@@ -1,0 +1,111 @@
+# 00 — Tổng quan dự án
+
+## 1. Bối cảnh
+
+Tập đoàn (**Owner**) sở hữu nhiều thương hiệu thời trang (ví dụ: một brand công sở nữ, một brand streetwear, một brand trẻ em, một brand phụ kiện). Hiện tại mỗi brand có thể đang:
+
+- Bán qua website riêng dựng trên nền tảng khác nhau (Haravan, Sapo, WooCommerce…), dữ liệu phân mảnh.
+- Bán trên sàn (Shopee, Lazada, TikTok Shop) và chuỗi cửa hàng vật lý với POS riêng.
+- Quản lý tồn kho, kế toán trên ERP; điều phối đơn/giao nhận trên **ODO**.
+
+Hệ quả: khách hàng bị tách theo brand, tồn kho không nhìn được toàn cục, khuyến mãi chéo brand khó làm, đối soát COD và hoá đơn thủ công.
+
+## 2. Tầm nhìn
+
+> **Một nền tảng — nhiều thương hiệu — một khách hàng — một bức tranh tồn kho.**
+
+VaniShop là **Multi-Brand Commerce Platform** thuộc sở hữu của Owner:
+
+- Mỗi brand có **storefront riêng** (domain, giao diện, catalog, giá, khuyến mãi riêng) nhưng chạy trên **một lõi chung**.
+- Owner có **tài khoản khách hàng dùng chung** (single customer view), **loyalty chung**, báo cáo hợp nhất.
+- Tồn kho **đa điểm** (kho tổng, kho brand, cửa hàng) được đồng bộ gần thời gian thực với ERP/ODO.
+- Sẵn sàng **omnichannel**: BOPIS (mua online – nhận tại cửa hàng), ship-from-store, đổi trả chéo kênh.
+- **Mở rộng về sau**: thêm brand mới trong vài ngày, thêm kênh (sàn TMĐT, POS, app mobile) qua API/connector.
+
+## 3. Mục tiêu (Goals)
+
+| # | Mục tiêu | Đo lường |
+|---|---|---|
+| G1 | Vận hành N brand trên 1 nền tảng | Thêm brand mới (cấu hình + theme từ template) ≤ 5 ngày làm việc |
+| G2 | Single customer view | 100% đơn web gắn với 1 hồ sơ khách hàng hợp nhất |
+| G3 | Tồn kho chính xác | Chênh lệch tồn web vs ERP < 0,5%; oversell < 0,1% đơn |
+| G4 | Tích hợp tự động qua module Integration | ≥ 99% message tới hệ thống ngoài (ERP, ODO khi có) không cần can thiệp tay; độ trễ P95 < 60 giây |
+| G5 | Phù hợp thị trường VN | Hỗ trợ COD, VietQR, ví điện tử, hoá đơn điện tử, địa chỉ 2 cấp mới |
+| G6 | Hiệu năng | TTFB storefront P95 < 300 ms (cache nóng), LCP mobile < 2,5 s |
+| G7 | Pháp lý | Tuân thủ quy định TMĐT, bảo vệ dữ liệu cá nhân, hoá đơn điện tử |
+
+## 4. Không nằm trong phạm vi (Non-goals) — giai đoạn đầu
+
+- **Không** phải marketplace mở cho người bán bên ngoài (không multi-vendor, không SaaS cho khách hàng khác).
+- **Không** thay thế ERP (kế toán, giá vốn, mua hàng, sản xuất) hay ODO (vận hành kho, pick–pack, điều phối vận chuyển).
+- **Không** tự xây POS ở Phase 1–2 (POS hiện hữu tích hợp qua API; POS riêng là tuỳ chọn Phase 4+).
+- **Không** hỗ trợ bán xuyên biên giới / đa tiền tệ ở Phase 1 (thiết kế schema vẫn chừa chỗ).
+
+## 5. Các bên liên quan (Stakeholders)
+
+| Vai trò | Nhu cầu chính |
+|---|---|
+| Ban điều hành Owner | Báo cáo hợp nhất theo brand/kênh/cửa hàng, kiểm soát chi phí |
+| Brand Manager | Tự chủ catalog, giá, khuyến mãi, nội dung của brand mình |
+| E-commerce / Merchandiser | Sắp xếp danh mục, bộ sưu tập, landing page, SEO |
+| CSKH | Tra cứu đơn/khách xuyên brand, xử lý đổi trả |
+| Vận hành kho / ODO | Nhận đơn chuẩn hoá, trả trạng thái giao nhận (vai trò ODO tạm hoãn — [ADR-0007](adr/0007-integration-module-odo-deferred.md)) |
+| Kế toán / ERP | Đối soát thanh toán, COD, hoá đơn điện tử, doanh thu theo pháp nhân |
+| Cửa hàng vật lý | Nhận đơn BOPIS, ship-from-store, đổi trả hàng mua online |
+| Khách hàng cuối | Mua nhanh trên mobile, thanh toán quen thuộc, theo dõi đơn, đổi trả dễ |
+| Đội IT | Hệ thống dễ bảo trì, test được, mở rộng được |
+
+## 6. Phạm vi chức năng tổng quát
+
+```mermaid
+mindmap
+  root((VaniShop))
+    Đa thương hiệu
+      Pháp nhân
+      Brand
+      Kênh bán
+      Domain & Theme
+    Catalog
+      Style / Variant
+      Thuộc tính màu-size
+      Danh mục & Bộ sưu tập
+      Bảng giá
+    Tồn kho
+      Kho / Cửa hàng
+      Giữ hàng
+      Có thể bán ATS
+    Bán hàng
+      Giỏ hàng
+      Checkout
+      Đơn hàng
+      Thanh toán VN
+      Giao hàng VN
+      Đổi trả
+    Khách hàng
+      Tài khoản chung
+      Loyalty
+      Khuyến mãi
+    Tích hợp
+      ODO
+      ERP
+      Hãng vận chuyển
+      Cổng thanh toán
+      Hoá đơn điện tử
+      Sàn TMĐT
+    Nền tảng
+      Hook & Plugin
+      Phân quyền
+      Audit
+      CMS
+```
+
+## 7. Nguyên tắc định hướng
+
+1. **Clean-room tuyệt đối**: không copy mã, schema, asset, file ngôn ngữ từ BeikeShop. Chỉ học ý tưởng ở mức khái niệm.
+2. **Brand-aware by default**: mọi dữ liệu nghiệp vụ đều trả lời được câu hỏi "thuộc brand nào / kênh nào / pháp nhân nào".
+3. **Nguồn dữ liệu gốc rõ ràng** (source of truth) cho từng loại dữ liệu — xem ma trận trong [08](08-module-integration.md).
+4. **Tích hợp bất đồng bộ, idempotent**: không để lỗi ERP/ODO làm hỏng checkout.
+5. **Core tối giản, nghiệp vụ bằng plugin** ([ADR-0009](adr/0009-core-toi-gian-nghiep-vu-bang-plugin.md)): core chỉ gồm nền tảng + nguyên liệu thương mại + điểm mở rộng.
+6. **Modular monolith trước, microservice khi cần**: ranh giới module rõ ràng để tách sau này.
+7. **Mobile-first, Việt Nam-first**: VNĐ, tiếng Việt có dấu, COD, địa chỉ mới.
+8. **Test là một phần của tính năng**: không merge nếu thiếu test cho nghiệp vụ lõi.
