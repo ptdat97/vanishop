@@ -12,5 +12,9 @@ final readonly class OrderLineData
         public string $sku,
         public string $productName,
         public int $quantity,
+        /** Thành tiền dòng sau giảm giá phân bổ — cơ sở tính tiền hoàn khi trả hàng. */
+        public int $totalAmount = 0,
+        public ?string $colorName = null,
+        public string $sizeCode = '',
     ) {}
 }

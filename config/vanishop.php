@@ -92,6 +92,12 @@ return [
         'return_window_days' => (int) env('VANI_RETURN_WINDOW_DAYS', 7),
     ],
 
+    'returns' => [
+        // ReturnPolicy (extension point). days_window dùng VANI_RETURN_WINDOW_DAYS.
+        'policy' => env('VANI_RETURN_POLICY', 'days_window'),
+        'reasons' => ['wrong_size', 'not_as_described', 'defective', 'changed_mind', 'other'],
+    ],
+
     'tax' => [
         'calculator' => env('VANI_TAX_CALCULATOR', 'vn_vat_inclusive'),
         // VAT gồm trong giá, basis points (1000 = 10%). Kế toán/pháp chế xác nhận mức áp dụng hiện hành.

@@ -209,6 +209,20 @@ final class PaymentService implements Payments
         }
     }
 
+    public function refundOrder(int $orderId, Money $amount, string $reason, string $idempotencyKey): void
+    {
+        $payment = Payment::query()->where('order_id', $orderId)->whereIn('status', [PaymentStatus::Paid, PaymentStatus::PartiallyRefunded])
+            ->orderByDesc('id')->get()
+            ->first(fn (Payment $payment): bool => RefundRules::refundable($payment->amount, $payment->refunded_amount) >= $amount->amount);
+
+        if ($payment === null) {
+            throw PaymentRejected::refundExceeds((int) Payment::query()->where('order_id', $orderId)->get()
+                ->sum(fn (Payment $payment): int => $payment->status->hasCollected() ? RefundRules::refundable($payment->amount, $payment->refunded_amount) : 0));
+        }
+
+        $this->refund($payment->id, $amount, $reason, $idempotencyKey);
+    }
+
     /**
      * Nhân viên đã chuyển trả tiền (hoàn thủ công: COD, chuyển khoản).
      */

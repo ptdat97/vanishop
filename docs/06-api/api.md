@@ -64,7 +64,9 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác minh chữ ký; trùng/cũ không làm lùi trạng thái; rate limit 600/phút/IP). **Implemented**.
 | POST | `/auth/otp/request`, `/auth/otp/verify` | Đăng nhập OTP |
 | GET/PATCH | `/me`, `/me/addresses`, `/me/orders`, `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản |
-| POST | `/me/returns` | Tạo yêu cầu đổi trả |
+| POST | `/orders/{id}/returns` | Khách gửi yêu cầu đổi/trả (`lines[{order_line_id, quantity}]`, `reason_code` ∈ `vanishop.returns.reasons`, `note`), header `X-Vani-Order-Token`. Lỗi `return.not_eligible` (chưa giao / quá hạn), `return.quantity_exceeded`. Đơn trả về có `returns[]` và `returnable{lines{order_line_id: số còn trả được}, deadline}`. **Implemented** |
+| POST | `/orders/{id}/returns/{returnId}/cancel` | Khách huỷ yêu cầu còn chờ duyệt. **Implemented** |
+| POST | `/me/returns` | Tạo yêu cầu đổi trả (khi có tài khoản khách) |
 | GET | `/geo/provinces`, `/geo/provinces/{code}/wards`, `/geo/search?q=` | Địa giới hành chính |
 | GET | `/search?q=&filter[...]` | Tìm kiếm qua `SearchProvider` (facet màu, size còn hàng, giá) |
 | GET | `/cms/pages/{slug}`, `/cms/menus/{code}`, `/cms/home` | Nội dung, menu, block trang chủ |

@@ -46,4 +46,11 @@ interface Payments
      * Hoàn tiền (một phần hoặc toàn bộ). Idempotent theo $idempotencyKey. Tổng hoàn ≤ số đã thu.
      */
     public function refund(int $paymentId, Money $amount, string $reason, string $idempotencyKey): void;
+
+    /**
+     * Hoàn tiền theo đơn (đổi/trả): chọn payment đã thu của đơn. Idempotent theo $idempotencyKey.
+     *
+     * @throws PaymentRejected nếu đơn chưa có khoản đã thu đủ để hoàn
+     */
+    public function refundOrder(int $orderId, Money $amount, string $reason, string $idempotencyKey): void;
 }

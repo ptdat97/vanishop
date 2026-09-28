@@ -32,6 +32,8 @@ final class EloquentShipmentReader implements ShipmentReader
                 events: DB::table('shipment_events')->where('shipment_id', $shipment->id)->orderBy('occurred_at')->orderBy('id')->get()
                     ->map(fn (object $event): array => ['status' => $event->status, 'description' => $event->description, 'at' => Carbon::parse((string) $event->occurred_at)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i')])
                     ->all(),
+                deliveredAt: $shipment->delivered_at?->toIso8601String(),
+                locationId: $shipment->location_id,
             ))->all();
     }
 }

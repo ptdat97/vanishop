@@ -6,7 +6,9 @@ namespace Modules\Storefront\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Modules\Ordering\Contracts\CustomerOrders;
+use Modules\Returns\Contracts\Returns;
 use Modules\Storefront\Application\OrderPresenter;
 
 /**
@@ -36,6 +38,39 @@ final class OrderController
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
 
         return response()->json(['data' => $this->presenter->present($detail)]);
+    }
+
+    /**
+     * Khách gửi yêu cầu đổi/trả cho dòng đã giao (trong hạn đổi trả).
+     */
+    public function requestReturn(Request $request, string $order, Returns $returns): JsonResponse
+    {
+        $data = $request->validate([
+            'lines' => ['required', 'array', 'min:1', 'max:50'],
+            'lines.*.order_line_id' => ['required', 'integer'],
+            'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+            'reason_code' => ['required', 'string', Rule::in((array) config('vanishop.returns.reasons'))],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+        $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
+        abort_if($detail === null, 404, __('ordering::messages.not_found'));
+
+        $lines = [];
+        foreach ($data['lines'] as $line) {
+            $lines[(int) $line['order_line_id']] = ($lines[(int) $line['order_line_id']] ?? 0) + (int) $line['quantity'];
+        }
+        $returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer');
+
+        return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))], 201);
+    }
+
+    public function cancelReturn(Request $request, string $order, string $return, Returns $returns): JsonResponse
+    {
+        $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
+        abort_if($detail === null, 404, __('ordering::messages.not_found'));
+        $returns->cancel($detail->id, $return, 'customer');
+
+        return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))]);
     }
 
     public function cancel(Request $request, string $order): JsonResponse

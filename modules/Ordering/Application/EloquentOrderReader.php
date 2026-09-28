@@ -40,7 +40,7 @@ final class EloquentOrderReader implements OrderReader
         }
 
         return OrderLine::query()->where('order_id', $orderId)->orderBy('id')->get()
-            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity))
+            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, $line->color_name, (string) $line->size_code))
             ->all();
     }
 
@@ -51,6 +51,7 @@ final class EloquentOrderReader implements OrderReader
             brandId: $order->brand_id, channelId: $order->channel_id, customerId: $order->customer_id === null ? null : (int) $order->customer_id,
             status: $order->order_status, paymentStatus: $order->payment_status, paymentMethod: (string) $order->payment_method,
             totalAmount: $order->total_amount, currencyCode: $order->currency_code, reservationKey: (string) $order->reservation_key,
+            returnStatus: (string) $order->return_status,
             recipient: ['full_name' => (string) ($order->customer_snapshot['full_name'] ?? ''), 'phone' => (string) ($order->customer_snapshot['phone'] ?? '')],
             shippingAddress: array_map('strval', (array) $order->shipping_address),
         );

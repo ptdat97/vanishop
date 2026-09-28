@@ -7,6 +7,8 @@ namespace Modules\Storefront\Application;
 use Modules\Fulfillment\Contracts\Data\ShipmentView;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Returns\Contracts\Data\ReturnView;
+use Modules\Returns\Contracts\Returns;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Support\MoneyFormatter;
 
@@ -15,6 +17,7 @@ final class OrderPresenter
     public function __construct(
         private readonly MoneyFormatter $money,
         private readonly ShipmentReader $shipments,
+        private readonly Returns $returns,
     ) {}
 
     /**
@@ -38,7 +41,7 @@ final class OrderPresenter
             'shipping_address' => $order->shippingAddress,
             'shipping_method' => ['label' => $order->shippingMethod['label'] ?? null, 'fee' => $money((int) ($order->shippingMethod['fee'] ?? 0))],
             'lines' => array_map(fn (array $line): array => [
-                'sku' => $line['sku'], 'name' => $line['name'], 'color_name' => $line['color_name'], 'size_code' => $line['size_code'], 'image_url' => $line['image_url'],
+                'id' => $line['id'], 'sku' => $line['sku'], 'name' => $line['name'], 'color_name' => $line['color_name'], 'size_code' => $line['size_code'], 'image_url' => $line['image_url'],
                 'quantity' => $line['quantity'], 'unit_price' => $money($line['unit_amount']), 'compare_at' => $money($line['compare_at_amount']),
                 'discount' => $money($line['discount_amount']), 'total' => $money($line['total_amount']),
             ], $order->lines),
@@ -56,6 +59,12 @@ final class OrderPresenter
                 'status' => $shipment->status,
                 'events' => $shipment->events,
             ], array_filter($this->shipments->forOrder($order->id), fn (ShipmentView $shipment): bool => $shipment->status !== 'cancelled'))),
+            'returns' => array_map(fn (ReturnView $return): array => [
+                'id' => $return->publicId, 'number' => $return->number, 'status' => $return->status, 'reason_code' => $return->reasonCode,
+                'refund' => $money($return->refundedAmount ?? $return->refundAmount), 'created_at' => $return->createdAt,
+                'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
+            ], $this->returns->forOrder($order->id)),
+            'returnable' => $this->returns->returnable($order->id),
         ];
     }
 }

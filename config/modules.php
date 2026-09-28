@@ -26,5 +26,6 @@ return [
     'Payment',
     'Checkout',
     'Fulfillment',
+    'Returns',
     'Storefront',
 ];

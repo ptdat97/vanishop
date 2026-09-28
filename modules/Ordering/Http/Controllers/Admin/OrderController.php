@@ -70,7 +70,7 @@ final class OrderController
             'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.orders.orders.index'),
             'order' => (array) $detail,
-            'panels' => Hook::slot('vani.admin.order.sidebar', $detail),
+            'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
                 'cancel' => Gate::allows('orders.cancel', [ScopeRef::brand($brand->id)]) && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status),

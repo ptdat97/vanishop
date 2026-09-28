@@ -20,7 +20,7 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 | `ShippingRateProvider` | `vani.checkout.shipping_providers` | Checkout | `FlatRateShipping` (**Implemented**; carrier thật: slice 9) | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PromotionRule` | `vani.promotion.rules` | Promotion | — (rule do plugin cung cấp). **Implemented** (rule chưa đăng ký → khuyến mãi bị bỏ qua + log) | [promotion](../03-domains/promotion.md) |
 | `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive). **Implemented** | [promotion](../03-domains/promotion.md) |
-| `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` | [order §7](../09-order/order.md) |
+| `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` (**Implemented**, chọn bằng `VANI_RETURN_POLICY`) | [order §7](../09-order/order.md) |
 | `SearchProvider` | `vani.search.providers` | Catalog | `database`, `meilisearch`: **Implemented** | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `OtpSender` | `vani.auth.otp_senders` | Customer | `email` | [customer](../03-domains/customer.md) |
 | `NotificationChannel` | `vani.notification.channels` | Notification | `mail` | [customer §4](../03-domains/customer.md) |
@@ -52,6 +52,7 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
 | `ShipmentReader` | Vận đơn của một đơn (Storefront, panel Admin). **Implemented**. Ghi nhận trạng thái đi qua webhook chung/Admin, chưa công bố `ShipmentRecorder` | Fulfillment |
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
+| `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
 | `SettingsRepository` | Đọc/ghi cấu hình theo scope | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
@@ -72,7 +73,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled` (**Implemented**), `OrderCompleted` |
 | Payment | `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted` (**Implemented**), `PaymentAuthorized` |
 | Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged` (**Implemented**; giao thành công = `ShipmentStatusChanged` với `to = delivered`) |
-| Returns | `ReturnRequested`, `ReturnResolved` |
+| Returns | `ReturnRequested`, `ReturnResolved` (**Implemented**) |
 | Integration | `IntegrationMessageFailed`, `IntegrationMessageDead` |
 | Extension | `PluginEnabled`, `PluginDisabled` |
 

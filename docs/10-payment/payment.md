@@ -4,6 +4,8 @@
 >
 > **Đã có:** module `modules/Payment`: `payments` (theo đơn + pháp nhân, `expires_at`, `refunded_amount`, CHECK số tiền), `payment_transactions` (append-only, unique `(gateway_code, gateway_transaction_id, type)` chống IPN trùng), `refunds` (unique `idempotency_key`); contract `PaymentGateway` (tag `vani.payment.gateways`) + `GatewayCapabilities` (callbacks, query, refund, partial refund, xác nhận thủ công, TTL); cổng Core `cod` (giới hạn `VANI_COD_MAX_AMOUNT`, tự xác nhận đơn `VANI_COD_AUTO_CONFIRM`) và `manual_bank_transfer` (tài khoản theo pháp nhân, nội dung = số đơn, nhân viên xác nhận); IPN chung `/api/payments/{gateway}/callback` (xác minh ở cổng, ghi nhận ở Core, so số tiền, trùng → trả OK, không xử lý lại); `vani:payment:expire` (mỗi phút: hết hạn → huỷ đơn → nhả hàng + hoàn lượt khuyến mãi), `vani:payment:reconcile` (mỗi phút: hỏi cổng các giao dịch treo > 5 phút); IPN đến sau khi huỷ → ghi nhận rồi tự hoàn tiền; hoàn tiền một phần/toàn bộ (tự động qua cổng nếu hỗ trợ, không thì chờ nhân viên chuyển trả); Admin brand workspace (xác nhận chuyển khoản, hoàn tiền, danh sách chờ hoàn); **bộ contract test** `Modules\Payment\Testing\PaymentGatewayContract` (§8); concurrency test IPN trùng.
 >
+> **Slice 9b:** `Payments::refundOrder` — hoàn theo đơn cho đổi/trả (chọn payment đã thu, ≤ số còn hoàn được).
+>
 > **Slice 9:** giao thành công vận đơn có COD → payment `paid`, đơn `cod_collected` (idempotent theo vận đơn).
 >
 > **Chưa có:** ngưỡng phê duyệt hoàn tiền 2 bước, credential cổng mã hoá theo pháp nhân trong settings (chờ Tenancy settings), khách chọn lại phương thức sau khi thanh toán lỗi, cổng online thật (plugin `vani.vietqr`, slice 10).

@@ -22,5 +22,8 @@ final readonly class ShipmentView
         public ?string $lastError,
         public array $lines,
         public array $events,
+        /** ISO 8601, null nếu chưa giao. */
+        public ?string $deliveredAt = null,
+        public int $locationId = 0,
     ) {}
 }

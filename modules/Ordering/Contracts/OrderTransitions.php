@@ -30,4 +30,15 @@ interface OrderTransitions
      * Cập nhật chiều giao hàng (fulfillment_status, tính từ các shipment) — gọi bởi Fulfillment. Ghi order_events.
      */
     public function setFulfillmentStatus(int $orderId, string $fulfillmentStatus, string $reason, string $source): void;
+
+    /**
+     * Cập nhật chiều đổi/trả (return_status) — gọi bởi Returns. Ghi order_events.
+     */
+    public function setReturnStatus(int $orderId, string $returnStatus, string $reason, string $source): void;
+
+    /**
+     * Khoá dòng đơn (FOR UPDATE) trong transaction của module khác — tuần tự hoá thao tác theo đơn
+     * (vd. tạo yêu cầu trả hàng: tổng trả không vượt số đã giao).
+     */
+    public function lock(int $orderId): void;
 }

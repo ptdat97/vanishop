@@ -37,7 +37,7 @@ final class CompleteDeliveredOrdersCommand extends Command
                 $allDelivered = FulfillmentProgress::orderStatus($shipments->pluck('status')->all()) === 'delivered';
                 $latest = $shipments->where('status', ShipmentStatus::Delivered)->max('delivered_at');
 
-                if ($order !== null && $order->status === OrderStatus::Processing && $allDelivered && $latest !== null && $latest < $cutoff) {
+                if ($order !== null && $order->status === OrderStatus::Processing && in_array($order->returnStatus, ['none', 'partially_returned', 'returned'], true) && $allDelivered && $latest !== null && $latest < $cutoff) {
                     $count += $transitions->transition($order->id, OrderStatus::Completed, 'return_window_passed', 'system') ? 1 : 0;
                 }
             }

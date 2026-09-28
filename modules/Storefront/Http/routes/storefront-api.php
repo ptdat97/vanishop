@@ -26,3 +26,5 @@ Route::get('payments/{payment}', [PaymentController::class, 'show'])->where('pay
 Route::get('orders/track', [OrderController::class, 'track'])->middleware('throttle:vani-order-track')->name('orders.track');
 Route::get('orders/{order}', [OrderController::class, 'show'])->where('order', '[0-9A-Z]{26}')->name('orders.show');
 Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->where('order', '[0-9A-Z]{26}')->name('orders.cancel');
+Route::post('orders/{order}/returns', [OrderController::class, 'requestReturn'])->where('order', '[0-9A-Z]{26}')->middleware('throttle:vani-checkout')->name('orders.returns.store');
+Route::post('orders/{order}/returns/{return}/cancel', [OrderController::class, 'cancelReturn'])->where(['order' => '[0-9A-Z]{26}', 'return' => '[0-9A-Z]{26}'])->name('orders.returns.cancel');

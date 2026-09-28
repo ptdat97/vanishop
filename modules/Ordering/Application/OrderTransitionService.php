@@ -91,6 +91,33 @@ final class OrderTransitionService implements OrderTransitions
         });
     }
 
+    public function setReturnStatus(int $orderId, string $returnStatus, string $reason, string $source): void
+    {
+        if (! in_array($returnStatus, ['none', 'requested', 'in_progress', 'partially_returned', 'returned'], true)) {
+            throw new InvalidArgumentException("return_status [{$returnStatus}] không hợp lệ.");
+        }
+
+        DB::transaction(function () use ($orderId, $returnStatus, $reason, $source): void {
+            $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
+            if ($order->return_status === $returnStatus) {
+                return;
+            }
+
+            $from = (string) $order->return_status;
+            $order->update(['return_status' => $returnStatus, 'lock_version' => $order->lock_version + 1]);
+            $this->record($order->id, 'return_status_changed', $from, $returnStatus, $reason, $source);
+        });
+    }
+
+    public function lock(int $orderId): void
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new \LogicException('OrderTransitions::lock phải chạy trong transaction.');
+        }
+
+        Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
+    }
+
     private function record(int $orderId, string $type, ?string $from, ?string $to, string $reason, string $source): void
     {
         $actor = $this->context->has() ? $this->context->actor() : null;
