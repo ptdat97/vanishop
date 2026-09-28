@@ -47,7 +47,7 @@ it('Admin: chi tiết đơn có panel thanh toán do module Payment cung cấp',
     $this->get("{$this->admin}/".($this->order)()->id)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Show')
         ->where('order.number', ($this->order)()->number)
         ->where('order.customerStatus.code', 'preparing')
-        ->where('panels.0.title', 'Thanh toán')
+        ->where('panels', fn ($panels) => collect($panels)->pluck('title')->sort()->values()->all() === ['Giao hàng', 'Thanh toán'])
         ->where('can.cancel', true)
         ->where('can.confirm', false));
 });
@@ -60,7 +60,8 @@ it('Admin: xác nhận đơn COD khi tắt tự xác nhận', function () {
 
     $this->post("{$this->admin}/{$order->id}/confirm")->assertSessionHasNoErrors();
 
-    expect($order->fresh()->order_status->value)->toBe('confirmed')
+    // Xác nhận → tự tạo vận đơn → processing.
+    expect($order->fresh()->order_status->value)->toBe('processing')
         ->and(DB::table('order_events')->where('order_id', $order->id)->where('to_status', 'confirmed')->value('source'))->toBe('staff')
         ->and(DB::table('audit_logs')->where('action', 'order.confirmed')->exists())->toBeTrue();
 });
@@ -166,10 +167,10 @@ it('khách: tra cứu bằng số đơn + SĐT (thông tin bị che), xem bằng
         ->assertStatus(409)->assertJsonPath('error.code', 'order.cannot_cancel');
 });
 
-it('khách không huỷ được đơn đang xử lý kho', function () {
+it('khách không huỷ được đơn đã rời kho', function () {
     $token = ($this->place)()->json('data.access_token');
     $order = ($this->order)();
-    DB::table('orders')->where('id', $order->id)->update(['order_status' => 'processing']);
+    DB::table('orders')->where('id', $order->id)->update(['order_status' => 'processing', 'fulfillment_status' => 'shipped']);
 
     $this->postJson("{$this->api}/orders/{$order->public_id}/cancel", ['reason' => 'x'], [...$this->headers, 'X-Vani-Order-Token' => $token])
         ->assertStatus(409)->assertJsonPath('error.code', 'order.cannot_cancel');

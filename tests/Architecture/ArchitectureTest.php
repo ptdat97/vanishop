@@ -45,9 +45,10 @@ foreach ([
     'Cart' => ['Catalog', 'Pricing', 'Inventory', 'Channel'],
     'Promotion' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Ordering', 'Checkout'],
     'Ordering' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Checkout'],
-    'Payment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout'],
-    'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Payment'],
-    'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment'],
+    'Payment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Fulfillment'],
+    'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Payment', 'Fulfillment'],
+    'Fulfillment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment'],
+    'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment'],
 ] as $consumer => $upstreams) {
     $forbidden = [];
     foreach ($upstreams as $upstream) {

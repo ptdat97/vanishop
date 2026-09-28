@@ -58,7 +58,7 @@ it('COD: đơn tự xác nhận, payment chờ thu, không hết hạn', functio
         ->assertJsonPath('data.payment.action.type', 'none')
         ->assertJsonPath('data.payment.expires_at', null);
 
-    expect(($this->orderRow)()->order_status->value)->toBe('confirmed')
+    expect(($this->orderRow)()->order_status->value)->toBe('processing')
         ->and(($this->orderRow)()->payment_status)->toBe('cod_pending')
         ->and(DB::table('order_events')->where('type', 'status_changed')->value('reason'))->toBe('cod_auto_confirm');
 });
@@ -84,10 +84,10 @@ it('online: redirect → IPN hợp lệ → đơn đã thanh toán + xác nhận
     ($this->callback)($paymentId, 'TXN-1')->assertOk();
 
     $order = ($this->orderRow)();
-    expect($order->order_status->value)->toBe('confirmed')
+    expect($order->order_status->value)->toBe('processing')
         ->and($order->payment_status)->toBe('paid')
         ->and(DB::table('payment_transactions')->where('type', 'callback')->count())->toBe(1)
-        ->and(DB::table('order_events')->where('order_id', $order->id)->where('type', 'status_changed')->value('source'))->toBe('gateway:fake_online');
+        ->and(DB::table('order_events')->where('order_id', $order->id)->where('type', 'status_changed')->where('to_status', 'confirmed')->value('source'))->toBe('gateway:fake_online');
 
     $this->getJson("{$this->api}/payments/{$paymentId}", $this->headers)->assertOk()->assertJsonPath('data.status', 'paid')->assertJsonPath('data.order.number', $order->number)->assertJsonPath('data.action', null);
 });
@@ -140,7 +140,7 @@ it('online: không nhận IPN → job truy vấn cổng ghi nhận thanh toán',
     $this->travel(6)->minutes();
     $this->artisan('vani:payment:reconcile')->assertSuccessful();
     expect(Payment::query()->withoutGlobalScopes()->where('public_id', $paymentId)->sole()->status->value)->toBe('paid')
-        ->and(($this->orderRow)()->order_status->value)->toBe('confirmed');
+        ->and(($this->orderRow)()->order_status->value)->toBe('processing');
 });
 
 it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên xác nhận, hoàn tiền một phần chờ chuyển trả', function () {
@@ -160,7 +160,7 @@ it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên x
     $this->post("{$base}/payments/{$payment->id}/confirm", ['note' => 'lần 2'])->assertSessionHasNoErrors();
 
     expect($payment->fresh()->status->value)->toBe('paid')
-        ->and(($this->orderRow)()->order_status->value)->toBe('confirmed')
+        ->and(($this->orderRow)()->order_status->value)->toBe('processing')
         ->and(DB::table('payment_transactions')->where('type', 'confirm')->count())->toBe(1);
 
     $this->post("{$base}/payments/{$payment->id}/refunds", ['amount' => 500_000, 'reason' => 'x', 'idempotency_key' => 'k1'])->assertSessionHasErrors('business');
@@ -177,6 +177,7 @@ it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên x
 });
 
 it('state machine: không chuyển ngược trạng thái; chuyển trùng là no-op', function () {
+    config(['vanishop.fulfillment.auto_create' => false]);
     ($this->order)('cod');
     $order = ($this->orderRow)();
     $transitions = app(OrderTransitions::class);

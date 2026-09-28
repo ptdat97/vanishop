@@ -1,6 +1,6 @@
 # Trạng thái triển khai
 
-> Cập nhật lần cuối: **2026-10-06**, sau slice 8 (Order). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
+> Cập nhật lần cuối: **2026-10-07**, sau slice 9 (Shipment). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
 
 ## Thang trạng thái
 
@@ -15,9 +15,9 @@
 
 > **Slice 0 (Foundation) đã có code**: khung module, Shared, Tenancy/Brand/Channel tối thiểu, Identity (RBAC theo phạm vi, audit, đăng nhập Admin), Extension (hook + plugin system + CLI), khung Admin Inertia, plugin mẫu, CI. Chưa có giỏ, checkout, đơn.
 >
-> **Slice 1–8 đã có code**: Catalog, Product, Variant & Price, Inventory (giữ hàng không oversell, đã kiểm chứng bằng concurrency test nhiều tiến trình trên MySQL), Cart, Checkout (khuyến mãi + voucher, VAT, phí giao cố định, đặt hàng idempotent), Payment (COD, chuyển khoản thủ công, khung cổng online + IPN, hết hạn thanh toán, hoàn tiền), quản lý đơn (Admin, tra cứu/huỷ cho khách) qua Storefront API.
+> **Slice 1–9 đã có code**: Catalog, Product, Variant & Price, Inventory (giữ hàng không oversell, đã kiểm chứng bằng concurrency test nhiều tiến trình trên MySQL), Cart, Checkout (khuyến mãi + voucher, VAT, phí giao cố định, đặt hàng idempotent), Payment (COD, chuyển khoản thủ công, khung cổng online + IPN, hết hạn thanh toán, hoàn tiền), quản lý đơn (Admin, tra cứu/huỷ cho khách), giao hàng (vận đơn thủ công + khung hãng vận chuyển, webhook, trừ tồn khi xuất kho, thu COD, hoàn tất đơn) — luồng E2E COD chạy đầu-cuối qua API.
 >
-> Test: **393 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **7 concurrency test** (group `concurrency`, chỉ MySQL).
+> Test: **417 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **7 concurrency test** (group `concurrency`, chỉ MySQL).
 
 ## Nền tảng
 
@@ -49,10 +49,11 @@
 | **Cart** | Partially Implemented (slice 5) | `carts` (ULID + token hash, theo kênh, trạng thái `active/converted/merged`), `cart_lines` (unique variant, CHECK quantity > 0, giá chụp), contract `Carts` (tạo, xem, thêm cộng dồn, sửa, xoá, gộp), kiểm tra variant bán được + có giá + đủ ATS + giới hạn, cờ dòng `unavailable/insufficient_stock/price_changed`, hook `vani.cart.validate_line`, event `CartUpdated`, `vani:cart:prune`, khoá giỏ khi sửa (concurrency test) | Gắn khách hàng + gộp khi đăng nhập (chờ Customer), `CartAbandoned`, native storefront |
 | **Promotion** | Partially Implemented (slice 6) | Khuyến mãi theo brand (priority, độc quyền/cộng dồn, tự động hoặc voucher, giới hạn lượt, ngân sách, khung giờ), rule từ plugin (`PromotionRule`), action `percent_off`/`amount_off` (`PromotionAction`), giá sàn 50%/dòng, voucher (mã cụ thể, sinh hàng loạt, giới hạn lượt, hết hạn), `PromotionEngine` (đánh giá, ghi nhận lượt bằng UPDATE có điều kiện, hoàn lượt), Admin brand workspace | Action trên phí ship, giới hạn theo khách, phạm vi owner/channel, giá sàn theo giá niêm yết, Admin cấu hình rule plugin |
 | **Checkout** | Partially Implemented (slice 6) | Contract `Checkout` (`quote`, `placeOrder`), totals pipeline + `TotalsCalculator`, `VnVatInclusiveTax`, `FlatRateShipping`, `CoreCheckoutValidator`, hook before/after_validate + payment_methods + shipping_options + `vani.order.after_create`, PlaceOrder một transaction + `Idempotency-Key` + `expected_total` (ADR-023), COD | Thanh toán online (slice 7), order group đa brand, đối chiếu địa giới hành chính, thuế trên phí ship |
-| **Ordering** | Partially Implemented (slice 6–8) | `orders`/`order_lines`/`order_adjustments`/`order_events`, snapshot, số đơn theo brand + tháng, `OrderWriter`, `OrderReader`, `OrderStateMachine` + `OrderTransitions` (+ `setPaymentStatus`), event `OrderPlaced`/`OrderConfirmed`/`OrderCancelled`; Admin đơn (lọc, tìm số đơn/SĐT, chi tiết, xác nhận, huỷ, đổi địa chỉ, ghi chú, slot panel), `CustomerOrders` (tra cứu che thông tin, xem/huỷ bằng access token), nhãn trạng thái cho khách | processing/completed (slice 9), order group, returns (sau slice 9), huỷ một phần |
-| **Payment** | Partially Implemented (slice 7) | `payments`, `payment_transactions`, `refunds`; `PaymentGateway` + registry; cổng `cod`, `manual_bank_transfer`; IPN chung; hết hạn thanh toán; truy vấn giao dịch treo; hoàn tiền (tự động/thủ công); Admin thanh toán; contract test suite | `cod_collected`, phê duyệt hoàn tiền 2 bước, credential cổng theo settings, cổng online thật (plugin) |
+| **Ordering** | Partially Implemented (slice 6–8) | `orders`/`order_lines`/`order_adjustments`/`order_events`, snapshot, số đơn theo brand + tháng, `OrderWriter`, `OrderReader`, `OrderStateMachine` + `OrderTransitions` (+ `setPaymentStatus`), event `OrderPlaced`/`OrderConfirmed`/`OrderCancelled`; Admin đơn (lọc, tìm số đơn/SĐT, chi tiết, xác nhận, huỷ, đổi địa chỉ, ghi chú, slot panel), `CustomerOrders` (tra cứu che thông tin, xem/huỷ bằng access token), nhãn trạng thái cho khách | order group, returns (slice 9b), huỷ một phần |
+| **Fulfillment** | Partially Implemented (slice 9) | `shipments`/`shipment_lines`/`shipment_events`, trạng thái chuẩn hoá chỉ đi tiến, `ShippingCarrier` + carrier `manual`, `SourcingStrategy` `reserved_locations`, tự tạo vận đơn khi xác nhận, job đặt vận đơn, webhook chung, commit giữ hàng khi rời kho, nhập lại hàng hoàn, hoàn tất đơn sau hạn đổi trả, Admin vận đơn + panel đơn, contract test suite | `FulfillmentMethod` (pickup), chuyển giữ hàng giữa kho, chế độ external, hãng thật (plugin) |
+| **Payment** | Partially Implemented (slice 7) | `payments`, `payment_transactions`, `refunds`; `PaymentGateway` + registry; cổng `cod`, `manual_bank_transfer`; IPN chung; hết hạn thanh toán; truy vấn giao dịch treo; hoàn tiền (tự động/thủ công); Admin thanh toán; contract test suite | Phê duyệt hoàn tiền 2 bước, credential cổng theo settings, cổng online thật (plugin) |
 | **Storefront** (tầng ghép, ADR-021) | Partially Implemented | `ProductViews` ghép Catalog + Pricing + Inventory (`in_stock`, `available`, `low_stock`); `CartPresenter` + API giỏ; `CheckoutPresenter` + API checkout; toàn bộ `/api/storefront/v1` | Native storefront (theme Blade) |
-| Customer / Fulfillment / Returns | Designed | — | Fulfillment: slice 9; Returns: sau slice 9; Customer chưa xếp slice (checkout hiện chỉ cho khách vãng lai) |
+| Customer / Returns | Designed | — | Returns: slice 9b; Customer chưa xếp slice (checkout hiện chỉ cho khách vãng lai) |
 | Content, Notification, Reporting | Planned | Dashboard Admin tối thiểu (slot `vani.admin.dashboard.cards`) nằm ở `app/` | |
 | Integration | Designed | — | Slice 11 |
 | Storefront native | Designed | Chỉ có middleware `ResolveChannel` | Theme `vani-base` |
@@ -63,12 +64,13 @@
 |---|---|
 | `/api/storefront/v1` | Partially Implemented: `GET /categories`, `GET /categories/{slug}`, `GET /products` (q, category, collection, color, attr[], sort, page; facet màu + thuộc tính), `GET /products/{slug}` (PDP, có `variants[].price`, `variants[].available/low_stock`, `price` khoảng giá, `in_stock`; danh sách có `price.min/max/compare_at/discount_percent` + `in_stock`), `POST /carts`, `GET /carts/{id}`, `POST/PATCH/DELETE /carts/{id}/lines[/{lineId}]` (token `X-Vani-Cart-Token`, ADR-022), `POST /checkout/{cart}/quote`, `POST /checkout/{cart}/orders` (Idempotency-Key, ADR-023, kèm `payment.action`), `GET /payments/{id}`, `GET /orders/track`, `GET /orders/{id}`, `POST /orders/{id}/cancel` (token `X-Vani-Order-Token`); kênh qua `X-Vani-Channel`, locale qua `X-Vani-Locale`, rate limit 240/phút/IP, định dạng lỗi chuẩn cho `/api/*` |
 | `/api/payments/{gateway}/callback` | Implemented (IPN chung, rate limit 600/phút/IP) |
+| `/api/shipping/{carrier}/webhook` | Implemented (webhook hãng vận chuyển chung) |
 | `/api/admin/v1`, `/api/integration/v1` | Designed |
-| Route Admin (web, Inertia) | Implemented dưới `/{VANI_ADMIN_PATH}` (mặc định `admin`): `/login`, `/logout`, `/plugins`, `/plugins/{slug}/…`, `/catalog/…`, `/pricing/…`, `/inventory/locations`, `/inventory/{brand}/stock`, `/inventory/{brand}/movements`, `/promotion/{brand}/promotions` (+ voucher), `/payment/{brand}/payments`, `/orders/{brand}/orders` |
+| Route Admin (web, Inertia) | Implemented dưới `/{VANI_ADMIN_PATH}` (mặc định `admin`): `/login`, `/logout`, `/plugins`, `/plugins/{slug}/…`, `/catalog/…`, `/pricing/…`, `/inventory/locations`, `/inventory/{brand}/stock`, `/inventory/{brand}/movements`, `/promotion/{brand}/promotions` (+ voucher), `/payment/{brand}/payments`, `/orders/{brand}/orders`, `/fulfillment/{brand}/shipments` |
 
 ## Database (migration đã có)
 
-`legal_entities`, `brands`, `channels`, `channel_brands`, `channel_domains`, `staff_users`, `roles`, `role_permissions`, `staff_role_assignments`, `audit_logs`, `plugins`, `plugin_scopes`, `categories`, `category_translations`, `attributes`, `attribute_translations`, `attribute_values`, `attribute_value_translations`, `colors`, `color_translations`, `sizes`, `media`, `mediables`, `styles`, `style_translations`, `style_colors`, `category_style`, `style_attribute_values`, `collections`, `collection_translations`, `collection_style`, `variants`, `price_lists`, `prices`, `channel_price_lists`, `price_history`, `locations`, `location_brands`, `channel_locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `carts`, `cart_lines`, `idempotency_keys`, `number_sequences`, `promotions`, `promotion_rules`, `vouchers`, `promotion_usages`, `orders`, `order_lines`, `order_adjustments`, `order_events`, `payments`, `payment_transactions`, `refunds` (+ bảng mặc định của Laravel). Dữ liệu demo: `php artisan db:seed --class=DemoSeeder`. Các bảng khác trong [database](../07-database/database.md) vẫn ở mức Designed.
+`legal_entities`, `brands`, `channels`, `channel_brands`, `channel_domains`, `staff_users`, `roles`, `role_permissions`, `staff_role_assignments`, `audit_logs`, `plugins`, `plugin_scopes`, `categories`, `category_translations`, `attributes`, `attribute_translations`, `attribute_values`, `attribute_value_translations`, `colors`, `color_translations`, `sizes`, `media`, `mediables`, `styles`, `style_translations`, `style_colors`, `category_style`, `style_attribute_values`, `collections`, `collection_translations`, `collection_style`, `variants`, `price_lists`, `prices`, `channel_price_lists`, `price_history`, `locations`, `location_brands`, `channel_locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `carts`, `cart_lines`, `idempotency_keys`, `number_sequences`, `promotions`, `promotion_rules`, `vouchers`, `promotion_usages`, `orders`, `order_lines`, `order_adjustments`, `order_events`, `payments`, `payment_transactions`, `refunds`, `shipments`, `shipment_lines`, `shipment_events` (+ bảng mặc định của Laravel). Dữ liệu demo: `php artisan db:seed --class=DemoSeeder`. Các bảng khác trong [database](../07-database/database.md) vẫn ở mức Designed.
 
 ## Plugin
 
@@ -81,11 +83,11 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 8) | 393 test pass (gồm 25 cặp chuyển trạng thái đơn, test snapshot) |
+| Unit + feature test (Foundation → slice 9) | 417 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối) |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
 | Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn), `PaymentCallbackConcurrencyTest.php` (6 IPN trùng cùng lúc → 1 lần ghi nhận) |
 | Observability | Partially: có correlation id (header + log context + queued job); chưa có metric/tracing |
 
 ## Production readiness
 
-**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng COD; chưa có cổng thanh toán online thật (plugin), giao hàng, đổi/trả, khách hàng có tài khoản. Điều kiện go-live: [roadmap §4](../20-roadmap/roadmap.md).
+**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng COD; chưa có cổng thanh toán/hãng vận chuyển thật (plugin, slice 10), đổi/trả, khách hàng có tài khoản, storefront native. Điều kiện go-live: [roadmap §4](../20-roadmap/roadmap.md).

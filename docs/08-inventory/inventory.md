@@ -4,6 +4,8 @@
 >
 > **Đã có:** `locations` (cấp Owner, `stock_authority`, priority, khả năng giao online/nhận tại quầy/nhận trả, `lock_version`), `location_brands`, `channel_locations` (**thuộc Inventory**, không thuộc Channel, để Channel không phụ thuộc Inventory), `stock_levels`, `stock_reservations`, `stock_movements` (append-only); domain `StockLevel` + `Allocation` (thuần PHP); `InventoryReservation` (reserve idempotent theo `reservation_key`, release, commit), `AvailabilityReader`, `InventoryStrategy` mặc định `standard`; điều chỉnh tay / kiểm kê / tồn an toàn (chặn khi location do hệ thống ngoài quản lý); lệnh `vani:inventory:release-expired` (mỗi phút); Admin: kho & cửa hàng (Owner), lưới tồn variant × location, lịch sử biến động; Storefront API: `in_stock`, `available`, `low_stock` (không lộ số lượng).
 >
+> **Slice 9:** `InventoryReservation::reservedLines` (Fulfillment tạo vận đơn theo kho đã giữ), `InventoryReturns::restock` (hàng hoàn về, movement `return`, idempotent theo reference), commit khi mọi vận đơn rời kho.
+>
 > **Chưa có:** transfer, reconciliation, sync từ authority ngoài qua Integration API (`sync()` domain đã có, bỏ qua bản cũ theo `sync_version`), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
 
 ## 1. Nguyên tắc

@@ -228,6 +228,22 @@ final class PaymentService implements Payments
     }
 
     /**
+     * Hãng báo giao thành công vận đơn có COD → ghi nhận đã thu (cod_collected). Idempotent theo vận đơn.
+     * Đối soát số tiền hãng chuyển về là plugin `vani.cod-reconciliation`.
+     */
+    public function collectCod(int $orderId, int $amount, string $shipmentReference): void
+    {
+        DB::transaction(function () use ($orderId, $amount, $shipmentReference): void {
+            $payment = Payment::query()->where('order_id', $orderId)->where('gateway_code', 'cod')->lockForUpdate()->first();
+            if ($payment === null || ! $this->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
+                return;
+            }
+
+            $this->capture($payment, Money::of($amount, $payment->currency_code), 'carrier', 'cod_collected');
+        });
+    }
+
+    /**
      * Hết hạn thanh toán → payment expired + huỷ đơn (OrderCancelled nhả hàng, hoàn lượt khuyến mãi).
      */
     public function expire(int $paymentId): bool
@@ -274,7 +290,7 @@ final class PaymentService implements Payments
         );
     }
 
-    private function capture(Payment $payment, Money $amount, string $source): bool
+    private function capture(Payment $payment, Money $amount, string $source, string $orderPaymentStatus = 'paid'): bool
     {
         if ($amount->amount !== $payment->amount || $amount->currency->code !== $payment->currency_code) {
             Log::warning('Số tiền thanh toán không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $amount->amount]);
@@ -293,7 +309,7 @@ final class PaymentService implements Payments
             return true;
         }
 
-        $this->transitions->setPaymentStatus($order->id, 'paid', "payment:{$payment->public_id}", $source);
+        $this->transitions->setPaymentStatus($order->id, $orderPaymentStatus, "payment:{$payment->public_id}", $source);
         if ($order->status === OrderStatus::Pending) {
             $this->transitions->transition($order->id, OrderStatus::Confirmed, 'payment_captured', $source);
         } elseif ($order->status === OrderStatus::Cancelled) {

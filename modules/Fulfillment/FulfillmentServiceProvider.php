@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Fulfillment;
+
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
+use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Facades\Hook;
+use Modules\Fulfillment\Application\CarrierRegistry;
+use Modules\Fulfillment\Application\Carriers\ManualCarrier;
+use Modules\Fulfillment\Application\EloquentShipmentReader;
+use Modules\Fulfillment\Application\Listeners\CancelShipmentsOnOrderCancel;
+use Modules\Fulfillment\Application\Listeners\CreateShipmentsOnConfirm;
+use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
+use Modules\Fulfillment\Application\ReservedLocationSourcing;
+use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
+use Modules\Fulfillment\Contracts\ShipmentReader;
+use Modules\Identity\Application\PermissionRegistry;
+use Modules\Ordering\Events\OrderCancelled;
+use Modules\Ordering\Events\OrderConfirmed;
+use Modules\Shared\Support\ModuleServiceProvider;
+
+final class FulfillmentServiceProvider extends ModuleServiceProvider
+{
+    protected function moduleName(): string
+    {
+        return 'Fulfillment';
+    }
+
+    public function register(): void
+    {
+        $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
+        $this->app->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
+        $this->app->tag([ReservedLocationSourcing::class], CarrierRegistry::SOURCING_TAG);
+    }
+
+    public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
+    {
+        $permissions->register('fulfillment.view', 'Xem vận đơn của brand');
+        $permissions->register('fulfillment.manage', 'Tạo/cập nhật/huỷ vận đơn');
+
+        $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60);
+
+        Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
+        Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
+        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 5);
+
+        RateLimiter::for('shipping-webhooks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('vani:orders:complete-delivered')->hourly()->withoutOverlapping()->onOneServer();
+        });
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([CompleteDeliveredOrdersCommand::class]);
+        }
+
+        if (! $this->app->routesAreCached()) {
+            Route::middleware(['api', 'throttle:shipping-webhooks'])->prefix('api/shipping')->name('api.shipping.')->group($this->modulePath('Http/routes/webhooks.php'));
+        }
+
+        $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
+        $this->loadBrandWorkspaceRoutes('fulfillment', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->bootModuleResources();
+    }
+}

@@ -61,6 +61,6 @@ it('6 IPN trùng đến cùng lúc → ghi nhận đúng một lần', function 
     expect(array_count_values($results))->toEqualCanonicalizing(['applied' => 1, 'duplicate' => 5])
         ->and((int) DB::table('payment_transactions')->where('type', 'callback')->count())->toBe(1)
         ->and(DB::table('payments')->value('status'))->toBe('paid')
-        ->and(DB::table('orders')->value('order_status'))->toBe('confirmed')
+        ->and(DB::table('orders')->value('order_status'))->toBe('processing') // confirmed → tạo vận đơn
         ->and((int) DB::table('order_events')->where('type', 'payment_status_changed')->count())->toBe(1);
 });

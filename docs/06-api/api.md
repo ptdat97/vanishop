@@ -57,7 +57,11 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 | GET | `/payments/{id}` | Trạng thái thanh toán cho trang kết quả khi khách quay về từ cổng (chỉ đọc; ghi nhận tiền chỉ qua callback). **Implemented** |
 | GET | `/orders/track?number=&phone=` | Tra cứu đơn không cần đăng nhập: trạng thái (`status{code, label}` tính từ 4 chiều), dòng hàng, tổng, mốc thời gian; tên/SĐT/địa chỉ bị che. Rate limit 10/phút/IP. **Implemented** |
 | GET | `/orders/{id}` | Chi tiết đơn đầy đủ. Header `X-Vani-Order-Token` (= `access_token` trong phản hồi đặt hàng). **Implemented** |
-| POST | `/orders/{id}/cancel` | Khách huỷ đơn (`reason`), khi đơn chưa xử lý kho. Lỗi `order.cannot_cancel` 409. **Implemented** |
+| POST | `/orders/{id}/cancel` | Khách huỷ đơn (`reason`), khi hàng chưa rời kho. Lỗi `order.cannot_cancel` 409. **Implemented** |
+
+Đơn (`/orders/track`, `/orders/{id}`) có `shipments[{carrier, service, tracking_number, status, events[{status, description, at}]}]`.
+
+Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác minh chữ ký; trùng/cũ không làm lùi trạng thái; rate limit 600/phút/IP). **Implemented**.
 | POST | `/auth/otp/request`, `/auth/otp/verify` | Đăng nhập OTP |
 | GET/PATCH | `/me`, `/me/addresses`, `/me/orders`, `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản |
 | POST | `/me/returns` | Tạo yêu cầu đổi trả |

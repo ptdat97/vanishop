@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Facades\Hook;
+use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderPlaced;
@@ -19,6 +20,7 @@ use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\Gateways\CodGateway;
 use Modules\Payment\Application\Gateways\ManualBankTransferGateway;
 use Modules\Payment\Application\Listeners\AutoConfirmCodOrder;
+use Modules\Payment\Application\Listeners\CollectCodOnDelivery;
 use Modules\Payment\Application\Listeners\OrderPaymentPanel;
 use Modules\Payment\Application\Listeners\SettleCancelledOrderPayments;
 use Modules\Payment\Application\PaymentService;
@@ -58,6 +60,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
 
         Event::listen(OrderPlaced::class, AutoConfirmCodOrder::class);
         Event::listen(OrderCancelled::class, SettleCancelledOrderPayments::class);
+        Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));
 
         RateLimiter::for('payment-callbacks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));

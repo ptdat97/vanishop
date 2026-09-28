@@ -20,5 +20,9 @@ final readonly class OrderData
         public int $totalAmount,
         public string $currencyCode,
         public string $reservationKey,
+        /** @var array{full_name: string, phone: string} */
+        public array $recipient = ['full_name' => '', 'phone' => ''],
+        /** @var array<string, string> */
+        public array $shippingAddress = [],
     ) {}
 }

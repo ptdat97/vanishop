@@ -9,9 +9,9 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|
 | `PaymentGateway` | `vani.payment.gateways` | Payment | `cod`, `manual_bank_transfer`. **Implemented** + bộ contract test `PaymentGatewayContract` | [payment](../10-payment/payment.md) |
-| `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `flat_rate`, `manual` | [fulfillment](../09-order/fulfillment.md) |
+| `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `manual`. **Implemented** + bộ contract test `ShippingCarrierContract` (phí ở checkout: `ShippingRateProvider`) | [fulfillment](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
-| `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `priority_first_fit` | [fulfillment](../09-order/fulfillment.md) |
+| `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `reserved_locations` (**Implemented**; đề xuất phải khớp hàng đang giữ) | [fulfillment](../09-order/fulfillment.md) |
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `TaxCalculator` | `vani.tax.calculators` | Checkout | `vn_vat_inclusive` (**Implemented**, chọn bằng `VANI_TAX_CALCULATOR`) | [cart-checkout](../03-domains/cart-checkout.md) |
@@ -50,7 +50,8 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 | `CustomerOrders` | Tra cứu/xem/huỷ đơn cho khách vãng lai. **Implemented** | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
-| `ShipmentRecorder` | Tạo/cập nhật shipment và trạng thái vận đơn | Fulfillment |
+| `ShipmentReader` | Vận đơn của một đơn (Storefront, panel Admin). **Implemented**. Ghi nhận trạng thái đi qua webhook chung/Admin, chưa công bố `ShipmentRecorder` | Fulfillment |
+| `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
 | `SettingsRepository` | Đọc/ghi cấu hình theo scope | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
@@ -70,7 +71,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Cart | `CartUpdated` (**Implemented**), `CartAbandoned` |
 | Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled` (**Implemented**), `OrderCompleted` |
 | Payment | `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted` (**Implemented**), `PaymentAuthorized` |
-| Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged`, `ShipmentDelivered` |
+| Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged` (**Implemented**; giao thành công = `ShipmentStatusChanged` với `to = delivered`) |
 | Returns | `ReturnRequested`, `ReturnResolved` |
 | Integration | `IntegrationMessageFailed`, `IntegrationMessageDead` |
 | Extension | `PluginEnabled`, `PluginDisabled` |

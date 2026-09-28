@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application;
 
+use Modules\Fulfillment\Contracts\Data\ShipmentView;
+use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Support\MoneyFormatter;
 
 final class OrderPresenter
 {
-    public function __construct(private readonly MoneyFormatter $money) {}
+    public function __construct(
+        private readonly MoneyFormatter $money,
+        private readonly ShipmentReader $shipments,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -44,6 +49,13 @@ final class OrderPresenter
             'tax_included' => $money($order->amounts['tax']),
             'total' => $money($order->amounts['total']),
             'timeline' => array_map(fn (array $event): array => ['type' => $event['type'], 'to' => $event['to'], 'at' => $event['at']], $order->events),
+            'shipments' => array_values(array_map(fn (ShipmentView $shipment): array => [
+                'carrier' => $shipment->carrierLabel,
+                'service' => $shipment->serviceCode,
+                'tracking_number' => $shipment->trackingNumber,
+                'status' => $shipment->status,
+                'events' => $shipment->events,
+            ], array_filter($this->shipments->forOrder($order->id), fn (ShipmentView $shipment): bool => $shipment->status !== 'cancelled'))),
         ];
     }
 }

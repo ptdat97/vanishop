@@ -25,4 +25,9 @@ interface OrderTransitions
      * Cập nhật chiều thanh toán (payment_status) — gọi bởi Payment. Ghi order_events.
      */
     public function setPaymentStatus(int $orderId, string $paymentStatus, string $reason, string $source): void;
+
+    /**
+     * Cập nhật chiều giao hàng (fulfillment_status, tính từ các shipment) — gọi bởi Fulfillment. Ghi order_events.
+     */
+    public function setFulfillmentStatus(int $orderId, string $fulfillmentStatus, string $reason, string $source): void;
 }

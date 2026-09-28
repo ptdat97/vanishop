@@ -29,4 +29,11 @@ interface InventoryReservation
      * Xuất kho: chuyển reservation sang committed. Idempotent.
      */
     public function commit(string $key): void;
+
+    /**
+     * Các dòng đang giữ (active) của key: location nào giữ bao nhiêu — Fulfillment dùng để tạo shipment theo kho.
+     *
+     * @return list<ReservedLine>
+     */
+    public function reservedLines(string $key): array;
 }

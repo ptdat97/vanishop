@@ -82,6 +82,16 @@ return [
         ],
     ],
 
+    'fulfillment' => [
+        // Tự tạo vận đơn khi đơn được xác nhận.
+        'auto_create' => (bool) env('VANI_FULFILLMENT_AUTO_CREATE', true),
+        // Carrier mặc định cho vận đơn mới (plugin hãng: ghn, ghtk…).
+        'default_carrier' => env('VANI_FULFILLMENT_CARRIER', 'manual'),
+        'sourcing' => env('VANI_FULFILLMENT_SOURCING', 'reserved_locations'),
+        // Số ngày sau khi giao để đơn chuyển "completed" (hết hạn đổi trả).
+        'return_window_days' => (int) env('VANI_RETURN_WINDOW_DAYS', 7),
+    ],
+
     'tax' => [
         'calculator' => env('VANI_TAX_CALCULATOR', 'vn_vat_inclusive'),
         // VAT gồm trong giá, basis points (1000 = 10%). Kế toán/pháp chế xác nhận mức áp dụng hiện hành.

@@ -28,7 +28,8 @@ flowchart LR
 | 6 ✅ | **Checkout** | Totals pipeline, `TaxCalculator` VAT, `CheckoutValidator`, Promotion framework (voucher + action primitive), `PlaceOrder` + idempotency | Test PlaceOrder: thành công/hết hàng/totals đổi/voucher hết/trùng: **đạt** (2026-10-04), kèm concurrency test (tồn, voucher, một giỏ một đơn). Tạo đơn tối thiểu (module Ordering) để PlaceOrder hoàn chỉnh; thanh toán COD |
 | 7 ✅ | **Payment** | Khung `PaymentGateway`, COD, chuyển khoản thủ công, IPN handler chung, hết hạn thanh toán | COD end-to-end; contract test suite `PaymentGateway` có sẵn: **đạt** (2026-10-05). Làm sớm state machine đơn + `OrderTransitions` (Payment cần xác nhận/huỷ đơn) |
 | 8 ✅ | **Order** | State machine 4 chiều, snapshot, `order_events`, Admin quản lý đơn, tra cứu đơn, huỷ, returns cơ bản | Mọi transition có test; snapshot không đổi khi catalog đổi: **đạt** (2026-10-06). **Returns dời sang sau slice 9** (đổi/trả chỉ áp cho hàng đã giao, cần Shipment) |
-| 9 | **Shipment** | Shipment, `flat_rate`, `manual`, sourcing mặc định, commit reservation | E2E: browse → cart → checkout COD → order → ship → delivered |
+| 9 ✅ | **Shipment** | Shipment, `flat_rate`, `manual`, sourcing mặc định, commit reservation | E2E: browse → cart → checkout COD → order → ship → delivered: **đạt** (2026-10-07, mức API). `flat_rate` là phí checkout (slice 6); sourcing mặc định `reserved_locations` |
+| 9b | **Returns** | RMA cơ bản: yêu cầu đổi/trả theo dòng đã giao, duyệt, nhận hàng, nhập kho, hoàn tiền (Payment) | Tổng trả ≤ đã giao; hoàn ≤ đã thu; có test |
 | 10 | **Proof plugins** | `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` ([plugin-catalog §2](../05-plugin/plugin-catalog.md)) | **Không có dòng thay đổi nào trong `modules/` phục vụ riêng plugin.** Nếu phải thêm extension point thì đó là PR Core tổng quát, có tài liệu. Contract test của 3 plugin pass. Extension points v1 đóng băng |
 
 ### Tiến độ slice 0 (2026-09-28)

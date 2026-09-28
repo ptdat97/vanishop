@@ -115,6 +115,14 @@ final class ReservationService implements InventoryReservation
         $this->finish($key, ReservationStatus::Committed, null);
     }
 
+    public function reservedLines(string $key): array
+    {
+        return StockReservation::query()->where('reservation_key', $key)->where('status', ReservationStatus::Active)
+            ->orderBy('location_id')->orderBy('variant_id')->get()
+            ->map(fn (StockReservation $row): ReservedLine => new ReservedLine((int) $row->variant_id, (int) $row->location_id, (int) $row->quantity))
+            ->all();
+    }
+
     private function finish(string $key, ReservationStatus $to, ?string $reason): void
     {
         DB::transaction(function () use ($key, $to, $reason): void {
