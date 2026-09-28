@@ -6,21 +6,22 @@ namespace Modules\Checkout\Application;
 
 use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Extension\Facades\Hook;
+use Modules\Payment\Contracts\Payments;
 
 /**
- * Phương thức thanh toán khả dụng. Slice 6: COD theo cấu hình; khung PaymentGateway ở slice Payment.
+ * Phương thức thanh toán khả dụng cho đơn: các PaymentGateway có isAvailable() + filter `vani.checkout.payment_methods`.
  */
 final class PaymentMethods
 {
+    public function __construct(private readonly Payments $payments) {}
+
     /**
      * @return list<array{code: string, label: string}>
      */
     public function available(Totals $totals): array
     {
-        $methods = array_map(
-            fn (string $code): array => ['code' => $code, 'label' => __("checkout::messages.payment_{$code}")],
-            (array) config('vanishop.checkout.payment_methods', ['cod']),
-        );
+        $brandIds = $totals->brandIds();
+        $methods = count($brandIds) === 1 ? $this->payments->availableMethods($brandIds[0], $totals->channelId, $totals->grandTotal) : [];
 
         $filtered = Hook::filter('vani.checkout.payment_methods', $methods, $totals);
 

@@ -1,6 +1,10 @@
 # Payment
 
-> Trạng thái: **Designed**.
+> Trạng thái: **Partially Implemented (slice 7)**.
+>
+> **Đã có:** module `modules/Payment`: `payments` (theo đơn + pháp nhân, `expires_at`, `refunded_amount`, CHECK số tiền), `payment_transactions` (append-only, unique `(gateway_code, gateway_transaction_id, type)` chống IPN trùng), `refunds` (unique `idempotency_key`); contract `PaymentGateway` (tag `vani.payment.gateways`) + `GatewayCapabilities` (callbacks, query, refund, partial refund, xác nhận thủ công, TTL); cổng Core `cod` (giới hạn `VANI_COD_MAX_AMOUNT`, tự xác nhận đơn `VANI_COD_AUTO_CONFIRM`) và `manual_bank_transfer` (tài khoản theo pháp nhân, nội dung = số đơn, nhân viên xác nhận); IPN chung `/api/payments/{gateway}/callback` (xác minh ở cổng, ghi nhận ở Core, so số tiền, trùng → trả OK, không xử lý lại); `vani:payment:expire` (mỗi phút: hết hạn → huỷ đơn → nhả hàng + hoàn lượt khuyến mãi), `vani:payment:reconcile` (mỗi phút: hỏi cổng các giao dịch treo > 5 phút); IPN đến sau khi huỷ → ghi nhận rồi tự hoàn tiền; hoàn tiền một phần/toàn bộ (tự động qua cổng nếu hỗ trợ, không thì chờ nhân viên chuyển trả); Admin brand workspace (xác nhận chuyển khoản, hoàn tiền, danh sách chờ hoàn); **bộ contract test** `Modules\Payment\Testing\PaymentGatewayContract` (§8); concurrency test IPN trùng.
+>
+> **Chưa có:** ghi nhận `cod_collected` khi giao thành công (slice Shipment), ngưỡng phê duyệt hoàn tiền 2 bước, credential cổng mã hoá theo pháp nhân trong settings (chờ Tenancy settings), khách chọn lại phương thức sau khi thanh toán lỗi, cổng online thật (plugin `vani.vietqr`, slice 10).
 
 ## 1. Trách nhiệm
 
@@ -84,6 +88,19 @@ sequenceDiagram
 Không lưu/không truyền dữ liệu thẻ qua server (hosted page/redirect) → PCI-DSS SAQ-A. Payload lưu log đã che thông tin nhạy cảm. Hoàn tiền cần quyền riêng + ngưỡng phê duyệt 2 bước.
 
 ## 8. Kiểm thử
+
+Plugin cổng thanh toán **phải** chạy bộ contract test của Core:
+
+```php
+// custom/plugin/<Plugin>/Tests/Feature/GatewayContractTest.php
+use Modules\Payment\Testing\PaymentGatewayContract;
+
+PaymentGatewayContract::define('vani.vietqr', fn () => new VietQrGateway(/* client giả */),
+    validCallback: fn (PaymentData $p) => Request::create('/callback', 'POST', VietQrFixtures::signed($p)),
+    tamperedCallback: fn (PaymentData $p) => Request::create('/callback', 'POST', VietQrFixtures::tampered($p)));
+```
+
+Bộ test kiểm tra: mã cổng hợp lệ; `initiate` idempotent; callback đúng chữ ký được chấp nhận và khớp payment/số tiền, bị sửa thì `InvalidCallback`; cổng không có callback luôn từ chối; `query` trả trạng thái chuẩn hoá; `refund` idempotent theo key. Cổng online mẫu: `modules/Payment/Tests/Feature/Fixtures/FakeOnlineGateway.php`.
 
 - Contract test `PaymentGateway`: chữ ký sai bị từ chối, callback trùng idempotent, `refund` với cùng idempotency key chỉ hoàn một lần.
 - Feature: COD end-to-end; online paid; hết hạn thanh toán; IPN muộn; hoàn tiền một phần.

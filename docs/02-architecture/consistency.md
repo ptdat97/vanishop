@@ -37,7 +37,7 @@ DB::transaction(function () use ($command) {
 |---|---|---|
 | `POST /checkout/.../orders` | Header `Idempotency-Key` (bắt buộc) | `idempotency_keys(scope, key, request_hash, status, response_*, expires_at)` 24h. **Implemented** (`Modules\Shared\Application\IdempotencyStore`: claim ngoài transaction, `complete` trong transaction nghiệp vụ, lỗi thì nhả key; bản ghi `processing` quá 5 phút cho chạy lại; dọn bằng `vani:idempotency:prune` mỗi giờ) |
 | API tạo tài nguyên (refund, shipment…) | `Idempotency-Key` | như trên |
-| IPN / webhook cổng thanh toán | `(gateway, gateway_transaction_id)` | unique trên `payment_transactions` |
+| IPN / webhook cổng thanh toán | `(gateway, gateway_transaction_id, type)` | unique trên `payment_transactions` + khoá dòng `payments`. **Implemented** (concurrency test: 6 IPN trùng → 1 lần ghi nhận) |
 | Webhook / inbox tích hợp | `(system, external_event_id)` | unique trên `integration_inbox` |
 | Outbox gửi đi | `message_id` (uuid) gửi kèm header `Idempotency-Key` | phía nhận |
 | Job | Thiết kế idempotent (kiểm tra trạng thái trước khi làm) | — |

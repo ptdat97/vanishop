@@ -44,6 +44,7 @@ final class TotalsPipeline
             grandTotal: $context->linesTotal()->add($shipping),
             rejectedVouchers: $context->promotions->rejectedVouchers ?? [],
             promotions: $context->promotions,
+            channelId: $context->channelId,
         );
     }
 }

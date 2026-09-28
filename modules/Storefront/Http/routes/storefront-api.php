@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Storefront\Http\Controllers\Api\CartController;
 use Modules\Storefront\Http\Controllers\Api\CategoryController;
 use Modules\Storefront\Http\Controllers\Api\CheckoutController;
+use Modules\Storefront\Http\Controllers\Api\PaymentController;
 use Modules\Storefront\Http\Controllers\Api\ProductController;
 
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -19,3 +20,4 @@ Route::delete('carts/{cart}/lines/{line}', [CartController::class, 'removeLine']
 
 Route::post('checkout/{cart}/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
 Route::post('checkout/{cart}/orders', [CheckoutController::class, 'placeOrder'])->middleware('throttle:vani-checkout')->name('checkout.orders.store');
+Route::get('payments/{payment}', [PaymentController::class, 'show'])->where('payment', '[0-9A-Z]{26}')->name('payments.show');

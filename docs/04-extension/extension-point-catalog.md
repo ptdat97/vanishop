@@ -8,7 +8,7 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|
-| `PaymentGateway` | `vani.payment.gateways` | Payment | `cod`, `manual_bank_transfer` | [payment](../10-payment/payment.md) |
+| `PaymentGateway` | `vani.payment.gateways` | Payment | `cod`, `manual_bank_transfer`. **Implemented** + bộ contract test `PaymentGatewayContract` | [payment](../10-payment/payment.md) |
 | `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `flat_rate`, `manual` | [fulfillment](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `priority_first_fit` | [fulfillment](../09-order/fulfillment.md) |
@@ -46,9 +46,9 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 | `PromotionEngine` | Đánh giá khuyến mãi, ghi nhận/hoàn lượt. **Implemented** | Promotion |
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |
-| `OrderReader` | Đọc đơn (DTO snapshot) | Ordering |
-| `OrderTransitions` | Yêu cầu chuyển trạng thái qua state machine | Ordering |
-| `PaymentRecorder` | Ghi transaction, hoàn tiền | Payment |
+| `OrderReader` | Đọc đơn (DTO snapshot). **Implemented** | Ordering |
+| `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
+| `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
 | `ShipmentRecorder` | Tạo/cập nhật shipment và trạng thái vận đơn | Fulfillment |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
 | `SettingsRepository` | Đọc/ghi cấu hình theo scope | Tenancy |
@@ -67,8 +67,8 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Inventory | `StockReserved`, `StockReleased`, `StockCommitted`, `StockAdjusted`, `AvailabilityChanged` (**Implemented**) |
 | Customer | `CustomerRegistered`, `CustomerMerged`, `ConsentChanged` |
 | Cart | `CartUpdated` (**Implemented**), `CartAbandoned` |
-| Ordering | `OrderPlaced` (**Implemented**), `OrderConfirmed`, `OrderCancelled`, `OrderCompleted` |
-| Payment | `PaymentAuthorized`, `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted` |
+| Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled` (**Implemented**), `OrderCompleted` |
+| Payment | `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted` (**Implemented**), `PaymentAuthorized` |
 | Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged`, `ShipmentDelivered` |
 | Returns | `ReturnRequested`, `ReturnResolved` |
 | Integration | `IntegrationMessageFailed`, `IntegrationMessageDead` |

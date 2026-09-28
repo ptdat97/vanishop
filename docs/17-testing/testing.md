@@ -1,6 +1,6 @@
 # Testing Strategy
 
-> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Concurrency test: `tests/Concurrency` (reservation, giỏ, PlaceOrder: không vượt tồn, không vượt lượt voucher, một giỏ một đơn; group `concurrency`, bị loại khỏi lần chạy mặc định, tự skip nếu không phải MySQL; CI chạy bước riêng trên MySQL 8.4). Chưa có: contract test suite, E2E (Pest Browser chưa cài).
+> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Contract test `PaymentGateway`: `Modules\Payment\Testing\PaymentGatewayContract` (áp cho `cod`, `manual_bank_transfer` và cổng mẫu). Concurrency test: `tests/Concurrency` (reservation, giỏ, PlaceOrder: không vượt tồn, không vượt lượt voucher, một giỏ một đơn; IPN trùng; group `concurrency`, bị loại khỏi lần chạy mặc định, tự skip nếu không phải MySQL; CI chạy bước riêng trên MySQL 8.4). Chưa có: contract test suite, E2E (Pest Browser chưa cài).
 >
 > Chạy test trên MySQL local: `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing vendor/bin/pest`.
 >

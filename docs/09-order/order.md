@@ -1,6 +1,6 @@
 # Order & Returns
 
-> Trạng thái: **Partially Implemented (slice 6)** — tạo đơn: `orders` (snapshot khách/địa chỉ/giao hàng, 4 cột trạng thái, số tiền), `order_lines` (snapshot tên/SKU/màu/size/ảnh, giá, giảm phân bổ, thuế), `order_adjustments`, `order_events` (append-only), số đơn `<mã brand><yymm>-<6 số>` từ `number_sequences`, contract `OrderWriter`, event `OrderPlaced`, kiểm tra cân số liệu khi lưu. **Chưa có:** state machine + `OrderTransitions`, `OrderReader`, Admin đơn, tra cứu đơn, huỷ/hết hạn thanh toán, order group, returns (slice 8). Quyết định: [ADR-012](../19-adr/ADR-012-order-snapshot.md).
+> Trạng thái: **Partially Implemented (slice 6)** — tạo đơn: `orders` (snapshot khách/địa chỉ/giao hàng, 4 cột trạng thái, số tiền), `order_lines` (snapshot tên/SKU/màu/size/ảnh, giá, giảm phân bổ, thuế), `order_adjustments`, `order_events` (append-only), số đơn `<mã brand><yymm>-<6 số>` từ `number_sequences`, contract `OrderWriter`, event `OrderPlaced`, kiểm tra cân số liệu khi lưu. **Slice 7:** `OrderStateMachine` (bảng chuyển cố định), `OrderTransitions` (khoá dòng, no-op khi trùng, `order_events`, `OrderConfirmed`/`OrderCancelled` sau commit, `setPaymentStatus`), `OrderReader`; hết hạn thanh toán → huỷ đơn → Checkout nhả hàng + hoàn lượt khuyến mãi. **Chưa có:** Admin đơn, tra cứu đơn, khách/CSKH huỷ, `processing`/`completed` (Fulfillment), order group, returns (slice 8). Quyết định: [ADR-012](../19-adr/ADR-012-order-snapshot.md).
 
 ## 1. Vòng đời tổng thể
 

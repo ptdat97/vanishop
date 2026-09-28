@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Checkout;
 
+use Illuminate\Support\Facades\Event;
 use Modules\Checkout\Application\Calculators\GuardCalculator;
 use Modules\Checkout\Application\Calculators\PromotionCalculator;
 use Modules\Checkout\Application\Calculators\ShippingCalculator;
@@ -11,12 +12,14 @@ use Modules\Checkout\Application\Calculators\SubtotalCalculator;
 use Modules\Checkout\Application\Calculators\TaxStage;
 use Modules\Checkout\Application\CheckoutService;
 use Modules\Checkout\Application\FlatRateShipping;
+use Modules\Checkout\Application\Listeners\UndoCancelledOrder;
 use Modules\Checkout\Application\ShippingOptions;
 use Modules\Checkout\Application\TotalsPipeline;
 use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
 use Modules\Checkout\Application\VnVatInclusiveTax;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\TaxCalculator;
+use Modules\Ordering\Events\OrderCancelled;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 final class CheckoutServiceProvider extends ModuleServiceProvider
@@ -57,6 +60,8 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
 
     public function boot(): void
     {
+        Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
+
         $this->bootModuleResources();
     }
 }

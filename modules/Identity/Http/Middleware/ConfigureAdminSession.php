@@ -47,6 +47,10 @@ final class ConfigureAdminSession
             // SessionManager giữ store (kèm tên cookie) đã tạo — buộc tạo lại theo cấu hình mới.
             $this->sessions->forgetDrivers();
             $this->app->forgetInstance('session.store');
+            // Redirector đã tạo giữ store cũ → withErrors()/withInput() sẽ ghi vào phiên không được lưu.
+            if ($this->app->resolved('redirect')) {
+                $this->app->make('redirect')->setSession($this->app->make('session.store'));
+            }
         }
 
         return $next($request);

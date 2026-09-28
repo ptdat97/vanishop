@@ -6,7 +6,7 @@ namespace Modules\Ordering\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Ordering\Domain\OrderStatus;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
@@ -30,7 +30,7 @@ final class Order extends Model
     protected function casts(): array
     {
         return [
-            'brand_id' => 'integer', 'channel_id' => 'integer', 'order_status' => OrderStatus::class,
+            'brand_id' => 'integer', 'channel_id' => 'integer', 'legal_entity_id' => 'integer', 'order_status' => OrderStatus::class,
             'subtotal_amount' => 'integer', 'discount_amount' => 'integer', 'shipping_amount' => 'integer', 'tax_amount' => 'integer', 'total_amount' => 'integer',
             'customer_snapshot' => 'array', 'shipping_address' => 'array', 'shipping_method' => 'array', 'meta' => 'array',
             'lock_version' => 'integer', 'placed_at' => 'immutable_datetime',

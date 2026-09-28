@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Ordering\Contracts\Data\OrderDraft;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Ordering\Domain\OrderNumber;
-use Modules\Ordering\Domain\OrderStatus;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Application\NumberSequences;
@@ -70,7 +70,7 @@ final class OrderFactory implements OrderWriter
 
         event(new OrderPlaced($order->id, $order->public_id, $number, $brand->id, $draft->channelId, $draft->customerId, $draft->totalAmount, $draft->currencyCode));
 
-        return new PlacedOrder($order->id, $order->public_id, $number, $brand->id, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode);
+        return new PlacedOrder($order->id, $order->public_id, $number, $brand->id, $brand->legalEntityId, $draft->channelId, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode);
     }
 
     /**

@@ -22,7 +22,7 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 
 | Plugin | Contract | Chứng minh được |
 |---|---|---|
-| `vani.vietqr` | `PaymentGateway`, webhook registry | Luồng thanh toán bất đồng bộ, IPN idempotent, settings theo pháp nhân |
+| `vani.vietqr` | `PaymentGateway` (+ contract test `PaymentGatewayContract`), IPN chung `/api/payments/vietqr/callback` | Luồng thanh toán bất đồng bộ, IPN idempotent, settings theo pháp nhân |
 | `vani.ghn` | `ShippingCarrier`, `integration_mappings`, webhook | Báo phí, tạo vận đơn sau commit, cập nhật trạng thái qua `ShipmentRecorder` |
 | `vani.promotion-rules` | `PromotionRule`, `PromotionAction`, Admin pages | Rule nghiệp vụ (giá trị giỏ, số lượng, collection, brand, đơn đầu, nhóm khách, freeship) cắm vào engine của Core |
 

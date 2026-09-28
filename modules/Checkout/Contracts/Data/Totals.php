@@ -29,6 +29,7 @@ final readonly class Totals
         public Money $grandTotal,
         public array $rejectedVouchers,
         public ?PromotionResult $promotions = null,
+        public int $channelId = 0,
     ) {}
 
     public function shippingFee(): Money

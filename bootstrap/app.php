@@ -14,6 +14,7 @@ use Modules\Identity\Http\Middleware\ConfigureAdminSession;
 use Modules\Identity\Http\Middleware\ResolveStaffContext;
 use Modules\Shared\Http\ApiErrorRenderer;
 use Modules\Shared\Http\Middleware\AssignCorrelationId;
+use Modules\Shared\Http\WebBusinessRuleRenderer;
 use Modules\Shared\Support\AdminPath;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -41,4 +42,5 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
         $exceptions->render(new ApiErrorRenderer);
+        $exceptions->render(new WebBusinessRuleRenderer);
     })->create();

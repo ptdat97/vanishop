@@ -55,12 +55,30 @@ return [
     ],
 
     'checkout' => [
-        // Slice 6: COD. Cổng thanh toán (PaymentGateway) thêm ở slice Payment / plugin.
-        'payment_methods' => ['cod'],
         'shipping' => [
             'flat_fee' => (int) env('VANI_SHIPPING_FLAT_FEE', 30000),
             // Miễn phí giao khi tiền hàng (sau giảm giá) >= ngưỡng; null = không miễn phí.
             'free_over' => env('VANI_SHIPPING_FREE_OVER', 500000) === null ? null : (int) env('VANI_SHIPPING_FREE_OVER', 500000),
+        ],
+    ],
+
+    'payment' => [
+        'cod' => [
+            // Tự xác nhận đơn COD sau khi đặt; false = CSKH xác nhận (Admin đơn — slice Order).
+            'auto_confirm' => (bool) env('VANI_COD_AUTO_CONFIRM', true),
+            // Đơn COD tối đa (₫); null = không giới hạn.
+            'max_amount' => env('VANI_COD_MAX_AMOUNT', 20000000) === null ? null : (int) env('VANI_COD_MAX_AMOUNT', 20000000),
+        ],
+        'bank_transfer' => [
+            // Tài khoản nhận tiền theo legal_entity_id; "default" dùng chung. Thiếu số tài khoản → phương thức ẩn.
+            'accounts' => [
+                'default' => [
+                    'bank' => env('VANI_BANK_TRANSFER_BANK', ''),
+                    'account_number' => env('VANI_BANK_TRANSFER_ACCOUNT', ''),
+                    'account_name' => env('VANI_BANK_TRANSFER_NAME', ''),
+                ],
+            ],
+            'ttl' => (int) env('VANI_BANK_TRANSFER_TTL', 86400),
         ],
     ],
 

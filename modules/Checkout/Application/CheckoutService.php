@@ -30,6 +30,8 @@ use Modules\Ordering\Contracts\Data\OrderDraft;
 use Modules\Ordering\Contracts\Data\OrderLineDraft;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderWriter;
+use Modules\Payment\Contracts\Data\PaymentView;
+use Modules\Payment\Contracts\Payments;
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Application\IdempotencyStore;
@@ -53,6 +55,7 @@ final class CheckoutService implements Checkout
         private readonly OrderWriter $orders,
         private readonly PromotionEngine $promotions,
         private readonly IdempotencyStore $idempotency,
+        private readonly Payments $paymentService,
         private readonly Container $container,
     ) {}
 
@@ -70,7 +73,7 @@ final class CheckoutService implements Checkout
         $scope = 'checkout:'.$request->cart->publicId;
         $stored = $this->idempotency->claim($scope, $idempotencyKey, $request->fingerprint());
         if ($stored !== null) {
-            return new PlaceOrderResult($stored->status, $stored->body, replayed: true);
+            return new PlaceOrderResult($stored->status, $stored->body, replayed: true, payment: $this->paymentView($stored->body, replay: true));
         }
 
         try {
@@ -86,19 +89,23 @@ final class CheckoutService implements Checkout
 
                 $publicId = (string) Str::ulid();
                 $reservationKey = "order:{$publicId}";
+                // Giữ hàng TRƯỚC khi tạo đơn: yêu cầu hết hàng thoát sớm, không chạm khoá số đơn.
+                // Giữ tới khi hết hạn thanh toán (+10 phút dự phòng); job hết hạn thanh toán huỷ đơn và nhả hàng trước.
+                $ttl = $this->paymentService->paymentTtl((string) $request->paymentMethod);
                 $this->inventory->reserve(new ReservationRequest(
                     $reservationKey,
                     $cart->channelId,
                     array_map(fn (TotalsLine $line): ReservationLine => new ReservationLine($line->variantId, $line->quantity), $totals->lines),
-                    $this->reservationTtl((string) $request->paymentMethod),
+                    $ttl === null ? null : $ttl + 600,
                 ));
 
                 $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals));
+                $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod);
                 $this->promotions->recordUsage($placed->id, null, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
                 Hook::action('vani.order.after_create', $placed);
                 $this->carts->markConverted($request->cart, $publicId);
 
-                $body = $this->present($placed, $totals);
+                $body = $this->present($placed, $totals, $payment['public_id'], (string) $request->paymentMethod);
                 $this->idempotency->complete($scope, $idempotencyKey, 201, $body);
 
                 return $body;
@@ -109,7 +116,7 @@ final class CheckoutService implements Checkout
             throw $exception;
         }
 
-        return new PlaceOrderResult(201, $body, replayed: false);
+        return new PlaceOrderResult(201, $body, replayed: false, payment: $this->paymentView($body, replay: false));
     }
 
     private function context(CartView $cart, CheckoutRequest $request): TotalsContext
@@ -200,19 +207,33 @@ final class CheckoutService implements Checkout
     }
 
     /**
-     * COD: giữ tới khi xuất kho hoặc huỷ đơn. Thanh toán online: giữ theo TTL, hết hạn thì nhả (slice Payment).
+     * Sau commit: khởi tạo với cổng (idempotent). Không lưu vào phản hồi idempotency vì QR/URL có thể đổi;
+     * gửi lại request → lấy lại hành động hiện tại của payment.
+     *
+     * @param  array<string, mixed>  $body
      */
-    private function reservationTtl(string $paymentMethod): ?int
+    private function paymentView(array $body, bool $replay): ?PaymentView
     {
-        return $paymentMethod === 'cod' ? null : (int) config('vanishop.inventory.reservation_ttl', 900);
+        $paymentId = $body['payment']['id'] ?? null;
+        if (! is_string($paymentId)) {
+            return null;
+        }
+
+        $view = $replay ? $this->paymentService->view($paymentId) : $this->paymentService->initiate($paymentId);
+        if ($view !== null && $replay && $view->action === null && $view->status === 'pending') {
+            $view = $this->paymentService->initiate($paymentId);
+        }
+
+        return $view;
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function present(PlacedOrder $order, Totals $totals): array
+    private function present(PlacedOrder $order, Totals $totals, string $paymentId, string $method): array
     {
         return [
+            'payment' => ['id' => $paymentId, 'method' => $method],
             'id' => $order->publicId,
             'number' => $order->number,
             'order_status' => $order->orderStatus,

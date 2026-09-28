@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Ordering\Domain;
+namespace Modules\Ordering\Contracts\Data;
 
 enum OrderStatus: string
 {

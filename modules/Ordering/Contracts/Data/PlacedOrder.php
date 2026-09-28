@@ -11,6 +11,8 @@ final readonly class PlacedOrder
         public string $publicId,
         public string $number,
         public int $brandId,
+        public int $legalEntityId,
+        public int $channelId,
         public string $orderStatus,
         public string $paymentStatus,
         public int $totalAmount,
