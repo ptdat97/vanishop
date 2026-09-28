@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Modules\Identity\Persistence\Models\StaffUser;
 
 return [
 
@@ -42,6 +43,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Nhân viên Admin (module Identity)
+        'staff' => [
+            'driver' => 'session',
+            'provider' => 'staff_users',
+        ],
     ],
 
     /*
@@ -65,6 +72,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'staff_users' => [
+            'driver' => 'eloquent',
+            'model' => StaffUser::class,
         ],
 
         // 'users' => [

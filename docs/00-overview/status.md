@@ -1,89 +1,82 @@
 # Trạng thái triển khai
 
-> Cập nhật lần cuối: **2026-09-28**, commit `030298f`. Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
+> Cập nhật lần cuối: **2026-10-01**, sau slice 3 (Variant & Price), chưa commit. Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
 
 ## Thang trạng thái
 
 | Trạng thái | Nghĩa |
 |---|---|
-| **Implemented** | Code đã merge, có test pass, dùng được theo đúng tài liệu |
+| **Implemented** | Code đã có, có test pass, dùng được theo đúng tài liệu |
 | **Partially Implemented** | Đã có code nhưng thiếu phần đã thiết kế (ghi rõ thiếu gì) |
 | **Designed** | Có thiết kế chi tiết trong `docs/`, chưa có code |
 | **Planned** | Mới có ý định hoặc phác thảo, chưa có thiết kế chi tiết |
 
 ## Tổng quan
 
-> **Hiện trạng thực tế: dự án mới là Laravel skeleton.** Toàn bộ kiến trúc VaniShop đang ở mức *Designed*, chưa có module nghiệp vụ nào được code.
+> **Slice 0 (Foundation) đã có code**: khung module, Shared, Tenancy/Brand/Channel tối thiểu, Identity (RBAC theo phạm vi, audit, đăng nhập Admin), Extension (hook + plugin system + CLI), khung Admin Inertia, plugin mẫu, CI. **Chưa có nghiệp vụ thương mại nào** (catalog, giỏ, đơn…).
+>
+> Test: **241 test pass** (unit, feature, architecture), chạy được trên cả SQLite in-memory và MySQL.
+
+## Nền tảng
 
 | Hạng mục | Trạng thái | Bằng chứng / Ghi chú |
 |---|---|---|
-| Laravel 13 skeleton, PHP 8.4 | **Implemented** | `composer.json`: `laravel/framework ^13.17` |
-| Thư viện hook `tormjens/eventy` | **Implemented** (mới cài package) | Chưa có lớp bọc `Hook` của VaniShop |
-| Pest 5, Pint, Laravel Boost | **Implemented** | `tests/` chỉ có `ExampleTest` |
-| Tailwind CSS 4 + Vite 8 | **Implemented** | Chưa có theme |
-| Tài liệu kiến trúc | **Implemented** | `docs/` |
-| Thư mục `modules/` + autoload `Modules\` | **Designed** | Chưa tồn tại |
-| Thư mục `custom/plugin/`, `custom/theme/` + autoload `Plugin\` | **Designed** | Chưa tồn tại |
-| MySQL 8.4 | **Designed** | `.env` vẫn đang dùng `DB_CONNECTION=sqlite` |
-| Locale `vi`, timezone hiển thị `Asia/Ho_Chi_Minh` | **Designed** | `.env` đang là `APP_LOCALE=en`; `config/app.php` timezone `UTC` (đúng thiết kế lưu UTC) |
-| Inertia + Vue 3 + TypeScript (Admin) | **Designed** | Chưa cài `inertiajs/inertia-laravel`, `vue` |
-| Redis, Horizon, Meilisearch | **Designed** | Queue/cache đang dùng driver `database` |
+| Laravel 13, PHP 8.4 | Implemented | `laravel/framework 13.33` |
+| `modules/` + autoload `Modules\`, `ModuleServiceProvider`, `config/modules.php` | Implemented | `app/Providers/ModuleServiceProvider.php` |
+| `custom/plugin/` + autoload `Plugin\`; `custom/theme/` | Implemented (thư mục theme còn trống) | |
+| MySQL | Implemented (dev) | `.env` dùng database `vanishop`. **Máy dev đang chạy MySQL 9.7.2** (DBngin); CI dùng MySQL 8.4 theo ADR-016 |
+| Locale `vi`, `APP_NAME=VaniShop` | Implemented | `.env`, `.env.example` |
+| Inertia v3 + Vue 3 + TypeScript 5.9 (Admin) | Implemented | `resources/js/admin.ts`; build + `vue-tsc` pass |
+| CI | Implemented (chưa chạy trên GitHub) | `.github/workflows/ci.yml`: clean-room, license, Pint, vue-tsc, build, Pest (SQLite + MySQL 8.4) |
+| Larastan | Planned | Chưa được duyệt dependency |
+| Redis, Horizon, Meilisearch | Designed | Queue/cache vẫn dùng driver `database` |
 
 ## Theo bounded context
 
-| Context | Trạng thái | Tài liệu |
-|---|---|---|
-| Shared (Money, Phone, CurrentContext) | Designed | [money](../02-architecture/money.md), [bounded-contexts](../02-architecture/bounded-contexts.md) |
-| Tenancy / Brand / Channel | Designed | [multi-brand](../12-multi-brand/multi-brand.md) |
-| Identity & Access | Designed | [security](../15-security/security.md) |
-| Extension (hook, plugin loader) | Designed | [extension-model](../04-extension/extension-model.md), [plugin-system](../05-plugin/plugin-system.md) |
-| Catalog / Pricing | Designed | [catalog-pricing](../03-domains/catalog-pricing.md) |
-| Inventory | Designed | [inventory](../08-inventory/inventory.md) |
-| Customer | Designed | [customer](../03-domains/customer.md) |
-| Cart / Checkout | Designed | [cart-checkout](../03-domains/cart-checkout.md) |
-| Promotion framework | Designed | [promotion](../03-domains/promotion.md) |
-| Ordering / Returns | Designed | [order](../09-order/order.md) |
-| Payment | Designed | [payment](../10-payment/payment.md) |
-| Fulfillment | Designed | [fulfillment](../09-order/fulfillment.md) |
-| Content, Notification, Reporting | Planned | Mới mô tả phạm vi trong [bounded-contexts](../02-architecture/bounded-contexts.md) |
-| Integration platform | Designed | [integration-platform](../11-integration/integration-platform.md) |
-| ERP connector | Designed (abstraction) · vai trò ODO **hoãn** | [erp-integration](../11-integration/erp-integration.md) |
-| Storefront native | Designed | [storefront](../14-storefront/storefront.md) |
-| Marketplace, Creator/Affiliate (plugin) | Designed (ranh giới) | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |
+| Context | Trạng thái | Đã có | Còn thiếu |
+|---|---|---|---|
+| **Shared** | Partially Implemented | `Money`, `Currency`, `MoneyFormatter`, `PhoneNumber`, `CurrentContext`/`ContextScope`/`Actor`, middleware correlation id, `BelongsToBrand` + `BrandScope`, base `ModuleServiceProvider` | Địa giới hành chính VN, `MoneyCast` Eloquent, `idempotency_keys`, `number_sequences` |
+| **Tenancy** | Partially Implemented | `legal_entities` + model/factory | Settings kế thừa owner → legal entity → brand → channel |
+| **Brand** | Partially Implemented | `brands` (+ `theme_tokens`, `lock_version`), `BrandDirectory`, rule `BrandSlug` (chặn slug trùng đường dẫn dành riêng, ADR-019) | Admin CRUD, preflight |
+| **Channel** | Partially Implemented | `channels`, `channel_brands`, `channel_domains`, `ChannelResolver`, middleware `vani.channel` (`ResolveChannel`, khớp path prefix dài nhất → hỗ trợ brand theo đường dẫn trên domain chung) | Admin CRUD, gán bảng giá/location |
+| **Identity** | Partially Implemented | Nhân viên (guard `staff`), đăng nhập/đăng xuất Admin, rate limit, vai trò + permission registry, gán vai trò theo scope owner/legal_entity/brand, `Authorizer`, `Gate::before`, `AuditLogger` (append-only), middleware `vani.staff-context`, lệnh `vani:staff:create-owner`; **ADR-020**: đường dẫn Admin `VANI_ADMIN_PATH`, cookie phiên Admin riêng + idle timeout, IP allowlist (404), `X-Robots-Tag: noindex`, chính sách mật khẩu ≥ 12 ký tự (+ kiểm tra mật khẩu bị lộ ở production), audit đăng nhập từ IP mới | Gửi thông báo khi đăng nhập từ IP mới (hiện chỉ audit + log), scope `location`, Admin quản lý nhân viên/vai trò, SSO. **Không dùng 2FA** (ADR-020) |
+| **Extension** | Partially Implemented | `Hook` (filter/action/collect/slot, strict mode, public/internal), `hooks.php` registry, manifest, dependency resolver (semver, conflicts, topo sort), lifecycle install/enable/disable/uninstall (+ `failed`), cache nạp plugin, cô lập plugin lỗi, safe mode, `PluginServiceProvider` API, `AdminNavigation`, CLI `vani:plugin:list/install/enable/disable/uninstall/hooks`, trang Admin "Plugin" | `vani:plugin:upgrade`, `vani:plugin:doctor`, scope `legal_entity`, `settings_schema` → form, circuit breaker, metric `hook_duration_ms` |
+| **Catalog** | Partially Implemented (slice 1) | Danh mục theo brand (cây materialized path, tối đa 5 cấp, chống vòng khi di chuyển, `lock_version`, bản dịch vi/en, ảnh), thuộc tính spec/internal + giá trị, màu + `color_family`, size theo hệ size, thư viện media (`media`, `mediables`, khử trùng lặp theo checksum), Admin brand workspace `/{admin}/catalog/{brand}/…`, Storefront API danh mục. **Slice 2:** Style (mã, slug, `draft/active/archived`, khung giờ hiển thị, bản dịch vi/en, danh mục + danh mục chính, thuộc tính theo kiểu nhập, `lock_version`, chỉ xoá bản nháp), Style Color + bộ ảnh theo màu (tối đa 20, đổi thứ tự), bộ sưu tập thủ công, hook `vani.product.before_save`/`after_save`, event `ProductCreated/Updated/Archived` (sau commit), `SearchProvider` (`database` tìm không dấu + facet; `meilisearch` qua REST), listener đồng bộ index (queue `search`), lệnh `vani:search:reindex`. **Slice 3:** Variant (màu × size, SKU `{STYLE}-{COLOR}-{SIZE}` duy nhất toàn hệ thống, barcode duy nhất, active/inactive, khối lượng), sinh ma trận trong Admin, event `VariantCreated`, contract `CatalogReader` + `VariantDirectory` | Bộ sưu tập theo luật, thư viện thuộc tính cấp Owner, resize ảnh qua CDN, import Excel |
+| **Pricing** | Implemented (slice 3) | Bảng giá theo brand (`base`/`sale`/`member`, priority, khung giờ, bật/tắt, `lock_version`), gán kênh, giá `bigint` + giá gốc, nhập giá hàng loạt theo mã sản phẩm, `price_history` append-only, audit, event `PriceChanged`, `PricingStrategy` mặc định `price_list_priority` (priority cao thắng → giá thấp hơn; giá base làm giá gốc khi khuyến mãi), contract `PriceResolver` | Giá theo nhóm khách (`member`), giá theo số lượng (`min_qty` > 1), import Excel |
+| **Storefront** (tầng ghép, ADR-021) | Partially Implemented | `ProductViews` ghép Catalog + Pricing; toàn bộ `/api/storefront/v1` | Native storefront (theme Blade) |
+| Inventory / Customer / Cart / Checkout / Promotion / Ordering / Payment / Fulfillment / Returns | Designed | — | Slice 4–9 |
+| Content, Notification, Reporting | Planned | Dashboard Admin tối thiểu (slot `vani.admin.dashboard.cards`) nằm ở `app/` | |
+| Integration | Designed | — | Slice 11 |
+| Storefront native | Designed | Chỉ có middleware `ResolveChannel` | Theme `vani-base` |
 
 ## API
 
 | API | Trạng thái |
 |---|---|
-| `/api/storefront/v1` | Designed |
-| `/api/admin/v1` | Designed |
-| `/api/integration/v1` | Designed |
+| `/api/storefront/v1` | Partially Implemented: `GET /categories`, `GET /categories/{slug}`, `GET /products` (q, category, collection, color, attr[], sort, page; facet màu + thuộc tính), `GET /products/{slug}` (PDP, có `variants[].price` và `price` khoảng giá; danh sách có `price.min/max/compare_at/discount_percent`); kênh qua `X-Vani-Channel`, locale qua `X-Vani-Locale`, rate limit 240/phút/IP, định dạng lỗi chuẩn cho `/api/*` |
+| `/api/admin/v1`, `/api/integration/v1` | Designed |
+| Route Admin (web, Inertia) | Implemented dưới `/{VANI_ADMIN_PATH}` (mặc định `admin`): `/login`, `/logout`, `/plugins`, `/plugins/{slug}/…` |
 
-## Database
+## Database (migration đã có)
 
-| Hạng mục | Trạng thái |
-|---|---|
-| Bảng mặc định Laravel (`users`, `cache`, `jobs`) | Implemented (SQLite) |
-| Schema VaniShop ([database](../07-database/database.md)) | Designed, chưa có migration |
+`legal_entities`, `brands`, `channels`, `channel_brands`, `channel_domains`, `staff_users`, `roles`, `role_permissions`, `staff_role_assignments`, `audit_logs`, `plugins`, `plugin_scopes`, `categories`, `category_translations`, `attributes`, `attribute_translations`, `attribute_values`, `attribute_value_translations`, `colors`, `color_translations`, `sizes`, `media`, `mediables`, `styles`, `style_translations`, `style_colors`, `category_style`, `style_attribute_values`, `collections`, `collection_translations`, `collection_style`, `variants`, `price_lists`, `prices`, `channel_price_lists`, `price_history` (+ bảng mặc định của Laravel). Dữ liệu demo: `php artisan db:seed --class=DemoSeeder`. Các bảng khác trong [database](../07-database/database.md) vẫn ở mức Designed.
 
 ## Plugin
 
 | Plugin | Trạng thái |
 |---|---|
-| Plugin loader, manifest, CLI `vani:plugin:*` | Designed |
-| `HelloWorld` (plugin mẫu) | Planned |
-| `VietQr`, `Ghn`, `PromotionRules` (3 plugin chứng minh kiến trúc) | Planned |
-| Các plugin khác ([plugin-catalog](../05-plugin/plugin-catalog.md)) | Planned |
+| `vani.hello-world` (plugin mẫu: slot hook, menu, permission, trang Admin, bật theo scope) | Implemented, có test |
+| `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` | Planned (slice 10) |
 
 ## Chất lượng
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Test coverage nghiệp vụ | 0%: chưa có code nghiệp vụ |
-| Architecture tests (Pest `arch()`) | Designed ([testing](../17-testing/testing.md)) |
-| CI | Planned |
-| Observability | Designed ([observability](../16-observability/observability.md)) |
+| Unit + feature test (Foundation → slice 3) | 241 test pass |
+| Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
+| Concurrency test | Designed (bắt đầu ở slice 4, Inventory) |
+| Observability | Partially: có correlation id (header + log context + queued job); chưa có metric/tracing |
 
 ## Production readiness
 
-**Chưa sẵn sàng.** Điều kiện tối thiểu để go-live brand đầu tiên được ghi ở [roadmap](../20-roadmap/roadmap.md), mục "Go-live gate".
+**Chưa sẵn sàng.** Mới có Foundation, chưa có nghiệp vụ thương mại. Điều kiện go-live: [roadmap §4](../20-roadmap/roadmap.md).

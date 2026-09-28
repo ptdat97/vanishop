@@ -23,7 +23,7 @@
 
 ## 3. Khách hàng hợp nhất
 
-- **Một tài khoản dùng cho mọi brand**. Đăng nhập ở brand A thì dùng được ở brand B: phiên theo domain, đăng nhập lại một chạm qua token redirect ngắn hạn.
+- **Một tài khoản dùng cho mọi brand**. Các brand chạy chung một domain ([ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)), nên cùng một cookie phiên: đăng nhập ở `vani.vn/lumiere` thì cũng đang đăng nhập ở `vani.vn/urbanx`. Trang tài khoản ở `vani.vn/tai-khoan`.
 - **Định danh chính là số điện thoại** (chuẩn hoá E.164 `+84…`); email là phụ.
 - Khách vãng lai đặt hàng → tạo **profile ẩn** theo SĐT; khi khách đăng ký bằng số đó và xác thực OTP thì hợp nhất lịch sử đơn.
 - Dữ liệu khách từ POS, sàn TMĐT (nếu có SĐT) đổ về qua [Integration](../11-integration/integration-platform.md), vào cùng hồ sơ.

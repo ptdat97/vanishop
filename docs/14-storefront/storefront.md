@@ -17,6 +17,7 @@ Native Storefront (Blade SSR + Alpine, theme custom/theme/*)
 
 | Client | Cách dùng |
 |---|---|
+| **Tầng ghép** | Module `modules/Storefront` (**Implemented** cho API, [ADR-021](../19-adr/ADR-021-storefront-composition-module.md)): `ProductViews` gọi `CatalogReader` + `PriceResolver` |
 | **Native storefront** | Controller storefront gọi **cùng Query/Command** mà API dùng, trong cùng process (không tự gọi HTTP tới chính mình, rule R19). Blade chỉ render DTO |
 | **Headless** (Next.js, mobile, Zalo Mini App) | Gọi `/api/storefront/v1` ([api](../06-api/api.md)) |
 
@@ -61,7 +62,8 @@ Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendat
 
 - SSR cho trang public, cache CDN 60–300s + `stale-while-revalidate`; phần cá nhân hoá (giỏ, giá thành viên) tải qua API sau khi trang hiện.
 - Cache ứng dụng có khoá theo channel: `ch:{channel}:style:{id}:v{version}`; invalidate theo event (`ProductUpdated`, `PriceChanged`, `AvailabilityChanged`).
-- SEO: canonical theo domain chính, sitemap theo channel, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
+- URL: một domain chung, mỗi brand một đường dẫn (`vani.vn/lumiere/…`), [multi-brand §5](../12-multi-brand/multi-brand.md). Mọi link và route storefront sinh kèm `path_prefix` của channel hiện tại.
+- SEO: canonical theo đường dẫn brand, sitemap mỗi brand + sitemap index ở gốc, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
 - Mục tiêu: LCP mobile < 2,5s, CLS < 0,1.
 
 ## 5. Kiểm thử

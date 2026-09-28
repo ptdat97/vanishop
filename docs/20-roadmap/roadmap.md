@@ -19,10 +19,10 @@ flowchart LR
 
 | # | Slice | Nội dung chính | Done khi |
 |---|---|---|---|
-| 0 | **Foundation** | `modules/`, `custom/` + autoload; `ModuleServiceProvider`; Shared (`Money`, `Phone`, `CurrentContext`, correlation id middleware); Tenancy/Brand/Channel tối thiểu (1 pháp nhân, 1 brand, 1 channel, `ResolveChannel`, `BelongsToBrand`); Identity (staff, RBAC theo scope, audit); Extension (`Hook` + registry, plugin loader, manifest, CLI `vani:plugin:*`, safe mode) + plugin mẫu `HelloWorld`; khung Admin Inertia; MySQL 8.4 + `.env`; CI (Pint, Larastan, Pest, arch test, clean-room) | Arch test chạy trong CI; nhân viên brand A không thấy dữ liệu brand B; `HelloWorld` install/enable/disable được theo scope |
-| 1 | **Catalog** | Danh mục, thuộc tính, màu/size, media, `SearchProvider` (database) | CRUD Admin + Storefront API đọc danh mục |
-| 2 | **Product (Style)** | Style, style color, nội dung đa ngôn ngữ, trạng thái, hook `vani.product.before_save`, event `ProductCreated/Updated` | PDP render được từ Application query |
-| 3 | **Variant & Price** | Variant/SKU, bảng giá, `PricingStrategy` mặc định, `price_history` | Giá hiển thị đúng theo channel; test Money |
+| 0 ✅ (phần lớn) | **Foundation** | `modules/`, `custom/` + autoload; `ModuleServiceProvider`; Shared (`Money`, `Phone`, `CurrentContext`, correlation id middleware); Tenancy/Brand/Channel tối thiểu (1 pháp nhân, 1 brand, 1 channel, `ResolveChannel`, `BelongsToBrand`); Identity (staff, RBAC theo scope, audit); Extension (`Hook` + registry, plugin loader, manifest, CLI `vani:plugin:*`, safe mode) + plugin mẫu `HelloWorld`; khung Admin Inertia; MySQL 8.4 + `.env`; CI (Pint, Larastan, Pest, arch test, clean-room) | Arch test chạy trong CI; nhân viên brand A không thấy dữ liệu brand B; `HelloWorld` install/enable/disable được theo scope |
+| 1 ✅ | **Catalog** | Danh mục, thuộc tính, màu/size, media. (`SearchProvider` dời sang slice 2 vì chưa có sản phẩm để tìm) | CRUD Admin + Storefront API đọc danh mục: **đạt** (2026-09-29) |
+| 2 ✅ | **Product (Style)** | Style, style color, nội dung đa ngôn ngữ, trạng thái, gắn danh mục/thuộc tính/ảnh, hook `vani.product.before_save`, event `ProductCreated/Updated`, **`SearchProvider`** (database + Meilisearch), bộ sưu tập thủ công | PDP render được từ Application query; tìm kiếm sản phẩm qua Storefront API: **đạt** (2026-09-30) |
+| 3 ✅ | **Variant & Price** | Variant/SKU, bảng giá, `PricingStrategy` mặc định, `price_history` | Giá hiển thị đúng theo channel; test Money: **đạt** (2026-10-01). Thêm module `Storefront` làm tầng ghép (ADR-021) |
 | 4 | **Inventory** | Location, stock level, reservation, ledger, ATS, `InventoryStrategy` mặc định, điều chỉnh tay/import | **Concurrency test không oversell pass trên MySQL** |
 | 5 | **Cart** | Giỏ, gộp giỏ, Storefront API cart | Thêm/sửa/xoá giỏ qua API và native |
 | 6 | **Checkout** | Totals pipeline, `TaxCalculator` VAT, `CheckoutValidator`, Promotion framework (voucher + action primitive), `PlaceOrder` + idempotency | Test PlaceOrder: thành công/hết hàng/totals đổi/voucher hết/trùng |
@@ -30,6 +30,20 @@ flowchart LR
 | 8 | **Order** | State machine 4 chiều, snapshot, `order_events`, Admin quản lý đơn, tra cứu đơn, huỷ, returns cơ bản | Mọi transition có test; snapshot không đổi khi catalog đổi |
 | 9 | **Shipment** | Shipment, `flat_rate`, `manual`, sourcing mặc định, commit reservation | E2E: browse → cart → checkout COD → order → ship → delivered |
 | 10 | **Proof plugins** | `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` ([plugin-catalog §2](../05-plugin/plugin-catalog.md)) | **Không có dòng thay đổi nào trong `modules/` phục vụ riêng plugin.** Nếu phải thêm extension point thì đó là PR Core tổng quát, có tài liệu. Contract test của 3 plugin pass. Extension points v1 đóng băng |
+
+### Tiến độ slice 0 (2026-09-28)
+
+- [x] `modules/`, `custom/` + autoload, `ModuleServiceProvider`
+- [x] Shared: `Money`, `PhoneNumber`, `CurrentContext`, correlation id
+- [x] Tenancy/Brand/Channel tối thiểu, `ResolveChannel`, `BelongsToBrand`
+- [x] Identity: nhân viên, RBAC theo scope, audit, đăng nhập Admin
+- [x] Identity: đường dẫn Admin cấu hình được `VANI_ADMIN_PATH` + kiểm soát bù trừ ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)). Không dùng 2FA.
+- [x] Extension: `Hook` + registry, plugin loader, manifest, CLI, safe mode, plugin mẫu `HelloWorld`
+- [x] Khung Admin Inertia
+- [x] MySQL + `.env`
+- [x] CI (chưa chạy trên GitHub vì repo chưa có remote CI)
+- [ ] Larastan (chờ duyệt dependency)
+- [ ] Settings kế thừa theo scope (Tenancy), dời sang slice cần dùng đầu tiên
 
 ## 3. Sau khi chứng minh kiến trúc
 
@@ -48,8 +62,8 @@ flowchart LR
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
 - [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
 - [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)).
-- [ ] Bảo mật: pentest, 2FA Admin, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)).
-- [ ] Pháp lý: thông báo website với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
+- [ ] Bảo mật: pentest, đường dẫn Admin bí mật + kiểm soát bù trừ của ADR-020, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)).
+- [ ] Pháp lý: chốt mô hình website (một pháp nhân vận hành hay đăng ký sàn TMĐT, [ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)), thông báo/đăng ký với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
 - [ ] Staging/production đặt tại VN tại nhà cung cấp Owner chọn ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)).
 
 ## 5. Rủi ro

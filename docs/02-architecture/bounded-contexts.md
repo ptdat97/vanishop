@@ -27,6 +27,7 @@
 | **Notification** | Template theo brand/event/kênh, gửi tin, nhật ký gửi | Nội dung marketing | `NotificationChannel` |
 | **Reporting** | Read model báo cáo, dashboard | Dữ liệu gốc | `DashboardWidget` |
 | **Integration** | Integration Client, API, webhook, outbox/inbox, mapping, ownership, connector framework | Nghiệp vụ domain | `Connector`, `IntegrationOutbox`, `ErpConnector` |
+| **Storefront** | Không có dữ liệu riêng: ghép Catalog + Pricing (+ Inventory, Promotion…) cho Storefront API và native storefront ([ADR-021](../19-adr/ADR-021-storefront-composition-module.md)) | Mọi dữ liệu nghiệp vụ | `ProductViews` (nội bộ) |
 
 ## 2. Context map
 
@@ -81,7 +82,7 @@ modules/Inventory/
 ├── Persistence/        # PRIVATE: Eloquent model, repository, migration, factory, seeder
 │   ├── Models/StockLevelRecord.php
 │   ├── Repositories/EloquentStockLevelRepository.php
-│   └── Database/{migrations,factories,seeders}/
+│   └── Database/{migrations,Factories,Seeders}/
 ├── Infrastructure/     # PRIVATE: adapter hạ tầng (Redis counter, queue job, HTTP client nếu có)
 ├── Http/               # Controller, Form Request, API Resource, routes
 │   ├── Controllers/{Storefront,Admin,Api}/

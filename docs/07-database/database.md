@@ -1,6 +1,6 @@
 # Database
 
-> Trạng thái: **Designed**. Chưa có migration nào của VaniShop; `.env` vẫn dùng SQLite. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md).
+> Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md).
 
 ## 1. Quy ước
 
@@ -86,8 +86,8 @@ erDiagram
 | Tenancy | `legal_entities`, `settings(scope_type, scope_id, key, value json, is_encrypted)` |
 | Brand | `brands(…, theme_tokens json, lock_version)` |
 | Channel | `channels`, `channel_domains`, `channel_brands`, `channel_price_lists`, `channel_locations` |
-| Identity | `staff_users`, `roles`, `permissions`, `role_permission`, `staff_role_assignments(staff_id, role_id, scope_type, scope_id)`, `audit_logs` |
-| Extension | `plugins`, `plugin_scopes` |
+| Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)`, `audit_logs` |
+| Extension | `plugins(id VARCHAR PK = plugin id)`, `plugin_scopes` |
 | Catalog | `styles(meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
 | Inventory | `locations`, `location_brands`, `stock_levels`, `stock_reservations`, `stock_movements`, `stock_transfers`, `stock_transfer_lines`, `inventory_reconciliations`, `inventory_reconciliation_lines` |
@@ -118,7 +118,7 @@ Bảng của plugin: xem README của từng plugin; ví dụ trong [marketplace
 
 ## 6. Migration
 
-- Migration nằm trong `modules/<M>/Persistence/Database/migrations`, nạp qua ServiceProvider; plugin nằm trong `custom/plugin/<P>/Database/migrations`.
+- Migration nằm trong `modules/<M>/Persistence/Database/migrations`, factory trong `modules/<M>/Persistence/Database/Factories` (chữ F hoa để khớp PSR-4 trên Linux), nạp qua ServiceProvider; plugin nằm trong `custom/plugin/<P>/Database/migrations`.
 - Không sửa migration đã chạy trên production. Thay đổi phá vỡ theo **expand → migrate → contract** qua hai lần deploy.
 - Bảng lớn: online schema change (`ALGORITHM=INSTANT/INPLACE`, hoặc `gh-ost`).
 - Migration phải idempotent để chạy lại an toàn sau lỗi, vì MySQL không rollback được DDL.

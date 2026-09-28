@@ -1,6 +1,10 @@
 # Testing Strategy
 
-> Trạng thái: **Designed**. Hiện chỉ có `tests/Unit/ExampleTest.php` và `tests/Feature/ExampleTest.php` của Laravel.
+> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Chưa có: concurrency test (từ slice Inventory), contract test suite, E2E (Pest Browser chưa cài).
+>
+> Chạy test trên MySQL local: `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing vendor/bin/pest`.
+>
+> Nếu `pest` thoát mà không in gì (Laravel PAO của Boost nuốt output khi có fatal error), chạy lại với `PAO_DISABLE=1` để thấy lỗi.
 
 ## 1. Tầng test
 

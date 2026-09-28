@@ -22,6 +22,9 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [016](ADR-016-mysql.md) | MySQL 8.4 | Accepted |
 | [017](ADR-017-admin-ui-inertia.md) | Admin: Inertia + Vue 3 + TypeScript | Accepted |
 | [018](ADR-018-infrastructure-vietnam.md) | Hạ tầng và dữ liệu đặt tại Việt Nam | Accepted |
+| [019](ADR-019-shared-domain-brand-path.md) | Một domain chung, storefront brand theo đường dẫn | Accepted |
+| [020](ADR-020-admin-path-no-2fa.md) | Admin: đường dẫn cấu hình được, không dùng 2FA | Accepted |
+| [021](ADR-021-storefront-composition-module.md) | Module Storefront làm tầng ghép (Catalog + Pricing + …) | Accepted |
 
 "Accepted" nghĩa là quyết định đã được chốt, **không** có nghĩa là đã có code. Trạng thái implementation nằm ở [status](../00-overview/status.md).
 

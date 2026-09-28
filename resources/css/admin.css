@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+
+@source '../js/admin';
+@source '../../modules/*/resources/js';
+@source '../../custom/plugin/*/Resources/js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+}

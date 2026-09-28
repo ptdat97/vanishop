@@ -1,6 +1,6 @@
 # Kiến trúc tổng thể
 
-> Trạng thái: **Designed**. Hiện chỉ có Laravel skeleton ([status](../00-overview/status.md)).
+> Trạng thái: **Partially Implemented**: khung Foundation đã có (slice 0), nghiệp vụ chưa có ([status](../00-overview/status.md)).
 
 ## 1. Phong cách kiến trúc
 
@@ -100,15 +100,15 @@ Cấu trúc bên trong module: [bounded-contexts §4](bounded-contexts.md). Cấ
 | Tầng | Lựa chọn | Trạng thái |
 |---|---|---|
 | Ngôn ngữ / Framework | PHP 8.4, Laravel 13 | Implemented |
-| Hook | `tormjens/eventy`, bọc bởi `Modules\Extension\Hook` | Package đã cài; lớp bọc Designed |
-| CSDL | MySQL 8.4 LTS, InnoDB, `utf8mb4` ([ADR-016](../19-adr/ADR-016-mysql.md)) | Designed |
+| Hook | `tormjens/eventy`, bọc bởi facade `Modules\Extension\Facades\Hook` | Implemented |
+| CSDL | MySQL 8.4 LTS, InnoDB, `utf8mb4` ([ADR-016](../19-adr/ADR-016-mysql.md)) | Implemented (dev: MySQL 9.7; CI: 8.4) |
 | Cache / Queue / Lock | Redis 7 + Laravel Horizon | Designed |
 | Tìm kiếm | Laravel Scout; `SearchProvider` contract; Meilisearch là provider mặc định | Designed |
 | File | Object storage S3-compatible tại VN + CDN | Designed |
-| Admin | Inertia 2 + Vue 3 + TypeScript + Tailwind 4 ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Designed |
+| Admin | Inertia v3 + Vue 3 + TypeScript 5.9 + Tailwind 4 ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Implemented (khung) |
 | Storefront | Blade SSR + Alpine.js + Tailwind 4, theme `custom/theme/*` | Designed |
 | API auth | Sanctum (storefront/admin), API key + HMAC (integration) | Designed |
-| Test | Pest 5 (unit, feature, arch), Pest Browser (E2E) | Pest Implemented |
+| Test | Pest 5 (unit, feature, arch), Pest Browser (E2E, chưa cài) | Implemented (unit/feature/arch) |
 | Chất lượng | Pint, Larastan level ≥ 6 | Pint Implemented |
 
 ## 6. Luồng request tiêu biểu

@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'parent_not_found' => 'Danh mục cha không tồn tại trong brand này.',
+    'attribute_values_required' => 'Thuộc tính dạng chọn cần ít nhất một giá trị.',
+    'category_has_children' => 'Không thể xoá danh mục còn danh mục con.',
+    'category_cycle' => 'Không thể chuyển danh mục vào chính nó hoặc danh mục con của nó.',
+    'category_too_deep' => 'Danh mục tối đa :max cấp.',
+    'stale' => 'Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang rồi sửa lại.',
+    'saved' => 'Đã lưu.',
+    'deleted' => 'Đã xoá.',
+    'only_draft_deletable' => 'Chỉ xoá được sản phẩm nháp. Sản phẩm đã đăng bán hãy chuyển sang trạng thái lưu trữ.',
+    'category_not_in_brand' => 'Có danh mục không thuộc brand này.',
+    'primary_category_not_selected' => 'Danh mục chính phải nằm trong các danh mục đã chọn.',
+    'attribute_not_in_brand' => 'Thuộc tính không thuộc brand này.',
+    'attribute_value_invalid' => 'Giá trị không hợp lệ với kiểu của thuộc tính.',
+    'color_not_in_brand' => 'Màu không thuộc brand này.',
+    'color_already_added' => 'Sản phẩm đã có màu này.',
+    'too_many_images' => 'Mỗi màu tối đa :max ảnh.',
+    'image_order_invalid' => 'Thứ tự ảnh không hợp lệ.',
+    'style_codes_not_found' => 'Không tìm thấy mã sản phẩm: :codes',
+    'size_not_in_brand' => 'Có size không thuộc brand này.',
+    'variants_need_colors' => 'Thêm ít nhất một màu cho sản phẩm trước khi tạo biến thể.',
+    'sku_taken' => 'SKU :sku đã tồn tại.',
+    'color_has_variants' => 'Màu này đã có biến thể. Hãy chuyển các biến thể sang ngừng bán thay vì gỡ màu.',
+    'variants_generated' => 'Đã tạo :count biến thể mới.',
+];

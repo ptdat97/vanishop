@@ -31,7 +31,7 @@ VaniShop là một **Commerce Platform / Commerce Kernel** thuộc sở hữu c�
 
 Với Owner, điều đó có nghĩa là:
 
-- Mỗi brand có **storefront riêng** (domain, giao diện, catalog, giá, khuyến mãi riêng) nhưng chạy trên **một lõi chung**.
+- Mỗi brand có **storefront riêng** (giao diện, catalog, giá, khuyến mãi riêng), chạy trên **một lõi chung** và **một domain chung**, phân biệt bằng đường dẫn: `vani.vn/lumiere`, `vani.vn/urbanx` ([ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)).
 - Owner có **tài khoản khách hàng dùng chung** (single customer view), **loyalty chung**, báo cáo hợp nhất.
 - Tồn kho **đa điểm** (kho tổng, kho brand, cửa hàng) được đồng bộ gần thời gian thực với ERP/ODO.
 - Sẵn sàng **omnichannel**: BOPIS (mua online – nhận tại cửa hàng), ship-from-store, đổi trả chéo kênh.

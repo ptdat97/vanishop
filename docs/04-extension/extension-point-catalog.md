@@ -13,14 +13,14 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `priority_first_fit` | [fulfillment](../09-order/fulfillment.md) |
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety) | [inventory](../08-inventory/inventory.md) |
-| `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority` | [catalog-pricing](../03-domains/catalog-pricing.md) |
+| `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `TaxCalculator` | `vani.tax.calculators` | Checkout | `vn_vat_inclusive` | [cart-checkout](../03-domains/cart-checkout.md) |
 | `TotalsCalculator` | `vani.totals.calculators` | Checkout | subtotal, promotion, shipping, tax, rounding | [cart-checkout](../03-domains/cart-checkout.md) |
 | `CheckoutValidator` | `vani.checkout.validators` | Checkout | price, stock, address | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PromotionRule` | `vani.promotion.rules` | Promotion | — (rule do plugin cung cấp) | [promotion](../03-domains/promotion.md) |
 | `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive) | [promotion](../03-domains/promotion.md) |
 | `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` | [order §7](../09-order/order.md) |
-| `SearchProvider` | `vani.search.providers` | Catalog | `database`, `meilisearch` | [catalog-pricing](../03-domains/catalog-pricing.md) |
+| `SearchProvider` | `vani.search.providers` | Catalog | `database`, `meilisearch`: **Implemented** | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `OtpSender` | `vani.auth.otp_senders` | Customer | `email` | [customer](../03-domains/customer.md) |
 | `NotificationChannel` | `vani.notification.channels` | Notification | `mail` | [customer §4](../03-domains/customer.md) |
 | `Connector` | `vani.integration.connectors` | Integration | — | [integration-platform](../11-integration/integration-platform.md) |
@@ -34,8 +34,10 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 
 | Contract | Chức năng | Context |
 |---|---|---|
-| `CatalogReader` | Đọc style/variant/giá/ATS theo channel | Catalog |
-| `PriceResolver` | Giá hiệu lực của variant theo channel/nhóm khách | Pricing |
+| `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant) theo phạm vi brand. **Implemented** | Catalog |
+| `VariantDirectory` | Tra variant (theo mã style, theo id) cho module khác. **Implemented** | Catalog |
+| `ChannelDirectory` | Kênh bán của một brand. **Implemented** | Channel |
+| `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` | Inventory |
 | `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) | Inventory |
 | `AvailabilityReader` | ATS theo channel/location | Inventory |
@@ -55,8 +57,8 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 
 | Context | Events |
 |---|---|
-| Catalog | `ProductCreated`, `ProductUpdated`, `VariantCreated`, `ProductArchived` |
-| Pricing | `PriceChanged` |
+| Catalog | `ProductCreated`, `ProductUpdated`, `ProductArchived`, `VariantCreated` (**Implemented**, `Modules\Catalog\Events`, sau commit) |
+| Pricing | `PriceChanged` (**Implemented**) |
 | Inventory | `StockReserved`, `StockReleased`, `StockCommitted`, `StockAdjusted`, `AvailabilityChanged` |
 | Customer | `CustomerRegistered`, `CustomerMerged`, `ConsentChanged` |
 | Cart | `CartUpdated`, `CartAbandoned` |
@@ -73,8 +75,8 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 |---|---|---|---|
 | `vani.catalog.listing.query` | filter | không | Sửa truy vấn danh sách sản phẩm (merchandising) |
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
-| `vani.product.before_save` | validate | có | Chặn/cảnh báo khi lưu sản phẩm (quy tắc riêng của brand) |
-| `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm |
+| `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của brand); tham số `ProductDraft`. **Implemented** |
+| `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `(styleId, brandId)`. **Implemented** |
 | `vani.checkout.payment_methods` | filter | không | Ẩn/hiện phương thức thanh toán |
 | `vani.checkout.shipping_options` | filter | không | Sửa danh sách phương thức giao |
 | `vani.checkout.before_validate` | validate | không | Kiểm tra bổ sung trước khi tính tổng |
@@ -90,13 +92,14 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 
 | Registry | Ví dụ |
 |---|---|
-| `adminMenu()` | Mục menu Admin + permission |
-| `adminPages()` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) |
-| `permissions()` | Permission mới + gán vào role mẫu |
+| `adminMenu()` | Mục menu Admin + permission — Implemented |
+| `adminPages($namespace, $path)` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) — Implemented |
+| `permissions()` | Khai báo permission — Implemented (gán role mẫu: Designed) |
 | `settingsSchema()` | JSON Schema cấu hình theo scope → form tự sinh; secret được mã hoá |
 | `storefrontRoutes()` | Storefront API dưới `/api/storefront/v1/…` (được mở rộng tài nguyên Core, không ghi đè route Core) |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
-| `webhookRoutes()` | `/api/integrations/{plugin}/…` |
+| `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
+| `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |
 | `scheduledTasks()` | Tác vụ định kỳ |
 | `notificationTemplates()` | Mẫu tin theo event |
 | `orderActions()` | Nút thao tác trên trang đơn Admin |

@@ -11,11 +11,26 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <testsuite name="Modules">
+            <directory>modules/*/Tests</directory>
+        </testsuite>
+        <testsuite name="Plugins">
+            <directory>custom/plugin/*/Tests</directory>
+        </testsuite>
+        <testsuite name="Architecture">
+            <directory>tests/Architecture</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
             <directory>app</directory>
+            <directory>modules</directory>
+            <directory>custom/plugin</directory>
         </include>
+        <exclude>
+            <directory>modules/*/Tests</directory>
+            <directory>custom/plugin/*/Tests</directory>
+        </exclude>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
@@ -31,6 +46,8 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="VANI_PLUGINS_CACHE" value="storage/framework/testing/vanishop-plugins.php"/>
+        <env name="VANI_HOOKS_STRICT" value="true"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>

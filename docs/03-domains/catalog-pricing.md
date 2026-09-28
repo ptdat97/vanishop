@@ -1,6 +1,19 @@
 # Catalog & Pricing
 
-> Trạng thái: **Designed**. Context: Catalog, Pricing ([bounded-contexts](../02-architecture/bounded-contexts.md)).
+> Trạng thái: **Partially Implemented** (slice 1). Context: Catalog, Pricing ([bounded-contexts](../02-architecture/bounded-contexts.md)).
+>
+> | Phần | Trạng thái |
+> |---|---|
+> | Danh mục theo brand: `parent_id` + materialized `path` (`/12/57/`), tối đa **5 cấp**, di chuyển kéo theo cả cây con, chặn chuyển vào cây con của chính nó, không xoá danh mục còn con, `lock_version`, bản dịch vi/en + SEO, ảnh | Implemented |
+> | Thuộc tính spec/internal, kiểu `select`/`multiselect`/`text`/`boolean`, giá trị có bản dịch; sửa giá trị giữ nguyên id theo `code` | Implemented |
+> | Màu (tên theo brand + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
+> | Media: `media` (theo brand, khử trùng lặp theo SHA-256) + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
+> | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
+> | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK); chọn bằng `VANI_SEARCH_PROVIDER`; `vani:search:reindex [--setup]` | Implemented |
+> | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá gán kênh, `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
+> | Giá thành viên theo nhóm khách, giá theo số lượng, import Excel giá | Designed |
+> | Bộ sưu tập theo luật, merchandising ghim vị trí trong Admin | Designed |
+> | Thư viện thuộc tính dùng chung cấp Owner; cây danh mục riêng của kênh tập đoàn; resize ảnh qua CDN | Designed (sau slice 2) |
 
 ## 1. Mô hình sản phẩm thời trang
 
@@ -75,7 +88,7 @@ channel_price_lists(channel_id, price_list_id, customer_group_id NULL)
 
 - **Giá niêm yết** (`compare_at_amount`) và **giá bán** (`amount`). Hiển thị "giảm x%" chỉ khi giá bán < giá niêm yết.
 - Giá tính theo **variant**; có thể nhập nhanh theo style/màu (áp cho mọi size).
-- Chọn giá: lọc các bảng giá hợp lệ của channel (theo thời gian, nhóm khách) → lấy theo `priority` → nếu nhiều, lấy **giá thấp nhất** (cấu hình được).
+- Chọn giá (**Implemented**, `Modules\Pricing\Domain\PriceSelection`): lọc bảng giá đang bật, gán cho channel, trong khung giờ → bảng giá `priority` cao nhất thắng → cùng priority lấy **giá thấp nhất** → vẫn trùng lấy id nhỏ hơn. Giá gốc: `compare_at` của mức thắng nếu lớn hơn giá bán; nếu mức thắng không phải bảng `base` thì dùng giá `base` cao nhất lớn hơn giá bán. `% giảm` làm tròn **xuống** (không phóng đại mức giảm).
 - Tiền theo [money](../02-architecture/money.md).
 - Cách chọn giá là extension point:
 

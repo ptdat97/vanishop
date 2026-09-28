@@ -1,0 +1,22 @@
+<?php
+
+use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Identity\Persistence\Models\StaffUser;
+
+it('liệt kê plugin tìm thấy trong custom/plugin', function () {
+    $staff = StaffUser::factory()->withPermissions(['admin.access', 'extension.plugins.view'])->create();
+
+    $this->actingAs($staff, 'staff')
+        ->get('/admin/plugins')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Extension::Plugins/Index')
+            ->where('plugins.0.id', 'vani.hello-world')
+            ->where('plugins.0.status', 'discovered'));
+});
+
+it('cần quyền extension.plugins.view', function () {
+    $staff = StaffUser::factory()->withPermissions(['admin.access'])->create();
+
+    $this->actingAs($staff, 'staff')->get('/admin/plugins')->assertForbidden();
+});

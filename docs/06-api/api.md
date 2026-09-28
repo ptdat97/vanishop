@@ -6,7 +6,7 @@
 
 | Nhóm | Prefix | Người dùng | Xác thực |
 |---|---|---|---|
-| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Kênh xác định qua header `X-Vani-Channel` hoặc domain; khách: Sanctum token / session cookie |
+| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Kênh xác định qua header `X-Vani-Channel` (mã kênh, **bắt buộc**); ngôn ngữ = locale của kênh, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách: Sanctum token / session cookie |
 | **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Sanctum token của nhân viên + RBAC theo scope |
 | **Integration API** | `/api/integration/v1` và `/api/integrations/{system}/webhooks` | Integration Client (ERP, POS, ODO khi có), hãng VC, cổng TT | Client credentials (API key + secret, HMAC chữ ký), IP allowlist tuỳ hệ thống |
 
@@ -39,15 +39,15 @@
 }
 ```
 
-Mã lỗi dạng `<module>.<lý_do>`, ổn định để client xử lý; `message` đã dịch theo `Accept-Language`.
+Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validation: `validation.failed` kèm `details[{field, messages}]`), ổn định để client xử lý; `message` theo locale của request. **Implemented** (`Modules\Shared\Http\ApiErrorRenderer`).
 
 ## 3. Storefront API: endpoint chính
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/catalog/categories` | Cây danh mục của kênh |
-| GET | `/catalog/products` | Danh sách/tìm kiếm + facet |
-| GET | `/catalog/products/{slug}` | Chi tiết style + màu + variant + giá + ATS |
+| GET | `/categories`, `/categories/{slug}` | Cây danh mục đang hiển thị của các brand trong kênh (**Implemented**) |
+| GET | `/products?q=&category=&collection=&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
+| GET | `/products/{slug}` | Chi tiết style: tên, mô tả, hướng dẫn bảo quản, SEO, breadcrumb, thuộc tính spec, màu + ảnh. **Implemented**. Variant, giá, ATS: slice 3–4 |
 | GET | `/catalog/products/{slug}/store-availability?province=` | Tồn theo cửa hàng (mức độ, không số chính xác) |
 | POST | `/carts` | Tạo giỏ |
 | GET/PATCH | `/carts/{id}` | Xem giỏ (kèm totals) |

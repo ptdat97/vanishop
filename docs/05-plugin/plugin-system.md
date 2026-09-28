@@ -1,6 +1,6 @@
 # Plugin System
 
-> Trạng thái: **Designed**. Loader, manifest, CLI chưa có code. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md).
+> Trạng thái: **Partially Implemented** (slice 0). Đã có: manifest, dependency resolver, lifecycle, loader, cache, safe mode, `PluginServiceProvider`, CLI chính, plugin mẫu. Chi tiết từng phần ghi ngay trong các mục bên dưới. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md).
 
 ## 1. Hướng phụ thuộc
 
@@ -92,9 +92,13 @@ stateDiagram-v2
 | disabled | Có | Không |
 | failed | **Không** | Không |
 
-Lưu trữ: `plugins(id, version, status, installed_at, last_error)`, `plugin_scopes(plugin_id, scope_type, scope_id, enabled)`. Manifest đã resolve được cache vào `bootstrap/cache/vanishop-plugins.php` để lúc boot không phải truy vấn DB.
+Lưu trữ: `plugins(id, version, status, installed_at, last_error)`, `plugin_scopes(plugin_id, scope_type, scope_id, enabled)`. Danh sách provider cần nạp (theo thứ tự phụ thuộc) được cache vào `bootstrap/cache/vanishop-plugins.php` (cấu hình `VANI_PLUGINS_CACHE`) mỗi khi trạng thái plugin thay đổi, để lúc boot không phải truy vấn DB.
+
+Scope đã hỗ trợ: `owner`, `brand`, `channel` (**Implemented**). `legal_entity`: Designed.
 
 ## 5. CLI
+
+`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`: **Implemented**. `upgrade`, `doctor`: Designed.
 
 ```bash
 php artisan vani:plugin:list                      # id, version, trạng thái, scope, tương thích
@@ -102,9 +106,9 @@ php artisan vani:plugin:install vani.vietqr       # kiểm tra deps → chạy m
 php artisan vani:plugin:enable vani.vietqr --scope=brand:lumiere
 php artisan vani:plugin:disable vani.vietqr [--scope=...]
 php artisan vani:plugin:uninstall vani.vietqr [--purge]   # --purge: rollback migration, xoá bảng plg_*
-php artisan vani:plugin:upgrade vani.vietqr       # chạy migration mới khi version tăng
-php artisan vani:plugin:hooks [vani.vietqr]       # hook công khai & listener của plugin
-php artisan vani:plugin:doctor                    # kiểm tra tương thích, deps, conflict, contract test
+php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
+php artisan vani:plugin:upgrade vani.vietqr       # (Designed) chạy migration mới khi version tăng
+php artisan vani:plugin:doctor                    # (Designed) kiểm tra tương thích, deps, conflict, contract test
 ```
 
 ## 6. Dependency resolution và tương thích
@@ -130,36 +134,54 @@ php artisan vani:plugin:doctor                    # kiểm tra tương thích, d
 
 | Tình huống | Hành vi |
 |---|---|
-| Exception trong `register()`/`boot()` | Loader bắt lỗi, đánh dấu plugin `failed`, ghi log + cảnh báo, **tiếp tục boot Core** |
-| Plugin làm hỏng request liên tục | Circuit breaker theo plugin: quá N lỗi/phút ở slot/filter không giao dịch thì tạm bỏ qua plugin đó 5 phút |
-| Sự cố nghiêm trọng | **Safe mode**: `VANI_PLUGINS_SAFE_MODE=true` → không nạp plugin nào; Core vẫn bán được bằng mặc định (COD, flat rate) |
+| Exception trong `register()`/`boot()` (kể cả khi nghe hook chưa khai báo/hook internal) | Loader bắt lỗi, ghi log, đánh dấu plugin `failed` (không nạp ở request sau), **tiếp tục boot Core**: Implemented |
+| Plugin làm hỏng request liên tục | (Designed) Circuit breaker theo plugin: quá N lỗi/phút ở slot/filter không giao dịch thì tạm bỏ qua plugin đó 5 phút |
+| Sự cố nghiêm trọng | **Safe mode**: `VANI_PLUGINS_SAFE_MODE=true` → không nạp plugin nào: Implemented |
 | Cổng thanh toán plugin lỗi | `PaymentGateway::isAvailable()` trả false khi health check fail → ẩn phương thức |
 
 ## 9. `PluginServiceProvider`
 
+API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). Mọi listener/menu đăng ký qua các helper này gắn với plugin id, nên **chỉ có hiệu lực trong phạm vi plugin được bật**. Plugin không nên gọi thẳng `Hook::onFilter()`, vì khi đó listener chạy ở mọi phạm vi.
+
+| Helper | Trạng thái | Tác dụng |
+|---|---|---|
+| `pluginId()` (abstract) | Implemented | Trùng `id` trong manifest |
+| `pluginPath($path)` | Implemented | Đường dẫn trong thư mục plugin |
+| `onFilter` / `onAction` / `onValidate` / `onSlot` | Implemented | Nghe hook public, chỉ chạy khi plugin active |
+| `adminMenu($key, $label, $route, $permission, $order)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active |
+| `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
+| `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |
+| `webhookRoutes($file)` | Implemented | `/api/integrations/{slug}/…` |
+| `adminPages($namespace, $path)` | Implemented | `Inertia::render('<Namespace>::<Trang>')` |
+| `migrations($path)`, `translations($path, $namespace)` | Implemented | |
+| `settingsSchema()`, `storefrontRoutes()`, `adminApiRoutes()`, `scheduledTasks()`… | Designed | Xem [extension-point-catalog §5](../04-extension/extension-point-catalog.md) |
+
+`{slug}` là plugin id với dấu `.` đổi thành `-` (ví dụ `vani.hello-world` → `vani-hello-world`).
+
 ```php
-namespace Plugin\VietQr;
+namespace Plugin\HelloWorld;
 
 use Modules\Extension\PluginServiceProvider;
-use Modules\Payment\Contracts\PaymentGateway;
 
-final class VietQrServiceProvider extends PluginServiceProvider
+final class HelloWorldServiceProvider extends PluginServiceProvider
 {
-    public function register(): void
+    protected function pluginId(): string
     {
-        $this->app->tag([Infrastructure\VietQrGateway::class], 'vani.payment.gateways');
+        return 'vani.hello-world';
     }
 
     public function boot(): void
     {
-        $this->webhookRoutes(__DIR__.'/Http/routes/webhooks.php');
-        $this->adminPages(__DIR__.'/Resources/js/Pages');
-        $this->settingsSchema(__DIR__.'/settings-schema.json');
-        $this->migrations(__DIR__.'/Database/migrations');
-        $this->translations(__DIR__.'/Resources/lang', 'vietqr');
+        $this->permissions(['hello-world.view' => 'Xem trang Hello World']);
+        $this->onSlot('vani.admin.dashboard.cards', fn (): array => ['title' => 'Hello World', 'body' => '…']);
+        $this->adminMenu('hello-world', 'Hello World', 'admin.plugins.vani-hello-world.index', 'hello-world.view');
+        $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
+        $this->adminPages('HelloWorld', $this->pluginPath('Resources/js/Pages'));
     }
 }
 ```
+
+Plugin mẫu đầy đủ (kèm test): `custom/plugin/HelloWorld/`.
 
 ## 10. Quy tắc cho người viết plugin
 

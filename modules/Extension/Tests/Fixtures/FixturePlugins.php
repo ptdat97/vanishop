@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Extension\Tests\Fixtures;
+
+use Illuminate\Filesystem\Filesystem;
+use Modules\Extension\Application\Plugins\ManifestRepository;
+use Modules\Extension\Application\Plugins\PluginStateCache;
+use Modules\Extension\PluginServiceProvider;
+
+/**
+ * Plugin giả cho test: ghi vanishop.json vào thư mục tạm và trỏ Extension tới đó.
+ */
+final class FixturePlugins
+{
+    public static function install(array $plugins): string
+    {
+        $root = storage_path('framework/testing/plugins-'.uniqid());
+        $files = new Filesystem;
+
+        foreach ($plugins as $directory => $manifest) {
+            $files->ensureDirectoryExists("{$root}/{$directory}");
+            $files->put("{$root}/{$directory}/vanishop.json", json_encode($manifest + [
+                'name' => ['vi' => $manifest['id']],
+                'version' => '1.0.0',
+                'kind' => 'business',
+                'provider' => GreetingPluginProvider::class,
+                'requires' => ['vanishop' => '^0.1'],
+                'scopes' => ['owner', 'brand', 'channel'],
+            ], JSON_PRETTY_PRINT));
+        }
+
+        app()->instance(ManifestRepository::class, new ManifestRepository($root));
+        app()->instance(PluginStateCache::class, new PluginStateCache($files, "{$root}/cache.php"));
+
+        return $root;
+    }
+
+    public static function withMigration(string $root, string $directory): void
+    {
+        $files = new Filesystem;
+        $files->ensureDirectoryExists("{$root}/{$directory}/Database/migrations");
+        $files->put("{$root}/{$directory}/Database/migrations/2026_01_01_000000_create_plg_fixture_items.php", <<<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('plg_fixture_items', fn (Blueprint $table) => $table->id());
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('plg_fixture_items');
+    }
+};
+PHP);
+    }
+}
+
+/**
+ * Provider giả: thêm lời chào qua hook test.greeting.
+ */
+final class GreetingPluginProvider extends PluginServiceProvider
+{
+    public static string $id = 'fixture.greeting';
+
+    protected function pluginId(): string
+    {
+        return self::$id;
+    }
+
+    public function boot(): void
+    {
+        $this->onFilter('test.greeting', fn (string $greeting): string => $greeting.' + '.self::$id);
+    }
+}

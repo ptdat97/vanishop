@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "jsx": "preserve",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "noEmit": true,
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "types": ["vite/client"],
+        "baseUrl": ".",
+        "paths": {
+            "@admin/*": ["resources/js/admin/*"]
+        }
+    },
+    "include": [
+        "resources/js/**/*.ts",
+        "resources/js/**/*.vue",
+        "modules/*/resources/js/**/*.ts",
+        "modules/*/resources/js/**/*.vue",
+        "custom/plugin/*/Resources/js/**/*.ts",
+        "custom/plugin/*/Resources/js/**/*.vue"
+    ]
+}

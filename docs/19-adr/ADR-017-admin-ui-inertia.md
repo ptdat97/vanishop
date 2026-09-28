@@ -9,7 +9,9 @@ Admin có nhiều CRUD, bảng lọc phức tạp, form động từ settings sc
 Chọn công nghệ UI Admin.
 
 ## Decision
-Inertia.js 2 + Vue 3 + TypeScript + Tailwind 4. Routing/controller/Form Request/Policy vẫn là Laravel. Trang của module ở `modules/<M>/resources/js/Pages`, của plugin ở `custom/plugin/<P>/Resources/js/Pages`, resolver `'<Module>::<Trang>'`. Storefront không dùng Inertia. Dependency được phê duyệt: `inertiajs/inertia-laravel`, `@inertiajs/vue3`, `vue`, `@vitejs/plugin-vue`, `typescript`, `vue-tsc`.
+Inertia (bản cài đặt: **v3**) + Vue 3 + TypeScript + Tailwind 4. Routing/controller/Form Request/Policy vẫn là Laravel. Trang của module ở `modules/<M>/resources/js/Pages`, của plugin ở `custom/plugin/<P>/Resources/js/Pages`, resolver `'<Module>::<Trang>'`. Storefront không dùng Inertia. Dependency được phê duyệt: `inertiajs/inertia-laravel`, `@inertiajs/vue3`, `vue`, `@vitejs/plugin-vue`, `typescript`, `vue-tsc`.
+
+Ghi chú triển khai (2026-09-28): TypeScript được ghim `^5.9` vì `vue-tsc` chưa hỗ trợ TypeScript 7. Trang lõi của Admin nằm ở `resources/js/admin/Pages`, layout ở `resources/js/admin/Layouts` (alias `@admin`).
 
 ## Alternatives
 Livewire, Filament, Inertia + React.

@@ -1,6 +1,6 @@
 # Extension Model
 
-> Trạng thái: **Designed**. Đã cài package `tormjens/eventy`; lớp `Hook`, registry và loader chưa có code. Quyết định: [ADR-004](../19-adr/ADR-004-extension-points.md).
+> Trạng thái: **Partially Implemented**. Đã có: `Hook` (filter/action/collect/slot), registry `hooks.php`, strict mode, public/internal, cô lập lỗi ở slot, listener gắn với plugin và chỉ chạy khi plugin active. Chưa có: metric `hook_duration_ms`, kiểm tra kiểu trả về của filter, contract test suite. Quyết định: [ADR-004](../19-adr/ADR-004-extension-points.md).
 
 Extension Points là **API quan trọng nhất của VaniShop**: nhờ chúng mà nghiệp vụ mới được xây ngoài Core ([commerce-kernel](../02-architecture/commerce-kernel.md)). Danh mục cụ thể: [extension-point-catalog](extension-point-catalog.md).
 
@@ -71,12 +71,14 @@ use Modules\Extension\Facades\Hook;
 // Core công bố
 $query   = Hook::filter('vani.catalog.listing.query', $query, $context);
 $issues  = Hook::collect('vani.checkout.before_validate', $checkout);   // gộp lỗi từ mọi listener
+$cards   = Hook::slot('vani.admin.dashboard.cards');                  // listener lỗi bị bỏ qua, có log
 Hook::action('vani.order.after_create', $orderData);
 
-// Plugin đăng ký (trong boot)
-Hook::onFilter('vani.integration.order_payload',
+// Plugin đăng ký trong boot() qua helper của PluginServiceProvider (gắn plugin id → chỉ chạy khi plugin active)
+$this->onFilter('vani.integration.order_payload',
     fn (array $payload, OrderData $order): array => $payload + ['gift_wrap' => true],
     priority: 20);
+// Tương tự: onAction(), onValidate() (trả list lỗi), onSlot() (trả một phần tử UI)
 ```
 
 ```blade

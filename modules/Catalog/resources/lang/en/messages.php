@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'parent_not_found' => 'The parent category does not exist in this brand.',
+    'attribute_values_required' => 'A select attribute needs at least one value.',
+    'category_has_children' => 'A category with sub-categories cannot be deleted.',
+    'category_cycle' => 'A category cannot be moved into itself or its descendants.',
+    'category_too_deep' => 'Categories can be at most :max levels deep.',
+    'stale' => 'This record was changed by someone else. Reload the page and try again.',
+    'saved' => 'Saved.',
+    'deleted' => 'Deleted.',
+    'only_draft_deletable' => 'Only draft products can be deleted. Archive published products instead.',
+    'category_not_in_brand' => 'Some categories do not belong to this brand.',
+    'primary_category_not_selected' => 'The primary category must be one of the selected categories.',
+    'attribute_not_in_brand' => 'The attribute does not belong to this brand.',
+    'attribute_value_invalid' => 'The value does not match the attribute type.',
+    'color_not_in_brand' => 'The color does not belong to this brand.',
+    'color_already_added' => 'The product already has this color.',
+    'too_many_images' => 'At most :max images per color.',
+    'image_order_invalid' => 'Invalid image order.',
+    'style_codes_not_found' => 'Style codes not found: :codes',
+    'size_not_in_brand' => 'Some sizes do not belong to this brand.',
+    'variants_need_colors' => 'Add at least one color before generating variants.',
+    'sku_taken' => 'SKU :sku already exists.',
+    'color_has_variants' => 'This color has variants. Deactivate the variants instead of removing the color.',
+    'variants_generated' => 'Created :count new variants.',
+];
