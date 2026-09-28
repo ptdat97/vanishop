@@ -1,6 +1,6 @@
 # Danh mục plugin nghiệp vụ
 
-> Trạng thái: tất cả plugin đều ở mức **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md` khi bắt đầu làm.
+> Trạng thái: ba plugin chứng minh kiến trúc đã **cài đặt trong repo** (slice 10 — xem [roadmap](../20-roadmap/roadmap.md)); các plugin còn lại ở mức **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md`.
 
 ## 1. Core có sẵn (không cần plugin)
 
@@ -9,31 +9,34 @@
 | Thanh toán | COD, chuyển khoản thủ công |
 | Vận chuyển | Phí cố định/theo bảng (`flat_rate`), vận đơn nhập tay (`manual`) |
 | Phân bổ kho | `priority_first_fit` |
-| Khuyến mãi | Framework + action `percent_off`/`amount_off` + voucher. **Chưa có rule điều kiện nào** ngoài "luôn áp dụng" và "có voucher" |
+| Khuyến mãi | Framework + action `percent_off`/`amount_off` + voucher. **Chưa có rule điều kiện nào** trong Core — rule điều kiện đến từ plugin (`vani.promotion-rules`) |
 | Thuế | VAT giá đã gồm thuế |
 | Thông báo | Email |
 | Đăng nhập | Mật khẩu, OTP email |
 | Tìm kiếm | Database, Meilisearch |
 | Tích hợp | Integration API, webhook, outbox/inbox, khung connector |
 
-## 2. Ba plugin chứng minh kiến trúc (làm đầu tiên)
+## 2. Ba plugin chứng minh kiến trúc (đã có trong repo)
 
 Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Core** ([roadmap](../20-roadmap/roadmap.md)).
 
-| Plugin | Contract | Chứng minh được |
-|---|---|---|
-| `vani.vietqr` | `PaymentGateway` (+ contract test `PaymentGatewayContract`), IPN chung `/api/payments/vietqr/callback` | Luồng thanh toán bất đồng bộ, IPN idempotent, settings theo pháp nhân |
-| `vani.ghn` | `ShippingCarrier`, `integration_mappings`, webhook | Báo phí, tạo vận đơn sau commit, cập nhật trạng thái qua `ShipmentRecorder` |
-| `vani.promotion-rules` | `PromotionRule`, `PromotionAction`, Admin pages | Rule nghiệp vụ (giá trị giỏ, số lượng, collection, brand, đơn đầu, nhóm khách, freeship) cắm vào engine của Core |
+| Plugin | Thư mục | Contract | Chứng minh được |
+|---|---|---|---|
+| `vani.promotion-rules` | `custom/plugin/PromotionRules` | `PromotionRule` (tag `PromotionRule::TAG`) | Rule nghiệp vụ cắm vào engine của Core: `min_order_subtotal`, `min_quantity`, `in_collections` (qua `CollectionDirectory`), `first_order_only` (qua `OrderReader`) |
+| `vani.vietqr` | `custom/plugin/VietQr` | `PaymentGateway` (tag `PaymentGateway::TAG`) | Cổng QR động (payload QR theo số tiền/số đơn), IPN HMAC qua route chung `/api/payments/vietqr/callback`, hoàn tiền idempotent, cấu hình tài khoản theo pháp nhân |
+| `vani.ghn` | `custom/plugin/Ghn` | `ShippingCarrier` + `ShippingRateProvider` | Báo cước ở checkout, đặt vận đơn idempotent sau commit, webhook trạng thái map về `ShipmentStatus` chuẩn |
+
+Cả ba đều chạy bộ contract test của Core (`PaymentGatewayContract`, `ShippingCarrierContract`) và chỉ đóng góp implementation cho extension point trong phạm vi (`owner`/`brand`) mà plugin được bật.
 
 ## 3. Danh mục theo nhóm
 
 Đợt: **P1** = cần để go-live brand đầu tiên · **P2** · **P3** · **Later**.
+Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 
 ### Thanh toán
 | Plugin | Contract | Đợt |
 |---|---|---|
-| `vani.vietqr` | `PaymentGateway` | P1 |
+| `vani.vietqr` ✅ | `PaymentGateway` | P1 |
 | `vani.vnpay` | `PaymentGateway` | P1 |
 | `vani.momo`, `vani.zalopay`, `vani.shopeepay` | `PaymentGateway` | P2 |
 | `vani.bnpl` (Kredivo, Fundiin…) | `PaymentGateway` | P3 |
@@ -41,7 +44,7 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 ### Vận chuyển
 | Plugin | Contract | Đợt |
 |---|---|---|
-| `vani.ghn` hoặc `vani.ghtk` | `ShippingCarrier` | P1 |
+| `vani.ghn` ✅ (thay cho `vani.ghtk`) | `ShippingCarrier` | P1 |
 | `vani.viettelpost`, `vani.jt`, `vani.ninjavan` | `ShippingCarrier` | P2 |
 | `vani.ahamove` | `ShippingCarrier` | P3 |
 | `vani.cod-reconciliation` | Events fulfillment, `PaymentRecorder`, Admin pages | P2 |
@@ -49,7 +52,7 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 ### Bán hàng, khuyến mãi, khách hàng
 | Plugin | Contract / điểm mở rộng | Đợt |
 |---|---|---|
-| `vani.promotion-rules` | `PromotionRule`, `PromotionAction` | P1 |
+| `vani.promotion-rules` ✅ | `PromotionRule`, `PromotionAction` | P1 |
 | `vani.promotion-advanced` (BxGy, combo, quà tặng, flash sale, cross-brand) | `PromotionRule`, `PromotionAction` | P3 |
 | `vani.cod-risk-guard` | `CheckoutValidator`, filter `vani.checkout.payment_methods` | P2 |
 | `vani.abandoned-cart` | Event `CartAbandoned`, `NotificationChannel` | P2 |

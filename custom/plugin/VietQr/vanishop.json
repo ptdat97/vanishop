@@ -1,0 +1,18 @@
+{
+    "id": "vani.vietqr",
+    "name": {
+        "vi": "Thanh toán VietQR",
+        "en": "VietQR Payment Gateway"
+    },
+    "version": "0.1.0",
+    "kind": "payment_gateway",
+    "provider": "Plugin\\VietQr\\VietQrServiceProvider",
+    "requires": {
+        "vanishop": "^0.1",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "scopes": ["legal_entity", "brand"],
+    "permissions": ["payments.view"],
+    "author": "VaniShop Team"
+}

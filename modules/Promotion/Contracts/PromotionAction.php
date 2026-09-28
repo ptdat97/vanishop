@@ -11,6 +11,8 @@ use Modules\Shared\Domain\Money\Money;
  */
 interface PromotionAction
 {
+    public const TAG = 'vani.promotion.actions';
+
     public function type(): string;
 
     public function label(): string;

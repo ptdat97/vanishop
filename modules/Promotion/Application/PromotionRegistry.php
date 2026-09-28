@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Application;
 
-use Illuminate\Contracts\Container\Container;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Promotion\Contracts\PromotionAction;
 use Modules\Promotion\Contracts\PromotionRule;
 
 /**
- * Rule/action theo type, lấy từ container tag. Plugin bị tắt thì type của nó không có mặt.
+ * Rule/action theo type, chỉ gồm implementation có hiệu lực trong phạm vi hiện tại
+ * (plugin tắt ở brand này thì type của nó không có mặt → khuyến mãi dùng type đó bị bỏ qua).
  */
 final class PromotionRegistry
 {
-    public const RULES_TAG = 'vani.promotion.rules';
+    public const RULES_TAG = PromotionRule::TAG;
 
-    public const ACTIONS_TAG = 'vani.promotion.actions';
+    public const ACTIONS_TAG = PromotionAction::TAG;
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Extensions $extensions) {}
 
     public function rule(string $type): ?PromotionRule
     {
@@ -35,8 +36,10 @@ final class PromotionRegistry
     public function rules(): array
     {
         $rules = [];
-        foreach ($this->container->tagged(self::RULES_TAG) as $rule) {
-            $rules[$rule->type()] = $rule;
+        foreach ($this->extensions->tagged(self::RULES_TAG) as $rule) {
+            if ($rule instanceof PromotionRule) {
+                $rules[$rule->type()] = $rule;
+            }
         }
 
         return $rules;
@@ -48,8 +51,10 @@ final class PromotionRegistry
     public function actions(): array
     {
         $actions = [];
-        foreach ($this->container->tagged(self::ACTIONS_TAG) as $action) {
-            $actions[$action->type()] = $action;
+        foreach ($this->extensions->tagged(self::ACTIONS_TAG) as $action) {
+            if ($action instanceof PromotionAction) {
+                $actions[$action->type()] = $action;
+            }
         }
 
         return $actions;

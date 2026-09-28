@@ -19,6 +19,7 @@ use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
 use Modules\Checkout\Application\VnVatInclusiveTax;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\TaxCalculator;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Shared\Support\ModuleServiceProvider;
 
@@ -35,21 +36,21 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(Checkout::class, CheckoutService::class);
 
-        $this->app->tag([SubtotalCalculator::class, PromotionCalculator::class, ShippingCalculator::class, TaxStage::class, GuardCalculator::class], TotalsPipeline::TAG);
-        $this->app->tag([CoreCheckoutValidator::class], CheckoutService::VALIDATORS_TAG);
+        $this->app->make(Extensions::class)->tag([SubtotalCalculator::class, PromotionCalculator::class, ShippingCalculator::class, TaxStage::class, GuardCalculator::class], TotalsPipeline::TAG);
+        $this->app->make(Extensions::class)->tag([CoreCheckoutValidator::class], CheckoutService::VALIDATORS_TAG);
 
         $this->app->bind(FlatRateShipping::class, fn (): FlatRateShipping => new FlatRateShipping(
             (int) config('vanishop.checkout.shipping.flat_fee', 30_000),
             config('vanishop.checkout.shipping.free_over') === null ? null : (int) config('vanishop.checkout.shipping.free_over'),
         ));
-        $this->app->tag([FlatRateShipping::class], ShippingOptions::TAG);
+        $this->app->make(Extensions::class)->tag([FlatRateShipping::class], ShippingOptions::TAG);
 
         $this->app->bind(VnVatInclusiveTax::class, fn (): VnVatInclusiveTax => new VnVatInclusiveTax((int) config('vanishop.tax.vat_rate_bp', 1000)));
-        $this->app->tag([VnVatInclusiveTax::class], self::TAX_TAG);
+        $this->app->make(Extensions::class)->tag([VnVatInclusiveTax::class], self::TAX_TAG);
         $this->app->bind(TaxCalculator::class, function ($app): TaxCalculator {
             $code = (string) config('vanishop.tax.calculator', 'vn_vat_inclusive');
-            foreach ($app->tagged(self::TAX_TAG) as $calculator) {
-                if ($calculator->code() === $code) {
+            foreach ($app->make(Extensions::class)->tagged(self::TAX_TAG) as $calculator) {
+                if ($calculator instanceof TaxCalculator && $calculator->code() === $code) {
                     return $calculator;
                 }
             }

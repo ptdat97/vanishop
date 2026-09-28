@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -14,7 +15,7 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
-    app()->tag([FakeApiCarrier::class], CarrierRegistry::CARRIERS_TAG);
+    app(Extensions::class)->tag([FakeApiCarrier::class], CarrierRegistry::CARRIERS_TAG);
     FakeApiCarrier::$failBooking = false;
     FakeApiCarrier::$booked = [];
 

@@ -14,6 +14,8 @@ use Modules\Checkout\Contracts\Data\TotalsContext;
  */
 interface ShippingRateProvider
 {
+    public const TAG = 'vani.checkout.shipping_providers';
+
     /**
      * @return list<ShippingOption>
      */

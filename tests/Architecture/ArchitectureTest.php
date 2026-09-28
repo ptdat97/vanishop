@@ -25,16 +25,21 @@ foreach ($modules as $module) {
 }
 
 // Plugin chỉ được dùng Contracts/, Events/ và PluginServiceProvider — không dùng tầng nội bộ của module.
-$internalLayers = [];
+// Ngoại lệ có chủ đích: Modules\Shared\Domain\Money là value object của shared kernel, mọi contract
+// (PaymentGateway, ShippingCarrier, Promotion…) đều dùng nên plugin phải dùng được.
+$pluginForbiddenLayers = [];
 foreach ($modules as $module) {
     foreach (['Application', 'Persistence', 'Infrastructure', 'Domain'] as $layer) {
-        $internalLayers[] = "Modules\\{$module}\\{$layer}";
+        if ($module === 'Shared' && $layer === 'Domain') {
+            continue;
+        }
+        $pluginForbiddenLayers[] = "Modules\\{$module}\\{$layer}";
     }
 }
 
 arch('R5: Plugin chỉ dùng API public của Core')
     ->expect('Plugin')
-    ->not->toUse($internalLayers);
+    ->not->toUse($pluginForbiddenLayers);
 
 arch('Module chỉ dùng Contracts của module khác (Identity → Brand)')
     ->expect('Modules\\Identity')

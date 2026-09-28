@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
@@ -47,7 +48,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
             (array) config('vanishop.payment.bank_transfer.accounts', []),
             (int) config('vanishop.payment.bank_transfer.ttl', 86_400),
         ));
-        $this->app->tag([CodGateway::class, ManualBankTransferGateway::class], GatewayRegistry::TAG);
+        $this->app->make(Extensions::class)->tag([CodGateway::class, ManualBankTransferGateway::class], GatewayRegistry::TAG);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

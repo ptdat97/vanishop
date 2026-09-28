@@ -13,9 +13,17 @@ use Modules\Promotion\Contracts\Data\PromotionContext;
  */
 interface PromotionRule
 {
+    public const TAG = 'vani.promotion.rules';
+
     public function type(): string;
 
     public function label(): string;
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<string> lỗi cấu hình (rỗng = hợp lệ) — dùng khi lưu khuyến mãi trong Admin
+     */
+    public function validateConfig(array $config): array;
 
     /**
      * @param  array<string, mixed>  $config

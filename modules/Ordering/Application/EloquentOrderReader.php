@@ -6,6 +6,7 @@ namespace Modules\Ordering\Application;
 
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
@@ -42,6 +43,15 @@ final class EloquentOrderReader implements OrderReader
         return OrderLine::query()->where('order_id', $orderId)->orderBy('id')->get()
             ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, $line->color_name, (string) $line->size_code))
             ->all();
+    }
+
+    public function customerHasPlacedOrder(int $customerId, ?int $brandId = null): bool
+    {
+        return Order::query()
+            ->where('customer_id', $customerId)
+            ->when($brandId !== null, fn ($query) => $query->where('brand_id', $brandId))
+            ->where('order_status', '!=', OrderStatus::Cancelled->value)
+            ->exists();
     }
 
     private function toData(Order $order): OrderData

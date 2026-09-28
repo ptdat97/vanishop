@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\Carriers\ManualCarrier;
@@ -36,8 +37,8 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
-        $this->app->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
-        $this->app->tag([ReservedLocationSourcing::class], CarrierRegistry::SOURCING_TAG);
+        $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
+        $this->app->make(Extensions::class)->tag([ReservedLocationSourcing::class], CarrierRegistry::SOURCING_TAG);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

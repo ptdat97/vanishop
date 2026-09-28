@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Application;
 
-use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Cart\Contracts\Carts;
@@ -21,6 +20,7 @@ use Modules\Checkout\Contracts\Data\PlaceOrderResult;
 use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\Data\TotalsLine;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Inventory\Contracts\Data\ReservationLine;
 use Modules\Inventory\Contracts\Data\ReservationRequest;
@@ -56,7 +56,7 @@ final class CheckoutService implements Checkout
         private readonly PromotionEngine $promotions,
         private readonly IdempotencyStore $idempotency,
         private readonly Payments $paymentService,
-        private readonly Container $container,
+        private readonly Extensions $extensions,
     ) {}
 
     public function quote(CheckoutRequest $request): CheckoutQuote
@@ -152,9 +152,10 @@ final class CheckoutService implements Checkout
     {
         $issues = array_map(fn (mixed $message): CheckoutIssue => new CheckoutIssue('rule', (string) $message), Hook::collect('vani.checkout.before_validate', $request));
 
-        /** @var CheckoutValidator $validator */
-        foreach ($this->container->tagged(self::VALIDATORS_TAG) as $validator) {
-            array_push($issues, ...$validator->validate($request, $totals, $cartReady));
+        foreach ($this->extensions->tagged(self::VALIDATORS_TAG) as $validator) {
+            if ($validator instanceof CheckoutValidator) {
+                array_push($issues, ...$validator->validate($request, $totals, $cartReady));
+            }
         }
 
         array_push($issues, ...array_map(fn (mixed $message): CheckoutIssue => new CheckoutIssue('rule', (string) $message), Hook::collect('vani.checkout.after_validate', $request, $totals)));

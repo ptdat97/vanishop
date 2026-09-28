@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Event;
 use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Channel\Persistence\Models\Channel;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Application\ChannelAvailability;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\Data\ReservationLine;
@@ -156,7 +157,7 @@ it('ATS theo kênh cộng các location, trừ giữ hàng và tồn an toàn; s
         }
     };
     $this->app->instance('greedy-strategy', $greedy);
-    $this->app->tag(['greedy-strategy'], ChannelAvailability::TAG);
+    $this->app->make(Extensions::class)->tag(['greedy-strategy'], ChannelAvailability::TAG);
     config(['vanishop.inventory.strategy' => 'greedy']);
 
     expect(app(AvailabilityReader::class)->forChannel([$this->s->id], $this->channel->id))->toBe([$this->s->id => 5]);

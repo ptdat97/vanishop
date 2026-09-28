@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\AdminPath;
 use ReflectionClass;
@@ -55,6 +56,15 @@ abstract class PluginServiceProvider extends ServiceProvider
         $this->app->make(HookManager::class)->onSlot($hook, $callback, $priority, $this->pluginId());
     }
 
+    /**
+     * Đóng góp implementation cho một extension point (vd. `vani.promotion.rules`).
+     * Registry của Core chỉ thấy implementation này trong phạm vi plugin được bật.
+     */
+    protected function contribute(string $tag, string $implementation): void
+    {
+        $this->app->make(Extensions::class)->contribute($tag, $implementation, $this->pluginId());
+    }
+
     protected function adminMenu(string $key, string $label, string $route, ?string $permission = null, int $order = 500): void
     {
         $this->app->make(AdminNavigation::class)->add($key, $label, $route, $permission, $order, $this->pluginId());
@@ -87,6 +97,8 @@ abstract class PluginServiceProvider extends ServiceProvider
             ->prefix(AdminPath::prefix()."/plugins/{$slug}")
             ->name("admin.plugins.{$slug}.")
             ->group($file);
+
+        $this->refreshRouteLookups();
     }
 
     /**
@@ -101,6 +113,21 @@ abstract class PluginServiceProvider extends ServiceProvider
         $slug = str_replace('.', '-', $this->pluginId());
 
         Route::middleware('api')->prefix("api/integrations/{$slug}")->name("integrations.{$slug}.")->group($file);
+
+        $this->refreshRouteLookups();
+    }
+
+    /**
+     * Route đăng ký sau khi app đã boot không nằm trong bảng tra cứu tên, khiến `Route::has()`/`route()`
+     * không thấy (menu Admin biến mất). Nạp lại bảng tra cứu sau khi đăng ký route của plugin.
+     */
+    private function refreshRouteLookups(): void
+    {
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $this->app['router']->getRoutes()->refreshNameLookups();
     }
 
     protected function migrations(string $path): void

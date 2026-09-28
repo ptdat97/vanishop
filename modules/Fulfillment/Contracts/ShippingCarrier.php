@@ -20,6 +20,8 @@ use Modules\Fulfillment\Contracts\Data\ShipmentData;
  */
 interface ShippingCarrier
 {
+    public const CARRIERS_TAG = 'vani.shipping.carriers';
+
     public function code(): string;
 
     public function label(): string;

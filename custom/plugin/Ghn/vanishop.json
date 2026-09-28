@@ -1,0 +1,18 @@
+{
+    "id": "vani.ghn",
+    "name": {
+        "vi": "Vận chuyển Giao Hàng Nhanh (GHN)",
+        "en": "Giao Hàng Nhanh (GHN) Shipping Carrier"
+    },
+    "version": "0.1.0",
+    "kind": "shipping_carrier",
+    "provider": "Plugin\\Ghn\\GhnServiceProvider",
+    "requires": {
+        "vanishop": "^0.1",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "scopes": ["legal_entity", "brand"],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

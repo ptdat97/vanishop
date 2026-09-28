@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Application;
 
-use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\InventoryStrategy;
 
@@ -21,7 +21,7 @@ final class ChannelAvailability implements AvailabilityReader
 
     public function __construct(
         private readonly VariantDirectory $variants,
-        private readonly Container $container,
+        private readonly Extensions $extensions,
         private readonly string $strategyCode,
     ) {}
 
@@ -61,11 +61,8 @@ final class ChannelAvailability implements AvailabilityReader
 
     private function strategy(): InventoryStrategy
     {
-        /** @var iterable<InventoryStrategy> $strategies */
-        $strategies = $this->container->tagged(self::TAG);
-
-        foreach ($strategies as $strategy) {
-            if ($strategy->code() === $this->strategyCode) {
+        foreach ($this->extensions->tagged(self::TAG) as $strategy) {
+            if ($strategy instanceof InventoryStrategy && $strategy->code() === $this->strategyCode) {
                 return $strategy;
             }
         }

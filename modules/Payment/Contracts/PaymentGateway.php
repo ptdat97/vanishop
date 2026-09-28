@@ -24,6 +24,8 @@ use Modules\Shared\Domain\Money\Money;
  */
 interface PaymentGateway
 {
+    public const TAG = 'vani.payment.gateways';
+
     public function code(): string;
 
     public function label(): string;

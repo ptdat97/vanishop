@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Brand\Persistence\Models\Brand;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
@@ -89,12 +90,17 @@ it('rule của plugin lọc dòng đủ điều kiện; rule chưa đăng ký th
             return 'Chỉ một variant';
         }
 
+        public function validateConfig(array $config): array
+        {
+            return isset($config['variant_id']) ? [] : ['Thiếu variant_id.'];
+        }
+
         public function evaluate(PromotionContext $context, array $config, Eligibility $candidates): Eligibility
         {
             return new Eligibility(array_values(array_filter($candidates->keys, fn (int $key) => $key === $config['variant_id'])));
         }
     });
-    app()->tag(['test.only_variant'], PromotionRegistry::RULES_TAG);
+    app(Extensions::class)->tag(['test.only_variant'], PromotionRegistry::RULES_TAG);
 
     expect(app(PromotionEngine::class)->evaluate(($this->context)())->discountByLine())->toBe([$this->m->id => 40_000]);
 });

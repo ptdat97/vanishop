@@ -7,6 +7,7 @@ namespace Modules\Inventory;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Inventory\Application\ChannelAvailability;
 use Modules\Inventory\Application\ReservationService;
@@ -30,10 +31,10 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->bind(InventoryReservation::class, ReservationService::class);
         $this->app->bind(InventoryReturns::class, ReturnService::class);
         $this->app->singleton(StandardInventoryStrategy::class);
-        $this->app->tag([StandardInventoryStrategy::class], ChannelAvailability::TAG);
+        $this->app->make(Extensions::class)->tag([StandardInventoryStrategy::class], ChannelAvailability::TAG);
         $this->app->bind(AvailabilityReader::class, fn ($app): ChannelAvailability => new ChannelAvailability(
             $app->make(VariantDirectory::class),
-            $app,
+            $app->make(Extensions::class),
             (string) config('vanishop.inventory.strategy', 'standard'),
         ));
     }

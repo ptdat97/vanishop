@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Modules\Returns\Application;
 
 use DateTimeImmutable;
-use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReturns;
@@ -46,7 +46,7 @@ final class ReturnService implements Returns
         private readonly Payments $payments,
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
-        private readonly Container $container,
+        private readonly Extensions $extensions,
     ) {}
 
     public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source): ReturnView
@@ -340,8 +340,8 @@ final class ReturnService implements Returns
     private function policy(): ReturnPolicy
     {
         $code = (string) config('vanishop.returns.policy', 'days_window');
-        foreach ($this->container->tagged(self::POLICIES_TAG) as $policy) {
-            if ($policy->code() === $code) {
+        foreach ($this->extensions->tagged(self::POLICIES_TAG) as $policy) {
+            if ($policy instanceof ReturnPolicy && $policy->code() === $code) {
                 return $policy;
             }
         }

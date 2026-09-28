@@ -1,6 +1,6 @@
 # Trạng thái triển khai
 
-> Cập nhật lần cuối: **2026-10-08**, sau slice 9b (Returns). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
+> Cập nhật lần cuối: **2026-10-09**, sau slice 10 (Proof plugins). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
 
 ## Thang trạng thái
 
@@ -17,7 +17,10 @@
 >
 > **Slice 1–9b đã có code**: Catalog, Product, Variant & Price, Inventory (giữ hàng không oversell, đã kiểm chứng bằng concurrency test nhiều tiến trình trên MySQL), Cart, Checkout (khuyến mãi + voucher, VAT, phí giao cố định, đặt hàng idempotent), Payment (COD, chuyển khoản thủ công, khung cổng online + IPN, hết hạn thanh toán, hoàn tiền), quản lý đơn (Admin, tra cứu/huỷ cho khách), giao hàng (vận đơn thủ công + khung hãng vận chuyển, webhook, trừ tồn khi xuất kho, thu COD, hoàn tất đơn) — luồng E2E COD chạy đầu-cuối qua API; đổi/trả (yêu cầu của khách, duyệt, nhận hàng, nhập kho, hoàn tiền).
 >
-> Test: **429 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **8 concurrency test** (group `concurrency`, chỉ MySQL).
+>
+> **Slice 10 (Proof plugins) đã có code**: ba plugin chứng minh kiến trúc thật sự cắm vào extension point của Commerce Core mà không vá Core — `vani.promotion-rules` (rule điều kiện khuyến mãi), `vani.vietqr` (cổng thanh toán QR động), `vani.ghn` (hãng vận chuyển + báo cước checkout). Mỗi plugin có contract test của Core, config riêng và bật/tắt theo scope `owner`/`brand`.
+>
+> Test: **448 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **8 concurrency test** (group `concurrency`, chỉ MySQL).
 
 ## Nền tảng
 
@@ -78,13 +81,15 @@
 | Plugin | Trạng thái |
 |---|---|
 | `vani.hello-world` (plugin mẫu: slot hook, menu, permission, trang Admin, bật theo scope) | Implemented, có test |
-| `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` | Planned (slice 10) |
+| `vani.promotion-rules` (rule `min_order_subtotal`, `min_quantity`, `in_collections`, `first_order_only`) | Implemented, có unit + feature + integration test (bật theo scope) |
+| `vani.vietqr` (cổng QR động, IPN HMAC qua `/api/payments/vietqr/callback`) | Implemented, có contract test `PaymentGatewayContract` |
+| `vani.ghn` (`ShippingCarrier` + `ShippingRateProvider`, webhook trạng thái) | Implemented, có contract test `ShippingCarrierContract` |
 
 ## Chất lượng
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 9b) | 429 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối) |
+| Unit + feature test (Foundation → slice 10) | 448 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin) |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
 | Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn), `PaymentCallbackConcurrencyTest.php` (6 IPN trùng cùng lúc → 1 lần ghi nhận), `ReturnConcurrencyTest.php` (4 yêu cầu trả toàn bộ cùng lúc → 1) |
 | Observability | Partially: có correlation id (header + log context + queued job); chưa có metric/tracing |

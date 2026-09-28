@@ -7,6 +7,7 @@ use Modules\Cart\Contracts\Carts;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayCallback;
@@ -48,7 +49,7 @@ function duplicateCallbackTasks(int $count, string $paymentId): array
 }
 
 it('6 IPN trùng đến cùng lúc → ghi nhận đúng một lần', function () {
-    app()->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
+    app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     ['brand' => $brand, 'channel' => $channel, 's' => $variant] = C::store();
     app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channel->id, [$brand->id], 'vi'));
     $key = app(Carts::class)->create('VND')->key;

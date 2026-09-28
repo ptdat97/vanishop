@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Application;
 
-use Illuminate\Contracts\Container\Container;
 use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\Data\TotalsLine;
 use Modules\Checkout\Contracts\TotalsCalculator;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -19,11 +19,11 @@ final class TotalsPipeline
 {
     public const TAG = 'vani.totals.calculators';
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Extensions $extensions) {}
 
     public function run(TotalsContext $context): Totals
     {
-        $calculators = iterator_to_array($this->container->tagged(self::TAG), false);
+        $calculators = array_values(array_filter($this->extensions->tagged(self::TAG), fn (object $calculator): bool => $calculator instanceof TotalsCalculator));
         usort($calculators, fn (TotalsCalculator $a, TotalsCalculator $b): int => [$a->priority(), $a->code()] <=> [$b->priority(), $b->code()]);
 
         foreach ($calculators as $calculator) {

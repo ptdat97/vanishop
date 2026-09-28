@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Promotion;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Promotion\Application\Actions\AmountOffAction;
 use Modules\Promotion\Application\Actions\PercentOffAction;
@@ -22,7 +23,7 @@ final class PromotionServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
-        $this->app->tag([PercentOffAction::class, AmountOffAction::class], PromotionRegistry::ACTIONS_TAG);
+        $this->app->make(Extensions::class)->tag([PercentOffAction::class, AmountOffAction::class], PromotionRegistry::ACTIONS_TAG);
         $this->app->bind(PromotionEngine::class, fn ($app): PromotionEvaluator => new PromotionEvaluator(
             $app->make(PromotionRegistry::class),
             (int) config('vanishop.promotion.max_discount_bp', 5000),

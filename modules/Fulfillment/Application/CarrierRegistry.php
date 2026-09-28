@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Application;
 
-use Illuminate\Contracts\Container\Container;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
 use Modules\Fulfillment\Contracts\SourcingStrategy;
 
+/**
+ * Carrier và SourcingStrategy có hiệu lực trong phạm vi hiện tại (plugin tắt thì không có mặt).
+ */
 final class CarrierRegistry
 {
-    public const CARRIERS_TAG = 'vani.shipping.carriers';
+    public const CARRIERS_TAG = ShippingCarrier::CARRIERS_TAG;
 
     public const SOURCING_TAG = 'vani.fulfillment.sourcing';
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Extensions $extensions) {}
 
     public function carrier(string $code): ?ShippingCarrier
     {
@@ -27,8 +30,10 @@ final class CarrierRegistry
     public function carriers(): array
     {
         $carriers = [];
-        foreach ($this->container->tagged(self::CARRIERS_TAG) as $carrier) {
-            $carriers[$carrier->code()] = $carrier;
+        foreach ($this->extensions->tagged(self::CARRIERS_TAG) as $carrier) {
+            if ($carrier instanceof ShippingCarrier) {
+                $carriers[$carrier->code()] = $carrier;
+            }
         }
 
         return $carriers;
@@ -36,8 +41,8 @@ final class CarrierRegistry
 
     public function sourcing(string $code): ?SourcingStrategy
     {
-        foreach ($this->container->tagged(self::SOURCING_TAG) as $strategy) {
-            if ($strategy->code() === $code) {
+        foreach ($this->extensions->tagged(self::SOURCING_TAG) as $strategy) {
+            if ($strategy instanceof SourcingStrategy && $strategy->code() === $code) {
                 return $strategy;
             }
         }

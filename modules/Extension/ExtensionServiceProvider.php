@@ -17,12 +17,14 @@ use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginLoader;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginStateCache;
+use Modules\Extension\Application\Plugins\ScopedExtensions;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginEnableCommand;
 use Modules\Extension\Console\PluginHooksCommand;
 use Modules\Extension\Console\PluginInstallCommand;
 use Modules\Extension\Console\PluginListCommand;
 use Modules\Extension\Console\PluginUninstallCommand;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
 use Modules\Identity\Application\PermissionRegistry;
@@ -64,6 +66,8 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->alias('eventy', Events::class);
 
         $this->app->scoped(PluginActivation::class);
+        $this->app->singleton(ScopedExtensions::class, fn ($app): ScopedExtensions => new ScopedExtensions($app, fn (): PluginActivation => $app->make(PluginActivation::class)));
+        $this->app->alias(ScopedExtensions::class, Extensions::class);
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));

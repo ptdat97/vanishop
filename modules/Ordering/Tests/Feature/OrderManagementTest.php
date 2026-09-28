@@ -5,7 +5,11 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Shared\Context\Actor;
+use Modules\Shared\Context\ContextScope;
+use Modules\Shared\Context\CurrentContext;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -26,6 +30,23 @@ beforeEach(function () {
     $this->reserved = fn () => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->value('reserved');
     $this->admin = '/admin/orders/lumiere/orders';
     $this->staff = fn (array $permissions = ['admin.access', 'orders.view', 'orders.manage', 'orders.cancel', 'payments.view']) => $this->actingAs(T::staffFor($this->brand, $permissions), 'staff');
+});
+
+it('OrderReader: khách đã từng đặt đơn (không tính đơn đã huỷ)', function () {
+    ($this->place)();
+    $order = ($this->order)();
+    DB::table('orders')->where('id', $order->id)->update(['customer_id' => 501]);
+
+    $reader = app(OrderReader::class);
+    $context = app(CurrentContext::class);
+    $asBrand = fn () => $context->runAs(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'), fn (): bool => $reader->customerHasPlacedOrder(501, $this->brand->id));
+
+    expect($asBrand())->toBeTrue()
+        ->and($context->runAs(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'), fn (): bool => $reader->customerHasPlacedOrder(999)))->toBeFalse();
+
+    DB::table('orders')->where('id', $order->id)->update(['order_status' => 'cancelled']);
+
+    expect($asBrand())->toBeFalse();
 });
 
 it('Admin: danh sách, lọc theo trạng thái, tìm theo số đơn hoặc SĐT', function () {

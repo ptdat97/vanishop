@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Application;
 
-use Illuminate\Contracts\Container\Container;
 use Modules\Checkout\Contracts\Data\ShippingOption;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\ShippingRateProvider;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 
 final class ShippingOptions
 {
-    public const TAG = 'vani.checkout.shipping_providers';
+    public const TAG = ShippingRateProvider::TAG;
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Extensions $extensions) {}
 
     /**
      * @return list<ShippingOption>
@@ -22,9 +22,10 @@ final class ShippingOptions
     public function for(TotalsContext $context): array
     {
         $options = [];
-        /** @var ShippingRateProvider $provider */
-        foreach ($this->container->tagged(self::TAG) as $provider) {
-            array_push($options, ...$provider->options($context));
+        foreach ($this->extensions->tagged(self::TAG) as $provider) {
+            if ($provider instanceof ShippingRateProvider) {
+                array_push($options, ...$provider->options($context));
+            }
         }
 
         $filtered = Hook::filter('vani.checkout.shipping_options', $options, $context);

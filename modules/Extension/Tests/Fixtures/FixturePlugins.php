@@ -81,3 +81,46 @@ final class GreetingPluginProvider extends PluginServiceProvider
         $this->onFilter('test.greeting', fn (string $greeting): string => $greeting.' + '.self::$id);
     }
 }
+
+/**
+ * Extension point giả: Core đăng ký implementation mặc định bằng `Extensions::tag()`,
+ * plugin đóng góp bằng `PluginServiceProvider::contribute()`.
+ */
+interface FixtureExtension
+{
+    public function code(): string;
+}
+
+final class FixtureCoreExtension implements FixtureExtension
+{
+    public function code(): string
+    {
+        return 'fixture.core';
+    }
+}
+
+final class FixturePluginExtension implements FixtureExtension
+{
+    public function code(): string
+    {
+        return 'fixture.plugin';
+    }
+}
+
+/**
+ * Provider giả: đóng góp implementation cho `ContributingPluginProvider::TAG` (tag giả của Core).
+ */
+final class ContributingPluginProvider extends PluginServiceProvider
+{
+    public const TAG = 'test.scoped_extensions';
+
+    protected function pluginId(): string
+    {
+        return 'fixture.extensions';
+    }
+
+    public function boot(): void
+    {
+        $this->contribute(self::TAG, FixturePluginExtension::class);
+    }
+}

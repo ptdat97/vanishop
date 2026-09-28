@@ -22,4 +22,11 @@ interface OrderReader
      * @return list<OrderLineData>
      */
     public function lines(int $orderId): array;
+
+    /**
+     * Khách đã từng đặt đơn (không tính đơn đã huỷ) chưa — dùng cho rule "đơn đầu tiên".
+     *
+     * @param  int|null  $brandId  null = bất kỳ brand nào trong phạm vi hiện tại
+     */
+    public function customerHasPlacedOrder(int $customerId, ?int $brandId = null): bool;
 }

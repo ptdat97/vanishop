@@ -39,6 +39,9 @@ final class PromotionRequest extends FormRequest
             'action_config' => ['required', 'array'],
             'action_config.basis_points' => ['nullable', 'integer'],
             'action_config.amount' => ['nullable', 'integer'],
+            'rules' => ['nullable', 'array'],
+            'rules.*.type' => ['required', 'string', 'max:64'],
+            'rules.*.config' => ['nullable', 'array'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
             'budget_amount' => ['nullable', 'integer', 'min:1'],
             'lock_version' => [$this->route('promotion') instanceof Promotion ? 'required' : 'nullable', 'integer', 'min:0'],
@@ -52,6 +55,10 @@ final class PromotionRequest extends FormRequest
     {
         $data = collect($this->validated())->except('lock_version')->all();
         $data['action_config'] = array_filter((array) $data['action_config'], fn (mixed $value): bool => $value !== null);
+        $data['rules'] = array_map(
+            fn (array $rule): array => ['type' => $rule['type'], 'config' => (array) ($rule['config'] ?? [])],
+            array_values((array) ($data['rules'] ?? [])),
+        );
 
         return $data + ['starts_at' => null, 'ends_at' => null, 'usage_limit' => null, 'budget_amount' => null];
     }

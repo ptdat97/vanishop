@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Application;
 
-use Illuminate\Contracts\Container\Container;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Payment\Contracts\PaymentGateway;
 
 /**
- * Cổng thanh toán theo mã, từ tag `vani.payment.gateways` (plugin tắt thì cổng của nó không có mặt).
+ * Cổng thanh toán theo mã, từ tag `vani.payment.gateways` — chỉ cổng có hiệu lực trong phạm vi hiện tại
+ * (plugin cổng tắt ở brand này thì cổng không có mặt).
  */
 final class GatewayRegistry
 {
-    public const TAG = 'vani.payment.gateways';
+    public const TAG = PaymentGateway::TAG;
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Extensions $extensions) {}
 
     public function get(string $code): ?PaymentGateway
     {
@@ -27,8 +28,10 @@ final class GatewayRegistry
     public function all(): array
     {
         $gateways = [];
-        foreach ($this->container->tagged(self::TAG) as $gateway) {
-            $gateways[$gateway->code()] = $gateway;
+        foreach ($this->extensions->tagged(self::TAG) as $gateway) {
+            if ($gateway instanceof PaymentGateway) {
+                $gateways[$gateway->code()] = $gateway;
+            }
         }
 
         return $gateways;

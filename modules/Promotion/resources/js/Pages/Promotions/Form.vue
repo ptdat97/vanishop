@@ -5,6 +5,14 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
+/**
+ * Cấu hình của một rule: JSON một cấp (số, chuỗi, boolean, danh sách giá trị đơn giản) — đủ cho các rule
+ * đang có và tương thích với kiểu dữ liệu form của Inertia. Rule cần cấu trúc sâu hơn thì cần form riêng của plugin.
+ */
+type RuleValue = string | number | boolean | null | Array<string | number | boolean | null>;
+
+type RuleInput = { type: string; config: Record<string, RuleValue> };
+
 const props = defineProps<{
     brand: { name: string; slug: string };
     baseUrl: string;
@@ -29,6 +37,7 @@ const props = defineProps<{
     vouchers: Array<{ id: number; code: string; status: string; used_count: number; usage_limit: number | null; expires_at: string | null }>;
     vouchersTotal: number;
     actions: Array<{ type: string; label: string }>;
+    ruleTypes: Array<{ type: string; label: string }>;
     stackings: string[];
 }>();
 
@@ -45,10 +54,40 @@ const form = useForm({
     requires_voucher: props.promotion?.requires_voucher ?? true,
     action_type: props.promotion?.action_type ?? 'percent_off',
     action_config: {} as Record<string, number>,
+    rules: [] as RuleInput[],
     usage_limit: props.promotion?.usage_limit ?? null,
     budget_amount: props.promotion?.budget_amount ?? null,
     lock_version: props.promotion?.lock_version ?? null,
 });
+
+// Điều kiện do plugin cung cấp: config nhập dạng JSON, Core/plugin kiểm tra khi lưu.
+const rules = ref<Array<{ type: string; config: string }>>(
+    (props.promotion?.rules ?? []).map((rule) => ({ type: rule.type, config: JSON.stringify(rule.config ?? {}) })),
+);
+const rulesError = ref<string | null>(null);
+
+function addRule(): void {
+    if (props.ruleTypes.length) {
+        rules.value.push({ type: props.ruleTypes[0].type, config: '{}' });
+    }
+}
+
+function collectRules(): boolean {
+    const parsed: RuleInput[] = [];
+    for (const rule of rules.value) {
+        try {
+            parsed.push({ type: rule.type, config: rule.config.trim() === '' ? {} : (JSON.parse(rule.config) as Record<string, RuleValue>) });
+        } catch {
+            rulesError.value = `Cấu hình của điều kiện "${rule.type}" không phải JSON hợp lệ.`;
+            return false;
+        }
+    }
+
+    rulesError.value = null;
+    form.rules = parsed;
+
+    return true;
+}
 
 watch([() => form.action_type, percent, amount], () => {
     form.action_config = form.action_type === 'percent_off' ? { basis_points: Math.round(Number(percent.value) * 100) } : form.action_type === 'amount_off' ? { amount: Number(amount.value) } : {};
@@ -57,6 +96,10 @@ watch([() => form.action_type, percent, amount], () => {
 const voucherForm = useForm({ code: '', prefix: '', count: null as number | null, usage_limit: 1 as number | null, expires_at: null as string | null });
 
 function submit(): void {
+    if (!collectRules()) {
+        return;
+    }
+
     if (props.promotion) {
         form.put(`${props.baseUrl}/${props.promotion.id}`, { preserveScroll: true });
     } else {
@@ -123,9 +166,21 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
             <input v-model.number="form.budget_amount" :class="inputClass" type="number" min="1" />
         </FormField>
         <label class="flex items-center gap-2 text-sm sm:col-span-2"><input v-model="form.requires_voucher" type="checkbox" /> Cần nhập mã voucher (bỏ chọn = tự động áp dụng)</label>
-        <div v-if="promotion?.rules.length" class="text-sm sm:col-span-2">
-            <p class="font-medium">Điều kiện (do plugin cung cấp)</p>
-            <p v-for="(rule, index) in promotion.rules" :key="index" class="text-slate-600">{{ rule.label ?? `${rule.type} (plugin chưa bật — khuyến mãi đang bị bỏ qua)` }}</p>
+        <div class="sm:col-span-2">
+            <p class="mb-2 text-sm font-medium">Điều kiện áp dụng (rule do Core/plugin cung cấp)</p>
+            <p v-if="!ruleTypes.length" class="text-sm text-slate-500">Chưa có loại điều kiện nào. Cài và bật plugin cung cấp rule (ví dụ <code>vani.promotion-rules</code>) để dùng.</p>
+            <div v-for="(rule, index) in rules" :key="index" class="mb-2 flex flex-wrap items-start gap-2">
+                <select v-model="rule.type" :class="inputClass">
+                    <option v-for="type in ruleTypes" :key="type.type" :value="type.type">{{ type.label }}</option>
+                </select>
+                <input v-model="rule.config" :class="[inputClass, 'flex-1 font-mono text-xs']" placeholder='{"amount": 500000}' />
+                <button type="button" :class="dangerButton" @click="rules.splice(index, 1)">Bỏ</button>
+                <p v-if="form.errors[`rules.${index}.config`] || form.errors[`rules.${index}.type`]" class="w-full text-sm text-red-600">
+                    {{ form.errors[`rules.${index}.config`] ?? form.errors[`rules.${index}.type`] }}
+                </p>
+            </div>
+            <button v-if="ruleTypes.length" type="button" :class="secondaryButton" @click="addRule">Thêm điều kiện</button>
+            <p v-if="rulesError" class="mt-2 text-sm text-red-600">{{ rulesError }}</p>
         </div>
         <p v-if="promotion" class="text-sm text-slate-500 sm:col-span-2">
             Đã dùng {{ promotion.usage_count }} lượt<span v-if="promotion.budget_amount">, {{ promotion.budget_used_amount.toLocaleString('vi-VN') }} ₫ ngân sách</span>.

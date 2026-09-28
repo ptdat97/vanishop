@@ -37,7 +37,10 @@ final class PromotionService
             throw ValidationException::withMessages(['action_config' => $errors]);
         }
 
-        return DB::transaction(function () use ($brandId, $data, $promotion, $expectedLockVersion): Promotion {
+        $rules = $this->validateRules((array) ($data['rules'] ?? []));
+        unset($data['rules']);
+
+        return DB::transaction(function () use ($brandId, $data, $rules, $promotion, $expectedLockVersion): Promotion {
             if ($promotion !== null) {
                 $updated = Promotion::query()->whereKey($promotion->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
                 if ($updated === 0) {
@@ -47,10 +50,54 @@ final class PromotionService
 
             $promotion ??= new Promotion(['brand_id' => $brandId]);
             $promotion->fill($data)->save();
-            $this->audit->record($promotion->wasRecentlyCreated ? 'promotion.created' : 'promotion.updated', 'promotion', $promotion->id, ['name' => $promotion->name, 'action' => $promotion->action_type, 'config' => $promotion->action_config]);
+            $this->syncRules($promotion, $rules);
+            $this->audit->record($promotion->wasRecentlyCreated ? 'promotion.created' : 'promotion.updated', 'promotion', $promotion->id,
+                ['name' => $promotion->name, 'action' => $promotion->action_type, 'config' => $promotion->action_config, 'rules' => $rules]);
 
             return $promotion;
         });
+    }
+
+    /**
+     * Kiểm tra danh sách rule: `type` phải do Core/plugin đang bật cung cấp, `config` do chính rule đó kiểm tra.
+     *
+     * @param  list<mixed>  $rules
+     * @return list<array{rule_type: string, config: array<string, mixed>}>
+     */
+    private function validateRules(array $rules): array
+    {
+        $validated = [];
+
+        foreach ($rules as $index => $rule) {
+            $type = is_array($rule) ? (string) ($rule['type'] ?? '') : '';
+            $config = is_array($rule) ? (array) ($rule['config'] ?? []) : [];
+            $implementation = $this->registry->rule($type);
+
+            if ($implementation === null) {
+                throw ValidationException::withMessages(["rules.{$index}.type" => __('promotion::messages.rule_unknown', ['type' => $type])]);
+            }
+
+            $errors = $implementation->validateConfig($config);
+            if ($errors !== []) {
+                throw ValidationException::withMessages(["rules.{$index}.config" => $errors]);
+            }
+
+            $validated[] = ['rule_type' => $implementation->type(), 'config' => $config];
+        }
+
+        return $validated;
+    }
+
+    /**
+     * @param  list<array{rule_type: string, config: array<string, mixed>}>  $rules
+     */
+    private function syncRules(Promotion $promotion, array $rules): void
+    {
+        $promotion->rules()->delete();
+
+        foreach ($rules as $rule) {
+            $promotion->rules()->create($rule);
+        }
     }
 
     public function delete(Promotion $promotion): void

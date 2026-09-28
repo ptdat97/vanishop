@@ -139,6 +139,7 @@ final class PromotionController
             ])->all(),
             'vouchersTotal' => $promotion?->vouchers()->count() ?? 0,
             'actions' => array_map(fn ($action): array => ['type' => $action->type(), 'label' => $action->label()], array_values($registry->actions())),
+            'ruleTypes' => array_map(fn ($rule): array => ['type' => $rule->type(), 'label' => $rule->label()], array_values($registry->rules())),
             'stackings' => array_column(Stacking::cases(), 'value'),
         ]);
     }

@@ -6,6 +6,7 @@ namespace Modules\Catalog;
 
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
+use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
 use Modules\Catalog\Application\Search\DatabaseSearchProvider;
@@ -14,6 +15,7 @@ use Modules\Catalog\Application\Search\SearchManager;
 use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\SearchReindexCommand;
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
@@ -22,6 +24,7 @@ use Modules\Catalog\Listeners\SyncProductSearchIndex;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
 
@@ -38,14 +41,15 @@ final class CatalogServiceProvider extends ModuleServiceProvider
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
+        $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->singleton(DatabaseSearchProvider::class);
         $this->app->singleton(MeilisearchSearchProvider::class, fn (): MeilisearchSearchProvider => new MeilisearchSearchProvider(
             (string) config('vanishop.search.meilisearch.host'),
             config('vanishop.search.meilisearch.key'),
             (string) config('vanishop.search.meilisearch.index'),
         ));
-        $this->app->tag([DatabaseSearchProvider::class, MeilisearchSearchProvider::class], SearchManager::TAG);
-        $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app, (string) config('vanishop.search.provider')));
+        $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class, MeilisearchSearchProvider::class], SearchManager::TAG);
+        $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app->make(Extensions::class), (string) config('vanishop.search.provider')));
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

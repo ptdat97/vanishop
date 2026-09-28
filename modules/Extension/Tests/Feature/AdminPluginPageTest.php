@@ -11,8 +11,9 @@ it('liệt kê plugin tìm thấy trong custom/plugin', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Extension::Plugins/Index')
-            ->where('plugins.0.id', 'vani.hello-world')
-            ->where('plugins.0.status', 'discovered'));
+            ->where('plugins', fn (iterable $plugins): bool => collect($plugins)
+                ->contains('id', 'vani.hello-world')
+                && collect($plugins)->every(fn (array $plugin): bool => $plugin['status'] === 'discovered')));
 });
 
 it('cần quyền extension.plugins.view', function () {

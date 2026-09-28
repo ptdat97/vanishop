@@ -4,29 +4,27 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application\Search;
 
-use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 use Modules\Catalog\Contracts\SearchProvider;
+use Modules\Extension\Contracts\Extensions;
 
 /**
- * Chọn SearchProvider theo cấu hình (VANI_SEARCH_PROVIDER) trong các provider đã đăng ký (tag vani.search.providers).
+ * Chọn SearchProvider theo cấu hình (VANI_SEARCH_PROVIDER) trong các provider có hiệu lực trong phạm vi hiện tại
+ * (SearchProvider do plugin cung cấp chỉ có mặt khi plugin được bật).
  */
 final class SearchManager
 {
     public const TAG = 'vani.search.providers';
 
     public function __construct(
-        private readonly Container $container,
+        private readonly Extensions $extensions,
         private readonly string $providerCode,
     ) {}
 
     public function provider(): SearchProvider
     {
-        /** @var iterable<SearchProvider> $providers */
-        $providers = $this->container->tagged(self::TAG);
-
-        foreach ($providers as $provider) {
-            if ($provider->code() === $this->providerCode) {
+        foreach ($this->extensions->tagged(self::TAG) as $provider) {
+            if ($provider instanceof SearchProvider && $provider->code() === $this->providerCode) {
                 return $provider;
             }
         }

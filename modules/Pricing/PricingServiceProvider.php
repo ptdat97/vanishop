@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Pricing;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
 use Modules\Pricing\Application\StrategyPriceResolver;
@@ -21,8 +22,8 @@ final class PricingServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(PriceListPriorityStrategy::class);
-        $this->app->tag([PriceListPriorityStrategy::class], StrategyPriceResolver::TAG);
-        $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver($app, (string) config('vanishop.pricing.strategy', 'price_list_priority')));
+        $this->app->make(Extensions::class)->tag([PriceListPriorityStrategy::class], StrategyPriceResolver::TAG);
+        $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver($app->make(Extensions::class), (string) config('vanishop.pricing.strategy', 'price_list_priority')));
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

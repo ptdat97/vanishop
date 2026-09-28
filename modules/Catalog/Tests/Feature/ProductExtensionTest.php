@@ -15,6 +15,7 @@ use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
@@ -70,7 +71,7 @@ it('hook vani.product.after_save chạy trong transaction với id sản phẩm'
 it('phát event sau commit và đồng bộ chỉ mục qua SearchProvider đang cấu hình', function () {
     $recorder = new RecordingSearchProvider;
     $this->app->instance(RecordingSearchProvider::class, $recorder);
-    $this->app->tag([RecordingSearchProvider::class], SearchManager::TAG);
+    $this->app->make(Extensions::class)->tag([RecordingSearchProvider::class], SearchManager::TAG);
     config(['vanishop.search.provider' => 'recording']);
 
     $style = T::product($this->brand->id, ['status' => 'draft']);
