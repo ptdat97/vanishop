@@ -39,7 +39,7 @@
 }
 ```
 
-Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validation: `validation.failed` kèm `details[{field, messages}]`), ổn định để client xử lý; `message` theo locale của request. **Implemented** (`Modules\Shared\Http\ApiErrorRenderer`).
+Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validation: `validation.failed` kèm `details[{field, messages}]`), ổn định để client xử lý; `message` theo locale của request. **Implemented** (`Modules\Shared\Http\ApiErrorRenderer`). Lỗi nghiệp vụ kế thừa `Modules\Shared\Domain\BusinessRuleViolation` (mã, HTTP status, `details` an toàn — không lộ số tồn chính xác).
 
 ## 3. Storefront API: endpoint chính
 
@@ -49,9 +49,9 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 | GET | `/products?q=&category=&collection=&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
 | GET | `/products/{slug}` | Chi tiết style: tên, mô tả, hướng dẫn bảo quản, SEO, breadcrumb, thuộc tính spec, màu + ảnh. **Implemented**, gồm `variants[].price`, `variants[].available`, `variants[].low_stock`, `price` (khoảng giá), `in_stock`. Danh sách `/products` có `price` và `in_stock`. Không trả số tồn chính xác |
 | GET | `/catalog/products/{slug}/store-availability?province=` | Tồn theo cửa hàng (mức độ, không số chính xác) |
-| POST | `/carts` | Tạo giỏ |
-| GET/PATCH | `/carts/{id}` | Xem giỏ (kèm totals) |
-| POST/PATCH/DELETE | `/carts/{id}/lines[/{lineId}]` | Thêm/sửa/xoá dòng |
+| POST | `/carts` | Tạo giỏ → `201`, `data` (giỏ) + `meta.token` (chỉ trả một lần). Rate limit 30/phút/IP. **Implemented** |
+| GET | `/carts/{id}` | Xem giỏ: dòng (sản phẩm, `unit_price`, `compare_at`, `price_when_added`, `line_total`, `issues[]` ∈ `unavailable`/`insufficient_stock`/`price_changed`), `subtotal`, `item_count`, `checkout_ready`. Header `X-Vani-Cart-Token` bắt buộc. **Implemented** (totals đầy đủ: slice 6) |
+| POST/PATCH/DELETE | `/carts/{id}/lines[/{lineId}]` | Thêm (`variant_id`, `quantity`, cộng dồn nếu đã có) / đặt số lượng (0 = xoá) / xoá dòng. **Implemented**. Lỗi: `cart.not_found` 404, `cart.line_not_found` 404, `cart.closed` 409, `cart.insufficient_stock` 409, `cart.variant_unavailable` 422, `cart.quantity_limit` 422, `cart.too_many_lines` 422, `cart.line_rejected` 422 (plugin) |
 | POST/DELETE | `/carts/{id}/vouchers` | Áp/gỡ voucher (Promotion framework của Core) |
 | GET | `/carts/{id}/shipping-options` | Phương thức VC + phí |
 | GET | `/carts/{id}/payment-methods` | Phương thức thanh toán khả dụng |

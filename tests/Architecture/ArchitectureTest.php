@@ -40,6 +40,21 @@ arch('Module chỉ dùng Contracts của module khác (Identity → Brand)')
     ->expect('Modules\\Identity')
     ->not->toUse(['Modules\\Brand\\Persistence', 'Modules\\Brand\\Application']);
 
+// Module downstream (ghép nhiều context) chỉ gọi Contracts/Events của module khác.
+foreach (['Cart' => ['Catalog', 'Pricing', 'Inventory', 'Channel'], 'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart']] as $consumer => $upstreams) {
+    $forbidden = [];
+    foreach ($upstreams as $upstream) {
+        foreach (['Application', 'Persistence', 'Infrastructure', 'Domain'] as $layer) {
+            $forbidden[] = "Modules\\{$upstream}\\{$layer}";
+        }
+    }
+
+    arch("R5: {$consumer} chỉ dùng API public của ".implode(', ', $upstreams))
+        ->expect("Modules\\{$consumer}")
+        ->not->toUse($forbidden)
+        ->ignoring("Modules\\{$consumer}\\Tests");
+}
+
 arch('Class của module dùng strict types')
     ->expect('Modules')
     ->toUseStrictTypes()

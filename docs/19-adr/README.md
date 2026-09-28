@@ -25,6 +25,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [019](ADR-019-shared-domain-brand-path.md) | Một domain chung, storefront brand theo đường dẫn | Accepted |
 | [020](ADR-020-admin-path-no-2fa.md) | Admin: đường dẫn cấu hình được, không dùng 2FA | Accepted |
 | [021](ADR-021-storefront-composition-module.md) | Module Storefront làm tầng ghép (Catalog + Pricing + …) | Accepted |
+| [022](ADR-022-guest-cart-token.md) | Giỏ khách vãng lai: id công khai + token bí mật, giỏ không giữ hàng | Accepted |
 
 "Accepted" nghĩa là quyết định đã được chốt, **không** có nghĩa là đã có code. Trạng thái implementation nằm ở [status](../00-overview/status.md).
 

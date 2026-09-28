@@ -7,6 +7,7 @@ namespace Modules\Catalog\Application\Products;
 use Illuminate\Support\Collection;
 use Modules\Catalog\Application\Search\SearchManager;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
+use Modules\Catalog\Contracts\Data\SellableVariant;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Domain\AttributeKind;
 use Modules\Catalog\Domain\PublishWindow;
@@ -86,6 +87,35 @@ final class StorefrontProductQuery
                     'size_system' => $variant->size->size_system->value,
                 ])->values()->all(),
         ];
+    }
+
+    /**
+     * @param  list<int>  $variantIds
+     * @return array<int, SellableVariant>
+     */
+    public function sellable(array $variantIds, string $locale, int $now): array
+    {
+        $at = new \DateTimeImmutable("@{$now}");
+
+        return Variant::query()
+            ->with(['style.translations', 'styleColor.color.translations', 'styleColor.gallery.media', 'size'])
+            ->whereIn('id', $variantIds)
+            ->where('status', VariantStatus::Active)
+            ->get()
+            ->filter(fn (Variant $variant): bool => PublishWindow::isVisible($variant->style->status, $variant->style->publishWindow(), $at))
+            ->mapWithKeys(fn (Variant $variant): array => [$variant->id => new SellableVariant(
+                id: $variant->id,
+                brandId: $variant->brand_id,
+                styleId: $variant->style_id,
+                sku: $variant->sku,
+                slug: $variant->style->slug,
+                name: (string) $variant->style->translate('name', $locale),
+                colorCode: $variant->styleColor->color->code,
+                colorName: $variant->styleColor->color->translate('name', $locale),
+                sizeCode: $variant->size->code,
+                imageUrl: $variant->styleColor->gallery->first()?->media->url(),
+            )])
+            ->all();
     }
 
     /**

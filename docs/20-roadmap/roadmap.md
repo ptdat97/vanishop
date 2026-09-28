@@ -24,7 +24,7 @@ flowchart LR
 | 2 ✅ | **Product (Style)** | Style, style color, nội dung đa ngôn ngữ, trạng thái, gắn danh mục/thuộc tính/ảnh, hook `vani.product.before_save`, event `ProductCreated/Updated`, **`SearchProvider`** (database + Meilisearch), bộ sưu tập thủ công | PDP render được từ Application query; tìm kiếm sản phẩm qua Storefront API: **đạt** (2026-09-30) |
 | 3 ✅ | **Variant & Price** | Variant/SKU, bảng giá, `PricingStrategy` mặc định, `price_history` | Giá hiển thị đúng theo channel; test Money: **đạt** (2026-10-01). Thêm module `Storefront` làm tầng ghép (ADR-021) |
 | 4 ✅ | **Inventory** | Location, stock level, reservation, ledger, ATS, `InventoryStrategy` mặc định, điều chỉnh tay (import dời lại) | **Concurrency test không oversell pass trên MySQL**: **đạt** (2026-10-02). Storefront API có `in_stock`/`available`/`low_stock` |
-| 5 | **Cart** | Giỏ, gộp giỏ, Storefront API cart | Thêm/sửa/xoá giỏ qua API và native |
+| 5 ✅ | **Cart** | Giỏ, gộp giỏ, Storefront API cart | Thêm/sửa/xoá giỏ qua API: **đạt** (2026-10-03). Native storefront dời tới khi có theme `vani-base`; gộp giỏ khi đăng nhập chờ module Customer (logic `merge` đã có) |
 | 6 | **Checkout** | Totals pipeline, `TaxCalculator` VAT, `CheckoutValidator`, Promotion framework (voucher + action primitive), `PlaceOrder` + idempotency | Test PlaceOrder: thành công/hết hàng/totals đổi/voucher hết/trùng |
 | 7 | **Payment** | Khung `PaymentGateway`, COD, chuyển khoản thủ công, IPN handler chung, hết hạn thanh toán | COD end-to-end; contract test suite `PaymentGateway` có sẵn |
 | 8 | **Order** | State machine 4 chiều, snapshot, `order_events`, Admin quản lý đơn, tra cứu đơn, huỷ, returns cơ bản | Mọi transition có test; snapshot không đổi khi catalog đổi |

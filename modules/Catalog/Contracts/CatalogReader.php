@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts;
 
 use Modules\Catalog\Contracts\Data\ProductFilters;
+use Modules\Catalog\Contracts\Data\SellableVariant;
 
 /**
  * Service contract: đọc catalog đang hiển thị cho storefront (trong phạm vi brand của CurrentContext).
@@ -39,4 +40,13 @@ interface CatalogReader
      * @return array<string, mixed>|null
      */
     public function productDetail(string $slug, string $locale, int $now): ?array;
+
+    /**
+     * Variant đang bán được (variant active + sản phẩm đang hiển thị) — cho giỏ hàng, checkout.
+     * Variant không bán được hoặc ngoài phạm vi brand thì không có mặt.
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, SellableVariant>
+     */
+    public function sellableVariants(array $variantIds, string $locale, int $now): array;
 }

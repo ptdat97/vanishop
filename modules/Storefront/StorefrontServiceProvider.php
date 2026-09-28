@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Storefront;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 /**
@@ -19,6 +22,9 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
     public function boot(): void
     {
+        // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.
+        RateLimiter::for('vani-cart-create', fn (Request $request): Limit => Limit::perMinute(30)->by((string) $request->ip()));
+
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));
         $this->bootModuleResources();
     }

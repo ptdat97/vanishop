@@ -20,5 +20,6 @@ return [
     'Catalog',
     'Pricing',
     'Inventory',
+    'Cart',
     'Storefront',
 ];

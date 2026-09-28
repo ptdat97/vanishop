@@ -46,6 +46,14 @@ return [
         'strategy' => env('VANI_PRICING_STRATEGY', 'price_list_priority'),
     ],
 
+    'cart' => [
+        // Giới hạn chống giỏ ảo / gom hàng.
+        'max_line_quantity' => (int) env('VANI_CART_MAX_LINE_QUANTITY', 20),
+        'max_lines' => (int) env('VANI_CART_MAX_LINES', 50),
+        // Giỏ không hoạt động quá số ngày này bị xoá (vani:cart:prune, chạy hằng ngày).
+        'ttl_days' => (int) env('VANI_CART_TTL_DAYS', 30),
+    ],
+
     'inventory' => [
         // Extension point InventoryStrategy (ví dụ channel allocation). Chỉ được giảm ATS.
         'strategy' => env('VANI_INVENTORY_STRATEGY', 'standard'),

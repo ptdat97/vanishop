@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Validation\ValidationException;
+use Modules\Shared\Domain\BusinessRuleViolation;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
@@ -27,6 +28,7 @@ final class ApiErrorRenderer
 
         [$status, $code, $message, $details] = match (true) {
             $exception instanceof ValidationException => [422, 'validation.failed', __('Dữ liệu không hợp lệ.'), $this->validationDetails($exception)],
+            $exception instanceof BusinessRuleViolation => [$exception->status(), $exception->errorCode(), $exception->getMessage(), $exception->details()],
             $exception instanceof AuthenticationException => [401, 'auth.unauthenticated', $exception->getMessage(), []],
             $exception instanceof HttpExceptionInterface => [
                 $exception->getStatusCode(),

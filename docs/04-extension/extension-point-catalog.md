@@ -61,7 +61,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Pricing | `PriceChanged` (**Implemented**) |
 | Inventory | `StockReserved`, `StockReleased`, `StockCommitted`, `StockAdjusted`, `AvailabilityChanged` |
 | Customer | `CustomerRegistered`, `CustomerMerged`, `ConsentChanged` |
-| Cart | `CartUpdated`, `CartAbandoned` |
+| Cart | `CartUpdated` (**Implemented**), `CartAbandoned` |
 | Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled`, `OrderCompleted` |
 | Payment | `PaymentAuthorized`, `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted` |
 | Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged`, `ShipmentDelivered` |
@@ -77,6 +77,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
 | `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của brand); tham số `ProductDraft`. **Implemented** |
 | `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `(styleId, brandId)`. **Implemented** |
+| `vani.cart.validate_line` | validate | có (khoá giỏ; không I/O mạng) | Chặn thêm/tăng dòng giỏ (giới hạn mua mỗi khách, hàng chỉ bán tại cửa hàng…); tham số `CartLineDraft` (số lượng sau thay đổi). **Implemented** |
 | `vani.checkout.payment_methods` | filter | không | Ẩn/hiện phương thức thanh toán |
 | `vani.checkout.shipping_options` | filter | không | Sửa danh sách phương thức giao |
 | `vani.checkout.before_validate` | validate | không | Kiểm tra bổ sung trước khi tính tổng |

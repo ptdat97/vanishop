@@ -1,15 +1,21 @@
 # Cart & Checkout
 
-> Trạng thái: **Designed**.
+> Trạng thái: **Cart Implemented (slice 5)**, Checkout **Designed**.
+>
+> **Cart đã có:** module `modules/Cart` (`carts`, `cart_lines`), contract `Carts` (create, view, addLine cộng dồn, updateLine, removeLine, merge), lỗi công khai `CartRejected` (mã `cart.*`), giới hạn số lượng/dòng (`vanishop.cart.*`), giá chụp khi thêm + cờ `price_changed`, cờ `insufficient_stock`/`unavailable` trên dòng, `subtotal` theo giá hiện tại, hook `vani.cart.validate_line`, event `CartUpdated`, lệnh `vani:cart:prune` (hằng ngày), Storefront API `/carts`. Định danh giỏ: [ADR-022](../19-adr/ADR-022-guest-cart-token.md).
+>
+> **Chưa có:** gắn khách hàng + gộp giỏ khi đăng nhập (chờ module Customer; logic gộp đã có), `CartAbandoned`, native storefront, totals pipeline (slice 6).
 
 ## 1. Cart
 
 | Mục | Thiết kế |
 |---|---|
 | Phạm vi | Một giỏ theo **channel**; kênh đa brand có giỏ chứa nhiều brand |
-| Định danh | `public_id` (ULID) + `cart_token` cookie cho khách vãng lai |
+| Định danh | `public_id` (ULID) + token bí mật (header `X-Vani-Cart-Token`; native: cookie HttpOnly), server chỉ lưu `sha256` ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)) |
 | Dòng giỏ | `variant_id`, `quantity`, `unit_price_snapshot` (giá lúc thêm, để cảnh báo "giá đã đổi"), `meta` |
-| Gộp giỏ | Khi đăng nhập: cộng dồn số lượng, giới hạn theo ATS, phát `CartUpdated` |
+| Gộp giỏ | Khi đăng nhập: cộng dồn số lượng, kẹp theo giới hạn dòng và ATS (không giảm dòng sẵn có của giỏ đích), bỏ dòng không còn bán, giỏ nguồn → `merged`, phát `CartUpdated` |
+| Giới hạn | Tối đa 20/variant, 50 dòng/giỏ (cấu hình `VANI_CART_MAX_LINE_QUANTITY`, `VANI_CART_MAX_LINES`) |
+| Đồng thời | Mọi thay đổi khoá dòng `carts` (`FOR UPDATE`) → nhiều tab cùng sửa không mất cập nhật (concurrency test) |
 | Không giữ hàng | Giỏ **không** reserve tồn (tránh khoá hàng ảo); reserve chỉ xảy ra trong `PlaceOrder` |
 | Hết hạn | 30 ngày không hoạt động; job dọn dẹp |
 | Giỏ bỏ quên | Event `CartAbandoned` (1h/24h), plugin `vani.abandoned-cart` xử lý |

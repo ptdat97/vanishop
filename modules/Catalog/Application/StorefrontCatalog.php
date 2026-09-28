@@ -57,6 +57,11 @@ final class StorefrontCatalog implements CatalogReader
         return $this->products->detail($slug, $locale, $now);
     }
 
+    public function sellableVariants(array $variantIds, string $locale, int $now): array
+    {
+        return $variantIds === [] ? [] : $this->products->sellable($variantIds, $locale, $now);
+    }
+
     /**
      * Slug/mã không tồn tại trong phạm vi → lọc ra rỗng (không âm thầm bỏ bộ lọc).
      */
