@@ -71,7 +71,7 @@ flowchart LR
 - [ ] Slice 0–10 đạt Done; slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
 - [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
-- [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)).
+- [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)). → **Một phần**: correlation id đã đi vào mọi dòng log (`App\Logging\ContextProcessor`). Còn thiếu metric/tracing, dashboard, cảnh báo.
 - [ ] Bảo mật: pentest, đường dẫn Admin bí mật + kiểm soát bù trừ của ADR-020, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)).
 - [ ] Pháp lý: chốt mô hình website (một pháp nhân vận hành hay đăng ký sàn TMĐT, [ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)), thông báo/đăng ký với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
 - [ ] Staging/production đặt tại VN tại nhà cung cấp Owner chọn ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)).

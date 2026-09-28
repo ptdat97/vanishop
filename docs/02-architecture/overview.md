@@ -146,3 +146,28 @@ sequenceDiagram
 | Mở rộng | Thêm brand không cần deploy; thêm capability bằng plugin, không sửa Core |
 | Quan sát | Mọi flow truy vết được bằng correlation id ([observability](../16-observability/observability.md)) |
 | Bảo mật | OWASP ASVS L2; PCI-DSS SAQ-A ([security](../15-security/security.md)) |
+
+### Đo NFR lần 1 (2026-10-09)
+
+Đo trên máy dev (`php artisan serve`, PHP 8.4, MySQL local, dữ liệu `DemoSeeder`: 4 style / 18 variant / 30 giá), ApacheBench, header `X-Vani-Channel: web-lumiere`. Chạy lại bằng:
+
+```bash
+php artisan migrate:fresh --force && php artisan db:seed --class=DemoSeeder
+php artisan serve --port=8899 &
+./scripts/bench/storefront-nfr.sh          # exit 0 = đạt, exit 1 = không đạt
+```
+
+| Endpoint | P50 | **P95** | Throughput | Kết quả |
+|---|---|---|---|---|
+| `GET /api/storefront/v1/categories` | 49 ms | **53 ms** | ~100 req/s | ✅ < 200 ms |
+| `GET /api/storefront/v1/products` | 91 ms | **120 ms** | ~52 req/s | ✅ < 200 ms |
+| `GET /api/storefront/v1/products/{slug}` (PDP) | 107 ms | **147 ms** | ~45 req/s | ✅ < 200 ms |
+
+(Mỗi endpoint 60 request, c=5. Số liệu thay đổi theo tải máy; script là nguồn chuẩn.)
+
+Cách đọc số liệu:
+- `php artisan serve` là **single-process**; throughput ~50 req/s là giới hạn của công cụ đo, **không phải** năng lực hệ thống. Mục tiêu 5.000 req/s phải đo lại trên staging khi có PHP-FPM + OPcache + CDN.
+- Storefront API giới hạn **240 req/phút/IP**; vượt ngưỡng trả `429` — rate limit cố ý, không phải lỗi. Vì vậy script mặc định 60 request/endpoint và **từ chối báo PASS khi có response không phải 2xx** (nếu không sẽ đo nhầm latency của lỗi). Cần tính lại tải khi đã đặt CDN.
+- Dữ liệu demo rất nhỏ; catalog thật (hàng chục nghìn SKU) cần đo lại vì listing có phân trang và facet.
+
+→ Mục "Load test đạt NFR" của [go-live gate](../20-roadmap/roadmap.md) **chưa đóng**: hiện mới xác nhận latency, chưa xác nhận tải.

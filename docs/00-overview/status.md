@@ -20,7 +20,7 @@
 >
 > **Slice 10 (Proof plugins) đã có code**: ba plugin chứng minh kiến trúc thật sự cắm vào extension point của Commerce Core mà không vá Core — `vani.promotion-rules` (rule điều kiện khuyến mãi), `vani.vietqr` (cổng thanh toán QR động), `vani.ghn` (hãng vận chuyển + báo cước checkout). Mỗi plugin có contract test của Core, config riêng và bật/tắt theo scope `owner`/`brand`.
 >
-> Test: **448 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **8 concurrency test** (group `concurrency`, chỉ MySQL).
+> Test: **453 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **8 concurrency test** (group `concurrency`, chỉ MySQL).
 
 ## Nền tảng
 
@@ -89,10 +89,10 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 10) | 448 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin) |
+| Unit + feature test (Foundation → slice 10) | 453 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging) |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
 | Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn), `PaymentCallbackConcurrencyTest.php` (6 IPN trùng cùng lúc → 1 lần ghi nhận), `ReturnConcurrencyTest.php` (4 yêu cầu trả toàn bộ cùng lúc → 1) |
-| Observability | Partially: có correlation id (header + log context + queued job); chưa có metric/tracing |
+| Observability | Partially: có correlation id (header + `Context` + **ghi vào mọi dòng log** qua `App\Logging\ContextProcessor`); chưa có metric/tracing |
 
 ## Production readiness
 
