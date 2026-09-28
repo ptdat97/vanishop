@@ -7,6 +7,7 @@ namespace Modules\Ordering\Application;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Ordering\Contracts\Data\OrderDraft;
@@ -35,7 +36,9 @@ final class OrderFactory implements OrderWriter
         $period = OrderNumber::period($now);
         $number = OrderNumber::format($brand->code, $period, $this->sequences->next("order:{$brand->id}", $period));
 
+        $accessToken = Str::random(40);
         $order = Order::query()->create([
+            'customer_phone' => $draft->customer['phone'], 'access_token_hash' => hash('sha256', $accessToken),
             'public_id' => $draft->publicId, 'number' => $number, 'legal_entity_id' => $brand->legalEntityId, 'brand_id' => $brand->id,
             'channel_id' => $draft->channelId, 'customer_id' => $draft->customerId, 'currency_code' => $draft->currencyCode,
             'order_status' => OrderStatus::Pending, 'payment_status' => $draft->paymentStatus, 'fulfillment_status' => 'unfulfilled', 'return_status' => 'none',
@@ -70,7 +73,7 @@ final class OrderFactory implements OrderWriter
 
         event(new OrderPlaced($order->id, $order->public_id, $number, $brand->id, $draft->channelId, $draft->customerId, $draft->totalAmount, $draft->currencyCode));
 
-        return new PlacedOrder($order->id, $order->public_id, $number, $brand->id, $brand->legalEntityId, $draft->channelId, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode);
+        return new PlacedOrder($order->id, $order->public_id, $number, $brand->id, $brand->legalEntityId, $draft->channelId, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode, $accessToken);
     }
 
     /**

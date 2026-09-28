@@ -17,5 +17,7 @@ final readonly class PlacedOrder
         public string $paymentStatus,
         public int $totalAmount,
         public string $currencyCode,
+        /** Token truy cập đơn cho khách — chỉ có lúc tạo, server chỉ lưu hash. */
+        public string $accessToken = '',
     ) {}
 }

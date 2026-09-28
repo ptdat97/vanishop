@@ -47,6 +47,7 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |
 | `OrderReader` | Đọc đơn (DTO snapshot). **Implemented** | Ordering |
+| `CustomerOrders` | Tra cứu/xem/huỷ đơn cho khách vãng lai. **Implemented** | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
 | `ShipmentRecorder` | Tạo/cập nhật shipment và trạng thái vận đơn | Fulfillment |
@@ -92,7 +93,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác |
 | `vani.storefront.pdp.after_price` | slot | — | UI dưới giá |
 | `vani.storefront.checkout.before_submit` | slot | — | UI trước nút đặt hàng |
-| `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin |
+| `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin; tham số `OrderDetail`, trả `{title, rows[{label, value}], link?}`. **Implemented** (Payment dùng) |
 
 ## 5. Registry (qua `PluginServiceProvider`)
 

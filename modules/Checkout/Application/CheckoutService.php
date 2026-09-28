@@ -234,6 +234,8 @@ final class CheckoutService implements Checkout
     {
         return [
             'payment' => ['id' => $paymentId, 'method' => $method],
+            // Token xem/huỷ đơn không cần tài khoản (header X-Vani-Order-Token). Chỉ trả ở phản hồi đặt hàng.
+            'access_token' => $order->accessToken,
             'id' => $order->publicId,
             'number' => $order->number,
             'order_status' => $order->orderStatus,
