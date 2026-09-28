@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Storefront\Http\Controllers\Api\CartController;
 use Modules\Storefront\Http\Controllers\Api\CategoryController;
+use Modules\Storefront\Http\Controllers\Api\CheckoutController;
 use Modules\Storefront\Http\Controllers\Api\ProductController;
 
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -15,3 +16,6 @@ Route::get('carts/{cart}', [CartController::class, 'show'])->name('carts.show');
 Route::post('carts/{cart}/lines', [CartController::class, 'addLine'])->name('carts.lines.store');
 Route::patch('carts/{cart}/lines/{line}', [CartController::class, 'updateLine'])->whereNumber('line')->name('carts.lines.update');
 Route::delete('carts/{cart}/lines/{line}', [CartController::class, 'removeLine'])->whereNumber('line')->name('carts.lines.destroy');
+
+Route::post('checkout/{cart}/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
+Route::post('checkout/{cart}/orders', [CheckoutController::class, 'placeOrder'])->middleware('throttle:vani-checkout')->name('checkout.orders.store');

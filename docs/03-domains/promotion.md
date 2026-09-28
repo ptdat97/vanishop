@@ -1,6 +1,10 @@
 # Promotion
 
-> Trạng thái: **Designed**. Core cung cấp **framework**, rule cụ thể do plugin cung cấp ([commerce-kernel](../02-architecture/commerce-kernel.md)).
+> Trạng thái: **Partially Implemented (slice 6)**.
+>
+> **Đã có:** module `modules/Promotion`: `promotions` (phạm vi **brand**, priority, `exclusive`/`combinable`, cần voucher hay tự động, giới hạn lượt, ngân sách, khung giờ, `lock_version`), `promotion_rules` (rule của plugin), `vouchers` (mã chữ hoa duy nhất, giới hạn lượt, hết hạn, bật/tắt), `promotion_usages`; `PromotionEngine` (đánh giá chỉ đọc; `recordUsage` bằng UPDATE có điều kiện; `revertUsage` idempotent), action `percent_off` / `amount_off`, extension point `PromotionRule` / `PromotionAction`, giá sàn `VANI_PROMOTION_MAX_DISCOUNT_BP` (mặc định 50%), Admin brand workspace (khuyến mãi, voucher cụ thể + sinh hàng loạt), concurrency test voucher.
+>
+> **Khác thiết kế:** mỗi khuyến mãi **một action** (cột `action_type` + `action_config` thay bảng `promotion_actions`); chỉ phạm vi brand (owner/channel: chưa). **Chưa có:** action trên phí giao hàng, giới hạn lượt theo khách (`usage_per_customer`, chờ Customer), giá sàn tính theo giá niêm yết (hiện tính theo giá bán của dòng — khi có giá sale, tổng mức giảm so với giá niêm yết có thể vượt 50%; pháp chế cần xác nhận cách áp), cache danh sách khuyến mãi, Admin cấu hình rule của plugin. Core cung cấp **framework**, rule cụ thể do plugin cung cấp ([commerce-kernel](../02-architecture/commerce-kernel.md)).
 
 ## 1. Trách nhiệm
 

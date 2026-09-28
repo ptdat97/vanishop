@@ -23,6 +23,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.
+        RateLimiter::for('vani-checkout', fn (Request $request): Limit => Limit::perMinute(20)->by((string) $request->ip()));
         RateLimiter::for('vani-cart-create', fn (Request $request): Limit => Limit::perMinute(30)->by((string) $request->ip()));
 
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));

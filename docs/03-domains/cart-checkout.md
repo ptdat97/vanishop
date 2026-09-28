@@ -1,10 +1,14 @@
 # Cart & Checkout
 
-> Trạng thái: **Cart Implemented (slice 5)**, Checkout **Designed**.
+> Trạng thái: **Cart Implemented (slice 5)**, **Checkout Implemented (slice 6)** — xem cuối khối này.
 >
 > **Cart đã có:** module `modules/Cart` (`carts`, `cart_lines`), contract `Carts` (create, view, addLine cộng dồn, updateLine, removeLine, merge), lỗi công khai `CartRejected` (mã `cart.*`), giới hạn số lượng/dòng (`vanishop.cart.*`), giá chụp khi thêm + cờ `price_changed`, cờ `insufficient_stock`/`unavailable` trên dòng, `subtotal` theo giá hiện tại, hook `vani.cart.validate_line`, event `CartUpdated`, lệnh `vani:cart:prune` (hằng ngày), Storefront API `/carts`. Định danh giỏ: [ADR-022](../19-adr/ADR-022-guest-cart-token.md).
 >
-> **Chưa có:** gắn khách hàng + gộp giỏ khi đăng nhập (chờ module Customer; logic gộp đã có), `CartAbandoned`, native storefront, totals pipeline (slice 6).
+> **Chưa có (Cart):** gắn khách hàng + gộp giỏ khi đăng nhập (chờ module Customer; logic gộp đã có), `CartAbandoned`, native storefront.
+>
+> **Checkout đã có (slice 6):** module `modules/Checkout`, contract `Checkout` (`quote`, `placeOrder`), totals pipeline (subtotal 100 → promotion 200 → shipping 500 → tax 800 → guard 900), `VnVatInclusiveTax` (VAT gồm trong giá, `VANI_VAT_RATE_BP`), `FlatRateShipping` (phí cố định + miễn phí trên ngưỡng), `CoreCheckoutValidator` (giỏ, một brand, liên hệ, SĐT, địa chỉ, giao hàng, thanh toán), hook `vani.checkout.before_validate` / `after_validate` / `payment_methods` / `shipping_options` / `vani.order.after_create`, `PlaceOrder` một transaction + `Idempotency-Key` + `expected_total` ([ADR-023](../19-adr/ADR-023-stateless-checkout.md)). Thanh toán: COD (`cod_pending`).
+>
+> **Chưa có (Checkout):** `PaymentGateway`/thanh toán online (slice 7), order group cho kênh đa brand, kiểm tra mã địa giới với bảng `administrative_units`, thuế trên phí giao hàng, carrier thật (slice 9).
 
 ## 1. Cart
 
@@ -108,9 +112,11 @@ final class PlaceOrder
 
 | Lỗi | Kết quả |
 |---|---|
-| Hết hàng | Rollback, `409 inventory.insufficient_stock` kèm dòng lỗi |
+| Giỏ có dòng thiếu hàng/ngừng bán (thấy ngay khi tính) | `422 checkout.invalid`, issue `cart_not_ready` |
+| Hết hàng do tranh chấp lúc giữ hàng | Rollback, `409 inventory.insufficient_stock` kèm `variant_id` |
+| Voucher không áp được (hết lượt, hết hạn…) lúc tính lại | Rollback, `422 checkout.voucher_invalid` kèm lý do |
 | Giá/KM thay đổi so với lúc xem | Rollback, `409 checkout.totals_changed` kèm tổng mới để khách xác nhận lại |
-| Voucher hết lượt | Rollback, `409 promotion.voucher_exhausted` |
+| Voucher hết lượt do tranh chấp lúc ghi nhận | Rollback, `409 promotion.voucher_exhausted` (`promotion.limit_reached` nếu hết lượt/ngân sách khuyến mãi) |
 | Cổng thanh toán lỗi khi `initiate` (sau commit) | Đơn vẫn tồn tại ở `pending`/`unpaid`; khách thử lại hoặc chọn phương thức khác; reservation hết hạn theo TTL |
 | Request trùng | Trả kết quả đã lưu (idempotency) |
 

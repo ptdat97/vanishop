@@ -35,14 +35,14 @@ DB::transaction(function () use ($command) {
 
 | Nơi | Khoá idempotency | Lưu ở |
 |---|---|---|
-| `POST /checkout/.../orders` | Header `Idempotency-Key` hoặc `checkout_token` | `idempotency_keys(scope, key, request_hash, response, expires_at)` 24h |
+| `POST /checkout/.../orders` | Header `Idempotency-Key` (bắt buộc) | `idempotency_keys(scope, key, request_hash, status, response_*, expires_at)` 24h. **Implemented** (`Modules\Shared\Application\IdempotencyStore`: claim ngoài transaction, `complete` trong transaction nghiệp vụ, lỗi thì nhả key; bản ghi `processing` quá 5 phút cho chạy lại; dọn bằng `vani:idempotency:prune` mỗi giờ) |
 | API tạo tài nguyên (refund, shipment…) | `Idempotency-Key` | như trên |
 | IPN / webhook cổng thanh toán | `(gateway, gateway_transaction_id)` | unique trên `payment_transactions` |
 | Webhook / inbox tích hợp | `(system, external_event_id)` | unique trên `integration_inbox` |
 | Outbox gửi đi | `message_id` (uuid) gửi kèm header `Idempotency-Key` | phía nhận |
 | Job | Thiết kế idempotent (kiểm tra trạng thái trước khi làm) | — |
 
-Cùng một key nhưng body khác (khác `request_hash`) → trả `409 idempotency_conflict`.
+Cùng một key nhưng body khác (khác `request_hash`) → trả `409 idempotency.conflict`; đang xử lý → `409 idempotency.in_progress`.
 
 ## 4. Concurrency
 

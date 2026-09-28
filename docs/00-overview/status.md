@@ -1,6 +1,6 @@
 # Trạng thái triển khai
 
-> Cập nhật lần cuối: **2026-10-03**, sau slice 5 (Cart). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
+> Cập nhật lần cuối: **2026-10-04**, sau slice 6 (Checkout). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
 
 ## Thang trạng thái
 
@@ -15,9 +15,9 @@
 
 > **Slice 0 (Foundation) đã có code**: khung module, Shared, Tenancy/Brand/Channel tối thiểu, Identity (RBAC theo phạm vi, audit, đăng nhập Admin), Extension (hook + plugin system + CLI), khung Admin Inertia, plugin mẫu, CI. Chưa có giỏ, checkout, đơn.
 >
-> **Slice 1–5 đã có code**: Catalog, Product, Variant & Price, Inventory (giữ hàng không oversell, đã kiểm chứng bằng concurrency test nhiều tiến trình trên MySQL), Cart (Storefront API).
+> **Slice 1–6 đã có code**: Catalog, Product, Variant & Price, Inventory (giữ hàng không oversell, đã kiểm chứng bằng concurrency test nhiều tiến trình trên MySQL), Cart, Checkout (khuyến mãi + voucher, VAT, phí giao cố định, đặt hàng COD idempotent) qua Storefront API.
 >
-> Test: **288 test pass** (unit, feature, architecture) trên cả SQLite in-memory và MySQL, cộng **3 concurrency test** (group `concurrency`, chỉ MySQL).
+> Test: **321 test pass** (unit, feature, architecture) trên cả SQLite in-memory và MySQL, cộng **6 concurrency test** (group `concurrency`, chỉ MySQL).
 
 ## Nền tảng
 
@@ -37,7 +37,7 @@
 
 | Context | Trạng thái | Đã có | Còn thiếu |
 |---|---|---|---|
-| **Shared** | Partially Implemented | `Money`, `Currency`, `MoneyFormatter`, `BusinessRuleViolation` (lỗi nghiệp vụ có mã → định dạng lỗi API), `PhoneNumber`, `CurrentContext`/`ContextScope`/`Actor`, middleware correlation id, `BelongsToBrand` + `BrandScope`, base `ModuleServiceProvider` | Địa giới hành chính VN, `MoneyCast` Eloquent, `idempotency_keys`, `number_sequences` |
+| **Shared** | Partially Implemented | `Money`, `Currency`, `MoneyFormatter`, `BusinessRuleViolation` (lỗi nghiệp vụ có mã → định dạng lỗi API), `IdempotencyStore` (`idempotency_keys`, `vani:idempotency:prune`), `NumberSequences` (`number_sequences`), `Money::includedTax`, `PhoneNumber`, `CurrentContext`/`ContextScope`/`Actor`, middleware correlation id, `BelongsToBrand` + `BrandScope`, base `ModuleServiceProvider` | Địa giới hành chính VN, `MoneyCast` Eloquent |
 | **Tenancy** | Partially Implemented | `legal_entities` + model/factory, contract `LegalEntityDirectory` | Settings kế thừa owner → legal entity → brand → channel |
 | **Brand** | Partially Implemented | `brands` (+ `theme_tokens`, `lock_version`), `BrandDirectory`, rule `BrandSlug` (chặn slug trùng đường dẫn dành riêng, ADR-019) | Admin CRUD, preflight |
 | **Channel** | Partially Implemented | `channels`, `channel_brands`, `channel_domains`, `ChannelResolver`, `ChannelDirectory` (`forBrand`, `all`), middleware `vani.channel` (`ResolveChannel`, khớp path prefix dài nhất → hỗ trợ brand theo đường dẫn trên domain chung) | Admin CRUD, gán bảng giá/location |
@@ -47,8 +47,11 @@
 | **Pricing** | Implemented (slice 3) | Bảng giá theo brand (`base`/`sale`/`member`, priority, khung giờ, bật/tắt, `lock_version`), gán kênh, giá `bigint` + giá gốc, nhập giá hàng loạt theo mã sản phẩm, `price_history` append-only, audit, event `PriceChanged`, `PricingStrategy` mặc định `price_list_priority` (priority cao thắng → giá thấp hơn; giá base làm giá gốc khi khuyến mãi), contract `PriceResolver` | Giá theo nhóm khách (`member`), giá theo số lượng (`min_qty` > 1), import Excel |
 | **Inventory** | Partially Implemented (slice 4) | Location cấp Owner (gán brand + kênh, `stock_authority`, priority, `lock_version`), `stock_levels`, reservation idempotent theo key + TTL + phân bổ theo priority (tách location), release/commit, `stock_movements` append-only, `AvailabilityReader`, `InventoryStrategy` `standard` (strategy chỉ giảm ATS), điều chỉnh tay/kiểm kê/tồn an toàn (chặn location do hệ thống ngoài quản lý), `vani:inventory:release-expired`, event `StockReserved/Released/Committed/Adjusted`, `AvailabilityChanged`; Admin: kho & cửa hàng (Owner), lưới tồn, lịch sử biến động | Transfer, reconciliation, sync từ ERP qua Integration API, import Excel, counter Redis flash sale, tồn theo cửa hàng cho storefront |
 | **Cart** | Partially Implemented (slice 5) | `carts` (ULID + token hash, theo kênh, trạng thái `active/converted/merged`), `cart_lines` (unique variant, CHECK quantity > 0, giá chụp), contract `Carts` (tạo, xem, thêm cộng dồn, sửa, xoá, gộp), kiểm tra variant bán được + có giá + đủ ATS + giới hạn, cờ dòng `unavailable/insufficient_stock/price_changed`, hook `vani.cart.validate_line`, event `CartUpdated`, `vani:cart:prune`, khoá giỏ khi sửa (concurrency test) | Gắn khách hàng + gộp khi đăng nhập (chờ Customer), `CartAbandoned`, native storefront |
-| **Storefront** (tầng ghép, ADR-021) | Partially Implemented | `ProductViews` ghép Catalog + Pricing + Inventory (`in_stock`, `available`, `low_stock`); `CartPresenter` + API giỏ; toàn bộ `/api/storefront/v1` | Native storefront (theme Blade) |
-| Customer / Checkout / Promotion / Ordering / Payment / Fulfillment / Returns | Designed | — | Slice 6–9 |
+| **Promotion** | Partially Implemented (slice 6) | Khuyến mãi theo brand (priority, độc quyền/cộng dồn, tự động hoặc voucher, giới hạn lượt, ngân sách, khung giờ), rule từ plugin (`PromotionRule`), action `percent_off`/`amount_off` (`PromotionAction`), giá sàn 50%/dòng, voucher (mã cụ thể, sinh hàng loạt, giới hạn lượt, hết hạn), `PromotionEngine` (đánh giá, ghi nhận lượt bằng UPDATE có điều kiện, hoàn lượt), Admin brand workspace | Action trên phí ship, giới hạn theo khách, phạm vi owner/channel, giá sàn theo giá niêm yết, Admin cấu hình rule plugin |
+| **Checkout** | Partially Implemented (slice 6) | Contract `Checkout` (`quote`, `placeOrder`), totals pipeline + `TotalsCalculator`, `VnVatInclusiveTax`, `FlatRateShipping`, `CoreCheckoutValidator`, hook before/after_validate + payment_methods + shipping_options + `vani.order.after_create`, PlaceOrder một transaction + `Idempotency-Key` + `expected_total` (ADR-023), COD | Thanh toán online (slice 7), order group đa brand, đối chiếu địa giới hành chính, thuế trên phí ship |
+| **Ordering** | Partially Implemented (slice 6) | `orders`/`order_lines`/`order_adjustments`/`order_events`, snapshot, số đơn theo brand + tháng, `OrderWriter`, `OrderPlaced` | State machine, Admin đơn, tra cứu, huỷ (slice 8) |
+| **Storefront** (tầng ghép, ADR-021) | Partially Implemented | `ProductViews` ghép Catalog + Pricing + Inventory (`in_stock`, `available`, `low_stock`); `CartPresenter` + API giỏ; `CheckoutPresenter` + API checkout; toàn bộ `/api/storefront/v1` | Native storefront (theme Blade) |
+| Customer / Payment / Fulfillment / Returns | Designed | — | Slice 7–9; Customer chưa xếp slice (checkout hiện chỉ cho khách vãng lai) |
 | Content, Notification, Reporting | Planned | Dashboard Admin tối thiểu (slot `vani.admin.dashboard.cards`) nằm ở `app/` | |
 | Integration | Designed | — | Slice 11 |
 | Storefront native | Designed | Chỉ có middleware `ResolveChannel` | Theme `vani-base` |
@@ -57,13 +60,13 @@
 
 | API | Trạng thái |
 |---|---|
-| `/api/storefront/v1` | Partially Implemented: `GET /categories`, `GET /categories/{slug}`, `GET /products` (q, category, collection, color, attr[], sort, page; facet màu + thuộc tính), `GET /products/{slug}` (PDP, có `variants[].price`, `variants[].available/low_stock`, `price` khoảng giá, `in_stock`; danh sách có `price.min/max/compare_at/discount_percent` + `in_stock`), `POST /carts`, `GET /carts/{id}`, `POST/PATCH/DELETE /carts/{id}/lines[/{lineId}]` (token `X-Vani-Cart-Token`, ADR-022); kênh qua `X-Vani-Channel`, locale qua `X-Vani-Locale`, rate limit 240/phút/IP, định dạng lỗi chuẩn cho `/api/*` |
+| `/api/storefront/v1` | Partially Implemented: `GET /categories`, `GET /categories/{slug}`, `GET /products` (q, category, collection, color, attr[], sort, page; facet màu + thuộc tính), `GET /products/{slug}` (PDP, có `variants[].price`, `variants[].available/low_stock`, `price` khoảng giá, `in_stock`; danh sách có `price.min/max/compare_at/discount_percent` + `in_stock`), `POST /carts`, `GET /carts/{id}`, `POST/PATCH/DELETE /carts/{id}/lines[/{lineId}]` (token `X-Vani-Cart-Token`, ADR-022), `POST /checkout/{cart}/quote`, `POST /checkout/{cart}/orders` (Idempotency-Key, ADR-023); kênh qua `X-Vani-Channel`, locale qua `X-Vani-Locale`, rate limit 240/phút/IP, định dạng lỗi chuẩn cho `/api/*` |
 | `/api/admin/v1`, `/api/integration/v1` | Designed |
-| Route Admin (web, Inertia) | Implemented dưới `/{VANI_ADMIN_PATH}` (mặc định `admin`): `/login`, `/logout`, `/plugins`, `/plugins/{slug}/…`, `/catalog/…`, `/pricing/…`, `/inventory/locations`, `/inventory/{brand}/stock`, `/inventory/{brand}/movements` |
+| Route Admin (web, Inertia) | Implemented dưới `/{VANI_ADMIN_PATH}` (mặc định `admin`): `/login`, `/logout`, `/plugins`, `/plugins/{slug}/…`, `/catalog/…`, `/pricing/…`, `/inventory/locations`, `/inventory/{brand}/stock`, `/inventory/{brand}/movements`, `/promotion/{brand}/promotions` (+ voucher) |
 
 ## Database (migration đã có)
 
-`legal_entities`, `brands`, `channels`, `channel_brands`, `channel_domains`, `staff_users`, `roles`, `role_permissions`, `staff_role_assignments`, `audit_logs`, `plugins`, `plugin_scopes`, `categories`, `category_translations`, `attributes`, `attribute_translations`, `attribute_values`, `attribute_value_translations`, `colors`, `color_translations`, `sizes`, `media`, `mediables`, `styles`, `style_translations`, `style_colors`, `category_style`, `style_attribute_values`, `collections`, `collection_translations`, `collection_style`, `variants`, `price_lists`, `prices`, `channel_price_lists`, `price_history`, `locations`, `location_brands`, `channel_locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `carts`, `cart_lines` (+ bảng mặc định của Laravel). Dữ liệu demo: `php artisan db:seed --class=DemoSeeder`. Các bảng khác trong [database](../07-database/database.md) vẫn ở mức Designed.
+`legal_entities`, `brands`, `channels`, `channel_brands`, `channel_domains`, `staff_users`, `roles`, `role_permissions`, `staff_role_assignments`, `audit_logs`, `plugins`, `plugin_scopes`, `categories`, `category_translations`, `attributes`, `attribute_translations`, `attribute_values`, `attribute_value_translations`, `colors`, `color_translations`, `sizes`, `media`, `mediables`, `styles`, `style_translations`, `style_colors`, `category_style`, `style_attribute_values`, `collections`, `collection_translations`, `collection_style`, `variants`, `price_lists`, `prices`, `channel_price_lists`, `price_history`, `locations`, `location_brands`, `channel_locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `carts`, `cart_lines`, `idempotency_keys`, `number_sequences`, `promotions`, `promotion_rules`, `vouchers`, `promotion_usages`, `orders`, `order_lines`, `order_adjustments`, `order_events` (+ bảng mặc định của Laravel). Dữ liệu demo: `php artisan db:seed --class=DemoSeeder`. Các bảng khác trong [database](../07-database/database.md) vẫn ở mức Designed.
 
 ## Plugin
 
@@ -76,11 +79,11 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 5) | 288 test pass |
+| Unit + feature test (Foundation → slice 6) | 321 test pass |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
-| Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng) |
+| Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn) |
 | Observability | Partially: có correlation id (header + log context + queued job); chưa có metric/tracing |
 
 ## Production readiness
 
-**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng; chưa có checkout, đơn, thanh toán, giao hàng. Điều kiện go-live: [roadmap §4](../20-roadmap/roadmap.md).
+**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng COD; chưa có thanh toán online, quản lý đơn (state machine, Admin), giao hàng, khách hàng. Điều kiện go-live: [roadmap §4](../20-roadmap/roadmap.md).

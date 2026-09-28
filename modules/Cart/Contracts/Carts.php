@@ -37,4 +37,15 @@ interface Carts
      * bỏ dòng không còn bán; giỏ nguồn chuyển sang "merged".
      */
     public function merge(CartKey $source, CartKey $target): CartView;
+
+    /**
+     * Khoá giỏ (FOR UPDATE) cho PlaceOrder và trả trạng thái hiện tại. Giỏ đã đóng → CartRejected::closed.
+     * Phải gọi TRONG transaction đặt hàng: hai request đặt cùng một giỏ được xếp hàng, request sau thấy giỏ đã đóng.
+     */
+    public function lockForCheckout(CartKey $key): CartView;
+
+    /**
+     * Đánh dấu giỏ đã đặt hàng (trong cùng transaction với lockForCheckout).
+     */
+    public function markConverted(CartKey $key, string $orderPublicId): void;
 }

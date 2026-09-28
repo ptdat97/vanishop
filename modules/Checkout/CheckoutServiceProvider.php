@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Checkout;
+
+use Modules\Checkout\Application\Calculators\GuardCalculator;
+use Modules\Checkout\Application\Calculators\PromotionCalculator;
+use Modules\Checkout\Application\Calculators\ShippingCalculator;
+use Modules\Checkout\Application\Calculators\SubtotalCalculator;
+use Modules\Checkout\Application\Calculators\TaxStage;
+use Modules\Checkout\Application\CheckoutService;
+use Modules\Checkout\Application\FlatRateShipping;
+use Modules\Checkout\Application\ShippingOptions;
+use Modules\Checkout\Application\TotalsPipeline;
+use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
+use Modules\Checkout\Application\VnVatInclusiveTax;
+use Modules\Checkout\Contracts\Checkout;
+use Modules\Checkout\Contracts\TaxCalculator;
+use Modules\Shared\Support\ModuleServiceProvider;
+
+final class CheckoutServiceProvider extends ModuleServiceProvider
+{
+    public const TAX_TAG = 'vani.tax.calculators';
+
+    protected function moduleName(): string
+    {
+        return 'Checkout';
+    }
+
+    public function register(): void
+    {
+        $this->app->bind(Checkout::class, CheckoutService::class);
+
+        $this->app->tag([SubtotalCalculator::class, PromotionCalculator::class, ShippingCalculator::class, TaxStage::class, GuardCalculator::class], TotalsPipeline::TAG);
+        $this->app->tag([CoreCheckoutValidator::class], CheckoutService::VALIDATORS_TAG);
+
+        $this->app->bind(FlatRateShipping::class, fn (): FlatRateShipping => new FlatRateShipping(
+            (int) config('vanishop.checkout.shipping.flat_fee', 30_000),
+            config('vanishop.checkout.shipping.free_over') === null ? null : (int) config('vanishop.checkout.shipping.free_over'),
+        ));
+        $this->app->tag([FlatRateShipping::class], ShippingOptions::TAG);
+
+        $this->app->bind(VnVatInclusiveTax::class, fn (): VnVatInclusiveTax => new VnVatInclusiveTax((int) config('vanishop.tax.vat_rate_bp', 1000)));
+        $this->app->tag([VnVatInclusiveTax::class], self::TAX_TAG);
+        $this->app->bind(TaxCalculator::class, function ($app): TaxCalculator {
+            $code = (string) config('vanishop.tax.calculator', 'vn_vat_inclusive');
+            foreach ($app->tagged(self::TAX_TAG) as $calculator) {
+                if ($calculator->code() === $code) {
+                    return $calculator;
+                }
+            }
+
+            throw new \RuntimeException("TaxCalculator [{$code}] chưa được đăng ký.");
+        });
+    }
+
+    public function boot(): void
+    {
+        $this->bootModuleResources();
+    }
+}

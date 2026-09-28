@@ -25,6 +25,8 @@ use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\StockAdjustmentService;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Pricing\Application\PriceListService;
+use Modules\Promotion\Application\PromotionService;
+use Modules\Promotion\Persistence\Models\Promotion;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Tenancy\Persistence\Models\LegalEntity;
@@ -35,9 +37,9 @@ use Modules\Tenancy\Persistence\Models\LegalEntity;
  */
 final class DemoSeeder extends Seeder
 {
-    public function run(CurrentContext $context, CategoryService $categories, TaxonomyService $taxonomy, ProductService $products, StyleColorService $styleColors, VariantService $variants, PriceListService $prices, LocationService $locations, StockAdjustmentService $stock): void
+    public function run(CurrentContext $context, CategoryService $categories, TaxonomyService $taxonomy, ProductService $products, StyleColorService $styleColors, VariantService $variants, PriceListService $prices, LocationService $locations, StockAdjustmentService $stock, PromotionService $promotions): void
     {
-        $context->runAs(ContextScope::system('demo seeder'), function () use ($categories, $taxonomy, $products, $styleColors, $variants, $prices, $locations, $stock): void {
+        $context->runAs(ContextScope::system('demo seeder'), function () use ($categories, $taxonomy, $products, $styleColors, $variants, $prices, $locations, $stock, $promotions): void {
             $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
             $company = LegalEntity::query()->firstOrCreate(['code' => 'VANI'], ['name' => 'Công ty TNHH Vani Fashion', 'tax_code' => '0100000001']);
 
@@ -52,6 +54,12 @@ final class DemoSeeder extends Seeder
                     $this->seedCatalog($brand->id, $categories, $taxonomy);
                     $this->seedProducts($brand, $products, $styleColors, $variants);
                     $this->seedPrices($brand, $channel->id, $prices);
+                }
+
+                if (! Promotion::query()->where('brand_id', $brand->id)->exists()) {
+                    $welcome = $promotions->save($brand->id, ['name' => 'Chào bạn mới — giảm 10%', 'status' => 'active', 'starts_at' => null, 'ends_at' => null, 'priority' => 0,
+                        'stacking' => 'combinable', 'requires_voucher' => true, 'action_type' => 'percent_off', 'action_config' => ['basis_points' => 1000], 'usage_limit' => null, 'budget_amount' => null]);
+                    $promotions->createVouchers($welcome, "{$code}CHAO10", null, 1, null, null);
                 }
             }
 

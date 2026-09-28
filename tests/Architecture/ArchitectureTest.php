@@ -41,7 +41,13 @@ arch('Module chỉ dùng Contracts của module khác (Identity → Brand)')
     ->not->toUse(['Modules\\Brand\\Persistence', 'Modules\\Brand\\Application']);
 
 // Module downstream (ghép nhiều context) chỉ gọi Contracts/Events của module khác.
-foreach (['Cart' => ['Catalog', 'Pricing', 'Inventory', 'Channel'], 'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart']] as $consumer => $upstreams) {
+foreach ([
+    'Cart' => ['Catalog', 'Pricing', 'Inventory', 'Channel'],
+    'Promotion' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Ordering', 'Checkout'],
+    'Ordering' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Checkout'],
+    'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering'],
+    'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout'],
+] as $consumer => $upstreams) {
     $forbidden = [];
     foreach ($upstreams as $upstream) {
         foreach (['Application', 'Persistence', 'Infrastructure', 'Domain'] as $layer) {

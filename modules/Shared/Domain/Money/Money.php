@@ -69,6 +69,18 @@ final readonly class Money
     }
 
     /**
+     * Phần thuế nằm trong số tiền ĐÃ GỒM thuế: round_half_up(gross × rate / (10000 + rate)), rate theo basis points.
+     */
+    public function includedTax(int $rateBasisPoints, RoundingMode $mode = RoundingMode::HalfAwayFromZero): self
+    {
+        if ($rateBasisPoints < 0) {
+            throw new InvalidArgumentException('Thuế suất không được âm.');
+        }
+
+        return new self(self::divide($this->amount * $rateBasisPoints, self::BASIS_POINTS + $rateBasisPoints, $mode), $this->currency);
+    }
+
+    /**
      * Làm tròn đến bội số của $step (ví dụ 1.000 ₫).
      */
     public function roundToStep(int $step, RoundingMode $mode = RoundingMode::HalfAwayFromZero): self

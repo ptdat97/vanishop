@@ -21,5 +21,8 @@ return [
     'Pricing',
     'Inventory',
     'Cart',
+    'Promotion',
+    'Ordering',
+    'Checkout',
     'Storefront',
 ];

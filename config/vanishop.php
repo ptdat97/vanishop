@@ -54,6 +54,27 @@ return [
         'ttl_days' => (int) env('VANI_CART_TTL_DAYS', 30),
     ],
 
+    'checkout' => [
+        // Slice 6: COD. Cổng thanh toán (PaymentGateway) thêm ở slice Payment / plugin.
+        'payment_methods' => ['cod'],
+        'shipping' => [
+            'flat_fee' => (int) env('VANI_SHIPPING_FLAT_FEE', 30000),
+            // Miễn phí giao khi tiền hàng (sau giảm giá) >= ngưỡng; null = không miễn phí.
+            'free_over' => env('VANI_SHIPPING_FREE_OVER', 500000) === null ? null : (int) env('VANI_SHIPPING_FREE_OVER', 500000),
+        ],
+    ],
+
+    'tax' => [
+        'calculator' => env('VANI_TAX_CALCULATOR', 'vn_vat_inclusive'),
+        // VAT gồm trong giá, basis points (1000 = 10%). Kế toán/pháp chế xác nhận mức áp dụng hiện hành.
+        'vat_rate_bp' => (int) env('VANI_VAT_RATE_BP', 1000),
+    ],
+
+    'promotion' => [
+        // Giá sàn: tổng giảm của một dòng không vượt tỷ lệ này (basis points; 5000 = 50%, NĐ 81/2018 — pháp chế xác nhận).
+        'max_discount_bp' => (int) env('VANI_PROMOTION_MAX_DISCOUNT_BP', 5000),
+    ],
+
     'inventory' => [
         // Extension point InventoryStrategy (ví dụ channel allocation). Chỉ được giảm ATS.
         'strategy' => env('VANI_INVENTORY_STRATEGY', 'standard'),

@@ -154,6 +154,27 @@ final class CartService implements Carts
         });
     }
 
+    public function lockForCheckout(CartKey $key): CartView
+    {
+        $this->find($key);
+        $cart = Cart::query()->where('public_id', $key->publicId)->lockForUpdate()->firstOrFail();
+        $this->assertOpen($cart);
+
+        return $this->build($cart);
+    }
+
+    public function markConverted(CartKey $key, string $orderPublicId): void
+    {
+        $cart = $this->find($key);
+        $cart->update([
+            'status' => CartStatus::Converted,
+            'meta' => [...($cart->meta ?? []), 'order_id' => $orderPublicId],
+            'lock_version' => $cart->lock_version + 1,
+            'last_activity_at' => now(),
+        ]);
+        event(new CartUpdated($cart->public_id, $cart->channel_id, $cart->customer_id));
+    }
+
     /**
      * @param  \Closure(Cart): mixed  $change
      */

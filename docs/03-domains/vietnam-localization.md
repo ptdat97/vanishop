@@ -15,6 +15,7 @@
   - Địa chỉ lưu: `province_code`, `ward_code`, `street_line`, và **chuỗi snapshot** đầy đủ tại thời điểm đặt hàng (không phụ thuộc bảng tham chiếu sau này).
   - Mỗi hãng VC có mã địa giới riêng → bảng mapping theo connector.
 - UX: ô tìm kiếm địa chỉ có gợi ý, gõ không dấu vẫn ra kết quả ("phuong ben thanh" → "Phường Bến Thành").
+- **Hiện trạng (slice 6):** checkout nhận `province_code/province_name/ward_code/ward_name/street_line` và lưu snapshot vào đơn; **chưa** đối chiếu với bảng `administrative_units` (chưa có). VAT gồm trong giá theo `VANI_VAT_RATE_BP` (mặc định 10%) — kế toán xác nhận mức hiện hành.
 - Nguồn dữ liệu: danh mục đơn vị hành chính chính thức của Tổng cục Thống kê/Bộ Nội vụ; cập nhật bằng lệnh `php artisan vani:geo:import`.
 
 ## 2. Số điện thoại, tên, ngôn ngữ
