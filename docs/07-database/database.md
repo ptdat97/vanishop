@@ -1,6 +1,6 @@
 # Database
 
-> Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md).
+> Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension, Catalog, Pricing, Inventory (trừ transfer/reconciliation) ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md).
 
 ## 1. Quy ước
 

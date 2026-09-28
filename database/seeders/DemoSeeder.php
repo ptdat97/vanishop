@@ -21,6 +21,9 @@ use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Channel\Persistence\Models\Channel;
+use Modules\Inventory\Application\LocationService;
+use Modules\Inventory\Application\StockAdjustmentService;
+use Modules\Inventory\Persistence\Models\Location;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -32,9 +35,9 @@ use Modules\Tenancy\Persistence\Models\LegalEntity;
  */
 final class DemoSeeder extends Seeder
 {
-    public function run(CurrentContext $context, CategoryService $categories, TaxonomyService $taxonomy, ProductService $products, StyleColorService $styleColors, VariantService $variants, PriceListService $prices): void
+    public function run(CurrentContext $context, CategoryService $categories, TaxonomyService $taxonomy, ProductService $products, StyleColorService $styleColors, VariantService $variants, PriceListService $prices, LocationService $locations, StockAdjustmentService $stock): void
     {
-        $context->runAs(ContextScope::system('demo seeder'), function () use ($categories, $taxonomy, $products, $styleColors, $variants, $prices): void {
+        $context->runAs(ContextScope::system('demo seeder'), function () use ($categories, $taxonomy, $products, $styleColors, $variants, $prices, $locations, $stock): void {
             $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
             $company = LegalEntity::query()->firstOrCreate(['code' => 'VANI'], ['name' => 'Công ty TNHH Vani Fashion', 'tax_code' => '0100000001']);
 
@@ -51,7 +54,39 @@ final class DemoSeeder extends Seeder
                     $this->seedPrices($brand, $channel->id, $prices);
                 }
             }
+
+            if (! Location::query()->where('code', 'WH-HCM')->exists()) {
+                $this->seedInventory($company->id, $locations, $stock);
+            }
         });
+    }
+
+    /**
+     * Kho tổng dùng chung giao online cho cả hai brand + mỗi brand một cửa hàng (chỉ bán tại quầy).
+     */
+    private function seedInventory(int $legalEntityId, LocationService $locations, StockAdjustmentService $stock): void
+    {
+        $brands = Brand::query()->whereIn('slug', ['lumiere', 'urbanx'])->pluck('id', 'slug');
+        $channels = Channel::query()->whereIn('code', ['web-lumiere', 'web-urbanx'])->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $defaults = ['legal_entity_id' => $legalEntityId, 'province_code' => '79', 'stock_authority' => Location::AUTHORITY_VANISHOP, 'status' => 'active', 'accepts_returns' => true];
+
+        $warehouse = $locations->save([...$defaults, 'code' => 'WH-HCM', 'name' => 'Kho tổng Thủ Đức', 'type' => 'warehouse', 'address' => 'TP. Thủ Đức, TP. Hồ Chí Minh',
+            'ships_online_orders' => true, 'allows_pickup' => false, 'priority' => 10], $brands->values()->map(fn ($id): int => (int) $id)->all(), $channels);
+
+        $stores = [];
+        foreach (['lumiere' => 'ST-LM-Q1', 'urbanx' => 'ST-UX-Q3'] as $slug => $code) {
+            $stores[(int) $brands[$slug]] = $locations->save([...$defaults, 'code' => $code, 'name' => "Cửa hàng {$code}", 'type' => 'store', 'address' => 'TP. Hồ Chí Minh',
+                'ships_online_orders' => false, 'allows_pickup' => true, 'priority' => 0], [(int) $brands[$slug]], []);
+        }
+
+        foreach (Variant::query()->whereIn('brand_id', $brands->values())->orderBy('id')->get() as $index => $variant) {
+            // Vài SKU hết hàng online / sắp hết để thử storefront.
+            $online = [0, 2, 8, 15, 30][$index % 5];
+            if ($online > 0) {
+                $stock->adjust($warehouse, $variant->id, $online, 'Tồn đầu kỳ (demo)');
+            }
+            $stock->adjust($stores[$variant->brand_id], $variant->id, 3, 'Tồn đầu kỳ (demo)');
+        }
     }
 
     private function seedProducts(Brand $brand, ProductService $products, StyleColorService $styleColors, VariantService $variants): void

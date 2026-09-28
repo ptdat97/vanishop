@@ -83,3 +83,13 @@ jobs:
           DB_DATABASE: vanishop_testing
           DB_USERNAME: root
           DB_PASSWORD: ''
+
+      - name: Concurrency tests — không oversell, không deadlock (MySQL 8.4, nhiều tiến trình)
+        run: vendor/bin/pest --compact --group=concurrency
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: vanishop_testing
+          DB_USERNAME: root
+          DB_PASSWORD: ''

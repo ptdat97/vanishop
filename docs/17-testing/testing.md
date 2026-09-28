@@ -1,8 +1,10 @@
 # Testing Strategy
 
-> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Chưa có: concurrency test (từ slice Inventory), contract test suite, E2E (Pest Browser chưa cài).
+> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Concurrency test: `tests/Concurrency` (group `concurrency`, bị loại khỏi lần chạy mặc định, tự skip nếu không phải MySQL; CI chạy bước riêng trên MySQL 8.4). Chưa có: contract test suite, E2E (Pest Browser chưa cài).
 >
 > Chạy test trên MySQL local: `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing vendor/bin/pest`.
+>
+> Concurrency (nhiều tiến trình, MySQL thật): `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing vendor/bin/pest --group=concurrency`. Test dùng `DatabaseTruncation` (không dùng transaction bọc test vì các tiến trình con phải thấy dữ liệu).
 >
 > Nếu `pest` thoát mà không in gì (Laravel PAO của Boost nuốt output khi có fatal error), chạy lại với `PAO_DISABLE=1` để thấy lỗi.
 

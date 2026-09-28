@@ -1,6 +1,10 @@
 # Inventory
 
-> Trạng thái: **Designed**. Quyết định: [ADR-006](../19-adr/ADR-006-inventory-authority.md).
+> Trạng thái: **Partially Implemented** (slice 4). Quyết định: [ADR-006](../19-adr/ADR-006-inventory-authority.md).
+>
+> **Đã có:** `locations` (cấp Owner, `stock_authority`, priority, khả năng giao online/nhận tại quầy/nhận trả, `lock_version`), `location_brands`, `channel_locations` (**thuộc Inventory**, không thuộc Channel, để Channel không phụ thuộc Inventory), `stock_levels`, `stock_reservations`, `stock_movements` (append-only); domain `StockLevel` + `Allocation` (thuần PHP); `InventoryReservation` (reserve idempotent theo `reservation_key`, release, commit), `AvailabilityReader`, `InventoryStrategy` mặc định `standard`; điều chỉnh tay / kiểm kê / tồn an toàn (chặn khi location do hệ thống ngoài quản lý); lệnh `vani:inventory:release-expired` (mỗi phút); Admin: kho & cửa hàng (Owner), lưới tồn variant × location, lịch sử biến động; Storefront API: `in_stock`, `available`, `low_stock` (không lộ số lượng).
+>
+> **Chưa có:** transfer, reconciliation, sync từ authority ngoài qua Integration API (`sync()` domain đã có, bỏ qua bản cũ theo `sync_version`), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
 
 ## 1. Nguyên tắc
 
@@ -98,7 +102,8 @@ public function reserve(ReservationRequest $req): Reservation   // gọi trong t
 }
 ```
 
-- Mức cô lập `READ COMMITTED` + `FOR UPDATE` trên đúng các dòng cần dùng.
+- Mức cô lập `READ COMMITTED` + `FOR UPDATE` trên đúng các dòng cần dùng. **Đã cấu hình** ở connection `mysql` (`DB_ISOLATION_LEVEL`, mặc định `READ COMMITTED`): concurrency test cho thấy `REPEATABLE READ` mặc định của MySQL sinh deadlock 1213 do gap lock.
+- **Hiện thực** (`ReservationService`): gộp số lượng theo variant → khoá `stock_levels` theo `(location_id, variant_id)` tăng dần (tạo dòng thiếu trước khi khoá) → **sau khi đã giữ khoá tồn** mới kiểm tra `reservation_key` đã có reservation `active` chưa (đọc thường, không `FOR UPDATE` — khoá dòng không tồn tại chính là nguồn gap lock) → phân bổ theo priority location giảm dần, tách sang location kế tiếp khi thiếu → ghi `stock_movements` + `stock_reservations` → event sau commit. Transaction thử lại tối đa 3 lần.
 - **Flash sale**: counter Redis `DECRBY` chặn trước; hết counter thì trả hết hàng ngay, không vào DB. Counter được nạp lại từ ATS DB định kỳ; DB luôn là nguồn đúng cuối cùng.
 - Job `ReleaseExpiredReservations` chạy mỗi phút, idempotent (chỉ xử lý `active` + `expires_at < now`).
 
@@ -148,6 +153,6 @@ Tra tồn tại cửa hàng, BOPIS, ship-from-store, endless aisle là plugin: [
 ## 10. Kiểm thử
 
 - Unit: `StockLevel::reserve/release/commit`, công thức ATS, `InventoryStrategy` không tăng được ATS.
-- Concurrency (MySQL thật): 50 tiến trình mua SKU tồn = 5 → đúng 5 thành công; không deadlock khi đơn nhiều SKU đảo thứ tự.
+- Concurrency (MySQL thật, `tests/Concurrency`, group `concurrency`): **đã có** — 12 tiến trình giữ SKU tồn = 5 → đúng 5 thành công, 7 `StockUnavailable`; đơn nhiều SKU đảo thứ tự không deadlock.
 - Feature: hết hạn reservation; huỷ đơn; sync bản cũ bị bỏ qua; client không phải authority bị 403.
 - Reconciliation: dữ liệu chênh lệch sinh đúng movement.

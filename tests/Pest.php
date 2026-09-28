@@ -17,4 +17,4 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature', '../modules/*/Tests/Feature', '../custom/plugin/*/Tests/Feature');
 
-pest()->extend(TestCase::class)->in('Architecture');
+pest()->extend(TestCase::class)->in('Architecture', 'Concurrency');

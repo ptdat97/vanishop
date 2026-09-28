@@ -7,6 +7,7 @@ use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Channel\Persistence\Models\Channel;
+use Modules\Inventory\Tests\Feature\InventoryTestHelpers;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers;
 
 require_once __DIR__.'/../../../Catalog/Tests/Feature/CatalogTestHelpers.php';
@@ -126,4 +127,28 @@ it('trả khoảng giá ở danh sách và giá từng biến thể ở PDP theo
         ->and($variants[$s->sku]['price']['compare_at']['amount'])->toBe(590000)
         ->and($variants[$m->sku]['price']['amount']['amount'])->toBe(620000)
         ->and($variants[$m->sku]['price']['compare_at'])->toBeNull();
+});
+
+it('công bố còn hàng / sắp hết theo tồn của kênh, không lộ số lượng', function () {
+    $channel = Channel::query()->where('code', 'web-lumiere')->sole();
+    require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
+    require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php';
+    [$s, $m, $l] = PricingTestHelpers::variants($this->silkDress, ['S', 'M', 'L']);
+    PricingTestHelpers::priceList($this->lumiere->id, ['code' => 'base'], [$channel->id], [$s->id => [590_000], $m->id => [590_000]]);
+    $online = InventoryTestHelpers::location($this->lumiere, [$channel->id]);
+    $storeOnly = InventoryTestHelpers::location($this->lumiere, []);
+    InventoryTestHelpers::stock($online, $s->id, 20);
+    InventoryTestHelpers::stock($online, $m->id, 4, 2);
+    InventoryTestHelpers::stock($storeOnly, $m->id, 50);
+    InventoryTestHelpers::stock($online, $l->id, 9);
+
+    $this->getJson('/api/storefront/v1/products?q=dam lua', $this->headers)->assertJsonPath('data.0.in_stock', true);
+    $this->getJson('/api/storefront/v1/products?q=linen', $this->headers)->assertJsonPath('data.0.in_stock', false);
+
+    $detail = $this->getJson('/api/storefront/v1/products/dam-lua-den', $this->headers)->assertOk()->assertJsonPath('data.in_stock', true);
+    $variants = collect($detail->json('data.variants'))->keyBy('sku');
+    expect($variants[$s->sku])->toMatchArray(['available' => true, 'low_stock' => false])
+        ->and($variants[$m->sku])->toMatchArray(['available' => true, 'low_stock' => true])
+        ->and($variants[$l->sku])->toMatchArray(['available' => false, 'low_stock' => false])
+        ->and(json_encode($detail->json()))->not->toContain('on_hand');
 });

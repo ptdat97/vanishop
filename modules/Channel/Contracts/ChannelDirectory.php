@@ -15,4 +15,11 @@ interface ChannelDirectory
      * @return list<array{id: int, code: string, name: string}>
      */
     public function forBrand(int $brandId): array;
+
+    /**
+     * Mọi kênh (Admin cấp Owner).
+     *
+     * @return list<array{id: int, code: string, name: string}>
+     */
+    public function all(): array;
 }

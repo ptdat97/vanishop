@@ -47,7 +47,7 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 |---|---|---|
 | GET | `/categories`, `/categories/{slug}` | Cây danh mục đang hiển thị của các brand trong kênh (**Implemented**) |
 | GET | `/products?q=&category=&collection=&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
-| GET | `/products/{slug}` | Chi tiết style: tên, mô tả, hướng dẫn bảo quản, SEO, breadcrumb, thuộc tính spec, màu + ảnh. **Implemented**. Variant, giá, ATS: slice 3–4 |
+| GET | `/products/{slug}` | Chi tiết style: tên, mô tả, hướng dẫn bảo quản, SEO, breadcrumb, thuộc tính spec, màu + ảnh. **Implemented**, gồm `variants[].price`, `variants[].available`, `variants[].low_stock`, `price` (khoảng giá), `in_stock`. Danh sách `/products` có `price` và `in_stock`. Không trả số tồn chính xác |
 | GET | `/catalog/products/{slug}/store-availability?province=` | Tồn theo cửa hàng (mức độ, không số chính xác) |
 | POST | `/carts` | Tạo giỏ |
 | GET/PATCH | `/carts/{id}` | Xem giỏ (kèm totals) |

@@ -17,7 +17,7 @@ Native Storefront (Blade SSR + Alpine, theme custom/theme/*)
 
 | Client | Cách dùng |
 |---|---|
-| **Tầng ghép** | Module `modules/Storefront` (**Implemented** cho API, [ADR-021](../19-adr/ADR-021-storefront-composition-module.md)): `ProductViews` gọi `CatalogReader` + `PriceResolver` |
+| **Tầng ghép** | Module `modules/Storefront` (**Implemented** cho API, [ADR-021](../19-adr/ADR-021-storefront-composition-module.md)): `ProductViews` gọi `CatalogReader` + `PriceResolver` + `AvailabilityReader` (chỉ công bố còn/hết/sắp hết, ngưỡng `VANI_LOW_STOCK_THRESHOLD`) |
 | **Native storefront** | Controller storefront gọi **cùng Query/Command** mà API dùng, trong cùng process (không tự gọi HTTP tới chính mình, rule R19). Blade chỉ render DTO |
 | **Headless** (Next.js, mobile, Zalo Mini App) | Gọi `/api/storefront/v1` ([api](../06-api/api.md)) |
 

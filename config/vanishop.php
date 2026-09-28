@@ -46,6 +46,15 @@ return [
         'strategy' => env('VANI_PRICING_STRATEGY', 'price_list_priority'),
     ],
 
+    'inventory' => [
+        // Extension point InventoryStrategy (ví dụ channel allocation). Chỉ được giảm ATS.
+        'strategy' => env('VANI_INVENTORY_STRATEGY', 'standard'),
+        // Storefront hiển thị "sắp hết hàng" khi ATS <= ngưỡng này (không lộ số tồn chính xác).
+        'low_stock_threshold' => (int) env('VANI_LOW_STOCK_THRESHOLD', 3),
+        // Thời gian giữ hàng cho đơn thanh toán online (giây).
+        'reservation_ttl' => (int) env('VANI_RESERVATION_TTL', 900),
+    ],
+
     'search' => [
         // database (mặc định, không cần hạ tầng) | meilisearch | provider do plugin đăng ký.
         'provider' => env('VANI_SEARCH_PROVIDER', 'database'),

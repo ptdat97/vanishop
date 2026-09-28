@@ -59,6 +59,8 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // ADR-016: READ COMMITTED — tránh gap lock gây deadlock khi giữ hàng song song.
+            'isolation_level' => env('DB_ISOLATION_LEVEL', 'READ COMMITTED'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

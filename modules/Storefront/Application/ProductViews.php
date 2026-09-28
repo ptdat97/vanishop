@@ -6,6 +6,7 @@ namespace Modules\Storefront\Application;
 
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
+use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
@@ -13,7 +14,8 @@ use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\MoneyFormatter;
 
 /**
- * Ghép dữ liệu sản phẩm cho storefront từ các module Core qua contract (Catalog + Pricing).
+ * Ghép dữ liệu sản phẩm cho storefront từ các module Core qua contract (Catalog + Pricing + Inventory).
+ * Storefront chỉ công bố còn/hết hàng và "sắp hết", không lộ số tồn chính xác.
  * Native storefront và Storefront API cùng dùng lớp này (ADR-009).
  */
 final class ProductViews
@@ -21,6 +23,7 @@ final class ProductViews
     public function __construct(
         private readonly CatalogReader $catalog,
         private readonly PriceResolver $prices,
+        private readonly AvailabilityReader $availability,
         private readonly CurrentContext $context,
         private readonly MoneyFormatter $money,
     ) {}
@@ -34,9 +37,11 @@ final class ProductViews
 
         $variantIds = array_merge(...array_map(fn (array $item): array => $item['variant_ids'], $listing['items'] ?: [['variant_ids' => []]]));
         $resolved = $this->resolve($variantIds, $now);
+        $stock = $this->stock(array_keys($resolved));
 
-        $listing['items'] = array_map(function (array $item) use ($resolved): array {
+        $listing['items'] = array_map(function (array $item) use ($resolved, $stock): array {
             $item['price'] = $this->range(array_values(array_intersect_key($resolved, array_flip($item['variant_ids']))));
+            $item['in_stock'] = array_sum(array_intersect_key($stock, array_flip($item['variant_ids']))) > 0;
             unset($item['variant_ids']);
 
             return $item;
@@ -56,12 +61,17 @@ final class ProductViews
         }
 
         $resolved = $this->resolve(array_column($product['variants'], 'id'), $now);
+        $stock = $this->stock(array_keys($resolved));
+        $lowStock = (int) config('vanishop.inventory.low_stock_threshold', 3);
 
         $product['variants'] = array_map(fn (array $variant): array => [
             ...$variant,
             'price' => isset($resolved[$variant['id']]) ? $this->price($resolved[$variant['id']]) : null,
+            'available' => ($stock[$variant['id']] ?? 0) > 0,
+            'low_stock' => ($stock[$variant['id']] ?? 0) > 0 && $stock[$variant['id']] <= $lowStock,
         ], $product['variants']);
         $product['price'] = $this->range(array_values($resolved));
+        $product['in_stock'] = array_sum($stock) > 0;
         unset($product['variant_ids']);
 
         return $product;
@@ -76,6 +86,19 @@ final class ProductViews
         $channelId = $this->context->channelId();
 
         return $variantIds === [] || $channelId === null ? [] : $this->prices->forVariants($variantIds, new PricingContext($channelId, $now));
+    }
+
+    /**
+     * ATS theo kênh hiện tại — chỉ cho variant đã có giá (chưa có giá thì không bán được).
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, int>
+     */
+    private function stock(array $variantIds): array
+    {
+        $channelId = $this->context->channelId();
+
+        return $variantIds === [] || $channelId === null ? [] : $this->availability->forChannel($variantIds, $channelId);
     }
 
     /**

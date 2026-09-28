@@ -19,5 +19,6 @@ return [
     'Extension',
     'Catalog',
     'Pricing',
+    'Inventory',
     'Storefront',
 ];

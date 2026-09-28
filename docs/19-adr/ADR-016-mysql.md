@@ -9,7 +9,7 @@ Cần khoá dòng, `SKIP LOCKED`, JSON, được hỗ trợ tốt bởi nhà cun
 Chọn engine cho production.
 
 ## Decision
-MySQL 8.4 LTS, InnoDB, `utf8mb4_0900_ai_ci`, `READ COMMITTED`. SQLite chỉ cho unit test. Bù trừ thiếu hụt so với PostgreSQL: index ghép thay partial index, generated column cho JSON, `search_text` thay `unaccent`, `number_sequences` thay sequence, migration idempotent vì DDL không transactional ([database](../07-database/database.md)).
+MySQL 8.4 LTS, InnoDB, `utf8mb4_0900_ai_ci`, `READ COMMITTED`. SQLite chỉ cho unit test. (`READ COMMITTED` đặt qua `isolation_level` của connection `mysql` trong `config/database.php`, biến `DB_ISOLATION_LEVEL`; concurrency test slice 4 xác nhận `REPEATABLE READ` gây deadlock khi giữ hàng song song.) Bù trừ thiếu hụt so với PostgreSQL: index ghép thay partial index, generated column cho JSON, `search_text` thay `unaccent`, `number_sequences` thay sequence, migration idempotent vì DDL không transactional ([database](../07-database/database.md)).
 
 ## Alternatives
 PostgreSQL 16 (partial index, unaccent, DDL transactional). Owner chọn MySQL.

@@ -12,7 +12,7 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 | `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `flat_rate`, `manual` | [fulfillment](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `priority_first_fit` | [fulfillment](../09-order/fulfillment.md) |
-| `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety) | [inventory](../08-inventory/inventory.md) |
+| `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `TaxCalculator` | `vani.tax.calculators` | Checkout | `vn_vat_inclusive` | [cart-checkout](../03-domains/cart-checkout.md) |
 | `TotalsCalculator` | `vani.totals.calculators` | Checkout | subtotal, promotion, shipping, tax, rounding | [cart-checkout](../03-domains/cart-checkout.md) |
@@ -38,9 +38,9 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 | `VariantDirectory` | Tra variant (theo mã style, theo id) cho module khác. **Implemented** | Catalog |
 | `ChannelDirectory` | Kênh bán của một brand. **Implemented** | Channel |
 | `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
-| `InventoryReservation` | `reserve`, `release`, `commit` | Inventory |
-| `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) | Inventory |
-| `AvailabilityReader` | ATS theo channel/location | Inventory |
+| `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
+| `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) — hiện là service nội bộ `StockAdjustmentService`, chưa công bố contract (chờ Integration) | Inventory |
+| `AvailabilityReader` | ATS theo channel (**Implemented**; theo location: chưa) | Inventory |
 | `OrderReader` | Đọc đơn (DTO snapshot) | Ordering |
 | `OrderTransitions` | Yêu cầu chuyển trạng thái qua state machine | Ordering |
 | `PaymentRecorder` | Ghi transaction, hoàn tiền | Payment |
