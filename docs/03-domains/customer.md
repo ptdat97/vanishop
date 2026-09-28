@@ -1,79 +1,65 @@
-# 07 — Khách hàng (core), Khuyến mãi & Loyalty (plugin)
+# Customer
 
-> **Core**: §1 tài khoản hợp nhất, địa chỉ, nhóm khách, consent; khung đăng nhập OTP; §4 khung thông báo + email. **Plugin**: §2 `Promotion`, §3 `Loyalty`, đăng nhập mạng xã hội (`SocialLogin`), SMS/ZNS (`SmsBrandname`, `ZaloZns`), `Wishlist`, `SizeAdvisor` — xem [17](17-danh-muc-plugin.md). Nội dung §2–§3 là **yêu cầu đầu vào cho plugin**.
+> Trạng thái: **Designed**. Khuyến mãi xem [promotion](promotion.md); loyalty là plugin ([spec](../05-plugin/specs/loyalty.md)).
 
-## 1. Khách hàng hợp nhất (Single Customer View)
+## 1. Trách nhiệm
 
-- **Một tài khoản dùng cho mọi brand** của Owner ("Vani ID"). Đăng nhập ở brand A thì dùng được ở brand B (SSO trong cùng Owner — cookie/phiên theo domain, đăng nhập lại 1 chạm qua token redirect).
-- **Định danh chính: số điện thoại** (chuẩn hoá E.164 `+84…`); email là phụ. Đăng nhập: mật khẩu và OTP (core, gửi qua `OtpSender` — email mặc định; SMS/ZNS do plugin); Google, Apple, Zalo qua plugin `SocialLogin`.
-- Khách vãng lai đặt hàng → tạo **customer profile ẩn** theo số điện thoại; khi khách đăng ký bằng số đó → hợp nhất lịch sử đơn (sau xác thực OTP).
-- **Hợp nhất trùng lặp** (merge) do CSKH thực hiện, có audit.
-- Dữ liệu khách từ POS/cửa hàng, sàn (nếu có SĐT) đổ về qua module Integration → cùng hồ sơ.
-
-### Hồ sơ khách
-
-| Nhóm | Trường |
+| Core (`modules/Customer`) | Plugin |
 |---|---|
-| Định danh | phone, email, họ tên, ngày sinh, giới tính |
-| Địa chỉ | sổ địa chỉ (theo chuẩn địa giới mới), địa chỉ mặc định |
-| Quan hệ brand | `customer_brand_profiles`: ngày đầu mua, tổng chi tiêu, số đơn, **consent marketing theo brand và theo kênh** (email/SMS/ZNS) |
-| Phân khúc | nhóm khách (VIP, nhân viên, KOL, sỉ), tag; segment động RFM (*plugin `AdvancedReports`*) |
-| Mở rộng | Tab hồ sơ do plugin thêm qua `customerProfileTabs()`: điểm thưởng, size profile, wishlist… |
+| Tài khoản hợp nhất toàn Owner ("Vani ID"), hồ sơ, sổ địa chỉ, nhóm khách, tag | Đăng nhập mạng xã hội (`vani.social-login`) |
+| Consent theo brand × kênh × mục đích | Gửi OTP qua SMS/ZNS (`vani.sms-brandname`, `vani.zalo-zns`) |
+| Xác thực: mật khẩu + OTP (khung `OtpSender`, mặc định gửi email) | Loyalty, wishlist, size advisor, phân khúc RFM |
+| Hợp nhất trùng lặp (merge) có audit | |
+| Quyền của chủ thể dữ liệu (xuất, rút consent, xoá/ẩn danh) | |
 
-## 2. Khuyến mãi *(plugin `Promotion`)*
+## 2. Invariant
 
-> Core chỉ cần: `TotalsCalculator`, `CheckoutValidator`, hook `vani.checkout.order.placing`, event `OrderCancelled` (hoàn lượt voucher), bảng giá `sale` của Pricing. Bảng của plugin dùng tiền tố `plg_promotion_`.
+| Invariant | Enforce |
+|---|---|
+| Một SĐT (E.164) ứng với tối đa một customer đang hoạt động | DB: `UNIQUE(phone)` trên bản ghi chưa merge/ẩn danh (cột `phone_active` generated = `IF(status='active', phone, NULL)` + unique) |
+| Email (nếu có) duy nhất, không phân biệt hoa thường | DB: unique trên `email_normalized` |
+| Consent marketing phải có nguồn và thời điểm; rút consent có hiệu lực ngay | App: `ConsentService`; ledger `customer_consent_events` append-only |
+| Merge không mất đơn: đơn của khách bị merge được chuyển sang khách đích | App: transaction `MergeCustomers` + event `CustomerMerged` |
 
-### 2.1 Mô hình: Điều kiện → Hành động
+## 3. Khách hàng hợp nhất
 
+- **Một tài khoản dùng cho mọi brand**. Đăng nhập ở brand A thì dùng được ở brand B: phiên theo domain, đăng nhập lại một chạm qua token redirect ngắn hạn.
+- **Định danh chính là số điện thoại** (chuẩn hoá E.164 `+84…`); email là phụ.
+- Khách vãng lai đặt hàng → tạo **profile ẩn** theo SĐT; khi khách đăng ký bằng số đó và xác thực OTP thì hợp nhất lịch sử đơn.
+- Dữ liệu khách từ POS, sàn TMĐT (nếu có SĐT) đổ về qua [Integration](../11-integration/integration-platform.md), vào cùng hồ sơ.
+
+| Nhóm dữ liệu | Trường |
+|---|---|
+| Định danh | phone, email, full_name, ngày sinh, giới tính |
+| Địa chỉ | Sổ địa chỉ theo địa giới 2 cấp ([vietnam-localization](vietnam-localization.md)) |
+| Quan hệ brand | `customer_brand_profiles`: ngày mua đầu, tổng chi tiêu, số đơn |
+| Consent | `customer_consents(brand_id, channel[email|sms|zns], purpose, granted_at, revoked_at, source)` |
+| Phân khúc | Nhóm khách (VIP, nhân viên, KOL, sỉ), tag |
+| Mở rộng | Tab hồ sơ do plugin thêm qua `customerProfileTabs()`; dữ liệu nhỏ trong `customers.meta.<plugin>` |
+
+## 4. Xác thực khách
+
+```php
+interface OtpSender
+{
+    public function channel(): string;                          // 'email', 'sms', 'zns'
+    public function isAvailable(CustomerContactData $contact): bool;
+    public function send(CustomerContactData $contact, string $code, OtpPurpose $purpose): void;
+}
 ```
-promotions(id, scope[owner|brand|channel], name, type, starts_at, ends_at, priority,
-           stacking[exclusive|combinable], budget_amount, usage_limit, usage_per_customer, status)
-promotion_conditions(promotion_id, type, operator, value_json)
-promotion_actions(promotion_id, type, value_json)
-vouchers(promotion_id, code, usage_limit, used_count, customer_id NULL, expires_at)
-```
 
-| Điều kiện | Hành động |
-|---|---|
-| Giá trị giỏ ≥ X | Giảm % / số tiền trên đơn (có trần tối đa) |
-| Số lượng ≥ N | Giảm % / số tiền trên dòng hàng đủ điều kiện |
-| Chứa sản phẩm/danh mục/bộ sưu tập | Mua X tặng Y (BxGy), mua 2 giảm thêm 10%… |
-| Nhóm khách / hạng thành viên | Freeship / giảm phí vận chuyển |
-| Đơn đầu tiên (theo brand hoặc Owner) | Tặng quà (gift variant, trừ tồn) |
-| Kênh, phương thức thanh toán, tỉnh/thành | Giá đồng giá (combo) |
-| Ngày sinh, khung giờ (flash sale) | |
+- OTP 6 số, TTL 5 phút, tối đa 5 lần thử; giới hạn tần suất theo SĐT + IP (chống SMS pumping, [security](../15-security/security.md)).
+- Storefront dùng session cookie; mobile/headless dùng Sanctum token.
 
-- **Chống chồng KM**: `exclusive` (không cộng), `combinable` (cộng dồn theo `priority`). Luôn có quy tắc "giá sau KM ≥ giá sàn" (brand cấu hình % tối đa).
-- **Voucher**: mã chung (`SALE50K`), mã riêng 1 lần (sinh hàng loạt cho CRM, đối tác), gắn khách cụ thể.
-- **Cross-brand** (scope `owner`): ví dụ "mua ở Lumière nhận voucher 100k dùng ở Urbanx". Chi phí KM phân bổ về brand/pháp nhân theo quy tắc kế toán.
-- Mọi đơn lưu **snapshot** KM đã áp dụng (xem Totals Pipeline ở [06](06-don-hang-thanh-toan-giao-hang.md)).
-- Tuân thủ quy định khuyến mãi VN: mức giảm tối đa, thời gian KM, đăng ký/thông báo với Sở Công Thương khi cần — xem [09](09-dac-thu-viet-nam.md).
+## 5. Giao tiếp khách hàng
 
-### 2.2 Hiệu năng
-- Promotion đang hoạt động của channel được cache (Redis), invalid khi thay đổi.
-- Usage voucher trừ trong transaction `PlaceOrder` với khoá dòng; flash sale dùng counter Redis.
+- Kênh: **Email (Core)**; SMS brandname, Zalo ZNS, Web push là plugin qua `NotificationChannel`.
+- Template **theo brand** (logo, màu, giọng văn), đa ngôn ngữ, gắn với domain event.
+- Tin giao dịch (xác nhận đơn, thanh toán, giao hàng, đổi trả, OTP) không cần consent marketing.
+- Tin marketing chỉ gửi khi có consent theo brand + kênh; mỗi tin có link huỷ đăng ký.
 
-## 3. Loyalty toàn tập đoàn *(plugin `Loyalty`)*
+## 6. Kiểm thử
 
-> Core chỉ cần: `TotalsCalculator` (đổi điểm), events đơn/đổi trả, `CustomerDirectory`, Integration (đơn POS), `customerProfileTabs()`. Bảng của plugin dùng tiền tố `plg_loyalty_`.
-
-| Thành phần | Thiết kế |
-|---|---|
-| **Hạng** | Member → Silver → Gold → Diamond, xét theo tổng chi tiêu 12 tháng **toàn tập đoàn** |
-| **Tích điểm** | Theo tỷ lệ cấu hình từng brand (ví dụ 1 điểm/10.000đ), nhân hệ số theo hạng/campaign |
-| **Trạng thái điểm** | `pending` khi đặt hàng → `available` khi hết hạn đổi trả → `expired` |
-| **Đổi điểm** | Trừ tiền khi checkout (1 điểm = N đồng) hoặc đổi voucher; giới hạn % giá trị đơn |
-| **Sổ điểm** | `loyalty_ledger` append-only (earn/redeem/expire/adjust/revert), số dư tính từ ledger (có bảng snapshot để đọc nhanh) |
-| **Omnichannel** | Mua tại cửa hàng (qua POS/ERP) cũng tích điểm nếu có SĐT |
-| **Chi phí** | Điểm đổi ở brand B nhưng tích ở brand A → báo cáo phân bổ chi phí liên brand |
-
-Quyền lợi hạng: freeship, giảm giá thành viên (bảng giá `member`), quà sinh nhật, early access bộ sưu tập mới.
-
-## 4. Giao tiếp khách hàng
-
-- Kênh: **Email (core)**; SMS brandname, **Zalo ZNS** (template được Zalo duyệt), Web push là plugin qua `NotificationChannel`.
-- Template **theo brand** (logo, màu, giọng văn), đa ngôn ngữ.
-- Thông báo giao dịch (không cần consent marketing): xác nhận đơn, thanh toán, giao hàng, đổi trả, OTP.
-- Thông báo marketing: chỉ gửi khi có consent theo brand + kênh; mỗi tin có link huỷ đăng ký.
-- Tích hợp CDP/Marketing automation (Phase 3) qua event stream.
+- Unit: chuẩn hoá SĐT (các dạng `09…`, `849…`, `+84 9…`).
+- Feature: khách vãng lai → đăng ký cùng SĐT → lịch sử đơn được gộp; merge chuyển đơn và phát `CustomerMerged`; rút consent chặn gửi marketing.
+- Security: brute-force OTP bị chặn.

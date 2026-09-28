@@ -29,9 +29,16 @@
 | Outbox / Inbox | Hộp thư đi / đến | Bảng lưu message tích hợp đảm bảo không mất và không trùng |
 | Canonical model | Mô hình chuẩn | Định dạng payload nội bộ có version, độc lập hệ thống ngoài |
 | Connector | Bộ kết nối | Plugin trong `custom/plugin/` chuyển đổi và gửi/nhận với một dịch vụ ngoài |
-| Core | Lõi | Phần trong `modules/`: kernel nền tảng + nguyên liệu thương mại + điểm mở rộng ([ADR-0009](adr/0009-core-toi-gian-nghiep-vu-bang-plugin.md)) |
-| Plugin chính thức | Official plugin | Plugin nghiệp vụ do đội VaniShop phát triển trong `custom/plugin/` ([17](17-danh-muc-plugin.md)) |
-| Điểm mở rộng | Extension point | Contract, domain event, hook, registry mà core cam kết cho plugin ([10 §6](10-hook-va-plugin.md)) |
+| Core / Commerce Kernel | Lõi | Phần trong `modules/`: commerce primitives, invariants, extension points ([commerce-kernel](../02-architecture/commerce-kernel.md)) |
+| Invariant | Bất biến | Quy tắc nghiệp vụ luôn đúng mà plugin không được phá (không oversell, chuyển trạng thái hợp lệ, tổng không âm…) |
+| Snapshot | Ảnh chụp | Bản sao dữ liệu tại thời điểm đặt hàng lưu trong đơn (tên, giá, thuế, địa chỉ…) |
+| System of Record (SoR) | Hệ thống lưu gốc | Nơi lưu bản gốc đầy đủ và lâu dài của dữ liệu |
+| System of Authority (SoA) | Hệ thống có quyền ghi | Hệ thống duy nhất được ghi một loại dữ liệu trong một scope |
+| Correlation ID | Mã truy vết | Mã đi xuyên request → command → event → outbox → hệ thống ngoài |
+| Seller | Người bán | Khái niệm của plugin marketplace, không có trong Core |
+| Attribution | Ghi nhận nguồn đơn | Liên kết đơn/dòng đơn với creator/campaign (plugin creator) |
+| Plugin chính thức | Official plugin | Plugin nghiệp vụ do đội VaniShop phát triển trong `custom/plugin/` ([plugin-catalog](../05-plugin/plugin-catalog.md)) |
+| Điểm mở rộng | Extension point | Contract, domain event, hook, registry mà Core cam kết cho plugin; có loại public và internal ([extension-point-catalog](../04-extension/extension-point-catalog.md)) |
 | Hook | Điểm mở rộng | Filter/action công khai cho plugin |
 | HĐĐT | Hoá đơn điện tử | Hoá đơn theo NĐ 123/2020 (sửa đổi NĐ 70/2025) |
 | ZNS | Zalo Notification Service | Tin nhắn giao dịch qua Zalo |

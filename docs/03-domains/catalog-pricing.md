@@ -1,4 +1,6 @@
-# 04 — Catalog & Giá
+# Catalog & Pricing
+
+> Trạng thái: **Designed**. Context: Catalog, Pricing ([bounded-contexts](../02-architecture/bounded-contexts.md)).
 
 ## 1. Mô hình sản phẩm thời trang
 
@@ -25,7 +27,7 @@ erDiagram
 | **Size Chart** | Bảng size theo brand + loại hàng (áo, quần, giày) | Bảng size áo nữ Lumière |
 
 - Sản phẩm **không có biến thể** (túi, phụ kiện) vẫn có 1 style color + 1 variant (`size = ONE`) để thống nhất luồng.
-- **Bundle / set** (set áo + quần): loại style đặc biệt, thành phần là variant; tồn = min(tồn thành phần). Phase 2.
+- **Bundle / set** (set áo + quần): loại style đặc biệt, thành phần là variant; tồn = min(tồn thành phần). Do plugin `vani.product-bundle` cung cấp (P3).
 - Trạng thái style: `draft` → `active` → `archived`; lịch hiển thị `published_from/to` theo channel.
 
 ## 2. Thuộc tính
@@ -56,9 +58,9 @@ erDiagram
 
 ## 5. Mã hàng & đồng bộ với ERP
 
-- **ERP là nguồn gốc của mã hàng** (`sku`, `barcode`, đơn vị, nhóm hàng, giá vốn) — xem ma trận ở [08](08-module-integration.md).
+- **ERP là nguồn gốc của mã hàng** (`sku`, `barcode`, đơn vị, nhóm hàng, giá vốn) — xem ma trận ở [integration-platform](../11-integration/integration-platform.md).
 - **VaniShop là nguồn gốc của nội dung bán hàng** (tên hiển thị, mô tả, ảnh, danh mục, SEO).
-- Luồng: ERP tạo item → Integration Hub nhận → tạo/cập nhật variant ở trạng thái `draft` + gom thành style theo `style_code` → merchandiser bổ sung nội dung → `active`.
+- Luồng: ERP tạo item → module Integration nhận → tạo/cập nhật variant ở trạng thái `draft` + gom thành style theo `style_code` → merchandiser bổ sung nội dung → `active`.
 - Bảng `external_references(entity_type, entity_id, system, external_id)` lưu ánh xạ mã giữa hệ thống.
 
 ## 6. Giá (Pricing)
@@ -74,7 +76,18 @@ channel_price_lists(channel_id, price_list_id, customer_group_id NULL)
 - **Giá niêm yết** (`compare_at_amount`) và **giá bán** (`amount`). Hiển thị "giảm x%" chỉ khi giá bán < giá niêm yết.
 - Giá tính theo **variant**; có thể nhập nhanh theo style/màu (áp cho mọi size).
 - Chọn giá: lọc các bảng giá hợp lệ của channel (theo thời gian, nhóm khách) → lấy theo `priority` → nếu nhiều, lấy **giá thấp nhất** (cấu hình được).
-- **Tiền lưu dạng số nguyên** (`bigint`, đơn vị đồng). Không dùng float. Value object `Money(amount, currency)`.
+- Tiền theo [money](../02-architecture/money.md).
+- Cách chọn giá là extension point:
+
+```php
+interface PricingStrategy
+{
+    public function code(): string;                     // mặc định 'price_list_priority'
+    public function resolve(VariantId $variant, PricingContext $ctx): ResolvedPrice;  // amount + compare_at + nguồn bảng giá
+}
+```
+
+Core chỉ dùng strategy được cấu hình cho channel; giá trả về vẫn là `Money` và được snapshot vào đơn.
 - Giá **đã bao gồm VAT** (thói quen B2C tại VN); lưu `tax_class` để tách thuế khi xuất hoá đơn.
 
 ### 6.2 Lịch sử giá & tuân thủ
@@ -87,7 +100,8 @@ channel_price_lists(channel_id, price_list_id, customer_group_id NULL)
 - Index Meilisearch **theo channel** (`products_<channel_code>`), document = style color (hoặc style, tuỳ brand cấu hình).
 - Trường tìm: tên (có dấu + không dấu), mã, màu, chất liệu, danh mục.
 - Facet: danh mục, color_family, size **còn hàng**, khoảng giá, chất liệu, bộ sưu tập.
-- Đồng bộ index qua event `StyleUpdated`, `PriceChanged`, `AvailabilityChanged` (debounce 5–30 giây).
+- Đồng bộ index qua event `ProductUpdated`, `PriceChanged`, `AvailabilityChanged` (debounce 5–30 giây).
+- Provider tìm kiếm là extension point `SearchProvider` (`index`, `remove`, `search(query, filters, facets)`); mặc định `database` (dev) và `meilisearch`; Algolia/Elasticsearch là plugin.
 - Từ đồng nghĩa tiếng Việt: "đầm = váy liền", "sơ mi = shirt", "quần bò = jeans".
 
 ## 8. Import / Export

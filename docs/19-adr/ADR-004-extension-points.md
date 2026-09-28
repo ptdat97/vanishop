@@ -1,24 +1,27 @@
-# 0009 — Core tối giản, nghiệp vụ bằng plugin
+# ADR-004 — Extension Points
 
-- Trạng thái: Accepted
-- Ngày: 2026-09-28
-- Người quyết định: Owner
+- Trạng thái: Accepted · Ngày: 2026-09-28
 
-## Bối cảnh
-Nhu cầu nghiệp vụ của từng brand và từng giai đoạn thay đổi liên tục: cổng thanh toán, hãng vận chuyển, luật khuyến mãi, loyalty, omnichannel, hoá đơn điện tử, sàn TMĐT, ERP/ODO. Nếu đưa hết vào lõi thì lõi sẽ phình to, khó test, và mỗi thay đổi nghiệp vụ đều chạm tới phần dùng chung.
+## Context
+Plugin cần can thiệp theo nhiều kiểu: thay implementation, phản ứng sự kiện, sửa dữ liệu trong flow, đăng ký UI/cấu hình.
 
-## Quyết định
-1. **Core** (`modules/`) chỉ chứa:
-   - **Kernel nền tảng**: tenancy đa brand, phân quyền, hook/plugin loader, integration framework, localization VN.
-   - **Nguyên liệu thương mại (commerce primitives)**: catalog, giá cơ bản, tồn kho + giữ hàng, khách hàng, giỏ + pipeline tính tiền, đơn hàng + máy trạng thái, khung thanh toán, khung fulfillment, đổi trả cơ bản, CMS cơ bản, khung thông báo.
-   - **Điểm mở rộng** được công bố và cam kết ổn định: contract, domain event, hook, registry. Danh sách ở [10 §6](../10-hook-va-plugin.md).
-   - **Bản cài mặc định tối thiểu** để bán được ngay: COD, chuyển khoản thủ công, phí ship cố định/theo bảng, vận đơn nhập tay, email.
-2. **Mọi tính năng nghiệp vụ còn lại là plugin** trong `custom/plugin/`, gồm cổng thanh toán, hãng VC, khuyến mãi, loyalty, omnichannel cửa hàng, HĐĐT, SMS/ZNS, sàn TMĐT, connector ERP/ODO, báo cáo nâng cao… Danh mục ở [17](../17-danh-muc-plugin.md).
-3. **Tiêu chí đưa một thứ vào core**: nó (a) là bất biến mà nhiều plugin cùng dựa vào (tiền, tồn, trạng thái đơn, phạm vi brand), **hoặc** (b) là điểm mở rộng, **hoặc** (c) thiếu nó thì không bán được đơn đầu tiên. Không thoả điều nào thì là plugin.
-4. Plugin **không được vượt qua bất biến của core**: mọi thay đổi trạng thái đơn đi qua state machine, mọi thay đổi tồn đi qua reservation/movement, mọi số tiền là `Money`, mọi dữ liệu có phạm vi brand.
+## Problem
+Nếu chỉ có một cơ chế (ví dụ chỉ hook) thì hoặc thiếu an toàn (hook sửa mọi thứ) hoặc thiếu linh hoạt.
 
-## Hệ quả
-- (+) Core nhỏ, ổn định, test kỹ; brand bật/tắt tính năng bằng cấu hình.
-- (+) Tài liệu và công sức tập trung vào core; plugin được viết song song, độc lập.
-- (−) Phải thiết kế điểm mở rộng cẩn thận ngay từ đầu. Thiếu điểm mở rộng thì plugin sẽ phải "hack" core, nên nếu thiếu thì bổ sung vào core chứ không vá trong plugin.
-- (−) Plugin chính thức cũng cần quản lý phiên bản và tương thích (`requires.vanishop`).
+## Decision
+- Bốn cơ chế: **Contract** (thay thế được), **Domain Event** (sau commit), **Hook** filter/action/validate/slot (trong flow, dựa trên `tormjens/eventy`, bọc bởi `Hook`), **Registry** (khai báo).
+- Có danh sách điểm **không được mở rộng** (state machine, công thức ATS, Money, scope, snapshot).
+- Phân biệt **public** (Contracts, Events, hook `visibility: public`) và **internal**.
+- **Compatibility policy** theo SemVer của Core; deprecation tối thiểu 1 minor.
+- Danh mục duy nhất: [extension-point-catalog](../04-extension/extension-point-catalog.md).
+
+## Alternatives
+- Chỉ dùng Laravel events: không sửa được dữ liệu trong flow.
+- Chỉ dùng hook kiểu WordPress: khó kiểm soát invariant và kiểu dữ liệu.
+
+## Consequences
+- (+) Mỗi nhu cầu có cơ chế phù hợp; invariant được bảo vệ.
+- (−) Phải duy trì registry hook, contract test và changelog extension.
+
+## Trade-offs
+Ít tự do hơn "hook mọi nơi", đổi lại nâng cấp an toàn và hành vi dự đoán được.

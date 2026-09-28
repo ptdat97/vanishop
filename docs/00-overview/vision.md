@@ -1,4 +1,6 @@
-# 00 — Tổng quan dự án
+# Vision
+
+> Trạng thái: **Designed**. Hiện trạng code: [status](status.md).
 
 ## 1. Bối cảnh
 
@@ -14,7 +16,20 @@ Hệ quả: khách hàng bị tách theo brand, tồn kho không nhìn được 
 
 > **Một nền tảng — nhiều thương hiệu — một khách hàng — một bức tranh tồn kho.**
 
-VaniShop là **Multi-Brand Commerce Platform** thuộc sở hữu của Owner:
+VaniShop là một **Commerce Platform / Commerce Kernel** thuộc sở hữu của Owner. Nó không chỉ là một website bán hàng. Cùng một nền tảng phải phục vụ được:
+
+| Mô hình | Cách đáp ứng |
+|---|---|
+| Single-brand, multi-brand, multi-channel | Core: Tenancy/Brand/Channel ([multi-brand](../12-multi-brand/multi-brand.md)) |
+| Fashion commerce | Core: mô hình Style → Màu → Size ([catalog-pricing](../03-domains/catalog-pricing.md)) |
+| Native storefront và headless/API-first | Core: Storefront Application + API ([storefront](../14-storefront/storefront.md)) |
+| ERP và tích hợp ngoài | Core: Integration platform; connector là plugin |
+| Marketplace/Seller, Creator/Affiliate | Plugin ([marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md)) |
+| Nghiệp vụ riêng của từng brand | Plugin qua Extension Points |
+
+> **Core cung cấp commerce primitives và business invariants. Capability đặc thù nghiệp vụ được xây ngoài Core qua Extension Points.** Mục tiêu cuối cùng: một Commerce Kernel ổn định, extension point rõ ràng, plugin phát triển độc lập, nâng cấp an toàn, không fork Core.
+
+Với Owner, điều đó có nghĩa là:
 
 - Mỗi brand có **storefront riêng** (domain, giao diện, catalog, giá, khuyến mãi riêng) nhưng chạy trên **một lõi chung**.
 - Owner có **tài khoản khách hàng dùng chung** (single customer view), **loyalty chung**, báo cáo hợp nhất.
@@ -34,12 +49,12 @@ VaniShop là **Multi-Brand Commerce Platform** thuộc sở hữu của Owner:
 | G6 | Hiệu năng | TTFB storefront P95 < 300 ms (cache nóng), LCP mobile < 2,5 s |
 | G7 | Pháp lý | Tuân thủ quy định TMĐT, bảo vệ dữ liệu cá nhân, hoá đơn điện tử |
 
-## 4. Không nằm trong phạm vi (Non-goals) — giai đoạn đầu
+## 4. Không nằm trong phạm vi (Non-goals) ở giai đoạn đầu
 
-- **Không** phải marketplace mở cho người bán bên ngoài (không multi-vendor, không SaaS cho khách hàng khác).
+- **Không** làm marketplace/multi-vendor trong giai đoạn đầu; kiến trúc cho phép thêm bằng plugin về sau. **Không** làm SaaS cho khách hàng khác (một bản cài đặt = một Owner).
 - **Không** thay thế ERP (kế toán, giá vốn, mua hàng, sản xuất) hay ODO (vận hành kho, pick–pack, điều phối vận chuyển).
-- **Không** tự xây POS ở Phase 1–2 (POS hiện hữu tích hợp qua API; POS riêng là tuỳ chọn Phase 4+).
-- **Không** hỗ trợ bán xuyên biên giới / đa tiền tệ ở Phase 1 (thiết kế schema vẫn chừa chỗ).
+- **Không** tự xây POS (POS hiện hữu tích hợp qua API; POS riêng là tuỳ chọn về sau).
+- **Không** hỗ trợ bán xuyên biên giới / đa tiền tệ ở giai đoạn đầu (thiết kế schema vẫn chừa chỗ).
 
 ## 5. Các bên liên quan (Stakeholders)
 
@@ -49,7 +64,7 @@ VaniShop là **Multi-Brand Commerce Platform** thuộc sở hữu của Owner:
 | Brand Manager | Tự chủ catalog, giá, khuyến mãi, nội dung của brand mình |
 | E-commerce / Merchandiser | Sắp xếp danh mục, bộ sưu tập, landing page, SEO |
 | CSKH | Tra cứu đơn/khách xuyên brand, xử lý đổi trả |
-| Vận hành kho / ODO | Nhận đơn chuẩn hoá, trả trạng thái giao nhận (vai trò ODO tạm hoãn — [ADR-0007](adr/0007-integration-module-odo-deferred.md)) |
+| Vận hành kho / ODO | Nhận đơn chuẩn hoá, trả trạng thái giao nhận (vai trò ODO tạm hoãn — [ADR-007](../19-adr/ADR-007-erp-integration.md)) |
 | Kế toán / ERP | Đối soát thanh toán, COD, hoá đơn điện tử, doanh thu theo pháp nhân |
 | Cửa hàng vật lý | Nhận đơn BOPIS, ship-from-store, đổi trả hàng mua online |
 | Khách hàng cuối | Mua nhanh trên mobile, thanh toán quen thuộc, theo dõi đơn, đổi trả dễ |
@@ -103,9 +118,10 @@ mindmap
 
 1. **Clean-room tuyệt đối**: không copy mã, schema, asset, file ngôn ngữ từ BeikeShop. Chỉ học ý tưởng ở mức khái niệm.
 2. **Brand-aware by default**: mọi dữ liệu nghiệp vụ đều trả lời được câu hỏi "thuộc brand nào / kênh nào / pháp nhân nào".
-3. **Nguồn dữ liệu gốc rõ ràng** (source of truth) cho từng loại dữ liệu — xem ma trận trong [08](08-module-integration.md).
+3. **Authority dữ liệu rõ ràng** cho từng loại dữ liệu, xem ma trận trong [erp-integration](../11-integration/erp-integration.md).
 4. **Tích hợp bất đồng bộ, idempotent**: không để lỗi ERP/ODO làm hỏng checkout.
-5. **Core tối giản, nghiệp vụ bằng plugin** ([ADR-0009](adr/0009-core-toi-gian-nghiep-vu-bang-plugin.md)): core chỉ gồm nền tảng + nguyên liệu thương mại + điểm mở rộng.
+5. **Core tối giản, nghiệp vụ bằng plugin** ([commerce-kernel](../02-architecture/commerce-kernel.md)): Core chỉ gồm primitives, invariants và extension points.
 6. **Modular monolith trước, microservice khi cần**: ranh giới module rõ ràng để tách sau này.
 7. **Mobile-first, Việt Nam-first**: VNĐ, tiếng Việt có dấu, COD, địa chỉ mới.
 8. **Test là một phần của tính năng**: không merge nếu thiếu test cho nghiệp vụ lõi.
+9. **Tài liệu phản ánh implementation**: trạng thái thật nằm ở [status](status.md). Các quy tắc bắt buộc nằm ở [architecture-rules](../01-principles/architecture-rules.md).

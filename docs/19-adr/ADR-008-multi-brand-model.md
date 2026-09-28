@@ -1,18 +1,26 @@
-# 0002 — Một database, cô lập theo phạm vi brand
+# ADR-008 — Multi-brand Model
 
-- Trạng thái: Accepted
-- Ngày: 2026-09-28
+- Trạng thái: Accepted · Ngày: 2026-09-28
 
-## Bối cảnh
-Owner sở hữu mọi brand, cần khách hàng hợp nhất, loyalty chung, tồn kho dùng chung location và báo cáo hợp nhất. Brand không phải khách hàng độc lập như mô hình SaaS.
+## Context
+Một Owner, nhiều pháp nhân, nhiều brand; kênh bán có thể một brand hoặc nhiều brand; khách hàng và tồn dùng chung.
 
-## Quyết định
-Dùng **một database**; bảng thuộc brand có `brand_id` (và `channel_id` khi cần). Cô lập bằng Policy (lớp 1) + global scope `BelongsToBrand` dựa trên `CurrentContext` (lớp 2). Thiếu context trong job/console → exception.
+## Problem
+Nhầm Brand với Channel/Store/Category làm hỏng mô hình giá, đơn, hoá đơn. Tách DB theo brand thì mất khách hàng hợp nhất.
 
-## Hệ quả
-- (+) Truy vấn xuyên brand đơn giản (khách, tồn, báo cáo).
-- (+) Thêm brand không cần hạ tầng mới.
-- (−) Rủi ro rò rỉ dữ liệu giữa brand nếu quên scope → bắt buộc test cô lập cho mọi model có phạm vi.
+## Decision
+- **Owner → Legal Entity → Brand**; **Channel** là thực thể độc lập chứa 1..N brand; **Location** thuộc pháp nhân, phục vụ 1..N brand.
+- Context riêng: Tenancy, Brand, Channel ([multi-brand](../12-multi-brand/multi-brand.md)).
+- **Một database**, cô lập bằng `brand_id` + Policy + global scope + `CurrentContext` bắt buộc.
+- Product/Cart/Checkout/Order/Payment vẫn thuộc Commerce Core; brand chỉ là phạm vi.
 
-## Phương án đã cân nhắc
-- **Database/schema riêng mỗi brand** (multi-tenant package): khó hợp nhất khách & tồn, migration nhân bản.
+## Alternatives
+- DB/schema riêng mỗi brand: khó hợp nhất khách, tồn, báo cáo; migration nhân bản.
+- Brand = Channel: không bán được nhiều brand trên một kênh.
+
+## Consequences
+- (+) Báo cáo hợp nhất; thêm brand không cần hạ tầng mới.
+- (−) Rủi ro rò rỉ dữ liệu nếu quên scope, nên bắt buộc có test cô lập.
+
+## Trade-offs
+Cô lập logic (không vật lý) đủ cho một Owner; không phù hợp SaaS nhiều khách hàng (không phải mục tiêu).

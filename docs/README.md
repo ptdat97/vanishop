@@ -1,68 +1,69 @@
-# VaniShop — Tài liệu dự án
+# VaniShop — Tài liệu kiến trúc
 
-> **VaniShop** là nền tảng **Multi-Brand Commerce** tự xây dựng từ đầu cho mô hình **1 Owner (1 tập đoàn) — nhiều thương hiệu thời trang**, bán trực tiếp đến người tiêu dùng (D2C), kết nối **ODO** (hệ thống vận hành / đơn hàng / giao nhận — vai trò đang tạm hoãn), **ERP**, cửa hàng vật lý và các kênh bán khác, tối ưu cho **thị trường Việt Nam**.
+> **VaniShop** là một **Commerce Kernel** xây trên Laravel theo kiểu Modular Monolith + DDD + API-first + Plugin Architecture. Nền tảng phục vụ single/multi-brand, multi-channel, fashion commerce, headless, ERP integration, và cho phép thêm nghiệp vụ mới (marketplace, creator, loyalty…) **bằng plugin, không fork Core**.
 >
-> Dự án **lấy cảm hứng về ý tưởng** từ BeikeShop v3.0.0.11 nhưng **viết lại 100% mã nguồn** theo quy trình clean-room — xem [01-clean-room-va-license.md](01-clean-room-va-license.md) trước khi viết dòng code đầu tiên.
+> Chủ sở hữu: 1 Owner (1 tập đoàn) với nhiều thương hiệu thời trang, thị trường Việt Nam. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
 
-## Trạng thái
+```text
+                    ┌─────────────────────┐
+                    │   Business Plugins  │  custom/plugin/*
+                    │ Payment · Shipping  │
+                    │ Promotion rules     │
+                    │ ERP · Marketplace   │
+                    │ Creator · Loyalty   │
+                    └──────────┬──────────┘
+                               │  Extension Points (Contract · Event · Hook · Registry)
+                    ┌──────────▼──────────┐
+                    │   Commerce Kernel   │  modules/*
+                    │ Catalog · Pricing   │
+                    │ Inventory · Cart    │
+                    │ Checkout · Order    │
+                    │ Payment · Fulfill.  │
+                    └──────────┬──────────┘
+                    ┌──────────▼──────────┐
+                    │   Infrastructure    │
+                    │ MySQL · Redis · S3  │
+                    │ Search · Ext. APIs  │
+                    └─────────────────────┘
+```
 
-| Mục | Giá trị |
+## Đọc gì trước
+
+1. [00-overview/status.md](00-overview/status.md): cái gì **đã có code**, cái gì mới chỉ là thiết kế.
+2. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.
+3. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): ranh giới giữa Core và Plugin.
+4. [04-extension/extension-model.md](04-extension/extension-model.md): khi nào dùng Contract, Event, Hook.
+
+## Cấu trúc
+
+| Thư mục | Tài liệu |
 |---|---|
-| Phiên bản tài liệu | 0.1 (bản khởi tạo) — 2026-09-28 |
-| Nền tảng code | Laravel 13, PHP 8.4, MySQL 8.4, Inertia + Vue 3 (Admin), Pest 5, Tailwind CSS 4, Vite 8, `tormjens/eventy` |
-| Cấu trúc | Module nghiệp vụ tại `modules/`, plugin tại `custom/plugin/` |
-| Giai đoạn | Phase 0 — Nền móng (xem [15-lo-trinh.md](15-lo-trinh.md)) |
+| **00-overview** | [vision](00-overview/vision.md) · [status](00-overview/status.md) · [glossary](00-overview/glossary.md) |
+| **01-principles** | [architecture-rules](01-principles/architecture-rules.md) · [clean-room-license](01-principles/clean-room-license.md) · [coding-conventions](01-principles/coding-conventions.md) |
+| **02-architecture** | [overview](02-architecture/overview.md) · [bounded-contexts](02-architecture/bounded-contexts.md) · [commerce-kernel](02-architecture/commerce-kernel.md) · [money](02-architecture/money.md) · [consistency](02-architecture/consistency.md) |
+| **03-domains** | [catalog-pricing](03-domains/catalog-pricing.md) · [customer](03-domains/customer.md) · [cart-checkout](03-domains/cart-checkout.md) · [promotion](03-domains/promotion.md) · [vietnam-localization](03-domains/vietnam-localization.md) |
+| **04-extension** | [extension-model](04-extension/extension-model.md) · [extension-point-catalog](04-extension/extension-point-catalog.md) |
+| **05-plugin** | [plugin-system](05-plugin/plugin-system.md) · [plugin-catalog](05-plugin/plugin-catalog.md) · specs: [loyalty](05-plugin/specs/loyalty.md), [store-omnichannel](05-plugin/specs/store-omnichannel.md) |
+| **06-api** | [api](06-api/api.md) |
+| **07-database** | [database](07-database/database.md) |
+| **08-inventory** | [inventory](08-inventory/inventory.md) |
+| **09-order** | [order](09-order/order.md) · [fulfillment](09-order/fulfillment.md) |
+| **10-payment** | [payment](10-payment/payment.md) |
+| **11-integration** | [integration-platform](11-integration/integration-platform.md) · [erp-integration](11-integration/erp-integration.md) |
+| **12-multi-brand** | [multi-brand](12-multi-brand/multi-brand.md) |
+| **13-marketplace** | [marketplace](13-marketplace/marketplace.md) · [creator-affiliate](13-marketplace/creator-affiliate.md) |
+| **14-storefront** | [storefront](14-storefront/storefront.md) |
+| **15-security** | [security](15-security/security.md) |
+| **16-observability** | [observability](16-observability/observability.md) |
+| **17-testing** | [testing](17-testing/testing.md) |
+| **18-operations** | [operations](18-operations/operations.md) |
+| **19-adr** | [Danh sách ADR](19-adr/README.md) |
+| **20-roadmap** | [roadmap](20-roadmap/roadmap.md) |
 
-## Mục lục
+## Quy ước tài liệu
 
-### Phần A — Định hướng
-| # | Tài liệu | Nội dung |
-|---|---|---|
-| 00 | [Tổng quan dự án](00-tong-quan-du-an.md) | Mục tiêu, phạm vi, các bên liên quan, chỉ số thành công |
-| 01 | [Clean-room & License](01-clean-room-va-license.md) | Quy tắc bắt buộc để không vi phạm license BeikeShop |
-| 02 | [Kiến trúc tổng thể](02-kien-truc-tong-the.md) | Modular monolith, bounded context, tech stack |
-| 03 | [Mô hình đa thương hiệu](03-mo-hinh-da-thuong-hieu.md) | Owner → Pháp nhân → Brand → Kênh bán → Kho/Cửa hàng |
-| 10 | [Hook, Plugin & Điểm mở rộng](10-hook-va-plugin.md) | **Hợp đồng giữa core và plugin** — đọc trước khi viết plugin |
-
-### Phần B — Core thương mại
-
-> Tài liệu tập trung vào **core**. Tính năng nghiệp vụ được đánh dấu *(plugin)* là yêu cầu đầu vào cho plugin — danh mục ở [17](17-danh-muc-plugin.md).
-
-| # | Tài liệu | Nội dung |
-|---|---|---|
-| 04 | [Catalog & Giá](04-catalog-va-gia.md) | Style/Variant, ma trận màu–size, thuộc tính, bảng giá |
-| 05 | [Tồn kho & Cửa hàng vật lý](05-ton-kho-va-cua-hang.md) | Location, giữ hàng, ATS, BOPIS, ship-from-store |
-| 06 | [Đơn hàng, Thanh toán, Giao hàng, Đổi trả](06-don-hang-thanh-toan-giao-hang.md) | Máy trạng thái đa chiều, COD, đối soát |
-| 07 | [Khách hàng (core), Khuyến mãi & Loyalty (plugin)](07-khach-hang-khuyen-mai-loyalty.md) | Tài khoản dùng chung toàn tập đoàn; yêu cầu cho plugin KM/loyalty |
-
-### Phần C — Tích hợp & Việt Nam
-| # | Tài liệu | Nội dung |
-|---|---|---|
-| 08 | [Module Integration & API tích hợp](08-module-integration.md) | Integration API, webhook, connector, outbox/inbox, nguồn dữ liệu gốc (ODO tạm hoãn) |
-| 09 | [Đặc thù thị trường Việt Nam](09-dac-thu-viet-nam.md) | Địa giới hành chính, VNĐ, hoá đơn điện tử, pháp lý |
-
-### Phần D — Kỹ thuật
-| # | Tài liệu | Nội dung |
-|---|---|---|
-| 11 | [Cơ sở dữ liệu](11-co-so-du-lieu.md) | ERD, quy ước schema, danh sách bảng |
-| 12 | [API](12-api.md) | Storefront API, Admin API, Integration API |
-| 13 | [Bảo mật & Phân quyền](13-bao-mat-phan-quyen.md) | RBAC theo phạm vi brand, audit, dữ liệu cá nhân |
-| 14 | [Hạ tầng & Vận hành](14-ha-tang-van-hanh.md) | Môi trường, queue, cache, search, giám sát |
-| 15 | [Lộ trình](15-lo-trinh.md) | Các phase, milestone, tiêu chí hoàn thành |
-| 16 | [Quy ước code & Kiểm thử](16-quy-uoc-code-kiem-thu.md) | Cấu trúc thư mục, naming, Pest, review |
-
-### Phần E — Plugin
-| # | Tài liệu | Nội dung |
-|---|---|---|
-| 17 | [Danh mục plugin nghiệp vụ](17-danh-muc-plugin.md) | Thanh toán, vận chuyển, KM, loyalty, omnichannel, HĐĐT, sàn, ERP… và điểm mở rộng mỗi plugin dùng |
-
-### Phụ lục
-- [Thuật ngữ](glossary.md)
-- [ADR — Architecture Decision Records](adr/README.md)
-
-## Cách dùng bộ tài liệu
-
-1. **Người mới**: đọc 00 → 01 → 02 → 03, sau đó đọc tài liệu domain liên quan đến việc mình làm.
-2. **Trước khi code một module**: đọc tài liệu domain + [16](16-quy-uoc-code-kiem-thu.md) + checklist clean-room trong [01](01-clean-room-va-license.md).
-3. **Khi thay đổi quyết định kiến trúc**: tạo ADR mới trong [adr/](adr/README.md), không sửa ADR cũ (chỉ đánh dấu *Superseded*).
-4. Tài liệu là "living docs": cập nhật cùng PR với code thay đổi hành vi.
+- Mỗi tài liệu mở đầu bằng dòng **Trạng thái**, lấy một trong bốn giá trị: `Implemented` · `Partially Implemented` · `Designed` · `Planned`. Trạng thái tổng hợp nằm ở [status.md](00-overview/status.md). **Không ghi `Implemented` khi code chưa tồn tại.**
+- Mỗi chủ đề chỉ có **một tài liệu gốc**, các nơi khác dẫn link đến đó, không chép lại.
+- Quyết định kiến trúc được ghi bằng ADR ([19-adr](19-adr/README.md)). Thay đổi quyết định thì tạo ADR mới, ADR cũ đánh dấu *Superseded*.
+- Tài liệu được cập nhật **trong cùng PR** với code làm thay đổi hành vi.
+- Tài liệu kiến trúc đã đủ để bắt đầu code. Từ đây ưu tiên **implementation theo vertical slice** ([roadmap](20-roadmap/roadmap.md)); chỉ mở rộng tài liệu khi code cần.

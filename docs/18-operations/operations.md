@@ -1,4 +1,6 @@
-# 14 — Hạ tầng & Vận hành
+# Operations
+
+> Trạng thái: **Designed**. Hạ tầng tại Việt Nam ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Giám sát: [observability](../16-observability/observability.md). CI: [testing §8](../17-testing/testing.md).
 
 ## 1. Môi trường
 
@@ -28,7 +30,7 @@ flowchart TB
     Q1 --> EXT[[ERP / Cổng TT / Hãng VC / đối tác webhook]]
 ```
 
-- **Toàn bộ hạ tầng và dữ liệu đặt tại Việt Nam** từ Phase 0 ([ADR-0008](adr/0008-ha-tang-tai-viet-nam.md)): Viettel IDC, FPT Cloud, VNG Cloud, BizFly Cloud hoặc CMC Cloud (Owner chọn trực tiếp). Ưu tiên managed MySQL + object storage S3-compatible; Redis/Meilisearch tự vận hành nếu không có managed.
+- **Toàn bộ hạ tầng và dữ liệu đặt tại Việt Nam** từ slice Foundation ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)): Viettel IDC, FPT Cloud, VNG Cloud, BizFly Cloud hoặc CMC Cloud (Owner chọn trực tiếp). Ưu tiên managed MySQL + object storage S3-compatible; Redis/Meilisearch tự vận hành nếu không có managed.
 - Triển khai bằng container (Docker), hạ tầng mô tả bằng mã (Terraform/Ansible) để có thể đổi nhà cung cấp.
 - Backup khác vùng: 2 DC (Hà Nội ↔ TP.HCM).
 - Web node **stateless**; session/cache ở Redis; file ở object storage.
@@ -65,18 +67,11 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 
 ## 6. Giám sát & cảnh báo
 
-| Loại | Công cụ | Chỉ số chính |
-|---|---|---|
-| APM & lỗi | Laravel Nightwatch/Pulse, Sentry | Lỗi mới, P95 latency, slow query |
-| Hạ tầng | Prometheus/Grafana hoặc dịch vụ cloud | CPU, RAM, kết nối DB, dung lượng |
-| Nghiệp vụ | Dashboard tuỳ biến | Đơn/phút theo brand, tỉ lệ thanh toán thành công theo cổng, tỉ lệ checkout lỗi, backlog outbox, độ trễ tồn |
-| Uptime | Synthetic check | Trang chủ, PDP, thêm giỏ, checkout sandbox mỗi 5 phút |
-
-Cảnh báo khẩn (gọi on-call): checkout lỗi > 2% trong 5 phút, tỉ lệ thanh toán thành công giảm > 30%, outbox dead > 0 cho `order.created`, DB replica lag > 30s.
+Xem [observability](../16-observability/observability.md) (log, metric, tracing, ngưỡng cảnh báo). Thêm synthetic check mỗi 5 phút cho: trang chủ, PDP, thêm giỏ, checkout COD trên brand sandbox.
 
 ## 7. Triển khai (CI/CD)
 
-1. PR → CI: Pint, Larastan, Pest (unit + feature), kiểm tra clean-room & license ([01](01-clean-room-va-license.md)), build asset.
+1. PR → CI theo [testing §8](../17-testing/testing.md), build asset.
 2. Merge `main` → deploy staging tự động → smoke test.
 3. Release tag → deploy production **zero-downtime** (migrate an toàn, `php artisan optimize`, reload worker).
 4. Feature flag (Laravel Pennant) cho tính năng lớn, bật theo brand.
@@ -94,4 +89,5 @@ Cảnh báo khẩn (gọi on-call): checkout lỗi > 2% trong 5 phút, tỉ lệ
 - Pre-warm cache, tăng worker, tạm dừng job `bulk`.
 - Flash sale: hàng đợi phòng chờ (waiting room) ở CDN nếu cần; counter tồn Redis.
 - Đóng băng deploy (code freeze) 48h trước và trong sự kiện.
+- **Safe mode plugin** (`VANI_PLUGINS_SAFE_MODE=true`) khi nghi plugin gây sự cố ([plugin-system §8](../05-plugin/plugin-system.md)).
 - Runbook sự cố: cổng thanh toán lỗi (ẩn phương thức, ưu tiên COD), đối tác tích hợp/ERP chậm (outbox giữ message, không ảnh hưởng checkout), sự cố dữ liệu cá nhân.

@@ -1,4 +1,6 @@
-# 01 — Clean-room & License
+# Clean-room & License
+
+> Trạng thái: **Implemented** (quy trình; mã nguồn BeikeShop đã xoá khỏi máy phát triển) · kiểm tra tự động trong CI: **Designed**.
 
 > Tài liệu này là **bắt buộc** với mọi thành viên, kể cả khi dùng AI agent sinh code. Đây là hướng dẫn kỹ thuật–quy trình, **không phải tư vấn pháp lý**; trước khi phát hành thương mại, Owner nên nhờ luật sư sở hữu trí tuệ rà soát.
 
@@ -51,10 +53,10 @@ flowchart LR
 | Chủ đề | Hướng của VaniShop |
 |---|---|
 | Mô hình | Multi-brand, multi-legal-entity, omnichannel (BeikeShop hướng 1 cửa hàng) |
-| Tổ chức code | Modular monolith theo bounded context trong `modules/*`, plugin trong `custom/plugin/*` (xem [02](02-kien-truc-tong-the.md)) |
-| Trạng thái đơn | Tách **4 chiều** trạng thái: đơn, thanh toán, fulfillment, đổi trả (xem [06](06-don-hang-thanh-toan-giao-hang.md)) |
+| Tổ chức code | Modular monolith theo bounded context trong `modules/*`, plugin trong `custom/plugin/*` (xem [overview](../02-architecture/overview.md)) |
+| Trạng thái đơn | Tách **4 chiều** trạng thái: đơn, thanh toán, fulfillment, đổi trả (xem [order](../09-order/order.md)) |
 | Tồn kho | Đa location + reservation + ATS, không trừ tồn trực tiếp trên SKU |
-| Hook | Quy ước tên riêng `vani.<module>.<entity>.<moment>`, contract có kiểu (xem [10](10-hook-va-plugin.md)) |
+| Hook | Quy ước tên riêng `vani.<module>.<entity>.<moment>`, contract có kiểu (xem [extension-model](../04-extension/extension-model.md)) |
 | Plugin | Là Laravel package / module với manifest `vanishop.json` và `ServiceProvider`, capability khai báo |
 | Tính tổng tiền | Pipeline "adjustments" có thứ tự, lưu vết từng dòng khuyến mãi |
 | Đa ngôn ngữ nội dung | Bảng `*_translations` + locale mặc định `vi`, (không dùng cấu trúc `*_descriptions`) |

@@ -1,99 +1,102 @@
-# 03 — Mô hình đa thương hiệu
+# Multi-brand & Multi-channel
 
-## 1. Cây tổ chức
+> Trạng thái: **Designed**. Quyết định: [ADR-008](../19-adr/ADR-008-multi-brand-model.md).
+
+## 1. Mô hình
+
+```text
+Owner (1 bản cài đặt)
+  └── Legal Entity (pháp nhân, MST)       ← xuất hoá đơn, nhận tiền
+        └── Brand (thương hiệu)            ← danh tính, sở hữu sản phẩm
+Channel (kênh bán)                         ← điểm bán; chứa 1..N brand
+Location (kho/cửa hàng)                    ← thuộc pháp nhân; phục vụ 1..N brand
+```
+
+**Không đồng nhất các khái niệm:**
+
+| Không phải | Vì |
+|---|---|
+| Brand = Channel | Một brand bán trên nhiều kênh (web riêng, sàn, POS); một kênh có thể bán nhiều brand |
+| Brand = Category | Category là cách sắp xếp sản phẩm trong một kênh; brand là chủ sở hữu sản phẩm |
+| Brand = Store/Location | Location là nơi để hàng, có thể dùng chung cho nhiều brand |
 
 ```mermaid
-flowchart TD
-    O[Owner / Tập đoàn<br/>1 bản cài đặt] --> LE1[Pháp nhân A<br/>MST 0101234567]
-    O --> LE2[Pháp nhân B<br/>MST 0309876543]
-    LE1 --> B1[Brand: Lumière<br/>thời trang công sở]
-    LE1 --> B2[Brand: Kiddo<br/>thời trang trẻ em]
-    LE2 --> B3[Brand: Urbanx<br/>streetwear]
-    B1 --> C1[Kênh: Web lumiere.vn]
-    B1 --> C2[Kênh: Shopee Mall Lumière]
-    B1 --> C3[Kênh: POS cửa hàng]
-    B3 --> C4[Kênh: Web urbanx.vn]
-    O --> C5[Kênh: Web tập đoàn<br/>house-of-brands]
-    O --> L[Locations dùng chung<br/>Kho tổng HN, Kho HCM, Cửa hàng...]
+flowchart LR
+    LE1[Pháp nhân A] --> BA[Brand Lumière] & BB[Brand Kiddo]
+    LE2[Pháp nhân B] --> BC[Brand Urbanx]
+    C1[Channel lumiere.vn] --> BA
+    C2[Channel vani.vn<br/>house-of-brands] --> BA & BB & BC
+    C3[Channel Shopee Mall Urbanx] --> BC
 ```
 
-| Thực thể | Định nghĩa | Ví dụ |
-|---|---|---|
-| **Owner** | Chủ sở hữu duy nhất của hệ thống. Chỉ có 1 Owner/bản cài đặt (không multi-tenant SaaS) | Tập đoàn Vani |
-| **Legal Entity (Pháp nhân)** | Công ty có MST riêng, xuất hoá đơn, nhận tiền | Công ty TNHH Vani Fashion |
-| **Brand** | Thương hiệu: nhận diện, catalog, chính sách riêng. Thuộc 1 pháp nhân | Lumière |
-| **Channel (Kênh bán)** | Một điểm bán cụ thể: website, sàn, POS, app. Gắn 1 brand **hoặc** là kênh tập đoàn (đa brand) | `lumiere-web`, `group-web` |
-| **Location** | Kho hoặc cửa hàng giữ hàng; có thể dùng chung giữa các brand | `WH-HN-01`, `ST-HCM-Q1` |
+## 2. Context sở hữu
 
-> Vì sao có **Pháp nhân**: tại VN các brand trong cùng tập đoàn thường thuộc công ty khác nhau. Doanh thu, hoá đơn điện tử, tài khoản nhận tiền cổng thanh toán, hợp đồng hãng vận chuyển đều gắn với pháp nhân.
-
-## 2. Chiến lược cô lập dữ liệu
-
-**Một database, cô lập bằng cột phạm vi** (`brand_id`, `channel_id`) + global scope — không tách DB theo brand. Lý do trong [ADR-0002](adr/0002-single-database-brand-scope.md): Owner cần báo cáo và khách hàng hợp nhất; brand không phải khách hàng độc lập.
-
-| Loại dữ liệu | Phạm vi | Ghi chú |
-|---|---|---|
-| Khách hàng, tài khoản, loyalty | **Owner** (dùng chung) | Consent marketing tách theo brand |
-| Location, tồn kho | **Owner** | Mỗi location khai báo brand được phép bán từ nó |
-| Style/Variant (sản phẩm) | **Brand** | 1 style thuộc đúng 1 brand |
-| Danh mục, bộ sưu tập, CMS, menu | **Brand** (hoặc Channel) | Kênh tập đoàn có danh mục riêng |
-| Bảng giá | **Brand**, gán cho **Channel** | Giá web và giá sàn có thể khác |
-| Khuyến mãi | **Brand** / **Channel** / **Owner** (cross-brand) | |
-| Đơn hàng | **Channel** (suy ra brand, pháp nhân) | Kênh đa brand → tách đơn theo brand (xem 5) |
-| Cấu hình (setting) | Kế thừa **Owner → Brand → Channel** | |
-| Nhân viên, vai trò | **Owner**, gán quyền theo phạm vi | Xem [13](13-bao-mat-phan-quyen.md) |
-
-### Thực thi trong code
-
-- Trait `BelongsToBrand` thêm **global scope** lọc theo `CurrentContext::brandIds()`.
-  - Storefront: 1 brand của kênh hiện tại (hoặc tập brand của kênh tập đoàn).
-  - Admin: các brand mà nhân viên được phân quyền.
-  - Job/console: phải **chỉ định rõ** context (`CurrentContext::runAs($brand, fn () => ...)`); thiếu context → ném exception, **không** mặc định "tất cả".
-- Test bắt buộc cho mỗi model có phạm vi brand: "nhân viên brand A không đọc/ghi được dữ liệu brand B".
-
-## 3. Cấu hình kế thừa
-
-```
-settings(scope_type, scope_id, key, value)
-  scope_type ∈ {owner, legal_entity, brand, channel}
-```
-
-Đọc `setting('checkout.cod.max_amount')` sẽ tìm lần lượt: channel → brand → legal_entity → owner → giá trị mặc định trong `config/vanishop.php`. Các nhóm cấu hình chính:
-
-- `store.*`: tên, logo, hotline, địa chỉ, giờ mở cửa.
-- `checkout.*`: cho phép khách vãng lai, COD, ngưỡng miễn phí vận chuyển.
-- `payment.<method>.*`: bật/tắt, credential (mã hoá), pháp nhân nhận tiền.
-- `shipping.<carrier>.*`: tài khoản hãng theo pháp nhân.
-- `seo.*`, `tracking.*` (GA4, Meta Pixel, TikTok Pixel theo brand).
-- `invoice.*`: nhà cung cấp hoá đơn điện tử, mẫu số/ký hiệu theo pháp nhân.
-
-## 4. Domain, theme và ngôn ngữ
-
-| Mục | Thiết kế |
+| Context | Sở hữu |
 |---|---|
-| Domain | Bảng `channel_domains` (domain, channel, is_primary, redirect). Hỗ trợ cả `lumiere.vn` và `shop.vani.vn/lumiere` (path prefix) |
-| Theme | Mỗi channel chọn 1 theme; theme = thư mục view + token thiết kế (màu, font, bo góc) + block page builder. Theme cơ sở `vani-base`, theme brand ghi đè có chọn lọc |
-| Ngôn ngữ | Mặc định `vi`; `en` tuỳ brand. Nội dung dịch lưu bảng `*_translations` |
-| Tiền tệ | `VND` (Phase 1). Schema có `currency_code` để mở rộng |
-| SEO | Canonical theo domain chính; sitemap, robots, schema.org Product/Offer riêng từng channel |
+| **Tenancy** | Owner, Legal Entity, settings kế thừa `owner → legal_entity → brand → channel` |
+| **Brand** | Danh tính (tên, slug, logo, favicon), **theme tokens** (màu, typography, radius, spacing), cấu hình brand (chính sách đổi trả, rounding step, giới hạn KM), sở hữu sản phẩm, quyền theo brand |
+| **Channel** | Loại kênh (`web`, `marketplace`, `pos`, `app`, `social`), domain, locale, tiền tệ, danh sách brand trong kênh (`channel_brands`), bảng giá áp dụng, location phục vụ, theme sử dụng |
 
-## 5. Kênh tập đoàn (house-of-brands)
+Theo sở hữu dữ liệu: **Collections, merchandising, content** thuộc Catalog/Content nhưng có phạm vi brand hoặc channel. **Product, Cart, Checkout, Order, Payment vẫn thuộc Commerce Core**; Brand chỉ là thuộc tính phạm vi (`brand_id`) trên chúng.
 
-Website chung của tập đoàn bán nhiều brand trong 1 giỏ:
+## 3. Phạm vi dữ liệu
 
-- Giỏ hàng chứa dòng hàng nhiều brand; checkout 1 lần, **thanh toán 1 lần**.
-- Khi đặt hàng: tạo 1 **Order Group** (mã hiển thị cho khách) → tách thành **N đơn con theo brand/pháp nhân** (mỗi đơn con có hoá đơn, fulfillment, đối soát riêng).
-- Khuyến mãi cross-brand phân bổ (allocate) giá trị giảm về từng đơn con theo tỷ lệ doanh thu.
-- Một giao dịch thanh toán → ghi nhận phân bổ cho từng pháp nhân (cần thoả thuận thu hộ nội bộ; kế toán xác nhận trước khi bật tính năng).
+| Dữ liệu | Phạm vi |
+|---|---|
+| Customer, loyalty, location, tồn | Owner (dùng chung) |
+| Style/Variant | Brand (1 style thuộc đúng 1 brand) |
+| Danh mục, bộ sưu tập, CMS, menu | Brand hoặc Channel |
+| Bảng giá | Brand, gán cho Channel |
+| Khuyến mãi | Owner / Brand / Channel |
+| Đơn hàng | Channel + Brand + Legal Entity (kênh đa brand thì tách đơn con theo brand) |
+| Nhân viên | Owner; quyền gán theo scope ([security](../15-security/security.md)) |
 
-> Phase 1 chỉ làm website **theo brand**. Kênh tập đoàn là Phase 3 nhưng schema (Order Group, allocation) có từ đầu.
+### Cơ chế cô lập
 
-## 6. Quy trình thêm brand mới (mục tiêu ≤ 5 ngày)
+1. **Policy** (lớp 1): mọi thao tác Admin/API kiểm tra quyền theo scope của bản ghi.
+2. **Global scope `BelongsToBrand`** (lớp 2): lọc theo `CurrentContext::brandIds()`.
+   - Storefront: các brand của channel hiện tại.
+   - Admin: các brand nhân viên được phân quyền.
+   - Job/CLI: bắt buộc `CurrentContext::runAs(...)`; thiếu context → exception, **không** mặc định "tất cả".
+3. **Test bắt buộc**: nhân viên brand A không đọc/ghi được dữ liệu brand B.
 
-1. Tạo pháp nhân (nếu mới) + brand + channel web trong Admin.
-2. Gắn domain, SSL (tự động qua Let's Encrypt / CDN).
-3. Chọn theme cơ sở, cấu hình token thiết kế, logo.
-4. Khai báo location được phép bán, bảng giá, phương thức thanh toán/vận chuyển.
-5. Import catalog từ ERP (mapping mã hàng) hoặc file Excel mẫu.
-6. Cấu hình Integration Client/connector cho brand (ERP, ODO khi có; mapping kho, mã kênh).
-7. Chạy checklist go-live tự động (`php artisan vani:brand:preflight {brand}`): thiếu cấu hình nào sẽ báo đỏ.
+```php
+final class CurrentContext   // scoped singleton theo request/job
+{
+    public function channel(): ?ChannelData;
+    /** @return list<int> */
+    public function brandIds(): array;
+    public function locale(): string;
+    public function actor(): Actor;                  // customer | staff | integration client | system
+    public function runAs(Scope $scope, Closure $fn): mixed;
+}
+```
+
+`ResolveChannel` middleware: host (+ path prefix) → `channel_domains` → channel → brands, locale, currency, price lists, theme → `CurrentContext`. Không khớp domain nào → 404.
+
+## 4. Kênh đa brand (house-of-brands)
+
+- Giỏ chứa nhiều brand; checkout một lần, thanh toán một lần.
+- `PlaceOrder` tạo `order_group` + **N đơn con theo brand/pháp nhân** trong cùng transaction; mỗi đơn con có fulfillment, hoá đơn, đối soát riêng.
+- Khuyến mãi cấp group phân bổ về đơn con theo tỷ lệ giá trị (`Money::allocate`).
+- Một payment trả cho cả group được ghi nhận phân bổ theo pháp nhân. Việc thu hộ nội bộ giữa các pháp nhân cần kế toán xác nhận trước khi bật.
+
+## 5. Theme và domain
+
+- Không fork storefront cho từng brand. Brand tuỳ biến qua **theme tokens + brand config + collection config + content + layout/blocks** ([storefront](../14-storefront/storefront.md)).
+- `channel_domains(host, path_prefix, channel_id, is_primary)`; SSL tự động qua CDN; canonical theo domain chính.
+
+## 6. Thêm brand mới
+
+1. Tạo pháp nhân (nếu mới), brand, channel; gắn domain.
+2. Chọn theme cơ sở, đặt theme tokens, logo.
+3. Gán location, bảng giá, bật plugin thanh toán/vận chuyển theo scope brand.
+4. Import catalog (ERP hoặc Excel mẫu).
+5. `php artisan vani:brand:preflight {brand}`: kiểm tra cấu hình thiếu (thông tin pháp lý website, phương thức thanh toán, bảng phí…).
+
+Mục tiêu: ≤ 5 ngày làm việc, không cần deploy code.
+
+## 7. Kiểm thử
+
+- Feature: cô lập dữ liệu giữa brand ở mọi model có phạm vi; `ResolveChannel` với domain/path prefix; job không có context bị từ chối.
+- Feature: checkout kênh đa brand tạo đúng N đơn con, tổng phân bổ bằng tổng group.

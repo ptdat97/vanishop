@@ -1,192 +1,159 @@
-# 08 — Module Integration & API tích hợp
+# Integration Platform
 
-> **Quyết định 2026-09-28** ([ADR-0007](adr/0007-integration-module-odo-deferred.md)): vai trò cụ thể của **ODO** (chọn kho? tạo vận đơn? đối soát COD?) **tạm hoãn**. Thay vào đó VaniShop xây **module `Integration`** làm cổng tích hợp chung: cung cấp **API chuẩn** và **khung connector** để kết nối bất kỳ dịch vụ nào — ODO, ERP, POS, sàn TMĐT, hãng vận chuyển, cổng thanh toán, hoá đơn điện tử — mà **không sửa lõi**.
->
-> Hệ quả: trong lúc chưa có ODO, **VaniShop tự đảm nhiệm fulfillment** (phân bổ kho, đặt vận đơn qua plugin hãng VC — xem [05](05-ton-kho-va-cua-hang.md), [06](06-don-hang-thanh-toan-giao-hang.md)). Khi ODO được chốt, chỉ cần bật connector/đối tác API và đổi cấu hình `fulfillment.mode`.
+> Trạng thái: **Designed**. Quyết định: [ADR-005](../19-adr/ADR-005-event-driven-integration.md), [ADR-013](../19-adr/ADR-013-outbox-inbox.md), [ADR-014](../19-adr/ADR-014-idempotency.md). ERP: [erp-integration](erp-integration.md).
 
-## 1. Mục tiêu module
+Module `modules/Integration` là **platform** dùng chung cho mọi tích hợp: ERP, ODO, POS, sàn TMĐT, hãng vận chuyển, cổng thanh toán, hoá đơn điện tử. Nó không chứa nghiệp vụ của domain, và không có connector cụ thể nào (connector là plugin).
 
-1. **API tích hợp công khai, có version** để hệ thống ngoài **đọc/ghi** dữ liệu VaniShop (pull) và **nhận sự kiện** (push/webhook).
-2. **Khung connector** (plugin) để VaniShop **chủ động gọi** API của hệ thống ngoài khi cần.
-3. **Tin cậy**: không mất message, không xử lý trùng, không để bản cũ ghi đè bản mới, không làm hỏng checkout khi bên ngoài lỗi.
-4. **Quan sát được**: tra vết mọi message, replay, cảnh báo.
+## 1. Thành phần
 
-## 2. Hai cách tích hợp
+| Thành phần | Trách nhiệm |
+|---|---|
+| **Integration Client** | Danh tính hệ thống ngoài: key, scope, data scope, rate limit, IP allowlist |
+| **Integration API** `/api/integration/v1` | Hệ thống ngoài pull/push dữ liệu (mô hình A) |
+| **Webhook subscription** | VaniShop đẩy sự kiện cho đối tác (mô hình A) |
+| **Connector** (plugin) | VaniShop chủ động gọi API ngoài (mô hình B) |
+| **Mapping** | `integration_mappings`, `external_references` |
+| **Ownership** | `integration_ownerships`: ai là authority của loại dữ liệu nào, theo scope |
+| **Outbox** | Message ra ngoài, ghi cùng transaction |
+| **Inbox** | Message vào, lưu trước khi xử lý |
+| **Retry / Dead letter / Replay** | Backoff, chuyển `dead`, phát lại có kiểm soát |
+| **Reconciliation** | Đối chiếu định kỳ theo từng loại dữ liệu |
+| **Correlation ID** | Truy vết xuyên hệ thống |
 
-| Mô hình | Khi dùng | Thành phần |
-|---|---|---|
-| **A. Đối tác tự tích hợp** (partner-driven) | Hệ thống ngoài có đội dev (ERP nội bộ, ODO, POS) | Integration API (REST) + Webhook subscription |
-| **B. Connector trong VaniShop** (platform-driven) | Dịch vụ SaaS có API cố định (GHN, GHTK, VNPay, MISA, Shopee…) | Plugin trong `custom/plugin/*` implement `Connector` |
-
-Cả hai đều đi qua cùng **outbox/inbox**, **mapping**, **log** của module.
+## 2. Hai mô hình
 
 ```mermaid
 flowchart LR
     subgraph VaniShop
-      D[Domain modules] -- ghi cùng transaction --> OB[(integration_outbox)]
-      OB --> DISP[Dispatcher<br/>queue worker]
-      DISP --> WHS[Webhook sender<br/>mô hình A]
-      DISP --> CON{{Connector plugin<br/>mô hình B}}
-      API[Integration API<br/>/api/integration/v1] --> D
-      WHR[Inbound webhooks<br/>/api/integrations/{system}] --> IB[(integration_inbox)]
-      IB --> PROC[Inbox processor] --> D
-      MAP[(mappings<br/>external_references)]
-      LOG[(integration_logs)]
+      D[Domain] -- cùng transaction --> OB[(outbox)]
+      OB --> W[Integration Worker]
+      W --> WH[Webhook sender]
+      W --> CN{{Connector plugin}}
+      API[Integration API] --> APP[Application commands]
+      IN[Inbound webhooks] --> IB[(inbox)] --> PR[Inbox processor] --> APP
     end
-    WHS --> P1[[ODO / ERP / POS<br/>đối tác]]
-    P1 -- REST: pull / ghi --> API
-    CON <--> P2[[GHN, VNPay, MISA,<br/>Shopee...]]
-    P2 -- webhook --> WHR
+    WH --> A[[Đối tác: ERP, ODO, POS]]
+    A -- REST --> API
+    CN <--> B[[SaaS: GHN, VNPay, MISA, Shopee]]
+    B -- webhook --> IN
 ```
 
-## 3. Integration Client (đối tác)
+**Không bao giờ** có flow `Checkout → HTTP request trực tiếp ERP` (rule R12).
 
-Mỗi hệ thống ngoài là một **Integration Client**:
+## 3. Integration Client
 
 | Trường | Ý nghĩa |
 |---|---|
-| `code`, `name` | `erp-main`, `odo`, `pos-kiotviet`… |
-| `credentials` | API key + secret (hash), hỗ trợ xoay vòng 2 key song song |
-| `scopes` | Quyền theo tài nguyên: `orders:read`, `orders.fulfillment:write`, `inventory:write`, `catalog.items:write`, `customers:read`… |
-| `data_scope` | Giới hạn brand / pháp nhân / location mà client được thấy |
-| `ip_allowlist` | Tuỳ chọn |
-| `rate_limit` | Mặc định 600 req/phút |
-| `status` | `active` / `suspended` |
-
-Quản lý trong Admin (Inertia): tạo client, cấp/thu hồi key, xem log, bật/tắt webhook subscription.
+| `code`, `name`, `status` | `erp-main`, `odo`, `pos-kiotviet`; `active`/`suspended` |
+| Keys | `integration_client_keys(client_id, key_id, secret_hash, created_at, expires_at, revoked_at)`; cho phép **2 key song song** để xoay vòng |
+| `scopes` | `orders:read`, `orders.fulfillment:write`, `inventory:write`, `catalog.items:write`, `customers:read`… |
+| Data scope | Brand / pháp nhân / location được thấy |
+| `ip_allowlist`, `rate_limit` | Tuỳ chọn; mặc định 600 req/phút |
 
 ## 4. Integration API (mô hình A)
 
-Prefix `/api/integration/v1`, xác thực bằng key client + chữ ký HMAC (chi tiết [12](12-api.md)). Payload theo **canonical model** có version (`vanishop.order.v1`…), JSON Schema công bố trong `docs/api/`.
+Xác thực HMAC ([api §5](../06-api/api.md)). Payload theo **canonical model** có version (`vanishop.order.v1`), JSON Schema trong `docs/api/schemas/` (được tạo khi triển khai).
 
-### 4.1 Đọc (pull)
+**Đọc**: `GET /orders?updated_since=&cursor=`, `/orders/{number}`, `/returns`, `/customers`, `/catalog/variants`, `/payments`, `/events?after=<cursor>` (event feed thay cho webhook).
 
-| Method | Path | Mô tả |
-|---|---|---|
-| GET | `/orders?updated_since=&status=&brand=&cursor=` | Đơn hàng thay đổi từ mốc thời gian |
-| GET | `/orders/{number}` | Chi tiết đơn (lines, địa chỉ, thanh toán, adjustments) |
-| GET | `/returns?updated_since=` | Yêu cầu đổi trả |
-| GET | `/customers?updated_since=` | Khách hàng (theo scope, PII tuỳ quyền) |
-| GET | `/catalog/variants?updated_since=` | Biến thể, mã hàng, barcode |
-| GET | `/payments?updated_since=` | Giao dịch thanh toán (đối soát) |
-| GET | `/events?after=<cursor>` | **Event feed** tuần tự — phương án thay webhook cho hệ thống không nhận được webhook |
-
-### 4.2 Ghi (push vào VaniShop)
-
-| Method | Path | Mô tả |
-|---|---|---|
-| POST | `/orders/{number}/acknowledgements` | Đối tác xác nhận đã nhận đơn (kèm mã đơn phía họ) |
-| POST | `/orders/{number}/fulfillments` | Tạo/cập nhật shipment: location xuất, dòng hàng, hãng, mã vận đơn, trạng thái |
-| POST | `/orders/{number}/cancellation-decisions` | Chấp nhận/từ chối yêu cầu huỷ |
-| PUT | `/inventory/levels` | Cập nhật tồn tuyệt đối theo `(location_code, sku)` + `version` (batch ≤ 1.000 dòng) |
-| POST | `/inventory/snapshots` | Snapshot toàn bộ tồn (bulk, gzip, xử lý bất đồng bộ, trả `job_id`) |
-| PUT | `/catalog/items` | Upsert mã hàng (sku, barcode, style_code, color, size, thuế…) |
-| PUT | `/prices` | Cập nhật giá (nếu brand cấu hình giá từ hệ thống ngoài) |
-| POST | `/returns/{number}/receipts` | Xác nhận đã nhận hàng trả, tình trạng |
-| POST | `/pos-orders` | Đơn tại cửa hàng (cho loyalty, lịch sử khách) |
-| POST | `/cod-reconciliations` | Kết quả đối soát COD |
-| GET | `/jobs/{id}` | Trạng thái xử lý bulk |
+**Ghi**: `POST /orders/{number}/acknowledgements`, `POST /orders/{number}/fulfillments`, `POST /orders/{number}/cancellation-decisions`, `PUT /inventory/levels`, `POST /inventory/snapshots`, `PUT /catalog/items`, `PUT /prices`, `POST /returns/{number}/receipts`, `POST /pos-orders`, `POST /cod-reconciliations`, `GET /jobs/{id}`.
 
 Quy tắc ghi:
-- **Idempotency-Key** bắt buộc cho POST; PUT idempotent theo khoá tự nhiên.
-- **Không ghi đè bản mới bằng bản cũ**: tồn/giá/trạng thái có `version` hoặc `occurred_at`; bản cũ hơn → trả `409 stale_update` và bỏ qua.
-- Ghi đi qua **Action** của module nghiệp vụ (không ghi thẳng bảng) → vẫn qua validation, state machine, audit.
-- Chỉ client được cấp scope tương ứng mới ghi được; **mỗi loại dữ liệu chỉ 1 client được làm nguồn gốc** (cấu hình ở ma trận mục 7).
+- `Idempotency-Key` bắt buộc cho POST; PUT idempotent theo khoá tự nhiên.
+- Bản cũ không ghi đè bản mới: `version`/`occurred_at`; bản cũ → `409 stale_update`.
+- Ghi đi qua **Application command** của context sở hữu, nên vẫn chịu validation, state machine và audit.
+- Client không phải authority của loại dữ liệu đó → `403 not_data_owner`.
 
-### 4.3 Webhook subscription (VaniShop → đối tác)
+## 5. Webhook subscription
 
-- Client đăng ký: `url`, danh sách `event_types`, secret ký.
-- Sự kiện: `order.created`, `order.confirmed`, `order.updated`, `order.cancel_requested`, `order.cancelled`, `payment.captured`, `payment.refunded`, `return.created`, `return.approved`, `customer.updated`, `inventory.reservation_changed`…
-- Envelope chuẩn và chữ ký `X-Vani-Signature` như [12 §5](12-api.md).
-- Gửi qua outbox: retry backoff (1m, 5m, 15m, 1h, 6h, 24h), **giữ thứ tự theo aggregate** (cùng 1 đơn gửi tuần tự). Quá hạn → `dead`, cảnh báo, replay thủ công.
-- Đối tác phải trả 2xx trong 10 giây; xử lý nặng làm bất đồng bộ phía họ.
+- Đăng ký: `url`, `event_types`, secret ký. Event: `order.created|confirmed|updated|cancel_requested|cancelled`, `payment.captured|refunded`, `return.created|approved`, `customer.updated`, `inventory.reservation_changed`…
+- Gửi qua outbox; đối tác phải trả 2xx trong 10 giây.
+- Lỗi liên tục 24h → subscription tự `paused` + thông báo.
 
-## 5. Connector (mô hình B)
+## 6. Connector (mô hình B)
 
 ```php
 interface Connector
 {
-    public function system(): string;                                 // 'ghn', 'vnpay', 'misa', 'shopee'...
+    public function system(): string;
     public function supports(string $messageType): bool;
-    public function send(OutboxMessage $message): DeliveryResult;     // gọi API ngoài
-    public function translateInbound(InboxMessage $message): array;   // → lệnh nội bộ chuẩn hoá
+    public function send(OutboxMessage $message): DeliveryResult;     // DeliveryResult: ok | retryable(err) | permanent(err)
+    public function translateInbound(InboxMessage $message): array;   // → Application commands
     public function healthCheck(): HealthStatus;
 }
 ```
 
-- Connector là **plugin** trong `custom/plugin/<Name>` ([10](10-hook-va-plugin.md)), credential cấu hình **theo pháp nhân/brand**.
-- Contract chuyên biệt kế thừa khung này: `PaymentGateway`, `ShippingCarrier` ([06](06-don-hang-thanh-toan-giao-hang.md)), `EInvoiceProvider` ([09](09-dac-thu-viet-nam.md)), `MarketplaceChannel` (Phase 3).
-- **Mapping** tách khỏi code: `integration_mappings(system, mapping_type, internal_value, external_value)` — mã kho, trạng thái, phương thức thanh toán, tỉnh/thành, kênh.
-- `external_references(entity_type, entity_id, system, external_id)` lưu ánh xạ ID giữa hệ thống.
+- `retryable` (timeout, 5xx, 429) → retry với backoff. `permanent` (4xx do dữ liệu sai) → `dead` ngay, không retry vô ích.
+- Mỗi lời gọi HTTP: timeout kết nối 3s, tổng 10s; circuit breaker theo connector (mở sau 5 lỗi liên tiếp, thử lại sau 60s).
+- Header gửi đi: `Idempotency-Key: <message_id>`, `X-Correlation-Id`.
 
-## 6. Độ tin cậy
+## 7. Outbox, Inbox, Retry, Dead letter, Replay
 
-### 6.1 Outbox
-- Message ghi vào `integration_outbox` **trong cùng transaction** với thay đổi nghiệp vụ ([ADR-0004](adr/0004-transactional-outbox.md)).
-- Cột: `id (uuid)`, `target` (client code hoặc connector), `message_type`, `aggregate_type`, `aggregate_id`, `payload (json)`, `status (pending|processing|sent|failed|dead)`, `attempts`, `next_attempt_at`, `correlation_id`, `sent_at`, `last_error`.
-- Dispatcher lấy lô bằng `SELECT … FOR UPDATE SKIP LOCKED` (MySQL 8+), index `(status, next_attempt_at)`.
+### Outbox
 
-### 6.2 Inbox
-- Webhook vào: xác thực chữ ký, lưu `integration_inbox`, **trả 2xx ngay**, xử lý bất đồng bộ.
-- Khoá duy nhất `(system, external_event_id)`; không có event id → hash payload.
-- Hệ thống chỉ hỗ trợ file (CSV/Excel qua SFTP): **file puller** định kỳ đọc file → đưa vào inbox như webhook.
-
-## 7. Nguồn dữ liệu gốc (Source of Truth)
-
-Mặc định khi **chưa có ODO**; mỗi dòng có thể chuyển nguồn gốc sang một Integration Client qua cấu hình khi hệ thống đó sẵn sàng.
-
-| Dữ liệu | Mặc định | Có thể chuyển sang | Ghi chú |
-|---|---|---|---|
-| Mã hàng, barcode, nhóm thuế | VaniShop (nhập/import) | **ERP** | Khi ERP làm master, form sửa mã trong Admin bị khoá |
-| Nội dung bán hàng | **VaniShop** | — | Luôn thuộc VaniShop |
-| Giá bán online | **VaniShop** | ERP | Theo brand |
-| Tồn vật lý (on-hand) | VaniShop (nhập/import/điều chỉnh) | **ERP / ODO / POS** | Theo location |
-| Giữ hàng, ATS | **VaniShop** | — | Luôn thuộc VaniShop |
-| Đơn hàng online | **VaniShop** | — | Đối tác nhận bản sao |
-| Phân bổ kho, vận đơn, trạng thái giao | VaniShop + plugin hãng VC | **ODO** | `fulfillment.mode = internal \| external` |
-| Đối soát COD | VaniShop (import bảng kê hãng VC) | ODO / ERP | |
-| Hoá đơn điện tử | Chưa chốt | VaniShop (plugin HĐĐT) / ERP | |
-| Khách hàng | **VaniShop** | — | ERP nhận bản sao |
-| Đơn tại cửa hàng | **POS/ERP** | — | VaniShop nhận để tính loyalty |
-
-> Quy tắc vàng: **mỗi trường dữ liệu chỉ có một hệ thống được ghi**. Module Integration kiểm soát bằng bảng `integration_ownerships(data_type, scope_type, scope_id, owner)` — API ghi từ client không phải owner sẽ bị từ chối `403 not_data_owner`.
-
-## 8. Luồng đơn hàng theo `fulfillment.mode`
-
-```mermaid
-sequenceDiagram
-    participant C as Khách
-    participant V as VaniShop
-    participant X as Hệ thống ngoài (ODO/ERP, khi có)
-    participant S as Hãng VC (plugin)
-    C->>V: Đặt hàng + thanh toán
-    V->>V: OrderConfirmed → outbox
-    alt fulfillment.mode = internal (mặc định hiện tại)
-        V->>V: Sourcing chọn location
-        V->>S: createShipment (plugin)
-        S-->>V: webhook trạng thái vận đơn
-    else fulfillment.mode = external
-        V-->>X: webhook order.confirmed (hoặc X pull /orders)
-        X->>V: POST /orders/{n}/acknowledgements
-        X->>V: POST /orders/{n}/fulfillments (mã vận đơn, trạng thái)
-    end
-    V-->>C: ZNS / Email thông báo
-    V-->>X: payment.captured, COD reconciliation (cho ERP)
+```
+integration_outbox(id uuid, target, message_type, schema_version, aggregate_type, aggregate_id,
+                   payload json, status[pending|processing|sent|failed|dead], attempts,
+                   next_attempt_at, correlation_id, last_error, created_at, sent_at)
+INDEX (status, next_attempt_at), INDEX (aggregate_type, aggregate_id, created_at)
 ```
 
-## 9. Giám sát
+```php
+// Worker (chạy liên tục qua Horizon + scheduler dự phòng)
+$batch = DB::transaction(fn () => OutboxRecord::where('status', 'pending')
+    ->where('next_attempt_at', '<=', now())
+    ->orderBy('created_at')->limit(100)
+    ->lockForUpdate()->skipLocked()->get()
+    ->each->markProcessing());
 
-- Dashboard Admin "Integration Health": message pending/failed/dead theo client/connector, độ trễ P50/P95, tỉ lệ lỗi, lần cuối nhận tồn.
-- Cảnh báo: dead message, backlog > ngưỡng, `healthCheck` fail, webhook đối tác lỗi liên tục (tự tạm dừng subscription sau 24h lỗi, thông báo).
-- Tra vết theo `correlation_id` / mã đơn: mọi request API, webhook vào/ra, payload (đã che PII), phản hồi.
+foreach ($batch->groupBy('aggregate_key') as $messages) {   // tuần tự trong cùng aggregate
+    foreach ($messages as $m) {
+        $result = $this->router->deliver($m);               // webhook hoặc connector
+        if ($result->failed()) { $m->scheduleRetryOrDead($result); break; } // chặn message sau cùng aggregate
+        $m->markSent();
+    }
+}
+```
+
+Backoff: 1m, 5m, 15m, 1h, 6h, 24h (+ jitter ±20%). Hết 6 lần → `dead`.
+
+### Inbox
+
+```
+integration_inbox(id, system, external_event_id, message_type, payload json, received_at,
+                  status[received|processed|failed|dead|ignored_stale], attempts, correlation_id, last_error)
+UNIQUE (system, external_event_id)
+```
+
+Endpoint webhook: xác thực chữ ký → insert (trùng thì trả 2xx luôn) → trả 2xx → xử lý bất đồng bộ.
+
+### Replay
+
+- Admin "Integration Health" (quyền `integration.replay`): xem message `failed/dead`, xem payload (đã che PII), **replay** từng message hoặc theo bộ lọc; mỗi lần replay đều có audit.
+- Replay dùng lại đúng `message_id`, nên phía nhận vẫn khử trùng lặp được.
+- CLI: `php artisan vani:integration:replay --status=dead --target=erp-main --since=...`.
+
+## 8. Reconciliation
+
+| Dữ liệu | Cách đối chiếu | Tần suất |
+|---|---|---|
+| Tồn kho | Snapshot authority ↔ `on_hand` ([inventory §6](../08-inventory/inventory.md)) | Hằng đêm |
+| Đơn hàng | Danh sách đơn phía đối tác (acknowledged) ↔ đơn `confirmed` của VaniShop; thiếu thì gửi lại | Mỗi giờ |
+| Thanh toán | Sao kê cổng ↔ `payment_transactions` | Hằng ngày |
+| COD | Bảng kê hãng ↔ shipment (plugin `vani.cod-reconciliation`) | Theo kỳ đối soát |
+
+Kết quả ghi vào `integration_reconciliations`, có báo cáo chênh lệch và cảnh báo khi vượt ngưỡng.
+
+## 9. Observability
+
+- Mỗi message mang `correlation_id` gốc từ request/command tạo ra nó ([observability](../16-observability/observability.md)).
+- Metric: `integration_outbox_pending{target}`, `integration_delivery_seconds{target}`, `integration_failures_total{target,kind}`, `integration_dead_total`.
+- Cảnh báo: có message `dead` loại `order.*`, backlog > 500 hoặc trễ > 5 phút, `healthCheck` fail.
 - Log giữ 90 ngày.
 
-## 10. Việc còn mở (khi chốt ODO/ERP)
+## 10. Kiểm thử
 
-- [ ] ODO đảm nhiệm những gì: chọn kho, tạo vận đơn, đối soát COD, xử lý hàng trả?
-- [ ] ODO/ERP tích hợp theo mô hình A (tự gọi API) hay B (VaniShop viết connector)?
-- [ ] ERP là sản phẩm nào, có REST API/webhook hay chỉ file?
-- [ ] Bảng mapping: kho, cửa hàng, kênh, phương thức thanh toán, hãng VC, trạng thái, tỉnh/thành.
-- [ ] Quy tắc mã `sku`, `style_code`, mã màu/size thống nhất.
-- [ ] Ai phát hành hoá đơn điện tử?
-- [ ] SLA độ trễ tồn kho, môi trường sandbox.
+- Outbox: rollback thì không có message; worker nhiều tiến trình không gửi trùng; thứ tự theo aggregate được giữ.
+- Inbox: webhook trùng chỉ xử lý một lần; chữ ký sai bị 401.
+- Contract test connector với fake server (`Http::fake`), phân loại đúng retryable/permanent.
+- API: scope/data scope/ownership bị chặn đúng; `stale_update`.

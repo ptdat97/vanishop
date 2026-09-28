@@ -1,4 +1,6 @@
-# 13 — Bảo mật & Phân quyền
+# Security
+
+> Trạng thái: **Designed**. Hiện chỉ có model `User` mặc định của Laravel.
 
 ## 1. Tách biệt người dùng
 
@@ -27,7 +29,7 @@ Admin chạy trên domain riêng (`admin.vani.vn`), không dùng chung cookie v�
 
 - **Gán role kèm phạm vi**: `staff_role_assignments(staff_id, role_id, scope_type, scope_id)`. Một người có thể là Brand Manager của Lumière và CSKH toàn tập đoàn.
 - Kiểm tra: `Gate::allows('orders.cancel', $order)` → Policy xác định phạm vi của `$order` (brand/location/legal_entity) và đối chiếu assignment.
-- Global scope `BelongsToBrand` ([03](03-mo-hinh-da-thuong-hieu.md)) là **lớp phòng thủ thứ hai**; Policy là lớp thứ nhất.
+- Global scope `BelongsToBrand` ([multi-brand](../12-multi-brand/multi-brand.md)) là **lớp phòng thủ thứ hai**; Policy là lớp thứ nhất.
 - **Phê duyệt 2 bước** (maker–checker) cho thao tác nhạy cảm: hoàn tiền > ngưỡng, điều chỉnh tồn lớn, khuyến mãi giảm > X%, export dữ liệu khách.
 
 ## 3. Audit log
@@ -46,8 +48,8 @@ Admin chạy trên domain riêng (`admin.vani.vn`), không dùng chung cookie v�
 | Tối thiểu hoá | Không thu dữ liệu không cần; không lưu số thẻ (tokenize ở cổng TT) |
 | Mã hoá | TLS 1.2+; mã hoá cột nhạy cảm (số tài khoản ngân hàng hoàn tiền, secret tích hợp) bằng Laravel encrypted cast; key quản lý tách biệt |
 | Che dữ liệu | SĐT/địa chỉ che một phần trong danh sách Admin, log, payload tích hợp lưu trữ |
-| Lưu trữ | **Toàn bộ dữ liệu lưu tại Việt Nam** ([ADR-0008](adr/0008-ha-tang-tai-viet-nam.md)); dịch vụ SaaS nước ngoài chỉ nhận dữ liệu đã che PII, nếu không → hồ sơ đánh giá chuyển dữ liệu ra nước ngoài |
-| Vi phạm | Quy trình thông báo sự cố cho cơ quan chức năng trong thời hạn quy định; runbook ở [14](14-ha-tang-van-hanh.md) |
+| Lưu trữ | **Toàn bộ dữ liệu lưu tại Việt Nam** ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)); dịch vụ SaaS nước ngoài chỉ nhận dữ liệu đã che PII, nếu không → hồ sơ đánh giá chuyển dữ liệu ra nước ngoài |
+| Vi phạm | Quy trình thông báo sự cố cho cơ quan chức năng trong thời hạn quy định; runbook ở [operations](../18-operations/operations.md) |
 | Hồ sơ đánh giá tác động | Lập và cập nhật khi thêm mục đích xử lý mới |
 
 ## 5. Bảo mật ứng dụng
@@ -67,3 +69,30 @@ Admin chạy trên domain riêng (`admin.vani.vn`), không dùng chung cookie v�
 - **Không** lưu/không đi qua server dữ liệu thẻ → phạm vi PCI-DSS SAQ-A (redirect/hosted fields của cổng).
 - Xác minh chữ ký IPN, so khớp số tiền & mã đơn, idempotent.
 - Hoàn tiền: phân quyền riêng + ngưỡng phê duyệt.
+
+## 7. Tenant và brand isolation
+
+- Một bản cài đặt = một Owner (không multi-tenant SaaS). **Brand isolation** là yêu cầu bảo mật chính: Policy + global scope + `CurrentContext` bắt buộc ([multi-brand §3](../12-multi-brand/multi-brand.md)).
+- **ABAC** được dùng ở mức vừa đủ: quyền = permission (RBAC) **và** thuộc tính của bản ghi (brand, legal entity, location, seller/creator nếu có plugin) khớp với scope của người dùng. Được hiện thực trong Policy, không dùng engine ABAC riêng.
+
+## 8. Integration credentials
+
+| Yêu cầu | Thiết kế |
+|---|---|
+| Danh tính | Mỗi hệ thống ngoài là một Integration Client ([integration-platform §3](../11-integration/integration-platform.md)) |
+| Scope | Theo tài nguyên + hành động (`orders:read`, `inventory:write`…) |
+| Data scope | Brand / legal entity / location |
+| Ownership | Chỉ authority của loại dữ liệu mới được ghi |
+| Ký request | HMAC-SHA256 trên `timestamp + "." + body`, lệch thời gian ≤ 5 phút, chống replay bằng nonce/`Idempotency-Key` |
+| Webhook đi | Ký cùng cơ chế bằng secret của subscription |
+| Webhook vào (cổng TT, hãng VC) | Xác thực theo chuẩn của từng dịch vụ trong plugin; sai chữ ký → 401 + log `security` |
+| IP allowlist, rate limit | Theo client |
+| Xoay vòng key | Hai key hoạt động song song; tạo key mới → đối tác chuyển → thu hồi key cũ; key hết hạn mặc định 12 tháng; có cảnh báo trước 30 ngày |
+| Lưu trữ | Secret chỉ lưu hash (key của client) hoặc mã hoá (credential gọi ra ngoài, trong `settings` với `is_encrypted`) |
+
+## 9. Secret
+
+- Không để secret trong source code, fixture hay log (rule R21). CI chạy secret scan (gitleaks).
+- Secret hạ tầng nằm trong `.env`/secret manager của môi trường; credential của plugin nằm trong settings đã mã hoá, key mã hoá tách khỏi DB.
+- Xoay vòng `APP_KEY` theo quy trình có `APP_PREVIOUS_KEYS` (Laravel hỗ trợ), không làm mất dữ liệu đã mã hoá.
+

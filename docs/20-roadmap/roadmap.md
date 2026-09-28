@@ -1,87 +1,65 @@
-# 15 — Lộ trình
+# Roadmap
 
-> Nguyên tắc ([ADR-0009](adr/0009-core-toi-gian-nghiep-vu-bang-plugin.md)): **xây core trước, ổn định điểm mở rộng, sau đó làm plugin nghiệp vụ song song**. Thời lượng ước tính cho đội 4–6 dev + 1 QA + 1 BA/PO.
+> Trạng thái: **Planned**. Tài liệu kiến trúc đã đủ để bắt đầu code. **Từ đây ưu tiên implementation theo vertical slice**; chỉ mở rộng tài liệu khi code cần. Mỗi slice xong phải cập nhật [status](../00-overview/status.md).
+
+## 1. Nguyên tắc
+
+- **Vertical slice**: mỗi slice đi hết Domain → Application → Persistence → Http/API → Admin UI tối thiểu → test (unit, feature, arch) → tài liệu trạng thái.
+- Làm Core trước, chứng minh extension point bằng plugin thật, **sau đó** mới mở rộng nghiệp vụ.
+- Mỗi slice có **Definition of Done** riêng. Chưa đạt thì không sang slice sau.
 
 ```mermaid
-gantt
-    dateFormat  YYYY-MM-DD
-    title Lộ trình VaniShop (ước tính)
-    section Core
-    Phase 0 Kernel                       :p0, 2026-10-05, 4w
-    Phase 1 Commerce core                :p1, after p0, 10w
-    Phase 2 Integration + đa brand       :p2, after p1, 8w
-    section Plugin
-    Plugin P1 (go-live)                  :pl1, after p1, 8w
-    Plugin P2                            :pl2, after pl1, 10w
-    Plugin P3                            :pl3, after pl2, 12w
+flowchart LR
+    F[0. Foundation] --> C[1. Catalog] --> P[2. Product/Style] --> V[3. Variant & Price] --> I[4. Inventory] --> CA[5. Cart] --> CO[6. Checkout] --> PA[7. Payment] --> O[8. Order] --> S[9. Shipment]
+    S --> PL[10. Proof plugins<br/>VietQR · GHN · PromotionRules]
+    PL --> X[11+. Mở rộng<br/>Integration/ERP · Multi-brand đầy đủ ·<br/>Marketplace · Creator · Merchandising]
 ```
 
-## Phase 0 — Kernel (≈ 4 tuần)
+## 2. Các slice
 
-- [x] Chốt ADR: MySQL, Admin Inertia + Vue 3 + TypeScript, module tại `modules/`, plugin tại `custom/plugin/`, theme tại `custom/theme/`, hoãn ODO, hạ tầng tại VN, core tối giản (xem [adr/](adr/README.md)).
-- [ ] Dựng staging tại nhà cung cấp VN do Owner chọn (Docker + Terraform/Ansible).
-- [ ] Autoload `Modules\`, `Plugin\`; `ModuleServiceProvider` tự đăng ký module.
-- [ ] **Extension**: facade `Hook` + registry hook, plugin loader (manifest, vòng đời, scope), `PluginServiceProvider` với các registry ([10 §6.4](10-hook-va-plugin.md)).
-- [ ] Khung Admin Inertia (layout, auth, menu động từ registry, bảng/lọc dùng chung, form tự sinh từ `settings_schema`).
-- [ ] `.env` MySQL 8.4; CI có service MySQL.
-- [ ] Shared: `Money`, `Phone`, `CurrentContext`, địa giới hành chính 2 cấp.
-- [ ] Tenancy: pháp nhân, brand, channel, domain, settings kế thừa; middleware `ResolveChannel`; trait `BelongsToBrand`.
-- [ ] Identity: staff, 2FA, scoped RBAC, audit log.
-- [ ] CI: Pint, Larastan, Pest (kèm arch test ranh giới module), clean-room checks, license check.
-- [ ] **Plugin mẫu** `HelloWorld` trong `custom/plugin/` dùng đủ registry, làm chuẩn cho người viết plugin.
-- **Done khi**: 2 brand với 2 domain local; nhân viên brand A không thấy dữ liệu brand B; plugin mẫu cài/bật/tắt theo brand được (có test).
+| # | Slice | Nội dung chính | Done khi |
+|---|---|---|---|
+| 0 | **Foundation** | `modules/`, `custom/` + autoload; `ModuleServiceProvider`; Shared (`Money`, `Phone`, `CurrentContext`, correlation id middleware); Tenancy/Brand/Channel tối thiểu (1 pháp nhân, 1 brand, 1 channel, `ResolveChannel`, `BelongsToBrand`); Identity (staff, RBAC theo scope, audit); Extension (`Hook` + registry, plugin loader, manifest, CLI `vani:plugin:*`, safe mode) + plugin mẫu `HelloWorld`; khung Admin Inertia; MySQL 8.4 + `.env`; CI (Pint, Larastan, Pest, arch test, clean-room) | Arch test chạy trong CI; nhân viên brand A không thấy dữ liệu brand B; `HelloWorld` install/enable/disable được theo scope |
+| 1 | **Catalog** | Danh mục, thuộc tính, màu/size, media, `SearchProvider` (database) | CRUD Admin + Storefront API đọc danh mục |
+| 2 | **Product (Style)** | Style, style color, nội dung đa ngôn ngữ, trạng thái, hook `vani.product.before_save`, event `ProductCreated/Updated` | PDP render được từ Application query |
+| 3 | **Variant & Price** | Variant/SKU, bảng giá, `PricingStrategy` mặc định, `price_history` | Giá hiển thị đúng theo channel; test Money |
+| 4 | **Inventory** | Location, stock level, reservation, ledger, ATS, `InventoryStrategy` mặc định, điều chỉnh tay/import | **Concurrency test không oversell pass trên MySQL** |
+| 5 | **Cart** | Giỏ, gộp giỏ, Storefront API cart | Thêm/sửa/xoá giỏ qua API và native |
+| 6 | **Checkout** | Totals pipeline, `TaxCalculator` VAT, `CheckoutValidator`, Promotion framework (voucher + action primitive), `PlaceOrder` + idempotency | Test PlaceOrder: thành công/hết hàng/totals đổi/voucher hết/trùng |
+| 7 | **Payment** | Khung `PaymentGateway`, COD, chuyển khoản thủ công, IPN handler chung, hết hạn thanh toán | COD end-to-end; contract test suite `PaymentGateway` có sẵn |
+| 8 | **Order** | State machine 4 chiều, snapshot, `order_events`, Admin quản lý đơn, tra cứu đơn, huỷ, returns cơ bản | Mọi transition có test; snapshot không đổi khi catalog đổi |
+| 9 | **Shipment** | Shipment, `flat_rate`, `manual`, sourcing mặc định, commit reservation | E2E: browse → cart → checkout COD → order → ship → delivered |
+| 10 | **Proof plugins** | `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` ([plugin-catalog §2](../05-plugin/plugin-catalog.md)) | **Không có dòng thay đổi nào trong `modules/` phục vụ riêng plugin.** Nếu phải thêm extension point thì đó là PR Core tổng quát, có tài liệu. Contract test của 3 plugin pass. Extension points v1 đóng băng |
 
-## Phase 1 — Commerce core (≈ 10 tuần)
+## 3. Sau khi chứng minh kiến trúc
 
-Chỉ dùng **core**, không cần plugin nào mà vẫn bán được.
-
-- [ ] Catalog: style/màu/variant, thuộc tính, danh mục, bộ sưu tập, media, import Excel, tìm kiếm (Scout).
-- [ ] Pricing: bảng giá, giá niêm yết/giá bán, lịch giá, lịch sử giá.
-- [ ] Inventory: location, stock level, reservation, ATS, movement, điều chỉnh tay/import.
-- [ ] Customer: tài khoản hợp nhất, OTP qua `OtpSender` (email), địa chỉ, consent.
-- [ ] Checkout: giỏ, totals pipeline (subtotal/shipping/tax/rounding), `CheckoutValidator`, `PlaceOrder`.
-- [ ] Ordering: 4 chiều trạng thái, state machine, Admin quản lý đơn, tra cứu đơn.
-- [ ] Payment: khung `PaymentGateway` + COD + chuyển khoản thủ công.
-- [ ] Fulfillment: shipment, `flat_rate`, `manual`, `SourcingStrategy` mặc định, `FulfillmentMethod` `delivery`.
-- [ ] Returns: RMA cơ bản, `ReturnPolicy`.
-- [ ] Content: trang, menu, banner, page builder + block cơ bản; theme `custom/theme/vani-base`; SEO, sitemap.
-- [ ] Notification: template theo brand/event, email.
-- [ ] Domain events + contract đọc/ghi ([10 §6.2–6.3](10-hook-va-plugin.md)) **đóng băng v1**.
-- **Done khi**: 1 brand chạy trên staging với luồng đặt (COD) → giao (vận đơn nhập tay) → hoàn tất → đổi trả; load test đạt NFR; điểm mở rộng v1 có tài liệu.
-
-## Phase 2 — Integration + đa brand (≈ 8 tuần, core)
-
-- [ ] Module Integration: client, API key/HMAC, outbox, inbox, mapping, ownership, log, dashboard, replay.
-- [ ] Integration API v1 + webhook subscription + tài liệu OpenAPI + sandbox.
-- [ ] Brand thứ 2, 3 lên nền tảng (quy trình ≤ 5 ngày, lệnh preflight).
-- [ ] Kênh tập đoàn house-of-brands (order group, tách đơn theo pháp nhân).
-- **Done khi**: đối tác (ERP) tích hợp được bằng Integration API mà không cần sửa core; 3 brand hoạt động.
-
-## Plugin — chạy song song sau Phase 1
-
-Danh mục đầy đủ ở [17](17-danh-muc-plugin.md). Mỗi plugin là một dự án nhỏ có README đặc tả, test, và tiêu chí Done riêng.
-
-| Đợt | Plugin | Mục tiêu |
+| Thứ tự | Hạng mục | Tài liệu |
 |---|---|---|
-| **P1 — go-live** | `VietQr`, `VnPay`, `Ghn` hoặc `Ghtk`, `ZaloZns`, `SmsBrandname`, `Promotion` (cơ bản), `TrackingPixels` | Go-live production brand đầu tiên |
-| **P2** | `MoMo`, `ZaloPay`, `ShopeePay`, `CodReconciliation`, `CodRiskGuard`, `EInvoice` + nhà cung cấp, `StoreOmnichannel` (tra tồn, BOPIS), `AbandonedCart`, `Wishlist`, `SocialLogin`, `FeedExport`, `Blog`, connector ERP (nếu cần) | Vận hành đầy đủ đa brand |
-| **P3** | `Loyalty`, `Promotion` nâng cao (cross-brand, BxGy, combo), `AdvancedSourcing`, `ChannelAllocation`, `Shopee`/`Lazada`/`TikTokShop`, `Bnpl`, `SizeAdvisor`, `ProductBundle`, `PosSync`, `AdvancedReports`, `Odo` (khi chốt) | Omnichannel & kênh mới |
+| 11 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation) + ERP connector khi chốt ERP | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
+| 12 | Multi-brand đầy đủ: brand thứ 2–3, theme tokens, kênh đa brand (order group), lệnh preflight | [multi-brand](../12-multi-brand/multi-brand.md) |
+| 13 | Plugin go-live P1 còn lại: `vani.vnpay`, `vani.zalo-zns`, `vani.sms-brandname`, `vani.tracking-pixels` | [plugin-catalog](../05-plugin/plugin-catalog.md) |
+| 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
+| 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
+| Later | Marketplace, Creator/Affiliate, advanced merchandising, recommendation | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |
 
-## Sau đó
+## 4. Go-live gate (brand đầu tiên)
 
-- Mobile app / Zalo Mini App trên Storefront API.
-- Cá nhân hoá, gợi ý sản phẩm; CDP/Marketing automation (plugin).
-- Đa tiền tệ, bán quốc tế.
-- Xem xét tách service (Search, Integration) nếu tải đòi hỏi.
+- [ ] Slice 0–10 đạt Done; slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
+- [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
+- [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
+- [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)).
+- [ ] Bảo mật: pentest, 2FA Admin, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)).
+- [ ] Pháp lý: thông báo website với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
+- [ ] Staging/production đặt tại VN tại nhà cung cấp Owner chọn ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)).
 
-## Rủi ro chính
+## 5. Rủi ro
 
 | Rủi ro | Mức | Giảm thiểu |
 |---|---|---|
-| Điểm mở rộng thiếu hoặc sai khiến plugin phải "hack" core | Cao | Plugin mẫu từ Phase 0; đóng băng v1 cuối Phase 1 sau khi thử bằng 2–3 plugin P1; bổ sung điểm mở rộng qua PR vào core |
-| Vai trò ODO chưa chốt; API ERP chưa sẵn sàng / chỉ hỗ trợ file | Cao | VaniShop tự fulfillment (`internal`); Integration API chuẩn; file puller SFTP dự phòng |
-| Chất lượng dữ liệu mã hàng giữa các brand không đồng nhất | Cao | Chuẩn hoá quy tắc mã trước Phase 1; import có dry-run |
-| Oversell mùa sale | Trung bình | Reservation atomic, safety stock, load test |
-| Vô tình vi phạm license BeikeShop | Trung bình | Quy trình clean-room + CI kiểm tra ([01](01-clean-room-va-license.md)) |
-| Thay đổi quy định (HĐĐT, dữ liệu cá nhân, địa giới) | Trung bình | Nghiệp vụ theo quy định nằm trong plugin, cập nhật độc lập với core |
-| Phạm vi core phình to | Cao | Áp tiêu chí vào core của [ADR-0009](adr/0009-core-toi-gian-nghiep-vu-bang-plugin.md) khi review mọi PR |
+| Extension point thiếu/sai khiến plugin phải hack Core | Cao | Slice 10 là bài kiểm tra bắt buộc; bổ sung extension point bằng PR Core tổng quát |
+| Tài liệu lệch khỏi implementation | Cao | `status.md` cập nhật mỗi PR; OpenAPI viết cùng code; rule R24 |
+| Over-engineering DDD | Trung bình | Phân biệt context "rich" và "CRUD" ([ADR-002](../19-adr/ADR-002-ddd-boundaries.md)) |
+| Vai trò ODO/ERP chưa chốt | Cao | Fulfillment `internal` trước; Integration API chuẩn |
+| Oversell mùa sale | Trung bình | Reservation atomic + Redis gate + concurrency test |
+| Vi phạm license BeikeShop | Trung bình | [clean-room](../01-principles/clean-room-license.md) + CI grep |
+| Phạm vi Core phình to | Cao | Tiêu chí [commerce-kernel §1](../02-architecture/commerce-kernel.md) khi review |

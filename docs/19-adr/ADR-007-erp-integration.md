@@ -1,25 +1,25 @@
-# 0007 — Hoãn vai trò ODO; xây module Integration cung cấp API tích hợp
+# ADR-007 — ERP Integration (và hoãn vai trò ODO)
 
-- Trạng thái: Accepted
-- Ngày: 2026-09-28
-- Người quyết định: Owner
+- Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner
 
-## Bối cảnh
-Chưa chốt ODO sẽ đảm nhiệm phần nào (chọn kho, tạo vận đơn, đối soát COD, xử lý hàng trả) và tích hợp theo cách nào. Nếu thiết kế cứng quanh ODO, lõi sẽ phải sửa khi phạm vi thay đổi.
+## Context
+Chưa chốt ERP cụ thể; vai trò ODO (chọn kho, vận đơn, đối soát COD, hàng trả) chưa xác định.
 
-## Quyết định
-1. **Tạm hoãn** thiết kế chi tiết tích hợp ODO.
-2. Xây **module `Integration`** (`modules/Integration`) làm cổng tích hợp chung:
-   - **Integration API** `/api/integration/v1` có version, xác thực API key + HMAC, scope theo tài nguyên và theo brand/pháp nhân/location.
-   - **Webhook subscription** cho đối tác, gửi qua outbox.
-   - **Khung connector** cho dịch vụ bên thứ ba (plugin trong `custom/plugin/`).
-   - Outbox/inbox, mapping, bảng quyền sở hữu dữ liệu (`integration_ownerships`), log, dashboard, replay.
-3. Trong lúc chưa có ODO, VaniShop **tự fulfillment**: `fulfillment.mode = internal` (sourcing nội bộ + plugin hãng VC). Khi ODO sẵn sàng → cấp Integration Client cho ODO và chuyển brand sang `external`.
+## Problem
+Thiết kế cứng quanh một ERP/ODO sẽ khiến Core phải sửa khi phạm vi thay đổi.
 
-Chi tiết: [08](../08-module-integration.md).
+## Decision
+- Abstraction `ErpConnector` (plugin: Odoo, SAP, MISA, custom) **và** Integration API để ERP có đội dev tự tích hợp.
+- Phân biệt **System of Record** và **System of Authority**; mỗi loại dữ liệu có đúng một authority theo scope (`integration_ownerships`). Mặc định đồng bộ **một chiều**, không đồng bộ hai chiều ([erp-integration](../11-integration/erp-integration.md)).
+- **Hoãn** vai trò ODO; VaniShop tự fulfillment (`fulfillment.mode = internal`). Khi chốt ODO: cấp Integration Client, đổi ownership, chuyển `external`.
 
-## Hệ quả
-- (+) Không bị chặn tiến độ bởi quyết định ODO; bất kỳ hệ thống nào (ODO, ERP, POS) đều tích hợp qua cùng một API.
-- (+) Lõi không phụ thuộc sản phẩm cụ thể.
-- (−) Phải tự xây sourcing và đặt vận đơn trước (vốn có thể do ODO làm) — chấp nhận vì cần cho phương án dự phòng.
-- (−) Integration API là hợp đồng công khai: thay đổi phá vỡ cần version mới.
+## Alternatives
+- Chọn và gắn chặt một ERP ngay: rủi ro phải làm lại.
+- Đồng bộ hai chiều mọi thứ: xung đột dữ liệu khó giải quyết.
+
+## Consequences
+- (+) Không bị chặn tiến độ; đổi ERP chỉ cần connector mới.
+- (−) Phải tự xây sourcing và đặt vận đơn trước.
+
+## Trade-offs
+Làm thêm phần fulfillment nội bộ để đổi lấy sự độc lập với quyết định ODO.

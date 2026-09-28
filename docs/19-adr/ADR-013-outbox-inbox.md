@@ -1,20 +1,24 @@
-# 0004 — Transactional outbox cho tích hợp
+# ADR-013 — Transactional Outbox / Inbox
 
-- Trạng thái: Accepted
-- Ngày: 2026-09-28
+- Trạng thái: Accepted · Ngày: 2026-09-28
 
-## Bối cảnh
-Message tới hệ thống ngoài (ERP, đối tác webhook, ODO khi có) phải đến chắc chắn, không trùng, đúng thứ tự; hệ thống ngoài có thể chậm hoặc lỗi nhưng không được làm hỏng checkout.
+## Context
+Message tới ERP/đối tác phải đến chắc chắn, không trùng, đúng thứ tự theo aggregate; message vào có thể trùng hoặc sai thứ tự.
 
-## Quyết định
-Ghi message vào bảng `integration_outbox` **trong cùng transaction** với thay đổi nghiệp vụ. Worker gửi bất đồng bộ, retry backoff, giữ thứ tự theo aggregate, chuyển `dead` sau N lần. Chiều vào dùng `integration_inbox` với khoá idempotency.
+## Problem
+Dispatch queue sau commit vẫn có thể mất message khi process chết giữa chừng; webhook vào có thể bị gửi lại nhiều lần.
 
-## Hệ quả
-- (+) Không mất message, checkout độc lập với hệ thống ngoài.
-- (+) Có màn hình theo dõi/replay.
-- (−) Nhất quán cuối (eventual consistency): trạng thái ở hệ thống ngoài trễ vài giây–phút.
+## Decision
+- **Outbox**: ghi `integration_outbox` trong cùng transaction nghiệp vụ; worker lấy bằng `FOR UPDATE SKIP LOCKED`; thứ tự theo aggregate; backoff; `dead`; replay.
+- **Inbox**: lưu trước khi xử lý, unique `(system, external_event_id)`, trả 2xx ngay, xử lý bất đồng bộ; chặn bản cũ bằng version.
 
-## Phương án đã cân nhắc
-- Gọi API ngay trong request: mất đơn khi lỗi, checkout chậm.
-- Chỉ dùng queue job: mất message nếu dispatch sau commit bị lỗi/crash.
-- Message broker (Kafka/RabbitMQ): cân nhắc khi lưu lượng lớn; outbox vẫn là nguồn phát.
+## Alternatives
+- Chỉ dùng queue: có thể mất message.
+- CDC (Debezium) đọc binlog: hạ tầng nặng.
+
+## Consequences
+- (+) At-least-once delivery + idempotent consumer, tương đương effectively-once.
+- (−) Thêm bảng, worker, màn hình vận hành.
+
+## Trade-offs
+Độ phức tạp vận hành vừa phải để đổi lấy độ tin cậy.

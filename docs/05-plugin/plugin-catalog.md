@@ -1,109 +1,107 @@
-# 17 — Danh mục plugin nghiệp vụ
+# Danh mục plugin nghiệp vụ
 
-> Theo [ADR-0009](adr/0009-core-toi-gian-nghiep-vu-bang-plugin.md), core chỉ cung cấp nguyên liệu thương mại và điểm mở rộng. Các tính năng dưới đây được xây thành **plugin** trong `custom/plugin/<Tên>/` và dùng các điểm mở rộng liệt kê ở [10 §6](10-hook-va-plugin.md).
->
-> Mỗi plugin khi bắt đầu phát triển sẽ có đặc tả riêng tại `custom/plugin/<Tên>/README.md`. Tài liệu này chỉ chốt **phạm vi** và **phụ thuộc vào core**. Các mô tả nghiệp vụ trong tài liệu 05–09 được đánh dấu *(plugin)* là yêu cầu đầu vào cho plugin tương ứng.
+> Trạng thái: tất cả plugin đều ở mức **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md` khi bắt đầu làm.
 
-## 1. Core cung cấp sẵn (không cần plugin)
+## 1. Core có sẵn (không cần plugin)
 
-| Nhóm | Mặc định trong core |
+| Nhóm | Mặc định trong Core |
 |---|---|
-| Thanh toán | **COD**, **chuyển khoản thủ công** (hiển thị số tài khoản, nhân viên xác nhận) |
-| Vận chuyển | **Phí cố định / theo bảng** (vùng, ngưỡng miễn phí), **vận đơn nhập tay** (hãng + mã vận đơn) |
-| Phân bổ kho | Chiến lược mặc định: location ưu tiên cao nhất đủ hàng |
-| Tính tiền | Tạm tính, phí vận chuyển, tách VAT, làm tròn VNĐ |
-| Thông báo | Email (SMTP) |
-| Đăng nhập | Mật khẩu + OTP qua email; **khung** OTP qua SMS/ZNS (cần plugin gửi) |
-| Đổi trả | Quy trình RMA cơ bản, hoàn tiền thủ công |
-| Tìm kiếm | Laravel Scout (driver database; Meilisearch qua cấu hình) |
-| CMS | Trang, menu, banner, page builder với block cơ bản |
-| Tích hợp | Integration API, webhook subscription, outbox/inbox, khung connector |
+| Thanh toán | COD, chuyển khoản thủ công |
+| Vận chuyển | Phí cố định/theo bảng (`flat_rate`), vận đơn nhập tay (`manual`) |
+| Phân bổ kho | `priority_first_fit` |
+| Khuyến mãi | Framework + action `percent_off`/`amount_off` + voucher. **Chưa có rule điều kiện nào** ngoài "luôn áp dụng" và "có voucher" |
+| Thuế | VAT giá đã gồm thuế |
+| Thông báo | Email |
+| Đăng nhập | Mật khẩu, OTP email |
+| Tìm kiếm | Database, Meilisearch |
+| Tích hợp | Integration API, webhook, outbox/inbox, khung connector |
 
-## 2. Plugin chính thức
+## 2. Ba plugin chứng minh kiến trúc (làm đầu tiên)
 
-Ký hiệu phase: P1 = cần cho go-live brand đầu tiên, P2/P3 = sau đó.
+Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Core** ([roadmap](../20-roadmap/roadmap.md)).
 
-### 2.1 Thanh toán (`kind: payment_gateway`)
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `VietQr` | QR động NAPAS, tự xác nhận qua webhook ngân hàng/Casso/SePay | `PaymentGateway`, inbound webhook | P1 |
-| `VnPay` | Thẻ nội địa/quốc tế, QR ngân hàng | `PaymentGateway` | P1 |
-| `MoMo`, `ZaloPay`, `ShopeePay` | Ví điện tử, deeplink | `PaymentGateway` | P2 |
-| `OnePay`, `Payoo` | Cổng thẻ khác | `PaymentGateway` | theo nhu cầu |
-| `Bnpl` | Trả góp / mua trước trả sau (Kredivo, Fundiin…) | `PaymentGateway` | P3 |
-
-### 2.2 Vận chuyển (`kind: shipping_carrier`)
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `Ghn`, `Ghtk` | Báo phí, tạo/huỷ vận đơn, webhook trạng thái, map địa giới | `ShippingCarrier`, `integration_mappings` | P1 (1 hãng) |
-| `ViettelPost`, `JtExpress`, `NinjaVan` | Như trên | `ShippingCarrier` | P2 |
-| `Ahamove` | Giao nhanh nội thành | `ShippingCarrier` | P3 |
-| `CodReconciliation` | Import bảng kê COD, khớp vận đơn, chênh lệch, đẩy kế toán | event `ShipmentStatusChanged`, `Payment` contract, Admin page | P2 |
-
-### 2.3 Bán hàng & khách hàng
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `Promotion` | Engine điều kiện → hành động, voucher, flash sale, chống chồng KM, ngân sách, KM cross-brand (yêu cầu: [07 §2](07-khach-hang-khuyen-mai-loyalty.md)) | `TotalsCalculator`, `CheckoutValidator`, event `OrderPlaced/Cancelled`, Admin pages | P1 (bản cơ bản) |
-| `Loyalty` | Hạng, tích/đổi điểm toàn tập đoàn, ledger (yêu cầu: [07 §3](07-khach-hang-khuyen-mai-loyalty.md)) | `TotalsCalculator`, events đơn/đổi trả, `customer.profile_tabs`, Integration (đơn POS) | P3 |
-| `CodRiskGuard` | Chống "bom hàng": giới hạn COD, blacklist SĐT, OTP đơn giá trị cao, xác nhận đơn tự động | `CheckoutValidator`, `PaymentGateway::isAvailable` filter | P2 |
-| `AbandonedCart` | Nhắc giỏ bỏ quên (email/ZNS) | event `CartAbandoned`, `NotificationChannel` | P2 |
-| `Wishlist` | Yêu thích, báo có hàng lại/giảm giá | Storefront routes, event `AvailabilityChanged`, `PriceChanged` | P2 |
-| `SizeAdvisor` | Gợi ý size theo số đo, size profile | Storefront block, `customer.profile_tabs` | P3 |
-| `ProductBundle` | Set/combo, tồn = min thành phần | `TotalsCalculator`, `InventoryReservation` contract | P3 |
-| `SocialLogin` | Google, Apple, Zalo | `auth.providers` registry | P2 |
-
-### 2.4 Omnichannel & cửa hàng
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `StoreOmnichannel` | Tra tồn tại cửa hàng, BOPIS, ship-from-store, endless aisle, trả hàng online tại cửa hàng, Store App (yêu cầu: [05 §7](05-ton-kho-va-cua-hang.md)) | `FulfillmentMethod` (pickup), `SourcingStrategy`, location capabilities, Admin pages quyền `store_staff` | P2 |
-| `AdvancedSourcing` | Chấm điểm location theo khoảng cách, chi phí, tải; tách kiện | `SourcingStrategy` | P3 |
-| `ChannelAllocation` | Giới hạn % tồn bán theo kênh | filter `vani.inventory.ats` | P3 |
-
-### 2.5 Hoá đơn & pháp lý
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `EInvoice` | Luồng HĐĐT: nháp, phát hành, điều chỉnh/thay thế, thông tin công ty ở checkout (yêu cầu: [09 §5](09-dac-thu-viet-nam.md)); định nghĩa contract `EInvoiceProvider` cho plugin nhà cung cấp | events `OrderCompleted`, `ReturnResolved`, `checkout.fields` | P2 |
-| `EInvoiceVnpt`, `EInvoiceViettel`, `EInvoiceMisa`… | Driver nhà cung cấp | `EInvoiceProvider` (của plugin `EInvoice`) | P2 |
-
-### 2.6 Thông báo
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `ZaloZns` | Tin giao dịch qua Zalo ZNS, OTP | `NotificationChannel`, `OtpSender` | P1 |
-| `SmsBrandname` | SMS brandname (nhiều nhà cung cấp), OTP | `NotificationChannel`, `OtpSender` | P1 |
-| `WebPush` | Thông báo đẩy trình duyệt | `NotificationChannel` | P3 |
-
-### 2.7 Kênh bán & marketing
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `Shopee`, `Lazada`, `TikTokShop` | Đẩy sản phẩm/tồn, kéo đơn về luồng fulfillment chung | `Connector`, Integration mapping, channel type `marketplace` | P3 |
-| `FeedExport` | Feed Google Merchant / Meta / TikTok Catalog | scheduled task, catalog read contract | P2 |
-| `TrackingPixels` | GA4, Meta Pixel, TikTok Pixel theo brand, server-side events | hook slot storefront, events đơn | P1 |
-
-### 2.8 Tích hợp hệ thống
-
-| Plugin | Phạm vi | Điểm mở rộng dùng | Phase |
-|---|---|---|---|
-| `Erp<Tên>` (MisaAmis, SapB1, Odoo…) | Khi ERP không tự gọi Integration API: connector đồng bộ mã hàng, tồn, thanh toán | `Connector`, `integration_ownerships` | khi chốt ERP |
-| `Odo` | Tạm hoãn ([ADR-0007](adr/0007-integration-module-odo-deferred.md)) | `Connector` hoặc Integration Client | khi chốt ODO |
-| `PosSync` | Đồng bộ đơn/khách từ POS hiện hữu | `Connector` / Integration API `pos-orders` | P3 |
-
-### 2.9 Báo cáo & nội dung
-
-| Plugin | Phạm vi | Phase |
+| Plugin | Contract | Chứng minh được |
 |---|---|---|
-| `AdvancedReports` | Báo cáo hợp nhất Owner, cohort, RFM, phân bổ chi phí KM/loyalty liên brand | P3 |
-| `Blog`, `Lookbook` | Nội dung, block storefront bổ sung | P2 |
+| `vani.vietqr` | `PaymentGateway`, webhook registry | Luồng thanh toán bất đồng bộ, IPN idempotent, settings theo pháp nhân |
+| `vani.ghn` | `ShippingCarrier`, `integration_mappings`, webhook | Báo phí, tạo vận đơn sau commit, cập nhật trạng thái qua `ShipmentRecorder` |
+| `vani.promotion-rules` | `PromotionRule`, `PromotionAction`, Admin pages | Rule nghiệp vụ (giá trị giỏ, số lượng, collection, brand, đơn đầu, nhóm khách, freeship) cắm vào engine của Core |
 
-## 3. Quy tắc cho plugin chính thức
+## 3. Danh mục theo nhóm
 
-- Tuân thủ [10 §5](10-hook-va-plugin.md) và checklist clean-room ([01](01-clean-room-va-license.md)).
-- Có test Pest riêng, chạy trong CI chung; **không** merge nếu làm đỏ test core.
-- Plugin phụ thuộc plugin khác thì khai báo trong `requires.plugins` (ví dụ `EInvoiceMisa` cần `EInvoice`).
-- Nếu plugin cần một điểm mở rộng mà core chưa có, **mở PR bổ sung điểm mở rộng vào core** (kèm tài liệu ở [10 §6](10-hook-va-plugin.md)), không vá core từ trong plugin.
+Đợt: **P1** = cần để go-live brand đầu tiên · **P2** · **P3** · **Later**.
+
+### Thanh toán
+| Plugin | Contract | Đợt |
+|---|---|---|
+| `vani.vietqr` | `PaymentGateway` | P1 |
+| `vani.vnpay` | `PaymentGateway` | P1 |
+| `vani.momo`, `vani.zalopay`, `vani.shopeepay` | `PaymentGateway` | P2 |
+| `vani.bnpl` (Kredivo, Fundiin…) | `PaymentGateway` | P3 |
+
+### Vận chuyển
+| Plugin | Contract | Đợt |
+|---|---|---|
+| `vani.ghn` hoặc `vani.ghtk` | `ShippingCarrier` | P1 |
+| `vani.viettelpost`, `vani.jt`, `vani.ninjavan` | `ShippingCarrier` | P2 |
+| `vani.ahamove` | `ShippingCarrier` | P3 |
+| `vani.cod-reconciliation` | Events fulfillment, `PaymentRecorder`, Admin pages | P2 |
+
+### Bán hàng, khuyến mãi, khách hàng
+| Plugin | Contract / điểm mở rộng | Đợt |
+|---|---|---|
+| `vani.promotion-rules` | `PromotionRule`, `PromotionAction` | P1 |
+| `vani.promotion-advanced` (BxGy, combo, quà tặng, flash sale, cross-brand) | `PromotionRule`, `PromotionAction` | P3 |
+| `vani.cod-risk-guard` | `CheckoutValidator`, filter `vani.checkout.payment_methods` | P2 |
+| `vani.abandoned-cart` | Event `CartAbandoned`, `NotificationChannel` | P2 |
+| `vani.wishlist` | Storefront route, events `AvailabilityChanged`, `PriceChanged` | P2 |
+| `vani.social-login` | Auth provider registry | P2 |
+| `vani.loyalty` ([spec](specs/loyalty.md)) | `TotalsCalculator`, events đơn | P3 |
+| `vani.size-advisor` | `StorefrontBlock`, `customerProfileTabs()` | P3 |
+| `vani.product-bundle` | `TotalsCalculator`, `InventoryReservation` | P3 |
+
+### Omnichannel & tồn kho
+| Plugin | Contract | Đợt |
+|---|---|---|
+| `vani.store-omnichannel` ([spec](specs/store-omnichannel.md)) | `FulfillmentMethod`, `SourcingStrategy` | P2 |
+| `vani.advanced-sourcing` | `SourcingStrategy` | P3 |
+| `vani.channel-allocation` | `InventoryStrategy` | P3 |
+
+### Hoá đơn & thông báo
+| Plugin | Contract | Đợt |
+|---|---|---|
+| `vani.einvoice` (định nghĩa `EInvoiceProvider` cho plugin nhà cung cấp) | Events `OrderCompleted`, `ReturnResolved`; `checkoutFields()` | P2 |
+| `vani.einvoice-vnpt`, `-viettel`, `-misa`… | `EInvoiceProvider` (của `vani.einvoice`) | P2 |
+| `vani.zalo-zns`, `vani.sms-brandname` | `NotificationChannel`, `OtpSender` | P1 |
+| `vani.webpush` | `NotificationChannel` | P3 |
+
+### Kênh bán, marketing, tìm kiếm
+| Plugin | Contract | Đợt |
+|---|---|---|
+| `vani.tracking-pixels` (GA4, Meta, TikTok) | Slot storefront, events đơn | P1 |
+| `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
+| `vani.shopee`, `vani.lazada`, `vani.tiktokshop` | `Connector`, channel type `marketplace` | P3 |
+| `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
+| `vani.recommendation` | Hook listing, `StorefrontBlock` | Later |
+
+### Tích hợp hệ thống
+| Plugin | Contract | Đợt |
+|---|---|---|
+| `vani.erp-<tên>` (Odoo, SAP B1, MISA AMIS…) | `ErpConnector` ([erp-integration](../11-integration/erp-integration.md)) | Khi chốt ERP |
+| `vani.odo` | `Connector` hoặc Integration Client | Khi chốt vai trò ODO |
+| `vani.pos-sync` | `Connector` / Integration API | P3 |
+
+### Mô hình kinh doanh mới
+| Plugin | Tài liệu | Đợt |
+|---|---|---|
+| `vani.marketplace` | [marketplace](../13-marketplace/marketplace.md) | Later |
+| `vani.creator` (creator/affiliate/attribution) | [creator-affiliate](../13-marketplace/creator-affiliate.md) | Later |
+
+### Báo cáo & nội dung
+| Plugin | Đợt |
+|---|---|
+| `vani.advanced-reports` (hợp nhất Owner, cohort, RFM, phân bổ chi phí KM/loyalty) | P3 |
+| `vani.blog`, `vani.lookbook` | P2 |
+
+## 4. Quy tắc
+
+Tuân thủ [plugin-system §10](plugin-system.md). Plugin phụ thuộc plugin khác thì khai báo `requires.plugins` (ví dụ `vani.einvoice-misa` → `vani.einvoice`).

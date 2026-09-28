@@ -1,24 +1,26 @@
-# 0001 — Modular monolith trên Laravel, module tại `modules/`
+# ADR-001 — Modular Monolith trên Laravel
 
-- Trạng thái: Accepted
-- Ngày: 2026-09-28
-- Người quyết định: Owner
+- Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner
 
-## Bối cảnh
-Cần xây nền tảng đa brand với đội nhỏ–vừa, yêu cầu nhất quán mạnh giữa checkout, tồn kho, khuyến mãi; đồng thời phải mở rộng được về sau (thêm kênh, tách dịch vụ).
+## Context
+Đội 4–6 dev, một Owner, thị trường VN. Checkout, tồn kho, khuyến mãi, đơn hàng cần nhất quán mạnh.
 
-## Quyết định
-- Xây **một ứng dụng Laravel 13** chia thành module theo bounded context.
-- Module đặt tại **thư mục gốc `modules/<Module>/`** (không đặt trong `app/`), namespace `Modules\<Module>\`, autoload PSR-4 `"Modules\\": "modules/"`. `app/` chỉ giữ phần khung ứng dụng.
-- Module giao tiếp qua `Contracts/` (interface + DTO) và Domain Event; không truy cập Model/bảng của module khác.
+## Problem
+Cần kiến trúc vừa phát triển nhanh, vừa có ranh giới rõ để mở rộng (plugin, tách service về sau), mà không gánh chi phí vận hành phân tán.
 
-## Hệ quả
-- (+) Một lần deploy, transaction DB cục bộ, dễ debug, tốc độ phát triển cao.
-- (+) Ranh giới module nhìn thấy rõ ở cấp thư mục; có thể tách service (Search, Integration) sau.
-- (−) Cần tự viết `ModuleServiceProvider` để nạp route, migration, view, lang, trang Inertia của từng module; lệnh `php artisan make:*` sinh file vào `app/` → phải di chuyển hoặc viết lệnh `vani:make:*` riêng.
-- (−) Cần kỷ luật ranh giới: bổ sung Pest arch tests, ví dụ `arch()->expect('Modules\Ordering')->not->toUse('Modules\Inventory\Models')`.
+## Decision
+- Một ứng dụng **Laravel 13**, chia module theo bounded context tại thư mục gốc **`modules/<Context>/`** (namespace `Modules\`), không đặt trong `app/`.
+- Module giao tiếp qua `Contracts/` và `Events/` ([bounded-contexts](../02-architecture/bounded-contexts.md)).
+- Chỉ tách service khi có số liệu vận hành chứng minh (rule R19).
 
-## Phương án đã cân nhắc
-- **Module trong `app/Modules`**: không cần sửa autoload nhưng lẫn với khung ứng dụng — Owner chọn tách ra thư mục gốc.
-- **Microservices ngay từ đầu**: chi phí vận hành, transaction phân tán — quá sớm.
-- **Nền tảng có sẵn (fork BeikeShop/khác)**: vướng license (xem [01](../01-clean-room-va-license.md)) và không khớp mô hình đa brand.
+## Alternatives
+- Microservices từ đầu: transaction phân tán, chi phí vận hành cao, đội nhỏ không kham nổi.
+- Module trong `app/Modules`: đơn giản autoload nhưng lẫn với khung ứng dụng. Owner chọn thư mục gốc riêng.
+- Fork nền tảng có sẵn: vướng license và không khớp mô hình đa brand.
+
+## Consequences
+- (+) Một deploy, transaction cục bộ, debug dễ.
+- (−) Phải tự viết `ModuleServiceProvider` và lệnh `vani:make:*`; phải có arch test giữ ranh giới.
+
+## Trade-offs
+Chấp nhận giới hạn scale theo chiều ngang của một codebase để đổi lấy tốc độ và tính nhất quán.

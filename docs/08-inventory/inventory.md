@@ -1,104 +1,153 @@
-# 05 — Tồn kho & Cửa hàng vật lý
+# Inventory
 
-> **Core**: §1–§6 (location, tồn, reservation, ATS, đồng bộ, sourcing mặc định). **Plugin**: §6 chiến lược nâng cao (`AdvancedSourcing`), §7 omnichannel (`StoreOmnichannel`), channel allocation (`ChannelAllocation`) — xem [17](17-danh-muc-plugin.md).
+> Trạng thái: **Designed**. Quyết định: [ADR-006](../19-adr/ADR-006-inventory-authority.md).
 
 ## 1. Nguyên tắc
 
-1. **Tồn vật lý** (on-hand) thuộc về nguồn gốc được cấu hình **theo location**: mặc định VaniShop (nhập/import/điều chỉnh), chuyển sang ERP/POS/ODO khi hệ thống đó kết nối qua module Integration ([08 §7](08-module-integration.md)). **VaniShop luôn nắm tồn có thể bán online** (Available-To-Sell — ATS) và **giữ hàng** (reservation).
-2. **Không bao giờ trừ trực tiếp** một con số "quantity" trên SKU khi khách đặt hàng — mọi thay đổi đi qua **reservation** và **stock movement** có lý do.
-3. Tồn kho luôn gắn với **location**.
+1. **Inventory Reservation là invariant của Core**; **Inventory Strategy là extension** (`InventoryStrategy`, `SourcingStrategy`).
+2. Tồn luôn gắn với **location**. Không có con số "quantity" chung trên SKU.
+3. Mọi thay đổi tồn đều là một **movement** trong ledger append-only, kèm lý do và tham chiếu. Không có câu `UPDATE` tồn "chay".
+4. **Authority**:
+   - Tồn vật lý (on-hand): nguồn gốc cấu hình **theo location**. Mặc định là VaniShop; khi ERP/POS/ODO được tích hợp thì chuyển sang hệ thống đó.
+   - Giữ hàng online và availability khi checkout: **luôn là VaniShop**. ERP không bao giờ ghi trực tiếp vào `reserved`.
 
-## 2. Location
+```text
+ERP / POS / ODO  (authority của physical stock, nếu được cấu hình)
+      │  inventory.levels (số tuyệt đối + version)
+      ▼
+VaniShop Inventory: on_hand (bản sao có version)
+      │
+      ▼
+Reservation (authority: VaniShop)  ──►  ATS  ──►  Checkout
+```
+
+## 2. Mô hình
+
+| Entity | Vai trò | Bảng |
+|---|---|---|
+| **Location** | Kho, cửa hàng, điểm ảo (ký gửi, sàn, seller) | `locations` |
+| **StockLevel** | Trạng thái hiện tại theo `(location, variant)` | `stock_levels` |
+| **StockReservation** | Lượng hàng đang giữ cho một đơn | `stock_reservations` |
+| **StockMovement / InventoryLedger** | Nhật ký append-only mọi biến động | `stock_movements` |
+| **StockTransfer** | Chuyển hàng giữa location | `stock_transfers`, `stock_transfer_lines` |
+| **ReconciliationRun** | Một lần đối chiếu với nguồn ngoài | `inventory_reconciliations`, `inventory_reconciliation_lines` |
+
+### Location
 
 | Trường | Ý nghĩa |
 |---|---|
-| `code`, `name`, `type` | `warehouse` (kho), `store` (cửa hàng), `virtual` (ký gửi, sàn) |
-| `legal_entity_id` | Pháp nhân sở hữu hàng tại location |
-| `address`, `geo(lat,lng)` | Dùng cho tìm cửa hàng gần nhất, tính phí ship |
-| `capabilities` | `ship_online_orders`, `pickup_in_store` (BOPIS), `accept_returns` |
-| `brands` | Danh sách brand được bán từ location này |
-| `priority`, `cutoff_time` | Ưu tiên phân bổ; giờ chốt đơn trong ngày |
-| `external_code` | Mã kho tương ứng trên ERP/ODO |
+| `code`, `name`, `type` | `warehouse`, `store`, `virtual` |
+| `legal_entity_id` | Pháp nhân sở hữu hàng |
+| `address`, `geo` | Cho sourcing, tìm cửa hàng |
+| `capabilities` | `ship_online_orders`, `pickup_in_store`, `accept_returns` |
+| `stock_authority` | `vanishop` hoặc mã Integration Client (ERP/POS/ODO) |
+| `priority`, `cutoff_time` | Sourcing |
+| Brand được bán | `location_brands` |
 
-## 3. Các con số tồn
+### Các con số
 
+```text
+on_hand       : tồn vật lý (tự quản lý, hoặc bản sao từ authority ngoài)
+reserved      : Σ reservation đang active tại location
+safety_stock  : không bán online (theo location, có thể override theo variant)
+available     = on_hand − reserved − safety_stock   (có thể âm khi authority ngoài hạ on_hand)
+ATS(location) = max(0, available)
+ATS(channel)  = InventoryStrategy.ats(channel, variant)   // mặc định: Σ ATS(location) của location phục vụ channel
 ```
-on_hand        : tồn vật lý (nội bộ, hoặc đồng bộ từ hệ thống nguồn gốc của location)
-reserved       : đang giữ cho đơn online chưa xuất kho
-safety_stock   : tồn an toàn không bán online (theo location / variant / channel)
-ATS(location)  = max(0, on_hand - reserved - safety_stock)
-ATS(channel)   = Σ ATS(location) với location phục vụ channel đó
-```
 
-- Cửa hàng thường có `safety_stock` cao hơn (hàng trưng bày, rủi ro lệch tồn).
-- Có thể cấu hình **channel allocation** (ví dụ chỉ bán tối đa 30% tồn cho Shopee) — Phase 3.
-- Bảng `stock_levels(location_id, variant_id, on_hand, reserved, safety_stock, version, synced_at)`.
-- Bảng `stock_movements` ghi sổ (append-only) mọi biến động: `sync_from_erp`, `reserve`, `release`, `commit` (xuất kho), `return`, `adjust`.
+`InventoryStrategy` (ví dụ `vani.channel-allocation`) chỉ được **giảm** ATS so với công thức chuẩn, không được tăng. Core kiểm tra `min(strategy, standard)`.
 
-## 4. Vòng đời reservation
+## 3. Vòng đời reservation
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Held: Checkout bắt đầu thanh toán online<br/>(TTL 15 phút)
-    [*] --> Committed: Đặt đơn COD
-    Held --> Committed: Thanh toán thành công
-    Held --> Released: Hết hạn TTL / huỷ thanh toán
-    Committed --> Fulfilled: Xác nhận xuất kho<br/>(kho nội bộ hoặc hệ thống ngoài)
-    Committed --> Released: Huỷ đơn trước xuất kho
-    Fulfilled --> [*]
-    Released --> [*]
+    [*] --> active: PlaceOrder (TTL nếu thanh toán online)
+    active --> committed: xuất kho (shipment picked_up / manual shipped)
+    active --> released: huỷ đơn / hết hạn thanh toán / thanh toán thất bại
+    active --> active: chuyển location (sourcing)
+    committed --> [*]
+    released --> [*]
 ```
 
-- **Chống oversell**: reserve thực hiện trong transaction với `SELECT ... FOR UPDATE` trên dòng `stock_levels` (hoặc update có điều kiện `WHERE on_hand - reserved - safety_stock >= :qty`). Test concurrency bắt buộc.
-- **Flash sale**: dùng bộ đếm nguyên tử Redis (`DECRBY`) làm cổng chặn phía trước, đối chiếu DB sau.
-- Job `ReleaseExpiredReservations` chạy mỗi phút.
-- Khi xác nhận xuất kho (`Fulfilled`): nếu VaniShop là nguồn gốc on-hand của location → trừ `reserved` và `on_hand` cùng lúc (movement `commit`); nếu on-hand thuộc hệ thống ngoài → chỉ trừ `reserved`, `on_hand` giảm theo lần đồng bộ tiếp theo (sự kiện có `movement_id` để khử trùng lặp).
-
-## 5. Đồng bộ tồn với hệ thống ngoài (qua module Integration)
-
-| Cơ chế | Khi nào | Ghi chú |
+| Sự kiện | Hành động | Movement |
 |---|---|---|
-| **Delta push** (`PUT /api/integration/v1/inventory/levels`) | Mỗi biến động | Ưu tiên; gửi `on_hand` tuyệt đối + `version`/timestamp để bỏ qua bản cũ |
-| **Full snapshot** | Mỗi đêm hoặc theo yêu cầu | Đối chiếu, sửa lệch; báo cáo chênh lệch |
-| **Pull theo SKU** | Trước khi xác nhận đơn giá trị cao (tuỳ chọn) | Timeout ngắn, lỗi thì dùng số liệu local |
+| Đặt hàng | reserve (atomic) | `reserve` |
+| Thanh toán thất bại / hết hạn / huỷ | release | `release` |
+| Xuất kho | commit: `reserved −= q`; nếu location do VaniShop quản lý thì `on_hand −= q` | `commit` |
+| Location do hệ thống ngoài quản lý | commit chỉ giảm `reserved`; on_hand giảm khi authority gửi số mới (khử trùng bằng `version`) | `commit` |
+| Trả hàng nhập kho | `on_hand += q` (nếu sellable) | `return` |
+| Điều chỉnh tay | `on_hand ±= q`, bắt buộc lý do + quyền `stock.adjust` | `adjust` |
+| Đồng bộ từ authority | set `on_hand = n` nếu `version` mới hơn | `sync` |
+| Chuyển kho | `transfer_out` / `transfer_in` | `transfer_*` |
 
-Chi tiết giao thức: [08](08-module-integration.md).
-
-## 6. Phân bổ đơn (Order Sourcing)
-
-Khi đơn được xác nhận, core gọi `SourcingStrategy` đang bật cho brand ([10 §6](10-hook-va-plugin.md)):
+## 4. Reserve atomic
 
 ```php
-interface SourcingStrategy
+public function reserve(ReservationRequest $req): Reservation   // gọi trong transaction PlaceOrder
 {
-    public function code(): string;
-    /** @return list<AllocationProposal> đề xuất location + dòng hàng + số lượng */
-    public function allocate(SourcingRequest $request): array;
+    // Khoá theo thứ tự (location_id, variant_id) tăng dần → tránh deadlock
+    $levels = StockLevelRecord::whereIn(...)->orderBy('location_id')->orderBy('variant_id')->lockForUpdate()->get();
+
+    foreach ($req->lines as $line) {
+        $level = StockLevel::fromRecord($levels->for($line));   // Domain object thuần
+        $level->reserve($line->quantity);                        // ném InsufficientStock nếu available < q
+        $this->levels->save($level);                             // reserved += q
+        $this->ledger->append(Movement::reserve($level, $line, $req->orderRef));
+    }
+    return $this->reservations->create($req, expiresAt: $req->ttl);
 }
 ```
 
-**Core — `priority_first_fit` (mặc định):**
+- Mức cô lập `READ COMMITTED` + `FOR UPDATE` trên đúng các dòng cần dùng.
+- **Flash sale**: counter Redis `DECRBY` chặn trước; hết counter thì trả hết hàng ngay, không vào DB. Counter được nạp lại từ ATS DB định kỳ; DB luôn là nguồn đúng cuối cùng.
+- Job `ReleaseExpiredReservations` chạy mỗi phút, idempotent (chỉ xử lý `active` + `expires_at < now`).
 
-1. Lọc location có capability `ship_online_orders`, phục vụ brand, đủ ATS.
-2. Ưu tiên **1 location đủ toàn bộ đơn** (tránh tách kiện), theo `priority`.
-3. *(Plugin `AdvancedSourcing`)* chấm điểm theo khoảng cách tới khách, chi phí vận chuyển ước tính, tải hiện tại của location.
-4. Không location nào đủ → tách đơn thành nhiều shipment (nếu brand cho phép) hoặc chuyển trạng thái chờ điều phối thủ công.
-5. Với `fulfillment.mode = external` (khi có ODO): kết quả sourcing chỉ là **đề xuất**; hệ thống ngoài có thể ghi đè bằng location thực tế qua Integration API.
+## 5. Tình huống cần xử lý
 
-> Mặc định hiện tại `fulfillment.mode = internal`: VaniShop tự phân bổ kho. Vai trò ODO tạm hoãn ([ADR-0007](adr/0007-integration-module-odo-deferred.md)).
+| Tình huống | Xử lý |
+|---|---|
+| Concurrent checkout SKU cuối | Khoá dòng; một bên nhận `inventory.insufficient_stock` |
+| Reservation hết hạn khi khách đang thanh toán | IPN đến sau → đơn đã huỷ → auto refund ([payment](../10-payment/payment.md)) |
+| Huỷ đơn | `OrderCancelled` → release (idempotent theo reservation id) |
+| Thanh toán thất bại | Giữ reservation đến hết TTL để khách thử lại; hết TTL thì release |
+| Authority ngoài hạ on_hand xuống dưới `reserved` | Cho phép (phản ánh thực tế); `available` âm → ATS = 0; cảnh báo "thiếu hàng cho đơn đã giữ" kèm danh sách đơn cần xử lý |
+| Bản sync cũ đến sau bản mới | So `version`, bỏ qua bản cũ |
+| Lệch tồn | Reconciliation (§6) |
+| Oversell do lỗi hệ thống | Không thể xảy ra nếu R14 đúng; concurrency test trong CI bảo vệ |
 
-## 7. Omnichannel với cửa hàng *(plugin `StoreOmnichannel`)*
+## 6. Transfer và reconciliation
 
-> Core chỉ cung cấp: location `type = store`, capability (`pickup_in_store`, `accept_returns`), contract `FulfillmentMethod` và `SourcingStrategy`, phân quyền theo location. Toàn bộ tính năng dưới đây là **yêu cầu đầu vào cho plugin**.
+- **Transfer**: `draft → in_transit → received`. Xuất: movement `transfer_out`. Nhận: `transfer_in` (có thể nhận thiếu, chênh lệch ghi `adjust` kèm lý do). Nếu cả hai location do ERP quản lý thì transfer diễn ra trên ERP; VaniShop chỉ nhận số mới.
+- **Reconciliation**: snapshot từ authority (hằng đêm hoặc theo yêu cầu) → so với `on_hand` → tạo `inventory_reconciliation_lines` cho chênh lệch → tự áp dụng nếu dưới ngưỡng, còn lại chờ duyệt → movement `sync`. Báo cáo tỷ lệ lệch (mục tiêu < 0,5%).
 
-| Tính năng | Mô tả | Phase |
-|---|---|---|
-| **Tra tồn tại cửa hàng** | PDP hiển thị "còn hàng tại 3 cửa hàng gần bạn" (theo tỉnh/thành, không hiển thị con số chính xác) | 2 |
-| **BOPIS** (Click & Collect) | Khách đặt online, chọn cửa hàng nhận. Cửa hàng xác nhận soạn hàng → SMS/ZNS "hàng đã sẵn sàng" → khách nhận, xuất trình mã | 2 |
-| **Ship-from-store** | Cửa hàng là location xuất đơn online | 3 |
-| **Endless aisle** | Nhân viên cửa hàng đặt online cho khách khi cửa hàng hết size | 3 |
-| **Trả hàng online tại cửa hàng** | Trả/đổi đơn online tại bất kỳ cửa hàng nào có `accept_returns` | 3 |
-| **Chuyển kho** | Đề xuất chuyển hàng giữa location (thực hiện trên ERP/ODO hoặc nội bộ) | 4 |
+## 7. Đồng bộ với authority ngoài
 
-- Cửa hàng thao tác qua **Store App** (web responsive trong Admin, quyền `store_staff` giới hạn theo location) hoặc qua POS hiện hữu tích hợp API.
-- SLA BOPIS: soạn hàng trong 2 giờ làm việc; giữ hàng tại quầy 3 ngày, quá hạn tự huỷ và hoàn tiền.
+| Cơ chế | Khi nào |
+|---|---|
+| Delta `PUT /api/integration/v1/inventory/levels` (số tuyệt đối + `version`) | Mỗi biến động |
+| Snapshot `POST /api/integration/v1/inventory/snapshots` | Hằng đêm → reconciliation |
+| Connector pull (`ErpConnector::pullStock`) | Khi ERP không tự đẩy |
+
+Chi tiết: [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md). Việc ghi của client không phải authority của location sẽ bị từ chối (`403 not_data_owner`).
+
+## 8. Invariant: DB và App
+
+| Invariant | Enforce |
+|---|---|
+| Một dòng tồn cho mỗi `(location, variant)` | DB unique |
+| `reserved >= 0`, `safety_stock >= 0` | DB `CHECK` (MySQL 8.0.16+) |
+| `reserved` = Σ reservation active | App (trong cùng transaction) + job kiểm tra định kỳ phát hiện lệch |
+| Không reserve vượt `available` | App (khoá dòng) |
+| Ledger không bị sửa/xoá | App (không có API) + quyền DB user ứng dụng không có `DELETE` trên `stock_movements` (khuyến nghị) |
+| Reservation release/commit đúng một lần | DB: trạng thái + `UPDATE … WHERE status = 'active'` |
+
+## 9. Omnichannel
+
+Tra tồn tại cửa hàng, BOPIS, ship-from-store, endless aisle là plugin: [store-omnichannel spec](../05-plugin/specs/store-omnichannel.md).
+
+## 10. Kiểm thử
+
+- Unit: `StockLevel::reserve/release/commit`, công thức ATS, `InventoryStrategy` không tăng được ATS.
+- Concurrency (MySQL thật): 50 tiến trình mua SKU tồn = 5 → đúng 5 thành công; không deadlock khi đơn nhiều SKU đảo thứ tự.
+- Feature: hết hạn reservation; huỷ đơn; sync bản cũ bị bỏ qua; client không phải authority bị 403.
+- Reconciliation: dữ liệu chênh lệch sinh đúng movement.
