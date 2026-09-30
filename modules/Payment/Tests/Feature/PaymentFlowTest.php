@@ -12,6 +12,7 @@ use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Persistence\Models\Payment;
+use Modules\Payment\Tests\Feature\Fixtures\FakeCollectOnDeliveryGateway;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Shared\Domain\Money\Money;
 
@@ -186,4 +187,15 @@ it('state machine: không chuyển ngược trạng thái; chuyển trùng là n
     expect($transitions->transition($order->id, OrderStatus::Confirmed, 'again', 'system'))->toBeFalse()
         ->and(fn () => $transitions->transition($order->id, OrderStatus::Pending, 'x', 'system'))
         ->toThrow(OrderTransitionRejected::class);
+});
+
+it('thu tiền khi giao là capability của cổng, không phải mã "cod": cổng plugin khai báo collectsOnDelivery được xử lý như COD', function () {
+    app(Extensions::class)->tag([FakeCollectOnDeliveryGateway::class], GatewayRegistry::TAG);
+
+    ($this->order)('fake_pay_at_door')->assertCreated()->assertJsonPath('data.payment.method', 'fake_pay_at_door');
+
+    $order = ($this->orderRow)();
+    expect($order->payment_status)->toBe('cod_pending')
+        ->and($order->order_status->value)->toBe('processing')
+        ->and((int) DB::table('shipments')->where('order_id', $order->id)->value('cod_amount'))->toBe(330_000);
 });

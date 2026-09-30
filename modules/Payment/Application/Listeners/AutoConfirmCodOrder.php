@@ -26,7 +26,7 @@ final class AutoConfirmCodOrder
         }
 
         $order = $this->orders->find($event->orderId);
-        if ($order !== null && $order->paymentMethod === 'cod' && $order->status === OrderStatus::Pending) {
+        if ($order !== null && $order->paymentStatus === 'cod_pending' && $order->status === OrderStatus::Pending) {
             $this->transitions->transition($order->id, OrderStatus::Confirmed, 'cod_auto_confirm', 'system');
         }
     }

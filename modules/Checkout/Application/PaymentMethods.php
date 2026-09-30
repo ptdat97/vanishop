@@ -28,8 +28,8 @@ final class PaymentMethods
         return array_values(array_filter(is_array($filtered) ? $filtered : $methods, fn (mixed $method): bool => is_array($method) && isset($method['code'], $method['label'])));
     }
 
-    public static function initialPaymentStatus(string $code): string
+    public function initialPaymentStatus(string $code): string
     {
-        return $code === 'cod' ? 'cod_pending' : 'unpaid';
+        return $this->payments->collectsOnDelivery($code) ? 'cod_pending' : 'unpaid';
     }
 }

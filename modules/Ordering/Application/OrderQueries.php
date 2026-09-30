@@ -56,7 +56,7 @@ final class OrderQueries
             fulfillmentStatus: (string) $order->fulfillment_status,
             returnStatus: (string) $order->return_status,
             paymentMethod: (string) $order->payment_method,
-            customerStatus: CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status, (string) $order->payment_method),
+            customerStatus: CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status),
             currencyCode: $order->currency_code,
             amounts: ['subtotal' => $order->subtotal_amount, 'discount' => $order->discount_amount, 'shipping' => $order->shipping_amount, 'tax' => $order->tax_amount, 'total' => $order->total_amount],
             customer: ['full_name' => (string) ($customer['full_name'] ?? ''), 'phone' => (string) ($customer['phone'] ?? ''), 'email' => $customer['email'] ?? null],

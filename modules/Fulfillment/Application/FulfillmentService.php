@@ -73,7 +73,8 @@ final class FulfillmentService
             $this->assertMatchesReservation($proposals, $lines, $reserved);
 
             $ids = [];
-            $cod = $order->paymentMethod === 'cod' ? $order->totalAmount : 0;
+            // Thu hộ: cổng thu tiền khi giao đặt đơn ở `cod_pending` (GatewayCapabilities::collectsOnDelivery).
+            $cod = $order->paymentStatus === 'cod_pending' ? $order->totalAmount : 0;
             foreach ($proposals as $index => $proposal) {
                 $shipment = Shipment::query()->create([
                     'public_id' => (string) Str::ulid(), 'order_id' => $orderId, 'brand_id' => $order->brandId, 'location_id' => $proposal->locationId,

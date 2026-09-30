@@ -219,7 +219,7 @@ final class CheckoutService implements Checkout
             customerId: $customerId,
             currencyCode: $totals->currencyCode,
             paymentMethod: (string) $request->paymentMethod,
-            paymentStatus: PaymentMethods::initialPaymentStatus((string) $request->paymentMethod),
+            paymentStatus: $this->payments->initialPaymentStatus((string) $request->paymentMethod),
             lines: array_map(fn (TotalsLine $line): OrderLineDraft => new OrderLineDraft(
                 $line->variantId, $line->sku, $line->name, $line->colorName, $line->sizeCode, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, $line->compareAt?->amount, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,

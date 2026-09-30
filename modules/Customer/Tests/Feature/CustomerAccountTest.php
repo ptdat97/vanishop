@@ -56,6 +56,10 @@ it('consent: cấp/rút theo brand của kênh, ghi ledger, trạng thái không
 
     $other = Brand::factory()->create();
     $this->putJson(H::API.'/me/consents', [...$body, 'brand_id' => $other->id], H::auth($this->token))->assertStatus(422);
+
+    // Kênh của plugin mới (vd. web push) dùng được consent mà không sửa Core; mã sai định dạng bị chặn.
+    $this->putJson(H::API.'/me/consents', [...$body, 'channel' => 'webpush'], H::auth($this->token))->assertOk();
+    $this->putJson(H::API.'/me/consents', [...$body, 'channel' => 'Web Push!'], H::auth($this->token))->assertStatus(422);
 });
 
 it('xuất dữ liệu cá nhân gồm hồ sơ, địa chỉ, consent, đơn hàng', function () {

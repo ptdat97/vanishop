@@ -84,7 +84,7 @@ final class AccountController
     {
         $data = $request->validate([
             'brand_id' => ['required', 'integer'],
-            'channel' => ['required', Rule::in(ConsentService::CHANNELS)],
+            'channel' => ['required', 'string', 'regex:'.ConsentService::CHANNEL_PATTERN],
             'purpose' => ['required', Rule::in(ConsentService::PURPOSES)],
             'granted' => ['required', 'boolean'],
         ]);

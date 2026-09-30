@@ -14,7 +14,11 @@ use Modules\Customer\Events\ConsentChanged;
  */
 final class ConsentService
 {
-    public const CHANNELS = ['email', 'sms', 'zns'];
+    /**
+     * Kênh consent = mã kênh liên lạc (`email`, `sms`, `zns`, hoặc kênh plugin mới như `webpush`). Không giữ danh
+     * sách cố định: plugin kênh mới dùng được consent mà không sửa Core.
+     */
+    public const CHANNEL_PATTERN = '/^[a-z][a-z0-9_]{1,31}$/';
 
     public const PURPOSES = ['marketing'];
 

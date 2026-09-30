@@ -12,7 +12,7 @@ final class CustomerStatus
     /**
      * @return array{code: string, label: string}
      */
-    public static function of(string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod): array
+    public static function of(string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus): array
     {
         $code = match (true) {
             $orderStatus === 'cancelled' => 'cancelled',
@@ -21,7 +21,8 @@ final class CustomerStatus
             $fulfillmentStatus === 'delivered' => 'delivered',
             in_array($fulfillmentStatus, ['shipped', 'partially_shipped'], true) => 'shipping',
             $fulfillmentStatus === 'returned_to_sender' => 'delivery_failed',
-            $orderStatus === 'pending' && $paymentMethod !== 'cod' && in_array($paymentStatus, ['unpaid', 'failed'], true) => 'awaiting_payment',
+            // Thu tiền khi giao bắt đầu ở `cod_pending`, không rơi vào nhánh chờ thanh toán.
+            $orderStatus === 'pending' && in_array($paymentStatus, ['unpaid', 'failed'], true) => 'awaiting_payment',
             $orderStatus === 'pending' => 'awaiting_confirmation',
             default => 'preparing',
         };

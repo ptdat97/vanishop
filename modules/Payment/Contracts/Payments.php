@@ -24,6 +24,11 @@ interface Payments
     public function paymentTtl(string $gatewayCode): ?int;
 
     /**
+     * Cổng thu tiền khi giao hàng (`GatewayCapabilities::collectsOnDelivery`) — Core không suy từ mã cổng.
+     */
+    public function collectsOnDelivery(string $gatewayCode): bool;
+
+    /**
      * Tạo payment cho đơn — TRONG transaction PlaceOrder. Trả thời gian giữ hàng (giây, null = không hết hạn).
      *
      * @return array{public_id: string, ttl: int|null}

@@ -54,7 +54,7 @@ final class OrderController
                 'order_status' => $order->order_status->value,
                 'payment_status' => $order->payment_status,
                 'payment_method' => $order->payment_method,
-                'label' => CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status, (string) $order->payment_method)['label'],
+                'label' => CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
             ])->all(),
             'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'total' => $page->total()],
         ]);

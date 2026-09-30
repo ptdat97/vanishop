@@ -77,6 +77,11 @@ final class PaymentService implements Payments
         return ($this->gateways->get($gatewayCode) ?? throw PaymentRejected::gatewayUnavailable($gatewayCode))->capabilities()->paymentTtlSeconds;
     }
 
+    public function collectsOnDelivery(string $gatewayCode): bool
+    {
+        return $this->gateways->get($gatewayCode)?->capabilities()->collectsOnDelivery ?? false;
+    }
+
     public function createForOrder(PlacedOrder $order, string $gatewayCode): array
     {
         $gateway = $this->gateways->get($gatewayCode) ?? throw PaymentRejected::gatewayUnavailable($gatewayCode);
@@ -248,7 +253,8 @@ final class PaymentService implements Payments
     public function collectCod(int $orderId, int $amount, string $shipmentReference): void
     {
         DB::transaction(function () use ($orderId, $amount, $shipmentReference): void {
-            $payment = Payment::query()->where('order_id', $orderId)->where('gateway_code', 'cod')->lockForUpdate()->first();
+            $payment = Payment::query()->where('order_id', $orderId)->lockForUpdate()->get()
+                ->first(fn (Payment $candidate): bool => $this->collectsOnDelivery($candidate->gateway_code));
             if ($payment === null || ! $this->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
                 return;
             }
