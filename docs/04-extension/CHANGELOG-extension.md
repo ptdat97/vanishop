@@ -17,6 +17,9 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 - Bộ contract test cho plugin (`Modules\<Ctx>\Testing\*Contract::define()`): `PromotionRule`, `PromotionAction`, `TaxCalculator`, `TotalsCalculator`, `CheckoutValidator`, `ShippingRateProvider`, `ReturnPolicy`, `InventoryStrategy`, `PricingStrategy`, `SourcingStrategy`, `SearchProvider`, `NotificationChannel`, `OtpSender`, `Connector`, `InboundHandler` (cùng `PaymentGateway`, `ShippingCarrier` có từ trước) — [testing §6](../17-testing/testing.md).
 
+- CLI `vani:plugin:upgrade`, `vani:plugin:doctor`.
+- Hook: đo `hook_duration_ms` theo hook × plugin; filter trả sai kiểu → `HookReturnTypeMismatch` (strict) / bỏ kết quả (production).
+
 ### Đổi hành vi
 - `MailChannel`: tin thiếu tiêu đề/nội dung → `permanent('mail.empty')` thay vì gửi email rỗng. `EmailOtpSender`: lỗi SMTP → `OtpDeliveryFailed` (Core chuyển sang kênh OTP kế tiếp).
 - `PaymentGateway::isAvailable()` lỗi → ẩn cổng; `ShippingRateProvider::options()` lỗi → bỏ lựa chọn của provider đó; `SearchProvider::search()` lỗi → tìm bằng provider `database`. Plugin lỗi liên tục bị tạm bỏ qua trên các luồng này.

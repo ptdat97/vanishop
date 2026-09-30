@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Plugins;
 
+use Composer\Semver\Comparator;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Support\Facades\DB;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
@@ -149,6 +150,49 @@ final class PluginManager
 
         $this->audit->record('extension.plugin.uninstalled', 'plugin', $pluginId, ['purge' => $purge]);
         $this->afterStateChange();
+    }
+
+    /**
+     * Nâng plugin đã cài lên version trong manifest hiện tại: chỉ nâng (không hạ), kiểm tra tương thích Core và
+     * phụ thuộc, chạy migration chưa chạy (phải expand/contract — tương thích ngược). Plugin `failed` nâng thành công
+     * chuyển về `installed` (bật lại bằng enable).
+     */
+    public function upgrade(string $pluginId): PluginRecord
+    {
+        $record = $this->recordOrFail($pluginId);
+        $manifest = $this->manifestOrFail($pluginId);
+        $from = $record->version;
+
+        if (Comparator::equalTo($manifest->version, $from)) {
+            throw new PluginOperationFailed("Plugin [{$pluginId}] đã ở version {$from}.");
+        }
+        if (Comparator::lessThan($manifest->version, $from)) {
+            throw new PluginOperationFailed("Không hạ version [{$pluginId}] từ {$from} xuống {$manifest->version}.");
+        }
+
+        $others = array_values(array_diff($this->installedIds(), [$pluginId]));
+        $problems = $this->resolver->problemsFor($pluginId, $this->manifests->all(), $others, $this->coreVersion);
+        if ($problems !== []) {
+            throw new PluginOperationFailed("Không thể nâng [{$pluginId}] lên {$manifest->version}:", $problems);
+        }
+
+        try {
+            $this->runMigrations($manifest);
+        } catch (Throwable $exception) {
+            $this->markFailed($pluginId, "upgrade {$from} → {$manifest->version}: {$exception->getMessage()}");
+
+            throw new PluginOperationFailed("Migration khi nâng [{$pluginId}] lỗi: {$exception->getMessage()}");
+        }
+
+        $record->update([
+            'version' => $manifest->version,
+            'status' => $record->status === PluginStatus::Failed ? PluginStatus::Installed : $record->status,
+            'last_error' => null,
+        ]);
+        $this->audit->record('extension.plugin.upgraded', 'plugin', $pluginId, ['from' => $from, 'to' => $manifest->version]);
+        $this->afterStateChange();
+
+        return $record->refresh();
     }
 
     public function markFailed(string $pluginId, string $error): void

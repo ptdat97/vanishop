@@ -14,16 +14,19 @@ use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginLoader;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
 use Modules\Extension\Console\PluginDisableCommand;
+use Modules\Extension\Console\PluginDoctorCommand;
 use Modules\Extension\Console\PluginEnableCommand;
 use Modules\Extension\Console\PluginHooksCommand;
 use Modules\Extension\Console\PluginInstallCommand;
 use Modules\Extension\Console\PluginListCommand;
 use Modules\Extension\Console\PluginUninstallCommand;
+use Modules\Extension\Console\PluginUpgradeCommand;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
@@ -71,6 +74,9 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->alias(ScopedExtensions::class, Extensions::class);
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
+        $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(
+            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), (string) config('vanishop.version'),
+        ));
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));
         $this->app->singleton(PluginStateCache::class, fn ($app): PluginStateCache => new PluginStateCache($app->make(Filesystem::class), (string) config('vanishop.plugins.cache')));
         $this->app->singleton(PluginLoader::class, fn ($app): PluginLoader => new PluginLoader($app, $app->make(PluginStateCache::class), (bool) config('vanishop.plugins.safe_mode')));
@@ -113,6 +119,8 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
                 PluginDisableCommand::class,
                 PluginUninstallCommand::class,
                 PluginHooksCommand::class,
+                PluginUpgradeCommand::class,
+                PluginDoctorCommand::class,
             ]);
         }
     }
