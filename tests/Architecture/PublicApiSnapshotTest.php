@@ -1,5 +1,7 @@
 <?php
 
+use Modules\Extension\PluginServiceProvider;
+
 /*
 | Public API cho plugin (docs/04-extension/extension-model.md §5): chữ ký của mọi thứ trong
 | Modules\*\Contracts, Modules\*\Events và PluginServiceProvider được chụp vào public-api.snapshot.
@@ -27,7 +29,7 @@ function publicApiLines(ReflectionClass $class): array
         }
     }
 
-    $isPluginBase = $class->getName() === Modules\Extension\PluginServiceProvider::class;
+    $isPluginBase = $class->getName() === PluginServiceProvider::class;
     foreach ($class->getMethods() as $method) {
         $visible = $method->isPublic() || ($isPluginBase && $method->isProtected());
         if (! $visible || $method->getDeclaringClass()->getName() !== $class->getName()) {
