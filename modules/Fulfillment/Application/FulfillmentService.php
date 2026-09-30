@@ -86,7 +86,7 @@ final class FulfillmentService
                     ShipmentLine::query()->create(['shipment_id' => $shipment->id, 'order_line_id' => $lineId, 'variant_id' => $variantByLine[$lineId], 'quantity' => $quantity]);
                 }
                 $this->recordEvent($shipment, ShipmentStatus::PendingBooking, "created:{$shipment->public_id}", 'system', null, []);
-                event(new ShipmentCreated($shipment->id, $orderId, $carrierCode));
+                event(new ShipmentCreated($shipment->id, $orderId, $carrierCode, $shipment->brand_id));
                 $ids[] = $shipment->id;
             }
 
@@ -261,7 +261,7 @@ final class FulfillmentService
         }
 
         $this->syncOrder($shipment->order_id);
-        event(new ShipmentStatusChanged($shipment->id, $shipment->order_id, $from->value, $to->value, $shipment->cod_amount));
+        event(new ShipmentStatusChanged($shipment->id, $shipment->order_id, $from->value, $to->value, $shipment->cod_amount, $shipment->brand_id));
 
         return true;
     }

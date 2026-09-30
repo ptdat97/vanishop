@@ -25,6 +25,14 @@ final class PluginActivation
 
     public function __construct(private readonly CurrentContext $context) {}
 
+    /**
+     * Bật ở scope owner (mọi brand) — dùng khi không xác định được brand của sự việc.
+     */
+    public function isActiveForOwner(string $pluginId): bool
+    {
+        return $this->enabledScopes()->where('plugin_id', $pluginId)->contains('scope_type', 'owner');
+    }
+
     public function isActive(string $pluginId): bool
     {
         $rows = $this->enabledScopes()->where('plugin_id', $pluginId);

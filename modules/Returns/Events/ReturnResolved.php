@@ -14,5 +14,5 @@ final readonly class ReturnResolved implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $returnId, public int $orderId, public int $refundedAmount) {}
+    public function __construct(public int $returnId, public int $orderId, public int $refundedAmount, public ?int $brandId = null) {}
 }

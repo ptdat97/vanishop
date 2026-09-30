@@ -11,5 +11,5 @@ final readonly class RefundCompleted implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $refundId, public int $paymentId, public int $orderId, public int $amount) {}
+    public function __construct(public int $refundId, public int $paymentId, public int $orderId, public int $amount, public ?int $brandId = null) {}
 }

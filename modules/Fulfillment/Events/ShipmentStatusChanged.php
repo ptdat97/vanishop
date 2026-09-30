@@ -17,5 +17,7 @@ final readonly class ShipmentStatusChanged implements ShouldDispatchAfterCommit
         public string $from,
         public string $to,
         public int $codAmount,
+        /** Brand của đơn — để plugin nghe event theo phạm vi brand (`PluginServiceProvider::onEvent`). */
+        public ?int $brandId = null,
     ) {}
 }

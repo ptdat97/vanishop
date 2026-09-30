@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
+use Modules\Extension\Application\Plugins\PluginEventListeners;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\AdminPath;
@@ -54,6 +55,19 @@ abstract class PluginServiceProvider extends ServiceProvider
     protected function onSlot(string $hook, callable $callback, int $priority = 10): void
     {
         $this->app->make(HookManager::class)->onSlot($hook, $callback, $priority, $this->pluginId());
+    }
+
+    /**
+     * Nghe domain event (`Modules\<Ctx>\Events\*`) — chỉ chạy khi plugin bật cho brand của event (event không
+     * mang brand: cần bật ở owner), trong phạm vi brand đó; lỗi được ghi log, không làm hỏng flow.
+     * Không dùng `Event::listen()` trực tiếp: listener khi đó chạy ở mọi brand.
+     *
+     * @param  class-string  $event
+     * @param  callable|class-string|array{0: class-string, 1: string}  $handler  class-string → `handle($event)`
+     */
+    protected function onEvent(string $event, callable|string|array $handler): void
+    {
+        $this->app->make(PluginEventListeners::class)->listen($event, $handler, $this->pluginId());
     }
 
     /**

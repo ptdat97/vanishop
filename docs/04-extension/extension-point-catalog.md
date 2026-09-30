@@ -62,7 +62,7 @@ Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho m
 
 ## 3. Domain Events
 
-Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Events`.
+Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Events`. Event gắn với đơn/brand mang `brandId` (thêm vào `Payment*`, `Refund*`, `Shipment*`, `Return*` ngày 2026-10-13) để plugin nghe qua `PluginServiceProvider::onEvent()` theo phạm vi bật; event cấp Owner (Customer, tồn kho, giỏ) chỉ tới plugin bật ở owner.
 
 | Context | Events |
 |---|---|

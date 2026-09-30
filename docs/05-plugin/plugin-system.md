@@ -148,6 +148,7 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `pluginId()` (abstract) | Implemented | Trùng `id` trong manifest |
 | `pluginPath($path)` | Implemented | Đường dẫn trong thư mục plugin |
 | `onFilter` / `onAction` / `onValidate` / `onSlot` | Implemented | Nghe hook public, chỉ chạy khi plugin active |
+| `onEvent($event, $handler)` | Implemented (2026-10-13) | Nghe domain event: chỉ chạy khi plugin bật cho `brandId` của event (event cấp Owner: cần bật ở owner), chạy trong phạm vi brand đó; lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
 | `adminMenu($key, $label, $route, $permission, $order)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active |
 | `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
 | `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Modules\Extension\Tests\Fixtures;
 
 use Illuminate\Filesystem\Filesystem;
+use Modules\Customer\Events\CustomerRegistered;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Payment\Events\PaymentCaptured;
+use Modules\Shared\Context\CurrentContext;
 
 /**
  * Plugin giả cho test: ghi vanishop.json vào thư mục tạm và trỏ Extension tới đó.
@@ -122,5 +125,34 @@ final class ContributingPluginProvider extends PluginServiceProvider
     public function boot(): void
     {
         $this->contribute(self::TAG, FixturePluginExtension::class);
+    }
+}
+
+/**
+ * Plugin nghe domain event qua onEvent(): ghi lại event nhận được và phạm vi brand lúc chạy.
+ */
+final class EventListeningPluginProvider extends PluginServiceProvider
+{
+    /** @var list<array{event: string, brand_ids: list<int>|null}> */
+    public static array $received = [];
+
+    public static bool $explode = false;
+
+    protected function pluginId(): string
+    {
+        return 'fixture.events';
+    }
+
+    public function boot(): void
+    {
+        $record = function (object $event): void {
+            if (self::$explode) {
+                throw new \RuntimeException('plugin listener lỗi');
+            }
+            self::$received[] = ['event' => $event::class, 'brand_ids' => app(CurrentContext::class)->brandIds()];
+        };
+
+        $this->onEvent(PaymentCaptured::class, $record);
+        $this->onEvent(CustomerRegistered::class, $record);
     }
 }
