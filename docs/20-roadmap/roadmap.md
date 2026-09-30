@@ -44,7 +44,9 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 - [x] Integration Client: 2 key HMAC song song, scope, data scope brand, IP allowlist, rate limit; CLI cấp client/key/webhook
 - [x] Integration API v1: `GET /events`, `GET /orders` (+ keyset cursor), `GET /orders/{number}`, `POST /orders/{number}/acknowledgements`, `PUT /inventory/levels` (`not_data_owner`, `stale_update`)
 - [x] PR Core tổng quát: `VariantDirectory::findBySkus`, `OrderReader::changedSince` (+ `OrderData` thêm `fulfillmentStatus`/`placedAt`/`updatedAt`), `InventorySync`
-- [ ] `integration_ownerships`, reconciliation, circuit breaker, metric/cảnh báo, các endpoint ghi còn lại, JSON Schema
+- [x] Circuit breaker theo connector (5 lỗi retryable liên tiếp → hoãn 60s, không tốn lượt thử; lỗi dữ liệu không tính)
+- [x] Đối soát đơn ↔ event feed hằng giờ, bù event thiếu (`reconciled: true`), báo cáo `integration_reconciliations` — bịt khe hở do domain event phát sau commit
+- [ ] `integration_ownerships`, đối soát tồn/thanh toán, metric/cảnh báo, các endpoint ghi còn lại, JSON Schema
 - [ ] Connector ERP (plugin) — chờ chốt ERP; contract `ErpConnector`
 
 ### Tiến độ slice 10 — Proof plugins (2026-10-09)

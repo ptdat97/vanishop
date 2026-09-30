@@ -15,6 +15,7 @@ use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Integration\Application\ConnectorRegistry;
 use Modules\Integration\Application\DatabaseReferences;
+use Modules\Integration\Application\Delivery\CircuitBreaker;
 use Modules\Integration\Application\Delivery\MessageRouter;
 use Modules\Integration\Application\Delivery\WebhookSender;
 use Modules\Integration\Application\EventPublisher;
@@ -25,6 +26,7 @@ use Modules\Integration\Application\OutboxWorker;
 use Modules\Integration\Console\ClientCommand;
 use Modules\Integration\Console\DispatchOutboxCommand;
 use Modules\Integration\Console\ProcessInboxCommand;
+use Modules\Integration\Console\ReconcileOrdersCommand;
 use Modules\Integration\Console\ReplayCommand;
 use Modules\Integration\Console\WebhookCommand;
 use Modules\Integration\Contracts\ExternalReferences;
@@ -67,6 +69,11 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
             array_values(array_map('intval', (array) config('vanishop.integration.retry_delays', [60, 300, 900, 3600, 21600, 86400]))),
             (float) config('vanishop.integration.retry_jitter', 0.2),
         ));
+        $this->app->bind(CircuitBreaker::class, fn ($app): CircuitBreaker => new CircuitBreaker(
+            $app->make('cache')->store(),
+            (int) config('vanishop.integration.circuit_threshold', 5),
+            (int) config('vanishop.integration.circuit_cooldown', 60),
+        ));
         $this->app->bind(WebhookSender::class, fn (): WebhookSender => new WebhookSender((int) config('vanishop.integration.webhook_pause_after_hours', 24)));
         $this->app->bind(OutboxWorker::class, fn ($app): OutboxWorker => new OutboxWorker(
             $app->make(MessageRouter::class), $app->make(RetryPolicy::class), (int) config('vanishop.integration.processing_timeout', 600),
@@ -99,10 +106,11 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
             // Dự phòng khi chưa chạy worker liên tục (`--work` dưới supervisor/Horizon).
             $schedule->command('vani:integration:dispatch')->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:integration:process-inbox')->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:integration:reconcile-orders')->hourly()->withoutOverlapping()->onOneServer();
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([DispatchOutboxCommand::class, ProcessInboxCommand::class, ReplayCommand::class, ClientCommand::class, WebhookCommand::class]);
+            $this->commands([DispatchOutboxCommand::class, ProcessInboxCommand::class, ReplayCommand::class, ReconcileOrdersCommand::class, ClientCommand::class, WebhookCommand::class]);
         }
 
         if (! $this->app->routesAreCached()) {

@@ -126,6 +126,9 @@ return [
         'processing_timeout' => (int) env('VANI_INTEGRATION_PROCESSING_TIMEOUT', 600),
         // Webhook lỗi liên tục quá số giờ này → subscription tạm dừng.
         'webhook_pause_after_hours' => (int) env('VANI_WEBHOOK_PAUSE_AFTER_HOURS', 24),
+        // Circuit breaker theo connector: mở sau N lỗi retryable liên tiếp, thử lại sau M giây.
+        'circuit_threshold' => (int) env('VANI_INTEGRATION_CIRCUIT_THRESHOLD', 5),
+        'circuit_cooldown' => (int) env('VANI_INTEGRATION_CIRCUIT_COOLDOWN', 60),
     ],
 
     'search' => [

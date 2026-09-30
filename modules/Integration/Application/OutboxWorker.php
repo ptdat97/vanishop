@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Integration\Application\Delivery\CircuitOpen;
 use Modules\Integration\Application\Delivery\MessageRouter;
 use Modules\Integration\Contracts\Data\DeliveryResult;
 use Modules\Integration\Domain\MessageStatus;
@@ -103,6 +104,12 @@ final class OutboxWorker
         try {
             try {
                 $result = $this->router->deliver($record);
+            } catch (CircuitOpen $open) {
+                $record->update([
+                    'status' => MessageStatus::Pending, 'locked_at' => null, 'next_attempt_at' => $open->retryAt, 'last_error' => $open->getMessage(),
+                ]);
+
+                return;
             } catch (Throwable $exception) {
                 report($exception);
                 $result = DeliveryResult::retryable($exception::class.': '.$exception->getMessage());

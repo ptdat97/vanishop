@@ -8,6 +8,7 @@ use Modules\Integration\Application\ConnectorRegistry;
 use Modules\Integration\Contracts\Data\DeliveryResult;
 use Modules\Integration\Persistence\Models\OutboxRecord;
 use Modules\Integration\Persistence\Models\WebhookSubscription;
+use Throwable;
 
 /**
  * `webhook:<id>` → WebhookSender; mã khác → Connector của plugin (trong phạm vi brand của message).
@@ -17,8 +18,12 @@ final class MessageRouter
     public function __construct(
         private readonly WebhookSender $webhooks,
         private readonly ConnectorRegistry $registry,
+        private readonly CircuitBreaker $breaker,
     ) {}
 
+    /**
+     * @throws CircuitOpen connector đang ngắt mạch — worker hoãn message, không tính lượt thử
+     */
     public function deliver(OutboxRecord $record): DeliveryResult
     {
         if (str_starts_with($record->target, WebhookSubscription::TARGET_PREFIX)) {
@@ -29,12 +34,30 @@ final class MessageRouter
                 : $this->webhooks->send($subscription, $record);
         }
 
-        return $this->registry->inBrand($record->brand_id, function () use ($record): DeliveryResult {
-            $connector = $this->registry->connector($record->target, $record->brand_id);
+        $openUntil = $this->breaker->openUntil($record->target);
+        if ($openUntil !== null) {
+            throw new CircuitOpen($record->target, $openUntil);
+        }
 
-            return $connector === null
-                ? DeliveryResult::permanent("connector.unavailable:{$record->target}")
-                : $connector->send($record->toMessage());
-        });
+        $connector = $this->registry->connector($record->target, $record->brand_id);
+        if ($connector === null) {
+            return DeliveryResult::permanent("connector.unavailable:{$record->target}");
+        }
+
+        try {
+            $result = $this->registry->inBrand($record->brand_id, fn (): DeliveryResult => $connector->send($record->toMessage()));
+        } catch (Throwable $exception) {
+            $this->breaker->recordFailure($record->target);
+            throw $exception;
+        }
+
+        // Lỗi vĩnh viễn là lỗi dữ liệu của từng message, không phải dấu hiệu hệ thống ngoài đang hỏng.
+        match (true) {
+            $result->isRetryable() => $this->breaker->recordFailure($record->target),
+            $result->isOk() => $this->breaker->recordSuccess($record->target),
+            default => null,
+        };
+
+        return $result;
     }
 }
