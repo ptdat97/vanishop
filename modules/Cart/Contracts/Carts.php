@@ -39,6 +39,18 @@ interface Carts
     public function merge(CartKey $source, CartKey $target): CartView;
 
     /**
+     * Giỏ đang mở của khách hàng trên kênh hiện tại (tạo mới nếu chưa có). Giỏ của khách truy cập bằng
+     * phiên đăng nhập (CurrentContext là actor customer), không cần token giỏ.
+     */
+    public function forCustomer(int $customerId, string $currencyCode): CartView;
+
+    /**
+     * Khi khách đăng nhập: gắn giỏ vãng lai (xác thực bằng token) vào khách. Khách đã có giỏ mở trên kênh →
+     * gộp vào giỏ đó; chưa có → giỏ vãng lai thành giỏ của khách và token cũ bị vô hiệu.
+     */
+    public function attachToCustomer(CartKey $guestCart, int $customerId): CartView;
+
+    /**
      * Khoá giỏ (FOR UPDATE) cho PlaceOrder và trả trạng thái hiện tại. Giỏ đã đóng → CartRejected::closed.
      * Phải gọi TRONG transaction đặt hàng: hai request đặt cùng một giỏ được xếp hàng, request sau thấy giỏ đã đóng.
      */

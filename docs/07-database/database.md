@@ -91,7 +91,7 @@ erDiagram
 | Catalog | `styles(meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
 | Inventory | `locations`, `location_brands`, `stock_levels`, `stock_reservations`, `stock_movements`, `stock_transfers`, `stock_transfer_lines`, `inventory_reconciliations`, `inventory_reconciliation_lines` |
-| Customer | `customers(meta json)`, `customer_brand_profiles`, `customer_consents`, `customer_consent_events`, `addresses`, `customer_groups`, `customer_group_customer` |
+| Customer | `customers(meta json)`, `customer_brand_profiles`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_group_customer` |
 | Cart | `carts(meta json)`, `cart_lines` |
 | Promotion | `promotions`, `promotion_rules`, `promotion_actions`, `vouchers`, `promotion_usages` |
 | Ordering | `order_groups`, `orders(meta json)`, `order_lines(meta json)`, `order_adjustments`, `order_events`, `order_notes` |

@@ -25,6 +25,7 @@ use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
+use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 
 /**
@@ -116,42 +117,51 @@ final class CartService implements Carts
         return DB::transaction(function () use ($source, $target): CartView {
             // Khoá theo thứ tự public_id để hai lần gộp ngược chiều không deadlock.
             $locked = Cart::query()->whereIn('public_id', [$source->publicId, $target->publicId])->orderBy('public_id')->lockForUpdate()->get()->keyBy('public_id');
-            $from = $locked[$source->publicId];
-            $into = $locked[$target->publicId];
-            $this->assertOpen($from);
-            $this->assertOpen($into);
 
-            $incoming = CartLine::query()->where('cart_id', $from->id)->get();
-            $existing = CartLine::query()->where('cart_id', $into->id)->get()->keyBy('variant_id');
-            $variantIds = $incoming->pluck('variant_id')->all();
-            $sellable = $this->catalog->sellableVariants($variantIds, $this->locale(), $this->now());
-            $prices = $this->prices->forVariants($variantIds, new PricingContext($into->channel_id, $this->now(), null));
-            $stock = $this->availability->forChannel($variantIds, $into->channel_id);
-            $lineCount = $existing->count();
+            return $this->mergeLocked($locked[$source->publicId], $locked[$target->publicId]);
+        });
+    }
 
-            foreach ($incoming as $line) {
-                $current = $existing->get($line->variant_id);
-                if (! isset($sellable[$line->variant_id], $prices[$line->variant_id]) || ($current === null && ! $this->limits->canAddLine($lineCount))) {
-                    continue;
-                }
+    public function forCustomer(int $customerId, string $currencyCode): CartView
+    {
+        $cart = $this->openCartOf($customerId);
+        if ($cart === null) {
+            $cart = Cart::query()->create([
+                'public_id' => (string) Str::ulid(),
+                'token_hash' => hash('sha256', Str::random(48)), // không ai giữ token: chỉ truy cập qua phiên khách
+                'channel_id' => $this->channelId(),
+                'customer_id' => $customerId,
+                'currency_code' => $currencyCode,
+                'status' => CartStatus::Active,
+                'last_activity_at' => now(),
+            ]);
+        }
 
-                $quantity = $this->limits->mergedQuantity($current->quantity ?? 0, $line->quantity, $stock[$line->variant_id] ?? 0);
-                if ($quantity < 1) {
-                    continue;
-                }
+        return $this->build($cart);
+    }
 
-                CartLine::query()->updateOrCreate(
-                    ['cart_id' => $into->id, 'variant_id' => $line->variant_id],
-                    ['brand_id' => $line->brand_id, 'quantity' => $quantity, 'unit_price_snapshot' => $current->unit_price_snapshot ?? $line->unit_price_snapshot],
-                );
-                $lineCount += $current === null ? 1 : 0;
+    public function attachToCustomer(CartKey $guestCart, int $customerId): CartView
+    {
+        $guest = $this->find($guestCart);
+        if ($guest->customer_id !== null && $guest->customer_id !== $customerId) {
+            throw CartRejected::notFound();
+        }
+
+        return DB::transaction(function () use ($guest, $customerId): CartView {
+            $existing = $this->openCartOf($customerId);
+            if ($existing === null || $existing->id === $guest->id) {
+                $locked = Cart::query()->whereKey($guest->id)->lockForUpdate()->firstOrFail();
+                $this->assertOpen($locked);
+                $locked->update(['customer_id' => $customerId, 'token_hash' => hash('sha256', Str::random(48))]);
+                $this->touch($locked);
+
+                return $this->build($locked);
             }
 
-            $from->update(['status' => CartStatus::Merged, 'lock_version' => $from->lock_version + 1, 'last_activity_at' => now()]);
-            $this->touch($into);
+            $locked = Cart::query()->whereIn('id', [$guest->id, $existing->id])->orderBy('public_id')->lockForUpdate()->get()->keyBy('id');
 
-            return $this->build($into);
-        });
+            return $this->mergeLocked($locked[$guest->id], $locked[$existing->id]);
+        }, attempts: 3);
     }
 
     public function lockForCheckout(CartKey $key): CartView
@@ -231,11 +241,56 @@ final class CartService implements Carts
         $cart = Cart::query()->where('public_id', $key->publicId)->where('channel_id', $this->channelId())->first();
 
         // Token sai và giỏ không tồn tại trả cùng một lỗi → không dò được public_id hợp lệ.
-        if ($cart === null || ! hash_equals($cart->token_hash, hash('sha256', $key->token))) {
+        // Giỏ của khách hàng: chính khách đó (phiên đăng nhập) truy cập được mà không cần token.
+        $ownedByActor = $cart !== null && $cart->customer_id !== null && $cart->customer_id === $this->customerId();
+        if ($cart === null || (! $ownedByActor && ! hash_equals($cart->token_hash, hash('sha256', $key->token)))) {
             throw CartRejected::notFound();
         }
 
         return $cart;
+    }
+
+    private function mergeLocked(Cart $from, Cart $into): CartView
+    {
+        $this->assertOpen($from);
+        $this->assertOpen($into);
+
+        $incoming = CartLine::query()->where('cart_id', $from->id)->get();
+        $existing = CartLine::query()->where('cart_id', $into->id)->get()->keyBy('variant_id');
+        $variantIds = $incoming->pluck('variant_id')->all();
+        $sellable = $this->catalog->sellableVariants($variantIds, $this->locale(), $this->now());
+        $prices = $this->prices->forVariants($variantIds, new PricingContext($into->channel_id, $this->now(), null));
+        $stock = $this->availability->forChannel($variantIds, $into->channel_id);
+        $lineCount = $existing->count();
+
+        foreach ($incoming as $line) {
+            $current = $existing->get($line->variant_id);
+            if (! isset($sellable[$line->variant_id], $prices[$line->variant_id]) || ($current === null && ! $this->limits->canAddLine($lineCount))) {
+                continue;
+            }
+
+            $quantity = $this->limits->mergedQuantity($current->quantity ?? 0, $line->quantity, $stock[$line->variant_id] ?? 0);
+            if ($quantity < 1) {
+                continue;
+            }
+
+            CartLine::query()->updateOrCreate(
+                ['cart_id' => $into->id, 'variant_id' => $line->variant_id],
+                ['brand_id' => $line->brand_id, 'quantity' => $quantity, 'unit_price_snapshot' => $current->unit_price_snapshot ?? $line->unit_price_snapshot],
+            );
+            $lineCount += $current === null ? 1 : 0;
+        }
+
+        $from->update(['status' => CartStatus::Merged, 'lock_version' => $from->lock_version + 1, 'last_activity_at' => now()]);
+        $this->touch($into);
+
+        return $this->build($into);
+    }
+
+    private function openCartOf(int $customerId): ?Cart
+    {
+        return Cart::query()->where('customer_id', $customerId)->where('channel_id', $this->channelId())
+            ->where('status', CartStatus::Active)->latest('last_activity_at')->first();
     }
 
     private function line(Cart $cart, int $lineId): CartLine
@@ -264,6 +319,16 @@ final class CartService implements Carts
     private function channelId(): int
     {
         return $this->context->channelId() ?? throw CartRejected::notFound();
+    }
+
+    private function customerId(): ?int
+    {
+        if (! $this->context->has()) {
+            return null;
+        }
+        $actor = $this->context->actor();
+
+        return $actor->type === ActorType::Customer ? $actor->id : null;
     }
 
     private function locale(): string

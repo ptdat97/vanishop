@@ -27,6 +27,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [021](ADR-021-storefront-composition-module.md) | Module Storefront làm tầng ghép (Catalog + Pricing + …) | Accepted |
 | [022](ADR-022-guest-cart-token.md) | Giỏ khách vãng lai: id công khai + token bí mật, giỏ không giữ hàng | Accepted |
 | [023](ADR-023-stateless-checkout.md) | Checkout không lưu phiên; PlaceOrder một transaction; một brand mỗi đơn | Accepted |
+| [024](ADR-024-customer-api-token.md) | Phiên khách trên Storefront API: token Bearer mờ (hash), không dùng Sanctum | Accepted |
 
 "Accepted" nghĩa là quyết định đã được chốt, **không** có nghĩa là đã có code. Trạng thái implementation nằm ở [status](../00-overview/status.md).
 

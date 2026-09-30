@@ -62,8 +62,9 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 Đơn (`/orders/track`, `/orders/{id}`) có `shipments[{carrier, service, tracking_number, status, events[{status, description, at}]}]`.
 
 Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác minh chữ ký; trùng/cũ không làm lùi trạng thái; rate limit 600/phút/IP). **Implemented**.
-| POST | `/auth/otp/request`, `/auth/otp/verify` | Đăng nhập OTP |
-| GET/PATCH | `/me`, `/me/addresses`, `/me/orders`, `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản |
+| POST | `/auth/otp/request` (`phone`, `purpose` ∈ `login`/`delete_account` → `202 {channel, expires_in}`), `/auth/otp/verify` (`phone`, `code`, `device?`, `cart_id?` + `X-Vani-Cart-Token` để gộp giỏ), `/auth/login` (`phone`, `password`), `/auth/logout` | Đăng nhập; trả `data` (khách) + `meta.token` (Bearer, một lần — [ADR-024](../19-adr/ADR-024-customer-api-token.md)). Lỗi `customer.otp_invalid` 422, `customer.otp_rate_limited` 429, `customer.otp_unavailable` 422, `customer.invalid_credentials` 401, `customer.unauthenticated` 401. Rate limit 20/phút/IP. **Implemented** |
+| GET/PATCH | `/me` (+ `PUT /me/password`, `GET /me/export`, `POST /me/delete` với OTP `delete_account`), `/me/addresses` (CRUD, tối đa 20), `/me/consents` (`PUT {brand_id, channel, purpose, granted}`), `/me/orders` (+ `/{id}`, `/{id}/cancel`), `/me/cart` | Tài khoản, header `Authorization: Bearer`. **Implemented**. Giỏ/checkout nhận Bearer tuỳ chọn: giỏ của khách không cần `X-Vani-Cart-Token` |
+| GET | `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản (plugin) |
 | POST | `/orders/{id}/returns` | Khách gửi yêu cầu đổi/trả (`lines[{order_line_id, quantity}]`, `reason_code` ∈ `vanishop.returns.reasons`, `note`), header `X-Vani-Order-Token`. Lỗi `return.not_eligible` (chưa giao / quá hạn), `return.quantity_exceeded`. Đơn trả về có `returns[]` và `returnable{lines{order_line_id: số còn trả được}, deadline}`. **Implemented** |
 | POST | `/orders/{id}/returns/{returnId}/cancel` | Khách huỷ yêu cầu còn chờ duyệt. **Implemented** |
 | POST | `/me/returns` | Tạo yêu cầu đổi trả (khi có tài khoản khách) |

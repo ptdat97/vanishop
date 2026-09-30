@@ -118,6 +118,19 @@ return [
         'reservation_ttl' => (int) env('VANI_RESERVATION_TTL', 900),
     ],
 
+    'customer' => [
+        // Token Bearer của Storefront API (ADR-024).
+        'token_ttl_days' => (int) env('VANI_CUSTOMER_TOKEN_TTL_DAYS', 90),
+        'otp' => [
+            // Giới hạn yêu cầu OTP trong cửa sổ `window` giây (chống SMS pumping).
+            'per_phone' => (int) env('VANI_OTP_PER_PHONE', 3),
+            'per_ip' => (int) env('VANI_OTP_PER_IP', 10),
+            'window' => (int) env('VANI_OTP_WINDOW', 600),
+            // CHỈ dev: ghi mã OTP vào log khi chưa có kênh SMS/ZNS.
+            'log_sender' => (bool) env('VANI_OTP_LOG_SENDER', env('APP_ENV') === 'local'),
+        ],
+    ],
+
     'integration' => [
         // Backoff giữa các lần gửi lại (giây); hết danh sách → dead. docs/11-integration/integration-platform.md §7
         'retry_delays' => [60, 300, 900, 3600, 21600, 86400],

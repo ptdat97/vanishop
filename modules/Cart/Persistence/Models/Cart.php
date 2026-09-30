@@ -30,6 +30,8 @@ final class Cart extends Model
     {
         return [
             'status' => CartStatus::class,
+            'channel_id' => 'integer',
+            'customer_id' => 'integer',
             'meta' => 'array',
             'lock_version' => 'integer',
             'last_activity_at' => 'immutable_datetime',

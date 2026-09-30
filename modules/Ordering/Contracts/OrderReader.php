@@ -37,5 +37,12 @@ interface OrderReader
      *
      * @return list<OrderData>
      */
+    /**
+     * Thống kê đơn (không tính đơn đã huỷ) của một khách theo brand, trong phạm vi brand của CurrentContext.
+     *
+     * @return list<array{brand_id: int, orders_count: int, total_spent: int, first_order_at: ?string, last_order_at: ?string}>
+     */
+    public function customerBrandStats(int $customerId): array;
+
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array;
 }

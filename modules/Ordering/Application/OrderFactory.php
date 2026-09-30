@@ -90,4 +90,22 @@ final class OrderFactory implements OrderWriter
             throw new InvalidArgumentException('Số liệu đơn không cân: tổng dòng/giảm giá/phí không khớp tổng đơn.');
         }
     }
+
+    public function reassignCustomer(int $fromCustomerId, int $toCustomerId): int
+    {
+        return DB::transaction(function () use ($fromCustomerId, $toCustomerId): int {
+            $orders = Order::query()->withoutGlobalScopes()->where('customer_id', $fromCustomerId)->lockForUpdate()->get(['id']);
+            foreach ($orders as $order) {
+                Order::query()->withoutGlobalScopes()->whereKey($order->id)->update(['customer_id' => $toCustomerId, 'updated_at' => now()]);
+                $actor = $this->context->has() ? $this->context->actor() : null;
+                DB::table('order_events')->insert([
+                    'order_id' => $order->id, 'type' => 'customer_reassigned', 'from_status' => null, 'to_status' => null, 'reason' => 'customer_merge',
+                    'actor_type' => $actor?->type->value, 'actor_id' => $actor?->id, 'source' => 'staff', 'correlation_id' => Context::get('correlation_id'),
+                    'data' => json_encode(['from' => $fromCustomerId, 'to' => $toCustomerId]), 'created_at' => now(),
+                ]);
+            }
+
+            return $orders->count();
+        });
+    }
 }

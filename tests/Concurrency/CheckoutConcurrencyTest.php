@@ -86,7 +86,10 @@ it('8 khách cùng đặt SKU chỉ còn 3 → đúng 3 đơn, tồn giữ đún
     expect($counts['ok'] ?? 0)->toBe(3)
         ->and(array_diff(array_keys($counts), ['ok', 'inventory.insufficient_stock', 'checkout.invalid']))->toBe([])
         ->and((int) DB::table('orders')->count())->toBe(3)
-        ->and((int) DB::table('stock_levels')->where('variant_id', $this->s->id)->value('reserved'))->toBe(3);
+        ->and((int) DB::table('stock_levels')->where('variant_id', $this->s->id)->value('reserved'))->toBe(3)
+        // Cùng SĐT, đặt song song → đúng một hồ sơ khách (unique phone_active), mọi đơn gắn khách đó.
+        ->and((int) DB::table('customers')->count())->toBe(1)
+        ->and(DB::table('orders')->distinct()->pluck('customer_id')->all())->toBe([(int) DB::table('customers')->value('id')]);
 });
 
 it('voucher còn 2 lượt, 6 khách cùng dùng → đúng 2 đơn có giảm giá', function () {

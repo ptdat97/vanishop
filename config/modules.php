@@ -23,6 +23,7 @@ return [
     'Cart',
     'Promotion',
     'Ordering',
+    'Customer',
     'Payment',
     'Checkout',
     'Fulfillment',

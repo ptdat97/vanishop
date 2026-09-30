@@ -20,6 +20,7 @@ use Modules\Checkout\Contracts\Data\PlaceOrderResult;
 use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Checkout\Contracts\Data\TotalsContext;
 use Modules\Checkout\Contracts\Data\TotalsLine;
+use Modules\Customer\Contracts\Customers;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Inventory\Contracts\Data\ReservationLine;
@@ -35,6 +36,8 @@ use Modules\Payment\Contracts\Payments;
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Application\IdempotencyStore;
+use Modules\Shared\Context\ActorType;
+use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Phone\PhoneNumber;
 use Throwable;
 
@@ -57,12 +60,14 @@ final class CheckoutService implements Checkout
         private readonly IdempotencyStore $idempotency,
         private readonly Payments $paymentService,
         private readonly Extensions $extensions,
+        private readonly Customers $customers,
+        private readonly CurrentContext $currentContext,
     ) {}
 
     public function quote(CheckoutRequest $request): CheckoutQuote
     {
         $cart = $this->carts->view($request->cart);
-        $context = $this->context($cart, $request);
+        $context = $this->context($cart, $request, $this->signedInCustomer());
         $totals = $this->pipeline->run($context);
 
         return new CheckoutQuote($totals, $this->shipping->for($context), $this->payments->available($totals), $cart->isCheckoutReady());
@@ -79,7 +84,8 @@ final class CheckoutService implements Checkout
         try {
             $body = DB::transaction(function () use ($request, $scope, $idempotencyKey): array {
                 $cart = $this->carts->lockForCheckout($request->cart);
-                $context = $this->context($cart, $request);
+                $customerId = $this->customerFor($request);
+                $context = $this->context($cart, $request, $customerId);
                 $totals = $this->pipeline->run($context);
 
                 $this->validate($request, $totals, $cart->isCheckoutReady());
@@ -99,9 +105,9 @@ final class CheckoutService implements Checkout
                     $ttl === null ? null : $ttl + 600,
                 ));
 
-                $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals));
+                $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals, $customerId));
                 $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod);
-                $this->promotions->recordUsage($placed->id, null, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
+                $this->promotions->recordUsage($placed->id, $customerId, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
                 Hook::action('vani.order.after_create', $placed);
                 $this->carts->markConverted($request->cart, $publicId);
 
@@ -119,7 +125,39 @@ final class CheckoutService implements Checkout
         return new PlaceOrderResult(201, $body, replayed: false, payment: $this->paymentView($body, replay: false));
     }
 
-    private function context(CartView $cart, CheckoutRequest $request): TotalsContext
+    private function signedInCustomer(): ?int
+    {
+        if (! $this->currentContext->has()) {
+            return null;
+        }
+        $actor = $this->currentContext->actor();
+
+        return $actor->type === ActorType::Customer ? $actor->id : null;
+    }
+
+    /**
+     * Khách đã đăng nhập; không thì profile (ẩn) theo SĐT liên hệ — lịch sử đơn vãng lai về đúng khách khi
+     * khách đăng ký bằng SĐT đó. SĐT sai → null (validator báo lỗi sau).
+     */
+    private function customerFor(CheckoutRequest $request): ?int
+    {
+        $signedIn = $this->signedInCustomer();
+        if ($signedIn !== null) {
+            return $signedIn;
+        }
+
+        $contact = (array) $request->contact;
+        $phone = PhoneNumber::tryFromString((string) ($contact['phone'] ?? ''));
+        if ($phone === null || trim((string) ($contact['full_name'] ?? '')) === '') {
+            return null;
+        }
+
+        $email = trim((string) ($contact['email'] ?? ''));
+
+        return $this->customers->resolveForCheckout($phone->e164, (string) $contact['full_name'], $email === '' ? null : $email);
+    }
+
+    private function context(CartView $cart, CheckoutRequest $request, ?int $customerId): TotalsContext
     {
         $lines = [];
         foreach ($cart->lines as $line) {
@@ -137,7 +175,7 @@ final class CheckoutService implements Checkout
 
         return new TotalsContext(
             channelId: $cart->channelId,
-            customerId: null,
+            customerId: $customerId,
             currencyCode: $cart->currencyCode,
             lines: $lines,
             adjustments: [],
@@ -168,7 +206,7 @@ final class CheckoutService implements Checkout
         }
     }
 
-    private function draft(string $publicId, string $reservationKey, CartView $cart, CheckoutRequest $request, Totals $totals): OrderDraft
+    private function draft(string $publicId, string $reservationKey, CartView $cart, CheckoutRequest $request, Totals $totals, ?int $customerId): OrderDraft
     {
         $contact = (array) $request->contact;
         $email = trim((string) ($contact['email'] ?? ''));
@@ -177,7 +215,7 @@ final class CheckoutService implements Checkout
             publicId: $publicId,
             brandId: $totals->brandIds()[0],
             channelId: $cart->channelId,
-            customerId: null,
+            customerId: $customerId,
             currencyCode: $totals->currencyCode,
             paymentMethod: (string) $request->paymentMethod,
             paymentStatus: PaymentMethods::initialPaymentStatus((string) $request->paymentMethod),

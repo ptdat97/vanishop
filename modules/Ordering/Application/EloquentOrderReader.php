@@ -55,6 +55,23 @@ final class EloquentOrderReader implements OrderReader
             ->exists();
     }
 
+    public function customerBrandStats(int $customerId): array
+    {
+        return Order::query()
+            ->where('customer_id', $customerId)
+            ->where('order_status', '!=', OrderStatus::Cancelled->value)
+            ->groupBy('brand_id')
+            ->orderBy('brand_id')
+            ->selectRaw('brand_id, count(*) as orders_count, sum(total_amount) as total_spent, min(placed_at) as first_order_at, max(placed_at) as last_order_at')
+            ->toBase()
+            ->get()
+            ->map(fn (object $row): array => [
+                'brand_id' => (int) $row->brand_id, 'orders_count' => (int) $row->orders_count, 'total_spent' => (int) $row->total_spent,
+                'first_order_at' => $row->first_order_at === null ? null : (string) $row->first_order_at,
+                'last_order_at' => $row->last_order_at === null ? null : (string) $row->last_order_at,
+            ])->all();
+    }
+
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array
     {
         return Order::query()

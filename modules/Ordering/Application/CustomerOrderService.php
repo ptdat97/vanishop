@@ -44,6 +44,37 @@ final class CustomerOrderService implements CustomerOrders
         return $this->queries->detail($order->fresh(['lines', 'adjustments']));
     }
 
+    public function ofCustomer(int $customerId, int $page = 1, int $perPage = 10): array
+    {
+        $paginator = Order::query()->with(['lines', 'adjustments'])->where('customer_id', $customerId)
+            ->orderByDesc('placed_at')->orderByDesc('id')->paginate($perPage, page: max(1, $page));
+
+        return [
+            'data' => array_map(fn (Order $order): OrderDetail => $this->queries->detail($order), $paginator->items()),
+            'total' => $paginator->total(),
+        ];
+    }
+
+    public function showForCustomer(int $customerId, string $publicId): ?OrderDetail
+    {
+        $order = $this->owned($customerId, $publicId);
+
+        return $order === null ? null : $this->queries->detail($order);
+    }
+
+    public function cancelForCustomer(int $customerId, string $publicId, string $reason): OrderDetail
+    {
+        $order = $this->owned($customerId, $publicId) ?? throw OrderActionRejected::notFound();
+        $this->commands->cancel($order->id, "customer:{$reason}", 'customer');
+
+        return $this->queries->detail($order->fresh(['lines', 'adjustments']));
+    }
+
+    private function owned(int $customerId, string $publicId): ?Order
+    {
+        return Order::query()->with(['lines', 'adjustments'])->where('public_id', $publicId)->where('customer_id', $customerId)->first();
+    }
+
     private function authorized(string $publicId, string $accessToken): ?Order
     {
         $order = Order::query()->with(['lines', 'adjustments'])->where('public_id', $publicId)->first();

@@ -21,4 +21,19 @@ interface CustomerOrders
      * @throws OrderTransitionRejected nếu đơn không còn huỷ được (đã xử lý/giao)
      */
     public function cancel(string $publicId, string $accessToken, string $reason): OrderDetail;
+
+    /**
+     * Đơn của khách hàng đã đăng nhập (mới nhất trước), trong phạm vi brand của CurrentContext.
+     *
+     * @return array{data: list<OrderDetail>, total: int}
+     */
+    public function ofCustomer(int $customerId, int $page = 1, int $perPage = 10): array;
+
+    public function showForCustomer(int $customerId, string $publicId): ?OrderDetail;
+
+    /**
+     * @throws OrderActionRejected đơn không thuộc khách
+     * @throws OrderTransitionRejected nếu đơn không còn huỷ được
+     */
+    public function cancelForCustomer(int $customerId, string $publicId, string $reason): OrderDetail;
 }
