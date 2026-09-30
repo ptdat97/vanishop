@@ -3,9 +3,11 @@
 use Modules\Extension\Contracts\Extensions;
 use Modules\Integration\Application\InboxProcessor;
 use Modules\Integration\Contracts\Data\DeliveryResult;
+use Modules\Integration\Contracts\Data\InboxMessage;
 use Modules\Integration\Contracts\InboundHandler;
 use Modules\Integration\Contracts\Inbox;
 use Modules\Integration\Persistence\Models\InboxRecord;
+use Modules\Integration\Testing\InboundHandlerContract;
 use Modules\Integration\Tests\Feature\Fixtures\FakeInboundHandler;
 
 beforeEach(function () {
@@ -50,3 +52,9 @@ it('retryable → thử lại theo backoff; stale → ignored_stale; permanent �
     expect(($this->row)('evt-1')->status->value)->toBe('processed')
         ->and(FakeInboundHandler::$handled[3]->attempt)->toBe(2);
 });
+
+InboundHandlerContract::define(
+    'fixture fake-shop (mẫu cách dùng bộ contract)',
+    fn () => new FakeInboundHandler,
+    fn () => new InboxMessage(1, 'fake-shop', 'evt-1', 'order.status', ['status' => 'shipped'], null, 1),
+);

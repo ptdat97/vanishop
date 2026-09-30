@@ -29,6 +29,10 @@ final class MailChannel implements NotificationChannel
 
     public function send(OutgoingMessage $message): SendResult
     {
+        if (trim((string) $message->body) === '' || trim((string) $message->subject) === '') {
+            return SendResult::permanent('mail.empty');
+        }
+
         try {
             Mail::raw((string) $message->body, function (Message $mail) use ($message): void {
                 $mail->to((string) $message->recipient->email)->subject((string) $message->subject);

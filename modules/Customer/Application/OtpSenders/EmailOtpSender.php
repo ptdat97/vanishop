@@ -8,7 +8,9 @@ use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Mail;
 use Modules\Customer\Contracts\Data\CustomerContact;
 use Modules\Customer\Contracts\Data\OtpPurpose;
+use Modules\Customer\Contracts\OtpDeliveryFailed;
 use Modules\Customer\Contracts\OtpSender;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 /**
  * Kênh OTP mặc định của Core: email đã lưu trên hồ sơ (khách mới chưa có email cần plugin SMS/ZNS).
@@ -32,8 +34,13 @@ final class EmailOtpSender implements OtpSender
 
     public function send(CustomerContact $contact, string $code, OtpPurpose $purpose): void
     {
-        Mail::raw(__('customer::messages.otp_body', ['code' => $code]), function (Message $message) use ($contact): void {
-            $message->to((string) $contact->email, $contact->fullName)->subject(__('customer::messages.otp_subject'));
-        });
+        try {
+            Mail::raw(__('customer::messages.otp_body', ['code' => $code]), function (Message $message) use ($contact): void {
+                $message->to((string) $contact->email, $contact->fullName)->subject(__('customer::messages.otp_subject'));
+            });
+        } catch (TransportExceptionInterface $exception) {
+            // Để Core chuyển sang kênh OTP kế tiếp (SMS/ZNS).
+            throw new OtpDeliveryFailed('mail: '.$exception->getMessage(), previous: $exception);
+        }
     }
 }

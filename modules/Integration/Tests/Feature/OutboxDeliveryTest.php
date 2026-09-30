@@ -10,8 +10,10 @@ use Modules\Integration\Application\OutboxWorker;
 use Modules\Integration\Application\ReplayService;
 use Modules\Integration\Contracts\Connector;
 use Modules\Integration\Contracts\Data\DeliveryResult;
+use Modules\Integration\Contracts\Data\OutboxMessage;
 use Modules\Integration\Domain\HmacSignature;
 use Modules\Integration\Persistence\Models\OutboxRecord;
+use Modules\Integration\Testing\ConnectorContract;
 use Modules\Integration\Tests\Feature\Fixtures\FakeErpConnector;
 use Modules\Integration\Tests\Feature\IntegrationTestHelpers as H;
 
@@ -177,3 +179,14 @@ it('message processing bị bỏ dở (worker chết) được trả về hàng 
 
     expect(($this->row)()->status->value)->toBe('sent');
 });
+
+ConnectorContract::define(
+    'fixture fake-erp (mẫu cách dùng bộ contract)',
+    fn () => new FakeErpConnector,
+    fn () => new OutboxMessage('11111111-1111-1111-1111-111111111111', 'fake-erp', 'order.created', '1', 1, 'order', 'LU-1', [], null, 1),
+    [
+        'ok' => fn () => FakeErpConnector::$results = [DeliveryResult::ok('SO-1')],
+        'retryable' => fn () => FakeErpConnector::$results = [DeliveryResult::retryable('http 503')],
+        'permanent' => fn () => FakeErpConnector::$results = [DeliveryResult::permanent('http 422')],
+    ],
+);

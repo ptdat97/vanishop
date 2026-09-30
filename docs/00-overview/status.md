@@ -1,6 +1,6 @@
 # Trạng thái triển khai
 
-> Cập nhật lần cuối: **2026-10-13**, sau slice Notification + plugin SMS/ZNS. Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
+> Cập nhật lần cuối: **2026-10-14**, sau đợt P0/P1 của [kernel-review](../02-architecture/kernel-review.md) (public API 0.2 → chuẩn bị 0.3: settings theo scope, `onEvent`, contract test suite, cô lập lỗi plugin). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
 
 ## Thang trạng thái
 
@@ -26,7 +26,7 @@
 >
 > **Slice Notification đã có code**: mẫu tin theo loại × kênh × brand, nhật ký gửi idempotent, gửi bất đồng bộ có retry, tin giao dịch đặt/huỷ đơn và giao hàng (email mặc định), consent cho tin marketing; plugin `vani.sms-brandname` (eSMS) và `vani.zalo-zns` là kênh gửi + kênh OTP (ZNS ưu tiên, tự dự phòng sang SMS).
 >
-> Test: **541 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **9 concurrency test** (group `concurrency`, chỉ MySQL).
+> Test: **625 test pass** (unit, feature, architecture, contract) trên cả SQLite in-memory và MySQL, cộng **9 concurrency test** (group `concurrency`, chỉ MySQL).
 
 ## Nền tảng
 
@@ -99,7 +99,7 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 11) | 541 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging, outbox/inbox/webhook/replay, Integration API, circuit breaker, đối soát event đơn, khách hàng: OTP/brute-force/rate limit, gộp giỏ, profile ẩn, merge, ẩn danh hoá, thông báo, plugin SMS/ZNS) |
+| Unit + feature test (Foundation → slice 11) | 625 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging, outbox/inbox/webhook/replay, Integration API, circuit breaker, đối soát event đơn, khách hàng: OTP/brute-force/rate limit, gộp giỏ, profile ẩn, merge, ẩn danh hoá, thông báo, plugin SMS/ZNS) |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
 | Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn, cùng SĐT → đúng một hồ sơ khách; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn), `PaymentCallbackConcurrencyTest.php` (6 IPN trùng cùng lúc → 1 lần ghi nhận), `ReturnConcurrencyTest.php` (4 yêu cầu trả toàn bộ cùng lúc → 1), `OutboxConcurrencyTest.php` (4 worker, 40 message/10 đơn → mỗi message gửi đúng một lần, đúng thứ tự trong từng đơn) |
 | Observability | Partially: có correlation id (header + `Context` + **ghi vào mọi dòng log** qua `App\Logging\ContextProcessor`); chưa có metric/tracing |

@@ -90,22 +90,36 @@ Nếu phiên bản Pest đang dùng không hỗ trợ wildcard ở giữa namesp
 
 ## 6. Contract test cho plugin
 
-Core cung cấp bộ test trừu tượng cho từng contract. Plugin chỉ cần khai báo factory:
+**Implemented** (P1-6, 2026-10-14). Mỗi contract mà plugin implement có một bộ test trong `Modules\<Ctx>\Testing` (plugin được phép dùng — không thuộc tầng nội bộ). Plugin gọi `define()` trong file test Pest của mình, truyền factory và dữ liệu/kịch bản mẫu; implementation mặc định của Core chạy cùng bộ test trong `tests/Feature/CoreExtensionContractsTest.php`.
 
 ```php
-// custom/plugin/VietQr/Tests/Contract/VietQrGatewayContractTest.php
-uses(PaymentGatewayContractTests::class);
-
-beforeEach(function () {
-    $this->gateway = new VietQrGateway(fakeClient());
-    $this->validCallback = fn (PaymentData $p) => VietQrFixtures::signedCallback($p);
-    $this->tamperedCallback = fn (PaymentData $p) => VietQrFixtures::tamperedCallback($p);
-});
+// custom/plugin/SmsBrandname/Tests/Feature/SmsBrandnameContractTest.php
+NotificationChannelContract::define('vani.sms-brandname', fn () => app(SmsChannel::class), fn () => new OutgoingMessage(...),
+    unreachable: new Recipient(email: 'lan@example.com'),
+    succeed: fn () => Http::fake([... 200 ...]), failTemporarily: fn () => Http::fake([... 503 ...]));
 ```
 
-Bộ `PaymentGatewayContractTests` kiểm tra: `initiate` trả kết quả hợp lệ; callback đúng chữ ký thì được chấp nhận; callback sai chữ ký bị từ chối; `refund` idempotent theo key; số tiền luôn là `Money`.
+| Bộ test | Bất biến chính |
+|---|---|
+| `Payment\Testing\PaymentGatewayContract` | initiate idempotent; callback đúng chữ ký được nhận, sai bị từ chối; refund idempotent theo key |
+| `Fulfillment\Testing\ShippingCarrierContract` | đặt vận đơn idempotent; webhook đúng/sai chữ ký |
+| `Fulfillment\Testing\SourcingStrategyContract` | phân bổ đủ số lượng từng dòng; chỉ dùng location/số lượng đang giữ |
+| `Promotion\Testing\PromotionRuleContract` | cấu hình hợp lệ/sai; rule chỉ **thu hẹp** tập dòng |
+| `Promotion\Testing\PromotionActionContract` | giảm giá cùng tiền tệ, không âm, không vượt số còn lại |
+| `Checkout\Testing\TaxCalculatorContract` | thuế suất 0–100%, tiền thuế 0 ≤ thuế ≤ thành tiền dòng |
+| `Checkout\Testing\TotalsCalculatorContract` | plugin dùng priority 300–399; không đổi dòng/đơn giá/tiền tệ |
+| `Checkout\Testing\CheckoutValidatorContract` | yêu cầu hợp lệ không bị chặn; vi phạm trả `CheckoutIssue` có mã |
+| `Checkout\Testing\ShippingRateProviderContract` | mã không trùng; phí không âm, cùng tiền tệ |
+| `Returns\Testing\ReturnPolicyContract` | hàng chưa giao không bao giờ đủ điều kiện; từ chối có lý do |
+| `Inventory\Testing\InventoryStrategyContract` | chỉ **giảm** ATS, không âm |
+| `Pricing\Testing\PricingStrategyContract` | giá dương; giá gốc > giá bán; % giảm 1–99 |
+| `Catalog\Testing\SearchProviderContract` | index/remove idempotent; tìm thấy sau index |
+| `Notification\Testing\NotificationChannelContract` | canReach đúng; lỗi tạm thời → retryable; tin rỗng → permanent; không ném exception |
+| `Customer\Testing\OtpSenderContract` | lỗi nhà cung cấp chỉ ném `OtpDeliveryFailed` (để Core chuyển kênh) |
+| `Integration\Testing\ConnectorContract` | phân loại ok/retryable/permanent; `Idempotency-Key = messageId` |
+| `Integration\Testing\InboundHandlerContract` | xử lý lại cùng message không làm lại việc |
 
-Tương tự: `ShippingCarrierContractTests`, `PromotionRuleContractTests`, `TotalsCalculatorContractTests`, `ConnectorContractTests`, `ErpConnectorContractTests`.
+Mọi bộ test đều kiểm tra mã ổn định và tính xác định (cùng đầu vào → cùng kết quả). Lần chạy đầu với Core đã phát hiện 2 lỗi thật: `MailChannel` gửi email rỗng, `EmailOtpSender` ném lỗi SMTP thay vì `OtpDeliveryFailed` (Core không chuyển được sang kênh OTP khác).
 
 ## 7. End-to-End
 

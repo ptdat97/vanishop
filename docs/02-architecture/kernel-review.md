@@ -157,6 +157,7 @@ Với validate/totals khi đặt hàng, fail-fast là đúng thiết kế. Nhưn
 | P1-8 Registry dùng chung | ✅ 2026-10-14 — `Extensions::implementations()` / `forBrand()` thay 6 vòng lặp registry |
 | P1-7 Cô lập lỗi luồng tuỳ chọn | ✅ 2026-10-14 — `Extensions::call()` (log kèm plugin, circuit breaker 5 lỗi/phút → 5 phút); áp cho kiểm tra cổng thanh toán, báo cước, tìm kiếm (rơi về `database`). `OtpService` đã có dự phòng kênh từ slice Notification; validate/totals khi đặt hàng giữ fail-fast theo thiết kế |
 | P1-9 Hook/registry còn thiếu | ✅ 2026-10-14 — `vani.integration.order_payload`, `vani.order.before_create` + `CheckoutRequest::$extra` (thay `checkoutFields()`), `vani.catalog.listing.query`, `PluginServiceProvider::schedule()`, `NotificationCatalog` (thay `notificationTemplates()`) |
+| P1-6 Contract test suite | ✅ 2026-10-14 — 15 bộ mới (tổng 17) trong `Modules\<Ctx>\Testing`; Core defaults + 5 plugin chạy cùng bộ test; phát hiện và sửa 2 lỗi thật (`MailChannel` gửi email rỗng, `EmailOtpSender` không cho Core chuyển kênh) |
 | P0-4 Settings theo scope | ✅ 2026-10-14 — bảng `settings` + contract `Settings` (Tenancy, kế thừa kênh → brand → pháp nhân → owner, secret mã hoá); 5 điểm chọn strategy nghiệp vụ đọc cấu hình theo kênh/brand (`.env` là mặc định, cấu hình sai/plugin tắt → mặc định); `PluginServiceProvider::settings()` + Admin → Cấu hình tự sinh form (lựa chọn lấy từ extension point); `vani.sms-brandname` đọc brandname theo brand |
 
 ## 6. Những điều **không** nên làm
