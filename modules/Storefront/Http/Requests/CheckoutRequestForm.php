@@ -37,6 +37,10 @@ final class CheckoutRequestForm extends FormRequest
             'voucher_codes' => ['array', 'max:5'],
             'voucher_codes.*' => ['string', 'max:64'],
             'note' => ['nullable', 'string', 'max:500'],
+            // Trường bổ sung của plugin: {"<plugin id>": {"<field>": scalar}} — tối đa 10 plugin × 20 trường.
+            'extra' => ['nullable', 'array', 'max:10'],
+            'extra.*' => ['array', 'max:20'],
+            'extra.*.*' => ['nullable', 'max:500', fn (string $attribute, mixed $value, \Closure $fail) => is_scalar($value) || $value === null ? null : $fail('Giá trị phải là chuỗi/số/đúng sai.')],
             'expected_total' => [$placing ? 'required' : 'nullable', 'integer', 'min:0'],
         ];
     }
@@ -59,6 +63,7 @@ final class CheckoutRequestForm extends FormRequest
             voucherCodes: array_values(array_map('strval', (array) $this->validated('voucher_codes', []))),
             note: $this->validated('note'),
             expectedTotal: $this->validated('expected_total') === null ? null : (int) $this->validated('expected_total'),
+            extra: array_filter((array) $this->validated('extra', []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),
         );
     }
 }

@@ -37,5 +37,7 @@ final readonly class OrderDraft
         public ?string $note,
         public string $reservationKey,
         public ?string $sourceCartId,
+        /** orders.meta: dữ liệu nhỏ của plugin, khoá theo plugin id (vani.order.before_create). */
+        public array $meta = [],
     ) {}
 }

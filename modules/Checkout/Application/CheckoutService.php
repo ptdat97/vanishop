@@ -106,7 +106,7 @@ final class CheckoutService implements Checkout
                     $ttl === null ? null : $ttl + 600,
                 ));
 
-                $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals, $customerId));
+                $placed = $this->orders->create($this->draft($publicId, $reservationKey, $cart, $request, $totals, $customerId, $this->orderMeta($request, $totals)));
                 $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod);
                 $this->promotions->recordUsage($placed->id, $customerId, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
                 Hook::action('vani.order.after_create', $placed);
@@ -207,7 +207,22 @@ final class CheckoutService implements Checkout
         }
     }
 
-    private function draft(string $publicId, string $reservationKey, CartView $cart, CheckoutRequest $request, Totals $totals, ?int $customerId): OrderDraft
+    /**
+     * orders.meta do plugin bổ sung (vani.order.before_create); chỉ nhận mảng khoá chuỗi.
+     *
+     * @return array<string, mixed>
+     */
+    private function orderMeta(CheckoutRequest $request, Totals $totals): array
+    {
+        $meta = Hook::filter('vani.order.before_create', [], $request, $totals);
+
+        return is_array($meta) ? array_filter($meta, fn (mixed $value, mixed $key): bool => is_string($key), ARRAY_FILTER_USE_BOTH) : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     */
+    private function draft(string $publicId, string $reservationKey, CartView $cart, CheckoutRequest $request, Totals $totals, ?int $customerId, array $meta = []): OrderDraft
     {
         $contact = (array) $request->contact;
         $email = trim((string) ($contact['email'] ?? ''));
@@ -243,6 +258,7 @@ final class CheckoutService implements Checkout
             note: $request->note === null || trim($request->note) === '' ? null : trim($request->note),
             reservationKey: $reservationKey,
             sourceCartId: $cart->id,
+            meta: $meta,
         );
     }
 

@@ -19,4 +19,11 @@ return [
         'args' => ['styleId' => 'int', 'brandId' => 'int'],
         'description' => 'Chạy TRONG transaction lưu sản phẩm: chỉ ghi DB của plugin, không I/O mạng.',
     ],
+    'vani.catalog.listing.query' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3',
+        'args' => ['query' => 'Modules\\Catalog\\Contracts\\Data\\ProductSearchQuery'],
+        'description' => 'Sửa truy vấn danh sách/tìm kiếm sản phẩm storefront (merchandising: lọc, sắp xếp). Phải trả về ProductSearchQuery; kiểu khác bị bỏ qua.',
+    ],
 ];

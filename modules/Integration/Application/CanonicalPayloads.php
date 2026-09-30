@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Integration\Application;
 
+use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\OrderReader;
@@ -23,6 +24,18 @@ final class CanonicalPayloads
      * @return array<string, mixed>
      */
     public function order(OrderData $order): array
+    {
+        $payload = $this->canonical($order);
+        $filtered = Hook::filter('vani.integration.order_payload', $payload, $order);
+
+        // Plugin chỉ được THÊM field: khoá canonical giữ nguyên giá trị Core (R20, schema có version).
+        return is_array($filtered) ? $payload + array_diff_key($filtered, $payload) : $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function canonical(OrderData $order): array
     {
         return [
             'schema' => self::ORDER_SCHEMA,

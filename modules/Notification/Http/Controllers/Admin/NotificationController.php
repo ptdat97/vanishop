@@ -15,7 +15,8 @@ use Modules\Brand\Contracts\Data\BrandData;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Notification\Application\ChannelRegistry;
 use Modules\Notification\Application\TemplateAdmin;
-use Modules\Notification\Domain\NotificationTypes;
+use Modules\Notification\Contracts\Data\NotificationType;
+use Modules\Notification\Contracts\NotificationCatalog;
 use Modules\Notification\Persistence\Models\NotificationLog;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
 
@@ -24,13 +25,13 @@ use Modules\Notification\Persistence\Models\NotificationTemplate;
  */
 final class NotificationController
 {
-    public function templates(BrandDirectory $brands, ChannelRegistry $channels): Response
+    public function templates(BrandDirectory $brands, ChannelRegistry $channels, NotificationCatalog $catalog): Response
     {
         Gate::authorize('notifications.view', [ScopeRef::owner()]);
 
         return Inertia::render('Notification::Templates/Index', [
             'baseUrl' => route('admin.notifications.templates.index'),
-            'types' => NotificationTypes::all(),
+            'types' => array_map(fn (NotificationType $type): array => ['label' => $type->label, 'variables' => $type->variables], $catalog->types()),
             'channels' => array_keys($channels->forBrand(null)),
             'brands' => array_map(fn (BrandData $brand): array => ['id' => $brand->id, 'name' => $brand->name], $brands->list(null)),
             'templates' => NotificationTemplate::query()->orderBy('type')->orderBy('channel')->orderBy('brand_id')->get()

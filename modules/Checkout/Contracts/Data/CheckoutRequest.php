@@ -25,6 +25,13 @@ final readonly class CheckoutRequest
         public array $voucherCodes,
         public ?string $note,
         public ?int $expectedTotal,
+        /**
+         * Trường bổ sung do plugin thu ở checkout, theo plugin id: ["vani.einvoice" => ["tax_code" => "…"]].
+         * Core chỉ chuyển tiếp; plugin kiểm tra (vani.checkout.before_validate) và lưu (vani.order.before_create).
+         *
+         * @var array<string, array<string, scalar|null>>
+         */
+        public array $extra = [],
     ) {}
 
     /**
@@ -34,7 +41,7 @@ final readonly class CheckoutRequest
     {
         return hash('sha256', (string) json_encode([
             $this->cart->publicId, $this->contact, $this->shippingAddress, $this->shippingMethod, $this->paymentMethod,
-            $this->voucherCodes, $this->note, $this->expectedTotal,
+            $this->voucherCodes, $this->note, $this->expectedTotal, $this->extra,
         ], JSON_UNESCAPED_UNICODE));
     }
 }

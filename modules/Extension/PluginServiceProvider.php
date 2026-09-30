@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Extension;
 
+use Closure;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
+use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginEventListeners;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
@@ -71,6 +74,26 @@ abstract class PluginServiceProvider extends ServiceProvider
     protected function onEvent(string $event, callable|string|array $handler): void
     {
         $this->app->make(PluginEventListeners::class)->listen($event, $handler, $this->pluginId());
+    }
+
+    /**
+     * Tác vụ định kỳ của plugin: chỉ chạy khi plugin đang bật ở ít nhất một phạm vi. Tác vụ chạy không có
+     * CurrentContext — tự lặp theo brand (vd. `CurrentContext::runAs(new ContextScope(..., brandIds: [$id]))`).
+     *
+     *   $this->schedule(fn (Schedule $schedule) => $schedule->command('vani:einvoice:sync')->everyFiveMinutes());
+     *
+     * @param  Closure(Schedule): mixed  $define
+     */
+    protected function schedule(Closure $define): void
+    {
+        $pluginId = $this->pluginId();
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) use ($define, $pluginId): void {
+            $before = count($schedule->events());
+            $define($schedule);
+            foreach (array_slice($schedule->events(), $before) as $event) {
+                $event->when(fn (): bool => $this->app->make(PluginActivation::class)->isEnabledAnywhere($pluginId));
+            }
+        });
     }
 
     /**

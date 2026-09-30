@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Customer\Contracts\Customers;
 use Modules\Notification\Contracts\Data\NotificationRequest;
 use Modules\Notification\Contracts\Data\Recipient;
+use Modules\Notification\Contracts\NotificationCatalog;
 use Modules\Notification\Contracts\NotificationChannel;
 use Modules\Notification\Contracts\Notifier;
 use Modules\Notification\Domain\TemplateRenderer;
@@ -24,6 +25,7 @@ final class NotificationService implements Notifier
     public function __construct(
         private readonly ChannelRegistry $channels,
         private readonly Customers $customers,
+        private readonly NotificationCatalog $catalog,
     ) {}
 
     public function notify(NotificationRequest $request): array
@@ -69,6 +71,14 @@ final class NotificationService implements Notifier
         $picked = [];
         foreach ($rows as $template) {
             $picked[$template->channel] ??= $template;
+        }
+
+        // Kênh chưa có mẫu trong DB → mẫu mặc định do Core/plugin khai báo (NotificationCatalog).
+        foreach ($this->catalog->types()[$request->type]->defaults ?? [] as $channel => $default) {
+            $picked[$channel] ??= new NotificationTemplate([
+                'brand_id' => null, 'type' => $request->type, 'channel' => $channel, 'locale' => 'vi',
+                'subject' => $default['subject'] ?? null, 'body' => $default['body'] ?? null, 'meta' => $default['meta'] ?? null, 'active' => true,
+            ]);
         }
 
         return $picked;

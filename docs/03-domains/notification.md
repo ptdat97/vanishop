@@ -39,7 +39,7 @@ flowchart LR
 | `shipment_shipped` | vận đơn sang `picked_up`/`in_transit` (một lần mỗi vận đơn) | + `carrier`, `tracking_number` |
 | `shipment_delivered` | vận đơn `delivered` | + `carrier`, `tracking_number` |
 
-Migration tạo sẵn mẫu **email tiếng Việt** mặc định cho 4 loại. Mẫu SMS/ZNS tạo trong Admin → Thông báo khi bật plugin (SMS phải khớp mẫu đăng ký với nhà mạng; ZNS cần template Zalo đã duyệt).
+Loại tin được khai báo qua `NotificationCatalog` (Core: 4 loại dưới; plugin: loại riêng kèm mẫu mặc định theo kênh — dùng khi DB chưa có mẫu). Migration tạo sẵn mẫu **email tiếng Việt** mặc định cho 4 loại. Mẫu SMS/ZNS tạo trong Admin → Thông báo khi bật plugin (SMS phải khớp mẫu đăng ký với nhà mạng; ZNS cần template Zalo đã duyệt).
 
 ## 4. Contract
 

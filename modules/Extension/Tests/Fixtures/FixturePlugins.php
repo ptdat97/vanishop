@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Tests\Fixtures;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Filesystem\Filesystem;
 use Modules\Customer\Events\CustomerRegistered;
 use Modules\Extension\Application\Plugins\ManifestRepository;
@@ -154,5 +155,18 @@ final class EventListeningPluginProvider extends PluginServiceProvider
 
         $this->onEvent(PaymentCaptured::class, $record);
         $this->onEvent(CustomerRegistered::class, $record);
+    }
+}
+
+final class SchedulingPluginProvider extends PluginServiceProvider
+{
+    protected function pluginId(): string
+    {
+        return 'fixture.scheduling';
+    }
+
+    public function boot(): void
+    {
+        $this->schedule(fn (Schedule $schedule) => $schedule->command('inspire')->hourly());
     }
 }

@@ -152,7 +152,8 @@ class Modules\Checkout\Contracts\Data\CheckoutIssue
 class Modules\Checkout\Contracts\Data\CheckoutQuote
   __construct(Modules\Checkout\Contracts\Data\Totals $totals, array $shippingOptions, array $paymentMethods, bool $cartReady)
 class Modules\Checkout\Contracts\Data\CheckoutRequest
-  __construct(Modules\Cart\Contracts\Data\CartKey $cart, ?array $contact, ?array $shippingAddress, ?string $shippingMethod, ?string $paymentMethod, array $voucherCodes, ?string $note, ?int $expectedTotal)
+  __construct(Modules\Cart\Contracts\Data\CartKey $cart, ?array $contact, ?array $shippingAddress, ?string $shippingMethod, ?string $paymentMethod, array $voucherCodes, ?string $note, ?int $expectedTotal, array $extra = array (
+))
   fingerprint(): string
 class Modules\Checkout\Contracts\Data\PlaceOrderResult
   __construct(int $status, array $body, bool $replayed, ?Modules\Payment\Contracts\Data\PaymentView $payment = NULL)
@@ -265,6 +266,7 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected onValidate(string $hook, callable $callback, int $priority = 10): void
   protected onSlot(string $hook, callable $callback, int $priority = 10): void
   protected onEvent(string $event, callable|array|string $handler): void
+  protected schedule(Closure $define): void
   protected settings(array $definitions): void
   protected contribute(string $tag, string $implementation): void
   protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
@@ -459,6 +461,10 @@ class Modules\Notification\Contracts\Data\NotificationRequest
   const TRANSACTIONAL = 'transactional'
   const MARKETING = 'marketing'
   __construct(string $type, string $key, ?int $brandId, Modules\Notification\Contracts\Data\Recipient $recipient, array $variables, string $category = 'transactional')
+class Modules\Notification\Contracts\Data\NotificationType
+  __construct(string $code, string $label, array $variables = array (
+), array $defaults = array (
+))
 class Modules\Notification\Contracts\Data\OutgoingMessage
   __construct(int $logId, string $idempotencyKey, string $type, ?int $brandId, Modules\Notification\Contracts\Data\Recipient $recipient, ?string $subject, ?string $body, array $meta, int $attempt)
 class Modules\Notification\Contracts\Data\Recipient
@@ -469,6 +475,9 @@ class Modules\Notification\Contracts\Data\SendResult
   static permanent(string $error): self
   isSent(): bool
   isRetryable(): bool
+interface Modules\Notification\Contracts\NotificationCatalog
+  define(Modules\Notification\Contracts\Data\NotificationType $type): void
+  types(): array
 interface Modules\Notification\Contracts\NotificationChannel
   const TAG = 'vani.notification.channels'
   code(): string
@@ -491,11 +500,13 @@ class Modules\Ordering\Contracts\Data\OrderData
   'full_name' => '',
   'phone' => '',
 ), array $shippingAddress = array (
-), string $fulfillmentStatus = 'unfulfilled', ?string $placedAt = NULL, ?string $updatedAt = NULL)
+), string $fulfillmentStatus = 'unfulfilled', ?string $placedAt = NULL, ?string $updatedAt = NULL, array $meta = array (
+))
 class Modules\Ordering\Contracts\Data\OrderDetail
   __construct(int $id, string $publicId, string $number, int $brandId, string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod, array $customerStatus, string $currencyCode, array $amounts, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $placedAt, array $lines, array $adjustments, array $events, bool $cancellableByCustomer, int $lockVersion)
 class Modules\Ordering\Contracts\Data\OrderDraft
-  __construct(string $publicId, int $brandId, int $channelId, ?int $customerId, string $currencyCode, string $paymentMethod, string $paymentStatus, array $lines, array $adjustments, int $subtotalAmount, int $discountAmount, int $shippingAmount, int $taxAmount, int $totalAmount, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $reservationKey, ?string $sourceCartId)
+  __construct(string $publicId, int $brandId, int $channelId, ?int $customerId, string $currencyCode, string $paymentMethod, string $paymentStatus, array $lines, array $adjustments, int $subtotalAmount, int $discountAmount, int $shippingAmount, int $taxAmount, int $totalAmount, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $reservationKey, ?string $sourceCartId, array $meta = array (
+))
 class Modules\Ordering\Contracts\Data\OrderLineData
   __construct(int $id, int $variantId, string $sku, string $productName, int $quantity, int $totalAmount = 0, ?string $colorName = NULL, string $sizeCode = '')
 class Modules\Ordering\Contracts\Data\OrderLineDraft

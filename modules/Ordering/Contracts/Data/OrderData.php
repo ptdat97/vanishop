@@ -30,5 +30,7 @@ final readonly class OrderData
         public ?string $placedAt = null,
         /** ISO-8601, độ chính xác giây — dùng làm con trỏ đồng bộ. */
         public ?string $updatedAt = null,
+        /** orders.meta (dữ liệu của plugin, khoá theo plugin id). */
+        public array $meta = [],
     ) {}
 }

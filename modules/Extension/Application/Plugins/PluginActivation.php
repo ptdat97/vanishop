@@ -26,6 +26,14 @@ final class PluginActivation
     public function __construct(private readonly CurrentContext $context) {}
 
     /**
+     * Bật ở ít nhất một phạm vi (dùng cho tác vụ định kỳ của plugin).
+     */
+    public function isEnabledAnywhere(string $pluginId): bool
+    {
+        return $this->enabledScopes()->contains('plugin_id', $pluginId);
+    }
+
+    /**
      * Bật ở scope owner (mọi brand) — dùng khi không xác định được brand của sự việc.
      */
     public function isActiveForOwner(string $pluginId): bool

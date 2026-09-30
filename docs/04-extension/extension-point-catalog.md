@@ -82,7 +82,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 
 | Hook | Loại | Chạy trong transaction | Mục đích |
 |---|---|---|---|
-| `vani.catalog.listing.query` | filter | không | Sửa truy vấn danh sách sản phẩm (merchandising) |
+| `vani.catalog.listing.query` | filter | không | Sửa truy vấn danh sách sản phẩm (merchandising); tham số/kết quả `ProductSearchQuery`, sai kiểu bị bỏ qua. **Implemented** (0.3) |
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
 | `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của brand); tham số `ProductDraft`. **Implemented** |
 | `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `(styleId, brandId)`. **Implemented** |
@@ -91,9 +91,9 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.checkout.shipping_options` | filter | có (khi đặt hàng) | Sửa danh sách phương thức giao; tham số `(options, TotalsContext)`. **Implemented** |
 | `vani.checkout.before_validate` | validate | có (transaction đặt hàng; không I/O mạng) | Kiểm tra bổ sung trước validator Core; tham số `CheckoutRequest`. **Implemented** |
 | `vani.checkout.after_validate` | validate | có | Kiểm tra dựa trên tổng đã tính; tham số `(CheckoutRequest, Totals)`. **Implemented** |
-| `vani.order.before_create` | filter | có | Bổ sung `meta` cho đơn trước khi lưu (không sửa giá/dòng) |
+| `vani.order.before_create` | filter | có (không I/O mạng) | Bổ sung `orders.meta` (khoá theo plugin id) trước khi lưu; tham số `(meta, CheckoutRequest, Totals)`; không sửa giá/dòng. Đọc lại qua `OrderData::$meta`. **Implemented** (0.3) |
 | `vani.order.after_create` | action | có (chỉ ghi DB) | Plugin ghi dữ liệu gắn với đơn (attribution, điểm chờ); tham số `PlacedOrder`. **Implemented** |
-| `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác |
+| `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
 | `vani.storefront.pdp.after_price` | slot | — | UI dưới giá |
 | `vani.storefront.checkout.before_submit` | slot | — | UI trước nút đặt hàng |
 | `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin; tham số `OrderDetail`, trả `{title, rows[{label, value}], link?}`. **Implemented** (Payment dùng) |
@@ -110,11 +110,11 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
 | `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |
-| `scheduledTasks()` | Tác vụ định kỳ |
-| `notificationTemplates()` | Mẫu tin theo event |
+| `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ, chỉ chạy khi plugin bật ở ít nhất một phạm vi — Implemented (0.3) |
+| `NotificationCatalog::define()` (contract Notification) | Loại tin + biến + mẫu mặc định theo kênh; mẫu trong DB thắng — Implemented (0.3) |
 | `orderActions()` | Nút thao tác trên trang đơn Admin |
 | `customerProfileTabs()` | Tab trên hồ sơ khách |
-| `checkoutFields()` | Trường bổ sung ở checkout → lưu vào `orders.meta.<plugin>` |
+| Trường checkout của plugin | Thay cho `checkoutFields()`: client gửi `extra[<plugin id>]` ở đặt hàng → plugin kiểm tra qua `vani.checkout.before_validate` và lưu qua `vani.order.before_create` — Implemented (0.3) |
 | `integrationMessageTypes()` | Loại message tích hợp mới + JSON Schema |
 
 ## 6. Dữ liệu của plugin

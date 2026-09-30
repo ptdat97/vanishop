@@ -102,6 +102,7 @@ final class EloquentOrderReader implements OrderReader
             fulfillmentStatus: (string) $order->fulfillment_status,
             placedAt: $order->placed_at?->toIso8601String(),
             updatedAt: $order->updated_at?->toIso8601String(),
+            meta: (array) ($order->meta ?? []),
         );
     }
 }

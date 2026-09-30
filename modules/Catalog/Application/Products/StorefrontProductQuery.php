@@ -17,6 +17,7 @@ use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleAttributeValue;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Catalog\Persistence\Models\Variant;
+use Modules\Extension\Facades\Hook;
 
 /**
  * Dữ liệu sản phẩm cho storefront (native và Storefront API dùng chung — ADR-009).
@@ -31,7 +32,8 @@ final class StorefrontProductQuery
      */
     public function list(ProductSearchQuery $query, string $locale): array
     {
-        $result = $this->search->search($query);
+        $filtered = Hook::filter('vani.catalog.listing.query', $query);
+        $result = $this->search->search($filtered instanceof ProductSearchQuery ? $filtered : $query);
 
         $styles = Style::query()
             ->with(['translations', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')])
