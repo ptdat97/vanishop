@@ -35,14 +35,7 @@ final class PromotionRegistry
      */
     public function rules(): array
     {
-        $rules = [];
-        foreach ($this->extensions->tagged(self::RULES_TAG) as $rule) {
-            if ($rule instanceof PromotionRule) {
-                $rules[$rule->type()] = $rule;
-            }
-        }
-
-        return $rules;
+        return $this->extensions->implementations(self::RULES_TAG, PromotionRule::class, fn (PromotionRule $rule): string => $rule->type());
     }
 
     /**
@@ -50,13 +43,6 @@ final class PromotionRegistry
      */
     public function actions(): array
     {
-        $actions = [];
-        foreach ($this->extensions->tagged(self::ACTIONS_TAG) as $action) {
-            if ($action instanceof PromotionAction) {
-                $actions[$action->type()] = $action;
-            }
-        }
-
-        return $actions;
+        return $this->extensions->implementations(self::ACTIONS_TAG, PromotionAction::class, fn (PromotionAction $action): string => $action->type());
     }
 }

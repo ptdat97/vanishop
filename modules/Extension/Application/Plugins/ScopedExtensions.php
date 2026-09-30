@@ -8,6 +8,8 @@ use Closure;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Shared\Context\ContextScope;
+use Modules\Shared\Context\CurrentContext;
 
 /**
  * Nguồn duy nhất biết một extension point có những implementation nào:
@@ -53,6 +55,29 @@ final class ScopedExtensions implements Extensions
         }
 
         return $result;
+    }
+
+    public function implementations(string $tag, string $interface, ?callable $key = null): array
+    {
+        $result = [];
+        foreach ($this->tagged($tag) as $implementation) {
+            if ($implementation instanceof $interface) {
+                $result[(string) ($key === null ? $implementation->code() : $key($implementation))] ??= $implementation;
+            }
+        }
+
+        return $result;
+    }
+
+    public function forBrand(?int $brandId, string $tag, string $interface, ?callable $key = null): array
+    {
+        $context = $this->container->make(CurrentContext::class);
+        $scope = ContextScope::system("extensions {$tag}");
+        if ($brandId !== null) {
+            $scope = new ContextScope($scope->actor, brandIds: [$brandId]);
+        }
+
+        return $context->runAs($scope, fn (): array => $this->implementations($tag, $interface, $key));
     }
 
     public function select(string $tag, string $code, ?string $fallbackCode = null): ?object

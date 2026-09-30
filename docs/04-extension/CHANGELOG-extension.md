@@ -4,6 +4,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## Chưa phát hành (dự kiến 0.3.0)
+
+### Thêm
+- `Extensions::implementations($tag, $interface, $key)` và `Extensions::forBrand($brandId, $tag, $interface, $key)` — registry dùng chung (lọc theo interface, đánh chỉ mục theo mã, xét trong phạm vi brand). Các registry của Core (`GatewayRegistry`, `CarrierRegistry`, `PromotionRegistry`, `SearchManager`, `ChannelRegistry`, `ConnectorRegistry`) dùng helper này.
+
 ## 0.2.0 — 2026-10-13
 
 Chốt bề mặt API sau slice 11, Customer, Notification và đợt P0 của [kernel-review](../02-architecture/kernel-review.md). Mọi plugin trong `custom/plugin` đã chuyển sang `^0.2`.

@@ -24,12 +24,7 @@ final class SearchManager
 
     public function provider(): SearchProvider
     {
-        foreach ($this->extensions->tagged(self::TAG) as $provider) {
-            if ($provider instanceof SearchProvider && $provider->code() === $this->providerCode) {
-                return $provider;
-            }
-        }
-
-        throw new InvalidArgumentException("Search provider [{$this->providerCode}] chưa được đăng ký.");
+        return $this->extensions->implementations(SearchProvider::TAG, SearchProvider::class)[$this->providerCode]
+            ?? throw new InvalidArgumentException("Search provider [{$this->providerCode}] chưa được đăng ký.");
     }
 }

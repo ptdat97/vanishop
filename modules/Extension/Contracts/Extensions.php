@@ -40,6 +40,30 @@ interface Extensions
     public function tagged(string $tag): array;
 
     /**
+     * Implementation có hiệu lực của `$tag` là instance của `$interface`, đánh chỉ mục theo `$key($implementation)`
+     * (mặc định `code()`); trùng khoá thì implementation đăng ký trước thắng (Core trước plugin).
+     *
+     * @template T of object
+     *
+     * @param  class-string<T>  $interface
+     * @param  (callable(T): string)|null  $key
+     * @return array<string, T>
+     */
+    public function implementations(string $tag, string $interface, ?callable $key = null): array;
+
+    /**
+     * Như `implementations()` nhưng xét trong phạm vi một brand (plugin bật ở brand đó); `null` = cấp Owner.
+     * Dùng cho worker/job chạy ngoài request (outbox, gửi tin…).
+     *
+     * @template T of object
+     *
+     * @param  class-string<T>  $interface
+     * @param  (callable(T): string)|null  $key
+     * @return array<string, T>
+     */
+    public function forBrand(?int $brandId, string $tag, string $interface, ?callable $key = null): array;
+
+    /**
      * Implementation có `code() === $code` trong các implementation có hiệu lực; không có → thử `$fallbackCode`
      * (ghi cảnh báo — cấu hình trỏ tới implementation của plugin đã tắt/không tồn tại không làm hỏng flow).
      */

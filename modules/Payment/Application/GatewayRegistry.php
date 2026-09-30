@@ -27,13 +27,6 @@ final class GatewayRegistry
      */
     public function all(): array
     {
-        $gateways = [];
-        foreach ($this->extensions->tagged(self::TAG) as $gateway) {
-            if ($gateway instanceof PaymentGateway) {
-                $gateways[$gateway->code()] = $gateway;
-            }
-        }
-
-        return $gateways;
+        return $this->extensions->implementations(self::TAG, PaymentGateway::class);
     }
 }

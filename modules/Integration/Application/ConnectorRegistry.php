@@ -25,27 +25,18 @@ final class ConnectorRegistry
      */
     public function connectors(?int $brandId): array
     {
-        return array_values(array_filter(
-            $this->inBrand($brandId, fn (): array => $this->extensions->tagged(Connector::TAG)),
-            fn (object $connector): bool => $connector instanceof Connector,
-        ));
+        return array_values($this->extensions->forBrand($brandId, Connector::TAG, Connector::class, fn (Connector $connector): string => $connector->system()));
     }
 
     public function connector(string $system, ?int $brandId): ?Connector
     {
-        foreach ($this->connectors($brandId) as $connector) {
-            if ($connector->system() === $system) {
-                return $connector;
-            }
-        }
-
-        return null;
+        return $this->extensions->forBrand($brandId, Connector::TAG, Connector::class, fn (Connector $connector): string => $connector->system())[$system] ?? null;
     }
 
     public function inboundHandler(string $system, string $messageType): ?InboundHandler
     {
-        foreach ($this->inBrand(null, fn (): array => $this->extensions->tagged(InboundHandler::TAG)) as $handler) {
-            if ($handler instanceof InboundHandler && $handler->system() === $system && $handler->supports($messageType)) {
+        foreach ($this->extensions->forBrand(null, InboundHandler::TAG, InboundHandler::class, fn (InboundHandler $handler): string => spl_object_hash($handler)) as $handler) {
+            if ($handler->system() === $system && $handler->supports($messageType)) {
                 return $handler;
             }
         }

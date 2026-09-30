@@ -35,14 +35,7 @@ final class CarrierRegistry
      */
     public function carriers(): array
     {
-        $carriers = [];
-        foreach ($this->extensions->tagged(self::CARRIERS_TAG) as $carrier) {
-            if ($carrier instanceof ShippingCarrier) {
-                $carriers[$carrier->code()] = $carrier;
-            }
-        }
-
-        return $carriers;
+        return $this->extensions->implementations(self::CARRIERS_TAG, ShippingCarrier::class);
     }
 
     /**

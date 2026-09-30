@@ -252,6 +252,8 @@ interface Modules\Extension\Contracts\Extensions
   tag(array|string $abstracts, string $tag): void
   contribute(string $tag, string $abstract, string $pluginId): void
   tagged(string $tag): array
+  implementations(string $tag, string $interface, ?callable $key = NULL): array
+  forBrand(?int $brandId, string $tag, string $interface, ?callable $key = NULL): array
   select(string $tag, string $code, ?string $fallbackCode = NULL): ?object
   ownerOf(object $implementation): ?string
 abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Support\ServiceProvider

@@ -24,21 +24,7 @@ final class ChannelRegistry
      */
     public function forBrand(?int $brandId): array
     {
-        $scope = ContextScope::system('notification channels');
-        if ($brandId !== null) {
-            $scope = new ContextScope($scope->actor, brandIds: [$brandId]);
-        }
-
-        return $this->context->runAs($scope, function (): array {
-            $channels = [];
-            foreach ($this->extensions->tagged(NotificationChannel::TAG) as $channel) {
-                if ($channel instanceof NotificationChannel) {
-                    $channels[$channel->code()] = $channel;
-                }
-            }
-
-            return $channels;
-        });
+        return $this->extensions->forBrand($brandId, NotificationChannel::TAG, NotificationChannel::class);
     }
 
     /**
