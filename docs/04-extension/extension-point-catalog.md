@@ -4,7 +4,7 @@
 
 ## 1. Contract: capability thay thế được
 
-Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng thái bật của plugin trong scope hiện tại (brand/channel/legal entity).
+Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` — **mọi tag là hằng `TAG` trên interface trong `Contracts`** (arch test chặn định nghĩa tag ở tầng khác; hằng cũ trong `Application` còn làm alias `@deprecated`). Registry của Core lọc theo trạng thái bật của plugin trong scope hiện tại (brand/channel/legal entity).
 
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|

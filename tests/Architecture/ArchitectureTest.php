@@ -84,3 +84,19 @@ arch('Class của module dùng strict types')
 arch('Không dùng hàm debug')
     ->expect(['dd', 'dump', 'ray', 'var_dump'])
     ->not->toBeUsed();
+
+it('Tag extension point chỉ được định nghĩa trong Contracts (plugin tham chiếu được, R5)', function () {
+    $offenders = [];
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('modules')));
+    foreach ($files as $file) {
+        $path = (string) $file;
+        if (! str_ends_with($path, '.php') || str_contains($path, '/Contracts/') || str_contains($path, '/Tests/')) {
+            continue;
+        }
+        if (preg_match("/const\\s+[A-Z_]*TAG\\s*=\\s*'vani\\./", (string) file_get_contents($path)) === 1) {
+            $offenders[] = str_replace(base_path().'/', '', $path);
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});

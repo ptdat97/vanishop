@@ -36,7 +36,8 @@ use Modules\Shared\Domain\Money\Money;
  */
 final class ReturnService implements Returns
 {
-    public const POLICIES_TAG = 'vani.returns.policies';
+    /** @deprecated dùng {@see ReturnPolicy::TAG} (public API). */
+    public const POLICIES_TAG = ReturnPolicy::TAG;
 
     public function __construct(
         private readonly OrderReader $orders,

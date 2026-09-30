@@ -17,7 +17,8 @@ use Modules\Inventory\Contracts\InventoryStrategy;
  */
 final class ChannelAvailability implements AvailabilityReader
 {
-    public const TAG = 'vani.inventory.strategies';
+    /** @deprecated dùng {@see InventoryStrategy::TAG} (public API). */
+    public const TAG = InventoryStrategy::TAG;
 
     public function __construct(
         private readonly VariantDirectory $variants,

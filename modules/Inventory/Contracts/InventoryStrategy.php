@@ -10,6 +10,9 @@ namespace Modules\Inventory\Contracts;
  */
 interface InventoryStrategy
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(InventoryStrategy::TAG, …)`. */
+    public const TAG = 'vani.inventory.strategies';
+
     public function code(): string;
 
     /**

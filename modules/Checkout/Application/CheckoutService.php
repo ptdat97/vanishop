@@ -47,7 +47,8 @@ use Throwable;
  */
 final class CheckoutService implements Checkout
 {
-    public const VALIDATORS_TAG = 'vani.checkout.validators';
+    /** @deprecated dùng {@see CheckoutValidator::TAG} (public API). */
+    public const VALIDATORS_TAG = CheckoutValidator::TAG;
 
     public function __construct(
         private readonly Carts $carts,

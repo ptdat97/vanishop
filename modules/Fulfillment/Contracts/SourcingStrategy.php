@@ -14,6 +14,9 @@ use Modules\Fulfillment\Contracts\Data\SourcingRequest;
  */
 interface SourcingStrategy
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(SourcingStrategy::TAG, …)`. */
+    public const TAG = 'vani.fulfillment.sourcing';
+
     public function code(): string;
 
     /**

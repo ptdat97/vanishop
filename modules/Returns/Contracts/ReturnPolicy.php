@@ -13,6 +13,9 @@ use Modules\Returns\Contracts\Data\ReturnDecision;
  */
 interface ReturnPolicy
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(ReturnPolicy::TAG, …)`. */
+    public const TAG = 'vani.returns.policies';
+
     public function code(): string;
 
     public function evaluate(ReturnContext $context): ReturnDecision;

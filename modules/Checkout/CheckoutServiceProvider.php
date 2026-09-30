@@ -25,7 +25,8 @@ use Modules\Shared\Support\ModuleServiceProvider;
 
 final class CheckoutServiceProvider extends ModuleServiceProvider
 {
-    public const TAX_TAG = 'vani.tax.calculators';
+    /** @deprecated dùng {@see TaxCalculator::TAG} (public API). */
+    public const TAX_TAG = TaxCalculator::TAG;
 
     protected function moduleName(): string
     {

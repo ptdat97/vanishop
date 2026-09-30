@@ -14,7 +14,8 @@ use Modules\Extension\Contracts\Extensions;
  */
 final class SearchManager
 {
-    public const TAG = 'vani.search.providers';
+    /** @deprecated dùng {@see SearchProvider::TAG} (public API). */
+    public const TAG = SearchProvider::TAG;
 
     public function __construct(
         private readonly Extensions $extensions,

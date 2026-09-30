@@ -16,7 +16,8 @@ use Modules\Pricing\Contracts\PricingStrategy;
  */
 final class StrategyPriceResolver implements PriceResolver
 {
-    public const TAG = 'vani.pricing.strategies';
+    /** @deprecated dùng {@see PricingStrategy::TAG} (public API). */
+    public const TAG = PricingStrategy::TAG;
 
     public function __construct(
         private readonly Extensions $extensions,

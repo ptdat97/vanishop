@@ -12,6 +12,9 @@ use Modules\Checkout\Contracts\Data\TotalsContext;
  */
 interface TaxCalculator
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(TaxCalculator::TAG, …)`. */
+    public const TAG = 'vani.tax.calculators';
+
     public function code(): string;
 
     /**

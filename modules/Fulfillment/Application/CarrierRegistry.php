@@ -15,7 +15,8 @@ final class CarrierRegistry
 {
     public const CARRIERS_TAG = ShippingCarrier::CARRIERS_TAG;
 
-    public const SOURCING_TAG = 'vani.fulfillment.sourcing';
+    /** @deprecated dùng {@see SourcingStrategy::TAG} (public API). */
+    public const SOURCING_TAG = SourcingStrategy::TAG;
 
     public function __construct(private readonly Extensions $extensions) {}
 

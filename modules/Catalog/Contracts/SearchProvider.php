@@ -16,6 +16,9 @@ use Modules\Catalog\Contracts\Data\ProductSearchResult;
  */
 interface SearchProvider
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(SearchProvider::TAG, …)`. */
+    public const TAG = 'vani.search.providers';
+
     public function code(): string;
 
     /**

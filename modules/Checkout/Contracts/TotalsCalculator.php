@@ -12,6 +12,9 @@ use Modules\Checkout\Contracts\Data\TotalsContext;
  */
 interface TotalsCalculator
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(TotalsCalculator::TAG, …)`. */
+    public const TAG = 'vani.totals.calculators';
+
     public function code(): string;
 
     public function priority(): int;

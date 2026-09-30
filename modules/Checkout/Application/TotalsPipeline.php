@@ -17,7 +17,8 @@ use Modules\Shared\Domain\Money\Money;
  */
 final class TotalsPipeline
 {
-    public const TAG = 'vani.totals.calculators';
+    /** @deprecated dùng {@see TotalsCalculator::TAG} (public API). */
+    public const TAG = TotalsCalculator::TAG;
 
     public function __construct(private readonly Extensions $extensions) {}
 

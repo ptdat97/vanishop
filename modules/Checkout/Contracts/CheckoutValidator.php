@@ -13,6 +13,9 @@ use Modules\Checkout\Contracts\Data\Totals;
  */
 interface CheckoutValidator
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(CheckoutValidator::TAG, …)`. */
+    public const TAG = 'vani.checkout.validators';
+
     public function code(): string;
 
     /**

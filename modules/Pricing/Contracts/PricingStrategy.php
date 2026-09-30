@@ -12,6 +12,9 @@ use Modules\Pricing\Contracts\Data\ResolvedPrice;
  */
 interface PricingStrategy
 {
+    /** Tag extension point: plugin đóng góp qua `contribute(PricingStrategy::TAG, …)`. */
+    public const TAG = 'vani.pricing.strategies';
+
     public function code(): string;
 
     /**
