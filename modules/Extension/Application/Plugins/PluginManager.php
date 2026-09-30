@@ -185,6 +185,7 @@ final class PluginManager
 
     private function afterStateChange(): void
     {
+        PluginActivation::forgetCache();
         $this->activation->flush();
         $this->rebuildCache();
     }

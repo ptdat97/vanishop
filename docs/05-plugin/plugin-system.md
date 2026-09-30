@@ -96,6 +96,8 @@ Lưu trữ: `plugins(id, version, status, installed_at, last_error)`, `plugin_sc
 
 Scope đã hỗ trợ: `owner`, `brand`, `channel` (**Implemented**). `legal_entity`: Designed.
 
+Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:plugins:enabled-scopes`, xoá mỗi khi install/enable/disable/failed) nên request/job không truy vấn `plugins`/`plugin_scopes`. Production nhiều server phải dùng store dùng chung (`database`/`redis`), không dùng `file`/`array`. Trong một request/job, danh sách implementation có hiệu lực của mỗi tag được ghi nhớ theo phạm vi.
+
 ## 5. CLI
 
 `list`, `install`, `enable`, `disable`, `uninstall`, `hooks`: **Implemented**. `upgrade`, `doctor`: Designed.

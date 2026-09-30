@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Plugins;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Cache;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Extension\Persistence\Models\PluginScopeRecord;
@@ -20,8 +21,12 @@ use Modules\Shared\Context\CurrentContext;
  */
 final class PluginActivation
 {
-    /** @var Collection<int, PluginScopeRecord>|null */
+    private const CACHE_KEY = 'vani:plugins:enabled-scopes';
+
+    /** @var Collection<int, array{plugin_id: string, scope_type: string, scope_id: int|null}>|null */
     private ?Collection $scopes = null;
+
+    private int $version = 0;
 
     public function __construct(private readonly CurrentContext $context) {}
 
@@ -63,9 +68,9 @@ final class PluginActivation
             return true;
         }
 
-        return $rows->contains(fn (PluginScopeRecord $row): bool => match ($row->scope_type) {
-            'channel' => $row->scope_id === $scope->channelId,
-            'brand' => in_array($row->scope_id, $scope->brandIds, true),
+        return $rows->contains(fn (array $row): bool => match ($row['scope_type']) {
+            'channel' => $row['scope_id'] === $scope->channelId,
+            'brand' => in_array($row['scope_id'], $scope->brandIds, true),
             default => false,
         });
     }
@@ -73,10 +78,14 @@ final class PluginActivation
     public function flush(): void
     {
         $this->scopes = null;
+        $this->version++;
     }
 
     /**
-     * @return Collection<int, PluginScopeRecord>
+     * Phạm vi đang bật của mọi plugin enabled. Lưu trong cache dùng chung (redis/database ở production) để request/job
+     * không phải truy vấn DB; PluginManager xoá cache mỗi khi trạng thái plugin đổi.
+     *
+     * @return Collection<int, array{plugin_id: string, scope_type: string, scope_id: int|null}>
      */
     private function enabledScopes(): Collection
     {
@@ -84,15 +93,32 @@ final class PluginActivation
             return $this->scopes;
         }
 
-        if (! Schema::hasTable('plugin_scopes')) {
-            return $this->scopes = new Collection;
+        try {
+            $rows = Cache::rememberForever(self::CACHE_KEY, fn (): array => PluginScopeRecord::query()
+                ->where('enabled', true)
+                ->whereIn('plugin_id', PluginRecord::query()->where('status', PluginStatus::Enabled)->select('id'))
+                ->get(['plugin_id', 'scope_type', 'scope_id'])
+                ->map(fn (PluginScopeRecord $row): array => ['plugin_id' => $row->plugin_id, 'scope_type' => $row->scope_type, 'scope_id' => $row->scope_id])
+                ->all());
+        } catch (QueryException) {
+            // Bảng chưa có (đang cài/migrate) → coi như không plugin nào bật, không cache.
+            $rows = [];
         }
 
-        $enabledPlugins = PluginRecord::query()->where('status', PluginStatus::Enabled)->pluck('id');
+        return $this->scopes = new Collection($rows);
+    }
 
-        return $this->scopes = PluginScopeRecord::query()
-            ->where('enabled', true)
-            ->whereIn('plugin_id', $enabledPlugins)
-            ->get();
+    /**
+     * Gọi khi trạng thái plugin đổi (PluginManager): xoá cache dùng chung và bộ nhớ của request hiện tại.
+     */
+    public static function forgetCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+    }
+
+    /** Tăng mỗi lần flush — ScopedExtensions dùng để biết kết quả `tagged()` đã ghi nhớ có còn đúng. */
+    public function version(): int
+    {
+        return $this->version;
     }
 }

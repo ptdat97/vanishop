@@ -30,6 +30,17 @@ final class ScopedExtensions implements Extensions
     private array $contributions = [];
 
     /**
+     * Danh sách abstract CÓ HIỆU LỰC của `tagged()` theo (tag, phạm vi) — chỉ trong một request/job: gắn với instance
+     * PluginActivation (scoped) + version của nó; đổi đăng ký thì xoá. Instance vẫn tạo qua container mỗi lần
+     * (implementation `bind` đọc cấu hình lúc tạo).
+     *
+     * @var array<string, list<string>>
+     */
+    private array $memo = [];
+
+    private ?string $memoOwner = null;
+
+    /**
      * @param  Closure(): PluginActivation  $activation  PluginActivation là scoped theo request/job
      */
     public function __construct(
@@ -39,6 +50,7 @@ final class ScopedExtensions implements Extensions
 
     public function tag(string|array $abstracts, string $tag): void
     {
+        $this->memo = [];
         foreach ((array) $abstracts as $abstract) {
             $this->contributions[$tag][(string) $abstract] = null;
         }
@@ -46,21 +58,34 @@ final class ScopedExtensions implements Extensions
 
     public function contribute(string $tag, string $abstract, string $pluginId): void
     {
+        $this->memo = [];
         $this->contributions[$tag][$abstract] = $pluginId;
     }
 
     public function tagged(string $tag): array
     {
         $activation = ($this->activation)();
-        $result = [];
-
-        foreach ($this->contributions[$tag] ?? [] as $abstract => $pluginId) {
-            if ($pluginId === null || $activation->isActive($pluginId)) {
-                $result[] = $this->container->make($abstract);
-            }
+        $owner = spl_object_id($activation).':'.$activation->version();
+        if ($owner !== $this->memoOwner) {
+            $this->memo = [];
+            $this->memoOwner = $owner;
         }
 
-        return $result;
+        $context = $this->container->make(CurrentContext::class);
+        $scope = $context->has() ? $context->scope() : null;
+        $key = $tag.'|'.($scope === null ? '-' : json_encode([$scope->brandIds, $scope->channelId]));
+
+        if (! isset($this->memo[$key])) {
+            $active = [];
+            foreach ($this->contributions[$tag] ?? [] as $abstract => $pluginId) {
+                if ($pluginId === null || $activation->isActive($pluginId)) {
+                    $active[] = $abstract;
+                }
+            }
+            $this->memo[$key] = $active;
+        }
+
+        return array_map(fn (string $abstract): object => $this->container->make($abstract), $this->memo[$key]);
     }
 
     public function implementations(string $tag, string $interface, ?callable $key = null): array

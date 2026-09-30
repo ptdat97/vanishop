@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Modules\Brand\Persistence\Models\Brand;
 use Modules\Extension\Application\Plugins\PluginActivation;
@@ -99,4 +100,20 @@ it('call(): implementation lỗi → giá trị dự phòng; plugin lỗi 5 lầ
 
     $this->travel(301)->seconds();
     expect(app(Extensions::class)->call($plugin, fn (): string => 'ok', 'dự phòng', 'test'))->toBe('ok');
+});
+
+it('phạm vi bật của plugin nằm trong cache dùng chung: không truy vấn DB khi cache ấm; đổi trạng thái thì làm mới', function () {
+    [$lumiere] = Brand::factory()->count(1)->create();
+    $this->plugins->install('fixture.extensions');
+    $this->plugins->enable('fixture.extensions', 'brand', $lumiere->id);
+    extensionCodes([$lumiere->id]); // làm ấm cache
+
+    DB::enableQueryLog();
+    app()->forgetScopedInstances(); // request mới
+    expect(extensionCodes([$lumiere->id]))->toBe(['fixture.core', 'fixture.plugin'])
+        ->and(collect(DB::getQueryLog())->pluck('query')->filter(fn (string $sql): bool => str_contains($sql, 'plugin')))->toBeEmpty();
+
+    $this->plugins->disable('fixture.extensions');
+    app()->forgetScopedInstances();
+    expect(extensionCodes([$lumiere->id]))->toBe(['fixture.core']);
 });
