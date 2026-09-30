@@ -1,0 +1,732 @@
+VaniShop 0.2.0
+interface Modules\Brand\Contracts\BrandDirectory
+  find(int $brandId): ?Modules\Brand\Contracts\Data\BrandData
+  list(?array $brandIds): array
+  idsOfLegalEntity(int $legalEntityId): array
+class Modules\Brand\Contracts\Data\BrandData
+  __construct(int $id, int $legalEntityId, string $code, string $name, string $slug)
+class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static notFound(): self
+  static closed(): self
+  static lineNotFound(): self
+  static variantUnavailable(int $variantId): self
+  static insufficientStock(int $variantId): self
+  static quantity(string $reason, int $max): self
+  static tooManyLines(int $max): self
+  static byRule(int $variantId, array $messages): self
+  errorCode(): string
+  status(): int
+  details(): array
+interface Modules\Cart\Contracts\Carts
+  create(string $currencyCode): Modules\Cart\Contracts\Data\NewCart
+  view(Modules\Cart\Contracts\Data\CartKey $key): Modules\Cart\Contracts\Data\CartView
+  addLine(Modules\Cart\Contracts\Data\CartKey $key, int $variantId, int $quantity): Modules\Cart\Contracts\Data\CartView
+  updateLine(Modules\Cart\Contracts\Data\CartKey $key, int $lineId, int $quantity): Modules\Cart\Contracts\Data\CartView
+  removeLine(Modules\Cart\Contracts\Data\CartKey $key, int $lineId): Modules\Cart\Contracts\Data\CartView
+  merge(Modules\Cart\Contracts\Data\CartKey $source, Modules\Cart\Contracts\Data\CartKey $target): Modules\Cart\Contracts\Data\CartView
+  forCustomer(int $customerId, string $currencyCode): Modules\Cart\Contracts\Data\CartView
+  attachToCustomer(Modules\Cart\Contracts\Data\CartKey $guestCart, int $customerId): Modules\Cart\Contracts\Data\CartView
+  lockForCheckout(Modules\Cart\Contracts\Data\CartKey $key): Modules\Cart\Contracts\Data\CartView
+  markConverted(Modules\Cart\Contracts\Data\CartKey $key, string $orderPublicId): void
+class Modules\Cart\Contracts\Data\CartKey
+  __construct(string $publicId, string $token)
+class Modules\Cart\Contracts\Data\CartLineDraft
+  __construct(string $cartId, int $channelId, ?int $customerId, int $variantId, int $brandId, int $quantity, int $unitPrice)
+class Modules\Cart\Contracts\Data\CartLineView
+  const ISSUE_UNAVAILABLE = 'unavailable'
+  const ISSUE_INSUFFICIENT_STOCK = 'insufficient_stock'
+  const ISSUE_PRICE_CHANGED = 'price_changed'
+  __construct(int $id, int $variantId, int $quantity, ?Modules\Catalog\Contracts\Data\SellableVariant $variant, ?Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, ?Modules\Shared\Domain\Money\Money $snapshotPrice, ?Modules\Shared\Domain\Money\Money $lineTotal, array $issues)
+  blocksCheckout(): bool
+class Modules\Cart\Contracts\Data\CartView
+  __construct(string $id, int $channelId, string $status, string $currencyCode, array $lines, Modules\Shared\Domain\Money\Money $subtotal, int $itemCount)
+  isCheckoutReady(): bool
+class Modules\Cart\Contracts\Data\NewCart
+  __construct(Modules\Cart\Contracts\Data\CartKey $key, Modules\Cart\Contracts\Data\CartView $view)
+class Modules\Cart\Events\CartUpdated
+  __construct(string $cartId, int $channelId, ?int $customerId)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+interface Modules\Catalog\Contracts\CatalogReader
+  categoryTree(string $locale): array
+  category(string $slug, string $locale): ?array
+  searchProducts(Modules\Catalog\Contracts\Data\ProductFilters $filters, string $locale): array
+  productDetail(string $slug, string $locale, int $now): ?array
+  sellableVariants(array $variantIds, string $locale, int $now): array
+interface Modules\Catalog\Contracts\CollectionDirectory
+  slugsForStyles(array $styleIds): array
+class Modules\Catalog\Contracts\Data\ProductDocument
+  __construct(int $id, int $brandId, string $styleCode, string $slug, string $status, ?int $publishedFrom, ?int $publishedTo, array $names, string $searchText, array $categoryIds, array $collectionIds, array $colorFamilies, array $attributeValueIds, int $createdAt)
+  toArray(): array
+class Modules\Catalog\Contracts\Data\ProductDraft
+  __construct(int $brandId, ?int $styleId, string $styleCode, string $slug, string $status, array $translations, array $categoryIds, array $attributes)
+class Modules\Catalog\Contracts\Data\ProductFilters
+  __construct(array $brandIds, int $now, string $text = '', ?string $categorySlug = NULL, ?string $collectionSlug = NULL, array $colorFamilies = array (
+), array $attributes = array (
+), string $sort = 'newest', int $page = 1, int $perPage = 24)
+class Modules\Catalog\Contracts\Data\ProductSearchQuery
+  const SORT_NEWEST = 'newest'
+  const SORT_CODE = 'code'
+  const MAX_PER_PAGE = 60
+  __construct(array $brandIds, int $now, string $text = '', ?int $categoryId = NULL, ?int $collectionId = NULL, array $colorFamilies = array (
+), array $attributeValueIds = array (
+), string $sort = 'newest', int $page = 1, int $perPage = 24)
+  offset(): int
+  limit(): int
+class Modules\Catalog\Contracts\Data\ProductSearchResult
+  __construct(array $styleIds, int $total, array $facets = array (
+  'color_families' => 
+  array (
+  ),
+  'attribute_values' => 
+  array (
+  ),
+))
+class Modules\Catalog\Contracts\Data\SellableVariant
+  __construct(int $id, int $brandId, int $styleId, string $sku, string $slug, string $name, string $colorCode, ?string $colorName, string $sizeCode, ?string $imageUrl)
+class Modules\Catalog\Contracts\Data\VariantData
+  __construct(int $id, int $brandId, int $styleId, string $styleCode, string $styleName, string $sku, string $colorCode, string $sizeCode, string $status)
+interface Modules\Catalog\Contracts\SearchProvider
+  const TAG = 'vani.search.providers'
+  code(): string
+  index(Modules\Catalog\Contracts\Data\ProductDocument $document): void
+  remove(int $styleId): void
+  search(Modules\Catalog\Contracts\Data\ProductSearchQuery $query): Modules\Catalog\Contracts\Data\ProductSearchResult
+interface Modules\Catalog\Contracts\VariantDirectory
+  ofStyleCode(int $brandId, string $styleCode): array
+  find(array $variantIds): array
+  findBySkus(array $skus): array
+class Modules\Catalog\Events\ProductArchived
+  __construct(int $styleId, int $brandId, string $styleCode)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Catalog\Events\ProductCreated
+  __construct(int $styleId, int $brandId, string $styleCode)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Catalog\Events\ProductUpdated
+  __construct(int $styleId, int $brandId, string $styleCode)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Catalog\Events\VariantCreated
+  __construct(int $variantId, int $styleId, int $brandId, string $sku)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+interface Modules\Channel\Contracts\ChannelDirectory
+  forBrand(int $brandId): array
+  all(): array
+interface Modules\Channel\Contracts\ChannelResolver
+  resolve(string $host, string $path): ?Modules\Channel\Contracts\Data\ChannelData
+  byCode(string $code): ?Modules\Channel\Contracts\Data\ChannelData
+class Modules\Channel\Contracts\Data\ChannelData
+  __construct(int $id, string $code, string $type, string $locale, string $currencyCode, array $brandIds, string $pathPrefix = '')
+interface Modules\Checkout\Contracts\Checkout
+  quote(Modules\Checkout\Contracts\Data\CheckoutRequest $request): Modules\Checkout\Contracts\Data\CheckoutQuote
+  placeOrder(Modules\Checkout\Contracts\Data\CheckoutRequest $request, string $idempotencyKey): Modules\Checkout\Contracts\Data\PlaceOrderResult
+class Modules\Checkout\Contracts\CheckoutRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static invalid(array $issues): self
+  static totalsChanged(int $expected, int $actual, string $currency): self
+  static vouchers(array $rejections): self
+  errorCode(): string
+  status(): int
+  details(): array
+interface Modules\Checkout\Contracts\CheckoutValidator
+  const TAG = 'vani.checkout.validators'
+  code(): string
+  validate(Modules\Checkout\Contracts\Data\CheckoutRequest $request, Modules\Checkout\Contracts\Data\Totals $totals, bool $cartReady): array
+class Modules\Checkout\Contracts\Data\Adjustment
+  __construct(string $type, string $source, ?string $code, string $label, Modules\Shared\Domain\Money\Money $amount, array $meta = array (
+))
+class Modules\Checkout\Contracts\Data\CheckoutIssue
+  __construct(string $code, string $message, ?string $field = NULL)
+class Modules\Checkout\Contracts\Data\CheckoutQuote
+  __construct(Modules\Checkout\Contracts\Data\Totals $totals, array $shippingOptions, array $paymentMethods, bool $cartReady)
+class Modules\Checkout\Contracts\Data\CheckoutRequest
+  __construct(Modules\Cart\Contracts\Data\CartKey $cart, ?array $contact, ?array $shippingAddress, ?string $shippingMethod, ?string $paymentMethod, array $voucherCodes, ?string $note, ?int $expectedTotal)
+  fingerprint(): string
+class Modules\Checkout\Contracts\Data\PlaceOrderResult
+  __construct(int $status, array $body, bool $replayed, ?Modules\Payment\Contracts\Data\PaymentView $payment = NULL)
+class Modules\Checkout\Contracts\Data\ShippingOption
+  __construct(string $code, string $label, Modules\Shared\Domain\Money\Money $fee, string $source = 'core')
+class Modules\Checkout\Contracts\Data\Totals
+  __construct(string $currencyCode, array $lines, array $adjustments, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, ?Modules\Checkout\Contracts\Data\ShippingOption $shipping, Modules\Shared\Domain\Money\Money $tax, Modules\Shared\Domain\Money\Money $grandTotal, array $rejectedVouchers, ?Modules\Promotion\Contracts\Data\PromotionResult $promotions = NULL, int $channelId = 0)
+  shippingFee(): Modules\Shared\Domain\Money\Money
+  brandIds(): array
+class Modules\Checkout\Contracts\Data\TotalsContext
+  __construct(int $channelId, ?int $customerId, string $currencyCode, array $lines, array $adjustments, array $voucherCodes, ?string $shippingMethod, ?array $shippingAddress, int $now, ?Modules\Checkout\Contracts\Data\ShippingOption $shipping = NULL, ?Modules\Promotion\Contracts\Data\PromotionResult $promotions = NULL, array $attributes = array (
+))
+  withLines(array $lines): self
+  withAdjustment(Modules\Checkout\Contracts\Data\Adjustment $adjustment): self
+  withShipping(?Modules\Checkout\Contracts\Data\ShippingOption $shipping): self
+  withPromotions(Modules\Promotion\Contracts\Data\PromotionResult $promotions): self
+  money(int $amount): Modules\Shared\Domain\Money\Money
+  linesTotal(): Modules\Shared\Domain\Money\Money
+class Modules\Checkout\Contracts\Data\TotalsLine
+  __construct(int $key, int $variantId, int $brandId, int $styleId, string $sku, string $name, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL)
+  total(): Modules\Shared\Domain\Money\Money
+  withDiscount(Modules\Shared\Domain\Money\Money $discount): self
+  withTax(int $rateBp, Modules\Shared\Domain\Money\Money $tax): self
+interface Modules\Checkout\Contracts\ShippingRateProvider
+  const TAG = 'vani.checkout.shipping_providers'
+  options(Modules\Checkout\Contracts\Data\TotalsContext $context): array
+interface Modules\Checkout\Contracts\TaxCalculator
+  const TAG = 'vani.tax.calculators'
+  code(): string
+  calculate(Modules\Checkout\Contracts\Data\TotalsContext $context): array
+interface Modules\Checkout\Contracts\TotalsCalculator
+  const TAG = 'vani.totals.calculators'
+  code(): string
+  priority(): int
+  calculate(Modules\Checkout\Contracts\Data\TotalsContext $context): Modules\Checkout\Contracts\Data\TotalsContext
+class Modules\Customer\Contracts\CustomerRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static unauthenticated(): self
+  static otpInvalid(): self
+  static otpRateLimited(int $retryAfter): self
+  static otpUnavailable(): self
+  static invalidCredentials(): self
+  static emailTaken(): self
+  static addressLimit(int $max): self
+  static notFound(): self
+  static mergeInvalid(string $reason): self
+  static passwordMismatch(): self
+  errorCode(): string
+  status(): int
+  details(): array
+interface Modules\Customer\Contracts\Customers
+  find(int $customerId): ?Modules\Customer\Contracts\Data\CustomerData
+  resolveForCheckout(string $phone, string $fullName, ?string $email): int
+  hasConsent(int $customerId, int $brandId, string $channel, string $purpose): bool
+class Modules\Customer\Contracts\Data\CustomerContact
+  __construct(string $phone, ?string $email = NULL, ?string $fullName = NULL, ?int $customerId = NULL)
+class Modules\Customer\Contracts\Data\CustomerData
+  __construct(int $id, string $publicId, ?string $phone, ?string $email, ?string $fullName, string $status, bool $registered, ?string $birthDate = NULL, ?string $gender = NULL, bool $hasPassword = false)
+  toArray(): array
+enum Modules\Customer\Contracts\Data\OtpPurpose
+  const Login = \Modules\Customer\Contracts\Data\OtpPurpose::Login
+  const DeleteAccount = \Modules\Customer\Contracts\Data\OtpPurpose::DeleteAccount
+  static cases(): array
+  static from(string|int $value): static
+  static tryFrom(string|int $value): ?static
+class Modules\Customer\Contracts\OtpDeliveryFailed extends RuntimeException
+interface Modules\Customer\Contracts\OtpSender
+  const TAG = 'vani.customer.otp_senders'
+  channel(): string
+  priority(): int
+  isAvailable(Modules\Customer\Contracts\Data\CustomerContact $contact): bool
+  send(Modules\Customer\Contracts\Data\CustomerContact $contact, string $code, Modules\Customer\Contracts\Data\OtpPurpose $purpose): void
+class Modules\Customer\Events\ConsentChanged
+  __construct(int $customerId, int $brandId, string $channel, string $purpose, bool $granted)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Customer\Events\CustomerAnonymized
+  __construct(int $customerId)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Customer\Events\CustomerMerged
+  __construct(int $sourceId, int $targetId, int $movedOrders)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Customer\Events\CustomerRegistered
+  __construct(int $customerId, string $publicId, bool $claimedGuestProfile)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+interface Modules\Extension\Contracts\Extensions
+  tag(array|string $abstracts, string $tag): void
+  contribute(string $tag, string $abstract, string $pluginId): void
+  tagged(string $tag): array
+  ownerOf(object $implementation): ?string
+abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Support\ServiceProvider
+  protected pluginId(): string
+  protected pluginPath(string $path = ''): string
+  protected onFilter(string $hook, callable $callback, int $priority = 10): void
+  protected onAction(string $hook, callable $callback, int $priority = 10): void
+  protected onValidate(string $hook, callable $callback, int $priority = 10): void
+  protected onSlot(string $hook, callable $callback, int $priority = 10): void
+  protected onEvent(string $event, callable|array|string $handler): void
+  protected contribute(string $tag, string $implementation): void
+  protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
+  protected permissions(array $permissions): void
+  protected adminRoutes(string $file): void
+  protected webhookRoutes(string $file): void
+  protected migrations(string $path): void
+  protected translations(string $path, string $namespace): void
+  protected adminPages(string $namespace, string $path): void
+class Modules\Fulfillment\Contracts\Data\AllocationProposal
+  __construct(int $locationId, array $lines)
+class Modules\Fulfillment\Contracts\Data\CarrierCapabilities
+  __construct(bool $autoBooking = false, bool $webhooks = false, bool $cancel = false)
+class Modules\Fulfillment\Contracts\Data\CarrierEvent
+  __construct(string $trackingNumber, string $status, string $eventId, DateTimeImmutable $occurredAt, ?string $description = NULL, array $maskedPayload = array (
+), array $acknowledgement = array (
+  'ok' => true,
+))
+class Modules\Fulfillment\Contracts\Data\CarrierShipment
+  __construct(string $trackingNumber, ?string $labelUrl = NULL, ?string $serviceCode = NULL)
+class Modules\Fulfillment\Contracts\Data\ShipmentData
+  __construct(string $publicId, string $orderNumber, int $brandId, int $locationId, ?string $serviceCode, array $items, array $recipient, array $address, Modules\Shared\Domain\Money\Money $codAmount, ?string $trackingNumber = NULL)
+class Modules\Fulfillment\Contracts\Data\ShipmentView
+  __construct(int $id, string $publicId, string $carrierCode, string $carrierLabel, ?string $serviceCode, ?string $trackingNumber, string $status, int $codAmount, ?string $lastError, array $lines, array $events, ?string $deliveredAt = NULL, int $locationId = 0)
+class Modules\Fulfillment\Contracts\Data\SourcingRequest
+  __construct(int $orderId, int $brandId, array $lines, array $reserved, array $shippingAddress)
+class Modules\Fulfillment\Contracts\FulfillmentRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static invalidTransition(string $from, string $to): self
+  static orderNotReady(string $status): self
+  static alreadyHasShipments(): self
+  static allocationMismatch(): self
+  static trackingTaken(): self
+  errorCode(): string
+  status(): int
+  details(): array
+class Modules\Fulfillment\Contracts\InvalidCarrierEvent extends RuntimeException
+interface Modules\Fulfillment\Contracts\ShipmentReader
+  forOrder(int $orderId): array
+interface Modules\Fulfillment\Contracts\ShippingCarrier
+  const CARRIERS_TAG = 'vani.shipping.carriers'
+  code(): string
+  label(): string
+  capabilities(): Modules\Fulfillment\Contracts\Data\CarrierCapabilities
+  createShipment(Modules\Fulfillment\Contracts\Data\ShipmentData $shipment): Modules\Fulfillment\Contracts\Data\CarrierShipment
+  cancel(Modules\Fulfillment\Contracts\Data\ShipmentData $shipment): void
+  parseWebhook(Illuminate\Http\Request $request): Modules\Fulfillment\Contracts\Data\CarrierEvent
+interface Modules\Fulfillment\Contracts\SourcingStrategy
+  const TAG = 'vani.fulfillment.sourcing'
+  code(): string
+  allocate(Modules\Fulfillment\Contracts\Data\SourcingRequest $request): array
+class Modules\Fulfillment\Events\ShipmentCreated
+  __construct(int $shipmentId, int $orderId, string $carrierCode, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Fulfillment\Events\ShipmentStatusChanged
+  __construct(int $shipmentId, int $orderId, string $from, string $to, int $codAmount, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+interface Modules\Identity\Contracts\AuditLogger
+  record(string $action, ?string $subjectType = NULL, string|int|null $subjectId = NULL, array $changes = array (
+)): void
+interface Modules\Identity\Contracts\Authorizer
+  allows(int $staffUserId, string $permission, ?Modules\Identity\Contracts\Data\ScopeRef $target = NULL): bool
+  accessibleBrandIds(int $staffUserId): ?array
+class Modules\Identity\Contracts\Data\ScopeRef
+  __construct(Modules\Identity\Domain\ScopeType $type, ?int $id = NULL)
+  static owner(): self
+  static brand(int $brandId): self
+  static legalEntity(int $legalEntityId): self
+interface Modules\Integration\Contracts\Connector
+  const TAG = 'vani.integration.connectors'
+  system(): string
+  supports(string $messageType): bool
+  send(Modules\Integration\Contracts\Data\OutboxMessage $message): Modules\Integration\Contracts\Data\DeliveryResult
+  healthCheck(): Modules\Integration\Contracts\Data\HealthStatus
+class Modules\Integration\Contracts\Data\DeliveryResult
+  static ok(?string $externalId = NULL): self
+  static retryable(string $error): self
+  static permanent(string $error): self
+  static stale(string $reason = 'stale'): self
+  isOk(): bool
+  isRetryable(): bool
+  isPermanent(): bool
+  isStale(): bool
+class Modules\Integration\Contracts\Data\HealthStatus
+  __construct(bool $healthy, ?string $message = NULL)
+  static healthy(): self
+  static unhealthy(string $message): self
+class Modules\Integration\Contracts\Data\InboxMessage
+  __construct(int $id, string $system, string $externalEventId, string $messageType, array $payload, ?string $correlationId, int $attempt)
+class Modules\Integration\Contracts\Data\IntegrationEvent
+  __construct(string $type, string $aggregateType, string $aggregateId, ?int $brandId, array $data, string $schemaVersion = '1')
+class Modules\Integration\Contracts\Data\OutboxMessage
+  __construct(string $messageId, string $target, string $messageType, string $schemaVersion, ?int $brandId, string $aggregateType, string $aggregateId, array $payload, ?string $correlationId, int $attempt)
+interface Modules\Integration\Contracts\ExternalReferences
+  link(string $system, string $entityType, string $internalId, string $externalId): void
+  externalId(string $system, string $entityType, string $internalId): ?string
+  internalId(string $system, string $entityType, string $externalId): ?string
+interface Modules\Integration\Contracts\InboundHandler
+  const TAG = 'vani.integration.inbound'
+  system(): string
+  supports(string $messageType): bool
+  handle(Modules\Integration\Contracts\Data\InboxMessage $message): Modules\Integration\Contracts\Data\DeliveryResult
+interface Modules\Integration\Contracts\Inbox
+  receive(string $system, string $externalEventId, string $messageType, array $payload): bool
+class Modules\Integration\Contracts\IntegrationAccessDenied extends Modules\Shared\Domain\BusinessRuleViolation
+  static unauthenticated(): self
+  static ipNotAllowed(): self
+  static insufficientScope(string $scope): self
+  errorCode(): string
+  status(): int
+interface Modules\Integration\Contracts\IntegrationEvents
+  publish(Modules\Integration\Contracts\Data\IntegrationEvent $event): string
+class Modules\Integration\Contracts\MappingMissing extends RuntimeException
+  __construct(string $system, string $type, string $value)
+interface Modules\Integration\Contracts\Mappings
+  map(string $system, string $type, string $internalValue): string
+  put(string $system, string $type, string $internalValue, string $externalValue): void
+interface Modules\Inventory\Contracts\AvailabilityReader
+  forChannel(array $variantIds, int $channelId): array
+class Modules\Inventory\Contracts\Data\ReservationLine
+  __construct(int $variantId, int $quantity)
+class Modules\Inventory\Contracts\Data\ReservationRequest
+  __construct(string $key, int $channelId, array $lines, ?int $ttlSeconds = NULL)
+class Modules\Inventory\Contracts\Data\ReservedLine
+  __construct(int $variantId, int $locationId, int $quantity)
+enum Modules\Inventory\Contracts\Data\SyncOutcome
+  const Applied = \Modules\Inventory\Contracts\Data\SyncOutcome::Applied
+  const Unchanged = \Modules\Inventory\Contracts\Data\SyncOutcome::Unchanged
+  const Stale = \Modules\Inventory\Contracts\Data\SyncOutcome::Stale
+  static cases(): array
+  static from(string|int $value): static
+  static tryFrom(string|int $value): ?static
+interface Modules\Inventory\Contracts\InventoryReservation
+  reserve(Modules\Inventory\Contracts\Data\ReservationRequest $request): array
+  release(string $key, string $reason): void
+  commit(string $key): void
+  reservedLines(string $key): array
+interface Modules\Inventory\Contracts\InventoryReturns
+  restock(int $locationId, int $variantId, int $quantity, string $reason, string $reference): void
+interface Modules\Inventory\Contracts\InventoryStrategy
+  const TAG = 'vani.inventory.strategies'
+  code(): string
+  adjust(array $standardAts, int $channelId): array
+interface Modules\Inventory\Contracts\InventorySync
+  assertAuthority(string $authority, array $locationCodes): void
+  syncOnHand(string $authority, string $locationCode, int $variantId, int $onHand, int $version, string $reason): Modules\Inventory\Contracts\Data\SyncOutcome
+class Modules\Inventory\Contracts\NotStockAuthority extends Modules\Shared\Domain\BusinessRuleViolation
+  __construct(string $locationCode)
+  errorCode(): string
+  status(): int
+  details(): array
+class Modules\Inventory\Contracts\StockUnavailable extends Modules\Shared\Domain\BusinessRuleViolation
+  __construct(int $variantId, int $requested, int $available)
+  errorCode(): string
+  details(): array
+class Modules\Inventory\Events\AvailabilityChanged
+  __construct(array $variantIds)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Inventory\Events\StockAdjusted
+  __construct(int $locationId, int $variantId, int $onHandDelta, string $reason)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Inventory\Events\StockCommitted
+  __construct(string $reservationKey, array $variantIds)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Inventory\Events\StockReleased
+  __construct(string $reservationKey, array $variantIds)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Inventory\Events\StockReserved
+  __construct(string $reservationKey, array $variantIds)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Notification\Contracts\Data\NotificationRequest
+  const TRANSACTIONAL = 'transactional'
+  const MARKETING = 'marketing'
+  __construct(string $type, string $key, ?int $brandId, Modules\Notification\Contracts\Data\Recipient $recipient, array $variables, string $category = 'transactional')
+class Modules\Notification\Contracts\Data\OutgoingMessage
+  __construct(int $logId, string $idempotencyKey, string $type, ?int $brandId, Modules\Notification\Contracts\Data\Recipient $recipient, ?string $subject, ?string $body, array $meta, int $attempt)
+class Modules\Notification\Contracts\Data\Recipient
+  __construct(?string $phone = NULL, ?string $email = NULL, ?string $name = NULL, ?int $customerId = NULL, string $locale = 'vi')
+class Modules\Notification\Contracts\Data\SendResult
+  static sent(?string $providerMessageId = NULL): self
+  static retryable(string $error): self
+  static permanent(string $error): self
+  isSent(): bool
+  isRetryable(): bool
+interface Modules\Notification\Contracts\NotificationChannel
+  const TAG = 'vani.notification.channels'
+  code(): string
+  canReach(Modules\Notification\Contracts\Data\Recipient $recipient): bool
+  send(Modules\Notification\Contracts\Data\OutgoingMessage $message): Modules\Notification\Contracts\Data\SendResult
+interface Modules\Notification\Contracts\Notifier
+  notify(Modules\Notification\Contracts\Data\NotificationRequest $request): array
+interface Modules\Ordering\Contracts\CustomerOrders
+  track(string $number, string $phone): ?Modules\Ordering\Contracts\Data\OrderDetail
+  show(string $publicId, string $accessToken): ?Modules\Ordering\Contracts\Data\OrderDetail
+  cancel(string $publicId, string $accessToken, string $reason): Modules\Ordering\Contracts\Data\OrderDetail
+  ofCustomer(int $customerId, int $page = 1, int $perPage = 10): array
+  showForCustomer(int $customerId, string $publicId): ?Modules\Ordering\Contracts\Data\OrderDetail
+  cancelForCustomer(int $customerId, string $publicId, string $reason): Modules\Ordering\Contracts\Data\OrderDetail
+class Modules\Ordering\Contracts\Data\OrderAdjustmentDraft
+  __construct(string $type, string $source, ?string $code, string $label, int $amount, array $meta = array (
+))
+class Modules\Ordering\Contracts\Data\OrderData
+  __construct(int $id, string $publicId, string $number, int $legalEntityId, int $brandId, int $channelId, ?int $customerId, Modules\Ordering\Contracts\Data\OrderStatus $status, string $paymentStatus, string $paymentMethod, int $totalAmount, string $currencyCode, string $reservationKey, string $returnStatus = 'none', array $recipient = array (
+  'full_name' => '',
+  'phone' => '',
+), array $shippingAddress = array (
+), string $fulfillmentStatus = 'unfulfilled', ?string $placedAt = NULL, ?string $updatedAt = NULL)
+class Modules\Ordering\Contracts\Data\OrderDetail
+  __construct(int $id, string $publicId, string $number, int $brandId, string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod, array $customerStatus, string $currencyCode, array $amounts, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $placedAt, array $lines, array $adjustments, array $events, bool $cancellableByCustomer, int $lockVersion)
+class Modules\Ordering\Contracts\Data\OrderDraft
+  __construct(string $publicId, int $brandId, int $channelId, ?int $customerId, string $currencyCode, string $paymentMethod, string $paymentStatus, array $lines, array $adjustments, int $subtotalAmount, int $discountAmount, int $shippingAmount, int $taxAmount, int $totalAmount, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $reservationKey, ?string $sourceCartId)
+class Modules\Ordering\Contracts\Data\OrderLineData
+  __construct(int $id, int $variantId, string $sku, string $productName, int $quantity, int $totalAmount = 0, ?string $colorName = NULL, string $sizeCode = '')
+class Modules\Ordering\Contracts\Data\OrderLineDraft
+  __construct(int $variantId, string $sku, string $productName, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, int $unitAmount, ?int $compareAtAmount, int $subtotalAmount, int $discountAmount, int $totalAmount, int $taxRateBp, int $taxAmount)
+enum Modules\Ordering\Contracts\Data\OrderStatus
+  const Pending = \Modules\Ordering\Contracts\Data\OrderStatus::Pending
+  const Confirmed = \Modules\Ordering\Contracts\Data\OrderStatus::Confirmed
+  const Processing = \Modules\Ordering\Contracts\Data\OrderStatus::Processing
+  const Completed = \Modules\Ordering\Contracts\Data\OrderStatus::Completed
+  const Cancelled = \Modules\Ordering\Contracts\Data\OrderStatus::Cancelled
+  static cases(): array
+  static from(string|int $value): static
+  static tryFrom(string|int $value): ?static
+class Modules\Ordering\Contracts\Data\PlacedOrder
+  __construct(int $id, string $publicId, string $number, int $brandId, int $legalEntityId, int $channelId, string $orderStatus, string $paymentStatus, int $totalAmount, string $currencyCode, string $accessToken = '')
+class Modules\Ordering\Contracts\OrderActionRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static cannotCancel(): self
+  static cannotChangeAddress(): self
+  static stale(): self
+  static notFound(): self
+  errorCode(): string
+  status(): int
+interface Modules\Ordering\Contracts\OrderReader
+  find(int $orderId): ?Modules\Ordering\Contracts\Data\OrderData
+  findByPublicId(string $publicId): ?Modules\Ordering\Contracts\Data\OrderData
+  findByNumber(string $number): ?Modules\Ordering\Contracts\Data\OrderData
+  lines(int $orderId): array
+  customerHasPlacedOrder(int $customerId, ?int $brandId = NULL): bool
+  customerBrandStats(int $customerId): array
+  changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array
+class Modules\Ordering\Contracts\OrderTransitionRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  __construct(Modules\Ordering\Contracts\Data\OrderStatus $from, Modules\Ordering\Contracts\Data\OrderStatus $to)
+  errorCode(): string
+  details(): array
+interface Modules\Ordering\Contracts\OrderTransitions
+  transition(int $orderId, Modules\Ordering\Contracts\Data\OrderStatus $to, string $reason, string $source): bool
+  can(int $orderId, Modules\Ordering\Contracts\Data\OrderStatus $to): bool
+  setPaymentStatus(int $orderId, string $paymentStatus, string $reason, string $source): void
+  setFulfillmentStatus(int $orderId, string $fulfillmentStatus, string $reason, string $source): void
+  setReturnStatus(int $orderId, string $returnStatus, string $reason, string $source): void
+  lock(int $orderId): void
+interface Modules\Ordering\Contracts\OrderWriter
+  create(Modules\Ordering\Contracts\Data\OrderDraft $draft): Modules\Ordering\Contracts\Data\PlacedOrder
+  reassignCustomer(int $fromCustomerId, int $toCustomerId): int
+class Modules\Ordering\Events\OrderCancelled
+  __construct(int $orderId, string $publicId, int $brandId, string $reservationKey, string $reason, string $source)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Ordering\Events\OrderConfirmed
+  __construct(int $orderId, string $publicId, int $brandId, string $reason)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Ordering\Events\OrderPlaced
+  __construct(int $orderId, string $publicId, string $number, int $brandId, int $channelId, ?int $customerId, int $totalAmount, string $currencyCode)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Payment\Contracts\Data\GatewayCallback
+  const PAID = 'paid'
+  const FAILED = 'failed'
+  const PENDING = 'pending'
+  __construct(string $paymentPublicId, string $gatewayTransactionId, string $status, Modules\Shared\Domain\Money\Money $amount, array $maskedPayload = array (
+), array $acknowledgement = array (
+  'ok' => true,
+))
+class Modules\Payment\Contracts\Data\GatewayCapabilities
+  __construct(bool $callbacks = false, bool $query = false, bool $refund = false, bool $partialRefund = false, bool $manualConfirmation = false, ?int $paymentTtlSeconds = NULL, bool $collectsOnDelivery = false)
+class Modules\Payment\Contracts\Data\GatewayResult
+  __construct(bool $successful, ?string $gatewayReference = NULL, ?string $message = NULL)
+class Modules\Payment\Contracts\Data\GatewayStatus
+  __construct(string $status, ?string $gatewayTransactionId = NULL, ?Modules\Shared\Domain\Money\Money $amount = NULL)
+class Modules\Payment\Contracts\Data\PaymentContext
+  __construct(int $brandId, int $legalEntityId, int $channelId, Modules\Shared\Domain\Money\Money $amount)
+class Modules\Payment\Contracts\Data\PaymentData
+  __construct(string $publicId, string $gatewayCode, string $orderNumber, int $legalEntityId, int $brandId, Modules\Shared\Domain\Money\Money $amount, string $status, ?string $gatewayReference, ?DateTimeImmutable $expiresAt)
+class Modules\Payment\Contracts\Data\PaymentInitiation
+  const NONE = 'none'
+  const REDIRECT = 'redirect'
+  const QR = 'qr'
+  const INSTRUCTIONS = 'instructions'
+  __construct(string $type, ?string $url = NULL, ?string $qrPayload = NULL, array $instructions = array (
+), ?string $gatewayReference = NULL)
+  static none(): self
+class Modules\Payment\Contracts\Data\PaymentView
+  __construct(string $publicId, string $gatewayCode, string $status, int $amount, string $currencyCode, string $orderPublicId, string $orderNumber, ?string $expiresAt, ?Modules\Payment\Contracts\Data\PaymentInitiation $action, ?string $actionError = NULL)
+class Modules\Payment\Contracts\InvalidCallback extends RuntimeException
+interface Modules\Payment\Contracts\PaymentGateway
+  const TAG = 'vani.payment.gateways'
+  code(): string
+  label(): string
+  capabilities(): Modules\Payment\Contracts\Data\GatewayCapabilities
+  isAvailable(Modules\Payment\Contracts\Data\PaymentContext $context): bool
+  initiate(Modules\Payment\Contracts\Data\PaymentData $payment): Modules\Payment\Contracts\Data\PaymentInitiation
+  verifyCallback(Illuminate\Http\Request $request): Modules\Payment\Contracts\Data\GatewayCallback
+  query(Modules\Payment\Contracts\Data\PaymentData $payment): Modules\Payment\Contracts\Data\GatewayStatus
+  refund(Modules\Payment\Contracts\Data\PaymentData $payment, Modules\Shared\Domain\Money\Money $amount, string $idempotencyKey): Modules\Payment\Contracts\Data\GatewayResult
+class Modules\Payment\Contracts\PaymentRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static gatewayUnavailable(string $code): self
+  static notFound(): self
+  static invalidState(string $status): self
+  static refundExceeds(int $refundable): self
+  errorCode(): string
+  status(): int
+  details(): array
+interface Modules\Payment\Contracts\Payments
+  availableMethods(int $brandId, int $channelId, Modules\Shared\Domain\Money\Money $amount): array
+  paymentTtl(string $gatewayCode): ?int
+  collectsOnDelivery(string $gatewayCode): bool
+  createForOrder(Modules\Ordering\Contracts\Data\PlacedOrder $order, string $gatewayCode): array
+  initiate(string $paymentPublicId): Modules\Payment\Contracts\Data\PaymentView
+  view(string $paymentPublicId): ?Modules\Payment\Contracts\Data\PaymentView
+  confirmManually(int $paymentId, string $note): void
+  refund(int $paymentId, Modules\Shared\Domain\Money\Money $amount, string $reason, string $idempotencyKey): void
+  refundOrder(int $orderId, Modules\Shared\Domain\Money\Money $amount, string $reason, string $idempotencyKey): void
+class Modules\Payment\Events\PaymentCaptured
+  __construct(int $paymentId, int $orderId, int $amount, string $gatewayCode, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Payment\Events\PaymentFailed
+  __construct(int $paymentId, int $orderId, string $gatewayCode, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Payment\Events\RefundCompleted
+  __construct(int $refundId, int $paymentId, int $orderId, int $amount, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Payment\Events\RefundCreated
+  __construct(int $refundId, int $paymentId, int $orderId, int $amount, string $status, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Pricing\Contracts\Data\PricingContext
+  __construct(int $channelId, int $now, ?int $customerGroupId = NULL)
+class Modules\Pricing\Contracts\Data\ResolvedPrice
+  __construct(int $variantId, Modules\Shared\Domain\Money\Money $amount, ?Modules\Shared\Domain\Money\Money $compareAt, ?int $discountPercent, string $priceListCode)
+interface Modules\Pricing\Contracts\PriceResolver
+  forVariants(array $variantIds, Modules\Pricing\Contracts\Data\PricingContext $context): array
+interface Modules\Pricing\Contracts\PricingStrategy
+  const TAG = 'vani.pricing.strategies'
+  code(): string
+  resolve(array $variantIds, Modules\Pricing\Contracts\Data\PricingContext $context): array
+class Modules\Pricing\Events\PriceChanged
+  __construct(int $priceListId, int $brandId, array $variantIds)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Promotion\Contracts\Data\AppliedPromotion
+  __construct(int $promotionId, ?int $voucherId, ?string $voucherCode, string $name, array $lineDiscounts, Modules\Shared\Domain\Money\Money $total)
+class Modules\Promotion\Contracts\Data\Eligibility
+  __construct(array $keys)
+  static none(): self
+  isEmpty(): bool
+  intersect(self $other): self
+class Modules\Promotion\Contracts\Data\PromotionContext
+  __construct(int $channelId, ?int $customerId, string $currencyCode, array $lines, array $voucherCodes, int $now, array $attributes = array (
+))
+  subtotal(): Modules\Shared\Domain\Money\Money
+  line(int $key): ?Modules\Promotion\Contracts\Data\PromotionLine
+class Modules\Promotion\Contracts\Data\PromotionLine
+  __construct(int $key, int $brandId, int $styleId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal)
+class Modules\Promotion\Contracts\Data\PromotionResult
+  __construct(array $applied, array $rejectedVouchers)
+  discountByLine(): array
+  total(string $currencyCode): Modules\Shared\Domain\Money\Money
+class Modules\Promotion\Contracts\Data\VoucherRejection
+  __construct(string $code, string $reason)
+interface Modules\Promotion\Contracts\PromotionAction
+  const TAG = 'vani.promotion.actions'
+  type(): string
+  label(): string
+  validateConfig(array $config): array
+  apply(array $remaining, array $config, string $currencyCode): array
+interface Modules\Promotion\Contracts\PromotionEngine
+  evaluate(Modules\Promotion\Contracts\Data\PromotionContext $context): Modules\Promotion\Contracts\Data\PromotionResult
+  recordUsage(int $orderId, ?int $customerId, string $currencyCode, Modules\Promotion\Contracts\Data\PromotionResult $result): void
+  revertUsage(int $orderId): void
+interface Modules\Promotion\Contracts\PromotionRule
+  const TAG = 'vani.promotion.rules'
+  type(): string
+  label(): string
+  validateConfig(array $config): array
+  evaluate(Modules\Promotion\Contracts\Data\PromotionContext $context, array $config, Modules\Promotion\Contracts\Data\Eligibility $candidates): Modules\Promotion\Contracts\Data\Eligibility
+class Modules\Promotion\Contracts\PromotionUnavailable extends Modules\Shared\Domain\BusinessRuleViolation
+  static voucherExhausted(string $code): self
+  static limitReached(string $name): self
+  errorCode(): string
+  details(): array
+class Modules\Returns\Contracts\Data\ReturnContext
+  __construct(int $orderId, int $brandId, array $lines, string $reasonCode, ?DateTimeImmutable $deliveredAt, DateTimeImmutable $now, string $source)
+class Modules\Returns\Contracts\Data\ReturnDecision
+  __construct(bool $eligible, ?string $reason = NULL, bool $autoApprove = false)
+  static deny(string $reason): self
+class Modules\Returns\Contracts\Data\ReturnView
+  __construct(int $id, string $publicId, string $number, int $orderId, string $status, string $reasonCode, ?string $customerNote, string $source, int $refundAmount, ?int $refundedAmount, string $currencyCode, string $createdAt, array $lines, array $events, int $lockVersion)
+interface Modules\Returns\Contracts\ReturnPolicy
+  const TAG = 'vani.returns.policies'
+  code(): string
+  evaluate(Modules\Returns\Contracts\Data\ReturnContext $context): Modules\Returns\Contracts\Data\ReturnDecision
+class Modules\Returns\Contracts\ReturnRejected extends Modules\Shared\Domain\BusinessRuleViolation
+  static notEligible(string $reason): self
+  static quantityExceeded(int $orderLineId, int $allowed): self
+  static invalidTransition(string $from, string $to): self
+  static refundExceeds(int $max): self
+  static stale(): self
+  errorCode(): string
+  status(): int
+  details(): array
+interface Modules\Returns\Contracts\Returns
+  request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source): Modules\Returns\Contracts\Data\ReturnView
+  forOrder(int $orderId): array
+  returnable(int $orderId): array
+  cancel(int $orderId, string $returnPublicId, string $source): Modules\Returns\Contracts\Data\ReturnView
+class Modules\Returns\Events\ReturnRequested
+  __construct(int $returnId, int $orderId, string $number, string $source, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+class Modules\Returns\Events\ReturnResolved
+  __construct(int $returnId, int $orderId, int $refundedAmount, ?int $brandId = NULL)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
+interface Modules\Tenancy\Contracts\LegalEntityDirectory
+  all(): array

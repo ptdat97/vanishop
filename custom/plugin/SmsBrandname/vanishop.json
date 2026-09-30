@@ -8,7 +8,7 @@
     "kind": "notification_channel",
     "provider": "Plugin\\SmsBrandname\\SmsBrandnameServiceProvider",
     "requires": {
-        "vanishop": "^0.1",
+        "vanishop": "^0.2",
         "plugins": {}
     },
     "conflicts": [],

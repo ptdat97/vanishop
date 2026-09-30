@@ -8,7 +8,7 @@
     "kind": "shipping_carrier",
     "provider": "Plugin\\Ghn\\GhnServiceProvider",
     "requires": {
-        "vanishop": "^0.1",
+        "vanishop": "^0.2",
         "plugins": {}
     },
     "conflicts": [],

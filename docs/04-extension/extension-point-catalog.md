@@ -30,7 +30,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `StorefrontBlock` | `vani.content.blocks` | Content | hero, product grid, rich text, banner | [storefront](../14-storefront/storefront.md) |
 | `DashboardWidget` | `vani.admin.widgets` | Reporting | doanh số, đơn mới | — |
 
-Mỗi contract có abstract base (`Abstract<Contract>`) cung cấp default cho method tuỳ chọn, và bộ **contract test** ([testing §6](../17-testing/testing.md)).
+Extension contract không có abstract base: mở rộng bằng field tuỳ chọn hoặc interface bổ sung tuỳ chọn ([extension-model §5](extension-model.md)); mọi thay đổi ghi ở [CHANGELOG-extension](CHANGELOG-extension.md). Mỗi contract nên có bộ **contract test** ([testing §6](../17-testing/testing.md)).
 
 ## 2. Service contract: plugin gọi Core
 

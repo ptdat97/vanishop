@@ -124,13 +124,15 @@ Extension point public được đánh version theo **SemVer của Core**:
 | Thay đổi | Cho phép ở |
 |---|---|
 | Thêm contract/event/hook mới; thêm field **tuỳ chọn** vào DTO | Minor (1.x) |
-| Thêm method vào interface **kèm** default qua abstract base class (`AbstractPaymentGateway`) | Minor |
-| Đổi tên, xoá, đổi kiểu tham số, thêm method bắt buộc, đổi ngữ nghĩa | **Major**, sau khi đã `@deprecated` ít nhất 1 minor |
+| Thêm method vào **service contract** (Core implement, plugin chỉ gọi: `OrderReader`, `Carts`…) | Minor |
+| Mở rộng **extension contract** (plugin implement: `PaymentGateway`, `NotificationChannel`…) bằng field tuỳ chọn trên DTO/capabilities, hoặc interface bổ sung tuỳ chọn mà Core kiểm tra bằng `instanceof` | Minor |
+| Đổi tên, xoá, đổi kiểu tham số, **thêm method vào extension contract**, đổi ngữ nghĩa | **Major** (giai đoạn `0.x`: tăng số giữa), sau khi đã `@deprecated` ít nhất 1 minor |
 | Sửa internal | Bất kỳ lúc nào |
 
 - Plugin khai báo `requires.vanishop: "^1.2"`. Loader từ chối bật plugin không tương thích ([plugin-system](../05-plugin/plugin-system.md)).
 - Deprecation được log (`vani.deprecation`) khi plugin dùng điểm đã deprecated.
-- `CHANGELOG-extension.md` ghi mọi thay đổi extension point (tạo khi phát hành 1.0).
+- [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).
+- `tests/Architecture/PublicApiSnapshotTest.php` chụp chữ ký của `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot`: đổi API mà không cập nhật snapshot (`VANI_UPDATE_API_SNAPSHOT=1`) + changelog thì CI đỏ. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.
 
 ## 6. Kiểm thử
 

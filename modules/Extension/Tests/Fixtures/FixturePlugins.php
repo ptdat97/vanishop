@@ -29,7 +29,7 @@ final class FixturePlugins
                 'version' => '1.0.0',
                 'kind' => 'business',
                 'provider' => GreetingPluginProvider::class,
-                'requires' => ['vanishop' => '^0.1'],
+                'requires' => ['vanishop' => '^0.2'],
                 'scopes' => ['owner', 'brand', 'channel'],
             ], JSON_PRETTY_PRINT));
         }

@@ -152,7 +152,7 @@ Với validate/totals khi đặt hàng, fail-fast là đúng thiết kế. Nhưn
 | P0-1 Tag vào `Contracts` | ✅ 2026-10-13 — 8 tag chuyển lên interface (`SearchProvider::TAG`, `SourcingStrategy::TAG`, `TaxCalculator::TAG`, `TotalsCalculator::TAG`, `CheckoutValidator::TAG`, `InventoryStrategy::TAG`, `ReturnPolicy::TAG`, `PricingStrategy::TAG`), hằng cũ là alias `@deprecated`; arch test chặn định nghĩa tag ngoài `Contracts/` |
 | P0-3 Bỏ hard-code capability | ✅ 2026-10-13 — `GatewayCapabilities::collectsOnDelivery` + `Payments::collectsOnDelivery()`; Checkout đặt `cod_pending` theo capability, các nơi khác đọc `payment_status` của đơn (không còn so `'cod'` trong Core); kênh consent là mã kênh bất kỳ đúng định dạng |
 | P0-2 `onEvent()` + `brandId` | ✅ 2026-10-13 — `PluginServiceProvider::onEvent()` (lọc theo brand của event, chạy trong phạm vi brand, cô lập lỗi); `brandId` tuỳ chọn trên `PaymentCaptured/Failed`, `RefundCreated/Completed`, `ShipmentCreated/StatusChanged`, `ReturnRequested/Resolved`; event không có brand chỉ tới plugin bật ở owner |
-| P0-5 Version public API | Chưa |
+| P0-5 Version public API | ✅ 2026-10-13 — Core `0.2.0`, mọi plugin `^0.2`; [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md); snapshot public API trong arch test; chính sách mở rộng extension contract không cần abstract base |
 | P0-4 Settings theo scope | Chưa |
 
 ## 6. Những điều **không** nên làm

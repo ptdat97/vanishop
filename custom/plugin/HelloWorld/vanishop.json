@@ -5,7 +5,7 @@
     "kind": "business",
     "provider": "Plugin\\HelloWorld\\HelloWorldServiceProvider",
     "requires": {
-        "vanishop": "^0.1",
+        "vanishop": "^0.2",
         "plugins": {}
     },
     "conflicts": [],
