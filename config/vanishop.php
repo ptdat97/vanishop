@@ -157,5 +157,7 @@ return [
     'hooks' => [
         // Gọi hook chưa khai báo sẽ ném lỗi (local/testing) thay vì bị bỏ qua.
         'strict' => (bool) env('VANI_HOOKS_STRICT', in_array(env('APP_ENV'), ['local', 'testing'], true)),
+        // Listener chạy lâu hơn ngưỡng này (ms) được ghi cảnh báo `hook_duration_ms` kèm plugin.
+        'slow_ms' => (float) env('VANI_HOOKS_SLOW_MS', 50),
     ],
 ];

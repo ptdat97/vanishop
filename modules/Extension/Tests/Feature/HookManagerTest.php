@@ -1,12 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Log;
+use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
+use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Domain\Hooks\HookDefinition;
 use Modules\Extension\Domain\Hooks\HookNotDeclared;
 use Modules\Extension\Domain\Hooks\HookNotPublic;
+use Modules\Extension\Domain\Hooks\HookReturnTypeMismatch;
 use Modules\Extension\Domain\Hooks\HookType;
 use Modules\Extension\Facades\Hook;
+use TorMorten\Eventy\Events;
 
 beforeEach(function () {
     $registry = app(HookRegistry::class);
@@ -63,4 +67,41 @@ it('listener của plugin không chạy khi plugin chưa bật', function () {
     Hook::onFilter('test.filter', fn (string $v) => $v.'-plugin', pluginId: 'vani.not-enabled');
 
     expect(Hook::filter('test.filter', 'x'))->toBe('x');
+});
+
+it('filter trả sai kiểu: strict → HookReturnTypeMismatch; production → bỏ kết quả sai, giữ giá trị', function () {
+    Hook::onFilter('test.filter', fn (array $value): string => 'không phải mảng');
+
+    expect(fn () => Hook::filter('test.filter', ['a' => 1]))->toThrow(HookReturnTypeMismatch::class);
+
+    $production = new HookManager(new Events, app(HookRegistry::class), fn () => app(PluginActivation::class), false);
+    $production->onFilter('test.filter', fn (array $value): string => 'không phải mảng');
+    $production->onFilter('test.filter', fn (array $value): array => [...$value, 'b' => 2], 20);
+    Log::spy();
+
+    expect($production->filter('test.filter', ['a' => 1]))->toBe(['a' => 1, 'b' => 2]);
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message): bool => str_contains($message, 'sai kiểu'))->once();
+
+    // Object: kết quả phải cùng lớp (hoặc lớp con) với đầu vào.
+    $objects = new HookManager(new Events, app(HookRegistry::class), fn () => app(PluginActivation::class), false);
+    $objects->onFilter('test.filter', fn (object $value): object => new stdClass);
+    expect($objects->filter('test.filter', new ArrayObject))->toBeInstanceOf(ArrayObject::class);
+});
+
+it('đo hook_duration_ms theo hook × plugin; listener chậm hơn ngưỡng bị ghi cảnh báo', function () {
+    $manager = new HookManager(new Events, app(HookRegistry::class), fn () => app(PluginActivation::class), true, slowMs: 5);
+    $manager->onAction('test.action', fn () => usleep(10_000));
+    $manager->onFilter('test.filter', fn (string $value): string => $value);
+    Log::spy();
+
+    $manager->action('test.action');
+    $manager->filter('test.filter', 'x');
+    $manager->filter('test.filter', 'y');
+
+    $timings = collect($manager->timings())->keyBy('hook');
+    expect($timings['test.action']['calls'])->toBe(1)
+        ->and($timings['test.action']['max_ms'])->toBeGreaterThan(5.0)
+        ->and($timings['test.filter']['calls'])->toBe(2)
+        ->and($timings['test.filter']['plugin'])->toBe('core');
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message, array $context): bool => $context['hook'] === 'test.action' && $context['hook_duration_ms'] > 5)->once();
 });

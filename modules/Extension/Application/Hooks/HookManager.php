@@ -10,6 +10,7 @@ use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Domain\Hooks\HookDefinition;
 use Modules\Extension\Domain\Hooks\HookNotDeclared;
 use Modules\Extension\Domain\Hooks\HookNotPublic;
+use Modules\Extension\Domain\Hooks\HookReturnTypeMismatch;
 use Modules\Extension\Domain\Hooks\HookType;
 use Throwable;
 use TorMorten\Eventy\Events;
@@ -28,6 +29,9 @@ final class HookManager
     /** @var array<string, list<string|null>> */
     private array $listenerOwners = [];
 
+    /** @var array<string, array{hook: string, plugin: string, calls: int, total_ms: float, max_ms: float}> */
+    private array $timings = [];
+
     /**
      * @param  Closure(): PluginActivation  $activation  lấy theo request/job hiện tại (PluginActivation là scoped)
      */
@@ -36,6 +40,7 @@ final class HookManager
         private readonly HookRegistry $registry,
         private readonly Closure $activation,
         private readonly bool $strict,
+        private readonly float $slowMs = 50.0,
     ) {}
 
     public function filter(string $name, mixed $value, mixed ...$args): mixed
@@ -78,8 +83,23 @@ final class HookManager
 
     public function onFilter(string $name, callable $callback, int $priority = 10, ?string $pluginId = null): void
     {
-        $this->listen($name, $pluginId, $priority, function (mixed $value, mixed ...$args) use ($callback, $pluginId): mixed {
-            return $this->isActive($pluginId) ? $callback($value, ...$args) : $value;
+        $this->listen($name, $pluginId, $priority, function (mixed $value, mixed ...$args) use ($name, $callback, $pluginId): mixed {
+            if (! $this->isActive($pluginId)) {
+                return $value;
+            }
+
+            $result = $callback($value, ...$args);
+            if (self::sameType($value, $result)) {
+                return $result;
+            }
+
+            // Filter phải trả về đúng kiểu đầu vào: strict (local/testing) → lỗi rõ ràng; production → bỏ kết quả sai.
+            if ($this->strict) {
+                throw new HookReturnTypeMismatch($name, $pluginId, get_debug_type($value), get_debug_type($result));
+            }
+            Log::warning('Filter trả sai kiểu, bỏ qua kết quả của listener.', ['hook' => $name, 'plugin' => $pluginId, 'expected' => get_debug_type($value), 'actual' => get_debug_type($result)]);
+
+            return $value;
         });
     }
 
@@ -123,6 +143,21 @@ final class HookManager
     }
 
     /**
+     * Thời gian chạy listener trong request/job hiện tại (hook_duration_ms theo hook × plugin).
+     *
+     * @return list<array{hook: string, plugin: string, calls: int, total_ms: float, max_ms: float}>
+     */
+    public function timings(): array
+    {
+        return array_values($this->timings);
+    }
+
+    public function resetTimings(): void
+    {
+        $this->timings = [];
+    }
+
+    /**
      * @return array<string, list<string|null>> hook => danh sách plugin nghe (null = Core)
      */
     public function listenerOwners(): array
@@ -142,7 +177,7 @@ final class HookManager
 
         $this->listenerOwners[$name][] = $pluginId;
 
-        $callable = new HookListener($pluginId, $listener);
+        $callable = new HookListener($pluginId, $this->timed($name, $pluginId, $listener));
 
         $type = $definition->type ?? HookType::Filter;
         if ($type === HookType::Action) {
@@ -150,6 +185,38 @@ final class HookManager
         } else {
             $this->events->addFilter($name, $callable, $priority, self::MAX_ARGUMENTS);
         }
+    }
+
+    /**
+     * Đo thời gian mỗi lần gọi listener; chậm hơn ngưỡng (mặc định 50 ms — giới hạn cho hook trong transaction)
+     * thì ghi cảnh báo kèm plugin.
+     */
+    private function timed(string $name, ?string $pluginId, Closure $listener): Closure
+    {
+        return function (mixed ...$args) use ($name, $pluginId, $listener): mixed {
+            $started = hrtime(true);
+            try {
+                return $listener(...$args);
+            } finally {
+                $ms = (hrtime(true) - $started) / 1_000_000;
+                $key = $name.'|'.($pluginId ?? 'core');
+                $entry = $this->timings[$key] ?? ['hook' => $name, 'plugin' => $pluginId ?? 'core', 'calls' => 0, 'total_ms' => 0.0, 'max_ms' => 0.0];
+                $this->timings[$key] = ['hook' => $name, 'plugin' => $entry['plugin'], 'calls' => $entry['calls'] + 1, 'total_ms' => $entry['total_ms'] + $ms, 'max_ms' => max($entry['max_ms'], $ms)];
+
+                if ($ms > $this->slowMs) {
+                    Log::warning('Listener hook chậm.', ['hook' => $name, 'plugin' => $pluginId ?? 'core', 'hook_duration_ms' => round($ms, 1), 'threshold_ms' => $this->slowMs]);
+                }
+            }
+        };
+    }
+
+    private static function sameType(mixed $input, mixed $output): bool
+    {
+        return match (true) {
+            $input === null => true,
+            is_object($input) => $output instanceof $input,
+            default => get_debug_type($input) === get_debug_type($output),
+        };
     }
 
     private function isActive(?string $pluginId): bool

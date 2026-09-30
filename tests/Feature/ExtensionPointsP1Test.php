@@ -75,10 +75,7 @@ it('vani.integration.order_payload: plugin chỉ thêm được field, không s�
     expect($payload['number'])->toBe($order->number)->and($payload['gift_wrap'])->toBeTrue();
 });
 
-it('vani.catalog.listing.query: plugin sửa truy vấn danh sách sản phẩm; trả sai kiểu thì bị bỏ qua', function () {
-    $this->getJson('/api/storefront/v1/products', $this->headers)->assertOk()->assertJsonCount(1, 'data');
-
-    Hook::onFilter('vani.catalog.listing.query', fn (ProductSearchQuery $query): string => 'sai kiểu');
+it('vani.catalog.listing.query: plugin sửa truy vấn danh sách sản phẩm', function () {
     $this->getJson('/api/storefront/v1/products', $this->headers)->assertOk()->assertJsonCount(1, 'data');
 
     Hook::onFilter('vani.catalog.listing.query', fn (mixed $query): ProductSearchQuery => new ProductSearchQuery(
