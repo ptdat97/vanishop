@@ -28,6 +28,10 @@ Nếu VaniShop chứa mã (kể cả đã sửa, đổi tên) từ BeikeShop, n�
 
 > Nguyên tắc ngón tay cái: **nếu bạn đang mở file BeikeShop trong một cửa sổ và gõ code VaniShop ở cửa sổ kia — dừng lại.**
 
+### 2.1 VaniCommerce cũng thuộc diện clean-room
+
+`~/Ecommerce/VaniCommerce` là nền tảng **dẫn xuất từ BeikeShop** (cùng họ helper hook, header phiên khách, cấu trúc plugin, bảng mô tả đa ngôn ngữ). Áp dụng **đúng các quy tắc như với BeikeShop**: không mở mã nguồn/tài liệu của nó khi code VaniShop, không đưa vào context AI agent khi sinh code, không chép tên hook/bảng/class/chuỗi. Kết quả nghiên cứu đã được viết lại bằng thiết kế của VaniShop tại [reference-comparison](../02-architecture/reference-comparison.md); người code chỉ đọc tài liệu đó.
+
 ## 3. Quy trình clean-room
 
 ```mermaid

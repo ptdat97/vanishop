@@ -34,16 +34,27 @@
 3. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): ranh giới giữa Core và Plugin.
 4. [04-extension/extension-model.md](04-extension/extension-model.md): khi nào dùng Contract, Event, Hook.
 
+## Dùng tài liệu nào khi nào
+
+| Tình huống | Đọc |
+|---|---|
+| Mới vào dự án, cần mental model | [overview](02-architecture/overview.md) → [system-map](02-architecture/system-map.md) |
+| Cần biết **hệ thống đang là gì** ở mức mã nguồn (bề mặt, module, middleware, lịch chạy) | [system-map](02-architecture/system-map.md), [request-lifecycle](02-architecture/request-lifecycle.md) |
+| Muốn biết **vì sao** làm thế này | [19-adr](19-adr/README.md) |
+| Đang viết plugin, cần **chữ ký chính xác + checklist** | [05-plugin/contracts](05-plugin/contracts/README.md) |
+| Tra extension point / hook public | [extension-point-catalog](04-extension/extension-point-catalog.md), `php artisan vani:plugin:hooks` |
+| So với hệ tham chiếu VaniCommerce: học gì, giữ gì | [reference-comparison](02-architecture/reference-comparison.md) (đọc lưu ý clean-room trước) |
+
 ## Cấu trúc
 
 | Thư mục | Tài liệu |
 |---|---|
 | **00-overview** | [vision](00-overview/vision.md) · [status](00-overview/status.md) · [glossary](00-overview/glossary.md) |
 | **01-principles** | [architecture-rules](01-principles/architecture-rules.md) · [clean-room-license](01-principles/clean-room-license.md) · [coding-conventions](01-principles/coding-conventions.md) |
-| **02-architecture** | [overview](02-architecture/overview.md) · [bounded-contexts](02-architecture/bounded-contexts.md) · [commerce-kernel](02-architecture/commerce-kernel.md) · [money](02-architecture/money.md) · [consistency](02-architecture/consistency.md) |
-| **03-domains** | [catalog-pricing](03-domains/catalog-pricing.md) · [customer](03-domains/customer.md) · [cart-checkout](03-domains/cart-checkout.md) · [promotion](03-domains/promotion.md) · [vietnam-localization](03-domains/vietnam-localization.md) |
-| **04-extension** | [extension-model](04-extension/extension-model.md) · [extension-point-catalog](04-extension/extension-point-catalog.md) |
-| **05-plugin** | [plugin-system](05-plugin/plugin-system.md) · [plugin-catalog](05-plugin/plugin-catalog.md) · specs: [loyalty](05-plugin/specs/loyalty.md), [store-omnichannel](05-plugin/specs/store-omnichannel.md) |
+| **02-architecture** | [overview](02-architecture/overview.md) · [system-map](02-architecture/system-map.md) · [request-lifecycle](02-architecture/request-lifecycle.md) · [bounded-contexts](02-architecture/bounded-contexts.md) · [commerce-kernel](02-architecture/commerce-kernel.md) · [kernel-review](02-architecture/kernel-review.md) · [money](02-architecture/money.md) · [consistency](02-architecture/consistency.md) · [reference-comparison](02-architecture/reference-comparison.md) |
+| **03-domains** | [catalog-pricing](03-domains/catalog-pricing.md) · [customer](03-domains/customer.md) · [cart-checkout](03-domains/cart-checkout.md) · [promotion](03-domains/promotion.md) · [notification](03-domains/notification.md) · [vietnam-localization](03-domains/vietnam-localization.md) |
+| **04-extension** | [extension-model](04-extension/extension-model.md) · [extension-point-catalog](04-extension/extension-point-catalog.md) · [CHANGELOG-extension](04-extension/CHANGELOG-extension.md) |
+| **05-plugin** | [plugin-system](05-plugin/plugin-system.md) · [plugin-catalog](05-plugin/plugin-catalog.md) · contracts: [lifecycle](05-plugin/contracts/plugin-lifecycle.md), [hook](05-plugin/contracts/hook-signatures.md), [payment-gateway](05-plugin/contracts/payment-gateway.md), [shipping-carrier](05-plugin/contracts/shipping-carrier.md) · specs: [loyalty](05-plugin/specs/loyalty.md), [store-omnichannel](05-plugin/specs/store-omnichannel.md) |
 | **06-api** | [api](06-api/api.md) |
 | **07-database** | [database](07-database/database.md) |
 | **08-inventory** | [inventory](08-inventory/inventory.md) |
@@ -64,6 +75,7 @@
 
 - Mỗi tài liệu mở đầu bằng dòng **Trạng thái**, lấy một trong bốn giá trị: `Implemented` · `Partially Implemented` · `Designed` · `Planned`. Trạng thái tổng hợp nằm ở [status.md](00-overview/status.md). **Không ghi `Implemented` khi code chưa tồn tại.**
 - Mỗi chủ đề chỉ có **một tài liệu gốc**, các nơi khác dẫn link đến đó, không chép lại.
+- Tài liệu mô tả code (system-map, request-lifecycle, contracts) ghi **theo code**: số liệu kèm lệnh đếm lại, chữ ký chép từ `Contracts/`. Chỗ code còn thiếu ghi ở mục *Giới hạn hiện tại*, không giấu.
 - Quyết định kiến trúc được ghi bằng ADR ([19-adr](19-adr/README.md)). Thay đổi quyết định thì tạo ADR mới, ADR cũ đánh dấu *Superseded*.
 - Tài liệu được cập nhật **trong cùng PR** với code làm thay đổi hành vi.
 - Tài liệu kiến trúc đã đủ để bắt đầu code. Từ đây ưu tiên **implementation theo vertical slice** ([roadmap](20-roadmap/roadmap.md)); chỉ mở rộng tài liệu khi code cần.

@@ -94,9 +94,27 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.order.before_create` | filter | có (không I/O mạng) | Bổ sung `orders.meta` (khoá theo plugin id) trước khi lưu; tham số `(meta, CheckoutRequest, Totals)`; không sửa giá/dòng. Đọc lại qua `OrderData::$meta`. **Implemented** (0.3) |
 | `vani.order.after_create` | action | có (chỉ ghi DB) | Plugin ghi dữ liệu gắn với đơn (attribution, điểm chờ); tham số `PlacedOrder`. **Implemented** |
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
-| `vani.storefront.pdp.after_price` | slot | — | UI dưới giá |
-| `vani.storefront.checkout.before_submit` | slot | — | UI trước nút đặt hàng |
+| `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin; tham số `OrderDetail`, trả `{title, rows[{label, value}], link?}`. **Implemented** (Payment dùng) |
+
+### 4.1 Slot storefront (Designed, chốt cùng theme `vani-base`)
+
+Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả **một view component** (view của plugin + dữ liệu), theme render tại vị trí slot, chỉ nối thêm, lỗi một listener bị bỏ qua. Danh sách dưới đây là **đề xuất ban đầu**; chỉ thành public API khi đã khai báo trong `hooks.php` cùng view của `vani-base`.
+
+| Slot | Vị trí | Ví dụ plugin |
+|---|---|---|
+| `vani.storefront.layout.head` | Cuối `<head>` | Pixel tracking, meta xác minh |
+| `vani.storefront.layout.body_end` | Cuối `<body>` | Chat, script đo lường |
+| `vani.storefront.plp.card_badges` | Nhãn trên thẻ sản phẩm ở danh sách | "Mới", "Bán chạy", "Freeship" |
+| `vani.storefront.pdp.after_title` | Dưới tên sản phẩm | Đánh giá sao |
+| `vani.storefront.pdp.after_price` | Dưới giá | Trả góp, điểm thưởng dự kiến |
+| `vani.storefront.pdp.after_add_to_cart` | Dưới nút thêm giỏ | Bảng size, cam kết đổi trả |
+| `vani.storefront.pdp.after_details` | Sau mô tả | Lookbook, phối đồ, sản phẩm gợi ý |
+| `vani.storefront.cart.after_lines` | Sau danh sách dòng giỏ | Tiến độ freeship, upsell |
+| `vani.storefront.checkout.after_shipping` | Sau chọn phương thức giao | Ghi chú giao hàng, gói quà |
+| `vani.storefront.checkout.before_submit` | Trước nút đặt hàng | Xuất hoá đơn điện tử (trường `extra[<plugin id>]`) |
+| `vani.storefront.order.after_summary` | Trang cảm ơn / chi tiết đơn | Hướng dẫn chuyển khoản, điểm đã cộng |
+| `vani.storefront.account.menu` | Menu tài khoản khách | Điểm thưởng, ví |
 
 ## 5. Registry (qua `PluginServiceProvider`)
 
@@ -121,4 +139,4 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 
 - Bảng riêng `plg_<plugin>_*`, tham chiếu ID của Core bằng FK (`ON DELETE RESTRICT`). Core **không** FK sang bảng plugin.
 - Cột `meta` (JSON) trên `orders`, `order_lines`, `carts`, `customers`, `styles`, `variants` dùng cho dữ liệu nhỏ, **namespace theo mã plugin** (`meta.einvoice.tax_code`). Không dùng cho dữ liệu cần lọc hoặc báo cáo.
-- Plugin **không** thêm cột vào bảng Core, không sửa migration Core.
+- Plugin **không** thêm cột vào bảng Core, không sửa migration Core ([ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md)).

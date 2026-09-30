@@ -99,6 +99,8 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 |---|---|---|
 | 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation) + ERP connector khi chốt ERP. **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
 | 12 | Multi-brand đầy đủ: brand thứ 2–3, theme tokens, kênh đa brand (order group), lệnh preflight | [multi-brand](../12-multi-brand/multi-brand.md) |
+| 12b | **Native storefront**: theme `vani-base` SSR-first, controller Storefront dùng chung Presenter với API, component slot + khai báo slot storefront trong `hooks.php`, override theme brand, test JS tắt/slot lỗi | [storefront](../14-storefront/storefront.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) |
+| 12c | PR Core: vận đơn chọn carrier theo `shippingMethod.source` của đơn (rơi về mặc định khi carrier không bật); `vani.ghn` gọi API GHN thật (báo cước có cache, đặt đơn idempotent) | [shipping-carrier](../05-plugin/contracts/shipping-carrier.md) |
 | 13 | Plugin go-live P1 còn lại: `vani.vnpay`, `vani.tracking-pixels` (`vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |

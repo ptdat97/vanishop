@@ -1,6 +1,6 @@
 # Extension Model
 
-> Trạng thái: **Partially Implemented**. Đã có: `Hook` (filter/action/collect/slot), registry `hooks.php`, strict mode, public/internal, cô lập lỗi ở slot, listener gắn với plugin và chỉ chạy khi plugin active. Chưa có: metric `hook_duration_ms`, kiểm tra kiểu trả về của filter, contract test suite. Quyết định: [ADR-004](../19-adr/ADR-004-extension-points.md).
+> Trạng thái: **Partially Implemented**. Đã có: `Hook` (filter/action/collect/slot), registry `hooks.php`, strict mode, public/internal, cô lập lỗi ở slot, listener gắn với plugin và chỉ chạy khi plugin active, **kiểm tra kiểu trả về của filter** (strict: exception; production: bỏ kết quả sai + log), **đo thời gian listener theo hook × plugin** (`HookManager::timings()`, log cảnh báo khi > 50 ms), contract test suite (17 bộ). Chưa có: xuất metric `hook_duration_ms` ra hệ thống giám sát, slot storefront (chờ theme, [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)). Quyết định: [ADR-004](../19-adr/ADR-004-extension-points.md). Chữ ký chính xác cho người viết plugin: [05-plugin/contracts](../05-plugin/contracts/README.md).
 
 Extension Points là **API quan trọng nhất của VaniShop**: nhờ chúng mà nghiệp vụ mới được xây ngoài Core ([commerce-kernel](../02-architecture/commerce-kernel.md)). Danh mục cụ thể: [extension-point-catalog](extension-point-catalog.md).
 
@@ -61,7 +61,7 @@ moment ∈ before_<verb> | after_<verb> | <noun> (filter dữ liệu) | slot UI
 | filter | `vani.catalog.listing.query`, `vani.integration.order_payload` | Giá trị đã sửa (cùng kiểu) |
 | action | `vani.order.after_create` | `void` |
 | validate | `vani.checkout.before_validate` | Danh sách lỗi (`ValidationIssue[]`) |
-| slot | `vani.storefront.pdp.after_price` | HTML/Component |
+| slot | `vani.storefront.pdp.after_price` | **Một** phần tử: dữ liệu có cấu trúc (Admin) hoặc view component (storefront); chỉ nối thêm ([ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)) |
 
 ### 4.2 API
 
@@ -115,7 +115,8 @@ return [
 | Exception trong **slot UI** → bỏ qua slot đó, ghi log, trang vẫn hiển thị | Plugin lỗi không được làm sập storefront |
 | Filter phải trả về **đúng kiểu** đầu vào; Core kiểm tra kiểu ở môi trường non-production | Chặn plugin trả dữ liệu sai |
 | Thứ tự chạy theo `priority` (nhỏ chạy trước), cùng priority thì theo thứ tự nạp plugin | Có thể dự đoán |
-| Mỗi lần gọi hook được đo thời gian (metric `hook_duration_ms{hook,plugin}`) | Phát hiện plugin chậm |
+| Mỗi lần gọi hook được đo thời gian theo hook × plugin; quá 50 ms thì log cảnh báo kèm plugin id (**Implemented**; xuất metric `hook_duration_ms{hook,plugin}`: chưa) | Phát hiện plugin chậm |
+| Priority mặc định **10** trong `PluginServiceProvider` | Ghi tường minh khi thứ tự quan trọng |
 
 ## 5. Compatibility policy
 
@@ -139,3 +140,4 @@ Extension point public được đánh version theo **SemVer của Core**:
 - **Contract test suite** do Core cung cấp: mỗi contract có một bộ test trừu tượng (ví dụ `PaymentGatewayContractTests`) mà plugin implement phải chạy và pass ([testing §6](../17-testing/testing.md)).
 - Test hook: plugin giả lập trong `tests/Fixtures/Plugins` đăng ký filter/action và kiểm tra Core gọi đúng thời điểm, đúng kiểu.
 - Arch test: plugin không dùng namespace internal của Core.
+- Mỗi extension point public có implementation tham chiếu + contract test (rule R26).

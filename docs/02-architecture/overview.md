@@ -93,7 +93,7 @@ Autoload (`composer.json`):
 }
 ```
 
-Cấu trúc bên trong module: [bounded-contexts §4](bounded-contexts.md). Cấu trúc plugin: [plugin-system](../05-plugin/plugin-system.md).
+Cấu trúc bên trong module: [bounded-contexts §4](bounded-contexts.md). Cấu trúc plugin: [plugin-system](../05-plugin/plugin-system.md). Bản đồ kiểm chứng từ code (bề mặt, thứ tự nạp module, số liệu): [system-map](system-map.md); middleware, boot, lịch chạy: [request-lifecycle](request-lifecycle.md).
 
 ## 5. Tech stack
 

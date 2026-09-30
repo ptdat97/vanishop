@@ -1,6 +1,6 @@
 # Plugin System
 
-> Trạng thái: **Partially Implemented** (slice 0). Đã có: manifest, dependency resolver, lifecycle, loader, cache, safe mode, `PluginServiceProvider`, CLI chính, plugin mẫu. Chi tiết từng phần ghi ngay trong các mục bên dưới. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md).
+> Trạng thái: **Partially Implemented** (slice 0). Đã có: manifest, dependency resolver, lifecycle, loader, cache, safe mode, `PluginServiceProvider`, CLI chính, plugin mẫu. Chi tiết từng phần ghi ngay trong các mục bên dưới. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md) (chỉ triển khai qua mã nguồn), [ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md) (dữ liệu plugin). **Viết plugin: đọc [contracts/](contracts/README.md)** (chữ ký chính xác, lỗi thường gặp, checklist).
 
 ## 1. Hướng phụ thuộc
 
@@ -196,3 +196,5 @@ Plugin mẫu đầy đủ (kèm test): `custom/plugin/HelloWorld/`.
 5. Có README đặc tả (phạm vi, cấu hình, bảng dữ liệu, event nghe/phát).
 6. Tuân thủ [clean-room](../01-principles/clean-room-license.md) và [architecture rules](../01-principles/architecture-rules.md).
 7. Thiếu extension point thì mở PR vào Core, không vá Core từ trong plugin (rule R1).
+8. Plugin vào hệ thống qua repo + CI, không upload qua Admin ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)).
+9. Checklist theo loại plugin: [contracts/](contracts/README.md).

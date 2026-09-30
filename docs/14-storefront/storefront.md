@@ -1,6 +1,6 @@
 # Storefront
 
-> Trạng thái: **Designed**. Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md).
+> Trạng thái: **Designed** cho native storefront (tầng ghép + Storefront API: Implemented). Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md).
 
 ## 1. Nguyên tắc
 
@@ -44,7 +44,29 @@ custom/theme/vani-base/
 └── js/app.js             # Alpine components (chỉ UI: gallery, chọn size, mini-cart)
 ```
 
-## 3. Block (page builder)
+## 3. Render và điểm chèn UI (ADR-025)
+
+| Quy tắc | Chi tiết |
+|---|---|
+| SSR là nguồn nội dung | PDP, PLP, danh mục, trang render đủ ở server; trang đọc được khi JS tắt/lỗi |
+| JS = đảo tương tác | Alpine gắn vào gallery, chọn màu/size, mini-cart, form checkout. Không app JS toàn trang, không router phía client |
+| JSON bridge | Dữ liệu cho Alpine render sẵn bằng `@js`/`data-*` từ DTO của Presenter; không gọi API lấy lại thứ server đã có. Phần cá nhân hoá (giỏ, giá thành viên) tải qua Storefront API sau khi trang hiện |
+| Không ẩn nội dung SSR chờ JS | Chống nhảy layout bằng kích thước cố định/skeleton CSS, không `display:none` rồi chờ JS bật lại |
+| Slot UI | `<x-vani::hook-slot name="vani.storefront.pdp.after_price" :product="$product" />` render các view component do plugin trả về theo priority; chỉ nối thêm; lỗi một listener bị bỏ qua. Danh mục: [extension-point-catalog §4.1](../04-extension/extension-point-catalog.md) |
+| Thay khối | Override view trong `custom/theme/<brand-theme>/` (fallback `vani-base` → module). Không có cơ chế viết lại HTML lúc render |
+| Không logic trong view | Blade chỉ render DTO; không query, không tính giá/tồn/khuyến mãi (R10) |
+
+Luồng một trang PDP:
+
+```text
+GET /{brand-path}/san-pham/{slug}
+  → web + vani.channel (path prefix → kênh/brand) → controller Storefront
+  → ProductViews (CatalogReader + PriceResolver + AvailabilityReader) → DTO
+  → Blade (theme brand → vani-base) + slot UI (Hook::slot) + JSON bridge cho Alpine
+  → HTML (cache CDN theo kênh; giỏ/giá thành viên tải sau qua /api/storefront/v1)
+```
+
+## 4. Block (page builder)
 
 ```php
 interface StorefrontBlock
@@ -58,7 +80,7 @@ interface StorefrontBlock
 
 Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendation).
 
-## 4. Hiệu năng và SEO
+## 5. Hiệu năng và SEO
 
 - SSR cho trang public, cache CDN 60–300s + `stale-while-revalidate`; phần cá nhân hoá (giỏ, giá thành viên) tải qua API sau khi trang hiện.
 - Cache ứng dụng có khoá theo channel: `ch:{channel}:style:{id}:v{version}`; invalidate theo event (`ProductUpdated`, `PriceChanged`, `AvailabilityChanged`).
@@ -66,8 +88,10 @@ Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendat
 - SEO: canonical theo đường dẫn brand, sitemap mỗi brand + sitemap index ở gốc, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
 - Mục tiêu: LCP mobile < 2,5s, CLS < 0,1.
 
-## 5. Kiểm thử
+## 6. Kiểm thử
 
 - Arch test: namespace controller storefront không dùng `Persistence`/`Domain` (chỉ dùng Application).
 - Test snapshot HTML tối thiểu cho các trang chính; E2E luồng mua ([testing](../17-testing/testing.md)).
 - Test theme fallback: theme brand thiếu view thì dùng view của `vani-base`.
+- Test trang chính với JS tắt: nội dung, giá, nút thêm giỏ (form POST dự phòng) vẫn hiển thị.
+- Test slot: listener plugin ném lỗi → trang vẫn render, phần tử khác vẫn có; plugin tắt trong scope → không hiện.
