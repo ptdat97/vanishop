@@ -31,7 +31,7 @@ final class StorefrontProductQuery
      */
     public function list(ProductSearchQuery $query, string $locale): array
     {
-        $result = $this->search->provider()->search($query);
+        $result = $this->search->search($query);
 
         $styles = Style::query()
             ->with(['translations', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')])

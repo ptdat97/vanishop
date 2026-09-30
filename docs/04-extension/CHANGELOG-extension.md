@@ -8,6 +8,10 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ### Thêm
 - `Extensions::implementations($tag, $interface, $key)` và `Extensions::forBrand($brandId, $tag, $interface, $key)` — registry dùng chung (lọc theo interface, đánh chỉ mục theo mã, xét trong phạm vi brand). Các registry của Core (`GatewayRegistry`, `CarrierRegistry`, `PromotionRegistry`, `SearchManager`, `ChannelRegistry`, `ConnectorRegistry`) dùng helper này.
+- `Extensions::call($implementation, $call, $fallback, $operation)` — cô lập lỗi trên luồng tuỳ chọn + circuit breaker theo plugin (5 lỗi/phút → bỏ qua 5 phút).
+
+### Đổi hành vi
+- `PaymentGateway::isAvailable()` lỗi → ẩn cổng; `ShippingRateProvider::options()` lỗi → bỏ lựa chọn của provider đó; `SearchProvider::search()` lỗi → tìm bằng provider `database`. Plugin lỗi liên tục bị tạm bỏ qua trên các luồng này.
 
 ## 0.2.0 — 2026-10-13
 

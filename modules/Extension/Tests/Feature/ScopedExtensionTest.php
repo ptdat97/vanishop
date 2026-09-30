@@ -75,3 +75,28 @@ it('ownerOf phân biệt implementation của Core và của plugin', function (
     expect($extensions->ownerOf(new FixturePluginExtension))->toBe('fixture.extensions')
         ->and($extensions->ownerOf(new FixtureCoreExtension))->toBeNull();
 });
+
+it('call(): implementation lỗi → giá trị dự phòng; plugin lỗi 5 lần/phút bị bỏ qua 5 phút (circuit breaker)', function () {
+    [$lumiere] = Brand::factory()->count(1)->create();
+    $this->plugins->install('fixture.extensions');
+    $this->plugins->enable('fixture.extensions', 'owner');
+    app(PluginActivation::class)->flush();
+    $plugin = collect(app(Extensions::class)->tagged(ContributingPluginProvider::TAG))->first(fn (object $item): bool => $item instanceof FixturePluginExtension);
+    $core = collect(app(Extensions::class)->tagged(ContributingPluginProvider::TAG))->first(fn (object $item): bool => $item instanceof FixtureCoreExtension);
+
+    $calls = 0;
+    $boom = function () use (&$calls): string {
+        $calls++;
+        throw new RuntimeException('plugin hỏng');
+    };
+
+    foreach (range(1, 5) as $ignored) {
+        expect(app(Extensions::class)->call($plugin, $boom, 'dự phòng', 'test'))->toBe('dự phòng');
+    }
+    expect(app(Extensions::class)->call($plugin, fn (): string => 'ok', 'dự phòng', 'test'))->toBe('dự phòng') // mạch mở: không gọi plugin
+        ->and($calls)->toBe(5)
+        ->and(app(Extensions::class)->call($core, fn (): string => 'ok', 'dự phòng', 'test'))->toBe('ok');   // Core không bị ảnh hưởng
+
+    $this->travel(301)->seconds();
+    expect(app(Extensions::class)->call($plugin, fn (): string => 'ok', 'dự phòng', 'test'))->toBe('ok');
+});

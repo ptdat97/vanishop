@@ -6,10 +6,12 @@ namespace Modules\Extension\Application\Plugins;
 
 use Closure;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Throwable;
 
 /**
  * Nguồn duy nhất biết một extension point có những implementation nào:
@@ -20,6 +22,10 @@ use Modules\Shared\Context\CurrentContext;
  */
 final class ScopedExtensions implements Extensions
 {
+    private const BREAKER_THRESHOLD = 5;
+
+    private const BREAKER_COOLDOWN = 300;
+
     /** @var array<string, array<string, string|null>> tag => abstract => plugin id (null = Core) */
     private array $contributions = [];
 
@@ -78,6 +84,35 @@ final class ScopedExtensions implements Extensions
         }
 
         return $context->runAs($scope, fn (): array => $this->implementations($tag, $interface, $key));
+    }
+
+    public function call(object $implementation, callable $call, mixed $fallback, string $operation): mixed
+    {
+        $plugin = $this->ownerOf($implementation);
+        $breaker = $plugin === null ? null : "vani:plugin-breaker:{$plugin}";
+        if ($breaker !== null && Cache::has("{$breaker}:open")) {
+            return $fallback;
+        }
+
+        try {
+            return $call();
+        } catch (Throwable $exception) {
+            report($exception);
+            Log::warning('Extension lỗi trên luồng tuỳ chọn — dùng giá trị dự phòng.', [
+                'plugin' => $plugin ?? 'core', 'implementation' => $implementation::class, 'operation' => $operation, 'error' => $exception->getMessage(),
+            ]);
+
+            if ($breaker !== null) {
+                Cache::add("{$breaker}:failures", 0, now()->addMinute());
+                if (Cache::increment("{$breaker}:failures") >= self::BREAKER_THRESHOLD) {
+                    Cache::put("{$breaker}:open", true, now()->addSeconds(self::BREAKER_COOLDOWN));
+                    Cache::forget("{$breaker}:failures");
+                    Log::error('Plugin lỗi liên tục — tạm bỏ qua trên luồng tuỳ chọn.', ['plugin' => $plugin, 'cooldown_seconds' => self::BREAKER_COOLDOWN]);
+                }
+            }
+
+            return $fallback;
+        }
     }
 
     public function select(string $tag, string $code, ?string $fallbackCode = null): ?object

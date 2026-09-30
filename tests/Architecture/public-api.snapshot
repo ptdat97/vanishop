@@ -254,6 +254,7 @@ interface Modules\Extension\Contracts\Extensions
   tagged(string $tag): array
   implementations(string $tag, string $interface, ?callable $key = NULL): array
   forBrand(?int $brandId, string $tag, string $interface, ?callable $key = NULL): array
+  call(object $implementation, callable $call, mixed $fallback, string $operation): mixed
   select(string $tag, string $code, ?string $fallbackCode = NULL): ?object
   ownerOf(object $implementation): ?string
 abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Support\ServiceProvider

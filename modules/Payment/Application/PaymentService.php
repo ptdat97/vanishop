@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Brand\Contracts\BrandDirectory;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
@@ -48,6 +49,7 @@ final class PaymentService implements Payments
         private readonly OrderTransitions $transitions,
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
+        private readonly Extensions $extensions,
     ) {}
 
     public function availableMethods(int $brandId, int $channelId, Money $amount): array
@@ -60,12 +62,9 @@ final class PaymentService implements Payments
         $context = new PaymentContext($brandId, $brand->legalEntityId, $channelId, $amount);
         $methods = [];
         foreach ($this->gateways->all() as $gateway) {
-            try {
-                if ($gateway->isAvailable($context)) {
-                    $methods[] = ['code' => $gateway->code(), 'label' => $gateway->label()];
-                }
-            } catch (Throwable $exception) {
-                Log::warning('Cổng thanh toán lỗi khi kiểm tra khả dụng — ẩn cổng.', ['gateway' => $gateway->code(), 'exception' => $exception]);
+            // Cổng lỗi khi kiểm tra khả dụng → ẩn cổng (không làm hỏng quote/checkout).
+            if ($this->extensions->call($gateway, fn (): bool => $gateway->isAvailable($context), false, 'payment.is_available')) {
+                $methods[] = ['code' => $gateway->code(), 'label' => $gateway->label()];
             }
         }
 

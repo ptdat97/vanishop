@@ -64,6 +64,19 @@ interface Extensions
     public function forBrand(?int $brandId, string $tag, string $interface, ?callable $key = null): array;
 
     /**
+     * Gọi một implementation trên luồng **tuỳ chọn** (kiểm tra khả dụng, báo cước, tìm kiếm…): lỗi được ghi log kèm
+     * plugin sở hữu và trả `$fallback`. Plugin lỗi liên tục (5 lần/phút) bị bỏ qua 5 phút (circuit breaker) — khi
+     * đó trả `$fallback` ngay. KHÔNG dùng cho luồng mà lỗi phải làm hỏng giao dịch (validate, totals khi đặt hàng).
+     *
+     * @template R
+     *
+     * @param  callable(): R  $call
+     * @param  R  $fallback
+     * @return R
+     */
+    public function call(object $implementation, callable $call, mixed $fallback, string $operation): mixed;
+
+    /**
      * Implementation có `code() === $code` trong các implementation có hiệu lực; không có → thử `$fallbackCode`
      * (ghi cảnh báo — cấu hình trỏ tới implementation của plugin đã tắt/không tồn tại không làm hỏng flow).
      */

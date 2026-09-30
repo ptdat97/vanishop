@@ -83,7 +83,8 @@ Trường hợp tương tự: `ConsentService::CHANNELS = ['email', 'sms', 'zns'
 | Boot plugin (`PluginLoader`) | Có → `failed`, Core vẫn chạy |
 | Slot UI (`HookManager::onSlot`) | Có |
 | Outbox worker, gửi thông báo, inbox | Có (retry/dead) |
-| `PaymentMethods`, `ShippingOptions`, `TotalsPipeline`, `PromotionEvaluator`, `SearchManager`, `OtpService` | **Không** |
+| `PaymentService::availableMethods` (kiểm tra cổng khả dụng) | Có (đính chính 2026-10-14: bản đầu ghi nhầm "không") nhưng không có circuit breaker/plugin id |
+| `ShippingOptions`, `TotalsPipeline`, `PromotionEvaluator`, `SearchManager`, `OtpService` | **Không** |
 
 Với validate/totals khi đặt hàng, fail-fast là đúng thiết kế. Nhưng với các điểm **chỉ đọc/tuỳ chọn** thì một plugin lỗi đang làm hỏng cả flow: `isAvailable()` của cổng thanh toán, báo cước của hãng vận chuyển trong `quote`, provider tìm kiếm. Tài liệu đã hứa "health check fail → ẩn phương thức" ([plugin-system §8](../05-plugin/plugin-system.md)) nhưng chưa có cơ chế chung.
 
@@ -153,6 +154,8 @@ Với validate/totals khi đặt hàng, fail-fast là đúng thiết kế. Nhưn
 | P0-3 Bỏ hard-code capability | ✅ 2026-10-13 — `GatewayCapabilities::collectsOnDelivery` + `Payments::collectsOnDelivery()`; Checkout đặt `cod_pending` theo capability, các nơi khác đọc `payment_status` của đơn (không còn so `'cod'` trong Core); kênh consent là mã kênh bất kỳ đúng định dạng |
 | P0-2 `onEvent()` + `brandId` | ✅ 2026-10-13 — `PluginServiceProvider::onEvent()` (lọc theo brand của event, chạy trong phạm vi brand, cô lập lỗi); `brandId` tuỳ chọn trên `PaymentCaptured/Failed`, `RefundCreated/Completed`, `ShipmentCreated/StatusChanged`, `ReturnRequested/Resolved`; event không có brand chỉ tới plugin bật ở owner |
 | P0-5 Version public API | ✅ 2026-10-13 — Core `0.2.0`, mọi plugin `^0.2`; [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md); snapshot public API trong arch test; chính sách mở rộng extension contract không cần abstract base |
+| P1-8 Registry dùng chung | ✅ 2026-10-14 — `Extensions::implementations()` / `forBrand()` thay 6 vòng lặp registry |
+| P1-7 Cô lập lỗi luồng tuỳ chọn | ✅ 2026-10-14 — `Extensions::call()` (log kèm plugin, circuit breaker 5 lỗi/phút → 5 phút); áp cho kiểm tra cổng thanh toán, báo cước, tìm kiếm (rơi về `database`). `OtpService` đã có dự phòng kênh từ slice Notification; validate/totals khi đặt hàng giữ fail-fast theo thiết kế |
 | P0-4 Settings theo scope | ✅ 2026-10-14 — bảng `settings` + contract `Settings` (Tenancy, kế thừa kênh → brand → pháp nhân → owner, secret mã hoá); 5 điểm chọn strategy nghiệp vụ đọc cấu hình theo kênh/brand (`.env` là mặc định, cấu hình sai/plugin tắt → mặc định); `PluginServiceProvider::settings()` + Admin → Cấu hình tự sinh form (lựa chọn lấy từ extension point); `vani.sms-brandname` đọc brandname theo brand |
 
 ## 6. Những điều **không** nên làm
