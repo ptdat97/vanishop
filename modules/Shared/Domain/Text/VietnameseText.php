@@ -26,6 +26,18 @@ final class VietnameseText
     }
 
     /**
+     * Bỏ dấu nhưng giữ hoa/thường và dấu câu (SMS brandname thường yêu cầu nội dung không dấu).
+     * "Đơn hàng LU-01 đã giao!" → "Don hang LU-01 da giao!"
+     */
+    public static function stripDiacritics(string $text): string
+    {
+        $text = str_replace(['đ', 'Đ'], ['d', 'D'], $text);
+        $decomposed = Normalizer::normalize($text, Normalizer::FORM_D);
+
+        return preg_replace('/\p{Mn}+/u', '', $decomposed === false ? $text : $decomposed) ?? $text;
+    }
+
+    /**
      * Các từ khoá đã chuẩn hoá, bỏ trùng.
      *
      * @return list<string>

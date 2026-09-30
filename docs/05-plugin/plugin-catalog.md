@@ -25,6 +25,8 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 | `vani.promotion-rules` | `custom/plugin/PromotionRules` | `PromotionRule` (tag `PromotionRule::TAG`) | Rule nghiệp vụ cắm vào engine của Core: `min_order_subtotal`, `min_quantity`, `in_collections` (qua `CollectionDirectory`), `first_order_only` (qua `OrderReader`) |
 | `vani.vietqr` | `custom/plugin/VietQr` | `PaymentGateway` (tag `PaymentGateway::TAG`) | Cổng QR động (payload QR theo số tiền/số đơn), IPN HMAC qua route chung `/api/payments/vietqr/callback`, hoàn tiền idempotent, cấu hình tài khoản theo pháp nhân |
 | `vani.ghn` | `custom/plugin/Ghn` | `ShippingCarrier` + `ShippingRateProvider` | Báo cước ở checkout, đặt vận đơn idempotent sau commit, webhook trạng thái map về `ShipmentStatus` chuẩn |
+| `vani.sms-brandname` | `custom/plugin/SmsBrandname` | `NotificationChannel` (`sms`) + `OtpSender` | SMS brandname qua eSMS: brandname theo brand, nội dung bỏ dấu, `RequestId` idempotent, phân loại lỗi thử lại/vĩnh viễn |
+| `vani.zalo-zns` | `custom/plugin/ZaloZns` | `NotificationChannel` (`zns`) + `OtpSender` | ZNS theo template đã duyệt (tham số render từ biến), tự làm mới access token (refresh token xoay vòng), OTP ưu tiên ZNS rồi dự phòng SMS |
 
 Cả ba đều chạy bộ contract test của Core (`PaymentGatewayContract`, `ShippingCarrierContract`) và chỉ đóng góp implementation cho extension point trong phạm vi (`owner`/`brand`) mà plugin được bật.
 
@@ -74,7 +76,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 |---|---|---|
 | `vani.einvoice` (định nghĩa `EInvoiceProvider` cho plugin nhà cung cấp) | Events `OrderCompleted`, `ReturnResolved`; `checkoutFields()` | P2 |
 | `vani.einvoice-vnpt`, `-viettel`, `-misa`… | `EInvoiceProvider` (của `vani.einvoice`) | P2 |
-| `vani.zalo-zns`, `vani.sms-brandname` | `NotificationChannel`, `OtpSender` | P1 |
+| `vani.zalo-zns` ✅, `vani.sms-brandname` ✅ | `NotificationChannel`, `OtpSender` | P1 |
 | `vani.webpush` | `NotificationChannel` | P3 |
 
 ### Kênh bán, marketing, tìm kiếm

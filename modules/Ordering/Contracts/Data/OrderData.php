@@ -21,7 +21,7 @@ final readonly class OrderData
         public string $currencyCode,
         public string $reservationKey,
         public string $returnStatus = 'none',
-        /** @var array{full_name: string, phone: string} */
+        /** @var array{full_name: string, phone: string, email?: ?string} */
         public array $recipient = ['full_name' => '', 'phone' => ''],
         /** @var array<string, string> */
         public array $shippingAddress = [],

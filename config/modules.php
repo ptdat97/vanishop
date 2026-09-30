@@ -28,6 +28,7 @@ return [
     'Checkout',
     'Fulfillment',
     'Returns',
+    'Notification',
     'Integration',
     'Storefront',
 ];

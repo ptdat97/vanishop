@@ -94,7 +94,10 @@ final class EloquentOrderReader implements OrderReader
             status: $order->order_status, paymentStatus: $order->payment_status, paymentMethod: (string) $order->payment_method,
             totalAmount: $order->total_amount, currencyCode: $order->currency_code, reservationKey: (string) $order->reservation_key,
             returnStatus: (string) $order->return_status,
-            recipient: ['full_name' => (string) ($order->customer_snapshot['full_name'] ?? ''), 'phone' => (string) ($order->customer_snapshot['phone'] ?? '')],
+            recipient: [
+                'full_name' => (string) ($order->customer_snapshot['full_name'] ?? ''), 'phone' => (string) ($order->customer_snapshot['phone'] ?? ''),
+                'email' => isset($order->customer_snapshot['email']) && $order->customer_snapshot['email'] !== '' ? (string) $order->customer_snapshot['email'] : null,
+            ],
             shippingAddress: array_map('strval', (array) $order->shipping_address),
             fulfillmentStatus: (string) $order->fulfillment_status,
             placedAt: $order->placed_at?->toIso8601String(),

@@ -32,6 +32,15 @@ flowchart LR
 | 9b ✅ | **Returns** | RMA cơ bản: yêu cầu đổi/trả theo dòng đã giao, duyệt, nhận hàng, nhập kho, hoàn tiền (Payment) | Tổng trả ≤ đã giao; hoàn ≤ đã thu; có test: **đạt** (2026-10-08), kèm concurrency test. Đổi hàng (đơn thay thế): chưa |
 | 10 ✅ | **Proof plugins** | `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` ([plugin-catalog §2](../05-plugin/plugin-catalog.md)) | **Đạt** (2026-10-09): cả 3 plugin cài/bật theo scope và đóng góp implementation qua extension point; contract test `PaymentGatewayContract` + `ShippingCarrierContract` pass; arch test R5 giữ nguyên (plugin không chạm tầng nội bộ của Core). Thay đổi trong `modules/` chỉ là **PR Core tổng quát**: hằng tag trên contract (`PromotionRule::TAG`, `PaymentGateway::TAG`, `ShippingCarrier::CARRIERS_TAG`, `ShippingRateProvider::TAG`), `Extensions::contribute()`, `CollectionDirectory` (Catalog), `OrderReader::customerHasPlacedOrder()` (Ordering), `validateConfig()` trên `PromotionRule`, và sửa route lookup cho plugin nạp runtime |
 
+### Tiến độ slice Notification + plugin SMS/ZNS (2026-10-13)
+
+- [x] Module `Notification`: mẫu tin (loại × kênh × brand × locale), `Notifier`, `NotificationChannel` (Core: `mail`), nhật ký idempotent, queue + retry, consent cho marketing ([notification](../03-domains/notification.md))
+- [x] Tin giao dịch: đặt đơn, huỷ đơn, đang giao, đã giao (mẫu email mặc định tiếng Việt)
+- [x] Admin mẫu tin + nhật ký gửi
+- [x] `vani.sms-brandname` (eSMS) và `vani.zalo-zns`: kênh gửi + `OtpSender`; OTP thử ZNS trước, lỗi thì tự chuyển SMS (`OtpDeliveryFailed`)
+- [ ] Chạy thử với tài khoản sandbox eSMS / OA Zalo thật (điều kiện go-live P1); đối chiếu mã lỗi nhà cung cấp
+- [ ] Email HTML theo theme brand, kênh dự phòng cho tin giao dịch, chiến dịch marketing + huỷ đăng ký
+
 ### Tiến độ slice Customer (2026-10-12)
 
 Xếp trước slice 12 theo quyết định của Owner (checkout trước đó chỉ cho khách vãng lai).
@@ -90,7 +99,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 |---|---|---|
 | 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation) + ERP connector khi chốt ERP. **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
 | 12 | Multi-brand đầy đủ: brand thứ 2–3, theme tokens, kênh đa brand (order group), lệnh preflight | [multi-brand](../12-multi-brand/multi-brand.md) |
-| 13 | Plugin go-live P1 còn lại: `vani.vnpay`, `vani.zalo-zns`, `vani.sms-brandname`, `vani.tracking-pixels` | [plugin-catalog](../05-plugin/plugin-catalog.md) |
+| 13 | Plugin go-live P1 còn lại: `vani.vnpay`, `vani.tracking-pixels` (`vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | Later | Marketplace, Creator/Affiliate, advanced merchandising, recommendation | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |

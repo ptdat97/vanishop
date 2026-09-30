@@ -23,6 +23,11 @@ final class CustomerService implements Customers
         return $customer === null ? null : self::toData($customer);
     }
 
+    public function hasConsent(int $customerId, int $brandId, string $channel, string $purpose): bool
+    {
+        return app(ConsentService::class)->allows($customerId, $brandId, $channel, $purpose);
+    }
+
     public function resolveForCheckout(string $phone, string $fullName, ?string $email): int
     {
         $customer = $this->findOrCreateByPhone(PhoneNumber::fromString($phone)->e164, $fullName);

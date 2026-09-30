@@ -1,0 +1,18 @@
+{
+    "id": "vani.sms-brandname",
+    "name": {
+        "vi": "SMS Brandname (eSMS)",
+        "en": "SMS Brandname (eSMS)"
+    },
+    "version": "0.1.0",
+    "kind": "notification_channel",
+    "provider": "Plugin\\SmsBrandname\\SmsBrandnameServiceProvider",
+    "requires": {
+        "vanishop": "^0.1",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "scopes": ["owner", "brand"],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

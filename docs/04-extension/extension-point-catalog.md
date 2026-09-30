@@ -22,8 +22,8 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 | `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive). **Implemented** | [promotion](../03-domains/promotion.md) |
 | `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` (**Implemented**, chọn bằng `VANI_RETURN_POLICY`) | [order §7](../09-order/order.md) |
 | `SearchProvider` | `vani.search.providers` | Catalog | `database`, `meilisearch`: **Implemented** | [catalog-pricing](../03-domains/catalog-pricing.md) |
-| `OtpSender` | `vani.auth.otp_senders` | Customer | `email` | [customer](../03-domains/customer.md) |
-| `NotificationChannel` | `vani.notification.channels` | Notification | `mail` | [customer §4](../03-domains/customer.md) |
+| `OtpSender` | `vani.customer.otp_senders` | Customer | `email`, `log` (chỉ dev). **Implemented**: thử theo `priority()` giảm dần; kênh ném `OtpDeliveryFailed` → kênh kế tiếp. Plugin: `vani.zalo-zns` (60), `vani.sms-brandname` (50) | [customer](../03-domains/customer.md) |
+| `NotificationChannel` | `vani.notification.channels` | Notification | `mail`. **Implemented**; plugin: `sms` (`vani.sms-brandname`), `zns` (`vani.zalo-zns`) | [notification](../03-domains/notification.md) |
 | `Connector` | `vani.integration.connectors` | Integration | — (connector là plugin). **Implemented** (slice 11): nhận message outbox theo `supports()`, trả `DeliveryResult` ok/retryable/permanent | [integration-platform](../11-integration/integration-platform.md) |
 | `InboundHandler` | `vani.integration.inbound` | Integration | —. **Implemented** (slice 11): xử lý message inbox theo `(system, message_type)`, trả `DeliveryResult` (thêm `stale`) | [integration-platform](../11-integration/integration-platform.md) |
 | `ErpConnector` (extends `Connector`) | `vani.integration.erp` | Integration | — | [erp-integration](../11-integration/erp-integration.md) |

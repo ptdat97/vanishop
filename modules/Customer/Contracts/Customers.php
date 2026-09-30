@@ -20,4 +20,9 @@ interface Customers
      * @return int customer id
      */
     public function resolveForCheckout(string $phone, string $fullName, ?string $email): int;
+
+    /**
+     * Khách đang đồng ý nhận tin cho brand × kênh (`email`, `sms`, `zns`) × mục đích (`marketing`).
+     */
+    public function hasConsent(int $customerId, int $brandId, string $channel, string $purpose): bool;
 }

@@ -1,0 +1,18 @@
+{
+    "id": "vani.zalo-zns",
+    "name": {
+        "vi": "Zalo ZNS (tin giao dịch & OTP)",
+        "en": "Zalo ZNS (transactional messages & OTP)"
+    },
+    "version": "0.1.0",
+    "kind": "notification_channel",
+    "provider": "Plugin\\ZaloZns\\ZaloZnsServiceProvider",
+    "requires": {
+        "vanishop": "^0.1",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "scopes": ["owner", "brand"],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

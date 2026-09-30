@@ -99,7 +99,7 @@ erDiagram
 | Fulfillment | `shipments`, `shipment_lines`, `shipment_events`, `shipping_rate_tables` |
 | Returns | `returns`, `return_lines`, `return_events` |
 | Content | `pages`, `page_translations`, `page_blocks`, `menus`, `menu_items`, `banners`, `redirects` |
-| Notification | `notification_templates`, `notification_logs` |
+| Notification | `notification_templates`, `notification_logs` (unique `idempotency_key`) |
 | Integration | `integration_clients`, `integration_client_keys`, `integration_webhook_subscriptions`, `integration_events` (event feed, append-only), `integration_ownerships`, `integration_outbox`, `integration_inbox`, `integration_logs`, `integration_mappings`, `external_references`, `integration_reconciliations` |
 
 Bảng của plugin: xem README của từng plugin; ví dụ trong [marketplace](../13-marketplace/marketplace.md), [loyalty spec](../05-plugin/specs/loyalty.md).

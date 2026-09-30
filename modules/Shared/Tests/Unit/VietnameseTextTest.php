@@ -15,3 +15,8 @@ it('tách từ khoá không trùng', function () {
     expect(VietnameseText::tokens('Áo áo SƠ MI'))->toBe(['ao', 'so', 'mi'])
         ->and(VietnameseText::tokens(''))->toBe([]);
 });
+
+it('bỏ dấu giữ hoa/thường và dấu câu (SMS không dấu)', function () {
+    expect(VietnameseText::stripDiacritics('Đơn hàng LU-01 đã giao! Cảm ơn Quý khách.'))
+        ->toBe('Don hang LU-01 da giao! Cam on Quy khach.');
+});

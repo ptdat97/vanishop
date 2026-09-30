@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Data\CustomerContact;
 use Modules\Customer\Contracts\Data\OtpPurpose;
+use Modules\Customer\Contracts\OtpDeliveryFailed;
 use Modules\Customer\Contracts\OtpSender;
 use Modules\Customer\Domain\OtpCode;
 use Modules\Extension\Contracts\Extensions;
@@ -41,24 +43,40 @@ final class OtpService
 
         $customer = $this->customers->activeByPhone($e164);
         $contact = new CustomerContact($e164, $customer?->email, $customer?->full_name, $customer?->id);
-        $sender = $this->sender($contact) ?? throw CustomerRejected::otpUnavailable();
+        $senders = $this->senders($contact);
+        if ($senders === []) {
+            throw CustomerRejected::otpUnavailable();
+        }
 
         foreach (["customer-otp:phone:{$e164}", "customer-otp:ip:{$ip}"] as $key) {
             RateLimiter::hit($key, $this->windowSeconds);
         }
 
         $code = OtpCode::generate();
-        DB::transaction(function () use ($e164, $purpose, $code, $sender, $ip): void {
+        $otpId = DB::transaction(function () use ($e164, $purpose, $code, $ip): int {
             DB::table('customer_otps')->where('phone', $e164)->where('purpose', $purpose->value)->whereNull('consumed_at')->update(['consumed_at' => now()]);
-            DB::table('customer_otps')->insert([
-                'phone' => $e164, 'purpose' => $purpose->value, 'code_hash' => OtpCode::hash($this->secret, $e164, $code), 'channel' => $sender->channel(),
+
+            return (int) DB::table('customer_otps')->insertGetId([
+                'phone' => $e164, 'purpose' => $purpose->value, 'code_hash' => OtpCode::hash($this->secret, $e164, $code), 'channel' => 'pending',
                 'expires_at' => now()->addSeconds(OtpCode::TTL_SECONDS), 'ip' => $ip, 'created_at' => now(),
             ]);
         });
 
-        $sender->send($contact, $code, $purpose);
+        // Thử kênh theo priority; kênh lỗi (vd. SĐT không dùng Zalo) → kênh kế tiếp.
+        foreach ($senders as $sender) {
+            try {
+                $sender->send($contact, $code, $purpose);
+                DB::table('customer_otps')->where('id', $otpId)->update(['channel' => $sender->channel()]);
 
-        return ['channel' => $sender->channel(), 'expires_in' => OtpCode::TTL_SECONDS];
+                return ['channel' => $sender->channel(), 'expires_in' => OtpCode::TTL_SECONDS];
+            } catch (OtpDeliveryFailed $exception) {
+                Log::warning('Gửi OTP thất bại, thử kênh khác.', ['channel' => $sender->channel(), 'error' => $exception->getMessage()]);
+            }
+        }
+
+        DB::table('customer_otps')->where('id', $otpId)->update(['consumed_at' => now()]);
+
+        throw CustomerRejected::otpUnavailable();
     }
 
     /**
@@ -95,17 +113,17 @@ final class OtpService
         }
     }
 
-    private function sender(CustomerContact $contact): ?OtpSender
+    /**
+     * @return list<OtpSender> kênh dùng được, priority giảm dần
+     */
+    private function senders(CustomerContact $contact): array
     {
-        $senders = array_filter($this->extensions->tagged(OtpSender::TAG), fn (object $sender): bool => $sender instanceof OtpSender);
+        $senders = array_values(array_filter(
+            $this->extensions->tagged(OtpSender::TAG),
+            fn (object $sender): bool => $sender instanceof OtpSender && $sender->isAvailable($contact),
+        ));
         usort($senders, fn (OtpSender $a, OtpSender $b): int => $b->priority() <=> $a->priority());
 
-        foreach ($senders as $sender) {
-            if ($sender->isAvailable($contact)) {
-                return $sender;
-            }
-        }
-
-        return null;
+        return $senders;
     }
 }

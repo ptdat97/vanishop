@@ -55,6 +55,7 @@ foreach ([
     'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Payment', 'Fulfillment'],
     'Fulfillment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment'],
     'Returns' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment'],
+    'Notification' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
     'Integration' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
     'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
 ] as $consumer => $upstreams) {
