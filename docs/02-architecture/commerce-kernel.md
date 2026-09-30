@@ -1,6 +1,6 @@
 # Commerce Kernel: ranh giới Core và Plugin
 
-> Trạng thái: **Designed**. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md).
+> Trạng thái: **Designed**. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md). Đánh giá đối chiếu với code: [kernel-review](kernel-review.md) (2026-10-13).
 
 > **Core cung cấp commerce primitives và business invariants. Capability đặc thù nghiệp vụ được xây ngoài Core qua Extension Points.**
 
