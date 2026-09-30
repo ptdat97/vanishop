@@ -24,7 +24,8 @@ Plugin đăng ký bằng tag container. Registry của Core lọc theo trạng t
 | `SearchProvider` | `vani.search.providers` | Catalog | `database`, `meilisearch`: **Implemented** | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `OtpSender` | `vani.auth.otp_senders` | Customer | `email` | [customer](../03-domains/customer.md) |
 | `NotificationChannel` | `vani.notification.channels` | Notification | `mail` | [customer §4](../03-domains/customer.md) |
-| `Connector` | `vani.integration.connectors` | Integration | — | [integration-platform](../11-integration/integration-platform.md) |
+| `Connector` | `vani.integration.connectors` | Integration | — (connector là plugin). **Implemented** (slice 11): nhận message outbox theo `supports()`, trả `DeliveryResult` ok/retryable/permanent | [integration-platform](../11-integration/integration-platform.md) |
+| `InboundHandler` | `vani.integration.inbound` | Integration | —. **Implemented** (slice 11): xử lý message inbox theo `(system, message_type)`, trả `DeliveryResult` (thêm `stale`) | [integration-platform](../11-integration/integration-platform.md) |
 | `ErpConnector` (extends `Connector`) | `vani.integration.erp` | Integration | — | [erp-integration](../11-integration/erp-integration.md) |
 | `StorefrontBlock` | `vani.content.blocks` | Content | hero, product grid, rich text, banner | [storefront](../14-storefront/storefront.md) |
 | `DashboardWidget` | `vani.admin.widgets` | Reporting | doanh số, đơn mới | — |

@@ -19,7 +19,7 @@
 | Optimistic lock | Cột `lock_version INT` trên aggregate được sửa qua Admin: `styles`, `price_lists`, `promotions`, `orders`, `shipments`, `payments`, `locations` |
 | Pessimistic lock | `SELECT … FOR UPDATE` cho `stock_levels`, `vouchers`, `number_sequences`, `carts` (khi checkout), `payments` (khi IPN/refund) |
 | Phạm vi | Bảng thuộc brand có `brand_id NOT NULL` + index |
-| Append-only | `stock_movements`, `order_events`, `payment_transactions`, `audit_logs`, `price_history`, `customer_consent_events`, `shipment_events`, `integration_logs` |
+| Append-only | `stock_movements`, `order_events`, `payment_transactions`, `audit_logs`, `price_history`, `customer_consent_events`, `shipment_events`, `integration_logs`, `integration_events` |
 
 ## 2. Invariant: DB enforce hay App enforce
 
@@ -100,7 +100,7 @@ erDiagram
 | Returns | `returns`, `return_lines`, `return_events` |
 | Content | `pages`, `page_translations`, `page_blocks`, `menus`, `menu_items`, `banners`, `redirects` |
 | Notification | `notification_templates`, `notification_logs` |
-| Integration | `integration_clients`, `integration_client_keys`, `integration_webhook_subscriptions`, `integration_ownerships`, `integration_outbox`, `integration_inbox`, `integration_logs`, `integration_mappings`, `external_references`, `integration_reconciliations` |
+| Integration | `integration_clients`, `integration_client_keys`, `integration_webhook_subscriptions`, `integration_events` (event feed, append-only), `integration_ownerships`, `integration_outbox`, `integration_inbox`, `integration_logs`, `integration_mappings`, `external_references`, `integration_reconciliations` |
 
 Bảng của plugin: xem README của từng plugin; ví dụ trong [marketplace](../13-marketplace/marketplace.md), [loyalty spec](../05-plugin/specs/loyalty.md).
 

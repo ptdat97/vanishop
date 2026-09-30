@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Application;
 
+use DateTimeInterface;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -54,6 +55,20 @@ final class EloquentOrderReader implements OrderReader
             ->exists();
     }
 
+    public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array
+    {
+        return Order::query()
+            ->when($since !== null, fn ($query) => $query->where(fn ($query) => $query
+                ->where('updated_at', '>', $since)
+                ->orWhere(fn ($query) => $query->where('updated_at', $since)->where('id', '>', $afterId ?? 0))))
+            ->orderBy('updated_at')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Order $order): OrderData => $this->toData($order))
+            ->all();
+    }
+
     private function toData(Order $order): OrderData
     {
         return new OrderData(
@@ -64,6 +79,9 @@ final class EloquentOrderReader implements OrderReader
             returnStatus: (string) $order->return_status,
             recipient: ['full_name' => (string) ($order->customer_snapshot['full_name'] ?? ''), 'phone' => (string) ($order->customer_snapshot['phone'] ?? '')],
             shippingAddress: array_map('strval', (array) $order->shipping_address),
+            fulfillmentStatus: (string) $order->fulfillment_status,
+            placedAt: $order->placed_at?->toIso8601String(),
+            updatedAt: $order->updated_at?->toIso8601String(),
         );
     }
 }

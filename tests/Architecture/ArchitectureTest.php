@@ -54,6 +54,7 @@ foreach ([
     'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Payment', 'Fulfillment'],
     'Fulfillment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment'],
     'Returns' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment'],
+    'Integration' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
     'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
 ] as $consumer => $upstreams) {
     $forbidden = [];
@@ -68,6 +69,10 @@ foreach ([
         ->not->toUse($forbidden)
         ->ignoring("Modules\\{$consumer}\\Tests");
 }
+
+arch('R12: Checkout không gọi HTTP ra ngoài (tích hợp đi qua outbox)')
+    ->expect('Modules\\Checkout')
+    ->not->toUse('Illuminate\\Support\\Facades\\Http');
 
 arch('Class của module dùng strict types')
     ->expect('Modules')

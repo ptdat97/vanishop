@@ -32,6 +32,21 @@ flowchart LR
 | 9b ✅ | **Returns** | RMA cơ bản: yêu cầu đổi/trả theo dòng đã giao, duyệt, nhận hàng, nhập kho, hoàn tiền (Payment) | Tổng trả ≤ đã giao; hoàn ≤ đã thu; có test: **đạt** (2026-10-08), kèm concurrency test. Đổi hàng (đơn thay thế): chưa |
 | 10 ✅ | **Proof plugins** | `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` ([plugin-catalog §2](../05-plugin/plugin-catalog.md)) | **Đạt** (2026-10-09): cả 3 plugin cài/bật theo scope và đóng góp implementation qua extension point; contract test `PaymentGatewayContract` + `ShippingCarrierContract` pass; arch test R5 giữ nguyên (plugin không chạm tầng nội bộ của Core). Thay đổi trong `modules/` chỉ là **PR Core tổng quát**: hằng tag trên contract (`PromotionRule::TAG`, `PaymentGateway::TAG`, `ShippingCarrier::CARRIERS_TAG`, `ShippingRateProvider::TAG`), `Extensions::contribute()`, `CollectionDirectory` (Catalog), `OrderReader::customerHasPlacedOrder()` (Ordering), `validateConfig()` trên `PromotionRule`, và sửa route lookup cho plugin nạp runtime |
 
+### Tiến độ slice 11 — Integration platform (2026-10-10)
+
+Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc ERP cụ thể chờ Owner chốt ERP.
+
+- [x] Event feed `integration_events` + transactional outbox (fan-out cùng transaction với feed) + bridge domain event → event tích hợp (`vanishop.order.v1`)
+- [x] Outbox worker nhiều tiến trình (`SKIP LOCKED`), thứ tự theo đơn, backoff 1m→24h, `failed`/`dead`, thu hồi message kẹt; concurrency test trên MySQL
+- [x] Webhook subscription: envelope + chữ ký HMAC + `Idempotency-Key`, tự tạm dừng sau 24h lỗi, bật lại trong Admin
+- [x] Inbox (unique `(system, external_event_id)`) + processor + extension point `InboundHandler`; extension point `Connector` cho plugin
+- [x] Replay (Admin + CLI), giữ message id, có audit; Admin "Tích hợp" (payload đã che PII)
+- [x] Integration Client: 2 key HMAC song song, scope, data scope brand, IP allowlist, rate limit; CLI cấp client/key/webhook
+- [x] Integration API v1: `GET /events`, `GET /orders` (+ keyset cursor), `GET /orders/{number}`, `POST /orders/{number}/acknowledgements`, `PUT /inventory/levels` (`not_data_owner`, `stale_update`)
+- [x] PR Core tổng quát: `VariantDirectory::findBySkus`, `OrderReader::changedSince` (+ `OrderData` thêm `fulfillmentStatus`/`placedAt`/`updatedAt`), `InventorySync`
+- [ ] `integration_ownerships`, reconciliation, circuit breaker, metric/cảnh báo, các endpoint ghi còn lại, JSON Schema
+- [ ] Connector ERP (plugin) — chờ chốt ERP; contract `ErpConnector`
+
 ### Tiến độ slice 10 — Proof plugins (2026-10-09)
 
 - [x] `vani.promotion-rules`: 4 rule (`min_order_subtotal`, `min_quantity`, `in_collections`, `first_order_only`) cắm vào engine của Core
@@ -59,7 +74,7 @@ flowchart LR
 
 | Thứ tự | Hạng mục | Tài liệu |
 |---|---|---|
-| 11 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation) + ERP connector khi chốt ERP | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
+| 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation) + ERP connector khi chốt ERP. **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
 | 12 | Multi-brand đầy đủ: brand thứ 2–3, theme tokens, kênh đa brand (order group), lệnh preflight | [multi-brand](../12-multi-brand/multi-brand.md) |
 | 13 | Plugin go-live P1 còn lại: `vani.vnpay`, `vani.zalo-zns`, `vani.sms-brandname`, `vani.tracking-pixels` | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |

@@ -1,6 +1,6 @@
 # Integration Platform
 
-> Trạng thái: **Designed**. Quyết định: [ADR-005](../19-adr/ADR-005-event-driven-integration.md), [ADR-013](../19-adr/ADR-013-outbox-inbox.md), [ADR-014](../19-adr/ADR-014-idempotency.md). ERP: [erp-integration](erp-integration.md).
+> Trạng thái: **Partially Implemented** (slice 11 — phần lõi, xem §11). Quyết định: [ADR-005](../19-adr/ADR-005-event-driven-integration.md), [ADR-013](../19-adr/ADR-013-outbox-inbox.md), [ADR-014](../19-adr/ADR-014-idempotency.md). ERP: [erp-integration](erp-integration.md).
 
 Module `modules/Integration` là **platform** dùng chung cho mọi tích hợp: ERP, ODO, POS, sàn TMĐT, hãng vận chuyển, cổng thanh toán, hoá đơn điện tử. Nó không chứa nghiệp vụ của domain, và không có connector cụ thể nào (connector là plugin).
 
@@ -157,3 +157,24 @@ Kết quả ghi vào `integration_reconciliations`, có báo cáo chênh lệch 
 - Inbox: webhook trùng chỉ xử lý một lần; chữ ký sai bị 401.
 - Contract test connector với fake server (`Http::fake`), phân loại đúng retryable/permanent.
 - API: scope/data scope/ownership bị chặn đúng; `stale_update`.
+
+## 11. Ghi chú triển khai (slice 11)
+
+Đã có: event feed, outbox, inbox, worker, webhook, replay, Integration Client, một phần Integration API, Admin "Tích hợp". Những điểm khác hoặc cụ thể hơn thiết kế ở trên:
+
+| Chủ đề | Triển khai |
+|---|---|
+| Event feed | Bảng `integration_events` (append-only, `id` là cursor của `GET /events`). `IntegrationEvents::publish()` ghi feed **và** fan-out outbox (webhook subscription khớp loại + data scope brand, connector `supports()`) trong một transaction |
+| Nguồn event | Domain event của Core là `ShouldDispatchAfterCommit`, nên bridge (`PublishDomainEvents`) ghi feed ngay **sau** commit nghiệp vụ, không cùng transaction. Khe hở (tiến trình chết giữa commit và ghi feed) được bù bằng reconciliation đơn hàng (§8, chưa làm). Bridge đăng ký ở `register()` để chạy trước listener của module khác — giữ `order.created` trước `order.confirmed` khi COD tự xác nhận |
+| Aggregate | Mọi event hiện có (`order.*`, `payment.*`, `return.*`, `shipment.status_changed`) dùng aggregate = số đơn, nên đối tác nhận đúng thứ tự trong một đơn |
+| Envelope | Như [api §5.1](../06-api/api.md), thêm `aggregate: {type, id}` |
+| Trạng thái message | `pending` (chờ gửi hoặc đã hẹn retry), `processing`, `sent`, `failed` (lỗi vĩnh viễn: 4xx, mapping thiếu, connector bị tắt — không tự retry), `dead` (hết lượt retry). Inbox dùng `received` thay cho `pending`, `processed` thay cho `sent`, thêm `ignored_stale` |
+| Thứ tự | Worker chỉ lấy message đầu hàng của mỗi (target, aggregate): message sau chờ khi message trước còn `pending`/`processing`. `failed`/`dead` **không** chặn hàng (tránh kẹt vô hạn); replay sau khi sửa |
+| Retry | 6 lần thử lại (1m, 5m, 15m, 1h, 6h, 24h ± 20%), tổng 7 lần gửi; cấu hình `vanishop.integration.retry_delays`. Message `processing` quá `processing_timeout` (600s) được trả về hàng đợi |
+| Webhook | Subscription thuộc một Integration Client (dùng data scope của client). Lỗi liên tục ≥ 24h → `paused` + log cảnh báo; khi `paused` không nhận message mới, đối tác bắt kịp qua `GET /events?after=` rồi được bật lại trong Admin. Mẫu `event_types`: `*`, `order.*`, hoặc tên chính xác |
+| Key | `integration_client_keys.secret` lưu **mã hoá** bằng `APP_KEY` (không phải hash) vì server cần secret để kiểm HMAC. Tối đa 2 key còn hiệu lực |
+| Chữ ký request | `X-Vani-Key-Id` + `X-Vani-Signature: t=,v1=hmac(secret, t + "." + METHOD + "." + path?query + "." + body)` — xem [api §5.1](../06-api/api.md) |
+| Scope | `events:read`, `orders:read`, `orders:write` (acknowledgements), `inventory:write` |
+| Ownership | Chưa có `integration_ownerships`. Authority tồn vật lý lấy từ `locations.stock_authority` = mã client |
+| Worker | `vani:integration:dispatch` / `vani:integration:process-inbox`: scheduler chạy mỗi phút (dự phòng); production chạy `--work` dưới supervisor/Horizon |
+| Connector | Extension point `Modules\Integration\Contracts\Connector` (tag `vani.integration.connectors`, có hiệu lực theo brand bật plugin) và `InboundHandler` (tag `vani.integration.inbound`) — thay cho `translateInbound()` trong §6. Circuit breaker chưa có |

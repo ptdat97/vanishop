@@ -118,6 +118,16 @@ return [
         'reservation_ttl' => (int) env('VANI_RESERVATION_TTL', 900),
     ],
 
+    'integration' => [
+        // Backoff giữa các lần gửi lại (giây); hết danh sách → dead. docs/11-integration/integration-platform.md §7
+        'retry_delays' => [60, 300, 900, 3600, 21600, 86400],
+        'retry_jitter' => 0.2,
+        // Message "processing" quá lâu (worker chết) được trả về hàng đợi.
+        'processing_timeout' => (int) env('VANI_INTEGRATION_PROCESSING_TIMEOUT', 600),
+        // Webhook lỗi liên tục quá số giờ này → subscription tạm dừng.
+        'webhook_pause_after_hours' => (int) env('VANI_WEBHOOK_PAUSE_AFTER_HOURS', 24),
+    ],
+
     'search' => [
         // database (mặc định, không cần hạ tầng) | meilisearch | provider do plugin đăng ký.
         'provider' => env('VANI_SEARCH_PROVIDER', 'database'),

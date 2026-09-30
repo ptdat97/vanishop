@@ -115,7 +115,9 @@ Envelope chuẩn cho message nội bộ/đối tác:
 }
 ```
 
-Chữ ký: header `X-Vani-Signature: t=<unix>,v1=<hex(hmac_sha256(secret, t + "." + body))>`; từ chối nếu lệch thời gian > 5 phút.
+Chữ ký: header `X-Vani-Signature: t=<unix>,v1=<hex(hmac_sha256(secret, t + "." + body))>`; từ chối nếu lệch thời gian > 5 phút. Cho phép nhiều `v1=` trong một header (xoay vòng secret).
+
+Request tới `/api/integration/v1` (Implemented, slice 11) dùng cùng định dạng nhưng ký trên `METHOD + "." + path?query + "." + body` (ví dụ `GET./api/integration/v1/orders?limit=50.`) để chữ ký gắn với đúng endpoint, kèm header `X-Vani-Key-Id: <key_id>`. Lỗi: `401 integration.unauthenticated`, `403 integration.ip_not_allowed`, `403 integration.insufficient_scope`, `403 not_data_owner`, `404 integration.order_not_found`, `409 integration.reference_conflict`. `PUT /inventory/levels` trả kết quả từng dòng: `applied`, `unchanged`, `stale_update`, `sku_not_found`.
 
 ### 5.2 Gửi ra (outbound)
 

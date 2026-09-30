@@ -23,4 +23,12 @@ interface VariantDirectory
      * @return array<int, VariantData> id => data (id không tồn tại/ngoài phạm vi thì không có mặt)
      */
     public function find(array $variantIds): array;
+
+    /**
+     * Tra theo SKU (mã duy nhất toàn hệ thống) — dùng cho đồng bộ từ hệ thống ngoài.
+     *
+     * @param  list<string>  $skus
+     * @return array<string, VariantData> sku => data (SKU không tồn tại/ngoài phạm vi thì không có mặt)
+     */
+    public function findBySkus(array $skus): array;
 }

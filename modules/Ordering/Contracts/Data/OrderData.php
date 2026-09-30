@@ -25,5 +25,10 @@ final readonly class OrderData
         public array $recipient = ['full_name' => '', 'phone' => ''],
         /** @var array<string, string> */
         public array $shippingAddress = [],
+        public string $fulfillmentStatus = 'unfulfilled',
+        /** ISO-8601 */
+        public ?string $placedAt = null,
+        /** ISO-8601, độ chính xác giây — dùng làm con trỏ đồng bộ. */
+        public ?string $updatedAt = null,
     ) {}
 }

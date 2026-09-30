@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts;
 
+use DateTimeInterface;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
 
@@ -29,4 +30,12 @@ interface OrderReader
      * @param  int|null  $brandId  null = bất kỳ brand nào trong phạm vi hiện tại
      */
     public function customerHasPlacedOrder(int $customerId, ?int $brandId = null): bool;
+
+    /**
+     * Đơn thay đổi sau một mốc, theo thứ tự (updated_at, id) tăng dần — cho đồng bộ kéo (keyset pagination).
+     * Trang sau: truyền updated_at + id của đơn cuối trang trước.
+     *
+     * @return list<OrderData>
+     */
+    public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array;
 }

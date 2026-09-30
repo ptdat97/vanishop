@@ -6,7 +6,9 @@
 >
 > **Slice 9:** `InventoryReservation::reservedLines` (Fulfillment tạo vận đơn theo kho đã giữ), `InventoryReturns::restock` (hàng hoàn về, movement `return`, idempotent theo reference), commit khi mọi vận đơn rời kho.
 >
-> **Chưa có:** transfer, reconciliation, sync từ authority ngoài qua Integration API (`sync()` domain đã có, bỏ qua bản cũ theo `sync_version`), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
+> **Slice 11:** sync từ authority ngoài qua `PUT /api/integration/v1/inventory/levels` → contract `InventorySync` (chỉ client là `stock_authority` của location được ghi, bản cũ theo `sync_version` bị bỏ qua, movement `sync` có `reference = v<version>`).
+>
+> **Chưa có:** transfer, reconciliation (snapshot), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
 
 ## 1. Nguyên tắc
 

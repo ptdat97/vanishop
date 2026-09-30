@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Integration\Application;
+
+use Modules\Ordering\Contracts\Data\OrderData;
+use Modules\Ordering\Contracts\Data\OrderLineData;
+use Modules\Ordering\Contracts\OrderReader;
+
+/**
+ * Payload canonical có version cho đối tác. Chỉ THÊM field trong cùng version (R20).
+ *
+ * @see docs/11-integration/integration-platform.md §4
+ */
+final class CanonicalPayloads
+{
+    public const ORDER_SCHEMA = 'vanishop.order.v1';
+
+    public function __construct(private readonly OrderReader $orders) {}
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function order(OrderData $order): array
+    {
+        return [
+            'schema' => self::ORDER_SCHEMA,
+            'number' => $order->number,
+            'public_id' => $order->publicId,
+            'legal_entity_id' => $order->legalEntityId,
+            'brand_id' => $order->brandId,
+            'channel_id' => $order->channelId,
+            'customer_id' => $order->customerId,
+            'status' => $order->status->value,
+            'payment_status' => $order->paymentStatus,
+            'fulfillment_status' => $order->fulfillmentStatus,
+            'return_status' => $order->returnStatus,
+            'payment_method' => $order->paymentMethod,
+            'currency' => $order->currencyCode,
+            'total_amount' => $order->totalAmount,
+            'customer' => $order->recipient,
+            'shipping_address' => $order->shippingAddress,
+            'lines' => array_map(fn (OrderLineData $line): array => [
+                'line_id' => $line->id,
+                'variant_id' => $line->variantId,
+                'sku' => $line->sku,
+                'name' => $line->productName,
+                'color' => $line->colorName,
+                'size' => $line->sizeCode,
+                'quantity' => $line->quantity,
+                'total_amount' => $line->totalAmount,
+            ], $this->orders->lines($order->id)),
+            'placed_at' => $order->placedAt,
+            'updated_at' => $order->updatedAt,
+        ];
+    }
+}

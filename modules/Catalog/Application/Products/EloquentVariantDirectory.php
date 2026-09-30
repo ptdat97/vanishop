@@ -33,6 +33,20 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->all();
     }
 
+    public function findBySkus(array $skus): array
+    {
+        if ($skus === []) {
+            return [];
+        }
+
+        return Variant::query()
+            ->with(['style.translations', 'styleColor.color', 'size'])
+            ->whereIn('sku', array_values(array_unique($skus)))
+            ->get()
+            ->mapWithKeys(fn (Variant $variant): array => [$variant->sku => $this->toData($variant)])
+            ->all();
+    }
+
     private function toData(Variant $variant): VariantData
     {
         return new VariantData(
