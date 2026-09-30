@@ -13,6 +13,9 @@ use Modules\Extension\Application\Plugins\PluginEventListeners;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\AdminPath;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 use ReflectionClass;
 
 /**
@@ -68,6 +71,23 @@ abstract class PluginServiceProvider extends ServiceProvider
     protected function onEvent(string $event, callable|string|array $handler): void
     {
         $this->app->make(PluginEventListeners::class)->listen($event, $handler, $this->pluginId());
+    }
+
+    /**
+     * Khai báo cấu hình của plugin (namespace = plugin id) → Admin → Cấu hình sinh form theo phạm vi.
+     * Đọc lúc chạy qua contract `Modules\Tenancy\Contracts\Settings::current($pluginId, $key, $default)`.
+     *
+     * @param  list<array{key: string, label: string, type?: string, default?: mixed, scopes?: list<string>, options?: array<string, string>, help?: string}>  $definitions
+     */
+    protected function settings(array $definitions): void
+    {
+        $settings = $this->app->make(Settings::class);
+        foreach ($definitions as $definition) {
+            $settings->define(new SettingDefinition(
+                $this->pluginId(), $definition['key'], $definition['label'], $definition['type'] ?? 'string', $definition['default'] ?? null,
+                $definition['scopes'] ?? [SettingsScope::OWNER, SettingsScope::BRAND], $definition['options'] ?? [], $definition['help'] ?? null,
+            ));
+        }
     }
 
     /**

@@ -252,6 +252,7 @@ interface Modules\Extension\Contracts\Extensions
   tag(array|string $abstracts, string $tag): void
   contribute(string $tag, string $abstract, string $pluginId): void
   tagged(string $tag): array
+  select(string $tag, string $code, ?string $fallbackCode = NULL): ?object
   ownerOf(object $implementation): ?string
 abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Support\ServiceProvider
   protected pluginId(): string
@@ -261,6 +262,7 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected onValidate(string $hook, callable $callback, int $priority = 10): void
   protected onSlot(string $hook, callable $callback, int $priority = 10): void
   protected onEvent(string $event, callable|array|string $handler): void
+  protected settings(array $definitions): void
   protected contribute(string $tag, string $implementation): void
   protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
   protected permissions(array $permissions): void
@@ -728,5 +730,37 @@ class Modules\Returns\Events\ReturnResolved
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+class Modules\Tenancy\Contracts\Data\SettingDefinition
+  const TYPES = array (
+  0 => 'string',
+  1 => 'secret',
+  2 => 'text',
+  3 => 'int',
+  4 => 'bool',
+  5 => 'select',
+)
+  __construct(string $namespace, string $key, string $label, string $type = 'string', mixed $default = NULL, array $scopes = array (
+  0 => 'owner',
+  1 => 'brand',
+), array $options = array (
+), ?string $help = NULL, ?string $optionsFromTag = NULL)
+class Modules\Tenancy\Contracts\Data\SettingsScope
+  const OWNER = 'owner'
+  const LEGAL_ENTITY = 'legal_entity'
+  const BRAND = 'brand'
+  const CHANNEL = 'channel'
+  __construct(?int $channelId = NULL, ?int $brandId = NULL, ?int $legalEntityId = NULL)
+  static owner(): self
+  static brand(int $brandId, ?int $legalEntityId = NULL): self
+  static fromContext(?Modules\Shared\Context\ContextScope $scope, ?int $channelId = NULL): self
+  chain(): array
 interface Modules\Tenancy\Contracts\LegalEntityDirectory
   all(): array
+interface Modules\Tenancy\Contracts\Settings
+  get(string $namespace, string $key, Modules\Tenancy\Contracts\Data\SettingsScope $scope, mixed $default = NULL): mixed
+  current(string $namespace, string $key, mixed $default = NULL): mixed
+  set(string $namespace, string $key, mixed $value, string $scopeType, int $scopeId = 0): void
+  forget(string $namespace, string $key, string $scopeType, int $scopeId = 0): void
+  explicit(string $namespace, string $scopeType, int $scopeId = 0): array
+  define(Modules\Tenancy\Contracts\Data\SettingDefinition $definition): void
+  definitions(?string $namespace = NULL): array

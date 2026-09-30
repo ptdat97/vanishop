@@ -93,10 +93,12 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
 
         $permissions->register('extension.plugins.view', 'Xem danh sách plugin');
         $permissions->register('extension.plugins.manage', 'Cài/bật/tắt plugin');
+        $permissions->register('settings.manage', 'Sửa cấu hình theo phạm vi (Core và plugin)');
 
         $navigation = $this->app->make(AdminNavigation::class);
         $navigation->add('dashboard', 'Tổng quan', 'admin.dashboard', 'admin.access', 0);
         $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 900);
+        $navigation->add('settings', 'Cấu hình', 'admin.settings.index', 'settings.manage', 950);
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
         $this->bootModuleResources();

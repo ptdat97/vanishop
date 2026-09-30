@@ -55,7 +55,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
-| `SettingsRepository` | Đọc/ghi cấu hình theo scope | Tenancy |
+| `Settings` | Đọc/ghi cấu hình theo scope (kênh → brand → pháp nhân → owner), khai báo định nghĩa. **Implemented** | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
 | `CurrentContext` | Brand/channel/locale/actor hiện tại; `runAs()` | Shared |
 | `Authorizer` | Kiểm tra quyền theo scope | Identity |
@@ -105,7 +105,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `adminMenu()` | Mục menu Admin + permission — Implemented |
 | `adminPages($namespace, $path)` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) — Implemented |
 | `permissions()` | Khai báo permission — Implemented (gán role mẫu: Designed) |
-| `settingsSchema()` | JSON Schema cấu hình theo scope → form tự sinh; secret được mã hoá |
+| `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
 | `storefrontRoutes()` | Storefront API dưới `/api/storefront/v1/…` (được mở rộng tài nguyên Core, không ghi đè route Core) |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |

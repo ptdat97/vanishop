@@ -22,10 +22,14 @@ use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
 use Modules\Fulfillment\Contracts\ShipmentReader;
+use Modules\Fulfillment\Contracts\SourcingStrategy;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 final class FulfillmentServiceProvider extends ModuleServiceProvider
 {
@@ -43,6 +47,10 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', 'fulfillment.sourcing', 'Chọn kho giao hàng (sourcing)', 'select', (string) config('vanishop.fulfillment.sourcing', 'reserved_locations'),
+            [SettingsScope::OWNER, SettingsScope::BRAND], optionsFromTag: SourcingStrategy::TAG, help: 'SourcingStrategy khi tạo vận đơn cho đơn của brand.',
+        ));
         $permissions->register('fulfillment.view', 'Xem vận đơn của brand');
         $permissions->register('fulfillment.manage', 'Tạo/cập nhật/huỷ vận đơn');
 

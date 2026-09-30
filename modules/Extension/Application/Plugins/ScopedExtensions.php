@@ -6,6 +6,7 @@ namespace Modules\Extension\Application\Plugins;
 
 use Closure;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Facades\Log;
 use Modules\Extension\Contracts\Extensions;
 
 /**
@@ -52,6 +53,27 @@ final class ScopedExtensions implements Extensions
         }
 
         return $result;
+    }
+
+    public function select(string $tag, string $code, ?string $fallbackCode = null): ?object
+    {
+        $byCode = [];
+        foreach ($this->tagged($tag) as $implementation) {
+            if (method_exists($implementation, 'code')) {
+                $byCode[(string) $implementation->code()] ??= $implementation;
+            }
+        }
+
+        if (isset($byCode[$code])) {
+            return $byCode[$code];
+        }
+        if ($fallbackCode !== null && isset($byCode[$fallbackCode])) {
+            Log::warning('Implementation được cấu hình không có hiệu lực, dùng mặc định.', ['tag' => $tag, 'configured' => $code, 'fallback' => $fallbackCode]);
+
+            return $byCode[$fallbackCode];
+        }
+
+        return null;
     }
 
     public function ownerOf(object $implementation): ?string

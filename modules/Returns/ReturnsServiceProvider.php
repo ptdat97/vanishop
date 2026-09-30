@@ -11,8 +11,12 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Returns\Application\DaysWindowPolicy;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
 use Modules\Returns\Application\ReturnService;
+use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Contracts\Returns;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 final class ReturnsServiceProvider extends ModuleServiceProvider
 {
@@ -30,6 +34,10 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', 'returns.policy', 'Chính sách đổi trả', 'select', (string) config('vanishop.returns.policy', 'days_window'),
+            [SettingsScope::OWNER, SettingsScope::BRAND], optionsFromTag: ReturnPolicy::TAG, help: 'ReturnPolicy áp cho đơn của brand.',
+        ));
         $permissions->register('returns.view', 'Xem yêu cầu đổi/trả');
         $permissions->register('returns.manage', 'Duyệt, từ chối, nhận hàng trả');
         $permissions->register('returns.refund', 'Hoàn tất đổi/trả và hoàn tiền');

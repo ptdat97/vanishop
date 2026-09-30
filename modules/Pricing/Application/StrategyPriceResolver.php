@@ -9,10 +9,14 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Pricing\Contracts\PricingStrategy;
+use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
- * PriceResolver dùng PricingStrategy theo cấu hình (VANI_PRICING_STRATEGY) trong các strategy có hiệu lực
- * trong phạm vi hiện tại (strategy do plugin cung cấp chỉ có mặt khi plugin được bật).
+ * PriceResolver dùng PricingStrategy theo cấu hình `core.pricing.strategy` của kênh/brand (mặc định
+ * VANI_PRICING_STRATEGY) trong các strategy có hiệu lực ở phạm vi hiện tại (strategy của plugin chỉ có mặt khi
+ * plugin được bật).
  */
 final class StrategyPriceResolver implements PriceResolver
 {
@@ -21,22 +25,22 @@ final class StrategyPriceResolver implements PriceResolver
 
     public function __construct(
         private readonly Extensions $extensions,
-        private readonly string $strategyCode,
+        private readonly Settings $settings,
+        private readonly CurrentContext $context,
+        private readonly string $defaultCode,
     ) {}
 
     public function forVariants(array $variantIds, PricingContext $context): array
     {
-        return $this->strategy()->resolve(array_values(array_unique($variantIds)), $context);
+        return $this->strategy($context->channelId)->resolve(array_values(array_unique($variantIds)), $context);
     }
 
-    private function strategy(): PricingStrategy
+    private function strategy(int $channelId): PricingStrategy
     {
-        foreach ($this->extensions->tagged(self::TAG) as $strategy) {
-            if ($strategy instanceof PricingStrategy && $strategy->code() === $this->strategyCode) {
-                return $strategy;
-            }
-        }
+        $scope = SettingsScope::fromContext($this->context->has() ? $this->context->scope() : null, $channelId);
+        $code = (string) $this->settings->get('core', 'pricing.strategy', $scope, $this->defaultCode);
+        $strategy = $this->extensions->select(PricingStrategy::TAG, $code, $this->defaultCode);
 
-        throw new InvalidArgumentException("Pricing strategy [{$this->strategyCode}] chưa được đăng ký.");
+        return $strategy instanceof PricingStrategy ? $strategy : throw new InvalidArgumentException("Pricing strategy [{$code}] chưa được đăng ký.");
     }
 }

@@ -10,6 +10,9 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\InventoryStrategy;
+use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * ATS(kênh) = Σ ATS(location) của các location phục vụ kênh cho brand của variant,
@@ -23,7 +26,9 @@ final class ChannelAvailability implements AvailabilityReader
     public function __construct(
         private readonly VariantDirectory $variants,
         private readonly Extensions $extensions,
-        private readonly string $strategyCode,
+        private readonly Settings $settings,
+        private readonly CurrentContext $context,
+        private readonly string $defaultCode,
     ) {}
 
     public function forChannel(array $variantIds, int $channelId): array
@@ -52,7 +57,7 @@ final class ChannelAvailability implements AvailabilityReader
             }
         }
 
-        $adjusted = $this->strategy()->adjust($standard, $channelId);
+        $adjusted = $this->strategy($channelId)->adjust($standard, $channelId);
         foreach ($standard as $variantId => $ats) {
             $standard[$variantId] = max(0, min($ats, (int) ($adjusted[$variantId] ?? $ats)));
         }
@@ -60,14 +65,12 @@ final class ChannelAvailability implements AvailabilityReader
         return $standard;
     }
 
-    private function strategy(): InventoryStrategy
+    private function strategy(int $channelId): InventoryStrategy
     {
-        foreach ($this->extensions->tagged(self::TAG) as $strategy) {
-            if ($strategy instanceof InventoryStrategy && $strategy->code() === $this->strategyCode) {
-                return $strategy;
-            }
-        }
+        $scope = SettingsScope::fromContext($this->context->has() ? $this->context->scope() : null, $channelId);
+        $code = (string) $this->settings->get('core', 'inventory.strategy', $scope, $this->defaultCode);
+        $strategy = $this->extensions->select(InventoryStrategy::TAG, $code, $this->defaultCode);
 
-        throw new InvalidArgumentException("Inventory strategy [{$this->strategyCode}] chưa được đăng ký.");
+        return $strategy instanceof InventoryStrategy ? $strategy : throw new InvalidArgumentException("InventoryStrategy [{$code}] chưa được đăng ký.");
     }
 }

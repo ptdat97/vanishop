@@ -29,6 +29,8 @@ use Modules\Returns\Persistence\Models\ReturnLine;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Invariant: tổng số lượng trả (yêu cầu còn mở + đã hoàn tất) của một dòng ≤ số đã giao — khoá dòng đơn khi tạo.
@@ -48,6 +50,7 @@ final class ReturnService implements Returns
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
         private readonly Extensions $extensions,
+        private readonly Settings $settings,
     ) {}
 
     public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source): ReturnView
@@ -62,7 +65,7 @@ final class ReturnService implements Returns
             $order = $this->orders->find($orderId) ?? throw ReturnRejected::notEligible('not_delivered');
             [$delivered, $deliveredAt] = $this->delivered($orderId);
 
-            $decision = $this->policy()->evaluate(new ReturnContext($orderId, $order->brandId, $lines, $reasonCode, $deliveredAt, now()->toDateTimeImmutable(), $source));
+            $decision = $this->policy($order->brandId)->evaluate(new ReturnContext($orderId, $order->brandId, $lines, $reasonCode, $deliveredAt, now()->toDateTimeImmutable(), $source));
             if (! $decision->eligible) {
                 throw ReturnRejected::notEligible((string) $decision->reason);
             }
@@ -338,15 +341,15 @@ final class ReturnService implements Returns
         return $locations;
     }
 
-    private function policy(): ReturnPolicy
+    /**
+     * Chính sách đổi trả theo cấu hình `core.returns.policy` của brand (mặc định VANI_RETURN_POLICY).
+     */
+    private function policy(int $brandId): ReturnPolicy
     {
-        $code = (string) config('vanishop.returns.policy', 'days_window');
-        foreach ($this->extensions->tagged(self::POLICIES_TAG) as $policy) {
-            if ($policy instanceof ReturnPolicy && $policy->code() === $code) {
-                return $policy;
-            }
-        }
+        $default = (string) config('vanishop.returns.policy', 'days_window');
+        $code = (string) $this->settings->get('core', 'returns.policy', SettingsScope::brand($brandId), $default);
+        $policy = $this->extensions->select(ReturnPolicy::TAG, $code, $default);
 
-        throw new \RuntimeException("ReturnPolicy [{$code}] chưa được đăng ký.");
+        return $policy instanceof ReturnPolicy ? $policy : throw new \RuntimeException("ReturnPolicy [{$code}] chưa được đăng ký.");
     }
 }

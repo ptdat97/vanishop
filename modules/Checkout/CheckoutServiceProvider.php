@@ -14,6 +14,7 @@ use Modules\Checkout\Application\CheckoutService;
 use Modules\Checkout\Application\FlatRateShipping;
 use Modules\Checkout\Application\Listeners\UndoCancelledOrder;
 use Modules\Checkout\Application\ShippingOptions;
+use Modules\Checkout\Application\Tax\ConfiguredTaxCalculator;
 use Modules\Checkout\Application\TotalsPipeline;
 use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
 use Modules\Checkout\Application\VnVatInclusiveTax;
@@ -22,6 +23,9 @@ use Modules\Checkout\Contracts\TaxCalculator;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 final class CheckoutServiceProvider extends ModuleServiceProvider
 {
@@ -48,20 +52,17 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
 
         $this->app->bind(VnVatInclusiveTax::class, fn (): VnVatInclusiveTax => new VnVatInclusiveTax((int) config('vanishop.tax.vat_rate_bp', 1000)));
         $this->app->make(Extensions::class)->tag([VnVatInclusiveTax::class], self::TAX_TAG);
-        $this->app->bind(TaxCalculator::class, function ($app): TaxCalculator {
-            $code = (string) config('vanishop.tax.calculator', 'vn_vat_inclusive');
-            foreach ($app->make(Extensions::class)->tagged(self::TAX_TAG) as $calculator) {
-                if ($calculator instanceof TaxCalculator && $calculator->code() === $code) {
-                    return $calculator;
-                }
-            }
-
-            throw new \RuntimeException("TaxCalculator [{$code}] chưa được đăng ký.");
-        });
+        $this->app->bind(TaxCalculator::class, fn ($app): TaxCalculator => new ConfiguredTaxCalculator(
+            $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.tax.calculator', 'vn_vat_inclusive'),
+        ));
     }
 
     public function boot(): void
     {
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', 'tax.calculator', 'Cách tính thuế', 'select', (string) config('vanishop.tax.calculator', 'vn_vat_inclusive'),
+            [SettingsScope::OWNER, SettingsScope::BRAND, SettingsScope::CHANNEL], optionsFromTag: TaxCalculator::TAG, help: 'TaxCalculator theo kênh/brand của giỏ.',
+        ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
 
         $this->bootModuleResources();

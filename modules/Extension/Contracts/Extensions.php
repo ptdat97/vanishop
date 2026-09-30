@@ -40,6 +40,12 @@ interface Extensions
     public function tagged(string $tag): array;
 
     /**
+     * Implementation có `code() === $code` trong các implementation có hiệu lực; không có → thử `$fallbackCode`
+     * (ghi cảnh báo — cấu hình trỏ tới implementation của plugin đã tắt/không tồn tại không làm hỏng flow).
+     */
+    public function select(string $tag, string $code, ?string $fallbackCode = null): ?object;
+
+    /**
      * Plugin sở hữu implementation (null = Core hoặc không do plugin nào đóng góp).
      */
     public function ownerOf(object $implementation): ?string;

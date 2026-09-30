@@ -12,6 +12,7 @@ use Modules\Notification\Contracts\Data\Recipient;
 use Modules\Notification\Persistence\Models\NotificationLog;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
 use Modules\Shared\Domain\Text\VietnameseText;
+use Modules\Tenancy\Contracts\Settings;
 use Plugin\SmsBrandname\Infrastructure\SmsChannel;
 use Plugin\SmsBrandname\SmsBrandnameServiceProvider;
 
@@ -83,4 +84,15 @@ it('plugin bật → tin giao dịch có mẫu kênh sms được gửi qua eSMS
     $log = NotificationLog::query()->where('channel', 'sms')->sole();
     expect($log->status)->toBe('sent')->and($log->provider_message_id)->toBe('sms-9');
     Http::assertSent(fn (Request $request): bool => $request['Content'] === VietnameseText::stripDiacritics("{$this->brand->name}: da nhan don {$number}"));
+});
+
+it('brandname đặt theo brand trong Admin → Cấu hình ghi đè config', function () {
+    Http::fake(['rest.esms.vn/*' => Http::response(['CodeResult' => '100', 'SMSID' => 'x'])]);
+    T::seed(fn () => app(Settings::class)->set('vani.sms-brandname', 'brandname', 'LUMIERE.VN', 'brand', $this->brand->id));
+
+    app(SmsChannel::class)->send(smsMessage($this->brand->id));
+    app(SmsChannel::class)->send(smsMessage(null));
+
+    Http::assertSent(fn (Request $request): bool => $request['Brandname'] === 'LUMIERE.VN');
+    Http::assertSent(fn (Request $request): bool => $request['Brandname'] === 'VANISHOP');
 });

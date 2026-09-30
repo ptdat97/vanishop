@@ -153,7 +153,7 @@ Với validate/totals khi đặt hàng, fail-fast là đúng thiết kế. Nhưn
 | P0-3 Bỏ hard-code capability | ✅ 2026-10-13 — `GatewayCapabilities::collectsOnDelivery` + `Payments::collectsOnDelivery()`; Checkout đặt `cod_pending` theo capability, các nơi khác đọc `payment_status` của đơn (không còn so `'cod'` trong Core); kênh consent là mã kênh bất kỳ đúng định dạng |
 | P0-2 `onEvent()` + `brandId` | ✅ 2026-10-13 — `PluginServiceProvider::onEvent()` (lọc theo brand của event, chạy trong phạm vi brand, cô lập lỗi); `brandId` tuỳ chọn trên `PaymentCaptured/Failed`, `RefundCreated/Completed`, `ShipmentCreated/StatusChanged`, `ReturnRequested/Resolved`; event không có brand chỉ tới plugin bật ở owner |
 | P0-5 Version public API | ✅ 2026-10-13 — Core `0.2.0`, mọi plugin `^0.2`; [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md); snapshot public API trong arch test; chính sách mở rộng extension contract không cần abstract base |
-| P0-4 Settings theo scope | Chưa |
+| P0-4 Settings theo scope | ✅ 2026-10-14 — bảng `settings` + contract `Settings` (Tenancy, kế thừa kênh → brand → pháp nhân → owner, secret mã hoá); 5 điểm chọn strategy nghiệp vụ đọc cấu hình theo kênh/brand (`.env` là mặc định, cấu hình sai/plugin tắt → mặc định); `PluginServiceProvider::settings()` + Admin → Cấu hình tự sinh form (lựa chọn lấy từ extension point); `vani.sms-brandname` đọc brandname theo brand |
 
 ## 6. Những điều **không** nên làm
 

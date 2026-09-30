@@ -18,8 +18,13 @@ use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Inventory\Contracts\InventoryReturns;
+use Modules\Inventory\Contracts\InventoryStrategy;
 use Modules\Inventory\Contracts\InventorySync;
+use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingsScope;
+use Modules\Tenancy\Contracts\Settings;
 
 final class InventoryServiceProvider extends ModuleServiceProvider
 {
@@ -38,12 +43,18 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->bind(AvailabilityReader::class, fn ($app): ChannelAvailability => new ChannelAvailability(
             $app->make(VariantDirectory::class),
             $app->make(Extensions::class),
+            $app->make(Settings::class),
+            $app->make(CurrentContext::class),
             (string) config('vanishop.inventory.strategy', 'standard'),
         ));
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', 'inventory.strategy', 'Cách tính số bán được (ATS)', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
+            [SettingsScope::OWNER, SettingsScope::BRAND, SettingsScope::CHANNEL], optionsFromTag: InventoryStrategy::TAG, help: 'Strategy chỉ giảm được ATS so với công thức chuẩn.',
+        ));
         $permissions->register('inventory.view', 'Xem tồn kho của brand');
         $permissions->register('inventory.adjust', 'Điều chỉnh/kiểm kê tồn kho');
         $permissions->register('inventory.locations.manage', 'Quản lý kho/cửa hàng (cấp Owner)');

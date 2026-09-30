@@ -67,7 +67,7 @@ final class FulfillmentService
 
             $lines = $this->orders->lines($orderId);
             $reserved = $this->inventory->reservedLines($order->reservationKey);
-            $strategy = $this->registry->sourcing((string) config('vanishop.fulfillment.sourcing', 'reserved_locations'))
+            $strategy = $this->registry->sourcing($order->brandId)
                 ?? throw new \InvalidArgumentException('SourcingStrategy chưa đăng ký.');
             $proposals = $strategy->allocate(new SourcingRequest($orderId, $order->brandId, $lines, $reserved, $order->shippingAddress));
             $this->assertMatchesReservation($proposals, $lines, $reserved);
