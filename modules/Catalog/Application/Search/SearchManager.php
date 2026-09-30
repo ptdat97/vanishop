@@ -11,7 +11,7 @@ use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Extension\Contracts\Extensions;
 
 /**
- * Chọn SearchProvider theo cấu hình (VANI_SEARCH_PROVIDER) trong các provider có hiệu lực trong phạm vi hiện tại
+ * Chọn SearchProvider theo cấu hình (VANI_SEARCH_PROVIDER, mặc định `database`; `meilisearch` cần plugin vani.search-meilisearch) trong các provider có hiệu lực trong phạm vi hiện tại
  * (SearchProvider do plugin cung cấp chỉ có mặt khi plugin được bật).
  */
 final class SearchManager
@@ -42,9 +42,14 @@ final class SearchManager
             ?? $fallback->search($query);
     }
 
+    /**
+     * Provider theo VANI_SEARCH_PROVIDER; provider đó không có hiệu lực (plugin chưa cài/bật) → `database` + cảnh báo,
+     * để storefront và đồng bộ chỉ mục vẫn chạy.
+     */
     public function provider(): SearchProvider
     {
-        return $this->extensions->implementations(SearchProvider::TAG, SearchProvider::class)[$this->providerCode]
-            ?? throw new InvalidArgumentException("Search provider [{$this->providerCode}] chưa được đăng ký.");
+        $provider = $this->extensions->select(SearchProvider::TAG, $this->providerCode, self::FALLBACK);
+
+        return $provider instanceof SearchProvider ? $provider : throw new InvalidArgumentException("Search provider [{$this->providerCode}] chưa được đăng ký.");
     }
 }

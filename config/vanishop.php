@@ -145,13 +145,9 @@ return [
     ],
 
     'search' => [
-        // database (mặc định, không cần hạ tầng) | meilisearch | provider do plugin đăng ký.
+        // database (mặc định, không cần hạ tầng) | mã provider do plugin đăng ký (vd. meilisearch — plugin
+        // vani.search-meilisearch, cấu hình MEILISEARCH_* nằm trong plugin). Provider chưa bật → dùng database.
         'provider' => env('VANI_SEARCH_PROVIDER', 'database'),
-        'meilisearch' => [
-            'host' => env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
-            'key' => env('MEILISEARCH_KEY'),
-            'index' => env('MEILISEARCH_INDEX', 'vani_products'),
-        ],
     ],
 
     'hooks' => [

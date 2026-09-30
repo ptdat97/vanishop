@@ -1,0 +1,18 @@
+{
+    "id": "vani.search-meilisearch",
+    "name": {
+        "vi": "Tìm kiếm Meilisearch",
+        "en": "Meilisearch search"
+    },
+    "version": "0.1.0",
+    "kind": "business",
+    "provider": "Plugin\\SearchMeilisearch\\SearchMeilisearchServiceProvider",
+    "requires": {
+        "vanishop": "^0.2",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "scopes": ["owner"],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

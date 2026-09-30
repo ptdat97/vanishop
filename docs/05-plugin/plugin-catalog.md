@@ -13,7 +13,7 @@
 | Thuế | VAT giá đã gồm thuế |
 | Thông báo | Email |
 | Đăng nhập | Mật khẩu, OTP email |
-| Tìm kiếm | Database, Meilisearch |
+| Tìm kiếm | Database (Meilisearch: plugin `vani.search-meilisearch`) |
 | Tích hợp | Integration API, webhook, outbox/inbox, khung connector |
 
 ## 2. Ba plugin chứng minh kiến trúc (đã có trong repo)
@@ -85,6 +85,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.tracking-pixels` (GA4, Meta, TikTok) | Slot storefront, events đơn | P1 |
 | `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
 | `vani.shopee`, `vani.lazada`, `vani.tiktokshop` | `Connector`, channel type `marketplace` | P3 |
+| `vani.search-meilisearch` ✅ | `SearchProvider` + `ConfigurableSearchIndex` | P1 (tách từ Core 2026-10-14) |
 | `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
 | `vani.recommendation` | Hook listing, `StorefrontBlock` | Later |
 

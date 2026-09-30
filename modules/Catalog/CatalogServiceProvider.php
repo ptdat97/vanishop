@@ -10,7 +10,6 @@ use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
 use Modules\Catalog\Application\Search\DatabaseSearchProvider;
-use Modules\Catalog\Application\Search\MeilisearchSearchProvider;
 use Modules\Catalog\Application\Search\SearchManager;
 use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\SearchReindexCommand;
@@ -43,12 +42,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->singleton(DatabaseSearchProvider::class);
-        $this->app->singleton(MeilisearchSearchProvider::class, fn (): MeilisearchSearchProvider => new MeilisearchSearchProvider(
-            (string) config('vanishop.search.meilisearch.host'),
-            config('vanishop.search.meilisearch.key'),
-            (string) config('vanishop.search.meilisearch.index'),
-        ));
-        $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class, MeilisearchSearchProvider::class], SearchManager::TAG);
+        // Meilisearch/Algolia/Elasticsearch là plugin (vani.search-meilisearch…).
+        $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchManager::TAG);
         $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app->make(Extensions::class), (string) config('vanishop.search.provider')));
     }
 

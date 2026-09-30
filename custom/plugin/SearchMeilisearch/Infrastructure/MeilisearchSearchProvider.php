@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Catalog\Application\Search;
+namespace Plugin\SearchMeilisearch\Infrastructure;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use Modules\Catalog\Contracts\ConfigurableSearchIndex;
 use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\ProductSearchResult;
@@ -16,7 +17,7 @@ use Modules\Shared\Domain\Text\VietnameseText;
  * Meilisearch qua REST API (không cần SDK). Một index cho mọi brand, lọc bằng brand_id.
  * Cấu hình index (filterable/sortable attributes) được đặt bằng lệnh vani:search:setup.
  */
-final class MeilisearchSearchProvider implements SearchProvider
+final class MeilisearchSearchProvider implements ConfigurableSearchIndex, SearchProvider
 {
     public const FILTERABLE = ['brand_id', 'status', 'published_from', 'published_to', 'category_ids', 'collection_ids', 'color_families', 'attribute_value_ids'];
 
@@ -71,7 +72,7 @@ final class MeilisearchSearchProvider implements SearchProvider
     /**
      * Cấu hình index: thuộc tính lọc/sắp xếp và trường tìm kiếm.
      */
-    public function setup(): void
+    public function setupIndex(): void
     {
         $this->client()->post('indexes', ['uid' => $this->index, 'primaryKey' => 'id']);
         $this->client()->patch("indexes/{$this->index}/settings", [

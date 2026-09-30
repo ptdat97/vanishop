@@ -57,6 +57,8 @@ interface Modules\Catalog\Contracts\CatalogReader
   sellableVariants(array $variantIds, string $locale, int $now): array
 interface Modules\Catalog\Contracts\CollectionDirectory
   slugsForStyles(array $styleIds): array
+interface Modules\Catalog\Contracts\ConfigurableSearchIndex
+  setupIndex(): void
 class Modules\Catalog\Contracts\Data\ProductDocument
   __construct(int $id, int $brandId, string $styleCode, string $slug, string $status, ?int $publishedFrom, ?int $publishedTo, array $names, string $searchText, array $categoryIds, array $collectionIds, array $colorFamilies, array $attributeValueIds, int $createdAt)
   toArray(): array

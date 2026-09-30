@@ -20,7 +20,10 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 - CLI `vani:plugin:upgrade`, `vani:plugin:doctor`.
 - Hook: đo `hook_duration_ms` theo hook × plugin; filter trả sai kiểu → `HookReturnTypeMismatch` (strict) / bỏ kết quả (production).
 
+- `Catalog\Contracts\ConfigurableSearchIndex` (interface tuỳ chọn cho SearchProvider có chỉ mục ngoài: `setupIndex()`).
+
 ### Đổi hành vi
+- Meilisearch tách khỏi Core thành plugin `vani.search-meilisearch` (cùng biến env `MEILISEARCH_*`; cài + bật ở owner). `VANI_SEARCH_PROVIDER` trỏ tới provider không có hiệu lực → dùng `database` + cảnh báo (trước đây: lỗi).
 - `MailChannel`: tin thiếu tiêu đề/nội dung → `permanent('mail.empty')` thay vì gửi email rỗng. `EmailOtpSender`: lỗi SMTP → `OtpDeliveryFailed` (Core chuyển sang kênh OTP kế tiếp).
 - `PaymentGateway::isAvailable()` lỗi → ẩn cổng; `ShippingRateProvider::options()` lỗi → bỏ lựa chọn của provider đó; `SearchProvider::search()` lỗi → tìm bằng provider `database`. Plugin lỗi liên tục bị tạm bỏ qua trên các luồng này.
 

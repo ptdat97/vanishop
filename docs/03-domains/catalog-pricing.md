@@ -9,7 +9,7 @@
 > | Màu (tên theo brand + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
 > | Media: `media` (theo brand, khử trùng lặp theo SHA-256) + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
-> | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK); chọn bằng `VANI_SEARCH_PROVIDER`; `vani:search:reindex [--setup]` | Implemented |
+> | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK — **plugin `vani.search-meilisearch`** từ 2026-10-14); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
 > | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá gán kênh, `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
 > | Giá thành viên theo nhóm khách, giá theo số lượng, import Excel giá | Designed |
 > | Bộ sưu tập theo luật, merchandising ghim vị trí trong Admin | Designed |
@@ -114,7 +114,7 @@ Core chỉ dùng strategy được cấu hình cho channel; giá trả về vẫ
 - Trường tìm: tên (có dấu + không dấu), mã, màu, chất liệu, danh mục.
 - Facet: danh mục, color_family, size **còn hàng**, khoảng giá, chất liệu, bộ sưu tập.
 - Đồng bộ index qua event `ProductUpdated`, `PriceChanged`, `AvailabilityChanged` (debounce 5–30 giây).
-- Provider tìm kiếm là extension point `SearchProvider` (`index`, `remove`, `search(query, filters, facets)`); mặc định `database` (dev) và `meilisearch`; Algolia/Elasticsearch là plugin.
+- Provider tìm kiếm là extension point `SearchProvider` (`index`, `remove`, `search(query, filters, facets)`); mặc định `database`; `meilisearch`, Algolia, Elasticsearch là plugin.
 - Từ đồng nghĩa tiếng Việt: "đầm = váy liền", "sơ mi = shirt", "quần bò = jeans".
 
 ## 8. Import / Export

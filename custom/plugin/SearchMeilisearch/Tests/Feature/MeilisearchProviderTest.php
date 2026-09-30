@@ -3,9 +3,15 @@
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
-use Modules\Catalog\Application\Search\MeilisearchSearchProvider;
+use Modules\Catalog\Application\Search\SearchManager;
+use Modules\Catalog\Contracts\ConfigurableSearchIndex;
 use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
+use Modules\Catalog\Tests\Feature\CatalogTestHelpers;
+use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginManager;
+use Plugin\SearchMeilisearch\Infrastructure\MeilisearchSearchProvider;
+use Plugin\SearchMeilisearch\SearchMeilisearchServiceProvider;
 
 beforeEach(function () {
     $this->provider = new MeilisearchSearchProvider('http://meili.test:7700', 'secret', 'vani_products');
@@ -53,3 +59,23 @@ it('ném lỗi khi Meilisearch lỗi (để queue retry)', function () {
 
     $this->provider->remove(3);
 })->throws(RequestException::class);
+
+it('VANI_SEARCH_PROVIDER=meilisearch nhưng plugin chưa bật → Core dùng provider database', function () {
+    config(['vanishop.search.provider' => 'meilisearch']);
+
+    expect(app(SearchManager::class)->provider()->code())->toBe('database');
+});
+
+it('plugin bật ở owner → SearchManager dùng Meilisearch; provider hỗ trợ cấu hình chỉ mục', function () {
+    config(['vanishop.search.provider' => 'meilisearch']);
+    CatalogTestHelpers::seed(function () {
+        app(PluginManager::class)->install('vani.search-meilisearch');
+        app(PluginManager::class)->enable('vani.search-meilisearch', 'owner');
+    });
+    app()->register(SearchMeilisearchServiceProvider::class);
+    app(PluginActivation::class)->flush();
+
+    $provider = app(SearchManager::class)->provider();
+    expect($provider)->toBeInstanceOf(MeilisearchSearchProvider::class)
+        ->and($provider)->toBeInstanceOf(ConfigurableSearchIndex::class);
+});
