@@ -23,7 +23,7 @@
 | **Returns** | Yêu cầu đổi/trả, kiểm hàng, quyết định hoàn | Hoàn tiền (gọi Payment) | `ReturnPolicy` |
 | **Content** | Trang, menu, banner, page builder, redirect | Theme | `StorefrontBlock` |
 | **Notification** | Template theo loại tin × kênh gửi × locale, gửi tin, nhật ký gửi | Nội dung marketing | `NotificationChannel` |
-| **Reporting** | Read model báo cáo, dashboard | Dữ liệu gốc | `DashboardWidget` |
+| **Reporting** → plugin `vani.reports` ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)) | Read model báo cáo, dashboard | Dữ liệu gốc | Core chỉ cung cấp `DashboardWidget` + slot dashboard |
 | **Integration** | Integration Client, API, webhook, outbox/inbox, mapping, ownership, connector framework | Nghiệp vụ domain | `Connector`, `IntegrationOutbox`, `ErpConnector` |
 | **Storefront** | Không có dữ liệu riêng: ghép Catalog + Pricing (+ Inventory, Promotion…) cho Storefront API và native storefront ([ADR-021](../19-adr/ADR-021-storefront-composition-module.md)) | Mọi dữ liệu nghiệp vụ | `ProductViews` (nội bộ) |
 

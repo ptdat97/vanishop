@@ -1,17 +1,20 @@
-# Danh mục plugin nghiệp vụ
+# Danh mục plugin
 
 > Trạng thái: ba plugin chứng minh kiến trúc đã **cài đặt trong repo** (slice 10 — xem [roadmap](../20-roadmap/roadmap.md)); các plugin còn lại ở mức **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md`.
 
-## 1. Core có sẵn (không cần plugin)
+## 1. Core có sẵn và plugin hệ thống
 
-| Nhóm | Mặc định trong Core |
-|---|---|
-| Thanh toán | COD, chuyển khoản thủ công |
-| Vận chuyển | Phí cố định/theo bảng (`flat_rate`), vận đơn nhập tay (`manual`) |
-| Phân bổ kho | `priority_first_fit` |
-| Khuyến mãi | Framework + action `percent_off`/`amount_off` + voucher. **Chưa có rule điều kiện nào** trong Core — rule điều kiện đến từ plugin (`vani.promotion-rules`) |
-| Thuế | VAT giá đã gồm thuế |
-| Thông báo | Email |
+Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặc định **trung lập thị trường**; mặc định mang chính sách kinh doanh/đặc thù VN là **plugin hệ thống** (đóng gói sẵn, tự bật). Hiện các plugin hệ thống vẫn nằm trong module, tách ở slice 12d ([commerce-kernel §6](../02-architecture/commerce-kernel.md)).
+
+| Nhóm | Mặc định trong Core (trung lập) | Plugin hệ thống (bundled) |
+|---|---|---|
+| Thanh toán | — | `vani.cod`, `vani.bank-transfer` |
+| Vận chuyển | Vận đơn nhập tay (`manual`) | `vani.shipping-flat-rate` (phí cố định/theo bảng) |
+| Thuế | `none` (dự phòng) | `vani.tax-vn-vat` (VAT giá đã gồm thuế) |
+| Phân bổ kho | `reserved_locations` | |
+| Khuyến mãi | Engine + action `percent_off`/`amount_off` + voucher. **Không có rule điều kiện** trong Core — rule đến từ plugin (`vani.promotion-rules`) | |
+| Đổi trả | `days_window` | |
+| Thông báo | Email (`mail`) | |
 | Đăng nhập | Mật khẩu, OTP email |
 | Tìm kiếm | Database (Meilisearch: plugin `vani.search-meilisearch`) |
 | Tích hợp | Integration API, webhook, outbox/inbox, khung connector |

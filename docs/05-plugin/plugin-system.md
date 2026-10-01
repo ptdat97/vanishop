@@ -1,6 +1,6 @@
 # Plugin System
 
-> Trạng thái: **Partially Implemented** (slice 0). Đã có: manifest, dependency resolver, lifecycle, loader, cache, safe mode, `PluginServiceProvider`, CLI chính, plugin mẫu. Chi tiết từng phần ghi ngay trong các mục bên dưới. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md) (chỉ triển khai qua mã nguồn), [ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md) (dữ liệu plugin). **Viết plugin: đọc [contracts/](contracts/README.md)** (chữ ký chính xác, lỗi thường gặp, checklist).
+> Trạng thái: **Partially Implemented** (slice 0). Vị trí trong mô hình microkernel (vòng 0 Extension nạp plugin vòng 2–3): [commerce-kernel](../02-architecture/commerce-kernel.md). Đã có: manifest, dependency resolver, lifecycle, loader, cache, safe mode, `PluginServiceProvider`, CLI chính, plugin mẫu. Chi tiết từng phần ghi ngay trong các mục bên dưới. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md) (chỉ triển khai qua mã nguồn), [ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md) (dữ liệu plugin). **Viết plugin: đọc [contracts/](contracts/README.md)** (chữ ký chính xác, lỗi thường gặp, checklist).
 
 ## 1. Hướng phụ thuộc
 
@@ -65,7 +65,8 @@ custom/plugin/VietQr/
 | `conflicts` | | Danh sách plugin id không được bật cùng lúc |
 | `scopes` | | **Deprecated** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader hiện vẫn đọc |
 | `permissions` | | Quyền plugin cần; hiển thị khi cài |
-| `settings_schema` | | JSON Schema cấu hình |
+| `settings_schema` | | (cũ) thay bằng `settings()` trong provider |
+| `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không gỡ/tắt được nếu là implementation cuối của extension point bắt buộc. Designed |
 
 ## 4. Vòng đời
 
@@ -99,7 +100,7 @@ Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:pl
 
 ## 5. CLI
 
-`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`: **Implemented**. `upgrade`, `doctor`: Designed.
+`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`, `upgrade`, `doctor`: **Implemented**. Kiểm tra extension point bắt buộc trong `disable`/`uninstall`/`doctor`: Designed ([commerce-kernel §5](../02-architecture/commerce-kernel.md)).
 
 ```bash
 php artisan vani:plugin:list                      # id, version, trạng thái, scope, tương thích
@@ -108,8 +109,8 @@ php artisan vani:plugin:enable vani.vietqr        # (--scope chỉ còn trong co
 php artisan vani:plugin:disable vani.vietqr [--scope=...]
 php artisan vani:plugin:uninstall vani.vietqr [--purge]   # --purge: rollback migration, xoá bảng plg_*
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
-php artisan vani:plugin:upgrade vani.vietqr       # (Designed) chạy migration mới khi version tăng
-php artisan vani:plugin:doctor                    # (Designed) kiểm tra tương thích, deps, conflict, contract test
+php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit
+php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, migration chờ, plugin failed, thiếu manifest/provider, không tương thích, cache không dùng chung ở production; exit 1 khi có lỗi
 ```
 
 ## 6. Dependency resolution và tương thích
@@ -120,6 +121,7 @@ php artisan vani:plugin:doctor                    # (Designed) kiểm tra tươn
 4. `enable` plugin A khi dependency B chưa enable trong cùng scope → từ chối (hoặc `--with-deps`).
 5. `disable`/`uninstall` B khi còn plugin phụ thuộc đang enable → từ chối.
 6. Nâng Core làm plugin không còn tương thích → plugin chuyển `failed` với lý do `incompatible_core`, Core vẫn chạy.
+7. (Designed) `disable`/`uninstall` plugin cung cấp implementation **cuối cùng** của extension point bắt buộc (thanh toán, phí giao, thuế, carrier, kênh thông báo) → từ chối.
 
 ## 7. Migration, upgrade, rollback
 
@@ -185,6 +187,10 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 ```
 
 Plugin mẫu đầy đủ (kèm test): `custom/plugin/HelloWorld/`.
+
+## 9b. Plugin công bố extension point cho plugin khác
+
+Designed ([commerce-kernel §7](../02-architecture/commerce-kernel.md)). Plugin đặt contract/event trong `Plugin\<Name>\Contracts`/`Events` và khai báo hook trong `custom/plugin/<Name>/hooks.php` (tên `<plugin-id>.<…>`); registry hook sẽ đọc thêm file này khi plugin được nạp. Plugin dùng khai báo `requires.plugins`. Cùng compatibility policy, theo SemVer của plugin cung cấp.
 
 ## 10. Quy tắc cho người viết plugin
 

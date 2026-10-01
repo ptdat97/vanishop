@@ -4,13 +4,13 @@
 
 ## 1. Phong cách kiến trúc
 
-**Laravel + Modular Monolith + DDD (pragmatic) + API-first + Plugin Architecture.**
+**Microkernel thương mại** trên **Laravel + Modular Monolith + DDD (pragmatic) + API-first**: microkernel (Extension, Identity, Tenancy, Shared) → Commerce Core → plugin hệ thống → plugin nghiệp vụ ([commerce-kernel](commerce-kernel.md), [ADR-029](../19-adr/ADR-029-commerce-microkernel.md)).
 
 | Lựa chọn | Lý do | ADR |
 |---|---|---|
 | Modular Monolith | Một lần deploy, transaction cục bộ cho checkout/tồn kho, đội nhỏ–vừa | [ADR-001](../19-adr/ADR-001-modular-monolith.md) |
 | DDD theo bounded context | Ranh giới rõ, ownership dữ liệu rõ, về sau có thể tách service | [ADR-002](../19-adr/ADR-002-ddd-boundaries.md) |
-| Plugin Architecture | Nghiệp vụ thay đổi nhanh nằm ngoài Core | [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md) |
+| Microkernel + plugin | Nghiệp vụ (kể cả mặc định COD/phí ship/VAT) nằm ngoài Core; Core ổn định | [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md), [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) |
 | API-first | Storefront native, headless, mobile, đối tác dùng chung Application layer | [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-010](../19-adr/ADR-010-api-versioning.md) |
 | Tích hợp hướng sự kiện | Hệ thống ngoài không làm hỏng checkout | [ADR-005](../19-adr/ADR-005-event-driven-integration.md), [ADR-013](../19-adr/ADR-013-outbox-inbox.md) |
 

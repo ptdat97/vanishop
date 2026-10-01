@@ -30,6 +30,9 @@
 | Outbox / Inbox | Hộp thư đi / đến | Bảng lưu message tích hợp đảm bảo không mất và không trùng |
 | Canonical model | Mô hình chuẩn | Định dạng payload nội bộ có version, độc lập hệ thống ngoài |
 | Connector | Bộ kết nối | Plugin trong `custom/plugin/` chuyển đổi và gửi/nhận với một dịch vụ ngoài |
+| Microkernel | Nhân nền tảng | Vòng 0: Extension, Identity, Tenancy, Shared — nạp plugin, registry, hook/event, cấu hình, quyền; không biết thương mại ([commerce-kernel](../02-architecture/commerce-kernel.md)) |
+| Plugin hệ thống | Bundled plugin | Plugin đóng gói sẵn, tự bật khi cài, chứa mặc định mang chính sách/đặc thù thị trường (COD, chuyển khoản, phí ship cố định, VAT VN) |
+| Extension point bắt buộc | Required extension point | Extension point phải luôn có ≥ 1 (hoặc đúng 1) implementation đang bật; Core chặn tắt implementation cuối |
 | Core / Commerce Kernel | Lõi | Phần trong `modules/`: commerce primitives, invariants, extension points ([commerce-kernel](../02-architecture/commerce-kernel.md)) |
 | Invariant | Bất biến | Quy tắc nghiệp vụ luôn đúng mà plugin không được phá (không oversell, chuyển trạng thái hợp lệ, tổng không âm…) |
 | Snapshot | Ảnh chụp | Bản sao dữ liệu tại thời điểm đặt hàng lưu trong đơn (tên, giá, thuế, địa chỉ…) |

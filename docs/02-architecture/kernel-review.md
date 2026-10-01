@@ -3,7 +3,7 @@
 > Phạm vi: đối chiếu **code hiện tại** (sau slice Notification, commit `666d79a`) với mô hình microkernel mà [commerce-kernel](commerce-kernel.md), [extension-model](../04-extension/extension-model.md), [plugin-system](../05-plugin/plugin-system.md) và ADR-003/004 đặt ra: Core nhỏ, giữ invariant, mọi capability khác cắm vào qua Extension Points + Plugin system.
 > Số liệu lấy bằng lệnh trên repo; mỗi phát hiện ghi kèm vị trí trong code.
 
-> **Ghi chú 2026-10-01**: đánh giá này viết khi VaniShop còn theo mô hình đa brand (ADR-008). Từ [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), các phát hiện về cô lập theo brand, `brandId` trên event, scope plugin/strategy theo brand **không còn là mục tiêu**; xem lộ trình gỡ ở [store-and-brand §6](../12-store/store-and-brand.md).
+> **Ghi chú 2026-10-01**: đánh giá này viết khi VaniShop còn theo mô hình đa brand (ADR-008). Từ [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), các phát hiện về cô lập theo brand, `brandId` trên event, scope plugin/strategy theo brand **không còn là mục tiêu**; xem lộ trình gỡ ở [store-and-brand §6](../12-store/store-and-brand.md). Hướng microkernel tiếp theo (bốn vòng, plugin hệ thống, extension point bắt buộc): [commerce-kernel](commerce-kernel.md), [ADR-029](../19-adr/ADR-029-commerce-microkernel.md).
 
 ## 1. Kết luận
 

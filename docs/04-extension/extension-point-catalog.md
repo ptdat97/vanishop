@@ -142,3 +142,28 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 - Bảng riêng `plg_<plugin>_*`, tham chiếu ID của Core bằng FK (`ON DELETE RESTRICT`). Core **không** FK sang bảng plugin.
 - Cột `meta` (JSON) trên `orders`, `order_lines`, `carts`, `customers`, `styles`, `variants` dùng cho dữ liệu nhỏ, **namespace theo mã plugin** (`meta.einvoice.tax_code`). Không dùng cho dữ liệu cần lọc hoặc báo cáo.
 - Plugin **không** thêm cột vào bảng Core, không sửa migration Core ([ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md)).
+
+## 7. Extension point còn thiếu theo plugin dự kiến
+
+Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-catalog.md) viết được **mà không sửa Core** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)). Bảng dưới đối chiếu plugin dự kiến với extension point chúng cần nhưng Core **chưa có**. Làm extension point **trước** plugin, theo đợt của plugin dùng nó; mỗi điểm cần implementation tham chiếu + contract test (R26).
+
+| Extension point thiếu | Loại | Plugin cần | Đợt |
+|---|---|---|---|
+| `REQUIRED` trên contract + chặn tắt implementation cuối; manifest `bundled` | Kernel | 4 plugin hệ thống | Slice 12d |
+| `storefrontRoutes()` — route Storefront API/trang storefront của plugin | Registry | `vani.wishlist`, `vani.loyalty` (`/me/loyalty`), `vani.store-omnichannel` | P2 |
+| Slot storefront + component `hook-slot` (§4.1) | Hook | `vani.tracking-pixels`, reviews, size chart, loyalty | P1 (cùng theme) |
+| Plugin khai báo `hooks.php` riêng (plugin công bố hook) | Kernel | `vani.loyalty` → `vani.promotion-advanced`; `vani.marketplace` → `vani.creator` | P3 |
+| Event `CartAbandoned` (+ job phát hiện) | Event | `vani.abandoned-cart` | P2 |
+| Event `OrderCompleted` | Event | `vani.loyalty` (điểm `available`), `vani.einvoice`, `vani.creator` | P2 |
+| `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
+| Registry nhà cung cấp đăng nhập (`AuthProvider`) | Contract | `vani.social-login` | P2 |
+| `orderActions()` — nút thao tác trên trang đơn Admin | Registry | `vani.einvoice` (xuất lại HĐ), `vani.cod-reconciliation` | P2 |
+| `customerProfileTabs()` | Registry | `vani.loyalty`, `vani.size-advisor` | P3 |
+| `productFormSections()` — phần form sản phẩm Admin của plugin (lưu qua `vani.product.after_save`) | Registry | size chart, product bundle, SEO nâng cao | P2 |
+| `StorefrontBlock` (page builder) | Contract | lookbook, recommendation, `brand_grid` | P2 |
+| `DashboardWidget` + quyền đọc báo cáo | Contract | `vani.reports` (Reporting thành plugin) | P2 |
+| `adminApiRoutes()` | Registry | POS/app quản trị của plugin | P3 |
+| `integrationMessageTypes()` + JSON Schema | Registry | connector ERP, sàn TMĐT | Khi chốt ERP |
+| Dòng giỏ có thuộc tính plugin (`cart_lines.meta` + hook ghi) | Hook | gói quà, khắc tên, `vani.product-bundle` | P3 |
+
+Khi thêm một extension point từ bảng này: chuyển dòng tương ứng lên §1–§5, ghi [CHANGELOG-extension](CHANGELOG-extension.md), xoá khỏi bảng.

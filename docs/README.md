@@ -1,38 +1,42 @@
 # VaniShop — Tài liệu kiến trúc
 
-> **VaniShop** là một **Commerce Kernel** xây trên Laravel theo kiểu Modular Monolith + DDD + API-first + Plugin Architecture. Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, marketplace, creator…) **bằng plugin, không fork Core**.
+> **VaniShop** là một **microkernel thương mại** trên Laravel (Modular Monolith + DDD + API-first): lõi nhỏ giữ primitive, bất biến và extension point; **nghiệp vụ thêm bằng plugin** ([ADR-029](19-adr/ADR-029-commerce-microkernel.md)). Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, marketplace, creator…) **bằng plugin, không fork Core**.
 >
 > Chủ sở hữu: 1 Owner vận hành 1 website bán hàng tại Việt Nam; các thương hiệu thời trang của Owner là thuộc tính sản phẩm (trang brand, bộ lọc brand), không phải storefront riêng. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
 
 ```text
-                    ┌─────────────────────┐
-                    │   Business Plugins  │  custom/plugin/*
-                    │ Payment · Shipping  │
-                    │ Promotion rules     │
-                    │ ERP · Marketplace   │
-                    │ Creator · Loyalty   │
-                    └──────────┬──────────┘
-                               │  Extension Points (Contract · Event · Hook · Registry)
-                    ┌──────────▼──────────┐
-                    │   Commerce Kernel   │  modules/*
-                    │ Catalog · Pricing   │
-                    │ Inventory · Cart    │
-                    │ Checkout · Order    │
-                    │ Payment · Fulfill.  │
-                    └──────────┬──────────┘
-                    ┌──────────▼──────────┐
-                    │   Infrastructure    │
-                    │ MySQL · Redis · S3  │
-                    │ Search · Ext. APIs  │
-                    └─────────────────────┘
+                ┌───────────────────────────────────────┐
+                │ 3. Plugin nghiệp vụ    custom/plugin/* │
+                │ Cổng TT · Hãng VC · Rule khuyến mãi ·  │
+                │ Loyalty · HĐĐT · ERP · Marketplace ·   │
+                │ Creator · Báo cáo · Wishlist …         │
+                ├───────────────────────────────────────┤
+                │ 2. Plugin hệ thống (bundled)           │
+                │ COD · Chuyển khoản · Phí ship · VAT VN │
+                └───────────────────┬───────────────────┘
+                                    │ Extension Points (Contract · Event · Hook · Registry)
+                ┌───────────────────▼───────────────────┐
+                │ 1. Commerce Core        modules/*      │
+                │ Catalog · Pricing · Inventory · Cart · │
+                │ Checkout · Promotion engine · Order ·  │
+                │ Payment · Fulfillment · Returns ·      │
+                │ Notification · Integration             │
+                ├───────────────────────────────────────┤
+                │ 0. Microkernel                         │
+                │ Extension · Identity · Tenancy · Shared│
+                └───────────────────┬───────────────────┘
+                ┌───────────────────▼───────────────────┐
+                │ Infrastructure  MySQL · Redis · S3 ·   │
+                │ Search · External APIs                 │
+                └───────────────────────────────────────┘
 ```
 
 ## Đọc gì trước
 
 1. [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md) + [12-store/store-and-brand.md](12-store/store-and-brand.md): **định hướng hiện hành** — một cửa hàng, một website, một giao diện, brand là thuộc tính catalog (code còn theo mô hình đa brand cũ cho tới slice 12).
 2. [00-overview/status.md](00-overview/status.md): cái gì **đã có code**, cái gì mới chỉ là thiết kế.
-3. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.
-4. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): ranh giới giữa Core và Plugin.
+3. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): **bốn vòng** microkernel — cái gì vào Core, cái gì là plugin.
+4. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.
 5. [04-extension/extension-model.md](04-extension/extension-model.md): khi nào dùng Contract, Event, Hook.
 
 ## Dùng tài liệu nào khi nào

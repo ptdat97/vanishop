@@ -2,7 +2,13 @@
 
 > Trạng thái: **Partially Implemented**. Đã có: `Hook` (filter/action/collect/slot), registry `hooks.php`, strict mode, public/internal, cô lập lỗi ở slot, listener gắn với plugin và chỉ chạy khi plugin active, **kiểm tra kiểu trả về của filter** (strict: exception; production: bỏ kết quả sai + log), **đo thời gian listener theo hook × plugin** (`HookManager::timings()`, log cảnh báo khi > 50 ms), contract test suite (17 bộ). Chưa có: xuất metric `hook_duration_ms` ra hệ thống giám sát, slot storefront (chờ theme, [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)). Quyết định: [ADR-004](../19-adr/ADR-004-extension-points.md). Chữ ký chính xác cho người viết plugin: [05-plugin/contracts](../05-plugin/contracts/README.md).
 
-Extension Points là **API quan trọng nhất của VaniShop**: nhờ chúng mà nghiệp vụ mới được xây ngoài Core ([commerce-kernel](../02-architecture/commerce-kernel.md)). Danh mục cụ thể: [extension-point-catalog](extension-point-catalog.md).
+Extension Points là **API quan trọng nhất của VaniShop**: VaniShop là một microkernel thương mại ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)), nghiệp vụ — kể cả mặc định COD, phí ship, VAT — được xây ngoài Core qua extension point ([commerce-kernel](../02-architecture/commerce-kernel.md)). Danh mục cụ thể: [extension-point-catalog](extension-point-catalog.md); extension point còn thiếu theo plugin dự kiến: [§7 của catalog](extension-point-catalog.md).
+
+| Ai cung cấp extension point | Ở đâu | Ai dùng |
+|---|---|---|
+| Microkernel (vòng 0) | `Extension`: registry tag, hook bus, `onEvent`, registry Admin/route/settings/schedule | Core, plugin |
+| Commerce Core (vòng 1) | `modules/<Ctx>/Contracts`, `Events`, `hooks.php` | Plugin hệ thống, plugin nghiệp vụ |
+| Plugin (vòng 2–3) | `Plugin\<Name>\Contracts`, `Events`, `custom/plugin/<Name>/hooks.php` (Designed) | Plugin khác, khai báo `requires.plugins` |
 
 ## 1. Bốn cơ chế
 
@@ -130,6 +136,7 @@ Extension point public được đánh version theo **SemVer của Core**:
 | Đổi tên, xoá, đổi kiểu tham số, **thêm method vào extension contract**, đổi ngữ nghĩa | **Major** (giai đoạn `0.x`: tăng số giữa), sau khi đã `@deprecated` ít nhất 1 minor |
 | Sửa internal | Bất kỳ lúc nào |
 
+- Extension contract có thể khai báo `REQUIRED` (`at_least_one`/`exactly_one`): Core từ chối tắt implementation cuối cùng (Designed, [commerce-kernel §5](../02-architecture/commerce-kernel.md)).
 - Plugin khai báo `requires.vanishop: "^1.2"`. Loader từ chối bật plugin không tương thích ([plugin-system](../05-plugin/plugin-system.md)).
 - Deprecation được log (`vani.deprecation`) khi plugin dùng điểm đã deprecated.
 - [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).

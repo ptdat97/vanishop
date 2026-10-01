@@ -55,6 +55,8 @@ custom/plugin/<Name>/                 # namespace Plugin\<Name>\
 | `vani:plugin:install <id>` | Chưa cài; deps/conflict/`requires.vanishop` đạt | Chạy migration trong `Database/migrations` → `installed`. Migration lỗi → `failed` + `last_error` |
 | `vani:plugin:enable <id>` | Không `failed`; deps đã bật | → `enabled`, audit. (Code hiện còn `--scope` + `plugin_scopes`, bỏ ở slice 12) |
 | `vani:plugin:disable <id>` | Không còn plugin phụ thuộc đang bật | → `disabled`. **Không đụng dữ liệu** |
+| `vani:plugin:upgrade <id>` | Version manifest > version đã cài; tương thích Core/deps | Chạy migration mới, cập nhật version; `failed` → `installed` nếu thành công; audit |
+| `vani:plugin:doctor [--json]` | — | Báo version chờ nâng, migration chờ, plugin lỗi, thiếu manifest/provider, không tương thích; exit 1 khi có lỗi |
 | `vani:plugin:uninstall <id> [--purge]` | Đã tắt; không còn plugin phụ thuộc đã cài | Mặc định **giữ bảng**. `--purge`: chạy `down()` theo thứ tự ngược |
 
 Sau mỗi thay đổi trạng thái: dựng lại `bootstrap/cache/vanishop-plugins.php`, xoá cache trạng thái bật (`vani:plugins:enabled-scopes`). Plugin `installed`/`disabled` vẫn được `register()` (để route Admin cấu hình, webhook chạy được) nhưng listener/implementation **không có hiệu lực**. Plugin `failed` không được nạp.
@@ -114,6 +116,6 @@ MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; s
 
 ## Giới hạn hiện tại
 
-- `vani:plugin:upgrade`, `vani:plugin:doctor`: Designed. Tăng version plugin hiện phải cài lại.
+- Manifest `bundled` (plugin hệ thống) và kiểm tra extension point bắt buộc khi tắt/gỡ: Designed ([ADR-029](../../19-adr/ADR-029-commerce-microkernel.md)).
 - Code hiện còn bật plugin theo scope `owner`/`brand`/`channel`; gỡ ở slice 12 ([store-and-brand §6](../../12-store/store-and-brand.md)).
 - Plugin có sẵn (`VietQr`, `Ghn`) vẫn đọc cấu hình từ `Config/*.php` + `.env`; chỉ `vani.sms-brandname` đọc qua `Settings`.

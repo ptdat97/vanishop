@@ -40,13 +40,15 @@ Shared → Tenancy → Brand → Channel → Identity → Extension
 → Payment → Checkout → Fulfillment → Returns → Notification → Integration → Storefront
 ```
 
+Vòng theo [commerce-kernel §1](commerce-kernel.md): Shared, Tenancy, Identity, Extension = **vòng 0** (microkernel); module thương mại = **vòng 1**; plugin = vòng 2–3. Hiện Identity và Extension còn dùng contract của Brand/Channel (phạm vi brand) — hết khi xong slice 12 (R29).
+
 | Nhóm | Module | Vai trò |
 |---|---|---|
-| Nền tảng | Shared, Tenancy, Brand, Channel, Identity | Money, context/scope, settings theo scope, brand/kênh, nhân viên + RBAC + audit |
-| Microkernel | **Extension** | Hook registry, plugin loader, lifecycle, kích hoạt theo scope, registry implementation (`Extensions`) |
-| Thương mại | Catalog, Pricing, Inventory, Cart, Promotion, Ordering, Customer, Payment, Checkout, Fulfillment, Returns | Primitives + invariants |
-| Khung dùng chung | Notification, Integration | Extension point + primitive cho nhiều plugin |
-| Tầng ghép | Storefront | Ghép dữ liệu từ contract của nhiều module cho bề mặt khách, không có bảng |
+| Vòng 0 — nền tảng | Shared, Tenancy, Identity (+ Brand, Channel của mô hình cũ) | Money, context, settings, nhân viên + RBAC + audit |
+| Vòng 0 — microkernel | **Extension** | Hook registry, plugin loader, lifecycle, kích hoạt theo scope, registry implementation (`Extensions`) |
+| Vòng 1 — thương mại | Catalog, Pricing, Inventory, Cart, Promotion, Ordering, Customer, Payment, Checkout, Fulfillment, Returns | Primitives + invariants |
+| Vòng 1 — khung dùng chung | Notification, Integration | Extension point + primitive cho nhiều plugin |
+| Vòng 1 — tầng ghép | Storefront | Ghép dữ liệu từ contract của nhiều module cho bề mặt khách, không có bảng |
 
 `Extension` nạp plugin **trong `register()`** (`PluginLoader::load()`), nên provider của plugin được boot **cùng vòng** với module Core, sau khi mọi module đã đăng ký binding. Chi tiết: [request-lifecycle §1](request-lifecycle.md).
 
