@@ -1,6 +1,6 @@
 # ADR-019 — Một domain chung, storefront brand theo đường dẫn
 
-- Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner
+- Trạng thái: **Superseded by [ADR-028](ADR-028-single-store-brand-as-catalog.md)** (2026-10-01) · Ngày: 2026-09-28 · Người quyết định: Owner
 
 ## Context
 Mỗi brand cần storefront riêng (giao diện, catalog, giá, khuyến mãi), nhưng Owner muốn toàn bộ chạy trên **một domain chung**.

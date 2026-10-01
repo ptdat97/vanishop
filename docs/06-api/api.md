@@ -6,8 +6,8 @@
 
 | Nhóm | Prefix | Người dùng | Xác thực |
 |---|---|---|---|
-| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Kênh xác định qua header `X-Vani-Channel` (mã kênh, **bắt buộc**); ngôn ngữ = locale của kênh, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách: Sanctum token / session cookie |
-| **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Sanctum token của nhân viên + RBAC theo scope |
+| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Một cửa hàng: **không** cần header kênh ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md); code hiện còn bắt `X-Vani-Channel`, bỏ ở slice 12); header tuỳ chọn `X-Vani-Source` (`web`/`app`/`zalo`) ghi nguồn đơn; ngôn ngữ mặc định `vi`, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách: Sanctum token / session cookie |
+| **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Sanctum token của nhân viên + RBAC (permission) |
 | **Integration API** | `/api/integration/v1` và `/api/integrations/{system}/webhooks` | Integration Client (ERP, POS, ODO khi có), hãng VC, cổng TT | Client credentials (API key + secret, HMAC chữ ký), IP allowlist tuỳ hệ thống |
 
 Đặc tả mỗi nhóm viết bằng **OpenAPI 3.1** trong `docs/06-api/openapi/*.yaml`, tạo **cùng lúc** với code của endpoint (không viết trước, để tránh lệch với implementation).
@@ -24,7 +24,7 @@
 - Versioning theo URL (`v1`); thay đổi phá vỡ → `v2`, giữ `v1` tối thiểu 6 tháng.
 - **Idempotency**: request tạo tài nguyên (đặt hàng, hoàn tiền, tạo shipment) nhận header `Idempotency-Key`; lưu kết quả 24h.
 - Rate limit: storefront theo IP + token; admin theo nhân viên; integration theo client (header `X-RateLimit-*`, vượt thì `429`).
-- **Authorization** hai lớp: scope của token (integration) hoặc permission (admin) + **data scope** (brand/legal entity/location) + **ownership** dữ liệu (integration, [erp-integration](../11-integration/erp-integration.md)).
+- **Authorization** hai lớp: scope của token (integration) hoặc permission (admin) + **data scope** (location, khi cần) + **ownership** dữ liệu (integration, [erp-integration](../11-integration/erp-integration.md)).
 
 ### Định dạng lỗi
 
@@ -45,8 +45,9 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/categories`, `/categories/{slug}` | Cây danh mục đang hiển thị của các brand trong kênh (**Implemented**) |
-| GET | `/products?q=&category=&collection=&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
+| GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng (**Implemented**, code hiện lọc theo brand của kênh) |
+| GET | `/brands`, `/brands/{slug}` | Danh sách brand đang hiện, chi tiết brand (logo, mô tả, SEO). Designed (slice 12) |
+| GET | `/products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`; `brand` + `meta.facets.brands`: Designed). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
 | GET | `/products/{slug}` | Chi tiết style: tên, mô tả, hướng dẫn bảo quản, SEO, breadcrumb, thuộc tính spec, màu + ảnh. **Implemented**, gồm `variants[].price`, `variants[].available`, `variants[].low_stock`, `price` (khoảng giá), `in_stock`. Danh sách `/products` có `price` và `in_stock`. Không trả số tồn chính xác |
 | GET | `/catalog/products/{slug}/store-availability?province=` | Tồn theo cửa hàng (mức độ, không số chính xác) |
 | POST | `/carts` | Tạo giỏ → `201`, `data` (giỏ) + `meta.token` (chỉ trả một lần). Rate limit 30/phút/IP. **Implemented** |
@@ -63,7 +64,7 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 
 Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác minh chữ ký; trùng/cũ không làm lùi trạng thái; rate limit 600/phút/IP). **Implemented**.
 | POST | `/auth/otp/request` (`phone`, `purpose` ∈ `login`/`delete_account` → `202 {channel, expires_in}`), `/auth/otp/verify` (`phone`, `code`, `device?`, `cart_id?` + `X-Vani-Cart-Token` để gộp giỏ), `/auth/login` (`phone`, `password`), `/auth/logout` | Đăng nhập; trả `data` (khách) + `meta.token` (Bearer, một lần — [ADR-024](../19-adr/ADR-024-customer-api-token.md)). Lỗi `customer.otp_invalid` 422, `customer.otp_rate_limited` 429, `customer.otp_unavailable` 422, `customer.invalid_credentials` 401, `customer.unauthenticated` 401. Rate limit 20/phút/IP. **Implemented** |
-| GET/PATCH | `/me` (+ `PUT /me/password`, `GET /me/export`, `POST /me/delete` với OTP `delete_account`), `/me/addresses` (CRUD, tối đa 20), `/me/consents` (`PUT {brand_id, channel, purpose, granted}`), `/me/orders` (+ `/{id}`, `/{id}/cancel`), `/me/cart` | Tài khoản, header `Authorization: Bearer`. **Implemented**. Giỏ/checkout nhận Bearer tuỳ chọn: giỏ của khách không cần `X-Vani-Cart-Token` |
+| GET/PATCH | `/me` (+ `PUT /me/password`, `GET /me/export`, `POST /me/delete` với OTP `delete_account`), `/me/addresses` (CRUD, tối đa 20), `/me/consents` (`PUT {channel, purpose, granted}`; code hiện còn `brand_id`), `/me/orders` (+ `/{id}`, `/{id}/cancel`), `/me/cart` | Tài khoản, header `Authorization: Bearer`. **Implemented**. Giỏ/checkout nhận Bearer tuỳ chọn: giỏ của khách không cần `X-Vani-Cart-Token` |
 | GET | `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản (plugin) |
 | POST | `/orders/{id}/returns` | Khách gửi yêu cầu đổi/trả (`lines[{order_line_id, quantity}]`, `reason_code` ∈ `vanishop.returns.reasons`, `note`), header `X-Vani-Order-Token`. Lỗi `return.not_eligible` (chưa giao / quá hạn), `return.quantity_exceeded`. Đơn trả về có `returns[]` và `returnable{lines{order_line_id: số còn trả được}, deadline}`. **Implemented** |
 | POST | `/orders/{id}/returns/{returnId}/cancel` | Khách huỷ yêu cầu còn chờ duyệt. **Implemented** |
@@ -78,12 +79,12 @@ Admin UI (Inertia) dùng route web + controller cùng Application layer. Admin A
 
 | Nhóm | Tài nguyên |
 |---|---|
-| Catalog | `styles`, `variants`, `categories`, `collections`, `attributes`, `media`, `imports` |
+| Catalog | `brands`, `styles`, `variants`, `categories`, `collections`, `attributes`, `media`, `imports` |
 | Pricing | `price-lists`, `prices` |
 | Inventory | `locations`, `stock-levels` (đọc + `adjustments` có lý do), `transfers`, `reconciliations` |
 | Order | `orders` (+ `transitions`, `notes`, `shipments`, `refunds`), `returns` |
 | Customer | `customers` (+ `merge`, `consents`), `customer-groups` |
-| Brand/Channel | `legal-entities`, `brands`, `channels`, `domains`, `settings` |
+| Cửa hàng | `store` (thông tin cửa hàng + pháp nhân vận hành), `settings`; brand nằm ở Catalog: `brands` |
 | Promotion | `promotions`, `vouchers` (+ `generate`) |
 | Plugin | `plugins` (+ `enable`, `disable`, `settings`) |
 | Integration | `integration/clients`, `integration/keys`, `integration/subscriptions`, `integration/messages` (xem/replay), `integration/mappings` |
@@ -91,7 +92,7 @@ Admin UI (Inertia) dùng route web + controller cùng Application layer. Admin A
 
 Plugin thêm tài nguyên riêng dưới `/api/admin/v1/plugins/{code}/…`.
 
-Mọi endpoint Admin kiểm tra **Policy** + phạm vi brand của nhân viên ([security](../15-security/security.md)).
+Mọi endpoint Admin kiểm tra **Policy** + permission của nhân viên ([security](../15-security/security.md)).
 
 ## 5. Integration API
 
@@ -133,5 +134,5 @@ Request tới `/api/integration/v1` (Implemented, slice 11) dùng cùng định 
 
 ## 7. Kiểm thử API
 
-- Mỗi endpoint có Feature test (Pest) cho: thành công, validation, phân quyền/phạm vi brand, idempotency (nếu có).
+- Mỗi endpoint có Feature test (Pest) cho: thành công, validation, phân quyền, idempotency (nếu có).
 - Contract test cho Integration API dựa trên JSON Schema của từng `event_type`.

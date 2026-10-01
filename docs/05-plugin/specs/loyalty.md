@@ -16,13 +16,12 @@
 
 | Thành phần | Thiết kế |
 |---|---|
-| **Hạng** | Member → Silver → Gold → Diamond, xét theo tổng chi tiêu 12 tháng **toàn tập đoàn** |
-| **Tích điểm** | Tỷ lệ cấu hình theo brand (ví dụ 1 điểm/10.000 ₫), nhân hệ số theo hạng/campaign |
+| **Hạng** | Member → Silver → Gold → Diamond, xét theo tổng chi tiêu 12 tháng **toàn cửa hàng** |
+| **Tích điểm** | Tỷ lệ cấu hình cho cửa hàng (ví dụ 1 điểm/10.000 ₫), có thể nhân hệ số theo brand/danh mục, nhân hệ số theo hạng/campaign |
 | **Trạng thái điểm** | `pending` khi đặt hàng → `available` khi hết hạn đổi trả → `expired` |
 | **Đổi điểm** | Trừ tiền khi checkout (1 điểm = N ₫) hoặc đổi voucher; giới hạn % giá trị đơn |
 | **Sổ điểm** | `plg_loyalty_ledger` append-only (earn/redeem/expire/adjust/revert); số dư tính từ ledger, có bảng snapshot để đọc nhanh |
 | **Omnichannel** | Mua tại cửa hàng (qua POS/ERP) cũng tích điểm nếu có SĐT |
-| **Chi phí liên brand** | Tích ở brand A, đổi ở brand B → báo cáo phân bổ chi phí |
 | **Quyền lợi hạng** | Freeship, bảng giá `member`, quà sinh nhật, early access |
 
 ## Invariant của plugin

@@ -47,7 +47,7 @@ flowchart LR
 | `code`, `name`, `status` | `erp-main`, `odo`, `pos-kiotviet`; `active`/`suspended` |
 | Keys | `integration_client_keys(client_id, key_id, secret_hash, created_at, expires_at, revoked_at)`; cho phép **2 key song song** để xoay vòng |
 | `scopes` | `orders:read`, `orders.fulfillment:write`, `inventory:write`, `catalog.items:write`, `customers:read`… |
-| Data scope | Brand / pháp nhân / location được thấy |
+| Data scope | Location được thấy (khi đối tác chỉ quản một kho/cửa hàng). Code hiện có data scope brand — gỡ ở slice 12 |
 | `ip_allowlist`, `rate_limit` | Tuỳ chọn; mặc định 600 req/phút |
 
 ## 4. Integration API (mô hình A)
@@ -164,7 +164,7 @@ Kết quả ghi vào `integration_reconciliations`, có báo cáo chênh lệch 
 
 | Chủ đề | Triển khai |
 |---|---|
-| Event feed | Bảng `integration_events` (append-only, `id` là cursor của `GET /events`). `IntegrationEvents::publish()` ghi feed **và** fan-out outbox (webhook subscription khớp loại + data scope brand, connector `supports()`) trong một transaction |
+| Event feed | Bảng `integration_events` (append-only, `id` là cursor của `GET /events`). `IntegrationEvents::publish()` ghi feed **và** fan-out outbox (webhook subscription khớp loại, connector `supports()`) trong một transaction |
 | Nguồn event | Domain event của Core là `ShouldDispatchAfterCommit`, nên bridge (`PublishDomainEvents`) ghi feed ngay **sau** commit nghiệp vụ, không cùng transaction. Khe hở (tiến trình chết giữa commit và ghi feed) được bù bằng đối soát đơn ↔ feed hằng giờ (`vani:integration:reconcile-orders`: đơn đổi trong 25h, bỏ 5 phút gần nhất; thiếu `order.created`/`order.confirmed`/`order.cancelled` theo trạng thái → phát bù với `reconciled: true`, event bù có thể đến sau event kế tiếp của cùng đơn). Event thanh toán/đổi trả/giao hàng chưa được đối soát. Bridge đăng ký ở `register()` để chạy trước listener của module khác — giữ `order.created` trước `order.confirmed` khi COD tự xác nhận |
 | Aggregate | Mọi event hiện có (`order.*`, `payment.*`, `return.*`, `shipment.status_changed`) dùng aggregate = số đơn, nên đối tác nhận đúng thứ tự trong một đơn |
 | Envelope | Như [api §5.1](../06-api/api.md), thêm `aggregate: {type, id}` |
@@ -177,4 +177,4 @@ Kết quả ghi vào `integration_reconciliations`, có báo cáo chênh lệch 
 | Scope | `events:read`, `orders:read`, `orders:write` (acknowledgements), `inventory:write` |
 | Ownership | Chưa có `integration_ownerships`. Authority tồn vật lý lấy từ `locations.stock_authority` = mã client |
 | Worker | `vani:integration:dispatch` / `vani:integration:process-inbox`: scheduler chạy mỗi phút (dự phòng); production chạy `--work` dưới supervisor/Horizon |
-| Connector | Extension point `Modules\Integration\Contracts\Connector` (tag `vani.integration.connectors`, có hiệu lực theo brand bật plugin) và `InboundHandler` (tag `vani.integration.inbound`) — thay cho `translateInbound()` trong §6. Circuit breaker theo connector (cache dùng chung giữa worker): mở sau `circuit_threshold` (5) lỗi retryable/exception liên tiếp, message hoãn tới hết `circuit_cooldown` (60s) mà không tăng `attempts`; lỗi vĩnh viễn không tính. Webhook không dùng breaker (đã có cơ chế `paused`) |
+| Connector | Extension point `Modules\Integration\Contracts\Connector` (tag `vani.integration.connectors`, có hiệu lực khi plugin bật) và `InboundHandler` (tag `vani.integration.inbound`) — thay cho `translateInbound()` trong §6. Circuit breaker theo connector (cache dùng chung giữa worker): mở sau `circuit_threshold` (5) lỗi retryable/exception liên tiếp, message hoãn tới hết `circuit_cooldown` (60s) mà không tăng `attempts`; lỗi vĩnh viễn không tính. Webhook không dùng breaker (đã có cơ chế `paused`) |

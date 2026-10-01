@@ -36,7 +36,7 @@ Các điểm sau **không có** extension point, và sẽ không bao giờ có:
 - Bảng chuyển trạng thái đơn, thanh toán, fulfillment. Plugin chỉ **yêu cầu** chuyển qua `OrderTransitions`.
 - Công thức ATS và logic khoá reservation. Plugin chỉ điều chỉnh qua `InventoryStrategy`, và kết quả luôn ≤ công thức gốc.
 - Kiểu `Money`, làm tròn cuối cùng của tổng đơn.
-- Kiểm tra phạm vi brand/scope, xác thực, chữ ký webhook.
+- Kiểm tra quyền, xác thực, chữ ký webhook.
 - Nội dung snapshot đơn sau khi tạo.
 - Ghi ledger (movement, audit, order events) theo kiểu append-only.
 

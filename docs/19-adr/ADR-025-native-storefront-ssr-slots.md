@@ -1,6 +1,6 @@
 # ADR-025 — Native storefront: SSR-first, JS tăng cường cục bộ, slot UI chỉ nối thêm
 
-- Trạng thái: Accepted · Ngày: 2026-09-30 · Bổ sung cho [ADR-009](ADR-009-storefront-architecture.md), [ADR-021](ADR-021-storefront-composition-module.md) · Nghiên cứu: [reference-comparison](../02-architecture/reference-comparison.md) L2, L3
+- Trạng thái: Accepted · Ngày: 2026-09-30 · **Sửa đổi bởi [ADR-028](ADR-028-single-store-brand-as-catalog.md)**: "theme brand" đọc là theme đang hoạt động của cửa hàng · Bổ sung cho [ADR-009](ADR-009-storefront-architecture.md), [ADR-021](ADR-021-storefront-composition-module.md) · Nghiên cứu: [reference-comparison](../02-architecture/reference-comparison.md) L2, L3
 
 ## Context
 ADR-009 chốt storefront native là Blade SSR + Alpine, dùng chung Application layer với Storefront API. Chưa chốt: JS được làm đến đâu, plugin chèn UI vào theme bằng cách nào, và khi slot không đủ thì làm gì. Hệ tham chiếu cho thấy ba điều: (1) SSR + JS cục bộ cho SEO và trang vẫn dùng được khi JS lỗi; (2) theme có sẵn nhiều điểm chèn UI giúp plugin thêm giao diện không cần sửa view; (3) lối thoát "viết lại HTML của view bất kỳ lúc render" làm plugin phụ thuộc vào cấu trúc HTML, dễ vỡ.

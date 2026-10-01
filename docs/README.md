@@ -1,8 +1,8 @@
 # VaniShop — Tài liệu kiến trúc
 
-> **VaniShop** là một **Commerce Kernel** xây trên Laravel theo kiểu Modular Monolith + DDD + API-first + Plugin Architecture. Nền tảng phục vụ single/multi-brand, multi-channel, fashion commerce, headless, ERP integration, và cho phép thêm nghiệp vụ mới (marketplace, creator, loyalty…) **bằng plugin, không fork Core**.
+> **VaniShop** là một **Commerce Kernel** xây trên Laravel theo kiểu Modular Monolith + DDD + API-first + Plugin Architecture. Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, marketplace, creator…) **bằng plugin, không fork Core**.
 >
-> Chủ sở hữu: 1 Owner (1 tập đoàn) với nhiều thương hiệu thời trang, thị trường Việt Nam. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
+> Chủ sở hữu: 1 Owner vận hành 1 website bán hàng tại Việt Nam; các thương hiệu thời trang của Owner là thuộc tính sản phẩm (trang brand, bộ lọc brand), không phải storefront riêng. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
 
 ```text
                     ┌─────────────────────┐
@@ -29,10 +29,11 @@
 
 ## Đọc gì trước
 
-1. [00-overview/status.md](00-overview/status.md): cái gì **đã có code**, cái gì mới chỉ là thiết kế.
-2. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.
-3. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): ranh giới giữa Core và Plugin.
-4. [04-extension/extension-model.md](04-extension/extension-model.md): khi nào dùng Contract, Event, Hook.
+1. [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md) + [12-store/store-and-brand.md](12-store/store-and-brand.md): **định hướng hiện hành** — một cửa hàng, một website, một giao diện, brand là thuộc tính catalog (code còn theo mô hình đa brand cũ cho tới slice 12).
+2. [00-overview/status.md](00-overview/status.md): cái gì **đã có code**, cái gì mới chỉ là thiết kế.
+3. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.
+4. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): ranh giới giữa Core và Plugin.
+5. [04-extension/extension-model.md](04-extension/extension-model.md): khi nào dùng Contract, Event, Hook.
 
 ## Dùng tài liệu nào khi nào
 
@@ -40,6 +41,7 @@
 |---|---|
 | Mới vào dự án, cần mental model | [overview](02-architecture/overview.md) → [system-map](02-architecture/system-map.md) |
 | Cần biết **hệ thống đang là gì** ở mức mã nguồn (bề mặt, module, middleware, lịch chạy) | [system-map](02-architecture/system-map.md), [request-lifecycle](02-architecture/request-lifecycle.md) |
+| Mô hình cửa hàng, brand, lộ trình gỡ đa brand | [store-and-brand](12-store/store-and-brand.md) |
 | Muốn biết **vì sao** làm thế này | [19-adr](19-adr/README.md) |
 | Đang viết plugin, cần **chữ ký chính xác + checklist** | [05-plugin/contracts](05-plugin/contracts/README.md) |
 | Tra extension point / hook public | [extension-point-catalog](04-extension/extension-point-catalog.md), `php artisan vani:plugin:hooks` |
@@ -61,7 +63,7 @@
 | **09-order** | [order](09-order/order.md) · [fulfillment](09-order/fulfillment.md) |
 | **10-payment** | [payment](10-payment/payment.md) |
 | **11-integration** | [integration-platform](11-integration/integration-platform.md) · [erp-integration](11-integration/erp-integration.md) |
-| **12-multi-brand** | [multi-brand](12-multi-brand/multi-brand.md) |
+| **12-store** | [store-and-brand](12-store/store-and-brand.md) (mô hình một cửa hàng + lộ trình gỡ đa brand khỏi code) |
 | **13-marketplace** | [marketplace](13-marketplace/marketplace.md) · [creator-affiliate](13-marketplace/creator-affiliate.md) |
 | **14-storefront** | [storefront](14-storefront/storefront.md) |
 | **15-security** | [security](15-security/security.md) |

@@ -97,5 +97,5 @@ Tên header/trường là ví dụ; theo tài liệu của từng cổng. `hash_
 
 ## Giới hạn hiện tại
 
-- `vani.vietqr` đọc cấu hình từ `Config/vietqr.php` + `.env`, chưa theo brand qua `Settings`.
+- `vani.vietqr` đọc cấu hình từ `Config/vietqr.php` + `.env`, chưa chỉnh được trong Admin qua `Settings`.
 - Phê duyệt hoàn tiền 2 bước: chưa có.

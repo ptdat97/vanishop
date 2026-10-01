@@ -61,20 +61,20 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 
 ## 5. Cache
 
-- Cache theo khoá có **brand/channel** trong tên: `ch:{channel}:product:{style}:v{version}`.
+- Cache theo khoá có version: `product:{style}:v{version}`, `brand:{id}:v{version}`.
 - Invalidate theo event (sản phẩm, giá, tồn) — dùng version key thay vì xoá hàng loạt.
 - Trang public (home, PLP, PDP) cache ở CDN ngắn (60–300s) + `stale-while-revalidate`; phần giá/tồn động tải qua API nếu cần độ chính xác cao.
 
 ## 6. Giám sát & cảnh báo
 
-Xem [observability](../16-observability/observability.md) (log, metric, tracing, ngưỡng cảnh báo). Thêm synthetic check mỗi 5 phút cho: trang chủ, PDP, thêm giỏ, checkout COD trên brand sandbox.
+Xem [observability](../16-observability/observability.md) (log, metric, tracing, ngưỡng cảnh báo). Thêm synthetic check mỗi 5 phút cho: trang chủ, PDP, thêm giỏ, checkout COD với sản phẩm sandbox.
 
 ## 7. Triển khai (CI/CD)
 
 1. PR → CI theo [testing §8](../17-testing/testing.md), build asset.
 2. Merge `main` → deploy staging tự động → smoke test.
 3. Release tag → deploy production **zero-downtime** (migrate an toàn, `php artisan optimize`, reload worker).
-4. Feature flag (Laravel Pennant) cho tính năng lớn, bật theo brand.
+4. Feature flag (Laravel Pennant) cho tính năng lớn, bật theo nhóm khách/phần trăm lưu lượng.
 5. Rollback: giữ artifact 5 bản gần nhất; migration theo expand/contract để rollback code không cần rollback DB.
 
 ## 8. Sao lưu & khôi phục

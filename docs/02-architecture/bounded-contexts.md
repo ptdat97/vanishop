@@ -1,30 +1,28 @@
 # Bounded Contexts
 
-> Trạng thái: **Designed**.
+> Trạng thái: **Designed**. Định hướng một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): context **Brand** và **Channel** bị gỡ, brand chuyển vào **Catalog**. Code hiện vẫn có hai module này cho tới slice 12 ([store-and-brand §6](../12-store/store-and-brand.md)).
 
 ## 1. Danh sách context
 
 | Context | Sở hữu (dữ liệu, quy tắc) | Không sở hữu | Contract công bố chính |
 |---|---|---|---|
 | **Shared** | `Money`, `Currency`, `Phone`, `Address` VO, `CurrentContext`, địa giới hành chính VN, `CorrelationId` | Nghiệp vụ | — (kernel dùng chung) |
-| **Tenancy** | Owner, Legal Entity, settings theo scope (owner → legal entity → brand → channel) | Nội dung brand | `SettingsRepository`, `TenancyDirectory` |
-| **Brand** | Danh tính brand, logo, theme tokens, cấu hình brand, quyền sở hữu sản phẩm | Kênh bán, đơn hàng | `BrandDirectory` |
-| **Channel** | Kênh bán, domain, locale, currency, brand trong kênh, gán bảng giá, gán location | Giá, tồn | `ChannelResolver`, `ChannelDirectory` |
-| **Identity & Access** | Nhân viên, vai trò, permission theo scope, audit log | Khách hàng | `Authorizer`, `AuditLogger` |
+| **Tenancy** (cửa hàng) | Thông tin cửa hàng + pháp nhân vận hành, theme tokens cấp cửa hàng, settings một cấp | Catalog | `Settings`, `LegalEntityDirectory` |
+| **Identity & Access** | Nhân viên, vai trò, permission (toàn cửa hàng; scope `location` Designed), audit log | Khách hàng | `Authorizer`, `AuditLogger` |
 | **Extension** | Hook registry, plugin loader, manifest, trạng thái plugin, settings schema | Nghiệp vụ plugin | `Hook`, `PluginRegistry` |
-| **Catalog** | Style, style color, variant/SKU, thuộc tính, danh mục, bộ sưu tập, media, nội dung | Giá, tồn | `CatalogReader` |
+| **Catalog** | **Brand**, style, style color, variant/SKU, thuộc tính, danh mục, bộ sưu tập, media, nội dung | Giá, tồn | `CatalogReader`, `VariantDirectory` |
 | **Pricing** | Bảng giá, giá theo variant, lịch giá, lịch sử giá, `PricingStrategy` | Khuyến mãi | `PriceResolver` |
 | **Inventory** | Location, stock level, reservation, movement/ledger, ATS | Chọn kho cho đơn (thuộc Fulfillment) | `InventoryReservation`, `InventoryAdjuster`, `AvailabilityReader` |
 | **Customer** | Tài khoản hợp nhất, địa chỉ, nhóm khách, consent, xác thực khách | Loyalty | `CustomerDirectory` |
 | **Cart** | Giỏ, dòng giỏ, gộp giỏ, snapshot giá khi thêm | Tính tổng cuối cùng | `Carts` |
 | **Checkout** | Phiên checkout, totals pipeline, `PlaceOrder` (điều phối) | Đơn sau khi tạo | `TotalsCalculator` (extension), `CheckoutValidator` (extension) |
 | **Promotion** | Framework khuyến mãi: context, rule/action contract, đánh giá, stacking, ghi nhận sử dụng | Rule cụ thể (thuộc plugin) | `PromotionRule`, `PromotionAction` |
-| **Ordering** | Order, order line (snapshot), state machine, sự kiện đơn, order group | Thanh toán, giao hàng | `OrderWriter` (**Implemented**), `OrderReader`, `OrderTransitions` |
+| **Ordering** | Order, order line (snapshot, gồm brand), state machine, sự kiện đơn, nguồn đơn | Thanh toán, giao hàng | `OrderWriter` (**Implemented**), `OrderReader`, `OrderTransitions` |
 | **Payment** | Payment, transaction, refund, khung gateway, COD, chuyển khoản thủ công | Đối soát COD chi tiết (plugin) | `PaymentGateway` (extension), `PaymentRecorder` |
 | **Fulfillment** | Shipment, sourcing, fulfillment method, carrier abstraction, vận đơn thủ công | Tồn | `ShippingCarrier`, `SourcingStrategy`, `FulfillmentMethod`, `ShipmentRecorder` |
 | **Returns** | Yêu cầu đổi/trả, kiểm hàng, quyết định hoàn | Hoàn tiền (gọi Payment) | `ReturnPolicy` |
 | **Content** | Trang, menu, banner, page builder, redirect | Theme | `StorefrontBlock` |
-| **Notification** | Template theo brand/event/kênh, gửi tin, nhật ký gửi | Nội dung marketing | `NotificationChannel` |
+| **Notification** | Template theo loại tin × kênh gửi × locale, gửi tin, nhật ký gửi | Nội dung marketing | `NotificationChannel` |
 | **Reporting** | Read model báo cáo, dashboard | Dữ liệu gốc | `DashboardWidget` |
 | **Integration** | Integration Client, API, webhook, outbox/inbox, mapping, ownership, connector framework | Nghiệp vụ domain | `Connector`, `IntegrationOutbox`, `ErpConnector` |
 | **Storefront** | Không có dữ liệu riêng: ghép Catalog + Pricing (+ Inventory, Promotion…) cho Storefront API và native storefront ([ADR-021](../19-adr/ADR-021-storefront-composition-module.md)) | Mọi dữ liệu nghiệp vụ | `ProductViews` (nội bộ) |
@@ -34,11 +32,10 @@
 ```mermaid
 flowchart TB
     subgraph Kernel nền tảng
-      SH[Shared] --- TN[Tenancy] --- BR[Brand] --- CH[Channel]
+      SH[Shared] --- TN[Tenancy]
       ID[Identity] --- EX[Extension] --- IN[Integration]
     end
     CAT[Catalog] --> PR[Pricing]
-    CH --> PR
     CAT --> INV[Inventory]
     CART[Cart] --> CAT & PR & INV
     CO[Checkout] --> CART & PROMO[Promotion] & INV & CU[Customer]
@@ -116,7 +113,7 @@ Http ──► Application ──► Domain
 | Mức | Context | Cách làm |
 |---|---|---|
 | **Rich domain** | Inventory, Checkout (totals), Ordering (state machine), Payment, Pricing, Promotion | Quy tắc nằm trong `Domain/` thuần PHP, test unit không cần DB. Eloquent chỉ lưu trữ |
-| **CRUD domain** | Content, Notification (template), Brand/Channel config, thuộc tính Catalog | Application dùng Eloquent trực tiếp qua Persistence; vẫn không có logic trong Controller |
+| **CRUD domain** | Content, Notification (template), cấu hình cửa hàng, brand và thuộc tính Catalog | Application dùng Eloquent trực tiếp qua Persistence; vẫn không có logic trong Controller |
 
 ## 5. Đăng ký module
 
@@ -125,7 +122,7 @@ Http ──► Application ──► Domain
 ```php
 // config/modules.php
 return [
-    'Shared', 'Tenancy', 'Brand', 'Channel', 'Identity', 'Extension', 'Integration',
+    'Shared', 'Tenancy', 'Identity', 'Extension', 'Integration',     // Brand, Channel: gỡ ở slice 12
     'Catalog', 'Pricing', 'Inventory', 'Customer', 'Cart', 'Promotion', 'Checkout',
     'Ordering', 'Payment', 'Fulfillment', 'Returns', 'Content', 'Notification', 'Reporting',
 ];

@@ -24,7 +24,7 @@ Request → Command → Domain Event → Outbox → Worker → Connector → Ext
 
 ## 3. Logs
 
-- JSON có cấu trúc, mỗi dòng có `timestamp`, `level`, `correlation_id`, `channel_code`, `brand_id`, `actor`, `module`, `plugin` (nếu có), `message`, `context`.
+- JSON có cấu trúc, mỗi dòng có `timestamp`, `level`, `correlation_id`, `source` (nguồn đơn khi có), `actor`, `module`, `plugin` (nếu có), `message`, `context`.
 - **Không log PII thô và secret**: SĐT, email, địa chỉ bị che (`09*****123`); token và chữ ký bị loại bỏ.
 - Kênh log: `app`, `security` (đăng nhập, sai chữ ký, từ chối quyền), `integration`, `audit` (lưu DB, không phải file), `vani.deprecation`.
 - Log tập trung lưu tại VN ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)), giữ 30 ngày nóng + 180 ngày lạnh.
@@ -34,7 +34,7 @@ Request → Command → Domain Event → Outbox → Worker → Connector → Ext
 | Nhóm | Metric |
 |---|---|
 | HTTP | `http_requests_total{route,status}`, `http_request_duration_seconds{route}` |
-| Nghiệp vụ | `orders_placed_total{brand,channel,payment}`, `checkout_failures_total{reason}`, `payment_success_ratio{gateway}`, `stock_insufficient_total` |
+| Nghiệp vụ | `orders_placed_total{source,payment}`, `checkout_failures_total{reason}`, `payment_success_ratio{gateway}`, `stock_insufficient_total` |
 | Inventory | `reservations_active`, `reservations_expired_total`, `inventory_sync_lag_seconds{authority}` |
 | Integration | `integration_outbox_pending{target}`, `integration_delivery_seconds{target}`, `integration_dead_total{target}` |
 | Queue | `queue_jobs_waiting{queue}`, `queue_job_duration_seconds{job}`, `failed_jobs_total` |

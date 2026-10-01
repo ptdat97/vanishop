@@ -29,7 +29,8 @@ Sau khi tạo, đơn giữ **snapshot** và không phụ thuộc dữ liệu cat
 | Địa chỉ, người nhận | `orders.shipping_address` (JSON) |
 | Khách hàng | `orders.customer_id` + `customer_snapshot` (tên, SĐT, email lúc đặt) |
 | Vận chuyển | `orders.shipping_method` (carrier, dịch vụ, phí) |
-| Pháp nhân, brand, channel, tiền tệ | Cột trên `orders` |
+| Brand của sản phẩm | `order_lines.brand_id` + `brand_name` (snapshot, Designed — slice 12) |
+| Nguồn đơn, tiền tệ | `orders.source` (`web`/`app`/`zalo`/`admin`/`pos`/`marketplace`), `currency_code`. Code hiện còn `brand_id`, `channel_id`, `legal_entity_id` trên `orders` — gỡ ở slice 12 ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 
 **Được thay đổi sau khi tạo** (luôn có `order_events`): trạng thái (qua state machine); địa chỉ giao **trước khi** fulfillment bắt đầu (lệnh `ChangeShippingAddress`, snapshot cũ lưu trong event); ghi chú; `meta` của plugin.
 
@@ -77,13 +78,13 @@ interface OrderTransitions   // public contract — cổng duy nhất để đ�
 
 Đơn thanh toán online ở `pending` + `unpaid` quá TTL (mặc định 15 phút, theo gateway) → job `ExpireUnpaidOrders` chuyển `cancelled` (reason `payment_timeout`) → `OrderCancelled` → giải phóng reservation. IPN đến muộn sau khi đã huỷ → ghi nhận payment, tự động tạo refund và cảnh báo CSKH.
 
-## 4. Order Group (kênh đa brand)
+## 4. Một đơn cho nhiều brand
 
-Một lần checkout trên kênh đa brand tạo `order_groups` (mã hiển thị cho khách) và **N đơn con theo brand/pháp nhân**. Mỗi đơn con có hoá đơn, fulfillment, đối soát riêng. Giảm giá cấp group được phân bổ về đơn con theo tỷ lệ giá trị ([multi-brand](../12-multi-brand/multi-brand.md)).
+Một giỏ chứa sản phẩm của nhiều brand tạo **một đơn** (một pháp nhân bán, một hoá đơn, một lần thanh toán). Không có order group ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Báo cáo theo brand đọc từ snapshot trên dòng đơn.
 
 ## 5. Số đơn
 
-`<BRAND_PREFIX><yymm>-<seq 6 số>`, ví dụ `LM2609-000123`. Sinh từ `number_sequences(scope, period, last_value)` với `FOR UPDATE` trong transaction `PlaceOrder`.
+`<PREFIX><yymm>-<seq 6 số>`, một dãy cho cả cửa hàng; tiền tố cấu hình (mặc định `VN`), ví dụ `VN2610-000123`. Code hiện dùng tiền tố theo brand — đổi ở slice 12. Sinh từ `number_sequences(scope, period, last_value)` với `FOR UPDATE` trong transaction `PlaceOrder`.
 
 ## 6. Domain events
 

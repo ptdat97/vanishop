@@ -8,7 +8,8 @@ Không nhúng logic Creator vào Checkout Core. Attribution **độc lập với
 
 ```
 plg_creator_creators(id, code, name, status, payout_account_encrypted, commission_plan_id)
-plg_creator_campaigns(id, creator_id NULL, brand_id, code, starts_at, ends_at, commission_rules json)
+plg_creator_campaigns(id, creator_id NULL, brand_id NULL, code,   -- brand_id: giới hạn chiến dịch cho sản phẩm của một brand catalog
+                       starts_at, ends_at, commission_rules json)
 plg_creator_links(id, campaign_id, creator_id, slug UNIQUE, target_url)
 plg_creator_touches(id, session_id, customer_id NULL, creator_id, campaign_id, link_id, source, touched_at)
 plg_creator_attributions(id, order_id, order_line_id NULL, creator_id, campaign_id, touch_id, model[last_click], weight_bp)

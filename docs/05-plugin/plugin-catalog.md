@@ -28,11 +28,11 @@ Mục tiêu: chứng minh **thêm capability thật mà không sửa Commerce Co
 | `vani.sms-brandname` | `custom/plugin/SmsBrandname` | `NotificationChannel` (`sms`) + `OtpSender` | SMS brandname qua eSMS: brandname theo brand, nội dung bỏ dấu, `RequestId` idempotent, phân loại lỗi thử lại/vĩnh viễn |
 | `vani.zalo-zns` | `custom/plugin/ZaloZns` | `NotificationChannel` (`zns`) + `OtpSender` | ZNS theo template đã duyệt (tham số render từ biến), tự làm mới access token (refresh token xoay vòng), OTP ưu tiên ZNS rồi dự phòng SMS |
 
-Cả ba đều chạy bộ contract test của Core (`PaymentGatewayContract`, `ShippingCarrierContract`) và chỉ đóng góp implementation cho extension point trong phạm vi (`owner`/`brand`) mà plugin được bật.
+Cả ba đều chạy bộ contract test của Core (`PaymentGatewayContract`, `ShippingCarrierContract`) và chỉ đóng góp implementation cho extension point khi plugin được bật.
 
 ## 3. Danh mục theo nhóm
 
-Đợt: **P1** = cần để go-live brand đầu tiên · **P2** · **P3** · **Later**.
+Đợt: **P1** = cần để go-live cửa hàng · **P2** · **P3** · **Later**.
 Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 
 ### Thanh toán
@@ -55,7 +55,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | Plugin | Contract / điểm mở rộng | Đợt |
 |---|---|---|
 | `vani.promotion-rules` ✅ | `PromotionRule`, `PromotionAction` | P1 |
-| `vani.promotion-advanced` (BxGy, combo, quà tặng, flash sale, cross-brand) | `PromotionRule`, `PromotionAction` | P3 |
+| `vani.promotion-advanced` (BxGy, combo, quà tặng, flash sale, mua kèm khác brand) | `PromotionRule`, `PromotionAction` | P3 |
 | `vani.cod-risk-guard` | `CheckoutValidator`, filter `vani.checkout.payment_methods` | P2 |
 | `vani.abandoned-cart` | Event `CartAbandoned`, `NotificationChannel` | P2 |
 | `vani.wishlist` | Storefront route, events `AvailabilityChanged`, `PriceChanged` | P2 |
@@ -69,7 +69,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 |---|---|---|
 | `vani.store-omnichannel` ([spec](specs/store-omnichannel.md)) | `FulfillmentMethod`, `SourcingStrategy` | P2 |
 | `vani.advanced-sourcing` | `SourcingStrategy` | P3 |
-| `vani.channel-allocation` | `InventoryStrategy` | P3 |
+| `vani.marketplace-allocation` (chừa tồn cho sàn TMĐT) | `InventoryStrategy` | P3 |
 
 ### Hoá đơn & thông báo
 | Plugin | Contract | Đợt |
@@ -79,12 +79,12 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.zalo-zns` ✅, `vani.sms-brandname` ✅ | `NotificationChannel`, `OtpSender` | P1 |
 | `vani.webpush` | `NotificationChannel` | P3 |
 
-### Kênh bán, marketing, tìm kiếm
+### Sàn TMĐT, marketing, tìm kiếm
 | Plugin | Contract | Đợt |
 |---|---|---|
 | `vani.tracking-pixels` (GA4, Meta, TikTok) | Slot storefront, events đơn | P1 |
 | `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
-| `vani.shopee`, `vani.lazada`, `vani.tiktokshop` | `Connector`, channel type `marketplace` | P3 |
+| `vani.shopee`, `vani.lazada`, `vani.tiktokshop` | `Connector`, đơn kéo về có `source = marketplace` | P3 |
 | `vani.search-meilisearch` ✅ | `SearchProvider` + `ConfigurableSearchIndex` | P1 (tách từ Core 2026-10-14) |
 | `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
 | `vani.recommendation` | Hook listing, `StorefrontBlock` | Later |

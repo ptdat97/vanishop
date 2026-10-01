@@ -1,6 +1,6 @@
 # ADR-008 — Multi-brand Model
 
-- Trạng thái: Accepted · Ngày: 2026-09-28
+- Trạng thái: **Superseded by [ADR-028](ADR-028-single-store-brand-as-catalog.md)** (2026-10-01) · Ngày: 2026-09-28
 
 ## Context
 Một Owner, nhiều pháp nhân, nhiều brand; kênh bán có thể một brand hoặc nhiều brand; khách hàng và tồn dùng chung.
@@ -10,7 +10,7 @@ Nhầm Brand với Channel/Store/Category làm hỏng mô hình giá, đơn, ho�
 
 ## Decision
 - **Owner → Legal Entity → Brand**; **Channel** là thực thể độc lập chứa 1..N brand; **Location** thuộc pháp nhân, phục vụ 1..N brand.
-- Context riêng: Tenancy, Brand, Channel ([multi-brand](../12-multi-brand/multi-brand.md)).
+- Context riêng: Tenancy, Brand, Channel ([multi-brand](../12-store/store-and-brand.md)).
 - **Một database**, cô lập bằng `brand_id` + Policy + global scope + `CurrentContext` bắt buộc.
 - Product/Cart/Checkout/Order/Payment vẫn thuộc Commerce Core; brand chỉ là phạm vi.
 

@@ -1,6 +1,6 @@
 # ADR-009 — Storefront Architecture
 
-- Trạng thái: Accepted · Ngày: 2026-09-28
+- Trạng thái: Accepted · Ngày: 2026-09-28 · **Sửa đổi bởi [ADR-028](ADR-028-single-store-brand-as-catalog.md)**: một giao diện cho cả cửa hàng, không theme/tokens theo brand
 
 ## Context
 Cần storefront SEO tốt cho nhiều brand, đồng thời hỗ trợ headless/mobile/Zalo Mini App.

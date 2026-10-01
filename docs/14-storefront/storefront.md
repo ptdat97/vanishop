@@ -1,6 +1,6 @@
 # Storefront
 
-> Trạng thái: **Designed** cho native storefront (tầng ghép + Storefront API: Implemented). Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md).
+> Trạng thái: **Designed** cho native storefront (tầng ghép + Storefront API: Implemented). Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc
 
@@ -23,18 +23,21 @@ Native Storefront (Blade SSR + Alpine, theme custom/theme/*)
 
 Nhờ vậy native và headless có cùng hành vi: giá, ATS, khuyến mãi, validation đều tính ở một nơi.
 
-## 2. Tuỳ biến theo brand, không fork
+## 2. Một giao diện, tuỳ biến không fork
+
+Cửa hàng có **một theme đang hoạt động** (cấu hình `theme`, mặc định `vani-base`). Brand **không** có theme riêng; brand hiện diện qua trang brand, logo, bộ lọc ([store-and-brand §2](../12-store/store-and-brand.md)).
 
 | Lớp tuỳ biến | Lưu ở | Ai chỉnh |
 |---|---|---|
-| **Theme tokens** (màu, font, radius, spacing, shadow) | `brands.theme_tokens` (JSON) → CSS variables → Tailwind 4 `@theme` | Brand Manager |
-| **Brand config** (logo, hotline, chính sách, footer pháp lý) | Settings scope brand | Brand Manager |
+| **Theme tokens** (màu, font, radius, spacing, shadow) | Setting cửa hàng `theme.tokens` (JSON) → CSS variables → Tailwind 4 `@theme` | Quản trị |
+| **Thông tin cửa hàng** (logo, hotline, chính sách, footer pháp lý của pháp nhân vận hành) | Settings cửa hàng | Quản trị |
+| **Brand** (logo, mô tả, banner trang brand, thứ tự hiển thị) | Catalog `brands` | Merchandiser |
 | **Collection config** (bộ sưu tập, sắp xếp, ghim) | Catalog | Merchandiser |
-| **Content** (trang, banner, menu) | Content | Merchandiser |
-| **Layout / Blocks** (page builder) | `page_blocks` JSON theo channel | Merchandiser |
-| **Components** (override view có chọn lọc) | `custom/theme/<brand-theme>/` | Dev |
+| **Content** (trang, banner, menu — menu có thể có mục "Thương hiệu") | Content | Merchandiser |
+| **Layout / Blocks** (page builder, gồm block "lưới thương hiệu") | `page_blocks` JSON | Merchandiser |
+| **Components** (override view có chọn lọc) | Theme con `custom/theme/<store-theme>/` (`parent: vani-base`) | Dev |
 
-View fallback: `custom/theme/<channel-theme>` → `custom/theme/vani-base` → view mặc định của module. Một theme brand chỉ override **ít file**; phần còn lại kế thừa `vani-base`.
+View fallback: theme đang hoạt động → `custom/theme/vani-base` → view mặc định của module. Theme con chỉ override **ít file**.
 
 ```
 custom/theme/vani-base/
@@ -53,17 +56,20 @@ custom/theme/vani-base/
 | JSON bridge | Dữ liệu cho Alpine render sẵn bằng `@js`/`data-*` từ DTO của Presenter; không gọi API lấy lại thứ server đã có. Phần cá nhân hoá (giỏ, giá thành viên) tải qua Storefront API sau khi trang hiện |
 | Không ẩn nội dung SSR chờ JS | Chống nhảy layout bằng kích thước cố định/skeleton CSS, không `display:none` rồi chờ JS bật lại |
 | Slot UI | `<x-vani::hook-slot name="vani.storefront.pdp.after_price" :product="$product" />` render các view component do plugin trả về theo priority; chỉ nối thêm; lỗi một listener bị bỏ qua. Danh mục: [extension-point-catalog §4.1](../04-extension/extension-point-catalog.md) |
-| Thay khối | Override view trong `custom/theme/<brand-theme>/` (fallback `vani-base` → module). Không có cơ chế viết lại HTML lúc render |
+| Thay khối | Override view trong theme con của cửa hàng (fallback `vani-base` → module). Không có cơ chế viết lại HTML lúc render |
 | Không logic trong view | Blade chỉ render DTO; không query, không tính giá/tồn/khuyến mãi (R10) |
 
 Luồng một trang PDP:
 
 ```text
-GET /{brand-path}/san-pham/{slug}
-  → web + vani.channel (path prefix → kênh/brand) → controller Storefront
-  → ProductViews (CatalogReader + PriceResolver + AvailabilityReader) → DTO
-  → Blade (theme brand → vani-base) + slot UI (Hook::slot) + JSON bridge cho Alpine
-  → HTML (cache CDN theo kênh; giỏ/giá thành viên tải sau qua /api/storefront/v1)
+GET /san-pham/{slug}
+  → web → controller Storefront
+  → ProductViews (CatalogReader + PriceResolver + AvailabilityReader) → DTO (gồm brand: tên, slug, logo)
+  → Blade (theme đang hoạt động → vani-base) + slot UI (Hook::slot) + JSON bridge cho Alpine
+  → HTML (cache CDN; giỏ/giá thành viên tải sau qua /api/storefront/v1)
+
+GET /thuong-hieu/{slug}
+  → ProductViews::search(brand = slug, lọc tiếp danh mục/màu/size/giá) → trang brand (logo, mô tả, lưới sản phẩm)
 ```
 
 ## 4. Block (page builder)
@@ -73,25 +79,26 @@ interface StorefrontBlock
 {
     public function type(): string;               // 'hero', 'product_grid', 'collection_carousel', 'rich_text'
     public function schema(): array;              // JSON Schema cho Admin editor
-    public function resolve(array $config, ChannelData $channel): BlockViewData;  // lấy dữ liệu qua Query
+    public function resolve(array $config): BlockViewData;  // lấy dữ liệu qua Query
     public function view(): string;               // Blade view (theme có thể override)
 }
 ```
 
-Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendation).
+Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendation).
 
 ## 5. Hiệu năng và SEO
 
 - SSR cho trang public, cache CDN 60–300s + `stale-while-revalidate`; phần cá nhân hoá (giỏ, giá thành viên) tải qua API sau khi trang hiện.
-- Cache ứng dụng có khoá theo channel: `ch:{channel}:style:{id}:v{version}`; invalidate theo event (`ProductUpdated`, `PriceChanged`, `AvailabilityChanged`).
-- URL: một domain chung, mỗi brand một đường dẫn (`vani.vn/lumiere/…`), [multi-brand §5](../12-multi-brand/multi-brand.md). Mọi link và route storefront sinh kèm `path_prefix` của channel hiện tại.
-- SEO: canonical theo đường dẫn brand, sitemap mỗi brand + sitemap index ở gốc, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
+- Cache ứng dụng: `style:{id}:v{version}`, `brand:{id}:v{version}`; invalidate theo event (`ProductUpdated`, `PriceChanged`, `AvailabilityChanged`).
+- URL: một website ([store-and-brand §4](../12-store/store-and-brand.md)): `/san-pham/{slug}`, `/danh-muc/{slug}`, `/thuong-hieu/{slug}`…
+- SEO: một canonical cho mỗi sản phẩm (không lặp theo brand), một sitemap (chia file khi lớn, gồm trang brand), schema.org `Product`/`Offer` có `brand`, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
 - Mục tiêu: LCP mobile < 2,5s, CLS < 0,1.
 
 ## 6. Kiểm thử
 
 - Arch test: namespace controller storefront không dùng `Persistence`/`Domain` (chỉ dùng Application).
 - Test snapshot HTML tối thiểu cho các trang chính; E2E luồng mua ([testing](../17-testing/testing.md)).
-- Test theme fallback: theme brand thiếu view thì dùng view của `vani-base`.
+- Test theme fallback: theme con thiếu view thì dùng view của `vani-base`.
+- Test trang brand: chỉ hiện sản phẩm của brand; brand ẩn → 404.
 - Test trang chính với JS tắt: nội dung, giá, nút thêm giỏ (form POST dự phòng) vẫn hiển thị.
-- Test slot: listener plugin ném lỗi → trang vẫn render, phần tử khác vẫn có; plugin tắt trong scope → không hiện.
+- Test slot: listener plugin ném lỗi → trang vẫn render, phần tử khác vẫn có; plugin tắt → không hiện.

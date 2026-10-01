@@ -1,10 +1,12 @@
 # Danh mục Extension Points (public API v1)
 
 > Trạng thái: **Designed**. Bảng này là **nguồn duy nhất** liệt kê extension point public. Thêm/đổi phải theo [compatibility policy](extension-model.md).
+>
+> **Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)** (một cửa hàng): plugin bật/tắt toàn cửa hàng; tham số kênh/brand-phạm vi trên contract (`PriceResolver`, `AvailabilityReader`, `ChannelDirectory`, `CurrentContext`) và `brandId` trên event sẽ bị gỡ/deprecated ở slice 12 (Core `0.3.0`, ghi [CHANGELOG-extension](CHANGELOG-extension.md)). Các dòng dưới đây mô tả API hiện tại.
 
 ## 1. Contract: capability thay thế được
 
-Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` — **mọi tag là hằng `TAG` trên interface trong `Contracts`** (arch test chặn định nghĩa tag ở tầng khác; hằng cũ trong `Application` còn làm alias `@deprecated`). Registry của Core lọc theo trạng thái bật của plugin trong scope hiện tại (brand/channel/legal entity).
+Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` — **mọi tag là hằng `TAG` trên interface trong `Contracts`** (arch test chặn định nghĩa tag ở tầng khác; hằng cũ trong `Application` còn làm alias `@deprecated`). Registry của Core lọc theo trạng thái bật của plugin (hiện theo scope owner/brand/channel; sau slice 12: bật/tắt toàn cửa hàng).
 
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|
@@ -16,7 +18,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `TaxCalculator` | `vani.tax.calculators` | Checkout | `vn_vat_inclusive` (**Implemented**, chọn bằng `VANI_TAX_CALCULATOR`) | [cart-checkout](../03-domains/cart-checkout.md) |
 | `TotalsCalculator` | `vani.totals.calculators` | Checkout | subtotal (100), promotion (200), shipping (500), tax (800), guard (900); plugin dùng 300–399. **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
-| `CheckoutValidator` | `vani.checkout.validators` | Checkout | `core` (giỏ, một brand, liên hệ, địa chỉ, giao hàng, thanh toán). **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
+| `CheckoutValidator` | `vani.checkout.validators` | Checkout | `core` (giỏ, một brand — bỏ ở slice 12, liên hệ, địa chỉ, giao hàng, thanh toán). **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
 | `ShippingRateProvider` | `vani.checkout.shipping_providers` | Checkout | `FlatRateShipping` (**Implemented**; carrier thật: slice 9) | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PromotionRule` | `vani.promotion.rules` | Promotion | — (rule do plugin cung cấp). **Implemented** (rule chưa đăng ký → khuyến mãi bị bỏ qua + log) | [promotion](../03-domains/promotion.md) |
 | `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive). **Implemented** | [promotion](../03-domains/promotion.md) |
@@ -36,9 +38,9 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 
 | Contract | Chức năng | Context |
 |---|---|---|
-| `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant) theo phạm vi brand. **Implemented** | Catalog |
+| `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant) (hiện lọc theo brand của kênh; sau slice 12: toàn cửa hàng, thêm danh sách/chi tiết brand). **Implemented** | Catalog |
 | `VariantDirectory` | Tra variant (theo mã style, theo id) cho module khác. **Implemented** | Catalog |
-| `ChannelDirectory` | Kênh bán của một brand. **Implemented** | Channel |
+| `ChannelDirectory` | Kênh bán của một brand. **Implemented**, sẽ gỡ cùng module Channel (slice 12) | Channel |
 | `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
 | `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) — hiện là service nội bộ `StockAdjustmentService`, chưa công bố contract (chờ Integration) | Inventory |
@@ -55,14 +57,14 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
-| `Settings` | Đọc/ghi cấu hình theo scope (kênh → brand → pháp nhân → owner), khai báo định nghĩa. **Implemented** | Tenancy |
+| `Settings` | Đọc/ghi cấu hình, khai báo định nghĩa. **Implemented** (hiện kế thừa kênh → brand → pháp nhân → owner; sau slice 12: một cấp cửa hàng) | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
-| `CurrentContext` | Brand/channel/locale/actor hiện tại; `runAs()` | Shared |
+| `CurrentContext` | Locale/actor hiện tại; `runAs()` (brand/channel: bỏ ở slice 12) | Shared |
 | `Authorizer` | Kiểm tra quyền theo scope | Identity |
 
 ## 3. Domain Events
 
-Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Events`. Event gắn với đơn/brand mang `brandId` (thêm vào `Payment*`, `Refund*`, `Shipment*`, `Return*` ngày 2026-10-13) để plugin nghe qua `PluginServiceProvider::onEvent()` theo phạm vi bật; event cấp Owner (Customer, tồn kho, giỏ) chỉ tới plugin bật ở owner.
+Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Events`. Plugin nghe qua `PluginServiceProvider::onEvent()`. Hiện event gắn với đơn mang `brandId` để lọc theo phạm vi bật plugin; sau slice 12 plugin bật toàn cửa hàng nên `brandId` thành `@deprecated` (không còn dùng để lọc).
 
 | Context | Events |
 |---|---|
@@ -84,7 +86,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 |---|---|---|---|
 | `vani.catalog.listing.query` | filter | không | Sửa truy vấn danh sách sản phẩm (merchandising); tham số/kết quả `ProductSearchQuery`, sai kiểu bị bỏ qua. **Implemented** (0.3) |
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
-| `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của brand); tham số `ProductDraft`. **Implemented** |
+| `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của cửa hàng); tham số `ProductDraft`. **Implemented** |
 | `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `(styleId, brandId)`. **Implemented** |
 | `vani.cart.validate_line` | validate | có (khoá giỏ; không I/O mạng) | Chặn thêm/tăng dòng giỏ (giới hạn mua mỗi khách, hàng chỉ bán tại cửa hàng…); tham số `CartLineDraft` (số lượng sau thay đổi). **Implemented** |
 | `vani.checkout.payment_methods` | filter | có (khi đặt hàng) | Ẩn/hiện phương thức thanh toán; tham số `(methods, Totals)`. **Implemented** |

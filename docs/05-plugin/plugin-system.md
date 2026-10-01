@@ -48,7 +48,6 @@ custom/plugin/VietQr/
     "plugins": {}
   },
   "conflicts": [],
-  "scopes": ["legal_entity", "brand", "channel"],
   "permissions": ["payments.write"],
   "settings_schema": "settings-schema.json",
   "author": "VaniShop Team"
@@ -64,7 +63,7 @@ custom/plugin/VietQr/
 | `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver) |
 | `requires.plugins` | | `{ "vani.einvoice": "^1.0" }` |
 | `conflicts` | | Danh sách plugin id không được bật cùng lúc |
-| `scopes` | | Phạm vi được bật/cấu hình |
+| `scopes` | | **Deprecated** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader hiện vẫn đọc |
 | `permissions` | | Quyền plugin cần; hiển thị khi cài |
 | `settings_schema` | | JSON Schema cấu hình |
 
@@ -94,7 +93,7 @@ stateDiagram-v2
 
 Lưu trữ: `plugins(id, version, status, installed_at, last_error)`, `plugin_scopes(plugin_id, scope_type, scope_id, enabled)`. Danh sách provider cần nạp (theo thứ tự phụ thuộc) được cache vào `bootstrap/cache/vanishop-plugins.php` (cấu hình `VANI_PLUGINS_CACHE`) mỗi khi trạng thái plugin thay đổi, để lúc boot không phải truy vấn DB.
 
-Scope đã hỗ trợ: `owner`, `brand`, `channel` (**Implemented**). `legal_entity`: Designed.
+Scope trong code hiện tại: `owner`, `brand`, `channel`. Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), plugin chỉ còn **bật/tắt toàn cửa hàng**; `plugin_scopes` và tham số `--scope` gỡ ở slice 12.
 
 Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:plugins:enabled-scopes`, xoá mỗi khi install/enable/disable/failed) nên request/job không truy vấn `plugins`/`plugin_scopes`. Production nhiều server phải dùng store dùng chung (`database`/`redis`), không dùng `file`/`array`. Trong một request/job, danh sách implementation có hiệu lực của mỗi tag được ghi nhớ theo phạm vi.
 
@@ -105,7 +104,7 @@ Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:pl
 ```bash
 php artisan vani:plugin:list                      # id, version, trạng thái, scope, tương thích
 php artisan vani:plugin:install vani.vietqr       # kiểm tra deps → chạy migration → installed
-php artisan vani:plugin:enable vani.vietqr --scope=brand:lumiere
+php artisan vani:plugin:enable vani.vietqr        # (--scope chỉ còn trong code cũ, bỏ ở slice 12)
 php artisan vani:plugin:disable vani.vietqr [--scope=...]
 php artisan vani:plugin:uninstall vani.vietqr [--purge]   # --purge: rollback migration, xoá bảng plg_*
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
@@ -150,7 +149,7 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `pluginId()` (abstract) | Implemented | Trùng `id` trong manifest |
 | `pluginPath($path)` | Implemented | Đường dẫn trong thư mục plugin |
 | `onFilter` / `onAction` / `onValidate` / `onSlot` | Implemented | Nghe hook public, chỉ chạy khi plugin active |
-| `onEvent($event, $handler)` | Implemented (2026-10-13) | Nghe domain event: chỉ chạy khi plugin bật cho `brandId` của event (event cấp Owner: cần bật ở owner), chạy trong phạm vi brand đó; lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
+| `onEvent($event, $handler)` | Implemented (2026-10-13) | Nghe domain event: chỉ chạy khi plugin đang bật (code hiện còn lọc theo `brandId` của event — bỏ ở slice 12); lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
 | `adminMenu($key, $label, $route, $permission, $order)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active |
 | `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
 | `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |

@@ -2,6 +2,8 @@
 
 > Trạng thái: **Partially Implemented**, mô tả code đang có. Kiểm chứng từ `bootstrap/app.php`, `bootstrap/providers.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/Extension/ExtensionServiceProvider.php`, `PluginServiceProvider`, provider của Payment/Fulfillment/Integration/Storefront/Channel/Customer. Bản đồ thành phần: [system-map](system-map.md).
 
+> **Định hướng mới ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: một cửa hàng, brand là thuộc tính catalog. Tài liệu này mô tả **code hiện tại** (vẫn có module Brand/Channel, brand workspace, `X-Vani-Channel`); các phần đó sẽ gỡ ở slice 12 ([store-and-brand §6](../12-store/store-and-brand.md)).
+
 ## 1. Khởi động (boot)
 
 ```text
@@ -51,7 +53,7 @@ bootstrap/providers.php
 | Callback thanh toán | `api` → `throttle:payment-callbacks`; `/api/payments/{gateway}/callback` | 600/phút/IP | Không |
 | Webhook vận chuyển | `api` → `throttle:shipping-webhooks`; `/api/shipping/{carrier}/webhook` | 600/phút/IP | Không |
 | Webhook của plugin (`webhookRoutes`) | `api`; `/api/integrations/{slug}/…` | Plugin tự đặt | Không |
-| Storefront native | Designed: `web` → `vani.channel` (khớp path prefix dài nhất, ADR-019) → phiên khách | Designed | Có |
+| Storefront native | Designed: `web` → phiên khách (một website, không xác định kênh/brand theo URL) | Designed | Có |
 
 Nhóm `api` không có phiên và CSRF, nên callback/webhook không cần "loại trừ CSRF"; bù lại **bắt buộc xác minh chữ ký** ở plugin ([payment-gateway](../05-plugin/contracts/payment-gateway.md), [shipping-carrier](../05-plugin/contracts/shipping-carrier.md)).
 

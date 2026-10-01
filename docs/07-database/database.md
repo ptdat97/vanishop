@@ -1,6 +1,6 @@
 # Database
 
-> Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension, Catalog, Pricing, Inventory (trừ transfer/reconciliation), Cart, Promotion, Ordering (orders, order_lines, order_adjustments, order_events), Shared (`idempotency_keys`, `number_sequences`) ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md).
+> Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension, Catalog, Pricing, Inventory (trừ transfer/reconciliation), Cart, Promotion, Ordering (orders, order_lines, order_adjustments, order_events), Shared (`idempotency_keys`, `number_sequences`) ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md). Schema dưới đây theo định hướng một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); migration hiện có vẫn mang `brand_id`/`channel_id` phạm vi và các bảng Brand/Channel cũ — gỡ theo [store-and-brand §6](../12-store/store-and-brand.md).
 
 ## 1. Quy ước
 
@@ -18,7 +18,7 @@
 | Soft delete | Chỉ cho Catalog (style), Content, cấu hình. **Không** cho order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
 | Optimistic lock | Cột `lock_version INT` trên aggregate được sửa qua Admin: `styles`, `price_lists`, `promotions`, `orders`, `shipments`, `payments`, `locations` |
 | Pessimistic lock | `SELECT … FOR UPDATE` cho `stock_levels`, `vouchers`, `number_sequences`, `carts` (khi checkout), `payments` (khi IPN/refund) |
-| Phạm vi | Bảng thuộc brand có `brand_id NOT NULL` + index |
+| Phạm vi | Không có cột phạm vi brand/kênh: mọi dữ liệu thuộc một cửa hàng. `brand_id` chỉ xuất hiện như **thuộc tính catalog** (`styles.brand_id`) và snapshot (`order_lines.brand_id`) |
 | Append-only | `stock_movements`, `order_events`, `payment_transactions`, `audit_logs`, `price_history`, `customer_consent_events`, `shipment_events`, `integration_logs`, `integration_events` |
 
 ## 2. Invariant: DB enforce hay App enforce
@@ -40,7 +40,6 @@
 | Voucher không vượt lượt | `CHECK(used_count >= 0)` | `UPDATE … WHERE used_count < usage_limit` |
 | Số lượng dòng giỏ/đơn > 0 | `CHECK(quantity > 0)` | |
 | Tiền đơn không âm | `CHECK(total_amount >= 0)` | Guard totals pipeline |
-| Brand scope | `brand_id NOT NULL` | Policy + global scope |
 | Tổng thuế/giảm giá khớp các dòng | | Domain totals + test |
 | Ledger không sửa | (khuyến nghị) DB user ứng dụng không có quyền `UPDATE/DELETE` trên bảng ledger | Không có API |
 
@@ -50,10 +49,7 @@ Nguyên tắc: invariant **đơn bản ghi** (unique, not null, check) do DB enf
 
 ```mermaid
 erDiagram
-    LEGAL_ENTITIES ||--o{ BRANDS : has
-    CHANNELS }o--o{ BRANDS : sells
-    CHANNELS ||--o{ CHANNEL_DOMAINS : has
-    BRANDS ||--o{ STYLES : owns
+    BRANDS |o--o{ STYLES : brand_of
     STYLES ||--o{ STYLE_COLORS : has
     STYLE_COLORS ||--o{ VARIANTS : has
     PRICE_LISTS ||--o{ PRICES : contains
@@ -64,7 +60,6 @@ erDiagram
     ORDERS ||--o{ STOCK_RESERVATIONS : reserves
     CUSTOMERS ||--o{ ADDRESSES : has
     CARTS ||--o{ CART_LINES : has
-    ORDER_GROUPS ||--o{ ORDERS : splits
     ORDERS ||--o{ ORDER_LINES : has
     ORDERS ||--o{ ORDER_ADJUSTMENTS : has
     ORDERS ||--o{ ORDER_EVENTS : logs
@@ -83,18 +78,16 @@ erDiagram
 | Context | Bảng |
 |---|---|
 | Shared | `currencies`, `administrative_units`, `administrative_unit_mappings`, `idempotency_keys`, `number_sequences` |
-| Tenancy | `legal_entities`, `settings(scope_type, scope_id, key, value json, is_encrypted)` |
-| Brand | `brands(…, theme_tokens json, lock_version)` |
-| Channel | `channels`, `channel_domains`, `channel_brands`, `channel_price_lists`, `channel_locations` |
-| Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)`, `audit_logs` |
-| Extension | `plugins(id VARCHAR PK = plugin id)`, `plugin_scopes` |
-| Catalog | `styles(meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
+| Tenancy (cửa hàng) | `legal_entities` (một bản ghi: pháp nhân vận hành), `settings(key, value json, is_encrypted)` (một cấp; theme tokens là một setting) |
+| Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id, scope_type[owner|location], scope_id)`, `audit_logs` |
+| Extension | `plugins(id VARCHAR PK = plugin id, status)` (bật/tắt toàn cửa hàng; `plugin_scopes` bỏ ở slice 12) |
+| Catalog | `brands`, `brand_translations`, `styles(brand_id NULL, meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
-| Inventory | `locations`, `location_brands`, `stock_levels`, `stock_reservations`, `stock_movements`, `stock_transfers`, `stock_transfer_lines`, `inventory_reconciliations`, `inventory_reconciliation_lines` |
-| Customer | `customers(meta json)`, `customer_brand_profiles`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_group_customer` |
+| Inventory | `locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `stock_transfers`, `stock_transfer_lines`, `inventory_reconciliations`, `inventory_reconciliation_lines` |
+| Customer | `customers(meta json)`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_group_customer` |
 | Cart | `carts(meta json)`, `cart_lines` |
 | Promotion | `promotions`, `promotion_rules`, `promotion_actions`, `vouchers`, `promotion_usages` |
-| Ordering | `order_groups`, `orders(meta json)`, `order_lines(meta json)`, `order_adjustments`, `order_events`, `order_notes` |
+| Ordering | `orders(source, meta json)`, `order_lines(brand_id, brand_name, meta json)`, `order_adjustments`, `order_events`, `order_notes` |
 | Payment | `payments`, `payment_transactions`, `refunds` |
 | Fulfillment | `shipments`, `shipment_lines`, `shipment_events`, `shipping_rate_tables` |
 | Returns | `returns`, `return_lines`, `return_events` |
@@ -108,7 +101,7 @@ Bảng của plugin: xem README của từng plugin; ví dụ trong [marketplace
 
 | Bảng | Index |
 |---|---|
-| `orders` | `(channel_id, placed_at)`, `(customer_id, placed_at)`, `(order_status, fulfillment_status)`, unique `number`, unique `public_id` |
+| `orders` | `(placed_at)`, `(source, placed_at)`, `(customer_id, placed_at)`, `(order_status, fulfillment_status)`, unique `number`, unique `public_id` |
 | `stock_levels` | unique `(location_id, variant_id)`, `(variant_id)` |
 | `stock_reservations` | `(status, expires_at)`, `(order_id)` |
 | `integration_outbox` | `(status, next_attempt_at)`, `(aggregate_type, aggregate_id, created_at)` |

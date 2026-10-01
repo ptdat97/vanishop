@@ -75,7 +75,7 @@ $this->onEvent(OrderPlaced::class, AwardPendingPoints::class);   // class-string
 ```
 
 - Dispatch **sau commit**; payload là DTO bất biến trong `Modules\<Ctx>\Events`.
-- Chạy khi plugin bật cho `brandId` của event, trong phạm vi brand đó. Event không mang brand (khách hàng, tồn kho, giỏ) chỉ tới plugin bật ở `owner`.
+- Chạy khi plugin đang bật. (Code hiện còn lọc theo `brandId` của event; bỏ ở slice 12, [ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md).)
 - Lỗi được log, **không** làm hỏng flow gốc. Việc phải đảm bảo tới nơi (gửi ERP, webhook) đi qua Integration outbox, không gọi HTTP trực tiếp trong listener.
 - Handler phải idempotent (R18): event có thể tới lại qua replay/đối soát.
 

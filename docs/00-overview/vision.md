@@ -4,44 +4,44 @@
 
 ## 1. Bối cảnh
 
-Tập đoàn (**Owner**) sở hữu nhiều thương hiệu thời trang (ví dụ: một brand công sở nữ, một brand streetwear, một brand trẻ em, một brand phụ kiện). Hiện tại mỗi brand có thể đang:
+Owner kinh doanh thời trang với **nhiều thương hiệu** (ví dụ: công sở nữ, streetwear, trẻ em, phụ kiện). Hiện tại việc bán hàng có thể đang:
 
-- Bán qua website riêng dựng trên nền tảng khác nhau (Haravan, Sapo, WooCommerce…), dữ liệu phân mảnh.
-- Bán trên sàn (Shopee, Lazada, TikTok Shop) và chuỗi cửa hàng vật lý với POS riêng.
+- Rải trên nhiều website/nền tảng khác nhau (Haravan, Sapo, WooCommerce…), dữ liệu phân mảnh.
+- Bán thêm trên sàn (Shopee, Lazada, TikTok Shop) và cửa hàng vật lý với POS riêng.
 - Quản lý tồn kho, kế toán trên ERP; điều phối đơn/giao nhận trên **ODO**.
 
-Hệ quả: khách hàng bị tách theo brand, tồn kho không nhìn được toàn cục, khuyến mãi chéo brand khó làm, đối soát COD và hoá đơn thủ công.
+Hệ quả: khách hàng bị tách, tồn kho không nhìn được toàn cục, đối soát COD và hoá đơn thủ công.
 
 ## 2. Tầm nhìn
 
-> **Một nền tảng — nhiều thương hiệu — một khách hàng — một bức tranh tồn kho.**
+> **Một cửa hàng — một website — một giao diện — nhiều thương hiệu trong cùng catalog — một khách hàng — một bức tranh tồn kho.**
 
-VaniShop là một **Commerce Platform / Commerce Kernel** thuộc sở hữu của Owner. Nó không chỉ là một website bán hàng. Cùng một nền tảng phải phục vụ được:
+VaniShop là **Commerce Kernel** của Owner, chạy **một cửa hàng** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Thương hiệu là **nhóm sản phẩm** trong catalog: khách duyệt theo danh mục hoặc theo brand, cho sản phẩm của nhiều brand vào cùng một giỏ, thanh toán một lần.
 
-| Mô hình | Cách đáp ứng |
+| Nhu cầu | Cách đáp ứng |
 |---|---|
-| Single-brand, multi-brand, multi-channel | Core: Tenancy/Brand/Channel ([multi-brand](../12-multi-brand/multi-brand.md)) |
+| Một website, nhiều thương hiệu | Brand là thực thể Catalog: trang brand, bộ lọc, khuyến mãi theo brand ([store-and-brand](../12-store/store-and-brand.md)) |
 | Fashion commerce | Core: mô hình Style → Màu → Size ([catalog-pricing](../03-domains/catalog-pricing.md)) |
-| Native storefront và headless/API-first | Core: Storefront Application + API ([storefront](../14-storefront/storefront.md)) |
+| Native storefront và headless/API-first | Core: Storefront Application + API dùng chung catalog/giá/tồn ([storefront](../14-storefront/storefront.md)) |
 | ERP và tích hợp ngoài | Core: Integration platform; connector là plugin |
 | Marketplace/Seller, Creator/Affiliate | Plugin ([marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md)) |
-| Nghiệp vụ riêng của từng brand | Plugin qua Extension Points |
+| Nghiệp vụ riêng | Plugin qua Extension Points |
 
 > **Core cung cấp commerce primitives và business invariants. Capability đặc thù nghiệp vụ được xây ngoài Core qua Extension Points.** Mục tiêu cuối cùng: một Commerce Kernel ổn định, extension point rõ ràng, plugin phát triển độc lập, nâng cấp an toàn, không fork Core.
 
 Với Owner, điều đó có nghĩa là:
 
-- Mỗi brand có **storefront riêng** (giao diện, catalog, giá, khuyến mãi riêng), chạy trên **một lõi chung** và **một domain chung**, phân biệt bằng đường dẫn: `vani.vn/lumiere`, `vani.vn/urbanx` ([ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)).
-- Owner có **tài khoản khách hàng dùng chung** (single customer view), **loyalty chung**, báo cáo hợp nhất.
-- Tồn kho **đa điểm** (kho tổng, kho brand, cửa hàng) được đồng bộ gần thời gian thực với ERP/ODO.
-- Sẵn sàng **omnichannel**: BOPIS (mua online – nhận tại cửa hàng), ship-from-store, đổi trả chéo kênh.
-- **Mở rộng về sau**: thêm brand mới trong vài ngày, thêm kênh (sàn TMĐT, POS, app mobile) qua API/connector.
+- **Một website** trên một domain, **một giao diện** (theme `vani-base` hoặc theme con), một bộ cấu hình, một pháp nhân đứng tên bán hàng.
+- Thương hiệu có **trang riêng trong website** (`/thuong-hieu/{slug}`), logo, mô tả, bộ lọc; giá, khuyến mãi, tồn dùng chung cơ chế của cửa hàng.
+- **Một tài khoản khách hàng**, loyalty chung, báo cáo hợp nhất (lọc được theo brand).
+- Tồn kho **đa điểm** (kho tổng, cửa hàng) đồng bộ gần thời gian thực với ERP/ODO.
+- Sẵn sàng **omnichannel** bằng plugin: BOPIS, ship-from-store, sàn TMĐT, POS qua API/connector — đơn từ các nguồn này vào cùng luồng, ghi `source` để báo cáo.
 
 ## 3. Mục tiêu (Goals)
 
 | # | Mục tiêu | Đo lường |
 |---|---|---|
-| G1 | Vận hành N brand trên 1 nền tảng | Thêm brand mới (cấu hình + theme từ template) ≤ 5 ngày làm việc |
+| G1 | Một cửa hàng nhiều thương hiệu | Thêm brand mới = tạo brand trong Catalog + gán sản phẩm, không cần deploy, trong ngày |
 | G2 | Single customer view | 100% đơn web gắn với 1 hồ sơ khách hàng hợp nhất |
 | G3 | Tồn kho chính xác | Chênh lệch tồn web vs ERP < 0,5%; oversell < 0,1% đơn |
 | G4 | Tích hợp tự động qua module Integration | ≥ 99% message tới hệ thống ngoài (ERP, ODO khi có) không cần can thiệp tay; độ trễ P95 < 60 giây |
@@ -60,12 +60,12 @@ Với Owner, điều đó có nghĩa là:
 
 | Vai trò | Nhu cầu chính |
 |---|---|
-| Ban điều hành Owner | Báo cáo hợp nhất theo brand/kênh/cửa hàng, kiểm soát chi phí |
-| Brand Manager | Tự chủ catalog, giá, khuyến mãi, nội dung của brand mình |
+| Ban điều hành Owner | Báo cáo hợp nhất, lọc theo brand/danh mục/nguồn đơn/cửa hàng vật lý |
+| Quản lý ngành hàng | Catalog, giá, khuyến mãi, nội dung; theo dõi hiệu quả từng brand |
 | E-commerce / Merchandiser | Sắp xếp danh mục, bộ sưu tập, landing page, SEO |
-| CSKH | Tra cứu đơn/khách xuyên brand, xử lý đổi trả |
+| CSKH | Tra cứu đơn/khách, xử lý đổi trả |
 | Vận hành kho / ODO | Nhận đơn chuẩn hoá, trả trạng thái giao nhận (vai trò ODO tạm hoãn — [ADR-007](../19-adr/ADR-007-erp-integration.md)) |
-| Kế toán / ERP | Đối soát thanh toán, COD, hoá đơn điện tử, doanh thu theo pháp nhân |
+| Kế toán / ERP | Đối soát thanh toán, COD, hoá đơn điện tử, doanh thu (theo brand khi cần) |
 | Cửa hàng vật lý | Nhận đơn BOPIS, ship-from-store, đổi trả hàng mua online |
 | Khách hàng cuối | Mua nhanh trên mobile, thanh toán quen thuộc, theo dõi đơn, đổi trả dễ |
 | Đội IT | Hệ thống dễ bảo trì, test được, mở rộng được |
@@ -75,12 +75,12 @@ Với Owner, điều đó có nghĩa là:
 ```mermaid
 mindmap
   root((VaniShop))
-    Đa thương hiệu
-      Pháp nhân
-      Brand
-      Kênh bán
-      Domain & Theme
+    Cửa hàng
+      Pháp nhân vận hành
+      Một website
+      Một giao diện
     Catalog
+      Brand
       Style / Variant
       Thuộc tính màu-size
       Danh mục & Bộ sưu tập
@@ -117,7 +117,7 @@ mindmap
 ## 7. Nguyên tắc định hướng
 
 1. **Clean-room tuyệt đối**: không copy mã, schema, asset, file ngôn ngữ từ BeikeShop. Chỉ học ý tưởng ở mức khái niệm.
-2. **Brand-aware by default**: mọi dữ liệu nghiệp vụ đều trả lời được câu hỏi "thuộc brand nào / kênh nào / pháp nhân nào".
+2. **Một cửa hàng, không phân mảnh**: dữ liệu nghiệp vụ ở cấp cửa hàng; brand là thuộc tính catalog để duyệt/lọc/báo cáo, không phải ranh giới dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
 3. **Authority dữ liệu rõ ràng** cho từng loại dữ liệu, xem ma trận trong [erp-integration](../11-integration/erp-integration.md).
 4. **Tích hợp bất đồng bộ, idempotent**: không để lỗi ERP/ODO làm hỏng checkout.
 5. **Core tối giản, nghiệp vụ bằng plugin** ([commerce-kernel](../02-architecture/commerce-kernel.md)): Core chỉ gồm primitives, invariants và extension points.

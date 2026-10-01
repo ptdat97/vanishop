@@ -1,6 +1,6 @@
 # ADR-023 — Checkout không lưu phiên; PlaceOrder một transaction, một brand mỗi đơn
 
-- Trạng thái: Accepted · Ngày: 2026-10-04 · Liên quan: [cart-checkout](../03-domains/cart-checkout.md), [ADR-014](ADR-014-idempotency.md), [ADR-022](ADR-022-guest-cart-token.md)
+- Trạng thái: Accepted · Ngày: 2026-10-04 · **Sửa đổi bởi [ADR-028](ADR-028-single-store-brand-as-catalog.md)**: bỏ quy tắc "một brand mỗi đơn", không có order group · Liên quan: [cart-checkout](../03-domains/cart-checkout.md), [ADR-014](ADR-014-idempotency.md), [ADR-022](ADR-022-guest-cart-token.md)
 
 ## Context
 Slice 6 cần xem tổng tiền (có voucher, phí giao, VAT) và đặt hàng qua Storefront API, trước khi có module Customer, Payment gateway và order group.

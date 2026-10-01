@@ -56,7 +56,7 @@ flowchart LR
 
 | Chủ đề | Hướng của VaniShop |
 |---|---|
-| Mô hình | Multi-brand, multi-legal-entity, omnichannel (BeikeShop hướng 1 cửa hàng) |
+| Mô hình | Một cửa hàng, brand là thuộc tính catalog ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). **Cùng khái niệm** với BeikeShop và hầu hết nền tảng TMĐT (khái niệm không được bảo hộ); thiết kế bảng `brands`, màn hình, luồng phải viết độc lập, không mở BeikeShop để tham khảo |
 | Tổ chức code | Modular monolith theo bounded context trong `modules/*`, plugin trong `custom/plugin/*` (xem [overview](../02-architecture/overview.md)) |
 | Trạng thái đơn | Tách **4 chiều** trạng thái: đơn, thanh toán, fulfillment, đổi trả (xem [order](../09-order/order.md)) |
 | Tồn kho | Đa location + reservation + ATS, không trừ tồn trực tiếp trên SKU |

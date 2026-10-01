@@ -2,10 +2,12 @@
 
 | Thuật ngữ | Tiếng Việt | Định nghĩa trong VaniShop |
 |---|---|---|
-| Owner | Chủ sở hữu / Tập đoàn | Chủ duy nhất của bản cài đặt, sở hữu mọi brand và dữ liệu khách hàng |
-| Legal Entity | Pháp nhân | Công ty có MST; xuất hoá đơn, nhận tiền |
-| Brand | Thương hiệu | Thương hiệu thời trang, thuộc 1 pháp nhân |
-| Channel | Kênh bán | Điểm bán cụ thể: website brand, website tập đoàn, sàn, POS, app, social |
+| Owner | Chủ sở hữu | Chủ duy nhất của bản cài đặt và dữ liệu khách hàng |
+| Store | Cửa hàng | Toàn bộ bản cài đặt: một website, một giao diện, một bộ cấu hình ([store-and-brand](../12-store/store-and-brand.md)) |
+| Legal Entity | Pháp nhân vận hành | Công ty có MST đứng tên bán hàng trên website; xuất hoá đơn, nhận tiền. Một bản ghi |
+| Brand | Thương hiệu | Nhóm sản phẩm trong Catalog (trang brand, bộ lọc, điều kiện khuyến mãi, báo cáo). **Không** phải phạm vi dữ liệu |
+| Order source | Nguồn đơn | `web`, `app`, `zalo`, `admin`, `pos`, `marketplace` — thuộc tính của đơn để báo cáo |
+| Channel | Kênh (cũ) | Khái niệm của mô hình đa brand (ADR-008), sẽ gỡ khỏi code ở slice 12. Không nhầm với **kênh gửi tin** (email/SMS/ZNS) của Notification |
 | Location | Địa điểm tồn kho | Kho hoặc cửa hàng giữ hàng |
 | Style | Mẫu sản phẩm | Sản phẩm hiển thị trên 1 trang chi tiết |
 | Style Color | Màu của mẫu | Biến thể màu, có ảnh riêng |
@@ -17,7 +19,6 @@
 | Sourcing | Phân bổ kho | Chọn location xuất hàng cho đơn |
 | BOPIS | Mua online nhận tại cửa hàng | Buy Online, Pick-up In Store |
 | Ship-from-store | Giao từ cửa hàng | Cửa hàng là điểm xuất đơn online |
-| Order Group | Nhóm đơn | Đơn khách đặt 1 lần trên kênh tập đoàn, tách thành nhiều đơn theo brand |
 | Adjustment | Điều chỉnh giá | Một dòng cộng/trừ trong totals pipeline (KM, phí, điểm…) |
 | Shipment | Kiện giao | Một lần giao hàng của đơn, có mã vận đơn |
 | RMA / Return | Đổi trả | Yêu cầu đổi/trả hàng |

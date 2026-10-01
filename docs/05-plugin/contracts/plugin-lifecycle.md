@@ -13,7 +13,6 @@
   "provider": "Plugin\\VietQr\\VietQrServiceProvider",
   "requires": { "vanishop": "^0.2", "plugins": {} },
   "conflicts": [],
-  "scopes": ["owner", "brand"],
   "permissions": ["payments.view"],
   "author": "VaniShop Team"
 }
@@ -29,7 +28,7 @@
 | `requires.vanishop` | ✔ | Ràng buộc Composer semver với `config('vanishop.version')` (hiện `0.2.0`) |
 | `requires.plugins` | | `{ "plugin.id": "^x.y" }` → sắp thứ tự nạp, chặn bật khi thiếu |
 | `conflicts` | | Kiểm tra hai chiều |
-| `scopes` | | Mặc định `["owner"]`. Scope bật được hiện nay: `owner`, `brand`, `channel` (`legal_entity`: Designed) |
+| `scopes` | | **Deprecated** ([ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md)): plugin bật/tắt toàn cửa hàng. Code hiện vẫn đọc (`owner`, `brand`, `channel`) cho tới slice 12 |
 | `permissions` | | Hiển thị khi cài |
 
 ## 2. Cấu trúc thư mục
@@ -44,7 +43,7 @@ custom/plugin/<Name>/                 # namespace Plugin\<Name>\
 ├── Http/{Controllers,routes}/        # routes/admin.php, routes/webhooks.php
 ├── Database/migrations/              # bảng plg_<plugin>_* — install chạy thư mục này
 ├── Resources/{lang,js/Pages}/
-├── Config/                           # mặc định; cấu hình theo brand dùng settings() (§5)
+├── Config/                           # mặc định; cấu hình chỉnh trong Admin dùng settings() (§4)
 ├── README.md                         # phạm vi, cấu hình, bảng, event nghe/phát
 └── Tests/{Unit,Feature,Contract}/
 ```
@@ -54,11 +53,11 @@ custom/plugin/<Name>/                 # namespace Plugin\<Name>\
 | Lệnh | Điều kiện | Việc Core làm |
 |---|---|---|
 | `vani:plugin:install <id>` | Chưa cài; deps/conflict/`requires.vanishop` đạt | Chạy migration trong `Database/migrations` → `installed`. Migration lỗi → `failed` + `last_error` |
-| `vani:plugin:enable <id> --scope=brand:<id>` | Không `failed`; deps đã bật trong cùng scope; scope có trong manifest | Ghi `plugin_scopes` → `enabled`, audit |
-| `vani:plugin:disable <id> [--scope]` | Không còn plugin phụ thuộc đang bật | Tắt scope; còn scope nào bật thì vẫn `enabled`, không thì `disabled`. **Không đụng dữ liệu** |
+| `vani:plugin:enable <id>` | Không `failed`; deps đã bật | → `enabled`, audit. (Code hiện còn `--scope` + `plugin_scopes`, bỏ ở slice 12) |
+| `vani:plugin:disable <id>` | Không còn plugin phụ thuộc đang bật | → `disabled`. **Không đụng dữ liệu** |
 | `vani:plugin:uninstall <id> [--purge]` | Đã tắt; không còn plugin phụ thuộc đã cài | Mặc định **giữ bảng**. `--purge`: chạy `down()` theo thứ tự ngược |
 
-Sau mỗi thay đổi trạng thái: dựng lại `bootstrap/cache/vanishop-plugins.php`, xoá cache phạm vi bật (`vani:plugins:enabled-scopes`). Plugin `installed`/`disabled` vẫn được `register()` (để route Admin cấu hình, webhook chạy được) nhưng listener/implementation **không có hiệu lực**. Plugin `failed` không được nạp.
+Sau mỗi thay đổi trạng thái: dựng lại `bootstrap/cache/vanishop-plugins.php`, xoá cache trạng thái bật (`vani:plugins:enabled-scopes`). Plugin `installed`/`disabled` vẫn được `register()` (để route Admin cấu hình, webhook chạy được) nhưng listener/implementation **không có hiệu lực**. Plugin `failed` không được nạp.
 
 Plugin chỉ vào hệ thống qua **mã nguồn + CI**, không upload qua Admin ([ADR-026](../../19-adr/ADR-026-plugin-deploy-via-code.md)).
 
@@ -80,16 +79,16 @@ final class VietQrServiceProvider extends PluginServiceProvider
 
 | Helper | Tác dụng | Hiệu lực |
 |---|---|---|
-| `contribute($tag, $class)` | Đóng góp implementation cho extension point. **Dùng hằng `TAG` trên interface**, không gõ chuỗi | Chỉ trong scope plugin bật |
-| `onFilter/onAction/onValidate/onSlot($hook, $cb, $priority = 10)` | Nghe hook public ([hook-signatures](hook-signatures.md)) | Chỉ trong scope bật |
-| `onEvent($event, $handler)` | Nghe domain event | Chỉ khi plugin bật cho brand của event |
+| `contribute($tag, $class)` | Đóng góp implementation cho extension point. **Dùng hằng `TAG` trên interface**, không gõ chuỗi | Chỉ khi plugin bật |
+| `onFilter/onAction/onValidate/onSlot($hook, $cb, $priority = 10)` | Nghe hook public ([hook-signatures](hook-signatures.md)) | Chỉ khi plugin bật |
+| `onEvent($event, $handler)` | Nghe domain event | Chỉ khi plugin bật |
 | `settings([...])` | Khai báo cấu hình → Admin → Cấu hình sinh form | Đọc bằng `Settings::current($pluginId, $key, $default)` |
-| `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ | Chạy khi plugin bật ở ít nhất một scope; không có `CurrentContext`, tự lặp theo brand |
+| `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ | Chạy khi plugin bật; chạy với actor `system` |
 | `adminMenu`, `permissions`, `adminRoutes`, `adminPages` | Màn hình Admin | Route trả 404 khi plugin không active |
 | `webhookRoutes($file)` | `/api/integrations/{slug}/…` | Luôn đăng ký (plugin tự kiểm tra) |
 | `migrations`, `translations` | Nạp migration/lang | — |
 
-**Không** gọi thẳng `Hook::onFilter()`, `Event::listen()` hay `app()->tag()`: listener/implementation khi đó chạy ở **mọi** brand, kể cả brand không bật plugin.
+**Không** gọi thẳng `Hook::onFilter()`, `Event::listen()` hay `app()->tag()`: listener/implementation khi đó chạy cả khi plugin đã tắt.
 
 ## 5. Dữ liệu của plugin
 
@@ -109,12 +108,12 @@ MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; s
 - [ ] Tag lấy từ hằng `TAG` của interface trong `Contracts`
 - [ ] Chỉ dùng `Contracts`, `Events`, hook public, `Shared\Domain` (arch test R5)
 - [ ] Bảng `plg_<plugin>_*`, migration idempotent, `down()` dọn sạch
-- [ ] Cấu hình theo brand qua `settings()`; secret khai báo type `secret` (mã hoá)
+- [ ] Cấu hình chỉnh trong Admin qua `settings()`; secret khai báo type `secret` (mã hoá)
 - [ ] Unit + feature + **contract test** của contract mình implement
 - [ ] README đặc tả; tuân thủ [clean-room](../../01-principles/clean-room-license.md)
 
 ## Giới hạn hiện tại
 
 - `vani:plugin:upgrade`, `vani:plugin:doctor`: Designed. Tăng version plugin hiện phải cài lại.
-- Scope `legal_entity` chưa bật được, dù manifest `vani.vietqr` khai báo.
-- Plugin có sẵn (`VietQr`, `Ghn`) vẫn đọc cấu hình từ `Config/*.php` + `.env`; chỉ `vani.sms-brandname` đọc theo brand qua `Settings`.
+- Code hiện còn bật plugin theo scope `owner`/`brand`/`channel`; gỡ ở slice 12 ([store-and-brand §6](../../12-store/store-and-brand.md)).
+- Plugin có sẵn (`VietQr`, `Ghn`) vẫn đọc cấu hình từ `Config/*.php` + `.env`; chỉ `vani.sms-brandname` đọc qua `Settings`.

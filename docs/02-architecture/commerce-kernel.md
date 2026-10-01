@@ -8,7 +8,7 @@
 
 Một capability thuộc **Core** khi thoả **ít nhất một** trong các điều sau:
 
-1. Nó là **invariant** mà nhiều capability khác dựa vào: tiền, tồn/reservation, vòng đời đơn, phạm vi brand, idempotency.
+1. Nó là **invariant** mà nhiều capability khác dựa vào: tiền, tồn/reservation, vòng đời đơn, snapshot, idempotency.
 2. Nó là **extension point**, tức là khung/abstraction để plugin cắm vào.
 3. Thiếu nó thì **không bán được đơn đầu tiên** (COD, phí ship cố định, vận đơn nhập tay…).
 
@@ -43,7 +43,7 @@ flowchart TD
 | Domain events | Mọi context | [extension-point-catalog §3](../04-extension/extension-point-catalog.md) |
 | Integration primitives (API, outbox/inbox, mapping, connector framework) | Integration | Connector cụ thể là plugin |
 | Authorization, audit | Identity | |
-| Multi-brand, multi-channel | Tenancy/Brand/Channel | |
+| Cửa hàng (pháp nhân vận hành, cấu hình), Brand như thực thể catalog | Tenancy, Catalog | [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) |
 | Extension mechanism | Extension | |
 
 ## 3. Plugin sở hữu
@@ -60,7 +60,7 @@ flowchart TD
 | Creator / Affiliate | Attribution, commission | [creator-affiliate](../13-marketplace/creator-affiliate.md) |
 | Merchandising nâng cao, Recommendation | Gợi ý, sắp xếp thông minh | hook listing, `StorefrontBlock` |
 | Tìm kiếm ngoài | Algolia, Elasticsearch | `SearchProvider` |
-| Quy tắc riêng của brand | Chặn COD theo tỉnh, quà tặng riêng | `CheckoutValidator`, hooks |
+| Quy tắc riêng của cửa hàng | Chặn COD theo tỉnh, quà tặng theo brand | `CheckoutValidator`, hooks |
 
 Danh mục đầy đủ và thứ tự làm: [plugin-catalog](../05-plugin/plugin-catalog.md).
 
@@ -72,7 +72,7 @@ Danh mục đầy đủ và thứ tự làm: [plugin-catalog](../05-plugin/plugi
 | Không bán vượt ATS | `InventoryReservation::reserve()` khoá dòng + kiểm tra trong transaction |
 | Tổng tiền không âm; adjustment luôn truy vết được | Totals pipeline kiểm tra sau mỗi calculator |
 | Order line là snapshot bất biến sau khi tạo | Không có API sửa line; thay đổi đi qua huỷ một phần/đổi hàng |
-| Mọi dữ liệu có phạm vi brand | `BelongsToBrand` scope + Policy + `CurrentContext` bắt buộc |
+| Thao tác Admin/API đúng quyền | Policy + `Authorizer` (permission); scope `location` cho nhân viên kho/cửa hàng (Designed) |
 | Mọi message ra ngoài có idempotency và đi qua outbox | `IntegrationOutbox` là con đường duy nhất |
 | Tiền là `Money` (số nguyên minor unit) | Contract chỉ nhận/trả `Money` |
 

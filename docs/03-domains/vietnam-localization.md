@@ -29,8 +29,8 @@
 
 | Mục | Quy ước |
 |---|---|
-| Tiền | VND, **số nguyên**, không phần thập phân. Hiển thị `1.250.000 ₫` hoặc `1.250.000đ` (cấu hình theo brand) |
-| Làm tròn | Giảm % → làm tròn đến đồng (hoặc 1.000đ theo cấu hình brand) ở từng dòng; tổng đơn = tổng các dòng |
+| Tiền | VND, **số nguyên**, không phần thập phân. Hiển thị `1.250.000 ₫` hoặc `1.250.000đ` (cấu hình của cửa hàng) |
+| Làm tròn | Giảm % → làm tròn đến đồng (hoặc 1.000đ theo cấu hình) ở từng dòng; tổng đơn = tổng các dòng |
 | Số | Dấu `.` phân cách nghìn, `,` thập phân |
 | Ngày giờ | `dd/mm/yyyy`, múi giờ `Asia/Ho_Chi_Minh`; DB lưu UTC |
 
@@ -39,7 +39,7 @@
 - **COD** vẫn chiếm tỷ trọng lớn → đầu tư: xác nhận đơn tự động (ZNS/gọi tự động), chấm điểm rủi ro "bom hàng", đối soát COD tự động ([order](../09-order/order.md)).
 - **VietQR/chuyển khoản** tăng mạnh → xác nhận tự động theo nội dung chuyển khoản.
 - **Hãng vận chuyển** phổ biến: GHN, GHTK, Viettel Post, VNPost, J&T Express, Ninja Van, BEST Express, Ahamove/Grab/Be (giao nhanh nội thành).
-- **Cho xem hàng / thử hàng** khi nhận: tuỳ chọn theo brand (ghi chú gửi hãng VC).
+- **Cho xem hàng / thử hàng** khi nhận: tuỳ chọn cấu hình (ghi chú gửi hãng VC).
 - Ngày giao dự kiến theo tuyến nội tỉnh/liên vùng; lưu ý Tết Nguyên đán (hãng ngưng lấy hàng).
 
 ## 5. Hoá đơn điện tử *(plugin `vani.einvoice` + plugin nhà cung cấp)*
@@ -55,7 +55,7 @@
       public function replace(IssuedInvoice $invoice, InvoiceDraft $replacement): IssuedInvoice;
   }
   ```
-- Hoá đơn phát hành theo **pháp nhân** của đơn (đơn con trong kênh tập đoàn).
+- Hoá đơn phát hành bởi **pháp nhân vận hành** cửa hàng, một hoá đơn mỗi đơn.
 - Khách yêu cầu hoá đơn công ty: thu MST, tên, địa chỉ; tra cứu MST tự điền (nếu có dịch vụ).
 - Thời điểm phát hành: cấu hình (khi giao thành công / khi thanh toán) — phải khớp quy định về thời điểm lập hoá đơn với bán hàng hoá.
 - Đổi trả → hoá đơn điều chỉnh/thay thế.
@@ -65,20 +65,20 @@
 
 | Chủ đề | Văn bản (tham khảo) | Tác động kỹ thuật |
 |---|---|---|
-| Website TMĐT bán hàng | Nghị định 52/2013/NĐ-CP, sửa đổi bởi NĐ 85/2021/NĐ-CP; **Luật Thương mại điện tử** (theo dõi hiệu lực & văn bản hướng dẫn) | Một domain chung nên có **một website** cần thông báo/đăng ký với Bộ Công Thương (online.gov.vn). ⚠️ Nếu các brand thuộc **nhiều pháp nhân** cùng bán trên website này, website có thể bị xem là **sàn giao dịch TMĐT** (phải **đăng ký**, không chỉ thông báo, kèm quy chế hoạt động). Pháp chế phải chốt mô hình (một pháp nhân vận hành website, hay đăng ký sàn) trước go-live ([ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)). Footer mỗi storefront hiển thị pháp nhân vận hành website và pháp nhân bán hàng của brand (tên, MST, địa chỉ, hotline) |
+| Website TMĐT bán hàng | Nghị định 52/2013/NĐ-CP, sửa đổi bởi NĐ 85/2021/NĐ-CP; **Luật Thương mại điện tử** (theo dõi hiệu lực & văn bản hướng dẫn) | **Một pháp nhân bán hàng trên website của mình** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) → website TMĐT bán hàng: **thông báo** với Bộ Công Thương (online.gov.vn). Không bán hàng của pháp nhân khác trên website (nếu có, website thành sàn và phải đăng ký, xem plugin marketplace) |
 | Thông tin bắt buộc | NĐ 52/2013 & 85/2021 | Trang chính sách: đổi trả, vận chuyển, thanh toán, bảo mật, giải quyết khiếu nại; điều khoản sử dụng. Quy trình checkout hiển thị rõ tổng giá, phí, cho phép khách xem lại trước khi xác nhận |
 | Bảo vệ dữ liệu cá nhân | **Nghị định 13/2023/NĐ-CP**, **Luật Bảo vệ dữ liệu cá nhân 2025** (hiệu lực 01/01/2026) | Consent rõ ràng từng mục đích, quyền truy cập/xoá/rút consent, đánh giá tác động xử lý DLCN, thông báo vi phạm, hạn chế chuyển dữ liệu ra nước ngoài (chọn vị trí lưu trữ) — xem [security](../15-security/security.md) |
 | Bảo vệ người tiêu dùng | Luật Bảo vệ quyền lợi người tiêu dùng 2023 | Ghi âm/lưu vết giao dịch, chính sách đổi trả rõ ràng, không điều khoản bất lợi ẩn |
 | Khuyến mãi | Luật Thương mại, **Nghị định 81/2018/NĐ-CP** (và văn bản thay thế nếu có) | Mức giảm tối đa (thường 50%, trừ trường hợp đặc biệt), thời gian KM, thông báo/đăng ký KM với Sở Công Thương; lưu lịch sử giá để chứng minh giá gốc |
 | Quảng cáo, tin nhắn | Luật Quảng cáo, Nghị định về chống tin nhắn rác | SMS/Email marketing cần consent, có cách từ chối, giới hạn khung giờ gửi |
 | Nhãn hàng hoá | Nghị định 43/2017 & 111/2021 | PDP hiển thị xuất xứ, thành phần/chất liệu, hướng dẫn sử dụng/bảo quản |
-| Thuế | Luật Quản lý thuế, quy định với sàn/website TMĐT | Báo cáo doanh thu theo pháp nhân, xuất dữ liệu cho kế toán |
+| Thuế | Luật Quản lý thuế, quy định với sàn/website TMĐT | Báo cáo doanh thu, xuất dữ liệu cho kế toán |
 
 ## 7. Sàn TMĐT & mạng xã hội *(plugin, đợt P3)*
 
-- Plugin Shopee / Lazada / TikTok Shop: đẩy sản phẩm & tồn (theo channel allocation), kéo đơn về → vào luồng fulfillment chung.
-- Social commerce: đơn từ Facebook/Zalo/livestream do CSKH tạo trong Admin (kênh `social`), dùng chung tồn/khuyến mãi.
-- Zalo Mini App cho brand (tuỳ chọn) dùng Storefront API.
+- Plugin Shopee / Lazada / TikTok Shop: đẩy sản phẩm & tồn (có thể chừa tồn bằng `InventoryStrategy`), kéo đơn về (`source = marketplace`) → vào luồng fulfillment chung.
+- Social commerce: đơn từ Facebook/Zalo/livestream do CSKH tạo trong Admin (`source = admin`), dùng chung tồn/khuyến mãi.
+- Zalo Mini App của cửa hàng (tuỳ chọn) dùng Storefront API.
 
 ## 8. Hành vi người dùng & UX
 

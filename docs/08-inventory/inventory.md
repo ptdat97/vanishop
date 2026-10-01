@@ -45,12 +45,11 @@ Reservation (authority: VaniShop)  ──►  ATS  ──►  Checkout
 | Trường | Ý nghĩa |
 |---|---|
 | `code`, `name`, `type` | `warehouse`, `store`, `virtual` |
-| `legal_entity_id` | Pháp nhân sở hữu hàng |
 | `address`, `geo` | Cho sourcing, tìm cửa hàng |
 | `capabilities` | `ship_online_orders`, `pickup_in_store`, `accept_returns` |
 | `stock_authority` | `vanishop` hoặc mã Integration Client (ERP/POS/ODO) |
 | `priority`, `cutoff_time` | Sourcing |
-| Brand được bán | `location_brands` |
+| Bán online | `capabilities.ship_online_orders` (code hiện có thêm `location_brands`, `channel_locations` — gỡ ở slice 12, [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 
 ### Các con số
 
@@ -60,10 +59,10 @@ reserved      : Σ reservation đang active tại location
 safety_stock  : không bán online (theo location, có thể override theo variant)
 available     = on_hand − reserved − safety_stock   (có thể âm khi authority ngoài hạ on_hand)
 ATS(location) = max(0, available)
-ATS(channel)  = InventoryStrategy.ats(channel, variant)   // mặc định: Σ ATS(location) của location phục vụ channel
+ATS           = InventoryStrategy.ats(variant)   // mặc định: Σ ATS(location) của các location giao online
 ```
 
-`InventoryStrategy` (ví dụ `vani.channel-allocation`) chỉ được **giảm** ATS so với công thức chuẩn, không được tăng. Core kiểm tra `min(strategy, standard)`.
+`InventoryStrategy` (ví dụ chừa tồn cho sàn TMĐT bằng plugin `vani.marketplace-allocation`) chỉ được **giảm** ATS so với công thức chuẩn, không được tăng. Core kiểm tra `min(strategy, standard)`.
 
 ## 3. Vòng đời reservation
 

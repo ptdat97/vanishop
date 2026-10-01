@@ -27,7 +27,8 @@
 | Capability | Test tối thiểu |
 |---|---|
 | Money | Bảo toàn tổng khi `allocate`, làm tròn, khác tiền tệ ném lỗi |
-| Brand scope | Mỗi model có phạm vi: nhân viên brand A không đọc/ghi brand B; job thiếu context bị từ chối |
+| Phân quyền | Nhân viên thiếu permission bị chặn ở mọi route Admin/API; (sau slice 12) không model nào ngoài Catalog lọc theo `brand_id` — arch test |
+| Brand (catalog) | Trang brand, facet brand, rule khuyến mãi theo brand, snapshot brand trên dòng đơn, giỏ nhiều brand → một đơn |
 | Inventory | Reserve/release/commit; hết hạn; concurrency không oversell |
 | Checkout | PlaceOrder thành công/hết hàng/totals đổi/voucher hết/idempotent |
 | Order | Mọi transition hợp lệ và không hợp lệ; snapshot không đổi khi catalog đổi |

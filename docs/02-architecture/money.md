@@ -46,7 +46,7 @@ final readonly class Money
 
 | Tình huống | Quy tắc |
 |---|---|
-| Giảm theo % trên một dòng | Tính trên tổng dòng, làm tròn **half-up** đến `rounding_step` của brand (mặc định 1 ₫; brand có thể chọn 1.000 ₫) |
+| Giảm theo % trên một dòng | Tính trên tổng dòng, làm tròn **half-up** đến `rounding_step` của cửa hàng (mặc định 1 ₫; có thể chọn 1.000 ₫) |
 | Giảm cấp đơn phân bổ xuống dòng | `Money::allocate()` theo **largest remainder**: tổng phân bổ **luôn bằng** số giảm cấp đơn |
 | Thuế VAT (giá đã gồm thuế) | Tách thuế theo từng dòng: `tax = round_half_up(gross × rate / (10000 + rate))` với `rate` tính bằng basis points; tổng thuế đơn bằng tổng thuế các dòng |
 | Tổng đơn | Tổng các dòng + adjustment; không làm tròn lại lần hai |
@@ -64,7 +64,7 @@ dư 1 ₫ cho phần có phần thập phân lớn nhất (dòng 2) → 2.500 / 
 
 Schema đã sẵn sàng, tính năng chưa bật:
 
-- Mỗi **channel** có một `currency_code`; bảng giá theo tiền tệ (không quy đổi động khi hiển thị giá bán).
+- Cửa hàng có một `currency_code` (VND); bảng giá theo tiền tệ (không quy đổi động khi hiển thị giá bán).
 - Nếu cần quy đổi (báo cáo hợp nhất): bảng `exchange_rates(base, quote, rate_micros BIGINT, effective_at)`, tỷ giá **snapshot** vào đơn (`fx_rate_micros`) tại thời điểm đặt.
 - Thuế, giảm giá, làm tròn luôn tính theo tiền tệ của đơn; chỉ quy đổi khi báo cáo.
 

@@ -6,9 +6,10 @@ Marketplace **không được làm biến dạng Commerce Core**. Seller là m�
 
 ## 1. Use case
 
-- Bán hàng ký gửi/concession của đối tác trên kênh tập đoàn.
-- Mở kênh cho brand bên ngoài (không thuộc Owner) bán cùng.
-- Brand nội bộ đóng vai trò seller với settlement nội bộ giữa các pháp nhân.
+- Bán hàng ký gửi/concession của đối tác trên website của cửa hàng.
+- Cho brand bên ngoài (không thuộc Owner) bán cùng.
+
+> ⚠️ Khi bán hàng của **người bán khác** (pháp nhân khác) trên website, website trở thành **sàn giao dịch TMĐT** (phải đăng ký với Bộ Công Thương, có quy chế hoạt động) — khác mô hình một pháp nhân bán hàng của [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md). Bật plugin này cần pháp chế duyệt trước.
 
 ## 2. Ranh giới
 
@@ -34,7 +35,7 @@ plg_mkt_payouts(id, settlement_id, amount, status, bank_reference)
 
 | Nhu cầu | Extension point Core |
 |---|---|
-| Sản phẩm của seller | Style có `brand_id` (brand "Marketplace" hoặc brand của seller) + `plg_mkt_seller_products`; hook `vani.product.before_save` kiểm tra quyền seller |
+| Sản phẩm của seller | Style có `brand_id` (brand catalog của seller, nếu có) + `plg_mkt_seller_products` (style ↔ seller); hook `vani.product.before_save` kiểm tra quyền seller |
 | Tồn của seller | Location `type = virtual` + `stock_authority` = seller (qua Integration Client của seller hoặc portal) |
 | Chọn kho theo seller | `SourcingStrategy` `marketplace` (dòng của seller → location của seller) |
 | Tạo Seller Order | Hook `vani.order.after_create` (chỉ ghi DB) → tạo `plg_mkt_seller_orders` |

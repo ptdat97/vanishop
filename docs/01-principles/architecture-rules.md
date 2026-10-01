@@ -13,7 +13,7 @@
 | R3 | Core chỉ chứa commerce primitives, business invariants và extension points. | Review |
 | R4 | Phụ thuộc chỉ đi một chiều **Plugin → Core Contracts → Core**. Core **không bao giờ** import `Plugin\`. | Arch test: `arch()->expect('Modules')->not->toUse('Plugin')` |
 | R5 | Plugin chỉ dùng API **public** của Core: namespace `Contracts`, `Events`, hook trong registry. Không dùng `Persistence`/`Domain` nội bộ của module. | Arch test |
-| R6 | Plugin không được phá invariant: trạng thái đơn chỉ đổi qua state machine; tồn chỉ đổi qua reservation/movement; tiền luôn là `Money`; dữ liệu luôn có phạm vi brand. | Contract test + review |
+| R6 | Plugin không được phá invariant: trạng thái đơn chỉ đổi qua state machine; tồn chỉ đổi qua reservation/movement; tiền luôn là `Money`; thao tác luôn qua kiểm tra quyền của Core. | Contract test + review |
 | R26 | Mỗi extension point **public** phải có ít nhất **một implementation tham chiếu** (mặc định của Core hoặc plugin trong repo) và, với extension contract, **bộ contract test** trong `Modules\<Ctx>\Testing`. Extension point chưa ai dùng được coi là chưa kiểm chứng. | Review + contract test |
 
 ## B. Module và DDD

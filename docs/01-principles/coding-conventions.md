@@ -35,7 +35,7 @@
 
 ### Tên gọi thống nhất (ubiquitous language)
 
-Dùng đúng thuật ngữ trong [glossary.md](../00-overview/glossary.md) cho tên class/bảng: `Style`, `Variant`, `Location`, `StockLevel`, `Reservation`, `Channel`, `LegalEntity`, `Shipment`, `ReturnRequest`… Không dùng từ đồng nghĩa lẫn lộn (`Product` vs `Item` vs `Goods`).
+Dùng đúng thuật ngữ trong [glossary.md](../00-overview/glossary.md) cho tên class/bảng: `Style`, `Variant`, `Location`, `StockLevel`, `Reservation`, `Brand` (thực thể catalog), `LegalEntity`, `Shipment`, `ReturnRequest`… Không dùng từ đồng nghĩa lẫn lộn (`Product` vs `Item` vs `Goods`).
 
 ## 3. Kiểm thử
 
@@ -51,7 +51,7 @@ Xem [testing](../17-testing/testing.md). Khi phát triển thì chạy test hẹ
 ## 5. Definition of Done
 
 - [ ] Code + test pass, Pint, Larastan sạch.
-- [ ] Phân quyền & phạm vi brand đã kiểm tra.
+- [ ] Phân quyền (permission) đã kiểm tra.
 - [ ] Chuỗi hiển thị đã dịch (`vi` bắt buộc).
 - [ ] Log/audit cho thao tác nhạy cảm.
 - [ ] Tài liệu cập nhật; hook mới đã khai báo registry.

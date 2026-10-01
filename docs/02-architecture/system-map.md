@@ -2,17 +2,19 @@
 
 > Trạng thái: **Partially Implemented**, mô tả **code đang có**; bề mặt nào chưa có code ghi rõ `Designed`. Kiểm chứng từ `bootstrap/app.php`, `config/modules.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/*/*ServiceProvider.php`. Bổ sung cho [overview](overview.md) (vì sao chọn kiến trúc này) và [bounded-contexts](bounded-contexts.md) (ranh giới nghiệp vụ).
 
+> **Định hướng mới ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: một cửa hàng, brand là thuộc tính catalog. Tài liệu này mô tả **code hiện tại** (vẫn có module Brand/Channel, brand workspace, `X-Vani-Channel`); các phần đó sẽ gỡ ở slice 12 ([store-and-brand §6](../12-store/store-and-brand.md)).
+
 ## 1. Năm bề mặt, một lõi
 
 Mọi bề mặt gọi **cùng Application layer / Contracts** của module. Không bề mặt nào tự tính giá, tồn, khuyến mãi hay trạng thái đơn.
 
 | Bề mặt | Đối tượng | Prefix | Auth | Nạp bởi | Trạng thái |
 |---|---|---|---|---|---|
-| **Storefront native** (Blade SSR) | Khách trên web | `/{brand-path}/…` ([ADR-019](../19-adr/ADR-019-shared-domain-brand-path.md)) | Phiên web (khách) | Theme `custom/theme/*` + controller trong `modules/Storefront` | Designed ([ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)) |
+| **Storefront native** (Blade SSR) | Khách trên web | `/…` (một website, [store-and-brand §4](../12-store/store-and-brand.md)) | Phiên web (khách) | Theme `custom/theme/*` + controller trong `modules/Storefront` | Designed ([ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)) |
 | **Storefront API** (JSON) | Headless, mobile, Zalo Mini App | `/api/storefront/v1` | Khách vãng lai: token giỏ/đơn ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)); đã đăng nhập: Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)) | `loadStorefrontApiRoutes()` (Storefront, Customer) | Implemented |
 | **Admin** (Inertia + Vue) | Nhân viên | `/{VANI_ADMIN_PATH}` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)) | Guard `staff`, phiên Admin riêng | `loadAdminRoutes()`, `loadBrandWorkspaceRoutes()` | Implemented |
 | **Admin API** (JSON) | App quản trị, công cụ nội bộ | `/api/admin/v1` | Designed | — | Designed |
-| **Integration API** (JSON) | ERP, POS, đối tác | `/api/integration/v1` | Key id + chữ ký HMAC, scope, data scope brand | `IntegrationServiceProvider` | Implemented |
+| **Integration API** (JSON) | ERP, POS, đối tác | `/api/integration/v1` | Key id + chữ ký HMAC, scope (data scope brand: gỡ ở slice 12) | `IntegrationServiceProvider` | Implemented |
 
 Ngoài ra có hai cửa vào **từ hệ thống ngoài** (không phải bề mặt cho người dùng): callback cổng thanh toán `/api/payments/{gateway}/callback` và webhook hãng vận chuyển `/api/shipping/{carrier}/webhook`. Cả hai là route **chung**; plugin chỉ cung cấp phần xác minh + chuẩn hoá (`verifyCallback`, `parseWebhook`), Core ghi nhận. Webhook riêng của plugin nằm dưới `/api/integrations/{slug}/…`.
 

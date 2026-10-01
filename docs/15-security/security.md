@@ -1,6 +1,6 @@
 # Security
 
-> Trạng thái: **Partially Implemented**. Đã có: guard `staff`, đăng nhập Admin + rate limit, RBAC theo phạm vi, audit log append-only, cô lập brand (`BelongsToBrand`). Đã có thêm các kiểm soát của ADR-020 (đường dẫn Admin cấu hình được, cookie phiên riêng, IP allowlist, noindex, chính sách mật khẩu, cảnh báo IP mới). Chưa có: SSO, maker-checker, integration credentials, secret scan trong CI. **Không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
+> Trạng thái: **Partially Implemented**. Đã có: guard `staff`, đăng nhập Admin + rate limit, RBAC theo phạm vi, audit log append-only. Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md): một cửa hàng → bỏ phạm vi brand/pháp nhân khỏi RBAC và bỏ `BelongsToBrand` (code hiện còn, gỡ ở slice 12). Đã có thêm các kiểm soát của ADR-020 (đường dẫn Admin cấu hình được, cookie phiên riêng, IP allowlist, noindex, chính sách mật khẩu, cảnh báo IP mới). Chưa có: SSO, maker-checker, integration credentials, secret scan trong CI. **Không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
 
 ## 1. Tách biệt người dùng
 
@@ -32,23 +32,21 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 - **Permission**: chuỗi `<resource>.<action>` — `orders.view`, `orders.cancel`, `prices.edit`, `stock.adjust`, `promotions.publish`, `customers.export`, `integration.replay`…
 - **Role**: tập permission, ví dụ:
 
-| Role | Phạm vi điển hình | Quyền chính |
+| Role | Phạm vi | Quyền chính |
 |---|---|---|
-| Owner Admin | owner | Toàn quyền |
-| Brand Manager | brand | Catalog, giá, KM, nội dung, báo cáo của brand |
-| Merchandiser | brand | Catalog, danh mục, nội dung (không giá) |
-| CSKH | owner hoặc brand | Xem/sửa đơn, đổi trả, khách hàng (không export) |
-| Kế toán | legal_entity | Thanh toán, đối soát, hoá đơn, báo cáo doanh thu |
-| Store Staff | location | BOPIS, nhận trả hàng, tra tồn tại location |
-| Integration Operator | owner | Theo dõi & replay message |
+| Quản trị | cửa hàng | Toàn quyền |
+| Quản lý ngành hàng | cửa hàng | Catalog (gồm brand), giá, KM, nội dung, báo cáo |
+| Merchandiser | cửa hàng | Catalog, danh mục, nội dung (không giá) |
+| CSKH | cửa hàng | Xem/sửa đơn, đổi trả, khách hàng (không export) |
+| Kế toán | cửa hàng | Thanh toán, đối soát, hoá đơn, báo cáo doanh thu |
+| Nhân viên cửa hàng/kho | location (Designed) | BOPIS, nhận trả hàng, tra tồn tại location |
+| Integration Operator | cửa hàng | Theo dõi & replay message |
 
-- **Gán role kèm phạm vi**: `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)`. Permission là mã chuỗi do module/plugin khai báo (`PermissionRegistry`), vai trò lưu trong `role_permissions`; `'*'` = mọi quyền. Một người có thể là Brand Manager của Lumière và CSKH toàn tập đoàn.
+- **Gán role**: `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)` với scope `owner` (toàn cửa hàng) hoặc `location`. Permission là mã chuỗi do module/plugin khai báo (`PermissionRegistry`), vai trò lưu trong `role_permissions`; `'*'` = mọi quyền. Brand **không** là phạm vi quyền: muốn giới hạn ai sửa sản phẩm brand nào thì dùng quy trình duyệt, không dùng RBAC.
 - Kiểm tra (**Implemented**, `Authorizer` + `Gate::before`):
-  - `Gate::allows('orders.cancel', [ScopeRef::brand($order->brand_id)])`: có permission **và** phạm vi được gán bao phủ brand của đối tượng.
-  - `Gate::allows('admin.access')` (không truyền phạm vi): có permission ở **bất kỳ** phạm vi nào. Dùng cho truy cập trang/menu; dữ liệu vẫn bị lọc theo phạm vi.
-  - Thao tác cấp Owner (ví dụ cài plugin) phải truyền `ScopeRef::owner()` tường minh.
-  - Owner bao phủ mọi thứ; Legal Entity bao phủ chính nó và các brand thuộc nó; Brand chỉ bao phủ chính nó. Scope `location`: Designed.
-- Global scope `BelongsToBrand` ([multi-brand](../12-multi-brand/multi-brand.md)) là **lớp phòng thủ thứ hai**; Policy là lớp thứ nhất.
+  - `Gate::allows('orders.cancel')`: có permission ở phạm vi cửa hàng.
+  - Thao tác tại một location (Designed): `Gate::allows('stock.adjust', [ScopeRef::location($id)])`.
+  - Code hiện còn scope `legal_entity`/`brand` và global scope `BelongsToBrand` (mô hình cũ ADR-008) — gỡ ở slice 12.
 - **Phê duyệt 2 bước** (maker–checker) cho thao tác nhạy cảm: hoàn tiền > ngưỡng, điều chỉnh tồn lớn, khuyến mãi giảm > X%, export dữ liệu khách.
 
 ## 3. Audit log
@@ -61,8 +59,8 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 
 | Yêu cầu | Thực hiện |
 |---|---|
-| Consent theo mục đích | `customer_consents` theo brand/kênh/mục đích, có nguồn & thời điểm; checkbox **không tick sẵn** |
-| Thông báo xử lý | Chính sách bảo mật theo pháp nhân, liên kết tại mọi form thu thập |
+| Consent theo mục đích | `customer_consents` theo kênh gửi/mục đích, có nguồn & thời điểm; checkbox **không tick sẵn** |
+| Thông báo xử lý | Chính sách bảo mật của cửa hàng (pháp nhân vận hành), liên kết tại mọi form thu thập |
 | Quyền của chủ thể | Trang tài khoản: tải dữ liệu của tôi, rút consent, yêu cầu xoá tài khoản (ẩn danh hoá, giữ đơn hàng theo nghĩa vụ kế toán/thuế) |
 | Tối thiểu hoá | Không thu dữ liệu không cần; không lưu số thẻ (tokenize ở cổng TT) |
 | Mã hoá | TLS 1.2+; mã hoá cột nhạy cảm (số tài khoản ngân hàng hoàn tiền, secret tích hợp) bằng Laravel encrypted cast; key quản lý tách biệt |
@@ -89,10 +87,10 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 - Xác minh chữ ký IPN, so khớp số tiền & mã đơn, idempotent.
 - Hoàn tiền: phân quyền riêng + ngưỡng phê duyệt.
 
-## 7. Tenant và brand isolation
+## 7. Một cửa hàng, không multi-tenant
 
-- Một bản cài đặt = một Owner (không multi-tenant SaaS). **Brand isolation** là yêu cầu bảo mật chính: Policy + global scope + `CurrentContext` bắt buộc ([multi-brand §3](../12-multi-brand/multi-brand.md)).
-- **ABAC** được dùng ở mức vừa đủ: quyền = permission (RBAC) **và** thuộc tính của bản ghi (brand, legal entity, location, seller/creator nếu có plugin) khớp với scope của người dùng. Được hiện thực trong Policy, không dùng engine ABAC riêng.
+- Một bản cài đặt = một Owner = một cửa hàng (không multi-tenant SaaS, không cô lập theo brand — [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
+- **ABAC** ở mức vừa đủ: quyền = permission (RBAC) **và**, khi cần, thuộc tính bản ghi khớp với người dùng (location của nhân viên cửa hàng; seller/creator nếu có plugin). Hiện thực trong Policy, không dùng engine ABAC riêng.
 
 ## 8. Integration credentials
 
@@ -100,7 +98,7 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 |---|---|
 | Danh tính | Mỗi hệ thống ngoài là một Integration Client ([integration-platform §3](../11-integration/integration-platform.md)) |
 | Scope | Theo tài nguyên + hành động (`orders:read`, `inventory:write`…) |
-| Data scope | Brand / legal entity / location |
+| Data scope | Location (khi đối tác chỉ quản một kho/cửa hàng) |
 | Ownership | Chỉ authority của loại dữ liệu mới được ghi |
 | Ký request | HMAC-SHA256 trên `timestamp + "." + body`, lệch thời gian ≤ 5 phút, chống replay bằng nonce/`Idempotency-Key` |
 | Webhook đi | Ký cùng cơ chế bằng secret của subscription |

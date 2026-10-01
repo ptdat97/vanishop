@@ -19,7 +19,7 @@ Cấu hình trong `integration_ownerships(data_type, scope_type, scope_id, autho
 |---|---|---|---|---|
 | Mã hàng (SKU, barcode, đơn vị, nhóm thuế) | VaniShop | **ERP** | ERP → VaniShop | Khi ERP là SoA, form sửa mã trong Admin bị khoá |
 | Nội dung bán hàng (tên hiển thị, mô tả, ảnh, SEO) | **VaniShop** | — | VaniShop → ERP (tên ngắn, tuỳ chọn) | |
-| Giá bán online | VaniShop | ERP | Một chiều theo cấu hình | Theo brand |
+| Giá bán online | VaniShop | ERP | Một chiều theo cấu hình | Cấu hình của cửa hàng |
 | Giá vốn | ERP | — | Không đồng bộ | |
 | Tồn vật lý (on-hand) | VaniShop | ERP / POS / ODO (theo location) | Authority → VaniShop | [inventory](../08-inventory/inventory.md) |
 | Reservation, ATS | **VaniShop** | — | VaniShop → ngoài (thông tin) | Không cho ERP ghi |

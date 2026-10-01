@@ -21,7 +21,7 @@
 ```mermaid
 flowchart TB
     Customer([Khách hàng<br/>Web / Mobile / Headless])
-    Staff([Nhân viên<br/>Admin / Brand / CSKH / Cửa hàng])
+    Staff([Nhân viên<br/>Quản trị / Ngành hàng / CSKH / Cửa hàng])
     subgraph VS[VaniShop]
       SF[Native Storefront<br/>Blade SSR]
       ADM[Admin<br/>Inertia + Vue 3]
@@ -68,13 +68,13 @@ vanishop/
 ├── app/                    # Khung ứng dụng: Providers, middleware chung, Console
 │   └── Providers/ModuleServiceProvider.php
 ├── modules/                # Commerce Kernel — namespace Modules\<Context>\
-│   ├── Shared/  Tenancy/  Brand/  Channel/  Identity/  Extension/
+│   ├── Shared/  Tenancy/  Identity/  Extension/      (Brand/, Channel/: gỡ ở slice 12, ADR-028)
 │   ├── Catalog/ Pricing/  Inventory/ Customer/ Cart/ Checkout/
 │   ├── Ordering/ Payment/ Fulfillment/ Returns/ Promotion/
 │   └── Content/ Notification/ Reporting/ Integration/
 ├── custom/
 │   ├── plugin/             # Business plugins — namespace Plugin\<Name>\
-│   └── theme/              # Theme storefront theo brand
+│   └── theme/              # Theme storefront của cửa hàng (một theme hoạt động)
 ├── resources/js/           # Entry Admin Inertia, component Vue dùng chung
 ├── routes/                 # Chỉ route khung; route nghiệp vụ nằm trong module/plugin
 ├── tests/                  # Test xuyên module (E2E, architecture)
@@ -123,7 +123,7 @@ sequenceDiagram
     participant P as Persistence
     participant O as Outbox
     C->>MW: HTTP request
-    MW->>MW: correlation id, ResolveChannel → CurrentContext, auth
+    MW->>MW: correlation id, CurrentContext (actor, locale), auth
     MW->>H: request
     H->>A: Command DTO (đã validate)
     A->>P: load aggregate (khoá nếu cần)
@@ -143,7 +143,7 @@ sequenceDiagram
 | Hiệu năng | Storefront TTFB P95 < 300 ms (cache nóng); API P95 < 200 ms (không tính cổng ngoài) |
 | Tải | 500 đơn/phút giờ cao điểm; 5.000 req/s qua CDN |
 | Nhất quán tồn | 0 oversell do race condition ([inventory](../08-inventory/inventory.md)) |
-| Mở rộng | Thêm brand không cần deploy; thêm capability bằng plugin, không sửa Core |
+| Mở rộng | Thêm brand = dữ liệu catalog, không cần deploy; thêm capability bằng plugin, không sửa Core |
 | Quan sát | Mọi flow truy vết được bằng correlation id ([observability](../16-observability/observability.md)) |
 | Bảo mật | OWASP ASVS L2; PCI-DSS SAQ-A ([security](../15-security/security.md)) |
 

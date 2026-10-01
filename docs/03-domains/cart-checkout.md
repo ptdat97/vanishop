@@ -8,13 +8,13 @@
 >
 > **Checkout đã có (slice 6):** module `modules/Checkout`, contract `Checkout` (`quote`, `placeOrder`), totals pipeline (subtotal 100 → promotion 200 → shipping 500 → tax 800 → guard 900), `VnVatInclusiveTax` (VAT gồm trong giá, `VANI_VAT_RATE_BP`), `FlatRateShipping` (phí cố định + miễn phí trên ngưỡng), `CoreCheckoutValidator` (giỏ, một brand, liên hệ, SĐT, địa chỉ, giao hàng, thanh toán), hook `vani.checkout.before_validate` / `after_validate` / `payment_methods` / `shipping_options` / `vani.order.after_create`, `PlaceOrder` một transaction + `Idempotency-Key` + `expected_total` ([ADR-023](../19-adr/ADR-023-stateless-checkout.md)). Thanh toán: COD (`cod_pending`).
 >
-> **Chưa có (Checkout):** `PaymentGateway`/thanh toán online (slice 7), order group cho kênh đa brand, kiểm tra mã địa giới với bảng `administrative_units`, thuế trên phí giao hàng, carrier thật (slice 9).
+> **Chưa có (Checkout):** `PaymentGateway`/thanh toán online (slice 7), kiểm tra mã địa giới với bảng `administrative_units`, thuế trên phí giao hàng, carrier thật (slice 9).
 
 ## 1. Cart
 
 | Mục | Thiết kế |
 |---|---|
-| Phạm vi | Một giỏ theo **channel**; kênh đa brand có giỏ chứa nhiều brand |
+| Phạm vi | Một giỏ cho cửa hàng, chứa sản phẩm **mọi brand**, đặt thành **một đơn** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Code hiện gắn giỏ với kênh và chặn đơn nhiều brand — gỡ ở slice 12 |
 | Định danh | `public_id` (ULID) + token bí mật (header `X-Vani-Cart-Token`; native: cookie HttpOnly), server chỉ lưu `sha256` ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)) |
 | Dòng giỏ | `variant_id`, `quantity`, `unit_price_snapshot` (giá lúc thêm, để cảnh báo "giá đã đổi"), `meta` |
 | Gộp giỏ | Khi đăng nhập: cộng dồn số lượng, kẹp theo giới hạn dòng và ATS (không giảm dòng sẵn có của giỏ đích), bỏ dòng không còn bán, giỏ nguồn → `merged`, phát `CartUpdated` |
@@ -24,7 +24,7 @@
 | Hết hạn | 30 ngày không hoạt động; job dọn dẹp |
 | Giỏ bỏ quên | Event `CartAbandoned` (1h/24h), plugin `vani.abandoned-cart` xử lý |
 
-Invariant: `quantity > 0` (DB `CHECK`), unique `(cart_id, variant_id)` (DB), variant phải thuộc brand có trong channel (App).
+Invariant: `quantity > 0` (DB `CHECK`), unique `(cart_id, variant_id)` (DB), variant phải đang bán (App).
 
 ## 2. Totals pipeline
 
@@ -51,7 +51,7 @@ interface TaxCalculator
 {
     public function code(): string;
     /** Tách thuế theo từng dòng sau khi đã trừ giảm giá phân bổ */
-    public function calculate(TaxableLines $lines, ChannelData $channel): TaxBreakdown;
+    public function calculate(TaxableLines $lines): TaxBreakdown;
 }
 ```
 
@@ -73,7 +73,7 @@ Cùng một pipeline dùng cho: xem giỏ, checkout, `PlaceOrder`, và tính l�
 6. **Voucher**.
 7. Đặt hàng → `PlaceOrder`.
 
-Validation: `CheckoutValidator` (core: giá, tồn, địa chỉ) + hook `vani.checkout.before_validate` / `vani.checkout.after_validate` (plugin: chống bom hàng, quy tắc riêng brand).
+Validation: `CheckoutValidator` (core: giá, tồn, địa chỉ) + hook `vani.checkout.before_validate` / `vani.checkout.after_validate` (plugin: chống bom hàng, quy tắc riêng của cửa hàng).
 
 ## 4. `PlaceOrder`: transaction boundary
 

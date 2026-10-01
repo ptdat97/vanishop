@@ -11,7 +11,7 @@ Hệ tham chiếu là **VaniCommerce** (`~/Ecommerce/VaniCommerce`), một nền
 
 ## 1. Kết luận
 
-VaniShop **đã vượt** hệ tham chiếu ở phần lõi thương mại: tồn kho (reservation đa kho, không oversell có concurrency test), trạng thái đơn tách 4 chiều, tiền `BIGINT`, idempotency, outbox/inbox, multi-brand theo scope, extension point có kiểu và compatibility policy. Các khoảng trống enterprise mà chính hệ tham chiếu tự liệt kê (hook trước khi ghi, event sau commit, outbox, idempotency key, audit, kiểm tra tương thích plugin) **VaniShop đều đã có**.
+VaniShop **đã vượt** hệ tham chiếu ở phần lõi thương mại: tồn kho (reservation đa kho, không oversell có concurrency test), trạng thái đơn tách 4 chiều, tiền `BIGINT`, idempotency, outbox/inbox, extension point có kiểu và compatibility policy. Các khoảng trống enterprise mà chính hệ tham chiếu tự liệt kê (hook trước khi ghi, event sau commit, outbox, idempotency key, audit, kiểm tra tương thích plugin) **VaniShop đều đã có**.
 
 Hệ tham chiếu mạnh hơn ở bốn điểm, VaniShop nên học:
 
@@ -43,9 +43,9 @@ Hệ tham chiếu mạnh hơn ở bốn điểm, VaniShop nên học:
 | Trạng thái đơn | Một máy trạng thái, plugin được **sửa cả bảng chuyển** | 4 chiều trạng thái, bảng chuyển **không mở rộng** | Plugin sửa bảng chuyển từng làm rò kho ở hệ tham chiếu (thêm nhánh trừ kho mà thiếu nhánh hoàn) |
 | Mở rộng dữ liệu | Plugin thêm cột vào bảng Core và thêm quan hệ động vào model | Bảng `plg_<plugin>_*` + `meta` JSON theo namespace plugin | Gỡ plugin không để lại cột trên bảng Core; migration Core không bị plugin chặn ([ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md)) |
 | Hook | Chuỗi tự do, không khai báo trước, filter không kiểm kiểu | Registry `hooks.php`, strict mode, public/internal, kiểm kiểu trả về, đo thời gian | Nâng cấp Core không phá plugin âm thầm |
-| Lối thoát sửa view | Viết lại HTML của view bất kỳ bằng bộ phân tích DOM lúc render | **Không có**; thay khối bằng override view trong theme brand | Viết lại HTML dễ vỡ khi view đổi, khó review ([ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)) |
+| Lối thoát sửa view | Viết lại HTML của view bất kỳ bằng bộ phân tích DOM lúc render | **Không có**; thay khối bằng override view trong theme của cửa hàng | Viết lại HTML dễ vỡ khi view đổi, khó review ([ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)) |
 | Cài plugin | Upload zip trong Admin (phải chặn path traversal, zip bomb) | Plugin chỉ vào hệ thống qua mã nguồn + CI | Bỏ hẳn một bề mặt tấn công; một Owner, một đội ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)) |
-| Phạm vi | Một cửa hàng | Owner → pháp nhân → brand → kênh; plugin bật theo scope | Mô hình tập đoàn nhiều brand ([ADR-008](../19-adr/ADR-008-multi-brand-model.md)) |
+| Phạm vi | Một cửa hàng | **Nay giống**: một cửa hàng, brand là thuộc tính catalog ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), thay ADR-008) | Owner chỉ cần một website, một giao diện |
 | Đa ngôn ngữ nội dung | Bảng mô tả theo ngôn ngữ | `*_translations` | Clean-room + đã triển khai |
 | Tích hợp | Hook sau commit, gọi ngoài trong listener | Outbox/inbox, retry, dead letter, replay, đối soát | ERP không được làm hỏng checkout (R12) |
 | Admin | Blade SSR | Inertia + Vue 3 + TS ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Màn hình vận hành nhiều bảng lọc, form sinh từ settings |

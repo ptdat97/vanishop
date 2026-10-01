@@ -8,7 +8,7 @@
 >
 > **Slice 9:** giao thành công vận đơn có COD → payment `paid`, đơn `cod_collected` (idempotent theo vận đơn).
 >
-> **Chưa có:** ngưỡng phê duyệt hoàn tiền 2 bước, credential cổng mã hoá theo pháp nhân trong settings (chờ Tenancy settings), khách chọn lại phương thức sau khi thanh toán lỗi, cổng online thật (plugin `vani.vietqr`, slice 10).
+> **Chưa có:** ngưỡng phê duyệt hoàn tiền 2 bước, credential cổng mã hoá trong settings cấp cửa hàng, khách chọn lại phương thức sau khi thanh toán lỗi, cổng online thật (plugin `vani.vietqr`, slice 10).
 
 ## 1. Trách nhiệm
 
@@ -26,7 +26,7 @@
 interface PaymentGateway
 {
     public function code(): string;                                        // 'cod', 'manual_bank_transfer', 'vietqr'...
-    public function isAvailable(PaymentContext $ctx): bool;                // theo brand, số tiền, thiết bị, health
+    public function isAvailable(PaymentContext $ctx): bool;                // theo số tiền, thiết bị, health
     public function initiate(PaymentData $payment): PaymentInitiation;     // redirect URL / QR / deeplink / none
     public function verifyCallback(Request $request): GatewayCallback;     // xác minh chữ ký → dữ liệu chuẩn hoá
     public function query(PaymentData $payment): GatewayStatus;            // truy vấn trạng thái giao dịch treo
@@ -35,13 +35,13 @@ interface PaymentGateway
 }
 ```
 
-Credential cấu hình **theo pháp nhân** (tài khoản nhận tiền của công ty nào), lưu mã hoá trong settings ([security](../15-security/security.md)).
+Credential cấu hình **cấp cửa hàng** (tài khoản nhận tiền của pháp nhân vận hành), lưu mã hoá trong settings ([security](../15-security/security.md)).
 
 ## 3. Dữ liệu và invariant
 
 | Bảng | Invariant |
 |---|---|
-| `payments(order_id, gateway_code, amount, currency_code, status, legal_entity_id, expires_at, lock_version)` | DB: `amount > 0`; App: Σ payment `paid` của đơn ≤ tổng đơn |
+| `payments(order_id, gateway_code, amount, currency_code, status, expires_at, lock_version)` | DB: `amount > 0`; App: Σ payment `paid` của đơn ≤ tổng đơn |
 | `payment_transactions(payment_id, type[initiate|callback|query|capture|refund], gateway_transaction_id, amount, status, raw_payload_masked, correlation_id)` | DB: unique `(gateway_code, gateway_transaction_id, type)` → khử IPN trùng; append-only |
 | `refunds(payment_id, amount, status, reason, idempotency_key, requested_by)` | DB: unique `idempotency_key`; App: Σ refund ≤ số đã thu (khoá `payments` khi tạo refund) |
 
@@ -74,8 +74,8 @@ sequenceDiagram
 
 ## 5. COD và chuyển khoản thủ công (Core)
 
-- **COD**: đặt hàng → `payment_status = cod_pending` → xác nhận đơn (tự động hoặc CSKH, tuỳ cấu hình brand) → `confirmed`. Giao thành công → `cod_collected` (khi hãng báo hoặc đối soát xác nhận). Giới hạn giá trị COD theo cấu hình.
-- **Chuyển khoản thủ công**: hiển thị số tài khoản của pháp nhân + nội dung = mã đơn; nhân viên có quyền `payments.confirm` xác nhận đã nhận tiền (audit).
+- **COD**: đặt hàng → `payment_status = cod_pending` → xác nhận đơn (tự động hoặc CSKH, tuỳ cấu hình) → `confirmed`. Giao thành công → `cod_collected` (khi hãng báo hoặc đối soát xác nhận). Giới hạn giá trị COD theo cấu hình.
+- **Chuyển khoản thủ công**: hiển thị số tài khoản của cửa hàng + nội dung = mã đơn; nhân viên có quyền `payments.confirm` xác nhận đã nhận tiền (audit).
 
 ## 6. Phương thức theo thị trường VN
 
