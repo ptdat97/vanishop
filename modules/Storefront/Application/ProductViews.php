@@ -24,6 +24,7 @@ final class ProductViews
         private readonly PriceResolver $prices,
         private readonly AvailabilityReader $availability,
         private readonly MoneyFormatter $money,
+        private readonly Enrichment $enrichment,
     ) {}
 
     /**
@@ -44,6 +45,7 @@ final class ProductViews
 
             return $item;
         }, $listing['items']);
+        $listing['items'] = $this->enrichment->apply('product_card', $listing['items']);
 
         return $listing;
     }
@@ -72,7 +74,7 @@ final class ProductViews
         $product['in_stock'] = array_sum($stock) > 0;
         unset($product['variant_ids']);
 
-        return $product;
+        return $this->enrichment->applyOne('product', $product);
     }
 
     /**

@@ -32,6 +32,7 @@
                 </ul>
             </section>
         @endif
+        <x-vani::hook-slot name="vani.storefront.plp.filters" :args="[$listing]" />
     </aside>
 
     <section>

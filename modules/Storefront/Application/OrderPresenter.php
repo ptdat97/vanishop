@@ -18,6 +18,7 @@ final class OrderPresenter
         private readonly MoneyFormatter $money,
         private readonly ShipmentReader $shipments,
         private readonly Returns $returns,
+        private readonly Enrichment $enrichment,
     ) {}
 
     /**
@@ -27,7 +28,7 @@ final class OrderPresenter
     {
         $money = fn (?int $amount): ?array => $amount === null ? null : $this->money->toArray(Money::of($amount, $order->currencyCode));
 
-        return [
+        return $this->enrichment->applyOne('order', [
             'id' => $order->publicId,
             'number' => $order->number,
             'status' => $order->customerStatus,
@@ -65,6 +66,6 @@ final class OrderPresenter
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),
             'returnable' => $this->returns->returnable($order->id),
-        ];
+        ]);
     }
 }

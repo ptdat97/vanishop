@@ -1,12 +1,15 @@
 <?php
 
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Checkout\Tests\Feature\CheckoutTestHelpers;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Plugin\HelloWorld\HelloWorldServiceProvider;
+
+require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /**
  * Plugin thật, cài/bật qua PluginManager rồi nạp provider như lúc boot.
@@ -54,4 +57,14 @@ it('plugin bị tắt → trang trả 404, không còn card', function () {
 
     $this->actingAs($staff, 'staff')->get('/admin/plugins/vani-hello-world')->assertNotFound();
     $this->actingAs($staff, 'staff')->get('/admin')->assertInertia(fn (Assert $page) => $page->where('cards', []));
+});
+
+it('storefront: lời chào trong dữ liệu PDP (API + native) và hiện qua slot', function () {
+    installHelloWorld();
+    ['s' => $variant] = CheckoutTestHelpers::store();
+    $slug = $variant->style->slug;
+
+    $extensions = $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()->json('data.extensions');
+    expect($extensions)->toBe(['vani.hello-world' => ['greeting' => 'Xin chào từ Đầm lụa!']]);
+    $this->get("/san-pham/{$slug}")->assertOk()->assertSee('Xin chào từ Đầm lụa!');
 });

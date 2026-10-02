@@ -21,6 +21,7 @@
                     </div>
                 @endforeach
             </fieldset>
+            <x-vani::hook-slot name="vani.storefront.checkout.contact_after" :args="[$quote]" />
 
             <fieldset class="space-y-3">
                 <legend class="mb-2 font-semibold">Địa chỉ nhận hàng</legend>
@@ -32,6 +33,7 @@
                     </div>
                 @endforeach
             </fieldset>
+            <x-vani::hook-slot name="vani.storefront.checkout.address_after" :args="[$quote]" />
 
             <fieldset>
                 <legend class="mb-2 font-semibold">Giao hàng</legend>
@@ -59,6 +61,7 @@
                 @endforelse
                 @error('payment_method')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
             </fieldset>
+            <x-vani::hook-slot name="vani.storefront.checkout.payment_after" :args="[$quote]" />
 
             <div>
                 <label for="note" class="block text-sm">Ghi chú</label>

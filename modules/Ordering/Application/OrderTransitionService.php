@@ -14,6 +14,7 @@ use Modules\Ordering\Domain\FulfillmentStatus;
 use Modules\Ordering\Domain\OrderStateMachine;
 use Modules\Ordering\Domain\PaymentStatus;
 use Modules\Ordering\Events\OrderCancelled;
+use Modules\Ordering\Events\OrderCompleted;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\CurrentContext;
@@ -41,6 +42,7 @@ final class OrderTransitionService implements OrderTransitions
             match ($to) {
                 OrderStatus::Confirmed => event(new OrderConfirmed($order->id, $order->public_id, $reason)),
                 OrderStatus::Cancelled => event(new OrderCancelled($order->id, $order->public_id, (string) $order->reservation_key, $reason, $source)),
+                OrderStatus::Completed => event(new OrderCompleted($order->id, $order->public_id, $order->number, $order->customer_id === null ? null : (int) $order->customer_id, (int) $order->total_amount, (string) $order->currency_code)),
                 default => null,
             };
 

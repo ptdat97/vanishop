@@ -26,6 +26,7 @@
                     <img data-gallery-main src="{{ $images[0] ?? $product['image_url'] }}" alt="{{ $product['name'] }}" width="600" height="800" class="h-full w-full object-cover">
                 @endif
             </div>
+            <x-vani::hook-slot name="vani.storefront.pdp.gallery_after" :args="[$product]" />
         </div>
 
         <div>

@@ -165,3 +165,14 @@ describe('slot storefront', function () {
         File::deleteDirectory($views);
     });
 });
+
+it('slot header/footer/checkout mới hiện ở đúng trang', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.header.actions', fn () => new HtmlString('<a href="/p/wishlist">Yêu thích</a>'));
+    $hooks->onSlot('vani.storefront.footer.columns', fn () => new HtmlString('<p>Đăng ký nhận tin</p>'));
+    $hooks->onSlot('vani.storefront.checkout.address_after', fn () => new HtmlString('<input name="extra[vani.gift][message]">'));
+
+    $this->get('/')->assertSee('Yêu thích')->assertSee('Đăng ký nhận tin');
+    $this->post('/gio-hang', ['variant_id' => $this->s->id]);
+    $this->get('/thanh-toan')->assertSee('name="extra[vani.gift][message]"', false);
+});

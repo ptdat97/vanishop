@@ -1,6 +1,6 @@
 # ADR-030 — Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu
 
-- Trạng thái: Proposed · Ngày: 2026-10-02 · Người quyết định: Owner
+- Trạng thái: Accepted · Ngày: 2026-10-02 · Người quyết định: Owner
 - Mở rộng: [ADR-004](ADR-004-extension-points.md), [ADR-029](ADR-029-commerce-microkernel.md). Liên quan: [ADR-025](ADR-025-native-storefront-ssr-slots.md), [ADR-027](ADR-027-plugin-data-no-core-columns.md).
 - Tài liệu gốc: [extension-surface-v2](../04-extension/extension-surface-v2.md).
 

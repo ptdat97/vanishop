@@ -14,14 +14,17 @@ use Modules\Shared\Support\MoneyFormatter;
  */
 final class CartPresenter
 {
-    public function __construct(private readonly MoneyFormatter $money) {}
+    public function __construct(
+        private readonly MoneyFormatter $money,
+        private readonly Enrichment $enrichment,
+    ) {}
 
     /**
      * @return array<string, mixed>
      */
     public function present(CartView $cart): array
     {
-        return [
+        return $this->enrichment->applyOne('cart', [
             'id' => $cart->id,
             'status' => $cart->status,
             'currency' => $cart->currencyCode,
@@ -47,7 +50,7 @@ final class CartPresenter
                 'line_total' => $this->optional($line->lineTotal),
                 'issues' => $line->issues,
             ], $cart->lines),
-        ];
+        ]);
     }
 
     /**

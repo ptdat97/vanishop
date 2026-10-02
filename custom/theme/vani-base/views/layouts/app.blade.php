@@ -20,10 +20,14 @@
                 <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="Tìm sản phẩm…"
                        class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
             </form>
-            <nav class="flex gap-4 text-sm">
+            <nav class="flex gap-4 text-sm" aria-label="Menu chính">
                 <a href="{{ route('storefront.brands') }}">Thương hiệu</a>
-                <a href="{{ route('storefront.cart') }}">Giỏ hàng</a>
+                <x-vani::hook-slot name="vani.storefront.header.nav" />
             </nav>
+            <div class="flex items-center gap-4 text-sm">
+                <x-vani::hook-slot name="vani.storefront.header.actions" />
+                <a href="{{ route('storefront.cart') }}">Giỏ hàng</a>
+            </div>
         </div>
     </header>
 
@@ -39,7 +43,10 @@
     </main>
 
     <footer class="mt-12 border-t border-slate-200">
-        <div class="mx-auto max-w-6xl px-4 py-6 text-sm text-slate-500">© {{ date('Y') }} {{ config('app.name') }}</div>
+        <div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 text-sm text-slate-500 md:grid-cols-4">
+            <x-vani::hook-slot name="vani.storefront.footer.columns" />
+            <p class="md:col-span-4">© {{ date('Y') }} {{ config('app.name') }}</p>
+        </div>
     </footer>
 
     <x-vani::hook-slot name="vani.storefront.layout.body_end" />

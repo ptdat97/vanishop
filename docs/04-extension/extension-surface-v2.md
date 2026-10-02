@@ -1,6 +1,6 @@
 # Mở rộng Extension Points của Commerce Kernel (EP v2)
 
-> Trạng thái: **Designed** (2026-10-02). Quyết định: [ADR-030](../19-adr/ADR-030-extension-surface-v2.md). Nền: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (microkernel), [extension-model](extension-model.md) (bốn cơ chế, compatibility policy), [extension-point-catalog](extension-point-catalog.md) (danh mục hiện có).
+> Trạng thái: **Designed**, ADR Accepted 2026-10-02. Quyết định: [ADR-030](../19-adr/ADR-030-extension-surface-v2.md). Nền: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (microkernel), [extension-model](extension-model.md) (bốn cơ chế, compatibility policy), [extension-point-catalog](extension-point-catalog.md) (danh mục hiện có).
 >
 > Clean-room: phần "hệ tham chiếu" dưới đây là đầu ra của vai trò nghiên cứu trên BeikeShop v3.0.0.11, chỉ ghi **khái niệm** bằng lời của VaniShop; không chép tên hook, class, bảng hay cấu trúc file ([clean-room](../01-principles/clean-room-license.md)).
 
@@ -195,11 +195,11 @@ Nguyên tắc: **mọi chuyển trạng thái có ý nghĩa nghiệp vụ của 
 
 ## 6. Lộ trình
 
-Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugin đó là implementation tham chiếu).
+Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugin đó là implementation tham chiếu). Đợt chỉ **thêm** thì tăng bản vá `0.3.x` (plugin `^0.3` chạy tiếp); cột Core dưới đây là dự kiến tối đa.
 
 | Đợt | Extension point | Plugin tham chiếu | Core |
 |---|---|---|---|
-| **W1** (cùng P1) | Slot storefront mới (header, footer, account, checkout từng bước); `StorefrontEnricher`; `OrderCompleted` | `vani.tracking-pixels`, `vani.vnpay` (đã đủ EP) | 0.4 |
+| **W1** ✅ (2026-10-02, Core 0.3.1) | Slot storefront mới (header, footer, bộ lọc PLP, ảnh PDP, checkout từng bước; slot tài khoản chờ trang `/tai-khoan`); `StorefrontEnricher` (tham chiếu `vani.hello-world`); `OrderCompleted` | `vani.tracking-pixels`, `vani.vnpay` (đã đủ EP) | 0.3.1 |
 | **W2** (Admin) | `adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter` + `FieldDefinition` | `vani.einvoice`, `vani.size-advisor` | 0.4 |
 | **W3** (storefront plugin) | `storefrontRoutes`, `storefrontPages`, `accountPages`; `CartAbandoned` | `vani.wishlist`, `vani.abandoned-cart` | 0.5 |
 | **W4** (giao dịch) | `meta` dòng giỏ/đơn, `CartLineOption`, `vani.checkout.context`, `CapturesLater` + `PaymentAuthorized` | `vani.product-bundle`, gói quà, `vani.creator` | 0.5 |

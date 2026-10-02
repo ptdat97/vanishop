@@ -21,3 +21,14 @@ it('view của theme không truy vấn DB', function () {
 
     expect($offenders)->toBe([]);
 });
+
+it('mọi slot storefront đã khai báo đều được theme vani-base render (khai báo = public API)', function () {
+    $views = '';
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../custom/theme/vani-base/views', FilesystemIterator::SKIP_DOTS)) as $file) {
+        $views .= file_get_contents($file->getPathname());
+    }
+
+    $missing = array_values(array_filter(array_keys(require __DIR__.'/../../modules/Storefront/hooks.php'), fn (string $slot): bool => ! str_contains($views, "name=\"{$slot}\"")));
+
+    expect($missing)->toBe([]);
+});

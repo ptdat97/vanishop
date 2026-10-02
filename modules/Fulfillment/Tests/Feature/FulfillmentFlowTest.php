@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -11,6 +12,7 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiCarrier;
 use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiRates;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
+use Modules\Ordering\Events\OrderCompleted;
 use Modules\Ordering\Persistence\Models\Order;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -78,8 +80,15 @@ it('E2E: xem sản phẩm → giỏ → COD → xác nhận → vận đơn → 
     expect(($this->order)()->order_status->value)->toBe('processing');
 
     $this->travel(8)->days();
+    $completed = [];
+    Event::listen(OrderCompleted::class, function (OrderCompleted $event) use (&$completed): void {
+        $completed[] = $event;
+    });
     $this->artisan('vani:orders:complete-delivered')->assertSuccessful();
-    expect(($this->order)()->order_status->value)->toBe('completed');
+    expect(($this->order)()->order_status->value)->toBe('completed')
+        ->and($completed)->toHaveCount(1)
+        ->and($completed[0]->number)->toBe($order->number)
+        ->and($completed[0]->total)->toBe(330_000);
 });
 
 it('hàng hoàn về: nhập lại kho, đơn "hoàn về", nhân viên huỷ đơn → huỷ COD', function () {

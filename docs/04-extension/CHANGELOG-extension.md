@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.1 — 2026-10-02
+
+Đợt W1 của [extension-surface-v2](extension-surface-v2.md) ([ADR-030](../19-adr/ADR-030-extension-surface-v2.md)). Chỉ thêm — plugin `^0.3` chạy tiếp.
+
+### Thêm
+- `Storefront\Contracts\StorefrontEnricher` (tag `vani.storefront.enrichers`; tài nguyên `product_card`, `product`, `cart`, `order`) + bộ contract test `Storefront\Testing\StorefrontEnricherContract`. Dữ liệu gắn dưới `extensions.<plugin-id>` ở cả native và Storefront API. Implementation tham chiếu: `vani.hello-world`.
+- Event `Ordering\Events\OrderCompleted` (`orderId`, `publicId`, `number`, `customerId`, `total`, `currency`) khi đơn chuyển `completed`.
+- Slot storefront (`since 0.3.1` trong `hooks.php`): `header.nav`, `header.actions`, `footer.columns`, `plp.filters`, `pdp.gallery_after`, `checkout.contact_after`, `checkout.address_after`, `checkout.payment_after`.
+- Slot storefront chấp nhận listener trả `null` (không hiện gì).
+
 ## 0.3.0 — 2026-10-02
 
 Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) — slice 12. Mọi plugin trong `custom/plugin` đã chuyển sang `^0.3`.
