@@ -34,6 +34,10 @@ Hệ tham chiếu mạnh hơn ở bốn điểm, VaniShop nên học:
 | L8 | Tài liệu tham chiếu đếm số liệu từ source, ghi mâu thuẫn theo code | `system-map` có lệnh đếm lại; chỗ tài liệu lệch code thì sửa theo code (R24) | [system-map §6](system-map.md) |
 | L9 | Tổng đơn gồm nhiều dòng, plugin thêm dòng (giảm giá, điểm) không đổi schema | **Đã có và chặt hơn**: `TotalsCalculator` theo priority, `order_adjustments` truy vết, guard cuối pipeline | [cart-checkout](../03-domains/cart-checkout.md) |
 | L10 | Plugin đăng ký tác vụ định kỳ, route API riêng cho headless | **Đã có** `schedule()`; `storefrontRoutes()` còn Designed | [plugin-system §9](../05-plugin/plugin-system.md) |
+| L11 | Gần như mọi màn hình quản trị mở cho plugin thêm trường/cột/tab/thao tác (nghiên cứu BeikeShop v3.0.0.11, 2026-10-02) | Registry có kiểu theo resource (`adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter`), dùng chung cho Admin API | [extension-surface-v2 §4.A](../04-extension/extension-surface-v2.md) |
+| L12 | Dữ liệu trả API khách bổ sung được qua điểm lọc tài nguyên | `StorefrontEnricher` batch ở Presenter, chỉ ghi dưới `extensions.<plugin-id>` | [extension-surface-v2 §4.B](../04-extension/extension-surface-v2.md) |
+| L13 | Phân loại plugin theo loại capability | `kind` manifest chuẩn hoá, doctor kiểm tra contract tối thiểu | [extension-surface-v2 §4.H](../04-extension/extension-surface-v2.md) |
+| L14 | Nhà cung cấp dịch máy và công cụ trợ lý AI do plugin đăng ký | `TranslationProvider`, `AgentTool` (Later) | [extension-surface-v2 §4.I](../04-extension/extension-surface-v2.md) |
 
 ## 3. Giữ khác biệt có chủ đích (ưu điểm của VaniShop)
 

@@ -145,6 +145,8 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 
 ## 7. Extension point còn thiếu theo plugin dự kiến
 
+> Thiết kế đầy đủ và lộ trình theo đợt (W1–W6): [extension-surface-v2](extension-surface-v2.md) ([ADR-030](../19-adr/ADR-030-extension-surface-v2.md)). Bảng dưới giữ các điểm đã nêu trước đó; khi một đợt hoàn thành, chuyển dòng lên §1–§5.
+
 Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-catalog.md) viết được **mà không sửa Core** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)). Bảng dưới đối chiếu plugin dự kiến với extension point chúng cần nhưng Core **chưa có**. Làm extension point **trước** plugin, theo đợt của plugin dùng nó; mỗi điểm cần implementation tham chiếu + contract test (R26).
 
 | Extension point thiếu | Loại | Plugin cần | Đợt |
