@@ -44,6 +44,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
         $this->app->make(Extensions::class)->requires(ShippingCarrier::CARRIERS_TAG, Requirement::AtLeastOne, 'Hãng vận chuyển');
+        $this->app->make(Extensions::class)->kindContract('shipping_carrier', ShippingCarrier::CARRIERS_TAG);
         $this->app->make(Extensions::class)->tag([ReservedLocationSourcing::class], SourcingStrategy::TAG);
         $this->app->make(Extensions::class)->requires(SourcingStrategy::TAG, Requirement::ExactlyOne, 'Chọn kho xuất hàng');
     }

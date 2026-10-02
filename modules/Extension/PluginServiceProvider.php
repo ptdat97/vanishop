@@ -12,6 +12,7 @@ use Illuminate\View\FileViewFinder;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
+use Modules\Extension\Application\Hooks\HookRegistry;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginEventListeners;
 use Modules\Extension\Application\Storefront\PluginViews;
@@ -176,6 +177,24 @@ abstract class PluginServiceProvider extends ServiceProvider
     protected function adminFilter(string $resource, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500): void
     {
         $this->app->make(AdminExtensions::class)->filter($resource, $this->pluginId(), $key, $label, $options, $apply, $order);
+    }
+
+    /**
+     * Plugin công bố hook cho plugin khác (ADR-030 §4.H): file trả mảng khai báo cùng định dạng hooks.php của module Core.
+     * Tên hook phải bắt đầu bằng id plugin (`vani.loyalty.points.earned`). Plugin dùng hook này khai báo plugin công bố
+     * trong `requires.plugins`.
+     */
+    protected function publishHooks(string $file): void
+    {
+        /** @var array<string, array<string, mixed>> $definitions */
+        $definitions = require $file;
+        foreach (array_keys($definitions) as $name) {
+            if (! str_starts_with((string) $name, $this->pluginId().'.')) {
+                throw new \InvalidArgumentException("Hook [{$name}] của plugin [{$this->pluginId()}] phải bắt đầu bằng \"{$this->pluginId()}.\".");
+            }
+        }
+
+        $this->app->make(HookRegistry::class)->declareMany($definitions);
     }
 
     protected function adminMenu(string $key, string $label, string $route, ?string $permission = null, int $order = 500): void

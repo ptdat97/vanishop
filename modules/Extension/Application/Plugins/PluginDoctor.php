@@ -7,6 +7,7 @@ namespace Modules\Extension\Application\Plugins;
 use Composer\Semver\Comparator;
 use Composer\Semver\Semver;
 use Illuminate\Support\Facades\DB;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
@@ -27,6 +28,8 @@ final class PluginDoctor
         private readonly DependencyResolver $resolver,
         private readonly PluginLoader $loader,
         private readonly RequiredExtensions $required,
+        private readonly Extensions $extensions,
+        private readonly PluginHealth $health,
         private readonly string $coreVersion,
     ) {}
 
@@ -82,6 +85,21 @@ final class PluginDoctor
         foreach ($manifests as $id => $manifest) {
             if (! $records->has($id) && ! $this->satisfiesCore($manifest->requiresCore)) {
                 $add($id, self::WARNING, 'incompatible_core', "Chưa cài; cần VaniShop {$manifest->requiresCore}, hiện tại {$this->coreVersion}.");
+            }
+        }
+
+        // Plugin khai loại gắn với extension point mà không đóng góp implementation (chỉ xét provider đã nạp ở tiến trình này).
+        $kindContracts = $this->extensions->kindContracts();
+        foreach ($this->loader->loaded() as $id) {
+            $tag = isset($manifests[$id]) ? ($kindContracts[$manifests[$id]->kind] ?? null) : null;
+            if ($tag !== null && ! in_array($id, $this->extensions->providers($tag), true)) {
+                $add($id, self::WARNING, 'kind_mismatch', "Loại [{$manifests[$id]->kind}] nhưng không đóng góp implementation cho [{$tag}].");
+            }
+        }
+
+        foreach ($this->health->run() as $id => $result) {
+            if ($result['status'] !== 'ok') {
+                $add($id, $result['status'] === 'error' ? self::ERROR : self::WARNING, 'health_'.$result['status'], $result['message']);
             }
         }
 

@@ -44,8 +44,10 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
         // Phí giao và thuế theo thị trường là plugin hệ thống (vani.shipping-flat-rate, vani.tax-vn-vat — ADR-029);
         // Core chỉ giữ `none` (không thuế) làm dự phòng trung lập.
         $this->app->make(Extensions::class)->requires(ShippingRateProvider::TAG, Requirement::AtLeastOne, 'Phí giao hàng');
+        $this->app->make(Extensions::class)->kindContract('shipping_rate', ShippingRateProvider::TAG);
         $this->app->make(Extensions::class)->tag([NoTax::class], TaxCalculator::TAG);
         $this->app->make(Extensions::class)->requires(TaxCalculator::TAG, Requirement::ExactlyOne, 'Cách tính thuế');
+        $this->app->make(Extensions::class)->kindContract('tax', TaxCalculator::TAG);
         $this->app->bind(TaxCalculator::class, fn ($app): TaxCalculator => new ConfiguredTaxCalculator(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.tax.calculator', 'vn_vat_inclusive'),
         ));

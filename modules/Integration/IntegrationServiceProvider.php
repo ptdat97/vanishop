@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Integration\Application\ConnectorRegistry;
 use Modules\Integration\Application\DatabaseReferences;
@@ -29,6 +30,7 @@ use Modules\Integration\Console\ProcessInboxCommand;
 use Modules\Integration\Console\ReconcileOrdersCommand;
 use Modules\Integration\Console\ReplayCommand;
 use Modules\Integration\Console\WebhookCommand;
+use Modules\Integration\Contracts\Connector;
 use Modules\Integration\Contracts\ExternalReferences;
 use Modules\Integration\Contracts\Inbox;
 use Modules\Integration\Contracts\IntegrationEvents;
@@ -85,6 +87,7 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, Router $router): void
     {
+        $this->app->make(Extensions::class)->kindContract('integration', Connector::TAG);
         $permissions->register('integration.view', 'Xem tình trạng tích hợp (outbox/inbox, client)');
         $permissions->register('integration.replay', 'Gửi lại message tích hợp lỗi');
         $permissions->register('integration.manage', 'Quản lý Integration Client và webhook');

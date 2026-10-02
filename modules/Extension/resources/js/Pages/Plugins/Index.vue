@@ -10,6 +10,7 @@ defineProps<{
         bundled: boolean;
         status: string;
         error: string | null;
+        health: { status: 'ok' | 'warning' | 'error'; message: string; checked_at: string } | null;
     }>;
     invalid: string[];
 }>();
@@ -37,6 +38,9 @@ defineProps<{
                     </div>
                     <div class="text-xs text-slate-500">{{ plugin.id }}</div>
                     <div v-if="plugin.error" class="text-xs text-red-600">{{ plugin.error }}</div>
+                    <div v-if="plugin.health && plugin.health.status !== 'ok'" class="text-xs" :class="plugin.health.status === 'error' ? 'text-red-600' : 'text-amber-700'" :title="`Kiểm tra lúc ${plugin.health.checked_at}`">
+                        {{ plugin.health.status === 'error' ? 'Lỗi' : 'Cảnh báo' }}: {{ plugin.health.message }}
+                    </div>
                 </td>
                 <td class="px-4 py-2">{{ plugin.version }}</td>
                 <td class="px-4 py-2">{{ plugin.kind }}</td>

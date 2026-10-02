@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extension;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Routing\Router;
@@ -16,6 +17,7 @@ use Modules\Extension\Application\Hooks\HookRegistry;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginDoctor;
+use Modules\Extension\Application\Plugins\PluginHealth;
 use Modules\Extension\Application\Plugins\PluginLoader;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginStateCache;
@@ -26,6 +28,7 @@ use Modules\Extension\Console\InstallCommand;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginDoctorCommand;
 use Modules\Extension\Console\PluginEnableCommand;
+use Modules\Extension\Console\PluginHealthCommand;
 use Modules\Extension\Console\PluginHooksCommand;
 use Modules\Extension\Console\PluginInstallCommand;
 use Modules\Extension\Console\PluginListCommand;
@@ -83,7 +86,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
         $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(
-            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), (string) config('vanishop.version'),
+            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), $app->make(Extensions::class), $app->make(PluginHealth::class), (string) config('vanishop.version'),
         ));
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));
         $this->app->singleton(PluginStateCache::class, fn ($app): PluginStateCache => new PluginStateCache($app->make(Filesystem::class), (string) config('vanishop.plugins.cache')));
@@ -106,6 +109,9 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
     public function boot(Router $router, PermissionRegistry $permissions): void
     {
         $router->aliasMiddleware('vani.plugin-active', EnsurePluginActive::class);
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('vani:plugin:health')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+        });
 
         $permissions->register('extension.plugins.view', 'Xem danh sách plugin');
         $permissions->register('extension.plugins.manage', 'Cài/bật/tắt plugin');
@@ -123,6 +129,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
+                PluginHealthCommand::class,
                 PluginListCommand::class,
                 PluginInstallCommand::class,
                 PluginEnableCommand::class,

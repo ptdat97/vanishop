@@ -30,7 +30,7 @@ final class FixturePlugins
             $files->put("{$root}/{$directory}/vanishop.json", json_encode($manifest + [
                 'name' => ['vi' => $manifest['id']],
                 'version' => '1.0.0',
-                'kind' => 'business',
+                'kind' => 'feature',
                 'provider' => GreetingPluginProvider::class,
                 'requires' => ['vanishop' => '^0.3'],
             ], JSON_PRETTY_PRINT));

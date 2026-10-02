@@ -1,4 +1,4 @@
-VaniShop 0.3.5
+VaniShop 0.3.6
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -291,6 +291,14 @@ class Modules\Extension\Contracts\Data\FieldDefinition
   static date(string $key, string $label, bool $required = false, ?string $help = NULL): self
   rules(): array
   toArray(): array
+class Modules\Extension\Contracts\Data\HealthStatus
+  const OK = 'ok'
+  const WARNING = 'warning'
+  const ERROR = 'error'
+  __construct(string $status, string $message = '')
+  static ok(string $message = ''): self
+  static warning(string $message): self
+  static error(string $message): self
 interface Modules\Extension\Contracts\Extensions
   tag(array|string $abstracts, string $tag): void
   contribute(string $tag, string $abstract, string $pluginId): void
@@ -302,6 +310,11 @@ interface Modules\Extension\Contracts\Extensions
   requires(string $tag, Modules\Extension\Contracts\Requirement $requirement, string $label): void
   requirements(): array
   providers(string $tag): array
+  kindContract(string $kind, string $tag): void
+  kindContracts(): array
+interface Modules\Extension\Contracts\PluginHealthCheck
+  const TAG = 'vani.health.checks'
+  check(): Modules\Extension\Contracts\Data\HealthStatus
 enum Modules\Extension\Contracts\Requirement
   const AtLeastOne = \Modules\Extension\Contracts\Requirement::AtLeastOne
   const ExactlyOne = \Modules\Extension\Contracts\Requirement::ExactlyOne
@@ -324,6 +337,7 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected adminAction(string $resource, string $key, string $label, string $permission, Closure $handle, string $scope = 'detail', bool $confirm = false, int $order = 500): void
   protected adminTab(string $resource, string $key, string $label, Closure $rows, int $order = 500): void
   protected adminFilter(string $resource, string $key, string $label, Closure|array $options, Closure $apply, int $order = 500): void
+  protected publishHooks(string $file): void
   protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
   protected permissions(array $permissions): void
   protected adminRoutes(string $file): void

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Plugin\ZaloZns;
 
 use Modules\Customer\Contracts\OtpSender;
+use Modules\Extension\Contracts\PluginHealthCheck;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Notification\Contracts\NotificationChannel;
 use Plugin\ZaloZns\Infrastructure\ZnsChannel;
 use Plugin\ZaloZns\Infrastructure\ZnsClient;
+use Plugin\ZaloZns\Infrastructure\ZnsHealthCheck;
 use Plugin\ZaloZns\Infrastructure\ZnsOtpSender;
 
 final class ZaloZnsServiceProvider extends PluginServiceProvider
@@ -40,6 +42,7 @@ final class ZaloZnsServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->contribute(PluginHealthCheck::TAG, ZnsHealthCheck::class);
         $this->contribute(NotificationChannel::TAG, ZnsChannel::class);
         $this->contribute(OtpSender::TAG, ZnsOtpSender::class);
     }

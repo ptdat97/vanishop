@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -155,4 +156,12 @@ it('giao dịch: lời chúc gói quà trên form thêm giỏ (native) → giỏ
     $order = Order::query()->withoutGlobalScopes()->sole();
     expect($order->lines()->sole()->meta)->toBe(['options' => ['vani.hello-world' => ['message' => 'Chúc mừng sinh nhật!']]]);
     $this->get("/don-hang/{$order->public_id}")->assertSee('Chúc mừng sinh nhật!');
+});
+
+it('plugin công bố hook: plugin khác sửa lời chào qua vani.hello-world.greeting', function () {
+    installHelloWorld();
+    app(HookManager::class)->onFilter('vani.hello-world.greeting', fn (string $message, string $name): string => "{$message} 🎉", 10, 'vani.cod');
+
+    $this->getJson('/api/storefront/v1/x/vani-hello-world/greeting?name=Lan')->assertJsonPath('data.message', 'Xin chào, Lan! 🎉');
+    $this->artisan('vani:plugin:hooks')->expectsOutputToContain('vani.hello-world.greeting')->assertSuccessful();
 });

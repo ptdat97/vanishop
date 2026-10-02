@@ -16,6 +16,15 @@ final readonly class PluginManifest
     private const VERSION_PATTERN = '/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/';
 
     /**
+     * Loại plugin (ADR-030 §4.H). Loại gắn với một extension point (vd. `payment_gateway`) được module sở hữu contract
+     * khai báo qua `Extensions::kindContract()`; doctor cảnh báo khi plugin không đóng góp contract đó.
+     */
+    public const KINDS = [
+        'payment_gateway', 'shipping_carrier', 'shipping_rate', 'tax', 'promotion', 'notification_channel', 'search',
+        'integration', 'marketing', 'analytics', 'customer_service', 'content', 'theme_extension', 'language', 'feature',
+    ];
+
+    /**
      * @param  array<string, string>  $name  locale => tên hiển thị
      * @param  array<string, string>  $requiresPlugins  plugin id => ràng buộc phiên bản
      * @param  list<string>  $conflicts
@@ -57,6 +66,11 @@ final readonly class PluginManifest
             throw InvalidManifest::because($path, "version [{$version}] không phải SemVer");
         }
 
+        $kind = (string) $data['kind'];
+        if (! in_array($kind, self::KINDS, true)) {
+            throw InvalidManifest::because($path, "kind [{$kind}] không hợp lệ (".implode(', ', self::KINDS).')');
+        }
+
         $requires = is_array($data['requires']) ? $data['requires'] : [];
         if (! isset($requires['vanishop']) || ! is_string($requires['vanishop'])) {
             throw InvalidManifest::because($path, 'thiếu requires.vanishop');
@@ -68,7 +82,7 @@ final readonly class PluginManifest
             id: $id,
             name: array_map('strval', $name),
             version: $version,
-            kind: (string) $data['kind'],
+            kind: $kind,
             provider: (string) $data['provider'],
             requiresCore: $requires['vanishop'],
             requiresPlugins: array_map('strval', (array) ($requires['plugins'] ?? [])),

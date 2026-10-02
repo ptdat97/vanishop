@@ -40,6 +40,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         $this->app->bind(Payments::class, PaymentService::class);
         // Cổng thanh toán đều là plugin (COD, chuyển khoản: plugin hệ thống vani.cod, vani.bank-transfer — ADR-029).
         $this->app->make(Extensions::class)->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
+        $this->app->make(Extensions::class)->kindContract('payment_gateway', PaymentGateway::TAG);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

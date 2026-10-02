@@ -44,6 +44,9 @@ final class ScopedExtensions implements Extensions
     /** @var array<string, array{requirement: Requirement, label: string}> */
     private array $requirements = [];
 
+    /** @var array<string, string> kind => tag */
+    private array $kindContracts = [];
+
     public function __construct(
         private readonly Container $container,
         private readonly Closure $activation,
@@ -175,5 +178,15 @@ final class ScopedExtensions implements Extensions
     public function providers(string $tag): array
     {
         return array_values($this->contributions[$tag] ?? []);
+    }
+
+    public function kindContract(string $kind, string $tag): void
+    {
+        $this->kindContracts[$kind] = $tag;
+    }
+
+    public function kindContracts(): array
+    {
+        return $this->kindContracts;
     }
 }

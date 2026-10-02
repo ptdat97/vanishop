@@ -204,7 +204,9 @@ Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugi
 | **W3** ✅ (2026-10-02, Core 0.3.3) | `storefrontRoutes`, `storefrontPages` + `storefrontViews` (theme override), `CartAbandoned` (tham chiếu `vani.hello-world`). `accountPages` chờ trang tài khoản native (`/tai-khoan`, 12b) | `vani.wishlist`, `vani.abandoned-cart` | 0.3.3 |
 | **W4a** ✅ (2026-10-02, Core 0.3.4) | Tuỳ chọn dòng giỏ (`CartLineOption`, khoá dòng = variant + băm tuỳ chọn, chụp `order_lines.meta`), `vani.checkout.context`, slot `pdp.add_to_cart_fields`; tham chiếu `vani.hello-world`. **Phụ thu chưa làm**: grandTotal = Σ dòng + ship, adjustment chỉ để truy vết → cần dòng phí trong totals (quyết định riêng) | gói quà, `vani.creator` | 0.3.4 |
 | **W4b** ✅ (2026-10-02, Core 0.3.5) | `CapturesLater` + `PaymentAuthorized`: giữ tiền → đơn xác nhận → thu khi vận đơn rời kho (hoặc nhân viên), huỷ đơn → void. Tham chiếu: cổng giả + contract test (plugin thật đầu tiên — thẻ quốc tế/BNPL — sẽ thay vai trò tham chiếu); hết hạn giữ tiền phía cổng: Designed | thẻ quốc tế, BNPL | 0.3.5 |
-| **W5** (nền tảng) | Plugin `hooks.php`, `kind` chuẩn, `AuthProvider`, `scopeTypes()`, `HealthCheck`, `integrationMessageTypes()` | `vani.loyalty` → `vani.promotion-advanced`, `vani.social-login` | 0.6 |
+| **W5a** ✅ (2026-10-02, Core 0.3.6) | `publishHooks()` (tên hook bắt đầu bằng id plugin) + arch test `requires.plugins`, `kind` chuẩn + `kind_mismatch`, `PluginHealthCheck` (tham chiếu SMS/ZNS) | `vani.hello-world` (hook `vani.hello-world.greeting`) | 0.3.6 |
+| **W5b** | `AuthProvider` (đăng nhập mạng xã hội) | `vani.social-login` | — |
+| Hoãn | `scopeTypes()` (marketplace, Later), `integrationMessageTypes()` (khi chốt ERP) — chưa có plugin tham chiếu (R26) | — | — |
 | **W6** | `StorefrontBlock`, `MenuItemType`, `ReportProvider`/`DashboardWidget` | `vani.lookbook`, `vani.reports` | 0.6 |
 | Later | `TranslationProvider`, `AgentTool` | — | — |
 

@@ -58,7 +58,6 @@ custom/plugin/VietQr/
 |---|---|---|
 | `id` | ✔ | `vendor.name`, duy nhất, không đổi |
 | `version` | ✔ | SemVer |
-| `kind` | ✔ | `payment_gateway`, `shipping_carrier`, `promotion`, `connector`, `notification_channel`, `storefront`, `business`, `theme_extension` |
 | `provider` | ✔ | ServiceProvider |
 | `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver) |
 | `requires.plugins` | | `{ "vani.einvoice": "^1.0" }` |
@@ -66,6 +65,7 @@ custom/plugin/VietQr/
 | `scopes` | | **Bỏ** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader bỏ qua |
 | `permissions` | | Quyền plugin cần; hiển thị khi cài |
 | `settings_schema` | | (cũ) thay bằng `settings()` trong provider |
+| `kind` | ✔ | Loại plugin, thuộc `PluginManifest::KINDS` (`payment_gateway`, `shipping_carrier`, `shipping_rate`, `tax`, `promotion`, `notification_channel`, `search`, `integration`, `marketing`, `analytics`, `customer_service`, `content`, `theme_extension`, `language`, `feature`). Loại gắn với extension point → doctor cảnh báo nếu không đóng góp |
 | `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không tắt được nếu là implementation đang bật cuối cùng của extension point bắt buộc. Implemented (`vani:install`) |
 
 ## 4. Vòng đời

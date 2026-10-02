@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Plugin\SmsBrandname;
 
 use Modules\Customer\Contracts\OtpSender;
+use Modules\Extension\Contracts\PluginHealthCheck;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Notification\Contracts\NotificationChannel;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\SmsBrandname\Infrastructure\EsmsClient;
 use Plugin\SmsBrandname\Infrastructure\SmsChannel;
+use Plugin\SmsBrandname\Infrastructure\SmsHealthCheck;
 use Plugin\SmsBrandname\Infrastructure\SmsOtpSender;
 
 final class SmsBrandnameServiceProvider extends PluginServiceProvider
@@ -46,6 +48,7 @@ final class SmsBrandnameServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->contribute(PluginHealthCheck::TAG, SmsHealthCheck::class);
         $this->settings([
             ['key' => 'brandname', 'label' => 'Brandname SMS', 'help' => 'Brandname đã đăng ký với nhà mạng.'],
         ]);

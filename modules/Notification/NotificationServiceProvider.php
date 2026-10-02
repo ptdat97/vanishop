@@ -40,6 +40,7 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         $this->app->singleton(NotificationCatalog::class, InMemoryNotificationCatalog::class);
         $this->app->make(Extensions::class)->tag([MailChannel::class], NotificationChannel::TAG);
         $this->app->make(Extensions::class)->requires(NotificationChannel::TAG, Requirement::AtLeastOne, 'Kênh gửi thông báo');
+        $this->app->make(Extensions::class)->kindContract('notification_channel', NotificationChannel::TAG);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

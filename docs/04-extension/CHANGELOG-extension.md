@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.6 — 2026-10-02
+
+Đợt W5a của [extension-surface-v2](extension-surface-v2.md): plugin làm nền cho plugin, loại plugin, sức khoẻ plugin.
+
+### Thêm
+- `PluginServiceProvider::publishHooks($file)` — plugin công bố hook cho plugin khác; tên phải bắt đầu bằng id plugin. Arch test: plugin chỉ dùng `Contracts`/`Events`/`Testing` của plugin đã khai báo trong `requires.plugins`.
+- `Extension\Contracts\PluginHealthCheck` (tag `vani.health.checks`) + `Data\HealthStatus`; lệnh `vani:plugin:health` (15 phút/lần, lưu cache cho Admin Plugin); `vani:plugin:doctor` báo `health_warning`/`health_error`.
+- `Extensions::kindContract($kind, $tag)`, `kindContracts()`; doctor cảnh báo `kind_mismatch`.
+
+### Phá vỡ (dev)
+- Manifest `kind` phải thuộc danh sách chuẩn `PluginManifest::KINDS` (`payment_gateway`, `shipping_carrier`, `shipping_rate`, `tax`, `promotion`, `notification_channel`, `search`, `integration`, `marketing`, `analytics`, `customer_service`, `content`, `theme_extension`, `language`, `feature`); `business` → `feature`/`search`.
+
 ## 0.3.5 — 2026-10-02
 
 Đợt W4b của [extension-surface-v2](extension-surface-v2.md): cổng giữ tiền rồi thu sau. Chỉ thêm.

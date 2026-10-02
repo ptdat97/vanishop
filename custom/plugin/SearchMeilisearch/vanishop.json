@@ -5,7 +5,7 @@
         "en": "Meilisearch search"
     },
     "version": "0.1.0",
-    "kind": "business",
+    "kind": "search",
     "provider": "Plugin\\SearchMeilisearch\\SearchMeilisearchServiceProvider",
     "requires": {
         "vanishop": "^0.3",

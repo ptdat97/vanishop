@@ -30,6 +30,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `InboundHandler` | `vani.integration.inbound` | Integration | —. **Implemented** (slice 11): xử lý message inbox theo `(system, message_type)`, trả `DeliveryResult` (thêm `stale`) | [integration-platform](../11-integration/integration-platform.md) |
 | `ErpConnector` (extends `Connector`) | `vani.integration.erp` | Integration | — | [erp-integration](../11-integration/erp-integration.md) |
 | `CartLineOption` | `vani.cart.line_options` | Cart | — (plugin). **Implemented** (0.3.4): tuỳ chọn dòng giỏ theo plugin id, chuẩn hoá + từ chối, chụp sang dòng đơn; không đổi giá (phụ thu: Designed); tham chiếu `vani.hello-world` (lời chúc gói quà) | [extension-surface-v2 §4.C](extension-surface-v2.md) |
+| `PluginHealthCheck` | `vani.health.checks` | Extension | — (plugin). **Implemented** (0.3.6): `vani:plugin:health` + doctor + trang Admin Plugin; tham chiếu `vani.sms-brandname`, `vani.zalo-zns` (thiếu khoá, sandbox) | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 | `StorefrontEnricher` | `vani.storefront.enrichers` | Storefront | — (plugin). **Implemented** (0.3.1): làm giàu `product_card`/`product`/`cart`/`order` dưới `extensions.<plugin-id>`, batch, lỗi bị bỏ; contract test `StorefrontEnricherContract`; tham chiếu `vani.hello-world` | [extension-surface-v2 §4.B](extension-surface-v2.md) |
 | `StorefrontBlock` | `vani.content.blocks` | Content | hero, product grid, rich text, banner | [storefront](../14-storefront/storefront.md) |
 | `DashboardWidget` | `vani.admin.widgets` | Reporting | doanh số, đơn mới | — |
@@ -163,7 +164,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 
 | Extension point thiếu | Loại | Plugin cần | Đợt |
 |---|---|---|---|
-| Plugin khai báo `hooks.php` riêng (plugin công bố hook) | Kernel | `vani.loyalty` → `vani.promotion-advanced`; `vani.marketplace` → `vani.creator` | P3 |
 | `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
 | Registry nhà cung cấp đăng nhập (`AuthProvider`) | Contract | `vani.social-login` | P2 |
 | `StorefrontBlock` (page builder) | Contract | lookbook, recommendation, `brand_grid` | P2 |

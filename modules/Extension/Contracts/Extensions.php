@@ -92,4 +92,15 @@ interface Extensions
      * @return list<string|null>
      */
     public function providers(string $tag): array;
+
+    /**
+     * Loại plugin `kind` (manifest) ứng với extension point `tag` — module sở hữu contract khai báo; doctor cảnh báo
+     * `kind_mismatch` khi plugin khai loại này mà không đóng góp implementation nào cho tag.
+     */
+    public function kindContract(string $kind, string $tag): void;
+
+    /**
+     * @return array<string, string> kind => tag
+     */
+    public function kindContracts(): array;
 }

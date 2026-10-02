@@ -47,6 +47,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         // Meilisearch/Algolia/Elasticsearch là plugin (vani.search-meilisearch…).
         $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchProvider::TAG);
         $this->app->make(Extensions::class)->requires(SearchProvider::TAG, Requirement::ExactlyOne, 'Tìm kiếm sản phẩm');
+        $this->app->make(Extensions::class)->kindContract('search', SearchProvider::TAG);
         $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app->make(Extensions::class), (string) config('vanishop.search.provider')));
     }
 

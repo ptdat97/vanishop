@@ -29,6 +29,7 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         $this->permissions(['hello-world.view' => 'Xem trang Hello World']);
+        $this->publishHooks($this->pluginPath('hooks.php'));
 
         $this->onSlot('vani.admin.dashboard.cards', fn (): array => [
             'title' => 'Hello World',

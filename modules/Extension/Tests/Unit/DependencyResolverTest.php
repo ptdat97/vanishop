@@ -8,7 +8,7 @@ use Modules\Extension\Domain\Plugin\PluginManifest;
 function manifest(string $id, string $core = '^0.1', array $plugins = [], array $conflicts = [], string $version = '1.0.0'): PluginManifest
 {
     return PluginManifest::fromArray([
-        'id' => $id, 'name' => $id, 'version' => $version, 'kind' => 'business',
+        'id' => $id, 'name' => $id, 'version' => $version, 'kind' => 'feature',
         'provider' => 'X', 'requires' => ['vanishop' => $core, 'plugins' => $plugins], 'conflicts' => $conflicts,
     ], '/tmp/'.$id);
 }
