@@ -1,0 +1,11 @@
+{
+    "label": "VaniShop Base",
+    "parent": null,
+    "tokens": {
+        "color-primary": "#111827",
+        "color-accent": "#b45309",
+        "color-surface": "#ffffff",
+        "radius": "0.5rem",
+        "font-sans": "'Instrument Sans', ui-sans-serif, system-ui, sans-serif"
+    }
+}

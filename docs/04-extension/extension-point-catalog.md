@@ -99,9 +99,9 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin; tham số `OrderDetail`, trả `{title, rows[{label, value}], link?}`. **Implemented** (Payment dùng) |
 
-### 4.1 Slot storefront (Designed, chốt cùng theme `vani-base`)
+### 4.1 Slot storefront (Implemented 2026-10-02 cùng theme `vani-base`, khai báo ở `modules/Storefront/hooks.php`)
 
-Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả **một view component** (view của plugin + dữ liệu), theme render tại vị trí slot, chỉ nối thêm, lỗi một listener bị bỏ qua. Danh sách dưới đây là **đề xuất ban đầu**; chỉ thành public API khi đã khai báo trong `hooks.php` cùng view của `vani-base`.
+Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả `Modules\Storefront\Contracts\Data\SlotView` (view của plugin + dữ liệu) hoặc `Htmlable`; theme render tại vị trí slot bằng `<x-vani::hook-slot>`, chỉ nối thêm, lỗi một listener (hoặc lỗi lúc render) bị bỏ qua, chuỗi thô bị bỏ. Các slot dưới đây là public API (`since 0.3`), trừ `account.menu` (chờ trang tài khoản native).
 
 | Slot | Vị trí | Ví dụ plugin |
 |---|---|---|
@@ -116,7 +116,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.checkout.after_shipping` | Sau chọn phương thức giao | Ghi chú giao hàng, gói quà |
 | `vani.storefront.checkout.before_submit` | Trước nút đặt hàng | Xuất hoá đơn điện tử (trường `extra[<plugin id>]`) |
 | `vani.storefront.order.after_summary` | Trang cảm ơn / chi tiết đơn | Hướng dẫn chuyển khoản, điểm đã cộng |
-| `vani.storefront.account.menu` | Menu tài khoản khách | Điểm thưởng, ví |
+| `vani.storefront.account.menu` | Menu tài khoản khách (**Designed** — chưa khai báo) | Điểm thưởng, ví |
 
 ## 5. Registry (qua `PluginServiceProvider`)
 
@@ -150,7 +150,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 | Extension point thiếu | Loại | Plugin cần | Đợt |
 |---|---|---|---|
 | `storefrontRoutes()` — route Storefront API/trang storefront của plugin | Registry | `vani.wishlist`, `vani.loyalty` (`/me/loyalty`), `vani.store-omnichannel` | P2 |
-| Slot storefront + component `hook-slot` (§4.1) | Hook | `vani.tracking-pixels`, reviews, size chart, loyalty | P1 (cùng theme) |
 | Plugin khai báo `hooks.php` riêng (plugin công bố hook) | Kernel | `vani.loyalty` → `vani.promotion-advanced`; `vani.marketplace` → `vani.creator` | P3 |
 | Event `CartAbandoned` (+ job phát hiện) | Event | `vani.abandoned-cart` | P2 |
 | Event `OrderCompleted` | Event | `vani.loyalty` (điểm `available`), `vani.einvoice`, `vani.creator` | P2 |

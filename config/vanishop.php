@@ -34,7 +34,18 @@ return [
     /*
     | Đường dẫn gốc dành riêng của storefront — VANI_ADMIN_PATH không được trùng.
     */
-    'reserved_paths' => ['api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico'],
+    'reserved_paths' => [
+        'api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico',
+        'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang',
+    ],
+
+    /*
+    | Native storefront (ADR-025): thư mục theme và theme mặc định (Admin → Cấu hình `core.theme` ghi đè).
+    */
+    'storefront' => [
+        'themes_path' => $relativeToBase(env('VANI_THEMES_PATH', 'custom/theme')),
+        'theme' => env('VANI_THEME', 'vani-base'),
+    ],
 
     'media' => [
         // Disk lưu ảnh catalog: 'public' cho dev (cần php artisan storage:link), S3-compatible tại VN cho production.

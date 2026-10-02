@@ -1,0 +1,89 @@
+@extends('theme::layouts.app')
+
+@section('title', $product['meta_title'] ?? $product['name'])
+@section('description', $product['meta_description'] ?? '')
+@section('canonical', route('storefront.product', $product['slug']))
+
+@push('head')
+    <script type="application/ld+json">{!! \Modules\Storefront\View\StructuredData::product($product) !!}</script>
+@endpush
+
+@section('content')
+    @if ($product['breadcrumb'] !== [])
+        <nav aria-label="Breadcrumb" class="mb-4 text-sm text-slate-500">
+            <a href="{{ route('storefront.home') }}">Trang chủ</a>
+            @foreach ($product['breadcrumb'] as $crumb)
+                / <a href="{{ route('storefront.category', $crumb['slug']) }}">{{ $crumb['name'] }}</a>
+            @endforeach
+        </nav>
+    @endif
+
+    <div class="grid gap-8 md:grid-cols-2">
+        @php($images = collect($product['colors'])->flatMap(fn ($color) => $color['images'])->all())
+        <div data-product-gallery>
+            <div class="aspect-[3/4] overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
+                @if (($images[0] ?? $product['image_url']) !== null)
+                    <img data-gallery-main src="{{ $images[0] ?? $product['image_url'] }}" alt="{{ $product['name'] }}" width="600" height="800" class="h-full w-full object-cover">
+                @endif
+            </div>
+        </div>
+
+        <div>
+            @if ($product['brand'])
+                <a href="{{ route('storefront.brand', $product['brand']['slug']) }}" class="text-sm uppercase tracking-wide text-slate-500">{{ $product['brand']['name'] }}</a>
+            @endif
+            <h1 class="text-2xl font-semibold">{{ $product['name'] }}</h1>
+            <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
+
+            <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price']])</p>
+            <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
+
+            <form action="{{ route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
+                @csrf
+                @foreach ($product['colors'] as $color)
+                    @php($variants = array_values(array_filter($product['variants'], fn ($variant) => $variant['color_code'] === $color['code'])))
+                    @continue($variants === [])
+                    <fieldset data-color-group data-images='@json(array_values($color['images']))'>
+                        <legend class="mb-2 text-sm font-medium">Màu: {{ $color['name'] }}</legend>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($variants as $variant)
+                                <label @class(['cursor-pointer rounded border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:font-semibold', 'opacity-50' => ! $variant['available'] || $variant['price'] === null])>
+                                    <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $variant['price'] === null) @checked(old('variant_id') == $variant['id'])>
+                                    {{ $variant['size_code'] }}
+                                    @if ($variant['low_stock'])<span class="text-xs text-accent">sắp hết</span>@endif
+                                    @unless ($variant['available'])<span class="sr-only">(hết hàng)</span>@endunless
+                                </label>
+                            @endforeach
+                        </div>
+                    </fieldset>
+                @endforeach
+                @error('variant_id')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+
+                <div class="flex items-center gap-3">
+                    <label for="quantity" class="text-sm">Số lượng</label>
+                    <input id="quantity" name="quantity" type="number" min="1" max="20" value="{{ old('quantity', 1) }}" class="w-20 rounded border border-slate-300 px-2 py-1.5">
+                </div>
+                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || $product['price'] === null)>
+                    {{ $product['in_stock'] ? 'Thêm vào giỏ' : 'Hết hàng' }}
+                </button>
+            </form>
+            <x-vani::hook-slot name="vani.storefront.pdp.after_add_to_cart" :args="[$product]" />
+
+            @if ($product['description'])
+                <section class="prose mt-8 max-w-none text-sm">{!! nl2br(e($product['description'])) !!}</section>
+            @endif
+            @if ($product['attributes'] !== [])
+                <dl class="mt-6 grid grid-cols-[8rem_1fr] gap-y-1 text-sm">
+                    @foreach ($product['attributes'] as $attribute)
+                        <dt class="text-slate-500">{{ $attribute['name'] }}</dt>
+                        <dd>{{ is_array($attribute['value']) ? implode(', ', $attribute['value']) : $attribute['value'] }}</dd>
+                    @endforeach
+                </dl>
+            @endif
+            @if ($product['care_instructions'])
+                <p class="mt-4 text-sm text-slate-600">{{ $product['care_instructions'] }}</p>
+            @endif
+            <x-vani::hook-slot name="vani.storefront.pdp.after_details" :args="[$product]" />
+        </div>
+    </div>
+@endsection

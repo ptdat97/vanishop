@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../../../modules/Storefront/resources/views';
+
+/* Token của theme → CSS variables --vani-* (layout in từ theme.json + cấu hình `theme.tokens`). */
+@theme {
+    --color-primary: var(--vani-color-primary, #111827);
+    --color-accent: var(--vani-color-accent, #b45309);
+    --color-surface: var(--vani-color-surface, #ffffff);
+    --radius-theme: var(--vani-radius, 0.5rem);
+    --font-sans: var(--vani-font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+/* Nội dung SSR luôn hiện; JS chỉ tăng cường (ADR-025 quyết định 4). */
+[data-js-only] {
+    display: none;
+}
+
+.js [data-js-only] {
+    display: revert;
+}

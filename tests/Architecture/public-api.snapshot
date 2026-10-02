@@ -743,6 +743,9 @@ class Modules\Returns\Events\ReturnResolved
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+class Modules\Storefront\Contracts\Data\SlotView
+  __construct(string $view, array $data = array (
+))
 class Modules\Tenancy\Contracts\Data\SettingDefinition
   const TYPES = array (
   0 => 'string',

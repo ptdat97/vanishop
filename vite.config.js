@@ -8,7 +8,7 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/admin.ts'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/admin.ts', 'custom/theme/vani-base/css/app.css', 'custom/theme/vani-base/js/app.js'],
             refresh: ['resources/views/**', 'modules/**/resources/**', 'custom/**'],
             fonts: [
                 bunny('Instrument Sans', {

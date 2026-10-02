@@ -14,6 +14,7 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutVite();
 
         if (in_array(RefreshDatabase::class, class_uses_recursive($this), true)) {
             $this->enableBundledPlugins();

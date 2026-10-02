@@ -1,6 +1,15 @@
 # Storefront
 
-> Trạng thái: **Designed** cho native storefront (tầng ghép + Storefront API: Implemented). Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
+> Trạng thái: native storefront **Partially Implemented** (slice 12b, 2026-10-02); tầng ghép + Storefront API: Implemented.
+>
+> | Phần | Trạng thái |
+> |---|---|
+> | Theme `vani-base` (`custom/theme/vani-base`), theme đang hoạt động `core.theme` + theme con (`parent`), token `theme.tokens` → CSS variables | Implemented |
+> | Trang SSR: `/`, `/danh-muc/{slug}`, `/thuong-hieu`, `/thuong-hieu/{slug}`, `/tim-kiem`, `/san-pham/{slug}` (JSON-LD `Product`), `/gio-hang`, `/thanh-toan`, `/don-hang/{id}` — mua được hoàn toàn bằng form khi JS tắt | Implemented |
+> | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented (trừ `vani.storefront.account.menu` — chưa có trang tài khoản native) |
+> | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
+> | Tài khoản `/tai-khoan`, tra cứu đơn, block/page builder, sitemap, hreflang, header cache CDN, giỏ/giá thành viên tải qua API | Designed |
+> | Địa chỉ checkout | Nhập tên tỉnh/phường; mã lấy từ tên chuẩn hoá cho tới khi có dữ liệu địa giới hành chính | Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc
 
@@ -55,7 +64,7 @@ custom/theme/vani-base/
 | JS = đảo tương tác | Alpine gắn vào gallery, chọn màu/size, mini-cart, form checkout. Không app JS toàn trang, không router phía client |
 | JSON bridge | Dữ liệu cho Alpine render sẵn bằng `@js`/`data-*` từ DTO của Presenter; không gọi API lấy lại thứ server đã có. Phần cá nhân hoá (giỏ, giá thành viên) tải qua Storefront API sau khi trang hiện |
 | Không ẩn nội dung SSR chờ JS | Chống nhảy layout bằng kích thước cố định/skeleton CSS, không `display:none` rồi chờ JS bật lại |
-| Slot UI | `<x-vani::hook-slot name="vani.storefront.pdp.after_price" :product="$product" />` render các view component do plugin trả về theo priority; chỉ nối thêm; lỗi một listener bị bỏ qua. Danh mục: [extension-point-catalog §4.1](../04-extension/extension-point-catalog.md) |
+| Slot UI | `<x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />` render các phần tử plugin trả về (`Storefront\Contracts\Data\SlotView` hoặc `Htmlable`; chuỗi thô bị bỏ) theo priority; chỉ nối thêm; lỗi một listener bị bỏ qua. Danh mục: [extension-point-catalog §4.1](../04-extension/extension-point-catalog.md) |
 | Thay khối | Override view trong theme con của cửa hàng (fallback `vani-base` → module). Không có cơ chế viết lại HTML lúc render |
 | Không logic trong view | Blade chỉ render DTO; không query, không tính giá/tồn/khuyến mãi (R10) |
 
