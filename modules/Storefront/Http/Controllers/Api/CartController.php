@@ -10,6 +10,7 @@ use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Cart\Contracts\Data\CartView;
 use Modules\Storefront\Application\CartPresenter;
+use Modules\Storefront\Http\Requests\LineOptions;
 
 /**
  * Giỏ hàng khách vãng lai: định danh bằng id công khai + token bí mật trong header X-Vani-Cart-Token.
@@ -46,7 +47,7 @@ final class CartController
             'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
         ]);
 
-        return $this->respond($this->carts->addLine($this->key($request, $cart), (int) $data['variant_id'], (int) $data['quantity']));
+        return $this->respond($this->carts->addLine($this->key($request, $cart), (int) $data['variant_id'], (int) $data['quantity'], LineOptions::from($request->input('options'))));
     }
 
     public function updateLine(Request $request, string $cart, int $line): JsonResponse

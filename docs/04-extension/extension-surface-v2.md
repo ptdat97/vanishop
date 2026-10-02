@@ -133,7 +133,7 @@ Core gọi qua `Extensions::call()` (lỗi → bỏ dữ liệu của plugin đ�
 | Điểm | Thiết kế | Plugin dùng |
 |---|---|---|
 | `meta` trên `cart_lines` và `order_lines` | Cột JSON theo không gian tên plugin; dòng đơn **chụp** `meta` của dòng giỏ lúc đặt (bất biến sau đó) | Gói quà, khắc tên, bundle |
-| `CartLineOption` (contract) | Plugin khai báo option nhận ở `POST /carts/{id}/lines` (`options.<plugin-id>.*`), validate + giá phụ thu (dương, tách thành adjustment qua `TotalsCalculator` của chính plugin) | Khắc tên +50.000đ |
+| `CartLineOption` (contract) | Plugin khai báo option nhận ở `POST /carts/{id}/lines` (`options.<plugin-id>.*`), validate + chuẩn hoá (W4a ✅). Phụ thu: Designed — `TotalsCalculator` chưa cộng được phí vào tổng (grandTotal = Σ dòng + ship) | Lời chúc gói quà; khắc tên có phí (sau) |
 | Hai dòng cùng variant khác option | Khoá dòng giỏ = (variant, hash(options)) thay cho unique variant | Bắt buộc khi có option |
 | `vani.checkout.context` (filter) | Bổ sung `PromotionContext::$attributes` từ request (mã giới thiệu, nguồn chiến dịch) trước khi đánh giá khuyến mãi | Creator/affiliate, UTM |
 | `PaymentGateway` có bước **authorize → capture** (interface tuỳ chọn `CapturesLater`) | Event `PaymentAuthorized`; capture khi giao/xác nhận | Thẻ quốc tế, BNPL |
@@ -202,7 +202,8 @@ Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugi
 | **W1** ✅ (2026-10-02, Core 0.3.1) | Slot storefront mới (header, footer, bộ lọc PLP, ảnh PDP, checkout từng bước; slot tài khoản chờ trang `/tai-khoan`); `StorefrontEnricher` (tham chiếu `vani.hello-world`); `OrderCompleted` | `vani.tracking-pixels`, `vani.vnpay` (đã đủ EP) | 0.3.1 |
 | **W2** ✅ (2026-10-02, Core 0.3.2) | `adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter` + `FieldDefinition`, trên `product` (form, cột, lọc), `order` (cột, lọc, thao tác chi tiết + hàng loạt, tab), `customer` (cột, lọc, thao tác, tab). Tham chiếu: `vani.hello-world`. Tài nguyên khác + Admin API: khi có plugin cần | `vani.einvoice`, `vani.size-advisor` | 0.3.2 |
 | **W3** ✅ (2026-10-02, Core 0.3.3) | `storefrontRoutes`, `storefrontPages` + `storefrontViews` (theme override), `CartAbandoned` (tham chiếu `vani.hello-world`). `accountPages` chờ trang tài khoản native (`/tai-khoan`, 12b) | `vani.wishlist`, `vani.abandoned-cart` | 0.3.3 |
-| **W4** (giao dịch) | `meta` dòng giỏ/đơn, `CartLineOption`, `vani.checkout.context`, `CapturesLater` + `PaymentAuthorized` | `vani.product-bundle`, gói quà, `vani.creator` | 0.5 |
+| **W4a** ✅ (2026-10-02, Core 0.3.4) | Tuỳ chọn dòng giỏ (`CartLineOption`, khoá dòng = variant + băm tuỳ chọn, chụp `order_lines.meta`), `vani.checkout.context`, slot `pdp.add_to_cart_fields`; tham chiếu `vani.hello-world`. **Phụ thu chưa làm**: grandTotal = Σ dòng + ship, adjustment chỉ để truy vết → cần dòng phí trong totals (quyết định riêng) | gói quà, `vani.creator` | 0.3.4 |
+| **W4b** | `CapturesLater` + `PaymentAuthorized` (giữ tiền → thu khi giao/xác nhận) | thẻ quốc tế, BNPL | — |
 | **W5** (nền tảng) | Plugin `hooks.php`, `kind` chuẩn, `AuthProvider`, `scopeTypes()`, `HealthCheck`, `integrationMessageTypes()` | `vani.loyalty` → `vani.promotion-advanced`, `vani.social-login` | 0.6 |
 | **W6** | `StorefrontBlock`, `MenuItemType`, `ReportProvider`/`DashboardWidget` | `vani.lookbook`, `vani.reports` | 0.6 |
 | Later | `TranslationProvider`, `AgentTool` | — | — |

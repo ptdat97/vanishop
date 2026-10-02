@@ -34,6 +34,7 @@ final class CheckoutPresenter
                 'subtotal' => $this->money->toArray($line->subtotal),
                 'discount' => $this->money->toArray($line->discount),
                 'total' => $this->money->toArray($line->total()),
+                'options' => $line->options,
             ], $totals->lines),
             'adjustments' => array_map(fn (Adjustment $adjustment): array => [
                 'type' => $adjustment->type,

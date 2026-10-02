@@ -29,7 +29,12 @@ final class CartViewBuilder
     {
         /** @var list<CartLine> $lines */
         $lines = $cart->lines()->get()->all();
-        $variantIds = array_map(fn (CartLine $line): int => $line->variant_id, $lines);
+        $variantIds = array_values(array_unique(array_map(fn (CartLine $line): int => $line->variant_id, $lines)));
+        // Cùng variant có thể nằm ở nhiều dòng (khác tuỳ chọn): đủ hàng xét theo tổng số lượng của variant.
+        $variantQuantities = [];
+        foreach ($lines as $line) {
+            $variantQuantities[$line->variant_id] = ($variantQuantities[$line->variant_id] ?? 0) + $line->quantity;
+        }
 
         $sellable = $variantIds === [] ? [] : $this->catalog->sellableVariants($variantIds, $locale, $now);
         $prices = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($now));
@@ -47,7 +52,7 @@ final class CartViewBuilder
 
             if ($variant === null || $price === null) {
                 $issues[] = CartLineView::ISSUE_UNAVAILABLE;
-            } elseif (($stock[$line->variant_id] ?? 0) < $line->quantity) {
+            } elseif (($stock[$line->variant_id] ?? 0) < $variantQuantities[$line->variant_id]) {
                 $issues[] = CartLineView::ISSUE_INSUFFICIENT_STOCK;
             }
             if ($price !== null && $snapshot !== null && ! $price->amount->equals($snapshot)) {
@@ -70,6 +75,7 @@ final class CartViewBuilder
                 snapshotPrice: $snapshot,
                 lineTotal: $lineTotal,
                 issues: $issues,
+                options: (array) ($line->meta['options'] ?? []),
             );
         }
 

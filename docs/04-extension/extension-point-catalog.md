@@ -29,6 +29,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `Connector` | `vani.integration.connectors` | Integration | — (connector là plugin). **Implemented** (slice 11): nhận message outbox theo `supports()`, trả `DeliveryResult` ok/retryable/permanent | [integration-platform](../11-integration/integration-platform.md) |
 | `InboundHandler` | `vani.integration.inbound` | Integration | —. **Implemented** (slice 11): xử lý message inbox theo `(system, message_type)`, trả `DeliveryResult` (thêm `stale`) | [integration-platform](../11-integration/integration-platform.md) |
 | `ErpConnector` (extends `Connector`) | `vani.integration.erp` | Integration | — | [erp-integration](../11-integration/erp-integration.md) |
+| `CartLineOption` | `vani.cart.line_options` | Cart | — (plugin). **Implemented** (0.3.4): tuỳ chọn dòng giỏ theo plugin id, chuẩn hoá + từ chối, chụp sang dòng đơn; không đổi giá (phụ thu: Designed); tham chiếu `vani.hello-world` (lời chúc gói quà) | [extension-surface-v2 §4.C](extension-surface-v2.md) |
 | `StorefrontEnricher` | `vani.storefront.enrichers` | Storefront | — (plugin). **Implemented** (0.3.1): làm giàu `product_card`/`product`/`cart`/`order` dưới `extensions.<plugin-id>`, batch, lỗi bị bỏ; contract test `StorefrontEnricherContract`; tham chiếu `vani.hello-world` | [extension-surface-v2 §4.B](extension-surface-v2.md) |
 | `StorefrontBlock` | `vani.content.blocks` | Content | hero, product grid, rich text, banner | [storefront](../14-storefront/storefront.md) |
 | `DashboardWidget` | `vani.admin.widgets` | Reporting | doanh số, đơn mới | — |
@@ -94,6 +95,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.checkout.shipping_options` | filter | có (khi đặt hàng) | Sửa danh sách phương thức giao; tham số `(options, TotalsContext)`. **Implemented** |
 | `vani.checkout.before_validate` | validate | có (transaction đặt hàng; không I/O mạng) | Kiểm tra bổ sung trước validator Core; tham số `CheckoutRequest`. **Implemented** |
 | `vani.checkout.after_validate` | validate | có | Kiểm tra dựa trên tổng đã tính; tham số `(CheckoutRequest, Totals)`. **Implemented** |
+| `vani.checkout.context` | filter | có (khi đặt hàng; không I/O mạng) | Bổ sung `PromotionContext::$attributes` từ request (mã giới thiệu, chiến dịch). **Implemented** (0.3.4) |
 | `vani.order.before_create` | filter | có (không I/O mạng) | Bổ sung `orders.meta` (khoá theo plugin id) trước khi lưu; tham số `(meta, CheckoutRequest, Totals)`; không sửa giá/dòng. Đọc lại qua `OrderData::$meta`. **Implemented** (0.3) |
 | `vani.order.after_create` | action | có (chỉ ghi DB) | Plugin ghi dữ liệu gắn với đơn (attribution, điểm chờ); tham số `PlacedOrder`. **Implemented** |
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
@@ -168,6 +170,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 | `DashboardWidget` + quyền đọc báo cáo | Contract | `vani.reports` (Reporting thành plugin) | P2 |
 | `adminApiRoutes()` | Registry | POS/app quản trị của plugin | P3 |
 | `integrationMessageTypes()` + JSON Schema | Registry | connector ERP, sàn TMĐT | Khi chốt ERP |
-| Dòng giỏ có thuộc tính plugin (`cart_lines.meta` + hook ghi) | Hook | gói quà, khắc tên, `vani.product-bundle` | P3 |
+| Phụ thu theo tuỳ chọn dòng (dòng phí trong totals; grandTotal hiện = Σ dòng + ship) | Totals | khắc tên có phí, `vani.product-bundle` | Khi có plugin cần |
 
 Khi thêm một extension point từ bảng này: chuyển dòng tương ứng lên §1–§5, ghi [CHANGELOG-extension](CHANGELOG-extension.md), xoá khỏi bảng.

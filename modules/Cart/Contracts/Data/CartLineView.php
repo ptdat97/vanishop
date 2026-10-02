@@ -32,6 +32,8 @@ final readonly class CartLineView
         public ?Money $snapshotPrice,
         public ?Money $lineTotal,
         public array $issues,
+        /** @var array<string, array<string, scalar|null>> tuỳ chọn theo plugin id (CartLineOption) */
+        public array $options = [],
     ) {}
 
     public function blocksCheckout(): bool

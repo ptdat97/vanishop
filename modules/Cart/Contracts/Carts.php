@@ -21,9 +21,11 @@ interface Carts
     public function view(CartKey $key): CartView;
 
     /**
-     * Thêm variant; đã có trong giỏ thì cộng dồn số lượng.
+     * Thêm variant; đã có dòng cùng variant + cùng tuỳ chọn thì cộng dồn số lượng.
+     *
+     * @param  array<string, array<string, mixed>>  $options  tuỳ chọn theo plugin id (CartLineOption)
      */
-    public function addLine(CartKey $key, int $variantId, int $quantity): CartView;
+    public function addLine(CartKey $key, int $variantId, int $quantity, array $options = []): CartView;
 
     /**
      * Đặt số lượng tuyệt đối; 0 = xoá dòng.

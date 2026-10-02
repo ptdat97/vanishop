@@ -17,5 +17,7 @@ final readonly class OrderLineData
         public ?string $colorName = null,
         public string $sizeCode = '',
         public ?string $brandName = null,
+        /** @var array<string, array<string, scalar|null>> */
+        public array $options = [],
     ) {}
 }

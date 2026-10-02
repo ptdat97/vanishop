@@ -140,4 +140,11 @@ return [
         'args' => ['quote' => 'array<string, mixed> (CheckoutPresenter::quote)'],
         'description' => 'Sau chọn phương thức thanh toán (ưu đãi theo cổng, hướng dẫn).',
     ],
+    'vani.storefront.pdp.add_to_cart_fields' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.4',
+        'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
+        'description' => 'Trường trong form thêm giỏ (trước nút): tuỳ chọn dòng của plugin, đặt tên options[<plugin id>][<field>] (CartLineOption).',
+    ],
 ];

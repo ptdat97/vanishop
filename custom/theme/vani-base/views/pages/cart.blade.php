@@ -15,6 +15,7 @@
                         @if ($line['product'])
                             <a href="{{ route('storefront.product', $line['product']['slug']) }}" class="font-medium">{{ $line['product']['name'] }}</a>
                             <p class="text-sm text-slate-500">{{ $line['product']['color_name'] }} / {{ $line['product']['size_code'] }} · {{ $line['sku'] }}</p>
+                            @include('theme::partials.line-options', ['options' => $line['options']])
                         @else
                             <p class="font-medium text-slate-500">Sản phẩm không còn bán</p>
                         @endif

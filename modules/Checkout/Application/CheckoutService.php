@@ -98,7 +98,7 @@ final class CheckoutService implements Checkout
                 $ttl = $this->paymentService->paymentTtl((string) $request->paymentMethod);
                 $this->inventory->reserve(new ReservationRequest(
                     $reservationKey,
-                    array_map(fn (TotalsLine $line): ReservationLine => new ReservationLine($line->variantId, $line->quantity), $totals->lines),
+                    $this->reservationLines($totals),
                     $ttl === null ? null : $ttl + 600,
                 ));
 
@@ -163,12 +163,15 @@ final class CheckoutService implements Checkout
             }
 
             $lines[] = new TotalsLine(
-                key: $line->variantId, variantId: $line->variantId, brandId: $line->variant->brandId, brandName: $line->variant->brandName, styleId: $line->variant->styleId,
+                key: $line->id, variantId: $line->variantId, options: $line->options, brandId: $line->variant->brandId, brandName: $line->variant->brandName, styleId: $line->variant->styleId,
                 sku: $line->variant->sku, name: $line->variant->name, colorName: $line->variant->colorName, sizeCode: $line->variant->sizeCode,
                 imageUrl: $line->variant->imageUrl, quantity: $line->quantity, unitPrice: $line->unitPrice, compareAt: $line->compareAt,
                 subtotal: $line->unitPrice->multiply($line->quantity), discount: $line->unitPrice->multiply(0),
             );
         }
+
+        // Thuộc tính ngữ cảnh cho khuyến mãi (mã giới thiệu, chiến dịch…) do plugin bổ sung từ request.
+        $attributes = Hook::filter('vani.checkout.context', [], $request);
 
         return new TotalsContext(
             customerId: $customerId,
@@ -179,7 +182,23 @@ final class CheckoutService implements Checkout
             shippingMethod: $request->shippingMethod,
             shippingAddress: $request->shippingAddress,
             now: now()->getTimestamp(),
+            attributes: is_array($attributes) ? array_filter($attributes, fn (mixed $value, mixed $key): bool => is_string($key), ARRAY_FILTER_USE_BOTH) : [],
         );
+    }
+
+    /**
+     * Giữ hàng theo variant: các dòng cùng variant (khác tuỳ chọn) cộng lại.
+     *
+     * @return list<ReservationLine>
+     */
+    private function reservationLines(Totals $totals): array
+    {
+        $quantities = [];
+        foreach ($totals->lines as $line) {
+            $quantities[$line->variantId] = ($quantities[$line->variantId] ?? 0) + $line->quantity;
+        }
+
+        return array_map(fn (int $variantId, int $quantity): ReservationLine => new ReservationLine($variantId, $quantity), array_keys($quantities), $quantities);
     }
 
     private function validate(CheckoutRequest $request, Totals $totals, bool $cartReady): void
@@ -232,7 +251,7 @@ final class CheckoutService implements Checkout
             lines: array_map(fn (TotalsLine $line): OrderLineDraft => new OrderLineDraft(
                 $line->variantId, $line->sku, $line->name, $line->colorName, $line->sizeCode, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, $line->compareAt?->amount, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
-                $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName,
+                $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName, $line->options,
             ), $totals->lines),
             adjustments: array_map(fn (Adjustment $adjustment): OrderAdjustmentDraft => new OrderAdjustmentDraft(
                 $adjustment->type, $adjustment->source, $adjustment->code, $adjustment->label, $adjustment->amount->amount, $adjustment->meta,

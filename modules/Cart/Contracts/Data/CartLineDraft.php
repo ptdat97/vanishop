@@ -16,5 +16,7 @@ final readonly class CartLineDraft
         public ?int $brandId,
         public int $quantity,
         public int $unitPrice,
+        /** @var array<string, array<string, scalar|null>> */
+        public array $options = [],
     ) {}
 }

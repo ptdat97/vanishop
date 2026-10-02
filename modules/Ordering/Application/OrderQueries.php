@@ -68,6 +68,7 @@ final class OrderQueries
                 'id' => $line->id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
                 'image_url' => $line->image_url, 'quantity' => $line->quantity, 'unit_amount' => $line->unit_amount, 'compare_at_amount' => $line->compare_at_amount,
                 'discount_amount' => $line->discount_amount, 'total_amount' => $line->total_amount, 'tax_rate_bp' => $line->tax_rate_bp, 'tax_amount' => $line->tax_amount,
+                'options' => (array) ($line->meta['options'] ?? []),
             ])->all(),
             adjustments: $order->adjustments->map(fn (OrderAdjustment $adjustment): array => [
                 'type' => $adjustment->type, 'code' => $adjustment->code, 'label' => $adjustment->label, 'amount' => $adjustment->amount,

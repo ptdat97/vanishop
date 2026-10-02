@@ -1,4 +1,7 @@
-VaniShop 0.3.3
+VaniShop 0.3.4
+interface Modules\Cart\Contracts\CartLineOption
+  const TAG = 'vani.cart.line_options'
+  normalize(int $variantId, array $values): array
 class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\BusinessRuleViolation
   static notFound(): self
   static closed(): self
@@ -6,6 +9,8 @@ class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\Business
   static variantUnavailable(int $variantId): self
   static insufficientStock(int $variantId): self
   static quantity(string $reason, int $max): self
+  static optionInvalid(string $plugin, string $message): self
+  static optionUnknown(string $plugin): self
   static tooManyLines(int $max): self
   static byRule(int $variantId, array $messages): self
   errorCode(): string
@@ -14,7 +19,8 @@ class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\Business
 interface Modules\Cart\Contracts\Carts
   create(string $currencyCode): Modules\Cart\Contracts\Data\NewCart
   view(Modules\Cart\Contracts\Data\CartKey $key): Modules\Cart\Contracts\Data\CartView
-  addLine(Modules\Cart\Contracts\Data\CartKey $key, int $variantId, int $quantity): Modules\Cart\Contracts\Data\CartView
+  addLine(Modules\Cart\Contracts\Data\CartKey $key, int $variantId, int $quantity, array $options = array (
+)): Modules\Cart\Contracts\Data\CartView
   updateLine(Modules\Cart\Contracts\Data\CartKey $key, int $lineId, int $quantity): Modules\Cart\Contracts\Data\CartView
   removeLine(Modules\Cart\Contracts\Data\CartKey $key, int $lineId): Modules\Cart\Contracts\Data\CartView
   merge(Modules\Cart\Contracts\Data\CartKey $source, Modules\Cart\Contracts\Data\CartKey $target): Modules\Cart\Contracts\Data\CartView
@@ -25,18 +31,21 @@ interface Modules\Cart\Contracts\Carts
 class Modules\Cart\Contracts\Data\CartKey
   __construct(string $publicId, string $token)
 class Modules\Cart\Contracts\Data\CartLineDraft
-  __construct(string $cartId, ?int $customerId, int $variantId, ?int $brandId, int $quantity, int $unitPrice)
+  __construct(string $cartId, ?int $customerId, int $variantId, ?int $brandId, int $quantity, int $unitPrice, array $options = array (
+))
 class Modules\Cart\Contracts\Data\CartLineView
   const ISSUE_UNAVAILABLE = 'unavailable'
   const ISSUE_INSUFFICIENT_STOCK = 'insufficient_stock'
   const ISSUE_PRICE_CHANGED = 'price_changed'
-  __construct(int $id, int $variantId, int $quantity, ?Modules\Catalog\Contracts\Data\SellableVariant $variant, ?Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, ?Modules\Shared\Domain\Money\Money $snapshotPrice, ?Modules\Shared\Domain\Money\Money $lineTotal, array $issues)
+  __construct(int $id, int $variantId, int $quantity, ?Modules\Catalog\Contracts\Data\SellableVariant $variant, ?Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, ?Modules\Shared\Domain\Money\Money $snapshotPrice, ?Modules\Shared\Domain\Money\Money $lineTotal, array $issues, array $options = array (
+))
   blocksCheckout(): bool
 class Modules\Cart\Contracts\Data\CartView
   __construct(string $id, string $status, string $currencyCode, array $lines, Modules\Shared\Domain\Money\Money $subtotal, int $itemCount)
   isCheckoutReady(): bool
 class Modules\Cart\Contracts\Data\NewCart
   __construct(Modules\Cart\Contracts\Data\CartKey $key, Modules\Cart\Contracts\Data\CartView $view)
+class Modules\Cart\Contracts\InvalidCartLineOption extends InvalidArgumentException
 class Modules\Cart\Events\CartAbandoned
   __construct(string $cartPublicId, int $customerId, int $itemCount, int $subtotal, string $currency, string $lastActivityAt)
   static dispatch(...$arguments)
@@ -172,7 +181,8 @@ class Modules\Checkout\Contracts\Data\TotalsContext
   money(int $amount): Modules\Shared\Domain\Money\Money
   linesTotal(): Modules\Shared\Domain\Money\Money
 class Modules\Checkout\Contracts\Data\TotalsLine
-  __construct(int $key, int $variantId, ?int $brandId, int $styleId, string $sku, string $name, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL, ?string $brandName = NULL)
+  __construct(int $key, int $variantId, ?int $brandId, int $styleId, string $sku, string $name, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL, ?string $brandName = NULL, array $options = array (
+))
   total(): Modules\Shared\Domain\Money\Money
   withDiscount(Modules\Shared\Domain\Money\Money $discount): self
   withTax(int $rateBp, Modules\Shared\Domain\Money\Money $tax): self
@@ -555,9 +565,11 @@ class Modules\Ordering\Contracts\Data\OrderDraft
   __construct(string $publicId, string $source, ?int $customerId, string $currencyCode, string $paymentMethod, string $paymentStatus, array $lines, array $adjustments, int $subtotalAmount, int $discountAmount, int $shippingAmount, int $taxAmount, int $totalAmount, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $reservationKey, ?string $sourceCartId, array $meta = array (
 ))
 class Modules\Ordering\Contracts\Data\OrderLineData
-  __construct(int $id, int $variantId, string $sku, string $productName, int $quantity, int $totalAmount = 0, ?string $colorName = NULL, string $sizeCode = '', ?string $brandName = NULL)
+  __construct(int $id, int $variantId, string $sku, string $productName, int $quantity, int $totalAmount = 0, ?string $colorName = NULL, string $sizeCode = '', ?string $brandName = NULL, array $options = array (
+))
 class Modules\Ordering\Contracts\Data\OrderLineDraft
-  __construct(int $variantId, string $sku, string $productName, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, int $unitAmount, ?int $compareAtAmount, int $subtotalAmount, int $discountAmount, int $totalAmount, int $taxRateBp, int $taxAmount, ?int $brandId = NULL, ?string $brandName = NULL)
+  __construct(int $variantId, string $sku, string $productName, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, int $unitAmount, ?int $compareAtAmount, int $subtotalAmount, int $discountAmount, int $totalAmount, int $taxRateBp, int $taxAmount, ?int $brandId = NULL, ?string $brandName = NULL, array $options = array (
+))
 enum Modules\Ordering\Contracts\Data\OrderStatus
   const Pending = \Modules\Ordering\Contracts\Data\OrderStatus::Pending
   const Confirmed = \Modules\Ordering\Contracts\Data\OrderStatus::Confirmed
@@ -732,7 +744,7 @@ class Modules\Promotion\Contracts\Data\PromotionContext
   subtotal(): Modules\Shared\Domain\Money\Money
   line(int $key): ?Modules\Promotion\Contracts\Data\PromotionLine
 class Modules\Promotion\Contracts\Data\PromotionLine
-  __construct(int $key, ?int $brandId, int $styleId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal)
+  __construct(int $key, ?int $brandId, int $styleId, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, Modules\Shared\Domain\Money\Money $subtotal, ?int $variantId = NULL)
 class Modules\Promotion\Contracts\Data\PromotionResult
   __construct(array $applied, array $rejectedVouchers)
   discountByLine(): array

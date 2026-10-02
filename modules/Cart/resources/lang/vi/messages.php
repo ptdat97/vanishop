@@ -10,4 +10,5 @@ return [
     'quantity_limit' => 'Mỗi sản phẩm chỉ được mua tối đa :max.',
     'too_many_lines' => 'Giỏ hàng tối đa :max sản phẩm.',
     'line_rejected' => 'Không thể thêm sản phẩm vào giỏ.',
+    'option_unknown' => 'Tuỳ chọn không được hỗ trợ.',
 ];

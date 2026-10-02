@@ -45,6 +45,7 @@ final class OrderPresenter
                 'id' => $line['id'], 'sku' => $line['sku'], 'name' => $line['name'], 'color_name' => $line['color_name'], 'size_code' => $line['size_code'], 'image_url' => $line['image_url'],
                 'quantity' => $line['quantity'], 'unit_price' => $money($line['unit_amount']), 'compare_at' => $money($line['compare_at_amount']),
                 'discount' => $money($line['discount_amount']), 'total' => $money($line['total_amount']),
+                'options' => $line['options'] ?? [],
             ], $order->lines),
             'adjustments' => array_map(fn (array $adjustment): array => ['type' => $adjustment['type'], 'code' => $adjustment['code'], 'label' => $adjustment['label'], 'amount' => $money($adjustment['amount'])], $order->adjustments),
             'subtotal' => $money($order->amounts['subtotal']),

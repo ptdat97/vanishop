@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Modules\Cart\Contracts\Carts;
 use Modules\Storefront\Application\CartPresenter;
 use Modules\Storefront\Application\NativeCart;
+use Modules\Storefront\Http\Requests\LineOptions;
 
 /**
  * Giỏ của native storefront qua form POST — dùng được khi JS tắt (ADR-025).
@@ -36,7 +37,7 @@ final class CartController
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ], ['variant_id.required' => __('storefront::messages.choose_variant')]);
 
-        $this->carts->addLine($this->cart->keyOrCreate(), (int) $data['variant_id'], (int) ($data['quantity'] ?? 1));
+        $this->carts->addLine($this->cart->keyOrCreate(), (int) $data['variant_id'], (int) ($data['quantity'] ?? 1), LineOptions::from($request->input('options')));
 
         return redirect()->route('storefront.cart')->with('status', __('storefront::messages.added_to_cart'));
     }

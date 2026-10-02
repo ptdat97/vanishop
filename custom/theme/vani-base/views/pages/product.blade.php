@@ -64,6 +64,7 @@
                     <label for="quantity" class="text-sm">Số lượng</label>
                     <input id="quantity" name="quantity" type="number" min="1" max="20" value="{{ old('quantity', 1) }}" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
+                <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
                 <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || $product['price'] === null)>
                     {{ $product['in_stock'] ? 'Thêm vào giỏ' : 'Hết hàng' }}
                 </button>

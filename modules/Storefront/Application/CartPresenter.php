@@ -49,6 +49,7 @@ final class CartPresenter
                 'price_when_added' => $this->optional($line->snapshotPrice),
                 'line_total' => $this->optional($line->lineTotal),
                 'issues' => $line->issues,
+                'options' => $line->options,
             ], $cart->lines),
         ]);
     }

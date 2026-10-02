@@ -53,6 +53,16 @@ final class CartRejected extends BusinessRuleViolation
         return new self("cart.{$reason}", 422, __("cart::messages.{$reason}", ['max' => $max]), ['max' => $max]);
     }
 
+    public static function optionInvalid(string $plugin, string $message): self
+    {
+        return new self('cart.option_invalid', 422, $message, ['plugin' => $plugin]);
+    }
+
+    public static function optionUnknown(string $plugin): self
+    {
+        return new self('cart.option_unknown', 422, __('cart::messages.option_unknown'), ['plugin' => $plugin]);
+    }
+
     public static function tooManyLines(int $max): self
     {
         return new self('cart.too_many_lines', 422, __('cart::messages.too_many_lines', ['max' => $max]), ['max' => $max]);

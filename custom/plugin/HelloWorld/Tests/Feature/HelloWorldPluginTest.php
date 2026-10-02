@@ -137,3 +137,22 @@ it('storefront: API và trang riêng của plugin; theme override được view 
     $this->getJson('/api/storefront/v1/x/vani-hello-world/greeting')->assertNotFound();
     $this->get('/p/vani-hello-world')->assertNotFound();
 });
+
+it('giao dịch: lời chúc gói quà trên form thêm giỏ (native) → giỏ → dòng đơn; quá dài bị từ chối', function () {
+    installHelloWorld();
+    ['s' => $variant] = CheckoutTestHelpers::store();
+
+    $this->get("/san-pham/{$variant->style->slug}")->assertSee('name="options[vani.hello-world][message]"', false);
+    $this->post('/gio-hang', ['variant_id' => $variant->id, 'options' => ['vani.hello-world' => ['message' => str_repeat('a', 61)]]])->assertSessionHasErrors('business');
+    $this->post('/gio-hang', ['variant_id' => $variant->id, 'options' => ['vani.hello-world' => ['message' => 'Chúc mừng sinh nhật!']]])->assertRedirect('/gio-hang');
+    $this->get('/gio-hang')->assertSee('Chúc mừng sinh nhật!');
+
+    $this->post('/thanh-toan', [
+        'contact' => ['full_name' => 'Lan', 'phone' => '0912345678'],
+        'shipping_address' => ['province_name' => 'Hà Nội', 'ward_name' => 'Hoàn Kiếm', 'street_line' => '1 Tràng Tiền'],
+        'shipping_method' => 'standard', 'payment_method' => 'cod', 'expected_total' => 330_000, 'idempotency_key' => 'gift-order-0001',
+    ]);
+    $order = Order::query()->withoutGlobalScopes()->sole();
+    expect($order->lines()->sole()->meta)->toBe(['options' => ['vani.hello-world' => ['message' => 'Chúc mừng sinh nhật!']]]);
+    $this->get("/don-hang/{$order->public_id}")->assertSee('Chúc mừng sinh nhật!');
+});

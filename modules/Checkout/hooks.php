@@ -19,6 +19,13 @@ return [
         'args' => ['request' => 'Modules\\Checkout\\Contracts\\Data\\CheckoutRequest', 'totals' => 'Modules\\Checkout\\Contracts\\Data\\Totals'],
         'description' => 'Kiểm tra dựa trên tổng đã tính (vd. giá trị đơn tối thiểu cho COD). Trả list<string> lỗi.',
     ],
+    'vani.checkout.context' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.4',
+        'args' => ['attributes' => 'array<string, mixed>', 'request' => 'Modules\\Checkout\\Contracts\\Data\\CheckoutRequest'],
+        'description' => 'Bổ sung thuộc tính ngữ cảnh cho khuyến mãi (PromotionContext::$attributes) từ request — mã giới thiệu, nguồn chiến dịch. Khoá nên bắt đầu bằng id plugin. Chạy cả khi quote và trong transaction đặt hàng: không I/O mạng.',
+    ],
     'vani.checkout.payment_methods' => [
         'type' => 'filter',
         'visibility' => 'public',

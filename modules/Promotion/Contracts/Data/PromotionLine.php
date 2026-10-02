@@ -18,5 +18,7 @@ final readonly class PromotionLine
         public int $quantity,
         public Money $unitPrice,
         public Money $subtotal,
+        /** Variant của dòng (một variant có thể ở nhiều dòng khác tuỳ chọn — `key` là khoá dòng). */
+        public ?int $variantId = null,
     ) {}
 }

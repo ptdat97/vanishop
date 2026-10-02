@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Plugin\HelloWorld;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Cart\Contracts\CartLineOption;
+use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontEnricher;
+use Plugin\HelloWorld\Infrastructure\GiftMessageOption;
 use Plugin\HelloWorld\Infrastructure\HelloEnricher;
 
 /**
@@ -42,6 +45,15 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
             : null);
 
         $this->extendCoreAdminScreens();
+
+        // Luồng giao dịch (W4): tuỳ chọn dòng giỏ + thuộc tính ngữ cảnh khuyến mãi từ trường checkout extra[vani.hello-world][ref].
+        $this->contribute(CartLineOption::TAG, GiftMessageOption::class);
+        $this->onSlot('vani.storefront.pdp.add_to_cart_fields', fn (): SlotView => new SlotView('vani-hello-world::gift-message-field'));
+        $this->onFilter('vani.checkout.context', function (array $attributes, CheckoutRequest $request): array {
+            $ref = trim((string) ($request->extra['vani.hello-world']['ref'] ?? ''));
+
+            return $ref === '' ? $attributes : [...$attributes, 'vani.hello-world.ref' => $ref];
+        });
 
         $this->adminMenu('hello-world', 'Hello World', 'admin.plugins.vani-hello-world.index', 'hello-world.view');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));

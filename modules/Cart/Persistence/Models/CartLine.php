@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class CartLine extends Model
 {
-    protected $fillable = ['cart_id', 'variant_id', 'quantity', 'unit_price_snapshot', 'meta'];
+    protected $fillable = ['cart_id', 'variant_id', 'options_hash', 'quantity', 'unit_price_snapshot', 'meta'];
 
     protected function casts(): array
     {

@@ -8,7 +8,7 @@ import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-type OrderLine = { sku: string; name: string; color_name: string | null; size_code: string; quantity: number; unit_amount: number; compare_at_amount: number | null; discount_amount: number; total_amount: number; tax_amount: number };
+type OrderLine = { sku: string; name: string; color_name: string | null; size_code: string; quantity: number; unit_amount: number; compare_at_amount: number | null; discount_amount: number; total_amount: number; tax_amount: number; options: Record<string, Record<string, string | number | boolean | null>> };
 
 const props = defineProps<{
     baseUrl: string;
@@ -91,7 +91,9 @@ function addNote(): void {
                     </thead>
                     <tbody>
                         <tr v-for="line in order.lines" :key="line.sku" class="border-t border-slate-100">
-                            <td class="px-4 py-2">{{ line.name }}<div class="font-mono text-xs text-slate-400">{{ line.sku }} · {{ line.color_name }} / {{ line.size_code }}</div></td>
+                            <td class="px-4 py-2">{{ line.name }}<div class="font-mono text-xs text-slate-400">{{ line.sku }} · {{ line.color_name }} / {{ line.size_code }}</div>
+                                <template v-for="(values, plugin) in line.options" :key="plugin"><div v-for="(value, field) in values" :key="field" class="text-xs text-amber-700">{{ field }}: {{ value }}</div></template>
+                            </td>
                             <td class="px-4 py-2">{{ line.quantity }}</td>
                             <td class="px-4 py-2">{{ vnd(line.unit_amount) }}<div v-if="line.compare_at_amount" class="text-xs text-slate-400 line-through">{{ vnd(line.compare_at_amount) }}</div></td>
                             <td class="px-4 py-2">{{ line.discount_amount ? `−${vnd(line.discount_amount)}` : '—' }}</td>

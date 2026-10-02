@@ -24,5 +24,7 @@ final readonly class OrderLineDraft
         /** Thương hiệu của sản phẩm lúc đặt (snapshot, báo cáo theo brand). */
         public ?int $brandId = null,
         public ?string $brandName = null,
+        /** @var array<string, array<string, scalar|null>> tuỳ chọn dòng theo plugin id — chụp lại, bất biến */
+        public array $options = [],
     ) {}
 }

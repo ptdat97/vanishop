@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.4 — 2026-10-02
+
+Đợt W4a của [extension-surface-v2](extension-surface-v2.md): tuỳ chọn dòng giỏ, ngữ cảnh khuyến mãi. Chỉ thêm.
+
+### Thêm
+- `Cart\Contracts\CartLineOption` (tag `vani.cart.line_options`) + `InvalidCartLineOption`: tuỳ chọn `options.<plugin-id>.<field>` khi thêm dòng (Storefront API `POST /carts/{id}/lines`, form native); cùng variant khác tuỳ chọn là hai dòng; tuỳ chọn không đổi giá. Mã lỗi `cart.option_unknown`, `cart.option_invalid`.
+- `Carts::addLine(..., array $options = [])`; field tuỳ chọn `options` trên `CartLineView`, `CartLineDraft`, `TotalsLine`, `OrderLineDraft`, `OrderLineData`; `PromotionLine::$variantId`.
+- Hook `vani.checkout.context` (filter → `PromotionContext::$attributes`).
+- Slot `vani.storefront.pdp.add_to_cart_fields` (trong form thêm giỏ).
+
+### Đổi hành vi
+- `TotalsLine::$key` / `PromotionLine::$key` là **id dòng giỏ** (trước: id variant) vì một variant có thể ở nhiều dòng; dùng `variantId` khi cần variant. Giữ hàng cộng số lượng theo variant.
+- `order_lines.meta.options` chụp tuỳ chọn của dòng (hiển thị ở Admin đơn, trang cảm ơn, API đơn).
+
 ## 0.3.3 — 2026-10-02
 
 Đợt W3 của [extension-surface-v2](extension-surface-v2.md): route và trang storefront của plugin, giỏ bị bỏ quên. Chỉ thêm.

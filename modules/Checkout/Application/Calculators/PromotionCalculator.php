@@ -31,7 +31,7 @@ final class PromotionCalculator implements TotalsCalculator
         $result = $this->engine->evaluate(new PromotionContext(
             $context->customerId,
             $context->currencyCode,
-            array_map(fn (TotalsLine $line): PromotionLine => new PromotionLine($line->key, $line->brandId, $line->styleId, $line->quantity, $line->unitPrice, $line->total()), $context->lines),
+            array_map(fn (TotalsLine $line): PromotionLine => new PromotionLine($line->key, $line->brandId, $line->styleId, $line->quantity, $line->unitPrice, $line->total(), $line->variantId), $context->lines),
             $context->voucherCodes,
             $context->now,
             $context->attributes,

@@ -10,4 +10,5 @@ return [
     'quantity_limit' => 'You can buy at most :max of this item.',
     'too_many_lines' => 'A cart can hold at most :max items.',
     'line_rejected' => 'This item cannot be added to the cart.',
+    'option_unknown' => 'This option is not supported.',
 ];
