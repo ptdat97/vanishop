@@ -9,7 +9,7 @@
 > | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented (trừ `vani.storefront.account.menu` — chưa có trang tài khoản native) |
 > | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
 > | Tài khoản `/tai-khoan` (đăng nhập OTP, tổng quan, đơn hàng + huỷ, địa chỉ; giỏ vãng lai gộp khi đăng nhập), tra cứu đơn `/tra-cuu-don`, `robots.txt`, `sitemap.xml` | Implemented (2026-10-02) |
-> | Sửa hồ sơ/địa chỉ, mật khẩu, đổi trả trên native; block/page builder; hreflang; header cache CDN (cần tách phiên khỏi trang công khai); giỏ/giá thành viên tải qua API | Designed |
+> | Sửa hồ sơ/địa chỉ, mật khẩu, đổi trả trên native; page builder cho trang khác ngoài trang chủ; hreflang; header cache CDN (cần tách phiên khỏi trang công khai); giỏ/giá thành viên tải qua API | Designed |
 > | Địa chỉ checkout | Nhập tên tỉnh/phường; mã lấy từ tên chuẩn hoá cho tới khi có dữ liệu địa giới hành chính | Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc
@@ -83,6 +83,8 @@ GET /thuong-hieu/{slug}
 ```
 
 ## 4. Block (page builder)
+
+> **Implemented** (2026-10-02) cho trang chủ: `Storefront\Contracts\StorefrontBlock` (`type`, `label`, `fields(): list<FieldDefinition>`, `resolve(config, locale)`, `view`), cấu hình lưu ở `core.storefront.home_blocks`, Admin → Giao diện → Trang chủ. Interface dưới đây là thiết kế ban đầu.
 
 ```php
 interface StorefrontBlock

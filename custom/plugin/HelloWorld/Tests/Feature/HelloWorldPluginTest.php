@@ -187,3 +187,16 @@ it('mục tài khoản do plugin thêm (accountPage) hiện trong menu tài kho�
 
     $this->get('/tai-khoan')->assertOk()->assertSee('data-account-page="vani.hello-world:hello"', false)->assertSee('Hello World');
 });
+
+it('khối trang chủ của plugin: thêm qua Admin, hiện trên trang chủ; plugin tắt thì khối bị bỏ', function () {
+    installHelloWorld();
+    CheckoutTestHelpers::store();
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'storefront.manage'])->create(), 'staff');
+
+    $this->put('/admin/storefront/home-blocks', ['blocks' => [['type' => 'hello_banner', 'config' => ['message' => 'Chào mừng!']], ['type' => 'rich_text', 'config' => ['body' => 'Khối Core']]]])->assertSessionHasNoErrors();
+    $this->get('/')->assertSee('Chào mừng!')->assertSee('Khối Core');
+
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));
+    app(PluginActivation::class)->flush();
+    $this->get('/')->assertOk()->assertDontSee('Chào mừng!')->assertSee('Khối Core');
+});

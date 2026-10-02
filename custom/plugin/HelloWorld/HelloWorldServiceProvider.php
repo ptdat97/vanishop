@@ -10,8 +10,10 @@ use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Storefront\Contracts\Data\SlotView;
+use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Contracts\StorefrontEnricher;
 use Plugin\HelloWorld\Infrastructure\GiftMessageOption;
+use Plugin\HelloWorld\Infrastructure\HelloBannerBlock;
 use Plugin\HelloWorld\Infrastructure\HelloEnricher;
 
 /**
@@ -38,6 +40,7 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 
         // Storefront: dữ liệu (StorefrontEnricher) + hiển thị qua slot bằng view của plugin.
         $this->contribute(StorefrontEnricher::TAG, HelloEnricher::class);
+        $this->contribute(StorefrontBlock::TAG, HelloBannerBlock::class);
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-hello-world');
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
         $this->storefrontPages($this->pluginPath('Http/routes/storefront-pages.php'));

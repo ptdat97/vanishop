@@ -207,7 +207,8 @@ Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugi
 | **W5a** ✅ (2026-10-02, Core 0.3.6) | `publishHooks()` (tên hook bắt đầu bằng id plugin) + arch test `requires.plugins`, `kind` chuẩn + `kind_mismatch`, `PluginHealthCheck` (tham chiếu SMS/ZNS) | `vani.hello-world` (hook `vani.hello-world.greeting`) | 0.3.6 |
 | **W5b** ✅ (2026-10-02, Core 0.3.7) | `AuthProvider` + API `/auth/social/*`, bảng `customer_identities`, ghép an toàn (không ghép theo email chưa xác minh, email đã xác minh chỉ ghép khách đang có). Tham chiếu: nhà cung cấp giả + contract test (plugin thật `vani.social-login` sẽ thay) | `vani.social-login` | 0.3.7 |
 | Hoãn | `scopeTypes()` (marketplace, Later), `integrationMessageTypes()` (khi chốt ERP) — chưa có plugin tham chiếu (R26) | — | — |
-| **W6** | `StorefrontBlock`, `MenuItemType`, `ReportProvider`/`DashboardWidget` | `vani.lookbook`, `vani.reports` | 0.6 |
+| **W6a** ✅ (2026-10-02, Core 0.3.10) | `StorefrontBlock` + page builder trang chủ (Admin), 4 khối Core, tham chiếu `vani.hello-world` | `vani.lookbook` | 0.3.10 |
+| **W6b** | `MenuItemType`, `ReportProvider`/`DashboardWidget` | `vani.reports` | — |
 | Later | `TranslationProvider`, `AgentTool` | — | — |
 
 Mỗi đợt: cập nhật [extension-point-catalog](extension-point-catalog.md) (chuyển dòng từ §7 lên §1–§5), snapshot public API, CHANGELOG-extension, contract test.

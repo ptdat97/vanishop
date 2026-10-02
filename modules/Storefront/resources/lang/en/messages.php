@@ -8,4 +8,6 @@ return [
     'issue_price_changed' => 'The price changed since it was added.',
     'otp_sent' => 'Verification code sent. Please check your messages.',
     'order_cancelled' => 'Order cancelled.',
+    'home_saved' => 'Home page saved.',
+    'home_reset' => 'Reverted to the theme default home page.',
 ];

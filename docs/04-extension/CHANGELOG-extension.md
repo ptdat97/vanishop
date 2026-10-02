@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.10 — 2026-10-02
+
+Đợt W6a của [extension-surface-v2](extension-surface-v2.md): page builder trang chủ. Chỉ thêm.
+
+### Thêm
+- `Storefront\Contracts\StorefrontBlock` (tag `vani.storefront.blocks`: `type()`, `label()`, `fields()` (FieldDefinition), `resolve()`, `view()`) + bộ contract test `Storefront\Testing\StorefrontBlockContract`. Core: `hero`, `product_grid`, `brand_grid`, `rich_text`; tham chiếu plugin `vani.hello-world` (`hello_banner`).
+- Admin → Giao diện → Trang chủ (`storefront.manage`): thêm/sắp xếp/cấu hình khối, dùng lại mặc định; lưu `core.storefront.home_blocks`. Khối lỗi/plugin tắt bị bỏ khi render.
+
 ## 0.3.9 — 2026-10-02
 
 Tài khoản khách native (slice 12b). Chỉ thêm.

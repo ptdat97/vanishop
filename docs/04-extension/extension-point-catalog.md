@@ -33,7 +33,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `CartLineOption` | `vani.cart.line_options` | Cart | — (plugin). **Implemented** (0.3.4): tuỳ chọn dòng giỏ theo plugin id, chuẩn hoá + từ chối, chụp sang dòng đơn; không đổi giá (phụ thu: Designed); tham chiếu `vani.hello-world` (lời chúc gói quà) | [extension-surface-v2 §4.C](extension-surface-v2.md) |
 | `PluginHealthCheck` | `vani.health.checks` | Extension | — (plugin). **Implemented** (0.3.6): `vani:plugin:health` + doctor + trang Admin Plugin; tham chiếu `vani.sms-brandname`, `vani.zalo-zns` (thiếu khoá, sandbox) | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 | `StorefrontEnricher` | `vani.storefront.enrichers` | Storefront | — (plugin). **Implemented** (0.3.1): làm giàu `product_card`/`product`/`cart`/`order` dưới `extensions.<plugin-id>`, batch, lỗi bị bỏ; contract test `StorefrontEnricherContract`; tham chiếu `vani.hello-world` | [extension-surface-v2 §4.B](extension-surface-v2.md) |
-| `StorefrontBlock` | `vani.content.blocks` | Content | hero, product grid, rich text, banner | [storefront](../14-storefront/storefront.md) |
+| `StorefrontBlock` | `vani.storefront.blocks` | Storefront | `hero`, `product_grid`, `brand_grid`, `rich_text`. **Implemented** (0.3.10): page builder trang chủ (Admin → Giao diện), contract test `StorefrontBlockContract`, tham chiếu `vani.hello-world` | [storefront §4](../14-storefront/storefront.md) |
 | `DashboardWidget` | `vani.admin.widgets` | Reporting | doanh số, đơn mới | — |
 
 Extension contract không có abstract base: mở rộng bằng field tuỳ chọn hoặc interface bổ sung tuỳ chọn ([extension-model §5](extension-model.md)); mọi thay đổi ghi ở [CHANGELOG-extension](CHANGELOG-extension.md). Mỗi extension contract có bộ **contract test** trong `Modules\<Ctx>\Testing` mà plugin phải chạy ([testing §6](../17-testing/testing.md)).
@@ -167,7 +167,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 | Extension point thiếu | Loại | Plugin cần | Đợt |
 |---|---|---|---|
 | `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
-| `StorefrontBlock` (page builder) | Contract | lookbook, recommendation, `brand_grid` | P2 |
 | `DashboardWidget` + quyền đọc báo cáo | Contract | `vani.reports` (Reporting thành plugin) | P2 |
 | `adminApiRoutes()` | Registry | POS/app quản trị của plugin | P3 |
 | `integrationMessageTypes()` + JSON Schema | Registry | connector ERP, sàn TMĐT | Khi chốt ERP |

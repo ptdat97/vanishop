@@ -10,9 +10,17 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
+use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Storefront\AccountPages;
+use Modules\Extension\Contracts\Extensions;
+use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Storefront\Application\Blocks\BrandGridBlock;
+use Modules\Storefront\Application\Blocks\HeroBlock;
+use Modules\Storefront\Application\Blocks\ProductGridBlock;
+use Modules\Storefront\Application\Blocks\RichTextBlock;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -37,8 +45,12 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         ));
     }
 
-    public function boot(Router $router): void
+    public function boot(Router $router, PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
+        $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ)');
+        $navigation->add('storefront', 'Giao diện', 'admin.storefront.home', 'storefront.manage', 600);
+
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
@@ -62,6 +74,8 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));
         $this->loadWebRoutes($this->modulePath('Http/routes/storefront-web.php'));
+        $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
+        $this->loadAdminSectionRoutes('storefront', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
     }
 }

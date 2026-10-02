@@ -1,6 +1,11 @@
 @extends('theme::layouts.app')
 
 @section('content')
+    @if ($blocks !== null)
+        @foreach ($blocks as $block)
+            {{ $block['html'] }}
+        @endforeach
+    @else
     @if ($categories !== [])
         <nav aria-label="Danh mục" class="mb-8 flex flex-wrap gap-3 text-sm">
             @foreach ($categories as $category)
@@ -34,4 +39,5 @@
             @endforeach
         </div>
     </section>
+    @endif
 @endsection
