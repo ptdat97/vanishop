@@ -34,6 +34,12 @@ jobs:
       - name: Pint
         run: vendor/bin/pint --test
 
+      - name: Static analysis (Larastan, level 5 + baseline)
+        run: php -d memory_limit=2G vendor/bin/phpstan analyse --no-progress
+
+      - name: Security advisories (composer audit)
+        run: composer audit --no-dev
+
       - name: Type check (Vue/TS)
         run: npx vue-tsc --noEmit -p tsconfig.json
 
@@ -73,6 +79,9 @@ jobs:
 
       - name: Tests (SQLite in-memory)
         run: vendor/bin/pest --compact
+
+      - name: Type coverage (≥ 97%)
+        run: vendor/bin/pest --type-coverage --min=97
 
       - name: Tests (MySQL 8.4)
         run: vendor/bin/pest --compact

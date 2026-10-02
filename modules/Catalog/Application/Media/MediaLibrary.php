@@ -16,7 +16,10 @@ use Modules\Catalog\Persistence\Models\Mediable;
  */
 final class MediaLibrary
 {
-    public function __construct(private readonly string $disk) {}
+    public function __construct(
+        private readonly string $disk,
+        private readonly ?ImageVariants $variants = null,
+    ) {}
 
     public function store(UploadedFile $file): Media
     {
@@ -29,6 +32,8 @@ final class MediaLibrary
 
         $dimensions = @getimagesize((string) $file->getRealPath()) ?: [null, null];
         $path = $file->storeAs('media/'.substr($checksum, 0, 2), $checksum.'.'.$file->extension(), $this->disk);
+
+        $this->variants?->generate($this->disk, $path, $checksum, (string) $file->getMimeType(), $dimensions[0]);
 
         return Media::query()->create([
             'disk' => $this->disk,

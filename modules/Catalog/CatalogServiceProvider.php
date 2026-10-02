@@ -6,7 +6,11 @@ namespace Modules\Catalog;
 
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\ImageManager;
 use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
+use Modules\Catalog\Application\Media\ImageVariants;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
 use Modules\Catalog\Application\Search\DatabaseSearchProvider;
@@ -38,7 +42,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
-        $this->app->bind(MediaLibrary::class, fn (): MediaLibrary => new MediaLibrary((string) config('vanishop.media.disk', 'public')));
+        $this->app->bind(MediaLibrary::class, fn ($app): MediaLibrary => new MediaLibrary((string) config('vanishop.media.disk', 'public'), $app->make(ImageVariants::class)));
+        $this->app->bind(ImageVariants::class, fn (): ImageVariants => new ImageVariants(ImageManager::usingDriver(extension_loaded('imagick') ? ImagickDriver::class : GdDriver::class)));
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);

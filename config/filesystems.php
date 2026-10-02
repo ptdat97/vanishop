@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        // Bucket riêng cho backup (spatie/laravel-backup), cùng nhà cung cấp S3-compatible tại VN, khác bucket ảnh.
+        's3_backup' => [
+            'driver' => 's3',
+            'key' => env('VANI_BACKUP_S3_KEY', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('VANI_BACKUP_S3_SECRET', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('VANI_BACKUP_S3_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
     ],
 
     /*

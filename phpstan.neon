@@ -1,0 +1,23 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - app
+        - modules
+        - custom/plugin
+    excludePaths:
+        - modules/*/Tests/*
+        - custom/plugin/*/Tests/*
+        - modules/*/Persistence/Database/migrations/*
+        - custom/plugin/*/Database/migrations/*
+    tmpDir: storage/framework/phpstan
+    ignoreErrors:
+        # Config của plugin (Config/*.php, nạp bằng mergeConfigFrom) là file cấu hình thật: env() được đánh giá khi
+        # dựng config cache như config/ — Larastan chỉ biết thư mục config/.
+        -
+            identifier: larastan.noEnvCallsOutsideOfConfig
+            paths:
+                - custom/plugin/*/Config/*

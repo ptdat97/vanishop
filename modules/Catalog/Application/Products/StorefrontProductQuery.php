@@ -77,7 +77,7 @@ final class StorefrontProductQuery
             'attributes' => $this->attributes($style->attributeValues, $locale),
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => [
                 ...$this->color($styleColor, $locale),
-                'images' => $styleColor->gallery->map(fn ($image): array => ['url' => $image->media->url(), 'alt' => $image->alt])->all(),
+                'images' => $styleColor->gallery->map(fn ($image): array => ['url' => $image->media->url(800), 'alt' => $image->alt])->all(),
             ])->all(),
             'variants' => $style->variants
                 ->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $variant->styleColor->position, $variant->size->sort_order))
@@ -115,7 +115,7 @@ final class StorefrontProductQuery
                 colorCode: $variant->styleColor->color->code,
                 colorName: $variant->styleColor->color->translate('name', $locale),
                 sizeCode: $variant->size->code,
-                imageUrl: $variant->styleColor->gallery->first()?->media->url(),
+                imageUrl: $variant->styleColor->gallery->first()?->media->url(400),
                 brandName: $variant->style->brand?->name,
             )])
             ->all();
@@ -134,7 +134,7 @@ final class StorefrontProductQuery
             'style_code' => $style->style_code,
             'name' => $style->translate('name', $locale),
             'brand' => $style->brand === null ? null : ['slug' => $style->brand->slug, 'name' => $style->brand->name],
-            'image_url' => $firstImage?->media->url(),
+            'image_url' => $firstImage?->media->url(400),
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => $this->color($styleColor, $locale))->all(),
             'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
         ];
@@ -150,7 +150,7 @@ final class StorefrontProductQuery
             'name' => $styleColor->color->translate('name', $locale),
             'hex' => $styleColor->color->hex,
             'family' => $styleColor->color->color_family->value,
-            'image_url' => $styleColor->gallery->first()?->media->url(),
+            'image_url' => $styleColor->gallery->first()?->media->url(400),
         ];
     }
 

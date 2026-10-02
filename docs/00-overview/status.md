@@ -30,7 +30,7 @@
 >
 > **Slice Notification đã có code**: mẫu tin theo loại × kênh × ngôn ngữ, nhật ký gửi idempotent, gửi bất đồng bộ có retry, tin giao dịch đặt/huỷ đơn và giao hàng (email mặc định), consent cho tin marketing; plugin `vani.sms-brandname` (eSMS) và `vani.zalo-zns` là kênh gửi + kênh OTP (ZNS ưu tiên, tự dự phòng sang SMS).
 >
-> Test: **723 test pass** trên SQLite in-memory và MySQL 8 (2026-10-02), cộng **9 concurrency test** (group `concurrency`, MySQL) pass.
+> Test: **727 test pass** trên SQLite in-memory và MySQL 8 (2026-10-02), cộng **9 concurrency test** (group `concurrency`, MySQL) pass.
 
 ## Nền tảng
 
@@ -43,8 +43,9 @@
 | Locale `vi`, `APP_NAME=VaniShop` | Implemented | `.env`, `.env.example` |
 | Inertia v3 + Vue 3 + TypeScript 5.9 (Admin) | Implemented | `resources/js/admin.ts`; build + `vue-tsc` pass |
 | CI | Implemented (chưa chạy trên GitHub) | `.github/workflows/ci.yml`: clean-room, license, Pint, vue-tsc, build, Pest (SQLite + MySQL 8.4), concurrency group trên MySQL 8.4 |
-| Larastan | Planned | Chưa được duyệt dependency |
-| Redis, Horizon, Meilisearch | Designed | Queue/cache vẫn dùng driver `database` |
+| Larastan | Implemented | Level 5 + baseline (217 lỗi cũ, giảm dần), CI chặn lỗi mới; type coverage ≥ 97% (hiện 97,9%); `composer audit` trong CI (ADR-032) |
+| Redis, Horizon | Partially Implemented | Horizon đã cài + cấu hình (hàng đợi ưu tiên, dashboard dưới Admin, quyền `system.monitor`); dev vẫn dùng driver `database`, production đặt `QUEUE_CONNECTION=redis` (ADR-032) |
+| Lưu trữ S3 tại VN, backup, metric | Partially Implemented | S3 (`VANI_MEDIA_DISK=s3`, disk `s3_backup`), backup hằng đêm + monitor, Pulse tự host; chưa diễn tập restore, chưa có cảnh báo (ADR-032) |
 
 ## Theo bounded context
 
@@ -102,7 +103,7 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 12d) | 723 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging, outbox/inbox/webhook/replay, Integration API, circuit breaker, đối soát event đơn, khách hàng: OTP/brute-force/rate limit, gộp giỏ, profile ẩn, merge, ẩn danh hoá, thông báo, plugin SMS/ZNS) |
+| Unit + feature test (Foundation → slice 12d) | 727 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging, outbox/inbox/webhook/replay, Integration API, circuit breaker, đối soát event đơn, khách hàng: OTP/brute-force/rate limit, gộp giỏ, profile ẩn, merge, ẩn danh hoá, thông báo, plugin SMS/ZNS) |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
 | Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn, cùng SĐT → đúng một hồ sơ khách; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn), `PaymentCallbackConcurrencyTest.php` (6 IPN trùng cùng lúc → 1 lần ghi nhận), `ReturnConcurrencyTest.php` (4 yêu cầu trả toàn bộ cùng lúc → 1), `OutboxConcurrencyTest.php` (4 worker, 40 message/10 đơn → mỗi message gửi đúng một lần, đúng thứ tự trong từng đơn) |
 | Observability | Partially: có correlation id (header + `Context` + **ghi vào mọi dòng log** qua `App\Logging\ContextProcessor`); chưa có metric/tracing |

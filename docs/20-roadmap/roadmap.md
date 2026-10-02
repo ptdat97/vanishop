@@ -90,7 +90,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 - [x] Khung Admin Inertia
 - [x] MySQL + `.env`
 - [x] CI (chưa chạy trên GitHub vì repo chưa có remote CI)
-- [ ] Larastan (chờ duyệt dependency)
+- [x] Larastan (level 5 + baseline, ADR-032)
 - [x] Settings kế thừa theo scope (Tenancy) — làm trong đợt P0 của kernel-review (2026-10-14)
 
 ## 3. Sau khi chứng minh kiến trúc

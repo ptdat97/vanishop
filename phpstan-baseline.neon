@@ -1,0 +1,1021 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between 20000000\|bool\|string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: custom/plugin/Cod/Config/cod.php
+
+		-
+			message: '#^Property Plugin\\Ghn\\Infrastructure\\GhnCarrier\:\:\$shopId is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: custom/plugin/Ghn/Infrastructure/GhnCarrier.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: custom/plugin/HelloWorld/Http/routes/storefront-api.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: custom/plugin/HelloWorld/Http/routes/storefront-pages.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 500000\|bool\|string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: custom/plugin/ShippingFlatRate/Config/shipping-flat-rate.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Contracts\\Cache\\Repository\:\:lock\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: custom/plugin/ZaloZns/Infrastructure/ZnsClient.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Cart\\Persistence\\Models\\CartLine\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Cart/Application/CartService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Cart\\Persistence\\Models\\CartLine\:\:\$options_hash\.$#'
+			identifier: property.notFound
+			count: 3
+			path: modules/Cart/Application/CartService.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: modules/Cart/Application/CartService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and null will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: modules/Cart/Application/CartService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
+			identifier: parameter.notFound
+			count: 1
+			path: modules/Cart/Contracts/CartRejected.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\ProductCollection\:\:\$style_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Catalog/Application/Collections/EloquentCollectionDirectory.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Catalog\\Persistence\\Models\\StyleColor\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Catalog/Application/Products/StorefrontProductQuery.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Style\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Catalog/Application/Search/ProductDocumentBuilder.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<array\{code\: string, translations\: array\<string, array\{label\: string\}\>\}\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: modules/Catalog/Application/Taxonomy/TaxonomyService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Mediable\:\:\$mediable_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Catalog/Http/Controllers/Admin/ProductColorController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Mediable\:\:\$mediable_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Catalog/Http/Controllers/Admin/ProductColorController.php
+
+		-
+			message: '#^Method Modules\\Catalog\\Persistence\\Models\\ProductCollection\:\:translationForeignKey\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: modules/Catalog/Persistence/Models/ProductCollection.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>fee" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Checkout/Application/TotalsPipeline.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
+			identifier: parameter.notFound
+			count: 1
+			path: modules/Checkout/Contracts/CheckoutRejected.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>fee" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Checkout/Contracts/Data/Totals.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<mixed\>\:\:\$each\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Checkout/Testing/CheckoutValidatorContract.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\CustomerIdentity\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Customer/Application/AccountLifecycle.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$orders_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Customer/Application/AuthService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>e164" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Customer/Application/CustomerSessionService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$first_order_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Customer/Application/CustomerStats.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$last_order_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Customer/Application/CustomerStats.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$orders_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Customer/Application/CustomerStats.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$total_spent\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Customer/Application/CustomerStats.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>e164" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Customer/Http/Controllers/Api/AuthController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>onError" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Extension/Application/Hooks/HookManager.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>last_error" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Extension/Console/PluginListCommand.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: modules/Extension/Contracts/Data/FieldDefinition.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$last_error\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Fulfillment/Application/EloquentShipmentReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$order_line_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Fulfillment/Application/EloquentShipmentReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Fulfillment/Application/EloquentShipmentReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$variant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Fulfillment/Application/EloquentShipmentReader.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Fulfillment/Application/EloquentShipmentReader.php
+
+		-
+			message: '#^Parameter \$lines of class Modules\\Fulfillment\\Contracts\\Data\\ShipmentView constructor expects list\<array\{sku\: string, quantity\: int\}\>, array\<int, array\{order_line_id\: mixed, variant_id\: mixed, quantity\: mixed\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: modules/Fulfillment/Application/EloquentShipmentReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$shipped_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$order_line_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$variant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^Property Modules\\Fulfillment\\Application\\FulfillmentService\:\:\$audit is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>shippingMethod" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Fulfillment/Application/FulfillmentService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
+			identifier: parameter.notFound
+			count: 1
+			path: modules/Fulfillment/Contracts/FulfillmentRejected.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array\{\} and array\{\} will always evaluate to false\.$#'
+			identifier: notIdentical.alwaysFalse
+			count: 1
+			path: modules/Fulfillment/Domain/FulfillmentProgress.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$last_error\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Fulfillment/Http/Controllers/Admin/ShipmentController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Fulfillment\\Persistence\\Models\\Shipment\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Fulfillment/Http/Controllers/Admin/ShipmentController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Identity\\Persistence\\Models\\StaffUser\:\:\$last_login_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Identity/Application/RecordStaffLogin.php
+
+		-
+			message: '#^Method Modules\\Integration\\Application\\ConnectorRegistry\:\:connectors\(\) invoked with 1 parameter, 0 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: modules/Integration/Application/HealthQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$actor_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$actor_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$location_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$on_hand_after\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$on_hand_delta\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reserved_after\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Inventory\\Persistence\\Models\\StockMovement\:\:\$reserved_delta\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Inventory\\Persistence\\Models\\StockMovement\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Inventory/Application/StockQueries.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: modules/Inventory/Http/Controllers/Admin/StockController.php
+
+		-
+			message: '#^Method Modules\\Inventory\\Contracts\\InventoryStrategy\:\:adjust\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: modules/Inventory/Testing/InventoryStrategyContract.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$access_token_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/CustomerOrderService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$fulfillment_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$payment_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$placed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$reservation_key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$return_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$shipping_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$brand_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$color_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$product_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$size_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$total_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$variant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/EloquentOrderReader.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$fulfillment_status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: modules/Ordering/Application/OrderCommands.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$lock_version\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderCommands.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$shipping_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderCommands.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$recipient$#'
+			identifier: parameter.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderCommands.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$discount_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$fulfillment_status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$lock_version\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$note\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$payment_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$placed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$return_status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$shipping_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$shipping_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$shipping_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$subtotal_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$tax_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$brand_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$color_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$compare_at_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$discount_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$image_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$product_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$size_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$tax_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$tax_rate_bp\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$total_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderLine\:\:\$unit_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Ordering\\Persistence\\Models\\OrderLine\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Ordering/Application/OrderQueries.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderTransitionService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$fulfillment_status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Ordering/Application/OrderTransitionService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$lock_version\.$#'
+			identifier: property.notFound
+			count: 4
+			path: modules/Ordering/Application/OrderTransitionService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$reservation_key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Application/OrderTransitionService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$return_status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Ordering/Application/OrderTransitionService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$customer_phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$fulfillment_status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$payment_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$placed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$return_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Modules\\Ordering\\Persistence\\Models\\Order\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 5
+			path: modules/Payment/Application/PaymentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$idempotency_key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Payment/Application/PaymentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$payment_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Payment/Application/PaymentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$public_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: modules/Payment/Application/PaymentService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: modules/Payment/Application/PaymentService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
+			identifier: parameter.notFound
+			count: 1
+			path: modules/Payment/Contracts/PaymentRejected.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Payment\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$payment_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Payment\\Persistence\\Models\\Refund\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<int\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: modules/Promotion/Application/PromotionEvaluator.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<mixed\>\:\:\$each\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Promotion/Testing/PromotionActionContract.php
+
+		-
+			message: '#^Access to an undefined property Pest\\Mixins\\Expectation\<mixed\>\:\:\$each\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Promotion/Testing/PromotionRuleContract.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$condition\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$order_line_id\.$#'
+			identifier: property.notFound
+			count: 6
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 3
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$refund_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$variant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$customer_note\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$source\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Offset ''order_line_id'' does not exist on array\{sku\: string, quantity\: int\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 3
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Returns\\Persistence\\Models\\ReturnLine\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Returns/Application/ReturnService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
+			identifier: parameter.notFound
+			count: 1
+			path: modules/Returns/Contracts/ReturnRejected.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Http/Controllers/Admin/ReturnController.php
+
+		-
+			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$source\.$#'
+			identifier: property.notFound
+			count: 1
+			path: modules/Returns/Http/Controllers/Admin/ReturnController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Returns\\Persistence\\Models\\ReturnRequest\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: modules/Returns/Http/Controllers/Admin/ReturnController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: modules/Storefront/Application/Enrichment.php
+
+		-
+			message: '#^Offset ''config'' on array\{type\: string, config\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: modules/Storefront/Application/PageBlocks.php
+
+		-
+			message: '#^Offset ''type'' on array\{type\: string, config\: array\<string, mixed\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: modules/Storefront/Application/PageBlocks.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<array\{type\?\: mixed, config\?\: mixed\}\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: modules/Storefront/Application/PageBlocks.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 5
+			path: modules/Storefront/Http/Controllers/Web/AccountController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: modules/Storefront/Http/Controllers/Web/CartController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 4
+			path: modules/Storefront/Http/Controllers/Web/CatalogController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: modules/Storefront/Http/Controllers/Web/CheckoutController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: modules/Storefront/Http/Controllers/Web/HomeController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: modules/Storefront/Http/Controllers/Web/OrderController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: modules/Storefront/Http/Controllers/Web/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: modules/Storefront/Http/Controllers/Web/TrackOrderController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>default" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: modules/Tenancy/Application/DatabaseSettings.php

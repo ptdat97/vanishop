@@ -33,6 +33,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [027](ADR-027-plugin-data-no-core-columns.md) | Plugin mở rộng dữ liệu bằng bảng `plg_*` + `meta`, không thêm cột vào bảng Core | Accepted |
 | [028](ADR-028-single-store-brand-as-catalog.md) | **Một Owner, một website, một giao diện; brand là thuộc tính catalog** | Accepted |
 | [029](ADR-029-commerce-microkernel.md) | **Microkernel thương mại: bốn vòng, nghiệp vụ là plugin, mặc định chính sách là plugin hệ thống** | Accepted |
+| [032](ADR-032-approved-dependencies-ops-quality.md) | **Dependency được duyệt: Horizon, S3, backup, Pulse, Intervention Image; Larastan, Rector, security advisories, type coverage** | Accepted |
 | [031](ADR-031-short-hook-syntax-auto-points.md) | **Cú pháp hook ngắn `vani_*` + điểm mở rộng tự động (mọi trang Admin, view storefront, API) giữ kiểm soát HookManager** | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 

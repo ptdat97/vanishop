@@ -118,7 +118,8 @@ it('tải ảnh danh mục, khử trùng lặp theo checksum', function () {
 
     $this->get("{$this->base}/{$category->id}/edit")
         ->assertInertia(fn (Assert $page) => $page->component('Catalog::Categories/Form')->whereNot('category.image_url', null));
-    expect(Storage::disk('public')->allFiles())->toHaveCount(1);
+    // Một ảnh gốc (khử trùng lặp) + các bản WebP thu nhỏ của chính ảnh đó.
+    expect(array_values(array_filter(Storage::disk('public')->allFiles(), fn (string $file): bool => preg_match('/-w\d+\.webp$/', $file) !== 1)))->toHaveCount(1);
 });
 
 it('từ chối file không phải ảnh', function () {
