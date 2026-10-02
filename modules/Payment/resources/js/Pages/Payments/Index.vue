@@ -18,6 +18,7 @@ const props = defineProps<{
         created_at: string | null;
         expires_at: string | null;
         can_confirm: boolean;
+        can_capture: boolean;
         can_refund: boolean;
     }>;
     refunds: Array<{ id: number; payment_id: number; amount: number; reason: string; created_at: string | null }>;
@@ -26,13 +27,17 @@ const props = defineProps<{
 
 const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
 const statusLabels: Record<string, string> = {
-    pending: 'Chờ thanh toán', paid: 'Đã thu', failed: 'Thất bại', cancelled: 'Đã huỷ', expired: 'Hết hạn', partially_refunded: 'Hoàn một phần', refunded: 'Đã hoàn',
+    pending: 'Chờ thanh toán', authorized: 'Đã giữ tiền', paid: 'Đã thu', failed: 'Thất bại', cancelled: 'Đã huỷ', expired: 'Hết hạn', partially_refunded: 'Hoàn một phần', refunded: 'Đã hoàn',
 };
 const refunding = ref<null | { id: number; max: number }>(null);
 const refundForm = useForm({ amount: 0, reason: '', idempotency_key: '' });
 
 function filter(status: string): void {
     router.get(props.baseUrl, status ? { status } : {}, { preserveState: true });
+}
+
+function capturePayment(id: number): void {
+    if (confirm('Thu khoản đã giữ tiền này?')) router.post(`${props.baseUrl}/${id}/capture`, {}, { preserveScroll: true });
 }
 
 function confirmPayment(id: number): void {
@@ -101,6 +106,7 @@ function completeRefund(id: number): void {
                 <td class="px-4 py-2 text-xs">{{ payment.created_at }}</td>
                 <td class="px-4 py-2 text-right">
                     <button v-if="payment.can_confirm && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="confirmPayment(payment.id)">Xác nhận đã nhận tiền</button>
+                    <button v-if="payment.can_capture && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="capturePayment(payment.id)">Thu tiền</button>
                     <button v-if="payment.can_refund && can.refund" type="button" class="ml-3 text-indigo-600 hover:underline" @click="openRefund(payment)">Hoàn tiền</button>
                 </td>
             </tr>

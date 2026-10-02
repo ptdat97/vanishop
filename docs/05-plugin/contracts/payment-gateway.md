@@ -73,6 +73,27 @@ public function verifyCallback(Request $request): GatewayCallback
 
 Tên header/trường là ví dụ; theo tài liệu của từng cổng. `hash_equals` bắt buộc (chống timing attack).
 
+## Giữ tiền rồi thu sau (`CapturesLater`, 0.3.5)
+
+Cổng thẻ quốc tế/BNPL thường **giữ tiền** khi khách thanh toán và chỉ **thu** khi giao hàng. Cổng implement thêm interface tuỳ chọn:
+
+```php
+final class CardGateway implements PaymentGateway, CapturesLater
+{
+    public function capture(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult { /* thu, idempotent theo key */ }
+    public function void(PaymentData $payment, string $idempotencyKey): GatewayResult { /* huỷ giữ tiền, idempotent */ }
+}
+```
+
+| Bước | Core | Plugin |
+|---|---|---|
+| Khách thanh toán | — | IPN trả `GatewayCallback` status `authorized` (chỉ cổng `CapturesLater` được dùng) |
+| Ghi nhận | Payment `authorized`, đơn xác nhận (`payment_status = authorized`), event `PaymentAuthorized` | — |
+| Thu | Vận đơn rời kho (`picked_up`) → `capture()` (`VANI_PAYMENT_CAPTURE_ON=shipped`); hoặc nhân viên bấm "Thu tiền". Lỗi → giữ `authorized` + log | Trả `GatewayResult` thành công + mã giao dịch; gọi lại cùng key trả cùng mã |
+| Huỷ đơn | `void()` → payment `cancelled`, không tạo hoàn tiền | Huỷ giữ tiền |
+
+Cổng xác nhận thu bằng IPN `paid` sau đó cũng được: Core bỏ qua bản trùng. Hết hạn giữ tiền phía cổng (thường 7 ngày): Designed.
+
 ## 5. Lỗi thường gặp
 
 | Lỗi | Hậu quả | Cách tránh |

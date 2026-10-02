@@ -7,6 +7,7 @@ namespace Modules\Payment\Testing;
 use Closure;
 use DateTimeImmutable;
 use Illuminate\Http\Request;
+use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\GatewayStatus;
@@ -24,7 +25,8 @@ use Modules\Shared\Domain\Money\Money;
  *       tamperedCallback: fn (PaymentData $p) => Request::create(...));   // callback bị sửa
  *
  * Kiểm tra: mã hợp lệ; initiate idempotent; callback đúng chữ ký được chấp nhận và khớp payment/số tiền;
- * callback sai bị từ chối; cổng không có callback luôn từ chối; query trả trạng thái; refund idempotent theo key.
+ * callback sai bị từ chối; cổng không có callback luôn từ chối; query trả trạng thái; refund idempotent theo key;
+ * cổng giữ tiền (CapturesLater): capture/void idempotent theo key.
  */
 final class PaymentGatewayContract
 {
@@ -73,7 +75,7 @@ final class PaymentGatewayContract
                 expect($callback)->toBeInstanceOf(GatewayCallback::class)
                     ->and($callback->paymentPublicId)->toBe($data->publicId)
                     ->and($callback->gatewayTransactionId)->not->toBe('')
-                    ->and($callback->status)->toBeIn([GatewayCallback::PAID, GatewayCallback::FAILED, GatewayCallback::PENDING])
+                    ->and($callback->status)->toBeIn([GatewayCallback::PAID, GatewayCallback::FAILED, GatewayCallback::PENDING, ...($instance instanceof CapturesLater ? [GatewayCallback::AUTHORIZED] : [])])
                     ->and($callback->amount->equals($data->amount))->toBeTrue();
 
                 expect(fn () => $instance->verifyCallback($tamperedCallback($data)))->toThrow(InvalidCallback::class);
@@ -103,6 +105,24 @@ final class PaymentGatewayContract
                 expect($first->successful)->toBeTrue()
                     ->and($second->successful)->toBeTrue()
                     ->and($second->gatewayReference)->toBe($first->gatewayReference);
+            });
+
+            it('giữ tiền: capture/void idempotent theo key (nếu CapturesLater)', function () use ($gateway, $payment): void {
+                $instance = $gateway();
+                if (! $instance instanceof CapturesLater) {
+                    expect($instance)->not->toBeInstanceOf(CapturesLater::class);
+
+                    return;
+                }
+
+                $data = $payment($instance);
+                $capture = $instance->capture($data, $data->amount, 'contract-capture-1');
+                $void = $instance->void($data, 'contract-void-1');
+
+                expect($capture->successful)->toBeTrue()
+                    ->and($instance->capture($data, $data->amount, 'contract-capture-1')->gatewayReference)->toBe($capture->gatewayReference)
+                    ->and($void)->toBeInstanceOf(GatewayResult::class)
+                    ->and($instance->void($data, 'contract-void-1')->gatewayReference)->toBe($void->gatewayReference);
             });
         });
     }

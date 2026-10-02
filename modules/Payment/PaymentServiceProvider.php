@@ -17,6 +17,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
+use Modules\Payment\Application\Listeners\CaptureAuthorizedOnShipment;
 use Modules\Payment\Application\Listeners\CollectCodOnDelivery;
 use Modules\Payment\Application\Listeners\OrderPaymentPanel;
 use Modules\Payment\Application\Listeners\SettleCancelledOrderPayments;
@@ -51,6 +52,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
 
         Event::listen(OrderCancelled::class, SettleCancelledOrderPayments::class);
         Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
+        Event::listen(ShipmentStatusChanged::class, CaptureAuthorizedOnShipment::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));
 
         RateLimiter::for('payment-callbacks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));

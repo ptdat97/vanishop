@@ -9,4 +9,6 @@ return [
     'confirmed' => 'Đã xác nhận nhận tiền.',
     'refund_created' => 'Đã tạo yêu cầu hoàn tiền.',
     'refund_completed' => 'Đã ghi nhận hoàn tiền.',
+    'capture_failed' => 'Cổng thanh toán từ chối thu khoản đã giữ. Kiểm tra lại với cổng hoặc liên hệ khách.',
+    'captured' => 'Đã thu tiền.',
 ];

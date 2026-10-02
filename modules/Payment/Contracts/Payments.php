@@ -48,6 +48,11 @@ interface Payments
     public function confirmManually(int $paymentId, string $note): void;
 
     /**
+     * Thu khoản đang giữ tiền (cổng CapturesLater). Idempotent; cổng từ chối → PaymentRejected.
+     */
+    public function captureAuthorized(int $paymentId, string $source): void;
+
+    /**
      * Hoàn tiền (một phần hoặc toàn bộ). Idempotent theo $idempotencyKey. Tổng hoàn ≤ số đã thu.
      */
     public function refund(int $paymentId, Money $amount, string $reason, string $idempotencyKey): void;

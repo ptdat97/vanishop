@@ -16,6 +16,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
+use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
@@ -25,6 +26,7 @@ use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Domain\RefundRules;
+use Modules\Payment\Events\PaymentAuthorized;
 use Modules\Payment\Events\PaymentCaptured;
 use Modules\Payment\Events\PaymentFailed;
 use Modules\Payment\Events\RefundCompleted;
@@ -136,9 +138,40 @@ final class PaymentService implements Payments
 
             return match ($callback->status) {
                 GatewayCallback::PAID => $this->capture($payment, $callback->amount, "gateway:{$gatewayCode}"),
+                GatewayCallback::AUTHORIZED => $this->authorize($payment, $callback->amount, "gateway:{$gatewayCode}"),
                 GatewayCallback::FAILED => $this->fail($payment, "gateway:{$gatewayCode}"),
                 default => true,
             };
+        });
+    }
+
+    /**
+     * Thu khoản đang giữ tiền qua cổng CapturesLater (vận đơn rời kho hoặc nhân viên bấm). Gọi cổng ngoài transaction;
+     * idempotent theo payment — gọi lại sau khi đã thu thì bỏ qua.
+     */
+    public function captureAuthorized(int $paymentId, string $source): void
+    {
+        $payment = Payment::query()->findOrFail($paymentId);
+        if ($payment->status->hasCollected()) {
+            return;
+        }
+        $gateway = $this->gateways->get($payment->gateway_code);
+        if ($payment->status !== PaymentStatus::Authorized || ! $gateway instanceof CapturesLater) {
+            throw PaymentRejected::invalidState($payment->status->value);
+        }
+
+        $amount = Money::of($payment->amount, $payment->currency_code);
+        $result = $gateway->capture($this->toData($payment), $amount, "capture:{$payment->public_id}");
+        if (! $result->successful) {
+            Log::warning('Cổng từ chối thu khoản đã giữ tiền.', ['payment' => $payment->public_id, 'message' => $result->message]);
+            throw PaymentRejected::captureFailed((string) $result->message);
+        }
+
+        DB::transaction(function () use ($paymentId, $amount, $result, $source): void {
+            $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
+            if ($this->recordTransaction($payment, 'capture', $result->gatewayReference ?? "capture:{$payment->public_id}", $amount->amount, GatewayCallback::PAID, [])) {
+                $this->capture($payment, $amount, $source);
+            }
         });
     }
 
@@ -285,10 +318,33 @@ final class PaymentService implements Payments
         foreach ($payments as $payment) {
             if ($payment->status === PaymentStatus::Pending || $payment->status === PaymentStatus::Failed) {
                 Payment::query()->whereKey($payment->id)->whereIn('status', [PaymentStatus::Pending, PaymentStatus::Failed])->update(['status' => PaymentStatus::Cancelled]);
+            } elseif ($payment->status === PaymentStatus::Authorized) {
+                $this->voidAuthorization($payment, $reason);
             } elseif ($payment->status->hasCollected() && RefundRules::refundable($payment->amount, $payment->refunded_amount) > 0) {
                 $this->refund($payment->id, Money::of(RefundRules::refundable($payment->amount, $payment->refunded_amount), $payment->currency_code), "order_cancelled:{$reason}", "order-cancel:{$orderId}:{$payment->id}");
             }
         }
+    }
+
+    /**
+     * Đơn huỷ khi đang giữ tiền: yêu cầu cổng huỷ giữ tiền. Cổng từ chối → giữ trạng thái authorized + log để CSKH xử lý.
+     */
+    private function voidAuthorization(Payment $payment, string $reason): void
+    {
+        $gateway = $this->gateways->get($payment->gateway_code);
+        $result = $gateway instanceof CapturesLater ? $gateway->void($this->toData($payment), "void:{$payment->public_id}") : null;
+        if ($result === null || ! $result->successful) {
+            Log::warning('Không huỷ được khoản giữ tiền của đơn đã huỷ — cần xử lý thủ công.', ['payment' => $payment->public_id, 'message' => $result?->message]);
+
+            return;
+        }
+
+        DB::transaction(function () use ($payment, $result, $reason): void {
+            $locked = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status === PaymentStatus::Authorized && $this->recordTransaction($locked, 'void', $result->gatewayReference ?? "void:{$locked->public_id}", $locked->amount, 'voided', ['reason' => $reason])) {
+                $locked->update(['status' => PaymentStatus::Cancelled, 'lock_version' => $locked->lock_version + 1]);
+            }
+        });
     }
 
     public function toData(Payment $payment): PaymentData
@@ -328,6 +384,34 @@ final class PaymentService implements Payments
             // IPN đến sau khi đơn đã huỷ (hết hạn): đã thu tiền → hoàn lại, CSKH theo dõi.
             Log::warning('Thanh toán về sau khi đơn đã huỷ — tạo yêu cầu hoàn tiền.', ['payment' => $payment->public_id, 'order' => $order->number]);
             DB::afterCommit(fn () => $this->refund($payment->id, $amount, 'late_payment_after_cancel', "late-payment:{$payment->id}"));
+        }
+
+        return true;
+    }
+
+    /**
+     * Cổng báo đã giữ tiền: payment authorized, đơn xác nhận (hàng đã giữ), tiền thu sau.
+     */
+    private function authorize(Payment $payment, Money $amount, string $source): bool
+    {
+        if ($amount->amount !== $payment->amount || $amount->currency->code !== $payment->currency_code) {
+            Log::warning('Số tiền giữ không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $amount->amount]);
+
+            return true;
+        }
+        if ($payment->status !== PaymentStatus::Pending) {
+            return true;
+        }
+
+        $payment->update(['status' => PaymentStatus::Authorized, 'lock_version' => $payment->lock_version + 1]);
+        event(new PaymentAuthorized($payment->id, $payment->order_id, $payment->amount, $payment->gateway_code));
+
+        $order = $this->orders->find($payment->order_id);
+        if ($order !== null) {
+            $this->transitions->setPaymentStatus($order->id, 'authorized', "payment:{$payment->public_id}", $source);
+            if ($order->status === OrderStatus::Pending) {
+                $this->transitions->transition($order->id, OrderStatus::Confirmed, 'payment_authorized', $source);
+            }
         }
 
         return true;

@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.5 — 2026-10-02
+
+Đợt W4b của [extension-surface-v2](extension-surface-v2.md): cổng giữ tiền rồi thu sau. Chỉ thêm.
+
+### Thêm
+- `Payment\Contracts\CapturesLater` (interface bổ sung tuỳ chọn cho `PaymentGateway`: `capture()`, `void()`, idempotent theo key) — Core kiểm tra bằng `instanceof`.
+- `GatewayCallback::AUTHORIZED`; trạng thái payment `authorized`; event `Payment\Events\PaymentAuthorized`.
+- `Payments::captureAuthorized($paymentId, $source)`; mã lỗi `payment.capture_failed`.
+- Bộ contract test `PaymentGatewayContract`: cổng `CapturesLater` được trả callback `authorized`, phải capture/void idempotent.
+
+### Hành vi
+- Callback `authorized` → đơn xác nhận, `orders.payment_status = authorized`; vận đơn rời kho (`picked_up`) → Core thu tiền (`VANI_PAYMENT_CAPTURE_ON=shipped`, mặc định; `manual` = nhân viên bấm "Thu tiền" ở Admin thanh toán). Thu lỗi → giữ `authorized` + log.
+- Đơn huỷ khi đang giữ tiền → `void` ở cổng, payment `cancelled` (không tạo hoàn tiền).
+
 ## 0.3.4 — 2026-10-02
 
 Đợt W4a của [extension-surface-v2](extension-surface-v2.md): tuỳ chọn dòng giỏ, ngữ cảnh khuyến mãi. Chỉ thêm.

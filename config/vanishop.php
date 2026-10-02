@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.4',
+    'version' => '0.3.5',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -91,6 +91,11 @@ return [
     | COD, chuyển khoản, phí giao cố định, VAT VN là plugin hệ thống (ADR-029) — cấu hình nằm trong
     | custom/plugin/{Cod,BankTransfer,ShippingFlatRate,TaxVnVat}/Config và Admin → Cấu hình.
     */
+
+    'payment' => [
+        // Cổng giữ tiền (CapturesLater): `shipped` = thu khi vận đơn rời kho; `manual` = nhân viên bấm thu.
+        'capture_on' => env('VANI_PAYMENT_CAPTURE_ON', 'shipped'),
+    ],
 
     'fulfillment' => [
         // Tự tạo vận đơn khi đơn được xác nhận.

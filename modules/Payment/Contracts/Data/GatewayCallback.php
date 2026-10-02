@@ -17,6 +17,9 @@ final readonly class GatewayCallback
 
     public const PENDING = 'pending';
 
+    /** Đã giữ tiền, chưa thu (chỉ cổng CapturesLater). */
+    public const AUTHORIZED = 'authorized';
+
     /**
      * @param  array<string, mixed>  $maskedPayload  payload đã che dữ liệu nhạy cảm, để lưu vết
      * @param  array<string, mixed>  $acknowledgement

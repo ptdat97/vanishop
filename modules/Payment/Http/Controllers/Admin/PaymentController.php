@@ -14,6 +14,7 @@ use Inertia\Response;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
@@ -50,6 +51,7 @@ final class PaymentController
                 'expires_at' => $payment->expires_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
                 'can_confirm' => in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed, PaymentStatus::Expired], true)
                     && ($gateways->get($payment->gateway_code)?->capabilities()->manualConfirmation ?? false),
+                'can_capture' => $payment->status === PaymentStatus::Authorized && $gateways->get($payment->gateway_code) instanceof CapturesLater,
                 'can_refund' => $payment->status->hasCollected() && $payment->refunded_amount < $payment->amount,
             ])->all(),
             'refunds' => $refunds->map(fn (Refund $refund): array => [
@@ -70,6 +72,17 @@ final class PaymentController
         $payments->confirmManually($payment->id, $data['note']);
 
         return back()->with('success', __('payment::messages.confirmed'));
+    }
+
+    /**
+     * Thu khoản đang giữ tiền (cổng CapturesLater) — khi chưa tự thu lúc vận đơn rời kho hoặc `capture_on = manual`.
+     */
+    public function capture(Payment $payment, PaymentService $payments): RedirectResponse
+    {
+        Gate::authorize('payments.confirm');
+        $payments->captureAuthorized($payment->id, 'staff');
+
+        return back()->with('success', __('payment::messages.captured'));
     }
 
     public function refund(Payment $payment, Request $request, PaymentService $payments): RedirectResponse
