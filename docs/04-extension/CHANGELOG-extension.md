@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.9 — 2026-10-02
+
+Tài khoản khách native (slice 12b). Chỉ thêm.
+
+### Thêm
+- Service contract `Customer\Contracts\CustomerSessions` (OTP đăng nhập, token, địa chỉ) cho bề mặt ngoài Storefront API; middleware `vani.customer-session[:required]` (token trong phiên web).
+- `PluginServiceProvider::accountPage($key, $label, $route)` — mục menu tài khoản khách native; trang plugin (`storefrontPages`) chạy cùng phiên khách.
+- Slot `vani.storefront.account.menu`, `account.dashboard`, `account.order_detail`.
+
 ## 0.3.8 — 2026-10-02
 
 [ADR-031](../19-adr/ADR-031-short-hook-syntax-auto-points.md): cú pháp hook ngắn + điểm mở rộng tự động. Chỉ thêm.

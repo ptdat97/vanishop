@@ -15,6 +15,7 @@ use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginEventListeners;
+use Modules\Extension\Application\Storefront\AccountPages;
 use Modules\Extension\Application\Storefront\PluginViews;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
@@ -266,7 +267,7 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['web', 'vani.storefront-context', 'vani.theme', 'vani.plugin-active:'.$this->pluginId()])
+        Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.plugin-active:'.$this->pluginId()])
             ->prefix("p/{$slug}")
             ->name("storefront.p.{$slug}.")
             ->group($file);
@@ -281,6 +282,15 @@ abstract class PluginServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom($path, $namespace);
         $this->app->make(PluginViews::class)->add($namespace, $this->pluginSlug(), $path);
+    }
+
+    /**
+     * Mục trong menu tài khoản khách native (`/tai-khoan`), trỏ tới route trang của plugin (storefrontPages()).
+     * Trang cần đăng nhập: thêm middleware `vani.customer-session:required` trong file route.
+     */
+    protected function accountPage(string $key, string $label, string $route, int $order = 500): void
+    {
+        $this->app->make(AccountPages::class)->add($this->pluginId(), $key, $label, $route, $order);
     }
 
     private function pluginSlug(): string

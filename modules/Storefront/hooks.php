@@ -165,4 +165,25 @@ return [
         'args' => ['body' => 'array<string, mixed>', 'request' => 'Illuminate\\Http\\Request'],
         'description' => 'Điểm tự động cho MỌI phản hồi JSON thành công của Storefront API: tên = tên route bỏ "api.storefront.v1." (products.show → vani.api.storefront.products.show; route plugin: x.<slug>.<tên>). Ưu tiên StorefrontEnricher khi chỉ cần thêm dữ liệu cho sản phẩm/giỏ/đơn.',
     ],
+    'vani.storefront.account.menu' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.9',
+        'args' => [],
+        'description' => 'Mục bổ sung trong menu tài khoản khách (ngoài accountPage() của plugin).',
+    ],
+    'vani.storefront.account.dashboard' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.9',
+        'args' => ['customer' => 'Modules\\Customer\\Contracts\\Data\\CustomerData'],
+        'description' => 'Khối trên trang tổng quan tài khoản (điểm thưởng, ví, ưu đãi).',
+    ],
+    'vani.storefront.account.order_detail' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.9',
+        'args' => ['order' => 'array<string, mixed> (OrderPresenter::present)'],
+        'description' => 'Khối trên trang chi tiết đơn trong tài khoản (hoá đơn, đổi trả, theo dõi).',
+    ],
 ];

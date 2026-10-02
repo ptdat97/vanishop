@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
+use Modules\Extension\Application\Storefront\AccountPages;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
@@ -38,6 +40,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
+        View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 
         $settings = $this->app->make(Settings::class);

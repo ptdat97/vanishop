@@ -176,3 +176,15 @@ it('slot header/footer/checkout mới hiện ở đúng trang', function () {
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
     $this->get('/thanh-toan')->assertSee('name="extra[vani.gift][message]"', false);
 });
+
+it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitemap gồm danh mục, thương hiệu, sản phẩm đang hiển thị', function () {
+    $robots = $this->get('/robots.txt')->assertOk()->assertHeader('Content-Type', 'text/plain; charset=UTF-8')->getContent();
+    expect($robots)->toContain('Disallow: /tai-khoan')->toContain('Sitemap: '.url('/sitemap.xml'))->not->toContain('/admin');
+
+    T::product($this->urbanx->id, ['name' => 'Nháp', 'slug' => 'ban-nhap', 'status' => 'draft']);
+    $xml = $this->get('/sitemap.xml')->assertOk()->getContent();
+    expect($xml)->toContain(route('storefront.product', $this->product->slug))
+        ->toContain(route('storefront.brand', 'urbanx'))
+        ->not->toContain('ban-nhap')
+        ->and(simplexml_load_string($xml))->not->toBeFalse();
+});

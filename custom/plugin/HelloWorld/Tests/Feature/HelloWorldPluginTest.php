@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Customer\Tests\Feature\CustomerTestHelpers;
+use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
@@ -175,4 +177,13 @@ it('cú pháp ngắn vani_add_filter trong plugin: thuộc plugin, tắt plugin 
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));
     app(PluginActivation::class)->flush();
     $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->missing('helloWorld'));
+});
+
+it('mục tài khoản do plugin thêm (accountPage) hiện trong menu tài khoản khi plugin bật', function () {
+    installHelloWorld();
+    CustomerTestHelpers::fakeOtp();
+    $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
+    $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes['+84912345678|login']]);
+
+    $this->get('/tai-khoan')->assertOk()->assertSee('data-account-page="vani.hello-world:hello"', false)->assertSee('Hello World');
 });

@@ -8,7 +8,8 @@
 > | Trang SSR: `/`, `/danh-muc/{slug}`, `/thuong-hieu`, `/thuong-hieu/{slug}`, `/tim-kiem`, `/san-pham/{slug}` (JSON-LD `Product`), `/gio-hang`, `/thanh-toan`, `/don-hang/{id}` — mua được hoàn toàn bằng form khi JS tắt | Implemented |
 > | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented (trừ `vani.storefront.account.menu` — chưa có trang tài khoản native) |
 > | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
-> | Tài khoản `/tai-khoan`, tra cứu đơn, block/page builder, sitemap, hreflang, header cache CDN, giỏ/giá thành viên tải qua API | Designed |
+> | Tài khoản `/tai-khoan` (đăng nhập OTP, tổng quan, đơn hàng + huỷ, địa chỉ; giỏ vãng lai gộp khi đăng nhập), tra cứu đơn `/tra-cuu-don`, `robots.txt`, `sitemap.xml` | Implemented (2026-10-02) |
+> | Sửa hồ sơ/địa chỉ, mật khẩu, đổi trả trên native; block/page builder; hreflang; header cache CDN (cần tách phiên khỏi trang công khai); giỏ/giá thành viên tải qua API | Designed |
 > | Địa chỉ checkout | Nhập tên tỉnh/phường; mã lấy từ tên chuẩn hoá cho tới khi có dữ liệu địa giới hành chính | Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc

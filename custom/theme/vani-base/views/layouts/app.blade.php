@@ -26,6 +26,7 @@
             </nav>
             <div class="flex items-center gap-4 text-sm">
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
+                <a href="{{ request()->attributes->has('customer') ? route('storefront.account') : route('storefront.account.login') }}">{{ request()->attributes->has('customer') ? 'Tài khoản' : 'Đăng nhập' }}</a>
                 <a href="{{ route('storefront.cart') }}">Giỏ hàng</a>
             </div>
         </div>
@@ -44,6 +45,7 @@
 
     <footer class="mt-12 border-t border-slate-200">
         <div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 text-sm text-slate-500 md:grid-cols-4">
+            <nav class="space-y-1" aria-label="Hỗ trợ"><a href="{{ route('storefront.track') }}" class="block">Tra cứu đơn hàng</a></nav>
             <x-vani::hook-slot name="vani.storefront.footer.columns" />
             <p class="md:col-span-4">© {{ date('Y') }} {{ config('app.name') }}</p>
         </div>

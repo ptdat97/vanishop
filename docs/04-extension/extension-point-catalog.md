@@ -126,7 +126,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.plp.filters` | Bộ lọc bổ sung trang danh sách (0.3.1) | Lọc theo dữ liệu plugin |
 | `vani.storefront.pdp.gallery_after` | Dưới ảnh sản phẩm (0.3.1) | Video, 360° |
 | `vani.storefront.checkout.contact_after` / `address_after` / `payment_after` | Sau từng bước checkout (0.3.1); trường `extra[<plugin id>]` | Mã số thuế HĐĐT, ghi chú giao, ưu đãi theo cổng |
-| `vani.storefront.account.menu` | Menu tài khoản khách (**Designed** — chờ trang tài khoản native) | Điểm thưởng, ví |
+| `vani.storefront.account.menu` / `account.dashboard` / `account.order_detail` | Menu, tổng quan, chi tiết đơn trong `/tai-khoan` (0.3.9); mục menu có trang riêng: `accountPage()` | Điểm thưởng, ví, hoá đơn |
 
 ## 5. Registry (qua `PluginServiceProvider`)
 
@@ -137,6 +137,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `permissions()` | Khai báo permission — Implemented (gán role mẫu: Designed) |
 | `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
 | `storefrontRoutes()` | Storefront API của plugin dưới `/api/storefront/v1/x/{slug}/…` (không ghi đè route Core) — Implemented (0.3.3) |
+| `accountPage(key, label, route)` | Mục menu tài khoản khách native trỏ tới trang của plugin — Implemented (0.3.9) |
 | `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3) |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |

@@ -41,6 +41,7 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-hello-world');
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
         $this->storefrontPages($this->pluginPath('Http/routes/storefront-pages.php'));
+        $this->accountPage('hello', 'Hello World', 'storefront.p.vani-hello-world.index');
         $this->onSlot('vani.storefront.pdp.after_title', fn (array $product): ?SlotView => isset($product['extensions']['vani.hello-world'])
             ? new SlotView('vani-hello-world::greeting', $product['extensions']['vani.hello-world'])
             : null);
