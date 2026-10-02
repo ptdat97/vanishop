@@ -80,9 +80,13 @@ final class CheckoutService implements Checkout
         }
 
         try {
-            $body = DB::transaction(function () use ($request, $scope, $idempotencyKey): array {
+            // Hồ sơ khách theo SĐT được tạo NGOÀI transaction đặt hàng: nhiều đơn cùng SĐT đặt song song có thể
+            // deadlock khi chèn khách (MySQL huỷ cả transaction ngoài, savepoint không cứu được) — ở đây tự thử lại.
+            // Tạo hồ sơ là idempotent nên đơn bị từ chối sau đó cũng không sao.
+            $customerId = $this->customerFor($request);
+
+            $body = DB::transaction(function () use ($request, $scope, $idempotencyKey, $customerId): array {
                 $cart = $this->carts->lockForCheckout($request->cart);
-                $customerId = $this->customerFor($request);
                 $context = $this->context($cart, $request, $customerId);
                 $totals = $this->pipeline->run($context);
 

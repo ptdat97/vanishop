@@ -58,13 +58,14 @@ final class CustomerService implements Customers
         }
 
         try {
-            // Savepoint riêng: lỗi trùng khoá không làm hỏng transaction bên ngoài.
+            // Savepoint riêng: lỗi trùng khoá không làm hỏng transaction bên ngoài. Gọi ngoài transaction (checkout):
+            // tự thử lại khi deadlock do nhiều request cùng chèn một SĐT.
             return DB::transaction(fn (): Customer => Customer::query()->create([
                 'public_id' => (string) Str::ulid(),
                 'phone' => $e164,
                 'full_name' => $fullName === null || trim($fullName) === '' ? null : trim($fullName),
                 'status' => CustomerStatus::Active,
-            ]));
+            ]), 3);
         } catch (UniqueConstraintViolationException) {
             return $this->activeByPhone($e164) ?? throw CustomerRejected::notFound();
         }

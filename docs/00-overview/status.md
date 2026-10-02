@@ -30,7 +30,7 @@
 >
 > **Slice Notification đã có code**: mẫu tin theo loại × kênh × ngôn ngữ, nhật ký gửi idempotent, gửi bất đồng bộ có retry, tin giao dịch đặt/huỷ đơn và giao hàng (email mặc định), consent cho tin marketing; plugin `vani.sms-brandname` (eSMS) và `vani.zalo-zns` là kênh gửi + kênh OTP (ZNS ưu tiên, tự dự phòng sang SMS).
 >
-> Test: **700 test pass** (unit, feature, architecture, contract) trên SQLite in-memory sau slice 12d; concurrency test (group `concurrency`, chỉ MySQL) đã sửa theo API mới nhưng **chưa chạy lại trên MySQL**.
+> Test: **700 test pass** trên SQLite in-memory và MySQL 8 (2026-10-02), cộng **9 concurrency test** (group `concurrency`, MySQL) pass.
 
 ## Nền tảng
 

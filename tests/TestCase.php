@@ -2,10 +2,12 @@
 
 namespace Tests;
 
+use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
 
@@ -16,8 +18,13 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
         $this->withoutVite();
 
-        if (in_array(RefreshDatabase::class, class_uses_recursive($this), true)) {
+        $traits = class_uses_recursive($this);
+        if (in_array(RefreshDatabase::class, $traits, true)) {
             $this->enableBundledPlugins();
+        } elseif (in_array(DatabaseTruncation::class, $traits, true)) {
+            // Concurrency test: tiến trình con boot app mới → cần bản ghi plugin + file cache nạp provider.
+            $this->enableBundledPlugins();
+            $this->app->make(PluginManager::class)->rebuildCache();
         }
     }
 
