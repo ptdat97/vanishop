@@ -35,7 +35,8 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `PluginHealthCheck` | `vani.health.checks` | Extension | — (plugin). **Implemented** (0.3.6): `vani:plugin:health` + doctor + trang Admin Plugin; tham chiếu `vani.sms-brandname`, `vani.zalo-zns` (thiếu khoá, sandbox) | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 | `StorefrontEnricher` | `vani.storefront.enrichers` | Storefront | — (plugin). **Implemented** (0.3.1): làm giàu `product_card`/`product`/`cart`/`order` dưới `extensions.<plugin-id>`, batch, lỗi bị bỏ; contract test `StorefrontEnricherContract`; tham chiếu `vani.hello-world` | [extension-surface-v2 §4.B](extension-surface-v2.md) |
 | `StorefrontBlock` | `vani.storefront.blocks` | Storefront | `hero`, `product_grid`, `brand_grid`, `rich_text`. **Implemented** (0.3.10): page builder trang chủ (Admin → Giao diện), contract test `StorefrontBlockContract`, tham chiếu `vani.hello-world` | [storefront §4](../14-storefront/storefront.md) |
-| `DashboardWidget` | `vani.admin.widgets` | Reporting | doanh số, đơn mới | — |
+| `DashboardWidget` | `vani.admin.dashboard.widgets` | Extension | — (plugin). **Implemented** (0.3.12): ô Tổng quan trả `Metric`/`Series`/`Table`, Core lọc quyền + cô lập lỗi; tham chiếu `vani.reports` | [extension-surface-v2 §4.G](extension-surface-v2.md) |
+| `ReportProvider` | `vani.admin.reports` | Extension | — (plugin). **Implemented** (0.3.12): Admin → Báo cáo, `run(ReportPeriod): ReportResult`, Core dựng trang + CSV; tham chiếu `vani.reports` | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 
 Extension contract không có abstract base: mở rộng bằng field tuỳ chọn hoặc interface bổ sung tuỳ chọn ([extension-model §5](extension-model.md)); mọi thay đổi ghi ở [CHANGELOG-extension](CHANGELOG-extension.md). Mỗi extension contract có bộ **contract test** trong `Modules\<Ctx>\Testing` mà plugin phải chạy ([testing §6](../17-testing/testing.md)).
 
@@ -55,6 +56,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |
 | `OrderReader` | Đọc đơn (DTO snapshot). **Implemented** | Ordering |
+| `OrderStatistics` | Số liệu bán hàng tổng hợp: tổng, theo ngày (múi giờ), theo thanh toán/kênh/sản phẩm/thương hiệu, đếm theo trạng thái. **Implemented** (0.3.12) | Ordering |
 | `CustomerOrders` | Tra cứu/xem/huỷ đơn cho khách vãng lai. **Implemented** | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |

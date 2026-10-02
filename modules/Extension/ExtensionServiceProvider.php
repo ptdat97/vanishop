@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\View;
 use Inertia\ResponseFactory;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Application\Admin\Reports;
 use Modules\Extension\Application\Hooks\CallerPlugin;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
@@ -132,6 +133,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
 
         $navigation = $this->app->make(AdminNavigation::class);
         $navigation->add('dashboard', 'Tổng quan', 'admin.dashboard', 'admin.access', 0);
+        $navigation->add('reports', 'Báo cáo', 'admin.reports.index', 'admin.access', 40, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);
         $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 900);
         $navigation->add('settings', 'Cấu hình', 'admin.settings.index', 'settings.manage', 950);
 

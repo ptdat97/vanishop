@@ -109,6 +109,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 ### Báo cáo & nội dung
 | Plugin | Đợt |
 |---|---|
+| `vani.reports` (widget Tổng quan, báo cáo doanh thu theo ngày/sản phẩm/thương hiệu/thanh toán/kênh, CSV) | **Implemented** (Core 0.3.12) |
 | `vani.advanced-reports` (hợp nhất Owner, cohort, RFM, phân bổ chi phí KM/loyalty) | P3 |
 | `vani.blog`, `vani.lookbook` | P2 |
 

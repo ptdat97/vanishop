@@ -67,7 +67,7 @@ it('doctor: báo version cần nâng, migration chưa chạy, plugin failed, man
     }
 
     expect(app(PluginDoctor::class)->diagnose())->toBe([
-        ['plugin' => 'fixture.future', 'level' => 'warning', 'code' => 'incompatible_core', 'message' => 'Chưa cài; cần VaniShop ^9.0, hiện tại 0.3.11.'],
+        ['plugin' => 'fixture.future', 'level' => 'warning', 'code' => 'incompatible_core', 'message' => 'Chưa cài; cần VaniShop ^9.0, hiện tại 0.3.12.'],
     ]);
     $this->artisan('vani:plugin:doctor')->assertSuccessful(); // chỉ cảnh báo → mã 0
 

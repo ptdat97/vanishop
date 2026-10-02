@@ -1,0 +1,17 @@
+{
+    "id": "vani.reports",
+    "name": {
+        "vi": "Báo cáo bán hàng",
+        "en": "Sales reports"
+    },
+    "version": "1.0.0",
+    "kind": "analytics",
+    "provider": "Plugin\\Reports\\ReportsServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.12",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": ["reports.view"],
+    "author": "VaniShop Team"
+}

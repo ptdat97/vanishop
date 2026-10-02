@@ -109,7 +109,7 @@ flowchart TD
 | Notification, Integration | 1 (khung) | Kênh gửi, connector là plugin |
 | Storefront | 1 (tầng ghép) | Không có bảng ([ADR-021](../19-adr/ADR-021-storefront-composition-module.md)) |
 | Content (trang, menu, banner, redirect) | 1 (Designed) | Page builder block do plugin thêm qua `StorefrontBlock` |
-| Reporting | **3** (plugin `vani.reports`, Designed) | Đọc qua `OrderReader`/event; Core chỉ có slot dashboard |
+| Reporting | **3** (plugin `vani.reports`, Implemented 0.3.12) | Đọc qua `OrderReader`/event; Core chỉ có slot dashboard |
 
 ### 3.2 Implementation mặc định
 
@@ -160,7 +160,7 @@ Không đặt hằng trên interface: một class có thể implement nhiều co
 | 2 ✅ | Tách `CodGateway`, `ManualBankTransferGateway` → `vani.cod`, `vani.bank-transfer` | Giữ `code()` để đơn cũ không đổi |
 | 3 ✅ | Tách `FlatRateShipping` → `vani.shipping-flat-rate` (cấu hình qua `settings()` thay `.env`) | |
 | 4 ✅ | Tách `VnVatInclusiveTax` → `vani.tax-vn-vat`; Core thêm `NoTax` dự phòng | |
-| 5 | Reporting làm plugin `vani.reports`; Admin dashboard chỉ còn slot | Chưa làm: Core chưa có báo cáo để tách (dashboard `app/` chỉ là slot); viết thẳng thành plugin khi làm báo cáo |
+| 5 | Reporting làm plugin `vani.reports`; Admin dashboard chỉ còn slot | ✅ 0.3.12: Core có `DashboardWidget`/`ReportProvider` + `OrderStatistics` (đọc); báo cáo nằm trong plugin `vani.reports` |
 | 6 ✅ | Arch test: `modules/` không chứa class implement `PaymentGateway`/`ShippingRateProvider`/`TaxCalculator` ngoài danh sách trung lập | R28 |
 
 Done khi: cài mới → 4 plugin hệ thống tự bật, E2E COD chạy; tắt `vani.cod` khi còn `vani.bank-transfer` được, tắt cả hai bị từ chối; contract test của 4 plugin pass; arch test R28 pass.

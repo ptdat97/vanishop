@@ -8,10 +8,12 @@ use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
+use Modules\Ordering\Application\EloquentOrderStatistics;
 use Modules\Ordering\Application\OrderFactory;
 use Modules\Ordering\Application\OrderTransitionService;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Shared\Support\ModuleServiceProvider;
@@ -31,6 +33,7 @@ final class OrderingServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(OrderWriter::class, OrderFactory::class);
         $this->app->bind(OrderReader::class, EloquentOrderReader::class);
+        $this->app->bind(OrderStatistics::class, EloquentOrderStatistics::class);
         $this->app->bind(OrderTransitions::class, OrderTransitionService::class);
         $this->app->bind(CustomerOrders::class, CustomerOrderService::class);
     }

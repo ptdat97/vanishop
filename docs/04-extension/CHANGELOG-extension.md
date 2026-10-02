@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.12 — 2026-10-02
+
+Đợt W6b (phần báo cáo) của [extension-surface-v2](extension-surface-v2.md). Chỉ thêm.
+
+### Thêm
+- `Extension\Contracts\DashboardWidget` (tag `vani.admin.dashboard.widgets`): `key()`, `label()`, `permission()`, `width()` (1–3), `order()`, `render(): Metric|Series|Table`. Core lọc theo quyền, cô lập lỗi (`Extensions::call`), vẽ theo kiểu dữ liệu; prop `widgets` trên trang Tổng quan. Slot `vani.admin.dashboard.cards` giữ nguyên.
+- `Extension\Contracts\ReportProvider` (tag `vani.admin.reports`): `key()`, `label()`, `description()`, `permission()`, `run(ReportPeriod): ReportResult`. Admin → Báo cáo (`/{admin}/reports[/{key}[/export]]`): chọn khoảng thời gian (hôm nay, 7/30 ngày, tháng này/trước, tuỳ chọn), số tổng, biểu đồ, bảng, xuất CSV (BOM UTF-8, chặn công thức). Menu chỉ hiện khi có báo cáo xem được.
+- DTO `Extension\Contracts\Data\{Metric, Series, Table, Column, ReportResult, ReportPeriod}` (định dạng `number|money|percent|text`).
+- Service contract `Ordering\Contracts\OrderStatistics`: `totals()`, `daily()` (theo múi giờ), `breakdown(SalesDimension)` (thanh toán, kênh, sản phẩm, thương hiệu), `countByStatus()`; DTO `SalesTotals`, `SalesBucket`, enum `SalesDimension`. Doanh thu = đơn không huỷ theo `placed_at`; tối đa 366 ngày.
+- `AdminNavigation::add(..., ?Closure $when)`: điều kiện hiển thị thêm cho mục menu.
+- Plugin tham chiếu `vani.reports` (5 widget, 5 báo cáo, quyền `reports.view`).
+
 ## 0.3.11 — 2026-10-02
 
 Địa giới hành chính Việt Nam. Chỉ thêm.
