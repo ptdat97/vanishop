@@ -1,4 +1,4 @@
-VaniShop 0.3.2
+VaniShop 0.3.3
 class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\BusinessRuleViolation
   static notFound(): self
   static closed(): self
@@ -37,6 +37,12 @@ class Modules\Cart\Contracts\Data\CartView
   isCheckoutReady(): bool
 class Modules\Cart\Contracts\Data\NewCart
   __construct(Modules\Cart\Contracts\Data\CartKey $key, Modules\Cart\Contracts\Data\CartView $view)
+class Modules\Cart\Events\CartAbandoned
+  __construct(string $cartPublicId, int $customerId, int $itemCount, int $subtotal, string $currency, string $lastActivityAt)
+  static dispatch(...$arguments)
+  static dispatchIf($boolean, ...$arguments)
+  static dispatchUnless($boolean, ...$arguments)
+  static broadcast(...$arguments)
 class Modules\Cart\Events\CartUpdated
   __construct(string $cartId, ?int $customerId)
   static dispatch(...$arguments)
@@ -311,6 +317,9 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
   protected permissions(array $permissions): void
   protected adminRoutes(string $file): void
+  protected storefrontRoutes(string $file): void
+  protected storefrontPages(string $file): void
+  protected storefrontViews(string $path, string $namespace): void
   protected webhookRoutes(string $file): void
   protected migrations(string $path): void
   protected translations(string $path, string $namespace): void

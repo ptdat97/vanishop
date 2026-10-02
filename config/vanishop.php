@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.2',
+    'version' => '0.3.3',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -36,7 +36,7 @@ return [
     */
     'reserved_paths' => [
         'api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico',
-        'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang',
+        'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'p',
     ],
 
     /*
@@ -83,6 +83,8 @@ return [
         'max_lines' => (int) env('VANI_CART_MAX_LINES', 50),
         // Giỏ không hoạt động quá số ngày này bị xoá (vani:cart:prune, chạy hằng ngày).
         'ttl_days' => (int) env('VANI_CART_TTL_DAYS', 30),
+        // Giỏ của khách không hoạt động quá số phút này → CartAbandoned (vani:cart:detect-abandoned, 5 phút/lần).
+        'abandoned_after_minutes' => (int) env('VANI_CART_ABANDONED_AFTER_MINUTES', 60),
     ],
 
     /*

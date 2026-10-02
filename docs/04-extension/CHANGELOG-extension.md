@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.3 — 2026-10-02
+
+Đợt W3 của [extension-surface-v2](extension-surface-v2.md): route và trang storefront của plugin, giỏ bị bỏ quên. Chỉ thêm.
+
+### Thêm
+- `PluginServiceProvider::storefrontRoutes()` — `/api/storefront/v1/x/{slug}/…` (middleware Storefront API của Core + plugin phải bật).
+- `PluginServiceProvider::storefrontPages()` — trang native `/p/{slug}/…` trong layout theme; `storefrontViews()` — view của plugin, theme override tại `custom/theme/<theme>/plugins/{slug}/`.
+- Event `Cart\Events\CartAbandoned` (`cartPublicId`, `customerId`, `itemCount`, `subtotal`, `currency`, `lastActivityAt`) — lệnh `vani:cart:detect-abandoned` (5 phút/lần, ngưỡng `VANI_CART_ABANDONED_AFTER_MINUTES`, mặc định 60), chỉ giỏ của khách còn hàng, một lần mỗi đợt không hoạt động.
+- Đường dẫn `p` vào `vanishop.reserved_paths`.
+
 ## 0.3.2 — 2026-10-02
 
 Đợt W2 của [extension-surface-v2](extension-surface-v2.md): plugin mở rộng màn hình Admin của Core. Chỉ thêm.

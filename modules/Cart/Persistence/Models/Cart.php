@@ -33,6 +33,7 @@ final class Cart extends Model
             'meta' => 'array',
             'lock_version' => 'integer',
             'last_activity_at' => 'immutable_datetime',
+            'abandoned_notified_at' => 'immutable_datetime',
         ];
     }
 

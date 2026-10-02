@@ -125,7 +125,7 @@ Core gọi qua `Extensions::call()` (lỗi → bỏ dữ liệu của plugin đ�
 | Registry | Đường dẫn | Ghi chú |
 |---|---|---|
 | `storefrontRoutes(file)` | `/api/storefront/v1/x/<plugin-slug>/…` | Middleware ngữ cảnh storefront + rate limit chung; xác thực khách tuỳ chọn |
-| `storefrontPages(file)` | `/p/<plugin-slug>/…` (có thể khai báo đường dẫn đẹp, kiểm tra trùng `reserved_paths` lúc bật) | View của plugin render trong layout theme (`theme::layouts.app`), theme override được view plugin qua `custom/theme/<theme>/plugins/<slug>/` |
+| `storefrontPages(file)` + `storefrontViews(path, namespace)` | `/p/<plugin-slug>/…` (đường dẫn đẹp riêng: Designed) | View của plugin render trong layout theme (`theme::layouts.app`), theme override được view plugin qua `custom/theme/<theme>/plugins/<slug>/` |
 | `accountPages(key, label, route)` | Mục trong `/tai-khoan` | Wishlist, điểm thưởng, ví |
 
 ### 4.C Luồng giao dịch: dòng giỏ có thuộc tính, ngữ cảnh khuyến mãi (S1–S2)
@@ -201,7 +201,7 @@ Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugi
 |---|---|---|---|
 | **W1** ✅ (2026-10-02, Core 0.3.1) | Slot storefront mới (header, footer, bộ lọc PLP, ảnh PDP, checkout từng bước; slot tài khoản chờ trang `/tai-khoan`); `StorefrontEnricher` (tham chiếu `vani.hello-world`); `OrderCompleted` | `vani.tracking-pixels`, `vani.vnpay` (đã đủ EP) | 0.3.1 |
 | **W2** ✅ (2026-10-02, Core 0.3.2) | `adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter` + `FieldDefinition`, trên `product` (form, cột, lọc), `order` (cột, lọc, thao tác chi tiết + hàng loạt, tab), `customer` (cột, lọc, thao tác, tab). Tham chiếu: `vani.hello-world`. Tài nguyên khác + Admin API: khi có plugin cần | `vani.einvoice`, `vani.size-advisor` | 0.3.2 |
-| **W3** (storefront plugin) | `storefrontRoutes`, `storefrontPages`, `accountPages`; `CartAbandoned` | `vani.wishlist`, `vani.abandoned-cart` | 0.5 |
+| **W3** ✅ (2026-10-02, Core 0.3.3) | `storefrontRoutes`, `storefrontPages` + `storefrontViews` (theme override), `CartAbandoned` (tham chiếu `vani.hello-world`). `accountPages` chờ trang tài khoản native (`/tai-khoan`, 12b) | `vani.wishlist`, `vani.abandoned-cart` | 0.3.3 |
 | **W4** (giao dịch) | `meta` dòng giỏ/đơn, `CartLineOption`, `vani.checkout.context`, `CapturesLater` + `PaymentAuthorized` | `vani.product-bundle`, gói quà, `vani.creator` | 0.5 |
 | **W5** (nền tảng) | Plugin `hooks.php`, `kind` chuẩn, `AuthProvider`, `scopeTypes()`, `HealthCheck`, `integrationMessageTypes()` | `vani.loyalty` → `vani.promotion-advanced`, `vani.social-login` | 0.6 |
 | **W6** | `StorefrontBlock`, `MenuItemType`, `ReportProvider`/`DashboardWidget` | `vani.lookbook`, `vani.reports` | 0.6 |

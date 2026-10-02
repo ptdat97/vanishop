@@ -21,6 +21,7 @@ use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
+use Modules\Extension\Application\Storefront\PluginViews;
 use Modules\Extension\Console\InstallCommand;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginDoctorCommand;
@@ -76,6 +77,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->scoped(PluginActivation::class);
         $this->app->singleton(ScopedExtensions::class, fn ($app): ScopedExtensions => new ScopedExtensions($app, fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(ScopedExtensions::class, Extensions::class);
+        $this->app->singleton(PluginViews::class);
         $this->app->singleton(AdminExtensions::class, fn ($app): AdminExtensions => new AdminExtensions(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(AdminExtensions::class, AdminScreen::class);
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));

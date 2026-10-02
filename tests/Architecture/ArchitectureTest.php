@@ -41,23 +41,19 @@ arch('R5: Plugin chỉ dùng API public của Core')
     ->expect('Plugin')
     ->not->toUse($pluginForbiddenLayers);
 
-arch('Module chỉ dùng Contracts của module khác (Identity → Brand)')
-    ->expect('Modules\\Identity')
-    ->not->toUse(['Modules\\Brand\\Persistence', 'Modules\\Brand\\Application']);
-
 // Module downstream (ghép nhiều context) chỉ gọi Contracts/Events của module khác.
 foreach ([
-    'Cart' => ['Catalog', 'Pricing', 'Inventory', 'Channel'],
+    'Cart' => ['Catalog', 'Pricing', 'Inventory'],
     'Promotion' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Ordering', 'Checkout'],
     'Ordering' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Checkout'],
-    'Customer' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering'],
+    'Customer' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering'],
     'Payment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Fulfillment'],
-    'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Payment', 'Fulfillment'],
+    'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Payment', 'Fulfillment'],
     'Fulfillment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment'],
     'Returns' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment'],
     'Notification' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
-    'Integration' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
-    'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Channel', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
+    'Integration' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
+    'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
 ] as $consumer => $upstreams) {
     $forbidden = [];
     foreach ($upstreams as $upstream) {

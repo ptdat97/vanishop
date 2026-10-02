@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers;
 use Modules\Customer\Persistence\Models\Customer;
@@ -10,6 +11,8 @@ use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Storefront\Application\Theme\Themes;
+use Modules\Tenancy\Contracts\Settings;
 use Plugin\HelloWorld\HelloWorldServiceProvider;
 
 require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -110,4 +113,27 @@ it('Admin: phần form sản phẩm lưu vào bảng riêng, cột + bộ lọc 
     $customer = Customer::query()->sole();
     $this->get("/admin/customers/{$customer->public_id}")->assertInertia(fn (Assert $page) => $page
         ->where('extensions.tabs.0.rows.0.value', "Xin chào khách #{$customer->id}"));
+});
+
+it('storefront: API và trang riêng của plugin; theme override được view plugin; plugin tắt → 404', function () {
+    installHelloWorld();
+
+    $this->getJson('/api/storefront/v1/x/vani-hello-world/greeting?name=Lan')->assertOk()->assertJsonPath('data.message', 'Xin chào, Lan!');
+    $this->get('/p/vani-hello-world')->assertOk()->assertSee('Trang này do plugin vani.hello-world')->assertSee('<header', false);
+
+    $themes = storage_path('framework/testing/themes-'.uniqid());
+    File::ensureDirectoryExists("{$themes}/shop/plugins/vani-hello-world/pages");
+    File::link(base_path('custom/theme/vani-base'), "{$themes}/vani-base");
+    File::put("{$themes}/shop/theme.json", json_encode(['parent' => 'vani-base']));
+    File::put("{$themes}/shop/plugins/vani-hello-world/pages/hello.blade.php", "@extends('theme::layouts.app')\n@section('content')Bản theme của trang Hello @endsection");
+    config(['vanishop.storefront.themes_path' => $themes]);
+    app()->forgetInstance(Themes::class);
+    app(Settings::class)->set('core', 'theme', 'shop');
+    $this->get('/p/vani-hello-world')->assertOk()->assertSee('Bản theme của trang Hello');
+    File::deleteDirectory($themes);
+
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));
+    app(PluginActivation::class)->flush();
+    $this->getJson('/api/storefront/v1/x/vani-hello-world/greeting')->assertNotFound();
+    $this->get('/p/vani-hello-world')->assertNotFound();
 });

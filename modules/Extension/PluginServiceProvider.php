@@ -14,6 +14,7 @@ use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginEventListeners;
+use Modules\Extension\Application\Storefront\PluginViews;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
@@ -211,6 +212,61 @@ abstract class PluginServiceProvider extends ServiceProvider
             ->group($file);
 
         $this->refreshRouteLookups();
+    }
+
+    /**
+     * Storefront API của plugin (ADR-030 §4.B): /api/storefront/v1/x/{slug}/…, tên route api.storefront.x.{slug}.…
+     * Cùng middleware với Storefront API của Core (ngữ cảnh storefront, rate limit); plugin tắt → 404.
+     * Cần khách đăng nhập: thêm middleware `vani.customer` (hoặc `vani.customer:optional`) trong file route.
+     */
+    protected function storefrontRoutes(string $file): void
+    {
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $slug = $this->pluginSlug();
+
+        Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context', 'vani.plugin-active:'.$this->pluginId()])
+            ->prefix("api/storefront/v1/x/{$slug}")
+            ->name("api.storefront.x.{$slug}.")
+            ->group($file);
+
+        $this->refreshRouteLookups();
+    }
+
+    /**
+     * Trang native storefront của plugin: /p/{slug}/…, tên route storefront.p.{slug}.…; render trong layout theme
+     * (`@extends('theme::layouts.app')`). View đăng ký bằng storefrontViews().
+     */
+    protected function storefrontPages(string $file): void
+    {
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $slug = $this->pluginSlug();
+
+        Route::middleware(['web', 'vani.storefront-context', 'vani.theme', 'vani.plugin-active:'.$this->pluginId()])
+            ->prefix("p/{$slug}")
+            ->name("storefront.p.{$slug}.")
+            ->group($file);
+
+        $this->refreshRouteLookups();
+    }
+
+    /**
+     * View storefront của plugin (namespace riêng); theme override được tại custom/theme/<theme>/plugins/{slug}/.
+     */
+    protected function storefrontViews(string $path, string $namespace): void
+    {
+        $this->loadViewsFrom($path, $namespace);
+        $this->app->make(PluginViews::class)->add($namespace, $this->pluginSlug(), $path);
+    }
+
+    private function pluginSlug(): string
+    {
+        return str_replace('.', '-', $this->pluginId());
     }
 
     /**

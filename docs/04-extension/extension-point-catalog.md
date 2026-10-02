@@ -73,7 +73,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Pricing | `PriceChanged` (**Implemented**) |
 | Inventory | `StockReserved`, `StockReleased`, `StockCommitted`, `StockAdjusted`, `AvailabilityChanged` (**Implemented**) |
 | Customer | `CustomerRegistered`, `CustomerMerged`, `ConsentChanged` |
-| Cart | `CartUpdated` (**Implemented**), `CartAbandoned` |
+| Cart | `CartUpdated`, `CartAbandoned` (**Implemented**; `CartAbandoned` từ 0.3.3, giỏ của khách không hoạt động quá ngưỡng) |
 | Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled`, `OrderCompleted` (**Implemented**; `OrderCompleted` từ 0.3.1, khi hết hạn đổi trả sau giao) |
 | Payment | `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted` (**Implemented**), `PaymentAuthorized` |
 | Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged` (**Implemented**; giao thành công = `ShipmentStatusChanged` với `to = delivered`) |
@@ -132,7 +132,8 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `adminPages($namespace, $path)` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) — Implemented |
 | `permissions()` | Khai báo permission — Implemented (gán role mẫu: Designed) |
 | `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
-| `storefrontRoutes()` | Storefront API dưới `/api/storefront/v1/…` (được mở rộng tài nguyên Core, không ghi đè route Core) |
+| `storefrontRoutes()` | Storefront API của plugin dưới `/api/storefront/v1/x/{slug}/…` (không ghi đè route Core) — Implemented (0.3.3) |
+| `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3) |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
 | `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |
@@ -160,9 +161,7 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 
 | Extension point thiếu | Loại | Plugin cần | Đợt |
 |---|---|---|---|
-| `storefrontRoutes()` — route Storefront API/trang storefront của plugin | Registry | `vani.wishlist`, `vani.loyalty` (`/me/loyalty`), `vani.store-omnichannel` | P2 |
 | Plugin khai báo `hooks.php` riêng (plugin công bố hook) | Kernel | `vani.loyalty` → `vani.promotion-advanced`; `vani.marketplace` → `vani.creator` | P3 |
-| Event `CartAbandoned` (+ job phát hiện) | Event | `vani.abandoned-cart` | P2 |
 | `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
 | Registry nhà cung cấp đăng nhập (`AuthProvider`) | Contract | `vani.social-login` | P2 |
 | `StorefrontBlock` (page builder) | Contract | lookbook, recommendation, `brand_grid` | P2 |

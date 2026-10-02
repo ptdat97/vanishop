@@ -34,7 +34,9 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 
         // Storefront: dữ liệu (StorefrontEnricher) + hiển thị qua slot bằng view của plugin.
         $this->contribute(StorefrontEnricher::TAG, HelloEnricher::class);
-        $this->loadViewsFrom($this->pluginPath('Resources/views'), 'vani-hello-world');
+        $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-hello-world');
+        $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
+        $this->storefrontPages($this->pluginPath('Http/routes/storefront-pages.php'));
         $this->onSlot('vani.storefront.pdp.after_title', fn (array $product): ?SlotView => isset($product['extensions']['vani.hello-world'])
             ? new SlotView('vani-hello-world::greeting', $product['extensions']['vani.hello-world'])
             : null);
