@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, secondaryButton } from '@admin/styles';
+import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
@@ -49,6 +52,7 @@ const props = defineProps<{
         placed_at: string;
     }>;
     can: { merge: boolean; anonymize: boolean };
+    extensions: ExtensionDetail & { id: number };
 }>();
 
 const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
@@ -77,10 +81,12 @@ function anonymize(): void {
         :subtitle="`${customer.id} · ${statusLabels[customer.status]} · ${customer.registered ? 'Tài khoản' : 'Khách vãng lai'}`"
     >
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
+        <ExtensionActions :actions="extensions.actions" :ids="[extensions.id]" />
     </PageHeader>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
+            <ExtensionTabs :tabs="extensions.tabs" />
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Đơn hàng gần đây</h2>
                 <table class="w-full text-sm">

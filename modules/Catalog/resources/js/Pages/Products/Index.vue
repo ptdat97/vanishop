@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { NavItem } from '../../types';
 
@@ -15,15 +17,17 @@ const props = defineProps<{
         total: number;
     };
     canManage: boolean;
+    extensions: Omit<ExtensionList, 'actions'>;
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
 const q = ref(props.filters.q);
 const status = ref(props.filters.status ?? '');
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const statusLabels: Record<string, string> = { draft: 'Nháp', active: 'Đang bán', archived: 'Lưu trữ' };
 
 function search(): void {
-    router.get(baseUrl.value, { q: q.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
+    router.get(baseUrl.value, { q: q.value || undefined, status: status.value || undefined, ext }, { preserveState: true, replace: true });
 }
 </script>
 
@@ -40,6 +44,7 @@ function search(): void {
             <option value="">Mọi trạng thái</option>
             <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
         </select>
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Lọc</button>
     </form>
 
@@ -52,6 +57,7 @@ function search(): void {
                 <th class="px-4 py-2">Thương hiệu</th>
                 <th class="px-4 py-2">Màu</th>
                 <th class="px-4 py-2">Trạng thái</th>
+                <th v-for="column in extensions.columns" :key="column.key" class="px-4 py-2">{{ column.label }}</th>
                 <th />
             </tr>
         </thead>
@@ -66,12 +72,13 @@ function search(): void {
                 <td class="px-4 py-2">{{ product.brand ?? '—' }}</td>
                 <td class="px-4 py-2">{{ product.colors }}</td>
                 <td class="px-4 py-2">{{ statusLabels[product.status] ?? product.status }}</td>
+                <td v-for="column in extensions.columns" :key="column.key" class="px-4 py-2">{{ extensions.values[product.id]?.[column.key] ?? '—' }}</td>
                 <td class="px-4 py-2 text-right">
                     <Link v-if="canManage" :href="`${baseUrl}/${product.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link>
                 </td>
             </tr>
             <tr v-if="!products.data.length">
-                <td colspan="7" class="px-4 py-6 text-center text-slate-500">Không có sản phẩm nào.</td>
+                <td :colspan="7 + extensions.columns.length" class="px-4 py-6 text-center text-slate-500">Không có sản phẩm nào.</td>
             </tr>
         </tbody>
     </table>

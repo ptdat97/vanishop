@@ -59,8 +59,8 @@ Học T1 nhưng thay "lọc mảng dữ liệu view" bằng **registry khai báo
 | `adminFormSection(resource, key, label, fields, load, save, order)` | Form tạo/sửa resource | Size chart (product), mã số thuế (customer), SEO nâng cao (category/brand) |
 | `adminColumn(resource, key, label, resolve, filter?, sortable?)` | Bảng danh sách | Hạng thành viên (customer), số HĐĐT (order), điểm rủi ro COD (order) |
 | `adminAction(resource, key, label, permission, handle, scope: row\|bulk\|detail, confirm?)` | Nút trên chi tiết / chọn nhiều | Xuất lại HĐĐT, gửi lại ZNS, đẩy đơn sang sàn |
-| `adminTab(resource, key, label, component\|panel)` | Tab trên trang chi tiết | Lịch sử điểm (customer), seller (product) |
-| `adminFilter(resource, key, label, options, apply)` | Bộ lọc danh sách | "Đơn có HĐĐT lỗi" |
+| `adminTab(resource, key, label, rows)` | Tab trên trang chi tiết (dòng nhãn/giá trị; UI phức tạp → trang riêng `adminPages`) | Lịch sử điểm (customer), seller (product) |
+| `adminFilter(resource, key, label, options, apply)` | Bộ lọc danh sách; `apply` trả **id** thoả — plugin không chạm truy vấn của Core | "Đơn có HĐĐT lỗi" |
 
 ```php
 // custom/plugin/SizeChart/SizeChartServiceProvider.php
@@ -79,7 +79,7 @@ $this->adminAction('order', 'einvoice.reissue', 'Xuất lại HĐĐT', 'einvoice
 
 | Quy tắc | Lý do |
 |---|---|
-| `fields` dùng `FieldDefinition` (cùng kiểu với `SettingDefinition`: string, text, int, bool, select, multiselect, date, money) → validate phía server trước khi gọi `save` | Không cần JS; lỗi hiển thị như lỗi form Core |
+| `fields` dùng `FieldDefinition` (string, text, int, bool, select, date; multiselect/money khi có plugin cần) → validate phía server trước khi gọi `save`. Input đặt dưới `extensions.<id plugin dạng slug>` (`vani-hello-world`) vì dấu chấm là phân cấp trong validate | Không cần JS; lỗi hiển thị như lỗi form Core |
 | `save` chạy **trong transaction lưu resource của Core**, sau Core; lỗi → rollback cả form | Không có trạng thái nửa vời |
 | Plugin cần UI phức tạp → `component` Inertia của plugin (`adminPages()` đã có) thay cho `fields` | Lối thoát có kiểm soát |
 | `adminAction` kiểm tra quyền + ghi audit (`plugin.action`) do Core làm | Plugin không tự bỏ qua quyền |
@@ -200,7 +200,7 @@ Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugi
 | Đợt | Extension point | Plugin tham chiếu | Core |
 |---|---|---|---|
 | **W1** ✅ (2026-10-02, Core 0.3.1) | Slot storefront mới (header, footer, bộ lọc PLP, ảnh PDP, checkout từng bước; slot tài khoản chờ trang `/tai-khoan`); `StorefrontEnricher` (tham chiếu `vani.hello-world`); `OrderCompleted` | `vani.tracking-pixels`, `vani.vnpay` (đã đủ EP) | 0.3.1 |
-| **W2** (Admin) | `adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter` + `FieldDefinition` | `vani.einvoice`, `vani.size-advisor` | 0.4 |
+| **W2** ✅ (2026-10-02, Core 0.3.2) | `adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter` + `FieldDefinition`, trên `product` (form, cột, lọc), `order` (cột, lọc, thao tác chi tiết + hàng loạt, tab), `customer` (cột, lọc, thao tác, tab). Tham chiếu: `vani.hello-world`. Tài nguyên khác + Admin API: khi có plugin cần | `vani.einvoice`, `vani.size-advisor` | 0.3.2 |
 | **W3** (storefront plugin) | `storefrontRoutes`, `storefrontPages`, `accountPages`; `CartAbandoned` | `vani.wishlist`, `vani.abandoned-cart` | 0.5 |
 | **W4** (giao dịch) | `meta` dòng giỏ/đơn, `CartLineOption`, `vani.checkout.context`, `CapturesLater` + `PaymentAuthorized` | `vani.product-bundle`, gói quà, `vani.creator` | 0.5 |
 | **W5** (nền tảng) | Plugin `hooks.php`, `kind` chuẩn, `AuthProvider`, `scopeTypes()`, `HealthCheck`, `integrationMessageTypes()` | `vani.loyalty` → `vani.promotion-advanced`, `vani.social-login` | 0.6 |

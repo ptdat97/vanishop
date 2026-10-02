@@ -1,10 +1,13 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers;
+use Modules\Customer\Persistence\Models\Customer;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Plugin\HelloWorld\HelloWorldServiceProvider;
@@ -67,4 +70,44 @@ it('storefront: lời chào trong dữ liệu PDP (API + native) và hiện qua 
     $extensions = $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()->json('data.extensions');
     expect($extensions)->toBe(['vani.hello-world' => ['greeting' => 'Xin chào từ Đầm lụa!']]);
     $this->get("/san-pham/{$slug}")->assertOk()->assertSee('Xin chào từ Đầm lụa!');
+});
+
+it('Admin: phần form sản phẩm lưu vào bảng riêng, cột + bộ lọc danh sách, thao tác trên đơn, tab khách', function () {
+    installHelloWorld();
+    ['s' => $variant] = CheckoutTestHelpers::store();
+    $style = $variant->style;
+    $staff = StaffUser::factory()->withPermissions(['admin.access', 'catalog.view', 'catalog.manage', 'orders.view', 'customers.view', 'hello-world.view'])->create();
+    $this->actingAs($staff, 'staff');
+
+    $this->get("/admin/catalog/products/{$style->id}/edit")->assertInertia(fn (Assert $page) => $page
+        ->where('extensionSections.0.plugin', 'vani.hello-world')
+        ->where('extensionSections.0.fields.0.key', 'note'));
+
+    $payload = fn (string $note) => [
+        'style_code' => $style->style_code, 'slug' => $style->slug, 'status' => 'active', 'lock_version' => $style->fresh()->lock_version,
+        'translations' => ['vi' => ['name' => 'Đầm lụa']], 'category_ids' => [], 'brand_id' => $style->brand_id,
+        'extensions' => ['vani-hello-world' => ['note' => ['note' => $note]]],
+    ];
+    $this->put("/admin/catalog/products/{$style->id}", $payload(str_repeat('x', 300)))->assertSessionHasErrors('extensions.vani-hello-world.note.note');
+    $this->put("/admin/catalog/products/{$style->id}", $payload('Hàng mới về'))->assertSessionHasNoErrors();
+    expect(DB::table('plg_hello_world_notes')->where('style_id', $style->id)->value('note'))->toBe('Hàng mới về');
+
+    $this->get('/admin/catalog/products?ext[vani.hello-world:has_note]=yes')->assertInertia(fn (Assert $page) => $page
+        ->has('products.data', 1)
+        ->where("extensions.values.{$style->id}", ['vani.hello-world:note' => 'Hàng mới về'])
+        ->where('extensions.filters.0.key', 'vani.hello-world:has_note'));
+
+    $response = $this->postJson('/api/storefront/v1/carts')->assertCreated();
+    $headers = ['X-Vani-Cart-Token' => $response->json('meta.token')];
+    $this->postJson("/api/storefront/v1/carts/{$response->json('data.id')}/lines", ['variant_id' => $variant->id, 'quantity' => 1], $headers)->assertOk();
+    $this->postJson("/api/storefront/v1/checkout/{$response->json('data.id')}/orders", CheckoutTestHelpers::orderPayload(['expected_total' => 330_000]), [...$headers, 'Idempotency-Key' => 'hello-order-1'])->assertCreated();
+    $order = Order::query()->withoutGlobalScopes()->sole();
+
+    $this->get("/admin/orders/orders/{$order->id}")->assertInertia(fn (Assert $page) => $page->where('extensions.actions.0.key', 'vani.hello-world:greet'));
+    $this->from("/admin/orders/orders/{$order->id}")->post('/admin/extensions/order/actions/vani.hello-world/greet', ['ids' => [$order->id]])
+        ->assertRedirect("/admin/orders/orders/{$order->id}")->assertSessionHas('success', "Đã gửi lời chào cho đơn #{$order->id}.");
+
+    $customer = Customer::query()->sole();
+    $this->get("/admin/customers/{$customer->public_id}")->assertInertia(fn (Assert $page) => $page
+        ->where('extensions.tabs.0.rows.0.value', "Xin chào khách #{$customer->id}"));
 });

@@ -14,9 +14,10 @@ use Modules\Shared\Domain\Phone\PhoneNumber;
 final class CustomerQueries
 {
     /**
+     * @param  list<int>|null  $ids  giới hạn theo bộ lọc của plugin
      * @return LengthAwarePaginator<int, Customer>
      */
-    public function search(?string $q, ?string $status, int $perPage = 30): LengthAwarePaginator
+    public function search(?string $q, ?string $status, int $perPage = 30, ?array $ids = null): LengthAwarePaginator
     {
         $q = trim((string) $q);
         $phone = $q === '' ? null : PhoneNumber::tryFromString($q);
@@ -26,6 +27,7 @@ final class CustomerQueries
             ->when($q !== '', fn ($query) => $query->where(fn ($query) => $phone !== null
                 ? $query->where('phone', $phone->e164)
                 : $query->where('email', 'like', '%'.mb_strtolower($q).'%')->orWhere('full_name', 'like', "%{$q}%")->orWhere('public_id', strtoupper($q))))
+            ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
             ->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();

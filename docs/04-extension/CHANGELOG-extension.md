@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.2 — 2026-10-02
+
+Đợt W2 của [extension-surface-v2](extension-surface-v2.md): plugin mở rộng màn hình Admin của Core. Chỉ thêm.
+
+### Thêm
+- `PluginServiceProvider::adminFormSection()`, `adminColumn()`, `adminAction()`, `adminTab()`, `adminFilter()` — tài nguyên `product`, `order`, `customer`.
+- `Extension\Contracts\Data\FieldDefinition` (string, text, int, bool, select, date) — Core validate trước khi gọi `save` của plugin.
+- Service contract `Extension\Contracts\AdminScreen` (module Core lấy phần mở rộng cho màn hình của mình).
+- Route `POST /{admin}/extensions/{resource}/actions/{plugin}/{key}` (`ids[]`): Core kiểm tra quyền, ghi audit `plugin.action`.
+
 ## 0.3.1 — 2026-10-02
 
 Đợt W1 của [extension-surface-v2](extension-surface-v2.md) ([ADR-030](../19-adr/ADR-030-extension-surface-v2.md)). Chỉ thêm — plugin `^0.3` chạy tiếp.

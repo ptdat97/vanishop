@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -30,6 +33,7 @@ const props = defineProps<{
     };
     panels: Array<{ title: string; rows: Array<{ label: string; value: string }>; link?: { label: string; url: string } }>;
     can: { confirm: boolean; cancel: boolean; change_address: boolean; note: boolean };
+    extensions: ExtensionDetail;
 }>();
 
 const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
@@ -74,6 +78,7 @@ function addNote(): void {
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>
         <button v-if="can.cancel" type="button" :class="dangerButton" @click="cancelOrder">Huỷ đơn</button>
+        <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />
     </PageHeader>
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
 
@@ -104,6 +109,8 @@ function addNote(): void {
                     <div class="flex justify-between text-xs text-slate-500"><dt>Trong đó VAT</dt><dd>{{ vnd(order.amounts.tax) }}</dd></div>
                 </dl>
             </section>
+
+            <ExtensionTabs :tabs="extensions.tabs" />
 
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Lịch sử</h2>

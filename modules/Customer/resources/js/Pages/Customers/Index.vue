@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { inputClass, secondaryButton } from '@admin/styles';
+import type { ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
@@ -10,6 +12,7 @@ const props = defineProps<{
     statuses: string[];
     customers: Array<{
         id: string;
+        ref: number;
         phone: string | null;
         email: string | null;
         full_name: string | null;
@@ -18,6 +21,7 @@ const props = defineProps<{
         created_at: string | null;
     }>;
     pagination: { page: number; last_page: number; total: number };
+    extensions: Omit<ExtensionList, 'actions'>;
 }>();
 
 const statusLabels: Record<string, string> = {
@@ -26,6 +30,7 @@ const statusLabels: Record<string, string> = {
     anonymized: 'Đã ẩn danh',
 };
 const q = ref(props.filters.q ?? '');
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 
 function search(changes: { q?: string | null; status?: string | null; page?: number } = {}): void {
     const next = {
@@ -33,7 +38,7 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
         status: props.filters.status,
         ...changes,
     };
-    router.get(props.baseUrl, Object.fromEntries(Object.entries(next).filter(([, value]) => value)), { preserveState: true });
+    router.get(props.baseUrl, { ...Object.fromEntries(Object.entries(next).filter(([, value]) => value)), ext }, { preserveState: true });
 }
 </script>
 
@@ -57,6 +62,7 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
                 {{ statusLabels[status] ?? status }}
             </option>
         </select>
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
@@ -68,6 +74,7 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
                 <th class="px-4 py-2">Email</th>
                 <th class="px-4 py-2">Loại</th>
                 <th class="px-4 py-2">Tạo lúc</th>
+                <th v-for="column in extensions.columns" :key="column.key" class="px-4 py-2">{{ column.label }}</th>
             </tr>
         </thead>
         <tbody>
@@ -88,9 +95,10 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
                     {{ customer.registered ? 'Tài khoản' : 'Khách vãng lai' }}
                 </td>
                 <td class="px-4 py-2 text-xs">{{ customer.created_at }}</td>
+                <td v-for="column in extensions.columns" :key="column.key" class="px-4 py-2 text-xs">{{ extensions.values[customer.ref]?.[column.key] ?? '—' }}</td>
             </tr>
             <tr v-if="!customers.length">
-                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Không có khách nào.</td>
+                <td :colspan="5 + extensions.columns.length" class="px-4 py-6 text-center text-slate-500">Không có khách nào.</td>
             </tr>
         </tbody>
     </table>

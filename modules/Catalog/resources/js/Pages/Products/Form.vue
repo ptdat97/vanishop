@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { initialExtensionValues, type ExtensionSection } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -43,6 +45,7 @@ const props = defineProps<{
     availableColors: Array<{ id: number; label: string }>;
     statuses: string[];
     availableSizes: Array<{ id: number; label: string; system: string }>;
+    extensionSections: ExtensionSection[];
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
@@ -71,6 +74,7 @@ const form = useForm({
         en: { ...emptyTranslation, ...props.product?.translations.en },
     },
     attributes: initialAttributes,
+    extensions: initialExtensionValues(props.extensionSections),
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
@@ -215,6 +219,7 @@ function removeImage(color: ColorEntry, imageId: number): void {
             </div>
             <VariantMatrix v-if="product" :product-url="productUrl" :variants="product.variants" :sizes="availableSizes" />
             <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh và biến thể.</p>
+            <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 self-start">

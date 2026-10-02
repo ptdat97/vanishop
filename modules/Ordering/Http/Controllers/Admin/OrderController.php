@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
@@ -29,11 +30,12 @@ final class OrderController
         return redirect()->route('admin.orders.orders.index');
     }
 
-    public function index(Request $request, OrderQueries $queries): Response
+    public function index(Request $request, OrderQueries $queries, AdminScreen $screen): Response
     {
         Gate::authorize('orders.view');
         $filters = $request->only(['status', 'payment_status', 'q']);
-        $page = $queries->search($filters);
+        $extensionFilters = (array) $request->query('ext', []);
+        $page = $queries->search([...$filters, 'ids' => $screen->filterIds('order', $extensionFilters)]);
 
         return Inertia::render('Ordering::Orders/Index', [
             'baseUrl' => route('admin.orders.orders.index'),
@@ -53,10 +55,16 @@ final class OrderController
                 'label' => CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
             ])->all(),
             'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'total' => $page->total()],
+            'extensions' => [
+                ...$screen->columns('order', collect($page->items())->pluck('id')->all()),
+                'filters' => $screen->filters('order'),
+                'filterValues' => $extensionFilters,
+                'actions' => $screen->actions('order', 'bulk'),
+            ],
         ]);
     }
 
-    public function show(Order $order, OrderQueries $queries): Response
+    public function show(Order $order, OrderQueries $queries, AdminScreen $screen): Response
     {
         Gate::authorize('orders.view');
         $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
@@ -72,6 +80,7 @@ final class OrderController
                 'change_address' => $canManage && OrderPolicy::canChangeAddress($order->order_status, (string) $order->fulfillment_status),
                 'note' => $canManage,
             ],
+            'extensions' => ['actions' => $screen->actions('order', 'detail'), 'tabs' => $screen->tabs('order', $order->id)],
         ]);
     }
 

@@ -17,6 +17,7 @@ use Modules\Customer\Application\CustomerQueries;
 use Modules\Customer\Application\CustomerStats;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
@@ -26,12 +27,13 @@ use Modules\Ordering\Contracts\Data\OrderDetail;
  */
 final class CustomerController
 {
-    public function index(Request $request, CustomerQueries $queries): Response
+    public function index(Request $request, CustomerQueries $queries, AdminScreen $screen): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
         $q = is_string($request->query('q')) ? $request->query('q') : null;
         $status = is_string($request->query('status')) ? $request->query('status') : null;
-        $page = $queries->search($q, $status);
+        $extensionFilters = (array) $request->query('ext', []);
+        $page = $queries->search($q, $status, ids: $screen->filterIds('customer', $extensionFilters));
 
         return Inertia::render('Customer::Customers/Index', [
             'baseUrl' => route('admin.customers.index'),
@@ -39,10 +41,15 @@ final class CustomerController
             'statuses' => array_column(CustomerStatus::cases(), 'value'),
             'customers' => collect($page->items())->map(fn (Customer $customer): array => $this->row($customer))->all(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
+            'extensions' => [
+                ...$screen->columns('customer', collect($page->items())->pluck('id')->all()),
+                'filters' => $screen->filters('customer'),
+                'filterValues' => $extensionFilters,
+            ],
         ]);
     }
 
-    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders): Response
+    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
         $model = $queries->byPublicId($customer) ?? abort(404);
@@ -67,6 +74,7 @@ final class CustomerController
                 'merge' => Gate::allows('customers.merge', [ScopeRef::owner()]),
                 'anonymize' => Gate::allows('customers.anonymize', [ScopeRef::owner()]),
             ],
+            'extensions' => ['id' => $model->id, 'actions' => $screen->actions('customer', 'detail'), 'tabs' => $screen->tabs('customer', $model->id)],
         ]);
     }
 
@@ -100,7 +108,7 @@ final class CustomerController
     private function row(Customer $customer): array
     {
         return [
-            'id' => $customer->public_id, 'phone' => $customer->phone, 'email' => $customer->email, 'full_name' => $customer->full_name,
+            'id' => $customer->public_id, 'ref' => $customer->id, 'phone' => $customer->phone, 'email' => $customer->email, 'full_name' => $customer->full_name,
             'status' => $customer->status->value, 'registered' => $customer->isRegistered(),
             'created_at' => $customer->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
         ];

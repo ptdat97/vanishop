@@ -9,10 +9,12 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
+use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginEventListeners;
+use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\AdminPath;
@@ -118,6 +120,61 @@ abstract class PluginServiceProvider extends ServiceProvider
     protected function contribute(string $tag, string $implementation): void
     {
         $this->app->make(Extensions::class)->contribute($tag, $implementation, $this->pluginId());
+    }
+
+    /**
+     * Phần form của plugin trên màn hình tạo/sửa tài nguyên của Core (ADR-030 §4.A). `save` chạy trong transaction
+     * lưu của Core, sau Core; lỗi → rollback cả form.
+     *
+     * @param  list<FieldDefinition>  $fields
+     * @param  Closure(int): array<string, mixed>  $load  id → giá trị hiện tại
+     * @param  Closure(int, array<string, mixed>): void  $save
+     */
+    protected function adminFormSection(string $resource, string $key, string $label, array $fields, Closure $load, Closure $save, int $order = 500): void
+    {
+        $this->app->make(AdminExtensions::class)->section($resource, $this->pluginId(), $key, $label, $fields, $load, $save, $order);
+    }
+
+    /**
+     * Cột trên trang danh sách. `resolve` nhận cả trang id (batch) và trả id => giá trị.
+     *
+     * @param  Closure(list<int>): array<int, scalar|null>  $resolve
+     */
+    protected function adminColumn(string $resource, string $key, string $label, Closure $resolve, int $order = 500): void
+    {
+        $this->app->make(AdminExtensions::class)->column($resource, $this->pluginId(), $key, $label, $resolve, $order);
+    }
+
+    /**
+     * Nút thao tác trên trang chi tiết (`detail`) hoặc chọn nhiều ở danh sách (`bulk`). Core kiểm tra quyền + audit.
+     *
+     * @param  Closure(int): (string|null)  $handle
+     * @param  'detail'|'bulk'|'both'  $scope
+     */
+    protected function adminAction(string $resource, string $key, string $label, string $permission, Closure $handle, string $scope = 'detail', bool $confirm = false, int $order = 500): void
+    {
+        $this->app->make(AdminExtensions::class)->action($resource, $this->pluginId(), $key, $label, $permission, $handle, $scope, $confirm, $order);
+    }
+
+    /**
+     * Tab trên trang chi tiết: danh sách dòng nhãn/giá trị. UI phức tạp hơn → trang riêng của plugin (`adminPages`).
+     *
+     * @param  Closure(int): list<array{label: string, value: string}>  $rows
+     */
+    protected function adminTab(string $resource, string $key, string $label, Closure $rows, int $order = 500): void
+    {
+        $this->app->make(AdminExtensions::class)->tab($resource, $this->pluginId(), $key, $label, $rows, $order);
+    }
+
+    /**
+     * Bộ lọc trên trang danh sách: `apply` nhận giá trị đã chọn và trả id thoả (plugin không chạm truy vấn của Core).
+     *
+     * @param  array<string, string>|Closure(): array<string, string>  $options
+     * @param  Closure(string): list<int>  $apply
+     */
+    protected function adminFilter(string $resource, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500): void
+    {
+        $this->app->make(AdminExtensions::class)->filter($resource, $this->pluginId(), $key, $label, $options, $apply, $order);
     }
 
     protected function adminMenu(string $key, string $label, string $route, ?string $permission = null, int $order = 500): void

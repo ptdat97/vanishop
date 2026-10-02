@@ -138,8 +138,11 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |
 | `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ, chỉ chạy khi plugin bật ở ít nhất một phạm vi — Implemented (0.3) |
 | `NotificationCatalog::define()` (contract Notification) | Loại tin + biến + mẫu mặc định theo kênh; mẫu trong DB thắng — Implemented (0.3) |
-| `orderActions()` | Nút thao tác trên trang đơn Admin |
-| `customerProfileTabs()` | Tab trên hồ sơ khách |
+| `adminFormSection(resource, key, label, fields, load, save)` | Phần form của plugin trên form tạo/sửa của Core (`product`); `save` trong transaction lưu của Core; input `extensions.<id-plugin-dạng-slug>.<key>.<field>` — Implemented (0.3.2) |
+| `adminColumn(resource, key, label, resolve)` | Cột trên danh sách (`product`, `order`, `customer`), `resolve` nhận cả trang id — Implemented (0.3.2) |
+| `adminFilter(resource, key, label, options, apply)` | Bộ lọc danh sách, `apply` trả id thoả (giao nhau giữa các bộ lọc) — Implemented (0.3.2) |
+| `adminAction(resource, key, label, permission, handle, scope)` | Nút trên trang chi tiết / chọn nhiều (danh sách đơn); Core kiểm tra quyền + audit — Implemented (0.3.2) |
+| `adminTab(resource, key, label, rows)` | Tab nhãn/giá trị trên trang chi tiết (`order`, `customer`) — Implemented (0.3.2) |
 | Trường checkout của plugin | Thay cho `checkoutFields()`: client gửi `extra[<plugin id>]` ở đặt hàng → plugin kiểm tra qua `vani.checkout.before_validate` và lưu qua `vani.order.before_create` — Implemented (0.3) |
 | `integrationMessageTypes()` | Loại message tích hợp mới + JSON Schema |
 
@@ -162,9 +165,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 | Event `CartAbandoned` (+ job phát hiện) | Event | `vani.abandoned-cart` | P2 |
 | `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
 | Registry nhà cung cấp đăng nhập (`AuthProvider`) | Contract | `vani.social-login` | P2 |
-| `orderActions()` — nút thao tác trên trang đơn Admin | Registry | `vani.einvoice` (xuất lại HĐ), `vani.cod-reconciliation` | P2 |
-| `customerProfileTabs()` | Registry | `vani.loyalty`, `vani.size-advisor` | P3 |
-| `productFormSections()` — phần form sản phẩm Admin của plugin (lưu qua `vani.product.after_save`) | Registry | size chart, product bundle, SEO nâng cao | P2 |
 | `StorefrontBlock` (page builder) | Contract | lookbook, recommendation, `brand_grid` | P2 |
 | `DashboardWidget` + quyền đọc báo cáo | Contract | `vani.reports` (Reporting thành plugin) | P2 |
 | `adminApiRoutes()` | Registry | POS/app quản trị của plugin | P3 |

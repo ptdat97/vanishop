@@ -18,7 +18,7 @@ use Modules\Shared\Domain\Phone\PhoneNumber;
 final class OrderQueries
 {
     /**
-     * @param  array{status?: ?string, payment_status?: ?string, q?: ?string}  $filters
+     * @param  array{status?: ?string, payment_status?: ?string, q?: ?string, ids?: list<int>|null}  $filters  ids: giới hạn theo bộ lọc của plugin
      * @return LengthAwarePaginator<int, Order>
      */
     public function search(array $filters, int $perPage = 30): LengthAwarePaginator
@@ -32,6 +32,7 @@ final class OrderQueries
             ->when($q !== '', fn ($query) => $phone !== null
                 ? $query->where('customer_phone', $phone->e164)
                 : $query->where('number', strtoupper($q)))
+            ->when(isset($filters['ids']), fn ($query) => $query->whereIn('id', $filters['ids']))
             ->orderByDesc('placed_at')->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();

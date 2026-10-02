@@ -1,4 +1,4 @@
-VaniShop 0.3.1
+VaniShop 0.3.2
 class Modules\Cart\Contracts\CartRejected extends Modules\Shared\Domain\BusinessRuleViolation
   static notFound(): self
   static closed(): self
@@ -242,6 +242,39 @@ class Modules\Customer\Events\CustomerRegistered
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+interface Modules\Extension\Contracts\AdminScreen
+  const RESOURCES = array (
+  0 => 'product',
+  1 => 'order',
+  2 => 'customer',
+)
+  formSections(string $resource, ?int $id): array
+  validationRules(string $resource): array
+  saving(string $resource, array $input, Closure $save, Closure $idOf): mixed
+  columns(string $resource, array $ids): array
+  filters(string $resource): array
+  filterIds(string $resource, array $values): ?array
+  actions(string $resource, string $scope): array
+  tabs(string $resource, int $id): array
+class Modules\Extension\Contracts\Data\FieldDefinition
+  const TYPES = array (
+  0 => 'string',
+  1 => 'text',
+  2 => 'int',
+  3 => 'bool',
+  4 => 'select',
+  5 => 'date',
+)
+  __construct(string $key, string $label, string $type = 'string', bool $required = false, array $options = array (
+), ?string $help = NULL, int $max = 255)
+  static string(string $key, string $label, bool $required = false, ?string $help = NULL, int $max = 255): self
+  static text(string $key, string $label, bool $required = false, ?string $help = NULL, int $max = 5000): self
+  static int(string $key, string $label, bool $required = false, ?string $help = NULL): self
+  static bool(string $key, string $label, ?string $help = NULL): self
+  static select(string $key, string $label, array $options, bool $required = false, ?string $help = NULL): self
+  static date(string $key, string $label, bool $required = false, ?string $help = NULL): self
+  rules(): array
+  toArray(): array
 interface Modules\Extension\Contracts\Extensions
   tag(array|string $abstracts, string $tag): void
   contribute(string $tag, string $abstract, string $pluginId): void
@@ -270,6 +303,11 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected schedule(Closure $define): void
   protected settings(array $definitions): void
   protected contribute(string $tag, string $implementation): void
+  protected adminFormSection(string $resource, string $key, string $label, array $fields, Closure $load, Closure $save, int $order = 500): void
+  protected adminColumn(string $resource, string $key, string $label, Closure $resolve, int $order = 500): void
+  protected adminAction(string $resource, string $key, string $label, string $permission, Closure $handle, string $scope = 'detail', bool $confirm = false, int $order = 500): void
+  protected adminTab(string $resource, string $key, string $label, Closure $rows, int $order = 500): void
+  protected adminFilter(string $resource, string $key, string $label, Closure|array $options, Closure $apply, int $order = 500): void
   protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
   protected permissions(array $permissions): void
   protected adminRoutes(string $file): void

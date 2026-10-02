@@ -9,6 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
@@ -29,6 +30,7 @@ use Modules\Extension\Console\PluginInstallCommand;
 use Modules\Extension\Console\PluginListCommand;
 use Modules\Extension\Console\PluginUninstallCommand;
 use Modules\Extension\Console\PluginUpgradeCommand;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
@@ -74,6 +76,8 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->scoped(PluginActivation::class);
         $this->app->singleton(ScopedExtensions::class, fn ($app): ScopedExtensions => new ScopedExtensions($app, fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(ScopedExtensions::class, Extensions::class);
+        $this->app->singleton(AdminExtensions::class, fn ($app): AdminExtensions => new AdminExtensions(fn (): PluginActivation => $app->make(PluginActivation::class)));
+        $this->app->alias(AdminExtensions::class, AdminScreen::class);
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
         $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(

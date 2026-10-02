@@ -21,13 +21,14 @@ use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Catalog\Persistence\Models\Variant;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 final class ProductController
 {
     use ConvertsDomainErrors;
 
-    public function index(Request $request): Response
+    public function index(Request $request, AdminScreen $screen): Response
     {
         Gate::authorize('catalog.view');
 
@@ -42,6 +43,7 @@ final class ProductController
                 }
             })
             ->when(is_string($status) && StyleStatus::tryFrom($status) !== null, fn ($query) => $query->where('status', $status))
+            ->when(($pluginIds = $screen->filterIds('product', (array) $request->query('ext', []))) !== null, fn ($query) => $query->whereIn('id', $pluginIds))
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
             ->paginate(30)
@@ -64,6 +66,11 @@ final class ProductController
                 'total' => $styles->total(),
             ],
             'canManage' => Gate::allows('catalog.manage'),
+            'extensions' => [
+                ...$screen->columns('product', $styles->getCollection()->pluck('id')->all()),
+                'filters' => $screen->filters('product'),
+                'filterValues' => (array) $request->query('ext', []),
+            ],
         ]);
     }
 
@@ -74,9 +81,10 @@ final class ProductController
         return $this->form(null, $tree);
     }
 
-    public function store(ProductRequest $request, ProductService $products): RedirectResponse
+    public function store(ProductRequest $request, ProductService $products, AdminScreen $screen): RedirectResponse
     {
-        $style = $this->orFormError(fn () => $products->create($request->toInput()));
+        $request->validate($screen->validationRules('product'));
+        $style = $this->orFormError(fn () => $screen->saving('product', (array) $request->input('extensions', []), fn () => $products->create($request->toInput()), fn ($style): int => $style->id));
 
         return redirect()->route('admin.catalog.products.edit', ['product' => $style->id])->with('success', __('catalog::messages.saved'));
     }
@@ -88,9 +96,10 @@ final class ProductController
         return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'colors.color.translations', 'colors.gallery.media', 'variants.size', 'variants.styleColor.color']), $tree);
     }
 
-    public function update(Style $product, ProductRequest $request, ProductService $products): RedirectResponse
+    public function update(Style $product, ProductRequest $request, ProductService $products, AdminScreen $screen): RedirectResponse
     {
-        $this->orFormError(fn () => $products->update($product, $request->toInput(), (int) $request->validated('lock_version')));
+        $request->validate($screen->validationRules('product'));
+        $this->orFormError(fn () => $screen->saving('product', (array) $request->input('extensions', []), fn () => $products->update($product, $request->toInput(), (int) $request->validated('lock_version')), fn (): int => $product->id));
 
         return back()->with('success', __('catalog::messages.saved'));
     }
@@ -142,6 +151,7 @@ final class ProductController
                         'size_code' => $variant->size->code,
                     ])->values()->all(),
             ],
+            'extensionSections' => app(AdminScreen::class)->formSections('product', $style?->id),
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => Brand::query()->orderBy('position')->orderBy('name')->get(['id', 'name'])->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
             'attributeDefinitions' => $attributes->map(fn (Attribute $attribute): array => [
