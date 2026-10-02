@@ -25,6 +25,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` (**Implemented**, chọn bằng `VANI_RETURN_POLICY`) | [order §7](../09-order/order.md) |
 | `SearchProvider` | `vani.search.providers` | Catalog | `database` (**Implemented**); `meilisearch` là plugin `vani.search-meilisearch`; interface tuỳ chọn `ConfigurableSearchIndex` (`setupIndex()` cho `--setup`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `OtpSender` | `vani.customer.otp_senders` | Customer | `email`, `log` (chỉ dev). **Implemented**: thử theo `priority()` giảm dần; kênh ném `OtpDeliveryFailed` → kênh kế tiếp. Plugin: `vani.zalo-zns` (60), `vani.sms-brandname` (50) | [customer](../03-domains/customer.md) |
+| `AuthProvider` | `vani.customer.auth_providers` | Customer | — (plugin). **Implemented** (0.3.7): Core lo `state`, danh sách `redirect_uri`, ghép danh tính (đã liên kết → SĐT đã xác minh → email đã xác minh của khách đang có), token; contract test `AuthProviderContract`. Chưa có plugin thật (dự kiến `vani.social-login`) | [extension-surface-v2 §4.E](extension-surface-v2.md) |
 | `NotificationChannel` | `vani.notification.channels` | Notification | `mail`. **Implemented**; plugin: `sms` (`vani.sms-brandname`), `zns` (`vani.zalo-zns`) | [notification](../03-domains/notification.md) |
 | `Connector` | `vani.integration.connectors` | Integration | — (connector là plugin). **Implemented** (slice 11): nhận message outbox theo `supports()`, trả `DeliveryResult` ok/retryable/permanent | [integration-platform](../11-integration/integration-platform.md) |
 | `InboundHandler` | `vani.integration.inbound` | Integration | —. **Implemented** (slice 11): xử lý message inbox theo `(system, message_type)`, trả `DeliveryResult` (thêm `stale`) | [integration-platform](../11-integration/integration-platform.md) |
@@ -165,7 +166,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 | Extension point thiếu | Loại | Plugin cần | Đợt |
 |---|---|---|---|
 | `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
-| Registry nhà cung cấp đăng nhập (`AuthProvider`) | Contract | `vani.social-login` | P2 |
 | `StorefrontBlock` (page builder) | Contract | lookbook, recommendation, `brand_grid` | P2 |
 | `DashboardWidget` + quyền đọc báo cáo | Contract | `vani.reports` (Reporting thành plugin) | P2 |
 | `adminApiRoutes()` | Registry | POS/app quản trị của plugin | P3 |

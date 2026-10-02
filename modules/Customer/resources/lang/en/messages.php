@@ -14,4 +14,9 @@ return [
     'password_mismatch' => 'Current password is incorrect.',
     'merged' => 'Customers merged.',
     'anonymized' => 'Customer anonymized.',
+    'social_unknown' => 'This sign-in method is not available.',
+    'social_state' => 'The sign-in session has expired or is invalid. Please try again.',
+    'social_redirect' => 'This return address is not allowed.',
+    'social_failed' => 'Could not sign in with this account. Please try again or use your phone number.',
+    'social_phone_required' => 'Please verify your phone number to finish signing in.',
 ];

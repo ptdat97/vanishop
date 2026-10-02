@@ -14,4 +14,9 @@ return [
     'password_mismatch' => 'Mật khẩu hiện tại không đúng.',
     'merged' => 'Đã hợp nhất khách hàng.',
     'anonymized' => 'Đã ẩn danh hoá khách hàng.',
+    'social_unknown' => 'Phương thức đăng nhập không có.',
+    'social_state' => 'Phiên đăng nhập hết hạn hoặc không hợp lệ. Vui lòng thử lại.',
+    'social_redirect' => 'Địa chỉ quay về không được phép.',
+    'social_failed' => 'Không đăng nhập được bằng tài khoản này. Vui lòng thử lại hoặc dùng số điện thoại.',
+    'social_phone_required' => 'Vui lòng xác minh số điện thoại để hoàn tất đăng nhập.',
 ];

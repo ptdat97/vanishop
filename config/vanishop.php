@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.6',
+    'version' => '0.3.7',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -135,6 +135,8 @@ return [
     'customer' => [
         // Token Bearer của Storefront API (ADR-024).
         'token_ttl_days' => (int) env('VANI_CUSTOMER_TOKEN_TTL_DAYS', 90),
+        // Đăng nhập mạng xã hội (AuthProvider): redirect_uri phải bắt đầu bằng một trong các tiền tố này (chống open redirect).
+        'auth_redirect_uris' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_AUTH_REDIRECT_URIS', (string) env('APP_URL', '')))))),
         'otp' => [
             // Giới hạn yêu cầu OTP trong cửa sổ `window` giây (chống SMS pumping).
             'per_phone' => (int) env('VANI_OTP_PER_PHONE', 3),

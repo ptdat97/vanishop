@@ -9,6 +9,9 @@ Route::middleware('throttle:vani-customer-auth')->group(function () {
     Route::post('auth/otp/request', [AuthController::class, 'requestOtp'])->name('auth.otp.request');
     Route::post('auth/otp/verify', [AuthController::class, 'verifyOtp'])->name('auth.otp.verify');
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::get('auth/social', [AuthController::class, 'socialProviders'])->name('auth.social.index');
+    Route::post('auth/social/{provider}/start', [AuthController::class, 'socialStart'])->where('provider', '[a-z0-9_.-]+')->name('auth.social.start');
+    Route::post('auth/social/{provider}/complete', [AuthController::class, 'socialComplete'])->where('provider', '[a-z0-9_.-]+')->name('auth.social.complete');
 });
 
 Route::middleware('vani.customer')->group(function () {

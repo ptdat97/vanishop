@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.7 — 2026-10-02
+
+Đợt W5b của [extension-surface-v2](extension-surface-v2.md): đăng nhập bằng tài khoản bên ngoài. Chỉ thêm.
+
+### Thêm
+- `Customer\Contracts\AuthProvider` (tag `vani.customer.auth_providers`), `AuthProviderFailed`, `Data\ExternalIdentity` + bộ contract test `Customer\Testing\AuthProviderContract`.
+- Storefront API: `GET /auth/social`, `POST /auth/social/{provider}/start` (`redirect_uri` theo `VANI_AUTH_REDIRECT_URIS`), `POST /auth/social/{provider}/complete` (`state` một lần, 10 phút) → token Bearer như đăng nhập OTP. Mã lỗi `customer.social_unknown|social_state|social_redirect|social_failed|social_phone_required`.
+- Bảng `customer_identities`; hợp nhất khách chuyển danh tính, ẩn danh hoá xoá, xuất dữ liệu có `linked_accounts`.
+
 ## 0.3.6 — 2026-10-02
 
 Đợt W5a của [extension-surface-v2](extension-surface-v2.md): plugin làm nền cho plugin, loại plugin, sức khoẻ plugin.

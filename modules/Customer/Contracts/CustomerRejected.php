@@ -41,6 +41,31 @@ final class CustomerRejected extends BusinessRuleViolation
         return new self(__('customer::messages.invalid_credentials'), 'customer.invalid_credentials', 401);
     }
 
+    public static function socialUnknown(): self
+    {
+        return new self(__('customer::messages.social_unknown'), 'customer.social_unknown', 404);
+    }
+
+    public static function socialState(): self
+    {
+        return new self(__('customer::messages.social_state'), 'customer.social_state', 422);
+    }
+
+    public static function socialRedirect(): self
+    {
+        return new self(__('customer::messages.social_redirect'), 'customer.social_redirect', 422);
+    }
+
+    public static function socialFailed(): self
+    {
+        return new self(__('customer::messages.social_failed'), 'customer.social_failed', 422);
+    }
+
+    public static function socialPhoneRequired(): self
+    {
+        return new self(__('customer::messages.social_phone_required'), 'customer.social_phone_required', 422);
+    }
+
     public static function emailTaken(): self
     {
         return new self(__('customer::messages.email_taken'), 'customer.email_taken', 409);

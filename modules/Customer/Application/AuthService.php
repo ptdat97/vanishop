@@ -10,10 +10,14 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Customer\Contracts\Data\ExternalIdentity;
 use Modules\Customer\Contracts\Data\OtpPurpose;
+use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Events\CustomerRegistered;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Customer\Persistence\Models\CustomerIdentity;
 use Modules\Customer\Persistence\Models\CustomerToken;
+use Modules\Shared\Domain\Phone\PhoneNumber;
 
 /**
  * Đăng nhập khách: OTP (mặc định) hoặc mật khẩu (tuỳ chọn, đặt sau khi đã xác thực SĐT). Phiên API là token
@@ -46,6 +50,44 @@ final class AuthService
                 $customer->update(['registered_at' => now(), 'phone_verified_at' => now()]);
                 event(new CustomerRegistered($customer->id, $customer->public_id, claimedGuestProfile: $guestProfile !== null));
             }
+
+            return $this->startSession($customer, $device);
+        });
+    }
+
+    /**
+     * Đăng nhập bằng danh tính bên ngoài (AuthProvider). Ghép theo thứ tự: danh tính đã liên kết → SĐT đã xác minh
+     * (tạo khách nếu chưa có) → email đã xác minh của khách đang có. Không có → `customer.social_phone_required`.
+     *
+     * @return array{customer: CustomerData, token: string, customer_id: int}
+     */
+    public function loginWithIdentity(ExternalIdentity $identity, ?string $device = null): array
+    {
+        return DB::transaction(function () use ($identity, $device): array {
+            $linked = CustomerIdentity::query()->where('provider', $identity->provider)->where('subject', $identity->subject)->first();
+            $customer = $linked === null ? null : Customer::query()->whereKey($linked->customer_id)->where('status', CustomerStatus::Active)->first();
+
+            if ($customer === null) {
+                $phone = $identity->phoneVerified ? PhoneNumber::tryFromString((string) $identity->phone) : null;
+                $customer = match (true) {
+                    $phone !== null => $this->customers->findOrCreateByPhone($phone->e164, $identity->fullName),
+                    $identity->emailVerified && $identity->email !== null => Customer::query()->where('status', CustomerStatus::Active)
+                        ->whereRaw('LOWER(email) = ?', [mb_strtolower($identity->email)])->first(),
+                    default => null,
+                } ?? throw CustomerRejected::socialPhoneRequired();
+
+                CustomerIdentity::query()->updateOrCreate(
+                    ['provider' => $identity->provider, 'subject' => $identity->subject],
+                    ['customer_id' => $customer->id],
+                );
+            }
+
+            $customer = Customer::query()->whereKey($customer->id)->lockForUpdate()->firstOrFail();
+            if (! $customer->isRegistered()) {
+                $customer->update(['registered_at' => now()] + ($customer->phone !== null && $identity->phoneVerified ? ['phone_verified_at' => now()] : []));
+                event(new CustomerRegistered($customer->id, $customer->public_id, claimedGuestProfile: $customer->orders_count > 0));
+            }
+            CustomerIdentity::query()->where('provider', $identity->provider)->where('subject', $identity->subject)->update(['last_used_at' => now()]);
 
             return $this->startSession($customer, $device);
         });

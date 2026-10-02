@@ -11,6 +11,7 @@ use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
+use Modules\Customer\Persistence\Models\CustomerIdentity;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\OrderWriter;
@@ -52,6 +53,7 @@ final class AccountLifecycle
 
             $moved = $this->orders->reassignCustomer($sourceId, $targetId);
             CustomerAddress::query()->where('customer_id', $sourceId)->update(['customer_id' => $targetId, 'is_default' => false]);
+            CustomerIdentity::query()->where('customer_id', $sourceId)->update(['customer_id' => $targetId]);
 
             foreach ($this->consents->all($sourceId) as $consent) {
                 if ($consent['granted'] && ! $this->consents->allows($targetId, $consent['channel'], $consent['purpose'])) {
@@ -92,6 +94,7 @@ final class AccountLifecycle
 
             $this->consents->revokeAll($customerId, "anonymize:{$source}");
             CustomerAddress::query()->where('customer_id', $customerId)->delete();
+            CustomerIdentity::query()->where('customer_id', $customerId)->delete();
             $this->auth->revokeAll($customerId);
             $customer->update([
                 'status' => CustomerStatus::Anonymized, 'phone' => null, 'email' => null, 'full_name' => null, 'birth_date' => null,
@@ -120,6 +123,8 @@ final class AccountLifecycle
             ],
             'addresses' => app(AddressBook::class)->all($customerId),
             'consents' => $this->consents->all($customerId),
+            'linked_accounts' => CustomerIdentity::query()->where('customer_id', $customerId)->orderBy('id')->get()
+                ->map(fn (CustomerIdentity $identity): array => ['provider' => $identity->provider, 'linked_at' => $identity->created_at?->toIso8601String()])->all(),
             'consent_history' => DB::table('customer_consent_events')->where('customer_id', $customerId)->orderBy('id')
                 ->get(['channel', 'purpose', 'action', 'source', 'created_at'])->map(fn (object $row): array => (array) $row)->all(),
             'orders' => array_map(fn ($order): array => [
