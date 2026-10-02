@@ -9,6 +9,8 @@ return [
     'otp_body' => 'Mã xác thực của bạn là :code (hiệu lực 5 phút). Không chia sẻ mã này với bất kỳ ai.',
     'invalid_credentials' => 'Số điện thoại hoặc mật khẩu không đúng.',
     'email_taken' => 'Email đã được dùng cho tài khoản khác.',
+    'phone_invalid' => 'Số điện thoại không hợp lệ.',
+    'address_invalid' => 'Tỉnh/thành hoặc phường/xã không hợp lệ. Vui lòng chọn lại theo danh mục hành chính hiện hành.',
     'address_limit' => 'Sổ địa chỉ tối đa :max địa chỉ.',
     'not_found' => 'Không tìm thấy khách hàng.',
     'password_mismatch' => 'Mật khẩu hiện tại không đúng.',

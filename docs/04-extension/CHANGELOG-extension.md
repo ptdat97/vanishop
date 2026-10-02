@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.13 — 2026-10-02
+
+Tài khoản khách native + địa chỉ theo danh mục ở mọi nơi. Chỉ thêm.
+
+### Thêm
+- Service contract `Checkout\Contracts\ShippingAddresses` (`directory()`, `normalize()`): quy tắc địa chỉ của checkout cho module khác dùng.
+- Service contract `Customer\Contracts\CustomerAccounts`: `updateProfile`, `setPassword`, `address`, `addAddress`, `updateAddress`, `deleteAddress`.
+- `CustomerRejected::addressInvalid()` (`customer.address_invalid`, 422), `CustomerRejected::phoneInvalid()` (`customer.phone_invalid`, 422), `OrderActionRejected::invalidAddress()` (`order.address_invalid`, 422).
+- Native storefront: `/tai-khoan/ho-so` (sửa hồ sơ, đặt/đổi mật khẩu), sổ địa chỉ thêm/sửa/xoá/đặt mặc định (chạy không cần JS).
+
+### Đổi hành vi
+- Có danh mục địa giới (`vani.provinces-vn` bật): sổ địa chỉ khách (API `/me/addresses` + native) và Admin đổi địa chỉ đơn bắt buộc mã tỉnh/phường hợp lệ, tên lấy theo danh mục; `province_name`/`ward_name` không còn bắt buộc gửi. Địa chỉ đã lưu với mã cũ vẫn đổi nhãn/mặc định được, chỉ kiểm tra khi đổi tỉnh/phường.
+- Số điện thoại sai định dạng trong sổ địa chỉ → 422 `customer.phone_invalid` (trước: lỗi 500 nếu lọt qua validate).
+
 ## 0.3.12 — 2026-10-02
 
 Đợt W6b (phần báo cáo) của [extension-surface-v2](extension-surface-v2.md). Chỉ thêm.

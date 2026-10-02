@@ -21,3 +21,10 @@ parameters:
             identifier: larastan.noEnvCallsOutsideOfConfig
             paths:
                 - custom/plugin/*/Config/*
+        # View storefront `theme::…` thuộc namespace đăng ký lúc chạy theo theme đang bật (UseActiveTheme) — Larastan
+        # không suy ra được view-string. Chỉ áp cho controller web của storefront.
+        -
+            message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+            identifier: argument.type
+            paths:
+                - modules/Storefront/Http/Controllers/Web/*

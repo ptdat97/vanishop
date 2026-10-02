@@ -54,6 +54,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `Carts` | Giỏ: tạo, xem, thêm/sửa/xoá dòng, gộp, khoá cho checkout. **Implemented** | Cart |
 | `PromotionEngine` | Đánh giá khuyến mãi, ghi nhận/hoàn lượt. **Implemented** | Promotion |
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
+| `ShippingAddresses` | Địa chỉ giao hàng theo danh mục địa giới đang dùng (`directory()`, `normalize()`): cùng quy tắc cho checkout, sổ địa chỉ khách, Admin sửa địa chỉ đơn. **Implemented** (0.3.13) | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |
 | `OrderReader` | Đọc đơn (DTO snapshot). **Implemented** | Ordering |
 | `OrderStatistics` | Số liệu bán hàng tổng hợp: tổng, theo ngày (múi giờ), theo thanh toán/kênh/sản phẩm/thương hiệu, đếm theo trạng thái. **Implemented** (0.3.12) | Ordering |
@@ -64,6 +65,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
+| `CustomerAccounts` | Khách tự quản lý hồ sơ, mật khẩu, sổ địa chỉ (bề mặt ngoài Storefront API, vd. native storefront). **Implemented** (0.3.13) | Customer |
 | `Settings` | Đọc/ghi cấu hình, khai báo định nghĩa. **Implemented** (hiện kế thừa kênh → brand → pháp nhân → owner; sau slice 12: một cấp cửa hàng) | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
 | `CurrentContext` | Locale/actor hiện tại; `runAs()` (brand/channel: bỏ ở slice 12) | Shared |

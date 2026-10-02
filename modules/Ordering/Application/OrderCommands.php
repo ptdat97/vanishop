@@ -6,6 +6,7 @@ namespace Modules\Ordering\Application;
 
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
+use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
@@ -23,6 +24,7 @@ final class OrderCommands
         private readonly OrderTransitions $transitions,
         private readonly CurrentContext $context,
         private readonly AuditLogger $audit,
+        private readonly ShippingAddresses $addresses,
     ) {}
 
     public function confirm(int $orderId, string $reason): void
@@ -51,11 +53,18 @@ final class OrderCommands
     }
 
     /**
-     * @param  array{province_code: string, province_name: string, ward_code: string, ward_name: string, street_line: string}  $address
-     * @param  array{full_name: string, phone: string}|null  $recipient
+     * Có danh mục địa giới: mã tỉnh/phường phải hợp lệ, tên lấy theo danh mục (cùng quy tắc checkout).
+     *
+     * @param  array{province_code: string, province_name?: string|null, ward_code: string, ward_name?: string|null, street_line: string}  $address
      */
     public function changeShippingAddress(int $orderId, array $address, string $reason, int $expectedLockVersion): void
     {
+        $address = array_map(fn (?string $value): string => trim((string) $value), $address);
+        $address = $this->addresses->normalize($address) ?? throw OrderActionRejected::invalidAddress();
+        if (($address['province_name'] ?? '') === '' || ($address['ward_name'] ?? '') === '') {
+            throw OrderActionRejected::invalidAddress();
+        }
+
         DB::transaction(function () use ($orderId, $address, $reason, $expectedLockVersion): void {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
             if ($order->lock_version !== $expectedLockVersion) {
@@ -66,7 +75,7 @@ final class OrderCommands
             }
 
             $old = $order->shipping_address;
-            $order->update(['shipping_address' => array_map('trim', $address), 'lock_version' => $order->lock_version + 1]);
+            $order->update(['shipping_address' => $address, 'lock_version' => $order->lock_version + 1]);
             $this->event($order->id, 'address_changed', $reason, ['from' => $old, 'to' => $address]);
             $this->audit->record('order.address_changed', 'order', $order->id, ['reason' => $reason]);
         });

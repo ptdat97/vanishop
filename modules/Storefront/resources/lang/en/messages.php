@@ -10,4 +10,8 @@ return [
     'order_cancelled' => 'Order cancelled.',
     'home_saved' => 'Home page saved.',
     'home_reset' => 'Reverted to the theme default home page.',
+    'profile_saved' => 'Profile saved.',
+    'password_saved' => 'Password updated.',
+    'address_saved' => 'Address saved.',
+    'address_deleted' => 'Address deleted.',
 ];

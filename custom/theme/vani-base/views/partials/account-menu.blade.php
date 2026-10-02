@@ -1,5 +1,5 @@
 <nav aria-label="Tài khoản" class="space-y-1 text-sm">
-    @foreach ([['storefront.account', 'Tổng quan'], ['storefront.account.orders', 'Đơn hàng'], ['storefront.account.addresses', 'Địa chỉ']] as [$route, $label])
+    @foreach ([['storefront.account', 'Tổng quan'], ['storefront.account.orders', 'Đơn hàng'], ['storefront.account.addresses', 'Địa chỉ'], ['storefront.account.profile', 'Hồ sơ']] as [$route, $label])
         <a href="{{ route($route) }}" @class(['block rounded px-3 py-2', 'bg-slate-100 font-semibold' => request()->routeIs($route)])>{{ $label }}</a>
     @endforeach
     @foreach ($accountMenu ?? [] as $item)

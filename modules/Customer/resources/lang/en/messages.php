@@ -9,6 +9,8 @@ return [
     'otp_body' => 'Your verification code is :code (valid for 5 minutes). Do not share it with anyone.',
     'invalid_credentials' => 'Incorrect phone number or password.',
     'email_taken' => 'This email is used by another account.',
+    'phone_invalid' => 'Invalid phone number.',
+    'address_invalid' => 'Invalid province or ward. Please choose again from the current administrative list.',
     'address_limit' => 'The address book holds at most :max addresses.',
     'not_found' => 'Customer not found.',
     'password_mismatch' => 'Current password is incorrect.',

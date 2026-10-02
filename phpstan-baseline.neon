@@ -511,12 +511,6 @@ parameters:
 			path: modules/Ordering/Application/OrderCommands.php
 
 		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$recipient$#'
-			identifier: parameter.notFound
-			count: 1
-			path: modules/Ordering/Application/OrderCommands.php
-
-		-
 			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\Order\:\:\$discount_amount\.$#'
 			identifier: property.notFound
 			count: 1
@@ -965,54 +959,6 @@ parameters:
 			identifier: arrayValues.list
 			count: 1
 			path: modules/Storefront/Application/PageBlocks.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 5
-			path: modules/Storefront/Http/Controllers/Web/AccountController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: modules/Storefront/Http/Controllers/Web/CartController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 4
-			path: modules/Storefront/Http/Controllers/Web/CatalogController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: modules/Storefront/Http/Controllers/Web/CheckoutController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 2
-			path: modules/Storefront/Http/Controllers/Web/HomeController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: modules/Storefront/Http/Controllers/Web/OrderController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: modules/Storefront/Http/Controllers/Web/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 2
-			path: modules/Storefront/Http/Controllers/Web/TrackOrderController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>default" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

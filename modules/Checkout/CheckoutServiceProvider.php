@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Checkout;
 
 use Illuminate\Support\Facades\Event;
+use Modules\Checkout\Application\Addresses;
 use Modules\Checkout\Application\Calculators\GuardCalculator;
 use Modules\Checkout\Application\Calculators\PromotionCalculator;
 use Modules\Checkout\Application\Calculators\ShippingCalculator;
@@ -17,6 +18,7 @@ use Modules\Checkout\Application\Tax\NoTax;
 use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutValidator;
+use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Contracts\TaxCalculator;
 use Modules\Checkout\Contracts\TotalsCalculator;
@@ -37,6 +39,7 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Checkout::class, CheckoutService::class);
+        $this->app->bind(ShippingAddresses::class, Addresses::class);
 
         $this->app->make(Extensions::class)->tag([SubtotalCalculator::class, PromotionCalculator::class, ShippingCalculator::class, TaxStage::class, GuardCalculator::class], TotalsCalculator::TAG);
         $this->app->make(Extensions::class)->tag([CoreCheckoutValidator::class], CheckoutValidator::TAG);

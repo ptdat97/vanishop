@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Application\OrderCommands;
@@ -64,7 +65,7 @@ final class OrderController
         ]);
     }
 
-    public function show(Order $order, OrderQueries $queries, AdminScreen $screen): Response
+    public function show(Order $order, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses): Response
     {
         Gate::authorize('orders.view');
         $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
@@ -81,6 +82,12 @@ final class OrderController
                 'note' => $canManage,
             ],
             'extensions' => ['actions' => $screen->actions('order', 'detail'), 'tabs' => $screen->tabs('order', $order->id)],
+            // Có danh mục địa giới: form đổi địa chỉ chọn tỉnh/phường (phường tải qua Storefront API).
+            'addressDirectory' => ($directory = $addresses->directory()) === null ? null : [
+                'provinces' => $directory->provinces(),
+                'wards' => ($code = (string) ($detail->shippingAddress['province_code'] ?? '')) === '' ? [] : $directory->wards($code),
+                'wards_url' => url('/api/storefront/v1/address/provinces'),
+            ],
         ]);
     }
 

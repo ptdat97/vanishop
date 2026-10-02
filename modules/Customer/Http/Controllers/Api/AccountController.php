@@ -121,9 +121,10 @@ final class AccountController
             'full_name' => [$required, 'string', 'max:120'],
             'phone' => [$required, 'string', 'max:20', fn (string $attribute, mixed $value, Closure $fail) => PhoneNumber::tryFromString((string) $value) === null ? $fail(__('Số điện thoại không hợp lệ.')) : null],
             'province_code' => [$required, 'string', 'max:8'],
-            'province_name' => [$required, 'string', 'max:64'],
+            // Có danh mục địa giới: tên lấy theo mã (không bắt buộc gửi); không có: AddressBook bắt buộc tên.
+            'province_name' => ['sometimes', 'nullable', 'string', 'max:64'],
             'ward_code' => [$required, 'string', 'max:8'],
-            'ward_name' => [$required, 'string', 'max:64'],
+            'ward_name' => ['sometimes', 'nullable', 'string', 'max:64'],
             'street_line' => [$required, 'string', 'max:255'],
             'is_default' => ['sometimes', 'boolean'],
         ];

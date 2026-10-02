@@ -8,6 +8,7 @@ return [
     'not_found' => 'Order not found.',
     'confirmed' => 'Order confirmed.',
     'cancelled' => 'Order cancelled.',
+    'address_invalid' => 'Invalid province or ward for the current administrative list.',
     'address_changed' => 'Shipping address changed.',
     'note_added' => 'Note added.',
 ];

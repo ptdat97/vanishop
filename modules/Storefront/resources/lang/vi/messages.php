@@ -10,4 +10,8 @@ return [
     'order_cancelled' => 'Đã huỷ đơn hàng.',
     'home_saved' => 'Đã lưu trang chủ.',
     'home_reset' => 'Đã dùng lại trang chủ mặc định của giao diện.',
+    'profile_saved' => 'Đã lưu hồ sơ.',
+    'password_saved' => 'Đã cập nhật mật khẩu.',
+    'address_saved' => 'Đã lưu địa chỉ.',
+    'address_deleted' => 'Đã xoá địa chỉ.',
 ];

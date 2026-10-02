@@ -23,6 +23,11 @@ final class OrderActionRejected extends BusinessRuleViolation
         return new self('order.cannot_change_address', 409, __('ordering::messages.cannot_change_address'));
     }
 
+    public static function invalidAddress(): self
+    {
+        return new self('order.address_invalid', 422, __('ordering::messages.address_invalid'));
+    }
+
     public static function stale(): self
     {
         return new self('order.stale', 409, __('ordering::messages.stale'));

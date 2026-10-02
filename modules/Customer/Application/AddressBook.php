@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Persistence\Models\CustomerAddress;
 use Modules\Shared\Domain\Phone\PhoneNumber;
 
 /**
- * Sổ địa chỉ: tối đa 20, luôn đúng một địa chỉ mặc định khi sổ không rỗng.
+ * Sổ địa chỉ: tối đa 20, luôn đúng một địa chỉ mặc định khi sổ không rỗng. Có danh mục địa giới (plugin
+ * `vani.provinces-vn`) → mã tỉnh/phường phải hợp lệ, tên lấy theo danh mục (cùng quy tắc checkout).
  */
 final class AddressBook
 {
     public const MAX = 20;
+
+    private const LOCATION_FIELDS = ['province_code', 'province_name', 'ward_code', 'ward_name'];
+
+    public function __construct(private readonly ShippingAddresses $addresses) {}
 
     /**
      * @return list<array<string, mixed>>
@@ -37,7 +43,7 @@ final class AddressBook
                 throw CustomerRejected::addressLimit(self::MAX);
             }
 
-            $address = CustomerAddress::query()->create([...$this->normalize($data), 'customer_id' => $customerId, 'is_default' => false]);
+            $address = CustomerAddress::query()->create([...$this->normalize($data, true), 'customer_id' => $customerId, 'is_default' => false]);
             if ($count === 0 || ($data['is_default'] ?? false)) {
                 $this->makeDefault($customerId, $address->id);
             }
@@ -54,7 +60,8 @@ final class AddressBook
     {
         return DB::transaction(function () use ($customerId, $addressId, $data): array {
             $address = $this->owned($customerId, $addressId);
-            $address->update($this->normalize([...$address->toView(), ...$data]));
+            // Chỉ kiểm tra lại theo danh mục khi đổi tỉnh/phường: địa chỉ cũ (mã trước 07/2025) vẫn đổi nhãn/mặc định được.
+            $address->update($this->normalize([...$address->toView(), ...$data], array_intersect_key($data, array_flip(self::LOCATION_FIELDS)) !== []));
             if ($data['is_default'] ?? false) {
                 $this->makeDefault($customerId, $address->id);
             }
@@ -93,14 +100,24 @@ final class AddressBook
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function normalize(array $data): array
+    private function normalize(array $data, bool $checkLocation): array
     {
+        $location = [
+            'province_code' => trim((string) ($data['province_code'] ?? '')), 'province_name' => trim((string) ($data['province_name'] ?? '')),
+            'ward_code' => trim((string) ($data['ward_code'] ?? '')), 'ward_name' => trim((string) ($data['ward_name'] ?? '')),
+        ];
+        if ($checkLocation) {
+            $location = $this->addresses->normalize($location) ?? throw CustomerRejected::addressInvalid();
+            if ($location['province_name'] === '' || $location['ward_name'] === '') {
+                throw CustomerRejected::addressInvalid();
+            }
+        }
+
         return [
             'label' => isset($data['label']) && trim((string) $data['label']) !== '' ? trim((string) $data['label']) : null,
             'full_name' => trim((string) $data['full_name']),
-            'phone' => PhoneNumber::fromString((string) $data['phone'])->e164,
-            'province_code' => (string) $data['province_code'], 'province_name' => trim((string) $data['province_name']),
-            'ward_code' => (string) $data['ward_code'], 'ward_name' => trim((string) $data['ward_name']),
+            'phone' => (PhoneNumber::tryFromString((string) $data['phone']) ?? throw CustomerRejected::phoneInvalid())->e164,
+            ...array_intersect_key($location, array_flip(self::LOCATION_FIELDS)),
             'street_line' => trim((string) $data['street_line']),
         ];
     }

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Customer\Persistence\Models\CustomerAddress;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
@@ -14,8 +15,8 @@ beforeEach(function () {
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->token = H::login($this);
     $this->address = fn (array $overrides = []): array => [
-        'full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678', 'province_code' => '79', 'province_name' => 'TP. Hồ Chí Minh',
-        'ward_code' => '26734', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi', ...$overrides,
+        'full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678', 'province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh',
+        'ward_code' => '70101065', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi', ...$overrides,
     ];
 });
 
@@ -86,4 +87,17 @@ it('xoá tài khoản = ẩn danh hoá (cần OTP): xoá PII, thu hồi phiên, 
 
     H::login($this, '0912345678');
     expect(Customer::query()->count())->toBe(2);
+});
+
+it('sổ địa chỉ theo danh mục địa giới: mã sai/không khớp → 422, tên lấy theo danh mục; địa chỉ cũ vẫn đổi mặc định được', function () {
+    $this->postJson(H::API.'/me/addresses', ($this->address)(['ward_code' => '10101003']), H::auth($this->token))
+        ->assertStatus(422)->assertJsonPath('error.code', 'customer.address_invalid');
+
+    $id = $this->postJson(H::API.'/me/addresses', ($this->address)(['province_name' => null, 'ward_name' => 'sai tên']), H::auth($this->token))->assertCreated()
+        ->assertJsonPath('data.province_name', 'Thành phố Hồ Chí Minh')->assertJsonPath('data.ward_name', 'Phường Bến Thành')->json('data.id');
+
+    // Địa chỉ lưu trước sắp xếp 07/2025 (mã cũ): đổi nhãn/mặc định không bị chặn; đổi tỉnh/phường thì phải hợp lệ.
+    CustomerAddress::query()->whereKey($id)->update(['province_code' => '79', 'ward_code' => '26734']);
+    $this->patchJson(H::API."/me/addresses/{$id}", ['label' => 'Nhà cũ', 'is_default' => true], H::auth($this->token))->assertOk()->assertJsonPath('data.label', 'Nhà cũ');
+    $this->patchJson(H::API."/me/addresses/{$id}", ['ward_code' => '26735'], H::auth($this->token))->assertStatus(422);
 });

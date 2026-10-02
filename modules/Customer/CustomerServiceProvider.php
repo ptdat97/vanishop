@@ -10,12 +10,14 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Modules\Customer\Application\AuthService;
+use Modules\Customer\Application\CustomerAccountService;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Application\CustomerSessionService;
 use Modules\Customer\Application\Listeners\RefreshCustomerStats;
 use Modules\Customer\Application\OtpSenders\EmailOtpSender;
 use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
+use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\OtpSender;
@@ -45,6 +47,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(Customers::class, CustomerService::class);
         $this->app->bind(CustomerSessions::class, CustomerSessionService::class);
+        $this->app->bind(CustomerAccounts::class, CustomerAccountService::class);
         $this->app->bind(OtpService::class, fn ($app): OtpService => new OtpService(
             $app->make(Extensions::class),
             $app->make(CustomerService::class),

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Storefront\Http\Controllers\Web\AccountController;
+use Modules\Storefront\Http\Controllers\Web\AccountSettingsController;
 use Modules\Storefront\Http\Controllers\Web\CartController;
 use Modules\Storefront\Http\Controllers\Web\CatalogController;
 use Modules\Storefront\Http\Controllers\Web\CheckoutController;
@@ -47,6 +48,15 @@ Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.the
         Route::get('/tai-khoan/don-hang/{order}', [AccountController::class, 'order'])->name('account.order');
         Route::post('/tai-khoan/don-hang/{order}/huy', [AccountController::class, 'cancelOrder'])->name('account.order.cancel');
         Route::get('/tai-khoan/dia-chi', [AccountController::class, 'addresses'])->name('account.addresses');
+        Route::get('/tai-khoan/ho-so', [AccountSettingsController::class, 'profile'])->name('account.profile');
+        Route::put('/tai-khoan/ho-so', [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
+        Route::put('/tai-khoan/mat-khau', [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
+        Route::get('/tai-khoan/dia-chi/them', [AccountSettingsController::class, 'createAddress'])->name('account.addresses.create');
+        Route::post('/tai-khoan/dia-chi', [AccountSettingsController::class, 'storeAddress'])->name('account.addresses.store');
+        Route::get('/tai-khoan/dia-chi/{address}/sua', [AccountSettingsController::class, 'editAddress'])->whereNumber('address')->name('account.addresses.edit');
+        Route::put('/tai-khoan/dia-chi/{address}', [AccountSettingsController::class, 'updateAddress'])->whereNumber('address')->name('account.addresses.update');
+        Route::post('/tai-khoan/dia-chi/{address}/mac-dinh', [AccountSettingsController::class, 'defaultAddress'])->whereNumber('address')->name('account.addresses.default');
+        Route::delete('/tai-khoan/dia-chi/{address}', [AccountSettingsController::class, 'destroyAddress'])->whereNumber('address')->name('account.addresses.destroy');
         Route::post('/tai-khoan/dang-xuat', [AccountController::class, 'logout'])->name('account.logout');
     });
 });

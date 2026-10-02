@@ -8,6 +8,7 @@ return [
     'not_found' => 'Không tìm thấy đơn hàng.',
     'confirmed' => 'Đã xác nhận đơn.',
     'cancelled' => 'Đã huỷ đơn.',
+    'address_invalid' => 'Tỉnh/thành hoặc phường/xã không hợp lệ theo danh mục hành chính hiện hành.',
     'address_changed' => 'Đã đổi địa chỉ giao hàng.',
     'note_added' => 'Đã thêm ghi chú.',
 ];

@@ -21,9 +21,10 @@ final class ShippingAddressRequest extends FormRequest
     {
         return [
             'province_code' => ['required', 'string', 'max:16'],
-            'province_name' => ['required', 'string', 'max:120'],
+            // Có danh mục địa giới: tên lấy theo mã; không có: OrderCommands bắt buộc tên.
+            'province_name' => ['nullable', 'string', 'max:120'],
             'ward_code' => ['required', 'string', 'max:16'],
-            'ward_name' => ['required', 'string', 'max:120'],
+            'ward_name' => ['nullable', 'string', 'max:120'],
             'street_line' => ['required', 'string', 'max:255'],
             'reason' => ['required', 'string', 'max:255'],
             'lock_version' => ['required', 'integer', 'min:0'],

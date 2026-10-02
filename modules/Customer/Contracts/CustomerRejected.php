@@ -76,6 +76,16 @@ final class CustomerRejected extends BusinessRuleViolation
         return new self(__('customer::messages.address_limit', ['max' => $max]), 'customer.address_limit', 422, ['max' => $max]);
     }
 
+    public static function phoneInvalid(): self
+    {
+        return new self(__('customer::messages.phone_invalid'), 'customer.phone_invalid', 422);
+    }
+
+    public static function addressInvalid(): self
+    {
+        return new self(__('customer::messages.address_invalid'), 'customer.address_invalid', 422);
+    }
+
     public static function notFound(): self
     {
         return new self(__('customer::messages.not_found'), 'customer.not_found', 404);

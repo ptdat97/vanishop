@@ -120,14 +120,16 @@ it('Admin: đổi địa chỉ trước khi giao (lưu địa chỉ cũ trong l�
     ($this->place)();
     $order = ($this->order)();
     ($this->staff)();
-    $address = ['province_code' => '01', 'province_name' => 'Hà Nội', 'ward_code' => '00004', 'ward_name' => 'Phường Ba Đình', 'street_line' => '1 Hoàng Diệu', 'reason' => 'Khách gọi đổi'];
+    // Tên gửi lên bị thay bằng tên theo danh mục (vani.provinces-vn); mã sai/không khớp tỉnh → từ chối.
+    $address = ['province_code' => '01', 'province_name' => 'Hà Nội', 'ward_code' => '10101003', 'ward_name' => 'Ba Đình', 'street_line' => '1 Hoàng Diệu', 'reason' => 'Khách gọi đổi'];
 
+    $this->put("{$this->admin}/{$order->id}/shipping-address", [...$address, 'ward_code' => '70101065', 'lock_version' => $order->lock_version])->assertSessionHasErrors('business');
     $this->put("{$this->admin}/{$order->id}/shipping-address", [...$address, 'lock_version' => $order->lock_version])->assertSessionHasNoErrors();
     $this->put("{$this->admin}/{$order->id}/shipping-address", [...$address, 'lock_version' => $order->lock_version])->assertSessionHasErrors('business');
     $this->post("{$this->admin}/{$order->id}/notes", ['note' => 'Giao sau 17h'])->assertSessionHasNoErrors();
 
     $event = DB::table('order_events')->where('order_id', $order->id)->where('type', 'address_changed')->first();
-    expect($order->fresh()->shipping_address['province_name'])->toBe('Hà Nội')
+    expect($order->fresh()->shipping_address)->toEqual(['province_code' => '01', 'province_name' => 'Thành phố Hà Nội', 'ward_code' => '10101003', 'ward_name' => 'Phường Ba Đình', 'street_line' => '1 Hoàng Diệu'])
         ->and(json_decode($event->data, true)['from']['province_name'])->toBe('Thành phố Hồ Chí Minh')
         ->and(DB::table('order_events')->where('type', 'note')->exists())->toBeTrue();
 

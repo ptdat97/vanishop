@@ -5,23 +5,17 @@ declare(strict_types=1);
 namespace Modules\Storefront\Application;
 
 use Modules\Checkout\Contracts\AddressDirectory;
-use Modules\Extension\Contracts\Extensions;
+use Modules\Checkout\Contracts\ShippingAddresses;
 
 /**
- * Danh mục địa giới cho storefront (API + checkout native) — AddressDirectory đầu tiên đang bật, như Checkout dùng.
+ * Danh mục địa giới cho storefront (API, checkout và sổ địa chỉ native) — cùng danh mục Checkout dùng.
  */
 final class AddressOptions
 {
-    public function __construct(private readonly Extensions $extensions) {}
+    public function __construct(private readonly ShippingAddresses $addresses) {}
 
     public function directory(): ?AddressDirectory
     {
-        foreach ($this->extensions->tagged(AddressDirectory::TAG) as $directory) {
-            if ($directory instanceof AddressDirectory) {
-                return $directory;
-            }
-        }
-
-        return null;
+        return $this->addresses->directory();
     }
 }
