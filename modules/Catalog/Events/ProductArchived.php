@@ -16,7 +16,6 @@ final readonly class ProductArchived implements ShouldDispatchAfterCommit
 
     public function __construct(
         public int $styleId,
-        public int $brandId,
         public string $styleCode,
     ) {}
 }

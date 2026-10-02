@@ -10,9 +10,9 @@ use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Mediable;
 
 /**
- * Đọc cây danh mục của các brand trong CurrentContext (1 truy vấn + eager load, dựng cây trong bộ nhớ).
+ * Đọc cây danh mục của cửa hàng (1 truy vấn + eager load, dựng cây trong bộ nhớ).
  *
- * @phpstan-type CategoryNode array{id: int, brand_id: int, parent_id: int|null, slug: string, name: string|null, description: string|null, status: string, position: int, depth: int, image_url: string|null, children: list<mixed>}
+ * @phpstan-type CategoryNode array{id: int, parent_id: int|null, slug: string, name: string|null, description: string|null, status: string, position: int, depth: int, image_url: string|null, children: list<mixed>}
  */
 final class CategoryTreeQuery
 {
@@ -73,7 +73,6 @@ final class CategoryTreeQuery
 
         return [
             'id' => $category->id,
-            'brand_id' => $category->brand_id,
             'parent_id' => $category->parent_id,
             'slug' => $category->slug,
             'name' => $category->translate('name', $locale),

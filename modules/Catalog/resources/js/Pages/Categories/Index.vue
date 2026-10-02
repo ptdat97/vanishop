@@ -5,16 +5,16 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import CategoryTreeRow from '../../Components/CategoryTreeRow.vue';
-import type { BrandRef, CategoryNode, NavItem } from '../../types';
+import type { CategoryNode, NavItem } from '../../types';
 
-const props = defineProps<{ brand: BrandRef; nav: NavItem[]; tree: CategoryNode[]; canManage: boolean }>();
+const props = defineProps<{ nav: NavItem[]; tree: CategoryNode[]; canManage: boolean }>();
 const page = usePage();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories')?.url ?? page.url);
 </script>
 
 <template>
-    <Head :title="`Danh mục · ${brand.name}`" />
-    <CatalogTabs :brand="brand" :nav="nav" active="categories" />
+    <Head title="Danh mục" />
+    <CatalogTabs :nav="nav" active="categories" />
     <PageHeader title="Danh mục">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm danh mục</Link>
     </PageHeader>

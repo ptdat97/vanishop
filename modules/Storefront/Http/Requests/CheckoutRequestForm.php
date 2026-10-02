@@ -64,6 +64,7 @@ final class CheckoutRequestForm extends FormRequest
             note: $this->validated('note'),
             expectedTotal: $this->validated('expected_total') === null ? null : (int) $this->validated('expected_total'),
             extra: array_filter((array) $this->validated('extra', []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),
+            source: (string) $this->attributes->get('order_source', 'web'),
         );
     }
 }

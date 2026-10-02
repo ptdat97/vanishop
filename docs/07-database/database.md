@@ -81,7 +81,7 @@ erDiagram
 | Tenancy (cửa hàng) | `legal_entities` (một bản ghi: pháp nhân vận hành), `settings(key, value json, is_encrypted)` (một cấp; theme tokens là một setting) |
 | Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id, scope_type[owner|location], scope_id)`, `audit_logs` |
 | Extension | `plugins(id VARCHAR PK = plugin id, status)` (bật/tắt toàn cửa hàng; `plugin_scopes` bỏ ở slice 12) |
-| Catalog | `brands`, `brand_translations`, `styles(brand_id NULL, meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
+| Catalog | `brands`, `styles(brand_id NULL, meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
 | Inventory | `locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `stock_transfers`, `stock_transfer_lines`, `inventory_reconciliations`, `inventory_reconciliation_lines` |
 | Customer | `customers(meta json)`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_group_customer` |

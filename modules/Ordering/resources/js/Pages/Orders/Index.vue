@@ -5,7 +5,6 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { reactive } from 'vue';
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     filters: { status: string; payment_status: string; q: string };
     statuses: string[];
@@ -35,8 +34,8 @@ function search(page = 1): void {
 </script>
 
 <template>
-    <Head :title="`Đơn hàng · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Đơn hàng · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Đơn hàng" />
+    <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
     <PageHeader title="Đơn hàng" :subtitle="`${pagination.total} đơn`" />
 
     <form class="mb-4 grid gap-2 sm:grid-cols-4" @submit.prevent="search()">

@@ -2,11 +2,9 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Modules\Brand\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Channel\Persistence\Models\Channel;
 use Modules\Extension\Contracts\Extensions;
-use Modules\Inventory\Application\ChannelAvailability;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\Data\ReservationLine;
 use Modules\Inventory\Contracts\Data\ReservationRequest;
@@ -26,15 +24,13 @@ require_once __DIR__.'/InventoryTestHelpers.php';
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create();
-    $this->other = Brand::factory()->create();
-    $this->channel = Channel::factory()->forBrand($this->brand, 'vani.test', '/lumiere')->create();
     [$this->s, $this->m] = P::variants(T::product($this->brand->id));
-    $this->hn = I::location($this->brand, [$this->channel->id], ['code' => 'WH-HN', 'priority' => 10]);
-    $this->hcm = I::location($this->brand, [$this->channel->id], ['code' => 'WH-HCM', 'priority' => 5]);
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id]));
+    $this->hn = I::location(['code' => 'WH-HN', 'priority' => 10]);
+    $this->hcm = I::location(['code' => 'WH-HCM', 'priority' => 5]);
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest()));
 
     $this->reservations = app(InventoryReservation::class);
-    $this->request = fn (string $key, array $lines, ?int $ttl = null) => new ReservationRequest($key, $this->channel->id,
+    $this->request = fn (string $key, array $lines, ?int $ttl = null) => new ReservationRequest($key,
         array_map(fn (array $line) => new ReservationLine($line[0], $line[1]), $lines), $ttl);
     $this->level = fn ($location, $variant) => DB::table('stock_levels')->where('location_id', $location->id)->where('variant_id', $variant->id)->first();
 });
@@ -72,16 +68,15 @@ it('tồn an toàn không được bán; thiếu hàng thì không giữ dòng n
         ->and(StockMovement::query()->count())->toBe(0);
 });
 
-it('không dùng location không phục vụ kênh, đã tắt, hoặc không bán brand', function () {
-    $offline = I::location($this->brand, [], ['code' => 'WH-OFF']);
-    $disabled = I::location($this->brand, [$this->channel->id], ['code' => 'WH-DIS', 'status' => 'inactive']);
-    $noOnline = I::location($this->brand, [$this->channel->id], ['code' => 'ST-01', 'ships_online_orders' => false]);
-    foreach ([$offline, $disabled, $noOnline] as $location) {
+it('không dùng location đã tắt hoặc không giao online', function () {
+    $disabled = I::location(['code' => 'WH-DIS', 'status' => 'inactive']);
+    $noOnline = I::location(['code' => 'ST-01', 'ships_online_orders' => false]);
+    foreach ([$disabled, $noOnline] as $location) {
         I::stock($location, $this->s->id, 50);
     }
 
     expect(fn () => $this->reservations->reserve(($this->request)('order:1', [[$this->s->id, 1]])))->toThrow(StockUnavailable::class);
-    expect(app(AvailabilityReader::class)->forChannel([$this->s->id], $this->channel->id))->toBe([$this->s->id => 0]);
+    expect(app(AvailabilityReader::class)->forVariants([$this->s->id]))->toBe([$this->s->id => 0]);
 });
 
 it('biến thể ngừng bán không giữ được', function () {
@@ -113,7 +108,7 @@ it('release trả hàng về; release/commit lần hai không có tác dụng', 
 });
 
 it('commit trừ on_hand nếu VaniShop quản lý tồn; nguồn ngoài thì chỉ bỏ giữ', function () {
-    $erp = I::location($this->brand, [$this->channel->id], ['code' => 'WH-ERP', 'priority' => 99, 'stock_authority' => 'erp-main']);
+    $erp = I::location(['code' => 'WH-ERP', 'priority' => 99, 'stock_authority' => 'erp-main']);
     I::stock($erp, $this->s->id, 1);
     I::stock($this->hn, $this->s->id, 5);
 
@@ -136,12 +131,12 @@ it('lệnh release-expired giải phóng reservation quá hạn', function () {
         ->and(($this->level)($this->hn, $this->s)->reserved)->toBe(1);
 });
 
-it('ATS theo kênh cộng các location, trừ giữ hàng và tồn an toàn; strategy chỉ được giảm', function () {
+it('ATS cộng các location giao online, trừ giữ hàng và tồn an toàn; strategy chỉ được giảm', function () {
     I::stock($this->hn, $this->s->id, 5, safetyStock: 1);
     I::stock($this->hcm, $this->s->id, 3);
     $this->reservations->reserve(($this->request)('order:1', [[$this->s->id, 2]]));
 
-    expect(app(AvailabilityReader::class)->forChannel([$this->s->id, $this->m->id], $this->channel->id))
+    expect(app(AvailabilityReader::class)->forVariants([$this->s->id, $this->m->id]))
         ->toBe([$this->s->id => 5, $this->m->id => 0]);
 
     $greedy = new class implements InventoryStrategy
@@ -151,16 +146,16 @@ it('ATS theo kênh cộng các location, trừ giữ hàng và tồn an toàn; s
             return 'greedy';
         }
 
-        public function adjust(array $standardAts, int $channelId): array
+        public function adjust(array $standardAts): array
         {
             return array_map(fn () => 999, $standardAts);
         }
     };
     $this->app->instance('greedy-strategy', $greedy);
-    $this->app->make(Extensions::class)->tag(['greedy-strategy'], ChannelAvailability::TAG);
+    $this->app->make(Extensions::class)->tag(['greedy-strategy'], InventoryStrategy::TAG);
     config(['vanishop.inventory.strategy' => 'greedy']);
 
-    expect(app(AvailabilityReader::class)->forChannel([$this->s->id], $this->channel->id))->toBe([$this->s->id => 5]);
+    expect(app(AvailabilityReader::class)->forVariants([$this->s->id]))->toBe([$this->s->id => 5]);
 });
 
 it('phát AvailabilityChanged sau commit transaction', function () {

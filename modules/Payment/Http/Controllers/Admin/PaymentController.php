@@ -11,9 +11,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Http\Controllers\BrandWorkspaceHome;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
@@ -24,22 +21,21 @@ use Modules\Shared\Domain\Money\Money;
 
 final class PaymentController
 {
-    public function home(BrandWorkspaceHome $home): Response|RedirectResponse
+    public function home(): RedirectResponse
     {
         Gate::authorize('payments.view');
 
-        return $home->respond('admin.payment.payments.index', 'Thanh toán', 'Chọn brand để xem thanh toán và hoàn tiền.');
+        return redirect()->route('admin.payment.payments.index');
     }
 
-    public function index(Brand $brand, Request $request, OrderReader $orders, GatewayRegistry $gateways): Response
+    public function index(Request $request, OrderReader $orders, GatewayRegistry $gateways): Response
     {
-        Gate::authorize('payments.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('payments.view');
         $status = $request->query('status');
         $payments = Payment::query()->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))->orderByDesc('id')->limit(100)->get();
         $refunds = Refund::query()->whereIn('payment_id', Payment::query()->select('id'))->where('status', 'requested')->orderBy('id')->get();
 
         return Inertia::render('Payment::Payments/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.payment.payments.index'),
             'status' => $status,
             'statuses' => array_column(PaymentStatus::cases(), 'value'),
@@ -61,24 +57,24 @@ final class PaymentController
                 'created_at' => $refund->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
             ])->all(),
             'can' => [
-                'confirm' => Gate::allows('payments.confirm', [ScopeRef::brand($brand->id)]),
-                'refund' => Gate::allows('payments.refund', [ScopeRef::brand($brand->id)]),
+                'confirm' => Gate::allows('payments.confirm'),
+                'refund' => Gate::allows('payments.refund'),
             ],
         ]);
     }
 
-    public function confirm(Brand $brand, Payment $payment, Request $request, PaymentService $payments): RedirectResponse
+    public function confirm(Payment $payment, Request $request, PaymentService $payments): RedirectResponse
     {
-        Gate::authorize('payments.confirm', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('payments.confirm');
         $data = $request->validate(['note' => ['required', 'string', 'max:255']]);
         $payments->confirmManually($payment->id, $data['note']);
 
         return back()->with('success', __('payment::messages.confirmed'));
     }
 
-    public function refund(Brand $brand, Payment $payment, Request $request, PaymentService $payments): RedirectResponse
+    public function refund(Payment $payment, Request $request, PaymentService $payments): RedirectResponse
     {
-        Gate::authorize('payments.refund', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('payments.refund');
         $data = $request->validate([
             'amount' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'max:255'],
@@ -89,9 +85,9 @@ final class PaymentController
         return back()->with('success', __('payment::messages.refund_created'));
     }
 
-    public function completeRefund(Brand $brand, Refund $refund, Request $request, PaymentService $payments): RedirectResponse
+    public function completeRefund(Refund $refund, Request $request, PaymentService $payments): RedirectResponse
     {
-        Gate::authorize('payments.refund', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('payments.refund');
         abort_unless(Payment::query()->whereKey($refund->payment_id)->exists(), 404);
         $data = $request->validate(['note' => ['required', 'string', 'max:255']]);
         $payments->completeManualRefund($refund->id, $data['note']);

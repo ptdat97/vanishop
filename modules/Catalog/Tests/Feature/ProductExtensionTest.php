@@ -2,10 +2,8 @@
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Products\ProductInput;
 use Modules\Catalog\Application\Products\ProductService;
-use Modules\Catalog\Application\Search\SearchManager;
 use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Contracts\Data\ProductDraft;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
@@ -14,6 +12,7 @@ use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
@@ -59,19 +58,19 @@ it('hook vani.product.before_save chặn lưu khi plugin báo lỗi', function (
 
 it('hook vani.product.after_save chạy trong transaction với id sản phẩm', function () {
     $seen = [];
-    Hook::onAction('vani.product.after_save', function (int $styleId, int $brandId) use (&$seen) {
-        $seen[] = [$styleId, $brandId];
+    Hook::onAction('vani.product.after_save', function (int $styleId) use (&$seen) {
+        $seen[] = $styleId;
     });
 
     $style = T::product($this->brand->id);
 
-    expect($seen)->toBe([[$style->id, $this->brand->id]]);
+    expect($seen)->toBe([$style->id]);
 });
 
 it('phát event sau commit và đồng bộ chỉ mục qua SearchProvider đang cấu hình', function () {
     $recorder = new RecordingSearchProvider;
     $this->app->instance(RecordingSearchProvider::class, $recorder);
-    $this->app->make(Extensions::class)->tag([RecordingSearchProvider::class], SearchManager::TAG);
+    $this->app->make(Extensions::class)->tag([RecordingSearchProvider::class], SearchProvider::TAG);
     config(['vanishop.search.provider' => 'recording']);
 
     $style = T::product($this->brand->id, ['status' => 'draft']);

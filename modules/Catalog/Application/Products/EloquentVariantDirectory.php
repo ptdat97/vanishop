@@ -10,11 +10,10 @@ use Modules\Catalog\Persistence\Models\Variant;
 
 final class EloquentVariantDirectory implements VariantDirectory
 {
-    public function ofStyleCode(int $brandId, string $styleCode): array
+    public function ofStyleCode(string $styleCode): array
     {
         return Variant::query()
             ->with(['style.translations', 'styleColor.color', 'size'])
-            ->where('brand_id', $brandId)
             ->whereHas('style', fn ($query) => $query->where('style_code', $styleCode))
             ->get()
             ->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $variant->styleColor->position, $variant->size->sort_order))
@@ -51,7 +50,7 @@ final class EloquentVariantDirectory implements VariantDirectory
     {
         return new VariantData(
             id: $variant->id,
-            brandId: $variant->brand_id,
+            brandId: $variant->style->brand_id,
             styleId: $variant->style_id,
             styleCode: $variant->style->style_code,
             styleName: (string) $variant->style->translate('name'),

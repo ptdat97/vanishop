@@ -4,7 +4,6 @@ import { primaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     promotions: Array<{
         id: number;
@@ -34,8 +33,8 @@ function describe(type: string, config: Record<string, number>): string {
 </script>
 
 <template>
-    <Head :title="`Khuyến mãi · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Khuyến mãi · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Khuyến mãi" />
+    <p class="mb-2 text-sm text-slate-500">Khuyến mãi</p>
     <PageHeader title="Khuyến mãi" subtitle="Priority cao đánh giá trước. Loại độc quyền chỉ áp khi chưa có khuyến mãi nào khác; tổng giảm mỗi dòng không vượt giá sàn.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm khuyến mãi</Link>
     </PageHeader>

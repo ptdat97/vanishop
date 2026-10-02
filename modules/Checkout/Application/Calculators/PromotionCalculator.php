@@ -29,7 +29,6 @@ final class PromotionCalculator implements TotalsCalculator
     public function calculate(TotalsContext $context): TotalsContext
     {
         $result = $this->engine->evaluate(new PromotionContext(
-            $context->channelId,
             $context->customerId,
             $context->currencyCode,
             array_map(fn (TotalsLine $line): PromotionLine => new PromotionLine($line->key, $line->brandId, $line->styleId, $line->quantity, $line->unitPrice, $line->total()), $context->lines),

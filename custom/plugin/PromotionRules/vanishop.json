@@ -8,7 +8,7 @@
     "kind": "promotion",
     "provider": "Plugin\\PromotionRules\\PromotionRulesServiceProvider",
     "requires": {
-        "vanishop": "^0.2",
+        "vanishop": "^0.3",
         "plugins": {}
     },
     "conflicts": [],

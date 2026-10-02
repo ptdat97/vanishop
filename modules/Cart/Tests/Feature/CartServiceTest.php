@@ -1,14 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Event;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Cart\Contracts\CartRejected;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Cart\Events\CartUpdated;
 use Modules\Cart\Persistence\Models\Cart;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Channel\Persistence\Models\Channel;
 use Modules\Extension\Facades\Hook;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
@@ -21,14 +20,13 @@ require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php
 beforeEach(function () {
     config(['vanishop.cart.max_line_quantity' => 5, 'vanishop.cart.max_lines' => 3]);
     $this->brand = Brand::factory()->create();
-    $this->channel = Channel::factory()->forBrand($this->brand, 'vani.test', '/lumiere')->create();
     [$this->s, $this->m, $this->l] = P::variants(T::product($this->brand->id), ['S', 'M', 'L']);
-    $this->base = P::priceList($this->brand->id, ['code' => 'base'], [$this->channel->id], [$this->s->id => [500_000], $this->m->id => [500_000], $this->l->id => [500_000]]);
-    $this->warehouse = I::location($this->brand, [$this->channel->id]);
+    $this->base = P::priceList(['code' => 'base'], [$this->s->id => [500_000], $this->m->id => [500_000], $this->l->id => [500_000]]);
+    $this->warehouse = I::location();
     I::stock($this->warehouse, $this->s->id, 10);
     I::stock($this->warehouse, $this->m->id, 2);
     I::stock($this->warehouse, $this->l->id, 10);
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'));
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $this->carts = app(Carts::class);
 });
 
@@ -67,14 +65,11 @@ it('giới hạn số dòng trong giỏ', function () {
     expect(rejectedCode(fn () => $carts->addLine($key, $this->l->id, 1)))->toBe('cart.too_many_lines');
 });
 
-it('từ chối variant không bán được: chưa có giá, sản phẩm nháp, brand ngoài kênh', function () {
+it('từ chối variant không bán được: chưa có giá, sản phẩm nháp', function () {
     $key = $this->carts->create('VND')->key;
     [$noPrice] = P::variants(T::product($this->brand->id), ['XL']);
     [$draft] = P::variants(T::product($this->brand->id, ['status' => 'draft']), ['XL']);
-    $other = Brand::factory()->create();
-    [$foreign] = P::variants(T::product($other->id), ['S']);
-
-    foreach ([$noPrice, $draft, $foreign] as $variant) {
+    foreach ([$noPrice, $draft] as $variant) {
         expect(rejectedCode(fn () => $this->carts->addLine($key, $variant->id, 1)))->toBe('cart.variant_unavailable');
     }
 });
@@ -95,7 +90,7 @@ it('báo giá đổi, hết hàng, ngừng bán trên dòng giỏ; subtotal bỏ
     $this->carts->addLine($key, $this->m->id, 2);
     $this->carts->addLine($key, $this->l->id, 1);
 
-    P::priceList($this->brand->id, ['code' => 'sale', 'type' => 'sale', 'priority' => 10], [$this->channel->id], [$this->s->id => [400_000]]);
+    P::priceList(['code' => 'sale', 'type' => 'sale', 'priority' => 10], [$this->s->id => [400_000]]);
     I::stock($this->warehouse, $this->m->id, 1);
     T::seed(fn () => $this->l->update(['status' => 'inactive']));
 
@@ -109,17 +104,12 @@ it('báo giá đổi, hết hàng, ngừng bán trên dòng giỏ; subtotal bỏ
         ->and($view->isCheckoutReady())->toBeFalse();
 });
 
-it('token sai, giỏ của kênh khác và giỏ đã đóng', function () {
+it('token sai và giỏ đã đóng', function () {
     $created = $this->carts->create('VND');
     $wrong = new CartKey($created->key->publicId, 'sai-token');
 
     expect(rejectedCode(fn () => $this->carts->view($wrong)))->toBe('cart.not_found');
 
-    $otherChannel = Channel::factory()->forBrand($this->brand, 'vani.test', '/khac')->create();
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $otherChannel->id, [$this->brand->id], 'vi'));
-    expect(rejectedCode(fn () => $this->carts->view($created->key)))->toBe('cart.not_found');
-
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'));
     Cart::query()->where('public_id', $created->key->publicId)->update(['status' => 'converted']);
     expect(rejectedCode(fn () => $this->carts->addLine($created->key, $this->s->id, 1)))->toBe('cart.closed');
 });
@@ -161,7 +151,7 @@ it('phát CartUpdated sau mỗi thay đổi', function () {
     $key = $this->carts->create('VND')->key;
     $this->carts->addLine($key, $this->s->id, 1);
 
-    Event::assertDispatched(CartUpdated::class, fn (CartUpdated $event) => $event->cartId === $key->publicId && $event->channelId === $this->channel->id);
+    Event::assertDispatched(CartUpdated::class, fn (CartUpdated $event) => $event->cartId === $key->publicId);
 });
 
 it('dọn giỏ không hoạt động, giữ giỏ đã đặt hàng', function () {

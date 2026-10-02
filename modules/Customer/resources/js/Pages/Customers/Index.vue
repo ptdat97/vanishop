@@ -39,7 +39,7 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
 
 <template>
     <Head title="Khách hàng" />
-    <PageHeader title="Khách hàng" :subtitle="`Một tài khoản dùng cho mọi brand · ${pagination.total} khách`" />
+    <PageHeader title="Khách hàng" :subtitle="`${pagination.total} khách`" />
 
     <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="[inputClass, 'w-72']" placeholder="SĐT, email, tên hoặc mã khách" />

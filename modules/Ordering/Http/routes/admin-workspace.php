@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Ordering\Http\Controllers\Admin\OrderController;
 
-// Prefix: /{admin}/orders/{brand} — tên route: admin.orders.*
+// Prefix: /{admin}/orders — tên route: admin.orders.*
 Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
 Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 Route::post('orders/{order}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');

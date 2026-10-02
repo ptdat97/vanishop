@@ -17,7 +17,6 @@ final readonly class CartView
      */
     public function __construct(
         public string $id,
-        public int $channelId,
         public string $status,
         public string $currencyCode,
         public array $lines,

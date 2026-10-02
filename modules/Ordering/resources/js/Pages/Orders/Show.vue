@@ -8,7 +8,6 @@ import { computed, ref } from 'vue';
 type OrderLine = { sku: string; name: string; color_name: string | null; size_code: string; quantity: number; unit_amount: number; compare_at_amount: number | null; discount_amount: number; total_amount: number; tax_amount: number };
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     order: {
         id: number;
@@ -70,7 +69,7 @@ function addNote(): void {
 
 <template>
     <Head :title="`Đơn ${order.number}`" />
-    <p class="mb-2 text-sm text-slate-500">Đơn hàng · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>

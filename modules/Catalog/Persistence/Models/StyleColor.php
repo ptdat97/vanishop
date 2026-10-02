@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * Màu của một style; có bộ ảnh riêng (mediables role = gallery). Phạm vi brand kế thừa từ style.
+ * Màu của một style; có bộ ảnh riêng (mediables role = gallery).
  *
  * @property int $id
  * @property int $style_id

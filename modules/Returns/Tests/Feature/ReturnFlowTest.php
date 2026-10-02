@@ -16,10 +16,10 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s, 'location' => $this->location] = C::store();
+    ['brand' => $this->brand, 's' => $this->s, 'location' => $this->location] = C::store();
     $this->api = '/api/storefront/v1';
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
-    $this->admin = '/admin/returns/lumiere/returns';
+    $this->headers = [];
+    $this->admin = '/admin/returns/returns';
 
     // Đơn COD 2 × S (600.000 ₫, miễn phí giao), đã giao.
     $this->placeAndDeliver = function (array $vouchers = [], int $expected = 600_000, bool $deliver = true): array {
@@ -50,7 +50,7 @@ beforeEach(function () {
         $headers,
     );
     $this->onHand = fn () => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->where('location_id', $this->location->id)->value('on_hand');
-    $this->staff = fn (array $permissions = ['admin.access', 'returns.view', 'returns.manage', 'returns.refund']) => $this->actingAs(T::staffFor($this->brand, $permissions), 'staff');
+    $this->staff = fn (array $permissions = ['admin.access', 'returns.view', 'returns.manage', 'returns.refund']) => $this->actingAs(T::staff($permissions), 'staff');
 });
 
 it('khách gửi yêu cầu trả 1 sản phẩm; không trả vượt số đã giao', function () {
@@ -110,7 +110,7 @@ it('nhân viên duyệt → nhận hàng (bán được: nhập kho) → hoàn t
 });
 
 it('hàng hư hỏng không nhập kho; hoàn trừ phí; tiền hoàn theo giá sau giảm', function () {
-    C::promotion($this->brand, [], ['GIAM10' => 10]);
+    C::promotion([], ['GIAM10' => 10]);
     [$order, $headers] = ($this->placeAndDeliver)(['GIAM10'], 540_000);
     ($this->requestReturn)($order, $headers, 2)->assertCreated()->assertJsonPath('data.returns.0.refund.amount', 540_000);
     $return = ReturnRequest::query()->withoutGlobalScopes()->sole();
@@ -160,7 +160,7 @@ it('quyền, khoá lạc quan, panel trên trang đơn', function () {
     ($this->staff)(['admin.access', 'returns.view', 'orders.view']);
     $this->get("{$this->admin}/{$return->id}")->assertOk();
     $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'approved', 'lock_version' => 0])->assertForbidden();
-    $this->get("/admin/orders/lumiere/orders/{$order->id}")->assertInertia(fn ($page) => $page->where('panels', fn ($panels) => collect($panels)->pluck('title')->contains('Đổi/trả')));
+    $this->get("/admin/orders/orders/{$order->id}")->assertInertia(fn ($page) => $page->where('panels', fn ($panels) => collect($panels)->pluck('title')->contains('Đổi/trả')));
 
     ($this->staff)();
     $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'approved', 'lock_version' => 5])->assertSessionHasErrors('business');

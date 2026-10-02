@@ -18,7 +18,7 @@ final readonly class ProductDocument
      */
     public function __construct(
         public int $id,
-        public int $brandId,
+        public ?int $brandId,
         public string $styleCode,
         public string $slug,
         public string $status,

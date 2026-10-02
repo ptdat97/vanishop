@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('styles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
+            $table->foreignId('brand_id')->nullable()->constrained()->restrictOnDelete();   // thương hiệu (thuộc tính catalog)
             $table->string('style_code', 64);
             $table->string('slug', 160);
             $table->string('status', 16)->default('draft');       // draft | active | archived
@@ -23,9 +23,10 @@ return new class extends Migration
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
 
-            $table->unique(['brand_id', 'style_code']);
-            $table->unique(['brand_id', 'slug']);
-            $table->index(['brand_id', 'status', 'published_from']);
+            $table->unique('style_code');
+            $table->unique('slug');
+            $table->index(['status', 'published_from']);
+            $table->index('brand_id');
         });
 
         Schema::create('style_translations', function (Blueprint $table) {
@@ -71,12 +72,11 @@ return new class extends Migration
 
         Schema::create('collections', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('slug', 128);
             $table->string('status', 16)->default('active');
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
-            $table->unique(['brand_id', 'slug']);
+            $table->unique('slug');
         });
 
         Schema::create('collection_translations', function (Blueprint $table) {

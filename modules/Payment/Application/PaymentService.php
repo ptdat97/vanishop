@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -44,7 +43,6 @@ final class PaymentService implements Payments
 {
     public function __construct(
         private readonly GatewayRegistry $gateways,
-        private readonly BrandDirectory $brands,
         private readonly OrderReader $orders,
         private readonly OrderTransitions $transitions,
         private readonly AuditLogger $audit,
@@ -52,14 +50,9 @@ final class PaymentService implements Payments
         private readonly Extensions $extensions,
     ) {}
 
-    public function availableMethods(int $brandId, int $channelId, Money $amount): array
+    public function availableMethods(Money $amount): array
     {
-        $brand = $this->brands->find($brandId);
-        if ($brand === null) {
-            return [];
-        }
-
-        $context = new PaymentContext($brandId, $brand->legalEntityId, $channelId, $amount);
+        $context = new PaymentContext($amount);
         $methods = [];
         foreach ($this->gateways->all() as $gateway) {
             // Cổng lỗi khi kiểm tra khả dụng → ẩn cổng (không làm hỏng quote/checkout).
@@ -87,7 +80,7 @@ final class PaymentService implements Payments
         $ttl = $gateway->capabilities()->paymentTtlSeconds;
 
         $payment = Payment::query()->create([
-            'public_id' => (string) Str::ulid(), 'order_id' => $order->id, 'legal_entity_id' => $order->legalEntityId, 'brand_id' => $order->brandId,
+            'public_id' => (string) Str::ulid(), 'order_id' => $order->id,
             'gateway_code' => $gatewayCode, 'amount' => $order->totalAmount, 'currency_code' => $order->currencyCode,
             'status' => PaymentStatus::Pending, 'expires_at' => $ttl === null ? null : now()->addSeconds($ttl),
         ]);
@@ -203,7 +196,7 @@ final class PaymentService implements Payments
             $payment->update(['refunded_amount' => $refunded, 'status' => $status, 'lock_version' => $payment->lock_version + 1]);
             $this->transitions->setPaymentStatus($payment->order_id, $status->value, "refund:{$refund->public_id}", 'system');
             $this->audit->record('payment.refund_created', 'payment', $payment->id, ['refund' => $refund->public_id, 'amount' => $amount->amount, 'reason' => $reason]);
-            event(new RefundCreated($refund->id, $payment->id, $payment->order_id, $amount->amount, $refund->status, $payment->brand_id));
+            event(new RefundCreated($refund->id, $payment->id, $payment->order_id, $amount->amount, $refund->status));
 
             return [$refund, $payment];
         });
@@ -241,7 +234,7 @@ final class PaymentService implements Payments
             $refund->update(['status' => 'completed']);
             $payment = Payment::query()->whereKey($refund->payment_id)->firstOrFail();
             $this->audit->record('payment.refund_completed', 'refund', $refund->id, ['amount' => $refund->amount, 'note' => $note]);
-            event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount, $payment->brand_id));
+            event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount));
         });
     }
 
@@ -303,8 +296,8 @@ final class PaymentService implements Payments
         $order = $this->orders->find($payment->order_id);
 
         return new PaymentData(
-            publicId: $payment->public_id, gatewayCode: $payment->gateway_code, orderNumber: $order->number ?? '', legalEntityId: $payment->legal_entity_id,
-            brandId: $payment->brand_id, amount: Money::of($payment->amount, $payment->currency_code), status: $payment->status->value,
+            publicId: $payment->public_id, gatewayCode: $payment->gateway_code, orderNumber: $order->number ?? '',
+            amount: Money::of($payment->amount, $payment->currency_code), status: $payment->status->value,
             gatewayReference: $payment->gateway_reference, expiresAt: $payment->expires_at === null ? null : new DateTimeImmutable($payment->expires_at->toIso8601String()),
         );
     }
@@ -321,7 +314,7 @@ final class PaymentService implements Payments
         }
 
         $payment->update(['status' => PaymentStatus::Paid, 'paid_at' => now(), 'lock_version' => $payment->lock_version + 1]);
-        event(new PaymentCaptured($payment->id, $payment->order_id, $payment->amount, $payment->gateway_code, $payment->brand_id));
+        event(new PaymentCaptured($payment->id, $payment->order_id, $payment->amount, $payment->gateway_code));
 
         $order = $this->orders->find($payment->order_id);
         if ($order === null) {
@@ -348,7 +341,7 @@ final class PaymentService implements Payments
 
         $payment->update(['status' => PaymentStatus::Failed, 'lock_version' => $payment->lock_version + 1]);
         $this->transitions->setPaymentStatus($payment->order_id, 'failed', "payment:{$payment->public_id}", $source);
-        event(new PaymentFailed($payment->id, $payment->order_id, $payment->gateway_code, $payment->brand_id));
+        event(new PaymentFailed($payment->id, $payment->order_id, $payment->gateway_code));
 
         return true;
     }
@@ -368,7 +361,7 @@ final class PaymentService implements Payments
             if ($result?->successful) {
                 $refund->update(['status' => 'completed', 'gateway_reference' => $result->gatewayReference]);
                 $this->recordTransaction($payment, 'refund', $result->gatewayReference ?? "refund:{$refund->public_id}", -1 * (int) $refund->amount, 'completed', []);
-                event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount, $payment->brand_id));
+                event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount));
             } else {
                 // Không hoàn được tự động → chuyển sang chờ nhân viên hoàn thủ công (số đã cam kết hoàn giữ nguyên).
                 $refund->update(['status' => 'requested']);

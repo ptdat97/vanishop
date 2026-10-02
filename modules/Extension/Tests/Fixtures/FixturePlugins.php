@@ -30,7 +30,7 @@ final class FixturePlugins
                 'version' => '1.0.0',
                 'kind' => 'business',
                 'provider' => GreetingPluginProvider::class,
-                'requires' => ['vanishop' => '^0.2'],
+                'requires' => ['vanishop' => '^0.3'],
                 'scopes' => ['owner', 'brand', 'channel'],
             ], JSON_PRETTY_PRINT));
         }
@@ -134,7 +134,7 @@ final class ContributingPluginProvider extends PluginServiceProvider
  */
 final class EventListeningPluginProvider extends PluginServiceProvider
 {
-    /** @var list<array{event: string, brand_ids: list<int>|null}> */
+    /** @var list<array{event: string, actor: string}> */
     public static array $received = [];
 
     public static bool $explode = false;
@@ -150,7 +150,7 @@ final class EventListeningPluginProvider extends PluginServiceProvider
             if (self::$explode) {
                 throw new \RuntimeException('plugin listener lỗi');
             }
-            self::$received[] = ['event' => $event::class, 'brand_ids' => app(CurrentContext::class)->brandIds()];
+            self::$received[] = ['event' => $event::class, 'actor' => app(CurrentContext::class)->actor()->type->value];
         };
 
         $this->onEvent(PaymentCaptured::class, $record);

@@ -17,7 +17,7 @@ use Modules\Notification\Persistence\Models\NotificationLog;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
 
 /**
- * Chọn template (brand ghi đè mặc định) cho từng kênh, render, ghi nhật ký rồi xếp hàng gửi. Render lúc xếp hàng
+ * Chọn template cho từng kênh, render, ghi nhật ký rồi xếp hàng gửi. Render lúc xếp hàng
  * để mọi lần thử gửi cùng một nội dung.
  */
 final class NotificationService implements Notifier
@@ -30,7 +30,7 @@ final class NotificationService implements Notifier
 
     public function notify(NotificationRequest $request): array
     {
-        $available = $this->channels->forBrand($request->brandId);
+        $available = $this->channels->all();
         $queued = [];
 
         foreach ($this->templates($request) as $channelCode => $template) {
@@ -54,7 +54,7 @@ final class NotificationService implements Notifier
     }
 
     /**
-     * Template đang bật theo kênh; bản của brand ghi đè bản mặc định (brand_id null). Thiếu locale → 'vi'.
+     * Template đang bật theo kênh. Thiếu locale → 'vi'.
      *
      * @return array<string, NotificationTemplate> channel => template
      */
@@ -64,9 +64,8 @@ final class NotificationService implements Notifier
             ->where('type', $request->type)
             ->where('active', true)
             ->whereIn('locale', array_unique([$request->recipient->locale, 'vi']))
-            ->where(fn ($query) => $query->whereNull('brand_id')->when($request->brandId !== null, fn ($query) => $query->orWhere('brand_id', $request->brandId)))
             ->get()
-            ->sortBy(fn (NotificationTemplate $template): int => ($template->brand_id !== null ? 0 : 2) + ($template->locale === $request->recipient->locale ? 0 : 1));
+            ->sortBy(fn (NotificationTemplate $template): int => $template->locale === $request->recipient->locale ? 0 : 1);
 
         $picked = [];
         foreach ($rows as $template) {
@@ -76,7 +75,7 @@ final class NotificationService implements Notifier
         // Kênh chưa có mẫu trong DB → mẫu mặc định do Core/plugin khai báo (NotificationCatalog).
         foreach ($this->catalog->types()[$request->type]->defaults ?? [] as $channel => $default) {
             $picked[$channel] ??= new NotificationTemplate([
-                'brand_id' => null, 'type' => $request->type, 'channel' => $channel, 'locale' => 'vi',
+                'type' => $request->type, 'channel' => $channel, 'locale' => 'vi',
                 'subject' => $default['subject'] ?? null, 'body' => $default['body'] ?? null, 'meta' => $default['meta'] ?? null, 'active' => true,
             ]);
         }
@@ -91,7 +90,6 @@ final class NotificationService implements Notifier
 
         $inserted = DB::table('notification_logs')->insertOrIgnore([
             'idempotency_key' => $key,
-            'brand_id' => $request->brandId,
             'type' => $request->type,
             'category' => $request->category,
             'channel' => $channel->code(),
@@ -111,7 +109,7 @@ final class NotificationService implements Notifier
     }
 
     /**
-     * Tin marketing: bắt buộc consent theo brand × kênh (mail ↔ consent `email`).
+     * Tin marketing: bắt buộc consent theo kênh (mail ↔ consent `email`).
      */
     private function consentMissing(NotificationRequest $request, string $channel): bool
     {
@@ -119,8 +117,8 @@ final class NotificationService implements Notifier
             return false;
         }
 
-        return $request->recipient->customerId === null || $request->brandId === null
-            || ! $this->customers->hasConsent($request->recipient->customerId, $request->brandId, $channel === 'mail' ? 'email' : $channel, 'marketing');
+        return $request->recipient->customerId === null
+            || ! $this->customers->hasConsent($request->recipient->customerId, $channel === 'mail' ? 'email' : $channel, 'marketing');
     }
 
     private function address(Recipient $recipient, string $channel): string

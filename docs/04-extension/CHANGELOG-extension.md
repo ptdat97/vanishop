@@ -4,10 +4,29 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
-## Chưa phát hành (dự kiến 0.3.0)
+## 0.3.0 — 2026-10-02
+
+Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) — slice 12. Mọi plugin trong `custom/plugin` đã chuyển sang `^0.3`.
+
+### Phá vỡ (một cửa hàng)
+- Xoá module `Brand` (tenant) và `Channel` cùng contract `BrandDirectory`, `BrandData`, `ChannelDirectory`, `ChannelData`. Brand giờ là thực thể Catalog: `CatalogReader::brands()`, `CatalogReader::brand($slug)`.
+- `ContextScope(Actor $actor, ?string $locale)`; `CurrentContext::brandIds()`/`channelId()` → `locale()`. Xoá `BelongsToBrand`, `BrandScope`, `BrandAccessDenied`.
+- `Settings` một cấp: `get($ns, $key, $default)`, `set($ns, $key, $value)`, `forget($ns, $key)`, `explicit($ns)`; xoá `SettingsScope`, `Settings::current()`, tham số `scopes` của `SettingDefinition`.
+- Plugin bật cho cả cửa hàng: `vani:plugin:enable/disable` bỏ `--scope`, manifest bỏ `scopes`; xoá `Extensions::forBrand()` (dùng `implementations()`); `onEvent()` không còn lọc theo brand.
+- RBAC: `ScopeType` chỉ còn `Owner`, `Location`; xoá `ScopeRef::brand()`, `legalEntity()`, `Authorizer::accessibleBrandIds()`.
+- Bỏ `brandId`/`channelId`/`legalEntityId` khỏi DTO và event: `PricingContext($now, ?$customerGroupId)`, `AvailabilityReader::forVariants()`, `InventoryStrategy::adjust($standardAts)`, `ReservationRequest($key, $lines, $ttl)`, `CartLineDraft`, `CartUpdated`, `PromotionContext`, `TotalsContext`, `Totals`, `PaymentContext($amount)`, `Payments::availableMethods($amount)`, `PaymentData`, `SourcingRequest`, `ShipmentData`, `ReturnContext`, `NotificationRequest`, `OutgoingMessage`, `IntegrationEvent`, `OutboxMessage`, `OrderPlaced($orderId, $publicId, $number, $customerId, $total, $currency)`, `OrderConfirmed`, `OrderCancelled`, event Payment/Fulfillment/Returns, `ConsentChanged`. Registry bỏ tham số brand: `ConnectorRegistry::connectors()`, `CarrierRegistry::sourcing()`, `ChannelRegistry::all()`, `ReturnService::policy()`.
+- `OrderReader::customerHasPlacedOrder($customerId)`; `customerBrandStats` → `customerStats($customerId)`. `Customers::hasConsent($customerId, $channel, $purpose)`.
+- Hook `vani.product.after_save` chỉ nhận `(styleId)`.
+- Xoá hằng deprecated từ 0.2.0 (`SearchManager::TAG`, `CarrierRegistry::SOURCING_TAG`, …) — dùng `TAG` trên interface.
+
+### Thêm (một cửa hàng)
+- `?int $brandId` (+ `brandName`) trên `SellableVariant`, `VariantData`, `ProductDocument`, `PromotionLine`, `TotalsLine`, `OrderLineDraft`, `OrderLineData`; `ProductSearchQuery::$brandIds` là bộ lọc (rỗng = mọi brand), `ProductSearchResult::$facets['brands']`, `ProductFilters::$brandSlugs`.
+- `OrderDraft::$source`, `OrderData::$source`, `CheckoutRequest::$source` (`web`/`app`/`zalo`, header `X-Vani-Source`).
+- Rule khuyến mãi `in_brands` (plugin `vani.promotion-rules`).
+
 
 ### Thêm
-- `Extensions::implementations($tag, $interface, $key)` và `Extensions::forBrand($brandId, $tag, $interface, $key)` — registry dùng chung (lọc theo interface, đánh chỉ mục theo mã, xét trong phạm vi brand). Các registry của Core (`GatewayRegistry`, `CarrierRegistry`, `PromotionRegistry`, `SearchManager`, `ChannelRegistry`, `ConnectorRegistry`) dùng helper này.
+- `Extensions::implementations($tag, $interface, $key)` — registry dùng chung (lọc theo interface, đánh chỉ mục theo mã, chỉ plugin đang bật). Các registry của Core (`GatewayRegistry`, `CarrierRegistry`, `PromotionRegistry`, `SearchManager`, `ChannelRegistry`, `ConnectorRegistry`) dùng helper này.
 - `Extensions::call($implementation, $call, $fallback, $operation)` — cô lập lỗi trên luồng tuỳ chọn + circuit breaker theo plugin (5 lỗi/phút → bỏ qua 5 phút).
 
 - Hook: `vani.integration.order_payload` (chỉ thêm khoá), `vani.order.before_create` (orders.meta), `vani.catalog.listing.query`.
@@ -23,7 +42,7 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 - `Catalog\Contracts\ConfigurableSearchIndex` (interface tuỳ chọn cho SearchProvider có chỉ mục ngoài: `setupIndex()`).
 
 ### Đổi hành vi
-- Meilisearch tách khỏi Core thành plugin `vani.search-meilisearch` (cùng biến env `MEILISEARCH_*`; cài + bật ở owner). `VANI_SEARCH_PROVIDER` trỏ tới provider không có hiệu lực → dùng `database` + cảnh báo (trước đây: lỗi).
+- Meilisearch tách khỏi Core thành plugin `vani.search-meilisearch` (cùng biến env `MEILISEARCH_*`). `VANI_SEARCH_PROVIDER` trỏ tới provider không có hiệu lực → dùng `database` + cảnh báo (trước đây: lỗi).
 - `MailChannel`: tin thiếu tiêu đề/nội dung → `permanent('mail.empty')` thay vì gửi email rỗng. `EmailOtpSender`: lỗi SMTP → `OtpDeliveryFailed` (Core chuyển sang kênh OTP kế tiếp).
 - `PaymentGateway::isAvailable()` lỗi → ẩn cổng; `ShippingRateProvider::options()` lỗi → bỏ lựa chọn của provider đó; `SearchProvider::search()` lỗi → tìm bằng provider `database`. Plugin lỗi liên tục bị tạm bỏ qua trên các luồng này.
 

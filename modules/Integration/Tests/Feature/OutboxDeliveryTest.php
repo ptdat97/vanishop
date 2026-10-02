@@ -31,7 +31,7 @@ beforeEach(function () {
 
 it('gửi webhook có envelope, chữ ký HMAC, Idempotency-Key = message_id, correlation id', function () {
     Http::fake(['erp.example/*' => Http::response(['ok' => true])]);
-    H::publish('order.created', 'LU-1', null, ['order' => ['number' => 'LU-1']]);
+    H::publish('order.created', 'LU-1', ['order' => ['number' => 'LU-1']]);
 
     expect(($this->work)())->toBe(1);
 
@@ -183,7 +183,7 @@ it('message processing bị bỏ dở (worker chết) được trả về hàng 
 ConnectorContract::define(
     'fixture fake-erp (mẫu cách dùng bộ contract)',
     fn () => new FakeErpConnector,
-    fn () => new OutboxMessage('11111111-1111-1111-1111-111111111111', 'fake-erp', 'order.created', '1', 1, 'order', 'LU-1', [], null, 1),
+    fn () => new OutboxMessage('11111111-1111-1111-1111-111111111111', 'fake-erp', 'order.created', '1', 'order', 'LU-1', [], null, 1),
     [
         'ok' => fn () => FakeErpConnector::$results = [DeliveryResult::ok('SO-1')],
         'retryable' => fn () => FakeErpConnector::$results = [DeliveryResult::retryable('http 503')],

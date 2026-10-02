@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Extension\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 
 /**
@@ -30,13 +29,5 @@ final class PluginRecord extends Model
             'status' => PluginStatus::class,
             'installed_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return HasMany<PluginScopeRecord, $this>
-     */
-    public function scopes(): HasMany
-    {
-        return $this->hasMany(PluginScopeRecord::class, 'plugin_id');
     }
 }

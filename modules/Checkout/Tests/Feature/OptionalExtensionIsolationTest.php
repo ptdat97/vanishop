@@ -95,7 +95,7 @@ final class BrokenSearch implements SearchProvider
 
 beforeEach(function () {
     ['s' => $this->s] = C::store();
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
 });
 
 it('hãng báo cước lỗi và cổng thanh toán lỗi health check → quote vẫn trả, chỉ ẩn phần lỗi', function () {

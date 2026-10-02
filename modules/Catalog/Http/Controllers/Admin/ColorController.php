@@ -8,22 +8,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Http\Requests\Admin\ColorRequest;
 use Modules\Catalog\Persistence\Models\Color;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 final class ColorController
 {
-    public function index(Brand $brand): Response
+    public function index(): Response
     {
-        Gate::authorize('catalog.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.view');
 
         return Inertia::render('Catalog::Taxonomy/Colors', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
-            'nav' => CatalogNavigation::for($brand),
+            'nav' => CatalogNavigation::all(),
             'colors' => Color::query()->with('translations')->orderBy('position')->orderBy('code')->get()
                 ->map(fn (Color $color): array => [
                     'id' => $color->id,
@@ -34,29 +31,29 @@ final class ColorController
                     'translations' => $color->translationsByLocale(),
                 ])->all(),
             'families' => array_column(ColorFamily::cases(), 'value'),
-            'canManage' => Gate::allows('catalog.manage', [ScopeRef::brand($brand->id)]),
+            'canManage' => Gate::allows('catalog.manage'),
         ]);
     }
 
-    public function store(Brand $brand, ColorRequest $request, TaxonomyService $taxonomy): RedirectResponse
+    public function store(ColorRequest $request, TaxonomyService $taxonomy): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
-        $taxonomy->saveColor($brand->id, $request->toData());
+        Gate::authorize('catalog.manage');
+        $taxonomy->saveColor($request->toData());
 
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function update(Brand $brand, Color $color, ColorRequest $request, TaxonomyService $taxonomy): RedirectResponse
+    public function update(Color $color, ColorRequest $request, TaxonomyService $taxonomy): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
-        $taxonomy->saveColor($brand->id, $request->toData(), $color);
+        Gate::authorize('catalog.manage');
+        $taxonomy->saveColor($request->toData(), $color);
 
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function destroy(Brand $brand, Color $color, TaxonomyService $taxonomy): RedirectResponse
+    public function destroy(Color $color, TaxonomyService $taxonomy): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $taxonomy->deleteColor($color);
 
         return back()->with('success', __('catalog::messages.deleted'));

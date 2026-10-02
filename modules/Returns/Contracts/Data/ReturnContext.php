@@ -16,7 +16,6 @@ final readonly class ReturnContext
      */
     public function __construct(
         public int $orderId,
-        public int $brandId,
         public array $lines,
         public string $reasonCode,
         public ?DateTimeImmutable $deliveredAt,

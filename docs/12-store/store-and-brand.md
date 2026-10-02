@@ -26,9 +26,10 @@ Owner (1 bản cài đặt)
 ## 2. Brand trong Catalog
 
 ```text
-brands(id, code UNIQUE, slug UNIQUE, status[active|hidden], sort_order, logo_media_id NULL, lock_version)
-brand_translations(brand_id, locale, name, description, seo_title, seo_description)
+brands(id, code UNIQUE, slug UNIQUE, name, description NULL, logo_path NULL, meta_title NULL, meta_description NULL,
+       status[active|hidden], position, lock_version)
 styles.brand_id NULL → brands (ON DELETE RESTRICT)
+-- Bản dịch tên/mô tả brand (brand_translations): Planned, thêm khi storefront cần đa ngôn ngữ cho trang brand.
 ```
 
 | Dùng ở | Cách dùng |
@@ -86,20 +87,20 @@ Code slice 0–11 cài theo ADR-008/019. Chuyển đổi theo **expand → migra
 
 | # | Việc | Module |
 |---|---|---|
-| 1 | Tạo `brands` + `brand_translations` **trong Catalog** (thực thể catalog mới); chuyển dữ liệu từ bảng tenant `brands` cũ; `styles.brand_id` trỏ sang brand catalog | Catalog, Brand |
-| 2 | Thêm `brand_id`, `brand_name` snapshot vào `order_lines`; payload tích hợp mang brand theo dòng | Ordering, Integration |
-| 3 | Bỏ `BelongsToBrand`/`BrandScope` khỏi các model (Catalog, Pricing, Promotion, Ordering, Payment, Fulfillment, Returns, Inventory, Customer, Notification, Integration); bỏ `brand_id` khỏi các bảng đó (khoảng 25 cột) | Toàn Core |
-| 4 | Gộp danh mục/thuộc tính/màu/size/bộ sưu tập về một bộ; xử lý trùng `slug`/`code` giữa các brand cũ | Catalog |
-| 5 | Bảng giá, khuyến mãi, voucher cấp cửa hàng; bỏ `channel_price_lists`; `PriceResolver`/`PromotionContext` không còn tham số kênh/brand phạm vi | Pricing, Promotion |
-| 6 | Checkout: bỏ validator "một brand mỗi đơn"; số đơn một dãy | Checkout, Ordering |
-| 7 | Bỏ module **Channel** (`channels`, `channel_domains`, `channel_brands`, `channel_locations`, `ResolveChannel`, header `X-Vani-Channel`); thêm `orders.source`. Storefront API không còn bắt buộc header kênh | Channel, Storefront, Cart, Inventory, Ordering |
-| 8 | Bỏ module **Brand** tenant (theme tokens chuyển sang cấu hình cửa hàng); `legal_entities` còn một bản ghi "pháp nhân vận hành" trong Tenancy | Brand, Tenancy |
-| 9 | `Settings` một cấp; `CurrentContext` bỏ `brandIds()`/`channel()`; `runAs` chỉ còn actor | Tenancy, Shared |
-| 10 | Identity: vai trò toàn cửa hàng (scope `owner`, sau này `location`); Admin bỏ brand workspace (`loadBrandWorkspaceRoutes`, `vani.admin-brand`) | Identity, mọi Admin |
-| 11 | Extension (**public API, phá vỡ** → Core `0.3.0`, ghi [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md)): plugin bật/tắt toàn cửa hàng, bỏ `plugin_scopes`, `onEvent()` không lọc theo brand, `brandId` trên event thành `@deprecated`; plugin cập nhật `requires.vanishop: ^0.3` | Extension, 6 plugin |
-| 12 | Customer: bỏ `customer_brand_profiles` (thống kê lên `customers`); consent theo kênh gửi × mục đích. Notification: mẫu không theo brand | Customer, Notification |
-| 13 | Integration: bỏ data scope brand của client/webhook | Integration |
-| 14 | Arch test: cấm `brand_id` làm phạm vi ngoài Catalog; xoá test cô lập brand, thêm test trang brand/facet brand | tests |
+| 1 ✅ | Tạo `brands` **trong Catalog** (thực thể catalog mới); chuyển dữ liệu từ bảng tenant `brands` cũ; `styles.brand_id` trỏ sang brand catalog | Catalog, Brand |
+| 2 ✅ | Thêm `brand_id`, `brand_name` snapshot vào `order_lines`; payload tích hợp mang brand theo dòng | Ordering, Integration |
+| 3 ✅ | Bỏ `BelongsToBrand`/`BrandScope` khỏi các model (Catalog, Pricing, Promotion, Ordering, Payment, Fulfillment, Returns, Inventory, Customer, Notification, Integration); bỏ `brand_id` khỏi các bảng đó (khoảng 25 cột) | Toàn Core |
+| 4 ✅ | Gộp danh mục/thuộc tính/màu/size/bộ sưu tập về một bộ; xử lý trùng `slug`/`code` giữa các brand cũ | Catalog |
+| 5 ✅ | Bảng giá, khuyến mãi, voucher cấp cửa hàng; bỏ `channel_price_lists`; `PriceResolver`/`PromotionContext` không còn tham số kênh/brand phạm vi | Pricing, Promotion |
+| 6 ✅ | Checkout: bỏ validator "một brand mỗi đơn"; số đơn một dãy | Checkout, Ordering |
+| 7 ✅ | Bỏ module **Channel** (`channels`, `channel_domains`, `channel_brands`, `channel_locations`, `ResolveChannel`, header `X-Vani-Channel`); thêm `orders.source`. Storefront API không còn bắt buộc header kênh | Channel, Storefront, Cart, Inventory, Ordering |
+| 8 ✅ | Bỏ module **Brand** tenant (theme tokens chuyển sang cấu hình cửa hàng); `legal_entities` còn một bản ghi "pháp nhân vận hành" trong Tenancy | Brand, Tenancy |
+| 9 ✅ | `Settings` một cấp; `CurrentContext` bỏ `brandIds()`/`channel()`; `runAs` chỉ còn actor | Tenancy, Shared |
+| 10 ✅ | Identity: vai trò toàn cửa hàng (scope `owner`, sau này `location`); Admin bỏ brand workspace (`loadBrandWorkspaceRoutes`, `vani.admin-brand`) | Identity, mọi Admin |
+| 11 ✅ | Extension (**public API, phá vỡ** → Core `0.3.0`, ghi [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md)): plugin bật/tắt toàn cửa hàng, bỏ `plugin_scopes`, `onEvent()` không lọc theo brand, `brandId` trên event thành `@deprecated`; plugin cập nhật `requires.vanishop: ^0.3` | Extension, 6 plugin |
+| 12 ✅ | Customer: bỏ `customer_brand_profiles` (thống kê lên `customers`); consent theo kênh gửi × mục đích. Notification: mẫu không theo brand | Customer, Notification |
+| 13 ✅ | Integration: bỏ data scope brand của client/webhook | Integration |
+| 14 ✅ | Arch test: cấm `brand_id` làm phạm vi ngoài Catalog; xoá test cô lập brand, thêm test trang brand/facet brand | tests |
 
 Done khi: không còn `BelongsToBrand`, `channels`, brand workspace; một giỏ nhiều brand đặt được một đơn; trang `/thuong-hieu/{slug}` và facet brand qua API chạy; toàn bộ test + concurrency test pass.
 

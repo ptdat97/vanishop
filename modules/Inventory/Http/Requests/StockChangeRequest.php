@@ -7,8 +7,6 @@ namespace Modules\Inventory\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 /**
  * Một thay đổi tồn tại (location, variant): adjust (±delta), count (đặt số kiểm kê), safety (tồn an toàn).
@@ -17,10 +15,7 @@ final class StockChangeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
-
-        return Gate::allows('inventory.adjust', [ScopeRef::brand($brand->id)]);
+        return Gate::allows('inventory.adjust');
     }
 
     /**

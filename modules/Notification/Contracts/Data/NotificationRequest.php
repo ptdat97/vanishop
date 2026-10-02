@@ -17,7 +17,6 @@ final readonly class NotificationRequest
     public function __construct(
         public string $type,
         public string $key,
-        public ?int $brandId,
         public Recipient $recipient,
         public array $variables,
         public string $category = self::TRANSACTIONAL,

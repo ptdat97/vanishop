@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import type { BrandRef, NavItem } from '../types';
+import type { NavItem } from '../types';
 
-defineProps<{ brand: BrandRef; nav: NavItem[]; active: string }>();
+defineProps<{ nav: NavItem[]; active: string }>();
 </script>
 
 <template>
     <div class="mb-6">
-        <p class="mb-2 text-sm text-slate-500">Catalog · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+        <p class="mb-2 text-sm text-slate-500">Catalog</p>
         <nav class="flex gap-1 border-b border-slate-200">
             <Link
                 v-for="item in nav"

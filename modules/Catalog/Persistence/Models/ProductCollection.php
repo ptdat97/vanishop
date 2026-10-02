@@ -6,26 +6,23 @@ namespace Modules\Catalog\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
  * Bộ sưu tập thủ công (landing page, campaign). Bộ sưu tập theo luật: Designed.
  *
  * @property int $id
- * @property int $brand_id
  * @property string $slug
  * @property string $status
  * @property int $position
  */
 final class ProductCollection extends Model
 {
-    use BelongsToBrand;
     use HasTranslations;
 
     protected $table = 'collections';
 
-    protected $fillable = ['brand_id', 'slug', 'status', 'position'];
+    protected $fillable = ['slug', 'status', 'position'];
 
     protected function translationModel(): string
     {

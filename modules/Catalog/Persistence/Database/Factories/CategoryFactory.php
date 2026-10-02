@@ -6,12 +6,10 @@ namespace Modules\Catalog\Persistence\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 
 /**
  * Tạo danh mục gốc (path tính sau khi có id). Dùng ->childOf($parent) cho danh mục con.
- * Cần CurrentContext cho phép brand tương ứng (ví dụ ContextScope::system trong test).
  *
  * @extends Factory<Category>
  */
@@ -22,7 +20,6 @@ final class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'brand_id' => Brand::factory(),
             'parent_id' => null,
             'slug' => Str::slug(fake()->unique()->words(2, true)).'-'.fake()->unique()->numberBetween(1, 99999),
             'path' => '/0/',
@@ -47,7 +44,7 @@ final class CategoryFactory extends Factory
 
     public function childOf(Category $parent): self
     {
-        return $this->state(['brand_id' => $parent->brand_id, 'parent_id' => $parent->id]);
+        return $this->state(['parent_id' => $parent->id]);
     }
 
     public function hidden(): self

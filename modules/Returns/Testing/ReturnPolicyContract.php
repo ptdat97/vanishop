@@ -22,7 +22,7 @@ final class ReturnPolicyContract
     public static function define(string $label, Closure $policy): void
     {
         $context = fn (?DateTimeImmutable $deliveredAt): ReturnContext => new ReturnContext(
-            1, 1, [10 => 1], 'wrong_size', $deliveredAt, new DateTimeImmutable('2026-10-14 10:00:00'), 'customer',
+            1, [10 => 1], 'wrong_size', $deliveredAt, new DateTimeImmutable('2026-10-14 10:00:00'), 'customer',
         );
 
         describe("ReturnPolicy contract: {$label}", function () use ($policy, $context): void {

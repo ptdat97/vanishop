@@ -79,7 +79,7 @@ final class HealthQueries
         return IntegrationClient::query()->with(['keys', 'subscriptions'])->orderBy('code')->get()
             ->map(fn (IntegrationClient $client): array => [
                 'id' => $client->id, 'code' => $client->code, 'name' => $client->name, 'status' => $client->status,
-                'scopes' => $client->scopes, 'brand_ids' => $client->brand_ids, 'rate_limit' => $client->rate_limit,
+                'scopes' => $client->scopes, 'rate_limit' => $client->rate_limit,
                 'active_keys' => $client->keys->filter->isUsable()->count(),
                 'subscriptions' => $client->subscriptions->map(fn (WebhookSubscription $subscription): array => [
                     'id' => $subscription->id, 'url' => $subscription->url, 'event_types' => $subscription->event_types,

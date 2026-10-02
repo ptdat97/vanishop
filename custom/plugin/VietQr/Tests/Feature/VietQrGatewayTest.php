@@ -6,12 +6,10 @@ use Modules\Payment\Testing\PaymentGatewayContract;
 use Plugin\VietQr\Infrastructure\VietQrGateway;
 
 $gateway = fn () => new VietQrGateway(
-    accounts: [
-        'default' => [
-            'bank_id' => '970436',
-            'account_no' => '0123456789',
-            'account_name' => 'CONG TY VANI',
-        ],
+    account: [
+        'bank_id' => '970436',
+        'account_no' => '0123456789',
+        'account_name' => 'CONG TY VANI',
     ],
     secret: 'test-secret',
 );

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Plugin\SmsBrandname\Infrastructure;
 
-use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Notification\Contracts\Data\OutgoingMessage;
 use Modules\Notification\Contracts\Data\Recipient;
 use Modules\Notification\Contracts\Data\SendResult;
 use Modules\Notification\Contracts\NotificationChannel;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\SmsBrandname\SmsBrandnameServiceProvider;
 
@@ -18,15 +16,10 @@ use Plugin\SmsBrandname\SmsBrandnameServiceProvider;
  */
 final class SmsChannel implements NotificationChannel
 {
-    /**
-     * @param  array<string, string>  $brandnames  (dự phòng, config cũ) mã brand => brandname
-     */
     public function __construct(
         private readonly EsmsClient $client,
-        private readonly BrandDirectory $brands,
         private readonly Settings $settings,
         private readonly string $defaultBrandname,
-        private readonly array $brandnames = [],
     ) {}
 
     public function code(): string
@@ -45,23 +38,16 @@ final class SmsChannel implements NotificationChannel
             return SendResult::permanent('sms.empty');
         }
 
-        return $this->client->send($message->recipient->phone, (string) $message->body, $this->brandnameFor($message->brandId), $message->idempotencyKey);
+        return $this->client->send($message->recipient->phone, (string) $message->body, $this->brandname(), $message->idempotencyKey);
     }
 
     /**
-     * Brandname: cấu hình `vani.sms-brandname.brandname` theo brand (Admin → Cấu hình) → config cũ theo mã brand →
-     * brandname mặc định.
+     * Brandname: cấu hình `vani.sms-brandname.brandname` (Admin → Cấu hình) → brandname trong config.
      */
-    public function brandnameFor(?int $brandId): string
+    public function brandname(): string
     {
-        $scope = $brandId === null ? SettingsScope::owner() : SettingsScope::brand($brandId);
-        $configured = (string) $this->settings->get(SmsBrandnameServiceProvider::ID, 'brandname', $scope, '');
-        if ($configured !== '') {
-            return $configured;
-        }
+        $configured = (string) $this->settings->get(SmsBrandnameServiceProvider::ID, 'brandname', '');
 
-        $code = $brandId === null ? null : $this->brands->find($brandId)?->code;
-
-        return $code !== null && isset($this->brandnames[$code]) ? $this->brandnames[$code] : $this->defaultBrandname;
+        return $configured !== '' ? $configured : $this->defaultBrandname;
     }
 }

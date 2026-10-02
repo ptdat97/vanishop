@@ -14,7 +14,6 @@ final readonly class PromotionContext
      * @param  array<string, mixed>  $attributes  dữ liệu bổ sung (vd. creator_ref) do plugin đặt
      */
     public function __construct(
-        public int $channelId,
         public ?int $customerId,
         public string $currencyCode,
         public array $lines,

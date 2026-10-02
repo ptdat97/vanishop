@@ -27,7 +27,7 @@ beforeEach(function () {
         $this->markTestSkipped('Concurrency test cần MySQL (SQLite in-memory không chia sẻ giữa tiến trình).');
     }
 
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s] = C::store('lumiere', stock: 3);
+    ['s' => $this->s] = C::store('lumiere', stock: 3);
 });
 
 /**
@@ -35,9 +35,9 @@ beforeEach(function () {
  *
  * @return list<array{0: string, 1: string}>
  */
-function checkoutCarts(int $count, int $channelId, int $brandId, int $variantId): array
+function checkoutCarts(int $count, int $variantId): array
 {
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channelId, [$brandId], 'vi'));
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $carts = [];
     for ($i = 0; $i < $count; $i++) {
         $key = app(Carts::class)->create('VND')->key;
@@ -53,12 +53,12 @@ function checkoutCarts(int $count, int $channelId, int $brandId, int $variantId)
  * @param  list<string>  $vouchers
  * @return list<Closure>
  */
-function placeOrderTasks(array $orders, int $channelId, int $brandId, int $expectedTotal, array $vouchers = []): array
+function placeOrderTasks(array $orders, int $expectedTotal, array $vouchers = []): array
 {
     $tasks = [];
     foreach ($orders as [$publicId, $token, $idempotencyKey]) {
-        $tasks[] = static function () use ($publicId, $token, $idempotencyKey, $channelId, $brandId, $expectedTotal, $vouchers): string {
-            app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channelId, [$brandId], 'vi'));
+        $tasks[] = static function () use ($publicId, $token, $idempotencyKey, $expectedTotal, $vouchers): string {
+            app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
             $payload = C::orderPayload();
 
             try {
@@ -77,10 +77,10 @@ function placeOrderTasks(array $orders, int $channelId, int $brandId, int $expec
 }
 
 it('8 khách cùng đặt SKU chỉ còn 3 → đúng 3 đơn, tồn giữ đúng 3', function () {
-    $carts = checkoutCarts(8, $this->channel->id, $this->brand->id, $this->s->id);
+    $carts = checkoutCarts(8, $this->s->id);
     $orders = array_map(fn (array $cart, int $i): array => [...$cart, "key-{$i}-abcdef"], $carts, array_keys($carts));
 
-    $results = Concurrency::driver('process')->run(placeOrderTasks($orders, $this->channel->id, $this->brand->id, 330_000));
+    $results = Concurrency::driver('process')->run(placeOrderTasks($orders, 330_000));
     $counts = array_count_values($results);
 
     expect($counts['ok'] ?? 0)->toBe(3)
@@ -94,11 +94,11 @@ it('8 khách cùng đặt SKU chỉ còn 3 → đúng 3 đơn, tồn giữ đún
 
 it('voucher còn 2 lượt, 6 khách cùng dùng → đúng 2 đơn có giảm giá', function () {
     DB::table('stock_levels')->update(['on_hand' => 100]);
-    C::promotion($this->brand, ['name' => 'Giảm 10%'], ['FLASH' => 2]);
-    $carts = checkoutCarts(6, $this->channel->id, $this->brand->id, $this->s->id);
+    C::promotion(['name' => 'Giảm 10%'], ['FLASH' => 2]);
+    $carts = checkoutCarts(6, $this->s->id);
     $orders = array_map(fn (array $cart, int $i): array => [...$cart, "key-{$i}-voucher"], $carts, array_keys($carts));
 
-    $results = Concurrency::driver('process')->run(placeOrderTasks($orders, $this->channel->id, $this->brand->id, 300_000, ['FLASH']));
+    $results = Concurrency::driver('process')->run(placeOrderTasks($orders, 300_000, ['FLASH']));
     $counts = array_count_values($results);
 
     expect($counts['ok'] ?? 0)->toBe(2)
@@ -109,10 +109,10 @@ it('voucher còn 2 lượt, 6 khách cùng dùng → đúng 2 đơn có giảm g
 });
 
 it('một giỏ gửi đặt hàng 5 lần song song (khác key) → một đơn', function () {
-    [$cart] = checkoutCarts(1, $this->channel->id, $this->brand->id, $this->s->id);
+    [$cart] = checkoutCarts(1, $this->s->id);
     $orders = array_map(fn (int $i): array => [...$cart, "same-cart-{$i}-key"], range(1, 5));
 
-    $results = Concurrency::driver('process')->run(placeOrderTasks($orders, $this->channel->id, $this->brand->id, 330_000));
+    $results = Concurrency::driver('process')->run(placeOrderTasks($orders, 330_000));
 
     expect(array_count_values($results))->toEqualCanonicalizing(['cart.closed' => 4, 'ok' => 1])
         ->and((int) DB::table('orders')->count())->toBe(1);

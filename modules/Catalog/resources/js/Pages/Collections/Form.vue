@@ -5,10 +5,9 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem, Translations } from '../../types';
+import type { NavItem, Translations } from '../../types';
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     collection: null | { id: number; slug: string; status: string; position: number; translations: Translations<'name' | 'description'>; style_codes: string };
 }>();
@@ -43,7 +42,7 @@ function destroy(): void {
 
 <template>
     <Head :title="collection ? 'Sửa bộ sưu tập' : 'Thêm bộ sưu tập'" />
-    <CatalogTabs :brand="brand" :nav="nav" active="collections" />
+    <CatalogTabs :nav="nav" active="collections" />
     <PageHeader :title="collection ? 'Sửa bộ sưu tập' : 'Thêm bộ sưu tập'">
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
         <button v-if="collection" type="button" :class="dangerButton" @click="destroy">Xoá</button>

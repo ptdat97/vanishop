@@ -22,7 +22,7 @@ use Modules\Ordering\Events\OrderPlaced;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 /**
- * Gửi tin giao dịch/marketing theo template (brand × loại × kênh), nhật ký gửi. Kênh ngoài email là plugin.
+ * Gửi tin giao dịch/marketing theo template (loại × kênh), nhật ký gửi. Kênh ngoài email là plugin.
  *
  * @see docs/03-domains/notification.md
  */
@@ -43,7 +43,7 @@ final class NotificationServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $catalog = $this->app->make(NotificationCatalog::class);
-        $order = ['brand_name', 'customer_name', 'order_number', 'total'];
+        $order = ['store_name', 'customer_name', 'order_number', 'total'];
         $catalog->define(new NotificationType('order_placed', 'Đặt đơn thành công', $order));
         $catalog->define(new NotificationType('order_cancelled', 'Đơn đã huỷ', $order));
         $catalog->define(new NotificationType('shipment_shipped', 'Đơn đang được giao', [...$order, 'carrier', 'tracking_number']));

@@ -8,10 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Modules\Inventory\Domain\LocationType;
 
 /**
- * Kho / cửa hàng / điểm ảo — cấp Owner, dùng chung cho các brand trong location_brands.
+ * Kho / cửa hàng / điểm ảo của cửa hàng.
  *
  * @property int $id
- * @property int $legal_entity_id
  * @property string $code
  * @property string $name
  * @property LocationType $type
@@ -27,7 +26,7 @@ final class Location extends Model
 {
     public const AUTHORITY_VANISHOP = 'vanishop';
 
-    protected $fillable = ['legal_entity_id', 'code', 'name', 'type', 'address', 'province_code', 'ships_online_orders', 'allows_pickup', 'accepts_returns', 'stock_authority', 'priority', 'status', 'lock_version'];
+    protected $fillable = ['code', 'name', 'type', 'address', 'province_code', 'ships_online_orders', 'allows_pickup', 'accepts_returns', 'stock_authority', 'priority', 'status', 'lock_version'];
 
     protected function casts(): array
     {

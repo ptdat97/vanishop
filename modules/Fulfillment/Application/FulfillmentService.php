@@ -67,9 +67,9 @@ final class FulfillmentService
 
             $lines = $this->orders->lines($orderId);
             $reserved = $this->inventory->reservedLines($order->reservationKey);
-            $strategy = $this->registry->sourcing($order->brandId)
+            $strategy = $this->registry->sourcing()
                 ?? throw new \InvalidArgumentException('SourcingStrategy chưa đăng ký.');
-            $proposals = $strategy->allocate(new SourcingRequest($orderId, $order->brandId, $lines, $reserved, $order->shippingAddress));
+            $proposals = $strategy->allocate(new SourcingRequest($orderId, $lines, $reserved, $order->shippingAddress));
             $this->assertMatchesReservation($proposals, $lines, $reserved);
 
             $ids = [];
@@ -77,7 +77,7 @@ final class FulfillmentService
             $cod = $order->paymentStatus === 'cod_pending' ? $order->totalAmount : 0;
             foreach ($proposals as $index => $proposal) {
                 $shipment = Shipment::query()->create([
-                    'public_id' => (string) Str::ulid(), 'order_id' => $orderId, 'brand_id' => $order->brandId, 'location_id' => $proposal->locationId,
+                    'public_id' => (string) Str::ulid(), 'order_id' => $orderId, 'location_id' => $proposal->locationId,
                     'carrier_code' => $carrierCode, 'cod_amount' => $index === 0 ? $cod : 0, 'currency_code' => $order->currencyCode,
                     'status' => ShipmentStatus::PendingBooking,
                 ]);
@@ -86,7 +86,7 @@ final class FulfillmentService
                     ShipmentLine::query()->create(['shipment_id' => $shipment->id, 'order_line_id' => $lineId, 'variant_id' => $variantByLine[$lineId], 'quantity' => $quantity]);
                 }
                 $this->recordEvent($shipment, ShipmentStatus::PendingBooking, "created:{$shipment->public_id}", 'system', null, []);
-                event(new ShipmentCreated($shipment->id, $orderId, $carrierCode, $shipment->brand_id));
+                event(new ShipmentCreated($shipment->id, $orderId, $carrierCode));
                 $ids[] = $shipment->id;
             }
 
@@ -216,7 +216,6 @@ final class FulfillmentService
         return new ShipmentData(
             publicId: $shipment->public_id,
             orderNumber: $order->number ?? '',
-            brandId: $shipment->brand_id,
             locationId: $shipment->location_id,
             serviceCode: $serviceCode ?? $shipment->service_code,
             items: $shipment->lines()->get()->map(fn (ShipmentLine $line): array => [
@@ -261,7 +260,7 @@ final class FulfillmentService
         }
 
         $this->syncOrder($shipment->order_id);
-        event(new ShipmentStatusChanged($shipment->id, $shipment->order_id, $from->value, $to->value, $shipment->cod_amount, $shipment->brand_id));
+        event(new ShipmentStatusChanged($shipment->id, $shipment->order_id, $from->value, $to->value, $shipment->cod_amount));
 
         return true;
     }

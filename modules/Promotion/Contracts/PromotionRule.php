@@ -27,7 +27,7 @@ interface PromotionRule
 
     /**
      * @param  array<string, mixed>  $config
-     * @param  Eligibility  $candidates  dòng đang xét (đã lọc theo brand và các rule trước)
+     * @param  Eligibility  $candidates  dòng đang xét (đã lọc qua các rule trước)
      */
     public function evaluate(PromotionContext $context, array $config, Eligibility $candidates): Eligibility;
 }

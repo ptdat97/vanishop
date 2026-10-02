@@ -17,14 +17,11 @@ use Modules\Shared\Domain\Money\Money;
  */
 final class TotalsPipeline
 {
-    /** @deprecated dùng {@see TotalsCalculator::TAG} (public API). */
-    public const TAG = TotalsCalculator::TAG;
-
     public function __construct(private readonly Extensions $extensions) {}
 
     public function run(TotalsContext $context): Totals
     {
-        $calculators = array_values(array_filter($this->extensions->tagged(self::TAG), fn (object $calculator): bool => $calculator instanceof TotalsCalculator));
+        $calculators = array_values(array_filter($this->extensions->tagged(TotalsCalculator::TAG), fn (object $calculator): bool => $calculator instanceof TotalsCalculator));
         usort($calculators, fn (TotalsCalculator $a, TotalsCalculator $b): int => [$a->priority(), $a->code()] <=> [$b->priority(), $b->code()]);
 
         foreach ($calculators as $calculator) {
@@ -45,7 +42,6 @@ final class TotalsPipeline
             grandTotal: $context->linesTotal()->add($shipping),
             rejectedVouchers: $context->promotions->rejectedVouchers ?? [],
             promotions: $context->promotions,
-            channelId: $context->channelId,
         );
     }
 }

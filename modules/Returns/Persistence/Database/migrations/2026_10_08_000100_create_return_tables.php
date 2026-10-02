@@ -14,7 +14,6 @@ return new class extends Migration
             $table->char('public_id', 26)->unique();
             $table->string('number', 40)->unique(); // <số đơn>-R<n>
             $table->foreignId('order_id')->constrained()->restrictOnDelete();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('status', 16);
             $table->string('reason_code', 32);
             $table->string('customer_note', 500)->nullable();
@@ -27,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['order_id', 'status']);
-            $table->index(['brand_id', 'status']);
+            $table->index('status');
         });
 
         Schema::create('return_lines', function (Blueprint $table) {

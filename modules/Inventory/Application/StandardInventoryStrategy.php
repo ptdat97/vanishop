@@ -13,7 +13,7 @@ final class StandardInventoryStrategy implements InventoryStrategy
         return 'standard';
     }
 
-    public function adjust(array $standardAts, int $channelId): array
+    public function adjust(array $standardAts): array
     {
         return $standardAts;
     }

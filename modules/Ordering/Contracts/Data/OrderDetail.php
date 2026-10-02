@@ -23,7 +23,6 @@ final readonly class OrderDetail
         public int $id,
         public string $publicId,
         public string $number,
-        public int $brandId,
         public string $orderStatus,
         public string $paymentStatus,
         public string $fulfillmentStatus,
@@ -42,5 +41,6 @@ final readonly class OrderDetail
         public array $events,
         public bool $cancellableByCustomer,
         public int $lockVersion,
+        public string $source = 'web',
     ) {}
 }

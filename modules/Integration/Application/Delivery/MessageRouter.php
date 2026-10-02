@@ -11,7 +11,7 @@ use Modules\Integration\Persistence\Models\WebhookSubscription;
 use Throwable;
 
 /**
- * `webhook:<id>` → WebhookSender; mã khác → Connector của plugin (trong phạm vi brand của message).
+ * `webhook:<id>` → WebhookSender; mã khác → Connector của plugin.
  */
 final class MessageRouter
 {
@@ -39,13 +39,13 @@ final class MessageRouter
             throw new CircuitOpen($record->target, $openUntil);
         }
 
-        $connector = $this->registry->connector($record->target, $record->brand_id);
+        $connector = $this->registry->connector($record->target);
         if ($connector === null) {
             return DeliveryResult::permanent("connector.unavailable:{$record->target}");
         }
 
         try {
-            $result = $this->registry->inBrand($record->brand_id, fn (): DeliveryResult => $connector->send($record->toMessage()));
+            $result = $connector->send($record->toMessage());
         } catch (Throwable $exception) {
             $this->breaker->recordFailure($record->target);
             throw $exception;

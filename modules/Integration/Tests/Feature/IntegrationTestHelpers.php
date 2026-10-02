@@ -20,14 +20,13 @@ final class IntegrationTestHelpers
 {
     /**
      * @param  list<string>  $scopes
-     * @param  list<int>  $brandIds
      * @return array{client: IntegrationClient, key: string, secret: string}
      */
-    public static function client(string $code = 'erp-main', array $scopes = ClientProvisioning::SCOPES, array $brandIds = [], array $ips = []): array
+    public static function client(string $code = 'erp-main', array $scopes = ClientProvisioning::SCOPES, array $ips = []): array
     {
-        return T::seed(function () use ($code, $scopes, $brandIds, $ips): array {
+        return T::seed(function () use ($code, $scopes, $ips): array {
             $provisioning = app(ClientProvisioning::class);
-            $client = $provisioning->upsert($code, ['scopes' => $scopes, 'brand_ids' => $brandIds, 'ip_allowlist' => $ips]);
+            $client = $provisioning->upsert($code, ['scopes' => $scopes, 'ip_allowlist' => $ips]);
             [$key, $secret] = $provisioning->issueKey($client);
 
             return ['client' => $client, 'key' => $key, 'secret' => $secret];
@@ -46,9 +45,9 @@ final class IntegrationTestHelpers
     /**
      * @param  array<string, mixed>  $data
      */
-    public static function publish(string $type, string $aggregateId, ?int $brandId = null, array $data = []): string
+    public static function publish(string $type, string $aggregateId, array $data = []): string
     {
-        return T::seed(fn (): string => app(IntegrationEvents::class)->publish(new IntegrationEvent($type, 'order', $aggregateId, $brandId, $data)));
+        return T::seed(fn (): string => app(IntegrationEvents::class)->publish(new IntegrationEvent($type, 'order', $aggregateId, $data)));
     }
 
     /**

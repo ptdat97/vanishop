@@ -1,7 +1,7 @@
 <?php
 
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Contracts\CollectionDirectory;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Ordering\Contracts\OrderReader;
@@ -9,11 +9,11 @@ use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
 use Modules\Promotion\Contracts\Data\PromotionLine;
-use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
 use Plugin\PromotionRules\Domain\Rules\FirstOrderOnlyRule;
+use Plugin\PromotionRules\Domain\Rules\InBrandsRule;
 use Plugin\PromotionRules\Domain\Rules\InCollectionsRule;
 use Plugin\PromotionRules\Domain\Rules\MinOrderSubtotalRule;
 use Plugin\PromotionRules\Domain\Rules\MinQuantityRule;
@@ -24,23 +24,23 @@ beforeEach(function () {
     $this->otherBrand = Brand::factory()->create(['slug' => 'brand-other']);
 });
 
-function installPromotionRules(string $scopeType = 'owner', ?int $scopeId = null): void
+function installPromotionRules(bool $enable = true): void
 {
-    $context = app(CurrentContext::class);
-    $context->runAs(ContextScope::system('test'), function () use ($scopeType, $scopeId) {
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () use ($enable) {
         $plugins = app(PluginManager::class);
         $plugins->install('vani.promotion-rules');
-        $plugins->enable('vani.promotion-rules', $scopeType, $scopeId);
+        if ($enable) {
+            $plugins->enable('vani.promotion-rules');
+        }
     });
 
     app()->register(PromotionRulesServiceProvider::class);
     app(PluginActivation::class)->flush();
 }
 
-function makeContext(array $lines, ?int $customerId = 1, int $channelId = 1): PromotionContext
+function makeContext(array $lines, ?int $customerId = 1): PromotionContext
 {
     return new PromotionContext(
-        channelId: $channelId,
         customerId: $customerId,
         currencyCode: 'VND',
         lines: $lines,
@@ -49,7 +49,7 @@ function makeContext(array $lines, ?int $customerId = 1, int $channelId = 1): Pr
     );
 }
 
-function makeLine(int $key, int $brandId, int $styleId, int $quantity, int $unitPrice): PromotionLine
+function makeLine(int $key, ?int $brandId, int $styleId, int $quantity, int $unitPrice): PromotionLine
 {
     $unit = Money::vnd($unitPrice);
 
@@ -120,8 +120,8 @@ it('InCollectionsRule: lọc các dòng thuộc bộ sưu tập', function () {
 
 it('FirstOrderOnlyRule: từ chối khách đã từng đặt đơn và khách vãng lai', function () {
     $orders = Mockery::mock(OrderReader::class);
-    $orders->shouldReceive('customerHasPlacedOrder')->with(100, 1)->andReturnFalse();
-    $orders->shouldReceive('customerHasPlacedOrder')->with(200, 1)->andReturnTrue();
+    $orders->shouldReceive('customerHasPlacedOrder')->with(100)->andReturnFalse();
+    $orders->shouldReceive('customerHasPlacedOrder')->with(200)->andReturnTrue();
 
     $rule = new FirstOrderOnlyRule($orders);
     expect($rule->type())->toBe('first_order_only')
@@ -135,25 +135,37 @@ it('FirstOrderOnlyRule: từ chối khách đã từng đặt đơn và khách v
         ->and($rule->evaluate(makeContext($lines, customerId: null), [], new Eligibility([1]))->keys)->toBe([]);
 });
 
-it('tích hợp: plugin đăng ký rule vào PromotionRegistry và chỉ hiển thị ở brand được bật', function () {
-    installPromotionRules('brand', $this->brand->id);
+it('InBrandsRule: lọc các dòng thuộc thương hiệu chỉ định (theo slug), bỏ qua brand ẩn và dòng không brand', function () {
+    $rule = app(InBrandsRule::class);
+    expect($rule->type())->toBe('in_brands')
+        ->and($rule->validateConfig(['slugs' => ['brand-promo']]))->toBe([])
+        ->and($rule->validateConfig(['slugs' => []]))->not->toBeEmpty()
+        ->and($rule->validateConfig(['slugs' => ['']]))->not->toBeEmpty();
 
-    $registry = app(PromotionRegistry::class);
-    $context = app(CurrentContext::class);
+    $ctx = makeContext([
+        makeLine(key: 1, brandId: $this->brand->id, styleId: 10, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 2, brandId: $this->otherBrand->id, styleId: 11, quantity: 1, unitPrice: 100_000),
+        makeLine(key: 3, brandId: null, styleId: 12, quantity: 1, unitPrice: 100_000),
+    ]);
 
-    $typesInScope = $context->runAs(new ContextScope(Actor::guest(), brandIds: [$this->brand->id]), function () use ($registry) {
+    expect($rule->evaluate($ctx, ['slugs' => ['brand-promo']], new Eligibility([1, 2, 3]))->keys)->toBe([1])
+        ->and($rule->evaluate($ctx, ['slugs' => ['brand-promo', 'brand-other']], new Eligibility([2, 3]))->keys)->toBe([2])
+        ->and($rule->evaluate($ctx, ['slugs' => ['khong-co']], new Eligibility([1, 2, 3]))->keys)->toBe([]);
+
+    $this->brand->update(['status' => 'hidden']);
+    expect($rule->evaluate($ctx, ['slugs' => ['brand-promo']], new Eligibility([1, 2, 3]))->keys)->toBe([]);
+});
+
+it('tích hợp: plugin đăng ký rule vào PromotionRegistry chỉ khi được bật', function () {
+    $types = function (): array {
         app(PluginActivation::class)->flush();
 
-        return array_map(fn ($r) => $r->type(), array_values($registry->rules()));
-    });
+        return array_map(fn ($r) => $r->type(), array_values(app(PromotionRegistry::class)->rules()));
+    };
 
-    expect($typesInScope)->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only');
+    installPromotionRules(enable: false);
+    expect($types())->not->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only', 'in_brands');
 
-    $typesOutOfScope = $context->runAs(new ContextScope(Actor::guest(), brandIds: [$this->otherBrand->id]), function () use ($registry) {
-        app(PluginActivation::class)->flush();
-
-        return array_map(fn ($r) => $r->type(), array_values($registry->rules()));
-    });
-
-    expect($typesOutOfScope)->not->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only');
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->enable('vani.promotion-rules'));
+    expect($types())->toContain('min_order_subtotal', 'min_quantity', 'in_collections', 'first_order_only', 'in_brands');
 });

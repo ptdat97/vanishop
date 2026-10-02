@@ -15,7 +15,6 @@ use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Contracts\Returns;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 
 final class ReturnsServiceProvider extends ModuleServiceProvider
@@ -29,14 +28,14 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(Returns::class, ReturnService::class);
         $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
-        $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnService::POLICIES_TAG);
+        $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'returns.policy', 'Chính sách đổi trả', 'select', (string) config('vanishop.returns.policy', 'days_window'),
-            [SettingsScope::OWNER, SettingsScope::BRAND], optionsFromTag: ReturnPolicy::TAG, help: 'ReturnPolicy áp cho đơn của brand.',
+            optionsFromTag: ReturnPolicy::TAG, help: 'ReturnPolicy áp cho đơn của cửa hàng.',
         ));
         $permissions->register('returns.view', 'Xem yêu cầu đổi/trả');
         $permissions->register('returns.manage', 'Duyệt, từ chối, nhận hàng trả');
@@ -46,7 +45,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 20);
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
-        $this->loadBrandWorkspaceRoutes('returns', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->loadAdminSectionRoutes('returns', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
     }
 }

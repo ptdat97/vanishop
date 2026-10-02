@@ -50,7 +50,6 @@ final class OrderQueries
             id: $order->id,
             publicId: $order->public_id,
             number: $order->number,
-            brandId: $order->brand_id,
             orderStatus: $order->order_status->value,
             paymentStatus: (string) $order->payment_status,
             fulfillmentStatus: (string) $order->fulfillment_status,
@@ -65,7 +64,7 @@ final class OrderQueries
             note: $masked ? null : $order->note,
             placedAt: $order->placed_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
             lines: $order->lines->map(fn (OrderLine $line): array => [
-                'id' => $line->id, 'sku' => $line->sku, 'name' => $line->product_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
+                'id' => $line->id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
                 'image_url' => $line->image_url, 'quantity' => $line->quantity, 'unit_amount' => $line->unit_amount, 'compare_at_amount' => $line->compare_at_amount,
                 'discount_amount' => $line->discount_amount, 'total_amount' => $line->total_amount, 'tax_rate_bp' => $line->tax_rate_bp, 'tax_amount' => $line->tax_amount,
             ])->all(),
@@ -75,6 +74,7 @@ final class OrderQueries
             events: $this->events($order->id, internal: ! $masked),
             cancellableByCustomer: OrderPolicy::customerCanCancel($order->order_status, (string) $order->fulfillment_status),
             lockVersion: $order->lock_version,
+            source: (string) $order->source,
         );
     }
 

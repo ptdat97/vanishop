@@ -11,7 +11,7 @@ use Modules\Promotion\Persistence\Models\Promotion;
 use Modules\Promotion\Persistence\Models\Voucher;
 
 /**
- * Khuyến mãi và voucher trong Admin (brand workspace).
+ * Khuyến mãi và voucher trong Admin.
  */
 final class PromotionService
 {
@@ -25,7 +25,7 @@ final class PromotionService
     /**
      * @param  array<string, mixed>  $data
      */
-    public function save(int $brandId, array $data, ?Promotion $promotion = null, ?int $expectedLockVersion = null): Promotion
+    public function save(array $data, ?Promotion $promotion = null, ?int $expectedLockVersion = null): Promotion
     {
         if ($data['starts_at'] !== null && $data['ends_at'] !== null && strtotime((string) $data['ends_at']) <= strtotime((string) $data['starts_at'])) {
             throw ValidationException::withMessages(['ends_at' => __('pricing::messages.window_invalid')]);
@@ -40,7 +40,7 @@ final class PromotionService
         $rules = $this->validateRules((array) ($data['rules'] ?? []));
         unset($data['rules']);
 
-        return DB::transaction(function () use ($brandId, $data, $rules, $promotion, $expectedLockVersion): Promotion {
+        return DB::transaction(function () use ($data, $rules, $promotion, $expectedLockVersion): Promotion {
             if ($promotion !== null) {
                 $updated = Promotion::query()->whereKey($promotion->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
                 if ($updated === 0) {
@@ -48,7 +48,7 @@ final class PromotionService
                 }
             }
 
-            $promotion ??= new Promotion(['brand_id' => $brandId]);
+            $promotion ??= new Promotion;
             $promotion->fill($data)->save();
             $this->syncRules($promotion, $rules);
             $this->audit->record($promotion->wasRecentlyCreated ? 'promotion.created' : 'promotion.updated', 'promotion', $promotion->id,

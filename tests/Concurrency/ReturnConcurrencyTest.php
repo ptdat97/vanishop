@@ -52,8 +52,8 @@ function returnTasks(int $count, int $orderId, int $lineId): array
 }
 
 it('4 yêu cầu trả toàn bộ gửi cùng lúc → chỉ một được tạo', function () {
-    ['brand' => $brand, 'channel' => $channel, 's' => $variant] = C::store();
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channel->id, [$brand->id], 'vi'));
+    ['s' => $variant] = C::store();
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $key = app(Carts::class)->create('VND')->key;
     app(Carts::class)->addLine($key, $variant->id, 2);
     $payload = C::orderPayload();

@@ -7,7 +7,6 @@ namespace Modules\Identity\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Modules\Identity\Contracts\Authorizer;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
@@ -15,14 +14,11 @@ use Modules\Shared\Context\CurrentContext;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Admin: phạm vi brand của CurrentContext = các brand nhân viên được phân quyền.
+ * Admin: CurrentContext = nhân viên đang đăng nhập + locale.
  */
 final class ResolveStaffContext
 {
-    public function __construct(
-        private readonly Authorizer $authorizer,
-        private readonly CurrentContext $context,
-    ) {}
+    public function __construct(private readonly CurrentContext $context) {}
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -38,7 +34,6 @@ final class ResolveStaffContext
 
         $this->context->set(new ContextScope(
             actor: Actor::staff($staff->id, $staff->email),
-            brandIds: $this->authorizer->accessibleBrandIds($staff->id),
             locale: app()->getLocale(),
         ));
 

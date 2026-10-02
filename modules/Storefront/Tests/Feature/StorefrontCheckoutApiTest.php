@@ -12,9 +12,9 @@ use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();
+    ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();
     $this->api = '/api/storefront/v1';
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
 
     $created = $this->postJson("{$this->api}/carts", [], $this->headers)->assertCreated();
     $this->cart = $created->json('data.id');
@@ -40,7 +40,7 @@ it('quote: tạm tính, miễn phí giao trên ngưỡng, VAT gồm trong giá, 
 });
 
 it('quote: voucher giảm giá, báo voucher không hợp lệ, phí giao dưới ngưỡng', function () {
-    C::promotion($this->brand, ['name' => 'Giảm 10%'], ['GIAM10' => 100]);
+    C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => 100]);
     ($this->add)($this->s, 1);
 
     ($this->quote)(['voucher_codes' => ['giam10', 'KHONGCO']])
@@ -54,7 +54,7 @@ it('quote: voucher giảm giá, báo voucher không hợp lệ, phí giao dướ
 
 it('đặt hàng COD thành công: snapshot, số đơn, giữ hàng không hết hạn, đóng giỏ, ghi lượt voucher', function () {
     Event::fake([OrderPlaced::class]);
-    C::promotion($this->brand, ['name' => 'Giảm 10%'], ['GIAM10' => 100]);
+    C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => 100]);
     ($this->add)($this->s, 1);
     ($this->add)($this->m, 2);
 
@@ -66,7 +66,7 @@ it('đặt hàng COD thành công: snapshot, số đơn, giữ hàng không hế
 
     $order = Order::query()->withoutGlobalScopes()->with(['lines', 'adjustments'])->sole();
     expect($response->json('data.number'))->toBe($order->number)
-        ->and($order->number)->toMatch('/^LU\d{4}-000001$/')
+        ->and($order->number)->toMatch('/^VN\d{4}-000001$/')
         ->and($order->customer_snapshot)->toEqual(['full_name' => 'Nguyễn Thị Lan', 'phone' => '+84912345678', 'email' => 'lan@example.com'])
         ->and($order->shipping_address['ward_name'])->toBe('Phường Bến Thành')
         ->and($order->note)->toBe('Giao giờ hành chính')
@@ -100,7 +100,7 @@ it('request trùng Idempotency-Key trả lại đúng kết quả cũ; khác n�
 
 it('tổng tiền đổi so với lúc xem → 409 kèm tổng mới, không tạo đơn', function () {
     ($this->add)($this->s, 1);
-    P::priceList($this->brand->id, ['code' => 'sale', 'type' => 'sale', 'priority' => 10], [$this->channel->id], [$this->s->id => [250_000]]);
+    P::priceList(['code' => 'sale', 'type' => 'sale', 'priority' => 10], [$this->s->id => [250_000]]);
 
     ($this->place)(C::orderPayload(['expected_total' => 330_000]))
         ->assertStatus(409)
@@ -126,7 +126,7 @@ it('giỏ có dòng thiếu hàng → 422 cart_not_ready, không tạo đơn (tr
 });
 
 it('voucher hết lượt lúc đặt → 409 promotion.voucher_exhausted', function () {
-    C::promotion($this->brand, [], ['CUOI' => 1]);
+    C::promotion([], ['CUOI' => 1]);
     ($this->add)($this->s, 1);
     $quote = ($this->quote)(['voucher_codes' => ['CUOI']])->json('data.total.amount');
 

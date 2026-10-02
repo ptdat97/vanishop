@@ -2,7 +2,7 @@
 
 > Trạng thái: **Partially Implemented**, mô tả **code đang có**; bề mặt nào chưa có code ghi rõ `Designed`. Kiểm chứng từ `bootstrap/app.php`, `config/modules.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/*/*ServiceProvider.php`. Bổ sung cho [overview](overview.md) (vì sao chọn kiến trúc này) và [bounded-contexts](bounded-contexts.md) (ranh giới nghiệp vụ).
 
-> **Định hướng mới ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: một cửa hàng, brand là thuộc tính catalog. Tài liệu này mô tả **code hiện tại** (vẫn có module Brand/Channel, brand workspace, `X-Vani-Channel`); các phần đó sẽ gỡ ở slice 12 ([store-and-brand §6](../12-store/store-and-brand.md)).
+> **Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: từ slice 12 (2026-10-02) code không còn module Brand/Channel, brand workspace hay header `X-Vani-Channel`; brand là thực thể Catalog.
 
 ## 1. Năm bề mặt, một lõi
 

@@ -39,7 +39,7 @@ final class RecordStaffLogin
 
         $staff->forceFill(['last_login_at' => now()])->save();
 
-        $this->context->runAs(new ContextScope(Actor::staff($staff->id, $staff->email), brandIds: null), function () use ($staff, $ip, $knownIp, $isFirstLogin): void {
+        $this->context->runAs(new ContextScope(Actor::staff($staff->id, $staff->email)), function () use ($staff, $ip, $knownIp, $isFirstLogin): void {
             $this->audit->record(self::ACTION_LOGIN, 'staff_user', $staff->id);
 
             if (! $knownIp && ! $isFirstLogin) {

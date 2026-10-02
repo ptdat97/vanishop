@@ -32,7 +32,7 @@ final class ReservationService implements InventoryReservation
 {
     public function __construct(
         private readonly StockLedger $ledger,
-        private readonly ChannelLocations $channelLocations,
+        private readonly OnlineLocations $locations,
         private readonly VariantDirectory $variants,
     ) {}
 
@@ -46,6 +46,7 @@ final class ReservationService implements InventoryReservation
             ksort($quantities);
 
             $variants = $this->variants->find(array_keys($quantities));
+            $online = $this->locations->ids();
             $candidates = [];
             $pairs = [];
             foreach ($quantities as $variantId => $quantity) {
@@ -53,7 +54,7 @@ final class ReservationService implements InventoryReservation
                 if ($variant === null || $variant->status !== 'active' || $quantity <= 0) {
                     throw new StockUnavailable($variantId, $quantity, 0);
                 }
-                $candidates[$variantId] = $this->channelLocations->forBrand($request->channelId, $variant->brandId);
+                $candidates[$variantId] = $online;
                 foreach ($candidates[$variantId] as $locationId) {
                     $pairs[] = [$locationId, $variantId];
                 }

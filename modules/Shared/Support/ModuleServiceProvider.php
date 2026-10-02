@@ -66,12 +66,12 @@ abstract class ModuleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Storefront API v1: /api/storefront/v1/…, kênh theo header X-Vani-Channel.
+     * Storefront API v1: /api/storefront/v1/… (khách vãng lai, locale theo X-Vani-Locale).
      */
     protected function loadStorefrontApiRoutes(string $file): void
     {
         if (! $this->app->routesAreCached()) {
-            Route::middleware(['api', 'throttle:storefront-api', 'vani.api-channel'])
+            Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context'])
                 ->prefix('api/storefront/v1')
                 ->name('api.storefront.v1.')
                 ->group($file);
@@ -79,13 +79,13 @@ abstract class ModuleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Admin trong brand workspace: /{admin}/catalog/{brand}/… (tham số {brand} = slug).
+     * Admin theo khu vực: /{admin}/{section}/…, tên route admin.{section}.…
      */
-    protected function loadBrandWorkspaceRoutes(string $section, string $file): void
+    protected function loadAdminSectionRoutes(string $section, string $file): void
     {
         if (! $this->app->routesAreCached()) {
-            Route::middleware(['web', 'vani.admin', 'auth:staff', 'vani.staff-context', 'vani.admin-brand'])
-                ->prefix(AdminPath::prefix()."/{$section}/{brand}")
+            Route::middleware(['web', 'vani.admin', 'auth:staff', 'vani.staff-context'])
+                ->prefix(AdminPath::prefix()."/{$section}")
                 ->name("admin.{$section}.")
                 ->group($file);
         }

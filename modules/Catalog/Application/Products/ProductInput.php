@@ -24,5 +24,6 @@ final readonly class ProductInput
         public array $categoryIds = [],
         public ?int $primaryCategoryId = null,
         public array $attributes = [],
+        public ?int $brandId = null,
     ) {}
 }

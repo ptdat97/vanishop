@@ -6,7 +6,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import VariantMatrix from '../../Components/VariantMatrix.vue';
-import type { BrandRef, NavItem, Translations } from '../../types';
+import type { NavItem, Translations } from '../../types';
 
 type Fields = 'name' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
 type AttributeValue = number | number[] | string | boolean | null;
@@ -20,7 +20,6 @@ interface ColorEntry {
 }
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     product: null | {
         id: number;
@@ -32,12 +31,14 @@ const props = defineProps<{
         lock_version: number;
         category_ids: number[];
         primary_category_id: number | null;
+        brand_id: number | null;
         translations: Translations<Fields>;
         attributes: Record<number, AttributeValue>;
         colors: ColorEntry[];
         variants: Array<{ id: number; sku: string; barcode: string | null; status: string; weight_gram: number | null; color_code: string; size_code: string }>;
     };
     categories: Array<{ id: number; label: string }>;
+    brands: Array<{ id: number; label: string }>;
     attributeDefinitions: Array<{ id: number; name: string | null; kind: string; input_type: string; values: Array<{ id: number; label: string | null }> }>;
     availableColors: Array<{ id: number; label: string }>;
     statuses: string[];
@@ -64,6 +65,7 @@ const form = useForm({
     lock_version: props.product?.lock_version ?? null,
     category_ids: props.product?.category_ids ?? ([] as number[]),
     primary_category_id: props.product?.primary_category_id ?? null,
+    brand_id: props.product?.brand_id ?? null,
     translations: {
         vi: { ...emptyTranslation, ...props.product?.translations.vi },
         en: { ...emptyTranslation, ...props.product?.translations.en },
@@ -123,7 +125,7 @@ function removeImage(color: ColorEntry, imageId: number): void {
 
 <template>
     <Head :title="product ? 'Sửa sản phẩm' : 'Thêm sản phẩm'" />
-    <CatalogTabs :brand="brand" :nav="nav" active="products" />
+    <CatalogTabs :nav="nav" active="products" />
     <PageHeader :title="product ? `Sửa: ${product.style_code}` : 'Thêm sản phẩm'">
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
         <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">Xoá</button>
@@ -236,6 +238,12 @@ function removeImage(color: ColorEntry, imageId: number): void {
             <FormField label="Danh mục" :error="errors.category_ids">
                 <select v-model="form.category_ids" :class="inputClass" multiple size="6">
                     <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.label }}</option>
+                </select>
+            </FormField>
+            <FormField label="Thương hiệu" :error="errors.brand_id">
+                <select v-model="form.brand_id" :class="inputClass">
+                    <option :value="null">— Không —</option>
+                    <option v-for="brand in brands" :key="brand.id" :value="brand.id">{{ brand.label }}</option>
                 </select>
             </FormField>
             <FormField label="Danh mục chính (breadcrumb)" :error="errors.primary_category_id">

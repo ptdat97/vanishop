@@ -11,7 +11,6 @@ return new class extends Migration
     {
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('legal_entity_id')->constrained()->restrictOnDelete();
             $table->string('code', 32)->unique();
             $table->string('name');
             $table->string('type', 16);                                 // warehouse | store | virtual
@@ -26,19 +25,6 @@ return new class extends Migration
             $table->string('status', 16)->default('active');
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
-        });
-
-        Schema::create('location_brands', function (Blueprint $table) {
-            $table->foreignId('location_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
-            $table->primary(['location_id', 'brand_id']);
-        });
-
-        // Location phục vụ đơn online của kênh (Inventory sở hữu vì phụ thuộc cả Channel lẫn Location).
-        Schema::create('channel_locations', function (Blueprint $table) {
-            $table->foreignId('channel_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('location_id')->constrained()->cascadeOnDelete();
-            $table->primary(['channel_id', 'location_id']);
         });
 
         Schema::create('stock_levels', function (Blueprint $table) {
@@ -96,7 +82,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        foreach (['stock_movements', 'stock_reservations', 'stock_levels', 'channel_locations', 'location_brands', 'locations'] as $table) {
+        foreach (['stock_movements', 'stock_reservations', 'stock_levels', 'locations'] as $table) {
             Schema::dropIfExists($table);
         }
     }

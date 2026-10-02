@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Notification\Application\Listeners;
 
 use Illuminate\Support\Facades\Log;
-use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Notification\Contracts\Data\NotificationRequest;
@@ -31,7 +30,6 @@ final class SendOrderNotifications
         private readonly Notifier $notifier,
         private readonly OrderReader $orders,
         private readonly ShipmentReader $shipments,
-        private readonly BrandDirectory $brands,
         private readonly MoneyFormatter $money,
         private readonly CurrentContext $context,
     ) {}
@@ -87,14 +85,14 @@ final class SendOrderNotifications
                     customerId: $order->customerId,
                 );
                 $variables = [
-                    'brand_name' => $this->brands->find($order->brandId)->name ?? '',
+                    'store_name' => (string) config('app.name'),
                     'customer_name' => $order->recipient['full_name'],
                     'order_number' => $order->number,
                     'total' => $this->money->format(Money::of($order->totalAmount, $order->currencyCode)),
                     ...($extra === null ? [] : $extra($order)),
                 ];
 
-                $this->notifier->notify(new NotificationRequest($type, $key, $order->brandId, $recipient, $variables));
+                $this->notifier->notify(new NotificationRequest($type, $key, $recipient, $variables));
             });
         } catch (Throwable $exception) {
             report($exception);

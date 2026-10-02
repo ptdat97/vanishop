@@ -52,9 +52,9 @@ InventoryStrategyContract::define('core standard', fn () => app(StandardInventor
 SourcingStrategyContract::define('core reserved_locations', fn () => app(ReservedLocationSourcing::class));
 
 PricingStrategyContract::define('core price_list_priority', fn () => app(PriceListPriorityStrategy::class), function (): array {
-    ['channel' => $channel, 's' => $s, 'm' => $m] = C::store();
+    ['s' => $s, 'm' => $m] = C::store();
 
-    return [[$s->id, $m->id], new PricingContext($channel->id, time())];
+    return [[$s->id, $m->id], new PricingContext(time())];
 });
 
 SearchProviderContract::define('core database', fn () => app(DatabaseSearchProvider::class), function (): array {
@@ -68,7 +68,7 @@ SearchProviderContract::define('core database', fn () => app(DatabaseSearchProvi
 NotificationChannelContract::define(
     'core mail',
     fn () => new MailChannel,
-    fn () => new OutgoingMessage(1, 'order_placed:1:mail', 'order_placed', 1, new Recipient(email: 'lan@example.com'), 'Tiêu đề', 'Nội dung', [], 1),
+    fn () => new OutgoingMessage(1, 'order_placed:1:mail', 'order_placed', new Recipient(email: 'lan@example.com'), 'Tiêu đề', 'Nội dung', [], 1),
     new Recipient(phone: '+84912345678'),
     succeed: fn () => null,
     failTemporarily: fn () => Mail::shouldReceive('raw')->andThrow(new TransportException('SMTP down')),

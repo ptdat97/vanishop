@@ -13,7 +13,7 @@ require_once __DIR__.'/IntegrationTestHelpers.php';
 beforeEach(function () {
     ['s' => $this->s] = C::store();
     $this->placeOrder = function (string $key): string {
-        $headers = ['X-Vani-Channel' => 'web-lumiere'];
+        $headers = [];
         $created = $this->postJson('/api/storefront/v1/carts', [], $headers)->assertCreated();
         $headers['X-Vani-Cart-Token'] = $created->json('meta.token');
         $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();

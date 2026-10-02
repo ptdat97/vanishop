@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Integration\Application\ClientProvisioning;
@@ -16,11 +15,11 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/IntegrationTestHelpers.php';
 
 beforeEach(function () {
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s, 'm' => $this->m] = C::store();
+    ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m] = C::store();
     $this->erp = H::client('erp-main');
     $this->api = '/api/integration/v1';
     $this->placeOrder = function (string $key = 'integration-order-1'): string {
-        $headers = ['X-Vani-Channel' => 'web-lumiere'];
+        $headers = [];
         $created = $this->postJson('/api/storefront/v1/carts', [], $headers)->assertCreated();
         $headers['X-Vani-Cart-Token'] = $created->json('meta.token');
         $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
@@ -67,11 +66,10 @@ describe('xác thực', function () {
     })->throws(ValidationException::class);
 });
 
-it('event feed: phân trang theo cursor, lọc theo loại và data scope brand', function () {
-    $other = Brand::factory()->create(['slug' => 'other', 'code' => 'OT']);
-    H::publish('order.created', 'LU-1', $this->brand->id);
-    H::publish('order.created', 'OT-1', $other->id);
-    H::publish('order.confirmed', 'LU-1', $this->brand->id);
+it('event feed: phân trang theo cursor, lọc theo loại', function () {
+    H::publish('order.created', 'LU-1');
+    H::publish('order.created', 'OT-1');
+    H::publish('order.confirmed', 'LU-1');
 
     $page = H::call($this, $this->erp, 'GET', "{$this->api}/events?limit=2")->assertOk();
     expect(array_column($page->json('data'), 'event_type'))->toBe(['order.created', 'order.created'])
@@ -80,13 +78,13 @@ it('event feed: phân trang theo cursor, lọc theo loại và data scope brand'
     expect(array_column($next->json('data'), 'event_type'))->toBe(['order.confirmed'])
         ->and($next->json('meta.has_more'))->toBeFalse();
 
-    $scoped = H::client('pos', ['events:read'], [$this->brand->id]);
-    $data = H::call($this, $scoped, 'GET', "{$this->api}/events?type=order.created")->assertOk()->json('data');
-    expect(array_column(array_column($data, 'aggregate'), 'id'))->toBe(['LU-1'])
+    $reader = H::client('pos', ['events:read']);
+    $data = H::call($this, $reader, 'GET', "{$this->api}/events?type=order.created")->assertOk()->json('data');
+    expect(array_column(array_column($data, 'aggregate'), 'id'))->toBe(['LU-1', 'OT-1'])
         ->and($data[0]['event_id'])->not->toBeEmpty();
 });
 
-it('orders: danh sách theo updated_since + cursor, chi tiết canonical, không thấy đơn brand khác', function () {
+it('orders: danh sách theo updated_since + cursor, chi tiết canonical (nguồn đơn, brand trên dòng), đơn không tồn tại → 404', function () {
     $first = ($this->placeOrder)('integration-order-1');
     $this->travel(5)->seconds();
     $second = ($this->placeOrder)('integration-order-2');
@@ -104,12 +102,11 @@ it('orders: danh sách theo updated_since + cursor, chi tiết canonical, không
         ->assertJsonPath('data.schema', 'vanishop.order.v1')
         ->assertJsonPath('data.number', $first)
         ->assertJsonPath('data.status', 'processing')
-        ->assertJsonPath('data.lines.0.sku', $this->s->sku);
+        ->assertJsonPath('data.lines.0.sku', $this->s->sku)
+        ->assertJsonPath('data.source', 'web')
+        ->assertJsonPath('data.lines.0.brand', $this->brand->name);
 
-    $other = Brand::factory()->create(['slug' => 'other', 'code' => 'OT']);
-    $scoped = H::client('pos', ['orders:read'], [$other->id]);
-    H::call($this, $scoped, 'GET', "{$this->api}/orders/{$first}")->assertStatus(404)->assertJsonPath('error.code', 'integration.order_not_found');
-    expect(H::call($this, $scoped, 'GET', "{$this->api}/orders")->json('data'))->toBe([]);
+    H::call($this, $this->erp, 'GET', "{$this->api}/orders/KHONG-CO")->assertStatus(404)->assertJsonPath('error.code', 'integration.order_not_found');
 });
 
 it('acknowledgement: bắt buộc Idempotency-Key, idempotent, lưu external reference, chặn số chứng từ khác', function () {
@@ -131,7 +128,7 @@ it('acknowledgement: bắt buộc Idempotency-Key, idempotent, lưu external ref
 
 describe('inventory levels', function () {
     beforeEach(function () {
-        $this->erpLocation = I::location($this->brand, [$this->channel->id], ['code' => 'WH-ERP', 'stock_authority' => 'erp-main']);
+        $this->erpLocation = I::location(['code' => 'WH-ERP', 'stock_authority' => 'erp-main']);
         $this->onHand = fn (int $variantId): int => (int) DB::table('stock_levels')->where('location_id', $this->erpLocation->id)->where('variant_id', $variantId)->value('on_hand');
     });
 

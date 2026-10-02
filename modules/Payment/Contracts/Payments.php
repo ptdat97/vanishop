@@ -16,7 +16,7 @@ interface Payments
     /**
      * @return list<array{code: string, label: string}>
      */
-    public function availableMethods(int $brandId, int $channelId, Money $amount): array;
+    public function availableMethods(Money $amount): array;
 
     /**
      * Thời gian chờ thanh toán của cổng (giây); null = không hết hạn (COD). Checkout dùng để giữ hàng.

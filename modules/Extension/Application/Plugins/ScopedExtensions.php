@@ -9,16 +9,13 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Contracts\Extensions;
-use Modules\Shared\Context\ContextScope;
-use Modules\Shared\Context\CurrentContext;
 use Throwable;
 
 /**
  * Nguồn duy nhất biết một extension point có những implementation nào:
  * implementation mặc định của Core (`tag()`) + implementation do plugin đóng góp (`contribute()`).
  *
- * `tagged()` là điểm chặn duy nhất: implementation của plugin chỉ được trả về khi plugin đang bật
- * trong phạm vi hiện tại, nên bật plugin cho brand này không ảnh hưởng brand khác.
+ * `tagged()` là điểm chặn duy nhất: implementation của plugin chỉ được trả về khi plugin đang bật.
  */
 final class ScopedExtensions implements Extensions
 {
@@ -30,7 +27,7 @@ final class ScopedExtensions implements Extensions
     private array $contributions = [];
 
     /**
-     * Danh sách abstract CÓ HIỆU LỰC của `tagged()` theo (tag, phạm vi) — chỉ trong một request/job: gắn với instance
+     * Danh sách abstract CÓ HIỆU LỰC của `tagged()` theo tag — chỉ trong một request/job: gắn với instance
      * PluginActivation (scoped) + version của nó; đổi đăng ký thì xoá. Instance vẫn tạo qua container mỗi lần
      * (implementation `bind` đọc cấu hình lúc tạo).
      *
@@ -71,9 +68,7 @@ final class ScopedExtensions implements Extensions
             $this->memoOwner = $owner;
         }
 
-        $context = $this->container->make(CurrentContext::class);
-        $scope = $context->has() ? $context->scope() : null;
-        $key = $tag.'|'.($scope === null ? '-' : json_encode([$scope->brandIds, $scope->channelId]));
+        $key = $tag;
 
         if (! isset($this->memo[$key])) {
             $active = [];
@@ -98,17 +93,6 @@ final class ScopedExtensions implements Extensions
         }
 
         return $result;
-    }
-
-    public function forBrand(?int $brandId, string $tag, string $interface, ?callable $key = null): array
-    {
-        $context = $this->container->make(CurrentContext::class);
-        $scope = ContextScope::system("extensions {$tag}");
-        if ($brandId !== null) {
-            $scope = new ContextScope($scope->actor, brandIds: [$brandId]);
-        }
-
-        return $context->runAs($scope, fn (): array => $this->implementations($tag, $interface, $key));
     }
 
     public function call(object $implementation, callable $call, mixed $fallback, string $operation): mixed

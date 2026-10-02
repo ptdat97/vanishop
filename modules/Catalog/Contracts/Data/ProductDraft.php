@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts\Data;
 
 /**
- * Dữ liệu sản phẩm sắp lưu — tham số của hook vani.product.before_save (plugin kiểm tra quy tắc riêng của brand).
+ * Dữ liệu sản phẩm sắp lưu — tham số của hook vani.product.before_save (plugin kiểm tra quy tắc riêng của cửa hàng).
  */
 final readonly class ProductDraft
 {
@@ -15,7 +15,7 @@ final readonly class ProductDraft
      * @param  array<int, mixed>  $attributes  attribute id => giá trị
      */
     public function __construct(
-        public int $brandId,
+        public ?int $brandId,
         public ?int $styleId,
         public string $styleCode,
         public string $slug,

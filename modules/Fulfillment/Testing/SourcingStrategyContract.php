@@ -25,7 +25,7 @@ final class SourcingStrategyContract
     public static function define(string $label, Closure $strategy, ?Closure $request = null): void
     {
         $request ??= fn (): SourcingRequest => new SourcingRequest(
-            1, 1,
+            1,
             [new OrderLineData(10, 101, 'SKU-1', 'Áo', 3), new OrderLineData(11, 102, 'SKU-2', 'Quần', 1)],
             [new ReservedLine(101, 1, 2), new ReservedLine(101, 2, 1), new ReservedLine(102, 2, 1)],
             ['province_code' => '79'],

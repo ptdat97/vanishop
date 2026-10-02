@@ -13,8 +13,6 @@ return new class extends Migration
             $table->id();
             $table->char('public_id', 26)->unique();
             $table->foreignId('order_id')->constrained()->restrictOnDelete();
-            $table->foreignId('legal_entity_id')->constrained()->restrictOnDelete(); // tài khoản nhận tiền theo pháp nhân
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('gateway_code', 64);
             $table->bigInteger('amount');
             $table->bigInteger('refunded_amount')->default(0);
@@ -28,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['status', 'expires_at']);
-            $table->index(['brand_id', 'status']);
+            $table->index('status');
         });
 
         // Append-only. Unique chống IPN/callback trùng.

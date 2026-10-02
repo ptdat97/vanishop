@@ -8,7 +8,7 @@ final readonly class VariantData
 {
     public function __construct(
         public int $id,
-        public int $brandId,
+        public ?int $brandId,
         public int $styleId,
         public string $styleCode,
         public string $styleName,

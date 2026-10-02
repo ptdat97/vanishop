@@ -1,7 +1,7 @@
 <?php
 
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Persistence\Models\AuditLog;
@@ -47,8 +47,8 @@ final class MinQuantityTestRule implements PromotionRule
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
     $this->other = Brand::factory()->create(['slug' => 'urbanx']);
-    $this->actingAs(T::staffFor($this->brand, ['admin.access', 'promotion.view', 'promotion.manage']), 'staff');
-    $this->base = '/admin/promotion/lumiere/promotions';
+    $this->actingAs(T::staff(['admin.access', 'promotion.view', 'promotion.manage']), 'staff');
+    $this->base = '/admin/promotion/promotions';
 });
 
 function promotionPayload(array $overrides = []): array
@@ -105,13 +105,9 @@ it('lưu và xoá điều kiện của plugin, từ chối loại chưa đăng k
     $this->post($this->base, promotionPayload(['rules' => [['type' => 'test.min_quantity', 'config' => ['quantity' => 0]]]]))->assertSessionHasErrors('rules.0.config');
 });
 
-it('cô lập brand và quyền', function () {
-    $foreign = T::seed(fn () => Promotion::query()->create(['brand_id' => $this->other->id, 'name' => 'X', 'action_type' => 'percent_off', 'action_config' => ['basis_points' => 1000]]));
+it('kiểm tra quyền', function () {
 
-    $this->get("{$this->base}/{$foreign->id}/edit")->assertNotFound();
-    $this->get('/admin/promotion/urbanx/promotions')->assertNotFound();
-
-    $this->actingAs(T::staffFor($this->brand, ['admin.access', 'promotion.view']), 'staff');
+    $this->actingAs(T::staff(['admin.access', 'promotion.view']), 'staff');
     $this->get($this->base)->assertOk();
     $this->post($this->base, promotionPayload())->assertForbidden();
 });

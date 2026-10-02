@@ -29,19 +29,10 @@ final readonly class Totals
         public Money $grandTotal,
         public array $rejectedVouchers,
         public ?PromotionResult $promotions = null,
-        public int $channelId = 0,
     ) {}
 
     public function shippingFee(): Money
     {
         return $this->shipping?->fee ?? Money::zero($this->currencyCode);
-    }
-
-    /**
-     * @return list<int>
-     */
-    public function brandIds(): array
-    {
-        return array_values(array_unique(array_map(fn (TotalsLine $line): int => $line->brandId, $this->lines)));
     }
 }

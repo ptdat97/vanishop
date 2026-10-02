@@ -16,7 +16,7 @@ return [
         'type' => 'action',
         'visibility' => 'public',
         'since' => '0.1',
-        'args' => ['styleId' => 'int', 'brandId' => 'int'],
+        'args' => ['styleId' => 'int'],
         'description' => 'Chạy TRONG transaction lưu sản phẩm: chỉ ghi DB của plugin, không I/O mạng.',
     ],
     'vani.catalog.listing.query' => [

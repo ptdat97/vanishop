@@ -36,7 +36,7 @@ final class PaymentGatewayContract
     public static function define(string $label, Closure $gateway, ?Closure $validCallback = null, ?Closure $tamperedCallback = null): void
     {
         $payment = fn (PaymentGateway $gateway): PaymentData => new PaymentData(
-            publicId: '01JCONTRACTTESTPAYMENT0001', gatewayCode: $gateway->code(), orderNumber: 'LM2610-000001', legalEntityId: 1, brandId: 1,
+            publicId: '01JCONTRACTTESTPAYMENT0001', gatewayCode: $gateway->code(), orderNumber: 'VN2610-000001',
             amount: Money::vnd(330_000), status: 'pending', gatewayReference: null, expiresAt: new DateTimeImmutable('+15 minutes'),
         );
 

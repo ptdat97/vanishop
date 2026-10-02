@@ -25,7 +25,7 @@ final class ClientProvisioning
     /**
      * Giá trị null/mảng rỗng = giữ nguyên (client đã có) hoặc mặc định (client mới).
      *
-     * @param  array{name?: ?string, scopes?: list<string>, brand_ids?: list<int>, ip_allowlist?: list<string>, rate_limit?: int, status?: ?string}  $attributes
+     * @param  array{name?: ?string, scopes?: list<string>, ip_allowlist?: list<string>, rate_limit?: int, status?: ?string}  $attributes
      */
     public function upsert(string $code, array $attributes): IntegrationClient
     {
@@ -46,9 +46,6 @@ final class ClientProvisioning
             'rate_limit' => $attributes['rate_limit'] ?? null,
             'status' => $attributes['status'] ?? ($client->exists ? null : 'active'),
         ], fn (mixed $value): bool => $value !== null));
-        if (($attributes['brand_ids'] ?? []) !== []) {
-            $client->brand_ids = array_values(array_unique($attributes['brand_ids']));
-        }
 
         $changes = $client->getDirty();
         $client->save();

@@ -39,7 +39,6 @@ const props = defineProps<{
         name: string;
         status: string;
         scopes: string[];
-        brand_ids: number[] | null;
         rate_limit: number;
         active_keys: number;
         subscriptions: Array<{
@@ -223,7 +222,6 @@ function resume(id: number): void {
             <tr>
                 <th class="px-4 py-2">Client</th>
                 <th class="px-4 py-2">Scope</th>
-                <th class="px-4 py-2">Brand</th>
                 <th class="px-4 py-2">Key</th>
                 <th class="px-4 py-2">Webhook</th>
             </tr>
@@ -236,9 +234,6 @@ function resume(id: number): void {
                 </td>
                 <td class="px-4 py-2 font-mono text-xs">
                     {{ client.scopes.join(', ') }}
-                </td>
-                <td class="px-4 py-2 text-xs">
-                    {{ client.brand_ids === null ? 'Tất cả' : client.brand_ids.join(', ') }}
                 </td>
                 <td class="px-4 py-2 text-xs">{{ client.active_keys }} còn hiệu lực</td>
                 <td class="px-4 py-2 text-xs">

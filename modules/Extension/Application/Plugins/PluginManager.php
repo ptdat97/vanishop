@@ -6,24 +6,20 @@ namespace Modules\Extension\Application\Plugins;
 
 use Composer\Semver\Comparator;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
-use Illuminate\Support\Facades\DB;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Domain\Plugin\PluginManifest;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
-use Modules\Extension\Persistence\Models\PluginScopeRecord;
 use Modules\Identity\Contracts\AuditLogger;
 use Throwable;
 
 /**
- * Vòng đời plugin: install → enable/disable (theo scope) → uninstall.
+ * Vòng đời plugin: install → enable/disable → uninstall.
  *
  * @see docs/05-plugin/plugin-system.md §4–§7
  */
 final class PluginManager
 {
-    public const SCOPE_TYPES = ['owner', 'brand', 'channel'];
-
     public function __construct(
         private readonly ManifestRepository $manifests,
         private readonly DependencyResolver $resolver,
@@ -69,10 +65,9 @@ final class PluginManager
         return $record->refresh();
     }
 
-    public function enable(string $pluginId, string $scopeType = 'owner', ?int $scopeId = null): void
+    public function enable(string $pluginId): void
     {
         $record = $this->recordOrFail($pluginId);
-        $this->assertScope($pluginId, $scopeType, $scopeId);
 
         if ($record->status === PluginStatus::Failed) {
             throw new PluginOperationFailed("Plugin [{$pluginId}] đang lỗi: {$record->last_error}");
@@ -87,44 +82,24 @@ final class PluginManager
             throw new PluginOperationFailed("Không thể bật [{$pluginId}]:", $problems);
         }
 
-        DB::transaction(function () use ($record, $scopeType, $scopeId): void {
-            PluginScopeRecord::query()->updateOrCreate(
-                ['plugin_id' => $record->id, 'scope_type' => $scopeType, 'scope_id' => $scopeId],
-                ['enabled' => true],
-            );
-            $record->update(['status' => PluginStatus::Enabled]);
-        });
+        $record->update(['status' => PluginStatus::Enabled]);
 
-        $this->audit->record('extension.plugin.enabled', 'plugin', $pluginId, ['scope_type' => $scopeType, 'scope_id' => $scopeId]);
+        $this->audit->record('extension.plugin.enabled', 'plugin', $pluginId);
         $this->afterStateChange();
     }
 
-    /**
-     * Tắt ở một scope, hoặc tắt hoàn toàn khi không truyền scope.
-     */
-    public function disable(string $pluginId, ?string $scopeType = null, ?int $scopeId = null): void
+    public function disable(string $pluginId): void
     {
         $record = $this->recordOrFail($pluginId);
 
-        if ($scopeType === null) {
-            $dependents = $this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->enabledIds());
-            if ($dependents !== []) {
-                throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đang được dùng bởi ".implode(', ', $dependents).'.');
-            }
+        $dependents = $this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->enabledIds());
+        if ($dependents !== []) {
+            throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đang được dùng bởi ".implode(', ', $dependents).'.');
         }
 
-        DB::transaction(function () use ($record, $scopeType, $scopeId): void {
-            $scopes = $record->scopes();
-            if ($scopeType !== null) {
-                $scopes->where('scope_type', $scopeType)->where('scope_id', $scopeId);
-            }
-            $scopes->update(['enabled' => false]);
+        $record->update(['status' => PluginStatus::Disabled]);
 
-            $stillEnabled = $record->scopes()->where('enabled', true)->exists();
-            $record->update(['status' => $stillEnabled ? PluginStatus::Enabled : PluginStatus::Disabled]);
-        });
-
-        $this->audit->record('extension.plugin.disabled', 'plugin', $pluginId, ['scope_type' => $scopeType, 'scope_id' => $scopeId]);
+        $this->audit->record('extension.plugin.disabled', 'plugin', $pluginId);
         $this->afterStateChange();
     }
 
@@ -247,22 +222,6 @@ final class PluginManager
         $path = $manifest->path.'/Database/migrations';
         if (is_dir($path)) {
             $this->console->call('migrate:rollback', ['--path' => $path, '--realpath' => true, '--force' => true]);
-        }
-    }
-
-    private function assertScope(string $pluginId, string $scopeType, ?int $scopeId): void
-    {
-        if (! in_array($scopeType, self::SCOPE_TYPES, true)) {
-            throw new PluginOperationFailed("Scope [{$scopeType}] không hợp lệ (".implode(', ', self::SCOPE_TYPES).').');
-        }
-
-        if (($scopeType === 'owner') !== ($scopeId === null)) {
-            throw new PluginOperationFailed('Scope owner không có id; các scope khác bắt buộc có id.');
-        }
-
-        $manifest = $this->manifestOrFail($pluginId);
-        if (! in_array($scopeType, $manifest->scopes, true) && $scopeType !== 'owner') {
-            throw new PluginOperationFailed("Plugin [{$pluginId}] không hỗ trợ scope [{$scopeType}].");
         }
     }
 

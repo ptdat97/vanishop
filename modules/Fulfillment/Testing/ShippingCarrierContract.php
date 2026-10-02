@@ -34,7 +34,7 @@ final class ShippingCarrierContract
     public static function define(string $label, Closure $carrier, ?Closure $validWebhook = null, ?Closure $tamperedWebhook = null): void
     {
         $shipment = new ShipmentData(
-            publicId: '01JCONTRACTTESTSHIPMENT001', orderNumber: 'LM2610-000001', brandId: 1, locationId: 1, serviceCode: null,
+            publicId: '01JCONTRACTTESTSHIPMENT001', orderNumber: 'VN2610-000001', locationId: 1, serviceCode: null,
             items: [['sku' => 'LM-DR01-BLK-S', 'name' => 'Đầm lụa', 'quantity' => 1]],
             recipient: ['full_name' => 'Nguyễn Thị Lan', 'phone' => '+84912345678'],
             address: ['province_code' => '79', 'province_name' => 'TP. Hồ Chí Minh', 'ward_code' => '26734', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi'],

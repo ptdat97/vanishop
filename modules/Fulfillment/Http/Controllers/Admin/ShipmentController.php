@@ -10,13 +10,10 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Http\Controllers\BrandWorkspaceHome;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 
@@ -25,16 +22,16 @@ final class ShipmentController
     /** Trạng thái nhân viên cập nhật tay (các trạng thái đặt vận đơn đi qua thao tác "nhập mã"). */
     private const MANUAL_STATUSES = [ShipmentStatus::PickedUp, ShipmentStatus::InTransit, ShipmentStatus::OutForDelivery, ShipmentStatus::FailedAttempt, ShipmentStatus::Delivered, ShipmentStatus::Returning, ShipmentStatus::Returned];
 
-    public function home(BrandWorkspaceHome $home): Response|RedirectResponse
+    public function home(): RedirectResponse
     {
         Gate::authorize('fulfillment.view');
 
-        return $home->respond('admin.fulfillment.shipments.index', 'Giao hàng', 'Chọn brand để xử lý vận đơn.');
+        return redirect()->route('admin.fulfillment.shipments.index');
     }
 
-    public function index(Brand $brand, Request $request, OrderReader $orders, CarrierRegistry $registry): Response
+    public function index(Request $request, OrderReader $orders, CarrierRegistry $registry): Response
     {
-        Gate::authorize('fulfillment.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('fulfillment.view');
         $status = (string) $request->query('status', '');
         $number = strtoupper(trim((string) $request->query('order', '')));
         $order = $number === '' ? null : $orders->findByNumber($number);
@@ -45,7 +42,6 @@ final class ShipmentController
             ->orderByDesc('id')->limit(100)->get();
 
         return Inertia::render('Fulfillment::Shipments/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.fulfillment.shipments.index'),
             'filters' => ['status' => $status, 'order' => $number],
             'statuses' => array_column(ShipmentStatus::cases(), 'value'),
@@ -69,13 +65,13 @@ final class ShipmentController
                 'can_book' => in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true),
                 'can_cancel' => $shipment->status->canMoveTo(ShipmentStatus::Cancelled),
             ])->all(),
-            'canManage' => Gate::allows('fulfillment.manage', [ScopeRef::brand($brand->id)]),
+            'canManage' => Gate::allows('fulfillment.manage'),
         ]);
     }
 
-    public function store(Brand $brand, Request $request, OrderReader $orders, FulfillmentService $fulfillment): RedirectResponse
+    public function store(Request $request, OrderReader $orders, FulfillmentService $fulfillment): RedirectResponse
     {
-        Gate::authorize('fulfillment.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('fulfillment.manage');
         $data = $request->validate(['order_id' => ['required', 'integer']]);
         abort_if($orders->find((int) $data['order_id']) === null, 404);
         $fulfillment->createForOrder((int) $data['order_id']);
@@ -83,18 +79,18 @@ final class ShipmentController
         return back()->with('success', __('fulfillment::messages.created'));
     }
 
-    public function book(Brand $brand, Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
+    public function book(Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
     {
-        Gate::authorize('fulfillment.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('fulfillment.manage');
         $data = $request->validate(['tracking_number' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._-]+$/'], 'service_code' => ['nullable', 'string', 'max:64']]);
         $fulfillment->book($shipment->id, $data['tracking_number'], $data['service_code'] ?? null);
 
         return back()->with('success', __('fulfillment::messages.booked'));
     }
 
-    public function status(Brand $brand, Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
+    public function status(Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
     {
-        Gate::authorize('fulfillment.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('fulfillment.manage');
         $data = $request->validate([
             'status' => ['required', Rule::in(array_map(fn (ShipmentStatus $status): string => $status->value, self::MANUAL_STATUSES))],
             'note' => ['nullable', 'string', 'max:255'],
@@ -104,9 +100,9 @@ final class ShipmentController
         return back()->with('success', __('fulfillment::messages.updated'));
     }
 
-    public function cancel(Brand $brand, Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
+    public function cancel(Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
     {
-        Gate::authorize('fulfillment.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('fulfillment.manage');
         $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
         $fulfillment->cancel($shipment->id, $data['reason']);
 

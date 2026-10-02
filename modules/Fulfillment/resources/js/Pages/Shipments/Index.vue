@@ -5,7 +5,6 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     filters: { status: string; order: string };
     statuses: string[];
@@ -62,8 +61,8 @@ function cancel(id: number): void {
 </script>
 
 <template>
-    <Head :title="`Giao hàng · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Giao hàng · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Giao hàng" />
+    <p class="mb-2 text-sm text-slate-500">Giao hàng</p>
     <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho." />
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
 

@@ -4,14 +4,13 @@ import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem } from '../../types';
+import type { NavItem } from '../../types';
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     filters: { q: string; status: string | null };
     products: {
-        data: Array<{ id: number; style_code: string; name: string | null; status: string; colors: number; image_url: string | null }>;
+        data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; colors: number; image_url: string | null }>;
         links: { prev: string | null; next: string | null };
         total: number;
     };
@@ -29,8 +28,8 @@ function search(): void {
 </script>
 
 <template>
-    <Head :title="`Sản phẩm · ${brand.name}`" />
-    <CatalogTabs :brand="brand" :nav="nav" active="products" />
+    <Head title="Sản phẩm" />
+    <CatalogTabs :nav="nav" active="products" />
     <PageHeader title="Sản phẩm" :subtitle="`${products.total} sản phẩm`">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm sản phẩm</Link>
     </PageHeader>
@@ -50,6 +49,7 @@ function search(): void {
                 <th class="w-16 px-4 py-2" />
                 <th class="px-4 py-2">Sản phẩm</th>
                 <th class="px-4 py-2">Mã</th>
+                <th class="px-4 py-2">Thương hiệu</th>
                 <th class="px-4 py-2">Màu</th>
                 <th class="px-4 py-2">Trạng thái</th>
                 <th />
@@ -63,6 +63,7 @@ function search(): void {
                 </td>
                 <td class="px-4 py-2 font-medium">{{ product.name }}</td>
                 <td class="px-4 py-2 font-mono text-xs">{{ product.style_code }}</td>
+                <td class="px-4 py-2">{{ product.brand ?? '—' }}</td>
                 <td class="px-4 py-2">{{ product.colors }}</td>
                 <td class="px-4 py-2">{{ statusLabels[product.status] ?? product.status }}</td>
                 <td class="px-4 py-2 text-right">
@@ -70,7 +71,7 @@ function search(): void {
                 </td>
             </tr>
             <tr v-if="!products.data.length">
-                <td colspan="6" class="px-4 py-6 text-center text-slate-500">Không có sản phẩm nào.</td>
+                <td colspan="7" class="px-4 py-6 text-center text-slate-500">Không có sản phẩm nào.</td>
             </tr>
         </tbody>
     </table>

@@ -16,7 +16,8 @@ final class CustomerTestHelpers
 {
     public const API = '/api/storefront/v1';
 
-    public const CHANNEL = ['X-Vani-Channel' => 'web-lumiere'];
+    /** Header chung của Storefront API (không còn header kênh — ADR-028). */
+    public const CHANNEL = [];
 
     public static function fakeOtp(): void
     {

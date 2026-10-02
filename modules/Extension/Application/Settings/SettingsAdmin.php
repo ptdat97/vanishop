@@ -8,11 +8,10 @@ use Illuminate\Validation\ValidationException;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
- * Màn hình cấu hình theo phạm vi: dữ liệu form (giá trị đặt trực tiếp + giá trị hiệu lực kế thừa) và lưu có audit.
+ * Màn hình cấu hình của cửa hàng: dữ liệu form (giá trị đã đặt + giá trị hiệu lực) và lưu có audit.
  * Secret không bao giờ trả về giao diện.
  */
 final class SettingsAdmin
@@ -37,17 +36,12 @@ final class SettingsAdmin
     /**
      * @return list<array<string, mixed>>
      */
-    public function form(string $namespace, string $scopeType, int $scopeId): array
+    public function form(string $namespace): array
     {
-        $explicit = $this->settings->explicit($namespace, $scopeType, $scopeId);
-        $effectiveScope = $this->effectiveScope($scopeType, $scopeId);
-        $parentScope = $this->parentScope($scopeType, $scopeId);
+        $explicit = $this->settings->explicit($namespace);
 
         $fields = [];
         foreach ($this->settings->definitions($namespace) as $definition) {
-            if (! in_array($scopeType, $definition->scopes, true)) {
-                continue;
-            }
             $secret = $definition->type === 'secret';
             $fields[] = [
                 'key' => $definition->key,
@@ -57,8 +51,7 @@ final class SettingsAdmin
                 'options' => $this->options($definition),
                 'is_set' => array_key_exists($definition->key, $explicit),
                 'value' => $secret ? null : ($explicit[$definition->key] ?? null),
-                'effective' => $secret ? null : $this->settings->get($namespace, $definition->key, $effectiveScope),
-                'inherited' => $secret || $parentScope === null ? null : $this->settings->get($namespace, $definition->key, $parentScope),
+                'effective' => $secret ? null : $this->settings->get($namespace, $definition->key),
             ];
         }
 
@@ -66,9 +59,9 @@ final class SettingsAdmin
     }
 
     /**
-     * @param  array<string, mixed>  $values  key => giá trị; null = xoá (kế thừa phạm vi cha). Secret rỗng = giữ nguyên.
+     * @param  array<string, mixed>  $values  key => giá trị; null = xoá (về mặc định). Secret rỗng = giữ nguyên.
      */
-    public function save(string $namespace, string $scopeType, int $scopeId, array $values): void
+    public function save(string $namespace, array $values): void
     {
         $definitions = [];
         foreach ($this->settings->definitions($namespace) as $definition) {
@@ -77,23 +70,20 @@ final class SettingsAdmin
 
         foreach ($values as $key => $value) {
             $definition = $definitions[$key] ?? throw ValidationException::withMessages(["values.{$key}" => 'Cấu hình không tồn tại.']);
-            if (! in_array($scopeType, $definition->scopes, true)) {
-                throw ValidationException::withMessages(["values.{$key}" => 'Không đặt được ở phạm vi này.']);
-            }
             if ($definition->type === 'secret' && ($value === null || $value === '')) {
                 continue;
             }
 
             if ($value === null || $value === '') {
-                $this->settings->forget($namespace, $key, $scopeType, $scopeId);
-                $this->audit->record('settings.reset', 'setting', "{$namespace}.{$key}", ['scope' => "{$scopeType}:{$scopeId}"]);
+                $this->settings->forget($namespace, $key);
+                $this->audit->record('settings.reset', 'setting', "{$namespace}.{$key}");
 
                 continue;
             }
 
-            $this->settings->set($namespace, $key, $this->cast($definition, $value), $scopeType, $scopeId);
+            $this->settings->set($namespace, $key, $this->cast($definition, $value));
             $this->audit->record('settings.updated', 'setting', "{$namespace}.{$key}", [
-                'scope' => "{$scopeType}:{$scopeId}", 'value' => $definition->type === 'secret' ? '***' : $value,
+                'value' => $definition->type === 'secret' ? '***' : $value,
             ]);
         }
     }
@@ -128,20 +118,5 @@ final class SettingsAdmin
         }
 
         return $options;
-    }
-
-    private function effectiveScope(string $type, int $id): SettingsScope
-    {
-        return match ($type) {
-            SettingsScope::CHANNEL => new SettingsScope(channelId: $id),
-            SettingsScope::BRAND => new SettingsScope(brandId: $id),
-            SettingsScope::LEGAL_ENTITY => new SettingsScope(legalEntityId: $id),
-            default => SettingsScope::owner(),
-        };
-    }
-
-    private function parentScope(string $type, int $id): ?SettingsScope
-    {
-        return $type === SettingsScope::OWNER ? null : SettingsScope::owner();
     }
 }

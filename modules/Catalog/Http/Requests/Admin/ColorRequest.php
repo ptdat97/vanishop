@@ -7,10 +7,8 @@ namespace Modules\Catalog\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Persistence\Models\Color;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 final class ColorRequest extends FormRequest
 {
@@ -19,10 +17,7 @@ final class ColorRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
-
-        return Gate::allows('catalog.manage', [ScopeRef::brand($brand->id)]);
+        return Gate::allows('catalog.manage');
     }
 
     /**
@@ -30,13 +25,11 @@ final class ColorRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
         $color = $this->route('color');
 
         return [
             'code' => ['required', 'string', 'max:32', 'regex:/^[A-Z0-9][A-Z0-9-]*$/',
-                Rule::unique('colors', 'code')->where('brand_id', $brand->id)->ignore($color instanceof Color ? $color->id : null)],
+                Rule::unique('colors', 'code')->ignore($color instanceof Color ? $color->id : null)],
             'color_family' => ['required', Rule::enum(ColorFamily::class)],
             'hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'position' => ['required', 'integer', 'min:0'],

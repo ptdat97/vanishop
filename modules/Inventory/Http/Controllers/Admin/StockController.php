@@ -9,8 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Http\Controllers\BrandWorkspaceHome;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Application\StockAdjustmentService;
@@ -20,27 +18,26 @@ use Modules\Inventory\Persistence\Models\Location;
 
 final class StockController
 {
-    public function home(BrandWorkspaceHome $home): Response|RedirectResponse
+    public function home(): RedirectResponse
     {
         Gate::authorize('inventory.view');
 
-        return $home->respond('admin.inventory.stock.index', 'Tồn kho', 'Chọn brand để xem và điều chỉnh tồn kho.');
+        return redirect()->route('admin.inventory.stock.index');
     }
 
     /**
-     * Lưới tồn: variant của một mã sản phẩm × location bán brand.
+     * Lưới tồn: variant của một mã sản phẩm × location.
      */
-    public function index(Brand $brand, Request $request, VariantDirectory $variants, StockQueries $queries): Response
+    public function index(Request $request, VariantDirectory $variants, StockQueries $queries): Response
     {
-        Gate::authorize('inventory.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('inventory.view');
 
         $styleCode = trim((string) $request->query('style', ''));
-        $rows = $styleCode === '' ? [] : $variants->ofStyleCode($brand->id, $styleCode);
-        $locations = $queries->locationsForBrand($brand->id);
+        $rows = $styleCode === '' ? [] : $variants->ofStyleCode($styleCode);
+        $locations = $queries->locations();
         $levels = $queries->levels(array_map(fn ($variant): int => $variant->id, $rows));
 
         return Inertia::render('Inventory::Stock/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.inventory.stock.index'),
             'locationsUrl' => Gate::allows('inventory.locations.manage', [ScopeRef::owner()]) ? route('admin.inventory.locations.index') : null,
             'styleCode' => $styleCode,
@@ -59,16 +56,16 @@ final class StockController
                 'status' => $variant->status,
                 'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$variant->id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $locations),
             ], $rows),
-            'canAdjust' => Gate::allows('inventory.adjust', [ScopeRef::brand($brand->id)]),
+            'canAdjust' => Gate::allows('inventory.adjust'),
         ]);
     }
 
-    public function change(Brand $brand, StockChangeRequest $request, VariantDirectory $variants, StockAdjustmentService $stock, StockQueries $queries): RedirectResponse
+    public function change(StockChangeRequest $request, VariantDirectory $variants, StockAdjustmentService $stock, StockQueries $queries): RedirectResponse
     {
         $variantId = (int) $request->validated('variant_id');
         $variant = $variants->find([$variantId])[$variantId] ?? null;
-        $location = collect($queries->locationsForBrand($brand->id))->firstWhere('id', (int) $request->validated('location_id'));
-        abort_if($variant === null || $variant->brandId !== $brand->id || $location === null, 404);
+        $location = collect($queries->locations())->firstWhere('id', (int) $request->validated('location_id'));
+        abort_if($variant === null || $location === null, 404);
 
         $quantity = (int) $request->validated('quantity');
         $reason = (string) $request->validated('reason');
@@ -82,16 +79,15 @@ final class StockController
         return back()->with('success', __('inventory::messages.adjusted'));
     }
 
-    public function movements(Brand $brand, Request $request, VariantDirectory $variants, StockQueries $queries): Response
+    public function movements(Request $request, VariantDirectory $variants, StockQueries $queries): Response
     {
-        Gate::authorize('inventory.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('inventory.view');
 
         $variantId = (int) $request->query('variant');
         $variant = $variants->find([$variantId])[$variantId] ?? null;
-        abort_if($variant === null || $variant->brandId !== $brand->id, 404);
+        abort_if($variant === null, 404);
 
         return Inertia::render('Inventory::Stock/Movements', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'backUrl' => route('admin.inventory.stock.index', ['style' => $variant->styleCode]),
             'variant' => ['sku' => $variant->sku, 'style_code' => $variant->styleCode],
             'movements' => $queries->movements($variantId),

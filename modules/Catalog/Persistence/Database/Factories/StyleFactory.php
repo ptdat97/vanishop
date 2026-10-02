@@ -6,11 +6,10 @@ namespace Modules\Catalog\Persistence\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Style;
 
 /**
- * Tạo style tối giản (không qua ProductService). Cần CurrentContext cho phép brand.
+ * Tạo style tối giản (không qua ProductService).
  *
  * @extends Factory<Style>
  */
@@ -23,7 +22,7 @@ final class StyleFactory extends Factory
         $code = strtoupper(fake()->unique()->bothify('ST##??##'));
 
         return [
-            'brand_id' => Brand::factory(),
+            'brand_id' => null,
             'style_code' => $code,
             'slug' => Str::slug($code),
             'status' => 'active',

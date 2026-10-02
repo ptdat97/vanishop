@@ -28,7 +28,6 @@ use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 
 final class FulfillmentServiceProvider extends ModuleServiceProvider
@@ -42,16 +41,16 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
-        $this->app->make(Extensions::class)->tag([ReservedLocationSourcing::class], CarrierRegistry::SOURCING_TAG);
+        $this->app->make(Extensions::class)->tag([ReservedLocationSourcing::class], SourcingStrategy::TAG);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'fulfillment.sourcing', 'Chọn kho giao hàng (sourcing)', 'select', (string) config('vanishop.fulfillment.sourcing', 'reserved_locations'),
-            [SettingsScope::OWNER, SettingsScope::BRAND], optionsFromTag: SourcingStrategy::TAG, help: 'SourcingStrategy khi tạo vận đơn cho đơn của brand.',
+            optionsFromTag: SourcingStrategy::TAG, help: 'SourcingStrategy khi tạo vận đơn.',
         ));
-        $permissions->register('fulfillment.view', 'Xem vận đơn của brand');
+        $permissions->register('fulfillment.view', 'Xem vận đơn');
         $permissions->register('fulfillment.manage', 'Tạo/cập nhật/huỷ vận đơn');
 
         $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60);
@@ -75,7 +74,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
-        $this->loadBrandWorkspaceRoutes('fulfillment', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->loadAdminSectionRoutes('fulfillment', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
     }
 }

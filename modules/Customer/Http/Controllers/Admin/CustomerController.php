@@ -12,9 +12,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Customer\Application\AccountLifecycle;
 use Modules\Customer\Application\AddressBook;
-use Modules\Customer\Application\BrandProfiles;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerQueries;
+use Modules\Customer\Application\CustomerStats;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Identity\Contracts\Data\ScopeRef;
@@ -22,7 +22,7 @@ use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 
 /**
- * Khách hàng — cấp Owner (một tài khoản cho mọi brand).
+ * Khách hàng của cửa hàng.
  */
 final class CustomerController
 {
@@ -42,7 +42,7 @@ final class CustomerController
         ]);
     }
 
-    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, BrandProfiles $profiles, CustomerOrders $orders): Response
+    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
         $model = $queries->byPublicId($customer) ?? abort(404);
@@ -58,10 +58,10 @@ final class CustomerController
             ],
             'addresses' => $addresses->all($model->id),
             'consents' => $consents->all($model->id),
-            'brandProfiles' => $profiles->of($model->id),
+            'stats' => $stats->of($model),
             'orders' => array_map(fn (OrderDetail $order): array => [
                 'number' => $order->number, 'status' => $order->customerStatus['label'], 'total' => $order->amounts['total'],
-                'placed_at' => $order->placedAt, 'brand_id' => $order->brandId,
+                'placed_at' => $order->placedAt,
             ], $orders->ofCustomer($model->id, 1, 20)['data']),
             'can' => [
                 'merge' => Gate::allows('customers.merge', [ScopeRef::owner()]),

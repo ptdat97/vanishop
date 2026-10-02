@@ -59,6 +59,6 @@ final class PromotionRuleContract
     {
         $line = fn (int $key, int $quantity, int $unit): PromotionLine => new PromotionLine($key, 1, 10 + $key, $quantity, Money::vnd($unit), Money::vnd($unit * $quantity));
 
-        return new PromotionContext(1, 42, 'VND', [$line(1, 2, 150_000), $line(2, 1, 99_000)], [], 1_760_000_000);
+        return new PromotionContext(42, 'VND', [$line(1, 2, 150_000), $line(2, 1, 99_000)], [], 1_760_000_000);
     }
 }

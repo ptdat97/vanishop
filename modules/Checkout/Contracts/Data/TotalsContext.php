@@ -19,7 +19,6 @@ final readonly class TotalsContext
      * @param  array<string, mixed>  $attributes
      */
     public function __construct(
-        public int $channelId,
         public ?int $customerId,
         public string $currencyCode,
         public array $lines,
@@ -38,25 +37,25 @@ final readonly class TotalsContext
      */
     public function withLines(array $lines): self
     {
-        return new self($this->channelId, $this->customerId, $this->currencyCode, $lines, $this->adjustments, $this->voucherCodes,
+        return new self($this->customerId, $this->currencyCode, $lines, $this->adjustments, $this->voucherCodes,
             $this->shippingMethod, $this->shippingAddress, $this->now, $this->shipping, $this->promotions, $this->attributes);
     }
 
     public function withAdjustment(Adjustment $adjustment): self
     {
-        return new self($this->channelId, $this->customerId, $this->currencyCode, $this->lines, [...$this->adjustments, $adjustment], $this->voucherCodes,
+        return new self($this->customerId, $this->currencyCode, $this->lines, [...$this->adjustments, $adjustment], $this->voucherCodes,
             $this->shippingMethod, $this->shippingAddress, $this->now, $this->shipping, $this->promotions, $this->attributes);
     }
 
     public function withShipping(?ShippingOption $shipping): self
     {
-        return new self($this->channelId, $this->customerId, $this->currencyCode, $this->lines, $this->adjustments, $this->voucherCodes,
+        return new self($this->customerId, $this->currencyCode, $this->lines, $this->adjustments, $this->voucherCodes,
             $this->shippingMethod, $this->shippingAddress, $this->now, $shipping, $this->promotions, $this->attributes);
     }
 
     public function withPromotions(PromotionResult $promotions): self
     {
-        return new self($this->channelId, $this->customerId, $this->currencyCode, $this->lines, $this->adjustments, $this->voucherCodes,
+        return new self($this->customerId, $this->currencyCode, $this->lines, $this->adjustments, $this->voucherCodes,
             $this->shippingMethod, $this->shippingAddress, $this->now, $this->shipping, $promotions, $this->attributes);
     }
 

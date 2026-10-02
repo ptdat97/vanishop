@@ -1,8 +1,7 @@
 <?php
 
-use Modules\Brand\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Channel\Persistence\Models\Channel;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 
@@ -10,14 +9,13 @@ require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
-    $this->channel = Channel::factory()->forBrand($this->brand, 'vani.test', '/lumiere')->create(['code' => 'web-lumiere']);
     $this->style = T::product($this->brand->id, ['name' => 'Đầm lụa', 'slug' => 'dam-lua']);
     [$this->s, $this->m] = P::variants($this->style);
-    P::priceList($this->brand->id, ['code' => 'base'], [$this->channel->id], [$this->s->id => [590_000], $this->m->id => [590_000, 690_000]]);
-    $warehouse = I::location($this->brand, [$this->channel->id]);
+    P::priceList(['code' => 'base'], [$this->s->id => [590_000], $this->m->id => [590_000, 690_000]]);
+    $warehouse = I::location();
     I::stock($warehouse, $this->s->id, 10);
     I::stock($warehouse, $this->m->id, 1);
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
 });
 
 function newCart($test): array

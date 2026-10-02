@@ -22,11 +22,11 @@ beforeEach(function () {
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     FakeOnlineGateway::$refunds = [];
     FakeOnlineGateway::$queryResult = null;
-    config(['vanishop.payment.bank_transfer.accounts.default' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
+    config(['vanishop.payment.bank_transfer.account' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
 
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s] = C::store();
+    ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
     $this->order = function (string $method, array $vouchers = [], int $expected = 330_000, string $key = 'order-key-0001') {
         $created = $this->postJson("{$this->api}/carts", [], $this->headers)->assertCreated();
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -48,7 +48,7 @@ it('quote liệt kê các cổng khả dụng', function () {
     $methods = $this->postJson("{$this->api}/checkout/{$created->json('data.id')}/quote", [], $headers)->json('data.payment_methods');
     expect(array_column($methods, 'code'))->toBe(['cod', 'manual_bank_transfer', 'fake_online']);
 
-    config(['vanishop.payment.cod.max_amount' => 100_000, 'vanishop.payment.bank_transfer.accounts.default.account_number' => '']);
+    config(['vanishop.payment.cod.max_amount' => 100_000, 'vanishop.payment.bank_transfer.account.account_number' => '']);
     $methods = $this->postJson("{$this->api}/checkout/{$created->json('data.id')}/quote", [], $headers)->json('data.payment_methods');
     expect(array_column($methods, 'code'))->toBe(['fake_online']);
 });
@@ -108,7 +108,7 @@ it('online: chữ ký sai → 400; sai số tiền → không ghi nhận', funct
 });
 
 it('online: hết hạn thanh toán → huỷ đơn, nhả hàng, hoàn lượt voucher; IPN muộn → tự hoàn tiền', function () {
-    C::promotion($this->brand, [], ['GIAM10' => 10]);
+    C::promotion([], ['GIAM10' => 10]);
     $paymentId = ($this->order)('fake_online', ['GIAM10'], 300_000)->assertCreated()->json('data.payment.id');
     expect(($this->reserved)())->toBe(1)->and(DB::table('vouchers')->value('used_count'))->toEqual(1);
 
@@ -152,11 +152,11 @@ it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên x
         ->assertJsonPath('data.payment.action.instructions.transfer_content', ($this->orderRow)()->number);
 
     $payment = Payment::query()->withoutGlobalScopes()->sole();
-    $base = '/admin/payment/lumiere';
-    $this->actingAs(T::staffFor($this->brand, ['admin.access', 'payments.view']), 'staff');
+    $base = '/admin/payment';
+    $this->actingAs(T::staff(['admin.access', 'payments.view']), 'staff');
     $this->post("{$base}/payments/{$payment->id}/confirm", ['note' => 'VCB 123'])->assertForbidden();
 
-    $this->actingAs(T::staffFor($this->brand, ['admin.access', 'payments.view', 'payments.confirm', 'payments.refund']), 'staff');
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.confirm', 'payments.refund']), 'staff');
     $this->get("{$base}/payments")->assertOk();
     $this->post("{$base}/payments/{$payment->id}/confirm", ['note' => 'VCB 123'])->assertSessionHasNoErrors();
     $this->post("{$base}/payments/{$payment->id}/confirm", ['note' => 'lần 2'])->assertSessionHasNoErrors();

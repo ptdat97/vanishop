@@ -11,5 +11,5 @@ final readonly class ConsentChanged implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $customerId, public int $brandId, public string $channel, public string $purpose, public bool $granted) {}
+    public function __construct(public int $customerId, public string $channel, public string $purpose, public bool $granted) {}
 }

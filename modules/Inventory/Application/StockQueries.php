@@ -14,14 +14,13 @@ use Modules\Inventory\Persistence\Models\StockMovement;
 final class StockQueries
 {
     /**
-     * Location bán brand này (kể cả không phục vụ online — cửa hàng vẫn có tồn).
+     * Mọi location (kể cả không phục vụ online — cửa hàng vẫn có tồn).
      *
      * @return list<Location>
      */
-    public function locationsForBrand(int $brandId): array
+    public function locations(): array
     {
         return Location::query()
-            ->whereIn('id', DB::table('location_brands')->where('brand_id', $brandId)->select('location_id'))
             ->orderByDesc('priority')->orderBy('code')
             ->get()->all();
     }

@@ -10,16 +10,14 @@ use Modules\Extension\Application\Plugins\PluginOperationFailed;
 
 final class PluginDisableCommand extends Command
 {
-    protected $signature = 'vani:plugin:disable {plugin} {--scope= : Bỏ trống để tắt hoàn toàn; hoặc owner | brand:<id> | channel:<id>}';
+    protected $signature = 'vani:plugin:disable {plugin}';
 
-    protected $description = 'Tắt plugin ở một phạm vi hoặc tắt hoàn toàn';
+    protected $description = 'Tắt plugin';
 
     public function handle(PluginManager $plugins): int
     {
         try {
-            $scope = $this->option('scope');
-            [$type, $id] = $scope === null ? [null, null] : ScopeOption::parse((string) $scope);
-            $plugins->disable((string) $this->argument('plugin'), $type, $id);
+            $plugins->disable((string) $this->argument('plugin'));
         } catch (PluginOperationFailed $exception) {
             $this->error($exception->getMessage());
 

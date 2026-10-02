@@ -4,7 +4,6 @@ import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     status: string;
     statuses: string[];
@@ -21,8 +20,8 @@ function filter(status: string): void {
 </script>
 
 <template>
-    <Head :title="`Đổi/trả · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Đổi/trả · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Đổi/trả" />
+    <p class="mb-2 text-sm text-slate-500">Đổi/trả</p>
     <PageHeader title="Yêu cầu đổi/trả" subtitle="Tiền hoàn tính từ thành tiền dòng đã trừ giảm giá; không hoàn phí giao." />
 
     <div class="mb-4 flex flex-wrap gap-2">

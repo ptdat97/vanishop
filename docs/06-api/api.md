@@ -6,7 +6,7 @@
 
 | Nhóm | Prefix | Người dùng | Xác thực |
 |---|---|---|---|
-| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Một cửa hàng: **không** cần header kênh ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md); code hiện còn bắt `X-Vani-Channel`, bỏ ở slice 12); header tuỳ chọn `X-Vani-Source` (`web`/`app`/`zalo`) ghi nguồn đơn; ngôn ngữ mặc định `vi`, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách: Sanctum token / session cookie |
+| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Một cửa hàng: **không** cần header kênh ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); header tuỳ chọn `X-Vani-Source` (`web`/`app`/`zalo`) ghi nguồn đơn; ngôn ngữ mặc định `vi`, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách: Sanctum token / session cookie |
 | **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Sanctum token của nhân viên + RBAC (permission) |
 | **Integration API** | `/api/integration/v1` và `/api/integrations/{system}/webhooks` | Integration Client (ERP, POS, ODO khi có), hãng VC, cổng TT | Client credentials (API key + secret, HMAC chữ ký), IP allowlist tuỳ hệ thống |
 

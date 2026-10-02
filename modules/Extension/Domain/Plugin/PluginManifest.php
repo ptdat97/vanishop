@@ -19,7 +19,6 @@ final readonly class PluginManifest
      * @param  array<string, string>  $name  locale => tên hiển thị
      * @param  array<string, string>  $requiresPlugins  plugin id => ràng buộc phiên bản
      * @param  list<string>  $conflicts
-     * @param  list<string>  $scopes
      * @param  list<string>  $permissions
      */
     public function __construct(
@@ -31,7 +30,6 @@ final readonly class PluginManifest
         public string $requiresCore,
         public array $requiresPlugins,
         public array $conflicts,
-        public array $scopes,
         public array $permissions,
         public string $path,
     ) {}
@@ -73,7 +71,6 @@ final readonly class PluginManifest
             requiresCore: $requires['vanishop'],
             requiresPlugins: array_map('strval', (array) ($requires['plugins'] ?? [])),
             conflicts: array_values(array_map('strval', (array) ($data['conflicts'] ?? []))),
-            scopes: array_values(array_map('strval', (array) ($data['scopes'] ?? ['owner']))),
             permissions: array_values(array_map('strval', (array) ($data['permissions'] ?? []))),
             path: $path,
         );

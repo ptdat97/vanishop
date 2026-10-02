@@ -14,9 +14,7 @@ return new class extends Migration
             $table->id();
             $table->char('public_id', 26)->unique();
             $table->string('number', 32)->unique();
-            $table->foreignId('legal_entity_id')->constrained()->restrictOnDelete();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
-            $table->foreignId('channel_id')->constrained()->restrictOnDelete();
+            $table->string('source', 16)->default('web'); // web | app | zalo | admin | pos | marketplace
             $table->unsignedBigInteger('customer_id')->nullable()->index(); // FK khi có module Customer
             $table->char('currency_code', 3);
             $table->string('order_status', 16);
@@ -40,8 +38,9 @@ return new class extends Migration
             $table->timestamp('placed_at');
             $table->timestamps();
 
-            $table->index(['brand_id', 'placed_at']);
-            $table->index(['brand_id', 'order_status']);
+            $table->index('placed_at');
+            $table->index('order_status');
+            $table->index(['source', 'placed_at']);
         });
 
         Schema::create('order_lines', function (Blueprint $table) {
@@ -50,6 +49,8 @@ return new class extends Migration
             $table->unsignedBigInteger('variant_id')->index(); // không FK: đơn không phụ thuộc catalog
             $table->string('sku', 64);
             $table->string('product_name');
+            $table->unsignedBigInteger('brand_id')->nullable()->index(); // snapshot thương hiệu (không FK)
+            $table->string('brand_name')->nullable();
             $table->string('color_name')->nullable();
             $table->string('size_code', 32);
             $table->string('image_url')->nullable();

@@ -11,5 +11,5 @@ final readonly class ShipmentCreated implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $shipmentId, public int $orderId, public string $carrierCode, public ?int $brandId = null) {}
+    public function __construct(public int $shipmentId, public int $orderId, public string $carrierCode) {}
 }

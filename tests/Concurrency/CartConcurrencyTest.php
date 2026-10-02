@@ -3,12 +3,11 @@
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\DB;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Cart\Contracts\CartRejected;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Channel\Persistence\Models\Channel;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\Actor;
@@ -30,10 +29,9 @@ beforeEach(function () {
     }
 
     $this->brand = Brand::factory()->create();
-    $this->channel = Channel::factory()->forBrand($this->brand, 'vani.test', '/lumiere')->create();
     [$this->variant] = P::variants(T::product($this->brand->id), ['S']);
-    P::priceList($this->brand->id, ['code' => 'base'], [$this->channel->id], [$this->variant->id => [500_000]]);
-    I::stock(I::location($this->brand, [$this->channel->id]), $this->variant->id, 100);
+    P::priceList(['code' => 'base'], [$this->variant->id => [500_000]]);
+    I::stock(I::location(), $this->variant->id, 100);
 });
 
 /**
@@ -41,12 +39,12 @@ beforeEach(function () {
  *
  * @return list<Closure>
  */
-function cartAddTasks(int $count, string $publicId, string $token, int $channelId, int $brandId, int $variantId): array
+function cartAddTasks(int $count, string $publicId, string $token, int $variantId): array
 {
     $tasks = [];
     foreach (range(1, $count) as $ignored) {
-        $tasks[] = static function () use ($publicId, $token, $channelId, $brandId, $variantId): string {
-            app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channelId, [$brandId], 'vi'));
+        $tasks[] = static function () use ($publicId, $token, $variantId): string {
+            app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
 
             try {
                 app(Carts::class)->addLine(new CartKey($publicId, $token), $variantId, 1);
@@ -62,13 +60,11 @@ function cartAddTasks(int $count, string $publicId, string $token, int $channelI
 }
 
 it('8 tiến trình cùng thêm một variant vào một giỏ → cộng dồn đủ 8, một dòng', function () {
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'));
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $key = app(Carts::class)->create('VND')->key;
 
     [$publicId, $token] = [$key->publicId, $key->token];
-    [$channelId, $brandId, $variantId] = [$this->channel->id, $this->brand->id, $this->variant->id];
-
-    $tasks = cartAddTasks(8, $publicId, $token, $channelId, $brandId, $variantId);
+    $tasks = cartAddTasks(8, $publicId, $token, $this->variant->id);
 
     $results = Concurrency::driver('process')->run($tasks);
 

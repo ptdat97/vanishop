@@ -47,7 +47,7 @@ final class NotificationChannelContract
             it('tin thiếu nội dung/tham số → permanent, không ném exception', function () use ($channel, $message, $succeed): void {
                 $succeed();
                 $original = $message();
-                $empty = new OutgoingMessage($original->logId, $original->idempotencyKey, $original->type, $original->brandId, $original->recipient, null, '', [], 1);
+                $empty = new OutgoingMessage($original->logId, $original->idempotencyKey, $original->type, $original->recipient, null, '', [], 1);
                 expect($channel()->send($empty)->kind)->toBe('permanent');
             });
         });

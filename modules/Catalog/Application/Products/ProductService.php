@@ -16,6 +16,7 @@ use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Extension\Facades\Hook;
@@ -29,19 +30,19 @@ final class ProductService
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
-    public function create(int $brandId, ProductInput $input): Style
+    public function create(ProductInput $input): Style
     {
-        $this->guard($brandId, null, $input);
+        $this->guard(null, $input);
 
-        return DB::transaction(function () use ($brandId, $input): Style {
-            $style = new Style(['brand_id' => $brandId]);
+        return DB::transaction(function () use ($input): Style {
+            $style = new Style;
             $this->fill($style, $input);
             $style->save();
             $this->syncRelations($style, $input);
 
-            Hook::action('vani.product.after_save', $style->id, $brandId);
+            Hook::action('vani.product.after_save', $style->id);
             $this->audit->record('catalog.product.created', 'style', $style->id, ['style_code' => $style->style_code]);
-            event(new ProductCreated($style->id, $brandId, $style->style_code));
+            event(new ProductCreated($style->id, $style->style_code));
 
             return $style;
         });
@@ -49,7 +50,7 @@ final class ProductService
 
     public function update(Style $style, ProductInput $input, int $expectedLockVersion): Style
     {
-        $this->guard($style->brand_id, $style->id, $input);
+        $this->guard($style->id, $input);
 
         return DB::transaction(function () use ($style, $input, $expectedLockVersion): Style {
             $updated = Style::query()->whereKey($style->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
@@ -64,12 +65,12 @@ final class ProductService
             $style->save();
             $this->syncRelations($style, $input);
 
-            Hook::action('vani.product.after_save', $style->id, $style->brand_id);
+            Hook::action('vani.product.after_save', $style->id);
             $this->audit->record('catalog.product.updated', 'style', $style->id, ['style_code' => $style->style_code, 'status' => $style->status->value]);
 
             event($style->status === StyleStatus::Archived && ! $wasArchived
-                ? new ProductArchived($style->id, $style->brand_id, $style->style_code)
-                : new ProductUpdated($style->id, $style->brand_id, $style->style_code));
+                ? new ProductArchived($style->id, $style->style_code)
+                : new ProductUpdated($style->id, $style->style_code));
 
             return $style->refresh();
         });
@@ -91,14 +92,14 @@ final class ProductService
             }
             $style->delete();
             $this->audit->record('catalog.product.deleted', 'style', $style->id, ['style_code' => $style->style_code]);
-            event(new ProductArchived($style->id, $style->brand_id, $style->style_code));
+            event(new ProductArchived($style->id, $style->style_code));
         });
     }
 
     /**
-     * Kiểm tra dữ liệu liên quan (danh mục, thuộc tính cùng brand) và hook của plugin.
+     * Kiểm tra dữ liệu liên quan (brand, danh mục, thuộc tính) và hook của plugin.
      */
-    private function guard(int $brandId, ?int $styleId, ProductInput $input): void
+    private function guard(?int $styleId, ProductInput $input): void
     {
         try {
             new PublishWindow($input->publishedFrom, $input->publishedTo);
@@ -107,18 +108,22 @@ final class ProductService
         }
 
         $categoryIds = array_values(array_unique($input->categoryIds));
-        $found = Category::query()->where('brand_id', $brandId)->whereIn('id', $categoryIds)->count();
+        if ($input->brandId !== null && ! Brand::query()->whereKey($input->brandId)->exists()) {
+            throw ValidationException::withMessages(['brand_id' => __('catalog::messages.brand_not_found')]);
+        }
+
+        $found = Category::query()->whereIn('id', $categoryIds)->count();
         if ($found !== count($categoryIds)) {
-            throw ValidationException::withMessages(['category_ids' => __('catalog::messages.category_not_in_brand')]);
+            throw ValidationException::withMessages(['category_ids' => __('catalog::messages.category_not_found')]);
         }
         if ($input->primaryCategoryId !== null && ! in_array($input->primaryCategoryId, $categoryIds, true)) {
             throw ValidationException::withMessages(['primary_category_id' => __('catalog::messages.primary_category_not_selected')]);
         }
 
-        $this->validateAttributes($brandId, $input->attributes);
+        $this->validateAttributes($input->attributes);
 
         $issues = Hook::collect('vani.product.before_save', new ProductDraft(
-            brandId: $brandId,
+            brandId: $input->brandId,
             styleId: $styleId,
             styleCode: $input->styleCode,
             slug: $input->slug,
@@ -135,16 +140,16 @@ final class ProductService
     /**
      * @param  array<int, mixed>  $values
      */
-    private function validateAttributes(int $brandId, array $values): void
+    private function validateAttributes(array $values): void
     {
-        $attributes = Attribute::query()->with('values')->where('brand_id', $brandId)->whereIn('id', array_keys($values))->get()->keyBy('id');
+        $attributes = Attribute::query()->with('values')->whereIn('id', array_keys($values))->get()->keyBy('id');
 
         foreach ($values as $attributeId => $value) {
             $attribute = $attributes->get($attributeId);
             $key = "attributes.{$attributeId}";
 
             if ($attribute === null) {
-                throw ValidationException::withMessages([$key => __('catalog::messages.attribute_not_in_brand')]);
+                throw ValidationException::withMessages([$key => __('catalog::messages.attribute_not_found')]);
             }
             if ($value === null || $value === '' || $value === []) {
                 continue;
@@ -167,6 +172,7 @@ final class ProductService
     private function fill(Style $style, ProductInput $input): void
     {
         $style->fill([
+            'brand_id' => $input->brandId,
             'style_code' => $input->styleCode,
             'slug' => $input->slug,
             'status' => $input->status,

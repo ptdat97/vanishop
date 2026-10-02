@@ -5,12 +5,11 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem, Translations } from '../../types';
+import type { NavItem, Translations } from '../../types';
 
 type Fields = 'name' | 'description' | 'meta_title' | 'meta_description';
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     category: null | {
         id: number;
@@ -73,7 +72,7 @@ function removeImage(): void {
 
 <template>
     <Head :title="category ? 'Sửa danh mục' : 'Thêm danh mục'" />
-    <CatalogTabs :brand="brand" :nav="nav" active="categories" />
+    <CatalogTabs :nav="nav" active="categories" />
     <PageHeader :title="category ? 'Sửa danh mục' : 'Thêm danh mục'">
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
         <button v-if="category" type="button" :class="dangerButton" @click="destroy">Xoá</button>

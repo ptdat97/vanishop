@@ -9,12 +9,13 @@ use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Application\StaleRecord;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Identity\Contracts\AuditLogger;
 
 /**
- * Thuộc tính, màu, size của brand (context kiểu CRUD — xem docs/02-architecture/bounded-contexts.md §4).
+ * Thuộc tính, màu, size của cửa hàng (context kiểu CRUD — xem docs/02-architecture/bounded-contexts.md §4).
  */
 final class TaxonomyService
 {
@@ -23,7 +24,7 @@ final class TaxonomyService
     /**
      * @param  array{code: string, kind: string, input_type: string, is_filterable: bool, position: int, translations: array<string, array{name: string}>, values?: list<array{code: string, translations: array<string, array{label: string}>}>}  $data
      */
-    public function saveAttribute(int $brandId, array $data, ?Attribute $attribute = null, ?int $expectedLockVersion = null): Attribute
+    public function saveAttribute(array $data, ?Attribute $attribute = null, ?int $expectedLockVersion = null): Attribute
     {
         $inputType = AttributeInputType::from($data['input_type']);
         $values = $data['values'] ?? [];
@@ -32,7 +33,7 @@ final class TaxonomyService
             throw ValidationException::withMessages(['values' => __('catalog::messages.attribute_values_required')]);
         }
 
-        return DB::transaction(function () use ($brandId, $data, $attribute, $expectedLockVersion, $inputType, $values): Attribute {
+        return DB::transaction(function () use ($data, $attribute, $expectedLockVersion, $inputType, $values): Attribute {
             if ($attribute !== null) {
                 $updated = Attribute::query()->whereKey($attribute->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');
                 if ($updated === 0) {
@@ -40,7 +41,7 @@ final class TaxonomyService
                 }
             }
 
-            $attribute ??= new Attribute(['brand_id' => $brandId]);
+            $attribute ??= new Attribute;
             $attribute->fill([
                 'code' => $data['code'],
                 'kind' => $data['kind'],
@@ -69,10 +70,10 @@ final class TaxonomyService
     /**
      * @param  array{code: string, color_family: string, hex: string|null, position: int, translations: array<string, array{name: string}>}  $data
      */
-    public function saveColor(int $brandId, array $data, ?Color $color = null): Color
+    public function saveColor(array $data, ?Color $color = null): Color
     {
-        return DB::transaction(function () use ($brandId, $data, $color): Color {
-            $color ??= new Color(['brand_id' => $brandId]);
+        return DB::transaction(function () use ($data, $color): Color {
+            $color ??= new Color;
             $color->fill([
                 'code' => $data['code'],
                 'color_family' => $data['color_family'],
@@ -87,6 +88,32 @@ final class TaxonomyService
         });
     }
 
+    /**
+     * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int}  $data
+     */
+    public function saveBrand(array $data, ?Brand $brand = null): Brand
+    {
+        $brand ??= new Brand;
+        $isNew = ! $brand->exists;
+        $brand->fill($data)->save();
+        $this->audit->record($isNew ? 'catalog.brand.created' : 'catalog.brand.updated', 'brand', $brand->id, ['code' => $brand->code]);
+
+        return $brand;
+    }
+
+    /**
+     * Không xoá brand còn sản phẩm (ẩn bằng status = hidden).
+     */
+    public function deleteBrand(Brand $brand): void
+    {
+        if ($brand->styles()->exists()) {
+            throw ValidationException::withMessages(['brand' => __('catalog::messages.brand_in_use')]);
+        }
+
+        $brand->delete();
+        $this->audit->record('catalog.brand.deleted', 'brand', $brand->id, ['code' => $brand->code]);
+    }
+
     public function deleteColor(Color $color): void
     {
         $color->delete();
@@ -96,9 +123,9 @@ final class TaxonomyService
     /**
      * @param  array{size_system: string, code: string, sort_order: int}  $data
      */
-    public function saveSize(int $brandId, array $data, ?Size $size = null): Size
+    public function saveSize(array $data, ?Size $size = null): Size
     {
-        $size ??= new Size(['brand_id' => $brandId]);
+        $size ??= new Size;
         $size->fill($data)->save();
 
         $this->audit->record($size->wasRecentlyCreated ? 'catalog.size.created' : 'catalog.size.updated', 'size', $size->id, ['code' => $size->code]);

@@ -16,7 +16,6 @@ use Modules\Integration\Domain\MessageStatus;
  * @property string $target
  * @property string $message_type
  * @property string $schema_version
- * @property int|null $brand_id
  * @property string $aggregate_type
  * @property string $aggregate_id
  * @property array<string, mixed> $payload
@@ -41,7 +40,7 @@ final class OutboxRecord extends Model
     protected function casts(): array
     {
         return [
-            'brand_id' => 'integer', 'payload' => 'array', 'status' => MessageStatus::class, 'attempts' => 'integer',
+            'payload' => 'array', 'status' => MessageStatus::class, 'attempts' => 'integer',
             'next_attempt_at' => 'datetime', 'locked_at' => 'datetime', 'sent_at' => 'datetime',
         ];
     }
@@ -49,7 +48,7 @@ final class OutboxRecord extends Model
     public function toMessage(): OutboxMessage
     {
         return new OutboxMessage(
-            $this->message_id, $this->target, $this->message_type, $this->schema_version, $this->brand_id,
+            $this->message_id, $this->target, $this->message_type, $this->schema_version,
             $this->aggregate_type, $this->aggregate_id, $this->payload, $this->correlation_id, $this->attempts + 1,
         );
     }

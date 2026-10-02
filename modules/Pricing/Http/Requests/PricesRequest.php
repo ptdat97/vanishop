@@ -6,18 +6,13 @@ namespace Modules\Pricing\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Pricing\Application\PriceListService;
 
 final class PricesRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
-
-        return Gate::allows('pricing.manage', [ScopeRef::brand($brand->id)]);
+        return Gate::allows('pricing.manage');
     }
 
     /**

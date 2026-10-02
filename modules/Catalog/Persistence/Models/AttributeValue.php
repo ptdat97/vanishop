@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
- * Giá trị của thuộc tính kiểu select/multiselect. Phạm vi brand kế thừa từ attribute cha.
+ * Giá trị của thuộc tính kiểu select/multiselect.
  *
  * @property int $id
  * @property int $attribute_id

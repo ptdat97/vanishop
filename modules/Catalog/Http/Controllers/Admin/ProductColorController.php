@@ -7,23 +7,20 @@ namespace Modules\Catalog\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Products\StyleColorService;
 use Modules\Catalog\Http\Requests\Admin\ProductImagesRequest;
 use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleColor;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 /**
- * Màu và bộ ảnh theo màu của sản phẩm. StyleColor/Mediable không tự mang brand_id nên luôn kiểm tra
- * chúng thuộc đúng sản phẩm (sản phẩm đã được lọc theo brand workspace).
+ * Màu và bộ ảnh theo màu của sản phẩm. Luôn kiểm tra StyleColor/Mediable thuộc đúng sản phẩm trong URL.
  */
 final class ProductColorController
 {
-    public function store(Brand $brand, Style $product, Request $request, StyleColorService $colors): RedirectResponse
+    public function store(Style $product, Request $request, StyleColorService $colors): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $data = $request->validate(['color_id' => ['required', 'integer']]);
 
         $colors->addColor($product, (int) $data['color_id']);
@@ -31,9 +28,9 @@ final class ProductColorController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function destroy(Brand $brand, Style $product, StyleColor $styleColor, StyleColorService $colors): RedirectResponse
+    public function destroy(Style $product, StyleColor $styleColor, StyleColorService $colors): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $styleColor);
 
         $colors->removeColor($product, $styleColor);
@@ -41,7 +38,7 @@ final class ProductColorController
         return back()->with('success', __('catalog::messages.deleted'));
     }
 
-    public function storeImages(Brand $brand, Style $product, StyleColor $styleColor, ProductImagesRequest $request, StyleColorService $colors): RedirectResponse
+    public function storeImages(Style $product, StyleColor $styleColor, ProductImagesRequest $request, StyleColorService $colors): RedirectResponse
     {
         $this->ensureBelongs($product, $styleColor);
 
@@ -50,9 +47,9 @@ final class ProductColorController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function destroyImage(Brand $brand, Style $product, StyleColor $styleColor, Mediable $image, StyleColorService $colors): RedirectResponse
+    public function destroyImage(Style $product, StyleColor $styleColor, Mediable $image, StyleColorService $colors): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $styleColor);
         abort_unless($image->mediable_type === 'catalog.style_color' && $image->mediable_id === $styleColor->id, 404);
 
@@ -61,9 +58,9 @@ final class ProductColorController
         return back()->with('success', __('catalog::messages.deleted'));
     }
 
-    public function reorderImages(Brand $brand, Style $product, StyleColor $styleColor, Request $request, StyleColorService $colors): RedirectResponse
+    public function reorderImages(Style $product, StyleColor $styleColor, Request $request, StyleColorService $colors): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $this->ensureBelongs($product, $styleColor);
         $data = $request->validate(['order' => ['required', 'array'], 'order.*' => ['integer']]);
 

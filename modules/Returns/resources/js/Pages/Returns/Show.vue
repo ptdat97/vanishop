@@ -5,7 +5,6 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     orderUrl: string;
     orderNumber: string | null;
@@ -48,7 +47,7 @@ function resolve(): void {
 
 <template>
     <Head :title="`Đổi/trả ${props.return.number}`" />
-    <p class="mb-2 text-sm text-slate-500">Đổi/trả · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <p class="mb-2 text-sm text-slate-500">Đổi/trả</p>
     <PageHeader :title="`Yêu cầu ${props.return.number}`" :subtitle="labels[props.return.status] ?? props.return.status">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <Link :href="orderUrl" :class="secondaryButton">Đơn {{ orderNumber }}</Link>

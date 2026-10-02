@@ -16,5 +16,6 @@ final readonly class OrderLineData
         public int $totalAmount = 0,
         public ?string $colorName = null,
         public string $sizeCode = '',
+        public ?string $brandName = null,
     ) {}
 }

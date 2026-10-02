@@ -47,9 +47,6 @@ use Throwable;
  */
 final class CheckoutService implements Checkout
 {
-    /** @deprecated dùng {@see CheckoutValidator::TAG} (public API). */
-    public const VALIDATORS_TAG = CheckoutValidator::TAG;
-
     public function __construct(
         private readonly Carts $carts,
         private readonly TotalsPipeline $pipeline,
@@ -101,7 +98,6 @@ final class CheckoutService implements Checkout
                 $ttl = $this->paymentService->paymentTtl((string) $request->paymentMethod);
                 $this->inventory->reserve(new ReservationRequest(
                     $reservationKey,
-                    $cart->channelId,
                     array_map(fn (TotalsLine $line): ReservationLine => new ReservationLine($line->variantId, $line->quantity), $totals->lines),
                     $ttl === null ? null : $ttl + 600,
                 ));
@@ -167,7 +163,7 @@ final class CheckoutService implements Checkout
             }
 
             $lines[] = new TotalsLine(
-                key: $line->variantId, variantId: $line->variantId, brandId: $line->variant->brandId, styleId: $line->variant->styleId,
+                key: $line->variantId, variantId: $line->variantId, brandId: $line->variant->brandId, brandName: $line->variant->brandName, styleId: $line->variant->styleId,
                 sku: $line->variant->sku, name: $line->variant->name, colorName: $line->variant->colorName, sizeCode: $line->variant->sizeCode,
                 imageUrl: $line->variant->imageUrl, quantity: $line->quantity, unitPrice: $line->unitPrice, compareAt: $line->compareAt,
                 subtotal: $line->unitPrice->multiply($line->quantity), discount: $line->unitPrice->multiply(0),
@@ -175,7 +171,6 @@ final class CheckoutService implements Checkout
         }
 
         return new TotalsContext(
-            channelId: $cart->channelId,
             customerId: $customerId,
             currencyCode: $cart->currencyCode,
             lines: $lines,
@@ -191,7 +186,7 @@ final class CheckoutService implements Checkout
     {
         $issues = array_map(fn (mixed $message): CheckoutIssue => new CheckoutIssue('rule', (string) $message), Hook::collect('vani.checkout.before_validate', $request));
 
-        foreach ($this->extensions->tagged(self::VALIDATORS_TAG) as $validator) {
+        foreach ($this->extensions->tagged(CheckoutValidator::TAG) as $validator) {
             if ($validator instanceof CheckoutValidator) {
                 array_push($issues, ...$validator->validate($request, $totals, $cartReady));
             }
@@ -229,8 +224,7 @@ final class CheckoutService implements Checkout
 
         return new OrderDraft(
             publicId: $publicId,
-            brandId: $totals->brandIds()[0],
-            channelId: $cart->channelId,
+            source: $request->source,
             customerId: $customerId,
             currencyCode: $totals->currencyCode,
             paymentMethod: (string) $request->paymentMethod,
@@ -238,7 +232,7 @@ final class CheckoutService implements Checkout
             lines: array_map(fn (TotalsLine $line): OrderLineDraft => new OrderLineDraft(
                 $line->variantId, $line->sku, $line->name, $line->colorName, $line->sizeCode, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, $line->compareAt?->amount, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
-                $line->taxRateBp, $line->tax->amount ?? 0,
+                $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName,
             ), $totals->lines),
             adjustments: array_map(fn (Adjustment $adjustment): OrderAdjustmentDraft => new OrderAdjustmentDraft(
                 $adjustment->type, $adjustment->source, $adjustment->code, $adjustment->label, $adjustment->amount->amount, $adjustment->meta,

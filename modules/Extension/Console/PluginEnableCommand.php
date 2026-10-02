@@ -10,22 +10,21 @@ use Modules\Extension\Application\Plugins\PluginOperationFailed;
 
 final class PluginEnableCommand extends Command
 {
-    protected $signature = 'vani:plugin:enable {plugin} {--scope=owner : owner | brand:<id> | channel:<id>}';
+    protected $signature = 'vani:plugin:enable {plugin}';
 
-    protected $description = 'Bật plugin trong một phạm vi';
+    protected $description = 'Bật plugin cho cửa hàng';
 
     public function handle(PluginManager $plugins): int
     {
         try {
-            [$type, $id] = ScopeOption::parse((string) $this->option('scope'));
-            $plugins->enable((string) $this->argument('plugin'), $type, $id);
+            $plugins->enable((string) $this->argument('plugin'));
         } catch (PluginOperationFailed $exception) {
             $this->error($exception->getMessage());
 
             return self::FAILURE;
         }
 
-        $this->info('Đã bật '.$this->argument('plugin').' ở scope '.$this->option('scope').'.');
+        $this->info('Đã bật '.$this->argument('plugin').'.');
 
         return self::SUCCESS;
     }

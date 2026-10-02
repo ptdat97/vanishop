@@ -9,7 +9,6 @@ use Modules\Integration\Persistence\Models\IntegrationEventRecord;
 
 /**
  * GET /events?after=<cursor>: thay cho webhook khi đối tác muốn kéo, hoặc để bắt kịp sau khi subscription bị dừng.
- * Client có data scope brand chỉ thấy event của brand đó (event cấp Owner không có brand thì không thấy).
  */
 final class EventFeed
 {
@@ -18,10 +17,8 @@ final class EventFeed
      */
     public function page(IntegrationClient $client, int $after, int $limit, ?string $type = null): array
     {
-        $brandIds = $client->brandIds();
         $rows = IntegrationEventRecord::query()
             ->where('id', '>', $after)
-            ->when($brandIds !== null, fn ($query) => $query->whereIn('brand_id', $brandIds))
             ->when($type !== null && $type !== '', fn ($query) => $query->where('event_type', $type))
             ->orderBy('id')
             ->limit($limit + 1)

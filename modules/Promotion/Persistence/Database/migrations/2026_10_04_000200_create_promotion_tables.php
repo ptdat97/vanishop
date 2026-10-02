@@ -11,7 +11,6 @@ return new class extends Migration
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('name');
             $table->string('status', 16)->default('active');
             $table->dateTime('starts_at')->nullable();
@@ -29,10 +28,10 @@ return new class extends Migration
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
 
-            $table->index(['brand_id', 'status']);
+            $table->index('status');
         });
 
-        // Điều kiện do plugin cung cấp (rule_type). Mọi rule phải thoả; không có rule = áp cho cả giỏ của brand.
+        // Điều kiện do plugin cung cấp (rule_type). Mọi rule phải thoả; không có rule = áp cho cả giỏ.
         Schema::create('promotion_rules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('promotion_id')->constrained()->cascadeOnDelete();

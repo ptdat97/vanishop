@@ -14,7 +14,6 @@ type RuleValue = string | number | boolean | null | Array<string | number | bool
 type RuleInput = { type: string; config: Record<string, RuleValue> };
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     promotion: null | {
         id: number;

@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Modules\Extension\Contracts;
 
 /**
- * Service contract: đăng ký và lấy implementation của một extension point (tag) CÓ HIỆU LỰC trong phạm vi
- * hiện tại.
+ * Service contract: đăng ký và lấy implementation CÓ HIỆU LỰC của một extension point (tag).
  *
  * - Module Core đăng ký implementation mặc định bằng `tag()` — luôn có hiệu lực.
  * - Plugin đóng góp implementation qua `PluginServiceProvider::contribute()` — chỉ có hiệu lực khi plugin
- *   được bật cho owner/brand/channel của CurrentContext.
+ *   đang bật.
  *
  * Registry của module (PaymentGateway, PromotionRule, ShippingCarrier…) dùng contract này thay cho
- * `Container::tagged()`, để plugin bật theo brand này không lọt sang brand khác.
+ * `Container::tagged()`, để plugin đã tắt không còn tham gia.
  *
  * @see docs/04-extension/extension-model.md
  */
@@ -50,18 +49,6 @@ interface Extensions
      * @return array<string, T>
      */
     public function implementations(string $tag, string $interface, ?callable $key = null): array;
-
-    /**
-     * Như `implementations()` nhưng xét trong phạm vi một brand (plugin bật ở brand đó); `null` = cấp Owner.
-     * Dùng cho worker/job chạy ngoài request (outbox, gửi tin…).
-     *
-     * @template T of object
-     *
-     * @param  class-string<T>  $interface
-     * @param  (callable(T): string)|null  $key
-     * @return array<string, T>
-     */
-    public function forBrand(?int $brandId, string $tag, string $interface, ?callable $key = null): array;
 
     /**
      * Gọi một implementation trên luồng **tuỳ chọn** (kiểm tra khả dụng, báo cước, tìm kiếm…): lỗi được ghi log kèm

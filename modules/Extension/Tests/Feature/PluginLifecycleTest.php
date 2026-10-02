@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Extension\Application\Hooks\HookRegistry;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
@@ -16,7 +15,6 @@ use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Extension\Tests\Fixtures\FixturePlugins;
 use Modules\Extension\Tests\Fixtures\GreetingPluginProvider;
 use Modules\Identity\Persistence\Models\AuditLog;
-use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 
@@ -26,7 +24,7 @@ beforeEach(function () {
     $this->root = FixturePlugins::install([
         'Greeting' => ['id' => 'fixture.greeting'],
         'Base' => ['id' => 'fixture.base'],
-        'Child' => ['id' => 'fixture.child', 'requires' => ['vanishop' => '^0.2', 'plugins' => ['fixture.base' => '^1.0']]],
+        'Child' => ['id' => 'fixture.child', 'requires' => ['vanishop' => '^0.3', 'plugins' => ['fixture.base' => '^1.0']]],
         'Rival' => ['id' => 'fixture.rival', 'conflicts' => ['fixture.greeting']],
         'Future' => ['id' => 'fixture.future', 'requires' => ['vanishop' => '^9.0']],
     ]);
@@ -74,26 +72,23 @@ it('chạy migration khi cài và rollback khi gỡ với --purge', function () 
         ->and(PluginRecord::query()->find('fixture.base'))->toBeNull();
 });
 
-it('listener của plugin chỉ chạy trong phạm vi được bật', function () {
+it('listener của plugin chỉ chạy khi plugin đang bật', function () {
     app(HookRegistry::class)->declare(new HookDefinition('test.greeting', HookType::Filter, true, '0.1'));
-    [$lumiere, $urbanx] = Brand::factory()->count(2)->create();
 
     $this->plugins->install('fixture.greeting');
     $this->app->register(GreetingPluginProvider::class);
-    $this->plugins->enable('fixture.greeting', 'brand', $lumiere->id);
-
-    $context = app(CurrentContext::class);
-    $greet = fn (array $brands) => $context->runAs(new ContextScope(Actor::guest(), brandIds: $brands), function () {
+    $greet = function () {
         app(PluginActivation::class)->flush();
 
         return Hook::filter('test.greeting', 'hi');
-    });
+    };
+    expect($greet())->toBe('hi');
 
-    expect($greet([$lumiere->id]))->toBe('hi + fixture.greeting')
-        ->and($greet([$urbanx->id]))->toBe('hi');
+    $this->plugins->enable('fixture.greeting');
+    expect($greet())->toBe('hi + fixture.greeting');
 
     $this->plugins->disable('fixture.greeting');
-    expect($greet([$lumiere->id]))->toBe('hi')
+    expect($greet())->toBe('hi')
         ->and(PluginRecord::query()->find('fixture.greeting')->status)->toBe(PluginStatus::Disabled);
 });
 
@@ -107,21 +102,10 @@ it('không cho tắt hoặc gỡ plugin đang được plugin khác phụ thuộ
         ->and(fn () => $this->plugins->uninstall('fixture.child'))->toThrow(PluginOperationFailed::class, 'tắt');
 });
 
-it('kiểm tra scope hợp lệ khi bật', function (string $type, ?int $id) {
-    $this->plugins->install('fixture.greeting');
-
-    $this->plugins->enable('fixture.greeting', $type, $id);
-})->with([
-    'scope lạ' => ['galaxy', 1],
-    'owner có id' => ['owner', 5],
-    'brand thiếu id' => ['brand', null],
-])->throws(PluginOperationFailed::class);
-
 it('CLI cài, bật, liệt kê, tắt, gỡ plugin', function () {
     $this->artisan('vani:plugin:install', ['plugin' => 'fixture.greeting'])->assertSuccessful();
-    $this->artisan('vani:plugin:enable', ['plugin' => 'fixture.greeting', '--scope' => 'brand:7'])->assertSuccessful();
-    $this->artisan('vani:plugin:list')->expectsOutputToContain('brand:7')->assertSuccessful();
-    $this->artisan('vani:plugin:enable', ['plugin' => 'fixture.greeting', '--scope' => 'brand:x'])->assertFailed();
+    $this->artisan('vani:plugin:enable', ['plugin' => 'fixture.greeting'])->assertSuccessful();
+    $this->artisan('vani:plugin:list')->expectsOutputToContain('enabled')->assertSuccessful();
     $this->artisan('vani:plugin:disable', ['plugin' => 'fixture.greeting'])->assertSuccessful();
     $this->artisan('vani:plugin:uninstall', ['plugin' => 'fixture.greeting'])->assertSuccessful();
     $this->artisan('vani:plugin:install', ['plugin' => 'fixture.unknown'])->assertFailed();

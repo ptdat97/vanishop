@@ -2,14 +2,14 @@
 
 > Trạng thái: **Partially Implemented** (slice 1). Context: Catalog, Pricing ([bounded-contexts](../02-architecture/bounded-contexts.md)).
 >
-> **Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)**: một catalog cho cả cửa hàng; **brand là thực thể của Catalog** (§1.1). Cột "Trạng thái" dưới đây mô tả code hiện tại — code vẫn lọc danh mục/thuộc tính/màu/media/bảng giá theo brand tenant cho tới slice 12.
+> **Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)**: một catalog cho cả cửa hàng; **brand là thực thể của Catalog** (§1.1). Cột "Trạng thái" dưới đây mô tả code hiện tại (sau slice 12, 2026-10-02).
 >
 > | Phần | Trạng thái |
 > |---|---|
-> | Brand là thực thể catalog (`brands`, `brand_translations`, `styles.brand_id`), trang brand, facet brand | Designed (slice 12) |
-> | Danh mục theo brand (sẽ thành một cây cho cả cửa hàng): `parent_id` + materialized `path` (`/12/57/`), tối đa **5 cấp**, di chuyển kéo theo cả cây con, chặn chuyển vào cây con của chính nó, không xoá danh mục còn con, `lock_version`, bản dịch vi/en + SEO, ảnh | Implemented |
+> | Brand là thực thể catalog (`brands`, `styles.brand_id` tuỳ chọn), Admin `/catalog/brands`, Storefront API `/brands` + lọc/facet `brand`, snapshot trên dòng đơn | Implemented (bản dịch brand: Planned; trang native `/thuong-hieu/{slug}`: slice 12b) |
+> | Danh mục (một cây cho cả cửa hàng): `parent_id` + materialized `path` (`/12/57/`), tối đa **5 cấp**, di chuyển kéo theo cả cây con, chặn chuyển vào cây con của chính nó, không xoá danh mục còn con, `lock_version`, bản dịch vi/en + SEO, ảnh | Implemented |
 > | Thuộc tính spec/internal, kiểu `select`/`multiselect`/`text`/`boolean`, giá trị có bản dịch; sửa giá trị giữ nguyên id theo `code` | Implemented |
-> | Màu (tên theo brand + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
+> | Màu (tên + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
 > | Media: `media` (theo brand, khử trùng lặp theo SHA-256) + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
 > | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK — **plugin `vani.search-meilisearch`** từ 2026-10-14); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
@@ -51,7 +51,7 @@ erDiagram
 
 Brand là nhóm sản phẩm theo thương hiệu, **không** là phạm vi dữ liệu ([store-and-brand §2](../12-store/store-and-brand.md)):
 
-- `brands(code, slug, status, sort_order, logo)` + `brand_translations(locale, name, description, seo_*)`; `styles.brand_id` (nullable, `RESTRICT`).
+- `brands(code, slug, name, description, logo_path, meta_title, meta_description, status, position)`; `styles.brand_id` (nullable, `RESTRICT`). Bản dịch brand: Planned.
 - Dùng cho trang `/thuong-hieu/{slug}`, facet tìm kiếm, menu, rule khuyến mãi "thuộc brand", báo cáo, snapshot trên dòng đơn.
 - Không ảnh hưởng giá, tồn, quyền, cấu hình. Ẩn brand chỉ ẩn trang brand, không ẩn sản phẩm.
 

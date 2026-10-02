@@ -37,14 +37,14 @@ final class OrderingServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
-        $permissions->register('orders.view', 'Xem đơn hàng của brand');
+        $permissions->register('orders.view', 'Xem đơn hàng');
         $permissions->register('orders.manage', 'Xác nhận đơn, đổi địa chỉ, ghi chú');
         $permissions->register('orders.cancel', 'Huỷ đơn');
 
         $navigation->add('orders', 'Đơn hàng', 'admin.orders.home', 'orders.view', 50);
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
-        $this->loadBrandWorkspaceRoutes('orders', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->loadAdminSectionRoutes('orders', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
     }
 }

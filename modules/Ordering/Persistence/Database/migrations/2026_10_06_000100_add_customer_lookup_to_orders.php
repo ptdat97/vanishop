@@ -14,14 +14,14 @@ return new class extends Migration
             // sha256 của token truy cập đơn trả cho khách lúc đặt (xem/huỷ đơn không cần tài khoản).
             $table->char('access_token_hash', 64)->nullable()->after('customer_phone');
 
-            $table->index(['brand_id', 'customer_phone']);
+            $table->index('customer_phone');
         });
     }
 
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropIndex(['brand_id', 'customer_phone']);
+            $table->dropIndex(['customer_phone']);
             $table->dropColumn(['customer_phone', 'access_token_hash']);
         });
     }

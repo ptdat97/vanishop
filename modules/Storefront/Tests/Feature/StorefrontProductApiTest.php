@@ -1,34 +1,32 @@
 <?php
 
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Channel\Persistence\Models\Channel;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers;
 
 require_once __DIR__.'/../../../Catalog/Tests/Feature/CatalogTestHelpers.php';
 
 beforeEach(function () {
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
     $this->lumiere = Brand::factory()->create(['slug' => 'lumiere']);
     $this->urbanx = Brand::factory()->create(['slug' => 'urbanx']);
-    Channel::factory()->forBrand($this->lumiere, 'vani.test', '/lumiere')->create(['code' => 'web-lumiere']);
 
     T::seed(function () {
-        $this->women = Category::factory()->create(['brand_id' => $this->lumiere->id, 'slug' => 'nu']);
+        $this->women = Category::factory()->create(['slug' => 'nu']);
         $this->dresses = Category::factory()->childOf($this->women)->create(['slug' => 'dam']);
-        $this->material = Attribute::factory()->create(['brand_id' => $this->lumiere->id, 'code' => 'material', 'input_type' => 'select', 'is_filterable' => true]);
+        $this->material = Attribute::factory()->create(['code' => 'material', 'input_type' => 'select', 'is_filterable' => true]);
         $this->material->syncTranslations(['vi' => ['name' => 'Chất liệu']]);
         $this->silk = $this->material->values()->create(['code' => 'silk']);
         $this->silk->syncTranslations(['vi' => ['label' => 'Lụa']]);
         $this->linen = $this->material->values()->create(['code' => 'linen']);
-        $this->supplier = Attribute::factory()->internal()->create(['brand_id' => $this->lumiere->id, 'code' => 'supplier', 'input_type' => 'text']);
-        $this->black = Color::factory()->create(['brand_id' => $this->lumiere->id, 'code' => 'BLK', 'color_family' => 'black']);
-        $this->white = Color::factory()->create(['brand_id' => $this->lumiere->id, 'code' => 'WHT', 'color_family' => 'white']);
+        $this->supplier = Attribute::factory()->internal()->create(['code' => 'supplier', 'input_type' => 'text']);
+        $this->black = Color::factory()->create(['code' => 'BLK', 'color_family' => 'black']);
+        $this->white = Color::factory()->create(['code' => 'WHT', 'color_family' => 'white']);
     });
 
     $this->silkDress = T::product($this->lumiere->id, ['name' => 'Đầm lụa đen', 'slug' => 'dam-lua-den', 'category_ids' => [$this->dresses->id], 'primary_category_id' => $this->dresses->id,
@@ -36,7 +34,7 @@ beforeEach(function () {
     $this->linenShirt = T::product($this->lumiere->id, ['name' => 'Áo linen trắng', 'slug' => 'ao-linen', 'category_ids' => [$this->women->id], 'attributes' => [$this->material->id => $this->linen->id]]);
     T::product($this->lumiere->id, ['name' => 'Đầm nháp', 'status' => 'draft']);
     T::product($this->lumiere->id, ['name' => 'Đầm sắp bán', 'published_from' => new DateTimeImmutable('+1 day')]);
-    T::product($this->urbanx->id, ['name' => 'Đầm brand khác']);
+    T::product($this->urbanx->id, ['name' => 'Áo thun Urbanx', 'slug' => 'ao-thun-urbanx']);
 
     T::seed(function () {
         $this->silkDress->colors()->create(['color_id' => $this->black->id]);
@@ -44,11 +42,32 @@ beforeEach(function () {
     });
 });
 
-it('chỉ trả sản phẩm đang hiển thị của các brand trong kênh', function () {
+it('trả sản phẩm đang hiển thị của mọi thương hiệu', function () {
     $this->getJson('/api/storefront/v1/products', $this->headers)
         ->assertOk()
-        ->assertJsonPath('meta.total', 2)
-        ->assertJsonCount(2, 'data');
+        ->assertJsonPath('meta.total', 3)
+        ->assertJsonCount(3, 'data');
+});
+
+it('lọc theo thương hiệu, kèm facet thương hiệu và thông tin brand trên sản phẩm', function () {
+    $response = $this->getJson('/api/storefront/v1/products?brand=urbanx', $this->headers)
+        ->assertJsonPath('meta.total', 1)
+        ->assertJsonPath('data.0.slug', 'ao-thun-urbanx')
+        ->assertJsonPath('data.0.brand.slug', 'urbanx');
+    expect(collect($response->json('meta.facets.brands'))->pluck('count', 'slug')->sortKeys()->all())->toBe(['lumiere' => 2, 'urbanx' => 1]);
+
+    $this->getJson('/api/storefront/v1/products?brand=lumiere,urbanx', $this->headers)->assertJsonPath('meta.total', 3);
+    $this->getJson('/api/storefront/v1/products?brand=khong-co', $this->headers)->assertJsonPath('meta.total', 0);
+    $this->getJson('/api/storefront/v1/products/dam-lua-den', $this->headers)->assertJsonPath('data.brand.name', $this->lumiere->name);
+});
+
+it('danh sách và chi tiết thương hiệu; brand ẩn trả 404', function () {
+    $this->getJson('/api/storefront/v1/brands')->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson('/api/storefront/v1/brands/urbanx')->assertOk()->assertJsonPath('data.slug', 'urbanx');
+
+    $this->urbanx->update(['status' => 'hidden']);
+    $this->getJson('/api/storefront/v1/brands')->assertJsonCount(1, 'data');
+    $this->getJson('/api/storefront/v1/brands/urbanx')->assertNotFound();
 });
 
 it('tìm theo từ khoá không dấu', function () {
@@ -77,7 +96,7 @@ it('lọc theo màu và thuộc tính, kèm facet', function () {
 
 it('lọc theo bộ sưu tập và phân trang', function () {
     T::seed(function () {
-        $collection = ProductCollection::query()->create(['brand_id' => $this->lumiere->id, 'slug' => 'he-2026', 'status' => 'active']);
+        $collection = ProductCollection::query()->create(['slug' => 'he-2026', 'status' => 'active']);
         $collection->styles()->attach($this->linenShirt->id);
     });
 
@@ -97,7 +116,7 @@ it('PDP có thuộc tính spec, breadcrumb, màu; ẩn thuộc tính internal', 
     expect(collect($response->json('data.attributes'))->pluck('code')->all())->not->toContain('supplier');
 });
 
-it('PDP trả 404 cho sản phẩm nháp, chưa tới giờ bán hoặc của brand khác', function () {
+it('PDP trả 404 cho sản phẩm không tồn tại', function () {
     $this->getJson('/api/storefront/v1/products/khong-ton-tai', $this->headers)->assertNotFound()->assertJsonPath('error.code', 'http.404');
 });
 
@@ -105,12 +124,11 @@ it('validate tham số', function () {
     $this->getJson('/api/storefront/v1/products?per_page=500', $this->headers)->assertStatus(422)->assertJsonPath('error.code', 'validation.failed');
 });
 
-it('trả khoảng giá ở danh sách và giá từng biến thể ở PDP theo bảng giá của kênh', function () {
-    $channelId = Channel::query()->where('code', 'web-lumiere')->value('id');
+it('trả khoảng giá ở danh sách và giá từng biến thể ở PDP theo bảng giá', function () {
     require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
     [$s, $m] = PricingTestHelpers::variants($this->silkDress, ['S', 'M']);
-    PricingTestHelpers::priceList($this->lumiere->id, ['code' => 'base'], [$channelId], [$s->id => [590_000], $m->id => [620_000]]);
-    PricingTestHelpers::priceList($this->lumiere->id, ['code' => 'sale', 'type' => 'sale', 'priority' => 10], [$channelId], [$s->id => [413_000]]);
+    PricingTestHelpers::priceList(['code' => 'base'], [$s->id => [590_000], $m->id => [620_000]]);
+    PricingTestHelpers::priceList(['code' => 'sale', 'type' => 'sale', 'priority' => 10], [$s->id => [413_000]]);
 
     $this->getJson('/api/storefront/v1/products?q=dam lua', $this->headers)
         ->assertJsonPath('data.0.price.min.amount', 413000)
@@ -129,14 +147,13 @@ it('trả khoảng giá ở danh sách và giá từng biến thể ở PDP theo
         ->and($variants[$m->sku]['price']['compare_at'])->toBeNull();
 });
 
-it('công bố còn hàng / sắp hết theo tồn của kênh, không lộ số lượng', function () {
-    $channel = Channel::query()->where('code', 'web-lumiere')->sole();
+it('công bố còn hàng / sắp hết theo tồn giao online, không lộ số lượng', function () {
     require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
     require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php';
     [$s, $m, $l] = PricingTestHelpers::variants($this->silkDress, ['S', 'M', 'L']);
-    PricingTestHelpers::priceList($this->lumiere->id, ['code' => 'base'], [$channel->id], [$s->id => [590_000], $m->id => [590_000]]);
-    $online = InventoryTestHelpers::location($this->lumiere, [$channel->id]);
-    $storeOnly = InventoryTestHelpers::location($this->lumiere, []);
+    PricingTestHelpers::priceList(['code' => 'base'], [$s->id => [590_000], $m->id => [590_000]]);
+    $online = InventoryTestHelpers::location();
+    $storeOnly = InventoryTestHelpers::location(['ships_online_orders' => false]);
     InventoryTestHelpers::stock($online, $s->id, 20);
     InventoryTestHelpers::stock($online, $m->id, 4, 2);
     InventoryTestHelpers::stock($storeOnly, $m->id, 50);

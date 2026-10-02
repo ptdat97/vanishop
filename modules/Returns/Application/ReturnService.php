@@ -29,7 +29,6 @@ use Modules\Returns\Persistence\Models\ReturnLine;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -38,9 +37,6 @@ use Modules\Tenancy\Contracts\Settings;
  */
 final class ReturnService implements Returns
 {
-    /** @deprecated dùng {@see ReturnPolicy::TAG} (public API). */
-    public const POLICIES_TAG = ReturnPolicy::TAG;
-
     public function __construct(
         private readonly OrderReader $orders,
         private readonly OrderTransitions $transitions,
@@ -65,7 +61,7 @@ final class ReturnService implements Returns
             $order = $this->orders->find($orderId) ?? throw ReturnRejected::notEligible('not_delivered');
             [$delivered, $deliveredAt] = $this->delivered($orderId);
 
-            $decision = $this->policy($order->brandId)->evaluate(new ReturnContext($orderId, $order->brandId, $lines, $reasonCode, $deliveredAt, now()->toDateTimeImmutable(), $source));
+            $decision = $this->policy()->evaluate(new ReturnContext($orderId, $lines, $reasonCode, $deliveredAt, now()->toDateTimeImmutable(), $source));
             if (! $decision->eligible) {
                 throw ReturnRejected::notEligible((string) $decision->reason);
             }
@@ -75,7 +71,7 @@ final class ReturnService implements Returns
             $count = ReturnRequest::query()->where('order_id', $orderId)->count();
 
             $return = ReturnRequest::query()->create([
-                'public_id' => (string) Str::ulid(), 'number' => $order->number.'-R'.($count + 1), 'order_id' => $orderId, 'brand_id' => $order->brandId,
+                'public_id' => (string) Str::ulid(), 'number' => $order->number.'-R'.($count + 1), 'order_id' => $orderId,
                 'status' => ReturnStatus::Requested, 'reason_code' => $reasonCode, 'customer_note' => $note === null ? null : mb_substr(trim($note), 0, 500),
                 'source' => $source, 'refund_amount' => 0, 'currency_code' => $order->currencyCode,
             ]);
@@ -100,7 +96,7 @@ final class ReturnService implements Returns
                 $this->move($return, ReturnStatus::Approved, 'auto_approved', 'system');
             }
             $this->syncOrder($orderId);
-            event(new ReturnRequested($return->id, $orderId, $return->number, $source, $return->brand_id));
+            event(new ReturnRequested($return->id, $orderId, $return->number, $source));
 
             return $return;
         });
@@ -210,7 +206,7 @@ final class ReturnService implements Returns
             $this->move($return, ReturnStatus::Resolved, $note, 'staff');
             $this->syncOrder($return->order_id);
             $this->audit->record('return.resolved', 'return_request', $return->id, ['refunded' => $amount]);
-            event(new ReturnResolved($return->id, $return->order_id, $amount, $return->brand_id));
+            event(new ReturnResolved($return->id, $return->order_id, $amount));
         });
     }
 
@@ -342,12 +338,12 @@ final class ReturnService implements Returns
     }
 
     /**
-     * Chính sách đổi trả theo cấu hình `core.returns.policy` của brand (mặc định VANI_RETURN_POLICY).
+     * Chính sách đổi trả theo cấu hình `core.returns.policy` của cửa hàng (mặc định VANI_RETURN_POLICY).
      */
-    private function policy(int $brandId): ReturnPolicy
+    private function policy(): ReturnPolicy
     {
         $default = (string) config('vanishop.returns.policy', 'days_window');
-        $code = (string) $this->settings->get('core', 'returns.policy', SettingsScope::brand($brandId), $default);
+        $code = (string) $this->settings->get('core', 'returns.policy', $default);
         $policy = $this->extensions->select(ReturnPolicy::TAG, $code, $default);
 
         return $policy instanceof ReturnPolicy ? $policy : throw new \RuntimeException("ReturnPolicy [{$code}] chưa được đăng ký.");

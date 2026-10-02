@@ -7,14 +7,12 @@ namespace Modules\Returns\Persistence\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Returns\Domain\ReturnStatus;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
  * @property int $id
  * @property string $public_id
  * @property string $number
  * @property int $order_id
- * @property int $brand_id
  * @property ReturnStatus $status
  * @property string $reason_code
  * @property int $refund_amount
@@ -24,14 +22,12 @@ use Modules\Shared\Persistence\Concerns\BelongsToBrand;
  */
 final class ReturnRequest extends Model
 {
-    use BelongsToBrand;
-
     protected $guarded = ['id'];
 
     protected function casts(): array
     {
         return [
-            'order_id' => 'integer', 'brand_id' => 'integer', 'status' => ReturnStatus::class, 'refund_amount' => 'integer',
+            'order_id' => 'integer', 'status' => ReturnStatus::class, 'refund_amount' => 'integer',
             'refunded_amount' => 'integer', 'lock_version' => 'integer', 'resolved_at' => 'immutable_datetime',
         ];
     }

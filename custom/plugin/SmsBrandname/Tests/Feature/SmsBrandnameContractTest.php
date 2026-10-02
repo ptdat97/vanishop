@@ -17,7 +17,7 @@ beforeEach(function () {
 NotificationChannelContract::define(
     'vani.sms-brandname',
     fn () => app(SmsChannel::class),
-    fn () => new OutgoingMessage(1, 'order_placed:1:sms', 'order_placed', null, new Recipient(phone: '+84912345678'), null, 'Don LU-01 da giao', [], 1),
+    fn () => new OutgoingMessage(1, 'order_placed:1:sms', 'order_placed', new Recipient(phone: '+84912345678'), null, 'Don LU-01 da giao', [], 1),
     new Recipient(email: 'lan@example.com'),
     succeed: fn () => Http::fake(['rest.esms.vn/*' => Http::response(['CodeResult' => '100', 'SMSID' => 'x'])]),
     failTemporarily: fn () => Http::fake(['rest.esms.vn/*' => Http::response('down', 503)]),

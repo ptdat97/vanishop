@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
@@ -19,10 +18,10 @@ beforeEach(function () {
     FakeApiCarrier::$failBooking = false;
     FakeApiCarrier::$booked = [];
 
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();
+    ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();
     $this->api = '/api/storefront/v1';
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
-    $this->ship = '/admin/fulfillment/lumiere/shipments';
+    $this->headers = [];
+    $this->ship = '/admin/fulfillment/shipments';
     $this->place = function (?array $lines = null, int $expected = 330_000) {
         $created = $this->postJson("{$this->api}/carts", [], $this->headers)->assertCreated();
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -35,7 +34,7 @@ beforeEach(function () {
     };
     $this->order = fn () => Order::query()->withoutGlobalScopes()->latest('id')->first();
     $this->level = fn ($variant, $location = null) => DB::table('stock_levels')->where('variant_id', $variant->id)->where('location_id', ($location ?? $this->location)->id)->first();
-    $this->asStaff = fn () => $this->actingAs(T::staffFor($this->brand, ['admin.access', 'fulfillment.view', 'fulfillment.manage', 'orders.view', 'orders.cancel']), 'staff');
+    $this->asStaff = fn () => $this->actingAs(T::staff(['admin.access', 'fulfillment.view', 'fulfillment.manage', 'orders.view', 'orders.cancel']), 'staff');
 });
 
 it('E2E: xem sản phẩm → giỏ → COD → xác nhận → vận đơn → lấy hàng → giao → thu COD → hoàn tất', function () {
@@ -95,7 +94,7 @@ it('hàng hoàn về: nhập lại kho, đơn "hoàn về", nhân viên huỷ đ
         ->and(DB::table('stock_movements')->where('type', 'return')->count())->toBe(1)
         ->and($order->fulfillment_status)->toBe('returned_to_sender');
 
-    $this->post("/admin/orders/lumiere/orders/{$order->id}/cancel", ['reason' => 'Khách bom hàng'])->assertSessionHasNoErrors();
+    $this->post("/admin/orders/orders/{$order->id}/cancel", ['reason' => 'Khách bom hàng'])->assertSessionHasNoErrors();
     expect(($this->order)()->order_status->value)->toBe('cancelled')
         ->and(DB::table('payments')->value('status'))->toBe('cancelled');
 });
@@ -146,7 +145,7 @@ it('hãng lỗi khi đặt vận đơn quá số lần thử → booking_failed,
 });
 
 it('đơn giữ hàng ở hai kho → hai vận đơn; chỉ trừ tồn khi cả hai đã rời kho', function () {
-    $store = I::location($this->brand, [$this->channel->id], ['code' => 'ST-Q1', 'priority' => -1]);
+    $store = I::location(['code' => 'ST-Q1', 'priority' => -1]);
     I::stock($this->location, $this->s->id, 1);
     I::stock($store, $this->s->id, 5);
     ($this->place)([[$this->s, 3]], 900_000);
@@ -171,12 +170,12 @@ it('đơn giữ hàng ở hai kho → hai vận đơn; chỉ trừ tồn khi c�
         ->and(($this->level)($this->s, $store)->on_hand)->toEqual(3);
 });
 
-it('Admin: quyền, cô lập brand, mã vận đơn trùng', function () {
+it('Admin: quyền, mã vận đơn trùng', function () {
     ($this->place)();
     ($this->place)();
     [$first, $second] = Shipment::query()->withoutGlobalScopes()->orderBy('id')->get()->all();
 
-    $this->actingAs(T::staffFor($this->brand, ['admin.access', 'fulfillment.view']), 'staff');
+    $this->actingAs(T::staff(['admin.access', 'fulfillment.view']), 'staff');
     $this->get($this->ship)->assertOk();
     $this->post("{$this->ship}/{$first->id}/book", ['tracking_number' => 'X1'])->assertForbidden();
 
@@ -184,7 +183,4 @@ it('Admin: quyền, cô lập brand, mã vận đơn trùng', function () {
     $this->post("{$this->ship}/{$first->id}/book", ['tracking_number' => 'X1'])->assertSessionHasNoErrors();
     $this->post("{$this->ship}/{$second->id}/book", ['tracking_number' => 'X1'])->assertSessionHasErrors('business');
 
-    $other = Brand::factory()->create(['slug' => 'urbanx']);
-    $this->actingAs(T::staffFor($other, ['admin.access', 'fulfillment.view', 'fulfillment.manage']), 'staff');
-    $this->post("/admin/fulfillment/urbanx/shipments/{$first->id}/book", ['tracking_number' => 'X9'])->assertNotFound();
 });

@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * Phạm vi brand kế thừa từ promotion (truy vấn luôn đi qua promotion có BelongsToBrand).
- *
  * @property int $id
  * @property int $promotion_id
  * @property string $code

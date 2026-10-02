@@ -12,26 +12,25 @@ use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Mediable;
 
 /**
- * Lưu file ảnh theo brand (khử trùng lặp theo checksum) và gắn vào đối tượng theo vai trò.
+ * Lưu file ảnh (khử trùng lặp theo checksum) và gắn vào đối tượng theo vai trò.
  */
 final class MediaLibrary
 {
     public function __construct(private readonly string $disk) {}
 
-    public function store(int $brandId, UploadedFile $file): Media
+    public function store(UploadedFile $file): Media
     {
         $checksum = hash_file('sha256', (string) $file->getRealPath());
 
-        $existing = Media::query()->where('brand_id', $brandId)->where('checksum', $checksum)->first();
+        $existing = Media::query()->where('checksum', $checksum)->first();
         if ($existing !== null) {
             return $existing;
         }
 
         $dimensions = @getimagesize((string) $file->getRealPath()) ?: [null, null];
-        $path = $file->storeAs("brands/{$brandId}/".substr($checksum, 0, 2), $checksum.'.'.$file->extension(), $this->disk);
+        $path = $file->storeAs('media/'.substr($checksum, 0, 2), $checksum.'.'.$file->extension(), $this->disk);
 
         return Media::query()->create([
-            'brand_id' => $brandId,
             'disk' => $this->disk,
             'path' => $path,
             'original_name' => mb_substr($file->getClientOriginalName(), 0, 255),

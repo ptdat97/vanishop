@@ -13,8 +13,6 @@ final readonly class PaymentData
         public string $publicId,
         public string $gatewayCode,
         public string $orderNumber,
-        public int $legalEntityId,
-        public int $brandId,
         public Money $amount,
         public string $status,
         public ?string $gatewayReference,

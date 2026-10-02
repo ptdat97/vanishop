@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Http\Controllers\BrandWorkspaceHome;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Domain\ReturnStatus;
@@ -20,20 +17,19 @@ use Modules\Returns\Persistence\Models\ReturnRequest;
 
 final class ReturnController
 {
-    public function home(BrandWorkspaceHome $home): Response|RedirectResponse
+    public function home(): RedirectResponse
     {
         Gate::authorize('returns.view');
 
-        return $home->respond('admin.returns.returns.index', 'Đổi/trả', 'Chọn brand để xử lý yêu cầu đổi/trả.');
+        return redirect()->route('admin.returns.returns.index');
     }
 
-    public function index(Brand $brand, Request $request, OrderReader $orders): Response
+    public function index(Request $request, OrderReader $orders): Response
     {
-        Gate::authorize('returns.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('returns.view');
         $status = (string) $request->query('status', '');
 
         return Inertia::render('Returns::Returns/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.returns.returns.index'),
             'status' => $status,
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
@@ -46,13 +42,12 @@ final class ReturnController
         ]);
     }
 
-    public function show(Brand $brand, ReturnRequest $return, ReturnService $returns, OrderReader $orders): Response
+    public function show(ReturnRequest $return, ReturnService $returns, OrderReader $orders): Response
     {
-        Gate::authorize('returns.view', [ScopeRef::brand($brand->id)]);
-        $canManage = Gate::allows('returns.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('returns.view');
+        $canManage = Gate::allows('returns.manage');
 
         return Inertia::render('Returns::Returns/Show', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.returns.returns.index'),
             'orderUrl' => route('admin.orders.orders.show', ['order' => $return->order_id]),
             'orderNumber' => $orders->find($return->order_id)?->number,
@@ -62,14 +57,14 @@ final class ReturnController
                 'reject' => $canManage && $return->status->canMoveTo(ReturnStatus::Rejected),
                 'in_transit' => $canManage && $return->status->canMoveTo(ReturnStatus::InTransit),
                 'receive' => $canManage && $return->status->canMoveTo(ReturnStatus::Received),
-                'resolve' => Gate::allows('returns.refund', [ScopeRef::brand($brand->id)]) && $return->status->canMoveTo(ReturnStatus::Resolved),
+                'resolve' => Gate::allows('returns.refund') && $return->status->canMoveTo(ReturnStatus::Resolved),
             ],
         ]);
     }
 
-    public function transition(Brand $brand, ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse
+    public function transition(ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse
     {
-        Gate::authorize('returns.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('returns.manage');
         $data = $request->validate([
             'to' => ['required', Rule::in(['approved', 'rejected', 'in_transit'])],
             'note' => ['nullable', 'required_if:to,rejected', 'string', 'max:255'],
@@ -80,9 +75,9 @@ final class ReturnController
         return back()->with('success', __('returns::messages.updated'));
     }
 
-    public function receive(Brand $brand, ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse
+    public function receive(ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse
     {
-        Gate::authorize('returns.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('returns.manage');
         $data = $request->validate([
             'conditions' => ['array'],
             'conditions.*' => [Rule::in(['sellable', 'damaged'])],
@@ -93,9 +88,9 @@ final class ReturnController
         return back()->with('success', __('returns::messages.received'));
     }
 
-    public function resolve(Brand $brand, ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse
+    public function resolve(ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse
     {
-        Gate::authorize('returns.refund', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('returns.refund');
         $data = $request->validate(['amount' => ['required', 'integer', 'min:0'], 'note' => ['nullable', 'string', 'max:255']]);
         $returns->resolve($return->id, (int) $data['amount'], $data['note'] ?? null);
 

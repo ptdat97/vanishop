@@ -17,7 +17,6 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\AdminPath;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 use ReflectionClass;
 
@@ -25,7 +24,7 @@ use ReflectionClass;
  * Lớp cơ sở (public API) cho ServiceProvider của plugin.
  *
  * Mọi listener/menu đăng ký qua các helper ở đây gắn với plugin id, nên chỉ có hiệu lực
- * trong phạm vi (owner/brand/channel) mà plugin được bật.
+ * khi plugin đang bật.
  *
  * @see docs/05-plugin/plugin-system.md
  */
@@ -64,9 +63,8 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
-     * Nghe domain event (`Modules\<Ctx>\Events\*`) — chỉ chạy khi plugin bật cho brand của event (event không
-     * mang brand: cần bật ở owner), trong phạm vi brand đó; lỗi được ghi log, không làm hỏng flow.
-     * Không dùng `Event::listen()` trực tiếp: listener khi đó chạy ở mọi brand.
+     * Nghe domain event (`Modules\<Ctx>\Events\*`) — chỉ chạy khi plugin đang bật; lỗi được ghi log, không làm
+     * hỏng flow. Không dùng `Event::listen()` trực tiếp: listener khi đó chạy cả khi plugin đã tắt.
      *
      * @param  class-string  $event
      * @param  callable|class-string|array{0: class-string, 1: string}  $handler  class-string → `handle($event)`
@@ -77,8 +75,8 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
-     * Tác vụ định kỳ của plugin: chỉ chạy khi plugin đang bật ở ít nhất một phạm vi. Tác vụ chạy không có
-     * CurrentContext — tự lặp theo brand (vd. `CurrentContext::runAs(new ContextScope(..., brandIds: [$id]))`).
+     * Tác vụ định kỳ của plugin: chỉ chạy khi plugin đang bật. Tác vụ chạy không có
+     * CurrentContext — cần thì tự đặt (vd. `CurrentContext::runAs(ContextScope::system('…'), …)`).
      *
      *   $this->schedule(fn (Schedule $schedule) => $schedule->command('vani:einvoice:sync')->everyFiveMinutes());
      *
@@ -91,16 +89,16 @@ abstract class PluginServiceProvider extends ServiceProvider
             $before = count($schedule->events());
             $define($schedule);
             foreach (array_slice($schedule->events(), $before) as $event) {
-                $event->when(fn (): bool => $this->app->make(PluginActivation::class)->isEnabledAnywhere($pluginId));
+                $event->when(fn (): bool => $this->app->make(PluginActivation::class)->isActive($pluginId));
             }
         });
     }
 
     /**
-     * Khai báo cấu hình của plugin (namespace = plugin id) → Admin → Cấu hình sinh form theo phạm vi.
-     * Đọc lúc chạy qua contract `Modules\Tenancy\Contracts\Settings::current($pluginId, $key, $default)`.
+     * Khai báo cấu hình của plugin (namespace = plugin id) → Admin → Cấu hình sinh form.
+     * Đọc lúc chạy qua contract `Modules\Tenancy\Contracts\Settings::get($pluginId, $key, $default)`.
      *
-     * @param  list<array{key: string, label: string, type?: string, default?: mixed, scopes?: list<string>, options?: array<string, string>, help?: string}>  $definitions
+     * @param  list<array{key: string, label: string, type?: string, default?: mixed, options?: array<string, string>, help?: string}>  $definitions
      */
     protected function settings(array $definitions): void
     {
@@ -108,7 +106,7 @@ abstract class PluginServiceProvider extends ServiceProvider
         foreach ($definitions as $definition) {
             $settings->define(new SettingDefinition(
                 $this->pluginId(), $definition['key'], $definition['label'], $definition['type'] ?? 'string', $definition['default'] ?? null,
-                $definition['scopes'] ?? [SettingsScope::OWNER, SettingsScope::BRAND], $definition['options'] ?? [], $definition['help'] ?? null,
+                $definition['options'] ?? [], $definition['help'] ?? null,
             ));
         }
     }

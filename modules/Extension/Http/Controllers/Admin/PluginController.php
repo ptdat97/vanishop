@@ -18,7 +18,7 @@ final class PluginController
     {
         Gate::authorize('extension.plugins.view');
 
-        $records = PluginRecord::query()->with('scopes')->get()->keyBy('id');
+        $records = PluginRecord::query()->get()->keyBy('id');
         $failures = $loader->failures();
 
         $plugins = array_map(function (PluginManifest $manifest) use ($records, $failures): array {
@@ -31,9 +31,6 @@ final class PluginController
                 'kind' => $manifest->kind,
                 'status' => $record?->status->value ?? 'discovered',
                 'error' => $failures[$manifest->id] ?? $record?->last_error,
-                'scopes' => $record?->scopes->where('enabled', true)
-                    ->map(fn ($scope): string => $scope->scope_type.($scope->scope_id !== null ? ':'.$scope->scope_id : ''))
-                    ->values()->all() ?? [],
             ];
         }, array_values($manifests->all()));
 

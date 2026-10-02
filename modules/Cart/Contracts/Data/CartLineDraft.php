@@ -11,10 +11,9 @@ final readonly class CartLineDraft
 {
     public function __construct(
         public string $cartId,
-        public int $channelId,
         public ?int $customerId,
         public int $variantId,
-        public int $brandId,
+        public ?int $brandId,
         public int $quantity,
         public int $unitPrice,
     ) {}

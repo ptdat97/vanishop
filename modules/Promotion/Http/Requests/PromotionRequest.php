@@ -7,8 +7,6 @@ namespace Modules\Promotion\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Promotion\Domain\Stacking;
 use Modules\Promotion\Persistence\Models\Promotion;
 
@@ -16,10 +14,7 @@ final class PromotionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
-
-        return Gate::allows('promotion.manage', [ScopeRef::brand($brand->id)]);
+        return Gate::allows('promotion.manage');
     }
 
     /**

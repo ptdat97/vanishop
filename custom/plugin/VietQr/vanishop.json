@@ -8,7 +8,7 @@
     "kind": "payment_gateway",
     "provider": "Plugin\\VietQr\\VietQrServiceProvider",
     "requires": {
-        "vanishop": "^0.2",
+        "vanishop": "^0.3",
         "plugins": {}
     },
     "conflicts": [],

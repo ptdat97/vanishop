@@ -10,33 +10,32 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Http\Requests\Admin\ProductRequest;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Catalog\Persistence\Models\Variant;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 final class ProductController
 {
     use ConvertsDomainErrors;
 
-    public function index(Brand $brand, Request $request): Response
+    public function index(Request $request): Response
     {
-        Gate::authorize('catalog.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.view');
 
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status');
 
         $styles = Style::query()
-            ->with(['translations', 'colors.gallery.media'])
+            ->with(['translations', 'brand:id,name', 'colors.gallery.media'])
             ->when($search !== '', function ($query) use ($search): void {
                 foreach (VietnameseText::tokens($search) as $token) {
                     $query->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
@@ -49,8 +48,7 @@ final class ProductController
             ->withQueryString();
 
         return Inertia::render('Catalog::Products/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
-            'nav' => CatalogNavigation::for($brand),
+            'nav' => CatalogNavigation::all(),
             'filters' => ['q' => $search, 'status' => $status],
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
@@ -58,60 +56,60 @@ final class ProductController
                     'style_code' => $style->style_code,
                     'name' => $style->translate('name'),
                     'status' => $style->status->value,
+                    'brand' => $style->brand?->name,
                     'colors' => $style->colors->count(),
                     'image_url' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first()?->media->url(),
                 ])->all(),
                 'links' => ['prev' => $styles->previousPageUrl(), 'next' => $styles->nextPageUrl()],
                 'total' => $styles->total(),
             ],
-            'canManage' => Gate::allows('catalog.manage', [ScopeRef::brand($brand->id)]),
+            'canManage' => Gate::allows('catalog.manage'),
         ]);
     }
 
-    public function create(Brand $brand, CategoryTreeQuery $tree): Response
+    public function create(CategoryTreeQuery $tree): Response
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
 
-        return $this->form($brand, null, $tree);
+        return $this->form(null, $tree);
     }
 
-    public function store(Brand $brand, ProductRequest $request, ProductService $products): RedirectResponse
+    public function store(ProductRequest $request, ProductService $products): RedirectResponse
     {
-        $style = $this->orFormError(fn () => $products->create($brand->id, $request->toInput()));
+        $style = $this->orFormError(fn () => $products->create($request->toInput()));
 
         return redirect()->route('admin.catalog.products.edit', ['product' => $style->id])->with('success', __('catalog::messages.saved'));
     }
 
-    public function edit(Brand $brand, Style $product, CategoryTreeQuery $tree): Response
+    public function edit(Style $product, CategoryTreeQuery $tree): Response
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
 
-        return $this->form($brand, $product->load(['translations', 'categories:id', 'attributeValues', 'colors.color.translations', 'colors.gallery.media', 'variants.size', 'variants.styleColor.color']), $tree);
+        return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'colors.color.translations', 'colors.gallery.media', 'variants.size', 'variants.styleColor.color']), $tree);
     }
 
-    public function update(Brand $brand, Style $product, ProductRequest $request, ProductService $products): RedirectResponse
+    public function update(Style $product, ProductRequest $request, ProductService $products): RedirectResponse
     {
         $this->orFormError(fn () => $products->update($product, $request->toInput(), (int) $request->validated('lock_version')));
 
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function destroy(Brand $brand, Style $product, ProductService $products): RedirectResponse
+    public function destroy(Style $product, ProductService $products): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
 
         $products->deleteDraft($product);
 
         return redirect()->route('admin.catalog.products.index')->with('success', __('catalog::messages.deleted'));
     }
 
-    private function form(Brand $brand, ?Style $style, CategoryTreeQuery $tree): Response
+    private function form(?Style $style, CategoryTreeQuery $tree): Response
     {
         $attributes = Attribute::query()->with(['translations', 'values.translations'])->orderBy('position')->orderBy('code')->get();
 
         return Inertia::render('Catalog::Products/Form', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
-            'nav' => CatalogNavigation::for($brand),
+            'nav' => CatalogNavigation::all(),
             'product' => $style === null ? null : [
                 'id' => $style->id,
                 'style_code' => $style->style_code,
@@ -122,6 +120,7 @@ final class ProductController
                 'lock_version' => $style->lock_version,
                 'category_ids' => $style->categories->pluck('id')->all(),
                 'primary_category_id' => $style->primary_category_id,
+                'brand_id' => $style->brand_id,
                 'translations' => $style->translationsByLocale(),
                 'attributes' => $this->attributeFormValues($style, $attributes),
                 'colors' => $style->colors->map(fn (StyleColor $styleColor): array => [
@@ -144,6 +143,7 @@ final class ProductController
                     ])->values()->all(),
             ],
             'categories' => $this->categoryOptions($tree->tree()),
+            'brands' => Brand::query()->orderBy('position')->orderBy('name')->get(['id', 'name'])->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
             'attributeDefinitions' => $attributes->map(fn (Attribute $attribute): array => [
                 'id' => $attribute->id,
                 'name' => $attribute->translate('name'),

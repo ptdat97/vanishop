@@ -7,10 +7,8 @@ namespace Modules\Catalog\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Domain\SizeSystem;
 use Modules\Catalog\Persistence\Models\Size;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 final class SizeRequest extends FormRequest
 {
@@ -19,10 +17,7 @@ final class SizeRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
-
-        return Gate::allows('catalog.manage', [ScopeRef::brand($brand->id)]);
+        return Gate::allows('catalog.manage');
     }
 
     /**
@@ -30,14 +25,12 @@ final class SizeRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
         $size = $this->route('size');
 
         return [
             'size_system' => ['required', Rule::enum(SizeSystem::class)],
             'code' => ['required', 'string', 'max:16', 'regex:/^[A-Z0-9][A-Z0-9.\/-]*$/',
-                Rule::unique('sizes', 'code')->where('brand_id', $brand->id)->where('size_system', $this->input('size_system'))
+                Rule::unique('sizes', 'code')->where('size_system', $this->input('size_system'))
                     ->ignore($size instanceof Size ? $size->id : null)],
             'sort_order' => ['required', 'integer', 'min:0', 'max:10000'],
         ];

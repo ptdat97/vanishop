@@ -29,7 +29,6 @@ const props = defineProps<{
         is_default: boolean;
     }>;
     consents: Array<{
-        brand_id: number;
         channel: string;
         purpose: string;
         granted: boolean;
@@ -37,19 +36,17 @@ const props = defineProps<{
         revoked_at: string | null;
         source: string;
     }>;
-    brandProfiles: Array<{
-        brand_id: number;
+    stats: {
         orders_count: number;
         total_spent: number;
         first_order_at: string | null;
         last_order_at: string | null;
-    }>;
+    };
     orders: Array<{
         number: string;
         status: string;
         total: number;
         placed_at: string;
-        brand_id: number;
     }>;
     can: { merge: boolean; anonymize: boolean };
 }>();
@@ -105,37 +102,21 @@ function anonymize(): void {
             </section>
 
             <section class="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="mb-3 font-semibold">Theo brand</h2>
-                <table class="w-full text-sm">
-                    <thead class="text-left text-slate-500">
-                        <tr>
-                            <th class="py-1">Brand</th>
-                            <th class="py-1">Số đơn</th>
-                            <th class="py-1">Tổng chi tiêu</th>
-                            <th class="py-1">Mua đầu / gần nhất</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="profile in brandProfiles" :key="profile.brand_id" class="border-t border-slate-100">
-                            <td class="py-2">#{{ profile.brand_id }}</td>
-                            <td class="py-2">{{ profile.orders_count }}</td>
-                            <td class="py-2">{{ vnd(profile.total_spent) }}</td>
-                            <td class="py-2 text-xs">
-                                {{ profile.first_order_at }} /
-                                {{ profile.last_order_at }}
-                            </td>
-                        </tr>
-                        <tr v-if="!brandProfiles.length">
-                            <td class="py-2 text-slate-500">—</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <h2 class="mb-3 font-semibold">Thống kê mua</h2>
+                <dl class="grid grid-cols-2 gap-2 text-sm">
+                    <dt class="text-slate-500">Số đơn</dt>
+                    <dd>{{ stats.orders_count }}</dd>
+                    <dt class="text-slate-500">Tổng chi tiêu</dt>
+                    <dd>{{ vnd(stats.total_spent) }}</dd>
+                    <dt class="text-slate-500">Mua đầu / gần nhất</dt>
+                    <dd class="text-xs">{{ stats.first_order_at ?? '—' }} / {{ stats.last_order_at ?? '—' }}</dd>
+                </dl>
             </section>
 
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Consent</h2>
-                <div v-for="consent in consents" :key="`${consent.brand_id}-${consent.channel}-${consent.purpose}`" class="text-sm">
-                    Brand #{{ consent.brand_id }} · {{ consent.channel }} · {{ consent.purpose }}:
+                <div v-for="consent in consents" :key="`${consent.channel}-${consent.purpose}`" class="text-sm">
+                    {{ consent.channel }} · {{ consent.purpose }}:
                     <strong :class="consent.granted ? 'text-green-700' : 'text-slate-500'">{{ consent.granted ? 'Đồng ý' : 'Đã rút' }}</strong>
                     <span class="text-xs text-slate-400"> ({{ consent.source }})</span>
                 </div>

@@ -7,20 +7,20 @@ namespace Modules\Catalog\Contracts;
 use Modules\Catalog\Contracts\Data\VariantData;
 
 /**
- * Service contract: tra variant cho các module khác (Pricing, Inventory, Ordering…). Lọc theo phạm vi brand.
+ * Service contract: tra variant cho các module khác (Pricing, Inventory, Ordering…).
  */
 interface VariantDirectory
 {
     /**
-     * Mọi variant (cả ngừng bán) của một style trong brand, theo thứ tự màu → size.
+     * Mọi variant (cả ngừng bán) của một style, theo thứ tự màu → size.
      *
      * @return list<VariantData>
      */
-    public function ofStyleCode(int $brandId, string $styleCode): array;
+    public function ofStyleCode(string $styleCode): array;
 
     /**
      * @param  list<int>  $variantIds
-     * @return array<int, VariantData> id => data (id không tồn tại/ngoài phạm vi thì không có mặt)
+     * @return array<int, VariantData> id => data (id không tồn tạithì không có mặt)
      */
     public function find(array $variantIds): array;
 
@@ -28,7 +28,7 @@ interface VariantDirectory
      * Tra theo SKU (mã duy nhất toàn hệ thống) — dùng cho đồng bộ từ hệ thống ngoài.
      *
      * @param  list<string>  $skus
-     * @return array<string, VariantData> sku => data (SKU không tồn tại/ngoài phạm vi thì không có mặt)
+     * @return array<string, VariantData> sku => data (SKU không tồn tạithì không có mặt)
      */
     public function findBySkus(array $skus): array;
 }

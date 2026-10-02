@@ -39,8 +39,8 @@ final class OrderTransitionService implements OrderTransitions
             $this->record($order->id, 'status_changed', $from->value, $to->value, $reason, $source);
 
             match ($to) {
-                OrderStatus::Confirmed => event(new OrderConfirmed($order->id, $order->public_id, $order->brand_id, $reason)),
-                OrderStatus::Cancelled => event(new OrderCancelled($order->id, $order->public_id, $order->brand_id, (string) $order->reservation_key, $reason, $source)),
+                OrderStatus::Confirmed => event(new OrderConfirmed($order->id, $order->public_id, $reason)),
+                OrderStatus::Cancelled => event(new OrderCancelled($order->id, $order->public_id, (string) $order->reservation_key, $reason, $source)),
                 default => null,
             };
 

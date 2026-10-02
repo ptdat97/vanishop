@@ -10,7 +10,6 @@ use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
-use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\MoneyFormatter;
 
 /**
@@ -24,7 +23,6 @@ final class ProductViews
         private readonly CatalogReader $catalog,
         private readonly PriceResolver $prices,
         private readonly AvailabilityReader $availability,
-        private readonly CurrentContext $context,
         private readonly MoneyFormatter $money,
     ) {}
 
@@ -83,22 +81,18 @@ final class ProductViews
      */
     private function resolve(array $variantIds, int $now): array
     {
-        $channelId = $this->context->channelId();
-
-        return $variantIds === [] || $channelId === null ? [] : $this->prices->forVariants($variantIds, new PricingContext($channelId, $now));
+        return $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($now));
     }
 
     /**
-     * ATS theo kênh hiện tại — chỉ cho variant đã có giá (chưa có giá thì không bán được).
+     * ATS — chỉ cho variant đã có giá (chưa có giá thì không bán được).
      *
      * @param  list<int>  $variantIds
      * @return array<int, int>
      */
     private function stock(array $variantIds): array
     {
-        $channelId = $this->context->channelId();
-
-        return $variantIds === [] || $channelId === null ? [] : $this->availability->forChannel($variantIds, $channelId);
+        return $variantIds === [] ? [] : $this->availability->forVariants($variantIds);
     }
 
     /**

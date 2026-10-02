@@ -70,7 +70,7 @@ final class OrderEventReconciler
                             $details[] = ['order' => $order->number, 'missing' => $type];
                         }
                         if ($repair) {
-                            $this->events->publish(new IntegrationEvent($type, 'order', $order->number, $order->brandId, [
+                            $this->events->publish(new IntegrationEvent($type, 'order', $order->number, [
                                 'order' => $this->payloads->order($order), 'reconciled' => true,
                             ]));
                             $repaired++;

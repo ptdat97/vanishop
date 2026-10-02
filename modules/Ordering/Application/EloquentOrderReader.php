@@ -42,34 +42,32 @@ final class EloquentOrderReader implements OrderReader
         }
 
         return OrderLine::query()->where('order_id', $orderId)->orderBy('id')->get()
-            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, $line->color_name, (string) $line->size_code))
+            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, $line->color_name, (string) $line->size_code, $line->brand_name))
             ->all();
     }
 
-    public function customerHasPlacedOrder(int $customerId, ?int $brandId = null): bool
+    public function customerHasPlacedOrder(int $customerId): bool
     {
         return Order::query()
             ->where('customer_id', $customerId)
-            ->when($brandId !== null, fn ($query) => $query->where('brand_id', $brandId))
             ->where('order_status', '!=', OrderStatus::Cancelled->value)
             ->exists();
     }
 
-    public function customerBrandStats(int $customerId): array
+    public function customerStats(int $customerId): array
     {
-        return Order::query()
+        $row = Order::query()
             ->where('customer_id', $customerId)
             ->where('order_status', '!=', OrderStatus::Cancelled->value)
-            ->groupBy('brand_id')
-            ->orderBy('brand_id')
-            ->selectRaw('brand_id, count(*) as orders_count, sum(total_amount) as total_spent, min(placed_at) as first_order_at, max(placed_at) as last_order_at')
+            ->selectRaw('count(*) as orders_count, coalesce(sum(total_amount), 0) as total_spent, min(placed_at) as first_order_at, max(placed_at) as last_order_at')
             ->toBase()
-            ->get()
-            ->map(fn (object $row): array => [
-                'brand_id' => (int) $row->brand_id, 'orders_count' => (int) $row->orders_count, 'total_spent' => (int) $row->total_spent,
-                'first_order_at' => $row->first_order_at === null ? null : (string) $row->first_order_at,
-                'last_order_at' => $row->last_order_at === null ? null : (string) $row->last_order_at,
-            ])->all();
+            ->first();
+
+        return [
+            'orders_count' => (int) ($row->orders_count ?? 0), 'total_spent' => (int) ($row->total_spent ?? 0),
+            'first_order_at' => ($row->first_order_at ?? null) === null ? null : (string) $row->first_order_at,
+            'last_order_at' => ($row->last_order_at ?? null) === null ? null : (string) $row->last_order_at,
+        ];
     }
 
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array
@@ -89,8 +87,7 @@ final class EloquentOrderReader implements OrderReader
     private function toData(Order $order): OrderData
     {
         return new OrderData(
-            id: $order->id, publicId: $order->public_id, number: $order->number, legalEntityId: (int) $order->legal_entity_id,
-            brandId: $order->brand_id, channelId: $order->channel_id, customerId: $order->customer_id === null ? null : (int) $order->customer_id,
+            id: $order->id, publicId: $order->public_id, number: $order->number, customerId: $order->customer_id === null ? null : (int) $order->customer_id,
             status: $order->order_status, paymentStatus: $order->payment_status, paymentMethod: (string) $order->payment_method,
             totalAmount: $order->total_amount, currencyCode: $order->currency_code, reservationKey: (string) $order->reservation_key,
             returnStatus: (string) $order->return_status,
@@ -103,6 +100,7 @@ final class EloquentOrderReader implements OrderReader
             placedAt: $order->placed_at?->toIso8601String(),
             updatedAt: $order->updated_at?->toIso8601String(),
             meta: (array) ($order->meta ?? []),
+            source: (string) $order->source,
         );
     }
 }

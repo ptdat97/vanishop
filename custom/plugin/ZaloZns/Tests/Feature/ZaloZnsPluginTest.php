@@ -27,7 +27,7 @@ function enablePlugin(string $id, string $provider): void
 
 function znsMessage(array $meta): OutgoingMessage
 {
-    return new OutgoingMessage(42, 'order_placed:1:zns', 'order_placed', null, new Recipient(phone: '+84912345678'), null, null, $meta, 1);
+    return new OutgoingMessage(42, 'order_placed:1:zns', 'order_placed', new Recipient(phone: '+84912345678'), null, null, $meta, 1);
 }
 
 beforeEach(function () {
@@ -91,7 +91,7 @@ it('OTP: ưu tiên ZNS; SĐT không dùng Zalo → Core tự chuyển sang SMS b
         'business.openapi.zalo.me/*' => Http::sequence()->push(['error' => 0, 'data' => ['msg_id' => 'otp-1']])->push(['error' => -118, 'message' => 'Zalo account not existed']),
         'rest.esms.vn/*' => Http::response(['CodeResult' => '100', 'SMSID' => 'sms-otp']),
     ]);
-    $headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $headers = [];
 
     $this->postJson('/api/storefront/v1/auth/otp/request', ['phone' => '0912345678'], $headers)->assertStatus(202)->assertJsonPath('data.channel', 'zns');
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/message/template') && $request['template_id'] === 'OTP-TPL' && preg_match('/^\d{6}$/', $request['template_data']['otp']) === 1);

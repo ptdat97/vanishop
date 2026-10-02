@@ -21,13 +21,8 @@ final readonly class ScopeRef
         return new self(ScopeType::Owner);
     }
 
-    public static function brand(int $brandId): self
+    public static function location(int $locationId): self
     {
-        return new self(ScopeType::Brand, $brandId);
-    }
-
-    public static function legalEntity(int $legalEntityId): self
-    {
-        return new self(ScopeType::LegalEntity, $legalEntityId);
+        return new self(ScopeType::Location, $locationId);
     }
 }

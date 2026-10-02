@@ -5,7 +5,6 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     priceList: null | {
         id: number;
@@ -17,9 +16,7 @@ const props = defineProps<{
         ends_at: string | null;
         status: string;
         lock_version: number;
-        channel_ids: number[];
     };
-    channels: Array<{ id: number; code: string; name: string }>;
     types: string[];
 }>();
 
@@ -32,7 +29,6 @@ const form = useForm({
     starts_at: props.priceList?.starts_at ?? null,
     ends_at: props.priceList?.ends_at ?? null,
     status: props.priceList?.status ?? 'active',
-    channel_ids: props.priceList?.channel_ids ?? ([] as number[]),
     lock_version: props.priceList?.lock_version ?? null,
 });
 
@@ -77,15 +73,6 @@ function destroy(): void {
                 <option value="active">Đang dùng</option>
                 <option value="inactive">Tắt</option>
             </select>
-        </FormField>
-        <FormField label="Áp dụng cho kênh" :error="form.errors.channel_ids">
-            <div class="space-y-1">
-                <label v-for="channel in channels" :key="channel.id" class="flex items-center gap-2 text-sm">
-                    <input v-model="form.channel_ids" type="checkbox" :value="channel.id" />
-                    {{ channel.name }} <span class="font-mono text-xs text-slate-400">{{ channel.code }}</span>
-                </label>
-                <p v-if="!channels.length" class="text-sm text-slate-500">Brand chưa có kênh bán nào.</p>
-            </div>
         </FormField>
         <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>

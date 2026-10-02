@@ -14,7 +14,6 @@ use Illuminate\Support\Carbon;
  * @property string $event_id
  * @property string $event_type
  * @property string $schema_version
- * @property int|null $brand_id
  * @property string $aggregate_type
  * @property string $aggregate_id
  * @property array<string, mixed> $payload
@@ -31,7 +30,7 @@ final class IntegrationEventRecord extends Model
 
     protected function casts(): array
     {
-        return ['brand_id' => 'integer', 'payload' => 'array', 'occurred_at' => 'immutable_datetime'];
+        return ['payload' => 'array', 'occurred_at' => 'immutable_datetime'];
     }
 
     /**

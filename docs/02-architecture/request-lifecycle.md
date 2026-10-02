@@ -2,7 +2,7 @@
 
 > Trạng thái: **Partially Implemented**, mô tả code đang có. Kiểm chứng từ `bootstrap/app.php`, `bootstrap/providers.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/Extension/ExtensionServiceProvider.php`, `PluginServiceProvider`, provider của Payment/Fulfillment/Integration/Storefront/Channel/Customer. Bản đồ thành phần: [system-map](system-map.md).
 
-> **Định hướng mới ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: một cửa hàng, brand là thuộc tính catalog. Tài liệu này mô tả **code hiện tại** (vẫn có module Brand/Channel, brand workspace, `X-Vani-Channel`); các phần đó sẽ gỡ ở slice 12 ([store-and-brand §6](../12-store/store-and-brand.md)).
+> **Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: từ slice 12 (2026-10-02) code không còn module Brand/Channel, brand workspace hay header `X-Vani-Channel`; brand là thực thể Catalog.
 
 ## 1. Khởi động (boot)
 
@@ -46,9 +46,9 @@ bootstrap/providers.php
 | Bề mặt | Middleware | Rate limit | Stateful |
 |---|---|---|---|
 | Admin (`loadAdminRoutes`) | `web` → `vani.admin` (`AdminGate`: IP allowlist, noindex… + Inertia) → `auth:staff` → `vani.staff-context` | Đăng nhập Admin: giới hạn số lần sai (`StaffLoginRequest`) | Có (phiên Admin, CSRF) |
-| Admin brand workspace (`loadBrandWorkspaceRoutes`) | như Admin + `vani.admin-brand`; prefix `/{admin}/{section}/{brand}` | — | Có |
+| Admin theo mục (`loadAdminSectionRoutes`) | như Admin; prefix `/{admin}/{section}` | — | Có |
 | Admin của plugin (`adminRoutes`) | như Admin + `vani.plugin-active:{id}` (404 khi plugin không active); prefix `/{admin}/plugins/{slug}` | — | Có |
-| Storefront API (`loadStorefrontApiRoutes`) | `api` → `throttle:storefront-api` → `vani.api-channel` (kênh từ `X-Vani-Channel`) | 240/phút/IP; tạo giỏ 30, checkout 20, tra đơn 10, đăng nhập khách 20 | Không (token) |
+| Storefront API (`loadStorefrontApiRoutes`) | `api` → `throttle:storefront-api` → `vani.storefront-context` (locale `X-Vani-Locale`, nguồn đơn `X-Vani-Source`) | 240/phút/IP; tạo giỏ 30, checkout 20, tra đơn 10, đăng nhập khách 20 | Không (token) |
 | Integration API | `api` → `vani.integration-client` (HMAC, scope, IP) → `throttle:integration-api` | Theo client | Không |
 | Callback thanh toán | `api` → `throttle:payment-callbacks`; `/api/payments/{gateway}/callback` | 600/phút/IP | Không |
 | Webhook vận chuyển | `api` → `throttle:shipping-webhooks`; `/api/shipping/{carrier}/webhook` | 600/phút/IP | Không |
@@ -68,7 +68,7 @@ Nhóm `api` không có phiên và CSRF, nên callback/webhook không cần "lo�
 
 ```text
 POST /api/storefront/v1/checkout/{cart}/orders   (Idempotency-Key, expected_total)
-  → correlation id → throttle → kênh (X-Vani-Channel) → token giỏ
+  → correlation id → throttle → ngữ cảnh storefront (locale, nguồn đơn) → token giỏ
   → Controller: Form Request → Checkout::placeOrder()
       DB transaction
         ├─ khoá giỏ, tính totals (TotalsCalculator theo priority, guard cuối)

@@ -8,21 +8,18 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Collections\CollectionService;
 use Modules\Catalog\Http\Requests\Admin\CollectionRequest;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 final class CollectionController
 {
-    public function index(Brand $brand): Response
+    public function index(): Response
     {
-        Gate::authorize('catalog.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.view');
 
         return Inertia::render('Catalog::Collections/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
-            'nav' => CatalogNavigation::for($brand),
+            'nav' => CatalogNavigation::all(),
             'collections' => ProductCollection::query()->with('translations')->withCount('styles')->orderBy('position')->orderBy('slug')->get()
                 ->map(fn (ProductCollection $collection): array => [
                     'id' => $collection->id,
@@ -31,51 +28,50 @@ final class CollectionController
                     'status' => $collection->status,
                     'styles_count' => $collection->styles_count,
                 ])->all(),
-            'canManage' => Gate::allows('catalog.manage', [ScopeRef::brand($brand->id)]),
+            'canManage' => Gate::allows('catalog.manage'),
         ]);
     }
 
-    public function create(Brand $brand): Response
+    public function create(): Response
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
 
-        return $this->form($brand, null);
+        return $this->form(null);
     }
 
-    public function store(Brand $brand, CollectionRequest $request, CollectionService $collections): RedirectResponse
+    public function store(CollectionRequest $request, CollectionService $collections): RedirectResponse
     {
-        $collection = $collections->save($brand->id, $request->toData(), $request->styleCodes());
+        $collection = $collections->save($request->toData(), $request->styleCodes());
 
         return redirect()->route('admin.catalog.collections.edit', ['collection' => $collection->id])->with('success', __('catalog::messages.saved'));
     }
 
-    public function edit(Brand $brand, ProductCollection $collection): Response
+    public function edit(ProductCollection $collection): Response
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
 
-        return $this->form($brand, $collection->load(['translations', 'styles']));
+        return $this->form($collection->load(['translations', 'styles']));
     }
 
-    public function update(Brand $brand, ProductCollection $collection, CollectionRequest $request, CollectionService $collections): RedirectResponse
+    public function update(ProductCollection $collection, CollectionRequest $request, CollectionService $collections): RedirectResponse
     {
-        $collections->save($brand->id, $request->toData(), $request->styleCodes(), $collection);
+        $collections->save($request->toData(), $request->styleCodes(), $collection);
 
         return back()->with('success', __('catalog::messages.saved'));
     }
 
-    public function destroy(Brand $brand, ProductCollection $collection, CollectionService $collections): RedirectResponse
+    public function destroy(ProductCollection $collection, CollectionService $collections): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $collections->delete($collection);
 
         return redirect()->route('admin.catalog.collections.index')->with('success', __('catalog::messages.deleted'));
     }
 
-    private function form(Brand $brand, ?ProductCollection $collection): Response
+    private function form(?ProductCollection $collection): Response
     {
         return Inertia::render('Catalog::Collections/Form', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
-            'nav' => CatalogNavigation::for($brand),
+            'nav' => CatalogNavigation::all(),
             'collection' => $collection === null ? null : [
                 'id' => $collection->id,
                 'slug' => $collection->slug,

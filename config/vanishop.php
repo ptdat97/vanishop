@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.2.0',
+    'version' => '0.3.0',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -32,13 +32,33 @@ return [
     ],
 
     /*
-    | Đường dẫn gốc dành riêng — slug brand không được trùng (ADR-019). Đường dẫn Admin được thêm tự động.
+    | Đường dẫn gốc dành riêng của storefront — VANI_ADMIN_PATH không được trùng.
     */
     'reserved_paths' => ['api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico'],
 
     'media' => [
         // Disk lưu ảnh catalog: 'public' cho dev (cần php artisan storage:link), S3-compatible tại VN cho production.
         'disk' => env('VANI_MEDIA_DISK', 'public'),
+    ],
+
+    /*
+    | Ngôn ngữ storefront: mặc định + danh sách được hỗ trợ (đổi bằng header X-Vani-Locale).
+    */
+    'locale' => [
+        'default' => env('VANI_LOCALE', 'vi'),
+        'supported' => ['vi', 'en'],
+    ],
+
+    /*
+    | Tiền tệ của cửa hàng (một cửa hàng — một tiền tệ, ADR-028).
+    */
+    'currency' => env('VANI_CURRENCY', 'VND'),
+
+    /*
+    | Đơn hàng: số đơn một dãy cho cả cửa hàng (ADR-028), dạng <tiền tố><yymm>-<6 số>.
+    */
+    'orders' => [
+        'number_prefix' => env('VANI_ORDER_NUMBER_PREFIX', 'VN'),
     ],
 
     'pricing' => [
@@ -70,13 +90,11 @@ return [
             'max_amount' => env('VANI_COD_MAX_AMOUNT', 20000000) === null ? null : (int) env('VANI_COD_MAX_AMOUNT', 20000000),
         ],
         'bank_transfer' => [
-            // Tài khoản nhận tiền theo legal_entity_id; "default" dùng chung. Thiếu số tài khoản → phương thức ẩn.
-            'accounts' => [
-                'default' => [
-                    'bank' => env('VANI_BANK_TRANSFER_BANK', ''),
-                    'account_number' => env('VANI_BANK_TRANSFER_ACCOUNT', ''),
-                    'account_name' => env('VANI_BANK_TRANSFER_NAME', ''),
-                ],
+            // Tài khoản nhận tiền của cửa hàng. Thiếu số tài khoản → phương thức ẩn.
+            'account' => [
+                'bank' => env('VANI_BANK_TRANSFER_BANK', ''),
+                'account_number' => env('VANI_BANK_TRANSFER_ACCOUNT', ''),
+                'account_name' => env('VANI_BANK_TRANSFER_NAME', ''),
             ],
             'ttl' => (int) env('VANI_BANK_TRANSFER_TTL', 86400),
         ],

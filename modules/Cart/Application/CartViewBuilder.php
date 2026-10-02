@@ -32,8 +32,8 @@ final class CartViewBuilder
         $variantIds = array_map(fn (CartLine $line): int => $line->variant_id, $lines);
 
         $sellable = $variantIds === [] ? [] : $this->catalog->sellableVariants($variantIds, $locale, $now);
-        $prices = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($cart->channel_id, $now, null));
-        $stock = $variantIds === [] ? [] : $this->availability->forChannel($variantIds, $cart->channel_id);
+        $prices = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($now));
+        $stock = $variantIds === [] ? [] : $this->availability->forVariants($variantIds);
 
         $subtotal = Money::zero($cart->currency_code);
         $itemCount = 0;
@@ -73,6 +73,6 @@ final class CartViewBuilder
             );
         }
 
-        return new CartView($cart->public_id, $cart->channel_id, $cart->status->value, $cart->currency_code, $views, $subtotal, $itemCount);
+        return new CartView($cart->public_id, $cart->status->value, $cart->currency_code, $views, $subtotal, $itemCount);
     }
 }

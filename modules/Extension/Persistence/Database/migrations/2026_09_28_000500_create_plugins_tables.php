@@ -17,21 +17,10 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('plugin_scopes', function (Blueprint $table) {
-            $table->id();
-            $table->string('plugin_id', 128);
-            $table->string('scope_type', 32);
-            $table->unsignedBigInteger('scope_id')->nullable();
-            $table->boolean('enabled')->default(true);
-            $table->timestamps();
-            $table->foreign('plugin_id')->references('id')->on('plugins')->cascadeOnDelete();
-            $table->unique(['plugin_id', 'scope_type', 'scope_id']);
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('plugin_scopes');
         Schema::dropIfExists('plugins');
     }
 };

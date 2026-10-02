@@ -31,7 +31,7 @@ it('dựng bộ lọc: brand, trạng thái, khung giờ, OR trong nhóm, AND gi
     Http::fake(['meili.test:7700/*' => Http::response([
         'hits' => [['id' => 3], ['id' => 9]],
         'estimatedTotalHits' => 2,
-        'facetDistribution' => ['color_families' => ['black' => 2], 'attribute_value_ids' => ['5' => 1]],
+        'facetDistribution' => ['color_families' => ['black' => 2], 'attribute_value_ids' => ['5' => 1], 'brand_id' => ['1' => 2]],
     ])]);
 
     $result = $this->provider->search(new ProductSearchQuery(
@@ -41,17 +41,27 @@ it('dựng bộ lọc: brand, trạng thái, khung giờ, OR trong nhóm, AND gi
 
     expect($result->styleIds)->toBe([3, 9])
         ->and($result->total)->toBe(2)
-        ->and($result->facets['attribute_values'])->toBe([5 => 1]);
+        ->and($result->facets['attribute_values'])->toBe([5 => 1])
+        ->and($result->facets['brands'])->toBe([1 => 2]);
 
     Http::assertSent(function (Request $request) {
         $filter = $request['filter'];
 
         return $request['q'] === 'dam lua'
-            && $filter[0] === 'brand_id IN [1, 2]'
+            && $filter[0] === "status = 'active'"
+            && in_array('brand_id IN [1, 2]', $filter, true)
             && in_array('category_ids = 4', $filter, true)
             && in_array(["color_families = 'black'", "color_families = 'white'"], $filter, true)
             && in_array(['attribute_value_ids = 5', 'attribute_value_ids = 6'], $filter, true);
     });
+});
+
+it('không lọc thương hiệu khi danh sách brand rỗng', function () {
+    Http::fake(['meili.test:7700/*' => Http::response(['hits' => [], 'estimatedTotalHits' => 0])]);
+
+    $this->provider->search(new ProductSearchQuery(brandIds: [], now: 1_800_000_000));
+
+    Http::assertSent(fn (Request $request) => collect($request['filter'])->flatten()->filter(fn (string $f) => str_starts_with($f, 'brand_id'))->isEmpty());
 });
 
 it('ném lỗi khi Meilisearch lỗi (để queue retry)', function () {

@@ -54,13 +54,13 @@ it('upgrade: bản mới không tương thích Core bị từ chối; plugin fai
     expect(fn () => ($this->plugins)()->upgrade('fixture.greeting'))->toThrow(PluginOperationFailed::class, 'incompatible_core');
 
     ($this->plugins)()->markFailed('fixture.greeting', 'incompatible_core');
-    ($this->deploy)('Greeting', ['version' => '2.0.1', 'requires' => ['vanishop' => '^0.2']]);
+    ($this->deploy)('Greeting', ['version' => '2.0.1', 'requires' => ['vanishop' => '^0.3']]);
     expect(($this->plugins)()->upgrade('fixture.greeting')->status)->toBe(PluginStatus::Installed);
 });
 
 it('doctor: báo version cần nâng, migration chưa chạy, plugin failed, manifest mất, plugin chưa cài không tương thích', function () {
     expect(app(PluginDoctor::class)->diagnose())->toBe([
-        ['plugin' => 'fixture.future', 'level' => 'warning', 'code' => 'incompatible_core', 'message' => 'Chưa cài; cần VaniShop ^9.0, hiện tại 0.2.0.'],
+        ['plugin' => 'fixture.future', 'level' => 'warning', 'code' => 'incompatible_core', 'message' => 'Chưa cài; cần VaniShop ^9.0, hiện tại 0.3.0.'],
     ]);
     $this->artisan('vani:plugin:doctor')->assertSuccessful(); // chỉ cảnh báo → mã 0
 

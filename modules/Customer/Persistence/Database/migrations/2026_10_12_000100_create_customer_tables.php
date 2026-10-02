@@ -26,6 +26,11 @@ return new class extends Migration
             $table->foreignId('merged_into_id')->nullable()->constrained('customers')->nullOnDelete();
             $table->json('meta')->nullable();
             $table->timestamp('last_login_at')->nullable();
+            // Thống kê mua (tính lại từ đơn, không tính đơn huỷ).
+            $table->unsignedInteger('orders_count')->default(0);
+            $table->bigInteger('total_spent')->default(0);    // VND, minor unit
+            $table->timestamp('first_order_at')->nullable();
+            $table->timestamp('last_order_at')->nullable();
             $table->timestamps();
 
             // Invariant: một SĐT / một email chỉ thuộc tối đa một khách đang hoạt động.
@@ -49,23 +54,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('customer_brand_profiles', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
-            $table->unsignedInteger('orders_count')->default(0);
-            $table->bigInteger('total_spent')->default(0);    // VND, minor unit; đơn đặt trừ đơn huỷ
-            $table->timestamp('first_order_at')->nullable();
-            $table->timestamp('last_order_at')->nullable();
-            $table->timestamps();
-
-            $table->unique(['customer_id', 'brand_id']);
-        });
-
         Schema::create('customer_consents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
             $table->string('channel', 16);                    // email | sms | zns
             $table->string('purpose', 32);                    // marketing
             $table->timestamp('granted_at')->nullable();
@@ -73,14 +64,13 @@ return new class extends Migration
             $table->string('source', 64);
             $table->timestamps();
 
-            $table->unique(['customer_id', 'brand_id', 'channel', 'purpose']);
+            $table->unique(['customer_id', 'channel', 'purpose']);
         });
 
         // Ledger append-only: mọi lần cấp/rút consent.
         Schema::create('customer_consent_events', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_id')->index();
-            $table->unsignedBigInteger('brand_id');
             $table->string('channel', 16);
             $table->string('purpose', 32);
             $table->string('action', 16);                     // granted | revoked
@@ -123,7 +113,6 @@ return new class extends Migration
         Schema::dropIfExists('customer_otps');
         Schema::dropIfExists('customer_consent_events');
         Schema::dropIfExists('customer_consents');
-        Schema::dropIfExists('customer_brand_profiles');
         Schema::dropIfExists('customer_addresses');
         Schema::dropIfExists('customers');
     }

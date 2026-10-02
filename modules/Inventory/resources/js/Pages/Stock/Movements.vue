@@ -4,7 +4,6 @@ import { secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
-    brand: { name: string; slug: string };
     backUrl: string;
     variant: { sku: string; style_code: string };
     movements: Array<{
@@ -27,7 +26,7 @@ const signed = (value: number): string => (value > 0 ? `+${value}` : value === 0
 
 <template>
     <Head :title="`Lịch sử tồn · ${variant.sku}`" />
-    <p class="mb-2 text-sm text-slate-500">Tồn kho · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <p class="mb-2 text-sm text-slate-500">Tồn kho</p>
     <PageHeader :title="`Lịch sử tồn: ${variant.sku}`" subtitle="Sổ cái chỉ ghi thêm; 100 dòng gần nhất.">
         <Link :href="backUrl" :class="secondaryButton">Quay lại</Link>
     </PageHeader>

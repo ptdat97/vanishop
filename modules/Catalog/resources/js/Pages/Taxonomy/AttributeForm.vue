@@ -5,7 +5,7 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem, Translations } from '../../types';
+import type { NavItem, Translations } from '../../types';
 
 interface ValueRow {
     code: string;
@@ -13,7 +13,6 @@ interface ValueRow {
 }
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     attribute: null | {
         id: number;
@@ -77,7 +76,7 @@ function destroy(): void {
 
 <template>
     <Head :title="attribute ? 'Sửa thuộc tính' : 'Thêm thuộc tính'" />
-    <CatalogTabs :brand="brand" :nav="nav" active="attributes" />
+    <CatalogTabs :nav="nav" active="attributes" />
     <PageHeader :title="attribute ? 'Sửa thuộc tính' : 'Thêm thuộc tính'">
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
         <button v-if="attribute" type="button" :class="dangerButton" @click="destroy">Xoá</button>

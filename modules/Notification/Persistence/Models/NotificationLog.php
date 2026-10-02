@@ -10,7 +10,6 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $idempotency_key
- * @property int|null $brand_id
  * @property string $type
  * @property string $category
  * @property string $channel
@@ -44,6 +43,6 @@ final class NotificationLog extends Model
 
     protected function casts(): array
     {
-        return ['brand_id' => 'integer', 'customer_id' => 'integer', 'meta' => 'array', 'attempts' => 'integer', 'sent_at' => 'datetime'];
+        return ['customer_id' => 'integer', 'meta' => 'array', 'attempts' => 'integer', 'sent_at' => 'datetime'];
     }
 }

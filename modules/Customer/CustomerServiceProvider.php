@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\CustomerService;
-use Modules\Customer\Application\Listeners\RefreshBrandProfile;
+use Modules\Customer\Application\Listeners\RefreshCustomerStats;
 use Modules\Customer\Application\OtpSenders\EmailOtpSender;
 use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
@@ -65,8 +65,8 @@ final class CustomerServiceProvider extends ModuleServiceProvider
 
         $router->aliasMiddleware('vani.customer', AuthenticateCustomer::class);
 
-        Event::listen(OrderPlaced::class, RefreshBrandProfile::class);
-        Event::listen(OrderCancelled::class, RefreshBrandProfile::class);
+        Event::listen(OrderPlaced::class, RefreshCustomerStats::class);
+        Event::listen(OrderCancelled::class, RefreshCustomerStats::class);
 
         RateLimiter::for('vani-customer-auth', fn (Request $request): Limit => Limit::perMinute(20)->by('customer-auth:'.$request->ip()));
 

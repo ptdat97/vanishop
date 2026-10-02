@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Events\CustomerMerged;
@@ -30,7 +29,7 @@ it('Owner tìm, xem, hợp nhất khách trùng (chuyển đơn, phát CustomerM
     $this->get('/admin/customers?q=0987654321')->assertInertia(fn (Assert $page) => $page->component('Customer::Customers/Index')
         ->has('customers', 1)->where('customers.0.id', $this->dupe->public_id));
     $this->get("/admin/customers/{$this->main->public_id}")->assertInertia(fn (Assert $page) => $page->component('Customer::Customers/Show')
-        ->has('orders', 1)->where('brandProfiles.0.orders_count', 1)->where('can.merge', true));
+        ->has('orders', 1)->where('stats.orders_count', 1)->where('can.merge', true));
 
     $this->post("/admin/customers/{$this->dupe->public_id}/merge", ['target' => $this->main->public_id])
         ->assertRedirect("/admin/customers/{$this->main->public_id}");
@@ -51,12 +50,9 @@ it('Owner tìm, xem, hợp nhất khách trùng (chuyển đơn, phát CustomerM
     expect($this->main->fresh()->status->value)->toBe('anonymized');
 });
 
-it('không có quyền merge/ẩn danh → 403; nhân viên cấp brand không xem được khách cấp Owner', function () {
+it('không có quyền merge/ẩn danh → 403', function () {
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'customers.view'])->create(), 'staff');
     $this->get('/admin/customers')->assertOk();
     $this->post("/admin/customers/{$this->dupe->public_id}/merge", ['target' => $this->main->public_id])->assertForbidden();
     $this->post("/admin/customers/{$this->main->public_id}/anonymize")->assertForbidden();
-
-    $this->actingAs(T::staffFor(Brand::query()->first(), ['admin.access', 'customers.view']), 'staff');
-    $this->get('/admin/customers')->assertForbidden();
 });

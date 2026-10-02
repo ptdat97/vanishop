@@ -5,7 +5,7 @@ import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem, Translations } from '../../types';
+import type { NavItem, Translations } from '../../types';
 
 interface ColorRow {
     id: number;
@@ -16,7 +16,7 @@ interface ColorRow {
     translations: Translations<'name'>;
 }
 
-const props = defineProps<{ brand: BrandRef; nav: NavItem[]; colors: ColorRow[]; families: string[]; canManage: boolean }>();
+const props = defineProps<{ nav: NavItem[]; colors: ColorRow[]; families: string[]; canManage: boolean }>();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'colors')?.url ?? '');
 const editingId = ref<number | null>(null);
 
@@ -59,9 +59,9 @@ function destroy(color: ColorRow): void {
 </script>
 
 <template>
-    <Head :title="`Màu · ${brand.name}`" />
-    <CatalogTabs :brand="brand" :nav="nav" active="colors" />
-    <PageHeader title="Màu" subtitle="Tên màu do brand đặt; nhóm màu dùng để lọc chung giữa các brand." />
+    <Head title="Màu" />
+    <CatalogTabs :nav="nav" active="colors" />
+    <PageHeader title="Màu" subtitle="Nhóm màu dùng cho bộ lọc trên storefront." />
 
     <div class="grid gap-6 lg:grid-cols-3">
         <table class="w-full rounded-lg border border-slate-200 bg-white text-sm lg:col-span-2">

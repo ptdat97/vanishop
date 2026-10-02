@@ -3,9 +3,8 @@
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\DB;
-use Modules\Brand\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Channel\Persistence\Models\Channel;
 use Modules\Inventory\Contracts\Data\ReservationLine;
 use Modules\Inventory\Contracts\Data\ReservationRequest;
 use Modules\Inventory\Contracts\InventoryReservation;
@@ -31,9 +30,8 @@ beforeEach(function () {
     }
 
     $this->brand = Brand::factory()->create();
-    $this->channel = Channel::factory()->forBrand($this->brand, 'vani.test', '/lumiere')->create();
     [$this->a, $this->b] = P::variants(T::product($this->brand->id));
-    $this->location = I::location($this->brand, [$this->channel->id], ['code' => 'WH-HN']);
+    $this->location = I::location(['code' => 'WH-HN']);
 });
 
 /**
@@ -42,13 +40,13 @@ beforeEach(function () {
  * @param  list<list<array{0: int, 1: int}>>  $orders  mỗi đơn là danh sách [variant_id, qty]
  * @return list<Closure>
  */
-function reservationTasks(int $channelId, int $brandId, array $orders): array
+function reservationTasks(array $orders): array
 {
     $tasks = [];
 
     foreach ($orders as $index => $lines) {
-        $tasks[] = function () use ($channelId, $brandId, $lines, $index): string {
-            app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channelId, [$brandId]));
+        $tasks[] = function () use ($lines, $index): string {
+            app(CurrentContext::class)->set(new ContextScope(Actor::guest()));
 
             $reservationLines = [];
             foreach ($lines as $line) {
@@ -56,7 +54,7 @@ function reservationTasks(int $channelId, int $brandId, array $orders): array
             }
 
             try {
-                app(InventoryReservation::class)->reserve(new ReservationRequest("order:{$index}", $channelId, $reservationLines));
+                app(InventoryReservation::class)->reserve(new ReservationRequest("order:{$index}", $reservationLines));
 
                 return 'ok';
             } catch (StockUnavailable) {
@@ -72,7 +70,7 @@ it('không bán vượt tồn khi 12 tiến trình cùng mua SKU chỉ còn 5', 
     I::stock($this->location, $this->a->id, 5);
 
     $results = Concurrency::driver('process')->run(
-        reservationTasks($this->channel->id, $this->brand->id, array_fill(0, 12, [[$this->a->id, 1]])),
+        reservationTasks(array_fill(0, 12, [[$this->a->id, 1]])),
     );
 
     $counts = array_count_values($results);
@@ -93,7 +91,7 @@ it('không deadlock khi các đơn giữ nhiều SKU theo thứ tự ngược nh
         $orders[] = $i % 2 === 0 ? [[$this->a->id, 1], [$this->b->id, 1]] : [[$this->b->id, 1], [$this->a->id, 1]];
     }
 
-    $results = Concurrency::driver('process')->run(reservationTasks($this->channel->id, $this->brand->id, $orders));
+    $results = Concurrency::driver('process')->run(reservationTasks($orders));
 
     expect(array_count_values($results))->toBe(['ok' => 10])
         ->and((int) DB::table('stock_levels')->where('variant_id', $this->a->id)->value('reserved'))->toBe(10)

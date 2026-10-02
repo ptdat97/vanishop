@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Event;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Events\VariantCreated;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
@@ -14,16 +14,15 @@ require_once __DIR__.'/CatalogTestHelpers.php';
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
     $this->other = Brand::factory()->create();
-    $this->actingAs(T::staffFor($this->brand), 'staff');
+    $this->actingAs(T::staff(), 'staff');
     $this->style = T::product($this->brand->id, ['style_code' => 'LM24-SH012']);
-    $this->base = "/admin/catalog/lumiere/products/{$this->style->id}";
+    $this->base = "/admin/catalog/products/{$this->style->id}";
 
     T::seed(function () {
-        $this->ivory = Color::factory()->create(['brand_id' => $this->brand->id, 'code' => 'IVR']);
-        $this->black = Color::factory()->create(['brand_id' => $this->brand->id, 'code' => 'BLK']);
-        $this->s = Size::factory()->create(['brand_id' => $this->brand->id, 'code' => 'S', 'sort_order' => 20]);
-        $this->m = Size::factory()->create(['brand_id' => $this->brand->id, 'code' => 'M', 'sort_order' => 30]);
-        $this->foreignSize = Size::factory()->create(['brand_id' => $this->other->id, 'code' => 'L']);
+        $this->ivory = Color::factory()->create(['code' => 'IVR']);
+        $this->black = Color::factory()->create(['code' => 'BLK']);
+        $this->s = Size::factory()->create(['code' => 'S', 'sort_order' => 20]);
+        $this->m = Size::factory()->create(['code' => 'M', 'sort_order' => 30]);
     });
 });
 
@@ -44,18 +43,18 @@ it('sinh ma trận màu × size với SKU chuẩn, không đụng biến thể �
     Event::assertDispatchedTimes(VariantCreated::class, 4);
 });
 
-it('từ chối size của brand khác', function () {
+it('từ chối size không tồn tại', function () {
     $this->post("{$this->base}/colors", ['color_id' => $this->ivory->id]);
 
-    $this->post("{$this->base}/variants/generate", ['size_ids' => [$this->foreignSize->id]])->assertSessionHasErrors('size_ids');
+    $this->post("{$this->base}/variants/generate", ['size_ids' => [999_999]])->assertSessionHasErrors('size_ids');
 });
 
 it('báo trùng SKU với sản phẩm khác', function () {
     $this->post("{$this->base}/colors", ['color_id' => $this->ivory->id]);
     T::seed(function () {
-        $otherStyle = Style::factory()->create(['brand_id' => $this->brand->id]);
+        $otherStyle = Style::factory()->create();
         $styleColor = $otherStyle->colors()->create(['color_id' => $this->black->id]);
-        Variant::query()->create(['brand_id' => $this->brand->id, 'style_id' => $otherStyle->id, 'style_color_id' => $styleColor->id, 'size_id' => $this->m->id, 'sku' => 'LM24-SH012-IVR-S']);
+        Variant::query()->create(['style_id' => $otherStyle->id, 'style_color_id' => $styleColor->id, 'size_id' => $this->m->id, 'sku' => 'LM24-SH012-IVR-S']);
     });
 
     $this->post("{$this->base}/variants/generate", ['size_ids' => [$this->s->id]])->assertSessionHasErrors('size_ids');
@@ -79,7 +78,7 @@ it('không sửa được biến thể của sản phẩm khác qua URL; không 
     $variant = T::seed(fn () => Variant::query()->sole());
     $other = T::product($this->brand->id);
 
-    $this->put("/admin/catalog/lumiere/products/{$other->id}/variants/{$variant->id}", ['sku' => 'X', 'status' => 'active'])->assertNotFound();
+    $this->put("/admin/catalog/products/{$other->id}/variants/{$variant->id}", ['sku' => 'X', 'status' => 'active'])->assertNotFound();
 
     $styleColor = T::seed(fn () => $this->style->colors()->sole());
     $this->delete("{$this->base}/colors/{$styleColor->id}")->assertSessionHasErrors('color_id');
@@ -87,10 +86,10 @@ it('không sửa được biến thể của sản phẩm khác qua URL; không 
 
 it('xoá sản phẩm nháp xoá luôn biến thể', function () {
     $draft = T::product($this->brand->id, ['status' => 'draft']);
-    $this->post("/admin/catalog/lumiere/products/{$draft->id}/colors", ['color_id' => $this->ivory->id]);
-    $this->post("/admin/catalog/lumiere/products/{$draft->id}/variants/generate", ['size_ids' => [$this->s->id]]);
+    $this->post("/admin/catalog/products/{$draft->id}/colors", ['color_id' => $this->ivory->id]);
+    $this->post("/admin/catalog/products/{$draft->id}/variants/generate", ['size_ids' => [$this->s->id]]);
 
-    $this->delete("/admin/catalog/lumiere/products/{$draft->id}")->assertRedirect();
+    $this->delete("/admin/catalog/products/{$draft->id}")->assertRedirect();
 
     expect(T::seed(fn () => Variant::query()->count()))->toBe(0);
 });

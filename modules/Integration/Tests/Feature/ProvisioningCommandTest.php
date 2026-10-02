@@ -12,7 +12,6 @@ it('tạo client + key, cập nhật scope, xoay vòng và thu hồi key, đăng
 
     $client = IntegrationClient::query()->where('code', 'erp-main')->sole();
     expect($client->scopes)->toBe(['orders:read', 'inventory:write'])
-        ->and($client->brand_ids)->toBeNull()
         ->and($client->keys()->count())->toBe(1);
 
     // Cập nhật không cấp key mới; secret được mã hoá trong DB.

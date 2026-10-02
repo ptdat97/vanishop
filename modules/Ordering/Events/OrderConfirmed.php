@@ -14,7 +14,6 @@ final readonly class OrderConfirmed implements ShouldDispatchAfterCommit
     public function __construct(
         public int $orderId,
         public string $publicId,
-        public int $brandId,
         public string $reason,
     ) {}
 }

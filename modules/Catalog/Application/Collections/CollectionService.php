@@ -22,18 +22,18 @@ final class CollectionService
      * @param  array{slug: string, status: string, position: int, translations: array<string, array{name: string, description?: string|null}>}  $data
      * @param  list<string>  $styleCodes  thứ tự hiển thị
      */
-    public function save(int $brandId, array $data, array $styleCodes, ?ProductCollection $collection = null): ProductCollection
+    public function save(array $data, array $styleCodes, ?ProductCollection $collection = null): ProductCollection
     {
         $codes = array_values(array_unique(array_filter(array_map('trim', $styleCodes))));
-        $styles = Style::query()->where('brand_id', $brandId)->whereIn('style_code', $codes)->pluck('id', 'style_code');
+        $styles = Style::query()->whereIn('style_code', $codes)->pluck('id', 'style_code');
 
         $missing = array_values(array_diff($codes, $styles->keys()->all()));
         if ($missing !== []) {
             throw ValidationException::withMessages(['style_codes' => __('catalog::messages.style_codes_not_found', ['codes' => implode(', ', $missing)])]);
         }
 
-        return DB::transaction(function () use ($brandId, $data, $codes, $styles, $collection): ProductCollection {
-            $collection ??= new ProductCollection(['brand_id' => $brandId]);
+        return DB::transaction(function () use ($data, $codes, $styles, $collection): ProductCollection {
+            $collection ??= new ProductCollection;
             $collection->fill(['slug' => $data['slug'], 'status' => $data['status'], 'position' => $data['position']])->save();
             $collection->syncTranslations($data['translations']);
 
@@ -50,7 +50,7 @@ final class CollectionService
             foreach (array_unique([...$before, ...array_keys($sync)]) as $styleId) {
                 $style = Style::query()->find($styleId);
                 if ($style !== null) {
-                    event(new ProductUpdated($style->id, $style->brand_id, $style->style_code));
+                    event(new ProductUpdated($style->id, $style->style_code));
                 }
             }
 
@@ -66,7 +66,7 @@ final class CollectionService
             $this->audit->record('catalog.collection.deleted', 'collection', $collection->id, ['slug' => $collection->slug]);
 
             foreach ($styles as $style) {
-                event(new ProductUpdated($style->id, $style->brand_id, $style->style_code));
+                event(new ProductUpdated($style->id, $style->style_code));
             }
         });
     }

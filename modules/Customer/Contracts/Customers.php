@@ -7,7 +7,7 @@ namespace Modules\Customer\Contracts;
 use Modules\Customer\Contracts\Data\CustomerData;
 
 /**
- * Service contract cho module khác (Checkout, Admin…). Khách hàng là cấp Owner, không lọc theo brand.
+ * Service contract cho module khác (Checkout, Admin…).
  */
 interface Customers
 {
@@ -22,7 +22,7 @@ interface Customers
     public function resolveForCheckout(string $phone, string $fullName, ?string $email): int;
 
     /**
-     * Khách đang đồng ý nhận tin cho brand × kênh (`email`, `sms`, `zns`) × mục đích (`marketing`).
+     * Khách đang đồng ý nhận tin qua kênh (`email`, `sms`, `zns`) × mục đích (`marketing`).
      */
-    public function hasConsent(int $customerId, int $brandId, string $channel, string $purpose): bool;
+    public function hasConsent(int $customerId, string $channel, string $purpose): bool;
 }

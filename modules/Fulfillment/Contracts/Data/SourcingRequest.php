@@ -16,7 +16,6 @@ final readonly class SourcingRequest
      */
     public function __construct(
         public int $orderId,
-        public int $brandId,
         public array $lines,
         public array $reserved,
         public array $shippingAddress,

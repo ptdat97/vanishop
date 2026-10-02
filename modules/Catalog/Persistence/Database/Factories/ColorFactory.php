@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Catalog\Persistence\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Color;
 
 /**
@@ -18,7 +17,6 @@ final class ColorFactory extends Factory
     public function definition(): array
     {
         return [
-            'brand_id' => Brand::factory(),
             'code' => strtoupper(fake()->unique()->lexify('???')),
             'color_family' => 'white',
             'hex' => '#FFFFF0',

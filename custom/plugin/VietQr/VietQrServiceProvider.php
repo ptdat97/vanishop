@@ -20,7 +20,7 @@ final class VietQrServiceProvider extends PluginServiceProvider
         $this->mergeConfigFrom($this->pluginPath('Config/vietqr.php'), 'vani.vietqr');
 
         $this->app->singleton(VietQrGateway::class, fn (): VietQrGateway => new VietQrGateway(
-            accounts: (array) config('vani.vietqr.accounts', []),
+            account: (array) config('vani.vietqr.account', []),
             secret: (string) config('vani.vietqr.secret'),
             ttlSeconds: (int) config('vani.vietqr.ttl', 900),
         ));

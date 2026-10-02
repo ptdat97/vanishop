@@ -36,7 +36,7 @@ final class StorefrontProductQuery
         $result = $this->search->search($filtered instanceof ProductSearchQuery ? $filtered : $query);
 
         $styles = Style::query()
-            ->with(['translations', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')])
+            ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')])
             ->whereIn('id', $result->styleIds)
             ->get()
             ->keyBy('id');
@@ -58,7 +58,7 @@ final class StorefrontProductQuery
     public function detail(string $slug, string $locale, int $now): ?array
     {
         $style = Style::query()
-            ->with(['translations', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations',
+            ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations',
                 'variants' => fn ($query) => $query->where('status', 'active')->with(['size', 'styleColor.color'])])
             ->where('slug', $slug)
             ->first();
@@ -100,14 +100,14 @@ final class StorefrontProductQuery
         $at = new \DateTimeImmutable("@{$now}");
 
         return Variant::query()
-            ->with(['style.translations', 'styleColor.color.translations', 'styleColor.gallery.media', 'size'])
+            ->with(['style.translations', 'style.brand', 'styleColor.color.translations', 'styleColor.gallery.media', 'size'])
             ->whereIn('id', $variantIds)
             ->where('status', VariantStatus::Active)
             ->get()
             ->filter(fn (Variant $variant): bool => PublishWindow::isVisible($variant->style->status, $variant->style->publishWindow(), $at))
             ->mapWithKeys(fn (Variant $variant): array => [$variant->id => new SellableVariant(
                 id: $variant->id,
-                brandId: $variant->brand_id,
+                brandId: $variant->style->brand_id,
                 styleId: $variant->style_id,
                 sku: $variant->sku,
                 slug: $variant->style->slug,
@@ -116,6 +116,7 @@ final class StorefrontProductQuery
                 colorName: $variant->styleColor->color->translate('name', $locale),
                 sizeCode: $variant->size->code,
                 imageUrl: $variant->styleColor->gallery->first()?->media->url(),
+                brandName: $variant->style->brand?->name,
             )])
             ->all();
     }
@@ -132,6 +133,7 @@ final class StorefrontProductQuery
             'slug' => $style->slug,
             'style_code' => $style->style_code,
             'name' => $style->translate('name', $locale),
+            'brand' => $style->brand === null ? null : ['slug' => $style->brand->slug, 'name' => $style->brand->name],
             'image_url' => $firstImage?->media->url(),
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => $this->color($styleColor, $locale))->all(),
             'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),

@@ -30,9 +30,9 @@ final class VariantService
      */
     public function generate(Style $style, array $sizeIds): array
     {
-        $sizes = Size::query()->where('brand_id', $style->brand_id)->whereIn('id', $sizeIds)->orderBy('sort_order')->get();
+        $sizes = Size::query()->whereIn('id', $sizeIds)->orderBy('sort_order')->get();
         if ($sizes->count() !== count(array_unique($sizeIds)) || $sizes->isEmpty()) {
-            throw ValidationException::withMessages(['size_ids' => __('catalog::messages.size_not_in_brand')]);
+            throw ValidationException::withMessages(['size_ids' => __('catalog::messages.size_not_found')]);
         }
 
         $style->load('colors.color', 'colors.variants');
@@ -54,7 +54,6 @@ final class VariantService
                     }
 
                     $created[] = Variant::query()->create([
-                        'brand_id' => $style->brand_id,
                         'style_id' => $style->id,
                         'style_color_id' => $styleColor->id,
                         'size_id' => $size->id,
@@ -66,9 +65,9 @@ final class VariantService
 
             $this->audit->record('catalog.variants.generated', 'style', $style->id, ['count' => count($created)]);
             foreach ($created as $variant) {
-                event(new VariantCreated($variant->id, $style->id, $style->brand_id, $variant->sku));
+                event(new VariantCreated($variant->id, $style->id, $variant->sku));
             }
-            event(new ProductUpdated($style->id, $style->brand_id, $style->style_code));
+            event(new ProductUpdated($style->id, $style->style_code));
 
             return $created;
         });
@@ -84,7 +83,7 @@ final class VariantService
             $variant->fill($data)->save();
 
             $this->audit->record('catalog.variant.updated', 'variant', $variant->id, ['before' => $before, 'after' => $variant->only(['sku', 'barcode', 'status', 'weight_gram'])]);
-            event(new ProductUpdated($style->id, $style->brand_id, $style->style_code));
+            event(new ProductUpdated($style->id, $style->style_code));
 
             return $variant;
         });

@@ -21,7 +21,7 @@ final class CollectionRequest extends FormRequest
 
         return [
             'slug' => ['required', 'string', 'max:128', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('collections', 'slug')->where('brand_id', $this->workspaceBrand()->id)->ignore($collection instanceof ProductCollection ? $collection->id : null)],
+                Rule::unique('collections', 'slug')->ignore($collection instanceof ProductCollection ? $collection->id : null)],
             'status' => ['required', Rule::in(['active', 'hidden'])],
             'position' => ['required', 'integer', 'min:0'],
             'translations.vi.name' => ['required', 'string', 'max:255'],

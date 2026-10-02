@@ -2,8 +2,6 @@
 
 use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Integration\Application\OutboxWorker;
 use Modules\Integration\Persistence\Models\OutboxRecord;
@@ -15,7 +13,7 @@ beforeEach(function () {
     H::client('erp-main');
     [$this->subscription] = H::subscription('erp-main', ['*'], 'https://erp.example/hooks');
     Http::fake(['erp.example/*' => Http::response('bad', 400)]);
-    H::publish('order.created', 'LU-1', null, ['order' => ['customer' => ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678']]]);
+    H::publish('order.created', 'LU-1', ['order' => ['customer' => ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678']]]);
     app(OutboxWorker::class)->run();
 });
 
@@ -41,12 +39,11 @@ it('Owner xem message lỗi (payload đã che PII), client và webhook; replay �
     expect($this->subscription->fresh()->status)->toBe('active');
 });
 
-it('chỉ xem không replay được; nhân viên cấp brand không vào được', function () {
+it('chỉ xem không replay được; không có quyền xem thì bị chặn', function () {
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'integration.view'])->create(), 'staff');
     $this->get('/admin/integration')->assertOk();
     $this->post('/admin/integration/replay', ['box' => 'outbox'])->assertForbidden();
 
-    $brand = Brand::factory()->create();
-    $this->actingAs(T::staffFor($brand, ['admin.access', 'integration.view', 'integration.replay']), 'staff');
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff');
     $this->get('/admin/integration')->assertForbidden();
 });

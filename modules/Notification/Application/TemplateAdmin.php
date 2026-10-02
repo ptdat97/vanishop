@@ -10,7 +10,7 @@ use Modules\Identity\Contracts\AuditLogger;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
 
 /**
- * CRUD mẫu tin: một mẫu cho mỗi (brand, loại, kênh, locale); optimistic lock; audit.
+ * CRUD mẫu tin: một mẫu cho mỗi (loại, kênh, locale); optimistic lock; audit.
  */
 final class TemplateAdmin
 {
@@ -41,7 +41,7 @@ final class TemplateAdmin
                 throw ValidationException::withMessages(['lock_version' => __('notification::messages.stale')]);
             }
 
-            $merged = [...$locked->only(['brand_id', 'type', 'channel', 'locale', 'subject', 'body', 'meta', 'active']), ...$data];
+            $merged = [...$locked->only(['type', 'channel', 'locale', 'subject', 'body', 'meta', 'active']), ...$data];
             $this->assertUnique($merged, $locked->id);
             $this->assertContent($merged);
             unset($data['lock_version']);
@@ -58,7 +58,7 @@ final class TemplateAdmin
     public function delete(NotificationTemplate $template): void
     {
         $template->delete();
-        $this->audit->record('notification.template.deleted', 'notification_template', $template->id, $template->only(['brand_id', 'type', 'channel']));
+        $this->audit->record('notification.template.deleted', 'notification_template', $template->id, $template->only(['type', 'channel']));
     }
 
     /**
@@ -68,7 +68,6 @@ final class TemplateAdmin
     {
         $exists = NotificationTemplate::query()
             ->where('type', $data['type'])->where('channel', $data['channel'])->where('locale', $data['locale'] ?? 'vi')
-            ->where(fn ($query) => ($data['brand_id'] ?? null) === null ? $query->whereNull('brand_id') : $query->where('brand_id', $data['brand_id']))
             ->when($exceptId !== null, fn ($query) => $query->whereKeyNot($exceptId))
             ->exists();
         if ($exists) {

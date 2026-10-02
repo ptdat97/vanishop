@@ -11,5 +11,5 @@ final readonly class PaymentFailed implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $paymentId, public int $orderId, public string $gatewayCode, public ?int $brandId = null) {}
+    public function __construct(public int $paymentId, public int $orderId, public string $gatewayCode) {}
 }

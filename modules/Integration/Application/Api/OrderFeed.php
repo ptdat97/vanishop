@@ -11,7 +11,7 @@ use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\OrderReader;
 
 /**
- * GET /orders?updated_since=&cursor=: đơn thay đổi theo (updated_at, id), phạm vi brand của client (CurrentContext).
+ * GET /orders?updated_since=&cursor=: đơn thay đổi theo (updated_at, id).
  * `cursor` là chuỗi mờ do chính API trả về; ưu tiên hơn `updated_since`.
  */
 final class OrderFeed

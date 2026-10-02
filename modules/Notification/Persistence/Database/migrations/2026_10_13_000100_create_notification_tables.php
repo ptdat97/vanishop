@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Notification (docs/03-domains/notification.md): template theo loại tin × kênh × brand, nhật ký gửi.
+ * Notification (docs/03-domains/notification.md): template theo loại tin × kênh, nhật ký gửi.
  */
 return new class extends Migration
 {
@@ -14,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('notification_templates', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('brand_id')->nullable(); // null = mặc định cho mọi brand
             $table->string('type', 64);                         // order_placed, shipment_delivered…
             $table->string('channel', 32);                      // mail | sms | zns | …
             $table->string('locale', 8)->default('vi');
@@ -25,14 +24,12 @@ return new class extends Migration
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
 
-            $table->foreign('brand_id')->references('id')->on('brands')->cascadeOnDelete();
             $table->index(['type', 'channel', 'locale']);
         });
 
         Schema::create('notification_logs', function (Blueprint $table) {
             $table->id();
             $table->string('idempotency_key', 160)->unique(); // listener chạy lại không gửi trùng (R18)
-            $table->unsignedBigInteger('brand_id')->nullable()->index();
             $table->string('type', 64);
             $table->string('category', 16);                    // transactional | marketing
             $table->string('channel', 32);
@@ -57,17 +54,17 @@ return new class extends Migration
         // Mẫu email mặc định (tiếng Việt). SMS/ZNS do Admin tạo khi bật plugin (ZNS cần template đã được Zalo duyệt).
         $now = now();
         DB::table('notification_templates')->insert(array_map(fn (array $row): array => [
-            ...$row, 'brand_id' => null, 'channel' => 'mail', 'locale' => 'vi', 'meta' => null, 'active' => true,
+            ...$row, 'channel' => 'mail', 'locale' => 'vi', 'meta' => null, 'active' => true,
             'lock_version' => 0, 'created_at' => $now, 'updated_at' => $now,
         ], [
-            ['type' => 'order_placed', 'subject' => '{{ brand_name }}: đã nhận đơn {{ order_number }}',
-                'body' => "Chào {{ customer_name }},\n\n{{ brand_name }} đã nhận đơn {{ order_number }}, tổng {{ total }}.\nChúng tôi sẽ báo khi đơn được giao cho đơn vị vận chuyển.\n\nCảm ơn bạn đã mua sắm!"],
-            ['type' => 'order_cancelled', 'subject' => '{{ brand_name }}: đơn {{ order_number }} đã huỷ',
-                'body' => "Chào {{ customer_name }},\n\nĐơn {{ order_number }} đã được huỷ. Nếu bạn đã thanh toán, tiền sẽ được hoàn theo phương thức ban đầu.\n\n{{ brand_name }}"],
-            ['type' => 'shipment_shipped', 'subject' => '{{ brand_name }}: đơn {{ order_number }} đang được giao',
-                'body' => "Chào {{ customer_name }},\n\nĐơn {{ order_number }} đã được giao cho {{ carrier }}. Mã vận đơn: {{ tracking_number }}.\n\n{{ brand_name }}"],
-            ['type' => 'shipment_delivered', 'subject' => '{{ brand_name }}: đơn {{ order_number }} đã giao thành công',
-                'body' => "Chào {{ customer_name }},\n\nĐơn {{ order_number }} đã giao thành công. Cảm ơn bạn và hẹn gặp lại!\n\n{{ brand_name }}"],
+            ['type' => 'order_placed', 'subject' => '{{ store_name }}: đã nhận đơn {{ order_number }}',
+                'body' => "Chào {{ customer_name }},\n\n{{ store_name }} đã nhận đơn {{ order_number }}, tổng {{ total }}.\nChúng tôi sẽ báo khi đơn được giao cho đơn vị vận chuyển.\n\nCảm ơn bạn đã mua sắm!"],
+            ['type' => 'order_cancelled', 'subject' => '{{ store_name }}: đơn {{ order_number }} đã huỷ',
+                'body' => "Chào {{ customer_name }},\n\nĐơn {{ order_number }} đã được huỷ. Nếu bạn đã thanh toán, tiền sẽ được hoàn theo phương thức ban đầu.\n\n{{ store_name }}"],
+            ['type' => 'shipment_shipped', 'subject' => '{{ store_name }}: đơn {{ order_number }} đang được giao',
+                'body' => "Chào {{ customer_name }},\n\nĐơn {{ order_number }} đã được giao cho {{ carrier }}. Mã vận đơn: {{ tracking_number }}.\n\n{{ store_name }}"],
+            ['type' => 'shipment_delivered', 'subject' => '{{ store_name }}: đơn {{ order_number }} đã giao thành công',
+                'body' => "Chào {{ customer_name }},\n\nĐơn {{ order_number }} đã giao thành công. Cảm ơn bạn và hẹn gặp lại!\n\n{{ store_name }}"],
         ]));
     }
 

@@ -6,16 +6,15 @@ namespace Modules\Storefront\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\App;
-use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Http\Requests\ProductListRequest;
 
 final class ProductController
 {
-    public function index(ProductListRequest $request, ProductViews $products, CurrentContext $context): JsonResponse
+    public function index(ProductListRequest $request, ProductViews $products): JsonResponse
     {
         $now = now()->getTimestamp();
-        $listing = $products->listing($request->toFilters($context->brandIds() ?? [], $now), App::getLocale(), $now);
+        $listing = $products->listing($request->toFilters($now), App::getLocale(), $now);
 
         return response()->json([
             'data' => $listing['items'],

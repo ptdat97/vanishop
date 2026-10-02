@@ -13,8 +13,6 @@
 return [
     'Shared',
     'Tenancy',
-    'Brand',
-    'Channel',
     'Identity',
     'Extension',
     'Catalog',

@@ -49,7 +49,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $permissions->register('staff.manage', 'Quản lý nhân viên và vai trò');
 
         // Permission đã khai báo trong registry được quyết định bởi RBAC theo phạm vi.
-        // Tham số đầu tiên có thể là ScopeRef để kiểm tra theo brand/pháp nhân.
+        // Tham số đầu tiên có thể là ScopeRef để kiểm tra theo location.
         Gate::before(function (mixed $user, string $ability, array $arguments) use ($permissions): ?bool {
             if (! $user instanceof StaffUser || ! $permissions->has($ability)) {
                 return null;

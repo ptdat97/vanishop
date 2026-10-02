@@ -20,14 +20,14 @@ final class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        $brandId = $this->workspaceBrand()->id;
         $style = $this->route('product');
         $ignore = $style instanceof Style ? $style->id : null;
 
         return [
-            'style_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('styles', 'style_code')->where('brand_id', $brandId)->ignore($ignore)],
-            'slug' => ['required', 'string', 'max:160', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('styles', 'slug')->where('brand_id', $brandId)->ignore($ignore)],
+            'style_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('styles', 'style_code')->ignore($ignore)],
+            'slug' => ['required', 'string', 'max:160', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('styles', 'slug')->ignore($ignore)],
             'status' => ['required', Rule::enum(StyleStatus::class)],
+            'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'published_from' => ['nullable', 'date'],
             'published_to' => ['nullable', 'date'],
             'lock_version' => [$style instanceof Style ? 'required' : 'nullable', 'integer', 'min:0'],
@@ -61,6 +61,7 @@ final class ProductRequest extends FormRequest
             categoryIds: array_map('intval', (array) $this->validated('category_ids', [])),
             primaryCategoryId: $this->validated('primary_category_id') === null ? null : (int) $this->validated('primary_category_id'),
             attributes: $this->attributeValues(),
+            brandId: $this->validated('brand_id') === null ? null : (int) $this->validated('brand_id'),
         );
     }
 

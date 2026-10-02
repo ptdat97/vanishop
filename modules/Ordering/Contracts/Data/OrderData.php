@@ -10,9 +10,6 @@ final readonly class OrderData
         public int $id,
         public string $publicId,
         public string $number,
-        public int $legalEntityId,
-        public int $brandId,
-        public int $channelId,
         public ?int $customerId,
         public OrderStatus $status,
         public string $paymentStatus,
@@ -32,5 +29,6 @@ final readonly class OrderData
         public ?string $updatedAt = null,
         /** orders.meta (dữ liệu của plugin, khoá theo plugin id). */
         public array $meta = [],
+        public string $source = 'web',
     ) {}
 }

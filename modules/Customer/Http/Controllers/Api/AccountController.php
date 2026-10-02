@@ -8,7 +8,6 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Modules\Customer\Application\AccountLifecycle;
 use Modules\Customer\Application\AddressBook;
 use Modules\Customer\Application\AuthService;
@@ -17,11 +16,10 @@ use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Application\OtpService;
 use Modules\Customer\Contracts\Data\OtpPurpose;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
-use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Phone\PhoneNumber;
 
 /**
- * /me — tài khoản của khách đã đăng nhập (một tài khoản cho mọi brand).
+ * /me — tài khoản của khách đã đăng nhập.
  */
 final class AccountController
 {
@@ -80,20 +78,15 @@ final class AccountController
         return response()->json(['data' => $consents->all(AuthenticateCustomer::customer($request)->id)]);
     }
 
-    public function updateConsent(Request $request, ConsentService $consents, CurrentContext $context): JsonResponse
+    public function updateConsent(Request $request, ConsentService $consents): JsonResponse
     {
         $data = $request->validate([
-            'brand_id' => ['required', 'integer'],
             'channel' => ['required', 'string', 'regex:'.ConsentService::CHANNEL_PATTERN],
             'purpose' => ['required', Rule::in(ConsentService::PURPOSES)],
             'granted' => ['required', 'boolean'],
         ]);
-        if (! $context->scope()->allowsBrand((int) $data['brand_id'])) {
-            throw ValidationException::withMessages(['brand_id' => __('Brand không thuộc kênh hiện tại.')]);
-        }
-
         $customerId = AuthenticateCustomer::customer($request)->id;
-        $consents->set($customerId, (int) $data['brand_id'], $data['channel'], $data['purpose'], (bool) $data['granted'], 'storefront:account', (string) $request->ip());
+        $consents->set($customerId, $data['channel'], $data['purpose'], (bool) $data['granted'], 'storefront:account', (string) $request->ip());
 
         return response()->json(['data' => $consents->all($customerId)]);
     }

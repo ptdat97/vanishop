@@ -21,5 +21,8 @@ final readonly class OrderLineDraft
         public int $totalAmount,
         public int $taxRateBp,
         public int $taxAmount,
+        /** Thương hiệu của sản phẩm lúc đặt (snapshot, báo cáo theo brand). */
+        public ?int $brandId = null,
+        public ?string $brandName = null,
     ) {}
 }

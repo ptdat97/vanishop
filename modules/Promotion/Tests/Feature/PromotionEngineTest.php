@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Promotion\Application\PromotionRegistry;
@@ -20,18 +19,18 @@ use Modules\Shared\Domain\Money\Money;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s, 'm' => $this->m] = C::store();
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'));
+    ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m] = C::store();
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $this->engine = app(PromotionEngine::class);
-    $this->context = fn (array $codes = [], ?Brand $brand = null) => new PromotionContext($this->channel->id, null, 'VND', [
-        new PromotionLine($this->s->id, ($brand ?? $this->brand)->id, $this->s->style_id, 1, Money::vnd(300_000), Money::vnd(300_000)),
-        new PromotionLine($this->m->id, ($brand ?? $this->brand)->id, $this->m->style_id, 2, Money::vnd(200_000), Money::vnd(400_000)),
+    $this->context = fn (array $codes = []) => new PromotionContext(null, 'VND', [
+        new PromotionLine($this->s->id, $this->brand->id, $this->s->style_id, 1, Money::vnd(300_000), Money::vnd(300_000)),
+        new PromotionLine($this->m->id, $this->brand->id, $this->m->style_id, 2, Money::vnd(200_000), Money::vnd(400_000)),
     ], $codes, now()->getTimestamp());
 });
 
 it('áp khuyến mãi tự động và voucher, cộng dồn theo priority trên số tiền còn lại', function () {
-    C::promotion($this->brand, ['name' => 'Tự động 10%', 'requires_voucher' => false, 'priority' => 10]);
-    C::promotion($this->brand, ['name' => 'Voucher 50k', 'action_type' => 'amount_off', 'action_config' => ['amount' => 70_000]], ['GIAM50' => 5]);
+    C::promotion(['name' => 'Tự động 10%', 'requires_voucher' => false, 'priority' => 10]);
+    C::promotion(['name' => 'Voucher 50k', 'action_type' => 'amount_off', 'action_config' => ['amount' => 70_000]], ['GIAM50' => 5]);
 
     $result = $this->engine->evaluate(($this->context)(['giam50 ']));
 
@@ -44,8 +43,8 @@ it('áp khuyến mãi tự động và voucher, cộng dồn theo priority trên
 });
 
 it('độc quyền: priority cao nhất thắng và dừng; bị bỏ qua nếu đã có khuyến mãi khác', function () {
-    C::promotion($this->brand, ['name' => 'Độc quyền 30%', 'stacking' => 'exclusive', 'priority' => 20, 'requires_voucher' => false, 'action_config' => ['basis_points' => 3000]]);
-    C::promotion($this->brand, ['name' => 'Cộng dồn 10%', 'priority' => 10, 'requires_voucher' => false]);
+    C::promotion(['name' => 'Độc quyền 30%', 'stacking' => 'exclusive', 'priority' => 20, 'requires_voucher' => false, 'action_config' => ['basis_points' => 3000]]);
+    C::promotion(['name' => 'Cộng dồn 10%', 'priority' => 10, 'requires_voucher' => false]);
 
     expect(collect($this->engine->evaluate(($this->context)())->applied)->pluck('name')->all())->toBe(['Độc quyền 30%']);
 
@@ -54,26 +53,24 @@ it('độc quyền: priority cao nhất thắng và dừng; bị bỏ qua nếu 
 });
 
 it('không giảm quá giá sàn 50% mỗi dòng', function () {
-    C::promotion($this->brand, ['name' => '40%', 'requires_voucher' => false, 'priority' => 2, 'action_config' => ['basis_points' => 4000]]);
-    C::promotion($this->brand, ['name' => '30%', 'requires_voucher' => false, 'priority' => 1, 'action_config' => ['basis_points' => 3000]]);
+    C::promotion(['name' => '40%', 'requires_voucher' => false, 'priority' => 2, 'action_config' => ['basis_points' => 4000]]);
+    C::promotion(['name' => '30%', 'requires_voucher' => false, 'priority' => 1, 'action_config' => ['basis_points' => 3000]]);
 
     expect($this->engine->evaluate(($this->context)())->discountByLine())->toBe([$this->s->id => 150_000, $this->m->id => 200_000]);
 });
 
 it('báo lý do voucher không áp được', function () {
-    C::promotion($this->brand, [], ['HETLUOT' => 1]);
+    C::promotion([], ['HETLUOT' => 1]);
     DB::table('vouchers')->where('code', 'HETLUOT')->update(['used_count' => 1]);
-    C::promotion($this->brand, ['ends_at' => now()->subDay()], ['HETHAN' => null]);
-    $other = Brand::factory()->create();
-    C::promotion($other, [], ['BRANDKHAC' => null]);
+    C::promotion(['ends_at' => now()->subDay()], ['HETHAN' => null]);
 
-    $reasons = collect($this->engine->evaluate(($this->context)(['KHONGCO', 'HETLUOT', 'HETHAN', 'BRANDKHAC']))->rejectedVouchers)->pluck('reason', 'code')->all();
+    $reasons = collect($this->engine->evaluate(($this->context)(['KHONGCO', 'HETLUOT', 'HETHAN']))->rejectedVouchers)->pluck('reason', 'code')->all();
 
-    expect($reasons)->toBe(['KHONGCO' => 'not_found', 'HETLUOT' => 'exhausted', 'HETHAN' => 'not_active', 'BRANDKHAC' => 'not_found']);
+    expect($reasons)->toBe(['KHONGCO' => 'not_found', 'HETLUOT' => 'exhausted', 'HETHAN' => 'not_active']);
 });
 
 it('rule của plugin lọc dòng đủ điều kiện; rule chưa đăng ký thì bỏ qua khuyến mãi', function () {
-    $promotion = C::promotion($this->brand, ['requires_voucher' => false]);
+    $promotion = C::promotion(['requires_voucher' => false]);
     PromotionRuleRecord::query()->create(['promotion_id' => $promotion->id, 'rule_type' => 'only_variant', 'config' => ['variant_id' => $this->m->id]]);
 
     expect($this->engine->evaluate(($this->context)())->applied)->toBe([]);
@@ -106,7 +103,7 @@ it('rule của plugin lọc dòng đủ điều kiện; rule chưa đăng ký th
 });
 
 it('ghi nhận sử dụng có điều kiện: hết lượt thì ném lỗi; hoàn lượt idempotent', function () {
-    $promotion = C::promotion($this->brand, ['usage_limit' => 5], ['MOTLAN' => 1]);
+    $promotion = C::promotion(['usage_limit' => 5], ['MOTLAN' => 1]);
     $result = $this->engine->evaluate(($this->context)(['MOTLAN']));
 
     DB::transaction(fn () => $this->engine->recordUsage(1001, null, 'VND', $result));

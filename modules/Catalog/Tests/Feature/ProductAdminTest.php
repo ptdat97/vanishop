@@ -3,8 +3,8 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Style;
@@ -15,14 +15,14 @@ require_once __DIR__.'/CatalogTestHelpers.php';
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
     $this->other = Brand::factory()->create(['slug' => 'urbanx']);
-    $this->base = '/admin/catalog/lumiere/products';
-    $this->actingAs(T::staffFor($this->brand), 'staff');
+    $this->base = '/admin/catalog/products';
+    $this->actingAs(T::staff(), 'staff');
 
     [$this->shirts, $this->material, $this->silk, $this->care] = T::seed(function () {
-        $shirts = Category::factory()->create(['brand_id' => $this->brand->id, 'slug' => 'ao-so-mi']);
-        $material = Attribute::factory()->create(['brand_id' => $this->brand->id, 'code' => 'material', 'input_type' => 'select', 'is_filterable' => true]);
+        $shirts = Category::factory()->create(['slug' => 'ao-so-mi']);
+        $material = Attribute::factory()->create(['code' => 'material', 'input_type' => 'select', 'is_filterable' => true]);
         $silk = $material->values()->create(['code' => 'silk', 'position' => 0]);
-        $care = Attribute::factory()->create(['brand_id' => $this->brand->id, 'code' => 'fit', 'input_type' => 'text']);
+        $care = Attribute::factory()->create(['code' => 'fit', 'input_type' => 'text']);
 
         return [$shirts, $material, $silk, $care];
     });
@@ -57,15 +57,13 @@ it('tạo sản phẩm với danh mục, thuộc tính và chuỗi tìm kiếm k
     });
 });
 
-it('từ chối danh mục, thuộc tính, giá trị của brand khác hoặc sai kiểu', function () {
-    $foreignCategory = T::seed(fn () => Category::factory()->create(['brand_id' => $this->other->id]));
-    $foreignAttribute = T::seed(fn () => Attribute::factory()->create(['brand_id' => $this->other->id]));
+it('từ chối danh mục, thuộc tính không tồn tại hoặc sai kiểu', function () {
 
     $cases = [
-        'category_ids' => productPayload(['category_ids' => [$foreignCategory->id]]),
+        'category_ids' => productPayload(['category_ids' => [999_999]]),
         'primary_category_id' => productPayload(['primary_category_id' => $this->shirts->id]),
         "attributes.{$this->material->id}" => productPayload(['attributes' => [$this->material->id => '999999']]),
-        "attributes.{$foreignAttribute->id}" => productPayload(['attributes' => [$foreignAttribute->id => 'x']]),
+        'attributes.999999' => productPayload(['attributes' => [999_999 => 'x']]),
         'published_to' => productPayload(['published_from' => '2026-11-01 00:00', 'published_to' => '2026-10-01 00:00']),
         'style_code' => productPayload(['style_code' => 'áo 1']),
     ];
@@ -99,7 +97,7 @@ it('cập nhật dùng lock_version, chỉ xoá được bản nháp', function 
 it('thêm màu, tải ảnh, đổi thứ tự và xoá ảnh', function () {
     Storage::fake('public');
     $style = T::product($this->brand->id);
-    $color = T::seed(fn () => Color::factory()->create(['brand_id' => $this->brand->id, 'code' => 'IVR']));
+    $color = T::seed(fn () => Color::factory()->create(['code' => 'IVR']));
 
     $this->post("{$this->base}/{$style->id}/colors", ['color_id' => $color->id])->assertSessionHasNoErrors();
     $this->post("{$this->base}/{$style->id}/colors", ['color_id' => $color->id])->assertSessionHasErrors('color_id');
@@ -123,18 +121,17 @@ it('thêm màu, tải ảnh, đổi thứ tự và xoá ảnh', function () {
 it('không thao tác được màu/ảnh của sản phẩm khác qua URL', function () {
     $mine = T::product($this->brand->id);
     $otherProduct = T::product($this->brand->id);
-    $color = T::seed(fn () => Color::factory()->create(['brand_id' => $this->brand->id]));
+    $color = T::seed(fn () => Color::factory()->create());
     $foreignColor = T::seed(fn () => $otherProduct->colors()->create(['color_id' => $color->id]));
-    $colorOtherBrand = T::seed(fn () => Color::factory()->create(['brand_id' => $this->other->id]));
 
     $this->delete("{$this->base}/{$mine->id}/colors/{$foreignColor->id}")->assertNotFound();
-    $this->post("{$this->base}/{$mine->id}/colors", ['color_id' => $colorOtherBrand->id])->assertSessionHasErrors('color_id');
+    $this->post("{$this->base}/{$mine->id}/colors", ['color_id' => 999_999])->assertSessionHasErrors('color_id');
 });
 
 it('danh sách sản phẩm tìm được theo tên không dấu', function () {
     T::product($this->brand->id, ['name' => 'Đầm lụa đen']);
     T::product($this->brand->id, ['name' => 'Quần jeans']);
-    T::product($this->other->id, ['name' => 'Đầm của brand khác']);
+    T::product($this->other->id, ['name' => 'Áo thun brand khác']);
 
     $this->get("{$this->base}?q=dam")->assertInertia(fn (Assert $page) => $page
         ->component('Catalog::Products/Index')->where('products.total', 1)->where('products.data.0.name', 'Đầm lụa đen'));

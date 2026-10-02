@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('media', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('disk', 32);
             $table->string('path', 512);
             $table->string('original_name');
@@ -20,7 +19,7 @@ return new class extends Migration
             $table->unsignedInteger('height')->nullable();
             $table->char('checksum', 64);
             $table->timestamps();
-            $table->unique(['brand_id', 'checksum']);
+            $table->unique('checksum');
         });
 
         // Gắn media vào đối tượng (category, style color, banner…) với vai trò và thứ tự.

@@ -9,7 +9,6 @@ defineProps<{
         kind: string;
         status: string;
         error: string | null;
-        scopes: string[];
     }>;
     invalid: string[];
 }>();
@@ -39,7 +38,6 @@ defineProps<{
                 <td class="px-4 py-2">{{ plugin.version }}</td>
                 <td class="px-4 py-2">{{ plugin.kind }}</td>
                 <td class="px-4 py-2">{{ plugin.status }}</td>
-                <td class="px-4 py-2">{{ plugin.scopes.join(', ') || '—' }}</td>
             </tr>
             <tr v-if="!plugins.length">
                 <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có plugin nào trong custom/plugin.</td>

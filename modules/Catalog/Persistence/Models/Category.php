@@ -12,12 +12,10 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Modules\Catalog\Domain\Category\CategoryPath;
 use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Persistence\Database\Factories\CategoryFactory;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
  * @property int $id
- * @property int $brand_id
  * @property int|null $parent_id
  * @property string $slug
  * @property string $path
@@ -28,14 +26,12 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  */
 final class Category extends Model
 {
-    use BelongsToBrand;
-
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
     use HasTranslations;
 
-    protected $fillable = ['brand_id', 'parent_id', 'slug', 'path', 'depth', 'position', 'status', 'lock_version'];
+    protected $fillable = ['parent_id', 'slug', 'path', 'depth', 'position', 'status', 'lock_version'];
 
     protected function casts(): array
     {

@@ -3,7 +3,7 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\AuditLog;
@@ -23,8 +23,8 @@ function categoryPayload(array $overrides = []): array
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
-    $this->staff = T::staffFor($this->brand);
-    $this->base = '/admin/catalog/lumiere/categories';
+    $this->staff = T::staff();
+    $this->base = '/admin/catalog/categories';
 });
 
 it('tạo danh mục gốc và danh mục con với path/depth đúng', function () {
@@ -41,10 +41,7 @@ it('tạo danh mục gốc và danh mục con với path/depth đúng', function
         ->and(AuditLog::query()->where('action', 'catalog.category.created')->count())->toBe(2);
 });
 
-it('slug duy nhất trong brand nhưng được trùng ở brand khác', function () {
-    $other = Brand::factory()->create();
-    T::seed(fn () => Category::factory()->create(['brand_id' => $other->id, 'slug' => 'ao-so-mi']));
-
+it('slug danh mục duy nhất trong cửa hàng', function () {
     $this->actingAs($this->staff, 'staff')->post($this->base, categoryPayload())->assertSessionHasNoErrors();
     $this->post($this->base, categoryPayload())->assertSessionHasErrors('slug');
 });
@@ -58,7 +55,7 @@ it('validate dữ liệu danh mục', function (array $payload, string $field) {
 ]);
 
 it('di chuyển danh mục kéo theo cả cây con', function () {
-    [$a, $b] = T::seed(fn () => Category::factory()->count(2)->create(['brand_id' => $this->brand->id]));
+    [$a, $b] = T::seed(fn () => Category::factory()->count(2)->create());
     $child = T::seed(fn () => Category::factory()->childOf($a)->create());
     $grandchild = T::seed(fn () => Category::factory()->childOf($child)->create());
 
@@ -74,7 +71,7 @@ it('di chuyển danh mục kéo theo cả cây con', function () {
 });
 
 it('không cho chuyển danh mục vào cây con của chính nó', function () {
-    $root = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id]));
+    $root = T::seed(fn () => Category::factory()->create());
     $child = T::seed(fn () => Category::factory()->childOf($root)->create());
 
     $this->actingAs($this->staff, 'staff')
@@ -83,7 +80,7 @@ it('không cho chuyển danh mục vào cây con của chính nó', function () 
 });
 
 it('giới hạn độ sâu 5 cấp', function () {
-    $node = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id]));
+    $node = T::seed(fn () => Category::factory()->create());
     foreach (range(2, 5) as $level) {
         $node = T::seed(fn () => Category::factory()->childOf($node)->create());
     }
@@ -94,7 +91,7 @@ it('giới hạn độ sâu 5 cấp', function () {
 });
 
 it('chặn ghi đè khi dữ liệu đã bị người khác sửa (lock_version)', function () {
-    $category = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id]));
+    $category = T::seed(fn () => Category::factory()->create());
     $payload = categoryPayload(['slug' => $category->slug, 'lock_version' => 0]);
 
     $this->actingAs($this->staff, 'staff')->put("{$this->base}/{$category->id}", $payload)->assertSessionHasNoErrors();
@@ -102,18 +99,18 @@ it('chặn ghi đè khi dữ liệu đã bị người khác sửa (lock_version
 });
 
 it('không xoá được danh mục còn con, xoá được danh mục lá', function () {
-    $root = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id]));
+    $root = T::seed(fn () => Category::factory()->create());
     $leaf = T::seed(fn () => Category::factory()->childOf($root)->create());
 
     $this->actingAs($this->staff, 'staff')->delete("{$this->base}/{$root->id}")->assertSessionHasErrors('category');
-    $this->delete("{$this->base}/{$leaf->id}")->assertRedirect(route('admin.catalog.categories.index', ['brand' => 'lumiere']));
+    $this->delete("{$this->base}/{$leaf->id}")->assertRedirect(route('admin.catalog.categories.index'));
 
     expect(T::seed(fn () => Category::query()->find($leaf->id)))->toBeNull();
 });
 
 it('tải ảnh danh mục, khử trùng lặp theo checksum', function () {
     Storage::fake('public');
-    $category = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id]));
+    $category = T::seed(fn () => Category::factory()->create());
     $image = UploadedFile::fake()->image('banner.jpg', 1600, 2000);
 
     $this->actingAs($this->staff, 'staff')->post("{$this->base}/{$category->id}/image", ['image' => $image, 'alt' => 'Banner'])->assertSessionHasNoErrors();
@@ -125,7 +122,7 @@ it('tải ảnh danh mục, khử trùng lặp theo checksum', function () {
 });
 
 it('từ chối file không phải ảnh', function () {
-    $category = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id]));
+    $category = T::seed(fn () => Category::factory()->create());
 
     $this->actingAs($this->staff, 'staff')
         ->post("{$this->base}/{$category->id}/image", ['image' => UploadedFile::fake()->create('virus.php', 10, 'text/x-php')])
@@ -133,7 +130,7 @@ it('từ chối file không phải ảnh', function () {
 });
 
 it('hiển thị cây danh mục theo thứ tự', function () {
-    $root = T::seed(fn () => Category::factory()->create(['brand_id' => $this->brand->id, 'slug' => 'nu']));
+    $root = T::seed(fn () => Category::factory()->create(['slug' => 'nu']));
     T::seed(fn () => Category::factory()->childOf($root)->create(['slug' => 'b', 'position' => 2]));
     T::seed(fn () => Category::factory()->childOf($root)->create(['slug' => 'a', 'position' => 1]));
 

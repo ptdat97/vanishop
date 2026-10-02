@@ -1,8 +1,3 @@
-export interface BrandRef {
-    name: string;
-    slug: string;
-}
-
 export interface NavItem {
     key: string;
     label: string;

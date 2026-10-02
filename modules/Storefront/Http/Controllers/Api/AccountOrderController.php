@@ -7,7 +7,6 @@ namespace Modules\Storefront\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Cart\Contracts\Carts;
-use Modules\Channel\Contracts\Data\ChannelData;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Context\ActorType;
@@ -16,7 +15,7 @@ use Modules\Storefront\Application\CartPresenter;
 use Modules\Storefront\Application\OrderPresenter;
 
 /**
- * Đơn và giỏ của khách đã đăng nhập (route có middleware `vani.customer`). Đơn trong phạm vi brand của kênh.
+ * Đơn và giỏ của khách đã đăng nhập (route có middleware `vani.customer`).
  */
 final class AccountOrderController
 {
@@ -59,10 +58,7 @@ final class AccountOrderController
      */
     public function cart(Request $request, Carts $carts, CartPresenter $cartPresenter): JsonResponse
     {
-        /** @var ChannelData $channel */
-        $channel = $request->attributes->get('channel');
-
-        return response()->json(['data' => $cartPresenter->present($carts->forCustomer($this->customerId(), $channel->currencyCode))]);
+        return response()->json(['data' => $cartPresenter->present($carts->forCustomer($this->customerId(), (string) config('vanishop.currency', 'VND')))]);
     }
 
     private function customerId(): int

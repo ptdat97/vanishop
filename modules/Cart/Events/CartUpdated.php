@@ -16,7 +16,6 @@ final readonly class CartUpdated implements ShouldDispatchAfterCommit
 
     public function __construct(
         public string $cartId,
-        public int $channelId,
         public ?int $customerId,
     ) {}
 }

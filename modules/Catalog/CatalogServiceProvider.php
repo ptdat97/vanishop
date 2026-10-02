@@ -15,6 +15,7 @@ use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\SearchReindexCommand;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\CollectionDirectory;
+use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
@@ -43,7 +44,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->singleton(DatabaseSearchProvider::class);
         // Meilisearch/Algolia/Elasticsearch là plugin (vani.search-meilisearch…).
-        $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchManager::TAG);
+        $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchProvider::TAG);
         $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app->make(Extensions::class), (string) config('vanishop.search.provider')));
     }
 
@@ -58,13 +59,13 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         // Không lưu tên class vào cột *_type (đổi namespace không làm hỏng dữ liệu).
         Relation::morphMap(['catalog.category' => Category::class, 'catalog.style_color' => StyleColor::class]);
 
-        $permissions->register('catalog.view', 'Xem catalog của brand');
-        $permissions->register('catalog.manage', 'Sửa catalog của brand (danh mục, thuộc tính, màu, size)');
+        $permissions->register('catalog.view', 'Xem catalog');
+        $permissions->register('catalog.manage', 'Sửa catalog (sản phẩm, thương hiệu, danh mục, thuộc tính, màu, size)');
 
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100);
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
-        $this->loadBrandWorkspaceRoutes('catalog', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->loadAdminSectionRoutes('catalog', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
     }
 }

@@ -41,6 +41,7 @@ final class DatabaseSearchProvider implements SearchProvider
         $filtered = (clone $base);
         $this->applyColorFilter($filtered, $query->colorFamilies);
         $this->applyAttributeFilter($filtered, $query->attributeValueIds);
+        $this->applyBrandFilter($filtered, $query->brandIds);
 
         $total = (clone $filtered)->count();
 
@@ -61,6 +62,7 @@ final class DatabaseSearchProvider implements SearchProvider
             facets: [
                 'color_families' => $this->colorFacet($base, $query),
                 'attribute_values' => $this->attributeFacet($base, $query),
+                'brands' => $this->brandFacet($base, $query),
             ],
         );
     }
@@ -73,7 +75,6 @@ final class DatabaseSearchProvider implements SearchProvider
         $now = Carbon::createFromTimestamp($query->now);
 
         $builder = Style::query()
-            ->whereIn('styles.brand_id', $query->brandIds)
             ->where('styles.status', StyleStatus::Active)
             ->where(fn (Builder $q) => $q->whereNull('styles.published_from')->orWhere('styles.published_from', '<=', $now))
             ->where(fn (Builder $q) => $q->whereNull('styles.published_to')->orWhere('styles.published_to', '>', $now));
@@ -98,6 +99,38 @@ final class DatabaseSearchProvider implements SearchProvider
         }
 
         return $builder;
+    }
+
+    /**
+     * @param  Builder<Style>  $builder
+     * @param  list<int>  $brandIds
+     */
+    private function applyBrandFilter(Builder $builder, array $brandIds): void
+    {
+        if ($brandIds !== []) {
+            $builder->whereIn('styles.brand_id', $brandIds);
+        }
+    }
+
+    /**
+     * Số sản phẩm theo thương hiệu (áp bộ lọc màu + thuộc tính, bỏ bộ lọc brand).
+     *
+     * @param  Builder<Style>  $base
+     * @return array<int, int>
+     */
+    private function brandFacet(Builder $base, ProductSearchQuery $query): array
+    {
+        $scope = (clone $base);
+        $this->applyColorFilter($scope, $query->colorFamilies);
+        $this->applyAttributeFilter($scope, $query->attributeValueIds);
+
+        return $scope->whereNotNull('styles.brand_id')
+            ->groupBy('styles.brand_id')
+            ->selectRaw('styles.brand_id as brand_id, count(*) as total')
+            ->toBase()
+            ->pluck('total', 'brand_id')
+            ->mapWithKeys(fn ($total, $brandId): array => [(int) $brandId => (int) $total])
+            ->all();
     }
 
     /**
@@ -142,6 +175,7 @@ final class DatabaseSearchProvider implements SearchProvider
     {
         $scope = (clone $base);
         $this->applyAttributeFilter($scope, $query->attributeValueIds);
+        $this->applyBrandFilter($scope, $query->brandIds);
 
         return DB::table('style_colors')
             ->join('colors', 'colors.id', '=', 'style_colors.color_id')
@@ -164,6 +198,7 @@ final class DatabaseSearchProvider implements SearchProvider
     {
         $scope = (clone $base);
         $this->applyColorFilter($scope, $query->colorFamilies);
+        $this->applyBrandFilter($scope, $query->brandIds);
 
         return DB::table('style_attribute_values')
             ->join('attributes', 'attributes.id', '=', 'style_attribute_values.attribute_id')

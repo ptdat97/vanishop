@@ -4,10 +4,9 @@ import { primaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem } from '../../types';
+import type { NavItem } from '../../types';
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     collections: Array<{ id: number; slug: string; name: string | null; status: string; styles_count: number }>;
     canManage: boolean;
@@ -16,8 +15,8 @@ const baseUrl = computed(() => props.nav.find((item) => item.key === 'collection
 </script>
 
 <template>
-    <Head :title="`Bộ sưu tập · ${brand.name}`" />
-    <CatalogTabs :brand="brand" :nav="nav" active="collections" />
+    <Head title="Bộ sưu tập" />
+    <CatalogTabs :nav="nav" active="collections" />
     <PageHeader title="Bộ sưu tập" subtitle="Tập hợp sản phẩm cho landing page, campaign.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bộ sưu tập</Link>
     </PageHeader>

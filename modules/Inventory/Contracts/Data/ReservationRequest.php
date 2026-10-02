@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Contracts\Data;
 
 /**
- * Yêu cầu giữ hàng cho một đơn/phiên checkout trên một kênh.
+ * Yêu cầu giữ hàng cho một đơn/phiên checkout.
  */
 final readonly class ReservationRequest
 {
@@ -14,7 +14,6 @@ final readonly class ReservationRequest
      */
     public function __construct(
         public string $key,
-        public int $channelId,
         public array $lines,
         public ?int $ttlSeconds = null,
     ) {}

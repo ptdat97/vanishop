@@ -49,7 +49,6 @@ final class CartService implements Carts
         $cart = Cart::query()->create([
             'public_id' => (string) Str::ulid(),
             'token_hash' => hash('sha256', $token),
-            'channel_id' => $this->channelId(),
             'currency_code' => $currencyCode,
             'status' => CartStatus::Active,
             'last_activity_at' => now(),
@@ -76,7 +75,6 @@ final class CartService implements Carts
 
             $line ??= new CartLine(['cart_id' => $cart->id, 'variant_id' => $variantId]);
             $line->fill([
-                'brand_id' => $variant->brandId,
                 'quantity' => ($line->quantity ?? 0) + $quantity,
                 // Thêm lại = khách đã thấy giá hiện tại → làm mới giá chụp.
                 'unit_price_snapshot' => $price->amount->amount,
@@ -129,7 +127,6 @@ final class CartService implements Carts
             $cart = Cart::query()->create([
                 'public_id' => (string) Str::ulid(),
                 'token_hash' => hash('sha256', Str::random(48)), // không ai giữ token: chỉ truy cập qua phiên khách
-                'channel_id' => $this->channelId(),
                 'customer_id' => $customerId,
                 'currency_code' => $currencyCode,
                 'status' => CartStatus::Active,
@@ -182,7 +179,7 @@ final class CartService implements Carts
             'lock_version' => $cart->lock_version + 1,
             'last_activity_at' => now(),
         ]);
-        event(new CartUpdated($cart->public_id, $cart->channel_id, $cart->customer_id));
+        event(new CartUpdated($cart->public_id, $cart->customer_id));
     }
 
     /**
@@ -212,15 +209,15 @@ final class CartService implements Carts
         $this->assertQuantity($quantity);
 
         $variant = $this->catalog->sellableVariants([$variantId], $this->locale(), $this->now())[$variantId] ?? null;
-        $price = $this->prices->forVariants([$variantId], new PricingContext($cart->channel_id, $this->now(), null))[$variantId] ?? null;
+        $price = $this->prices->forVariants([$variantId], new PricingContext($this->now()))[$variantId] ?? null;
         if ($variant === null || $price === null) {
             throw CartRejected::variantUnavailable($variantId);
         }
-        if (($this->availability->forChannel([$variantId], $cart->channel_id)[$variantId] ?? 0) < $quantity) {
+        if (($this->availability->forVariants([$variantId])[$variantId] ?? 0) < $quantity) {
             throw CartRejected::insufficientStock($variantId);
         }
 
-        $errors = Hook::collect('vani.cart.validate_line', new CartLineDraft($cart->public_id, $cart->channel_id, $cart->customer_id, $variantId, $variant->brandId, $quantity, $price->amount->amount));
+        $errors = Hook::collect('vani.cart.validate_line', new CartLineDraft($cart->public_id, $cart->customer_id, $variantId, $variant->brandId, $quantity, $price->amount->amount));
         if ($errors !== []) {
             throw CartRejected::byRule($variantId, array_map('strval', $errors));
         }
@@ -238,7 +235,7 @@ final class CartService implements Carts
 
     private function find(CartKey $key): Cart
     {
-        $cart = Cart::query()->where('public_id', $key->publicId)->where('channel_id', $this->channelId())->first();
+        $cart = Cart::query()->where('public_id', $key->publicId)->first();
 
         // Token sai và giỏ không tồn tại trả cùng một lỗi → không dò được public_id hợp lệ.
         // Giỏ của khách hàng: chính khách đó (phiên đăng nhập) truy cập được mà không cần token.
@@ -259,8 +256,8 @@ final class CartService implements Carts
         $existing = CartLine::query()->where('cart_id', $into->id)->get()->keyBy('variant_id');
         $variantIds = $incoming->pluck('variant_id')->all();
         $sellable = $this->catalog->sellableVariants($variantIds, $this->locale(), $this->now());
-        $prices = $this->prices->forVariants($variantIds, new PricingContext($into->channel_id, $this->now(), null));
-        $stock = $this->availability->forChannel($variantIds, $into->channel_id);
+        $prices = $this->prices->forVariants($variantIds, new PricingContext($this->now()));
+        $stock = $this->availability->forVariants($variantIds);
         $lineCount = $existing->count();
 
         foreach ($incoming as $line) {
@@ -276,7 +273,7 @@ final class CartService implements Carts
 
             CartLine::query()->updateOrCreate(
                 ['cart_id' => $into->id, 'variant_id' => $line->variant_id],
-                ['brand_id' => $line->brand_id, 'quantity' => $quantity, 'unit_price_snapshot' => $current->unit_price_snapshot ?? $line->unit_price_snapshot],
+                ['quantity' => $quantity, 'unit_price_snapshot' => $current->unit_price_snapshot ?? $line->unit_price_snapshot],
             );
             $lineCount += $current === null ? 1 : 0;
         }
@@ -289,7 +286,7 @@ final class CartService implements Carts
 
     private function openCartOf(int $customerId): ?Cart
     {
-        return Cart::query()->where('customer_id', $customerId)->where('channel_id', $this->channelId())
+        return Cart::query()->where('customer_id', $customerId)
             ->where('status', CartStatus::Active)->latest('last_activity_at')->first();
     }
 
@@ -308,17 +305,12 @@ final class CartService implements Carts
     private function touch(Cart $cart): void
     {
         $cart->update(['lock_version' => $cart->lock_version + 1, 'last_activity_at' => now()]);
-        event(new CartUpdated($cart->public_id, $cart->channel_id, $cart->customer_id));
+        event(new CartUpdated($cart->public_id, $cart->customer_id));
     }
 
     private function build(Cart $cart): CartView
     {
         return $this->views->build($cart, $this->locale(), $this->now());
-    }
-
-    private function channelId(): int
-    {
-        return $this->context->channelId() ?? throw CartRejected::notFound();
     }
 
     private function customerId(): ?int

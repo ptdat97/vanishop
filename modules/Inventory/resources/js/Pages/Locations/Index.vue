@@ -22,7 +22,7 @@ const typeLabels: Record<string, string> = { warehouse: 'Kho', store: 'Cửa hà
 
 <template>
     <Head title="Kho & cửa hàng" />
-    <PageHeader title="Kho & cửa hàng" subtitle="Location dùng chung cho các brand. Priority cao hơn được giữ hàng trước khi bán online.">
+    <PageHeader title="Kho & cửa hàng" subtitle="Priority cao hơn được giữ hàng trước khi bán online.">
         <Link :href="`${baseUrl}/create`" :class="primaryButton">Thêm location</Link>
     </PageHeader>
     <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">

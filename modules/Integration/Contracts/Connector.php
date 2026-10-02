@@ -10,7 +10,7 @@ use Modules\Integration\Contracts\Data\OutboxMessage;
 
 /**
  * Extension point (mô hình B): VaniShop chủ động gửi message ra hệ thống ngoài (ERP, HĐĐT, sàn…).
- * Plugin đóng góp qua `contribute(Connector::TAG, …)`; chỉ có hiệu lực ở brand bật plugin.
+ * Plugin đóng góp qua `contribute(Connector::TAG, …)`; chỉ có hiệu lực khi plugin bật.
  *
  * Mỗi event của feed được fan-out thành một message outbox cho mọi connector `supports()` loại đó;
  * worker gọi `send()` sau commit, có retry/backoff/dead letter. Connector phải gửi header

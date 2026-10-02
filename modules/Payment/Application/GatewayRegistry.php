@@ -9,7 +9,7 @@ use Modules\Payment\Contracts\PaymentGateway;
 
 /**
  * Cổng thanh toán theo mã, từ tag `vani.payment.gateways` — chỉ cổng có hiệu lực trong phạm vi hiện tại
- * (plugin cổng tắt ở brand này thì cổng không có mặt).
+ * (plugin cổng tắt thì cổng không có mặt).
  */
 final class GatewayRegistry
 {

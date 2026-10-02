@@ -17,16 +17,16 @@ use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Shared\Domain\Money\Money;
 
 /**
- * Chuyển khoản thủ công: hiển thị tài khoản của pháp nhân + nội dung = số đơn; nhân viên xác nhận đã nhận tiền.
+ * Chuyển khoản thủ công: hiển thị tài khoản của cửa hàng + nội dung = số đơn; nhân viên xác nhận đã nhận tiền.
  * Tự xác nhận theo sao kê là plugin `vani.vietqr`.
  */
 final class ManualBankTransferGateway implements PaymentGateway
 {
     /**
-     * @param  array<string, array{bank: string, account_number: string, account_name: string}>  $accounts  theo legal_entity_id, khoá "default" dùng chung
+     * @param  array{bank?: string, account_number?: string, account_name?: string}  $account
      */
     public function __construct(
-        private readonly array $accounts,
+        private readonly array $account,
         private readonly int $ttlSeconds,
     ) {}
 
@@ -47,12 +47,12 @@ final class ManualBankTransferGateway implements PaymentGateway
 
     public function isAvailable(PaymentContext $context): bool
     {
-        return $this->account($context->legalEntityId) !== null;
+        return $this->account() !== null;
     }
 
     public function initiate(PaymentData $payment): PaymentInitiation
     {
-        $account = $this->account($payment->legalEntityId) ?? [];
+        $account = $this->account() ?? [];
 
         return new PaymentInitiation(PaymentInitiation::INSTRUCTIONS, instructions: [
             'bank' => (string) ($account['bank'] ?? ''),
@@ -81,10 +81,8 @@ final class ManualBankTransferGateway implements PaymentGateway
     /**
      * @return array{bank: string, account_number: string, account_name: string}|null
      */
-    private function account(int $legalEntityId): ?array
+    private function account(): ?array
     {
-        $account = $this->accounts[(string) $legalEntityId] ?? $this->accounts['default'] ?? null;
-
-        return $account === null || ($account['account_number'] ?? '') === '' ? null : $account;
+        return ($this->account['account_number'] ?? '') === '' ? null : $this->account;
     }
 }

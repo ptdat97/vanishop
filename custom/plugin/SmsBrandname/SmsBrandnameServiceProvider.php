@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Plugin\SmsBrandname;
 
-use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Customer\Contracts\OtpSender;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Notification\Contracts\NotificationChannel;
-use Modules\Shared\Context\CurrentContext;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\SmsBrandname\Infrastructure\EsmsClient;
 use Plugin\SmsBrandname\Infrastructure\SmsChannel;
@@ -36,15 +33,12 @@ final class SmsBrandnameServiceProvider extends PluginServiceProvider
         ));
         $this->app->bind(SmsChannel::class, fn ($app): SmsChannel => new SmsChannel(
             $app->make(EsmsClient::class),
-            $app->make(BrandDirectory::class),
             $app->make(Settings::class),
             (string) config('vani.sms-brandname.brandname'),
-            (array) config('vani.sms-brandname.brandnames', []),
         ));
         $this->app->bind(SmsOtpSender::class, fn ($app): SmsOtpSender => new SmsOtpSender(
             $app->make(EsmsClient::class),
             $app->make(SmsChannel::class),
-            $app->make(CurrentContext::class),
             (string) config('vani.sms-brandname.otp_message'),
             (bool) config('vani.sms-brandname.otp_enabled', true),
         ));
@@ -53,7 +47,7 @@ final class SmsBrandnameServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         $this->settings([
-            ['key' => 'brandname', 'label' => 'Brandname SMS', 'help' => 'Brandname đã đăng ký với nhà mạng; đặt riêng cho từng brand.', 'scopes' => [SettingsScope::OWNER, SettingsScope::BRAND]],
+            ['key' => 'brandname', 'label' => 'Brandname SMS', 'help' => 'Brandname đã đăng ký với nhà mạng.'],
         ]);
 
         $this->contribute(NotificationChannel::TAG, SmsChannel::class);

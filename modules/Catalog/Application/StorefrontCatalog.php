@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application;
 
+use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\StorefrontProductQuery;
 use Modules\Catalog\Contracts\CatalogReader;
@@ -12,6 +13,7 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\AttributeValue;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 
@@ -48,8 +50,22 @@ final class StorefrontCatalog implements CatalogReader
             'facets' => [
                 'color_families' => $result['facets']['color_families'],
                 'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
+                'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
             ],
         ];
+    }
+
+    public function brands(): array
+    {
+        return Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
+            ->map(fn (Brand $brand): array => $this->brandView($brand))->all();
+    }
+
+    public function brand(string $slug): ?array
+    {
+        $brand = Brand::query()->where('slug', $slug)->where('status', Brand::ACTIVE)->first();
+
+        return $brand === null ? null : [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description];
     }
 
     public function productDetail(string $slug, string $locale, int $now): ?array
@@ -72,6 +88,9 @@ final class StorefrontCatalog implements CatalogReader
         $collectionId = $filters->collectionSlug === null ? null
             : (ProductCollection::query()->where('slug', $filters->collectionSlug)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
 
+        $brandIds = $filters->brandSlugs === [] ? []
+            : (Brand::query()->whereIn('slug', $filters->brandSlugs)->where('status', Brand::ACTIVE)->pluck('id')->map(fn ($id): int => (int) $id)->all() ?: [-1]);
+
         $attributeValueIds = [];
         foreach ($filters->attributes as $code => $valueCodes) {
             $attribute = Attribute::query()->with('values')->where('code', $code)->where('kind', 'spec')->first();
@@ -80,7 +99,7 @@ final class StorefrontCatalog implements CatalogReader
         }
 
         return new ProductSearchQuery(
-            brandIds: $filters->brandIds,
+            brandIds: $brandIds,
             now: $filters->now,
             text: $filters->text,
             categoryId: $categoryId,
@@ -155,5 +174,35 @@ final class StorefrontCatalog implements CatalogReader
         }
 
         return null;
+    }
+
+    /**
+     * @return array{id: int, code: string, slug: string, name: string, description: ?string, logo_url: ?string}
+     */
+    private function brandView(Brand $brand): array
+    {
+        return [
+            'id' => $brand->id,
+            'code' => $brand->code,
+            'slug' => $brand->slug,
+            'name' => $brand->name,
+            'description' => $brand->description,
+            'logo_url' => $brand->logo_path === null ? null : Storage::disk((string) config('vanishop.media.disk', 'public'))->url($brand->logo_path),
+        ];
+    }
+
+    /**
+     * @param  array<int, int>  $counts  brand id => số sản phẩm
+     * @return list<array{slug: string, name: string, count: int}>
+     */
+    private function brandFacets(array $counts): array
+    {
+        if ($counts === []) {
+            return [];
+        }
+
+        return Brand::query()->whereIn('id', array_keys($counts))->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
+            ->map(fn (Brand $brand): array => ['slug' => $brand->slug, 'name' => $brand->name, 'count' => $counts[$brand->id] ?? 0])
+            ->all();
     }
 }

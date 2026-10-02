@@ -7,11 +7,9 @@ namespace Modules\Catalog\Persistence\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Catalog\Domain\VariantStatus;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
  * @property int $id
- * @property int $brand_id
  * @property int $style_id
  * @property int $style_color_id
  * @property int $size_id
@@ -25,9 +23,7 @@ use Modules\Shared\Persistence\Concerns\BelongsToBrand;
  */
 final class Variant extends Model
 {
-    use BelongsToBrand;
-
-    protected $fillable = ['brand_id', 'style_id', 'style_color_id', 'size_id', 'sku', 'barcode', 'status', 'weight_gram', 'meta', 'lock_version'];
+    protected $fillable = ['style_id', 'style_color_id', 'size_id', 'sku', 'barcode', 'status', 'weight_gram', 'meta', 'lock_version'];
 
     protected function casts(): array
     {

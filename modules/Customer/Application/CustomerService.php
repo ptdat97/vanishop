@@ -23,9 +23,9 @@ final class CustomerService implements Customers
         return $customer === null ? null : self::toData($customer);
     }
 
-    public function hasConsent(int $customerId, int $brandId, string $channel, string $purpose): bool
+    public function hasConsent(int $customerId, string $channel, string $purpose): bool
     {
-        return app(ConsentService::class)->allows($customerId, $brandId, $channel, $purpose);
+        return app(ConsentService::class)->allows($customerId, $channel, $purpose);
     }
 
     public function resolveForCheckout(string $phone, string $fullName, ?string $email): int

@@ -14,14 +14,13 @@ use Illuminate\Support\Carbon;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Database\Factories\StyleFactory;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
  * Style = sản phẩm khách nhìn thấy (một trang PDP). Biến thể màu × size ở StyleColor / Variant.
  *
  * @property int $id
- * @property int $brand_id
+ * @property int|null $brand_id
  * @property string $style_code
  * @property string $slug
  * @property StyleStatus $status
@@ -34,8 +33,6 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  */
 final class Style extends Model
 {
-    use BelongsToBrand;
-
     /** @use HasFactory<StyleFactory> */
     use HasFactory;
 
@@ -70,6 +67,14 @@ final class Style extends Model
             $this->published_from === null ? null : DateTimeImmutable::createFromInterface($this->published_from),
             $this->published_to === null ? null : DateTimeImmutable::createFromInterface($this->published_to),
         );
+    }
+
+    /**
+     * @return BelongsTo<Brand, $this>
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
     }
 
     /**

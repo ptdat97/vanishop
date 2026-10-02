@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
- * @property int|null $brand_id
  * @property string $type
  * @property string $channel
  * @property string $locale
@@ -20,10 +19,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class NotificationTemplate extends Model
 {
-    protected $fillable = ['brand_id', 'type', 'channel', 'locale', 'subject', 'body', 'meta', 'active', 'lock_version'];
+    protected $fillable = ['type', 'channel', 'locale', 'subject', 'body', 'meta', 'active', 'lock_version'];
 
     protected function casts(): array
     {
-        return ['brand_id' => 'integer', 'meta' => 'array', 'active' => 'boolean', 'lock_version' => 'integer'];
+        return ['meta' => 'array', 'active' => 'boolean', 'lock_version' => 'integer'];
     }
 }

@@ -33,7 +33,7 @@ require_once __DIR__.'/../../modules/Extension/Tests/Fixtures/FixturePlugins.php
 
 beforeEach(function () {
     ['brand' => $this->brand, 's' => $this->s] = C::store();
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
     $this->placeOrder = function (array $overrides = []): Order {
         $created = $this->postJson('/api/storefront/v1/carts', [], $this->headers);
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -88,7 +88,7 @@ it('NotificationCatalog: loại tin của plugin có mẫu mặc định gửi �
     app(NotificationCatalog::class)->define(new NotificationType('cart_abandoned', 'Giỏ bị bỏ quên', ['customer_name'], [
         'mail' => ['subject' => 'Bạn quên giỏ hàng', 'body' => 'Chào {{ customer_name }}, giỏ của bạn vẫn còn.'],
     ]));
-    $send = fn (string $key) => app(Notifier::class)->notify(new NotificationRequest('cart_abandoned', $key, $this->brand->id, new Recipient(email: 'lan@example.com'), ['customer_name' => 'Lan']));
+    $send = fn (string $key) => app(Notifier::class)->notify(new NotificationRequest('cart_abandoned', $key, new Recipient(email: 'lan@example.com'), ['customer_name' => 'Lan']));
 
     expect($send('cart:1'))->toBe(['mail']);
     $mails = app('mailer')->getSymfonyTransport()->messages()->all();
@@ -111,7 +111,7 @@ it('schedule(): tác vụ của plugin chỉ chạy khi plugin đang bật', fun
     app(PluginActivation::class)->flush();
     expect($event->filtersPass($this->app))->toBeFalse();
 
-    $plugins->enable('fixture.scheduling', 'brand', $this->brand->id);
+    $plugins->enable('fixture.scheduling');
     app(PluginActivation::class)->flush();
     expect($event->filtersPass($this->app))->toBeTrue();
 

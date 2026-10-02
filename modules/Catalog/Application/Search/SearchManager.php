@@ -16,9 +16,6 @@ use Modules\Extension\Contracts\Extensions;
  */
 final class SearchManager
 {
-    /** @deprecated dùng {@see SearchProvider::TAG} (public API). */
-    public const TAG = SearchProvider::TAG;
-
     private const FALLBACK = 'database';
 
     public function __construct(

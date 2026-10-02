@@ -4,7 +4,6 @@ import { primaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     priceLists: Array<{
         id: number;
@@ -16,7 +15,6 @@ defineProps<{
         starts_at: string | null;
         ends_at: string | null;
         prices_count: number;
-        channels_count: number;
     }>;
     canManage: boolean;
 }>();
@@ -25,8 +23,8 @@ const typeLabels: Record<string, string> = { base: 'Giá niêm yết', sale: 'Kh
 </script>
 
 <template>
-    <Head :title="`Bảng giá · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Giá bán · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Bảng giá" />
+    <p class="mb-2 text-sm text-slate-500">Giá bán</p>
     <PageHeader title="Bảng giá" subtitle="Bảng giá priority cao hơn thắng; giá niêm yết (base) được dùng làm giá gốc khi đang khuyến mãi.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bảng giá</Link>
     </PageHeader>
@@ -37,7 +35,6 @@ const typeLabels: Record<string, string> = { base: 'Giá niêm yết', sale: 'Kh
                 <th class="px-4 py-2">Loại</th>
                 <th class="px-4 py-2">Priority</th>
                 <th class="px-4 py-2">Hiệu lực</th>
-                <th class="px-4 py-2">Kênh</th>
                 <th class="px-4 py-2">Số giá</th>
                 <th />
             </tr>
@@ -51,7 +48,6 @@ const typeLabels: Record<string, string> = { base: 'Giá niêm yết', sale: 'Kh
                 <td class="px-4 py-2">{{ typeLabels[list.type] ?? list.type }}</td>
                 <td class="px-4 py-2">{{ list.priority }}</td>
                 <td class="px-4 py-2 text-xs">{{ list.starts_at ?? '—' }} → {{ list.ends_at ?? '—' }}</td>
-                <td class="px-4 py-2">{{ list.channels_count }}</td>
                 <td class="px-4 py-2">{{ list.prices_count }}</td>
                 <td class="px-4 py-2 text-right">
                     <Link :href="`${baseUrl}/${list.id}/prices`" class="text-indigo-600 hover:underline">Giá</Link>

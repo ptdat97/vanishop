@@ -6,7 +6,6 @@ import { computed, ref } from 'vue';
 
 type Template = {
     id: number;
-    brand_id: number | null;
     type: string;
     channel: string;
     locale: string;
@@ -21,7 +20,6 @@ const props = defineProps<{
     baseUrl: string;
     types: Record<string, { label: string; variables: string[] }>;
     channels: string[];
-    brands: Array<{ id: number; name: string }>;
     templates: Template[];
     can: { manage: boolean };
 }>();
@@ -29,7 +27,6 @@ const props = defineProps<{
 const editing = ref<Template | null>(null);
 const creating = ref(false);
 const form = useForm({
-    brand_id: null as number | null,
     type: 'order_placed',
     channel: 'mail',
     locale: 'vi',
@@ -40,14 +37,12 @@ const form = useForm({
     lock_version: 0,
 });
 const metaError = ref<string | null>(null);
-const brandName = (id: number | null): string => (id === null ? 'Mặc định' : (props.brands.find((brand) => brand.id === id)?.name ?? `#${id}`));
 const variableHint = computed(() => (props.types[form.type]?.variables ?? []).map((name) => '{' + '{ ' + name + ' }' + '}').join(', '));
 
 function open(template: Template | null): void {
     editing.value = template;
     creating.value = template === null;
     form.defaults({
-        brand_id: template?.brand_id ?? null,
         type: template?.type ?? 'order_placed',
         channel: template?.channel ?? 'mail',
         locale: template?.locale ?? 'vi',
@@ -94,22 +89,13 @@ function remove(template: Template): void {
 
 <template>
     <Head title="Mẫu tin" />
-    <PageHeader title="Mẫu tin" subtitle="Tin giao dịch theo loại × kênh; mẫu của brand ghi đè mẫu mặc định. Biến: {{ ten_bien }}.">
+    <PageHeader title="Mẫu tin" subtitle="Tin giao dịch theo loại × kênh; Biến: {{ ten_bien }}.">
         <Link :href="baseUrl.replace(/templates$/, 'logs')" :class="secondaryButton">Nhật ký gửi</Link>
         <button v-if="can.manage" :class="primaryButton" @click="open(null)">Thêm mẫu</button>
     </PageHeader>
 
     <form v-if="creating || editing" class="mb-6 space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="submit">
-        <div class="grid gap-3 md:grid-cols-4">
-            <label>
-                Brand
-                <select v-model="form.brand_id" :class="inputClass">
-                    <option :value="null">Mặc định (mọi brand)</option>
-                    <option v-for="brand in brands" :key="brand.id" :value="brand.id">
-                        {{ brand.name }}
-                    </option>
-                </select>
-            </label>
+        <div class="grid gap-3 md:grid-cols-3">
             <label>
                 Loại tin
                 <select v-model="form.type" :class="inputClass">
@@ -165,7 +151,6 @@ function remove(template: Template): void {
             <tr>
                 <th class="px-4 py-2">Loại tin</th>
                 <th class="px-4 py-2">Kênh</th>
-                <th class="px-4 py-2">Brand</th>
                 <th class="px-4 py-2">Nội dung</th>
                 <th />
             </tr>
@@ -179,7 +164,6 @@ function remove(template: Template): void {
                 <td class="px-4 py-2 font-mono text-xs">
                     {{ template.channel }}
                 </td>
-                <td class="px-4 py-2">{{ brandName(template.brand_id) }}</td>
                 <td class="max-w-md px-4 py-2 text-xs whitespace-pre-line text-slate-600">
                     {{ template.subject ? `${template.subject}\n` : '' }}{{ template.body }}
                 </td>

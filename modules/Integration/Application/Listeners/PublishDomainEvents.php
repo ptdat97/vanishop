@@ -136,7 +136,7 @@ final class PublishDomainEvents
                     return;
                 }
 
-                $this->events->publish(new IntegrationEvent($type, 'order', $order->number, $order->brandId, $data($order)));
+                $this->events->publish(new IntegrationEvent($type, 'order', $order->number, $data($order)));
             });
         } catch (Throwable $exception) {
             report($exception);

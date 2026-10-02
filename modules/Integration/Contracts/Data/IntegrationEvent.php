@@ -16,7 +16,6 @@ final readonly class IntegrationEvent
         public string $type,
         public string $aggregateType,
         public string $aggregateId,
-        public ?int $brandId,
         public array $data,
         public string $schemaVersion = '1',
     ) {}

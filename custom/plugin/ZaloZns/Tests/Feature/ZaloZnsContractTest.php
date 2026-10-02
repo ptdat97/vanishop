@@ -19,7 +19,7 @@ beforeEach(function () {
 NotificationChannelContract::define(
     'vani.zalo-zns',
     fn () => app(ZnsChannel::class),
-    fn () => new OutgoingMessage(1, 'order_placed:1:zns', 'order_placed', null, new Recipient(phone: '+84912345678'), null, null, ['template_id' => 'T1', 'params' => ['order_code' => 'LU-01']], 1),
+    fn () => new OutgoingMessage(1, 'order_placed:1:zns', 'order_placed', new Recipient(phone: '+84912345678'), null, null, ['template_id' => 'T1', 'params' => ['order_code' => 'LU-01']], 1),
     new Recipient(email: 'lan@example.com'),
     succeed: fn () => Http::fake(['business.openapi.zalo.me/*' => Http::response(['error' => 0, 'data' => ['msg_id' => 'm']])]),
     failTemporarily: fn () => Http::fake(['business.openapi.zalo.me/*' => Http::response('down', 503)]),

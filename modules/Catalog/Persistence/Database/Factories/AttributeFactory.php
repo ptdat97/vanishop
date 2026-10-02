@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Catalog\Persistence\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Attribute;
 
 /**
@@ -18,7 +17,6 @@ final class AttributeFactory extends Factory
     public function definition(): array
     {
         return [
-            'brand_id' => Brand::factory(),
             'code' => fake()->unique()->lexify('attr_?????'),
             'kind' => 'spec',
             'input_type' => 'text',

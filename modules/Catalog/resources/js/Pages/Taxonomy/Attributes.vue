@@ -4,10 +4,9 @@ import { primaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem } from '../../types';
+import type { NavItem } from '../../types';
 
 const props = defineProps<{
-    brand: BrandRef;
     nav: NavItem[];
     attributes: Array<{ id: number; code: string; name: string | null; kind: string; input_type: string; is_filterable: boolean; values_count: number }>;
     canManage: boolean;
@@ -16,8 +15,8 @@ const baseUrl = computed(() => props.nav.find((item) => item.key === 'attributes
 </script>
 
 <template>
-    <Head :title="`Thuộc tính · ${brand.name}`" />
-    <CatalogTabs :brand="brand" :nav="nav" active="attributes" />
+    <Head title="Thuộc tính" />
+    <CatalogTabs :nav="nav" active="attributes" />
     <PageHeader title="Thuộc tính" subtitle="Chất liệu, form dáng, mùa… Loại internal không hiển thị ra storefront.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm thuộc tính</Link>
     </PageHeader>

@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Ordering\Contracts\OrderReader;
@@ -14,10 +13,10 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
-    config(['vanishop.payment.bank_transfer.accounts.default' => ['bank' => 'VCB', 'account_number' => '0123456789', 'account_name' => 'VANI']]);
-    ['brand' => $this->brand, 'channel' => $this->channel, 's' => $this->s] = C::store();
+    config(['vanishop.payment.bank_transfer.account' => ['bank' => 'VCB', 'account_number' => '0123456789', 'account_name' => 'VANI']]);
+    ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';
-    $this->headers = ['X-Vani-Channel' => 'web-lumiere'];
+    $this->headers = [];
     $this->place = function (string $method = 'cod', array $overrides = []) {
         $created = $this->postJson("{$this->api}/carts", [], $this->headers)->assertCreated();
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -28,8 +27,8 @@ beforeEach(function () {
     };
     $this->order = fn () => Order::query()->withoutGlobalScopes()->latest('id')->first();
     $this->reserved = fn () => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->value('reserved');
-    $this->admin = '/admin/orders/lumiere/orders';
-    $this->staff = fn (array $permissions = ['admin.access', 'orders.view', 'orders.manage', 'orders.cancel', 'payments.view']) => $this->actingAs(T::staffFor($this->brand, $permissions), 'staff');
+    $this->admin = '/admin/orders/orders';
+    $this->staff = fn (array $permissions = ['admin.access', 'orders.view', 'orders.manage', 'orders.cancel', 'payments.view']) => $this->actingAs(T::staff($permissions), 'staff');
 });
 
 it('OrderReader: khách đã từng đặt đơn (không tính đơn đã huỷ)', function () {
@@ -39,10 +38,10 @@ it('OrderReader: khách đã từng đặt đơn (không tính đơn đã huỷ)
 
     $reader = app(OrderReader::class);
     $context = app(CurrentContext::class);
-    $asBrand = fn () => $context->runAs(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'), fn (): bool => $reader->customerHasPlacedOrder(501, $this->brand->id));
+    $asBrand = fn () => $context->runAs(new ContextScope(Actor::guest(), 'vi'), fn (): bool => $reader->customerHasPlacedOrder(501));
 
     expect($asBrand())->toBeTrue()
-        ->and($context->runAs(new ContextScope(Actor::guest(), $this->channel->id, [$this->brand->id], 'vi'), fn (): bool => $reader->customerHasPlacedOrder(999)))->toBeFalse();
+        ->and($context->runAs(new ContextScope(Actor::guest(), 'vi'), fn (): bool => $reader->customerHasPlacedOrder(999)))->toBeFalse();
 
     DB::table('orders')->where('id', $order->id)->update(['order_status' => 'cancelled']);
 
@@ -88,12 +87,12 @@ it('Admin: xác nhận đơn COD khi tắt tự xác nhận', function () {
 });
 
 it('Admin huỷ đơn đã thanh toán: nhả hàng, hoàn lượt voucher, tạo yêu cầu hoàn tiền', function () {
-    C::promotion($this->brand, [], ['GIAM10' => 5]);
+    C::promotion([], ['GIAM10' => 5]);
     ($this->place)('manual_bank_transfer', ['voucher_codes' => ['GIAM10'], 'expected_total' => 300_000]);
     $order = ($this->order)();
     ($this->staff)(['admin.access', 'orders.view', 'orders.cancel', 'payments.view', 'payments.confirm']);
     $paymentId = DB::table('payments')->value('id');
-    $this->post("/admin/payment/lumiere/payments/{$paymentId}/confirm", ['note' => 'VCB'])->assertSessionHasNoErrors();
+    $this->post("/admin/payment/payments/{$paymentId}/confirm", ['note' => 'VCB'])->assertSessionHasNoErrors();
 
     $this->post("{$this->admin}/{$order->id}/cancel", ['reason' => 'Khách đổi ý'])->assertSessionHasNoErrors();
 
@@ -136,14 +135,21 @@ it('Admin: đổi địa chỉ trước khi giao (lưu địa chỉ cũ trong l�
     $this->put("{$this->admin}/{$order->id}/shipping-address", [...$address, 'lock_version' => $order->fresh()->lock_version])->assertSessionHasErrors('business');
 });
 
-it('cô lập brand: không xem được đơn brand khác', function () {
+it('lưu nguồn đơn từ X-Vani-Source và snapshot thương hiệu trên dòng đơn', function () {
+    $this->headers = ['X-Vani-Source' => 'app'];
     ($this->place)();
     $order = ($this->order)();
-    $other = Brand::factory()->create(['slug' => 'urbanx']);
-    $this->actingAs(T::staffFor($other, ['admin.access', 'orders.view']), 'staff');
 
-    $this->get("/admin/orders/urbanx/orders/{$order->id}")->assertNotFound();
-    $this->get("{$this->admin}/{$order->id}")->assertNotFound();
+    expect($order->source)->toBe('app')
+        ->and($order->lines()->value('brand_id'))->toBe($this->brand->id)
+        ->and($order->lines()->value('brand_name'))->toBe($this->brand->name);
+
+    $this->brand->update(['name' => 'Tên mới']);
+    expect($order->lines()->value('brand_name'))->not->toBe('Tên mới');
+
+    $this->headers = ['X-Vani-Source' => 'la'];
+    ($this->place)();
+    expect(($this->order)()->source)->toBe('web');
 });
 
 it('snapshot: đổi tên, giá, ngừng bán sản phẩm không làm đổi đơn cũ', function () {

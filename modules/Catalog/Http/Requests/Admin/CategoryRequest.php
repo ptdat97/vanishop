@@ -7,11 +7,9 @@ namespace Modules\Catalog\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Categories\CategoryInput;
 use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 final class CategoryRequest extends FormRequest
 {
@@ -20,10 +18,7 @@ final class CategoryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
-
-        return Gate::allows('catalog.manage', [ScopeRef::brand($brand->id)]);
+        return Gate::allows('catalog.manage');
     }
 
     /**
@@ -31,13 +26,11 @@ final class CategoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var Brand $brand */
-        $brand = $this->attributes->get('workspace_brand');
         $category = $this->route('category');
 
         return [
             'slug' => ['required', 'string', 'max:128', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('categories', 'slug')->where('brand_id', $brand->id)->ignore($category instanceof Category ? $category->id : null)],
+                Rule::unique('categories', 'slug')->ignore($category instanceof Category ? $category->id : null)],
             'parent_id' => ['nullable', 'integer'],
             'status' => ['required', Rule::enum(CategoryStatus::class)],
             'position' => ['required', 'integer', 'min:0', 'max:100000'],

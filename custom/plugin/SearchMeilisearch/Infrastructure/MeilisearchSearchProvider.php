@@ -14,7 +14,7 @@ use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 /**
- * Meilisearch qua REST API (không cần SDK). Một index cho mọi brand, lọc bằng brand_id.
+ * Meilisearch qua REST API (không cần SDK). Một index cho cửa hàng; brand_id dùng để lọc/facet theo thương hiệu.
  * Cấu hình index (filterable/sortable attributes) được đặt bằng lệnh vani:search:setup.
  */
 final class MeilisearchSearchProvider implements ConfigurableSearchIndex, SearchProvider
@@ -49,7 +49,7 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
         $response = $this->client()->post("indexes/{$this->index}/search", [
             'q' => VietnameseText::normalize($query->text),
             'filter' => $this->filters($query),
-            'facets' => ['color_families', 'attribute_value_ids'],
+            'facets' => ['color_families', 'attribute_value_ids', 'brand_id'],
             'sort' => $query->sort === ProductSearchQuery::SORT_CODE ? ['style_code:asc'] : ['created_at:desc'],
             'offset' => $query->offset(),
             'limit' => $query->limit(),
@@ -64,6 +64,8 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
             facets: [
                 'color_families' => array_map('intval', (array) ($distribution['color_families'] ?? [])),
                 'attribute_values' => collect((array) ($distribution['attribute_value_ids'] ?? []))
+                    ->mapWithKeys(fn ($total, $id): array => [(int) $id => (int) $total])->all(),
+                'brands' => collect((array) ($distribution['brand_id'] ?? []))
                     ->mapWithKeys(fn ($total, $id): array => [(int) $id => (int) $total])->all(),
             ],
         );
@@ -88,12 +90,14 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
     private function filters(ProductSearchQuery $query): array
     {
         $filters = [
-            'brand_id IN ['.implode(', ', $query->brandIds ?: [0]).']',
             "status = 'active'",
             "(published_from IS NULL OR published_from <= {$query->now})",
             "(published_to IS NULL OR published_to > {$query->now})",
         ];
 
+        if ($query->brandIds !== []) {
+            $filters[] = 'brand_id IN ['.implode(', ', $query->brandIds).']';
+        }
         if ($query->categoryId !== null) {
             $filters[] = "category_ids = {$query->categoryId}";
         }

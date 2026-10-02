@@ -5,7 +5,6 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     status: string | null;
     statuses: string[];
@@ -59,8 +58,8 @@ function completeRefund(id: number): void {
 </script>
 
 <template>
-    <Head :title="`Thanh toán · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Thanh toán · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Thanh toán" />
+    <p class="mb-2 text-sm text-slate-500">Thanh toán</p>
     <PageHeader title="Thanh toán" subtitle="Xác nhận chuyển khoản thủ công, hoàn tiền. Tổng hoàn không vượt số đã thu." />
 
     <div class="mb-4 flex flex-wrap gap-2">

@@ -49,7 +49,7 @@ it('đăng nhập trên thiết bị khác kèm giỏ vãng lai → gộp vào g
         ->and(DB::table('carts')->where('public_id', $guestId)->value('status'))->toBe('merged');
 });
 
-it('khách đăng nhập đặt hàng từ giỏ của mình → đơn gắn khách, thống kê theo brand; huỷ đơn thì tính lại', function () {
+it('khách đăng nhập đặt hàng từ giỏ của mình → đơn gắn khách, cập nhật thống kê; huỷ đơn thì tính lại', function () {
     $token = H::login($this);
     $cartId = $this->getJson(H::API.'/me/cart', H::auth($token))->json('data.id');
     $this->postJson(H::API."/carts/{$cartId}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], H::auth($token))->assertOk();
@@ -62,11 +62,11 @@ it('khách đăng nhập đặt hàng từ giỏ của mình → đơn gắn kh�
     expect($order->customer_id)->toBe($customer->id)
         ->and(Customer::query()->where('phone', '+84900000000')->exists())->toBeFalse(); // SĐT người nhận khác không tạo hồ sơ
 
-    $profile = DB::table('customer_brand_profiles')->where('customer_id', $customer->id)->sole();
+    $profile = $customer->fresh();
     expect((int) $profile->orders_count)->toBe(1)->and((int) $profile->total_spent)->toBe(330_000);
 
     $this->postJson(H::API."/me/orders/{$order->public_id}/cancel", ['reason' => 'đổi ý'], H::auth($token))->assertOk();
-    expect(DB::table('customer_brand_profiles')->where('customer_id', $customer->id)->exists())->toBeFalse();
+    expect((int) $customer->fresh()->orders_count)->toBe(0)->and((int) $customer->fresh()->total_spent)->toBe(0);
 });
 
 it('hai đơn vãng lai cùng SĐT → cùng một profile ẩn', function () {
@@ -75,5 +75,5 @@ it('hai đơn vãng lai cùng SĐT → cùng một profile ẩn', function () {
 
     $customer = Customer::query()->sole();
     expect(Order::query()->withoutGlobalScopes()->where('customer_id', $customer->id)->count())->toBe(2)
-        ->and((int) DB::table('customer_brand_profiles')->where('customer_id', $customer->id)->value('orders_count'))->toBe(2);
+        ->and((int) $customer->fresh()->orders_count)->toBe(2);
 });

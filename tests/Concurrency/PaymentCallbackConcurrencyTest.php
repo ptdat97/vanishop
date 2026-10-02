@@ -50,8 +50,8 @@ function duplicateCallbackTasks(int $count, string $paymentId): array
 
 it('6 IPN trùng đến cùng lúc → ghi nhận đúng một lần', function () {
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
-    ['brand' => $brand, 'channel' => $channel, 's' => $variant] = C::store();
-    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), $channel->id, [$brand->id], 'vi'));
+    ['s' => $variant] = C::store();
+    app(CurrentContext::class)->set(new ContextScope(Actor::guest(), 'vi'));
     $key = app(Carts::class)->create('VND')->key;
     app(Carts::class)->addLine($key, $variant->id, 1);
     $payload = C::orderPayload();

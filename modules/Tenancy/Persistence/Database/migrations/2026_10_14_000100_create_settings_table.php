@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Cấu hình theo phạm vi, kế thừa kênh → brand → pháp nhân → owner (docs/12-multi-brand/multi-brand.md).
+ * Cấu hình của cửa hàng (một cấp, ADR-028).
  */
 return new class extends Migration
 {
@@ -13,15 +13,13 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('scope_type', 16);          // owner | legal_entity | brand | channel
-            $table->unsignedBigInteger('scope_id')->default(0); // 0 = owner
             $table->string('namespace', 64);           // core | <plugin id>
             $table->string('key', 96);
             $table->text('value');                      // JSON; mã hoá (APP_KEY) khi encrypted
             $table->boolean('encrypted')->default(false);
             $table->timestamps();
 
-            $table->unique(['namespace', 'key', 'scope_type', 'scope_id']);
+            $table->unique(['namespace', 'key']);
         });
     }
 

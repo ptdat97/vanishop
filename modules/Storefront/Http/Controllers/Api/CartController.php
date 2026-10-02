@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Cart\Contracts\Data\CartView;
-use Modules\Channel\Contracts\Data\ChannelData;
 use Modules\Storefront\Application\CartPresenter;
 
 /**
@@ -26,9 +25,7 @@ final class CartController
 
     public function store(Request $request): JsonResponse
     {
-        /** @var ChannelData $channel */
-        $channel = $request->attributes->get('channel');
-        $created = $this->carts->create($channel->currencyCode);
+        $created = $this->carts->create((string) config('vanishop.currency', 'VND'));
 
         return response()->json([
             'data' => $this->presenter->present($created->view),

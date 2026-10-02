@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Domain;
 
 /**
- * Nhóm màu chuẩn để lọc xuyên brand; tên màu cụ thể do brand đặt.
+ * Nhóm màu chuẩn để lọc; tên màu cụ thể đặt riêng.
  */
 enum ColorFamily: string
 {

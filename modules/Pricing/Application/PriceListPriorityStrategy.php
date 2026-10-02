@@ -35,10 +35,8 @@ final class PriceListPriorityStrategy implements PricingStrategy
 
         $rows = DB::table('prices')
             ->join('price_lists', 'price_lists.id', '=', 'prices.price_list_id')
-            ->join('channel_price_lists', 'channel_price_lists.price_list_id', '=', 'price_lists.id')
-            ->where('channel_price_lists.channel_id', $context->channelId)
-            ->where(fn ($query) => $query->whereNull('channel_price_lists.customer_group_id')
-                ->when($context->customerGroupId !== null, fn ($q) => $q->orWhere('channel_price_lists.customer_group_id', $context->customerGroupId)))
+            ->where(fn ($query) => $query->whereNull('price_lists.customer_group_id')
+                ->when($context->customerGroupId !== null, fn ($q) => $q->orWhere('price_lists.customer_group_id', $context->customerGroupId)))
             ->where('price_lists.status', 'active')
             ->where(fn ($query) => $query->whereNull('price_lists.starts_at')->orWhere('price_lists.starts_at', '<=', $now))
             ->where(fn ($query) => $query->whereNull('price_lists.ends_at')->orWhere('price_lists.ends_at', '>', $now))

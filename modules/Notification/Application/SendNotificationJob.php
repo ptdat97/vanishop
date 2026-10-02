@@ -40,13 +40,13 @@ final class SendNotificationJob implements ShouldQueue
             return;
         }
 
-        $channel = $channels->forBrand($log->brand_id)[$log->channel] ?? null;
+        $channel = $channels->all()[$log->channel] ?? null;
         $attempt = $log->attempts + 1;
 
         try {
             $result = $channel === null
                 ? SendResult::permanent("channel.unavailable:{$log->channel}")
-                : $channels->inBrand($log->brand_id, fn (): SendResult => $channel->send($this->message($log, $attempt)));
+                : $channel->send($this->message($log, $attempt));
         } catch (Throwable $exception) {
             report($exception);
             $result = SendResult::retryable($exception::class.': '.$exception->getMessage());
@@ -80,6 +80,6 @@ final class SendNotificationJob implements ShouldQueue
             ? new Recipient(email: $log->recipient, customerId: $log->customer_id)
             : new Recipient(phone: $log->recipient, customerId: $log->customer_id);
 
-        return new OutgoingMessage($log->id, $log->idempotency_key, $log->type, $log->brand_id, $recipient, $log->subject, $log->body, $log->meta ?? [], $attempt);
+        return new OutgoingMessage($log->id, $log->idempotency_key, $log->type, $recipient, $log->subject, $log->body, $log->meta ?? [], $attempt);
     }
 }

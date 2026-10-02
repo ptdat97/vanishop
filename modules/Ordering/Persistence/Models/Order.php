@@ -7,14 +7,12 @@ namespace Modules\Ordering\Persistence\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Ordering\Contracts\Data\OrderStatus;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
  * @property int $id
  * @property string $public_id
  * @property string $number
- * @property int $brand_id
- * @property int $channel_id
+ * @property string $source
  * @property OrderStatus $order_status
  * @property string $payment_status
  * @property string $currency_code
@@ -23,14 +21,12 @@ use Modules\Shared\Persistence\Concerns\BelongsToBrand;
  */
 final class Order extends Model
 {
-    use BelongsToBrand;
-
     protected $guarded = ['id'];
 
     protected function casts(): array
     {
         return [
-            'brand_id' => 'integer', 'channel_id' => 'integer', 'legal_entity_id' => 'integer', 'order_status' => OrderStatus::class,
+            'order_status' => OrderStatus::class,
             'subtotal_amount' => 'integer', 'discount_amount' => 'integer', 'shipping_amount' => 'integer', 'tax_amount' => 'integer', 'total_amount' => 'integer',
             'customer_snapshot' => 'array', 'shipping_address' => 'array', 'shipping_method' => 'array', 'meta' => 'array',
             'lock_version' => 'integer', 'placed_at' => 'immutable_datetime',

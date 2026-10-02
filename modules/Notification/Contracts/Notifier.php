@@ -8,7 +8,7 @@ use Modules\Notification\Contracts\Data\NotificationRequest;
 
 /**
  * Service contract: gửi một tin theo loại (`order_placed`…) tới người nhận, trên mọi kênh có template đang bật
- * cho brand và kênh đó liên lạc được với người nhận. Tin marketing chỉ gửi khi khách có consent theo brand × kênh.
+ * và kênh đó liên lạc được với người nhận. Tin marketing chỉ gửi khi khách có consent theo kênh.
  * Idempotent theo `NotificationRequest::$key` + kênh.
  */
 interface Notifier

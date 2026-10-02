@@ -11,7 +11,6 @@ const props = defineProps<{
         code: string;
         name: string;
         type: string;
-        legal_entity_id: number;
         address: string | null;
         province_code: string | null;
         ships_online_orders: boolean;
@@ -21,12 +20,7 @@ const props = defineProps<{
         priority: number;
         status: string;
         lock_version: number;
-        brand_ids: number[];
-        channel_ids: number[];
     };
-    brands: Array<{ id: number; name: string }>;
-    channels: Array<{ id: number; code: string; name: string }>;
-    legalEntities: Array<{ id: number; code: string; name: string }>;
     types: string[];
 }>();
 
@@ -35,7 +29,6 @@ const form = useForm({
     code: props.location?.code ?? '',
     name: props.location?.name ?? '',
     type: props.location?.type ?? 'warehouse',
-    legal_entity_id: props.location?.legal_entity_id ?? props.legalEntities[0]?.id ?? null,
     address: props.location?.address ?? '',
     province_code: props.location?.province_code ?? '',
     ships_online_orders: props.location?.ships_online_orders ?? true,
@@ -44,8 +37,6 @@ const form = useForm({
     stock_authority: props.location?.stock_authority ?? 'vanishop',
     priority: props.location?.priority ?? 0,
     status: props.location?.status ?? 'active',
-    brand_ids: props.location?.brand_ids ?? ([] as number[]),
-    channel_ids: props.location?.channel_ids ?? ([] as number[]),
     lock_version: props.location?.lock_version ?? null,
 });
 
@@ -72,11 +63,6 @@ function submit(): void {
                 <option v-for="type in types" :key="type" :value="type">{{ typeLabels[type] ?? type }}</option>
             </select>
         </FormField>
-        <FormField label="Pháp nhân" :error="form.errors.legal_entity_id">
-            <select v-model="form.legal_entity_id" :class="inputClass">
-                <option v-for="entity in legalEntities" :key="entity.id" :value="entity.id">{{ entity.name }}</option>
-            </select>
-        </FormField>
         <FormField label="Địa chỉ" :error="form.errors.address"><input v-model="form.address" :class="inputClass" /></FormField>
         <FormField label="Mã tỉnh/thành" :error="form.errors.province_code"><input v-model="form.province_code" :class="inputClass" /></FormField>
         <FormField label="Priority" hint="Cao hơn được giữ hàng trước." :error="form.errors.priority">
@@ -97,21 +83,6 @@ function submit(): void {
                 <option value="active">Đang dùng</option>
                 <option value="inactive">Tắt</option>
             </select>
-        </FormField>
-        <FormField label="Brand có hàng tại đây" :error="form.errors.brand_ids">
-            <div class="space-y-1">
-                <label v-for="brand in brands" :key="brand.id" class="flex items-center gap-2 text-sm">
-                    <input v-model="form.brand_ids" type="checkbox" :value="brand.id" /> {{ brand.name }}
-                </label>
-            </div>
-        </FormField>
-        <FormField label="Kênh bán lấy hàng từ đây" :error="form.errors.channel_ids">
-            <div class="space-y-1">
-                <label v-for="channel in channels" :key="channel.id" class="flex items-center gap-2 text-sm">
-                    <input v-model="form.channel_ids" type="checkbox" :value="channel.id" />
-                    {{ channel.name }} <span class="font-mono text-xs text-slate-400">{{ channel.code }}</span>
-                </label>
-            </div>
         </FormField>
         <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>

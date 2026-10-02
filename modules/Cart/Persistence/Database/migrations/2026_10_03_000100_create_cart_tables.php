@@ -14,7 +14,6 @@ return new class extends Migration
             $table->char('public_id', 26)->unique();
             // sha256 của cart token (khách vãng lai giữ token; server không lưu token gốc).
             $table->char('token_hash', 64);
-            $table->foreignId('channel_id')->constrained('channels');
             // Chưa có FK: module Customer chưa tồn tại (thêm khi có bảng customers).
             $table->unsignedBigInteger('customer_id')->nullable()->index();
             $table->char('currency_code', 3);
@@ -31,7 +30,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('cart_id')->constrained('carts')->cascadeOnDelete();
             $table->foreignId('variant_id')->constrained('variants');
-            $table->foreignId('brand_id')->constrained('brands');
             $table->unsignedInteger('quantity');
             // Giá lúc thêm vào giỏ (đơn vị nhỏ nhất) — chỉ để cảnh báo "giá đã đổi", không dùng tính tiền.
             $table->bigInteger('unit_price_snapshot')->nullable();

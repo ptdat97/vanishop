@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Modules\Brand\Contracts\BrandDirectory;
 use Modules\Ordering\Contracts\Data\OrderDraft;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
@@ -23,7 +22,6 @@ use Modules\Shared\Context\CurrentContext;
 final class OrderFactory implements OrderWriter
 {
     public function __construct(
-        private readonly BrandDirectory $brands,
         private readonly NumberSequences $sequences,
         private readonly CurrentContext $context,
     ) {}
@@ -31,16 +29,15 @@ final class OrderFactory implements OrderWriter
     public function create(OrderDraft $draft): PlacedOrder
     {
         $this->assertBalanced($draft);
-        $brand = $this->brands->find($draft->brandId) ?? throw new InvalidArgumentException("Brand #{$draft->brandId} không tồn tại.");
         $now = new DateTimeImmutable('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
         $period = OrderNumber::period($now);
-        $number = OrderNumber::format($brand->code, $period, $this->sequences->next("order:{$brand->id}", $period));
+        $number = OrderNumber::format((string) config('vanishop.orders.number_prefix', 'VN'), $period, $this->sequences->next('order', $period));
 
         $accessToken = Str::random(40);
         $order = Order::query()->create([
             'customer_phone' => $draft->customer['phone'], 'access_token_hash' => hash('sha256', $accessToken),
-            'public_id' => $draft->publicId, 'number' => $number, 'legal_entity_id' => $brand->legalEntityId, 'brand_id' => $brand->id,
-            'channel_id' => $draft->channelId, 'customer_id' => $draft->customerId, 'currency_code' => $draft->currencyCode,
+            'public_id' => $draft->publicId, 'number' => $number, 'source' => $draft->source,
+            'customer_id' => $draft->customerId, 'currency_code' => $draft->currencyCode,
             'order_status' => OrderStatus::Pending, 'payment_status' => $draft->paymentStatus, 'fulfillment_status' => 'unfulfilled', 'return_status' => 'none',
             'payment_method' => $draft->paymentMethod,
             'subtotal_amount' => $draft->subtotalAmount, 'discount_amount' => $draft->discountAmount, 'shipping_amount' => $draft->shippingAmount,
@@ -51,7 +48,7 @@ final class OrderFactory implements OrderWriter
 
         foreach ($draft->lines as $line) {
             $order->lines()->create([
-                'variant_id' => $line->variantId, 'sku' => $line->sku, 'product_name' => $line->productName, 'color_name' => $line->colorName,
+                'variant_id' => $line->variantId, 'sku' => $line->sku, 'product_name' => $line->productName, 'brand_id' => $line->brandId, 'brand_name' => $line->brandName, 'color_name' => $line->colorName,
                 'size_code' => $line->sizeCode, 'image_url' => $line->imageUrl, 'quantity' => $line->quantity, 'unit_amount' => $line->unitAmount,
                 'compare_at_amount' => $line->compareAtAmount, 'subtotal_amount' => $line->subtotalAmount, 'discount_amount' => $line->discountAmount,
                 'total_amount' => $line->totalAmount, 'tax_rate_bp' => $line->taxRateBp, 'tax_amount' => $line->taxAmount,
@@ -71,9 +68,9 @@ final class OrderFactory implements OrderWriter
             'data' => json_encode(['payment_method' => $draft->paymentMethod, 'total' => $draft->totalAmount]), 'created_at' => now(),
         ]);
 
-        event(new OrderPlaced($order->id, $order->public_id, $number, $brand->id, $draft->channelId, $draft->customerId, $draft->totalAmount, $draft->currencyCode));
+        event(new OrderPlaced($order->id, $order->public_id, $number, $draft->customerId, $draft->totalAmount, $draft->currencyCode));
 
-        return new PlacedOrder($order->id, $order->public_id, $number, $brand->id, $brand->legalEntityId, $draft->channelId, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode, $accessToken);
+        return new PlacedOrder($order->id, $order->public_id, $number, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode, $accessToken);
     }
 
     /**

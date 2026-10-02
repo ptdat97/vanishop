@@ -158,7 +158,7 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `webhookRoutes($file)` | Implemented | `/api/integrations/{slug}/…` |
 | `adminPages($namespace, $path)` | Implemented | `Inertia::render('<Namespace>::<Trang>')` |
 | `migrations($path)`, `translations($path, $namespace)` | Implemented | |
-| `settings([...])` | Implemented (2026-10-14) | Khai báo cấu hình (key, label, type `string/secret/text/int/bool/select`, default, scopes, options) → Admin → Cấu hình sinh form theo phạm vi; đọc lúc chạy qua `Tenancy\Contracts\Settings::current($pluginId, $key)`. Thay cho `settings_schema` JSON trong manifest |
+| `settings([...])` | Implemented (2026-10-14) | Khai báo cấu hình (key, label, type `string/secret/text/int/bool/select`, default, options) → Admin → Cấu hình sinh form; đọc lúc chạy qua `Tenancy\Contracts\Settings::get($pluginId, $key, $default)`. Thay cho `settings_schema` JSON trong manifest |
 | `storefrontRoutes()`, `adminApiRoutes()`, `scheduledTasks()`… | Designed | Xem [extension-point-catalog §5](../04-extension/extension-point-catalog.md) |
 
 `{slug}` là plugin id với dấu `.` đổi thành `-` (ví dụ `vani.hello-world` → `vani-hello-world`).

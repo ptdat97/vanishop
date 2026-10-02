@@ -8,11 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Pricing\Domain\PriceListType;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
  * @property int $id
- * @property int $brand_id
+ * @property int|null $customer_group_id
  * @property string $code
  * @property string $name
  * @property string $currency_code
@@ -25,9 +24,7 @@ use Modules\Shared\Persistence\Concerns\BelongsToBrand;
  */
 final class PriceList extends Model
 {
-    use BelongsToBrand;
-
-    protected $fillable = ['brand_id', 'code', 'name', 'currency_code', 'type', 'priority', 'starts_at', 'ends_at', 'status', 'lock_version'];
+    protected $fillable = ['code', 'name', 'currency_code', 'type', 'customer_group_id', 'priority', 'starts_at', 'ends_at', 'status', 'lock_version'];
 
     protected function casts(): array
     {

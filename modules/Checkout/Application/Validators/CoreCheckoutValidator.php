@@ -12,7 +12,7 @@ use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Shared\Domain\Phone\PhoneNumber;
 
 /**
- * Kiểm tra bắt buộc của Core: giỏ bán được, liên hệ, địa chỉ, giao hàng, thanh toán, một brand mỗi đơn.
+ * Kiểm tra bắt buộc của Core: giỏ bán được, liên hệ, địa chỉ, giao hàng, thanh toán.
  */
 final class CoreCheckoutValidator implements CheckoutValidator
 {
@@ -29,10 +29,6 @@ final class CoreCheckoutValidator implements CheckoutValidator
 
         if ($totals->lines === [] || ! $cartReady) {
             $issues[] = new CheckoutIssue('cart_not_ready', __('checkout::messages.cart_not_ready'));
-        }
-        // Kênh đa brand cần order group (tách đơn theo brand/pháp nhân) — Designed, chưa hỗ trợ.
-        if (count($totals->brandIds()) > 1) {
-            $issues[] = new CheckoutIssue('multi_brand', __('checkout::messages.multi_brand'));
         }
 
         $contact = $request->contact ?? [];

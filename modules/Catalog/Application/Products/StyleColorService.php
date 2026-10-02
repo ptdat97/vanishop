@@ -29,9 +29,9 @@ final class StyleColorService
 
     public function addColor(Style $style, int $colorId): StyleColor
     {
-        $color = Color::query()->where('brand_id', $style->brand_id)->find($colorId);
+        $color = Color::query()->find($colorId);
         if ($color === null) {
-            throw ValidationException::withMessages(['color_id' => __('catalog::messages.color_not_in_brand')]);
+            throw ValidationException::withMessages(['color_id' => __('catalog::messages.color_not_found')]);
         }
         if ($style->colors()->where('color_id', $colorId)->exists()) {
             throw ValidationException::withMessages(['color_id' => __('catalog::messages.color_already_added')]);
@@ -70,7 +70,7 @@ final class StyleColorService
         DB::transaction(function () use ($style, $styleColor, $files): void {
             $position = (int) $styleColor->gallery()->max('position');
             foreach ($files as $file) {
-                $media = $this->media->store($style->brand_id, $file);
+                $media = $this->media->store($file);
                 $styleColor->gallery()->create(['media_id' => $media->id, 'role' => 'gallery', 'position' => ++$position]);
             }
             $this->touch($style, 'catalog.product.images_added', ['style_color_id' => $styleColor->id, 'count' => count($files)]);
@@ -107,6 +107,6 @@ final class StyleColorService
     {
         $style->touch();
         $this->audit->record($action, 'style', $style->id, $changes);
-        event(new ProductUpdated($style->id, $style->brand_id, $style->style_code));
+        event(new ProductUpdated($style->id, $style->style_code));
     }
 }

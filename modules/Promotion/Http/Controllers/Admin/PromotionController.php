@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Http\Controllers\BrandWorkspaceHome;
-use Modules\Brand\Persistence\Models\Brand;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Application\PromotionService;
 use Modules\Promotion\Domain\Stacking;
@@ -23,19 +20,18 @@ use Modules\Promotion\Persistence\Models\Voucher;
 
 final class PromotionController
 {
-    public function home(BrandWorkspaceHome $home): Response|RedirectResponse
+    public function home(): RedirectResponse
     {
         Gate::authorize('promotion.view');
 
-        return $home->respond('admin.promotion.promotions.index', 'Khuyến mãi', 'Chọn brand để quản lý khuyến mãi và voucher.');
+        return redirect()->route('admin.promotion.promotions.index');
     }
 
-    public function index(Brand $brand): Response
+    public function index(): Response
     {
-        Gate::authorize('promotion.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('promotion.view');
 
         return Inertia::render('Promotion::Promotions/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.promotion.promotions.index'),
             'promotions' => Promotion::query()->withCount('vouchers')->orderByDesc('priority')->orderByDesc('id')->get()->map(fn (Promotion $promotion): array => [
                 'id' => $promotion->id,
@@ -53,47 +49,47 @@ final class PromotionController
                 'starts_at' => $promotion->starts_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
                 'ends_at' => $promotion->ends_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
             ])->all(),
-            'canManage' => Gate::allows('promotion.manage', [ScopeRef::brand($brand->id)]),
+            'canManage' => Gate::allows('promotion.manage'),
         ]);
     }
 
-    public function create(Brand $brand, PromotionRegistry $registry): Response
+    public function create(PromotionRegistry $registry): Response
     {
-        Gate::authorize('promotion.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('promotion.manage');
 
-        return $this->form($brand, null, $registry);
+        return $this->form(null, $registry);
     }
 
-    public function store(Brand $brand, PromotionRequest $request, PromotionService $service): RedirectResponse
+    public function store(PromotionRequest $request, PromotionService $service): RedirectResponse
     {
-        $promotion = $service->save($brand->id, $request->toData());
+        $promotion = $service->save($request->toData());
 
         return redirect()->route('admin.promotion.promotions.edit', ['promotion' => $promotion->id])->with('success', __('promotion::messages.saved'));
     }
 
-    public function edit(Brand $brand, Promotion $promotion, PromotionRegistry $registry): Response
+    public function edit(Promotion $promotion, PromotionRegistry $registry): Response
     {
-        Gate::authorize('promotion.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('promotion.manage');
 
-        return $this->form($brand, $promotion, $registry);
+        return $this->form($promotion, $registry);
     }
 
-    public function update(Brand $brand, Promotion $promotion, PromotionRequest $request, PromotionService $service): RedirectResponse
+    public function update(Promotion $promotion, PromotionRequest $request, PromotionService $service): RedirectResponse
     {
-        $service->save($brand->id, $request->toData(), $promotion, (int) $request->validated('lock_version'));
+        $service->save($request->toData(), $promotion, (int) $request->validated('lock_version'));
 
         return back()->with('success', __('promotion::messages.saved'));
     }
 
-    public function destroy(Brand $brand, Promotion $promotion, PromotionService $service): RedirectResponse
+    public function destroy(Promotion $promotion, PromotionService $service): RedirectResponse
     {
-        Gate::authorize('promotion.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('promotion.manage');
         $service->delete($promotion);
 
         return redirect()->route('admin.promotion.promotions.index')->with('success', __('promotion::messages.deleted'));
     }
 
-    public function storeVouchers(Brand $brand, Promotion $promotion, VoucherRequest $request, PromotionService $service): RedirectResponse
+    public function storeVouchers(Promotion $promotion, VoucherRequest $request, PromotionService $service): RedirectResponse
     {
         $count = $service->createVouchers(
             $promotion,
@@ -107,9 +103,9 @@ final class PromotionController
         return back()->with('success', __('promotion::messages.vouchers_created', ['count' => $count]));
     }
 
-    public function updateVoucher(Brand $brand, Promotion $promotion, Voucher $voucher, Request $request, PromotionService $service): RedirectResponse
+    public function updateVoucher(Promotion $promotion, Voucher $voucher, Request $request, PromotionService $service): RedirectResponse
     {
-        Gate::authorize('promotion.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('promotion.manage');
         abort_unless($voucher->promotion_id === $promotion->id, 404);
         $data = $request->validate(['status' => ['required', Rule::in(['active', 'inactive'])]]);
         $service->setVoucherStatus($voucher, $data['status']);
@@ -117,10 +113,9 @@ final class PromotionController
         return back()->with('success', __('promotion::messages.saved'));
     }
 
-    private function form(Brand $brand, ?Promotion $promotion, PromotionRegistry $registry): Response
+    private function form(?Promotion $promotion, PromotionRegistry $registry): Response
     {
         return Inertia::render('Promotion::Promotions/Form', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.promotion.promotions.index'),
             'promotion' => $promotion === null ? null : [
                 ...$promotion->only(['id', 'name', 'status', 'priority', 'requires_voucher', 'action_type', 'action_config', 'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version']),

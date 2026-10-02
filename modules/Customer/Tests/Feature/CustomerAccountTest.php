@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
@@ -46,16 +45,13 @@ it('sổ địa chỉ: địa chỉ đầu là mặc định, đổi mặc đị
     $this->postJson(H::API.'/me/addresses', ($this->address)(['phone' => 'abc']), H::auth($this->token))->assertStatus(422);
 });
 
-it('consent: cấp/rút theo brand của kênh, ghi ledger, trạng thái không đổi thì không ghi thêm', function () {
-    $body = ['brand_id' => $this->brand->id, 'channel' => 'email', 'purpose' => 'marketing', 'granted' => true];
+it('consent: cấp/rút, ghi ledger, trạng thái không đổi thì không ghi thêm', function () {
+    $body = ['channel' => 'email', 'purpose' => 'marketing', 'granted' => true];
     $this->putJson(H::API.'/me/consents', $body, H::auth($this->token))->assertOk()->assertJsonPath('data.0.granted', true);
     $this->putJson(H::API.'/me/consents', $body, H::auth($this->token))->assertOk();
     $this->putJson(H::API.'/me/consents', [...$body, 'granted' => false], H::auth($this->token))->assertOk()->assertJsonPath('data.0.granted', false);
 
     expect(DB::table('customer_consent_events')->pluck('action')->all())->toBe(['granted', 'revoked']);
-
-    $other = Brand::factory()->create();
-    $this->putJson(H::API.'/me/consents', [...$body, 'brand_id' => $other->id], H::auth($this->token))->assertStatus(422);
 
     // Kênh của plugin mới (vd. web push) dùng được consent mà không sửa Core; mã sai định dạng bị chặn.
     $this->putJson(H::API.'/me/consents', [...$body, 'channel' => 'webpush'], H::auth($this->token))->assertOk();

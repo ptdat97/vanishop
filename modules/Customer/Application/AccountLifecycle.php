@@ -27,7 +27,7 @@ final class AccountLifecycle
         private readonly CustomerOrders $customerOrders,
         private readonly ConsentService $consents,
         private readonly AuthService $auth,
-        private readonly BrandProfiles $brandProfiles,
+        private readonly CustomerStats $stats,
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
     ) {}
@@ -54,8 +54,8 @@ final class AccountLifecycle
             CustomerAddress::query()->where('customer_id', $sourceId)->update(['customer_id' => $targetId, 'is_default' => false]);
 
             foreach ($this->consents->all($sourceId) as $consent) {
-                if ($consent['granted'] && ! $this->consents->allows($targetId, $consent['brand_id'], $consent['channel'], $consent['purpose'])) {
-                    $this->consents->set($targetId, $consent['brand_id'], $consent['channel'], $consent['purpose'], true, "merge:{$source->public_id}");
+                if ($consent['granted'] && ! $this->consents->allows($targetId, $consent['channel'], $consent['purpose'])) {
+                    $this->consents->set($targetId, $consent['channel'], $consent['purpose'], true, "merge:{$source->public_id}");
                 }
             }
 
@@ -66,8 +66,8 @@ final class AccountLifecycle
                 'registered_at' => $target->registered_at ?? $source->registered_at,
             ], fn (mixed $value): bool => $value !== null));
             $this->auth->revokeAll($sourceId);
-            $this->brandProfiles->recompute($sourceId);
-            $this->brandProfiles->recompute($targetId);
+            $this->stats->recompute($sourceId);
+            $this->stats->recompute($targetId);
 
             $this->audit->record('customer.merged', 'customer', $targetId, ['source' => $source->public_id, 'orders' => $moved]);
             event(new CustomerMerged($sourceId, $targetId, $moved));
@@ -121,7 +121,7 @@ final class AccountLifecycle
             'addresses' => app(AddressBook::class)->all($customerId),
             'consents' => $this->consents->all($customerId),
             'consent_history' => DB::table('customer_consent_events')->where('customer_id', $customerId)->orderBy('id')
-                ->get(['brand_id', 'channel', 'purpose', 'action', 'source', 'created_at'])->map(fn (object $row): array => (array) $row)->all(),
+                ->get(['channel', 'purpose', 'action', 'source', 'created_at'])->map(fn (object $row): array => (array) $row)->all(),
             'orders' => array_map(fn ($order): array => [
                 'number' => $order->number, 'placed_at' => $order->placedAt, 'status' => $order->customerStatus['label'],
                 'total' => $order->amounts['total'], 'currency' => $order->currencyCode,

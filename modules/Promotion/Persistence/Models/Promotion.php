@@ -8,11 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Promotion\Domain\Stacking;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
  * @property int $id
- * @property int $brand_id
  * @property string $name
  * @property string $status
  * @property Carbon|null $starts_at
@@ -30,15 +28,13 @@ use Modules\Shared\Persistence\Concerns\BelongsToBrand;
  */
 final class Promotion extends Model
 {
-    use BelongsToBrand;
-
-    protected $fillable = ['brand_id', 'name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
+    protected $fillable = ['name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
         'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version'];
 
     protected function casts(): array
     {
         return [
-            'brand_id' => 'integer', 'starts_at' => 'datetime', 'ends_at' => 'datetime', 'priority' => 'integer', 'stacking' => Stacking::class,
+            'starts_at' => 'datetime', 'ends_at' => 'datetime', 'priority' => 'integer', 'stacking' => Stacking::class,
             'requires_voucher' => 'boolean', 'action_config' => 'array', 'usage_limit' => 'integer', 'usage_count' => 'integer',
             'budget_amount' => 'integer', 'budget_used_amount' => 'integer', 'lock_version' => 'integer',
         ];

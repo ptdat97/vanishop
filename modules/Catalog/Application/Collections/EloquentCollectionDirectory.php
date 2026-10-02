@@ -16,7 +16,6 @@ final class EloquentCollectionDirectory implements CollectionDirectory
             return [];
         }
 
-        // ProductCollection có BrandScope nên chỉ trả bộ sưu tập trong phạm vi brand hiện tại.
         $rows = ProductCollection::query()
             ->join('collection_style', 'collection_style.collection_id', '=', 'collections.id')
             ->where('collections.status', 'active')

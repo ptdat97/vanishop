@@ -15,7 +15,6 @@ interface Row {
 }
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     priceList: { id: number; code: string; name: string; type: string };
     styleCode: string;
@@ -51,7 +50,7 @@ function save(): void {
 
 <template>
     <Head :title="`Giá · ${priceList.name}`" />
-    <PageHeader :title="`Nhập giá: ${priceList.name}`" :subtitle="`${brand.name} · ${priceList.code}`">
+    <PageHeader :title="`Nhập giá: ${priceList.name}`" :subtitle="priceList.code">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách bảng giá</Link>
     </PageHeader>
 

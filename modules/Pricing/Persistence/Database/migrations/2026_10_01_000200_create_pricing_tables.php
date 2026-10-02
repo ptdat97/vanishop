@@ -10,18 +10,17 @@ return new class extends Migration
     {
         Schema::create('price_lists', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
-            $table->string('code', 64);
+            $table->string('code', 64)->unique();
             $table->string('name');
             $table->char('currency_code', 3)->default('VND');
             $table->string('type', 16);                  // base | sale | member
+            $table->unsignedBigInteger('customer_group_id')->nullable();   // giá thành viên (Designed)
             $table->integer('priority')->default(0);
             $table->dateTime('starts_at')->nullable();
             $table->dateTime('ends_at')->nullable();
             $table->string('status', 16)->default('active');
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
-            $table->unique(['brand_id', 'code']);
         });
 
         Schema::create('prices', function (Blueprint $table) {
@@ -34,14 +33,6 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['price_list_id', 'variant_id', 'min_qty']);
             $table->index(['variant_id']);
-        });
-
-        // Bảng giá áp dụng cho kênh (customer_group_id: giá thành viên — Designed).
-        Schema::create('channel_price_lists', function (Blueprint $table) {
-            $table->foreignId('channel_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('price_list_id')->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('customer_group_id')->nullable();
-            $table->primary(['channel_id', 'price_list_id']);
         });
 
         // Lịch sử giá append-only: chứng minh giá trước khuyến mãi là giá thực tế đã bán.
@@ -65,7 +56,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('price_history');
-        Schema::dropIfExists('channel_price_lists');
         Schema::dropIfExists('prices');
         Schema::dropIfExists('price_lists');
     }

@@ -11,7 +11,7 @@ use Modules\Promotion\Contracts\PromotionRule;
 
 /**
  * Rule: chỉ áp dụng cho đơn hàng đầu tiên của khách (khách chưa từng có đơn nào không huỷ).
- * Cấu hình: {} (hoặc {"scope": "brand" | "all"})
+ * Cấu hình: {}
  */
 final class FirstOrderOnlyRule implements PromotionRule
 {
@@ -31,12 +31,7 @@ final class FirstOrderOnlyRule implements PromotionRule
 
     public function validateConfig(array $config): array
     {
-        $scope = $config['scope'] ?? null;
-        if ($scope !== null && ! in_array($scope, ['brand', 'all'], true)) {
-            return ['Giá trị "scope" chỉ có thể là "brand" hoặc "all".'];
-        }
-
-        return [];
+        return $config === [] ? [] : ['Rule này không nhận cấu hình.'];
     }
 
     public function evaluate(PromotionContext $context, array $config, Eligibility $candidates): Eligibility
@@ -46,14 +41,7 @@ final class FirstOrderOnlyRule implements PromotionRule
             return Eligibility::none();
         }
 
-        $brandId = null;
-        if (($config['scope'] ?? 'brand') === 'brand') {
-            $firstKey = $candidates->keys[0] ?? null;
-            $line = $firstKey !== null ? $context->line($firstKey) : null;
-            $brandId = $line?->brandId;
-        }
-
-        $hasPlaced = $this->orders->customerHasPlacedOrder($context->customerId, $brandId);
+        $hasPlaced = $this->orders->customerHasPlacedOrder($context->customerId);
 
         return $hasPlaced ? Eligibility::none() : $candidates;
     }

@@ -7,7 +7,6 @@ import { ref } from 'vue';
 type Level = { on_hand: number; reserved: number; safety_stock: number; available: number };
 
 const props = defineProps<{
-    brand: { name: string; slug: string };
     baseUrl: string;
     locationsUrl: string | null;
     styleCode: string;
@@ -41,8 +40,8 @@ function submit(): void {
 </script>
 
 <template>
-    <Head :title="`Tồn kho · ${brand.name}`" />
-    <p class="mb-2 text-sm text-slate-500">Tồn kho · <span class="font-medium text-slate-700">{{ brand.name }}</span></p>
+    <Head title="Tồn kho" />
+    <p class="mb-2 text-sm text-slate-500">Tồn kho</p>
     <PageHeader title="Tồn kho theo sản phẩm" subtitle="Có thể bán = tồn − đang giữ − tồn an toàn.">
         <Link v-if="locationsUrl" :href="locationsUrl" :class="secondaryButton">Kho & cửa hàng</Link>
     </PageHeader>
@@ -53,7 +52,7 @@ function submit(): void {
     </form>
 
     <p v-if="styleCode && !variants.length" class="text-sm text-slate-500">Không tìm thấy biến thể nào cho mã {{ styleCode }}.</p>
-    <p v-else-if="variants.length && !locations.length" class="text-sm text-slate-500">Brand chưa được gán vào location nào.</p>
+    <p v-else-if="variants.length && !locations.length" class="text-sm text-slate-500">Chưa có kho/cửa hàng nào.</p>
 
     <div v-if="variants.length && locations.length" class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <p v-if="styleName" class="border-b border-slate-100 px-4 py-2 font-medium">{{ styleName }}</p>

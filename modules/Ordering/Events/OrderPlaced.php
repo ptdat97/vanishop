@@ -15,8 +15,6 @@ final readonly class OrderPlaced implements ShouldDispatchAfterCommit
         public int $orderId,
         public string $publicId,
         public string $number,
-        public int $brandId,
-        public int $channelId,
         public ?int $customerId,
         public int $totalAmount,
         public string $currencyCode,

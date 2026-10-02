@@ -14,7 +14,6 @@ final readonly class OutboxMessage
         public string $target,
         public string $messageType,
         public string $schemaVersion,
-        public ?int $brandId,
         public string $aggregateType,
         public string $aggregateId,
         public array $payload,

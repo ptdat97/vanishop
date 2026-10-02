@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Integration API: `X-Vani-Key-Id` + `X-Vani-Signature: t=<unix>,v1=<hmac>` ký trên METHOD.path?query.body.
- * Thành công → CurrentContext là actor `integration` với data scope (brand) của client.
+ * Thành công → CurrentContext là actor `integration`.
  */
 final class AuthenticateIntegrationClient
 {
@@ -56,7 +56,7 @@ final class AuthenticateIntegrationClient
 
         $request->attributes->set(self::ATTRIBUTE, $client);
         Context::add('integration_client', $client->code);
-        $this->context->set(new ContextScope(new Actor(ActorType::Integration, $client->id, $client->code), null, $client->brandIds(), 'vi'));
+        $this->context->set(new ContextScope(new Actor(ActorType::Integration, $client->id, $client->code), 'vi'));
 
         return $next($request);
     }

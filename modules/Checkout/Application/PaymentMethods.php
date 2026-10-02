@@ -20,8 +20,7 @@ final class PaymentMethods
      */
     public function available(Totals $totals): array
     {
-        $brandIds = $totals->brandIds();
-        $methods = count($brandIds) === 1 ? $this->payments->availableMethods($brandIds[0], $totals->channelId, $totals->grandTotal) : [];
+        $methods = $this->payments->availableMethods($totals->grandTotal);
 
         $filtered = Hook::filter('vani.checkout.payment_methods', $methods, $totals);
 

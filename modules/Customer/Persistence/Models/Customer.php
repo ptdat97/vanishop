@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 use Modules\Customer\Domain\CustomerStatus;
 
 /**
- * Khách hàng cấp Owner (không thuộc brand). registered_at = null → profile ẩn của khách vãng lai.
+ * Khách hàng của cửa hàng. registered_at = null → profile ẩn của khách vãng lai.
  *
  * @property int $id
  * @property string $public_id
@@ -32,7 +32,7 @@ final class Customer extends Model
 {
     protected $fillable = [
         'public_id', 'phone', 'email', 'full_name', 'birth_date', 'gender', 'status', 'registered_at', 'phone_verified_at',
-        'password', 'merged_into_id', 'meta', 'last_login_at',
+        'password', 'merged_into_id', 'meta', 'last_login_at', 'orders_count', 'total_spent', 'first_order_at', 'last_order_at',
     ];
 
     protected $hidden = ['password'];
@@ -42,6 +42,7 @@ final class Customer extends Model
         return [
             'status' => CustomerStatus::class, 'birth_date' => 'date', 'registered_at' => 'datetime', 'phone_verified_at' => 'datetime',
             'password' => 'hashed', 'merged_into_id' => 'integer', 'meta' => 'array', 'last_login_at' => 'datetime',
+            'orders_count' => 'integer', 'total_spent' => 'integer', 'first_order_at' => 'datetime', 'last_order_at' => 'datetime',
         ];
     }
 

@@ -10,7 +10,7 @@ use Modules\Promotion\Contracts\PromotionRule;
 
 /**
  * Rule/action theo type, chỉ gồm implementation có hiệu lực trong phạm vi hiện tại
- * (plugin tắt ở brand này thì type của nó không có mặt → khuyến mãi dùng type đó bị bỏ qua).
+ * (plugin tắt thì type của nó không có mặt → khuyến mãi dùng type đó bị bỏ qua).
  */
 final class PromotionRegistry
 {

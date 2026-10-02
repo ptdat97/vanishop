@@ -16,7 +16,6 @@ final readonly class OutgoingMessage
         public int $logId,
         public string $idempotencyKey,
         public string $type,
-        public ?int $brandId,
         public Recipient $recipient,
         public ?string $subject,
         public ?string $body,

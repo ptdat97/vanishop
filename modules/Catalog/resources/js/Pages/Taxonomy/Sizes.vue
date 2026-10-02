@@ -5,7 +5,7 @@ import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { BrandRef, NavItem } from '../../types';
+import type { NavItem } from '../../types';
 
 interface SizeRow {
     id: number;
@@ -14,7 +14,7 @@ interface SizeRow {
     sort_order: number;
 }
 
-const props = defineProps<{ brand: BrandRef; nav: NavItem[]; sizes: SizeRow[]; systems: string[]; canManage: boolean }>();
+const props = defineProps<{ nav: NavItem[]; sizes: SizeRow[]; systems: string[]; canManage: boolean }>();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'sizes')?.url ?? '');
 const editingId = ref<number | null>(null);
 const form = useForm({ size_system: 'alpha', code: '', sort_order: 0 });
@@ -49,8 +49,8 @@ function destroy(size: SizeRow): void {
 </script>
 
 <template>
-    <Head :title="`Size · ${brand.name}`" />
-    <CatalogTabs :brand="brand" :nav="nav" active="sizes" />
+    <Head title="Size" />
+    <CatalogTabs :nav="nav" active="sizes" />
     <PageHeader title="Size" subtitle="Thứ tự sắp xếp quyết định cách hiển thị: XS < S < M < L…" />
 
     <div class="grid gap-6 lg:grid-cols-3">

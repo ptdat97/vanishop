@@ -20,13 +20,12 @@ final class CategoryService
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
-    public function create(int $brandId, CategoryInput $input): Category
+    public function create(CategoryInput $input): Category
     {
-        return DB::transaction(function () use ($brandId, $input): Category {
-            $parent = $this->parentOrNull($brandId, $input->parentId);
+        return DB::transaction(function () use ($input): Category {
+            $parent = $this->parentOrNull($input->parentId);
 
             $category = Category::query()->create([
-                'brand_id' => $brandId,
                 'parent_id' => $parent?->id,
                 'slug' => $input->slug,
                 'status' => $input->status,
@@ -87,7 +86,7 @@ final class CategoryService
     private function moveSubtree(Category $category, ?int $newParentId): void
     {
         $from = $category->categoryPath();
-        $parent = $this->parentOrNull($category->brand_id, $newParentId);
+        $parent = $this->parentOrNull($newParentId);
 
         if ($parent !== null && $parent->categoryPath()->isWithin($from)) {
             throw new CategoryCycle;
@@ -96,7 +95,6 @@ final class CategoryService
         $to = $parent === null ? CategoryPath::root($category->id) : $parent->categoryPath()->child($category->id);
 
         $subtree = Category::query()
-            ->where('brand_id', $category->brand_id)
             ->where('path', 'like', $from->toString().'%')
             ->lockForUpdate()
             ->get();
@@ -109,13 +107,13 @@ final class CategoryService
         $category->forceFill(['parent_id' => $parent?->id, 'path' => $to->toString(), 'depth' => $to->depth()]);
     }
 
-    private function parentOrNull(int $brandId, ?int $parentId): ?Category
+    private function parentOrNull(?int $parentId): ?Category
     {
         if ($parentId === null) {
             return null;
         }
 
-        $parent = Category::query()->where('brand_id', $brandId)->lockForUpdate()->find($parentId);
+        $parent = Category::query()->lockForUpdate()->find($parentId);
 
         if ($parent === null) {
             throw ValidationException::withMessages(['parent_id' => __('catalog::messages.parent_not_found')]);

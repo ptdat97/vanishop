@@ -8,18 +8,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Application\Products\VariantService;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 final class ProductVariantController
 {
-    public function generate(Brand $brand, Style $product, Request $request, VariantService $variants): RedirectResponse
+    public function generate(Style $product, Request $request, VariantService $variants): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         $data = $request->validate(['size_ids' => ['required', 'array', 'min:1', 'max:50'], 'size_ids.*' => ['integer', 'distinct']]);
 
         $created = $variants->generate($product, array_map('intval', $data['size_ids']));
@@ -27,9 +25,9 @@ final class ProductVariantController
         return back()->with('success', __('catalog::messages.variants_generated', ['count' => count($created)]));
     }
 
-    public function update(Brand $brand, Style $product, Variant $variant, Request $request, VariantService $variants): RedirectResponse
+    public function update(Style $product, Variant $variant, Request $request, VariantService $variants): RedirectResponse
     {
-        Gate::authorize('catalog.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('catalog.manage');
         abort_unless($variant->style_id === $product->id, 404);
 
         $data = $request->validate([

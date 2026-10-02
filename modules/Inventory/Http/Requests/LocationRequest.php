@@ -29,7 +29,6 @@ final class LocationRequest extends FormRequest
             'code' => ['required', 'string', 'max:32', 'regex:/^[A-Z0-9][A-Z0-9-]*$/', Rule::unique('locations', 'code')->ignore($location instanceof Location ? $location->id : null)],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', Rule::enum(LocationType::class)],
-            'legal_entity_id' => ['required', 'integer', 'exists:legal_entities,id'],
             'address' => ['nullable', 'string', 'max:255'],
             'province_code' => ['nullable', 'string', 'max:16'],
             'ships_online_orders' => ['required', 'boolean'],
@@ -38,10 +37,6 @@ final class LocationRequest extends FormRequest
             'stock_authority' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9_-]*$/'],
             'priority' => ['required', 'integer', 'min:-1000', 'max:1000'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
-            'brand_ids' => ['array'],
-            'brand_ids.*' => ['integer', 'distinct', 'exists:brands,id'],
-            'channel_ids' => ['array'],
-            'channel_ids.*' => ['integer', 'distinct', 'exists:channels,id'],
             'lock_version' => [$location instanceof Location ? 'required' : 'nullable', 'integer', 'min:0'],
         ];
     }
@@ -51,6 +46,6 @@ final class LocationRequest extends FormRequest
      */
     public function toData(): array
     {
-        return collect($this->validated())->except(['brand_ids', 'channel_ids', 'lock_version'])->all();
+        return collect($this->validated())->except(['lock_version'])->all();
     }
 }

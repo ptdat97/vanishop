@@ -14,11 +14,7 @@ use Modules\Shared\Context\CurrentContext;
 use Throwable;
 
 /**
- * Domain event → listener của plugin, theo phạm vi bật của plugin:
- *
- * - Event mang `brandId` → chỉ gọi khi plugin bật cho brand đó (owner/brand; scope channel không áp dụng vì
- *   event không gắn kênh), và chạy trong phạm vi brand đó (Core contract plugin gọi sẽ tự lọc theo brand).
- * - Event không mang brand (cấp Owner, vd. `CustomerRegistered`, `StockAdjusted`) → chỉ gọi khi plugin bật ở owner.
+ * Domain event → listener của plugin: chỉ gọi khi plugin đang bật, chạy với actor hệ thống của plugin.
  *
  * Domain event là phản ứng phụ sau commit: lỗi của listener plugin được ghi log, không làm hỏng request/job.
  */
@@ -46,12 +42,8 @@ final class PluginEventListeners
      */
     private function dispatch(object $payload, callable|string|array $handler, string $pluginId): void
     {
-        $brandId = property_exists($payload, 'brandId') && is_int($payload->brandId) ? $payload->brandId : null;
-        $scope = new ContextScope(Actor::system("plugin {$pluginId}"), brandIds: $brandId === null ? null : [$brandId]);
-
-        $this->context->runAs($scope, function () use ($payload, $handler, $pluginId, $brandId): void {
-            $activation = $this->container->make(PluginActivation::class);
-            if (! ($brandId === null ? $activation->isActiveForOwner($pluginId) : $activation->isActive($pluginId))) {
+        $this->context->runAs(new ContextScope(Actor::system("plugin {$pluginId}")), function () use ($payload, $handler, $pluginId): void {
+            if (! $this->container->make(PluginActivation::class)->isActive($pluginId)) {
                 return;
             }
 

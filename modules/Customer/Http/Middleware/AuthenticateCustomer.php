@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * `Authorization: Bearer <token>` (ADR-024). `vani.customer` bắt buộc đăng nhập; `vani.customer:optional` cho
  * route dùng được cả khi chưa đăng nhập (giỏ, checkout). Token sai/hết hạn luôn là 401, kể cả ở chế độ optional.
- * Chạy SAU `vani.api-channel`: giữ kênh/brand/locale, chỉ thay actor bằng khách hàng.
+ * Chạy SAU `vani.storefront-context`: giữ locale, chỉ thay actor bằng khách hàng.
  */
 final class AuthenticateCustomer
 {
@@ -45,8 +45,6 @@ final class AuthenticateCustomer
         $scope = $this->context->has() ? $this->context->scope() : null;
         $this->context->set(new ContextScope(
             new Actor(ActorType::Customer, $customer->id, $customer->public_id),
-            $scope?->channelId,
-            $scope === null ? [] : $scope->brandIds,
             $scope?->locale,
         ));
 

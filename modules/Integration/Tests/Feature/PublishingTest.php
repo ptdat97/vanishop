@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
@@ -21,7 +20,7 @@ beforeEach(function () {
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->placeOrder = function (): string {
         $api = '/api/storefront/v1';
-        $headers = ['X-Vani-Channel' => 'web-lumiere'];
+        $headers = [];
         $created = $this->postJson("{$api}/carts", [], $headers)->assertCreated();
         $headers['X-Vani-Cart-Token'] = $created->json('meta.token');
         $this->postJson("{$api}/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
@@ -37,7 +36,6 @@ it('đặt đơn COD → event feed order.created + order.confirmed theo thứ t
     $events = IntegrationEventRecord::query()->orderBy('id')->get();
     expect($events->pluck('event_type')->all())->toBe(['order.created', 'order.confirmed'])
         ->and($events->pluck('aggregate_id')->unique()->all())->toBe([$number])
-        ->and($events[0]->brand_id)->toBe($this->brand->id)
         ->and($events[0]->correlation_id)->not->toBeNull();
 
     $order = $events[0]->payload['order'];
@@ -46,16 +44,15 @@ it('đặt đơn COD → event feed order.created + order.confirmed theo thứ t
         ->and($order['total_amount'])->toBe(330_000)
         ->and($order['lines'][0]['sku'])->toBe($this->s->sku)
         ->and($order['lines'][0]['quantity'])->toBe(1)
+        ->and($order['lines'][0]['brand'])->toBe($this->brand->name)
+        ->and($order['source'])->toBe('web')
         ->and($events[1]->payload['reason'])->toBe('cod_auto_confirm');
 });
 
-it('fan-out theo subscription (event type, data scope brand, trạng thái) và connector hỗ trợ', function () {
-    $other = Brand::factory()->create(['slug' => 'other', 'code' => 'OT']);
+it('fan-out theo subscription (event type, trạng thái) và connector hỗ trợ', function () {
     H::client('erp-main');
-    H::client('pos', brandIds: [$other->id]);
     H::client('odo');
     [$all] = H::subscription('erp-main', ['order.*']);
-    H::subscription('pos', ['*']);                                   // brand khác → không nhận
     [$paused] = H::subscription('odo', ['*']);
     $paused->update(['status' => 'paused']);                          // tạm dừng → không nhận
     [$payments] = H::subscription('erp-main', ['payment.captured']); // không khớp loại
@@ -82,7 +79,7 @@ it('transaction nghiệp vụ rollback → không có event, không có message'
 
     try {
         DB::transaction(function () {
-            OrderConfirmed::dispatch(1, 'X', $this->brand->id, 'test');
+            OrderConfirmed::dispatch(1, 'X', 'test');
             throw new RuntimeException('rollback');
         });
     } catch (RuntimeException) {

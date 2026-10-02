@@ -45,7 +45,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
             config('vanishop.payment.cod.max_amount') === null ? null : (int) config('vanishop.payment.cod.max_amount'),
         ));
         $this->app->bind(ManualBankTransferGateway::class, fn (): ManualBankTransferGateway => new ManualBankTransferGateway(
-            (array) config('vanishop.payment.bank_transfer.accounts', []),
+            (array) config('vanishop.payment.bank_transfer.account', []),
             (int) config('vanishop.payment.bank_transfer.ttl', 86_400),
         ));
         $this->app->make(Extensions::class)->tag([CodGateway::class, ManualBankTransferGateway::class], GatewayRegistry::TAG);
@@ -53,7 +53,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
-        $permissions->register('payments.view', 'Xem thanh toán của brand');
+        $permissions->register('payments.view', 'Xem thanh toán');
         $permissions->register('payments.confirm', 'Xác nhận đã nhận tiền (chuyển khoản thủ công)');
         $permissions->register('payments.refund', 'Hoàn tiền');
 
@@ -80,7 +80,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
-        $this->loadBrandWorkspaceRoutes('payment', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->loadAdminSectionRoutes('payment', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
     }
 }

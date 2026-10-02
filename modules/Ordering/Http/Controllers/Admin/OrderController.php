@@ -9,10 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Brand\Http\Controllers\BrandWorkspaceHome;
-use Modules\Brand\Persistence\Models\Brand;
 use Modules\Extension\Facades\Hook;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -25,21 +22,20 @@ use Modules\Ordering\Persistence\Models\Order;
 
 final class OrderController
 {
-    public function home(BrandWorkspaceHome $home): Response|RedirectResponse
+    public function home(): RedirectResponse
     {
         Gate::authorize('orders.view');
 
-        return $home->respond('admin.orders.orders.index', 'Đơn hàng', 'Chọn brand để xem đơn hàng.');
+        return redirect()->route('admin.orders.orders.index');
     }
 
-    public function index(Brand $brand, Request $request, OrderQueries $queries): Response
+    public function index(Request $request, OrderQueries $queries): Response
     {
-        Gate::authorize('orders.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('orders.view');
         $filters = $request->only(['status', 'payment_status', 'q']);
         $page = $queries->search($filters);
 
         return Inertia::render('Ordering::Orders/Index', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.orders.orders.index'),
             'filters' => ['status' => $filters['status'] ?? '', 'payment_status' => $filters['payment_status'] ?? '', 'q' => $filters['q'] ?? ''],
             'statuses' => array_column(OrderStatus::cases(), 'value'),
@@ -60,45 +56,44 @@ final class OrderController
         ]);
     }
 
-    public function show(Brand $brand, Order $order, OrderQueries $queries): Response
+    public function show(Order $order, OrderQueries $queries): Response
     {
-        Gate::authorize('orders.view', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('orders.view');
         $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
-        $canManage = Gate::allows('orders.manage', [ScopeRef::brand($brand->id)]);
+        $canManage = Gate::allows('orders.manage');
 
         return Inertia::render('Ordering::Orders/Show', [
-            'brand' => ['name' => $brand->name, 'slug' => $brand->slug],
             'baseUrl' => route('admin.orders.orders.index'),
             'order' => (array) $detail,
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
-                'cancel' => Gate::allows('orders.cancel', [ScopeRef::brand($brand->id)]) && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status),
+                'cancel' => Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status),
                 'change_address' => $canManage && OrderPolicy::canChangeAddress($order->order_status, (string) $order->fulfillment_status),
                 'note' => $canManage,
             ],
         ]);
     }
 
-    public function confirm(Brand $brand, Order $order, Request $request, OrderCommands $commands): RedirectResponse
+    public function confirm(Order $order, Request $request, OrderCommands $commands): RedirectResponse
     {
-        Gate::authorize('orders.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('orders.manage');
         $data = $request->validate(['reason' => ['nullable', 'string', 'max:255']]);
         $commands->confirm($order->id, 'staff_confirmed'.(isset($data['reason']) ? ": {$data['reason']}" : ''));
 
         return back()->with('success', __('ordering::messages.confirmed'));
     }
 
-    public function cancel(Brand $brand, Order $order, Request $request, OrderCommands $commands): RedirectResponse
+    public function cancel(Order $order, Request $request, OrderCommands $commands): RedirectResponse
     {
-        Gate::authorize('orders.cancel', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('orders.cancel');
         $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
         $commands->cancel($order->id, $data['reason'], 'staff');
 
         return back()->with('success', __('ordering::messages.cancelled'));
     }
 
-    public function updateAddress(Brand $brand, Order $order, ShippingAddressRequest $request, OrderCommands $commands): RedirectResponse
+    public function updateAddress(Order $order, ShippingAddressRequest $request, OrderCommands $commands): RedirectResponse
     {
         $address = $request->safe()->only(['province_code', 'province_name', 'ward_code', 'ward_name', 'street_line']);
         $commands->changeShippingAddress($order->id, $address, (string) $request->validated('reason'), (int) $request->validated('lock_version'));
@@ -106,9 +101,9 @@ final class OrderController
         return back()->with('success', __('ordering::messages.address_changed'));
     }
 
-    public function addNote(Brand $brand, Order $order, Request $request, OrderCommands $commands): RedirectResponse
+    public function addNote(Order $order, Request $request, OrderCommands $commands): RedirectResponse
     {
-        Gate::authorize('orders.manage', [ScopeRef::brand($brand->id)]);
+        Gate::authorize('orders.manage');
         $data = $request->validate(['note' => ['required', 'string', 'max:1000']]);
         $commands->addNote($order->id, $data['note']);
 

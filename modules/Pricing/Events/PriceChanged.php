@@ -16,7 +16,6 @@ final readonly class PriceChanged implements ShouldDispatchAfterCommit
      */
     public function __construct(
         public int $priceListId,
-        public int $brandId,
         public array $variantIds,
     ) {}
 }

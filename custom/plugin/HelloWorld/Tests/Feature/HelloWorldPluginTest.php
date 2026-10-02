@@ -1,9 +1,8 @@
 <?php
 
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Brand\Persistence\Models\Brand;
+use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -12,13 +11,12 @@ use Plugin\HelloWorld\HelloWorldServiceProvider;
 /**
  * Plugin thật, cài/bật qua PluginManager rồi nạp provider như lúc boot.
  */
-function installHelloWorld(string $scopeType = 'owner', ?int $scopeId = null): void
+function installHelloWorld(): void
 {
-    $context = app(CurrentContext::class);
-    $context->runAs(ContextScope::system('test'), function () use ($scopeType, $scopeId) {
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
         $plugins = app(PluginManager::class);
         $plugins->install('vani.hello-world');
-        $plugins->enable('vani.hello-world', $scopeType, $scopeId);
+        $plugins->enable('vani.hello-world');
     });
 
     app()->register(HelloWorldServiceProvider::class);
@@ -48,14 +46,12 @@ it('ẩn menu và chặn trang khi nhân viên thiếu quyền', function () {
     $this->actingAs($staff, 'staff')->get('/admin/plugins/vani-hello-world')->assertForbidden();
 });
 
-it('chỉ hoạt động với nhân viên thuộc brand được bật', function () {
-    [$lumiere, $urbanx] = Brand::factory()->count(2)->create();
-    installHelloWorld('brand', $lumiere->id);
+it('plugin bị tắt → trang trả 404, không còn card', function () {
+    installHelloWorld();
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));
+    app(PluginActivation::class)->flush();
+    $staff = StaffUser::factory()->withPermissions(['admin.access', 'hello-world.view'])->create();
 
-    $inScope = StaffUser::factory()->withPermissions(['admin.access', 'hello-world.view'], ScopeType::Brand, $lumiere->id)->create();
-    $outOfScope = StaffUser::factory()->withPermissions(['admin.access', 'hello-world.view'], ScopeType::Brand, $urbanx->id)->create();
-
-    $this->actingAs($inScope, 'staff')->get('/admin/plugins/vani-hello-world')->assertOk();
-    $this->actingAs($outOfScope, 'staff')->get('/admin/plugins/vani-hello-world')->assertNotFound();
-    $this->actingAs($outOfScope, 'staff')->get('/admin')->assertInertia(fn (Assert $page) => $page->where('cards', []));
+    $this->actingAs($staff, 'staff')->get('/admin/plugins/vani-hello-world')->assertNotFound();
+    $this->actingAs($staff, 'staff')->get('/admin')->assertInertia(fn (Assert $page) => $page->where('cards', []));
 });

@@ -13,7 +13,6 @@ return new class extends Migration
             $table->id();
             $table->char('public_id', 26)->unique();
             $table->foreignId('order_id')->constrained()->restrictOnDelete();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->foreignId('location_id')->constrained()->restrictOnDelete();
             $table->string('carrier_code', 64);
             $table->string('service_code', 64)->nullable();
@@ -31,7 +30,7 @@ return new class extends Migration
 
             // Unique khi có mã vận đơn (NULL không vi phạm unique ở MySQL/SQLite).
             $table->unique(['carrier_code', 'tracking_number']);
-            $table->index(['brand_id', 'status']);
+            $table->index('status');
             $table->index(['status', 'delivered_at']);
         });
 

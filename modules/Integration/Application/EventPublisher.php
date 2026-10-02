@@ -18,7 +18,7 @@ use Modules\Integration\Persistence\Models\WebhookSubscription;
  * Ghi event feed + fan-out outbox trong MỘT transaction: có event thì chắc chắn có message cho mọi bên đăng ký.
  *
  * Subscription đang `paused` không nhận message mới — đối tác bắt kịp qua `GET /events?after=` rồi
- * được bật lại. Client chỉ nhận event thuộc data scope (brand) của mình.
+ * được bật lại.
  */
 final class EventPublisher implements IntegrationEvents
 {
@@ -31,7 +31,6 @@ final class EventPublisher implements IntegrationEvents
                 'event_id' => (string) Str::uuid(),
                 'event_type' => $event->type,
                 'schema_version' => $event->schemaVersion,
-                'brand_id' => $event->brandId,
                 'aggregate_type' => $event->aggregateType,
                 'aggregate_id' => $event->aggregateId,
                 'payload' => $event->data,
@@ -43,7 +42,7 @@ final class EventPublisher implements IntegrationEvents
             foreach ($this->subscriptions($event) as $subscription) {
                 $targets[] = $subscription->target();
             }
-            foreach ($this->registry->connectors($event->brandId) as $connector) {
+            foreach ($this->registry->connectors() as $connector) {
                 if ($connector->supports($event->type)) {
                     $targets[] = $connector->system();
                 }
@@ -57,7 +56,6 @@ final class EventPublisher implements IntegrationEvents
                     'target' => $target,
                     'message_type' => $event->type,
                     'schema_version' => $event->schemaVersion,
-                    'brand_id' => $event->brandId,
                     'aggregate_type' => $event->aggregateType,
                     'aggregate_id' => $event->aggregateId,
                     'payload' => $envelope,
@@ -81,7 +79,6 @@ final class EventPublisher implements IntegrationEvents
             ->where('status', 'active')
             ->get()
             ->filter(fn (WebhookSubscription $subscription): bool => $subscription->client->isActive()
-                && $subscription->client->allowsBrand($event->brandId)
                 && $subscription->wants($event->type))
             ->values()
             ->all();

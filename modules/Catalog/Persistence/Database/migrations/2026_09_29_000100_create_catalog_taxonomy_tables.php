@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->restrictOnDelete();
             $table->string('slug', 128);
             // Materialized path các id tổ tiên + chính nó: "/12/57/" — truy vấn cây con bằng LIKE "/12/%".
@@ -21,9 +20,9 @@ return new class extends Migration
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
 
-            $table->unique(['brand_id', 'slug']);
-            $table->index(['brand_id', 'parent_id', 'position']);
-            $table->index(['brand_id', 'path']);
+            $table->unique('slug');
+            $table->index(['parent_id', 'position']);
+            $table->index('path');
         });
 
         Schema::create('category_translations', function (Blueprint $table) {
@@ -39,7 +38,6 @@ return new class extends Migration
 
         Schema::create('attributes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('code', 64);
             $table->string('kind', 16);           // spec | internal
             $table->string('input_type', 16);     // select | multiselect | text | boolean
@@ -47,7 +45,7 @@ return new class extends Migration
             $table->unsignedInteger('position')->default(0);
             $table->unsignedInteger('lock_version')->default(0);
             $table->timestamps();
-            $table->unique(['brand_id', 'code']);
+            $table->unique('code');
         });
 
         Schema::create('attribute_translations', function (Blueprint $table) {
@@ -77,14 +75,13 @@ return new class extends Migration
 
         Schema::create('colors', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('code', 32);
             $table->string('color_family', 16);
             $table->char('hex', 7)->nullable();
             $table->unsignedInteger('position')->default(0);
             $table->timestamps();
-            $table->unique(['brand_id', 'code']);
-            $table->index(['brand_id', 'color_family']);
+            $table->unique('code');
+            $table->index('color_family');
         });
 
         Schema::create('color_translations', function (Blueprint $table) {
@@ -97,13 +94,12 @@ return new class extends Migration
 
         Schema::create('sizes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brand_id')->constrained()->restrictOnDelete();
             $table->string('size_system', 16);    // alpha | numeric | vn | us | eu | one
             $table->string('code', 16);
             $table->unsignedInteger('sort_order');
             $table->timestamps();
-            $table->unique(['brand_id', 'size_system', 'code']);
-            $table->index(['brand_id', 'size_system', 'sort_order']);
+            $table->unique(['size_system', 'code']);
+            $table->index(['size_system', 'sort_order']);
         });
     }
 

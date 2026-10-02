@@ -8,13 +8,11 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Fulfillment\Domain\ShipmentStatus;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 
 /**
  * @property int $id
  * @property string $public_id
  * @property int $order_id
- * @property int $brand_id
  * @property int $location_id
  * @property string $carrier_code
  * @property string|null $service_code
@@ -28,14 +26,12 @@ use Modules\Shared\Persistence\Concerns\BelongsToBrand;
  */
 final class Shipment extends Model
 {
-    use BelongsToBrand;
-
     protected $guarded = ['id'];
 
     protected function casts(): array
     {
         return [
-            'order_id' => 'integer', 'brand_id' => 'integer', 'location_id' => 'integer', 'cod_amount' => 'integer', 'status' => ShipmentStatus::class,
+            'order_id' => 'integer', 'location_id' => 'integer', 'cod_amount' => 'integer', 'status' => ShipmentStatus::class,
             'booking_attempts' => 'integer', 'lock_version' => 'integer', 'shipped_at' => 'immutable_datetime', 'delivered_at' => 'immutable_datetime',
         ];
     }

@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('status', 16)->default('active'); // active | suspended
             $table->json('scopes');                          // ["orders:read", "inventory:write", …]
-            $table->json('brand_ids')->nullable();           // data scope; null = mọi brand
             $table->json('ip_allowlist')->nullable();
             $table->unsignedInteger('rate_limit')->default(600); // request/phút
             $table->timestamps();
@@ -52,14 +51,12 @@ return new class extends Migration
             $table->uuid('event_id')->unique();
             $table->string('event_type', 64);
             $table->string('schema_version', 16);
-            $table->unsignedBigInteger('brand_id')->nullable();
             $table->string('aggregate_type', 32);
             $table->string('aggregate_id', 64);
             $table->json('payload');
             $table->string('correlation_id', 64)->nullable();
             $table->timestamp('occurred_at');
 
-            $table->index(['brand_id', 'id']);
             $table->index(['event_type', 'id']);
         });
 
@@ -70,7 +67,6 @@ return new class extends Migration
             $table->string('target', 96);                    // webhook:<subscription id> | mã connector
             $table->string('message_type', 64);
             $table->string('schema_version', 16);
-            $table->unsignedBigInteger('brand_id')->nullable();
             $table->string('aggregate_type', 32);
             $table->string('aggregate_id', 64);
             $table->json('payload');

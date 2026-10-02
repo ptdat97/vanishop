@@ -19,7 +19,6 @@ final readonly class ShipmentData
     public function __construct(
         public string $publicId,
         public string $orderNumber,
-        public int $brandId,
         public int $locationId,
         public ?string $serviceCode,
         public array $items,

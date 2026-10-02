@@ -12,15 +12,12 @@ type Field = {
     is_set: boolean;
     value: unknown;
     effective: unknown;
-    inherited: unknown;
 };
 
 const props = defineProps<{
     baseUrl: string;
     namespaces: string[];
     namespace: string;
-    scope: string;
-    scopes: Array<{ value: string; label: string }>;
     fields: Field[];
 }>();
 
@@ -31,13 +28,12 @@ const toInput = (field: Field): string => {
 };
 const form = useForm({
     namespace: props.namespace,
-    scope: props.scope,
     values: Object.fromEntries(props.fields.map((field) => [field.key, toInput(field)])) as Record<string, string>,
 });
 const display = (value: unknown): string => (value === null || value === undefined || value === '' ? '—' : String(value));
 
-function go(changes: { namespace?: string; scope?: string }): void {
-    router.get(props.baseUrl, { namespace: props.namespace, scope: props.scope, ...changes });
+function go(changes: { namespace?: string }): void {
+    router.get(props.baseUrl, { namespace: props.namespace, ...changes });
 }
 
 function submit(): void {
@@ -49,15 +45,12 @@ function submit(): void {
     <Head title="Cấu hình" />
     <PageHeader
         title="Cấu hình"
-        subtitle="Giá trị ở phạm vi cụ thể hơn (kênh → brand) ghi đè phạm vi Owner. Để trống = dùng giá trị kế thừa. Secret không hiển thị lại."
+        subtitle="Cấu hình của cửa hàng. Để trống = dùng giá trị mặc định. Secret không hiển thị lại."
     />
 
     <div class="mb-4 flex flex-wrap gap-2">
         <select :class="[inputClass, 'w-64']" :value="namespace" @change="go({ namespace: ($event.target as HTMLSelectElement).value })">
             <option v-for="item in namespaces" :key="item" :value="item">{{ item === 'core' ? 'Core' : `Plugin ${item}` }}</option>
-        </select>
-        <select :class="[inputClass, 'w-72']" :value="scope" @change="go({ scope: ($event.target as HTMLSelectElement).value })">
-            <option v-for="item in scopes" :key="item.value" :value="item.value">{{ item.label }}</option>
         </select>
     </div>
 
@@ -70,30 +63,29 @@ function submit(): void {
             </div>
             <div>
                 <select v-if="field.type === 'select' || field.type === 'bool'" v-model="form.values[field.key]" :class="inputClass">
-                    <option value="">(kế thừa)</option>
+                    <option value="">(mặc định)</option>
                     <template v-if="field.type === 'bool'">
                         <option value="1">Có</option>
                         <option value="0">Không</option>
                     </template>
                     <option v-for="(label, code) in field.options" v-else :key="code" :value="code">{{ label }}</option>
                 </select>
-                <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" placeholder="(kế thừa)" />
+                <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" placeholder="(mặc định)" />
                 <input
                     v-else
                     v-model="form.values[field.key]"
                     :type="field.type === 'secret' ? 'password' : field.type === 'int' ? 'number' : 'text'"
                     :class="inputClass"
-                    :placeholder="field.type === 'secret' ? (field.is_set ? 'Đã đặt — để trống để giữ nguyên' : 'Chưa đặt') : '(kế thừa)'"
+                    :placeholder="field.type === 'secret' ? (field.is_set ? 'Đã đặt — để trống để giữ nguyên' : 'Chưa đặt') : '(mặc định)'"
                     autocomplete="off"
                 />
                 <p v-if="form.errors[`values.${field.key}`]" class="text-xs text-red-600">{{ form.errors[`values.${field.key}`] }}</p>
             </div>
             <div v-if="field.type !== 'secret'" class="text-xs text-slate-500">
                 Hiệu lực: <strong>{{ display(field.effective) }}</strong>
-                <span v-if="scope !== 'owner'"> · Owner: {{ display(field.inherited) }}</span>
             </div>
         </div>
-        <p v-if="!fields.length" class="text-slate-500">Không có cấu hình nào đặt được ở phạm vi này.</p>
+        <p v-if="!fields.length" class="text-slate-500">Không có cấu hình nào.</p>
         <button v-if="fields.length" type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
     </form>
 </template>

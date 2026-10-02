@@ -10,11 +10,8 @@ return [
     'api_key' => env('ESMS_API_KEY', ''),
     'secret_key' => env('ESMS_SECRET_KEY', ''),
 
-    // Brandname mặc định và brandname riêng theo mã brand (mỗi brand đăng ký brandname riêng với nhà mạng).
+    // Brandname mặc định (đổi trong Admin → Cấu hình).
     'brandname' => env('ESMS_BRANDNAME', ''),
-    'brandnames' => [
-        // 'LU' => 'LUMIERE',
-    ],
 
     // 1 = sandbox của eSMS (không gửi thật, không trừ tiền).
     'sandbox' => (bool) env('ESMS_SANDBOX', false),

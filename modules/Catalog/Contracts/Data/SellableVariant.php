@@ -11,7 +11,7 @@ final readonly class SellableVariant
 {
     public function __construct(
         public int $id,
-        public int $brandId,
+        public ?int $brandId,
         public int $styleId,
         public string $sku,
         public string $slug,
@@ -20,5 +20,6 @@ final readonly class SellableVariant
         public ?string $colorName,
         public string $sizeCode,
         public ?string $imageUrl,
+        public ?string $brandName = null,
     ) {}
 }

@@ -23,10 +23,10 @@ use Modules\Shared\Domain\Money\Money;
 final class VietQrGateway implements PaymentGateway
 {
     /**
-     * @param  array<string, array{bank_id: string, account_no: string, template?: string, account_name?: string}>  $accounts  theo legal_entity_id, fallback "default"
+     * @param  array{bank_id?: string, account_no?: string, template?: string, account_name?: string}  $account  tài khoản nhận tiền của cửa hàng
      */
     public function __construct(
-        private readonly array $accounts = [],
+        private readonly array $account = [],
         private readonly string $secret = 'vietqr-default-secret',
         private readonly int $ttlSeconds = 900,
     ) {}
@@ -55,12 +55,12 @@ final class VietQrGateway implements PaymentGateway
 
     public function isAvailable(PaymentContext $context): bool
     {
-        return $this->account($context->legalEntityId) !== null;
+        return $this->account() !== null;
     }
 
     public function initiate(PaymentData $payment): PaymentInitiation
     {
-        $account = $this->account($payment->legalEntityId) ?? [
+        $account = $this->account() ?? [
             'bank_id' => '970436', // Vietcombank bin
             'account_no' => '0123456789',
             'template' => 'compact2',
@@ -163,10 +163,8 @@ final class VietQrGateway implements PaymentGateway
     /**
      * @return array{bank_id: string, account_no: string, template?: string, account_name?: string}|null
      */
-    private function account(int $legalEntityId): ?array
+    private function account(): ?array
     {
-        $account = $this->accounts[(string) $legalEntityId] ?? $this->accounts['default'] ?? null;
-
-        return $account === null || ($account['account_no'] ?? '') === '' ? null : $account;
+        return ($this->account['account_no'] ?? '') === '' ? null : $this->account;
     }
 }

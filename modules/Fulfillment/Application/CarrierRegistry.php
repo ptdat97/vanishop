@@ -7,7 +7,6 @@ namespace Modules\Fulfillment\Application;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
 use Modules\Fulfillment\Contracts\SourcingStrategy;
-use Modules\Tenancy\Contracts\Data\SettingsScope;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -16,9 +15,6 @@ use Modules\Tenancy\Contracts\Settings;
 final class CarrierRegistry
 {
     public const CARRIERS_TAG = ShippingCarrier::CARRIERS_TAG;
-
-    /** @deprecated dùng {@see SourcingStrategy::TAG} (public API). */
-    public const SOURCING_TAG = SourcingStrategy::TAG;
 
     public function __construct(
         private readonly Extensions $extensions,
@@ -39,12 +35,12 @@ final class CarrierRegistry
     }
 
     /**
-     * Sourcing theo cấu hình `core.fulfillment.sourcing` của brand (mặc định VANI_FULFILLMENT_SOURCING).
+     * Sourcing theo cấu hình `core.fulfillment.sourcing` của cửa hàng (mặc định VANI_FULFILLMENT_SOURCING).
      */
-    public function sourcing(int $brandId): ?SourcingStrategy
+    public function sourcing(): ?SourcingStrategy
     {
         $default = (string) config('vanishop.fulfillment.sourcing', 'reserved_locations');
-        $code = (string) $this->settings->get('core', 'fulfillment.sourcing', SettingsScope::brand($brandId), $default);
+        $code = (string) $this->settings->get('core', 'fulfillment.sourcing', $default);
         $strategy = $this->extensions->select(SourcingStrategy::TAG, $code, $default);
 
         return $strategy instanceof SourcingStrategy ? $strategy : null;

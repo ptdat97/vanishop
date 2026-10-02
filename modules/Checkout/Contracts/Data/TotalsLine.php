@@ -14,7 +14,7 @@ final readonly class TotalsLine
     public function __construct(
         public int $key,
         public int $variantId,
-        public int $brandId,
+        public ?int $brandId,
         public int $styleId,
         public string $sku,
         public string $name,
@@ -28,6 +28,7 @@ final readonly class TotalsLine
         public Money $discount,
         public int $taxRateBp = 0,
         public ?Money $tax = null,
+        public ?string $brandName = null,
     ) {}
 
     public function total(): Money
@@ -38,12 +39,12 @@ final readonly class TotalsLine
     public function withDiscount(Money $discount): self
     {
         return new self($this->key, $this->variantId, $this->brandId, $this->styleId, $this->sku, $this->name, $this->colorName, $this->sizeCode,
-            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $discount, $this->taxRateBp, $this->tax);
+            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $discount, $this->taxRateBp, $this->tax, $this->brandName);
     }
 
     public function withTax(int $rateBp, Money $tax): self
     {
         return new self($this->key, $this->variantId, $this->brandId, $this->styleId, $this->sku, $this->name, $this->colorName, $this->sizeCode,
-            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $this->discount, $rateBp, $tax);
+            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $this->discount, $rateBp, $tax, $this->brandName);
     }
 }

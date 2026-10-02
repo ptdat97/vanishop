@@ -32,17 +32,15 @@ final class PromotionEvaluator implements PromotionEngine
 
     public function evaluate(PromotionContext $context): PromotionResult
     {
-        $brandIds = array_values(array_unique(array_map(fn ($line) => $line->brandId, $context->lines)));
-        if ($brandIds === []) {
+        if ($context->lines === []) {
             return new PromotionResult([], array_map(fn (string $code) => new VoucherRejection($code, 'not_applicable'), $context->voucherCodes));
         }
 
-        [$voucherByPromotion, $rejected] = $this->vouchers($context, $brandIds);
+        [$voucherByPromotion, $rejected] = $this->vouchers($context);
 
         /** @var Collection<int, Promotion> $candidates */
         $candidates = Promotion::query()
             ->with('rules')
-            ->whereIn('brand_id', $brandIds)
             ->where('status', 'active')
             ->where(fn ($query) => $query->where('requires_voucher', false)->orWhereIn('id', array_keys($voucherByPromotion)))
             ->orderByDesc('priority')->orderBy('id')
@@ -156,10 +154,9 @@ final class PromotionEvaluator implements PromotionEngine
     }
 
     /**
-     * @param  list<int>  $brandIds
      * @return array{0: array<int, Voucher>, 1: list<VoucherRejection>}
      */
-    private function vouchers(PromotionContext $context, array $brandIds): array
+    private function vouchers(PromotionContext $context): array
     {
         $codes = array_values(array_unique(array_filter(array_map(Voucher::normalize(...), $context->voucherCodes))));
         if ($codes === []) {
@@ -172,10 +169,10 @@ final class PromotionEvaluator implements PromotionEngine
 
         foreach ($codes as $code) {
             $voucher = $vouchers->get($code);
-            $promotion = $voucher?->promotion; // BelongsToBrand: promotion ngoài phạm vi kênh → null
+            $promotion = $voucher?->promotion;
 
             $reason = match (true) {
-                $voucher === null, $promotion === null, ! in_array($promotion->brand_id, $brandIds, true) => 'not_found',
+                $voucher === null, $promotion === null => 'not_found',
                 $voucher->status !== 'active', ! $promotion->isRunningAt($context->now) => 'not_active',
                 $voucher->expires_at !== null && $voucher->expires_at->getTimestamp() <= $context->now => 'expired',
                 ($voucher->usage_limit !== null && $voucher->used_count >= $voucher->usage_limit) || $this->exhausted($promotion) => 'exhausted',
@@ -200,14 +197,11 @@ final class PromotionEvaluator implements PromotionEngine
     }
 
     /**
-     * Dòng của brand khuyến mãi, lọc qua mọi rule. null = có rule thuộc plugin không còn bật (bỏ qua khuyến mãi).
+     * Mọi dòng của giỏ, lọc qua mọi rule. null = có rule thuộc plugin không còn bật (bỏ qua khuyến mãi).
      */
     private function eligibility(Promotion $promotion, PromotionContext $context): ?Eligibility
     {
-        $eligibility = new Eligibility(array_values(array_map(
-            fn ($line): int => $line->key,
-            array_filter($context->lines, fn ($line): bool => $line->brandId === $promotion->brand_id),
-        )));
+        $eligibility = new Eligibility(array_values(array_map(fn ($line): int => $line->key, $context->lines)));
 
         foreach ($promotion->rules as $record) {
             $rule = $this->registry->rule($record->rule_type);

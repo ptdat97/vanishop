@@ -32,6 +32,8 @@ final readonly class CheckoutRequest
          * @var array<string, array<string, scalar|null>>
          */
         public array $extra = [],
+        /** Nguồn đơn: web | app | zalo | admin (báo cáo). */
+        public string $source = 'web',
     ) {}
 
     /**

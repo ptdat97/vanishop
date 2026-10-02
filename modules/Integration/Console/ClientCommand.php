@@ -18,7 +18,6 @@ final class ClientCommand extends Command
         {code : Mã client (vd. erp-main) — cũng là giá trị stock_authority của location do client quản lý}
         {--name= : Tên hiển thị}
         {--scope=* : Scope (orders:read, orders:write, inventory:write, events:read)}
-        {--brand=* : Brand id trong data scope (bỏ trống = mọi brand)}
         {--ip=* : IP/CIDR được phép (bỏ trống = không giới hạn)}
         {--rate-limit=600 : Request/phút}
         {--suspend : Tạm dừng client}
@@ -33,7 +32,6 @@ final class ClientCommand extends Command
             $client = $provisioning->upsert((string) $this->argument('code'), [
                 'name' => $this->option('name') ?: null,
                 'scopes' => (array) $this->option('scope'),
-                'brand_ids' => array_map('intval', (array) $this->option('brand')),
                 'ip_allowlist' => (array) $this->option('ip'),
                 'rate_limit' => (int) $this->option('rate-limit'),
                 'status' => $this->option('suspend') ? 'suspended' : null,

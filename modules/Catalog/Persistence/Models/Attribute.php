@@ -10,12 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Domain\AttributeKind;
 use Modules\Catalog\Persistence\Database\Factories\AttributeFactory;
-use Modules\Shared\Persistence\Concerns\BelongsToBrand;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
  * @property int $id
- * @property int $brand_id
  * @property string $code
  * @property AttributeKind $kind
  * @property AttributeInputType $input_type
@@ -25,14 +23,12 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  */
 final class Attribute extends Model
 {
-    use BelongsToBrand;
-
     /** @use HasFactory<AttributeFactory> */
     use HasFactory;
 
     use HasTranslations;
 
-    protected $fillable = ['brand_id', 'code', 'kind', 'input_type', 'is_filterable', 'position', 'lock_version'];
+    protected $fillable = ['code', 'kind', 'input_type', 'is_filterable', 'position', 'lock_version'];
 
     protected function casts(): array
     {

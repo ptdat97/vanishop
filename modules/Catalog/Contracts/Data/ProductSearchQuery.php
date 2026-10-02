@@ -17,7 +17,7 @@ final readonly class ProductSearchQuery
     public const MAX_PER_PAGE = 60;
 
     /**
-     * @param  list<int>  $brandIds
+     * @param  list<int>  $brandIds  lọc theo thương hiệu (rỗng = mọi brand)
      * @param  list<string>  $colorFamilies
      * @param  array<int, list<int>>  $attributeValueIds  attribute id => value ids
      */

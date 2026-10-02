@@ -17,7 +17,6 @@ final readonly class OrderCancelled implements ShouldDispatchAfterCommit
     public function __construct(
         public int $orderId,
         public string $publicId,
-        public int $brandId,
         public string $reservationKey,
         public string $reason,
         public string $source,

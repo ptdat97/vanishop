@@ -10,7 +10,7 @@ return [
         'visibility' => 'public',
         'since' => '0.1',
         'args' => ['request' => 'Modules\\Checkout\\Contracts\\Data\\CheckoutRequest'],
-        'description' => 'Kiểm tra bổ sung trước validator Core (chống bom hàng, quy tắc riêng brand). Trả list<string> lỗi. Chạy trong transaction đặt hàng, không I/O mạng.',
+        'description' => 'Kiểm tra bổ sung trước validator Core (chống bom hàng, quy tắc riêng của cửa hàng). Trả list<string> lỗi. Chạy trong transaction đặt hàng, không I/O mạng.',
     ],
     'vani.checkout.after_validate' => [
         'type' => 'validate',

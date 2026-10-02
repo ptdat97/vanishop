@@ -7,7 +7,7 @@ namespace Modules\Shared\Context;
 use Closure;
 
 /**
- * Phạm vi (actor, channel, brand, locale) của request/job hiện tại.
+ * Phạm vi (actor, locale) của request/job hiện tại.
  * Được đăng ký dạng scoped: mỗi request/job có một instance riêng.
  */
 final class CurrentContext
@@ -34,17 +34,9 @@ final class CurrentContext
         return $this->scope()->actor;
     }
 
-    public function channelId(): ?int
+    public function locale(): ?string
     {
-        return $this->scope()->channelId;
-    }
-
-    /**
-     * @return list<int>|null null = không giới hạn brand
-     */
-    public function brandIds(): ?array
-    {
-        return $this->scope()->brandIds;
+        return $this->scope()->locale;
     }
 
     /**

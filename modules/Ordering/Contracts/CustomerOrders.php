@@ -7,7 +7,7 @@ namespace Modules\Ordering\Contracts;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 
 /**
- * Service contract cho khách (không cần tài khoản), trong phạm vi brand của kênh:
+ * Service contract cho khách (không cần tài khoản):
  * - track: số đơn + SĐT → thông tin rút gọn (địa chỉ/liên hệ bị che)
  * - show/cancel: id đơn + access token trả về lúc đặt
  */
@@ -23,7 +23,7 @@ interface CustomerOrders
     public function cancel(string $publicId, string $accessToken, string $reason): OrderDetail;
 
     /**
-     * Đơn của khách hàng đã đăng nhập (mới nhất trước), trong phạm vi brand của CurrentContext.
+     * Đơn của khách hàng đã đăng nhập (mới nhất trước).
      *
      * @return array{data: list<OrderDetail>, total: int}
      */
