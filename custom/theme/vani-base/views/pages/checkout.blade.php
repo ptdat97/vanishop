@@ -25,13 +25,42 @@
 
             <fieldset class="space-y-3">
                 <legend class="mb-2 font-semibold">Địa chỉ nhận hàng</legend>
-                @foreach ([['shipping_address.province_name', 'shipping_address[province_name]', 'Tỉnh/Thành phố'], ['shipping_address.ward_name', 'shipping_address[ward_name]', 'Phường/Xã'], ['shipping_address.street_line', 'shipping_address[street_line]', 'Số nhà, đường']] as [$key, $name, $label])
+                @if ($provinces !== null)
                     <div>
-                        <label for="{{ $key }}" class="block text-sm">{{ $label }}</label>
-                        <input id="{{ $key }}" name="{{ $name }}" type="text" value="{{ old($key) }}" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
-                        @error($key)<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                        <label for="province_code" class="block text-sm">Tỉnh/Thành phố</label>
+                        <select id="province_code" name="shipping_address[province_code]" data-province-select data-wards-url="{{ url('/api/storefront/v1/address/provinces') }}" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                            <option value="">— Chọn tỉnh/thành —</option>
+                            @foreach ($provinces as $province)
+                                <option value="{{ $province['code'] }}" @selected(old('shipping_address.province_code') === $province['code'])>{{ $province['name'] }}</option>
+                            @endforeach
+                        </select>
+                        @error('shipping_address.province_code')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
-                @endforeach
+                    <div>
+                        <label for="ward_code" class="block text-sm">Phường/Xã</label>
+                        <select id="ward_code" name="shipping_address[ward_code]" data-ward-select class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                            <option value="">{{ $wards === [] ? '— Chọn tỉnh/thành trước —' : '— Chọn phường/xã —' }}</option>
+                            @foreach ($wards as $ward)
+                                <option value="{{ $ward['code'] }}" @selected(old('shipping_address.ward_code') === $ward['code'])>{{ $ward['name'] }}</option>
+                            @endforeach
+                        </select>
+                        <noscript><button type="submit" name="action" value="quote" class="mt-1 text-sm underline">Tải danh sách phường/xã</button></noscript>
+                        @error('shipping_address.ward_code')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="shipping_address.street_line" class="block text-sm">Số nhà, đường</label>
+                        <input id="shipping_address.street_line" name="shipping_address[street_line]" type="text" value="{{ old('shipping_address.street_line') }}" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                        @error('shipping_address.street_line')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                @else
+                    @foreach ([['shipping_address.province_name', 'shipping_address[province_name]', 'Tỉnh/Thành phố'], ['shipping_address.ward_name', 'shipping_address[ward_name]', 'Phường/Xã'], ['shipping_address.street_line', 'shipping_address[street_line]', 'Số nhà, đường']] as [$key, $name, $label])
+                        <div>
+                            <label for="{{ $key }}" class="block text-sm">{{ $label }}</label>
+                            <input id="{{ $key }}" name="{{ $name }}" type="text" value="{{ old($key) }}" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                            @error($key)<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    @endforeach
+                @endif
             </fieldset>
             <x-vani::hook-slot name="vani.storefront.checkout.address_after" :args="[$quote]" />
 

@@ -128,7 +128,7 @@ it('Admin: đổi địa chỉ trước khi giao (lưu địa chỉ cũ trong l�
 
     $event = DB::table('order_events')->where('order_id', $order->id)->where('type', 'address_changed')->first();
     expect($order->fresh()->shipping_address['province_name'])->toBe('Hà Nội')
-        ->and(json_decode($event->data, true)['from']['province_name'])->toBe('TP. Hồ Chí Minh')
+        ->and(json_decode($event->data, true)['from']['province_name'])->toBe('Thành phố Hồ Chí Minh')
         ->and(DB::table('order_events')->where('type', 'note')->exists())->toBeTrue();
 
     DB::table('orders')->where('id', $order->id)->update(['fulfillment_status' => 'shipped']);

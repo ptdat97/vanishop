@@ -152,7 +152,7 @@ it('giao dịch: lời chúc gói quà trên form thêm giỏ (native) → giỏ
 
     $this->post('/thanh-toan', [
         'contact' => ['full_name' => 'Lan', 'phone' => '0912345678'],
-        'shipping_address' => ['province_name' => 'Hà Nội', 'ward_name' => 'Hoàn Kiếm', 'street_line' => '1 Tràng Tiền'],
+        'shipping_address' => ['province_code' => '01', 'ward_code' => '10105001', 'street_line' => '1 Tràng Tiền'],
         'shipping_method' => 'standard', 'payment_method' => 'cod', 'expected_total' => 330_000, 'idempotency_key' => 'gift-order-0001',
     ]);
     $order = Order::query()->withoutGlobalScopes()->sole();

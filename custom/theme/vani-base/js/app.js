@@ -25,3 +25,26 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
 document.querySelectorAll('[data-autosubmit]').forEach((input) => {
     input.addEventListener('change', () => input.form?.requestSubmit());
 });
+
+// Checkout: chọn tỉnh → tải phường/xã từ Storefront API (không JS: nút "Tải danh sách phường/xã").
+document.querySelectorAll('[data-province-select]').forEach((province) => {
+    const ward = province.form?.querySelector('[data-ward-select]');
+    if (!ward) {
+        return;
+    }
+
+    province.addEventListener('change', async () => {
+        ward.replaceChildren(new Option('— Đang tải… —', ''));
+        if (!province.value) {
+            ward.replaceChildren(new Option('— Chọn tỉnh/thành trước —', ''));
+            return;
+        }
+        try {
+            const response = await fetch(`${province.dataset.wardsUrl}/${encodeURIComponent(province.value)}/wards`, { headers: { Accept: 'application/json' } });
+            const { data } = await response.json();
+            ward.replaceChildren(new Option('— Chọn phường/xã —', ''), ...data.map((item) => new Option(item.name, item.code)));
+        } catch {
+            ward.replaceChildren(new Option('— Không tải được, thử lại —', ''));
+        }
+    });
+});

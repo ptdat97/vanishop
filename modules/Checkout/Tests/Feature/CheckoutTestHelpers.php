@@ -62,7 +62,7 @@ final class CheckoutTestHelpers
     {
         return array_replace_recursive([
             'contact' => ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912 345 678', 'email' => 'Lan@Example.com'],
-            'shipping_address' => ['province_code' => '79', 'province_name' => 'TP. Hồ Chí Minh', 'ward_code' => '26734', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi'],
+            'shipping_address' => ['province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh', 'ward_code' => '70101065', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi'],
             'shipping_method' => 'standard',
             'payment_method' => 'cod',
             'voucher_codes' => [],

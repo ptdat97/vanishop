@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Storefront\Http\Controllers\Api\AccountOrderController;
+use Modules\Storefront\Http\Controllers\Api\AddressController;
 use Modules\Storefront\Http\Controllers\Api\BrandController;
 use Modules\Storefront\Http\Controllers\Api\CartController;
 use Modules\Storefront\Http\Controllers\Api\CategoryController;
@@ -16,6 +17,8 @@ Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
 Route::get('products', [ProductController::class, 'index'])->name('products.index');
 Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('address/provinces', [AddressController::class, 'provinces'])->name('address.provinces');
+Route::get('address/provinces/{province}/wards', [AddressController::class, 'wards'])->where('province', '[0-9A-Za-z_-]{1,16}')->name('address.wards');
 
 // Giỏ & checkout: dùng được khi chưa đăng nhập (token giỏ) hoặc đã đăng nhập (Bearer, giỏ của khách).
 Route::middleware('vani.customer:optional')->group(function () {

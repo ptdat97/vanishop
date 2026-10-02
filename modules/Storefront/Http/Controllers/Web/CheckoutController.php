@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutRejected;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
+use Modules\Storefront\Application\AddressOptions;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\PaymentPresenter;
@@ -26,6 +27,7 @@ final class CheckoutController
         private readonly Checkout $checkout,
         private readonly NativeCart $cart,
         private readonly CheckoutPresenter $presenter,
+        private readonly AddressOptions $addresses,
     ) {}
 
     public function show(Request $request): View|RedirectResponse
@@ -38,9 +40,15 @@ final class CheckoutController
         $old = (array) $request->old();
         $quote = $this->presenter->quote($this->checkout->quote($this->toRequest($old, $request)));
 
+        $directory = $this->addresses->directory();
+        $province = (string) ($old['shipping_address']['province_code'] ?? '');
+
         return view('theme::pages.checkout', [
             'quote' => $quote,
             'idempotencyKey' => (string) Str::ulid(),
+            // Có danh mục địa giới (plugin): chọn tỉnh/phường; không có: nhập tự do.
+            'provinces' => $directory?->provinces(),
+            'wards' => $directory === null || $province === '' ? [] : $directory->wards($province),
         ]);
     }
 
@@ -50,6 +58,8 @@ final class CheckoutController
             'contact.full_name' => ['nullable', 'string', 'max:120'],
             'contact.phone' => ['nullable', 'string', 'max:20'],
             'contact.email' => ['nullable', 'email', 'max:190'],
+            'shipping_address.province_code' => ['nullable', 'string', 'max:16'],
+            'shipping_address.ward_code' => ['nullable', 'string', 'max:16'],
             'shipping_address.province_name' => ['nullable', 'string', 'max:120'],
             'shipping_address.ward_name' => ['nullable', 'string', 'max:120'],
             'shipping_address.street_line' => ['nullable', 'string', 'max:255'],
@@ -99,8 +109,14 @@ final class CheckoutController
                 'phone' => (string) ($data['contact']['phone'] ?? ''),
                 'email' => ($data['contact']['email'] ?? '') === '' ? null : (string) $data['contact']['email'],
             ],
-            // Chưa có danh mục địa giới hành chính: mã lấy từ tên đã chuẩn hoá (thay bằng chọn tỉnh/phường khi có dữ liệu).
-            shippingAddress: [
+            // Có danh mục địa giới: form gửi mã, Core lấy tên chuẩn. Không có: nhập tên, mã lấy từ tên đã chuẩn hoá.
+            shippingAddress: $this->addresses->directory() !== null ? [
+                'province_code' => (string) ($address['province_code'] ?? ''),
+                'province_name' => '',
+                'ward_code' => (string) ($address['ward_code'] ?? ''),
+                'ward_name' => '',
+                'street_line' => (string) ($address['street_line'] ?? ''),
+            ] : [
                 'province_code' => Str::slug((string) ($address['province_name'] ?? '')),
                 'province_name' => (string) ($address['province_name'] ?? ''),
                 'ward_code' => Str::slug((string) ($address['ward_name'] ?? '')),
@@ -129,8 +145,8 @@ final class CheckoutController
             $field = $issue['field'] ?? null;
             $field = match (true) {
                 $field === null => 'business',
-                str_starts_with($field, 'shipping_address.province') => 'shipping_address.province_name',
-                str_starts_with($field, 'shipping_address.ward') => 'shipping_address.ward_name',
+                str_starts_with($field, 'shipping_address.province') => $this->addresses->directory() !== null ? 'shipping_address.province_code' : 'shipping_address.province_name',
+                str_starts_with($field, 'shipping_address.ward') => $this->addresses->directory() !== null ? 'shipping_address.ward_code' : 'shipping_address.ward_name',
                 default => $field,
             };
             $errors[$field] ??= (string) $issue['message'];

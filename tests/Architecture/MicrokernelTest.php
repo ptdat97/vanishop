@@ -49,5 +49,5 @@ it('plugin hệ thống khai báo bundled trong manifest', function () {
     }
     sort($bundled);
 
-    expect($bundled)->toBe(['vani.bank-transfer', 'vani.cod', 'vani.shipping-flat-rate', 'vani.tax-vn-vat']);
+    expect($bundled)->toBe(['vani.bank-transfer', 'vani.cod', 'vani.provinces-vn', 'vani.shipping-flat-rate', 'vani.tax-vn-vat']);
 });

@@ -7,7 +7,7 @@ use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 
-const BUNDLED = ['vani.bank-transfer', 'vani.cod', 'vani.shipping-flat-rate', 'vani.tax-vn-vat'];
+const BUNDLED = ['vani.bank-transfer', 'vani.cod', 'vani.provinces-vn', 'vani.shipping-flat-rate', 'vani.tax-vn-vat'];
 
 beforeEach(function () {
     app(CurrentContext::class)->set(ContextScope::system('test'));
@@ -26,7 +26,7 @@ it('doctor báo extension point bắt buộc thiếu implementation khi chưa c�
 
 it('vani:install cài + bật 4 plugin hệ thống, chạy lại không đổi gì; plugin đã tắt có chủ đích giữ nguyên', function () {
     $this->artisan('vani:install', ['--no-migrate' => true])
-        ->expectsOutputToContain('Đã cài + bật: vani.bank-transfer, vani.cod, vani.shipping-flat-rate, vani.tax-vn-vat.')
+        ->expectsOutputToContain('Đã cài + bật: vani.bank-transfer, vani.cod, vani.provinces-vn, vani.shipping-flat-rate, vani.tax-vn-vat.')
         ->assertSuccessful();
 
     expect(PluginRecord::query()->where('status', PluginStatus::Enabled)->orderBy('id')->pluck('id')->all())->toBe(BUNDLED)

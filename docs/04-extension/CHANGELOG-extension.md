@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.11 — 2026-10-02
+
+Địa giới hành chính Việt Nam. Chỉ thêm.
+
+### Thêm
+- `Checkout\Contracts\AddressDirectory` (tag `vani.checkout.address_directories`): có implementation → checkout kiểm tra `province_code`/`ward_code` (issue `address_invalid`), chụp tên chuẩn vào đơn; Storefront API `GET /address/provinces`, `GET /address/provinces/{code}/wards`; checkout native chọn tỉnh/phường.
+- Plugin hệ thống `vani.provinces-vn` (bundled): 34 tỉnh/thành, 3.321 phường/xã sau sắp xếp 07/2025.
+
+### Đổi hành vi
+- Khi `vani.provinces-vn` bật (mặc định sau `vani:install`), đơn bắt buộc mã tỉnh/phường hợp lệ theo danh mục mới; mã cũ (trước 07/2025) bị từ chối.
+
 ## 0.3.10 — 2026-10-02
 
 Đợt W6a của [extension-surface-v2](extension-surface-v2.md): page builder trang chủ. Chỉ thêm.

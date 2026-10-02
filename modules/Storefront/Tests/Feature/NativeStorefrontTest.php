@@ -22,7 +22,7 @@ beforeEach(function () {
     T::product($this->urbanx->id, ['name' => 'Áo thun Urbanx', 'slug' => 'ao-thun-urbanx']);
     $this->checkout = fn (array $overrides = []) => array_replace_recursive([
         'contact' => ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678', 'email' => 'lan@example.com'],
-        'shipping_address' => ['province_name' => 'TP. Hồ Chí Minh', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi'],
+        'shipping_address' => ['province_code' => '29', 'ward_code' => '70101065', 'street_line' => '12 Lê Lợi'],
         'shipping_method' => 'standard',
         'payment_method' => 'cod',
         'expected_total' => 330_000,

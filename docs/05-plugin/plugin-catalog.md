@@ -11,6 +11,7 @@ Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặ
 | Thanh toán | — | `vani.cod`, `vani.bank-transfer` |
 | Vận chuyển | Vận đơn nhập tay (`manual`) | `vani.shipping-flat-rate` (phí cố định + ngưỡng miễn phí) |
 | Thuế | `none` (dự phòng) | `vani.tax-vn-vat` (VAT giá đã gồm thuế) |
+| Địa chỉ | Nhập tự do | `vani.provinces-vn` (34 tỉnh/thành, 3.321 phường/xã — 07/2025) |
 | Phân bổ kho | `reserved_locations` | |
 | Khuyến mãi | Engine + action `percent_off`/`amount_off` + voucher. **Không có rule điều kiện** trong Core — rule đến từ plugin (`vani.promotion-rules`) | |
 | Đổi trả | `days_window` | |

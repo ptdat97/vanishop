@@ -60,6 +60,7 @@ final class CheckoutService implements Checkout
         private readonly Extensions $extensions,
         private readonly Customers $customers,
         private readonly CurrentContext $currentContext,
+        private readonly Addresses $addresses,
     ) {}
 
     public function quote(CheckoutRequest $request): CheckoutQuote
@@ -270,7 +271,9 @@ final class CheckoutService implements Checkout
                 'phone' => PhoneNumber::fromString((string) $contact['phone'])->e164,
                 'email' => $email === '' ? null : mb_strtolower($email),
             ],
-            shippingAddress: array_map(fn (mixed $value): string => trim((string) $value), (array) $request->shippingAddress),
+            // Chụp tên tỉnh/phường chuẩn theo danh mục địa giới (nếu có).
+            shippingAddress: $this->addresses->normalize(array_map(fn (mixed $value): string => trim((string) $value), (array) $request->shippingAddress))
+                ?? array_map(fn (mixed $value): string => trim((string) $value), (array) $request->shippingAddress),
             shippingMethod: ['code' => $totals->shipping?->code, 'label' => $totals->shipping?->label, 'source' => $totals->shipping?->source, 'fee' => $totals->shippingFee()->amount],
             note: $request->note === null || trim($request->note) === '' ? null : trim($request->note),
             reservationKey: $reservationKey,

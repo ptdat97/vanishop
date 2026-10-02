@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Application\Validators;
 
+use Modules\Checkout\Application\Addresses;
 use Modules\Checkout\Application\PaymentMethods;
 use Modules\Checkout\Contracts\CheckoutValidator;
 use Modules\Checkout\Contracts\Data\CheckoutIssue;
@@ -16,7 +17,10 @@ use Modules\Shared\Domain\Phone\PhoneNumber;
  */
 final class CoreCheckoutValidator implements CheckoutValidator
 {
-    public function __construct(private readonly PaymentMethods $payments) {}
+    public function __construct(
+        private readonly PaymentMethods $payments,
+        private readonly Addresses $addresses,
+    ) {}
 
     public function code(): string
     {
@@ -39,10 +43,18 @@ final class CoreCheckoutValidator implements CheckoutValidator
             $issues[] = new CheckoutIssue('phone_invalid', __('checkout::messages.phone_invalid'), 'contact.phone');
         }
 
-        foreach (['province_code', 'province_name', 'ward_code', 'ward_name', 'street_line'] as $field) {
+        // Có danh mục địa giới: chỉ cần mã tỉnh/phường (tên lấy theo danh mục) và mã phải hợp lệ, khớp nhau.
+        $directory = $this->addresses->directory();
+        $required = $directory === null ? ['province_code', 'province_name', 'ward_code', 'ward_name', 'street_line'] : ['province_code', 'ward_code', 'street_line'];
+        $missing = false;
+        foreach ($required as $field) {
             if (trim((string) ($request->shippingAddress[$field] ?? '')) === '') {
                 $issues[] = new CheckoutIssue('required', __('checkout::messages.address_required'), "shipping_address.{$field}");
+                $missing = true;
             }
+        }
+        if ($directory !== null && ! $missing && $this->addresses->normalize(array_map('strval', (array) $request->shippingAddress)) === null) {
+            $issues[] = new CheckoutIssue('address_invalid', __('checkout::messages.address_invalid'), 'shipping_address.ward_code');
         }
 
         if ($totals->shipping === null) {

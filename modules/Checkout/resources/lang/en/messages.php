@@ -7,6 +7,7 @@ return [
     'cart_not_ready' => 'Some items in the cart are out of stock or unavailable. Please update the cart.',
     'name_required' => 'Please enter the recipient name.',
     'phone_invalid' => 'The phone number is not valid.',
+    'address_invalid' => 'Invalid province or ward.',
     'address_required' => 'Please enter the full shipping address.',
     'shipping_unavailable' => 'The shipping method is not available.',
     'payment_unavailable' => 'The payment method is not available.',

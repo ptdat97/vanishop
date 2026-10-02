@@ -14,7 +14,7 @@ it('liệt kê plugin tìm thấy trong custom/plugin', function () {
             ->where('plugins', fn (iterable $plugins): bool => collect($plugins)
                 ->contains('id', 'vani.hello-world')
                 && collect($plugins)->every(fn (array $plugin): bool => $plugin['status'] === ($plugin['bundled'] ? 'enabled' : 'discovered'))
-                && collect($plugins)->where('bundled', true)->pluck('id')->sort()->values()->all() === ['vani.bank-transfer', 'vani.cod', 'vani.shipping-flat-rate', 'vani.tax-vn-vat']));
+                && collect($plugins)->where('bundled', true)->pluck('id')->sort()->values()->all() === ['vani.bank-transfer', 'vani.cod', 'vani.provinces-vn', 'vani.shipping-flat-rate', 'vani.tax-vn-vat']));
 });
 
 it('cần quyền extension.plugins.view', function () {
