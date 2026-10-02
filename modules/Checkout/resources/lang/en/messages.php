@@ -10,7 +10,6 @@ return [
     'address_required' => 'Please enter the full shipping address.',
     'shipping_unavailable' => 'The shipping method is not available.',
     'payment_unavailable' => 'The payment method is not available.',
-    'shipping_standard' => 'Standard delivery',
-    'payment_cod' => 'Cash on delivery (COD)',
+    'no_payment_method' => 'The store has no available payment method.',
     'idempotency_key_required' => 'Missing Idempotency-Key header.',
 ];

@@ -20,6 +20,7 @@ use Modules\Customer\Contracts\OtpSender;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderPlaced;
@@ -53,6 +54,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         ));
         $this->app->bind(LogOtpSender::class, fn (): LogOtpSender => new LogOtpSender((bool) config('vanishop.customer.otp.log_sender', false)));
         $this->app->make(Extensions::class)->tag([EmailOtpSender::class, LogOtpSender::class], OtpSender::TAG);
+        $this->app->make(Extensions::class)->requires(OtpSender::TAG, Requirement::AtLeastOne, 'Kênh gửi OTP');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, Router $router): void

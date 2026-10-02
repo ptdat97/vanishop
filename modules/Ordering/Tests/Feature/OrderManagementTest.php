@@ -13,7 +13,7 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
-    config(['vanishop.payment.bank_transfer.account' => ['bank' => 'VCB', 'account_number' => '0123456789', 'account_name' => 'VANI']]);
+    config(['vani.bank-transfer.account' => ['bank' => 'VCB', 'account_number' => '0123456789', 'account_name' => 'VANI']]);
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';
     $this->headers = [];
@@ -73,7 +73,7 @@ it('Admin: chi tiết đơn có panel thanh toán do module Payment cung cấp',
 });
 
 it('Admin: xác nhận đơn COD khi tắt tự xác nhận', function () {
-    config(['vanishop.payment.cod.auto_confirm' => false]);
+    config(['vani.cod.auto_confirm' => false]);
     ($this->place)();
     ($this->staff)();
     $order = ($this->order)();

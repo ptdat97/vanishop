@@ -7,6 +7,7 @@ namespace Modules\Inventory;
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Inventory\Application\AuthoritySyncService;
 use Modules\Inventory\Application\ReservationService;
@@ -37,6 +38,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->bind(InventorySync::class, AuthoritySyncService::class);
         $this->app->singleton(StandardInventoryStrategy::class);
         $this->app->make(Extensions::class)->tag([StandardInventoryStrategy::class], InventoryStrategy::TAG);
+        $this->app->make(Extensions::class)->requires(InventoryStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược tồn bán được');
         $this->app->bind(AvailabilityReader::class, fn ($app): StockAvailability => new StockAvailability(
             $app->make(Extensions::class),
             $app->make(Settings::class),

@@ -6,6 +6,7 @@ namespace Modules\Pricing;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
 use Modules\Pricing\Application\StrategyPriceResolver;
@@ -26,6 +27,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
     {
         $this->app->singleton(PriceListPriorityStrategy::class);
         $this->app->make(Extensions::class)->tag([PriceListPriorityStrategy::class], PricingStrategy::TAG);
+        $this->app->make(Extensions::class)->requires(PricingStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược chọn giá');
         $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.pricing.strategy', 'price_list_priority'),
         ));

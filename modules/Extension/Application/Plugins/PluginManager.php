@@ -27,6 +27,7 @@ final class PluginManager
         private readonly PluginActivation $activation,
         private readonly AuditLogger $audit,
         private readonly ConsoleKernel $console,
+        private readonly RequiredExtensions $required,
         private readonly string $coreVersion,
     ) {}
 
@@ -95,6 +96,11 @@ final class PluginManager
         $dependents = $this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->enabledIds());
         if ($dependents !== []) {
             throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đang được dùng bởi ".implode(', ', $dependents).'.');
+        }
+
+        $broken = $this->required->brokenWithout($pluginId, $this->enabledIds());
+        if ($broken !== []) {
+            throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đây là implementation cuối cùng của ".implode(', ', $broken).' — bật plugin thay thế trước.');
         }
 
         $record->update(['status' => PluginStatus::Disabled]);
@@ -168,6 +174,31 @@ final class PluginManager
         $this->afterStateChange();
 
         return $record->refresh();
+    }
+
+    /**
+     * Cài + bật các plugin hệ thống (`"bundled": true`) còn thiếu, theo thứ tự phụ thuộc — dùng bởi `vani:install`.
+     * Idempotent: plugin đã bật thì bỏ qua; plugin người dùng đã tắt có chủ đích **vẫn được giữ tắt**.
+     *
+     * @return array{installed: list<string>, enabled: list<string>}
+     */
+    public function installBundled(): array
+    {
+        $bundled = array_filter($this->manifests->all(), fn (PluginManifest $manifest): bool => $manifest->bundled);
+        $result = ['installed' => [], 'enabled' => []];
+
+        foreach ($this->resolver->loadOrder($bundled) as $id) {
+            if (PluginRecord::query()->whereKey($id)->exists()) {
+                continue;
+            }
+
+            $this->install($id);
+            $this->enable($id);
+            $result['installed'][] = $id;
+            $result['enabled'][] = $id;
+        }
+
+        return $result;
     }
 
     public function markFailed(string $pluginId, string $error): void

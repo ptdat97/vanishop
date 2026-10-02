@@ -25,6 +25,7 @@ use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
 
@@ -45,6 +46,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->singleton(DatabaseSearchProvider::class);
         // Meilisearch/Algolia/Elasticsearch là plugin (vani.search-meilisearch…).
         $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchProvider::TAG);
+        $this->app->make(Extensions::class)->requires(SearchProvider::TAG, Requirement::ExactlyOne, 'Tìm kiếm sản phẩm');
         $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app->make(Extensions::class), (string) config('vanishop.search.provider')));
     }
 

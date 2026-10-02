@@ -9,9 +9,7 @@ use Modules\Catalog\Testing\SearchProviderContract;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Application\Calculators\GuardCalculator;
 use Modules\Checkout\Application\Calculators\SubtotalCalculator;
-use Modules\Checkout\Application\FlatRateShipping;
-use Modules\Checkout\Application\VnVatInclusiveTax;
-use Modules\Checkout\Testing\ShippingRateProviderContract;
+use Modules\Checkout\Application\Tax\NoTax;
 use Modules\Checkout\Testing\TaxCalculatorContract;
 use Modules\Checkout\Testing\TotalsCalculatorContract;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -41,10 +39,9 @@ use Symfony\Component\Mailer\Exception\TransportException;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
-TaxCalculatorContract::define('core vn_vat_inclusive', fn () => app(VnVatInclusiveTax::class));
+TaxCalculatorContract::define('core none', fn () => app(NoTax::class));
 TotalsCalculatorContract::define('core subtotal', fn () => app(SubtotalCalculator::class), plugin: false);
 TotalsCalculatorContract::define('core guard', fn () => app(GuardCalculator::class), plugin: false);
-ShippingRateProviderContract::define('core flat_rate', fn () => app(FlatRateShipping::class));
 PromotionActionContract::define('core percent_off', fn () => new PercentOffAction, ['basis_points' => 1000], ['basis_points' => -5]);
 PromotionActionContract::define('core amount_off', fn () => new AmountOffAction, ['amount' => 50_000], ['amount' => 'abc']);
 ReturnPolicyContract::define('core days_window', fn () => app(DaysWindowPolicy::class));

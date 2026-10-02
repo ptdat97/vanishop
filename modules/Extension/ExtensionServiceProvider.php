@@ -18,7 +18,9 @@ use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginLoader;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginStateCache;
+use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
+use Modules\Extension\Console\InstallCommand;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginDoctorCommand;
 use Modules\Extension\Console\PluginEnableCommand;
@@ -75,7 +77,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
         $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(
-            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), (string) config('vanishop.version'),
+            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), (string) config('vanishop.version'),
         ));
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));
         $this->app->singleton(PluginStateCache::class, fn ($app): PluginStateCache => new PluginStateCache($app->make(Filesystem::class), (string) config('vanishop.plugins.cache')));
@@ -87,6 +89,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             $app->make(PluginActivation::class),
             $app->make(AuditLogger::class),
             $app->make(ConsoleKernel::class),
+            $app->make(RequiredExtensions::class),
             (string) config('vanishop.version'),
         ));
 
@@ -113,6 +116,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                InstallCommand::class,
                 PluginListCommand::class,
                 PluginInstallCommand::class,
                 PluginEnableCommand::class,

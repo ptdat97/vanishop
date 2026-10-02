@@ -50,7 +50,10 @@ final class CoreCheckoutValidator implements CheckoutValidator
         }
 
         $methods = array_column($this->payments->available($totals), 'code');
-        if ($request->paymentMethod === null || ! in_array($request->paymentMethod, $methods, true)) {
+        if ($methods === []) {
+            // Không cổng nào khả dụng (plugin thanh toán tắt hết / cấu hình sai): báo rõ thay vì lỗi 500 (ADR-029).
+            $issues[] = new CheckoutIssue('no_payment_method', __('checkout::messages.no_payment_method'), 'payment_method');
+        } elseif ($request->paymentMethod === null || ! in_array($request->paymentMethod, $methods, true)) {
             $issues[] = new CheckoutIssue('payment_unavailable', __('checkout::messages.payment_unavailable'), 'payment_method');
         }
 

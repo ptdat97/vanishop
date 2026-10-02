@@ -9,6 +9,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Throwable;
 
 /**
@@ -40,6 +41,9 @@ final class ScopedExtensions implements Extensions
     /**
      * @param  Closure(): PluginActivation  $activation  PluginActivation là scoped theo request/job
      */
+    /** @var array<string, array{requirement: Requirement, label: string}> */
+    private array $requirements = [];
+
     public function __construct(
         private readonly Container $container,
         private readonly Closure $activation,
@@ -156,5 +160,20 @@ final class ScopedExtensions implements Extensions
         }
 
         return null;
+    }
+
+    public function requires(string $tag, Requirement $requirement, string $label): void
+    {
+        $this->requirements[$tag] = ['requirement' => $requirement, 'label' => $label];
+    }
+
+    public function requirements(): array
+    {
+        return $this->requirements;
+    }
+
+    public function providers(string $tag): array
+    {
+        return array_values($this->contributions[$tag] ?? []);
     }
 }

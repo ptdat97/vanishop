@@ -35,7 +35,7 @@ Làm sao để mọi thay đổi nghiệp vụ (cổng, hãng, luật khuyến m
 - (+) Core ổn định, đổi nghiệp vụ = đổi/thêm plugin; Core có thể dùng cho thị trường khác mà không sửa.
 - (+) Chính các mặc định cũng chạy qua extension point → extension point luôn được kiểm chứng (R26).
 - (−) Thêm 4 plugin phải cài khi dựng hệ thống; cần cơ chế "bundled" + "required extension point" trong Extension.
-- (−) Code hiện có COD/chuyển khoản/flat rate/VAT trong module (`modules/Payment/Application/Gateways`, `modules/Checkout/Application`) → slice tách ([commerce-kernel §6](../02-architecture/commerce-kernel.md)).
+- (−) Code hiện có COD/chuyển khoản/flat rate/VAT trong module (`modules/Payment/Application/Gateways`, `modules/Checkout/Application`) → đã tách ở slice 12d (2026-10-02) ([commerce-kernel §6](../02-architecture/commerce-kernel.md)).
 
 ## Trade-offs
 Thêm chi phí đóng gói và kiểm tra phụ thuộc để đổi lấy một lõi không mang chính sách kinh doanh.

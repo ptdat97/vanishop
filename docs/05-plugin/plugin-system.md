@@ -63,10 +63,10 @@ custom/plugin/VietQr/
 | `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver) |
 | `requires.plugins` | | `{ "vani.einvoice": "^1.0" }` |
 | `conflicts` | | Danh sách plugin id không được bật cùng lúc |
-| `scopes` | | **Deprecated** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader hiện vẫn đọc |
+| `scopes` | | **Bỏ** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader bỏ qua |
 | `permissions` | | Quyền plugin cần; hiển thị khi cài |
 | `settings_schema` | | (cũ) thay bằng `settings()` trong provider |
-| `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không gỡ/tắt được nếu là implementation cuối của extension point bắt buộc. Designed |
+| `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không tắt được nếu là implementation đang bật cuối cùng của extension point bắt buộc. Implemented (`vani:install`) |
 
 ## 4. Vòng đời
 

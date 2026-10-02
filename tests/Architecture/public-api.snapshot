@@ -250,6 +250,15 @@ interface Modules\Extension\Contracts\Extensions
   call(object $implementation, callable $call, mixed $fallback, string $operation): mixed
   select(string $tag, string $code, ?string $fallbackCode = NULL): ?object
   ownerOf(object $implementation): ?string
+  requires(string $tag, Modules\Extension\Contracts\Requirement $requirement, string $label): void
+  requirements(): array
+  providers(string $tag): array
+enum Modules\Extension\Contracts\Requirement
+  const AtLeastOne = \Modules\Extension\Contracts\Requirement::AtLeastOne
+  const ExactlyOne = \Modules\Extension\Contracts\Requirement::ExactlyOne
+  static cases(): array
+  static from(string|int $value): static
+  static tryFrom(string|int $value): ?static
 abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Support\ServiceProvider
   protected pluginId(): string
   protected pluginPath(string $path = ''): string

@@ -116,6 +116,4 @@ MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; s
 
 ## Giới hạn hiện tại
 
-- Manifest `bundled` (plugin hệ thống) và kiểm tra extension point bắt buộc khi tắt/gỡ: Designed ([ADR-029](../../19-adr/ADR-029-commerce-microkernel.md)).
-- Code hiện còn bật plugin theo scope `owner`/`brand`/`channel`; gỡ ở slice 12 ([store-and-brand §6](../../12-store/store-and-brand.md)).
-- Plugin có sẵn (`VietQr`, `Ghn`) vẫn đọc cấu hình từ `Config/*.php` + `.env`; chỉ `vani.sms-brandname` đọc qua `Settings`.
+- Plugin `VietQr`, `Ghn` vẫn đọc cấu hình từ `Config/*.php` + `.env`; `vani.sms-brandname` và 4 plugin hệ thống đọc `Settings` trước, thiếu thì theo `.env`.

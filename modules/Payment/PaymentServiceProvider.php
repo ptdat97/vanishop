@@ -12,21 +12,18 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
-use Modules\Ordering\Events\OrderPlaced;
-use Modules\Payment\Application\GatewayRegistry;
-use Modules\Payment\Application\Gateways\CodGateway;
-use Modules\Payment\Application\Gateways\ManualBankTransferGateway;
-use Modules\Payment\Application\Listeners\AutoConfirmCodOrder;
 use Modules\Payment\Application\Listeners\CollectCodOnDelivery;
 use Modules\Payment\Application\Listeners\OrderPaymentPanel;
 use Modules\Payment\Application\Listeners\SettleCancelledOrderPayments;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Console\ExpirePaymentsCommand;
 use Modules\Payment\Console\ReconcilePaymentsCommand;
+use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\Payments;
 use Modules\Shared\Support\ModuleServiceProvider;
 
@@ -40,15 +37,8 @@ final class PaymentServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Payments::class, PaymentService::class);
-
-        $this->app->bind(CodGateway::class, fn (): CodGateway => new CodGateway(
-            config('vanishop.payment.cod.max_amount') === null ? null : (int) config('vanishop.payment.cod.max_amount'),
-        ));
-        $this->app->bind(ManualBankTransferGateway::class, fn (): ManualBankTransferGateway => new ManualBankTransferGateway(
-            (array) config('vanishop.payment.bank_transfer.account', []),
-            (int) config('vanishop.payment.bank_transfer.ttl', 86_400),
-        ));
-        $this->app->make(Extensions::class)->tag([CodGateway::class, ManualBankTransferGateway::class], GatewayRegistry::TAG);
+        // Cổng thanh toán đều là plugin (COD, chuyển khoản: plugin hệ thống vani.cod, vani.bank-transfer — ADR-029).
+        $this->app->make(Extensions::class)->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
@@ -59,7 +49,6 @@ final class PaymentServiceProvider extends ModuleServiceProvider
 
         $navigation->add('payment', 'Thanh toán', 'admin.payment.home', 'payments.view', 350);
 
-        Event::listen(OrderPlaced::class, AutoConfirmCodOrder::class);
         Event::listen(OrderCancelled::class, SettleCancelledOrderPayments::class);
         Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));

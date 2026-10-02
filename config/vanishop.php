@@ -74,31 +74,10 @@ return [
         'ttl_days' => (int) env('VANI_CART_TTL_DAYS', 30),
     ],
 
-    'checkout' => [
-        'shipping' => [
-            'flat_fee' => (int) env('VANI_SHIPPING_FLAT_FEE', 30000),
-            // Miễn phí giao khi tiền hàng (sau giảm giá) >= ngưỡng; null = không miễn phí.
-            'free_over' => env('VANI_SHIPPING_FREE_OVER', 500000) === null ? null : (int) env('VANI_SHIPPING_FREE_OVER', 500000),
-        ],
-    ],
-
-    'payment' => [
-        'cod' => [
-            // Tự xác nhận đơn COD sau khi đặt; false = CSKH xác nhận (Admin đơn — slice Order).
-            'auto_confirm' => (bool) env('VANI_COD_AUTO_CONFIRM', true),
-            // Đơn COD tối đa (₫); null = không giới hạn.
-            'max_amount' => env('VANI_COD_MAX_AMOUNT', 20000000) === null ? null : (int) env('VANI_COD_MAX_AMOUNT', 20000000),
-        ],
-        'bank_transfer' => [
-            // Tài khoản nhận tiền của cửa hàng. Thiếu số tài khoản → phương thức ẩn.
-            'account' => [
-                'bank' => env('VANI_BANK_TRANSFER_BANK', ''),
-                'account_number' => env('VANI_BANK_TRANSFER_ACCOUNT', ''),
-                'account_name' => env('VANI_BANK_TRANSFER_NAME', ''),
-            ],
-            'ttl' => (int) env('VANI_BANK_TRANSFER_TTL', 86400),
-        ],
-    ],
+    /*
+    | COD, chuyển khoản, phí giao cố định, VAT VN là plugin hệ thống (ADR-029) — cấu hình nằm trong
+    | custom/plugin/{Cod,BankTransfer,ShippingFlatRate,TaxVnVat}/Config và Admin → Cấu hình.
+    */
 
     'fulfillment' => [
         // Tự tạo vận đơn khi đơn được xác nhận.
@@ -117,9 +96,8 @@ return [
     ],
 
     'tax' => [
+        // Mã TaxCalculator mặc định (plugin vani.tax-vn-vat: `vn_vat_inclusive`); không có hiệu lực → `none`.
         'calculator' => env('VANI_TAX_CALCULATOR', 'vn_vat_inclusive'),
-        // VAT gồm trong giá, basis points (1000 = 10%). Kế toán/pháp chế xác nhận mức áp dụng hiện hành.
-        'vat_rate_bp' => (int) env('VANI_VAT_RATE_BP', 1000),
     ],
 
     'promotion' => [

@@ -32,6 +32,8 @@ final readonly class PluginManifest
         public array $conflicts,
         public array $permissions,
         public string $path,
+        /** Plugin hệ thống (ADR-029): `vani:install` tự cài + bật. */
+        public bool $bundled = false,
     ) {}
 
     /**
@@ -73,6 +75,7 @@ final readonly class PluginManifest
             conflicts: array_values(array_map('strval', (array) ($data['conflicts'] ?? []))),
             permissions: array_values(array_map('strval', (array) ($data['permissions'] ?? []))),
             path: $path,
+            bundled: (bool) ($data['bundled'] ?? false),
         );
     }
 

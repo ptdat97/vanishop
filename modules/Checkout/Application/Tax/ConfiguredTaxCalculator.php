@@ -11,7 +11,8 @@ use Modules\Tenancy\Contracts\Settings;
 use RuntimeException;
 
 /**
- * TaxCalculator theo cấu hình `core.tax.calculator` của cửa hàng (mặc định VANI_TAX_CALCULATOR).
+ * TaxCalculator theo cấu hình `core.tax.calculator` của cửa hàng (mặc định VANI_TAX_CALCULATOR). Không có hiệu lực
+ * (plugin thuế tắt) → mặc định → `none` của Core.
  * Không đăng ký vào tag — chỉ là điểm chọn.
  */
 final class ConfiguredTaxCalculator implements TaxCalculator
@@ -30,7 +31,8 @@ final class ConfiguredTaxCalculator implements TaxCalculator
     public function calculate(TotalsContext $context): array
     {
         $code = (string) $this->settings->get('core', 'tax.calculator', $this->defaultCode);
-        $calculator = $this->extensions->select(TaxCalculator::TAG, $code, $this->defaultCode);
+        $calculator = $this->extensions->select(TaxCalculator::TAG, $code, $this->defaultCode)
+            ?? $this->extensions->select(TaxCalculator::TAG, NoTax::CODE);
 
         return $calculator instanceof TaxCalculator
             ? $calculator->calculate($context)

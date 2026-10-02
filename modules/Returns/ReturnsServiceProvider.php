@@ -6,6 +6,7 @@ namespace Modules\Returns;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Returns\Application\DaysWindowPolicy;
@@ -29,6 +30,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $this->app->bind(Returns::class, ReturnService::class);
         $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
         $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);
+        $this->app->make(Extensions::class)->requires(ReturnPolicy::TAG, Requirement::ExactlyOne, 'Chính sách đổi trả');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

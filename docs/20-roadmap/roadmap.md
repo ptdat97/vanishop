@@ -101,7 +101,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 | 12 ✅ | **Chuyển sang một cửa hàng** (xong 2026-10-02) ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): brand thành thực thể Catalog (trang brand, facet, rule khuyến mãi, snapshot dòng đơn); gỡ `BelongsToBrand`, module Brand tenant + Channel, brand workspace, plugin scope theo brand, `X-Vani-Channel`; giỏ nhiều brand → một đơn; số đơn một dãy; Core `0.3.0` | [store-and-brand §6](../12-store/store-and-brand.md) |
 | 12b | **Native storefront**: theme `vani-base` SSR-first, controller Storefront dùng chung Presenter với API, một theme đang hoạt động + theme con, trang `/thuong-hieu/{slug}`, component slot + khai báo slot storefront trong `hooks.php`, test JS tắt/slot lỗi | [storefront](../14-storefront/storefront.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) |
 | 12c | PR Core: vận đơn chọn carrier theo `shippingMethod.source` của đơn (rơi về mặc định khi carrier không bật); `vani.ghn` gọi API GHN thật (báo cước có cache, đặt đơn idempotent) | [shipping-carrier](../05-plugin/contracts/shipping-carrier.md) |
-| 12d | **Microkernel** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): extension point bắt buộc + manifest `bundled` + `vani:install`; tách `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` khỏi module; Reporting thành `vani.reports`; arch test R28/R29; sau đó làm extension point còn thiếu theo đợt plugin ([catalog §7](../04-extension/extension-point-catalog.md)) | [commerce-kernel §6](../02-architecture/commerce-kernel.md) |
+| 12d ✅ | **Microkernel** (xong 2026-10-02, trừ `vani.reports` — chưa có báo cáo để tách) ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): extension point bắt buộc + manifest `bundled` + `vani:install`; tách `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` khỏi module; Reporting thành `vani.reports`; arch test R28/R29; sau đó làm extension point còn thiếu theo đợt plugin ([catalog §7](../04-extension/extension-point-catalog.md)) | [commerce-kernel §6](../02-architecture/commerce-kernel.md) |
 | 13 | Plugin go-live P1 còn lại: `vani.vnpay`, `vani.tracking-pixels` (`vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
@@ -109,7 +109,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 
 ## 4. Go-live gate
 
-- [ ] Slice 0–10, **slice 12 (một cửa hàng)** và **12d (microkernel: plugin hệ thống)** đạt Done; slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
+- [ ] Slice 0–10 đạt Done (slice 12 và 12d đã xong 2026-10-02); slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
 - [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
 - [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)). → **Một phần**: correlation id đã đi vào mọi dòng log (`App\Logging\ContextProcessor`). Còn thiếu metric/tracing, dashboard, cảnh báo.

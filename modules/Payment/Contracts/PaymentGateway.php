@@ -15,7 +15,7 @@ use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Shared\Domain\Money\Money;
 
 /**
- * Extension point (tag `vani.payment.gateways`). Core: `cod`, `manual_bank_transfer`. Plugin: VietQR, VNPay, MoMo…
+ * Extension point (tag `vani.payment.gateways`). Bắt buộc ≥ 1 đang bật (ADR-029). Mọi cổng là plugin: `cod`, `manual_bank_transfer` (plugin hệ thống `vani.cod`, `vani.bank-transfer`), VietQR, VNPay, MoMo…
  * Bộ contract test: Modules\Payment\Testing\PaymentGatewayContract.
  *
  * - initiate() chạy SAU commit và phải idempotent (gọi lại cho cùng payment trả cùng kết quả/giao dịch).

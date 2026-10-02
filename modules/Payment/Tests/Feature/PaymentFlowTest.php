@@ -22,7 +22,7 @@ beforeEach(function () {
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     FakeOnlineGateway::$refunds = [];
     FakeOnlineGateway::$queryResult = null;
-    config(['vanishop.payment.bank_transfer.account' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
+    config(['vani.bank-transfer.account' => ['bank' => 'Vietcombank', 'account_number' => '0123456789', 'account_name' => 'CONG TY VANI']]);
 
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';
@@ -46,9 +46,9 @@ it('quote liệt kê các cổng khả dụng', function () {
     $this->postJson("{$this->api}/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers);
 
     $methods = $this->postJson("{$this->api}/checkout/{$created->json('data.id')}/quote", [], $headers)->json('data.payment_methods');
-    expect(array_column($methods, 'code'))->toBe(['cod', 'manual_bank_transfer', 'fake_online']);
+    expect(array_column($methods, 'code'))->toBe(['manual_bank_transfer', 'cod', 'fake_online']);
 
-    config(['vanishop.payment.cod.max_amount' => 100_000, 'vanishop.payment.bank_transfer.account.account_number' => '']);
+    config(['vani.cod.max_amount' => 100_000, 'vani.bank-transfer.account.account_number' => '']);
     $methods = $this->postJson("{$this->api}/checkout/{$created->json('data.id')}/quote", [], $headers)->json('data.payment_methods');
     expect(array_column($methods, 'code'))->toBe(['fake_online']);
 });
@@ -66,7 +66,7 @@ it('COD: đơn tự xác nhận, payment chờ thu, không hết hạn', functio
 });
 
 it('COD: tắt tự xác nhận thì đơn chờ CSKH', function () {
-    config(['vanishop.payment.cod.auto_confirm' => false]);
+    config(['vani.cod.auto_confirm' => false]);
     ($this->order)('cod')->assertCreated();
 
     expect(($this->orderRow)()->order_status->value)->toBe('pending');

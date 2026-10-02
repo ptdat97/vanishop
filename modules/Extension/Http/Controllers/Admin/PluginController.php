@@ -29,6 +29,7 @@ final class PluginController
                 'name' => $manifest->displayName(app()->getLocale()),
                 'version' => $manifest->version,
                 'kind' => $manifest->kind,
+                'bundled' => $manifest->bundled,
                 'status' => $record?->status->value ?? 'discovered',
                 'error' => $failures[$manifest->id] ?? $record?->last_error,
             ];

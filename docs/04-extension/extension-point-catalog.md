@@ -16,10 +16,10 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `reserved_locations` (**Implemented**; đề xuất phải khớp hàng đang giữ) | [fulfillment](../09-order/fulfillment.md) |
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
-| `TaxCalculator` | `vani.tax.calculators` | Checkout | `vn_vat_inclusive` (**Implemented**, chọn bằng `VANI_TAX_CALCULATOR`) | [cart-checkout](../03-domains/cart-checkout.md) |
+| `TaxCalculator` | `vani.tax.calculators` | Checkout | Core: `none`; `vn_vat_inclusive` là plugin hệ thống `vani.tax-vn-vat` (**Implemented**, chọn bằng `core.tax.calculator`/`VANI_TAX_CALCULATOR`). Bắt buộc đúng 1 | [cart-checkout](../03-domains/cart-checkout.md) |
 | `TotalsCalculator` | `vani.totals.calculators` | Checkout | subtotal (100), promotion (200), shipping (500), tax (800), guard (900); plugin dùng 300–399. **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
-| `CheckoutValidator` | `vani.checkout.validators` | Checkout | `core` (giỏ, một brand — bỏ ở slice 12, liên hệ, địa chỉ, giao hàng, thanh toán). **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
-| `ShippingRateProvider` | `vani.checkout.shipping_providers` | Checkout | `FlatRateShipping` (**Implemented**; carrier thật: slice 9) | [cart-checkout](../03-domains/cart-checkout.md) |
+| `CheckoutValidator` | `vani.checkout.validators` | Checkout | `core` (giỏ, liên hệ, địa chỉ, giao hàng, thanh toán; `no_payment_method` khi không cổng nào khả dụng). **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
+| `ShippingRateProvider` | `vani.checkout.shipping_providers` | Checkout | Không có trong Core; phí cố định là plugin hệ thống `vani.shipping-flat-rate`, GHN là plugin (**Implemented**). Bắt buộc ≥ 1 | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PromotionRule` | `vani.promotion.rules` | Promotion | — (rule do plugin cung cấp). **Implemented** (rule chưa đăng ký → khuyến mãi bị bỏ qua + log) | [promotion](../03-domains/promotion.md) |
 | `PromotionAction` | `vani.promotion.actions` | Promotion | `percent_off`, `amount_off` (primitive). **Implemented** | [promotion](../03-domains/promotion.md) |
 | `ReturnPolicy` | `vani.returns.policies` | Returns | `days_window` (**Implemented**, chọn bằng `VANI_RETURN_POLICY`) | [order §7](../09-order/order.md) |
@@ -149,7 +149,6 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 
 | Extension point thiếu | Loại | Plugin cần | Đợt |
 |---|---|---|---|
-| `REQUIRED` trên contract + chặn tắt implementation cuối; manifest `bundled` | Kernel | 4 plugin hệ thống | Slice 12d |
 | `storefrontRoutes()` — route Storefront API/trang storefront của plugin | Registry | `vani.wishlist`, `vani.loyalty` (`/me/loyalty`), `vani.store-omnichannel` | P2 |
 | Slot storefront + component `hook-slot` (§4.1) | Hook | `vani.tracking-pixels`, reviews, size chart, loyalty | P1 (cùng theme) |
 | Plugin khai báo `hooks.php` riêng (plugin công bố hook) | Kernel | `vani.loyalty` → `vani.promotion-advanced`; `vani.marketplace` → `vani.creator` | P3 |

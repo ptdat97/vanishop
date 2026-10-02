@@ -9,7 +9,7 @@ use Modules\Checkout\Contracts\Data\TotalsContext;
 
 /**
  * Nguồn phương thức giao + phí cho checkout (tag `vani.checkout.shipping_providers`).
- * Core: `flat_rate` theo cấu hình. Carrier (GHN…) là plugin, thêm ở slice Shipment/Proof plugins.
+ * Bắt buộc ≥ 1 đang bật (ADR-029). Phí cố định là plugin hệ thống `vani.shipping-flat-rate`; carrier (GHN…) là plugin.
  * Không gọi mạng đồng bộ không có timeout/cache.
  */
 interface ShippingRateProvider

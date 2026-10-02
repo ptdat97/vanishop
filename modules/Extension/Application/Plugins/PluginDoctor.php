@@ -14,7 +14,7 @@ use Throwable;
 
 /**
  * Chẩn đoán plugin (vani:plugin:doctor): tương thích Core/phụ thuộc/xung đột, version lệch, migration chưa chạy,
- * provider không tồn tại, plugin failed, cấu hình hạ tầng mà plugin system cần.
+ * provider không tồn tại, plugin failed, extension point bắt buộc thiếu implementation (ADR-029), cấu hình hạ tầng.
  */
 final class PluginDoctor
 {
@@ -26,6 +26,7 @@ final class PluginDoctor
         private readonly ManifestRepository $manifests,
         private readonly DependencyResolver $resolver,
         private readonly PluginLoader $loader,
+        private readonly RequiredExtensions $required,
         private readonly string $coreVersion,
     ) {}
 
@@ -82,6 +83,10 @@ final class PluginDoctor
             if (! $records->has($id) && ! $this->satisfiesCore($manifest->requiresCore)) {
                 $add($id, self::WARNING, 'incompatible_core', "Chưa cài; cần VaniShop {$manifest->requiresCore}, hiện tại {$this->coreVersion}.");
             }
+        }
+
+        foreach ($this->required->missing($enabled) as $tag => $label) {
+            $add('core', self::ERROR, 'required_extension_missing', "Extension point bắt buộc [{$tag}] ({$label}) không có implementation nào đang bật.");
         }
 
         foreach ($this->loader->failures() as $id => $error) {

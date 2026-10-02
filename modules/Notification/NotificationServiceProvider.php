@@ -7,6 +7,7 @@ namespace Modules\Notification;
 use Illuminate\Support\Facades\Event;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Notification\Application\Channels\MailChannel;
@@ -38,6 +39,7 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         $this->app->bind(Notifier::class, NotificationService::class);
         $this->app->singleton(NotificationCatalog::class, InMemoryNotificationCatalog::class);
         $this->app->make(Extensions::class)->tag([MailChannel::class], NotificationChannel::TAG);
+        $this->app->make(Extensions::class)->requires(NotificationChannel::TAG, Requirement::AtLeastOne, 'Kênh gửi thông báo');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

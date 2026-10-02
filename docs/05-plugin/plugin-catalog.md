@@ -4,12 +4,12 @@
 
 ## 1. Core có sẵn và plugin hệ thống
 
-Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặc định **trung lập thị trường**; mặc định mang chính sách kinh doanh/đặc thù VN là **plugin hệ thống** (đóng gói sẵn, tự bật). Hiện các plugin hệ thống vẫn nằm trong module, tách ở slice 12d ([commerce-kernel §6](../02-architecture/commerce-kernel.md)).
+Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặc định **trung lập thị trường**; mặc định mang chính sách kinh doanh/đặc thù VN là **plugin hệ thống** (đóng gói sẵn, tự bật). Đã tách khỏi module ở slice 12d (2026-10-02); `php artisan vani:install` cài + bật ([commerce-kernel §6](../02-architecture/commerce-kernel.md)).
 
 | Nhóm | Mặc định trong Core (trung lập) | Plugin hệ thống (bundled) |
 |---|---|---|
 | Thanh toán | — | `vani.cod`, `vani.bank-transfer` |
-| Vận chuyển | Vận đơn nhập tay (`manual`) | `vani.shipping-flat-rate` (phí cố định/theo bảng) |
+| Vận chuyển | Vận đơn nhập tay (`manual`) | `vani.shipping-flat-rate` (phí cố định + ngưỡng miễn phí) |
 | Thuế | `none` (dự phòng) | `vani.tax-vn-vat` (VAT giá đã gồm thuế) |
 | Phân bổ kho | `reserved_locations` | |
 | Khuyến mãi | Engine + action `percent_off`/`amount_off` + voucher. **Không có rule điều kiện** trong Core — rule đến từ plugin (`vani.promotion-rules`) | |

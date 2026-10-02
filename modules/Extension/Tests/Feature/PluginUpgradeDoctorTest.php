@@ -7,6 +7,7 @@ use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginOperationFailed;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Extension\Tests\Fixtures\FixturePlugins;
@@ -59,6 +60,12 @@ it('upgrade: bản mới không tương thích Core bị từ chối; plugin fai
 });
 
 it('doctor: báo version cần nâng, migration chưa chạy, plugin failed, manifest mất, plugin chưa cài không tương thích', function () {
+    // Thư mục plugin giả không có plugin hệ thống: coi các extension point bắt buộc đã có implementation của Core,
+    // để doctor chỉ báo vấn đề của plugin giả (thiếu implementation bắt buộc: InstallCommandTest).
+    foreach (array_keys(app(Extensions::class)->requirements()) as $tag) {
+        app(Extensions::class)->tag([stdClass::class], $tag);
+    }
+
     expect(app(PluginDoctor::class)->diagnose())->toBe([
         ['plugin' => 'fixture.future', 'level' => 'warning', 'code' => 'incompatible_core', 'message' => 'Chưa cài; cần VaniShop ^9.0, hiện tại 0.3.0.'],
     ]);

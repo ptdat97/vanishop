@@ -10,7 +10,6 @@ return [
     'address_required' => 'Vui lòng nhập đầy đủ địa chỉ nhận hàng.',
     'shipping_unavailable' => 'Phương thức giao hàng không khả dụng.',
     'payment_unavailable' => 'Phương thức thanh toán không khả dụng.',
-    'shipping_standard' => 'Giao hàng tiêu chuẩn',
-    'payment_cod' => 'Thanh toán khi nhận hàng (COD)',
+    'no_payment_method' => 'Cửa hàng chưa có phương thức thanh toán nào khả dụng.',
     'idempotency_key_required' => 'Thiếu header Idempotency-Key.',
 ];

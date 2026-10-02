@@ -152,7 +152,7 @@ sequenceDiagram
 Đo trên máy dev (`php artisan serve`, PHP 8.4, MySQL local, dữ liệu `DemoSeeder`: 4 style / 18 variant / 30 giá), ApacheBench, header `X-Vani-Channel: web-lumiere` (lần đo trước slice 12; từ slice 12 không cần header kênh). Chạy lại bằng:
 
 ```bash
-php artisan migrate:fresh --force && php artisan db:seed --class=DemoSeeder
+php artisan migrate:fresh --force && php artisan vani:install --no-migrate && php artisan db:seed --class=DemoSeeder
 php artisan serve --port=8899 &
 ./scripts/bench/storefront-nfr.sh          # exit 0 = đạt, exit 1 = không đạt
 ```

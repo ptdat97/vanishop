@@ -8,7 +8,9 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Filesystem\Filesystem;
 use Modules\Customer\Events\CustomerRegistered;
 use Modules\Extension\Application\Plugins\ManifestRepository;
+use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginStateCache;
+use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Payment\Events\PaymentCaptured;
 use Modules\Shared\Context\CurrentContext;
@@ -31,12 +33,16 @@ final class FixturePlugins
                 'kind' => 'business',
                 'provider' => GreetingPluginProvider::class,
                 'requires' => ['vanishop' => '^0.3'],
-                'scopes' => ['owner', 'brand', 'channel'],
             ], JSON_PRETTY_PRINT));
         }
 
         app()->instance(ManifestRepository::class, new ManifestRepository($root));
         app()->instance(PluginStateCache::class, new PluginStateCache($files, "{$root}/cache.php"));
+
+        // Chỉ có plugin giả trong thư mục tạm: bỏ bản ghi plugin hệ thống do TestCase bật sẵn.
+        PluginRecord::query()->delete();
+        PluginActivation::forgetCache();
+        app(PluginActivation::class)->flush();
 
         return $root;
     }

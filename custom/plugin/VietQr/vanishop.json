@@ -12,7 +12,6 @@
         "plugins": {}
     },
     "conflicts": [],
-    "scopes": ["legal_entity", "brand"],
     "permissions": ["payments.view"],
     "author": "VaniShop Team"
 }

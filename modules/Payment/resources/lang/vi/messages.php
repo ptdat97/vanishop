@@ -1,8 +1,6 @@
 <?php
 
 return [
-    'cod' => 'Thanh toán khi nhận hàng (COD)',
-    'manual_bank_transfer' => 'Chuyển khoản ngân hàng',
     'gateway_unavailable' => 'Phương thức thanh toán không khả dụng.',
     'not_found' => 'Không tìm thấy thanh toán.',
     'invalid_state' => 'Thanh toán đang ở trạng thái :status, không thực hiện được thao tác này.',

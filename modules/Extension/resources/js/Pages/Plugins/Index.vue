@@ -7,6 +7,7 @@ defineProps<{
         name: string;
         version: string;
         kind: string;
+        bundled: boolean;
         status: string;
         error: string | null;
     }>;
@@ -17,7 +18,7 @@ defineProps<{
 <template>
     <Head title="Plugin" />
     <h1 class="mb-2 text-xl font-semibold">Plugin</h1>
-    <p class="mb-6 text-sm text-slate-500">Cài và bật plugin bằng lệnh <code>php artisan vani:plugin:*</code>.</p>
+    <p class="mb-6 text-sm text-slate-500">Cài và bật plugin bằng lệnh <code>php artisan vani:plugin:*</code>. Plugin hệ thống được <code>vani:install</code> cài sẵn; không tắt được plugin là implementation cuối cùng của một extension point bắt buộc.</p>
     <table class="w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-sm">
         <thead class="bg-slate-50 text-left text-slate-500">
             <tr>
@@ -25,13 +26,15 @@ defineProps<{
                 <th class="px-4 py-2">Phiên bản</th>
                 <th class="px-4 py-2">Loại</th>
                 <th class="px-4 py-2">Trạng thái</th>
-                <th class="px-4 py-2">Phạm vi</th>
             </tr>
         </thead>
         <tbody>
             <tr v-for="plugin in plugins" :key="plugin.id" class="border-t border-slate-100">
                 <td class="px-4 py-2">
-                    <div class="font-medium">{{ plugin.name }}</div>
+                    <div class="font-medium">
+                        {{ plugin.name }}
+                        <span v-if="plugin.bundled" class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600" title="Plugin hệ thống: vani:install tự cài + bật">Hệ thống</span>
+                    </div>
                     <div class="text-xs text-slate-500">{{ plugin.id }}</div>
                     <div v-if="plugin.error" class="text-xs text-red-600">{{ plugin.error }}</div>
                 </td>
@@ -40,7 +43,7 @@ defineProps<{
                 <td class="px-4 py-2">{{ plugin.status }}</td>
             </tr>
             <tr v-if="!plugins.length">
-                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có plugin nào trong custom/plugin.</td>
+                <td colspan="4" class="px-4 py-6 text-center text-slate-500">Chưa có plugin nào trong custom/plugin.</td>
             </tr>
         </tbody>
     </table>

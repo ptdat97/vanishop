@@ -12,7 +12,6 @@
         "plugins": {}
     },
     "conflicts": [],
-    "scopes": ["owner"],
     "permissions": [],
     "author": "VaniShop Team"
 }

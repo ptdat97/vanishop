@@ -9,7 +9,6 @@
         "plugins": {}
     },
     "conflicts": [],
-    "scopes": ["owner", "brand", "channel"],
     "permissions": ["hello-world.view"],
     "author": "VaniShop Team"
 }

@@ -1,8 +1,6 @@
 <?php
 
 return [
-    'cod' => 'Cash on delivery (COD)',
-    'manual_bank_transfer' => 'Bank transfer',
     'gateway_unavailable' => 'This payment method is not available.',
     'not_found' => 'Payment not found.',
     'invalid_state' => 'The payment is :status; this action is not allowed.',

@@ -73,4 +73,23 @@ interface Extensions
      * Plugin sở hữu implementation (null = Core hoặc không do plugin nào đóng góp).
      */
     public function ownerOf(object $implementation): ?string;
+
+    /**
+     * Đánh dấu extension point bắt buộc (ADR-029): Extension từ chối tắt plugin cung cấp implementation đang bật
+     * cuối cùng, `vani:plugin:doctor` báo lỗi khi thiếu.
+     */
+    public function requires(string $tag, Requirement $requirement, string $label): void;
+
+    /**
+     * @return array<string, array{requirement: Requirement, label: string}> tag => yêu cầu
+     */
+    public function requirements(): array;
+
+    /**
+     * Nguồn đóng góp implementation cho tag: plugin id, hoặc null cho implementation của Core.
+     * Gồm cả plugin đang tắt (provider đã nạp) — để kiểm tra trước khi tắt.
+     *
+     * @return list<string|null>
+     */
+    public function providers(string $tag): array;
 }

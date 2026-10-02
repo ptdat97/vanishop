@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Payment\Application\Gateways;
+namespace Plugin\BankTransfer\Infrastructure;
 
 use Illuminate\Http\Request;
 use Modules\Payment\Contracts\Data\GatewayCallback;
@@ -15,20 +15,19 @@ use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Settings;
+use Plugin\BankTransfer\BankTransferServiceProvider;
 
 /**
- * Chuyển khoản thủ công: hiển thị tài khoản của cửa hàng + nội dung = số đơn; nhân viên xác nhận đã nhận tiền.
- * Tự xác nhận theo sao kê là plugin `vani.vietqr`.
+ * Chuyển khoản thủ công: hiển thị tài khoản của cửa hàng + nội dung = số đơn; nhân viên xác nhận đã nhận tiền
+ * (Core: `manualConfirmation`). Tự xác nhận theo sao kê là plugin `vani.vietqr`.
+ * Mã `manual_bank_transfer` giữ nguyên từ khi còn nằm trong Core — đơn cũ không đổi.
  */
 final class ManualBankTransferGateway implements PaymentGateway
 {
-    /**
-     * @param  array{bank?: string, account_number?: string, account_name?: string}  $account
-     */
-    public function __construct(
-        private readonly array $account,
-        private readonly int $ttlSeconds,
-    ) {}
+    private const FIELDS = ['bank', 'account_number', 'account_name'];
+
+    public function __construct(private readonly Settings $settings) {}
 
     public function code(): string
     {
@@ -37,12 +36,12 @@ final class ManualBankTransferGateway implements PaymentGateway
 
     public function label(): string
     {
-        return __('payment::messages.manual_bank_transfer');
+        return __('vani-bank-transfer::messages.label');
     }
 
     public function capabilities(): GatewayCapabilities
     {
-        return new GatewayCapabilities(manualConfirmation: true, paymentTtlSeconds: $this->ttlSeconds);
+        return new GatewayCapabilities(manualConfirmation: true, paymentTtlSeconds: (int) config('vani.bank-transfer.ttl', 86_400));
     }
 
     public function isAvailable(PaymentContext $context): bool
@@ -52,12 +51,10 @@ final class ManualBankTransferGateway implements PaymentGateway
 
     public function initiate(PaymentData $payment): PaymentInitiation
     {
-        $account = $this->account() ?? [];
+        $account = $this->account() ?? array_fill_keys(self::FIELDS, '');
 
         return new PaymentInitiation(PaymentInitiation::INSTRUCTIONS, instructions: [
-            'bank' => (string) ($account['bank'] ?? ''),
-            'account_number' => (string) ($account['account_number'] ?? ''),
-            'account_name' => (string) ($account['account_name'] ?? ''),
+            ...$account,
             'amount' => (string) $payment->amount->amount,
             'transfer_content' => $payment->orderNumber,
         ]);
@@ -79,10 +76,18 @@ final class ManualBankTransferGateway implements PaymentGateway
     }
 
     /**
+     * Tài khoản nhận tiền: cấu hình trong Admin, thiếu thì theo .env.
+     *
      * @return array{bank: string, account_number: string, account_name: string}|null
      */
     private function account(): ?array
     {
-        return ($this->account['account_number'] ?? '') === '' ? null : $this->account;
+        $fallback = (array) config('vani.bank-transfer.account', []);
+        $account = [];
+        foreach (self::FIELDS as $field) {
+            $account[$field] = (string) ($this->settings->get(BankTransferServiceProvider::ID, $field) ?? ($fallback[$field] ?? ''));
+        }
+
+        return $account['account_number'] === '' ? null : $account;
     }
 }

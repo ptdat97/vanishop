@@ -115,9 +115,9 @@ flowchart TD
 
 | Extension point | Bắt buộc | Mặc định | Vị trí đích | Hiện ở |
 |---|---|---|---|---|
-| `PaymentGateway` | ≥ 1 | `cod`, `manual_bank_transfer` | **Plugin hệ thống** `vani.cod`, `vani.bank-transfer` | `modules/Payment/Application/Gateways` |
-| `ShippingRateProvider` | ≥ 1 | `flat_rate` | **Plugin hệ thống** `vani.shipping-flat-rate` | `modules/Checkout/Application/FlatRateShipping.php` |
-| `TaxCalculator` | đúng 1 | `vn_vat_inclusive` | **Plugin hệ thống** `vani.tax-vn-vat`; Core giữ `none` (không thuế) làm dự phòng | `modules/Checkout/Application/VnVatInclusiveTax.php` |
+| `PaymentGateway` | ≥ 1 | `cod`, `manual_bank_transfer` | **Plugin hệ thống** `vani.cod`, `vani.bank-transfer` | ✅ `custom/plugin/Cod`, `custom/plugin/BankTransfer` (2026-10-02) |
+| `ShippingRateProvider` | ≥ 1 | `standard` (phí cố định) | **Plugin hệ thống** `vani.shipping-flat-rate` | ✅ `custom/plugin/ShippingFlatRate` |
+| `TaxCalculator` | đúng 1 | `vn_vat_inclusive` | **Plugin hệ thống** `vani.tax-vn-vat`; Core giữ `none` (không thuế) làm dự phòng | ✅ `custom/plugin/TaxVnVat`; `NoTax` ở `modules/Checkout/Application/Tax` |
 | `ShippingCarrier` | ≥ 1 | `manual` (nhập mã vận đơn) | Core (trung lập) | `modules/Fulfillment/Application/Carriers` |
 | `NotificationChannel` | ≥ 1 | `mail` | Core (trung lập) | `modules/Notification/Application/Channels` |
 | `OtpSender` | ≥ 1 | `email` (`log` chỉ dev) | Core (trung lập) | `modules/Customer/Application/OtpSenders` |
@@ -131,40 +131,37 @@ flowchart TD
 
 Plugin hệ thống là plugin bình thường (manifest, `PluginServiceProvider`, contract test) với thêm:
 
-- Manifest `"bundled": true`: lệnh cài đặt hệ thống mới `vani:install` (Designed; hiện dựng bằng `migrate` + `vani:plugin:install` từng plugin) tự `install` + `enable`; có trong mọi môi trường.
+- Manifest `"bundled": true`: lệnh `vani:install` (migrate + cài/bật plugin bundled còn thiếu, chạy lại an toàn; plugin đã tắt có chủ đích giữ nguyên) — Implemented.
 - Gỡ được nếu đã có plugin khác thay thế (ví dụ VNPay thay chuyển khoản tay); tắt được khi không phải implementation cuối cùng của extension point bắt buộc (§5).
 - Không được dùng internal của Core (R5) — chính các plugin này chứng minh extension point đủ dùng.
 - Đổi chính sách (phí ship theo tỉnh, ngưỡng COD, thuế suất) = sửa/cấu hình plugin, **không** chạm Core.
 
 ## 5. Extension point bắt buộc
 
-Mỗi contract trong registry khai báo số implementation đang bật tối thiểu/tối đa (`required: at_least_one | exactly_one | none`), ví dụ trên interface:
+Module sở hữu contract đăng ký yêu cầu ở ServiceProvider (Implemented 2026-10-02):
 
 ```php
-interface PaymentGateway
-{
-    public const TAG = 'vani.payment.gateways';
-    public const REQUIRED = Requirement::AtLeastOne;   // Designed
-    // …
-}
+$extensions->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
 ```
+
+Không đặt hằng trên interface: một class có thể implement nhiều contract (GHN vừa là `ShippingCarrier` vừa là `ShippingRateProvider`) và hằng trùng tên gây lỗi PHP. Đăng ký hiện có: `PaymentGateway`, `ShippingRateProvider`, `ShippingCarrier`, `NotificationChannel`, `OtpSender` (≥ 1); `TaxCalculator`, `SearchProvider`, `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy`, `ReturnPolicy` (đúng 1 — chọn qua cấu hình khi có nhiều; Core có implementation trung lập nên không bao giờ thiếu).
 
 | Thời điểm | Kiểm tra |
 |---|---|
-| `vani:plugin:disable` / `uninstall` | Từ chối nếu làm extension point bắt buộc không còn implementation (`exactly_one`: phải chọn cái thay thế trước) |
-| `vani:plugin:doctor` | Báo lỗi extension point bắt buộc thiếu hoặc thừa implementation |
-| Runtime | Nếu vẫn thiếu (cấu hình sai): checkout trả lỗi rõ ràng `checkout.no_payment_method` thay vì lỗi 500 |
+| `vani:plugin:disable` (gỡ yêu cầu tắt trước) | Từ chối nếu plugin là implementation đang bật cuối cùng của extension point bắt buộc |
+| `vani:plugin:doctor`, `vani:install` | Báo lỗi `required_extension_missing` khi extension point bắt buộc không có implementation đang bật |
+| Runtime | Không cổng nào khả dụng: checkout trả `checkout.invalid` với issue `no_payment_method` thay vì lỗi 500 |
 
 ## 6. Lộ trình chuyển (slice 12d)
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| 1 | Extension: hằng `REQUIRED` trên contract + kiểm tra ở disable/uninstall/doctor; manifest `bundled`; lệnh `vani:install` cài plugin bundled | Public API: thêm (minor) |
-| 2 | Tách `CodGateway`, `ManualBankTransferGateway` → `vani.cod`, `vani.bank-transfer` | Giữ `code()` để đơn cũ không đổi |
-| 3 | Tách `FlatRateShipping` → `vani.shipping-flat-rate` (cấu hình qua `settings()` thay `.env`) | |
-| 4 | Tách `VnVatInclusiveTax` → `vani.tax-vn-vat`; Core thêm `NoTax` dự phòng | |
-| 5 | Reporting làm plugin `vani.reports`; Admin dashboard chỉ còn slot | |
-| 6 | Arch test: `modules/` không chứa class implement `PaymentGateway`/`ShippingRateProvider`/`TaxCalculator` ngoài danh sách trung lập | R28 |
+| 1 ✅ | Extension: `Requirement` + `Extensions::requires()` + kiểm tra ở disable/uninstall/doctor; manifest `bundled`; lệnh `vani:install` cài plugin bundled | Public API: thêm (minor) |
+| 2 ✅ | Tách `CodGateway`, `ManualBankTransferGateway` → `vani.cod`, `vani.bank-transfer` | Giữ `code()` để đơn cũ không đổi |
+| 3 ✅ | Tách `FlatRateShipping` → `vani.shipping-flat-rate` (cấu hình qua `settings()` thay `.env`) | |
+| 4 ✅ | Tách `VnVatInclusiveTax` → `vani.tax-vn-vat`; Core thêm `NoTax` dự phòng | |
+| 5 | Reporting làm plugin `vani.reports`; Admin dashboard chỉ còn slot | Chưa làm: Core chưa có báo cáo để tách (dashboard `app/` chỉ là slot); viết thẳng thành plugin khi làm báo cáo |
+| 6 ✅ | Arch test: `modules/` không chứa class implement `PaymentGateway`/`ShippingRateProvider`/`TaxCalculator` ngoài danh sách trung lập | R28 |
 
 Done khi: cài mới → 4 plugin hệ thống tự bật, E2E COD chạy; tắt `vani.cod` khi còn `vani.bank-transfer` được, tắt cả hai bị từ chối; contract test của 4 plugin pass; arch test R28 pass.
 
@@ -187,7 +184,7 @@ Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố
 | Thao tác đúng quyền | Policy + `Authorizer` |
 | Message ra ngoài có idempotency, đi qua outbox | `IntegrationOutbox` là con đường duy nhất |
 | Tiền là `Money` | Contract chỉ nhận/trả `Money` |
-| Extension point bắt buộc luôn có implementation | Extension chặn tắt/gỡ implementation cuối (§5, Designed) |
+| Extension point bắt buộc luôn có implementation | Extension chặn tắt implementation cuối (§5) |
 
 ## 9. Khi Core thiếu extension point
 

@@ -19,6 +19,12 @@ Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)
 - Hook `vani.product.after_save` chỉ nhận `(styleId)`.
 - Xoá hằng deprecated từ 0.2.0 (`SearchManager::TAG`, `CarrierRegistry::SOURCING_TAG`, …) — dùng `TAG` trên interface.
 
+### Microkernel — plugin hệ thống (slice 12d, ADR-029)
+- `Extension\Contracts\Requirement` (`AtLeastOne`, `ExactlyOne`); `Extensions::requires($tag, $requirement, $label)`, `requirements()`, `providers($tag)`. `PluginManager::disable()` từ chối tắt implementation đang bật cuối cùng của extension point bắt buộc; `vani:plugin:doctor` báo `required_extension_missing`.
+- Manifest `"bundled": true`; `PluginManager::installBundled()`; lệnh `vani:install`.
+- **Đổi hành vi:** COD, chuyển khoản, phí giao cố định, VAT VN rời Core thành plugin hệ thống `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` (giữ mã `cod`, `manual_bank_transfer`, `standard`, `vn_vat_inclusive`). Cấu hình chuyển từ `vanishop.payment.cod.*`, `vanishop.payment.bank_transfer.*`, `vanishop.checkout.shipping.*`, `vanishop.tax.vat_rate_bp` sang `vani.cod.*`, `vani.bank-transfer.*`, `vani.shipping-flat-rate.*`, `vani.tax-vn-vat.*` + Admin → Cấu hình (biến `.env` giữ tên). Core thêm TaxCalculator `none` (dự phòng). Nguồn phí giao `ShippingOption::$source` của phí cố định là `vani.shipping-flat-rate` (trước: `core`).
+- Checkout: không cổng nào khả dụng → issue `no_payment_method`.
+
 ### Thêm (một cửa hàng)
 - `?int $brandId` (+ `brandName`) trên `SellableVariant`, `VariantData`, `ProductDocument`, `PromotionLine`, `TotalsLine`, `OrderLineDraft`, `OrderLineData`; `ProductSearchQuery::$brandIds` là bộ lọc (rỗng = mọi brand), `ProductSearchResult::$facets['brands']`, `ProductFilters::$brandSlugs`.
 - `OrderDraft::$source`, `OrderData::$source`, `CheckoutRequest::$source` (`web`/`app`/`zalo`, header `X-Vani-Source`).

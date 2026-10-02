@@ -1,0 +1,18 @@
+{
+    "id": "vani.bank-transfer",
+    "name": {
+        "vi": "Chuyển khoản ngân hàng (xác nhận thủ công)",
+        "en": "Bank transfer (manual confirmation)"
+    },
+    "version": "1.0.0",
+    "kind": "payment_gateway",
+    "provider": "Plugin\\BankTransfer\\BankTransferServiceProvider",
+    "bundled": true,
+    "requires": {
+        "vanishop": "^0.3",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

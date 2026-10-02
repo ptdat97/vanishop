@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Payment\Application\Gateways;
+namespace Plugin\Cod\Infrastructure;
 
 use Illuminate\Http\Request;
 use Modules\Payment\Contracts\Data\GatewayCallback;
@@ -15,13 +15,16 @@ use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Settings;
+use Plugin\Cod\CodServiceProvider;
 
 /**
- * Thu tiền khi giao. Ghi nhận đã thu (cod_collected) do Fulfillment/đối soát ở slice Shipment.
+ * Thu tiền khi giao. Core ghi nhận đã thu khi vận đơn giao thành công (`collectsOnDelivery`).
+ * Mã `cod` giữ nguyên từ khi còn nằm trong Core — đơn cũ không đổi.
  */
 final class CodGateway implements PaymentGateway
 {
-    public function __construct(private readonly ?int $maxAmount) {}
+    public function __construct(private readonly Settings $settings) {}
 
     public function code(): string
     {
@@ -30,7 +33,7 @@ final class CodGateway implements PaymentGateway
 
     public function label(): string
     {
-        return __('payment::messages.cod');
+        return __('vani-cod::messages.label');
     }
 
     public function capabilities(): GatewayCapabilities
@@ -40,7 +43,9 @@ final class CodGateway implements PaymentGateway
 
     public function isAvailable(PaymentContext $context): bool
     {
-        return $this->maxAmount === null || $context->amount->amount <= $this->maxAmount;
+        $max = $this->settings->get(CodServiceProvider::ID, 'max_amount', config('vani.cod.max_amount'));
+
+        return $max === null || $max === '' || $context->amount->amount <= (int) $max;
     }
 
     public function initiate(PaymentData $payment): PaymentInitiation

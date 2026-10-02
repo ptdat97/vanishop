@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\Carriers\ManualCarrier;
@@ -22,6 +23,7 @@ use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
 use Modules\Fulfillment\Contracts\ShipmentReader;
+use Modules\Fulfillment\Contracts\ShippingCarrier;
 use Modules\Fulfillment\Contracts\SourcingStrategy;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
@@ -41,7 +43,9 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
+        $this->app->make(Extensions::class)->requires(ShippingCarrier::CARRIERS_TAG, Requirement::AtLeastOne, 'Hãng vận chuyển');
         $this->app->make(Extensions::class)->tag([ReservedLocationSourcing::class], SourcingStrategy::TAG);
+        $this->app->make(Extensions::class)->requires(SourcingStrategy::TAG, Requirement::ExactlyOne, 'Chọn kho xuất hàng');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void

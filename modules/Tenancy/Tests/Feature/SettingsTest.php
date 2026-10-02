@@ -76,7 +76,7 @@ it('Admin → Cấu hình: form (lựa chọn lấy từ extension point), lưu/
 
     $this->get('/admin/settings?namespace=core')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
         ->where('namespace', 'core')
-        ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
+        ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['none' => 'none', 'vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
 
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['tax.calculator' => 'zero_tax', 'returns.policy' => '']])->assertSessionHasNoErrors();
     expect(app(Settings::class)->get('core', 'tax.calculator'))->toBe('zero_tax')
