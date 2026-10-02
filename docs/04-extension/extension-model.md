@@ -62,6 +62,8 @@ vani.<context>.<subject?>.<moment>
 moment ∈ before_<verb> | after_<verb> | <noun> (filter dữ liệu) | slot UI
 ```
 
+Khai báo theo mẫu: khoá `'vani.admin.page.*'` bao mọi hook có tiền tố đó (khai báo đúng tên được ưu tiên). Thêm `stability` (`stable`/`experimental`) và `on_error` (`fail`/`skip`) khi cần.
+
 | Loại | Ví dụ | Trả về |
 |---|---|---|
 | filter | `vani.catalog.listing.query`, `vani.integration.order_payload` | Giá trị đã sửa (cùng kiểu) |
@@ -86,6 +88,27 @@ $this->onFilter('vani.integration.order_payload',
     priority: 20);
 // Tương tự: onAction(), onValidate() (trả list lỗi), onSlot() (trả một phần tử UI)
 ```
+
+Cú pháp ngắn ([ADR-031](../19-adr/ADR-031-short-hook-syntax-auto-points.md)) — gọi được ở mọi nơi, vẫn đi qua HookManager:
+
+```php
+$data = vani_filter('vani.catalog.product.view_data', $data, $product);   // Core
+vani_action('vani.order.after_create', $order);
+
+// Trong plugin (vd. boot()): listener tự gắn với plugin theo vị trí file → tắt plugin là tắt listener
+vani_add_filter('vani.admin.page.ordering.orders.show', fn (array $props): array => [...$props, 'myPlugin' => [...]], 20);
+vani_add_action('vani.order.after_create', fn (PlacedOrder $order) => ...);
+```
+
+### 4.2a Điểm mở rộng tự động (`experimental`)
+
+| Họ hook (khai báo mẫu) | Ở đâu | Tham số |
+|---|---|---|
+| `vani.admin.page.*` | Props của mọi trang Admin (Inertia); tên = component viết thường, `::`/`/` → `.` | `(props, component)` |
+| `vani.storefront.view.*` | Dữ liệu mọi view theme (`theme::pages.product` → `…view.pages.product`) | `(data, view)` |
+| `vani.api.storefront.*` | Body JSON thành công của Storefront API (`products.show`, route plugin `x.<slug>.<tên>`) | `(body, request)` |
+
+Chỉ chạy khi có listener; listener lỗi bị bỏ (`on_error: skip`); filter vẫn kiểm kiểu. `experimental` = có thể đổi ở bản minor (ghi CHANGELOG); có contract/registry `stable` (StorefrontEnricher, `adminFormSection`…) thì dùng cái đó.
 
 ```blade
 <x-vani::hook-slot name="vani.storefront.pdp.after_price" :product="$product" />

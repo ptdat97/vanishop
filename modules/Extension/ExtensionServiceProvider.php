@@ -10,10 +10,16 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Inertia\ResponseFactory;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Application\Hooks\CallerPlugin;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
+use Modules\Extension\Application\Hooks\Points\HookedInertiaFactory;
+use Modules\Extension\Application\Hooks\Points\ResponseHooks;
+use Modules\Extension\Application\Hooks\Points\ViewHooks;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginDoctor;
@@ -81,6 +87,9 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ScopedExtensions::class, fn ($app): ScopedExtensions => new ScopedExtensions($app, fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(ScopedExtensions::class, Extensions::class);
         $this->app->singleton(PluginViews::class);
+        $this->app->singleton(CallerPlugin::class);
+        // Điểm mở rộng tự động cho mọi trang Admin (ADR-031).
+        $this->app->singleton(ResponseFactory::class, HookedInertiaFactory::class);
         $this->app->singleton(AdminExtensions::class, fn ($app): AdminExtensions => new AdminExtensions(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(AdminExtensions::class, AdminScreen::class);
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
@@ -109,6 +118,8 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
     public function boot(Router $router, PermissionRegistry $permissions): void
     {
         $router->aliasMiddleware('vani.plugin-active', EnsurePluginActive::class);
+        $router->aliasMiddleware('vani.response-hooks', ResponseHooks::class);
+        View::composer('theme::*', ViewHooks::class);
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:plugin:health')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
         });

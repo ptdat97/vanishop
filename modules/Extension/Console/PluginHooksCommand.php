@@ -20,17 +20,24 @@ final class PluginHooksCommand extends Command
         $filter = $this->argument('plugin');
         $rows = [];
 
-        foreach ($registry->all() as $name => $definition) {
+        // Hook cụ thể có listener nhưng chỉ được bao bởi khai báo mẫu (điểm tự động) cũng được liệt kê.
+        $definitions = $registry->all();
+        foreach (array_keys($owners) as $name) {
+            $definitions[$name] ??= $registry->get($name);
+        }
+        ksort($definitions);
+
+        foreach (array_filter($definitions) as $name => $definition) {
             $listeners = array_map(fn (?string $owner): string => $owner ?? 'core', $owners[$name] ?? []);
 
             if ($filter !== null && ! in_array($filter, $listeners, true)) {
                 continue;
             }
 
-            $rows[] = [$name, $definition->type->value, $definition->public ? 'public' : 'internal', $definition->since, implode(', ', $listeners) ?: '-'];
+            $rows[] = [$name, $definition->type->value, $definition->public ? 'public' : 'internal', $definition->stability, $definition->since, implode(', ', $listeners) ?: '-'];
         }
 
-        $this->table(['Hook', 'Type', 'Visibility', 'Since', 'Listeners'], $rows);
+        $this->table(['Hook', 'Type', 'Visibility', 'Stability', 'Since', 'Listeners'], $rows);
 
         return self::SUCCESS;
     }

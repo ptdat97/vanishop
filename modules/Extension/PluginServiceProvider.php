@@ -246,7 +246,7 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context', 'vani.plugin-active:'.$this->pluginId()])
+        Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context', 'vani.plugin-active:'.$this->pluginId(), 'vani.response-hooks:vani.api.storefront,api.storefront.'])
             ->prefix("api/storefront/v1/x/{$slug}")
             ->name("api.storefront.x.{$slug}.")
             ->group($file);

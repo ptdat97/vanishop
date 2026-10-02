@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.8 — 2026-10-02
+
+[ADR-031](../19-adr/ADR-031-short-hook-syntax-auto-points.md): cú pháp hook ngắn + điểm mở rộng tự động. Chỉ thêm.
+
+### Thêm
+- Helper `vani_filter()`, `vani_action()`, `vani_add_filter()`, `vani_add_action()` — sở hữu plugin suy ra từ vị trí file gọi.
+- Khai báo hook theo mẫu (`'<tiền tố>.*'`), thuộc tính `stability` (`stable`|`experimental`), `on_error` (`fail`|`skip`).
+- Điểm tự động (`experimental`): `vani.admin.page.*`, `vani.storefront.view.*`, `vani.api.storefront.*`.
+- `vani:plugin:hooks` có cột Stability và liệt kê hook cụ thể có listener.
+
 ## 0.3.7 — 2026-10-02
 
 Đợt W5b của [extension-surface-v2](extension-surface-v2.md): đăng nhập bằng tài khoản bên ngoài. Chỉ thêm.

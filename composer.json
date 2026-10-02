@@ -34,7 +34,10 @@
             "Plugin\\": "custom/plugin/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "modules/Extension/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

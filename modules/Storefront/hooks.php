@@ -147,4 +147,22 @@ return [
         'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
         'description' => 'Trường trong form thêm giỏ (trước nút): tuỳ chọn dòng của plugin, đặt tên options[<plugin id>][<field>] (CartLineOption).',
     ],
+    'vani.storefront.view.*' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'stability' => 'experimental',
+        'on_error' => 'skip',
+        'since' => '0.3.8',
+        'args' => ['data' => 'array<string, mixed>', 'view' => 'string'],
+        'description' => 'Điểm tự động cho MỌI view của theme storefront: sửa dữ liệu view trước khi render (theme::pages.product → vani.storefront.view.pages.product). Chỉ ảnh hưởng hiển thị.',
+    ],
+    'vani.api.storefront.*' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'stability' => 'experimental',
+        'on_error' => 'skip',
+        'since' => '0.3.8',
+        'args' => ['body' => 'array<string, mixed>', 'request' => 'Illuminate\\Http\\Request'],
+        'description' => 'Điểm tự động cho MỌI phản hồi JSON thành công của Storefront API: tên = tên route bỏ "api.storefront.v1." (products.show → vani.api.storefront.products.show; route plugin: x.<slug>.<tên>). Ưu tiên StorefrontEnricher khi chỉ cần thêm dữ liệu cho sản phẩm/giỏ/đơn.',
+    ],
 ];

@@ -47,6 +47,9 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 
         $this->extendCoreAdminScreens();
 
+        // Cú pháp ngắn (ADR-031): listener vẫn thuộc vani.hello-world (suy ra từ vị trí file) → tắt plugin là tắt.
+        vani_add_filter('vani.admin.page.catalog.products.index', fn (array $props): array => [...$props, 'helloWorld' => ['banner' => 'Xin chào từ plugin']]);
+
         // Luồng giao dịch (W4): tuỳ chọn dòng giỏ + thuộc tính ngữ cảnh khuyến mãi từ trường checkout extra[vani.hello-world][ref].
         $this->contribute(CartLineOption::TAG, GiftMessageOption::class);
         $this->onSlot('vani.storefront.pdp.add_to_cart_fields', fn (): SlotView => new SlotView('vani-hello-world::gift-message-field'));

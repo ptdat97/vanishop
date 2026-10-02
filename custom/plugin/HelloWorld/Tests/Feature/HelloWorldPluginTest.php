@@ -165,3 +165,14 @@ it('plugin công bố hook: plugin khác sửa lời chào qua vani.hello-world.
     $this->getJson('/api/storefront/v1/x/vani-hello-world/greeting?name=Lan')->assertJsonPath('data.message', 'Xin chào, Lan! 🎉');
     $this->artisan('vani:plugin:hooks')->expectsOutputToContain('vani.hello-world.greeting')->assertSuccessful();
 });
+
+it('cú pháp ngắn vani_add_filter trong plugin: thuộc plugin, tắt plugin thì không chạy', function () {
+    installHelloWorld();
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'catalog.view'])->create(), 'staff');
+    $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->where('helloWorld.banner', 'Xin chào từ plugin'));
+    expect(app(HookManager::class)->listenerOwners()['vani.admin.page.catalog.products.index'] ?? [])->toContain('vani.hello-world');
+
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));
+    app(PluginActivation::class)->flush();
+    $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->missing('helloWorld'));
+});

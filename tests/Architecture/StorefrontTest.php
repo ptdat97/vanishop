@@ -28,7 +28,8 @@ it('mọi slot storefront đã khai báo đều được theme vani-base render 
         $views .= file_get_contents($file->getPathname());
     }
 
-    $missing = array_values(array_filter(array_keys(require __DIR__.'/../../modules/Storefront/hooks.php'), fn (string $slot): bool => ! str_contains($views, "name=\"{$slot}\"")));
+    $slots = array_keys(array_filter(require __DIR__.'/../../modules/Storefront/hooks.php', fn (array $hook): bool => $hook['type'] === 'slot'));
+    $missing = array_values(array_filter($slots, fn (string $slot): bool => ! str_contains($views, "name=\"{$slot}\"")));
 
     expect($missing)->toBe([]);
 });

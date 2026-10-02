@@ -88,7 +88,18 @@ final class HookManager
                 return $value;
             }
 
-            $result = $callback($value, ...$args);
+            try {
+                $result = $callback($value, ...$args);
+            } catch (Throwable $exception) {
+                // Điểm đọc/hiển thị (on_error: skip): bỏ listener lỗi thay vì làm hỏng trang/API.
+                if (($this->registry->get($name)?->onError ?? 'fail') !== 'skip') {
+                    throw $exception;
+                }
+                report($exception);
+                Log::warning('Filter lỗi, bỏ qua listener.', ['hook' => $name, 'plugin' => $pluginId]);
+
+                return $value;
+            }
             if (self::sameType($value, $result)) {
                 return $result;
             }
@@ -155,6 +166,14 @@ final class HookManager
     public function resetTimings(): void
     {
         $this->timings = [];
+    }
+
+    /**
+     * Có listener cho hook không — điểm tự động dùng để bỏ qua việc chuẩn bị dữ liệu khi không ai nghe.
+     */
+    public function hasListeners(string $name): bool
+    {
+        return ($this->listenerOwners[$name] ?? []) !== [];
     }
 
     /**
