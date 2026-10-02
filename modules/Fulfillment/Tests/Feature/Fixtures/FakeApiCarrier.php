@@ -49,7 +49,7 @@ final class FakeApiCarrier implements ShippingCarrier
 
         self::$booked[$shipment->publicId] ??= 'FK'.str_pad((string) (count(self::$booked) + 1), 6, '0', STR_PAD_LEFT);
 
-        return new CarrierShipment(self::$booked[$shipment->publicId], "https://carrier.example/label/{$shipment->publicId}", 'standard');
+        return new CarrierShipment(self::$booked[$shipment->publicId], "https://carrier.example/label/{$shipment->publicId}", $shipment->serviceCode ?? 'standard');
     }
 
     public function cancel(ShipmentData $shipment): void {}

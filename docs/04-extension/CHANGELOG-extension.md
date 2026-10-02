@@ -25,6 +25,10 @@ Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)
 - **Đổi hành vi:** COD, chuyển khoản, phí giao cố định, VAT VN rời Core thành plugin hệ thống `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` (giữ mã `cod`, `manual_bank_transfer`, `standard`, `vn_vat_inclusive`). Cấu hình chuyển từ `vanishop.payment.cod.*`, `vanishop.payment.bank_transfer.*`, `vanishop.checkout.shipping.*`, `vanishop.tax.vat_rate_bp` sang `vani.cod.*`, `vani.bank-transfer.*`, `vani.shipping-flat-rate.*`, `vani.tax-vn-vat.*` + Admin → Cấu hình (biến `.env` giữ tên). Core thêm TaxCalculator `none` (dự phòng). Nguồn phí giao `ShippingOption::$source` của phí cố định là `vani.shipping-flat-rate` (trước: `core`).
 - Checkout: không cổng nào khả dụng → issue `no_payment_method`.
 
+### Carrier theo phương thức giao (slice 12c — phần Core)
+- `OrderData::$shippingMethod` (`code`, `label`, `source`, `fee`).
+- **Đổi hành vi:** vận đơn dùng carrier có `code()` = `shippingMethod.source` của đơn (dịch vụ = `shippingMethod.code` → `ShipmentData::$serviceCode`) khi carrier đang bật; ngược lại dùng `vanishop.fulfillment.default_carrier`.
+
 ### Native storefront (slice 12b)
 - Slot storefront (`modules/Storefront/hooks.php`, `since 0.3`): `vani.storefront.layout.head`, `layout.body_end`, `plp.card_badges`, `pdp.after_title`, `pdp.after_price`, `pdp.after_add_to_cart`, `pdp.after_details`, `cart.after_lines`, `checkout.after_shipping`, `checkout.before_submit`, `order.after_summary`.
 - `Storefront\Contracts\Data\SlotView` — phần tử plugin trả cho slot storefront.

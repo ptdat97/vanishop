@@ -49,14 +49,17 @@ final class FulfillmentService
     /**
      * Tạo shipment cho đơn đã xác nhận theo SourcingStrategy. Trả các shipment id vừa tạo.
      *
+     * Carrier: chỉ định tường minh (nhân viên) → carrier của phương thức giao khách chọn (`shippingMethod.source`,
+     * dịch vụ = `shippingMethod.code`) nếu carrier đó đang bật → carrier mặc định (`vanishop.fulfillment.default_carrier`).
+     *
      * @return list<int>
      */
     public function createForOrder(int $orderId, ?string $carrierCode = null): array
     {
-        $carrierCode ??= (string) config('vanishop.fulfillment.default_carrier', 'manual');
+        [$carrierCode, $serviceCode] = $this->carrierFor($orderId, $carrierCode);
         $carrier = $this->registry->carrier($carrierCode) ?? throw new \InvalidArgumentException("Carrier [{$carrierCode}] chưa đăng ký.");
 
-        $ids = DB::transaction(function () use ($orderId, $carrierCode): array {
+        $ids = DB::transaction(function () use ($orderId, $carrierCode, $serviceCode): array {
             $order = $this->orders->find($orderId) ?? throw FulfillmentRejected::orderNotReady('missing');
             if (! in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)) {
                 throw FulfillmentRejected::orderNotReady($order->status->value);
@@ -78,7 +81,7 @@ final class FulfillmentService
             foreach ($proposals as $index => $proposal) {
                 $shipment = Shipment::query()->create([
                     'public_id' => (string) Str::ulid(), 'order_id' => $orderId, 'location_id' => $proposal->locationId,
-                    'carrier_code' => $carrierCode, 'cod_amount' => $index === 0 ? $cod : 0, 'currency_code' => $order->currencyCode,
+                    'carrier_code' => $carrierCode, 'service_code' => $serviceCode, 'cod_amount' => $index === 0 ? $cod : 0, 'currency_code' => $order->currencyCode,
                     'status' => ShipmentStatus::PendingBooking,
                 ]);
                 $variantByLine = array_column(array_map(fn ($line): array => ['id' => $line->id, 'variant' => $line->variantId], $lines), 'variant', 'id');
@@ -105,6 +108,25 @@ final class FulfillmentService
         }
 
         return $ids;
+    }
+
+    /**
+     * @return array{0: string, 1: ?string} [carrier, dịch vụ]
+     */
+    private function carrierFor(int $orderId, ?string $requested): array
+    {
+        if ($requested !== null) {
+            return [$requested, null];
+        }
+
+        $method = $this->orders->find($orderId)?->shippingMethod ?? [];
+        $source = (string) ($method['source'] ?? '');
+        if ($source !== '' && $this->registry->carrier($source) !== null) {
+            return [$source, isset($method['code']) ? (string) $method['code'] : null];
+        }
+
+        // Phí giao không gắn hãng (phí cố định) hoặc carrier đã tắt → carrier mặc định.
+        return [(string) config('vanishop.fulfillment.default_carrier', 'manual'), null];
     }
 
     /**

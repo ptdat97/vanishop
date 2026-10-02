@@ -2,12 +2,14 @@
 
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiCarrier;
+use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiRates;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Persistence\Models\Order;
 
@@ -183,4 +185,29 @@ it('Admin: quyền, mã vận đơn trùng', function () {
     $this->post("{$this->ship}/{$first->id}/book", ['tracking_number' => 'X1'])->assertSessionHasNoErrors();
     $this->post("{$this->ship}/{$second->id}/book", ['tracking_number' => 'X1'])->assertSessionHasErrors('business');
 
+});
+
+it('vận đơn dùng carrier của phương thức giao khách chọn (dịch vụ = mã phương thức); phí cố định hoặc carrier tắt → mặc định', function () {
+    app(Extensions::class)->tag([FakeApiRates::class], ShippingRateProvider::TAG);
+    $placeWith = function (string $method, int $expected, string $key) {
+        $created = $this->postJson("{$this->api}/carts")->assertCreated();
+        $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
+        $this->postJson("{$this->api}/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
+        $this->postJson("{$this->api}/checkout/{$created->json('data.id')}/orders", C::orderPayload(['shipping_method' => $method, 'expected_total' => $expected]), [...$headers, 'Idempotency-Key' => $key])->assertCreated();
+
+        return Shipment::query()->withoutGlobalScopes()->where('order_id', ($this->order)()->id)->sole();
+    };
+
+    $viaCarrier = $placeWith('fake_express', 345_000, 'carrier-by-source-1');
+    expect($viaCarrier->carrier_code)->toBe('fake_api')->and($viaCarrier->service_code)->toBe('fake_express')
+        ->and(FakeApiCarrier::$booked)->not->toBeEmpty();
+
+    $flat = $placeWith('standard', 330_000, 'carrier-by-source-2');
+    expect($flat->carrier_code)->toBe('manual')->and($flat->service_code)->toBeNull();
+
+    // Đơn đặt với carrier đã tắt sau đó: không còn carrier đó → mặc định thay vì lỗi.
+    DB::table('orders')->where('id', ($this->order)()->id)->update(['shipping_method' => json_encode(['code' => 'x', 'source' => 'hang_da_tat'])]);
+    DB::table('shipments')->where('order_id', ($this->order)()->id)->update(['status' => 'cancelled']);
+    T::seed(fn () => app(FulfillmentService::class)->createForOrder(($this->order)()->id));
+    expect(Shipment::query()->withoutGlobalScopes()->where('order_id', ($this->order)()->id)->where('status', '!=', 'cancelled')->sole()->carrier_code)->toBe('manual');
 });

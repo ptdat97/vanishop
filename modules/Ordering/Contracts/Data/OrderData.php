@@ -30,5 +30,12 @@ final readonly class OrderData
         /** orders.meta (dữ liệu của plugin, khoá theo plugin id). */
         public array $meta = [],
         public string $source = 'web',
+        /**
+         * Phương thức giao khách chọn (snapshot lúc đặt): `source` = mã carrier tương ứng (vd. `ghn`) hoặc plugin
+         * báo phí không gắn hãng (vd. `vani.shipping-flat-rate`).
+         *
+         * @var array{code?: ?string, label?: ?string, source?: ?string, fee?: int}
+         */
+        public array $shippingMethod = [],
     ) {}
 }

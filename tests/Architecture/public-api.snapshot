@@ -500,7 +500,8 @@ class Modules\Ordering\Contracts\Data\OrderData
   'phone' => '',
 ), array $shippingAddress = array (
 ), string $fulfillmentStatus = 'unfulfilled', ?string $placedAt = NULL, ?string $updatedAt = NULL, array $meta = array (
-), string $source = 'web')
+), string $source = 'web', array $shippingMethod = array (
+))
 class Modules\Ordering\Contracts\Data\OrderDetail
   __construct(int $id, string $publicId, string $number, string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod, array $customerStatus, string $currencyCode, array $amounts, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $placedAt, array $lines, array $adjustments, array $events, bool $cancellableByCustomer, int $lockVersion, string $source = 'web')
 class Modules\Ordering\Contracts\Data\OrderDraft

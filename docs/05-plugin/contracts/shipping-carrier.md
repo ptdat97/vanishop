@@ -92,6 +92,6 @@ interface ShippingCarrier
 
 ## Giới hạn hiện tại
 
-- **Carrier của vận đơn chưa theo lựa chọn của khách.** `FulfillmentService::createForOrder()` dùng `config('vanishop.fulfillment.default_carrier')` (mặc định `manual`) cho mọi đơn; `shippingMethod.source` đã lưu trên đơn nhưng chưa được đọc. Cần PR Core: chọn carrier theo `source` (rơi về mặc định nếu carrier không bật trong scope).
-- **`vani.ghn` là bản mô phỏng**: phí lấy từ cấu hình (mặc định 30.000đ), mã vận đơn sinh trong bộ nhớ, chưa gọi API GHN. Đủ để chứng minh extension point và chạy contract test, **chưa** dùng được cho vận hành.
+- Carrier của vận đơn theo lựa chọn của khách (2026-10-02): `FulfillmentService::createForOrder()` dùng carrier có `code()` = `shippingMethod.source` của đơn (dịch vụ = `shippingMethod.code`, truyền tới `ShipmentData::$serviceCode`) nếu carrier đang bật; phí không gắn hãng (`vani.shipping-flat-rate`) hoặc carrier đã tắt → `vanishop.fulfillment.default_carrier`. Nhân viên chỉ định carrier vẫn được ưu tiên.
+- **`vani.ghn` là bản mô phỏng**: phí lấy từ cấu hình (mặc định 30.000đ), mã vận đơn sinh trong bộ nhớ, chưa gọi API GHN. Đủ để chứng minh extension point và chạy contract test, **chưa** dùng được cho vận hành. Khi làm thật (hoãn theo quyết định Owner 2026-10-02): báo cước bằng `shipping-order/preview` (nhận tên tỉnh/phường, không tạo đơn), tạo đơn với `client_order_code` = `publicId` + tra `detail-by-client-code` trước khi tạo, huỷ `switch-status/cancel`, webhook không có chữ ký → xác minh bằng custom header bí mật, khử trùng theo `OrderCode` + `Type` + `Time`.
 - `FulfillmentMethod` (nhận tại cửa hàng): Designed.

@@ -101,6 +101,7 @@ final class EloquentOrderReader implements OrderReader
             updatedAt: $order->updated_at?->toIso8601String(),
             meta: (array) ($order->meta ?? []),
             source: (string) $order->source,
+            shippingMethod: (array) ($order->shipping_method ?? []),
         );
     }
 }
