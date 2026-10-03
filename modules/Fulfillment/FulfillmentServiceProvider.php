@@ -25,6 +25,8 @@ use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
 use Modules\Fulfillment\Contracts\SourcingStrategy;
+use Modules\Fulfillment\Domain\ShipmentStatus;
+use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
@@ -63,6 +65,17 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 5);
+
+        // Tắt hãng còn vận đơn chưa kết thúc → webhook 404, trạng thái giao/COD/hàng hoàn không được cập nhật.
+        $this->app->make(Extensions::class)->guardDisable(ShippingCarrier::CARRIERS_TAG, function (object $carrier): ?string {
+            if (! $carrier instanceof ShippingCarrier) {
+                return null;
+            }
+            $open = Shipment::query()->where('carrier_code', $carrier->code())
+                ->whereNotIn('status', [ShipmentStatus::Delivered, ShipmentStatus::Returned, ShipmentStatus::Cancelled])->count();
+
+            return $open === 0 ? null : "còn {$open} vận đơn chưa kết thúc của hãng {$carrier->code()}";
+        });
 
         RateLimiter::for('shipping-webhooks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));
 

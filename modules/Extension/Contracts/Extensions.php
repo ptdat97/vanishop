@@ -94,6 +94,23 @@ interface Extensions
     public function providers(string $tag): array;
 
     /**
+     * Chặn tắt plugin khi implementation của nó còn việc dở dang (0.3.16): `$check` nhận implementation do plugin đóng
+     * góp cho `$tag`, trả lý do (vd. "còn 3 khoản thanh toán đang chờ qua cổng vnpay") hoặc null. Module sở hữu dữ liệu
+     * đăng ký (Payment: khoản chờ/giữ tiền; Fulfillment: vận đơn chưa kết thúc) — tắt cổng/hãng giữa chừng làm IPN,
+     * webhook trả 404 và tiền/hàng không được ghi nhận.
+     *
+     * @param  callable(object): (string|null)  $check
+     */
+    public function guardDisable(string $tag, callable $check): void;
+
+    /**
+     * Lý do không nên tắt `$pluginId` lúc này (rỗng = tắt được). `vani:plugin:disable --force` bỏ qua (có audit).
+     *
+     * @return list<string>
+     */
+    public function disableBlockers(string $pluginId): array;
+
+    /**
      * Loại plugin `kind` (manifest) ứng với extension point `tag` — module sở hữu contract khai báo; doctor cảnh báo
      * `kind_mismatch` khi plugin khai loại này mà không đóng góp implementation nào cho tag.
      */

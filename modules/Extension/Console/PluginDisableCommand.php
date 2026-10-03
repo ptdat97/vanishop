@@ -10,14 +10,14 @@ use Modules\Extension\Application\Plugins\PluginOperationFailed;
 
 final class PluginDisableCommand extends Command
 {
-    protected $signature = 'vani:plugin:disable {plugin}';
+    protected $signature = 'vani:plugin:disable {plugin} {--force : Tắt dù còn việc dở dang (thanh toán chờ, vận đơn đang giao)}';
 
     protected $description = 'Tắt plugin';
 
     public function handle(PluginManager $plugins): int
     {
         try {
-            $plugins->disable((string) $this->argument('plugin'));
+            $plugins->disable((string) $this->argument('plugin'), (bool) $this->option('force'));
         } catch (PluginOperationFailed $exception) {
             $this->error($exception->getMessage());
 

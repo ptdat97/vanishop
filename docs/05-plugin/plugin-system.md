@@ -100,13 +100,22 @@ Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:pl
 
 ## 5. CLI
 
-`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`, `upgrade`, `doctor`: **Implemented**. Kiểm tra extension point bắt buộc trong `disable`/`uninstall`/`doctor`: Designed ([commerce-kernel §5](../02-architecture/commerce-kernel.md)).
+`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`, `upgrade`, `doctor`: **Implemented**. Kiểm tra extension point bắt buộc trong `disable`/`doctor`: **Implemented** ([commerce-kernel §5](../02-architecture/commerce-kernel.md)).
+
+**Chặn tắt khi còn việc dở dang** (0.3.16): module sở hữu dữ liệu đăng ký `Extensions::guardDisable($tag, $check)`; `disable` từ chối khi implementation của plugin còn việc chưa xong, nêu lý do:
+
+| Tag | Chặn khi | Vì sao |
+|---|---|---|
+| `vani.payment.gateways` | Cổng còn khoản thanh toán `pending`/`authorized` | IPN về cổng đã tắt trả 404 → tiền khách đã trả không được ghi nhận, khoản hết hạn và đơn bị huỷ |
+| `vani.shipping.carriers` | Hãng còn vận đơn chưa `delivered`/`returned`/`cancelled` | Webhook trả 404 → không cập nhật giao hàng, thu COD, nhập lại hàng hoàn |
+
+`--force` tắt dù còn việc dở dang (khẩn cấp: plugin lỗi), ghi `forced` + lý do vào audit; việc dở dang phải xử lý tay. Muốn ngừng nhận đơn mới qua một cổng/hãng mà vẫn hoàn tất đơn cũ: dùng cấu hình của plugin (vd. giới hạn số tiền, tắt phương thức), không tắt plugin.
 
 ```bash
 php artisan vani:plugin:list                      # id, version, trạng thái, scope, tương thích
 php artisan vani:plugin:install vani.vietqr       # kiểm tra deps → chạy migration → installed
 php artisan vani:plugin:enable vani.vietqr        # (--scope chỉ còn trong code cũ, bỏ ở slice 12)
-php artisan vani:plugin:disable vani.vietqr [--scope=...]
+php artisan vani:plugin:disable vani.vietqr [--force]   # từ chối khi còn thanh toán chờ / vận đơn đang giao
 php artisan vani:plugin:uninstall vani.vietqr [--purge]   # --purge: rollback migration, xoá bảng plg_*
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
 php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit

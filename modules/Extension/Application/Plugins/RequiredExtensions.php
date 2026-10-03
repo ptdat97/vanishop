@@ -56,4 +56,14 @@ final class RequiredExtensions
 
         return $missing;
     }
+
+    /**
+     * Việc dở dang của implementation do plugin đóng góp (Extensions::guardDisable).
+     *
+     * @return list<string>
+     */
+    public function inUse(string $pluginId): array
+    {
+        return $this->extensions->disableBlockers($pluginId);
+    }
 }

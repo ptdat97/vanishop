@@ -26,6 +26,8 @@ use Modules\Payment\Console\ExpirePaymentsCommand;
 use Modules\Payment\Console\ReconcilePaymentsCommand;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\Payments;
+use Modules\Payment\Domain\PaymentStatus;
+use Modules\Payment\Persistence\Models\Payment;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 final class PaymentServiceProvider extends ModuleServiceProvider
@@ -55,6 +57,16 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
         Event::listen(ShipmentStatusChanged::class, CaptureAuthorizedOnShipment::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));
+
+        // Tắt cổng còn khoản chờ/giữ tiền → IPN 404, tiền khách đã trả không được ghi nhận.
+        $this->app->make(Extensions::class)->guardDisable(PaymentGateway::TAG, function (object $gateway): ?string {
+            if (! $gateway instanceof PaymentGateway) {
+                return null;
+            }
+            $open = Payment::query()->where('gateway_code', $gateway->code())->whereIn('status', [PaymentStatus::Pending, PaymentStatus::Authorized])->count();
+
+            return $open === 0 ? null : "còn {$open} khoản thanh toán chờ/giữ tiền qua cổng {$gateway->code()}";
+        });
 
         RateLimiter::for('payment-callbacks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));
 

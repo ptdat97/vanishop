@@ -47,6 +47,9 @@ final class ScopedExtensions implements Extensions
     /** @var array<string, string> kind => tag */
     private array $kindContracts = [];
 
+    /** @var array<string, list<callable(object): (string|null)>> tag => kiểm tra */
+    private array $disableGuards = [];
+
     public function __construct(
         private readonly Container $container,
         private readonly Closure $activation,
@@ -178,6 +181,32 @@ final class ScopedExtensions implements Extensions
     public function providers(string $tag): array
     {
         return array_values($this->contributions[$tag] ?? []);
+    }
+
+    public function guardDisable(string $tag, callable $check): void
+    {
+        $this->disableGuards[$tag][] = $check;
+    }
+
+    public function disableBlockers(string $pluginId): array
+    {
+        $reasons = [];
+        foreach ($this->disableGuards as $tag => $checks) {
+            foreach ($this->contributions[$tag] ?? [] as $abstract => $owner) {
+                if ($owner !== $pluginId) {
+                    continue;
+                }
+                $implementation = $this->container->make($abstract);
+                foreach ($checks as $check) {
+                    $reason = $check($implementation);
+                    if (is_string($reason) && $reason !== '') {
+                        $reasons[] = $reason;
+                    }
+                }
+            }
+        }
+
+        return $reasons;
     }
 
     public function kindContract(string $kind, string $tag): void

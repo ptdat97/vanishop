@@ -89,7 +89,10 @@ final class PluginManager
         $this->afterStateChange();
     }
 
-    public function disable(string $pluginId): void
+    /**
+     * @param  bool  $force  tắt dù implementation còn việc dở dang (khẩn cấp: plugin lỗi) — ghi lý do vào audit
+     */
+    public function disable(string $pluginId, bool $force = false): void
     {
         $record = $this->recordOrFail($pluginId);
 
@@ -103,9 +106,14 @@ final class PluginManager
             throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đây là implementation cuối cùng của ".implode(', ', $broken).' — bật plugin thay thế trước.');
         }
 
+        $inUse = $this->required->inUse($pluginId);
+        if ($inUse !== [] && ! $force) {
+            throw new PluginOperationFailed("Không nên tắt [{$pluginId}] lúc này: ".implode('; ', $inUse).'. Chờ xử lý xong, hoặc dùng --force (việc dở dang sẽ không được ghi nhận tự động).');
+        }
+
         $record->update(['status' => PluginStatus::Disabled]);
 
-        $this->audit->record('extension.plugin.disabled', 'plugin', $pluginId);
+        $this->audit->record('extension.plugin.disabled', 'plugin', $pluginId, $inUse === [] ? [] : ['forced' => true, 'in_use' => $inUse]);
         $this->afterStateChange();
     }
 

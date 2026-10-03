@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.16 — 2026-10-03
+
+Củng cố vòng đời plugin. Thêm + đổi hành vi.
+
+### Thêm
+- `Extensions::guardDisable(string $tag, callable $check)` và `Extensions::disableBlockers(string $pluginId): list<string>`: module đăng ký kiểm tra "implementation của plugin còn việc dở dang". Core đăng ký cho `vani.payment.gateways` (khoản `pending`/`authorized`) và `vani.shipping.carriers` (vận đơn chưa kết thúc).
+- `vani:plugin:disable --force`.
+- `ReturnRejected::unknownLines()` (`return.unknown_lines`).
+
+### Đổi hành vi
+- `vani:plugin:disable` từ chối tắt cổng thanh toán/hãng vận chuyển còn việc dở dang (trước: tắt được, IPN/webhook sau đó 404). `--force` bỏ qua, ghi audit `forced`.
+- Returns `receive()`: khoá tình trạng không thuộc yêu cầu → 422 (trước: bị coi là "bán được" và nhập kho).
+
 ## 0.3.15 — 2026-10-03
 
 Cổng VNPay. Chỉ thêm.
