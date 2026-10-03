@@ -8,7 +8,7 @@
 >
 > **Slice 11:** sync từ authority ngoài qua `PUT /api/integration/v1/inventory/levels` → contract `InventorySync` (chỉ client là `stock_authority` của location được ghi, bản cũ theo `sync_version` bị bỏ qua, movement `sync` có `reference = v<version>`).
 >
-> **Chưa có:** transfer, reconciliation (snapshot), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
+> **Chưa có:** transfer, reconciliation với nguồn ngoài (snapshot), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
 
 ## 1. Nguyên tắc
 
@@ -126,6 +126,7 @@ public function reserve(ReservationRequest $req): Reservation   // gọi trong t
 ## 6. Transfer và reconciliation
 
 - **Transfer**: `draft → in_transit → received`. Xuất: movement `transfer_out`. Nhận: `transfer_in` (có thể nhận thiếu, chênh lệch ghi `adjust` kèm lý do). Nếu cả hai location do ERP quản lý thì transfer diễn ra trên ERP; VaniShop chỉ nhận số mới.
+- **Đối soát nội bộ** (**Implemented**, `vani:inventory:verify`, hằng ngày 03:30): `reserved` = tổng hàng giữ active (lệch → `--repair-reserved` ghi movement `reconcile`); on_hand/reserved = giá trị "sau" của movement cuối (lệch = có chỗ sửa tồn ngoài sổ → chỉ báo, cần kiểm kê); không âm. Exit 1 + log cảnh báo khi còn chênh lệch. Bộ test bất biến vòng đời (`tests/Feature/Invariants`) chạy lệnh này sau mọi luồng.
 - **Reconciliation**: snapshot từ authority (hằng đêm hoặc theo yêu cầu) → so với `on_hand` → tạo `inventory_reconciliation_lines` cho chênh lệch → tự áp dụng nếu dưới ngưỡng, còn lại chờ duyệt → movement `sync`. Báo cáo tỷ lệ lệch (mục tiêu < 0,5%).
 
 ## 7. Đồng bộ với authority ngoài

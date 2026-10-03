@@ -15,6 +15,7 @@ use Modules\Inventory\Application\ReturnService;
 use Modules\Inventory\Application\StandardInventoryStrategy;
 use Modules\Inventory\Application\StockAvailability;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
+use Modules\Inventory\Console\VerifyStockCommand;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Inventory\Contracts\InventoryReturns;
@@ -60,10 +61,11 @@ final class InventoryServiceProvider extends ModuleServiceProvider
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:inventory:release-expired')->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:inventory:verify')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ReleaseExpiredReservationsCommand::class]);
+            $this->commands([ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class]);
         }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-owner.php'));

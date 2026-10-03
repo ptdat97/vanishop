@@ -95,6 +95,9 @@ beforeEach(function () {
             }
         }
 
+        // Công cụ đối soát chạy trên production cũng phải thấy sạch sau mọi vòng đời.
+        $this->artisan('vani:inventory:verify')->assertSuccessful();
+
         foreach (DB::table('payments')->get() as $payment) {
             $captured = in_array($payment->status, ['paid', 'partially_refunded', 'refunded'], true) ? (int) $payment->amount : 0;
             expect((int) DB::table('refunds')->where('payment_id', $payment->id)->where('status', 'completed')->sum('amount'))->toBeLessThanOrEqual($captured, "I4 payment {$payment->public_id}");
