@@ -938,6 +938,7 @@ class Modules\Returns\Contracts\ReturnRejected extends Modules\Shared\Domain\Bus
   static quantityExceeded(int $orderLineId, int $allowed): self
   static invalidTransition(string $from, string $to): self
   static refundExceeds(int $max): self
+  static unknownLines(array $lineIds): self
   static stale(): self
   errorCode(): string
   status(): int

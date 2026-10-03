@@ -36,6 +36,14 @@ final class ReturnRejected extends BusinessRuleViolation
         return new self('return.refund_exceeds', 422, __('returns::messages.refund_exceeds'), ['max' => $max]);
     }
 
+    /**
+     * @param  list<int|string>  $lineIds
+     */
+    public static function unknownLines(array $lineIds): self
+    {
+        return new self('return.unknown_lines', 422, __('returns::messages.unknown_lines'), ['return_line_ids' => $lineIds]);
+    }
+
     public static function stale(): self
     {
         return new self('return.stale', 409, __('returns::messages.stale'));

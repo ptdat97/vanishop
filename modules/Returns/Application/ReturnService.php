@@ -164,6 +164,12 @@ final class ReturnService implements Returns
                 throw ReturnRejected::invalidTransition($return->status->value, ReturnStatus::Received->value);
             }
 
+            // Khoá tình trạng = id dòng trả hàng. Khoá lạ bị từ chối: không âm thầm coi là "bán được" và nhập kho hàng hỏng.
+            $unknown = array_diff(array_keys($conditions), $return->lines->pluck('id')->all());
+            if ($unknown !== []) {
+                throw ReturnRejected::unknownLines(array_values($unknown));
+            }
+
             $locations = $this->shipmentLocations($return->order_id);
             foreach ($return->lines as $line) {
                 $condition = ($conditions[$line->id] ?? 'sellable') === 'damaged' ? 'damaged' : 'sellable';
