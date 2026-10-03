@@ -15,4 +15,11 @@ Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `
 - **Storefront API** (headless): `GET /api/storefront/v1/x/vani-cms/pages/{slug}`, `GET …/posts?per_page=`, `GET …/posts/{slug}`.
 - **Dữ liệu:** bảng `plg_cms_pages`, `plg_cms_posts`. Tắt plugin thì URL, menu, khối và API đều biến mất; dữ liệu vẫn giữ.
 
-Chưa làm: đa ngôn ngữ, chuyên mục/thẻ cho bài viết, menu tuỳ biến (`MenuItemType`), lịch sử phiên bản.
+## Quyết định
+
+- **URL cố định** (Owner chốt 2026-10-03): trang ở `/trang/{slug}`, tin tức ở `/tin-tuc` và `/tin-tuc/{slug}`. Không có cấu hình đổi prefix: URL ổn định cho SEO, và route đăng ký lúc boot nên không phụ thuộc cấu hình trong DB (chạy được với `route:cache`).
+
+## Chưa làm
+
+- **Trình soạn thảo WYSIWYG** (hoãn, Owner 2026-10-03): hiện soạn bằng Markdown. Khi làm cần trình soạn thảo trực quan ở Admin (gói npm) và bộ làm sạch HTML theo allowlist ở server (gói PHP), nên phải duyệt dependency theo R25 + ghi ADR. Giữ Markdown làm định dạng lưu, hoặc chuyển sang HTML đã làm sạch: quyết định khi làm.
+- Đa ngôn ngữ, chuyên mục/thẻ cho bài viết, menu tuỳ biến (`MenuItemType`), lịch sử phiên bản.

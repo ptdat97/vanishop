@@ -111,7 +111,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 |---|---|
 | `vani.reports` (widget Tổng quan, báo cáo doanh thu theo ngày/sản phẩm/thương hiệu/thanh toán/kênh, CSV) | **Implemented** (Core 0.3.12) |
 | `vani.advanced-reports` (hợp nhất Owner, cohort, RFM, phân bổ chi phí KM/loyalty) | P3 |
-| `vani.cms` (trang `/trang/*`, tin tức `/tin-tuc`, Markdown, hẹn giờ, xem trước, SEO, link header/footer, khối "Bài viết mới", sitemap, Storefront API) | **Implemented** (Core 0.3.14) — thay cho `vani.blog` |
+| `vani.cms` (trang `/trang/*`, tin tức `/tin-tuc`, Markdown, hẹn giờ, xem trước, SEO, link header/footer, khối "Bài viết mới", sitemap, Storefront API) | **Implemented** (Core 0.3.14) — thay cho `vani.blog`; URL cố định; WYSIWYG hoãn |
 | `vani.lookbook` | P2 |
 
 ## 4. Quy tắc
