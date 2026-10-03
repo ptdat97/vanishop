@@ -124,7 +124,7 @@ function resume(id: number): void {
         <button
             v-for="box in ['outbox', 'inbox'] as const"
             :key="box"
-            :class="[secondaryButton, filters.box === box ? 'border-indigo-500 text-indigo-700' : '']"
+            :class="[secondaryButton, filters.box === box ? 'border-indigo-500 text-red-700' : '']"
             @click="filter({ box, target: null })"
         >
             {{ box === 'outbox' ? 'Gửi đi' : 'Nhận vào' }}

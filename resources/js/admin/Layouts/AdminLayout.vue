@@ -31,7 +31,7 @@ function logout(): void {
                     :key="item.key"
                     :href="item.url"
                     class="rounded-md px-3 py-2 text-sm"
-                    :class="isCurrent(item.key, item.url) ? 'bg-indigo-50 font-medium text-indigo-700' : 'text-slate-600 hover:bg-slate-100'"
+                    :class="isCurrent(item.key, item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
                 >
                     {{ item.label }}
                 </Link>

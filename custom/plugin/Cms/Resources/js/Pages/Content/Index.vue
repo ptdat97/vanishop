@@ -53,7 +53,7 @@ function submitSearch(): void {
             :href="urls[key]"
             :class="[
                 secondaryButton,
-                kind === key ? 'border-indigo-500 text-indigo-700' : '',
+                kind === key ? 'border-indigo-500 text-red-700' : '',
             ]"
         >
             {{ labels.plural }}
@@ -90,7 +90,7 @@ function submitSearch(): void {
                     <td class="px-4 py-2">
                         <Link
                             :href="`${urls.index}/${item.id}`"
-                            class="font-medium text-indigo-700 hover:underline"
+                            class="font-medium text-red-700 hover:underline"
                             >{{ item.title }}</Link
                         >
                         <div class="text-xs text-slate-400">
@@ -149,7 +149,7 @@ function submitSearch(): void {
             class="rounded border px-3 py-1"
             :class="[
                 link.active
-                    ? 'border-indigo-500 text-indigo-700'
+                    ? 'border-indigo-500 text-red-700'
                     : 'border-slate-200',
                 link.url ? '' : 'pointer-events-none opacity-40',
             ]"

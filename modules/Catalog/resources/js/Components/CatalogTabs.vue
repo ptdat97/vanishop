@@ -14,7 +14,7 @@ defineProps<{ nav: NavItem[]; active: string }>();
                 :key="item.key"
                 :href="item.url"
                 class="-mb-px border-b-2 px-3 py-2 text-sm"
-                :class="item.key === active ? 'border-indigo-600 font-medium text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'"
+                :class="item.key === active ? 'border-indigo-600 font-medium text-red-700' : 'border-transparent text-slate-500 hover:text-slate-800'"
             >
                 {{ item.label }}
             </Link>

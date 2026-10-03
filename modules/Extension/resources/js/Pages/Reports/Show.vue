@@ -74,7 +74,7 @@ function choose(preset: string): void {
             :class="[
                 secondaryButton,
                 period.preset === preset
-                    ? 'border-indigo-500 text-indigo-700'
+                    ? 'border-indigo-500 text-red-700'
                     : '',
             ]"
             @click="choose(preset)"
@@ -98,7 +98,7 @@ function choose(preset: string): void {
             :class="[
                 secondaryButton,
                 period.preset === 'custom'
-                    ? 'border-indigo-500 text-indigo-700'
+                    ? 'border-indigo-500 text-red-700'
                     : '',
             ]"
             @click="choose('custom')"
