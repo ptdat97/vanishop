@@ -1,0 +1,15 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/events/payment.refunded.json",
+    "title": "data của event payment.refunded (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["order_number", "refund_id", "payment_id", "amount", "currency"],
+    "properties": {
+        "order_number": { "type": "string" },
+        "refund_id": { "type": "integer" },
+        "payment_id": { "type": "integer" },
+        "amount": { "type": "integer", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+    }
+}

@@ -1,0 +1,64 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/vanishop.order.v1.json",
+    "title": "Canonical order (vanishop.order.v1)",
+    "description": "Ảnh chụp đơn hàng gửi ra ngoài. Mọi trường liệt kê đều bắt buộc và giữ kiểu trong v1; plugin chỉ được THÊM trường (hook vani.integration.order_payload), không đổi trường canonical. Tiền là số nguyên đơn vị nhỏ nhất (VND: đồng).",
+    "type": "object",
+    "additionalProperties": true,
+    "required": ["schema", "number", "public_id", "source", "customer_id", "status", "payment_status", "fulfillment_status", "return_status", "payment_method", "currency", "total_amount", "customer", "shipping_address", "lines", "placed_at", "updated_at"],
+    "properties": {
+        "schema": { "type": "string", "const": "vanishop.order.v1" },
+        "number": { "type": "string" },
+        "public_id": { "type": "string", "pattern": "^[0-9A-Z]{26}$" },
+        "source": { "type": "string", "description": "web | app | zalo | admin | pos | marketplace" },
+        "customer_id": { "type": ["integer", "null"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "processing", "completed", "cancelled"] },
+        "payment_status": { "type": "string" },
+        "fulfillment_status": { "type": "string", "enum": ["unfulfilled", "allocated", "partially_shipped", "shipped", "delivered", "returned_to_sender"] },
+        "return_status": { "type": "string", "enum": ["none", "requested", "in_progress", "partially_returned", "returned"] },
+        "payment_method": { "type": "string" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "total_amount": { "type": "integer", "minimum": 0 },
+        "customer": {
+            "type": "object",
+            "required": ["full_name", "phone"],
+            "properties": {
+                "full_name": { "type": "string" },
+                "phone": { "type": "string" },
+                "email": { "type": ["string", "null"] }
+            }
+        },
+        "shipping_address": {
+            "type": "object",
+            "required": ["province_code", "province_name", "ward_code", "ward_name", "street_line"],
+            "properties": {
+                "province_code": { "type": "string" },
+                "province_name": { "type": "string" },
+                "ward_code": { "type": "string" },
+                "ward_name": { "type": "string" },
+                "street_line": { "type": "string" }
+            }
+        },
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["line_id", "variant_id", "sku", "name", "brand", "color", "size", "quantity", "total_amount"],
+                "properties": {
+                    "line_id": { "type": "integer" },
+                    "variant_id": { "type": "integer" },
+                    "sku": { "type": "string" },
+                    "name": { "type": "string" },
+                    "brand": { "type": ["string", "null"] },
+                    "color": { "type": ["string", "null"] },
+                    "size": { "type": "string" },
+                    "quantity": { "type": "integer", "minimum": 1 },
+                    "total_amount": { "type": "integer", "minimum": 0 }
+                }
+            }
+        },
+        "placed_at": { "type": ["string", "null"], "format": "date-time" },
+        "updated_at": { "type": ["string", "null"], "format": "date-time" }
+    }
+}

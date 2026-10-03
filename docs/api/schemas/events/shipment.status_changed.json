@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/events/shipment.status_changed.json",
+    "title": "data của event shipment.status_changed (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "order_number",
+        "shipment_id",
+        "from",
+        "to"
+    ],
+    "properties": {
+        "order_number": {
+            "type": "string"
+        },
+        "shipment_id": {
+            "type": "integer"
+        },
+        "from": {
+            "type": "string",
+            "enum": [
+                "pending_booking",
+                "booking_failed",
+                "created",
+                "picked_up",
+                "in_transit",
+                "out_for_delivery",
+                "failed_attempt",
+                "delivered",
+                "returning",
+                "returned",
+                "cancelled"
+            ]
+        },
+        "to": {
+            "type": "string",
+            "enum": [
+                "pending_booking",
+                "booking_failed",
+                "created",
+                "picked_up",
+                "in_transit",
+                "out_for_delivery",
+                "failed_attempt",
+                "delivered",
+                "returning",
+                "returned",
+                "cancelled"
+            ]
+        }
+    }
+}

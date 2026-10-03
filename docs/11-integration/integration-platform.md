@@ -52,7 +52,7 @@ flowchart LR
 
 ## 4. Integration API (mô hình A)
 
-Xác thực HMAC ([api §5](../06-api/api.md)). Payload theo **canonical model** có version (`vanishop.order.v1`), JSON Schema trong `docs/api/schemas/` (được tạo khi triển khai).
+Xác thực HMAC ([api §5](../06-api/api.md)). Payload theo **canonical model** có version (`vanishop.order.v1`), JSON Schema trong [`docs/api/schemas/`](../api/schemas/README.md): envelope v1, `vanishop.order.v1`, `data` của 8 loại event; test bắt payload thật khớp schema (`PayloadSchemaTest`).
 
 **Đọc**: `GET /orders?updated_since=&cursor=`, `/orders/{number}`, `/returns`, `/customers`, `/catalog/variants`, `/payments`, `/events?after=<cursor>` (event feed thay cho webhook).
 

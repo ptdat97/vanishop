@@ -1,0 +1,14 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/events/return.created.json",
+    "title": "data của event return.created (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["order_number", "return_id", "return_number", "source"],
+    "properties": {
+        "order_number": { "type": "string" },
+        "return_id": { "type": "integer" },
+        "return_number": { "type": "string" },
+        "source": { "type": "string" }
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/events/order.confirmed.json",
+    "title": "data của event order.confirmed (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "order"
+    ],
+    "properties": {
+        "order": {
+            "$ref": "../vanishop.order.v1.json"
+        },
+        "reconciled": {
+            "type": "boolean",
+            "const": true,
+            "description": "Có khi event được bù bởi đối soát (vani:integration:reconcile-orders)."
+        },
+        "reason": {
+            "type": "string"
+        }
+    },
+    "description": "`reason`/`source` có khi event phát từ luồng nghiệp vụ; event bù bởi đối soát (`reconciled: true`) không có."
+}
