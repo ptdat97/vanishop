@@ -1,0 +1,17 @@
+{
+    "id": "vani.cms",
+    "name": {
+        "vi": "Nội dung (CMS)",
+        "en": "Content (CMS)"
+    },
+    "version": "1.0.0",
+    "kind": "content",
+    "provider": "Plugin\\Cms\\CmsServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.14",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": ["cms.view", "cms.manage"],
+    "author": "VaniShop Team"
+}

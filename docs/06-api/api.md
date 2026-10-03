@@ -69,9 +69,9 @@ Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác
 | POST | `/orders/{id}/returns` | Khách gửi yêu cầu đổi/trả (`lines[{order_line_id, quantity}]`, `reason_code` ∈ `vanishop.returns.reasons`, `note`), header `X-Vani-Order-Token`. Lỗi `return.not_eligible` (chưa giao / quá hạn), `return.quantity_exceeded`. Đơn trả về có `returns[]` và `returnable{lines{order_line_id: số còn trả được}, deadline}`. **Implemented** |
 | POST | `/orders/{id}/returns/{returnId}/cancel` | Khách huỷ yêu cầu còn chờ duyệt. **Implemented** |
 | POST | `/me/returns` | Tạo yêu cầu đổi trả (khi có tài khoản khách) |
-| GET | `/geo/provinces`, `/geo/provinces/{code}/wards`, `/geo/search?q=` | Địa giới hành chính |
+| GET | `/address/provinces`, `/address/provinces/{code}/wards` | Địa giới hành chính (khi có `AddressDirectory`, vd. `vani.provinces-vn`). **Implemented** (0.3.11) |
 | GET | `/search?q=&filter[...]` | Tìm kiếm qua `SearchProvider` (facet màu, size còn hàng, giá) |
-| GET | `/cms/pages/{slug}`, `/cms/menus/{code}`, `/cms/home` | Nội dung, menu, block trang chủ |
+| GET | `/x/vani-cms/pages/{slug}`, `/x/vani-cms/posts`, `/x/vani-cms/posts/{slug}` | Nội dung (plugin `vani.cms`). **Implemented** (0.3.14); menu tuỳ biến: chưa |
 
 ## 4. Admin API: nhóm tài nguyên
 

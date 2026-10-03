@@ -35,6 +35,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `PluginHealthCheck` | `vani.health.checks` | Extension | — (plugin). **Implemented** (0.3.6): `vani:plugin:health` + doctor + trang Admin Plugin; tham chiếu `vani.sms-brandname`, `vani.zalo-zns` (thiếu khoá, sandbox) | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 | `StorefrontEnricher` | `vani.storefront.enrichers` | Storefront | — (plugin). **Implemented** (0.3.1): làm giàu `product_card`/`product`/`cart`/`order` dưới `extensions.<plugin-id>`, batch, lỗi bị bỏ; contract test `StorefrontEnricherContract`; tham chiếu `vani.hello-world` | [extension-surface-v2 §4.B](extension-surface-v2.md) |
 | `StorefrontBlock` | `vani.storefront.blocks` | Storefront | `hero`, `product_grid`, `brand_grid`, `rich_text`. **Implemented** (0.3.10): page builder trang chủ (Admin → Giao diện), contract test `StorefrontBlockContract`, tham chiếu `vani.hello-world` | [storefront §4](../14-storefront/storefront.md) |
+| `SitemapProvider` | `vani.storefront.sitemap` | Storefront | — (plugin). **Implemented** (0.3.14): URL công khai của plugin vào `/sitemap.xml`, lỗi bị bỏ; tham chiếu `vani.cms` | [storefront §5](../14-storefront/storefront.md) |
 | `DashboardWidget` | `vani.admin.dashboard.widgets` | Extension | — (plugin). **Implemented** (0.3.12): ô Tổng quan trả `Metric`/`Series`/`Table`, Core lọc quyền + cô lập lỗi; tham chiếu `vani.reports` | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 | `ReportProvider` | `vani.admin.reports` | Extension | — (plugin). **Implemented** (0.3.12): Admin → Báo cáo, `run(ReportPeriod): ReportResult`, Core dựng trang + CSV; tham chiếu `vani.reports` | [extension-surface-v2 §4.G](extension-surface-v2.md) |
 
@@ -143,7 +144,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
 | `storefrontRoutes()` | Storefront API của plugin dưới `/api/storefront/v1/x/{slug}/…` (không ghi đè route Core) — Implemented (0.3.3) |
 | `accountPage(key, label, route)` | Mục menu tài khoản khách native trỏ tới trang của plugin — Implemented (0.3.9) |
-| `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3) |
+| `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3). `prefix:` (0.3.14): URL đẹp `/{prefix}/…` (vd. `/tin-tuc`), không trùng route Core (`StorefrontPrefixes::RESERVED`, arch test) hay plugin khác — tham chiếu `vani.cms` |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
 | `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |

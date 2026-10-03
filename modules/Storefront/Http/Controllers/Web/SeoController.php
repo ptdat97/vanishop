@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Cache;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
+use Modules\Extension\Contracts\Extensions;
+use Modules\Storefront\Contracts\SitemapProvider;
 
 /**
  * robots.txt và sitemap.xml của native storefront (storefront §5): một sitemap gồm trang chủ, danh mục, thương hiệu,
- * sản phẩm đang hiển thị. Cache 1 giờ. Đường dẫn Admin không được nhắc tới (bí mật, ADR-020).
+ * sản phẩm đang hiển thị và URL plugin cung cấp (SitemapProvider). Cache 1 giờ. Đường dẫn Admin không được nhắc tới (bí mật, ADR-020).
  */
 final class SeoController
 {
@@ -31,14 +33,14 @@ final class SeoController
         return response(implode("\n", $lines)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
-    public function sitemap(CatalogReader $catalog): Response
+    public function sitemap(CatalogReader $catalog, Extensions $extensions): Response
     {
-        $xml = Cache::remember('vani:sitemap:'.App::getLocale(), 3600, fn (): string => $this->build($catalog));
+        $xml = Cache::remember('vani:sitemap:'.App::getLocale(), 3600, fn (): string => $this->build($catalog, $extensions));
 
         return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
     }
 
-    private function build(CatalogReader $catalog): string
+    private function build(CatalogReader $catalog, Extensions $extensions): string
     {
         $urls = [url('/'), route('storefront.brands')];
         $walk = function (array $nodes) use (&$walk, &$urls): void {
@@ -60,6 +62,14 @@ final class SeoController
             }
             if (count($items) < ProductSearchQuery::MAX_PER_PAGE) {
                 break;
+            }
+        }
+
+        // URL của plugin (trang nội dung, bài viết…): lỗi của một plugin chỉ bỏ phần của plugin đó.
+        foreach ($extensions->tagged(SitemapProvider::TAG) as $provider) {
+            if ($provider instanceof SitemapProvider && count($urls) < self::MAX_URLS) {
+                $limit = self::MAX_URLS - count($urls);
+                $urls = [...$urls, ...array_slice($extensions->call($provider, fn (): array => $provider->urls($limit), [], 'sitemap'), 0, $limit)];
             }
         }
 

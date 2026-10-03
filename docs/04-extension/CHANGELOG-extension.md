@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.14 — 2026-10-03
+
+Nội dung: plugin `vani.cms`. Chỉ thêm.
+
+### Thêm
+- `PluginServiceProvider::storefrontPages(string $file, ?string $prefix = null)`: plugin xin đoạn đầu URL riêng (vd. `trang`, `tin-tuc`); trùng route Core (`Extension\Application\Storefront\StorefrontPrefixes::RESERVED`) hoặc plugin khác → lỗi lúc boot. Tên route vẫn `storefront.p.{slug}.…`.
+- `Storefront\Contracts\SitemapProvider` (tag `vani.storefront.sitemap`): `urls(int $limit): list<string>`, gộp vào `/sitemap.xml`, lỗi chỉ bỏ phần của plugin đó.
+- Theme `vani-base`: class `.vani-prose` cho nội dung soạn thảo; Tailwind quét view plugin (`custom/plugin/*/Resources/views`).
+- Admin JS: `@admin/http` (`postJson`, `HttpError`) gọi JSON kèm `X-XSRF-TOKEN` (tải ảnh, xem trước).
+- Plugin `vani.cms` (trang, tin tức, khối `cms_latest_posts`, Storefront API `/x/vani-cms/*`).
+
+### Sửa
+- `ReportPeriod::fromPreset()` lấy giờ theo `CarbonImmutable::now()` (đồng hồ ứng dụng) thay vì giờ hệ thống — test cố định được ngày.
+
 ## 0.3.13 — 2026-10-02
 
 Tài khoản khách native + địa chỉ theo danh mục ở mọi nơi. Chỉ thêm.

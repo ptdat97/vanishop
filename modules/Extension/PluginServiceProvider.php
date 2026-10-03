@@ -17,6 +17,7 @@ use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginEventListeners;
 use Modules\Extension\Application\Storefront\AccountPages;
 use Modules\Extension\Application\Storefront\PluginViews;
+use Modules\Extension\Application\Storefront\StorefrontPrefixes;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
@@ -258,9 +259,16 @@ abstract class PluginServiceProvider extends ServiceProvider
     /**
      * Trang native storefront của plugin: /p/{slug}/…, tên route storefront.p.{slug}.…; render trong layout theme
      * (`@extends('theme::layouts.app')`). View đăng ký bằng storefrontViews().
+     *
+     * `$prefix` (0.3.14): URL đẹp cho nội dung (vd. `tin-tuc` → /tin-tuc/…); không được trùng route Core hay plugin
+     * khác (ném lỗi lúc boot). Gọi nhiều lần với prefix khác nhau được; tên route vẫn là storefront.p.{slug}.…
      */
-    protected function storefrontPages(string $file): void
+    protected function storefrontPages(string $file, ?string $prefix = null): void
     {
+        if ($prefix !== null) {
+            $this->app->make(StorefrontPrefixes::class)->claim($prefix, $this->pluginId());
+        }
+
         if ($this->app->routesAreCached()) {
             return;
         }
@@ -268,7 +276,7 @@ abstract class PluginServiceProvider extends ServiceProvider
         $slug = $this->pluginSlug();
 
         Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.plugin-active:'.$this->pluginId()])
-            ->prefix("p/{$slug}")
+            ->prefix($prefix ?? "p/{$slug}")
             ->name("storefront.p.{$slug}.")
             ->group($file);
 

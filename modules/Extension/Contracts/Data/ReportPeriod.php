@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts\Data;
 
+use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
@@ -34,7 +35,8 @@ final readonly class ReportPeriod
     public static function fromPreset(string $preset, ?string $start = null, ?string $end = null, ?DateTimeImmutable $now = null, string $timezone = self::TIMEZONE): self
     {
         $zone = new DateTimeZone($timezone);
-        $today = ($now ?? new DateTimeImmutable('now'))->setTimezone($zone)->setTime(0, 0);
+        // CarbonImmutable::now() theo đồng hồ của ứng dụng (test cố định được giờ).
+        $today = DateTimeImmutable::createFromInterface($now ?? CarbonImmutable::now())->setTimezone($zone)->setTime(0, 0);
 
         return match ($preset) {
             'today' => new self($today, $today->modify('+1 day'), $preset, $timezone),

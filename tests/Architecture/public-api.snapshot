@@ -1,4 +1,4 @@
-VaniShop 0.3.13
+VaniShop 0.3.14
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -434,7 +434,7 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected permissions(array $permissions): void
   protected adminRoutes(string $file): void
   protected storefrontRoutes(string $file): void
-  protected storefrontPages(string $file): void
+  protected storefrontPages(string $file, ?string $prefix = NULL): void
   protected storefrontViews(string $path, string $namespace): void
   protected accountPage(string $key, string $label, string $route, int $order = 500): void
   protected webhookRoutes(string $file): void
@@ -951,6 +951,9 @@ class Modules\Returns\Events\ReturnResolved
 class Modules\Storefront\Contracts\Data\SlotView
   __construct(string $view, array $data = array (
 ))
+interface Modules\Storefront\Contracts\SitemapProvider
+  const TAG = 'vani.storefront.sitemap'
+  urls(int $limit): array
 interface Modules\Storefront\Contracts\StorefrontBlock
   const TAG = 'vani.storefront.blocks'
   type(): string

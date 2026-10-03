@@ -32,6 +32,7 @@ use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
 use Modules\Extension\Application\Storefront\AccountPages;
 use Modules\Extension\Application\Storefront\PluginViews;
+use Modules\Extension\Application\Storefront\StorefrontPrefixes;
 use Modules\Extension\Console\InstallCommand;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginDoctorCommand;
@@ -89,6 +90,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ScopedExtensions::class, fn ($app): ScopedExtensions => new ScopedExtensions($app, fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(ScopedExtensions::class, Extensions::class);
         $this->app->singleton(PluginViews::class);
+        $this->app->singleton(StorefrontPrefixes::class);
         $this->app->singleton(AccountPages::class, fn ($app): AccountPages => new AccountPages(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(CallerPlugin::class);
         // Điểm mở rộng tự động cho mọi trang Admin (ADR-031).
