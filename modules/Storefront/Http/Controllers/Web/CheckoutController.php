@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutRejected;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
+use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Storefront\Application\AddressOptions;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
@@ -90,6 +91,12 @@ final class CheckoutController
             'payment' => $result->payment === null ? null : $payments->present($result->payment),
         ]);
         $this->cart->forget();
+
+        // Cổng chuyển hướng (VNPay…): sang trang cổng ngay; khách quay về qua return URL của cổng → trang đơn.
+        $action = $result->payment?->action;
+        if ($action !== null && $action->type === PaymentInitiation::REDIRECT && $action->url !== null) {
+            return redirect()->away($action->url);
+        }
 
         return redirect()->route('storefront.order', $order['id']);
     }

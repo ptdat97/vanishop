@@ -26,6 +26,8 @@ parameters:
         -
             message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
             identifier: argument.type
+            # Khớp hay không tuỳ plugin nào đang bật ở máy chạy phân tích (Larastan boot app).
+            reportUnmatched: false
             paths:
                 - modules/Storefront/Http/Controllers/Web/*
                 - custom/plugin/*/Http/Controllers/*

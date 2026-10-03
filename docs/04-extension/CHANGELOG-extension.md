@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.15 — 2026-10-03
+
+Cổng VNPay. Chỉ thêm.
+
+### Thêm
+- `Payment\Contracts\CallbackResponder` (interface tuỳ chọn của PaymentGateway): `callbackResponse(CallbackOutcome, ?GatewayCallback): array{status, body}` — cổng tự chọn phản hồi IPN cho mọi kết quả (VNPay: luôn 200 + `RspCode`). Không implement → phản hồi mặc định như cũ.
+- Enum `Payment\Contracts\Data\CallbackOutcome`: `Applied`, `Duplicate`, `AmountMismatch`, `NotFound`, `Invalid`.
+- Plugin `vani.vnpay` (redirect, IPN, querydr, refund).
+
+### Đổi hành vi
+- Checkout native: cổng trả hành động `redirect` → chuyển khách sang trang cổng ngay sau khi đặt. Trang đơn đọc trạng thái thanh toán mới nhất (không dùng bản chụp lúc đặt), hiện nút "Thanh toán ngay" (redirect) hoặc mã QR (qr) khi chưa trả, "Đã nhận thanh toán" khi đã trả.
+- Callback đã thu tiền trước đó (giao dịch mới cho khoản đã thu) → `Duplicate` (trước: âm thầm bỏ qua với 200 — với cổng không CallbackResponder vẫn là 200 + `acknowledgement`).
+
+### Test
+- `migrate:fresh` của test chạy cả migration plugin trong custom/plugin (tránh DDL giữa transaction test trên MySQL).
+
 ## 0.3.14 — 2026-10-03
 
 Nội dung: plugin `vani.cms`. Chỉ thêm.

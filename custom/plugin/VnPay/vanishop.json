@@ -1,0 +1,17 @@
+{
+    "id": "vani.vnpay",
+    "name": {
+        "vi": "Thanh toán VNPay",
+        "en": "VNPay payment gateway"
+    },
+    "version": "1.0.0",
+    "kind": "payment_gateway",
+    "provider": "Plugin\\VnPay\\VnPayServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.15",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

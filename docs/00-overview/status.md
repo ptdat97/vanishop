@@ -30,7 +30,7 @@
 >
 > **Slice Notification đã có code**: mẫu tin theo loại × kênh × ngôn ngữ, nhật ký gửi idempotent, gửi bất đồng bộ có retry, tin giao dịch đặt/huỷ đơn và giao hàng (email mặc định), consent cho tin marketing; plugin `vani.sms-brandname` (eSMS) và `vani.zalo-zns` là kênh gửi + kênh OTP (ZNS ưu tiên, tự dự phòng sang SMS).
 >
-> Test: **749 test pass** trên SQLite in-memory và MySQL 8 (2026-10-02), cộng **9 concurrency test** (group `concurrency`, MySQL) pass.
+> Test: **762 test pass** trên SQLite in-memory và MySQL 8 (2026-10-02), cộng **9 concurrency test** (group `concurrency`, MySQL) pass.
 
 ## Nền tảng
 
@@ -97,7 +97,8 @@
 | `vani.reports` (widget Tổng quan + 5 báo cáo bán hàng, quyền `reports.view`) | Implemented, có feature test (số liệu theo giờ VN, quyền, CSV) |
 | `vani.cms` (trang, tin tức, quyền `cms.view`/`cms.manage`) | Implemented, có feature test (XSS, hẹn giờ, xem trước ký, sitemap, API, ảnh) |
 | `vani.promotion-rules` (rule `min_order_subtotal`, `min_quantity`, `in_collections`, `first_order_only`, `in_brands`) | Implemented, có unit + feature + contract test |
-| `vani.vietqr` (cổng QR động, IPN HMAC qua `/api/payments/vietqr/callback`) | Implemented, có contract test `PaymentGatewayContract` |
+| `vani.vietqr` (cổng QR động, IPN HMAC qua `/api/payments/vietqr/callback`) | Implemented, có contract test `PaymentGatewayContract`. **Hạn chế**: `refund()` luôn báo thành công mà không gọi ngân hàng, `query()` luôn `pending`, chưa cấu hình tài khoản thì `initiate()` dùng tài khoản mặc định cứng (chưa sửa) |
+| `vani.vnpay` (redirect, IPN `RspCode`, querydr, refund) | Implemented, có contract test + feature test; chờ chạy thử với TMN sandbox thật |
 | `vani.ghn` (`ShippingCarrier` + `ShippingRateProvider`, webhook trạng thái) | Partially Implemented: có contract test `ShippingCarrierContract`, nhưng là **bản mô phỏng** — phí lấy từ cấu hình, mã vận đơn sinh trong bộ nhớ, chưa gọi API GHN |
 | `vani.sms-brandname` (eSMS: kênh `sms` + `OtpSender`) | Implemented, test với `Http::fake` (chưa thử với tài khoản sandbox thật) |
 | `vani.zalo-zns` (kênh `zns` + `OtpSender`, làm mới token) | Implemented, test với `Http::fake` (chưa thử với OA thật; mã lỗi Zalo cần đối chiếu khi chạy sandbox) |
@@ -106,7 +107,7 @@
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Unit + feature test (Foundation → slice 12d) | 749 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging, outbox/inbox/webhook/replay, Integration API, circuit breaker, đối soát event đơn, khách hàng: OTP/brute-force/rate limit, gộp giỏ, profile ẩn, merge, ẩn danh hoá, thông báo, plugin SMS/ZNS) |
+| Unit + feature test (Foundation → slice 12d) | 762 test pass (gồm 25 cặp chuyển trạng thái đơn, snapshot, E2E COD đầu-cuối, contract test của 2 plugin, correlation-id logging, outbox/inbox/webhook/replay, Integration API, circuit breaker, đối soát event đơn, khách hàng: OTP/brute-force/rate limit, gộp giỏ, profile ẩn, merge, ẩn danh hoá, thông báo, plugin SMS/ZNS) |
 | Architecture test (R4, R5, R8, R9, strict types, không dùng hàm debug) | Implemented: `tests/Architecture/ArchitectureTest.php` |
 | Concurrency test | Implemented: `tests/Concurrency/ReservationConcurrencyTest.php` (12 tiến trình, tồn 5 → đúng 5 thành công; nhiều SKU đảo thứ tự không deadlock), `CartConcurrencyTest.php` (8 tiến trình cùng thêm vào một giỏ → cộng dồn đủ, một dòng), `CheckoutConcurrencyTest.php` (8 khách/tồn 3 → 3 đơn, cùng SĐT → đúng một hồ sơ khách; voucher 2 lượt/6 khách → 2 đơn; một giỏ đặt 5 lần song song → 1 đơn), `PaymentCallbackConcurrencyTest.php` (6 IPN trùng cùng lúc → 1 lần ghi nhận), `ReturnConcurrencyTest.php` (4 yêu cầu trả toàn bộ cùng lúc → 1), `OutboxConcurrencyTest.php` (4 worker, 40 message/10 đơn → mỗi message gửi đúng một lần, đúng thứ tự trong từng đơn) |
 | Observability | Partially: có correlation id (header + `Context` + **ghi vào mọi dòng log** qua `App\Logging\ContextProcessor`); chưa có metric/tracing |

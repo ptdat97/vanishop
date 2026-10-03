@@ -17,6 +17,7 @@ use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Payment\Contracts\CapturesLater;
+use Modules\Payment\Contracts\Data\CallbackOutcome;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
@@ -128,20 +129,43 @@ final class PaymentService implements Payments
      */
     public function applyCallback(string $gatewayCode, GatewayCallback $callback, string $type = 'callback'): bool
     {
-        return DB::transaction(function () use ($gatewayCode, $callback, $type): bool {
+        return $this->processCallback($gatewayCode, $callback, $type) !== CallbackOutcome::Duplicate;
+    }
+
+    /**
+     * Ghi nhận callback/IPN đã xác minh, trả kết quả chi tiết (cổng CallbackResponder dùng để chọn mã phản hồi).
+     *
+     * @throws PaymentRejected không có khoản thanh toán
+     */
+    public function processCallback(string $gatewayCode, GatewayCallback $callback, string $type = 'callback'): CallbackOutcome
+    {
+        return DB::transaction(function () use ($gatewayCode, $callback, $type): CallbackOutcome {
             $payment = Payment::query()->where('public_id', $callback->paymentPublicId)->where('gateway_code', $gatewayCode)->lockForUpdate()->first()
                 ?? throw PaymentRejected::notFound();
+            $collectedBefore = $payment->status->hasCollected();
 
             if (! $this->recordTransaction($payment, $type, $callback->gatewayTransactionId, $callback->amount->amount, $callback->status, $callback->maskedPayload)) {
-                return false;
+                return CallbackOutcome::Duplicate;
             }
 
-            return match ($callback->status) {
+            $settles = in_array($callback->status, [GatewayCallback::PAID, GatewayCallback::AUTHORIZED], true);
+            if ($settles && ($callback->amount->amount !== $payment->amount || $callback->amount->currency->code !== $payment->currency_code)) {
+                Log::warning('Số tiền thanh toán không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $callback->amount->amount]);
+
+                return CallbackOutcome::AmountMismatch;
+            }
+            if ($collectedBefore) {
+                return CallbackOutcome::Duplicate;
+            }
+
+            match ($callback->status) {
                 GatewayCallback::PAID => $this->capture($payment, $callback->amount, "gateway:{$gatewayCode}"),
                 GatewayCallback::AUTHORIZED => $this->authorize($payment, $callback->amount, "gateway:{$gatewayCode}"),
                 GatewayCallback::FAILED => $this->fail($payment, "gateway:{$gatewayCode}"),
                 default => true,
             };
+
+            return CallbackOutcome::Applied;
         });
     }
 

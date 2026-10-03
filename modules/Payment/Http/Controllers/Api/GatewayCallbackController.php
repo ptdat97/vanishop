@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Contracts\CallbackResponder;
+use Modules\Payment\Contracts\Data\CallbackOutcome;
+use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\InvalidCallback;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Shared\Context\ContextScope;
@@ -25,6 +28,15 @@ final class GatewayCallbackController
         $implementation = $gateways->get($gateway);
         abort_if($implementation === null || ! $implementation->capabilities()->callbacks, 404);
 
+        $respond = function (CallbackOutcome $outcome, ?GatewayCallback $callback, JsonResponse $default) use ($implementation): JsonResponse {
+            if (! $implementation instanceof CallbackResponder) {
+                return $default;
+            }
+            $response = $implementation->callbackResponse($outcome, $callback);
+
+            return response()->json($response['body'], $response['status']);
+        };
+
         try {
             $callback = $implementation->verifyCallback($request);
         } catch (InvalidCallback $exception) {
@@ -32,15 +44,15 @@ final class GatewayCallbackController
                 'gateway' => $gateway, 'ip' => $request->ip(), 'reason' => $exception->getMessage(),
             ]);
 
-            return response()->json(['error' => ['code' => 'payment.invalid_callback', 'message' => 'Invalid callback.']], 400);
+            return $respond(CallbackOutcome::Invalid, null, response()->json(['error' => ['code' => 'payment.invalid_callback', 'message' => 'Invalid callback.']], 400));
         }
 
         try {
-            $context->runAs(ContextScope::system("payment callback {$gateway}"), fn () => $payments->applyCallback($gateway, $callback));
+            $outcome = $context->runAs(ContextScope::system("payment callback {$gateway}"), fn (): CallbackOutcome => $payments->processCallback($gateway, $callback));
         } catch (PaymentRejected) {
-            return response()->json(['error' => ['code' => 'payment.not_found', 'message' => 'Unknown payment.']], 404);
+            return $respond(CallbackOutcome::NotFound, $callback, response()->json(['error' => ['code' => 'payment.not_found', 'message' => 'Unknown payment.']], 404));
         }
 
-        return response()->json($callback->acknowledgement);
+        return $respond($outcome, $callback, response()->json($callback->acknowledgement));
     }
 }

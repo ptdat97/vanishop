@@ -43,7 +43,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | Plugin | Contract | Đợt |
 |---|---|---|
 | `vani.vietqr` ✅ | `PaymentGateway` | P1 |
-| `vani.vnpay` | `PaymentGateway` | P1 |
+| `vani.vnpay` | `PaymentGateway`, `CallbackResponder` | **Implemented** (Core 0.3.15); chờ chạy thử với TMN sandbox thật |
 | `vani.momo`, `vani.zalopay`, `vani.shopeepay` | `PaymentGateway` | P2 |
 | `vani.bnpl` (Kredivo, Fundiin…) | `PaymentGateway` | P3 |
 

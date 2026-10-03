@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -26,6 +27,23 @@ abstract class TestCase extends BaseTestCase
             $this->enableBundledPlugins();
             $this->app->make(PluginManager::class)->rebuildCache();
         }
+    }
+
+    /**
+     * `migrate:fresh` đầu phiên test chạy cả migration của mọi plugin trong custom/plugin: khi test cài plugin, bảng
+     * đã có nên không chạy DDL giữa transaction của test (MySQL tự commit khi gặp DDL → mất savepoint của RefreshDatabase).
+     */
+    public function createApplication(): Application
+    {
+        $app = parent::createApplication();
+        $migrator = $app->make('migrator');
+        foreach ($app->make(ManifestRepository::class)->all() as $manifest) {
+            if (is_dir($manifest->path.'/Database/migrations')) {
+                $migrator->path($manifest->path.'/Database/migrations');
+            }
+        }
+
+        return $app;
     }
 
     /**
