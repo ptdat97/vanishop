@@ -1,12 +1,26 @@
 # Roadmap
 
-> Trạng thái: **Planned**. Tài liệu kiến trúc đã đủ để bắt đầu code. **Từ đây ưu tiên implementation theo vertical slice**; chỉ mở rộng tài liệu khi code cần. Mỗi slice xong phải cập nhật [status](../00-overview/status.md).
+> Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.18). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
 
 ## 1. Nguyên tắc
 
 - **Vertical slice**: mỗi slice đi hết Domain → Application → Persistence → Http/API → Admin UI tối thiểu → test (unit, feature, arch) → tài liệu trạng thái.
 - Làm Core trước, chứng minh extension point bằng plugin thật, **sau đó** mới mở rộng nghiệp vụ.
 - Mỗi slice có **Definition of Done** riêng. Chưa đạt thì không sang slice sau.
+- Thứ tự ưu tiên khi chọn việc: **Correctness → Consistency → Extensibility → Integration → Observability → Feature**.
+
+**Definition of Done chung** (áp dụng cho mọi slice/phase từ 2026-10-04). Tiến độ được đo bằng "có invariant + test + contract + xử lý lỗi", không bằng "tính năng đã chạy":
+
+| Hạng mục | Yêu cầu |
+|---|---|
+| Implementation | Qua Application/Domain service của module sở hữu (R30) |
+| Invariant | Ghi rõ trong tài liệu domain; có test kiểm tra |
+| Test | Feature test. Concurrency test nếu có race condition. Arch test nếu đụng ranh giới module/plugin. Thêm đường đi vào `tests/Feature/Invariants` nếu đụng tồn/tiền/vòng đời đơn. Chạy được trên cả SQLite và MySQL |
+| Contract | Public API, event, schema, extension point: snapshot `public-api.snapshot`, `CHANGELOG-extension`, `docs/api/schemas` (R32) |
+| Failure handling | Lỗi bên ngoài và lỗi plugin được cô lập; có đường xử lý tay; hành động operator có audit (R31) |
+| Migration | Có `down()` hoặc ghi rõ lý do không đảo được; ràng buộc DB khớp invariant |
+| Documentation | `status.md`, tài liệu domain; ADR nếu đổi quyết định |
+| Observability | Log có correlation id cho lỗi/chênh lệch. Metric khi phase 6 có hạ tầng |
 
 ```mermaid
 flowchart LR
@@ -107,7 +121,108 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 | 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | Later | Marketplace, Creator/Affiliate, advanced merchandising, recommendation | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |
 
-## 4. Go-live gate
+## 4. Hardening Commerce Kernel (từ 2026-10-04)
+
+Mục tiêu là một Commerce Kernel nhỏ, đúng, có invariant mạnh và contract ổn định; business mở rộng bằng plugin, không sửa Core. Thứ tự phase dưới đây là bắt buộc. Mỗi phase báo cáo theo mẫu: Implemented, Changed, Tests, Invariants, Architecture impact, Migration impact, Known limitations, Next step.
+
+**Không ưu tiên** trong giai đoạn này: business module mới (marketplace, creator, affiliate, loyalty, social/livestream commerce, marketing nâng cao). Cũng không: fork Core vì một plugin, tạo hook để né thiết kế contract, biến mọi thứ thành event hay plugin, tách microservice, hoặc thêm dependency lớn khi code hiện có làm được.
+
+Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
+
+### Phase 1. Inventory hardening
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| Invariant `reserved = Σ hàng giữ active`, tồn = trạng thái sau của movement cuối, không âm | ✅ | `vani:inventory:verify` hằng ngày; bộ bất biến chạy lệnh này sau mọi vòng đời |
+| Không nhả hai lần / commit hai lần, không hàng giữ treo | ✅ | release/commit idempotent theo key; bất biến I3; `releaseQuantities` cho huỷ một phần |
+| Mọi điều chỉnh tạo movement, không `UPDATE` ngoài service | ✅ | R30; `reconcile` khi sửa reserved |
+| Chuyển kho (`pending → shipped → received`, `cancelled`) | ⬜ | Đã có `MovementType::TransferOut/TransferIn`. Thiết kế: `stock_transfers` + dòng; `shipped` trừ `on_hand` kho đi (movement `transfer_out`), `received` cộng kho đến (`transfer_in`); hàng đang đi đường không bán được; huỷ sau `shipped` = nhập lại kho đi |
+| Báo cáo đối soát nội bộ lưu lại (không chỉ log) | 🟡 | Hiện chỉ có output lệnh + log; lưu kết quả cùng bảng đối soát của Phase 3 |
+
+### Phase 2. Order / Payment / Return invariants
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| State machine đơn, controller không tự đổi trạng thái | ✅ | `OrderStateMachine` + `OrderTransitions`; mọi transition có test |
+| Huỷ một phần | ✅ | 0.3.18 |
+| `refund ≤ captured`, callback trùng ghi nhận một lần | ✅ | `RefundRules`, unique `(gateway, transaction)`; concurrency test IPN |
+| `return quantity ≤ fulfilled`, `refund ≤ captured`, 4 yêu cầu trả cùng lúc → 1 | ✅ | `ReturnConcurrencyTest`; khoá tình trạng lạ bị từ chối |
+| Phân biệt restock (`sellable`/`damaged`) | ✅ | Nhập kho chỉ khi `sellable` |
+| Đổi hàng (exchange) | ⬜ | Đơn thay thế liên kết `parent_order_id`, giá trị bù trừ với tiền hoàn |
+| Tính lại khuyến mãi theo ngưỡng sau huỷ một phần | ⬜ | Hiện giữ giảm giá đã phân bổ (ghi ở order §2.1) |
+
+Đối chiếu với prompt roadmap:
+- **Trạng thái đơn giữ mô hình 4 chiều** (order/payment/fulfillment/return, [order §3](../09-order/order.md)), không thêm `fulfilled`/`closed` vào `order_status`. "Fulfilled" là `fulfillment_status = delivered`; "closed" là `completed` (giao hết và hết hạn đổi trả).
+- **Thanh toán:** `paid` ứng với `captured`. Đã có `authorized`, `partially_refunded`, `refunded`; không đổi tên.
+- **Đổi trả:** bước kiểm hàng (`inspected`) gộp vào `received`, nhân viên ghi tình trạng từng dòng khi nhận. Chỉ tách thành trạng thái riêng khi có quy trình kiểm định nhiều người.
+
+### Phase 3. External reconciliation
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| Đồng bộ tồn từ authority ngoài (`InventorySync`, version, chỉ authority của location) | ✅ | slice 11 |
+| Bảng đối soát tồn với nguồn ngoài | ⬜ | `inventory_reconciliations` (source, location, variant, expected, actual, difference, detected_at, resolved_at, resolution). Phân loại chênh lệch: nguồn ngoài ≠ VaniShop, VaniShop ≠ sổ (`on_hand_off_ledger`), hàng giữ ≠ reserved (`reserved_mismatch`). Không tự sửa phía ngoài; chỉ áp phía VaniShop khi location có `stock_authority` ngoài |
+| Đối soát thanh toán với cổng | 🟡 | `vani:payment:reconcile` hỏi cổng cho khoản `pending` và áp kết quả đã xác minh (cổng là authority của kết quả thu). Chưa có: phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu. Phần này chỉ ghi chênh lệch để xử lý tay, không tự sửa |
+
+### Phase 4. Integration event reconciliation
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| Đối soát `order.*` (phát hiện, bù, `reconciled: true`, báo cáo) | ✅ | `vani:integration:reconcile-orders` |
+| Mở rộng cho `payment.*`, `return.*`, `shipment.*`, `order.lines_cancelled` | ⬜ | Dựng lại event từ trạng thái nghiệp vụ, không tạo giao dịch mới. Khoá nhận diện theo thực thể (payment/refund/return/shipment public id + trạng thái) để không phát trùng. Cần đọc qua contract (`Payments`, `Returns`, `ShipmentReader`) |
+| Tách rõ đối soát trạng thái nghiệp vụ (Phase 3) với đối soát event (Phase 4) | ✅ | Hai nhóm lệnh và bảng khác nhau |
+
+### Phase 5. Plugin lifecycle, dependency, migration
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| Manifest: version, `requires.vanishop`, `requires.plugins`, `conflicts`, kiểm tra tương thích khi install/enable/upgrade | ✅ | Dependency resolver (semver, topo sort), doctor |
+| Chặn tắt khi còn giao dịch dở dang, `--force` có audit | ✅ | `guardDisable` (0.3.16) |
+| Trạng thái `draining`: ngừng nhận giao dịch mới nhưng vẫn xử lý giao dịch cũ (IPN, webhook, query), tự tắt khi hết | ⬜ | Plugin `draining` vẫn nạp provider. Cổng/hãng không còn được chọn ở checkout/tạo vận đơn, nhưng callback vẫn chạy. Lệnh định kỳ tắt hẳn khi `disableBlockers()` rỗng |
+| `--force` cần xác nhận tường minh | ⬜ | CLI hỏi lại, hoặc cờ `--yes`, kèm cảnh báo liệt kê việc dở dang |
+| Khai báo dữ liệu plugin (owned / referenced / retained), chặn gỡ khi còn tham chiếu | ⬜ | Manifest `data`; `uninstall --purge` kiểm tra tham chiếu trước khi rollback migration |
+| "Required capabilities" giữa plugin | 🟡 | Hiện qua `requires.plugins` + `publishHooks`; capability theo tag (plugin cần ≥1 implementation của tag X) là bổ sung có thể làm |
+
+### Phase 6. API, contract, observability
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| Schema event công khai + test luồng thật | ✅ | `docs/api/schemas`, R32 |
+| Contract test cho extension point | ✅ | Mọi extension point domain có bộ trong `Modules\*\Testing` (R26) |
+| `/api/integration/v1`: HMAC, scope, IP allowlist, rate limit, cursor (`/events`, `/orders`) | 🟡 | Còn endpoint ghi (fulfillments, cancellation-decisions, snapshots, catalog, prices, returns receipts, pos-orders, cod-reconciliations, jobs) và OpenAPI + error contract công bố |
+| Metric tối thiểu | ⬜ | `orders.created/failed`, `payments.pending/failed/reconciliation_mismatch`, `inventory.reservation_failed/reconciliation_mismatch`, `integration.outbox_backlog/webhook_failed/event_replay`, `plugin.active_transactions` (từ `disableBlockers`). Ưu tiên metrics → logs → tracing; ghi vào Pulse (đã có, ADR-032) trước khi cần hệ khác |
+| Health check | 🟡 | `PluginHealthCheck`, Horizon/Pulse; còn endpoint health tổng hợp cho load balancer/giám sát |
+
+### Phase 7. Storefront / Search
+
+| Hạng mục | Trạng thái | Ghi chú |
+|---|---|---|
+| SSR-first, JS tuỳ chọn cho luồng mua | ✅ | ADR-025 |
+| Home/danh mục/thương hiệu/tìm kiếm/PDP/giỏ/checkout/tài khoản/đơn | ✅ | |
+| Gửi yêu cầu đổi/trả trên storefront native | ⬜ | Hiện chỉ có qua API |
+| Abstraction tìm kiếm | ✅ | `SearchProvider` (`database` trong Core, Meilisearch là plugin). Không thêm abstraction `SearchEngine` mới |
+| Cache CDN | ⬜ | Cần tách phiên khỏi trang công khai |
+
+### Phase 8. Promotion / Pricing
+
+Đã có: `PricingStrategy`, bảng giá, `price_history`, khuyến mãi (rule/action, voucher), snapshot giá và giảm giá vào đơn (không tính lại đơn cũ theo giá mới). Còn: phân khúc khách, campaign, tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế), tính lại theo ngưỡng sau huỷ một phần.
+
+### Phase 9. ERP connector
+
+Chỉ làm khi contract tích hợp ổn định (Phase 4, 6) và Owner chốt ERP. Connector là plugin qua `Connector`/`InboundHandler`/`ExternalReferences`/`Mappings`, không đưa SDK hay logic ERP vào Core ([erp-integration](../11-integration/erp-integration.md)).
+
+### Phase 10. Marketplace / Creator / Affiliate
+
+Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `vani.attribution`. Các plugin này dùng Catalog/Pricing/Order/Payment/Inventory/Customer/Integration qua contract công khai. Chỉ bắt đầu sau khi Phase 1–6 đạt Done.
+
+### Việc kế tiếp đề xuất
+
+1. Phase 1: chuyển kho có vòng đời.
+2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`.
+3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`.
+4. Phase 5: trạng thái `draining` + xác nhận `--force`.
+
+## 5. Go-live gate
 
 - [ ] Slice 0–10 đạt Done (slice 12 và 12d đã xong 2026-10-02); slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
@@ -117,7 +232,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 - [ ] Pháp lý: một pháp nhân vận hành website bán hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)), thông báo/đăng ký với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
 - [ ] Staging/production đặt tại VN tại nhà cung cấp Owner chọn ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)).
 
-## 5. Rủi ro
+## 6. Rủi ro
 
 | Rủi ro | Mức | Giảm thiểu |
 |---|---|---|

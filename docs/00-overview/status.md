@@ -114,4 +114,4 @@
 
 ## Production readiness
 
-**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng COD, plugin cổng/hãng mẫu (slice 10), nền tảng tích hợp (slice 11), tài khoản khách hàng, thông báo giao dịch (email + plugin SMS/ZNS); chưa có connector ERP thật, đổi hàng, storefront native, metric/cảnh báo; plugin SMS/ZNS chưa chạy thử với tài khoản sandbox thật. Điều kiện go-live: [roadmap §4](../20-roadmap/roadmap.md).
+**Chưa sẵn sàng.** Đã có catalog, giá, tồn kho, giỏ hàng, khuyến mãi, đặt hàng (COD, chuyển khoản, VietQR, VNPay), vận đơn, đổi trả, huỷ một phần, storefront native, tài khoản khách, thông báo (email + SMS/ZNS), nền tảng tích hợp có schema công bố, CMS, báo cáo. Còn thiếu: chạy thử plugin với tài khoản sandbox thật (VNPay, SMS/ZNS, GHN), đổi hàng, chuyển kho, đối soát với nguồn ngoài, metric/cảnh báo, diễn tập khôi phục backup. Thứ tự hardening: [roadmap §4](../20-roadmap/roadmap.md); điều kiện go-live: [roadmap §5](../20-roadmap/roadmap.md).

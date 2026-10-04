@@ -40,6 +40,8 @@
 | R16 | **Không dùng FLOAT/DOUBLE/DECIMAL cho tiền.** Tiền là số nguyên minor unit (`BIGINT`) + currency. | CI grep migration + arch test |
 | R17 | Ledger (stock movement, loyalty, audit, order events, price history) là **append-only**: không UPDATE, không DELETE. | Review + test |
 | R18 | Mỗi Job/Listener phải **idempotent** và chịu được chạy lại. | Review |
+| R30 | **Trạng thái thương mại quan trọng** (tồn, hàng giữ, trạng thái/tiền của đơn, thanh toán, hoàn tiền, đổi trả, vận đơn) chỉ được đổi qua Application/Domain service của module sở hữu — không `UPDATE` trực tiếp từ controller, listener module khác, command hay plugin. Sửa dữ liệu vận hành cũng đi qua service (vd. `vani:inventory:verify --repair-reserved` ghi movement `reconcile`). | Arch test (controller/plugin không dùng `Persistence` của module khác) + review |
+| R31 | **Mọi thao tác đổi trạng thái có đường truy vết**: ledger/event của module (`stock_movements`, `order_events`, `return_events`, `shipment_events`, `payment_transactions`) hoặc `audit_logs` (thao tác nhân viên/operator, `--force`). | Review + feature test kiểm tra bản ghi truy vết |
 
 ## D. Kiến trúc hệ thống
 
@@ -47,6 +49,7 @@
 |---|---|---|
 | R19 | **Không biến Modular Monolith thành distributed monolith.** Không tách service chỉ vì "đẹp"; muốn tách phải có ADR kèm số liệu vận hành. Module trong cùng process không gọi nhau bằng HTTP. | ADR |
 | R20 | API công khai (Storefront/Admin/Integration) có version; không thay đổi phá vỡ trong cùng version. | Contract test |
+| R32 | **Schema event tích hợp là API công khai** ([docs/api/schemas](../api/schemas/README.md)): thêm trường tuỳ chọn → giữ v1; xoá/đổi kiểu/đổi nghĩa → v2 + `schema_version` mới, phát song song v1 trong thời gian chuyển đổi. Payload không lộ id tự tăng nội bộ. | `PayloadSchemaTest` (luồng thật khớp schema) |
 | R21 | Không để secret/API key trong source code hay trong log. | CI secret scan |
 | R22 | Mọi request, command, event, message tích hợp đều mang **correlation id**. | Test middleware + review |
 | R23 | Mã VaniShop không được chứa mã BeikeShop ([clean-room](clean-room-license.md)). | CI grep + audit |
@@ -57,3 +60,4 @@
 |---|---|
 | R24 | Tài liệu phản ánh implementation. Cập nhật [status.md](../00-overview/status.md) khi trạng thái thay đổi. |
 | R25 | Không thêm dependency khi chưa được phê duyệt (theo AGENTS.md); dependency đã phê duyệt được ghi trong ADR. |
+| R33 | **Mỗi lỗi concurrency/nhất quán đã gặp phải thành regression test** (concurrency test trên MySQL, hoặc đường đi trong bộ bất biến `tests/Feature/Invariants`). Lỗi chỉ lộ trên MySQL (CHECK, thứ tự JSON, id trùng trên SQLite) phải có test chạy được trên MySQL. |
