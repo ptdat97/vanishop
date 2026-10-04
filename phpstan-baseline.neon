@@ -763,36 +763,6 @@ parameters:
 			path: modules/Ordering/Http/Controllers/Admin/OrderController.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 5
-			path: modules/Payment/Application/PaymentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$idempotency_key\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Payment/Application/PaymentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$payment_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Payment/Application/PaymentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$public_id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: modules/Payment/Application/PaymentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 3
-			path: modules/Payment/Application/PaymentService.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
 			identifier: parameter.notFound
 			count: 1
@@ -801,36 +771,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Payment\:\:\$created_at\.$#'
 			identifier: property.notFound
-			count: 1
-			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$payment_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Payment\\Persistence\\Models\\Refund\:\:\$reason\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Payment\\Persistence\\Models\\Refund\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: modules/Payment/Http/Controllers/Admin/PaymentController.php
 

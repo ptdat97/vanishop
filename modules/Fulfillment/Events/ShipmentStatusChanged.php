@@ -17,5 +17,11 @@ final readonly class ShipmentStatusChanged implements ShouldDispatchAfterCommit
         public string $from,
         public string $to,
         public int $codAmount,
+        /** 0.3.17 */
+        public ?string $publicId = null,
+        /** 0.3.17 */
+        public ?string $trackingNumber = null,
+        /** 0.3.17 */
+        public ?string $carrierCode = null,
     ) {}
 }

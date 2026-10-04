@@ -291,7 +291,7 @@ final class PaymentService implements Payments
             $refund->update(['status' => 'completed']);
             $payment = Payment::query()->whereKey($refund->payment_id)->firstOrFail();
             $this->audit->record('payment.refund_completed', 'refund', $refund->id, ['amount' => $refund->amount, 'note' => $note]);
-            event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount));
+            event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount, $refund->public_id, $payment->public_id));
         });
     }
 
@@ -394,7 +394,7 @@ final class PaymentService implements Payments
         }
 
         $payment->update(['status' => PaymentStatus::Paid, 'paid_at' => now(), 'lock_version' => $payment->lock_version + 1]);
-        event(new PaymentCaptured($payment->id, $payment->order_id, $payment->amount, $payment->gateway_code));
+        event(new PaymentCaptured($payment->id, $payment->order_id, $payment->amount, $payment->gateway_code, $payment->public_id));
 
         $order = $this->orders->find($payment->order_id);
         if ($order === null) {
@@ -469,7 +469,7 @@ final class PaymentService implements Payments
             if ($result?->successful) {
                 $refund->update(['status' => 'completed', 'gateway_reference' => $result->gatewayReference]);
                 $this->recordTransaction($payment, 'refund', $result->gatewayReference ?? "refund:{$refund->public_id}", -1 * (int) $refund->amount, 'completed', []);
-                event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount));
+                event(new RefundCompleted($refund->id, $payment->id, $payment->order_id, (int) $refund->amount, $refund->public_id, $payment->public_id));
             } else {
                 // Không hoàn được tự động → chuyển sang chờ nhân viên hoàn thủ công (số đã cam kết hoàn giữ nguyên).
                 $refund->update(['status' => 'requested']);

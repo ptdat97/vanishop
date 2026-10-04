@@ -11,5 +11,8 @@ final readonly class ReturnRequested implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $returnId, public int $orderId, public string $number, public string $source) {}
+    /**
+     * @param  string|null  $publicId  0.3.17
+     */
+    public function __construct(public int $returnId, public int $orderId, public string $number, public string $source, public ?string $publicId = null) {}
 }

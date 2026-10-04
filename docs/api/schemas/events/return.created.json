@@ -4,11 +4,26 @@
     "title": "data của event return.created (v1)",
     "type": "object",
     "additionalProperties": false,
-    "required": ["order_number", "return_id", "return_number", "source"],
+    "required": [
+        "order_number",
+        "return_id",
+        "return_number",
+        "source"
+    ],
     "properties": {
-        "order_number": { "type": "string" },
-        "return_id": { "type": "integer" },
-        "return_number": { "type": "string" },
-        "source": { "type": "string" }
+        "order_number": {
+            "type": "string"
+        },
+        "return_id": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{26}$",
+            "description": "Định danh công khai (ULID)."
+        },
+        "return_number": {
+            "type": "string"
+        },
+        "source": {
+            "type": "string"
+        }
     }
 }

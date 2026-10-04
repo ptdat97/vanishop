@@ -93,10 +93,10 @@ it('event liên quan (thanh toán) mang số đơn làm aggregate, giữ thứ t
     $number = ($this->placeOrder)();
     $orderId = T::seed(fn () => Order::query()->where('number', $number)->value('id'));
 
-    PaymentCaptured::dispatch(99, $orderId, 330_000, 'cod');
+    PaymentCaptured::dispatch(99, $orderId, 330_000, 'cod', '01JPAYMENTPUBLIC0000000099');
 
     $event = IntegrationEventRecord::query()->where('event_type', 'payment.captured')->sole();
     expect($event->aggregate_id)->toBe($number)
-        ->and($event->payload)->toEqual(['order_number' => $number, 'payment_id' => 99, 'gateway' => 'cod', 'amount' => 330_000, 'currency' => 'VND'])
+        ->and($event->payload)->toEqual(['order_number' => $number, 'payment_id' => '01JPAYMENTPUBLIC0000000099', 'gateway' => 'cod', 'amount' => 330_000, 'currency' => 'VND'])
         ->and($event->id)->toBeGreaterThan(IntegrationEventRecord::query()->where('event_type', 'order.created')->value('id'));
 });

@@ -15,6 +15,10 @@
 - **Bên nhận** khử trùng lặp theo `event_id` và xử lý tuần tự theo `aggregate.id` (số đơn).
 - **Tiền:** số nguyên theo đơn vị nhỏ nhất (VND tính bằng đồng). **Thời gian:** RFC 3339, theo giờ Việt Nam.
 
+## Định danh
+
+Mọi id trong payload là định danh công khai (ULID 26 ký tự), không lộ id tự tăng nội bộ. Ngoại lệ là `order.customer_id` và `lines[].variant_id`/`line_id`: đây là khoá đồng bộ với hệ thống ngoài như ERP hay danh mục. *(2026-10-04: đã chỉnh trong v1, trước khi có bên tích hợp.)*
+
 ## Kiểm chứng
 
 Test `modules/Integration/Tests/Feature/PayloadSchemaTest.php` cho chạy các luồng thật (đặt hàng, xác nhận, giao, thu tiền, đổi trả, hoàn tiền, huỷ, đối soát) rồi kiểm từng event theo các schema này. Test cũng kiểm rằng mỗi loại event đều có file schema tương ứng.

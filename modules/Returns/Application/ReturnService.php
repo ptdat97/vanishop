@@ -96,7 +96,7 @@ final class ReturnService implements Returns
                 $this->move($return, ReturnStatus::Approved, 'auto_approved', 'system');
             }
             $this->syncOrder($orderId);
-            event(new ReturnRequested($return->id, $orderId, $return->number, $source));
+            event(new ReturnRequested($return->id, $orderId, $return->number, $source, $return->public_id));
 
             return $return;
         });
@@ -212,7 +212,7 @@ final class ReturnService implements Returns
             $this->move($return, ReturnStatus::Resolved, $note, 'staff');
             $this->syncOrder($return->order_id);
             $this->audit->record('return.resolved', 'return_request', $return->id, ['refunded' => $amount]);
-            event(new ReturnResolved($return->id, $return->order_id, $amount));
+            event(new ReturnResolved($return->id, $return->order_id, $amount, $return->public_id, $return->number));
         });
     }
 

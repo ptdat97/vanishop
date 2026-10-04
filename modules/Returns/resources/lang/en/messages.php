@@ -10,6 +10,7 @@ return [
     'refund_exceeds' => 'The refund exceeds the amount calculated for this return.',
     'unknown_lines' => 'Item condition refers to lines outside this return request.',
     'stale' => 'This return was changed by someone else. Reload the page.',
+    'created' => 'Return request created.',
     'updated' => 'Return updated.',
     'received' => 'Return received.',
     'resolved' => 'Return resolved.',

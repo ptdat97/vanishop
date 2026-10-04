@@ -282,7 +282,7 @@ final class FulfillmentService
         }
 
         $this->syncOrder($shipment->order_id);
-        event(new ShipmentStatusChanged($shipment->id, $shipment->order_id, $from->value, $to->value, $shipment->cod_amount));
+        event(new ShipmentStatusChanged($shipment->id, $shipment->order_id, $from->value, $to->value, $shipment->cod_amount, $shipment->public_id, $shipment->tracking_number, $shipment->carrier_code));
 
         return true;
     }

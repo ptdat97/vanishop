@@ -7,6 +7,8 @@
     "required": [
         "order_number",
         "shipment_id",
+        "carrier",
+        "tracking_number",
         "from",
         "to"
     ],
@@ -15,7 +17,9 @@
             "type": "string"
         },
         "shipment_id": {
-            "type": "integer"
+            "type": "string",
+            "pattern": "^[0-9A-Z]{26}$",
+            "description": "Định danh công khai (ULID)."
         },
         "from": {
             "type": "string",
@@ -47,6 +51,18 @@
                 "returning",
                 "returned",
                 "cancelled"
+            ]
+        },
+        "carrier": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "tracking_number": {
+            "type": [
+                "string",
+                "null"
             ]
         }
     }

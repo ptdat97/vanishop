@@ -4,12 +4,32 @@
     "title": "data của event payment.captured (v1)",
     "type": "object",
     "additionalProperties": false,
-    "required": ["order_number", "payment_id", "gateway", "amount", "currency"],
+    "required": [
+        "order_number",
+        "payment_id",
+        "gateway",
+        "amount",
+        "currency"
+    ],
     "properties": {
-        "order_number": { "type": "string" },
-        "payment_id": { "type": "integer" },
-        "gateway": { "type": "string" },
-        "amount": { "type": "integer", "minimum": 0 },
-        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+        "order_number": {
+            "type": "string"
+        },
+        "payment_id": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{26}$",
+            "description": "Định danh công khai (ULID)."
+        },
+        "gateway": {
+            "type": "string"
+        },
+        "amount": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+        }
     }
 }

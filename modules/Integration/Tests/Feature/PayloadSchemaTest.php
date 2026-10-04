@@ -97,6 +97,6 @@ it('bộ kiểm tra schema bắt được payload sai (thiếu trường, sai ki
     $order = json_decode((string) file_get_contents(schemaDir().'/vanishop.order.v1.json'), true);
     $data = ['order_number' => 'VN1', 'shipment_id' => '5', 'from' => 'picked_up', 'to' => 'teleported', 'extra' => 1];
 
-    expect(JsonSchemaSubset::validate($data, schemaDir().'/events/shipment.status_changed.json'))->toHaveCount(3)
+    expect(JsonSchemaSubset::validate($data, schemaDir().'/events/shipment.status_changed.json'))->toHaveCount(5) // id sai định dạng, enum, trường thừa, thiếu carrier + tracking_number
         ->and(JsonSchemaSubset::validate(['order' => ['schema' => 'vanishop.order.v1']], schemaDir().'/events/order.created.json'))->toHaveCount(count($order['required']) - 1);
 });

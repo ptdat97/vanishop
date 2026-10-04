@@ -76,35 +76,35 @@ final class PublishDomainEvents
     public function paymentCaptured(PaymentCaptured $event): void
     {
         $this->related($event->orderId, 'payment.captured', fn (OrderData $order): array => [
-            'payment_id' => $event->paymentId, 'gateway' => $event->gatewayCode, 'amount' => $event->amount, 'currency' => $order->currencyCode,
+            'payment_id' => $event->paymentPublicId ?? (string) $event->paymentId, 'gateway' => $event->gatewayCode, 'amount' => $event->amount, 'currency' => $order->currencyCode,
         ]);
     }
 
     public function refundCompleted(RefundCompleted $event): void
     {
         $this->related($event->orderId, 'payment.refunded', fn (OrderData $order): array => [
-            'refund_id' => $event->refundId, 'payment_id' => $event->paymentId, 'amount' => $event->amount, 'currency' => $order->currencyCode,
+            'refund_id' => $event->refundPublicId ?? (string) $event->refundId, 'payment_id' => $event->paymentPublicId ?? (string) $event->paymentId, 'amount' => $event->amount, 'currency' => $order->currencyCode,
         ]);
     }
 
     public function returnRequested(ReturnRequested $event): void
     {
         $this->related($event->orderId, 'return.created', fn (): array => [
-            'return_id' => $event->returnId, 'return_number' => $event->number, 'source' => $event->source,
+            'return_id' => $event->publicId ?? (string) $event->returnId, 'return_number' => $event->number, 'source' => $event->source,
         ]);
     }
 
     public function returnResolved(ReturnResolved $event): void
     {
         $this->related($event->orderId, 'return.resolved', fn (OrderData $order): array => [
-            'return_id' => $event->returnId, 'refunded_amount' => $event->refundedAmount, 'currency' => $order->currencyCode,
+            'return_id' => $event->publicId ?? (string) $event->returnId, 'return_number' => $event->number, 'refunded_amount' => $event->refundedAmount, 'currency' => $order->currencyCode,
         ]);
     }
 
     public function shipmentStatusChanged(ShipmentStatusChanged $event): void
     {
         $this->related($event->orderId, 'shipment.status_changed', fn (): array => [
-            'shipment_id' => $event->shipmentId, 'from' => $event->from, 'to' => $event->to,
+            'shipment_id' => $event->publicId ?? (string) $event->shipmentId, 'carrier' => $event->carrierCode, 'tracking_number' => $event->trackingNumber, 'from' => $event->from, 'to' => $event->to,
         ]);
     }
 

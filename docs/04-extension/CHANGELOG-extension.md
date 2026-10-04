@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.17 — 2026-10-04
+
+Định danh công khai trong event + nhân viên tạo đổi/trả. Chỉ thêm (payload tích hợp: chỉnh v1 trước khi có bên tích hợp).
+
+### Thêm
+- Tham số tuỳ chọn cuối constructor (plugin nghe event không phải sửa): `PaymentCaptured::$paymentPublicId`, `RefundCompleted::$refundPublicId`/`$paymentPublicId`, `ReturnRequested::$publicId`, `ReturnResolved::$publicId`/`$number`, `ShipmentStatusChanged::$publicId`/`$trackingNumber`/`$carrierCode`.
+- Admin → đơn → "Tạo yêu cầu đổi/trả" (`returns.manage`): nhân viên tạo hộ khách, nguồn `staff`, cùng chính sách/giới hạn số lượng.
+
+### Đổi (payload tích hợp v1, chưa có bên tích hợp)
+- `payment.captured`/`payment.refunded`/`return.created`/`return.resolved`/`shipment.status_changed`: id là public id (ULID) thay vì id nội bộ; `return.resolved` thêm `return_number`; `shipment.status_changed` thêm `carrier`, `tracking_number`. Schema `docs/api/schemas/events/*` cập nhật.
+
 ## 0.3.16 — 2026-10-03
 
 Củng cố vòng đời plugin. Thêm + đổi hành vi.

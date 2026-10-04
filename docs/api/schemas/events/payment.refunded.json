@@ -4,12 +4,34 @@
     "title": "data của event payment.refunded (v1)",
     "type": "object",
     "additionalProperties": false,
-    "required": ["order_number", "refund_id", "payment_id", "amount", "currency"],
+    "required": [
+        "order_number",
+        "refund_id",
+        "payment_id",
+        "amount",
+        "currency"
+    ],
     "properties": {
-        "order_number": { "type": "string" },
-        "refund_id": { "type": "integer" },
-        "payment_id": { "type": "integer" },
-        "amount": { "type": "integer", "minimum": 0 },
-        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+        "order_number": {
+            "type": "string"
+        },
+        "refund_id": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{26}$",
+            "description": "Định danh công khai (ULID)."
+        },
+        "payment_id": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{26}$",
+            "description": "Định danh công khai (ULID)."
+        },
+        "amount": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+        }
     }
 }
