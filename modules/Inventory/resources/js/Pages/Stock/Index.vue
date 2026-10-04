@@ -9,6 +9,7 @@ type Level = { on_hand: number; reserved: number; safety_stock: number; availabl
 const props = defineProps<{
     baseUrl: string;
     locationsUrl: string | null;
+    transfersUrl: string | null;
     styleCode: string;
     styleName: string | null;
     locations: Array<{ id: number; code: string; name: string; external: boolean }>;
@@ -43,6 +44,7 @@ function submit(): void {
     <Head title="Tồn kho" />
     <p class="mb-2 text-sm text-slate-500">Tồn kho</p>
     <PageHeader title="Tồn kho theo sản phẩm" subtitle="Có thể bán = tồn − đang giữ − tồn an toàn.">
+        <Link v-if="transfersUrl" :href="transfersUrl" :class="secondaryButton">Chuyển kho</Link>
         <Link v-if="locationsUrl" :href="locationsUrl" :class="secondaryButton">Kho & cửa hàng</Link>
     </PageHeader>
 

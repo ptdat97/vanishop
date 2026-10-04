@@ -40,6 +40,7 @@ final class StockController
         return Inertia::render('Inventory::Stock/Index', [
             'baseUrl' => route('admin.inventory.stock.index'),
             'locationsUrl' => Gate::allows('inventory.locations.manage', [ScopeRef::owner()]) ? route('admin.inventory.locations.index') : null,
+            'transfersUrl' => route('admin.inventory.transfers.index'),
             'styleCode' => $styleCode,
             'styleName' => $rows[0]->styleName ?? null,
             'locations' => array_map(fn (Location $location): array => [

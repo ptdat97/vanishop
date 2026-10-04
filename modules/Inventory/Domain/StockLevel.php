@@ -108,6 +108,30 @@ final readonly class StockLevel
         return $this->with(safetyStock: $safetyStock);
     }
 
+    /**
+     * Xuất chuyển kho: hàng rời kho đi (movement `transfer_out`). Không cho on_hand âm.
+     */
+    public function transferOut(int $quantity): self
+    {
+        $this->assertPositive($quantity);
+
+        if ($this->onHand - $quantity < 0) {
+            throw new InvalidArgumentException("Không thể xuất {$quantity}: kho chỉ còn {$this->onHand}.");
+        }
+
+        return $this->with(onHand: $this->onHand - $quantity);
+    }
+
+    /**
+     * Nhập chuyển kho: hàng tới kho đến (movement `transfer_in`) hoặc nhập lại kho đi khi huỷ sau `shipped`.
+     */
+    public function transferIn(int $quantity): self
+    {
+        $this->assertPositive($quantity);
+
+        return $this->with(onHand: $this->onHand + $quantity);
+    }
+
     private function with(?int $onHand = null, ?int $reserved = null, ?int $safetyStock = null, ?int $syncVersion = null): self
     {
         return new self(

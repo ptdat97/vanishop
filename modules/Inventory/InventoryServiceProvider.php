@@ -55,6 +55,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         ));
         $permissions->register('inventory.view', 'Xem tồn kho');
         $permissions->register('inventory.adjust', 'Điều chỉnh/kiểm kê tồn kho');
+        $permissions->register('inventory.transfer', 'Tạo/điều phối chuyển kho');
         $permissions->register('inventory.locations.manage', 'Quản lý kho/cửa hàng (cấp Owner)');
 
         $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 300);

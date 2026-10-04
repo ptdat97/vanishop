@@ -1,6 +1,6 @@
 # Roadmap
 
-> Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.18). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
+> Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.19). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
 
 ## 1. Nguyên tắc
 
@@ -136,7 +136,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Invariant `reserved = Σ hàng giữ active`, tồn = trạng thái sau của movement cuối, không âm | ✅ | `vani:inventory:verify` hằng ngày; bộ bất biến chạy lệnh này sau mọi vòng đời |
 | Không nhả hai lần / commit hai lần, không hàng giữ treo | ✅ | release/commit idempotent theo key; bất biến I3; `releaseQuantities` cho huỷ một phần |
 | Mọi điều chỉnh tạo movement, không `UPDATE` ngoài service | ✅ | R30; `reconcile` khi sửa reserved |
-| Chuyển kho (`pending → shipped → received`, `cancelled`) | ⬜ | Đã có `MovementType::TransferOut/TransferIn`. Thiết kế: `stock_transfers` + dòng; `shipped` trừ `on_hand` kho đi (movement `transfer_out`), `received` cộng kho đến (`transfer_in`); hàng đang đi đường không bán được; huỷ sau `shipped` = nhập lại kho đi |
+| Chuyển kho (`pending → shipped → received`, `cancelled`) | ✅ | 2026-10-15. `stock_transfers` + dòng; `pending` không đổi tồn, `shipped` trừ `on_hand` kho đi (movement `transfer_out`), `received` cộng kho đến (`transfer_in`); hàng đang đi đường không bán được; huỷ sau `shipped` = nhập lại kho đi. Chỉ giữa hai location do VaniShop quản lý tồn; quyền `inventory.transfer`; event `StockTransfer*` |
 | Báo cáo đối soát nội bộ lưu lại (không chỉ log) | 🟡 | Hiện chỉ có output lệnh + log; lưu kết quả cùng bảng đối soát của Phase 3 |
 
 ### Phase 2. Order / Payment / Return invariants
@@ -217,7 +217,7 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 
 ### Việc kế tiếp đề xuất
 
-1. Phase 1: chuyển kho có vòng đời.
+1. Phase 1: chuyển kho có vòng đời. ✅ 2026-10-15
 2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`.
 3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`.
 4. Phase 5: trạng thái `draining` + xác nhận `--force`.

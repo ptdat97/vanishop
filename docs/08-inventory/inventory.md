@@ -8,7 +8,9 @@
 >
 > **Slice 11:** sync từ authority ngoài qua `PUT /api/integration/v1/inventory/levels` → contract `InventorySync` (chỉ client là `stock_authority` của location được ghi, bản cũ theo `sync_version` bị bỏ qua, movement `sync` có `reference = v<version>`).
 >
-> **Chưa có:** transfer, reconciliation với nguồn ngoài (snapshot), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
+> **Phase 1 (2026-10-15):** chuyển kho có vòng đời `pending → shipped → received`, `cancelled` (`stock_transfers`, `stock_transfer_lines`); Admin → Tồn kho → Chuyển kho; quyền `inventory.transfer`.
+>
+> **Chưa có:** reconciliation với nguồn ngoài (snapshot), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
 
 ## 1. Nguyên tắc
 
@@ -85,7 +87,7 @@ stateDiagram-v2
 | Trả hàng nhập kho | `on_hand += q` (nếu sellable) | `return` |
 | Điều chỉnh tay | `on_hand ±= q`, bắt buộc lý do + quyền `stock.adjust` | `adjust` |
 | Đồng bộ từ authority | set `on_hand = n` nếu `version` mới hơn | `sync` |
-| Chuyển kho | `transfer_out` / `transfer_in` | `transfer_*` |
+| Chuyển kho | `transfer_out` (gửi) / `transfer_in` (nhận hoặc nhập lại kho đi khi huỷ sau gửi) | `transfer_out`, `transfer_in` |
 
 ## 4. Reserve atomic
 
@@ -125,7 +127,7 @@ public function reserve(ReservationRequest $req): Reservation   // gọi trong t
 
 ## 6. Transfer và reconciliation
 
-- **Transfer**: `draft → in_transit → received`. Xuất: movement `transfer_out`. Nhận: `transfer_in` (có thể nhận thiếu, chênh lệch ghi `adjust` kèm lý do). Nếu cả hai location do ERP quản lý thì transfer diễn ra trên ERP; VaniShop chỉ nhận số mới.
+- **Transfer** (**Implemented**, roadmap Phase 1 — Admin → Tồn kho → Chuyển kho): `pending → shipped → received`, `cancelled`. `pending` không đổi tồn (hàng còn ở kho đi, vẫn bán được). `shipped` ghi `transfer_out` (trừ `on_hand` kho đi) — từ đây hàng đang **đi đường nên ATS không tính**. `received` ghi `transfer_in` (cộng `on_hand` kho đến); nhận thiếu được (chênh lệch coi là hao hụt trên đường, lưu trên `stock_transfer_lines.received_quantity`). Huỷ sau `shipped` nhập lại kho đi (`transfer_in`, reference `:revert`); huỷ trước `shipped` không đổi tồn. Chỉ chuyển giữa hai location do VaniShop quản lý tồn vật lý; nếu do ERP quản lý thì transfer diễn ra trên ERP, VaniShop chỉ nhận số mới.
 - **Đối soát nội bộ** (**Implemented**, `vani:inventory:verify`, hằng ngày 03:30): `reserved` = tổng hàng giữ active (lệch → `--repair-reserved` ghi movement `reconcile`); on_hand/reserved = giá trị "sau" của movement cuối (lệch = có chỗ sửa tồn ngoài sổ → chỉ báo, cần kiểm kê); không âm. Exit 1 + log cảnh báo khi còn chênh lệch. Bộ test bất biến vòng đời (`tests/Feature/Invariants`) chạy lệnh này sau mọi luồng.
 - **Reconciliation**: snapshot từ authority (hằng đêm hoặc theo yêu cầu) → so với `on_hand` → tạo `inventory_reconciliation_lines` cho chênh lệch → tự áp dụng nếu dưới ngưỡng, còn lại chờ duyệt → movement `sync`. Báo cáo tỷ lệ lệch (mục tiêu < 0,5%).
 
@@ -159,4 +161,5 @@ Tra tồn tại cửa hàng, BOPIS, ship-from-store, endless aisle là plugin: [
 - Unit: `StockLevel::reserve/release/commit`, công thức ATS, `InventoryStrategy` không tăng được ATS.
 - Concurrency (MySQL thật, `tests/Concurrency`, group `concurrency`): **đã có** — 12 tiến trình giữ SKU tồn = 5 → đúng 5 thành công, 7 `StockUnavailable`; đơn nhiều SKU đảo thứ tự không deadlock.
 - Feature: hết hạn reservation; huỷ đơn; sync bản cũ bị bỏ qua; client không phải authority bị 403.
+- Chuyển kho: vòng đời `pending → shipped → received`, huỷ trước/sau khi gửi, nhận thiếu, chặn gửi vượt tồn và sai thứ tự trạng thái, audit (`StockTransferTest`, `StockTransferAdminTest`); bất biến tồn chạy `vani:inventory:verify` sau mỗi bước (`tests/Feature/Invariants/StockTransferInvariantsTest`).
 - Reconciliation: dữ liệu chênh lệch sinh đúng movement.

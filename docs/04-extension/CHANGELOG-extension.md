@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.19 — 2026-10-15
+
+Chuyển kho có vòng đời `pending → shipped → received`, `cancelled` (roadmap Phase 1). Chỉ thêm.
+
+### Thêm
+- Event `Inventory\Events\StockTransferCreated`, `StockTransferShipped`, `StockTransferReceived`, `StockTransferCancelled` (dispatch sau commit; payload: `publicId`, `fromLocationId`, `toLocationId`, `variantIds`; `StockTransferCancelled` thêm `restocked`).
+- Permission `inventory.transfer` và màn hình Admin "Chuyển kho" (`admin.inventory.transfers.*`).
+
 ## 0.3.18 — 2026-10-04
 
 Huỷ một phần đơn. Chỉ thêm (+ đổi hành vi hoàn tiền trong transaction).
