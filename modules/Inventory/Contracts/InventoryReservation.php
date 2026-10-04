@@ -31,6 +31,14 @@ interface InventoryReservation
     public function commit(string $key): void;
 
     /**
+     * Nhả MỘT PHẦN hàng giữ còn active của `$key` (huỷ một phần đơn, 0.3.18): theo variant, nhả từ dòng giữ mới nhất.
+     * Số nhả vượt số đang giữ → nhả hết phần đang giữ của variant đó. Idempotent theo gọi lại: không.
+     *
+     * @param  array<int, int>  $quantities  variant_id => số lượng
+     */
+    public function releaseQuantities(string $key, array $quantities, string $reason): void;
+
+    /**
      * Các dòng đang giữ (active) của key: location nào giữ bao nhiêu — Fulfillment dùng để tạo shipment theo kho.
      *
      * @return list<ReservedLine>

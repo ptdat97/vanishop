@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import FlashMessage from "@admin/Components/FlashMessage.vue";
-import FormField from "@admin/Components/FormField.vue";
-import PageHeader from "@admin/Components/PageHeader.vue";
-import { HttpError, postJson } from "@admin/http";
-import {
-    dangerButton,
-    inputClass,
-    primaryButton,
-    secondaryButton,
-} from "@admin/styles";
-import { Head, Link, router, useForm } from "@inertiajs/vue3";
-import { computed, ref } from "vue";
-import { kindLabels, type Kind } from "./labels";
+import FlashMessage from '@admin/Components/FlashMessage.vue';
+import FormField from '@admin/Components/FormField.vue';
+import PageHeader from '@admin/Components/PageHeader.vue';
+import { HttpError, postJson } from '@admin/http';
+import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { kindLabels, type Kind } from './labels';
 
 type Item = {
     id: number;
@@ -20,7 +15,7 @@ type Item = {
     body: string;
     meta_title: string | null;
     meta_description: string | null;
-    status: "draft" | "published";
+    status: 'draft' | 'published';
     published_at: string | null;
     excerpt: string | null;
     cover_path: string | null;
@@ -46,15 +41,15 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
-    title: props.item?.title ?? "",
-    slug: props.item?.slug ?? "",
-    body: props.item?.body ?? "",
-    meta_title: props.item?.meta_title ?? "",
-    meta_description: props.item?.meta_description ?? "",
-    status: props.item?.status ?? "draft",
-    published_at: props.item?.published_at ?? "",
-    excerpt: props.item?.excerpt ?? "",
-    cover_path: props.item?.cover_path ?? "",
+    title: props.item?.title ?? '',
+    slug: props.item?.slug ?? '',
+    body: props.item?.body ?? '',
+    meta_title: props.item?.meta_title ?? '',
+    meta_description: props.item?.meta_description ?? '',
+    status: props.item?.status ?? 'draft',
+    published_at: props.item?.published_at ?? '',
+    excerpt: props.item?.excerpt ?? '',
+    cover_path: props.item?.cover_path ?? '',
     show_in_header: props.item?.show_in_header ?? false,
     show_in_footer: props.item?.show_in_footer ?? false,
     sort_order: props.item?.sort_order ?? 0,
@@ -65,9 +60,7 @@ const busy = ref(false);
 const uploadError = ref<string | null>(null);
 const bodyField = ref<HTMLTextAreaElement | null>(null);
 const label = computed(() => kindLabels[props.kind].singular);
-const prefix = computed(() =>
-    props.kind === "pages" ? "/trang/" : "/tin-tuc/",
-);
+const prefix = computed(() => (props.kind === 'pages' ? '/trang/' : '/tin-tuc/'));
 
 function save(): void {
     const options = { preserveScroll: true };
@@ -79,12 +72,7 @@ function save(): void {
 }
 
 function destroy(): void {
-    if (
-        props.urls.item &&
-        confirm(
-            `Xoá ${label.value} "${props.item?.title}"? Không khôi phục được.`,
-        )
-    ) {
+    if (props.urls.item && confirm(`Xoá ${label.value} "${props.item?.title}"? Không khôi phục được.`)) {
         router.delete(props.urls.item);
     }
 }
@@ -106,23 +94,15 @@ async function togglePreview(): Promise<void> {
     }
 }
 
-async function upload(
-    file: File,
-): Promise<{ path: string; url: string } | null> {
+async function upload(file: File): Promise<{ path: string; url: string } | null> {
     uploadError.value = null;
     const data = new FormData();
-    data.append("image", file);
+    data.append('image', file);
     busy.value = true;
     try {
-        return await postJson<{ path: string; url: string }>(
-            props.urls.upload,
-            data,
-        );
+        return await postJson<{ path: string; url: string }>(props.urls.upload, data);
     } catch (error) {
-        uploadError.value =
-            error instanceof HttpError
-                ? (error.errors.image?.[0] ?? error.message)
-                : "Không tải được ảnh.";
+        uploadError.value = error instanceof HttpError ? (error.errors.image?.[0] ?? error.message) : 'Không tải được ảnh.';
         return null;
     } finally {
         busy.value = false;
@@ -132,7 +112,7 @@ async function upload(
 async function insertImage(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    input.value = "";
+    input.value = '';
     if (!file) return;
     const result = await upload(file);
     if (!result) return;
@@ -145,7 +125,7 @@ async function insertImage(event: Event): Promise<void> {
 async function setCover(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    input.value = "";
+    input.value = '';
     if (!file) return;
     const result = await upload(file);
     if (result) {
@@ -155,28 +135,17 @@ async function setCover(event: Event): Promise<void> {
 }
 
 function removeCover(): void {
-    form.cover_path = "";
+    form.cover_path = '';
     coverUrl.value = null;
 }
 </script>
 
 <template>
     <Head :title="item ? item.title : `Thêm ${label}`" />
-    <PageHeader
-        :title="item ? item.title : `Thêm ${label}`"
-        :subtitle="item?.public_url ?? undefined"
-    >
-        <Link :href="urls.index" :class="secondaryButton"
-            >← {{ kindLabels[kind].plural }}</Link
-        >
-        <a
-            v-if="item"
-            :href="item.public_url ?? item.preview_url"
-            target="_blank"
-            rel="noopener"
-            :class="secondaryButton"
-        >
-            {{ item.public_url ? "Xem trên cửa hàng" : "Xem trước" }}
+    <PageHeader :title="item ? item.title : `Thêm ${label}`" :subtitle="item?.public_url ?? undefined">
+        <Link :href="urls.index" :class="secondaryButton">← {{ kindLabels[kind].plural }}</Link>
+        <a v-if="item" :href="item.public_url ?? item.preview_url" target="_blank" rel="noopener" :class="secondaryButton">
+            {{ item.public_url ? 'Xem trên cửa hàng' : 'Xem trước' }}
         </a>
     </PageHeader>
     <FlashMessage />
@@ -184,31 +153,12 @@ function removeCover(): void {
     <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
             <FormField label="Tiêu đề" :error="form.errors.title">
-                <input
-                    v-model="form.title"
-                    :class="inputClass"
-                    maxlength="200"
-                    required
-                    :disabled="!can.manage"
-                />
+                <input v-model="form.title" :class="inputClass" maxlength="200" required :disabled="!can.manage" />
             </FormField>
-            <FormField
-                :label="`Đường dẫn (${prefix}…)`"
-                :error="form.errors.slug"
-            >
-                <input
-                    v-model="form.slug"
-                    :class="inputClass"
-                    maxlength="120"
-                    placeholder="Để trống: tạo từ tiêu đề"
-                    :disabled="!can.manage"
-                />
+            <FormField :label="`Đường dẫn (${prefix}…)`" :error="form.errors.slug">
+                <input v-model="form.slug" :class="inputClass" maxlength="120" placeholder="Để trống: tạo từ tiêu đề" :disabled="!can.manage" />
             </FormField>
-            <FormField
-                v-if="kind === 'posts'"
-                label="Tóm tắt"
-                :error="form.errors.excerpt"
-            >
+            <FormField v-if="kind === 'posts'" label="Tóm tắt" :error="form.errors.excerpt">
                 <textarea
                     v-model="form.excerpt"
                     :class="inputClass"
@@ -220,41 +170,20 @@ function removeCover(): void {
             </FormField>
 
             <div>
-                <div
-                    class="mb-1 flex flex-wrap items-center justify-between gap-2"
-                >
+                <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
                     <span class="text-sm font-medium">Nội dung (Markdown)</span>
                     <div class="flex items-center gap-2">
-                        <label
-                            v-if="can.manage"
-                            :class="[secondaryButton, 'cursor-pointer']"
-                        >
+                        <label v-if="can.manage" :class="[secondaryButton, 'cursor-pointer']">
                             Chèn ảnh
-                            <input
-                                type="file"
-                                accept="image/*"
-                                class="hidden"
-                                @change="insertImage"
-                            />
+                            <input type="file" accept="image/*" class="hidden" @change="insertImage" />
                         </label>
-                        <button
-                            type="button"
-                            :class="secondaryButton"
-                            :disabled="busy"
-                            @click="togglePreview"
-                        >
-                            {{
-                                previewHtml === null ? "Xem trước" : "Soạn tiếp"
-                            }}
+                        <button type="button" :class="secondaryButton" :disabled="busy" @click="togglePreview">
+                            {{ previewHtml === null ? 'Xem trước' : 'Soạn tiếp' }}
                         </button>
                     </div>
                 </div>
                 <!-- HTML xem trước do server render (bỏ HTML thô), giống storefront. -->
-                <div
-                    v-if="previewHtml !== null"
-                    class="vani-admin-prose min-h-64 rounded-md border border-slate-200 p-4 text-sm"
-                    v-html="previewHtml"
-                />
+                <div v-if="previewHtml !== null" class="vani-admin-prose min-h-64 rounded-md border border-slate-200 p-4 text-sm" v-html="previewHtml" />
                 <textarea
                     v-else
                     ref="bodyField"
@@ -270,145 +199,60 @@ function removeCover(): void {
                 <p v-if="uploadError" class="mt-1 text-sm text-red-600">
                     {{ uploadError }}
                 </p>
-                <p class="mt-1 text-xs text-slate-500">
-                    Hỗ trợ tiêu đề (##), in đậm, danh sách, liên kết, ảnh, bảng.
-                    HTML thô không được hiển thị.
-                </p>
+                <p class="mt-1 text-xs text-slate-500">Hỗ trợ tiêu đề (##), in đậm, danh sách, liên kết, ảnh, bảng. HTML thô không được hiển thị.</p>
             </div>
         </div>
 
         <aside class="space-y-4">
-            <section
-                class="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
-            >
+            <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <FormField label="Trạng thái" :error="form.errors.status">
-                    <select
-                        v-model="form.status"
-                        :class="inputClass"
-                        :disabled="!can.manage"
-                    >
+                    <select v-model="form.status" :class="inputClass" :disabled="!can.manage">
                         <option value="draft">Nháp</option>
                         <option value="published">Đăng</option>
                     </select>
                 </FormField>
-                <FormField
-                    label="Thời điểm đăng (giờ VN)"
-                    :error="form.errors.published_at"
-                >
-                    <input
-                        v-model="form.published_at"
-                        type="datetime-local"
-                        :class="inputClass"
-                        :disabled="!can.manage"
-                    />
+                <FormField label="Thời điểm đăng (giờ VN)" :error="form.errors.published_at">
+                    <input v-model="form.published_at" type="datetime-local" :class="inputClass" :disabled="!can.manage" />
                 </FormField>
-                <p class="text-xs text-slate-500">
-                    Đăng + để trống: đăng ngay. Chọn thời điểm trong tương lai:
-                    tự hiện khi tới giờ.
-                </p>
+                <p class="text-xs text-slate-500">Đăng + để trống: đăng ngay. Chọn thời điểm trong tương lai: tự hiện khi tới giờ.</p>
                 <div v-if="can.manage" class="flex gap-2">
-                    <button
-                        type="submit"
-                        :class="primaryButton"
-                        :disabled="form.processing || busy"
-                    >
-                        Lưu
-                    </button>
-                    <button
-                        v-if="item"
-                        type="button"
-                        :class="dangerButton"
-                        @click="destroy"
-                    >
-                        Xoá
-                    </button>
+                    <button type="submit" :class="primaryButton" :disabled="form.processing || busy">Lưu</button>
+                    <button v-if="item" type="button" :class="dangerButton" @click="destroy">Xoá</button>
                 </div>
             </section>
 
-            <section
-                v-if="kind === 'posts'"
-                class="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
-            >
+            <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="text-sm font-medium">Ảnh bìa</h2>
-                <img
-                    v-if="coverUrl"
-                    :src="coverUrl"
-                    alt=""
-                    class="w-full rounded"
-                />
+                <img v-if="coverUrl" :src="coverUrl" alt="" class="w-full rounded" />
                 <div v-if="can.manage" class="flex gap-2">
                     <label :class="[secondaryButton, 'cursor-pointer']">
-                        {{ coverUrl ? "Đổi ảnh" : "Chọn ảnh" }}
-                        <input
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                            @change="setCover"
-                        />
+                        {{ coverUrl ? 'Đổi ảnh' : 'Chọn ảnh' }}
+                        <input type="file" accept="image/*" class="hidden" @change="setCover" />
                     </label>
-                    <button
-                        v-if="coverUrl"
-                        type="button"
-                        :class="secondaryButton"
-                        @click="removeCover"
-                    >
-                        Bỏ
-                    </button>
+                    <button v-if="coverUrl" type="button" :class="secondaryButton" @click="removeCover">Bỏ</button>
                 </div>
                 <p v-if="form.errors.cover_path" class="text-sm text-red-600">
                     {{ form.errors.cover_path }}
                 </p>
             </section>
 
-            <section
-                v-if="kind === 'pages'"
-                class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm"
-            >
+            <section v-if="kind === 'pages'" class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <h2 class="font-medium">Hiển thị</h2>
                 <label class="flex items-center gap-2"
-                    ><input
-                        v-model="form.show_in_header"
-                        type="checkbox"
-                        :disabled="!can.manage"
-                    />
-                    Link ở menu đầu trang</label
+                    ><input v-model="form.show_in_header" type="checkbox" :disabled="!can.manage" /> Link ở menu đầu trang</label
                 >
-                <label class="flex items-center gap-2"
-                    ><input
-                        v-model="form.show_in_footer"
-                        type="checkbox"
-                        :disabled="!can.manage"
-                    />
-                    Link ở chân trang</label
-                >
+                <label class="flex items-center gap-2"><input v-model="form.show_in_footer" type="checkbox" :disabled="!can.manage" /> Link ở chân trang</label>
                 <FormField label="Thứ tự" :error="form.errors.sort_order">
-                    <input
-                        v-model.number="form.sort_order"
-                        type="number"
-                        min="0"
-                        :class="inputClass"
-                        :disabled="!can.manage"
-                    />
+                    <input v-model.number="form.sort_order" type="number" min="0" :class="inputClass" :disabled="!can.manage" />
                 </FormField>
             </section>
 
-            <section
-                class="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
-            >
+            <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="text-sm font-medium">SEO</h2>
                 <FormField label="Tiêu đề SEO" :error="form.errors.meta_title">
-                    <input
-                        v-model="form.meta_title"
-                        :class="inputClass"
-                        maxlength="200"
-                        placeholder="Mặc định: tiêu đề"
-                        :disabled="!can.manage"
-                    />
+                    <input v-model="form.meta_title" :class="inputClass" maxlength="200" placeholder="Mặc định: tiêu đề" :disabled="!can.manage" />
                 </FormField>
-                <FormField
-                    label="Mô tả SEO"
-                    :error="form.errors.meta_description"
-                >
+                <FormField label="Mô tả SEO" :error="form.errors.meta_description">
                     <textarea
                         v-model="form.meta_description"
                         :class="inputClass"

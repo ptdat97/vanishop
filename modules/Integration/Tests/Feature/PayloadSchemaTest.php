@@ -52,9 +52,10 @@ it('event phát từ các luồng thật (đặt, xác nhận, giao, thu tiền,
     };
     $system = fn (Closure $callback) => app(CurrentContext::class)->runAs(ContextScope::system('test'), $callback);
 
-    // COD: tạo → xác nhận → vận đơn → giao (thu COD) → đổi trả → hoàn tất.
-    [$cod, $headers] = $place('cod', 2);
-    $shipment = Shipment::query()->sole();
+    // COD: tạo → xác nhận → huỷ một phần → vận đơn → giao (thu COD) → đổi trả → hoàn tất.
+    [$cod, $headers] = $place('cod', 3);
+    $system(fn () => app(OrderCommands::class)->cancelLines($cod->id, [$cod->lines()->value('id') => 1], 'hết hàng', $cod->fresh()->lock_version));
+    $shipment = Shipment::query()->where('status', '!=', 'cancelled')->sole();
     $system(function () use ($shipment) {
         $service = app(FulfillmentService::class);
         $service->book($shipment->id, 'T1');
@@ -79,7 +80,7 @@ it('event phát từ các luồng thật (đặt, xác nhận, giao, thu tiền,
 
     $records = IntegrationEventRecord::query()->orderBy('id')->get();
     expect($records->pluck('event_type')->unique()->values()->all())->toEqualCanonicalizing([
-        'order.created', 'order.confirmed', 'order.cancelled', 'payment.captured', 'payment.refunded', 'return.created', 'return.resolved', 'shipment.status_changed',
+        'order.created', 'order.confirmed', 'order.cancelled', 'order.lines_cancelled', 'payment.captured', 'payment.refunded', 'return.created', 'return.resolved', 'shipment.status_changed',
     ])->and($records->contains(fn ($record) => ($record->payload['reconciled'] ?? false) === true))->toBeTrue();
 
     foreach ($records as $record) {

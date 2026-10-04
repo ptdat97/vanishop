@@ -24,6 +24,17 @@ final class OrderPolicy
         return OrderStateMachine::can($status, OrderStatus::Cancelled) && in_array($fulfillmentStatus, ['unfulfilled', 'allocated', 'returned_to_sender'], true);
     }
 
+    /**
+     * Huỷ một phần (nhân viên, 0.3.18): đơn đã xác nhận/đang xử lý, hàng chưa rời kho; tiền ở trạng thái điều chỉnh được —
+     * COD chờ thu (giảm số thu hộ) hoặc đã thu (hoàn phần huỷ). Thanh toán online chưa trả: link đã cấp mang số tiền cũ → không.
+     */
+    public static function staffCanCancelLines(OrderStatus $status, string $fulfillmentStatus, string $paymentStatus): bool
+    {
+        return in_array($status, [OrderStatus::Confirmed, OrderStatus::Processing], true)
+            && in_array($fulfillmentStatus, ['unfulfilled', 'allocated'], true)
+            && in_array($paymentStatus, ['cod_pending', 'paid', 'partially_refunded'], true);
+    }
+
     /** Đổi địa chỉ giao: hàng chưa rời kho, đơn còn mở. Vận đơn đã đặt ở hãng thì plugin hãng phải cập nhật lại. */
     public static function canChangeAddress(OrderStatus $status, string $fulfillmentStatus): bool
     {

@@ -116,6 +116,39 @@ final class ReservationService implements InventoryReservation
         $this->finish($key, ReservationStatus::Committed, null);
     }
 
+    public function releaseQuantities(string $key, array $quantities, string $reason): void
+    {
+        $quantities = array_filter($quantities, fn (int $quantity): bool => $quantity > 0);
+        if ($quantities === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($key, $quantities, $reason): void {
+            $rows = StockReservation::query()->where('reservation_key', $key)->where('status', ReservationStatus::Active)
+                ->whereIn('variant_id', array_keys($quantities))->orderByDesc('id')->lockForUpdate()->get();
+            if ($rows->isEmpty()) {
+                return;
+            }
+
+            $records = $this->ledger->lock($rows->map(fn (StockReservation $row): array => [$row->location_id, $row->variant_id])->unique()->values()->all());
+            $remaining = $quantities;
+            foreach ($rows as $row) {
+                $take = min($row->quantity, $remaining[$row->variant_id] ?? 0);
+                if ($take <= 0) {
+                    continue;
+                }
+                $remaining[$row->variant_id] -= $take;
+
+                $record = $records["{$row->location_id}:{$row->variant_id}"];
+                // save() cập nhật $record trong bộ nhớ → dòng giữ kế tiếp cùng kho/variant tính từ số mới.
+                $this->ledger->save($record, $record->toDomain()->release($take), MovementType::Release, $reason, $key);
+                $take === $row->quantity
+                    ? $row->update(['status' => ReservationStatus::Released, 'release_reason' => $reason])
+                    : $row->update(['quantity' => $row->quantity - $take]);
+            }
+        });
+    }
+
     public function reservedLines(string $key): array
     {
         return StockReservation::query()->where('reservation_key', $key)->where('status', ReservationStatus::Active)

@@ -13,6 +13,7 @@ use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
+use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Payment\Events\PaymentCaptured;
 use Modules\Payment\Events\RefundCompleted;
@@ -50,6 +51,7 @@ final class PublishDomainEvents
             OrderPlaced::class => 'orderPlaced',
             OrderConfirmed::class => 'orderConfirmed',
             OrderCancelled::class => 'orderCancelled',
+            OrderLinesCancelled::class => 'orderLinesCancelled',
             PaymentCaptured::class => 'paymentCaptured',
             RefundCompleted::class => 'refundCompleted',
             ReturnRequested::class => 'returnRequested',
@@ -71,6 +73,14 @@ final class PublishDomainEvents
     public function orderCancelled(OrderCancelled $event): void
     {
         $this->forOrder($event->orderId, 'order.cancelled', ['reason' => $event->reason, 'source' => $event->source]);
+    }
+
+    public function orderLinesCancelled(OrderLinesCancelled $event): void
+    {
+        $this->forOrder($event->orderId, 'order.lines_cancelled', [
+            'cancellation_id' => $event->cancellationId, 'reason' => $event->reason, 'amount' => $event->amount,
+            'lines' => array_map(fn (array $line): array => ['line_id' => $line['order_line_id'], 'variant_id' => $line['variant_id'], 'quantity' => $line['quantity'], 'amount' => $line['amount']], $event->lines),
+        ]);
     }
 
     public function paymentCaptured(PaymentCaptured $event): void

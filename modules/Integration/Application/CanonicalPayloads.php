@@ -62,7 +62,7 @@ final class CanonicalPayloads
                 'size' => $line->sizeCode,
                 'quantity' => $line->quantity,
                 'total_amount' => $line->totalAmount,
-            ], $this->orders->lines($order->id)),
+            ], array_values(array_filter($this->orders->lines($order->id), fn (OrderLineData $line): bool => $line->quantity > 0))), // dòng huỷ hết: chỉ có trong order.lines_cancelled
             'placed_at' => $order->placedAt,
             'updated_at' => $order->updatedAt,
         ];

@@ -17,10 +17,12 @@ use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
+use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Payment\Application\Listeners\CaptureAuthorizedOnShipment;
 use Modules\Payment\Application\Listeners\CollectCodOnDelivery;
 use Modules\Payment\Application\Listeners\OrderPaymentPanel;
 use Modules\Payment\Application\Listeners\SettleCancelledOrderPayments;
+use Modules\Payment\Application\Listeners\SettlePartialCancellation;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Console\ExpirePaymentsCommand;
 use Modules\Payment\Console\ReconcilePaymentsCommand;
@@ -54,6 +56,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         $navigation->add('payment', 'Thanh toán', 'admin.payment.home', 'payments.view', 350);
 
         Event::listen(OrderCancelled::class, SettleCancelledOrderPayments::class);
+        Event::listen(OrderLinesCancelled::class, SettlePartialCancellation::class);
         Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
         Event::listen(ShipmentStatusChanged::class, CaptureAuthorizedOnShipment::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));

@@ -259,8 +259,36 @@ final class PaymentService implements Payments
         });
 
         if ($refund !== null && $refund->status === 'processing') {
-            $this->executeGatewayRefund($refund, $payment);
+            // Đang trong transaction của nghiệp vụ gọi (vd. hoàn tất đổi trả): chỉ gọi cổng khi nghiệp vụ đó commit — rollback
+            // thì không có tiền nào bị hoàn. Ngoài transaction: chạy ngay.
+            DB::afterCommit(fn () => $this->executeGatewayRefund($refund, $payment));
         }
+    }
+
+    /**
+     * Huỷ một phần đơn: COD chờ thu → giảm số tiền cần thu (vận đơn tạo lại mang số mới); đã thu → hoàn phần huỷ
+     * (idempotent theo lần huỷ). Thanh toán online chưa trả không được huỷ một phần (OrderPolicy).
+     */
+    public function settlePartialCancellation(int $orderId, int $amount, string $cancellationId, string $reason): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($orderId, $amount, $cancellationId, $reason): void {
+            $payments = Payment::query()->where('order_id', $orderId)->lockForUpdate()->get();
+            $cod = $payments->first(fn (Payment $payment): bool => $payment->status === PaymentStatus::Pending && $this->collectsOnDelivery($payment->gateway_code));
+            if ($cod !== null) {
+                $cod->update(['amount' => max(0, $cod->amount - $amount), 'lock_version' => $cod->lock_version + 1]);
+                $this->audit->record('payment.amount_reduced', 'payment', $cod->id, ['by' => $amount, 'cancellation' => $cancellationId]);
+
+                return;
+            }
+
+            if ($payments->contains(fn (Payment $payment): bool => $payment->status->hasCollected())) {
+                $this->refundOrder($orderId, Money::of($amount, (string) $payments->first()->currency_code), "order_lines_cancelled:{$reason}", "lines-cancel:{$cancellationId}");
+            }
+        });
     }
 
     public function refundOrder(int $orderId, Money $amount, string $reason, string $idempotencyKey): void

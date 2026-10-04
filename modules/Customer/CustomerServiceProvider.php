@@ -28,6 +28,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
+use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Shared\Support\ModuleServiceProvider;
 
@@ -77,6 +78,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
 
         Event::listen(OrderPlaced::class, RefreshCustomerStats::class);
         Event::listen(OrderCancelled::class, RefreshCustomerStats::class);
+        Event::listen(OrderLinesCancelled::class, RefreshCustomerStats::class);
 
         RateLimiter::for('vani-customer-auth', fn (Request $request): Limit => Limit::perMinute(20)->by('customer-auth:'.$request->ip()));
 

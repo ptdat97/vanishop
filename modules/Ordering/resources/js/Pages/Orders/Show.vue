@@ -1,20 +1,17 @@
 <script setup lang="ts">
-import ExtensionActions from "@admin/Components/Extensions/ExtensionActions.vue";
-import ExtensionTabs from "@admin/Components/Extensions/ExtensionTabs.vue";
-import FormField from "@admin/Components/FormField.vue";
-import PageHeader from "@admin/Components/PageHeader.vue";
-import {
-    dangerButton,
-    inputClass,
-    primaryButton,
-    secondaryButton,
-} from "@admin/styles";
-import type { ExtensionDetail } from "@admin/types";
-import { Head, Link, router, useForm, usePage } from "@inertiajs/vue3";
-import { computed, ref } from "vue";
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
+import FormField from '@admin/Components/FormField.vue';
+import PageHeader from '@admin/Components/PageHeader.vue';
+import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionDetail } from '@admin/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 type Division = { code: string; name: string };
 type OrderLine = {
+    id: number;
+    cancelled_quantity: number;
     sku: string;
     name: string;
     color_name: string | null;
@@ -77,6 +74,7 @@ const props = defineProps<{
     can: {
         confirm: boolean;
         cancel: boolean;
+        cancel_lines: boolean;
         change_address: boolean;
         note: boolean;
     };
@@ -88,46 +86,55 @@ const props = defineProps<{
     } | null;
 }>();
 
-const vnd = (amount: number): string =>
-    `${new Intl.NumberFormat("vi-VN").format(amount)} ₫`;
+const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
 const url = computed(() => `${props.baseUrl}/${props.order.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const editingAddress = ref(false);
 const address = props.order.shippingAddress;
 const addressForm = useForm({
-    street_line: address.street_line ?? "",
-    ward_name: address.ward_name ?? "",
-    ward_code: address.ward_code ?? "",
-    province_name: address.province_name ?? "",
-    province_code: address.province_code ?? "",
-    reason: "",
+    street_line: address.street_line ?? '',
+    ward_name: address.ward_name ?? '',
+    ward_code: address.ward_code ?? '',
+    province_name: address.province_name ?? '',
+    province_code: address.province_code ?? '',
+    reason: '',
     lock_version: props.order.lockVersion,
 });
 const wards = ref<Division[]>(props.addressDirectory?.wards ?? []);
 const wardsError = ref(false);
-const noteForm = useForm({ note: "" });
+const noteForm = useForm({ note: '' });
+const cancellingLines = ref(false);
+const cancelLinesForm = useForm({
+    lines: Object.fromEntries(props.order.lines.map((line) => [line.id, 0])) as Record<number, number>,
+    reason: '',
+    lock_version: props.order.lockVersion,
+});
+const cancelTotal = computed(() => Object.values(cancelLinesForm.lines).reduce((sum, quantity) => sum + Number(quantity || 0), 0));
+
+function cancelLines(): void {
+    cancelLinesForm.post(`${url.value}/cancel-lines`, { preserveScroll: true, onSuccess: () => (cancellingLines.value = false) });
+}
 
 async function loadWards(): Promise<void> {
-    addressForm.ward_code = "";
+    addressForm.ward_code = '';
     wards.value = [];
     wardsError.value = false;
     if (!props.addressDirectory || !addressForm.province_code) return;
     try {
-        const response = await fetch(
-            `${props.addressDirectory.wards_url}/${encodeURIComponent(addressForm.province_code)}/wards`,
-            { headers: { Accept: "application/json" } },
-        );
+        const response = await fetch(`${props.addressDirectory.wards_url}/${encodeURIComponent(addressForm.province_code)}/wards`, {
+            headers: { Accept: 'application/json' },
+        });
         wards.value = ((await response.json()) as { data: Division[] }).data;
     } catch {
         wardsError.value = true;
     }
 }
 const eventLabels: Record<string, string> = {
-    placed: "Đặt hàng",
-    status_changed: "Đổi trạng thái",
-    payment_status_changed: "Thanh toán",
-    address_changed: "Đổi địa chỉ",
-    note: "Ghi chú",
+    placed: 'Đặt hàng',
+    status_changed: 'Đổi trạng thái',
+    payment_status_changed: 'Thanh toán',
+    address_changed: 'Đổi địa chỉ',
+    note: 'Ghi chú',
 };
 
 function confirmOrder(): void {
@@ -135,13 +142,8 @@ function confirmOrder(): void {
 }
 
 function cancelOrder(): void {
-    const reason = prompt("Lý do huỷ đơn:");
-    if (reason)
-        router.post(
-            `${url.value}/cancel`,
-            { reason },
-            { preserveScroll: true },
-        );
+    const reason = prompt('Lý do huỷ đơn:');
+    if (reason) router.post(`${url.value}/cancel`, { reason }, { preserveScroll: true });
 }
 
 function saveAddress(): void {
@@ -162,33 +164,14 @@ function addNote(): void {
 <template>
     <Head :title="`Đơn ${order.number}`" />
     <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
-    <PageHeader
-        :title="`Đơn ${order.number}`"
-        :subtitle="`${order.placedAt} · ${order.customerStatus.label}`"
-    >
+    <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
-        <button
-            v-if="can.confirm"
-            type="button"
-            :class="primaryButton"
-            @click="confirmOrder"
-        >
-            Xác nhận đơn
-        </button>
-        <button
-            v-if="can.cancel"
-            type="button"
-            :class="dangerButton"
-            @click="cancelOrder"
-        >
-            Huỷ đơn
-        </button>
+        <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>
+        <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
+        <button v-if="can.cancel" type="button" :class="dangerButton" @click="cancelOrder">Huỷ đơn</button>
         <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />
     </PageHeader>
-    <p
-        v-if="errors.business"
-        class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700"
-    >
+    <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
         {{ errors.business }}
     </p>
 
@@ -200,51 +183,39 @@ function addNote(): void {
                         <tr>
                             <th class="px-4 py-2">Sản phẩm</th>
                             <th class="px-4 py-2">SL</th>
+                            <th v-if="cancellingLines" class="px-4 py-2">Huỷ</th>
                             <th class="px-4 py-2">Đơn giá</th>
                             <th class="px-4 py-2">Giảm</th>
                             <th class="px-4 py-2 text-right">Thành tiền</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr
-                            v-for="line in order.lines"
-                            :key="line.sku"
-                            class="border-t border-slate-100"
-                        >
+                        <tr v-for="line in order.lines" :key="line.sku" class="border-t border-slate-100">
                             <td class="px-4 py-2">
                                 {{ line.name }}
                                 <div class="font-mono text-xs text-slate-400">
                                     {{ line.sku }} · {{ line.color_name }} /
                                     {{ line.size_code }}
                                 </div>
-                                <template
-                                    v-for="(values, plugin) in line.options"
-                                    :key="plugin"
-                                    ><div
-                                        v-for="(value, field) in values"
-                                        :key="field"
-                                        class="text-xs text-amber-700"
-                                    >
-                                        {{ field }}: {{ value }}
-                                    </div></template
+                                <template v-for="(values, plugin) in line.options" :key="plugin"
+                                    ><div v-for="(value, field) in values" :key="field" class="text-xs text-amber-700">{{ field }}: {{ value }}</div></template
                                 >
                             </td>
-                            <td class="px-4 py-2">{{ line.quantity }}</td>
+                            <td class="px-4 py-2">
+                                {{ line.quantity }}
+                                <div v-if="line.cancelled_quantity" class="text-xs text-red-600">đã huỷ {{ line.cancelled_quantity }}</div>
+                            </td>
+                            <td v-if="cancellingLines" class="px-4 py-2">
+                                <input v-model.number="cancelLinesForm.lines[line.id]" type="number" min="0" :max="line.quantity" :class="[inputClass, 'w-20']" />
+                            </td>
                             <td class="px-4 py-2">
                                 {{ vnd(line.unit_amount) }}
-                                <div
-                                    v-if="line.compare_at_amount"
-                                    class="text-xs text-slate-400 line-through"
-                                >
+                                <div v-if="line.compare_at_amount" class="text-xs text-slate-400 line-through">
                                     {{ vnd(line.compare_at_amount) }}
                                 </div>
                             </td>
                             <td class="px-4 py-2">
-                                {{
-                                    line.discount_amount
-                                        ? `−${vnd(line.discount_amount)}`
-                                        : "—"
-                                }}
+                                {{ line.discount_amount ? `−${vnd(line.discount_amount)}` : '—' }}
                             </td>
                             <td class="px-4 py-2 text-right">
                                 {{ vnd(line.total_amount) }}
@@ -252,21 +223,22 @@ function addNote(): void {
                         </tr>
                     </tbody>
                 </table>
+                <form v-if="cancellingLines" class="flex flex-wrap items-end gap-3 border-t border-slate-100 bg-red-50/40 p-4 text-sm" @submit.prevent="cancelLines">
+                    <FormField label="Lý do huỷ một phần" :error="cancelLinesForm.errors.reason" class="min-w-64 flex-1">
+                        <input v-model="cancelLinesForm.reason" :class="inputClass" maxlength="255" required placeholder="Vd. hết hàng size M" />
+                    </FormField>
+                    <button type="submit" :class="dangerButton" :disabled="cancelLinesForm.processing || cancelTotal === 0">Huỷ {{ cancelTotal }} sản phẩm</button>
+                    <button type="button" :class="secondaryButton" @click="cancellingLines = false">Thôi</button>
+                    <p class="w-full text-xs text-slate-500">Tiền phần huỷ: COD giảm số thu hộ; đã thanh toán thì hoàn tự động (cổng hỗ trợ) hoặc tạo yêu cầu hoàn tay. Vận đơn chưa rời kho được tạo lại.</p>
+                </form>
                 <dl class="space-y-1 border-t border-slate-100 p-4 text-sm">
                     <div class="flex justify-between">
                         <dt>Tạm tính</dt>
                         <dd>{{ vnd(order.amounts.subtotal) }}</dd>
                     </div>
-                    <div
-                        v-for="adjustment in order.adjustments"
-                        :key="adjustment.label"
-                        class="flex justify-between text-slate-600"
-                    >
+                    <div v-for="adjustment in order.adjustments" :key="adjustment.label" class="flex justify-between text-slate-600">
                         <dt>
-                            {{ adjustment.label
-                            }}<span v-if="adjustment.code" class="font-mono">
-                                ({{ adjustment.code }})</span
-                            >
+                            {{ adjustment.label }}<span v-if="adjustment.code" class="font-mono"> ({{ adjustment.code }})</span>
                         </dt>
                         <dd>{{ vnd(adjustment.amount) }}</dd>
                     </div>
@@ -290,75 +262,37 @@ function addNote(): void {
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Lịch sử</h2>
                 <ol class="space-y-2 text-sm">
-                    <li
-                        v-for="(event, index) in order.events"
-                        :key="index"
-                        class="border-l-2 border-slate-200 pl-3"
-                    >
-                        <span class="text-xs text-slate-400">{{
-                            event.at
-                        }}</span>
+                    <li v-for="(event, index) in order.events" :key="index" class="border-l-2 border-slate-200 pl-3">
+                        <span class="text-xs text-slate-400">{{ event.at }}</span>
                         ·
-                        <span class="font-medium">{{
-                            eventLabels[event.type] ?? event.type
-                        }}</span>
+                        <span class="font-medium">{{ eventLabels[event.type] ?? event.type }}</span>
                         <span v-if="event.to"> → {{ event.to }}</span>
-                        <span v-if="event.reason" class="text-slate-500">
-                            ({{ event.reason }})</span
-                        >
-                        <span
-                            v-if="event.actor || event.source"
-                            class="text-xs text-slate-400"
-                        >
-                            · {{ event.actor ?? event.source }}</span
-                        >
-                        <p
-                            v-if="event.type === 'note' && event.data"
-                            class="text-slate-700"
-                        >
+                        <span v-if="event.reason" class="text-slate-500"> ({{ event.reason }})</span>
+                        <span v-if="event.actor || event.source" class="text-xs text-slate-400"> · {{ event.actor ?? event.source }}</span>
+                        <p v-if="event.type === 'note' && event.data" class="text-slate-700">
                             {{ event.data.note }}
                         </p>
                     </li>
                 </ol>
-                <form
-                    v-if="can.note"
-                    class="mt-3 flex gap-2"
-                    @submit.prevent="addNote"
-                >
-                    <input
-                        v-model="noteForm.note"
-                        :class="inputClass"
-                        placeholder="Ghi chú nội bộ"
-                    />
-                    <button
-                        type="submit"
-                        :class="secondaryButton"
-                        :disabled="noteForm.processing"
-                    >
-                        Thêm
-                    </button>
+                <form v-if="can.note" class="mt-3 flex gap-2" @submit.prevent="addNote">
+                    <input v-model="noteForm.note" :class="inputClass" placeholder="Ghi chú nội bộ" />
+                    <button type="submit" :class="secondaryButton" :disabled="noteForm.processing">Thêm</button>
                 </form>
             </section>
         </div>
 
         <aside class="space-y-4">
-            <section
-                class="rounded-lg border border-slate-200 bg-white p-4 text-sm"
-            >
+            <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <h2 class="mb-2 font-semibold">Khách hàng</h2>
                 <p>{{ order.customer.full_name }}</p>
                 <p class="text-slate-600">{{ order.customer.phone }}</p>
                 <p v-if="order.customer.email" class="text-slate-600">
                     {{ order.customer.email }}
                 </p>
-                <p v-if="order.note" class="mt-2 rounded bg-amber-50 p-2">
-                    Ghi chú của khách: {{ order.note }}
-                </p>
+                <p v-if="order.note" class="mt-2 rounded bg-amber-50 p-2">Ghi chú của khách: {{ order.note }}</p>
             </section>
 
-            <section
-                class="rounded-lg border border-slate-200 bg-white p-4 text-sm"
-            >
+            <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <div class="mb-2 flex items-center justify-between">
                     <h2 class="font-semibold">Giao đến</h2>
                     <button
@@ -378,133 +312,58 @@ function addNote(): void {
                     </p>
                 </template>
                 <form v-else class="space-y-2" @submit.prevent="saveAddress">
-                    <FormField
-                        label="Số nhà, đường"
-                        :error="addressForm.errors.street_line"
-                        ><input
-                            v-model="addressForm.street_line"
-                            :class="inputClass"
+                    <FormField label="Số nhà, đường" :error="addressForm.errors.street_line"
+                        ><input v-model="addressForm.street_line" :class="inputClass"
                     /></FormField>
                     <template v-if="addressDirectory">
-                        <FormField
-                            label="Tỉnh/thành"
-                            :error="addressForm.errors.province_code"
-                        >
-                            <select
-                                v-model="addressForm.province_code"
-                                :class="inputClass"
-                                @change="loadWards"
-                            >
+                        <FormField label="Tỉnh/thành" :error="addressForm.errors.province_code">
+                            <select v-model="addressForm.province_code" :class="inputClass" @change="loadWards">
                                 <option value="">— Chọn tỉnh/thành —</option>
-                                <option
-                                    v-for="province in addressDirectory.provinces"
-                                    :key="province.code"
-                                    :value="province.code"
-                                >
+                                <option v-for="province in addressDirectory.provinces" :key="province.code" :value="province.code">
                                     {{ province.name }}
                                 </option>
                             </select>
                         </FormField>
-                        <FormField
-                            label="Phường/xã"
-                            :error="
-                                addressForm.errors.ward_code ||
-                                (wardsError
-                                    ? 'Không tải được danh sách phường/xã.'
-                                    : undefined)
-                            "
-                        >
-                            <select
-                                v-model="addressForm.ward_code"
-                                :class="inputClass"
-                            >
+                        <FormField label="Phường/xã" :error="addressForm.errors.ward_code || (wardsError ? 'Không tải được danh sách phường/xã.' : undefined)">
+                            <select v-model="addressForm.ward_code" :class="inputClass">
                                 <option value="">— Chọn phường/xã —</option>
-                                <option
-                                    v-for="ward in wards"
-                                    :key="ward.code"
-                                    :value="ward.code"
-                                >
+                                <option v-for="ward in wards" :key="ward.code" :value="ward.code">
                                     {{ ward.name }}
                                 </option>
                             </select>
                         </FormField>
                     </template>
                     <template v-else>
-                        <FormField
-                            label="Phường/xã"
-                            :error="addressForm.errors.ward_name"
-                            ><input
-                                v-model="addressForm.ward_name"
-                                :class="inputClass"
+                        <FormField label="Phường/xã" :error="addressForm.errors.ward_name"
+                            ><input v-model="addressForm.ward_name" :class="inputClass"
                         /></FormField>
-                        <FormField
-                            label="Mã phường/xã"
-                            :error="addressForm.errors.ward_code"
-                            ><input
-                                v-model="addressForm.ward_code"
-                                :class="inputClass"
+                        <FormField label="Mã phường/xã" :error="addressForm.errors.ward_code"
+                            ><input v-model="addressForm.ward_code" :class="inputClass"
                         /></FormField>
-                        <FormField
-                            label="Tỉnh/thành"
-                            :error="addressForm.errors.province_name"
-                            ><input
-                                v-model="addressForm.province_name"
-                                :class="inputClass"
+                        <FormField label="Tỉnh/thành" :error="addressForm.errors.province_name"
+                            ><input v-model="addressForm.province_name" :class="inputClass"
                         /></FormField>
-                        <FormField
-                            label="Mã tỉnh/thành"
-                            :error="addressForm.errors.province_code"
-                            ><input
-                                v-model="addressForm.province_code"
-                                :class="inputClass"
+                        <FormField label="Mã tỉnh/thành" :error="addressForm.errors.province_code"
+                            ><input v-model="addressForm.province_code" :class="inputClass"
                         /></FormField>
                     </template>
-                    <FormField label="Lý do" :error="addressForm.errors.reason"
-                        ><input
-                            v-model="addressForm.reason"
-                            :class="inputClass"
-                    /></FormField>
+                    <FormField label="Lý do" :error="addressForm.errors.reason"><input v-model="addressForm.reason" :class="inputClass" /></FormField>
                     <div class="flex gap-2">
-                        <button
-                            type="submit"
-                            :class="primaryButton"
-                            :disabled="addressForm.processing"
-                        >
-                            Lưu
-                        </button>
-                        <button
-                            type="button"
-                            :class="secondaryButton"
-                            @click="editingAddress = false"
-                        >
-                            Huỷ
-                        </button>
+                        <button type="submit" :class="primaryButton" :disabled="addressForm.processing">Lưu</button>
+                        <button type="button" :class="secondaryButton" @click="editingAddress = false">Huỷ</button>
                     </div>
                 </form>
             </section>
 
-            <section
-                v-for="(panel, index) in panels"
-                :key="index"
-                class="rounded-lg border border-slate-200 bg-white p-4 text-sm"
-            >
+            <section v-for="(panel, index) in panels" :key="index" class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <h2 class="mb-2 font-semibold">{{ panel.title }}</h2>
                 <dl class="space-y-1">
-                    <div
-                        v-for="row in panel.rows"
-                        :key="row.label"
-                        class="flex justify-between gap-3"
-                    >
+                    <div v-for="row in panel.rows" :key="row.label" class="flex justify-between gap-3">
                         <dt class="text-slate-500">{{ row.label }}</dt>
                         <dd class="text-right">{{ row.value }}</dd>
                     </div>
                 </dl>
-                <Link
-                    v-if="panel.link"
-                    :href="panel.link.url"
-                    class="mt-2 inline-block text-xs text-indigo-600 hover:underline"
-                    >{{ panel.link.label }}</Link
-                >
+                <Link v-if="panel.link" :href="panel.link.url" class="mt-2 inline-block text-xs text-indigo-600 hover:underline">{{ panel.link.label }}</Link>
             </section>
         </aside>
     </div>

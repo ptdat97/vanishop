@@ -7,6 +7,7 @@ namespace Modules\Customer\Application\Listeners;
 use Modules\Customer\Application\CustomerStats;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Events\OrderCancelled;
+use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -19,7 +20,7 @@ final class RefreshCustomerStats
         private readonly CurrentContext $context,
     ) {}
 
-    public function handle(OrderPlaced|OrderCancelled $event): void
+    public function handle(OrderPlaced|OrderCancelled|OrderLinesCancelled $event): void
     {
         $customerId = $event instanceof OrderPlaced
             ? $event->customerId

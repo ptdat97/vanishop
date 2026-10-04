@@ -14,32 +14,25 @@ export class HttpError extends Error {
 
 function xsrfToken(): string {
     const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : "";
+    return match ? decodeURIComponent(match[1]) : '';
 }
 
-export async function postJson<T>(
-    url: string,
-    body: FormData | Record<string, unknown>,
-): Promise<T> {
+export async function postJson<T>(url: string, body: FormData | Record<string, unknown>): Promise<T> {
     const isForm = body instanceof FormData;
     const response = await fetch(url, {
-        method: "POST",
-        credentials: "same-origin",
+        method: 'POST',
+        credentials: 'same-origin',
         headers: {
-            Accept: "application/json",
-            "X-XSRF-TOKEN": xsrfToken(),
-            "X-Requested-With": "XMLHttpRequest",
-            ...(isForm ? {} : { "Content-Type": "application/json" }),
+            Accept: 'application/json',
+            'X-XSRF-TOKEN': xsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(isForm ? {} : { 'Content-Type': 'application/json' }),
         },
         body: isForm ? body : JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-        throw new HttpError(
-            data.message ?? `HTTP ${response.status}`,
-            response.status,
-            data.errors ?? {},
-        );
+        throw new HttpError(data.message ?? `HTTP ${response.status}`, response.status, data.errors ?? {});
     }
     return data as T;
 }

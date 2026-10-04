@@ -97,7 +97,7 @@ final class EloquentOrderReader implements OrderReader
             ],
             shippingAddress: array_map('strval', (array) $order->shipping_address),
             fulfillmentStatus: (string) $order->fulfillment_status,
-            placedAt: $order->placed_at?->toIso8601String(),
+            placedAt: $order->placed_at->toIso8601String(),
             updatedAt: $order->updated_at?->toIso8601String(),
             meta: (array) ($order->meta ?? []),
             source: (string) $order->source,

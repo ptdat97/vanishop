@@ -202,3 +202,36 @@ it('thanh toán online hết hạn: đơn huỷ, hàng giữ được trả', fu
     expect($order->fresh()->order_status->value)->toBe('cancelled')->and(($this->onHand)())->toBe(10);
     ($this->assertInvariants)();
 });
+
+it('huỷ một phần đơn COD rồi giao: nhả đúng phần huỷ, vận đơn tạo lại thu hộ theo tổng mới, thu COD khớp', function () {
+    [$order] = ($this->place)(2); // 2 × 300.000, miễn phí giao
+    $line = $order->lines()->first();
+    ($this->system)(fn () => app(OrderCommands::class)->cancelLines($order->id, [$line->id => 1], 'hết size', $order->fresh()->lock_version));
+
+    $order->refresh();
+    $shipment = Shipment::query()->where('status', '!=', 'cancelled')->sole();
+    expect([$order->total_amount, $line->fresh()->quantity, $line->fresh()->cancelled_quantity])->toBe([300_000, 1, 1])
+        ->and($shipment->cod_amount)->toBe(300_000)
+        ->and((int) DB::table('payments')->value('amount'))->toBe(300_000)
+        ->and(DB::table('stock_reservations')->where('reservation_key', $order->reservation_key)->where('status', 'active')->sum('quantity'))->toEqual(1)
+        ->and(DB::table('order_adjustments')->where('order_id', $order->id)->where('type', 'cancellation')->value('amount'))->toEqual(-300_000);
+
+    ($this->ship)($shipment, ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
+    expect(($this->onHand)())->toBe(9)->and(DB::table('payments')->value('status'))->toBe('paid');
+    ($this->assertInvariants)();
+});
+
+it('huỷ một phần đơn đã thanh toán online: hoàn đúng phần huỷ (một lần), hàng còn lại giao bình thường', function () {
+    [$order, , $payment] = ($this->place)(2, 'fake_online');
+    $this->postJson('/api/payments/fake_online/callback', FakeOnlineGateway::callbackPayload($payment['id'], 'TXN-PART-1', 'paid', 600_000))->assertOk();
+    $line = $order->lines()->first();
+
+    ($this->system)(fn () => app(OrderCommands::class)->cancelLines($order->id, [$line->id => 1], 'khách bớt 1', $order->fresh()->lock_version));
+
+    expect((int) DB::table('refunds')->where('status', 'completed')->sum('amount'))->toBe(300_000)
+        ->and($order->fresh()->payment_status)->toBe('partially_refunded')
+        ->and(($this->onHand)())->toBe(10);
+    ($this->ship)(Shipment::query()->where('status', '!=', 'cancelled')->sole(), ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
+    expect(($this->onHand)())->toBe(9);
+    ($this->assertInvariants)();
+});

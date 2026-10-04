@@ -5,23 +5,74 @@
     "description": "Phong bì của mọi event tích hợp (webhook, GET /events, outbox connector). `data` theo schema của từng event_type trong events/.",
     "type": "object",
     "additionalProperties": false,
-    "required": ["event_id", "event_type", "schema_version", "occurred_at", "source", "aggregate", "correlation_id", "data"],
+    "required": [
+        "event_id",
+        "event_type",
+        "schema_version",
+        "occurred_at",
+        "source",
+        "aggregate",
+        "correlation_id",
+        "data"
+    ],
     "properties": {
-        "event_id": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", "description": "UUID; khoá khử trùng lặp phía nhận." },
-        "event_type": { "type": "string", "enum": ["order.created", "order.confirmed", "order.cancelled", "payment.captured", "payment.refunded", "return.created", "return.resolved", "shipment.status_changed"] },
-        "schema_version": { "type": "string", "const": "1" },
-        "occurred_at": { "type": "string", "format": "date-time" },
-        "source": { "type": "string", "const": "vanishop" },
+        "event_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "description": "UUID; khoá khử trùng lặp phía nhận."
+        },
+        "event_type": {
+            "type": "string",
+            "enum": [
+                "order.created",
+                "order.confirmed",
+                "order.cancelled",
+                "order.lines_cancelled",
+                "payment.captured",
+                "payment.refunded",
+                "return.created",
+                "return.resolved",
+                "shipment.status_changed"
+            ]
+        },
+        "schema_version": {
+            "type": "string",
+            "const": "1"
+        },
+        "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "source": {
+            "type": "string",
+            "const": "vanishop"
+        },
         "aggregate": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["type", "id"],
+            "required": [
+                "type",
+                "id"
+            ],
             "properties": {
-                "type": { "type": "string", "const": "order" },
-                "id": { "type": "string", "description": "Số đơn (orders.number) — thứ tự giao nhận theo aggregate." }
+                "type": {
+                    "type": "string",
+                    "const": "order"
+                },
+                "id": {
+                    "type": "string",
+                    "description": "Số đơn (orders.number) — thứ tự giao nhận theo aggregate."
+                }
             }
         },
-        "correlation_id": { "type": ["string", "null"] },
-        "data": { "type": "object" }
+        "correlation_id": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "data": {
+            "type": "object"
+        }
     }
 }

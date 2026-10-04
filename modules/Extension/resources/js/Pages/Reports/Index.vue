@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import PageHeader from "@admin/Components/PageHeader.vue";
-import { Head, Link } from "@inertiajs/vue3";
+import PageHeader from '@admin/Components/PageHeader.vue';
+import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
     reports: Array<{ key: string; label: string; description: string }>;
@@ -9,10 +9,7 @@ defineProps<{
 
 <template>
     <Head title="Báo cáo" />
-    <PageHeader
-        title="Báo cáo"
-        subtitle="Báo cáo do plugin cung cấp; số liệu tính theo giờ Việt Nam, không gồm đơn đã huỷ."
-    />
+    <PageHeader title="Báo cáo" subtitle="Báo cáo do plugin cung cấp; số liệu tính theo giờ Việt Nam, không gồm đơn đã huỷ." />
     <div v-if="reports.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link
             v-for="report in reports"
@@ -24,8 +21,5 @@ defineProps<{
             <p class="mt-1 text-sm text-slate-600">{{ report.description }}</p>
         </Link>
     </div>
-    <p v-else class="text-sm text-slate-500">
-        Chưa có báo cáo nào. Bật plugin Báo cáo (vani.reports) trong Admin →
-        Plugin.
-    </p>
+    <p v-else class="text-sm text-slate-500">Chưa có báo cáo nào. Bật plugin Báo cáo (vani.reports) trong Admin → Plugin.</p>
 </template>

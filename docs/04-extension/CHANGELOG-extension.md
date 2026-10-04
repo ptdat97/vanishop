@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.18 — 2026-10-04
+
+Huỷ một phần đơn. Chỉ thêm (+ đổi hành vi hoàn tiền trong transaction).
+
+### Thêm
+- Event `Ordering\Events\OrderLinesCancelled` (sau commit): `orderId`, `publicId`, `cancellationId`, `lines` (dòng, variant, số lượng, thành tiền phần huỷ), `amount`, `reason`, `source`.
+- `InventoryReservation::releaseQuantities(string $key, array $quantities, string $reason)`: nhả một phần hàng giữ.
+- `OrderActionRejected::cannotCancelLines()`, `invalidCancelQuantities()`.
+- Event tích hợp `order.lines_cancelled` + schema `docs/api/schemas/events/order.lines_cancelled.json`; `vanishop.order.v1.lines` chỉ gồm dòng còn hiệu lực.
+
+### Đổi hành vi
+- `PaymentService::refund()` trong transaction của nghiệp vụ gọi: gọi cổng hoàn tiền **sau khi** transaction đó commit (trước: ngay sau transaction của refund — nghiệp vụ gọi rollback thì tiền đã hoàn).
+
 ## 0.3.17 — 2026-10-04
 
 Định danh công khai trong event + nhân viên tạo đổi/trả. Chỉ thêm (payload tích hợp: chỉnh v1 trước khi có bên tích hợp).

@@ -78,6 +78,7 @@ final class OrderController
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
                 'cancel' => Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status),
+                'cancel_lines' => Gate::allows('orders.cancel') && OrderPolicy::staffCanCancelLines($order->order_status, (string) $order->fulfillment_status, (string) $order->payment_status),
                 'change_address' => $canManage && OrderPolicy::canChangeAddress($order->order_status, (string) $order->fulfillment_status),
                 'note' => $canManage,
             ],
@@ -107,6 +108,24 @@ final class OrderController
         $commands->cancel($order->id, $data['reason'], 'staff');
 
         return back()->with('success', __('ordering::messages.cancelled'));
+    }
+
+    public function cancelLines(Order $order, Request $request, OrderCommands $commands): RedirectResponse
+    {
+        Gate::authorize('orders.cancel');
+        $data = $request->validate([
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*' => ['integer', 'min:0', 'max:100000'],
+            'reason' => ['required', 'string', 'max:255'],
+            'lock_version' => ['required', 'integer', 'min:0'],
+        ]);
+        $quantities = [];
+        foreach ($data['lines'] as $lineId => $quantity) {
+            $quantities[(int) $lineId] = (int) $quantity;
+        }
+        $commands->cancelLines($order->id, $quantities, $data['reason'], (int) $data['lock_version']);
+
+        return back()->with('success', __('ordering::messages.lines_cancelled'));
     }
 
     public function updateAddress(Order $order, ShippingAddressRequest $request, OrderCommands $commands): RedirectResponse

@@ -20,6 +20,7 @@ use Modules\Fulfillment\Application\EloquentShipmentReader;
 use Modules\Fulfillment\Application\Listeners\CancelShipmentsOnOrderCancel;
 use Modules\Fulfillment\Application\Listeners\CreateShipmentsOnConfirm;
 use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
+use Modules\Fulfillment\Application\Listeners\RebuildShipmentsOnLinesCancelled;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
 use Modules\Fulfillment\Contracts\ShipmentReader;
@@ -30,6 +31,7 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
+use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -64,6 +66,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
 
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
+        Event::listen(OrderLinesCancelled::class, RebuildShipmentsOnLinesCancelled::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 5);
 
         // Tắt hãng còn vận đơn chưa kết thúc → webhook 404, trạng thái giao/COD/hàng hoàn không được cập nhật.

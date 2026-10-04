@@ -1,0 +1,61 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/events/order.lines_cancelled.json",
+    "title": "data của event order.lines_cancelled (v1)",
+    "description": "Huỷ một phần (0.3.18): `order` là ảnh chụp SAU khi huỷ (số lượng, tổng đã giảm); `lines` là phần bị huỷ. Bên nhận khử trùng lặp theo `cancellation_id`.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "order",
+        "cancellation_id",
+        "reason",
+        "amount",
+        "lines"
+    ],
+    "properties": {
+        "order": {
+            "$ref": "../vanishop.order.v1.json"
+        },
+        "cancellation_id": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{26}$"
+        },
+        "reason": {
+            "type": "string"
+        },
+        "amount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Tổng tiền phần huỷ (sau giảm giá)."
+        },
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "line_id",
+                    "variant_id",
+                    "quantity",
+                    "amount"
+                ],
+                "properties": {
+                    "line_id": {
+                        "type": "integer"
+                    },
+                    "variant_id": {
+                        "type": "integer"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "amount": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                }
+            }
+        }
+    }
+}
