@@ -10,7 +10,9 @@
 >
 > **Phase 1 (2026-10-15):** chuyển kho có vòng đời `pending → shipped → received`, `cancelled` (`stock_transfers`, `stock_transfer_lines`); Admin → Tồn kho → Chuyển kho; quyền `inventory.transfer`.
 >
-> **Chưa có:** reconciliation với nguồn ngoài (snapshot), import Excel, counter Redis cho flash sale, scope `location` trong RBAC.
+> **Phase 3 (2026-10-15):** bảng đối soát tồn kho `inventory_reconciliations` + `inventory_reconciliation_lines` dùng chung cho đối soát nội bộ (`vani:inventory:verify` giờ lưu phiên + dòng, dòng đã sửa `resolution = repaired`) và nguồn ngoài (`vani:inventory:reconcile`, snapshot JSON, chỉ áp phía VaniShop khi location do nguồn đó quản lý); Admin → Tồn kho → Đối soát (chỉ đọc).
+>
+> **Chưa có:** import Excel, counter Redis cho flash sale, scope `location` trong RBAC, đối soát thanh toán với cổng (Phase 3 còn).
 
 ## 1. Nguyên tắc
 
@@ -128,8 +130,8 @@ public function reserve(ReservationRequest $req): Reservation   // gọi trong t
 ## 6. Transfer và reconciliation
 
 - **Transfer** (**Implemented**, roadmap Phase 1 — Admin → Tồn kho → Chuyển kho): `pending → shipped → received`, `cancelled`. `pending` không đổi tồn (hàng còn ở kho đi, vẫn bán được). `shipped` ghi `transfer_out` (trừ `on_hand` kho đi) — từ đây hàng đang **đi đường nên ATS không tính**. `received` ghi `transfer_in` (cộng `on_hand` kho đến); nhận thiếu được (chênh lệch coi là hao hụt trên đường, lưu trên `stock_transfer_lines.received_quantity`). Huỷ sau `shipped` nhập lại kho đi (`transfer_in`, reference `:revert`); huỷ trước `shipped` không đổi tồn. Chỉ chuyển giữa hai location do VaniShop quản lý tồn vật lý; nếu do ERP quản lý thì transfer diễn ra trên ERP, VaniShop chỉ nhận số mới.
-- **Đối soát nội bộ** (**Implemented**, `vani:inventory:verify`, hằng ngày 03:30): `reserved` = tổng hàng giữ active (lệch → `--repair-reserved` ghi movement `reconcile`); on_hand/reserved = giá trị "sau" của movement cuối (lệch = có chỗ sửa tồn ngoài sổ → chỉ báo, cần kiểm kê); không âm. Exit 1 + log cảnh báo khi còn chênh lệch. Bộ test bất biến vòng đời (`tests/Feature/Invariants`) chạy lệnh này sau mọi luồng.
-- **Reconciliation**: snapshot từ authority (hằng đêm hoặc theo yêu cầu) → so với `on_hand` → tạo `inventory_reconciliation_lines` cho chênh lệch → tự áp dụng nếu dưới ngưỡng, còn lại chờ duyệt → movement `sync`. Báo cáo tỷ lệ lệch (mục tiêu < 0,5%).
+- **Đối soát nội bộ** (**Implemented**, `vani:inventory:verify`, hằng ngày 03:30): `reserved` = tổng hàng giữ active (lệch → `--repair-reserved` ghi movement `reconcile`); on_hand/reserved = giá trị "sau" của movement cuối (lệch = có chỗ sửa tồn ngoài sổ → chỉ báo, cần kiểm kê); không âm. Result được **lưu vào bảng đối soát chung**: một phiên (`source = internal_verify`) + một dòng cho mỗi chênh lệch (`expected`/`actual`/`difference`, `resolution = repaired` cho dòng đã sửa). Exit 1 + log cảnh báo khi còn chênh lệch. Bộ test bất biến vòng đời (`tests/Feature/Invariants`) chạy lệnh này sau mọi luồng.
+- **Reconciliation nguồn ngoài** (**Implemented**, `vani:inventory:reconcile`): snapshot từ authority (`--source`, `--file`/`--json`, `[--dry-run]`; định dạng `[{"location":"WH-HN","sku":"LM-DR01-M","on_hand":8,"version":41}]`) → so `on_hand` với VaniShop → ghi line `external_mismatch`. **Không tự sửa phía ngoài**; chỉ áp phía VaniShop khi location có `stock_authority = source` (movement `sync`, `reference = v<version>`, bỏ qua bản cũ hơn `sync_version`), line có `resolution = applied`; còn lại line để mở cho xử lý tay (kiểm kê/điều chỉnh trên hệ thống đúng authority). Báo cáo tỷ lệ lệch (mục tiêu < 0,5%) dựa trên bảng đối soát.
 
 ## 7. Đồng bộ với authority ngoài
 
@@ -151,6 +153,7 @@ Chi tiết: [integration-platform](../11-integration/integration-platform.md), [
 | Không reserve vượt `available` | App (khoá dòng) |
 | Ledger không bị sửa/xoá | App (không có API) + quyền DB user ứng dụng không có `DELETE` trên `stock_movements` (khuyến nghị) |
 | Reservation release/commit đúng một lần | DB: trạng thái + `UPDATE … WHERE status = 'active'` |
+| Phiên đối soát phản ánh đúng kết quả: `discrepancies` = số dòng, `repaired` = số dòng có `resolution` | App (`InventoryReconciler`) + `tests/Feature/Invariants/ReconciliationInvariantsTest` |
 
 ## 9. Omnichannel
 
@@ -162,4 +165,4 @@ Tra tồn tại cửa hàng, BOPIS, ship-from-store, endless aisle là plugin: [
 - Concurrency (MySQL thật, `tests/Concurrency`, group `concurrency`): **đã có** — 12 tiến trình giữ SKU tồn = 5 → đúng 5 thành công, 7 `StockUnavailable`; đơn nhiều SKU đảo thứ tự không deadlock.
 - Feature: hết hạn reservation; huỷ đơn; sync bản cũ bị bỏ qua; client không phải authority bị 403.
 - Chuyển kho: vòng đời `pending → shipped → received`, huỷ trước/sau khi gửi, nhận thiếu, chặn gửi vượt tồn và sai thứ tự trạng thái, audit (`StockTransferTest`, `StockTransferAdminTest`); bất biến tồn chạy `vani:inventory:verify` sau mỗi bước (`tests/Feature/Invariants/StockTransferInvariantsTest`).
-- Reconciliation: dữ liệu chênh lệch sinh đúng movement.
+- Reconciliation (`ReconciliationTest`, `tests/Feature/Invariants/ReconciliationInvariantsTest`): verify lưu phiên + dòng; `--repair-reserved` ghi line `repaired` + movement `reconcile`; tồn sửa ngoài sổ ghi line mở; nguồn ngoài áp `applied` (movement `sync`, `v<version>`) khi `stock_authority = source`; `--dry-run`/location VaniShop-managed chỉ ghi không áp; snapshot cũ hơn `sync_version` và dòng không tra được bị bỏ qua; Admin đối soát cần `inventory.view`.

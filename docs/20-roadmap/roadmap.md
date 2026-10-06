@@ -137,7 +137,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Không nhả hai lần / commit hai lần, không hàng giữ treo | ✅ | release/commit idempotent theo key; bất biến I3; `releaseQuantities` cho huỷ một phần |
 | Mọi điều chỉnh tạo movement, không `UPDATE` ngoài service | ✅ | R30; `reconcile` khi sửa reserved |
 | Chuyển kho (`pending → shipped → received`, `cancelled`) | ✅ | 2026-10-15. `stock_transfers` + dòng; `pending` không đổi tồn, `shipped` trừ `on_hand` kho đi (movement `transfer_out`), `received` cộng kho đến (`transfer_in`); hàng đang đi đường không bán được; huỷ sau `shipped` = nhập lại kho đi. Chỉ giữa hai location do VaniShop quản lý tồn; quyền `inventory.transfer`; event `StockTransfer*` |
-| Báo cáo đối soát nội bộ lưu lại (không chỉ log) | 🟡 | Hiện chỉ có output lệnh + log; lưu kết quả cùng bảng đối soát của Phase 3 |
+| Báo cáo đối soát nội bộ lưu lại (không chỉ log) | ✅ | `vani:inventory:verify` ghi phiên + dòng vào `inventory_reconciliations`/`inventory_reconciliation_lines` (source `internal_verify`); dòng đã sửa có `resolution = repaired` |
 
 ### Phase 2. Order / Payment / Return invariants
 
@@ -161,7 +161,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Hạng mục | Trạng thái | Ghi chú |
 |---|---|---|
 | Đồng bộ tồn từ authority ngoài (`InventorySync`, version, chỉ authority của location) | ✅ | slice 11 |
-| Bảng đối soát tồn với nguồn ngoài | ⬜ | `inventory_reconciliations` (source, location, variant, expected, actual, difference, detected_at, resolved_at, resolution). Phân loại chênh lệch: nguồn ngoài ≠ VaniShop, VaniShop ≠ sổ (`on_hand_off_ledger`), hàng giữ ≠ reserved (`reserved_mismatch`). Không tự sửa phía ngoài; chỉ áp phía VaniShop khi location có `stock_authority` ngoài |
+| Bảng đối soát tồn với nguồn ngoài | ✅ | `inventory_reconciliations` + `inventory_reconciliation_lines` (source, location, variant, expected, actual, difference, detected_at, resolved_at, resolution). Phân loại: `external_mismatch` (nguồn ngoài ≠ VaniShop), `on_hand_off_ledger`, `reserved_mismatch`/`reserved_off_ledger`, `negative_on_hand`. `vani:inventory:verify` và `vani:inventory:reconcile` (snapshot JSON `--file`/`--json`, `--dry-run`) dùng chung bảng; không tự sửa phía ngoài; chỉ áp phía VaniShop khi location có `stock_authority` = nguồn đó (movement `sync`, chống bản cũ theo `version`). Admin → Tồn kho → Đối soát (chỉ đọc) |
 | Đối soát thanh toán với cổng | 🟡 | `vani:payment:reconcile` hỏi cổng cho khoản `pending` và áp kết quả đã xác minh (cổng là authority của kết quả thu). Chưa có: phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu. Phần này chỉ ghi chênh lệch để xử lý tay, không tự sửa |
 
 ### Phase 4. Integration event reconciliation
@@ -218,9 +218,10 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 ### Việc kế tiếp đề xuất
 
 1. Phase 1: chuyển kho có vòng đời. ✅ 2026-10-15
-2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`.
+2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`. ✅ 2026-10-15
 3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`.
-4. Phase 5: trạng thái `draining` + xác nhận `--force`.
+4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay).
+5. Phase 5: trạng thái `draining` + xác nhận `--force`.
 
 ## 5. Go-live gate
 

@@ -14,6 +14,7 @@ use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Application\ReturnService;
 use Modules\Inventory\Application\StandardInventoryStrategy;
 use Modules\Inventory\Application\StockAvailability;
+use Modules\Inventory\Console\ReconcileInventoryCommand;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
 use Modules\Inventory\Console\VerifyStockCommand;
 use Modules\Inventory\Contracts\AvailabilityReader;
@@ -66,7 +67,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class]);
+            $this->commands([ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class, ReconcileInventoryCommand::class]);
         }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-owner.php'));

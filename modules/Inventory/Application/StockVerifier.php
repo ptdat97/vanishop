@@ -22,7 +22,7 @@ final class StockVerifier
     public function __construct(private readonly StockLedger $ledger) {}
 
     /**
-     * @return array{checked: int, issues: list<array{location_id: int, variant_id: int, issue: string, expected: int, actual: int}>, repaired: int}
+     * @return array{checked: int, issues: list<array{location_id: int, variant_id: int, issue: string, expected: int, actual: int, repaired: bool}>, repaired: int}
      */
     public function verify(bool $repairReserved = false): array
     {
@@ -42,8 +42,8 @@ final class StockVerifier
                 foreach ($levels as $level) {
                     $checked++;
                     $key = "{$level->location_id}:{$level->variant_id}";
-                    $issue = function (string $type, int $expected, int $actual) use (&$issues, $level): void {
-                        $issues[] = ['location_id' => (int) $level->location_id, 'variant_id' => (int) $level->variant_id, 'issue' => $type, 'expected' => $expected, 'actual' => $actual];
+                    $issue = function (string $type, int $expected, int $actual, bool $wasRepaired = false) use (&$issues, $level): void {
+                        $issues[] = ['location_id' => (int) $level->location_id, 'variant_id' => (int) $level->variant_id, 'issue' => $type, 'expected' => $expected, 'actual' => $actual, 'repaired' => $wasRepaired];
                     };
 
                     if ((int) $level->on_hand < 0) {
@@ -54,6 +54,7 @@ final class StockVerifier
                         $issue('reserved_mismatch', $expectedReserved, (int) $level->reserved);
                         if ($repairReserved && $this->repairReserved((int) $level->location_id, (int) $level->variant_id)) {
                             $repaired++;
+                            $issues[array_key_last($issues)]['repaired'] = true;
 
                             continue; // biến động reconcile vừa ghi là mốc mới của sổ
                         }

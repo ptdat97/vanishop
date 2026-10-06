@@ -16,4 +16,8 @@ return [
     'transfer_invalid_transition' => 'Không thể chuyển phiếu từ [:from] sang [:to].',
     'transfer_received_range' => 'Số nhận của variant #:variant phải trong khoảng 0–:max.',
     'transfer_unknown_sku' => 'Không tìm thấy SKU [:sku].',
+
+    'reconcile_source_required' => '--source là bắt buộc và phải khác "vanishop".',
+    'reconcile_input_required' => 'Cần --file hoặc --json cho snapshot.',
+    'reconcile_invalid_json' => 'JSON snapshot không hợp lệ.',
 ];

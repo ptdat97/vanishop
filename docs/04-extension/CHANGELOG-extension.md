@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.20 — 2026-10-15
+
+Bảng đối soát tồn kho (roadmap Phase 3). Chỉ thêm.
+
+### Thêm
+- Màn hình Admin "Đối soát tồn kho" (`admin.inventory.reconciliations.index`, `admin.inventory.reconciliations.show`, quyền `inventory.view`): xem phiên + dòng chênh lệch của `vani:inventory:verify` (nội bộ, `source = internal_verify`) và `vani:inventory:reconcile` (nguồn ngoài).
+- Lệnh `vani:inventory:reconcile` (`--source`, `--file`/`--json`, `--dry-run`): so `on_hand` với snapshot nguồn ngoài, áp lên VaniShop khi `locations.stock_authority = source`.
+
 ## 0.3.19 — 2026-10-15
 
 Chuyển kho có vòng đời `pending → shipped → received`, `cancelled` (roadmap Phase 1). Chỉ thêm.

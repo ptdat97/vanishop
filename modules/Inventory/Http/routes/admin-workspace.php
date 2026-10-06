@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Inventory\Http\Controllers\Admin\ReconciliationController;
 use Modules\Inventory\Http\Controllers\Admin\StockController;
 use Modules\Inventory\Http\Controllers\Admin\StockTransferController;
 
@@ -14,3 +15,6 @@ Route::post('transfers', [StockTransferController::class, 'store'])->name('trans
 Route::post('transfers/{transfer}/ship', [StockTransferController::class, 'ship'])->name('transfers.ship');
 Route::post('transfers/{transfer}/receive', [StockTransferController::class, 'receive'])->name('transfers.receive');
 Route::post('transfers/{transfer}/cancel', [StockTransferController::class, 'cancel'])->name('transfers.cancel');
+
+Route::get('reconciliations', [ReconciliationController::class, 'index'])->name('reconciliations.index');
+Route::get('reconciliations/{reconciliation}', [ReconciliationController::class, 'show'])->name('reconciliations.show');

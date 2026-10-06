@@ -16,4 +16,8 @@ return [
     'transfer_invalid_transition' => 'Cannot move the transfer from [:from] to [:to].',
     'transfer_received_range' => 'Received quantity for variant #:variant must be between 0 and :max.',
     'transfer_unknown_sku' => 'SKU [:sku] was not found.',
+
+    'reconcile_source_required' => '--source is required and must not be "vanishop".',
+    'reconcile_input_required' => 'Provide either --file or --json with the snapshot.',
+    'reconcile_invalid_json' => 'Invalid snapshot JSON.',
 ];

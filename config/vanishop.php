@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.19',
+    'version' => '0.3.20',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
