@@ -29,6 +29,7 @@ afterEach(fn () => setAdminPathEnv(null));
 it('đổi đường dẫn Admin bằng VANI_ADMIN_PATH', function () {
     setAdminPathEnv('quan-tri-7f3k');
     $this->refreshApplication();
+    $this->withoutVite(); // app mới: tắt Vite lại như TestCase::setUp (không phụ thuộc public/build)
 
     $this->get('/quan-tri-7f3k/login')->assertOk();
     $this->get('/admin/login')->assertNotFound();
