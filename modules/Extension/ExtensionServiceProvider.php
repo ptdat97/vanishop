@@ -34,6 +34,7 @@ use Modules\Extension\Application\Storefront\AccountPages;
 use Modules\Extension\Application\Storefront\PluginViews;
 use Modules\Extension\Application\Storefront\StorefrontPrefixes;
 use Modules\Extension\Console\InstallCommand;
+use Modules\Extension\Console\PluginCacheCommand;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginDoctorCommand;
 use Modules\Extension\Console\PluginEnableCommand;
@@ -146,8 +147,11 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->persistLoaderFailures();
 
         if ($this->app->runningInConsole()) {
+            // Không gắn vào optimize:clear: xoá file cache = tắt mọi plugin ở lần boot sau.
+            $this->optimizes(optimize: 'vani:plugin:cache', key: 'vanishop-plugins');
             $this->commands([
                 InstallCommand::class,
+                PluginCacheCommand::class,
                 PluginHealthCommand::class,
                 PluginListCommand::class,
                 PluginInstallCommand::class,

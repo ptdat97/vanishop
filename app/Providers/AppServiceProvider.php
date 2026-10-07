@@ -6,6 +6,7 @@ use App\Livewire\Pulse\CommerceMetricsCard;
 use App\Observability\PulseMetrics;
 use App\Observability\RecordCommerceMetrics;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -30,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(PermissionRegistry $permissions): void
     {
+        self::trustProxies((string) config('vanishop.trusted_proxies'));
         // Dashboard vận hành (Horizon, Pulse — ADR-032): chỉ nhân viên có quyền system.monitor.
         $permissions->register('system.monitor', 'Xem dashboard vận hành (queue, hiệu năng)');
         Gate::define('viewPulse', fn ($user = null): bool => $user !== null && Gate::forUser($user)->allows('system.monitor'));
@@ -47,5 +49,17 @@ class AppServiceProvider extends ServiceProvider
         }
         Livewire::component('vani.commerce-metrics', CommerceMetricsCard::class);
         Horizon::auth(fn (Request $request): bool => ($user = $request->user('staff')) !== null && Gate::forUser($user)->allows('system.monitor'));
+    }
+
+    /**
+     * Sau LB/CDN: IP khách (allowlist Admin, giới hạn OTP) và HTTPS lấy từ X-Forwarded-* của proxy tin cậy
+     * (`VANI_TRUSTED_PROXIES`: IP/CIDR phân tách dấu phẩy, hoặc '*'). Trống = không tin header nào.
+     */
+    public static function trustProxies(string $setting): void
+    {
+        $setting = trim($setting);
+        if ($setting !== '') {
+            TrustProxies::at($setting === '*' ? '*' : array_values(array_filter(array_map('trim', explode(',', $setting)))));
+        }
     }
 }

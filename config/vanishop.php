@@ -47,6 +47,10 @@ return [
         'theme' => env('VANI_THEME', 'vani-base'),
     ],
 
+    // Proxy tin cậy (load balancer/CDN đứng trước app): IP/CIDR phân tách dấu phẩy, hoặc '*' khi app chỉ nhận
+    // traffic qua LB. Trống = không tin X-Forwarded-* (IP khách, HTTPS sẽ sai nếu có LB).
+    'trusted_proxies' => env('VANI_TRUSTED_PROXIES', ''),
+
     'health' => [
         // Token để GET /health trả chi tiết từng kiểm tra (header X-Health-Token). Trống = chỉ trả status.
         'token' => env('VANI_HEALTH_TOKEN', ''),
