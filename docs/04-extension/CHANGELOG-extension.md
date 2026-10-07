@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.22 — 2026-10-07
+
+Đối soát khoản đã thu với cổng (roadmap Phase 3). Chỉ thêm.
+
+### Thêm
+- `GatewayStatus::$refunded` (tuỳ chọn, cuối constructor): tổng đã hoàn phía cổng, nếu cổng tra được. Cổng hiện có không phải sửa; muốn đối soát hoàn tiền thì điền trường này trong `query()`.
+- `vani:payment:verify [--days=7]` + bảng `payment_reconciliations`/`payment_reconciliation_lines`: ghi chênh lệch (`gateway_not_captured`, `amount_mismatch`, `refund_mismatch`) để xử lý tay, không đổi trạng thái thanh toán.
+
 ## 0.3.21 — 2026-10-07
 
 Đối soát event tích hợp ngoài `order.*` (roadmap Phase 4). Chỉ thêm.

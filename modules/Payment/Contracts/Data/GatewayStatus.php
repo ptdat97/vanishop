@@ -12,5 +12,7 @@ final readonly class GatewayStatus
         public string $status,
         public ?string $gatewayTransactionId = null,
         public ?Money $amount = null,
+        /** 0.3.22: tổng đã hoàn phía cổng (nếu cổng tra được) — đối soát khoản đã thu (vani:payment:verify). */
+        public ?Money $refunded = null,
     ) {}
 }

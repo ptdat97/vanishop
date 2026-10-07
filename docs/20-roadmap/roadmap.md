@@ -162,7 +162,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 |---|---|---|
 | Đồng bộ tồn từ authority ngoài (`InventorySync`, version, chỉ authority của location) | ✅ | slice 11 |
 | Bảng đối soát tồn với nguồn ngoài | ✅ | `inventory_reconciliations` + `inventory_reconciliation_lines` (source, location, variant, expected, actual, difference, detected_at, resolved_at, resolution). Phân loại: `external_mismatch` (nguồn ngoài ≠ VaniShop), `on_hand_off_ledger`, `reserved_mismatch`/`reserved_off_ledger`, `negative_on_hand`. `vani:inventory:verify` và `vani:inventory:reconcile` (snapshot JSON `--file`/`--json`, `--dry-run`) dùng chung bảng; không tự sửa phía ngoài; chỉ áp phía VaniShop khi location có `stock_authority` = nguồn đó (movement `sync`, chống bản cũ theo `version`). Admin → Tồn kho → Đối soát (chỉ đọc) |
-| Đối soát thanh toán với cổng | 🟡 | `vani:payment:reconcile` hỏi cổng cho khoản `pending` và áp kết quả đã xác minh (cổng là authority của kết quả thu). Chưa có: phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu. Phần này chỉ ghi chênh lệch để xử lý tay, không tự sửa |
+| Đối soát thanh toán với cổng | ✅ | Khoản `pending`: `vani:payment:reconcile` hỏi cổng và áp kết quả đã xác minh (cổng là authority của kết quả thu). Khoản đã thu (0.3.22): `vani:payment:verify` (hằng ngày 04:00) tra cổng, ghi `gateway_not_captured` / `amount_mismatch` / `refund_mismatch` vào `payment_reconciliations` + `payment_reconciliation_lines`, **không tự sửa**; lỗi còn mở không ghi lặp; COD/chuyển khoản tay bỏ qua; `refund_mismatch` chỉ khi cổng báo được tổng hoàn (`GatewayStatus::$refunded`) |
 
 ### Phase 4. Integration event reconciliation
 
@@ -220,7 +220,7 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 1. Phase 1: chuyển kho có vòng đời. ✅ 2026-10-15
 2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`. ✅ 2026-10-15
 3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`. ✅ 2026-10-07 (Core 0.3.21)
-4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay).
+4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay). ✅ 2026-10-07 (Core 0.3.22)
 5. Phase 5: trạng thái `draining` + xác nhận `--force`.
 
 ## 5. Go-live gate

@@ -28,6 +28,9 @@ final class FakeOnlineGateway implements PaymentGateway
 
     public static ?GatewayStatus $queryResult = null;
 
+    /** Giả lập cổng lỗi khi tra cứu (timeout…). */
+    public static ?\Throwable $queryException = null;
+
     public function code(): string
     {
         return 'fake_online';
@@ -65,6 +68,10 @@ final class FakeOnlineGateway implements PaymentGateway
 
     public function query(PaymentData $payment): GatewayStatus
     {
+        if (self::$queryException !== null) {
+            throw self::$queryException;
+        }
+
         return self::$queryResult ?? new GatewayStatus(GatewayCallback::PENDING);
     }
 
