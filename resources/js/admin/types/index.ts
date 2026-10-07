@@ -14,7 +14,7 @@ export interface SharedProps {
     app: { name: string; locale: string };
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
-    urls: { logout?: string };
+    urls: { logout?: string; media?: string | null };
     [key: string]: unknown;
 }
 
@@ -80,4 +80,19 @@ export function initialExtensionValues(sections: ExtensionSection[]): ExtensionV
     }
 
     return values;
+}
+
+/** Ảnh trong Thư viện ảnh (GET /{admin}/media/browse). */
+export interface MediaItem {
+    id: number;
+    name: string;
+    thumb_url: string;
+    url: string;
+    width: number | null;
+    height: number | null;
+    size_bytes: number;
+    mime_type: string;
+    folder: string;
+    usages_count: number;
+    created_at: string;
 }

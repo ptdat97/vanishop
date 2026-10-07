@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -51,7 +52,11 @@ final class HandleInertiaRequests extends Middleware
                 'staff' => $staff instanceof StaffUser ? ['id' => $staff->id, 'name' => $staff->name, 'email' => $staff->email] : null,
             ],
             'navigation' => fn (): array => $staff instanceof StaffUser ? app(AdminNavigation::class)->visibleItems() : [],
-            'urls' => fn (): array => $staff instanceof StaffUser ? ['logout' => route('admin.logout')] : [],
+            // media: Thư viện ảnh cho modal chọn ảnh (MediaPicker); null khi nhân viên không có quyền media.view.
+            'urls' => fn (): array => $staff instanceof StaffUser ? [
+                'logout' => route('admin.logout'),
+                'media' => Gate::forUser($staff)->allows('media.view') ? route('admin.media.index') : null,
+            ] : [],
             'flash' => fn (): array => ['success' => $request->session()->get('success')],
         ];
     }

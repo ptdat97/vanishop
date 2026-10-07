@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Color;
+use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleColor;
@@ -74,6 +75,34 @@ final class StyleColorService
                 $styleColor->gallery()->create(['media_id' => $media->id, 'role' => 'gallery', 'position' => ++$position]);
             }
             $this->touch($style, 'catalog.product.images_added', ['style_color_id' => $styleColor->id, 'count' => count($files)]);
+        });
+    }
+
+    /**
+     * Gắn ảnh có sẵn trong Thư viện ảnh vào bộ ảnh của màu (bỏ qua ảnh màu này đã có).
+     *
+     * @param  list<int>  $mediaIds
+     */
+    public function attachMedia(Style $style, StyleColor $styleColor, array $mediaIds): void
+    {
+        $mediaIds = array_values(array_unique($mediaIds));
+        if (Media::query()->whereKey($mediaIds)->count() !== count($mediaIds)) {
+            throw ValidationException::withMessages(['images' => __('catalog::messages.media_not_found')]);
+        }
+        $new = array_values(array_diff($mediaIds, $styleColor->gallery()->pluck('media_id')->all()));
+        if ($styleColor->gallery()->count() + count($new) > self::MAX_IMAGES_PER_COLOR) {
+            throw ValidationException::withMessages(['images' => __('catalog::messages.too_many_images', ['max' => self::MAX_IMAGES_PER_COLOR])]);
+        }
+        if ($new === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($style, $styleColor, $new): void {
+            $position = (int) $styleColor->gallery()->max('position');
+            foreach ($new as $mediaId) {
+                $styleColor->gallery()->create(['media_id' => $mediaId, 'role' => 'gallery', 'position' => ++$position]);
+            }
+            $this->touch($style, 'catalog.product.images_added', ['style_color_id' => $styleColor->id, 'count' => count($new), 'source' => 'library']);
         });
     }
 

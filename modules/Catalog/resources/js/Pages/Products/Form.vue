@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
+import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { initialExtensionValues, type ExtensionSection } from '@admin/types';
+import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -112,6 +113,15 @@ function uploadImages(color: ColorEntry, event: Event): void {
     }
 }
 
+const pickingFor = ref<ColorEntry | null>(null);
+
+function attachFromLibrary(items: MediaItem[]): void {
+    if (pickingFor.value && items.length) {
+        router.post(`${productUrl.value}/colors/${pickingFor.value.id}/images/library`, { media_ids: items.map((item) => item.id) }, { preserveScroll: true });
+    }
+    pickingFor.value = null;
+}
+
 function moveImage(color: ColorEntry, index: number, direction: -1 | 1): void {
     const order = color.images.map((image) => image.id);
     const target = index + direction;
@@ -213,10 +223,14 @@ function removeImage(color: ColorEntry, imageId: number): void {
                             + Ảnh
                             <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="uploadImages(color, $event)" />
                         </label>
+                        <button type="button" class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-indigo-300 text-center text-xs text-indigo-600" @click="pickingFor = color">
+                            Chọn từ<br />thư viện
+                        </button>
                     </div>
                 </div>
                 <p v-if="!product.colors.length" class="text-sm text-slate-500">Chưa có màu. Thêm màu rồi tải ảnh cho từng màu (khuyến nghị tỉ lệ 4:5).</p>
             </div>
+            <MediaPicker :open="pickingFor !== null" :title="`Ảnh cho màu ${pickingFor?.name ?? pickingFor?.code ?? ''}`" @update:open="(value) => !value && (pickingFor = null)" @select="attachFromLibrary" />
             <VariantMatrix v-if="product" :product-url="productUrl" :variants="product.variants" :sizes="availableSizes" />
             <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh và biến thể.</p>
             <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />

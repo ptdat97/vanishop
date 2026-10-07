@@ -143,6 +143,15 @@ final class ImageCache
     }
 
     /**
+     * Xoá mọi bản thu nhỏ của một ảnh (khi xoá ảnh khỏi thư viện).
+     */
+    public function forget(Media $media): void
+    {
+        $checksum = $media->checksum;
+        File::delete(glob($this->directory.'/media/'.substr($checksum, 0, 2)."/{$checksum}-w*.*") ?: []);
+    }
+
+    /**
      * Xoá toàn bộ cache ảnh; các bản sẽ được tạo lại khi có request (sau khi đổi định dạng/chất lượng).
      */
     public function flush(): void

@@ -47,7 +47,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
-        $this->app->bind(MediaLibrary::class, fn (): MediaLibrary => new MediaLibrary((string) config('vanishop.media.disk', 'public')));
+        $this->app->bind(MediaLibrary::class, fn ($app): MediaLibrary => new MediaLibrary((string) config('vanishop.media.disk', 'public'), $app->make(ImageCache::class)));
         $this->app->singleton(ImageCache::class, fn ($app): ImageCache => new ImageCache(
             ImageManager::usingDriver(extension_loaded('imagick') ? ImagickDriver::class : GdDriver::class),
             $app->make(Extensions::class),
@@ -84,13 +84,18 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $permissions->register('catalog.view', 'Xem catalog');
         $permissions->register('catalog.manage', 'Sửa catalog (sản phẩm, thương hiệu, danh mục, thuộc tính, màu, size)');
 
+        $permissions->register('media.view', 'Xem và chọn ảnh từ Thư viện ảnh');
+        $permissions->register('media.manage', 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)');
+
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100);
+        $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 110);
 
         if (! $this->app->routesAreCached()) {
             Route::group([], $this->modulePath('Http/routes/media-cache.php'));
         }
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('catalog', $this->modulePath('Http/routes/admin-workspace.php'));
+        $this->loadAdminSectionRoutes('media', $this->modulePath('Http/routes/admin-media.php'));
         $this->bootModuleResources();
     }
 }

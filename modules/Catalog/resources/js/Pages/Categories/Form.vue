@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import FormField from '@admin/Components/FormField.vue';
+import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { MediaItem } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -60,6 +62,14 @@ function destroy(): void {
 function uploadImage(): void {
     if (props.category) {
         imageForm.post(`${baseUrl.value}/${props.category.id}/image`, { forceFormData: true, preserveScroll: true, onSuccess: () => imageForm.reset() });
+    }
+}
+
+const picking = ref(false);
+
+function pickImage(items: MediaItem[]): void {
+    if (props.category && items[0]) {
+        router.post(`${baseUrl.value}/${props.category.id}/image/library`, { media_id: items[0].id, alt: imageForm.alt || null }, { preserveScroll: true });
     }
 }
 
@@ -131,8 +141,10 @@ function removeImage(): void {
                 <p v-if="imageForm.errors.image" class="text-sm text-red-600">{{ imageForm.errors.image }}</p>
                 <div class="flex gap-2">
                     <button type="button" :class="secondaryButton" :disabled="!imageForm.image || imageForm.processing" @click="uploadImage">Tải lên</button>
+                    <button type="button" :class="secondaryButton" @click="picking = true">Chọn từ thư viện</button>
                     <button v-if="category.image_url" type="button" :class="dangerButton" @click="removeImage">Gỡ ảnh</button>
                 </div>
+                <MediaPicker v-model:open="picking" title="Chọn ảnh danh mục" :multiple="false" @select="pickImage" />
             </div>
         </div>
     </form>

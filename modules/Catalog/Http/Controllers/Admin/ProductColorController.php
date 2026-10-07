@@ -47,6 +47,17 @@ final class ProductColorController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
+    public function attachLibraryImages(Style $product, StyleColor $styleColor, Request $request, StyleColorService $colors): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $this->ensureBelongs($product, $styleColor);
+        $data = $request->validate(['media_ids' => ['required', 'array', 'min:1', 'max:'.StyleColorService::MAX_IMAGES_PER_COLOR], 'media_ids.*' => ['integer']]);
+
+        $colors->attachMedia($product, $styleColor, array_map('intval', $data['media_ids']));
+
+        return back()->with('success', __('catalog::messages.saved'));
+    }
+
     public function destroyImage(Style $product, StyleColor $styleColor, Mediable $image, StyleColorService $colors): RedirectResponse
     {
         Gate::authorize('catalog.manage');

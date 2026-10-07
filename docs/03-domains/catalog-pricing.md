@@ -11,12 +11,13 @@
 > | Thuộc tính spec/internal, kiểu `select`/`multiselect`/`text`/`boolean`, giá trị có bản dịch; sửa giá trị giữ nguyên id theo `code` | Implemented |
 > | Màu (tên + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
 > | Media: `media` (theo brand, khử trùng lặp theo SHA-256) + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
+> | Thư viện ảnh dùng chung `/{admin}/media` (2026-10-08): thư mục ảo `media_folders` + `media.folder` (slug, lồng tối đa 4 cấp, đổi tên kéo theo con, chỉ xoá thư mục rỗng), tải lên/kéo thả (jpg/png/webp ≤ 10 MB, 20 ảnh/lần), tìm theo tên mọi thư mục, sắp xếp, đổi tên hiển thị, chuyển thư mục, xoá chỉ ảnh không còn dùng (kèm file gốc + bản thu nhỏ). Modal chọn ảnh `MediaPicker` (`resources/js/admin/Components/Media`) ở ảnh màu sản phẩm và ảnh danh mục. Quyền `media.view` (xem/chọn), `media.manage` (ghi) | Implemented |
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
 > | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK — **plugin `vani.search-meilisearch`** từ 2026-10-14); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
 > | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá gán kênh, `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
 > | Giá thành viên theo nhóm khách, giá theo số lượng, import Excel giá | Designed |
 > | Bộ sưu tập theo luật, merchandising ghim vị trí trong Admin | Designed |
-> | Resize ảnh qua CDN | Designed |
+> | Resize ảnh: bản thu nhỏ tạo khi có request đầu tiên, cache tại `public/cache` (`ImageCache`, 0.3.28); WebP qua plugin `vani.media-webp` | Implemented |
 
 ## 1. Mô hình sản phẩm thời trang
 

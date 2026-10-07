@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Catalog\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\Categories\CategoryService;
@@ -14,6 +16,7 @@ use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Http\Requests\Admin\CategoryImageRequest;
 use Modules\Catalog\Http\Requests\Admin\CategoryRequest;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Media;
 
 final class CategoryController
 {
@@ -97,6 +100,20 @@ final class CategoryController
 
         $stored = $media->store($request->file('image'));
         $media->attachSingle($category, 'image', $stored, $request->validated('alt'));
+
+        return back()->with('success', __('catalog::messages.saved'));
+    }
+
+    public function attachLibraryImage(Category $category, Request $request, MediaLibrary $media): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $data = $request->validate(['media_id' => ['required', 'integer'], 'alt' => ['nullable', 'string', 'max:255']]);
+        $stored = Media::query()->find($data['media_id']);
+        if ($stored === null) {
+            throw ValidationException::withMessages(['image' => __('catalog::messages.media_not_found')]);
+        }
+
+        $media->attachSingle($category, 'image', $stored, $data['alt'] ?? null);
 
         return back()->with('success', __('catalog::messages.saved'));
     }

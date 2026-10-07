@@ -36,3 +36,21 @@ export async function postJson<T>(url: string, body: FormData | Record<string, u
     }
     return data as T;
 }
+
+export async function getJson<T>(url: string, query: Record<string, string | number | null | undefined> = {}): Promise<T> {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+        if (value !== null && value !== undefined && value !== '') {
+            params.set(key, String(value));
+        }
+    }
+    const response = await fetch(params.size ? `${url}?${params}` : url, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new HttpError(data.message ?? `HTTP ${response.status}`, response.status, data.errors ?? {});
+    }
+    return data as T;
+}
