@@ -8,15 +8,26 @@ document.documentElement.classList.add('js');
 document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
     const main = gallery.querySelector('[data-gallery-main]');
     const form = document.querySelector('[data-variant-form]');
-    if (!main || !form) {
+    if (!main) {
         return;
     }
 
-    form.addEventListener('change', (event) => {
+    // Ảnh là {url, alt} (cùng hình dạng Storefront API).
+    const show = (url) => {
+        main.src = url;
+        gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => {
+            thumb.classList.toggle('border-primary', thumb.dataset.src === url);
+            thumb.classList.toggle('border-slate-200', thumb.dataset.src !== url);
+        });
+    };
+
+    gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => thumb.addEventListener('click', () => show(thumb.dataset.src)));
+
+    form?.addEventListener('change', (event) => {
         const group = event.target.closest('[data-color-group]');
         const images = group ? JSON.parse(group.dataset.images || '[]') : [];
         if (images.length > 0) {
-            main.src = images[0];
+            show(images[0].url ?? images[0]);
         }
     });
 });

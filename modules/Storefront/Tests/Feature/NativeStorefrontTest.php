@@ -1,13 +1,18 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
+use Modules\Catalog\Application\Products\StyleColorService;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Shared\Context\ContextScope;
+use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Contracts\Data\SlotView;
@@ -187,4 +192,21 @@ it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitem
         ->toContain(route('storefront.brand', 'urbanx'))
         ->not->toContain('ban-nhap')
         ->and(simplexml_load_string($xml))->not->toBeFalse();
+});
+
+it('PDP có ảnh: ảnh chính + thumbnail từ {url, alt}, data-images cho JS đổi theo màu (hồi quy htmlspecialchars array)', function () {
+    Storage::fake('public');
+    $styleColor = $this->s->styleColor;
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($this->product, $styleColor, [
+        UploadedFile::fake()->image('truoc.jpg', 300, 400),
+        UploadedFile::fake()->image('sau.jpg', 310, 410),
+    ]));
+    $urls = $styleColor->gallery()->with('media')->orderBy('position')->get()->map(fn ($image) => $image->media->url(800))->all();
+
+    $html = $this->get("/san-pham/{$this->product->slug}")->assertOk()
+        ->assertSee('data-gallery-main src="'.e($urls[0]).'"', false)
+        ->assertSee('data-gallery-thumb data-src="'.e($urls[1]).'"', false)
+        ->getContent();
+    expect(substr_count($html, 'data-gallery-thumb '))->toBe(2)
+        ->and($html)->toContain('data-images=\'[{"url":');
 });

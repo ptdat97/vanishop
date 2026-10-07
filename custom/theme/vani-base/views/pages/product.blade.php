@@ -19,13 +19,24 @@
     @endif
 
     <div class="grid gap-8 md:grid-cols-2">
-        @php($images = collect($product['colors'])->flatMap(fn ($color) => $color['images'])->all())
+        {{-- Mỗi ảnh là {url, alt} (cùng hình dạng Storefront API). --}}
+        @php($images = collect($product['colors'])->flatMap(fn ($color) => $color['images'])->values()->all())
+        @php($mainUrl = $images[0]['url'] ?? $product['image_url'])
         <div data-product-gallery>
             <div class="aspect-[3/4] overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
-                @if (($images[0] ?? $product['image_url']) !== null)
-                    <img data-gallery-main src="{{ $images[0] ?? $product['image_url'] }}" alt="{{ $product['name'] }}" width="600" height="800" class="h-full w-full object-cover">
+                @if ($mainUrl !== null)
+                    <img data-gallery-main src="{{ $mainUrl }}" alt="{{ $images[0]['alt'] ?? $product['name'] }}" width="600" height="800" class="h-full w-full object-cover">
                 @endif
             </div>
+            @if (count($images) > 1)
+                <div class="mt-3 grid grid-cols-4 gap-2" data-gallery-thumbs>
+                    @foreach ($images as $index => $image)
+                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" @class(['aspect-[3/4] overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) aria-label="Ảnh {{ $index + 1 }} của {{ $product['name'] }}">
+                            <img src="{{ $image['url'] }}" alt="" loading="lazy" width="150" height="200" class="h-full w-full object-cover">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
             <x-vani::hook-slot name="vani.storefront.pdp.gallery_after" :args="[$product]" />
         </div>
 
