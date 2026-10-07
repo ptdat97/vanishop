@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.23 — 2026-10-07
+
+Plugin ngừng an toàn (roadmap Phase 5). Thêm + đổi hành vi CLI.
+
+### Thêm
+- Trạng thái plugin `draining`: vẫn nạp provider, vẫn xử lý giao dịch đang dở; không được chọn cho giao dịch mới.
+- `Extensions::acceptsNewTransactions(object $implementation): bool`. Core dùng ở phương thức thanh toán (checkout), phương thức giao (`ShippingOptions`), hãng cho vận đơn mới (`CarrierRegistry::acceptsNewShipments`). Plugin có điểm khởi tạo giao dịch riêng nên dùng cùng kiểm tra này.
+- `vani:plugin:disable --drain`, `vani:plugin:finish-draining` (lịch 5 phút); doctor báo `draining`.
+
+### Đổi hành vi
+- `vani:plugin:disable --force` khi còn việc dở dang: liệt kê và hỏi xác nhận; chạy không tương tác phải kèm `--yes` (trước: tắt ngay).
+- Kiểm tra plugin phụ thuộc khi tắt/ngừng tính cả plugin đang `draining`.
+
 ## 0.3.22 — 2026-10-07
 
 Đối soát khoản đã thu với cổng (roadmap Phase 3). Chỉ thêm.

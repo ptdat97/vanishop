@@ -16,14 +16,21 @@ final class PluginActivation
 {
     private const CACHE_KEY = 'vani:plugins:enabled';
 
-    /** @var array<string, true>|null */
+    /** @var array<string, string>|null plugin id => trạng thái (enabled | draining) */
     private ?array $enabled = null;
 
     private int $version = 0;
 
+    /** Đang bật hoặc đang ngừng (draining) — implementation vẫn tham gia flow. */
     public function isActive(string $pluginId): bool
     {
         return isset($this->enabledIds()[$pluginId]);
+    }
+
+    /** Đang ngừng: không nhận giao dịch mới (Extensions::acceptsNewTransactions). */
+    public function isDraining(string $pluginId): bool
+    {
+        return ($this->enabledIds()[$pluginId] ?? null) === PluginStatus::Draining->value;
     }
 
     public function flush(): void
@@ -49,7 +56,7 @@ final class PluginActivation
     /**
      * Plugin đang bật — lưu trong cache dùng chung (redis/database ở production) để request/job không truy vấn DB.
      *
-     * @return array<string, true>
+     * @return array<string, string>
      */
     private function enabledIds(): array
     {
@@ -59,14 +66,15 @@ final class PluginActivation
 
         try {
             $ids = Cache::rememberForever(self::CACHE_KEY, fn (): array => PluginRecord::query()
-                ->where('status', PluginStatus::Enabled)
-                ->pluck('id')
+                ->whereIn('status', [PluginStatus::Enabled, PluginStatus::Draining])
+                ->get(['id', 'status'])
+                ->mapWithKeys(fn (PluginRecord $record): array => [(string) $record->id => $record->status->value])
                 ->all());
         } catch (QueryException) {
             // Bảng chưa có (đang cài/migrate) → coi như không plugin nào bật, không cache.
             $ids = [];
         }
 
-        return $this->enabled = array_fill_keys(array_map('strval', $ids), true);
+        return $this->enabled = array_map('strval', $ids);
     }
 }

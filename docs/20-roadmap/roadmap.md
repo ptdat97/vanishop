@@ -178,8 +178,8 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 |---|---|---|
 | Manifest: version, `requires.vanishop`, `requires.plugins`, `conflicts`, kiểm tra tương thích khi install/enable/upgrade | ✅ | Dependency resolver (semver, topo sort), doctor |
 | Chặn tắt khi còn giao dịch dở dang, `--force` có audit | ✅ | `guardDisable` (0.3.16) |
-| Trạng thái `draining`: ngừng nhận giao dịch mới nhưng vẫn xử lý giao dịch cũ (IPN, webhook, query), tự tắt khi hết | ⬜ | Plugin `draining` vẫn nạp provider. Cổng/hãng không còn được chọn ở checkout/tạo vận đơn, nhưng callback vẫn chạy. Lệnh định kỳ tắt hẳn khi `disableBlockers()` rỗng |
-| `--force` cần xác nhận tường minh | ⬜ | CLI hỏi lại, hoặc cờ `--yes`, kèm cảnh báo liệt kê việc dở dang |
+| Trạng thái `draining`: ngừng nhận giao dịch mới nhưng vẫn xử lý giao dịch cũ (IPN, webhook, query), tự tắt khi hết | ✅ | 0.3.23: `vani:plugin:disable --drain`, `Extensions::acceptsNewTransactions` (checkout thanh toán/giao hàng, hãng cho vận đơn mới), `vani:plugin:finish-draining` (5 phút), doctor báo `draining`; enable huỷ ngừng |
+| `--force` cần xác nhận tường minh | ✅ | 0.3.23: liệt kê việc dở dang, hỏi xác nhận; không tương tác cần `--yes`; audit `forced` |
 | Khai báo dữ liệu plugin (owned / referenced / retained), chặn gỡ khi còn tham chiếu | ⬜ | Manifest `data`; `uninstall --purge` kiểm tra tham chiếu trước khi rollback migration |
 | "Required capabilities" giữa plugin | 🟡 | Hiện qua `requires.plugins` + `publishHooks`; capability theo tag (plugin cần ≥1 implementation của tag X) là bổ sung có thể làm |
 
@@ -221,7 +221,8 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`. ✅ 2026-10-15
 3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`. ✅ 2026-10-07 (Core 0.3.21)
 4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay). ✅ 2026-10-07 (Core 0.3.22)
-5. Phase 5: trạng thái `draining` + xác nhận `--force`.
+5. Phase 5: trạng thái `draining` + xác nhận `--force`. ✅ 2026-10-07 (Core 0.3.23)
+6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu.
 
 ## 5. Go-live gate
 

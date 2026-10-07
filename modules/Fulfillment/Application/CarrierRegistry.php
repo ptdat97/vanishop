@@ -27,6 +27,16 @@ final class CarrierRegistry
     }
 
     /**
+     * Hãng nhận vận đơn MỚI: có và plugin sở hữu không đang ngừng (draining) — vận đơn đang giao vẫn dùng carrier().
+     */
+    public function acceptsNewShipments(string $code): bool
+    {
+        $carrier = $this->carrier($code);
+
+        return $carrier !== null && $this->extensions->acceptsNewTransactions($carrier);
+    }
+
+    /**
      * @return array<string, ShippingCarrier>
      */
     public function carriers(): array

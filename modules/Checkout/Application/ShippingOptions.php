@@ -23,7 +23,7 @@ final class ShippingOptions
     {
         $options = [];
         foreach ($this->extensions->tagged(self::TAG) as $provider) {
-            if ($provider instanceof ShippingRateProvider) {
+            if ($provider instanceof ShippingRateProvider && $this->extensions->acceptsNewTransactions($provider)) {
                 // Hãng báo cước lỗi → bỏ các lựa chọn của hãng đó, các hãng khác vẫn hiện.
                 array_push($options, ...$this->extensions->call($provider, fn (): array => $provider->options($context), [], 'checkout.shipping_options'));
             }

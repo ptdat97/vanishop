@@ -58,8 +58,8 @@ final class PaymentService implements Payments
         $context = new PaymentContext($amount);
         $methods = [];
         foreach ($this->gateways->all() as $gateway) {
-            // Cổng lỗi khi kiểm tra khả dụng → ẩn cổng (không làm hỏng quote/checkout).
-            if ($this->extensions->call($gateway, fn (): bool => $gateway->isAvailable($context), false, 'payment.is_available')) {
+            // Cổng đang ngừng (plugin draining) → không nhận thanh toán mới; cổng lỗi khi kiểm tra → ẩn (không hỏng checkout).
+            if ($this->extensions->acceptsNewTransactions($gateway) && $this->extensions->call($gateway, fn (): bool => $gateway->isAvailable($context), false, 'payment.is_available')) {
                 $methods[] = ['code' => $gateway->code(), 'label' => $gateway->label()];
             }
         }

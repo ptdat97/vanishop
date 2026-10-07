@@ -76,6 +76,9 @@ stateDiagram-v2
     discovered --> installed: vani:plugin:install
     installed --> enabled: vani:plugin:enable [--scope]
     enabled --> disabled: vani:plugin:disable
+    enabled --> draining: vani:plugin:disable --drain (còn việc dở dang)
+    draining --> disabled: hết việc dở dang (vani:plugin:finish-draining, 5 phút)
+    draining --> enabled: vani:plugin:enable (huỷ ngừng)
     disabled --> enabled
     disabled --> uninstalled: vani:plugin:uninstall [--purge]
     uninstalled --> [*]
@@ -89,6 +92,7 @@ stateDiagram-v2
 | discovered | Không | Không |
 | installed | Có (để route webhook/Admin cấu hình chạy được) | Không |
 | enabled (theo scope) | Có | Có, trong scope được bật |
+| draining (0.3.23) | Có | Có cho giao dịch đang dở (IPN, webhook, tra cứu, hoàn tiền, hook, slot); **không** được chọn cho giao dịch mới (`Extensions::acceptsNewTransactions` = false: phương thức thanh toán ở checkout, phương thức giao, hãng cho vận đơn mới) |
 | disabled | Có | Không |
 | failed | **Không** | Không |
 
@@ -109,13 +113,16 @@ Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:pl
 | `vani.payment.gateways` | Cổng còn khoản thanh toán `pending`/`authorized` | IPN về cổng đã tắt trả 404 → tiền khách đã trả không được ghi nhận, khoản hết hạn và đơn bị huỷ |
 | `vani.shipping.carriers` | Hãng còn vận đơn chưa `delivered`/`returned`/`cancelled` | Webhook trả 404 → không cập nhật giao hàng, thu COD, nhập lại hàng hoàn |
 
-`--force` tắt dù còn việc dở dang (khẩn cấp: plugin lỗi), ghi `forced` + lý do vào audit; việc dở dang phải xử lý tay. Muốn ngừng nhận đơn mới qua một cổng/hãng mà vẫn hoàn tất đơn cũ: dùng cấu hình của plugin (vd. giới hạn số tiền, tắt phương thức), không tắt plugin.
+**Ngừng an toàn** (0.3.23): `--drain` chuyển plugin sang `draining`. Cổng/hãng của plugin không còn hiện cho giao dịch mới, nhưng giao dịch đang dở vẫn được xử lý; lệnh `vani:plugin:finish-draining` (5 phút) tắt hẳn khi `disableBlockers()` rỗng. Không có việc dở dang thì tắt ngay. Bật lại (`enable`) huỷ ngừng. Không ngừng được implementation bắt buộc cuối cùng: plugin draining không tính là implementation thay thế. Audit: `extension.plugin.draining` → `extension.plugin.drained`.
+
+`--force` tắt ngay dù còn việc dở dang (khẩn cấp: plugin lỗi). Lệnh liệt kê việc dở dang và **hỏi xác nhận**; chạy không tương tác phải kèm `--yes`. Audit ghi `forced` + lý do; việc dở dang phải xử lý tay.
 
 ```bash
 php artisan vani:plugin:list                      # id, version, trạng thái, scope, tương thích
 php artisan vani:plugin:install vani.vietqr       # kiểm tra deps → chạy migration → installed
 php artisan vani:plugin:enable vani.vietqr        # (--scope chỉ còn trong code cũ, bỏ ở slice 12)
-php artisan vani:plugin:disable vani.vietqr [--force]   # từ chối khi còn thanh toán chờ / vận đơn đang giao
+php artisan vani:plugin:disable vani.vietqr [--drain | --force [--yes]]   # còn thanh toán chờ / vận đơn đang giao: --drain ngừng an toàn, --force tắt ngay (xác nhận)
+php artisan vani:plugin:finish-draining           # (lịch 5 phút) tắt plugin draining đã hết việc dở dang
 php artisan vani:plugin:uninstall vani.vietqr [--purge]   # --purge: rollback migration, xoá bảng plg_*
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
 php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit
@@ -130,7 +137,7 @@ php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, mi
 4. `enable` plugin A khi dependency B chưa enable trong cùng scope → từ chối (hoặc `--with-deps`).
 5. `disable`/`uninstall` B khi còn plugin phụ thuộc đang enable → từ chối.
 6. Nâng Core làm plugin không còn tương thích → plugin chuyển `failed` với lý do `incompatible_core`, Core vẫn chạy.
-7. (Designed) `disable`/`uninstall` plugin cung cấp implementation **cuối cùng** của extension point bắt buộc (thanh toán, phí giao, thuế, carrier, kênh thông báo) → từ chối.
+7. `disable`/`--drain` plugin cung cấp implementation **cuối cùng** của extension point bắt buộc (thanh toán, phí giao, thuế, carrier, kênh thông báo) → từ chối (**Implemented**). Plugin phụ thuộc đang `draining` vẫn tính là đang chạy.
 
 ## 7. Migration, upgrade, rollback
 

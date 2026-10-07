@@ -183,6 +183,13 @@ final class ScopedExtensions implements Extensions
         return array_values($this->contributions[$tag] ?? []);
     }
 
+    public function acceptsNewTransactions(object $implementation): bool
+    {
+        $owner = $this->ownerOf($implementation);
+
+        return $owner === null || ! ($this->activation)()->isDraining($owner);
+    }
+
     public function guardDisable(string $tag, callable $check): void
     {
         $this->disableGuards[$tag][] = $check;

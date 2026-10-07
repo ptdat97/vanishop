@@ -30,7 +30,15 @@ it('cổng còn khoản thanh toán chờ: không tắt được; --force tắt 
         ->assertFailed();
     expect(DB::table('plugins')->where('id', 'vani.cod')->value('status'))->toBe('enabled');
 
-    $this->artisan('vani:plugin:disable', ['plugin' => 'vani.cod', '--force' => true])->assertSuccessful();
+    // --force phải xác nhận tường minh: từ chối → huỷ; không tương tác mà thiếu --yes → huỷ.
+    $this->artisan('vani:plugin:disable', ['plugin' => 'vani.cod', '--force' => true])
+        ->expectsOutputToContain('còn 1 khoản thanh toán chờ/giữ tiền qua cổng cod')
+        ->expectsConfirmation('Xác nhận tắt ngay (sẽ ghi audit)?', 'no')->assertFailed();
+    $this->artisan('vani:plugin:disable', ['plugin' => 'vani.cod', '--force' => true, '--no-interaction' => true])->assertFailed();
+    expect(DB::table('plugins')->where('id', 'vani.cod')->value('status'))->toBe('enabled');
+
+    $this->artisan('vani:plugin:disable', ['plugin' => 'vani.cod', '--force' => true])
+        ->expectsConfirmation('Xác nhận tắt ngay (sẽ ghi audit)?', 'yes')->assertSuccessful();
     $audit = DB::table('audit_logs')->where('action', 'extension.plugin.disabled')->where('subject_id', 'vani.cod')->sole();
     expect(DB::table('plugins')->where('id', 'vani.cod')->value('status'))->toBe('disabled')
         ->and(json_decode((string) $audit->changes, true))->toMatchArray(['forced' => true]);

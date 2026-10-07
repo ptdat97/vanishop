@@ -45,7 +45,9 @@ final class PluginDoctor
 
         $manifests = $this->manifests->all();
         $records = PluginRecord::query()->get()->keyBy('id');
-        $enabled = $records->filter(fn (PluginRecord $record): bool => $record->status === PluginStatus::Enabled)->keys()->all();
+        // Đang chạy = bật hoặc đang ngừng (draining vẫn nạp provider, vẫn xử lý giao dịch dở).
+        $running = fn (PluginRecord $record): bool => in_array($record->status, [PluginStatus::Enabled, PluginStatus::Draining], true);
+        $enabled = $records->filter($running)->keys()->all();
         $ranMigrations = DB::table('migrations')->pluck('migration')->all();
 
         foreach ($records as $id => $record) {
@@ -54,6 +56,10 @@ final class PluginDoctor
                 $add($id, self::ERROR, 'manifest_missing', 'Đã cài nhưng không còn thư mục/manifest trong custom/plugin.');
 
                 continue;
+            }
+
+            if ($record->status === PluginStatus::Draining) {
+                $add($id, self::WARNING, 'draining', 'Đang ngừng: không nhận giao dịch mới, tự tắt khi hết việc dở dang (vani:plugin:finish-draining).');
             }
 
             if ($record->status === PluginStatus::Failed) {
@@ -71,8 +77,8 @@ final class PluginDoctor
             }
 
             $active = array_values(array_diff($enabled, [$id]));
-            foreach ($this->resolver->problemsFor($id, $manifests, $record->status === PluginStatus::Enabled ? $active : array_values(array_diff($records->keys()->all(), [$id])), $this->coreVersion) as $problem) {
-                $add($id, $problem->code === 'inactive_dependency' && $record->status !== PluginStatus::Enabled ? self::WARNING : self::ERROR, $problem->code, $problem->message);
+            foreach ($this->resolver->problemsFor($id, $manifests, $running($record) ? $active : array_values(array_diff($records->keys()->all(), [$id])), $this->coreVersion) as $problem) {
+                $add($id, $problem->code === 'inactive_dependency' && ! $running($record) ? self::WARNING : self::ERROR, $problem->code, $problem->message);
             }
 
             $migrations = is_dir($manifest->path.'/Database/migrations') ? glob($manifest->path.'/Database/migrations/*.php') ?: [] : [];

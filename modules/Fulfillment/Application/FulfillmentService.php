@@ -121,11 +121,11 @@ final class FulfillmentService
 
         $method = $this->orders->find($orderId)?->shippingMethod ?? [];
         $source = (string) ($method['source'] ?? '');
-        if ($source !== '' && $this->registry->carrier($source) !== null) {
+        if ($source !== '' && $this->registry->acceptsNewShipments($source)) {
             return [$source, isset($method['code']) ? (string) $method['code'] : null];
         }
 
-        // Phí giao không gắn hãng (phí cố định) hoặc carrier đã tắt → carrier mặc định.
+        // Phí giao không gắn hãng (phí cố định), carrier đã tắt hoặc đang ngừng (draining) → carrier mặc định.
         return [(string) config('vanishop.fulfillment.default_carrier', 'manual'), null];
     }
 

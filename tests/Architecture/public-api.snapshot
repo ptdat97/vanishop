@@ -1,4 +1,4 @@
-VaniShop 0.3.22
+VaniShop 0.3.23
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -396,6 +396,7 @@ interface Modules\Extension\Contracts\Extensions
   requirements(): array
   providers(string $tag): array
   guardDisable(string $tag, callable $check): void
+  acceptsNewTransactions(object $implementation): bool
   disableBlockers(string $pluginId): array
   kindContract(string $kind, string $tag): void
   kindContracts(): array

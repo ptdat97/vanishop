@@ -96,19 +96,11 @@ final class PluginManager
     {
         $record = $this->recordOrFail($pluginId);
 
-        $dependents = $this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->enabledIds());
-        if ($dependents !== []) {
-            throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đang được dùng bởi ".implode(', ', $dependents).'.');
-        }
-
-        $broken = $this->required->brokenWithout($pluginId, $this->enabledIds());
-        if ($broken !== []) {
-            throw new PluginOperationFailed("Không thể tắt [{$pluginId}]: đây là implementation cuối cùng của ".implode(', ', $broken).' — bật plugin thay thế trước.');
-        }
+        $this->assertCanStop($pluginId, 'tắt');
 
         $inUse = $this->required->inUse($pluginId);
         if ($inUse !== [] && ! $force) {
-            throw new PluginOperationFailed("Không nên tắt [{$pluginId}] lúc này: ".implode('; ', $inUse).'. Chờ xử lý xong, hoặc dùng --force (việc dở dang sẽ không được ghi nhận tự động).');
+            throw new PluginOperationFailed("Không nên tắt [{$pluginId}] lúc này: ".implode('; ', $inUse).'. Dùng --drain để ngừng nhận giao dịch mới và tự tắt khi xử lý xong, hoặc --force (việc dở dang sẽ không được ghi nhận tự động).');
         }
 
         $record->update(['status' => PluginStatus::Disabled]);
@@ -117,11 +109,72 @@ final class PluginManager
         $this->afterStateChange();
     }
 
+    /**
+     * Ngừng plugin có việc dở dang (0.3.23): `draining` — không nhận giao dịch mới, vẫn xử lý giao dịch đang dở; tự tắt
+     * khi hết (finishDraining, lịch 5 phút). Không có việc dở dang → tắt ngay.
+     *
+     * @return bool true = đã tắt ngay; false = đang draining
+     */
+    public function drain(string $pluginId): bool
+    {
+        $record = $this->recordOrFail($pluginId);
+        if ($record->status !== PluginStatus::Enabled) {
+            throw new PluginOperationFailed("Chỉ ngừng được plugin đang bật — [{$pluginId}] đang {$record->status->value}.");
+        }
+        $this->assertCanStop($pluginId, 'ngừng');
+
+        $inUse = $this->required->inUse($pluginId);
+        if ($inUse === []) {
+            $this->disable($pluginId);
+
+            return true;
+        }
+
+        $record->update(['status' => PluginStatus::Draining]);
+        $this->audit->record('extension.plugin.draining', 'plugin', $pluginId, ['in_use' => $inUse]);
+        $this->afterStateChange();
+
+        return false;
+    }
+
+    /**
+     * Tắt các plugin draining đã hết việc dở dang.
+     *
+     * @return list<string> plugin đã tắt
+     */
+    public function finishDraining(): array
+    {
+        $finished = [];
+        foreach (PluginRecord::query()->where('status', PluginStatus::Draining)->orderBy('id')->get() as $record) {
+            if ($this->required->inUse((string) $record->id) !== []) {
+                continue;
+            }
+            $record->update(['status' => PluginStatus::Disabled]);
+            $this->audit->record('extension.plugin.drained', 'plugin', (string) $record->id);
+            $finished[] = (string) $record->id;
+        }
+        if ($finished !== []) {
+            $this->afterStateChange();
+        }
+
+        return $finished;
+    }
+
+    /**
+     * Việc dở dang của plugin (thanh toán chờ, vận đơn đang giao…).
+     *
+     * @return list<string>
+     */
+    public function inUse(string $pluginId): array
+    {
+        return $this->required->inUse($pluginId);
+    }
+
     public function uninstall(string $pluginId, bool $purge = false): void
     {
         $record = $this->recordOrFail($pluginId);
 
-        if ($record->status === PluginStatus::Enabled) {
+        if (in_array($record->status, [PluginStatus::Enabled, PluginStatus::Draining], true)) {
             throw new PluginOperationFailed("Hãy tắt [{$pluginId}] trước khi gỡ.");
         }
 
@@ -288,5 +341,32 @@ final class PluginManager
     private function enabledIds(): array
     {
         return PluginRecord::query()->where('status', PluginStatus::Enabled)->pluck('id')->all();
+    }
+
+    /**
+     * Đang chạy (bật hoặc draining) — plugin phụ thuộc đang draining vẫn cần plugin nền.
+     *
+     * @return list<string>
+     */
+    private function activeIds(): array
+    {
+        return PluginRecord::query()->whereIn('status', [PluginStatus::Enabled, PluginStatus::Draining])->pluck('id')->all();
+    }
+
+    /**
+     * Không bị plugin khác phụ thuộc; không phải implementation cuối của extension point bắt buộc (plugin draining không
+     * còn nhận giao dịch mới nên không tính là implementation thay thế).
+     */
+    private function assertCanStop(string $pluginId, string $verb): void
+    {
+        $dependents = array_values(array_diff($this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->activeIds()), [$pluginId]));
+        if ($dependents !== []) {
+            throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: đang được dùng bởi ".implode(', ', $dependents).'.');
+        }
+
+        $broken = $this->required->brokenWithout($pluginId, $this->enabledIds());
+        if ($broken !== []) {
+            throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: đây là implementation cuối cùng của ".implode(', ', $broken).' — bật plugin thay thế trước.');
+        }
     }
 }

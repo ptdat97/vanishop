@@ -104,6 +104,13 @@ interface Extensions
     public function guardDisable(string $tag, callable $check): void;
 
     /**
+     * Implementation có được chọn cho GIAO DỊCH MỚI không (0.3.23): false khi plugin sở hữu đang `draining`. Module dùng ở
+     * điểm khởi tạo giao dịch (phương thức thanh toán ở checkout, phương thức giao, hãng cho vận đơn mới); các luồng xử lý
+     * giao dịch đang dở (callback, webhook, tra cứu, hoàn tiền) không lọc theo đây.
+     */
+    public function acceptsNewTransactions(object $implementation): bool;
+
+    /**
      * Lý do không nên tắt `$pluginId` lúc này (rỗng = tắt được). `vani:plugin:disable --force` bỏ qua (có audit).
      *
      * @return list<string>

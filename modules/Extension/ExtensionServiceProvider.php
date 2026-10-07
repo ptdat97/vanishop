@@ -37,6 +37,7 @@ use Modules\Extension\Console\InstallCommand;
 use Modules\Extension\Console\PluginDisableCommand;
 use Modules\Extension\Console\PluginDoctorCommand;
 use Modules\Extension\Console\PluginEnableCommand;
+use Modules\Extension\Console\PluginFinishDrainingCommand;
 use Modules\Extension\Console\PluginHealthCommand;
 use Modules\Extension\Console\PluginHooksCommand;
 use Modules\Extension\Console\PluginInstallCommand;
@@ -127,6 +128,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         View::composer('theme::*', ViewHooks::class);
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:plugin:health')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:plugin:finish-draining')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
         });
 
         $permissions->register('extension.plugins.view', 'Xem danh sách plugin');
@@ -151,6 +153,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
                 PluginInstallCommand::class,
                 PluginEnableCommand::class,
                 PluginDisableCommand::class,
+                PluginFinishDrainingCommand::class,
                 PluginUninstallCommand::class,
                 PluginHooksCommand::class,
                 PluginUpgradeCommand::class,
