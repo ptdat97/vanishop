@@ -1,6 +1,6 @@
 # Operations
 
-> Trạng thái: **Designed**. Hạ tầng tại Việt Nam ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Giám sát: [observability](../16-observability/observability.md). CI: [testing §8](../17-testing/testing.md).
+> Trạng thái: **Designed**. Cài đặt, deploy và xử lý sự cố với mã nguồn hiện tại: [production](production.md). Hạ tầng tại Việt Nam ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Giám sát: [observability](../16-observability/observability.md). CI: [testing §8](../17-testing/testing.md).
 
 ## 1. Môi trường
 
@@ -80,7 +80,7 @@ Xem [observability](../16-observability/observability.md) (log, metric, tracing,
 
 1. PR → CI theo [testing §8](../17-testing/testing.md), build asset.
 2. Merge `main` → deploy staging tự động → smoke test.
-3. Release tag → deploy production **zero-downtime** (migrate an toàn, `php artisan optimize`, reload worker).
+3. Release tag → deploy production **zero-downtime** — quy trình và lưu ý chi tiết: [production §5](production.md#5-quy-trình-mỗi-lần-deploy).
 4. Feature flag (Laravel Pennant) cho tính năng lớn, bật theo nhóm khách/phần trăm lưu lượng.
 5. Rollback: giữ artifact 5 bản gần nhất; migration theo expand/contract để rollback code không cần rollback DB.
 

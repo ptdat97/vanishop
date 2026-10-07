@@ -73,7 +73,7 @@
 | **15-security** | [security](15-security/security.md) |
 | **16-observability** | [observability](16-observability/observability.md) |
 | **17-testing** | [testing](17-testing/testing.md) |
-| **18-operations** | [operations](18-operations/operations.md) |
+| **18-operations** | [operations](18-operations/operations.md) · [production](18-operations/production.md) |
 | **19-adr** | [Danh sách ADR](19-adr/README.md) |
 | **20-roadmap** | [roadmap](20-roadmap/roadmap.md) |
 
