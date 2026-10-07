@@ -1,0 +1,44 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/integration/error.v1.json",
+    "title": "Lỗi API (v1)",
+    "description": "Mọi lỗi của /api/* có cùng hình dạng. `code` ổn định để máy xử lý (vd. integration.unauthenticated, validation.failed, http.429); `message` cho người đọc, có thể đổi.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "error"
+    ],
+    "properties": {
+        "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "code",
+                "message"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "pattern": "^[a-z_]+(\\.[a-z0-9_]+)*$"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": [
+                        "object",
+                        "array"
+                    ],
+                    "description": "Dữ liệu kèm theo: validation.failed → danh sách {field, messages}; lỗi nghiệp vụ → khoá/giá trị liên quan."
+                },
+                "correlation_id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Gửi kèm khi báo lỗi cho VaniShop để tra log."
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,100 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/integration/events-page.v1.json",
+    "title": "GET /events (v1)",
+    "description": "Mỗi phần tử là phong bì event (envelope.v1) cộng `cursor`.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "cursor",
+                    "event_id",
+                    "event_type",
+                    "schema_version",
+                    "occurred_at",
+                    "source",
+                    "aggregate",
+                    "correlation_id",
+                    "data"
+                ],
+                "properties": {
+                    "cursor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Truyền vào ?after= để lấy trang kế tiếp."
+                    },
+                    "event_id": {
+                        "type": "string"
+                    },
+                    "event_type": {
+                        "type": "string"
+                    },
+                    "schema_version": {
+                        "type": "string"
+                    },
+                    "occurred_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "source": {
+                        "type": "string",
+                        "const": "vanishop"
+                    },
+                    "aggregate": {
+                        "type": "object",
+                        "required": [
+                            "type",
+                            "id"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "correlation_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "data": {
+                        "type": "object",
+                        "description": "Theo docs/api/schemas/events/<event_type>.json"
+                    }
+                }
+            }
+        },
+        "meta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "next_cursor",
+                "has_more"
+            ],
+            "properties": {
+                "next_cursor": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "has_more": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

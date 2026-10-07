@@ -6,6 +6,7 @@
 |---|---|
 | `envelope.v1.json` | Phong bì chung: `event_id` (UUID, khoá khử trùng lặp), `event_type`, `schema_version`, `occurred_at`, `aggregate`, `correlation_id`, `data` |
 | `vanishop.order.v1.json` | Ảnh chụp đơn hàng (canonical) |
+| `integration/*.json` | Phản hồi của `/api/integration/v1` (trang event, trang đơn, đơn, xác nhận, kết quả đồng bộ tồn) và `error.v1.json` (lỗi chung của `/api/*`). OpenAPI: `docs/api/openapi/integration-v1.json` |
 | `events/<event_type>.json` | `data` của từng loại event (9 loại, gồm `order.lines_cancelled` từ 0.3.18) |
 
 ## Quy tắc tương thích

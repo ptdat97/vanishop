@@ -1,0 +1,485 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "VaniShop Integration API",
+        "version": "1",
+        "summary": "API cho hệ thống ngoài (ERP, POS, kho, 3PL) đọc đơn/event và ghi xác nhận đơn, tồn kho.",
+        "description": "Hợp đồng công khai của `/api/integration/v1`. Quy tắc tương thích giống schema event: thêm trường hoặc endpoint\ntuỳ chọn thì giữ v1; xoá trường, đổi kiểu hoặc đổi nghĩa thì ra `/api/integration/v2` và chạy song song trong thời\ngian chuyển đổi (docs/api/schemas/README.md).\n\n**Xác thực (HMAC).** Mỗi request gửi hai header:\n- `X-Vani-Key-Id`: id khoá của client. Mỗi client có tối đa 2 khoá hiệu lực song song để xoay vòng.\n- `X-Vani-Signature: t=<unix>,v1=<hex>`, trong đó `v1 = HMAC-SHA256(secret, \"<t>.<METHOD>.<path+query>.<body>\")`.\n  Chấp nhận lệch giờ tối đa 300 giây; có thể gửi nhiều `v1` khi đang xoay khoá.\n\n**Phân quyền.** Mỗi endpoint cần một scope (`events:read`, `orders:read`, `orders:write`, `inventory:write`).\nClient có thể bị giới hạn theo danh sách IP.\n\n**Giới hạn tần suất.** Theo từng client, mặc định 600 request/phút. Vượt ngưỡng → `429` (`http.429`) kèm\n`Retry-After`.\n\n**Idempotency.** Endpoint ghi có tác dụng phụ yêu cầu header `Idempotency-Key`. Gửi lại cùng khoá và cùng nội dung\n→ nhận lại đúng phản hồi cũ, kèm header `Idempotent-Replayed: true`.\n\n**Phân trang theo cursor.** `GET /events` dùng `after` (số `cursor` của event cuối đã nhận); `GET /orders` dùng\n`cursor` mờ do server trả trong `meta.next_cursor`.\n\n**Lỗi.** Mọi lỗi có dạng `{\"error\": {\"code\", \"message\", \"details?\", \"correlation_id?\"}}`\n(docs/api/schemas/integration/error.v1.json). Máy xử lý theo `code`, không theo `message`.\n"
+    },
+    "servers": [
+        {
+            "url": "https://{domain}/api/integration/v1",
+            "variables": {
+                "domain": {
+                    "default": "shop.example.vn"
+                }
+            }
+        }
+    ],
+    "security": [
+        {
+            "keyId": [],
+            "signature": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Events"
+        },
+        {
+            "name": "Orders"
+        },
+        {
+            "name": "Inventory"
+        }
+    ],
+    "paths": {
+        "/events": {
+            "get": {
+                "tags": [
+                    "Events"
+                ],
+                "operationId": "listEvents",
+                "summary": "Event feed (thay cho webhook hoặc để bắt kịp sau khi webhook tạm dừng)",
+                "description": "Scope `events:read`. Event theo thứ tự `cursor` tăng dần, toàn bộ loại event (lọc bằng `type`).",
+                "parameters": [
+                    {
+                        "name": "after",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "default": 0
+                        },
+                        "description": "Cursor của event cuối đã xử lý."
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 500,
+                            "default": 100
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 64
+                        },
+                        "description": "Lọc theo event_type (vd. order.created)."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Một trang event.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/integration/events-page.v1.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "operationId": "listOrders",
+                "summary": "Đơn thay đổi gần đây (đồng bộ theo updated_at)",
+                "description": "Scope `orders:read`.",
+                "parameters": [
+                    {
+                        "name": "updated_since",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 200
+                        },
+                        "description": "Giá trị meta.next_cursor của trang trước."
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Một trang đơn (vanishop.order.v1).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/integration/orders-page.v1.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/orders/{number}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "operationId": "showOrder",
+                "summary": "Một đơn theo số đơn",
+                "description": "Scope `orders:read`.",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/OrderNumber"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Đơn (vanishop.order.v1).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/integration/order.v1.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/OrderNotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/orders/{number}/acknowledgements": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "operationId": "acknowledgeOrder",
+                "summary": "Xác nhận đã nhận đơn và gửi số chứng từ phía hệ thống ngoài",
+                "description": "Scope `orders:write`. Mỗi đơn chỉ gắn một `external_id` cho mỗi client. Gửi lại cùng `external_id` là\nidempotent; gửi `external_id` khác → `409 integration.reference_conflict`.\n",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/OrderNumber"
+                    },
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "external_id"
+                                ],
+                                "properties": {
+                                    "external_id": {
+                                        "type": "string",
+                                        "maxLength": 128
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Đã ghi nhận (hoặc phản hồi cũ khi gửi lại cùng Idempotency-Key).",
+                        "headers": {
+                            "Idempotent-Replayed": {
+                                "$ref": "#/components/headers/IdempotentReplayed"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/integration/acknowledgement.v1.json"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/IdempotencyKeyRequired"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/OrderNotFound"
+                    },
+                    "409": {
+                        "description": "`integration.reference_conflict` (đơn đã gắn external_id khác), `idempotency.conflict` (Idempotency-Key đã dùng cho nội dung khác), `idempotency.in_progress` (lần gửi trước đang xử lý — thử lại sau).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/integration/error.v1.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/inventory/levels": {
+            "put": {
+                "tags": [
+                    "Inventory"
+                ],
+                "operationId": "syncInventoryLevels",
+                "summary": "Tồn vật lý tuyệt đối từ authority (ERP/kho) theo location + SKU",
+                "description": "Scope `inventory:write`. Client phải là `stock_authority` của **mọi** location trong request, nếu không cả\nrequest bị từ chối (`403 not_data_owner`). `version` tăng dần theo từng (location, SKU); bản cũ hơn bản đã áp bị\nbỏ qua (`stale_update`). Kết quả trả theo từng dòng.\n",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "levels"
+                                ],
+                                "properties": {
+                                    "levels": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 500,
+                                        "items": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                                "location_code",
+                                                "sku",
+                                                "on_hand",
+                                                "version"
+                                            ],
+                                            "properties": {
+                                                "location_code": {
+                                                    "type": "string",
+                                                    "maxLength": 64
+                                                },
+                                                "sku": {
+                                                    "type": "string",
+                                                    "maxLength": 64
+                                                },
+                                                "on_hand": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "version": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Kết quả từng dòng.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/integration/inventory-levels-result.v1.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "keyId": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Vani-Key-Id"
+            },
+            "signature": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Vani-Signature",
+                "description": "t=<unix>,v1=<hex HMAC-SHA256(secret, \"<t>.<METHOD>.<path+query>.<body>\")>"
+            }
+        },
+        "parameters": {
+            "OrderNumber": {
+                "name": "number",
+                "in": "path",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                }
+            },
+            "IdempotencyKey": {
+                "name": "Idempotency-Key",
+                "in": "header",
+                "required": true,
+                "schema": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.:-]{8,128}$"
+                }
+            }
+        },
+        "headers": {
+            "IdempotentReplayed": {
+                "description": "`true` khi đây là phản hồi đã lưu của lần gửi trước với cùng Idempotency-Key.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "true"
+                    ]
+                }
+            }
+        },
+        "responses": {
+            "Unauthenticated": {
+                "description": "`integration.unauthenticated` — thiếu/sai chữ ký, khoá hết hạn, client tạm dừng.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "Forbidden": {
+                "description": "`integration.insufficient_scope`, `integration.ip_not_allowed`, `not_data_owner`.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "OrderNotFound": {
+                "description": "`integration.order_not_found`.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "IdempotencyKeyRequired": {
+                "description": "`integration.idempotency_key_required`.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "ValidationFailed": {
+                "description": "`validation.failed` — `details` là danh sách {field, messages}.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "RateLimited": {
+                "description": "`http.429` — vượt giới hạn tần suất của client.",
+                "headers": {
+                    "Retry-After": {
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

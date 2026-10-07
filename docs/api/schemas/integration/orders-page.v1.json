@@ -1,0 +1,35 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/integration/orders-page.v1.json",
+    "title": "GET /orders (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "$ref": "../vanishop.order.v1.json"
+            }
+        },
+        "meta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "next_cursor"
+            ],
+            "properties": {
+                "next_cursor": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Mờ — truyền nguyên vào ?cursor=."
+                }
+            }
+        }
+    }
+}

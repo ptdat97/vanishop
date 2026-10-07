@@ -1,0 +1,51 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/integration/inventory-levels-result.v1.json",
+    "title": "PUT /inventory/levels (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "results"
+            ],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "location_code",
+                            "sku",
+                            "status"
+                        ],
+                        "properties": {
+                            "location_code": {
+                                "type": "string"
+                            },
+                            "sku": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "applied",
+                                    "unchanged",
+                                    "stale_update",
+                                    "sku_not_found"
+                                ],
+                                "description": "stale_update: version cũ hơn bản đã áp (bỏ qua)."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

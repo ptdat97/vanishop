@@ -119,7 +119,9 @@ Envelope chuẩn cho message nội bộ/đối tác:
 
 Chữ ký: header `X-Vani-Signature: t=<unix>,v1=<hex(hmac_sha256(secret, t + "." + body))>`; từ chối nếu lệch thời gian > 5 phút. Cho phép nhiều `v1=` trong một header (xoay vòng secret).
 
-Request tới `/api/integration/v1` (Implemented, slice 11) dùng cùng định dạng nhưng ký trên `METHOD + "." + path?query + "." + body` (ví dụ `GET./api/integration/v1/orders?limit=50.`) để chữ ký gắn với đúng endpoint, kèm header `X-Vani-Key-Id: <key_id>`. Lỗi: `401 integration.unauthenticated`, `403 integration.ip_not_allowed`, `403 integration.insufficient_scope`, `403 not_data_owner`, `404 integration.order_not_found`, `409 integration.reference_conflict`. `PUT /inventory/levels` trả kết quả từng dòng: `applied`, `unchanged`, `stale_update`, `sku_not_found`.
+**Hợp đồng công khai (0.3.26):** [OpenAPI 3.1 `docs/api/openapi/integration-v1.json`](../api/openapi/integration-v1.json). File này mô tả xác thực, scope, giới hạn tần suất, idempotency, cursor, từng endpoint và schema phản hồi (`docs/api/schemas/integration/*.json`, gồm `error.v1.json`). `IntegrationApiContractTest` kiểm tra route thật trùng OpenAPI và phản hồi thật (thành công và lỗi) khớp schema.
+
+Request tới `/api/integration/v1` (Implemented, slice 11) dùng cùng định dạng nhưng ký trên `METHOD + "." + path?query + "." + body` (ví dụ `GET./api/integration/v1/orders?limit=50.`) để chữ ký gắn với đúng endpoint, kèm header `X-Vani-Key-Id: <key_id>`. Lỗi: `401 integration.unauthenticated`, `403 integration.ip_not_allowed`, `403 integration.insufficient_scope`, `403 not_data_owner`, `404 integration.order_not_found`, `400 integration.idempotency_key_required`, `409 integration.reference_conflict` / `idempotency.conflict` / `idempotency.in_progress`, `422 validation.failed`, `429 http.429`. `PUT /inventory/levels` trả kết quả từng dòng: `applied`, `unchanged`, `stale_update`, `sku_not_found`.
 
 ### 5.2 Gửi ra (outbound)
 
@@ -135,4 +137,4 @@ Request tới `/api/integration/v1` (Implemented, slice 11) dùng cùng định 
 ## 7. Kiểm thử API
 
 - Mỗi endpoint có Feature test (Pest) cho: thành công, validation, phân quyền, idempotency (nếu có).
-- Contract test cho Integration API dựa trên JSON Schema của từng `event_type`.
+- Contract test cho Integration API: payload event khớp JSON Schema từng `event_type` (`PayloadSchemaTest`); route và phản hồi khớp OpenAPI (`IntegrationApiContractTest`).

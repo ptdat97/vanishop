@@ -21,6 +21,11 @@ final class IntegrationRequestRejected extends BusinessRuleViolation
         return new self('Không tìm thấy đơn.', 'integration.order_not_found', 404, ['number' => $number]);
     }
 
+    public static function idempotencyKeyRequired(): self
+    {
+        return new self('Header Idempotency-Key bắt buộc (8–128 ký tự A-Z a-z 0-9 _ . : -).', 'integration.idempotency_key_required', 400);
+    }
+
     public static function referenceConflict(string $number, string $existing): self
     {
         return new self('Đơn đã được xác nhận với số chứng từ khác.', 'integration.reference_conflict', 409, ['number' => $number, 'external_id' => $existing]);

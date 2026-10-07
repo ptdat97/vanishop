@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.26 — 2026-10-07
+
+Hợp đồng Integration API (roadmap Phase 6). Không đổi API plugin.
+
+### Thêm
+- OpenAPI 3.1 `docs/api/openapi/integration-v1.json` + schema phản hồi `docs/api/schemas/integration/*.json` (gồm `error.v1.json`).
+
+### Đổi hành vi
+- `POST /api/integration/v1/orders/{number}/acknowledgements` thiếu/sai `Idempotency-Key`: lỗi `400 integration.idempotency_key_required` (trước: `400 http.400`).
+
 ## 0.3.25 — 2026-10-07
 
 Observability tối thiểu (roadmap Phase 6). Chỉ thêm.

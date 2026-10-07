@@ -1,0 +1,33 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/integration/acknowledgement.v1.json",
+    "title": "POST /orders/{number}/acknowledgements (v1)",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "order_number",
+                "system",
+                "external_id"
+            ],
+            "properties": {
+                "order_number": {
+                    "type": "string"
+                },
+                "system": {
+                    "type": "string",
+                    "description": "Mã client gọi API."
+                },
+                "external_id": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -54,7 +54,9 @@ final class IntegrationApiController
     public function acknowledge(string $number, Request $request, IntegrationCommands $commands): JsonResponse
     {
         $key = (string) $request->header('Idempotency-Key', '');
-        abort_if(preg_match('/^[A-Za-z0-9_.:-]{8,128}$/', $key) !== 1, 400, 'Idempotency-Key bắt buộc (8–128 ký tự).');
+        if (preg_match('/^[A-Za-z0-9_.:-]{8,128}$/', $key) !== 1) {
+            throw IntegrationRequestRejected::idempotencyKeyRequired();
+        }
         $data = $request->validate(['external_id' => ['required', 'string', 'max:128']]);
 
         $result = $commands->acknowledgeOrderOnce($this->client($request), $number, $data['external_id'], $key);
