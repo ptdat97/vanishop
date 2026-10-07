@@ -13,5 +13,8 @@
     },
     "conflicts": [],
     "permissions": ["cms.view", "cms.manage"],
-    "author": "VaniShop Team"
+    "author": "VaniShop Team",
+    "data": {
+        "owned": ["plg_cms_pages", "plg_cms_posts"]
+    }
 }

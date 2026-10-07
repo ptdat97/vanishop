@@ -7,6 +7,7 @@ namespace Modules\Extension\Application\Plugins;
 use Composer\Semver\Comparator;
 use Composer\Semver\Semver;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Domain\Plugin\PluginStatus;
@@ -85,6 +86,24 @@ final class PluginDoctor
             $pending = array_diff(array_map(fn (string $file): string => basename($file, '.php'), $migrations), $ranMigrations);
             if ($pending !== []) {
                 $add($id, self::WARNING, 'migrations_pending', count($pending).' migration chưa chạy: '.implode(', ', $pending));
+            }
+
+            // Khai báo dữ liệu (0.3.24): plugin có migration phải khai data.owned; bảng/cột khai báo phải tồn tại.
+            if ($migrations !== [] && $manifest->data->owned === []) {
+                $add($id, self::WARNING, 'data_undeclared', 'Có migration nhưng manifest chưa khai báo data.owned — uninstall --purge không kiểm tra được tham chiếu.');
+            }
+            if ($pending === []) {
+                foreach ($manifest->data->owned as $table) {
+                    if (! Schema::hasTable($table)) {
+                        $add($id, self::ERROR, 'data_owned_missing', "Bảng khai báo trong data.owned không tồn tại: {$table}.");
+                    }
+                }
+                foreach ($manifest->data->references as $from => $to) {
+                    [$table, $column] = explode('.', $to);
+                    if (! Schema::hasColumn($table, $column)) {
+                        $add($id, self::WARNING, 'data_reference_invalid', "data.references {$from} → {$to}: cột đích không tồn tại.");
+                    }
+                }
             }
         }
 

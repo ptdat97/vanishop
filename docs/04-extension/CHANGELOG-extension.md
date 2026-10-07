@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.24 — 2026-10-07
+
+Khai báo dữ liệu plugin + gỡ an toàn (roadmap Phase 5). Thêm + đổi hành vi gỡ.
+
+### Thêm
+- Manifest `data` (`owned`, `references`, `retained`) — `Extension\Domain\Plugin\PluginDataDeclaration`, `PluginManifest::$data`. Validate: `owned` là bảng `plg_*`, `retained` ⊆ `owned`, `references` dạng `bang.cot` đi từ bảng `owned`.
+- `vani:plugin:uninstall --drop-retained [--yes]`.
+- Doctor: `data_undeclared`, `data_owned_missing`, `data_reference_invalid`.
+- Khai báo cho `vani.cms`, `vani.hello-world`, `vani.vnpay` (`plg_vnpay_refunds` là `retained`: chứng từ hoàn tiền).
+
+### Đổi hành vi
+- `uninstall` từ chối khi implementation còn việc dở dang (trước: gỡ được sau `--force` tắt).
+- `uninstall --purge` từ chối khi còn tham chiếu (khai báo hoặc khoá ngoại thật) hoặc dữ liệu `retained` chưa xác nhận.
+
 ## 0.3.23 — 2026-10-07
 
 Plugin ngừng an toàn (roadmap Phase 5). Thêm + đổi hành vi CLI.

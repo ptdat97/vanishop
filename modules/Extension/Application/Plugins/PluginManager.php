@@ -29,6 +29,7 @@ final class PluginManager
         private readonly ConsoleKernel $console,
         private readonly RequiredExtensions $required,
         private readonly string $coreVersion,
+        private readonly PluginDataGuard $dataGuard = new PluginDataGuard,
     ) {}
 
     public function install(string $pluginId): PluginRecord
@@ -170,7 +171,11 @@ final class PluginManager
         return $this->required->inUse($pluginId);
     }
 
-    public function uninstall(string $pluginId, bool $purge = false): void
+    /**
+     * @param  bool  $purge  rollback migration, xoá bảng owned — chặn khi còn tham chiếu/khoá ngoại/dữ liệu lưu giữ
+     * @param  bool  $dropRetained  cho phép xoá bảng `data.retained` khi purge (đã xuất/lưu trữ)
+     */
+    public function uninstall(string $pluginId, bool $purge = false, bool $dropRetained = false): void
     {
         $record = $this->recordOrFail($pluginId);
 
@@ -183,14 +188,25 @@ final class PluginManager
             throw new PluginOperationFailed("Không thể gỡ [{$pluginId}]: các plugin ".implode(', ', $dependents).' phụ thuộc vào nó.');
         }
 
+        // Gỡ = không nạp provider nữa → IPN/webhook của giao dịch đang dở sẽ 404 (kể cả khi đã --force tắt).
+        $inUse = $this->required->inUse($pluginId);
+        if ($inUse !== []) {
+            throw new PluginOperationFailed("Không thể gỡ [{$pluginId}]: ".implode('; ', $inUse).'.');
+        }
+
         $manifest = $this->manifests->find($pluginId);
         if ($purge && $manifest !== null) {
+            $installed = array_intersect_key($this->manifests->all(), array_flip($this->installedIds()));
+            $blockers = $this->dataGuard->purgeBlockers($manifest, $installed, $dropRetained);
+            if ($blockers !== []) {
+                throw new PluginOperationFailed("Không thể xoá dữ liệu của [{$pluginId}]: ".implode('; ', $blockers).'. Gỡ không --purge để giữ dữ liệu.');
+            }
             $this->rollbackMigrations($manifest);
         }
 
         $record->delete();
 
-        $this->audit->record('extension.plugin.uninstalled', 'plugin', $pluginId, ['purge' => $purge]);
+        $this->audit->record('extension.plugin.uninstalled', 'plugin', $pluginId, ['purge' => $purge] + ($purge && $dropRetained ? ['dropped_retained' => $manifest?->data->retained ?? []] : []));
         $this->afterStateChange();
     }
 

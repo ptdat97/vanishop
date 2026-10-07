@@ -43,6 +43,8 @@ final readonly class PluginManifest
         public string $path,
         /** Plugin hệ thống (ADR-029): `vani:install` tự cài + bật. */
         public bool $bundled = false,
+        /** Khai báo dữ liệu (owned / references / retained) — 0.3.24. */
+        public PluginDataDeclaration $data = new PluginDataDeclaration,
     ) {}
 
     /**
@@ -90,6 +92,7 @@ final readonly class PluginManifest
             permissions: array_values(array_map('strval', (array) ($data['permissions'] ?? []))),
             path: $path,
             bundled: (bool) ($data['bundled'] ?? false),
+            data: PluginDataDeclaration::fromArray(is_array($data['data'] ?? null) ? $data['data'] : [], $path),
         );
     }
 

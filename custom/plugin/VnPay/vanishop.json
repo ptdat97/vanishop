@@ -13,5 +13,10 @@
     },
     "conflicts": [],
     "permissions": [],
-    "author": "VaniShop Team"
+    "author": "VaniShop Team",
+    "data": {
+        "owned": ["plg_vnpay_refunds"],
+        "references": { "plg_vnpay_refunds.payment_public_id": "payments.public_id" },
+        "retained": ["plg_vnpay_refunds"]
+    }
 }

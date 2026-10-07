@@ -10,5 +10,9 @@
     },
     "conflicts": [],
     "permissions": ["hello-world.view"],
-    "author": "VaniShop Team"
+    "author": "VaniShop Team",
+    "data": {
+        "owned": ["plg_hello_world_notes"],
+        "references": { "plg_hello_world_notes.style_id": "styles.id" }
+    }
 }

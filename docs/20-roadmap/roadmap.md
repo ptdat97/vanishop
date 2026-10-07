@@ -180,7 +180,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Chặn tắt khi còn giao dịch dở dang, `--force` có audit | ✅ | `guardDisable` (0.3.16) |
 | Trạng thái `draining`: ngừng nhận giao dịch mới nhưng vẫn xử lý giao dịch cũ (IPN, webhook, query), tự tắt khi hết | ✅ | 0.3.23: `vani:plugin:disable --drain`, `Extensions::acceptsNewTransactions` (checkout thanh toán/giao hàng, hãng cho vận đơn mới), `vani:plugin:finish-draining` (5 phút), doctor báo `draining`; enable huỷ ngừng |
 | `--force` cần xác nhận tường minh | ✅ | 0.3.23: liệt kê việc dở dang, hỏi xác nhận; không tương tác cần `--yes`; audit `forced` |
-| Khai báo dữ liệu plugin (owned / referenced / retained), chặn gỡ khi còn tham chiếu | ⬜ | Manifest `data`; `uninstall --purge` kiểm tra tham chiếu trước khi rollback migration |
+| Khai báo dữ liệu plugin (owned / referenced / retained), chặn gỡ khi còn tham chiếu | ✅ | 0.3.24: manifest `data`; `uninstall` chặn khi còn việc dở dang; `--purge` chặn khi plugin khác tham chiếu, khoá ngoại thật từ bảng ngoài, `retained` chưa `--drop-retained`; doctor `data_undeclared`/`data_owned_missing`/`data_reference_invalid` |
 | "Required capabilities" giữa plugin | 🟡 | Hiện qua `requires.plugins` + `publishHooks`; capability theo tag (plugin cần ≥1 implementation của tag X) là bổ sung có thể làm |
 
 ### Phase 6. API, contract, observability
@@ -222,7 +222,8 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`. ✅ 2026-10-07 (Core 0.3.21)
 4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay). ✅ 2026-10-07 (Core 0.3.22)
 5. Phase 5: trạng thái `draining` + xác nhận `--force`. ✅ 2026-10-07 (Core 0.3.23)
-6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu.
+6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
+7. Phase 6: API/contract/observability — metric tối thiểu (Pulse), health check tổng hợp, OpenAPI + error contract cho `/api/integration/v1`.
 
 ## 5. Go-live gate
 

@@ -49,8 +49,12 @@ custom/plugin/VietQr/
   },
   "conflicts": [],
   "permissions": ["payments.write"],
-  "settings_schema": "settings-schema.json",
-  "author": "VaniShop Team"
+  "author": "VaniShop Team",
+  "data": {
+    "owned": ["plg_vietqr_transfers"],
+    "references": { "plg_vietqr_transfers.payment_public_id": "payments.public_id" },
+    "retained": ["plg_vietqr_transfers"]
+  }
 }
 ```
 
@@ -65,6 +69,7 @@ custom/plugin/VietQr/
 | `scopes` | | **Bỏ** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader bỏ qua |
 | `permissions` | | Quyền plugin cần; hiển thị khi cài |
 | `settings_schema` | | (cũ) thay bằng `settings()` trong provider |
+| `data` | (bắt buộc khi có migration) | **0.3.24.** `owned`: bảng `plg_*` do migration của plugin tạo (`--purge` xoá). `references`: cột của plugin trỏ sang dữ liệu khác, `"plg_bang.cot": "bang.cot"`. `retained`: bảng phải lưu giữ (chứng từ/pháp lý), ⊆ `owned`. Doctor: `data_undeclared` (có migration, chưa khai `owned`), `data_owned_missing`, `data_reference_invalid` |
 | `kind` | ✔ | Loại plugin, thuộc `PluginManifest::KINDS` (`payment_gateway`, `shipping_carrier`, `shipping_rate`, `tax`, `promotion`, `notification_channel`, `search`, `integration`, `marketing`, `analytics`, `customer_service`, `content`, `theme_extension`, `language`, `feature`). Loại gắn với extension point → doctor cảnh báo nếu không đóng góp |
 | `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không tắt được nếu là implementation đang bật cuối cùng của extension point bắt buộc. Implemented (`vani:install`) |
 
@@ -123,7 +128,7 @@ php artisan vani:plugin:install vani.vietqr       # kiểm tra deps → chạy m
 php artisan vani:plugin:enable vani.vietqr        # (--scope chỉ còn trong code cũ, bỏ ở slice 12)
 php artisan vani:plugin:disable vani.vietqr [--drain | --force [--yes]]   # còn thanh toán chờ / vận đơn đang giao: --drain ngừng an toàn, --force tắt ngay (xác nhận)
 php artisan vani:plugin:finish-draining           # (lịch 5 phút) tắt plugin draining đã hết việc dở dang
-php artisan vani:plugin:uninstall vani.vietqr [--purge]   # --purge: rollback migration, xoá bảng plg_*
+php artisan vani:plugin:uninstall vani.vietqr [--purge [--drop-retained [--yes]]]   # --purge: rollback migration, xoá bảng owned (chặn khi còn tham chiếu/khoá ngoại/dữ liệu lưu giữ)
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
 php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit
 php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, migration chờ, plugin failed, thiếu manifest/provider, không tương thích, cache không dùng chung ở production; exit 1 khi có lỗi
@@ -146,7 +151,8 @@ php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, mi
 | install | Chạy migration trong `Database/migrations` của plugin (bảng `plg_<plugin>_*`), ghi version |
 | upgrade | So version manifest với version đã cài → chạy migration chưa chạy; migration **phải tương thích ngược** (expand/contract) |
 | disable | Không đụng dữ liệu |
-| uninstall | Giữ bảng (mặc định). `--purge` chạy `down()` của các migration theo thứ tự ngược rồi xoá dữ liệu cấu hình |
+| uninstall | Giữ bảng (mặc định). Từ chối khi implementation của plugin còn việc dở dang (gỡ xong provider không nạp nữa → IPN/webhook 404) |
+| uninstall `--purge` | Chạy `down()` của migration theo thứ tự ngược. **Từ chối** (0.3.24) khi: plugin khác đang cài khai `data.references` trỏ vào bảng `owned`; có khoá ngoại thật từ bảng ngoài plugin trỏ vào bảng `owned`; có `data.retained` mà chưa `--drop-retained` (CLI hỏi xác nhận, không tương tác cần `--yes`). Audit ghi `dropped_retained` |
 | Lỗi migration | MySQL không rollback được DDL → plugin chuyển `failed` + `last_error`; migration phải idempotent (`if (! Schema::hasTable(...))`) để chạy lại an toàn |
 
 ## 8. Xử lý lỗi và cô lập
