@@ -6,7 +6,7 @@ namespace Modules\Integration\Application\Listeners;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
-use Modules\Integration\Application\CanonicalPayloads;
+use Modules\Integration\Application\DomainEventPayloads;
 use Modules\Integration\Contracts\Data\IntegrationEvent;
 use Modules\Integration\Contracts\IntegrationEvents;
 use Modules\Ordering\Contracts\Data\OrderData;
@@ -36,7 +36,7 @@ final class PublishDomainEvents
     public function __construct(
         private readonly IntegrationEvents $events,
         private readonly OrderReader $orders,
-        private readonly CanonicalPayloads $payloads,
+        private readonly DomainEventPayloads $payloads,
         private readonly CurrentContext $context,
     ) {}
 
@@ -62,76 +62,47 @@ final class PublishDomainEvents
 
     public function orderPlaced(OrderPlaced $event): void
     {
-        $this->forOrder($event->orderId, 'order.created');
+        $this->publish($event->orderId, 'order.created', fn (OrderData $order): array => $this->payloads->order($order));
     }
 
     public function orderConfirmed(OrderConfirmed $event): void
     {
-        $this->forOrder($event->orderId, 'order.confirmed', ['reason' => $event->reason]);
+        $this->publish($event->orderId, 'order.confirmed', fn (OrderData $order): array => $this->payloads->order($order, ['reason' => $event->reason]));
     }
 
     public function orderCancelled(OrderCancelled $event): void
     {
-        $this->forOrder($event->orderId, 'order.cancelled', ['reason' => $event->reason, 'source' => $event->source]);
+        $this->publish($event->orderId, 'order.cancelled', fn (OrderData $order): array => $this->payloads->order($order, ['reason' => $event->reason, 'source' => $event->source]));
     }
 
     public function orderLinesCancelled(OrderLinesCancelled $event): void
     {
-        $this->forOrder($event->orderId, 'order.lines_cancelled', [
-            'cancellation_id' => $event->cancellationId, 'reason' => $event->reason, 'amount' => $event->amount,
-            'lines' => array_map(fn (array $line): array => ['line_id' => $line['order_line_id'], 'variant_id' => $line['variant_id'], 'quantity' => $line['quantity'], 'amount' => $line['amount']], $event->lines),
-        ]);
+        $this->publish($event->orderId, 'order.lines_cancelled', fn (OrderData $order): array => $this->payloads->linesCancelled($order, $event->cancellationId, $event->reason, $event->amount, $event->lines));
     }
 
     public function paymentCaptured(PaymentCaptured $event): void
     {
-        $this->related($event->orderId, 'payment.captured', fn (OrderData $order): array => [
-            'payment_id' => $event->paymentPublicId ?? (string) $event->paymentId, 'gateway' => $event->gatewayCode, 'amount' => $event->amount, 'currency' => $order->currencyCode,
-        ]);
+        $this->publish($event->orderId, 'payment.captured', fn (OrderData $order): array => $this->payloads->paymentCaptured($order, $event->paymentPublicId ?? (string) $event->paymentId, $event->gatewayCode, $event->amount));
     }
 
     public function refundCompleted(RefundCompleted $event): void
     {
-        $this->related($event->orderId, 'payment.refunded', fn (OrderData $order): array => [
-            'refund_id' => $event->refundPublicId ?? (string) $event->refundId, 'payment_id' => $event->paymentPublicId ?? (string) $event->paymentId, 'amount' => $event->amount, 'currency' => $order->currencyCode,
-        ]);
+        $this->publish($event->orderId, 'payment.refunded', fn (OrderData $order): array => $this->payloads->paymentRefunded($order, $event->refundPublicId ?? (string) $event->refundId, $event->paymentPublicId ?? (string) $event->paymentId, $event->amount));
     }
 
     public function returnRequested(ReturnRequested $event): void
     {
-        $this->related($event->orderId, 'return.created', fn (): array => [
-            'return_id' => $event->publicId ?? (string) $event->returnId, 'return_number' => $event->number, 'source' => $event->source,
-        ]);
+        $this->publish($event->orderId, 'return.created', fn (OrderData $order): array => $this->payloads->returnCreated($order, $event->publicId ?? (string) $event->returnId, $event->number, $event->source));
     }
 
     public function returnResolved(ReturnResolved $event): void
     {
-        $this->related($event->orderId, 'return.resolved', fn (OrderData $order): array => [
-            'return_id' => $event->publicId ?? (string) $event->returnId, 'return_number' => $event->number, 'refunded_amount' => $event->refundedAmount, 'currency' => $order->currencyCode,
-        ]);
+        $this->publish($event->orderId, 'return.resolved', fn (OrderData $order): array => $this->payloads->returnResolved($order, $event->publicId ?? (string) $event->returnId, $event->number, $event->refundedAmount));
     }
 
     public function shipmentStatusChanged(ShipmentStatusChanged $event): void
     {
-        $this->related($event->orderId, 'shipment.status_changed', fn (): array => [
-            'shipment_id' => $event->publicId ?? (string) $event->shipmentId, 'carrier' => $event->carrierCode, 'tracking_number' => $event->trackingNumber, 'from' => $event->from, 'to' => $event->to,
-        ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $extra
-     */
-    private function forOrder(int $orderId, string $type, array $extra = []): void
-    {
-        $this->publish($orderId, $type, fn (OrderData $order): array => ['order' => $this->payloads->order($order), ...$extra]);
-    }
-
-    /**
-     * @param  callable(OrderData): array<string, mixed>  $data
-     */
-    private function related(int $orderId, string $type, callable $data): void
-    {
-        $this->publish($orderId, $type, fn (OrderData $order): array => ['order_number' => $order->number, ...$data($order)]);
+        $this->publish($event->orderId, 'shipment.status_changed', fn (OrderData $order): array => $this->payloads->shipmentStatusChanged($order, $event->publicId ?? (string) $event->shipmentId, $event->carrierCode, $event->trackingNumber, $event->from, $event->to));
     }
 
     /**

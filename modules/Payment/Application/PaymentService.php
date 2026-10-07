@@ -291,6 +291,24 @@ final class PaymentService implements Payments
         });
     }
 
+    public function settlementsForOrder(int $orderId): array
+    {
+        $payments = Payment::query()->where('order_id', $orderId)->orderBy('id')->get();
+        $byId = $payments->keyBy('id');
+
+        return [
+            // Đã từng thu (kể cả đã hoàn hết) — khác hasCollected() (còn hoàn tiếp được).
+            'captures' => $payments->filter(fn (Payment $payment): bool => in_array($payment->status, [PaymentStatus::Paid, PaymentStatus::PartiallyRefunded, PaymentStatus::Refunded], true))->map(fn (Payment $payment): array => [
+                'payment_id' => $payment->public_id, 'gateway' => $payment->gateway_code, 'amount' => (int) $payment->amount, 'currency' => $payment->currency_code,
+            ])->values()->all(),
+            'refunds' => Refund::query()->whereIn('payment_id', $payments->pluck('id'))->where('status', 'completed')->orderBy('id')->get()
+                ->map(fn (Refund $refund): array => [
+                    'refund_id' => $refund->public_id, 'payment_id' => (string) $byId[$refund->payment_id]->public_id, 'amount' => $refund->amount,
+                    'currency' => (string) $byId[$refund->payment_id]->currency_code,
+                ])->values()->all(),
+        ];
+    }
+
     public function refundOrder(int $orderId, Money $amount, string $reason, string $idempotencyKey): void
     {
         $payment = Payment::query()->where('order_id', $orderId)->whereIn('status', [PaymentStatus::Paid, PaymentStatus::PartiallyRefunded])

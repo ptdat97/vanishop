@@ -42,5 +42,12 @@ interface OrderReader
      */
     public function customerStats(int $customerId): array;
 
+    /**
+     * Các lần huỷ một phần của đơn (đọc, 0.3.21): theo thứ tự thời gian.
+     *
+     * @return list<array{cancellation_id: string, reason: string, amount: int, lines: list<array{order_line_id: int, variant_id: int, quantity: int, amount: int}>}>
+     */
+    public function cancellations(int $orderId): array;
+
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array;
 }

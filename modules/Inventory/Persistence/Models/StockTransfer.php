@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Inventory\Domain\TransferStatus;
 
 /**
@@ -21,6 +23,11 @@ use Modules\Inventory\Domain\TransferStatus;
  * @property string|null $reference
  * @property string|null $cancel_reason
  * @property int $lock_version
+ * @property CarbonImmutable|null $shipped_at
+ * @property CarbonImmutable|null $received_at
+ * @property CarbonImmutable|null $cancelled_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class StockTransfer extends Model
 {

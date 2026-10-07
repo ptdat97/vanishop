@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Ordering\Application;
 
 use DateTimeInterface;
+use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -68,6 +69,26 @@ final class EloquentOrderReader implements OrderReader
             'first_order_at' => ($row->first_order_at ?? null) === null ? null : (string) $row->first_order_at,
             'last_order_at' => ($row->last_order_at ?? null) === null ? null : (string) $row->last_order_at,
         ];
+    }
+
+    public function cancellations(int $orderId): array
+    {
+        $variants = OrderLine::query()->where('order_id', $orderId)->pluck('variant_id', 'id');
+
+        return DB::table('order_events')->where('order_id', $orderId)->where('type', 'lines_cancelled')->orderBy('id')->get()
+            ->map(function (object $event) use ($variants): array {
+                $data = (array) json_decode((string) $event->data, true);
+
+                return [
+                    'cancellation_id' => (string) ($data['cancellation_id'] ?? ''),
+                    'reason' => (string) $event->reason,
+                    'amount' => (int) ($data['totals']['total'] ?? 0),
+                    'lines' => array_map(fn (array $line): array => [
+                        'order_line_id' => (int) $line['order_line_id'], 'variant_id' => (int) ($variants[$line['order_line_id']] ?? 0),
+                        'quantity' => (int) $line['quantity'], 'amount' => (int) $line['total'],
+                    ], (array) ($data['lines'] ?? [])),
+                ];
+            })->all();
     }
 
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array

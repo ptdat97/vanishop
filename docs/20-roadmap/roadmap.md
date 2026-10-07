@@ -169,7 +169,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Hạng mục | Trạng thái | Ghi chú |
 |---|---|---|
 | Đối soát `order.*` (phát hiện, bù, `reconciled: true`, báo cáo) | ✅ | `vani:integration:reconcile-orders` |
-| Mở rộng cho `payment.*`, `return.*`, `shipment.*`, `order.lines_cancelled` | ⬜ | Dựng lại event từ trạng thái nghiệp vụ, không tạo giao dịch mới. Khoá nhận diện theo thực thể (payment/refund/return/shipment public id + trạng thái) để không phát trùng. Cần đọc qua contract (`Payments`, `Returns`, `ShipmentReader`) |
+| Mở rộng cho `payment.*`, `return.*`, `shipment.*`, `order.lines_cancelled` | ✅ | 0.3.21: dựng lại từ trạng thái nghiệp vụ qua contract đọc (`Payments::settlementsForOrder`, `OrderReader::cancellations`, `Returns`, `ShipmentReader`), payload dùng chung `DomainEventPayloads`; nhận diện theo public id của thực thể (vận đơn: + trạng thái hiện tại), không phát trùng, không tạo giao dịch mới. Giới hạn: cửa sổ theo `updated_at` của đơn, chỉ bù trạng thái vận đơn hiện tại |
 | Tách rõ đối soát trạng thái nghiệp vụ (Phase 3) với đối soát event (Phase 4) | ✅ | Hai nhóm lệnh và bảng khác nhau |
 
 ### Phase 5. Plugin lifecycle, dependency, migration
@@ -219,7 +219,7 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 
 1. Phase 1: chuyển kho có vòng đời. ✅ 2026-10-15
 2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`. ✅ 2026-10-15
-3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`.
+3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`. ✅ 2026-10-07 (Core 0.3.21)
 4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay).
 5. Phase 5: trạng thái `draining` + xác nhận `--force`.
 

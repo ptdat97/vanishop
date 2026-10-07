@@ -24,6 +24,11 @@
         },
         "source": {
             "type": "string"
+        },
+        "reconciled": {
+            "type": "boolean",
+            "const": true,
+            "description": "Có khi event được bù bởi đối soát (vani:integration:reconcile-orders)."
         }
     }
 }

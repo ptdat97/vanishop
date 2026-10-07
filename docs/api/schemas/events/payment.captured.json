@@ -30,6 +30,11 @@
         "currency": {
             "type": "string",
             "pattern": "^[A-Z]{3}$"
+        },
+        "reconciled": {
+            "type": "boolean",
+            "const": true,
+            "description": "Có khi event được bù bởi đối soát (vani:integration:reconcile-orders)."
         }
     }
 }

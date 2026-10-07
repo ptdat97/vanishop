@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.21 — 2026-10-07
+
+Đối soát event tích hợp ngoài `order.*` (roadmap Phase 4). Chỉ thêm.
+
+### Thêm
+- `Payment\Contracts\Payments::settlementsForOrder(int $orderId)`: khoản đã thu (kể cả đã hoàn hết) và hoàn tiền đã xong của đơn.
+- `Ordering\Contracts\OrderReader::cancellations(int $orderId)`: các lần huỷ một phần (id, lý do, số tiền, dòng).
+- `vani:integration:reconcile-orders` bù cả `order.lines_cancelled`, `payment.captured`/`refunded`, `return.created`/`resolved`, `shipment.status_changed` (chi tiết báo cáo có `entity`). Schema các event này thêm trường tuỳ chọn `reconciled` (không phá vỡ, giữ v1).
+
 ## 0.3.20 — 2026-10-15
 
 Bảng đối soát tồn kho (roadmap Phase 3). Chỉ thêm.

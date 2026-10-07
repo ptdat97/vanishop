@@ -62,5 +62,12 @@ interface Payments
      *
      * @throws PaymentRejected nếu đơn chưa có khoản đã thu đủ để hoàn
      */
+    /**
+     * Khoản đã thu và hoàn tiền đã xong của một đơn (đọc, 0.3.21) — đối soát event tích hợp dựng lại payment.*.
+     *
+     * @return array{captures: list<array{payment_id: string, gateway: string, amount: int, currency: string}>, refunds: list<array{refund_id: string, payment_id: string, amount: int, currency: string}>}
+     */
+    public function settlementsForOrder(int $orderId): array;
+
     public function refundOrder(int $orderId, Money $amount, string $reason, string $idempotencyKey): void;
 }
