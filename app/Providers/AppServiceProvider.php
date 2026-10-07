@@ -2,12 +2,18 @@
 
 namespace App\Providers;
 
+use App\Livewire\Pulse\CommerceMetricsCard;
+use App\Observability\PulseMetrics;
+use App\Observability\RecordCommerceMetrics;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Horizon;
+use Livewire\Livewire;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Shared\Contracts\Metrics;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(Metrics::class, PulseMetrics::class);
     }
 
     /**
@@ -33,7 +39,13 @@ class AppServiceProvider extends ServiceProvider
             $schedule->command('backup:run')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
             $schedule->command('backup:monitor')->dailyAt('09:00')->onOneServer();
             $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
+            $schedule->command('vani:metrics:snapshot')->everyMinute()->withoutOverlapping()->onOneServer();
         });
+        // Counter thương mại từ domain event (sau commit) — Phase 6 observability.
+        foreach (RecordCommerceMetrics::listeners() as $event => $method) {
+            Event::listen($event, [RecordCommerceMetrics::class, $method]);
+        }
+        Livewire::component('vani.commerce-metrics', CommerceMetricsCard::class);
         Horizon::auth(fn (Request $request): bool => ($user = $request->user('staff')) !== null && Gate::forUser($user)->allows('system.monitor'));
     }
 }

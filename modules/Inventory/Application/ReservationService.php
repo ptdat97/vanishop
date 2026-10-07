@@ -21,6 +21,7 @@ use Modules\Inventory\Events\StockReleased;
 use Modules\Inventory\Events\StockReserved;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockReservation;
+use Modules\Shared\Contracts\Metrics;
 
 /**
  * Giữ hàng atomic (invariant Core — rule R14): khoá dòng tồn theo thứ tự cố định, kiểm ATS,
@@ -34,6 +35,7 @@ final class ReservationService implements InventoryReservation
         private readonly StockLedger $ledger,
         private readonly OnlineLocations $locations,
         private readonly VariantDirectory $variants,
+        private readonly Metrics $metrics,
     ) {}
 
     public function reserve(ReservationRequest $request): array
@@ -52,6 +54,8 @@ final class ReservationService implements InventoryReservation
             foreach ($quantities as $variantId => $quantity) {
                 $variant = $variants[$variantId] ?? null;
                 if ($variant === null || $variant->status !== 'active' || $quantity <= 0) {
+                    $this->metrics->increment('inventory.reservation_failed', 1, 'no_stock_record');
+
                     throw new StockUnavailable($variantId, $quantity, 0);
                 }
                 $candidates[$variantId] = $online;
@@ -81,6 +85,8 @@ final class ReservationService implements InventoryReservation
                 try {
                     $plan = Allocation::allocate($variantId, $quantity, $levels);
                 } catch (InsufficientStock $exception) {
+                    $this->metrics->increment('inventory.reservation_failed', 1, 'insufficient');
+
                     throw new StockUnavailable($exception->variantId, $exception->requested, $exception->available);
                 }
 

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Domain\MovementType;
 use Modules\Inventory\Domain\ReservationStatus;
 use Modules\Inventory\Domain\StockLevel;
+use Modules\Shared\Contracts\Metrics;
 
 /**
  * Đối soát tồn kho với chính sổ của nó (bất biến của Inventory):
@@ -19,7 +20,10 @@ final class StockVerifier
 {
     private const CHUNK = 500;
 
-    public function __construct(private readonly StockLedger $ledger) {}
+    public function __construct(
+        private readonly StockLedger $ledger,
+        private readonly Metrics $metrics,
+    ) {}
 
     /**
      * @return array{checked: int, issues: list<array{location_id: int, variant_id: int, issue: string, expected: int, actual: int, repaired: bool}>, repaired: int}
@@ -69,6 +73,8 @@ final class StockVerifier
                     }
                 }
             });
+
+        $this->metrics->increment('inventory.reconciliation_mismatch', count($issues), 'internal');
 
         return ['checked' => $checked, 'issues' => $issues, 'repaired' => $repaired];
     }

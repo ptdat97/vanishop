@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.24',
+    'version' => '0.3.25',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -45,6 +45,11 @@ return [
     'storefront' => [
         'themes_path' => $relativeToBase(env('VANI_THEMES_PATH', 'custom/theme')),
         'theme' => env('VANI_THEME', 'vani-base'),
+    ],
+
+    'health' => [
+        // Token để GET /health trả chi tiết từng kiểm tra (header X-Health-Token). Trống = chỉ trả status.
+        'token' => env('VANI_HEALTH_TOKEN', ''),
     ],
 
     'media' => [

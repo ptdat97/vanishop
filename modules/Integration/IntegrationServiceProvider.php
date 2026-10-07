@@ -39,6 +39,7 @@ use Modules\Integration\Domain\RetryPolicy;
 use Modules\Integration\Http\Middleware\AuthenticateIntegrationClient;
 use Modules\Integration\Http\Middleware\RequireIntegrationScope;
 use Modules\Integration\Persistence\Models\IntegrationClient;
+use Modules\Shared\Contracts\Metrics;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 /**
@@ -78,7 +79,7 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
         ));
         $this->app->bind(WebhookSender::class, fn (): WebhookSender => new WebhookSender((int) config('vanishop.integration.webhook_pause_after_hours', 24)));
         $this->app->bind(OutboxWorker::class, fn ($app): OutboxWorker => new OutboxWorker(
-            $app->make(MessageRouter::class), $app->make(RetryPolicy::class), (int) config('vanishop.integration.processing_timeout', 600),
+            $app->make(MessageRouter::class), $app->make(RetryPolicy::class), $app->make(Metrics::class), (int) config('vanishop.integration.processing_timeout', 600),
         ));
         $this->app->bind(InboxProcessor::class, fn ($app): InboxProcessor => new InboxProcessor(
             $app->make(ConnectorRegistry::class), $app->make(RetryPolicy::class), (int) config('vanishop.integration.processing_timeout', 600),

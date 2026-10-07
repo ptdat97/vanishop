@@ -11,6 +11,7 @@ use Modules\Identity\Contracts\AuditLogger;
 use Modules\Integration\Domain\MessageStatus;
 use Modules\Integration\Persistence\Models\InboxRecord;
 use Modules\Integration\Persistence\Models\OutboxRecord;
+use Modules\Shared\Contracts\Metrics;
 
 /**
  * Phát lại message `failed`/`dead`. Giữ nguyên message_id (outbox) / external_event_id (inbox) để phía nhận
@@ -20,14 +21,20 @@ final class ReplayService
 {
     public const MAX_PER_CALL = 1000;
 
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly Metrics $metrics,
+    ) {}
 
     /**
      * @param  array{ids?: list<int>, status?: string, target?: string, since?: \DateTimeInterface|null}  $filter
      */
     public function replayOutbox(array $filter): int
     {
-        return $this->replay(OutboxRecord::query(), $filter, 'target', MessageStatus::Pending, 'outbox');
+        $count = $this->replay(OutboxRecord::query(), $filter, 'target', MessageStatus::Pending, 'outbox');
+        $this->metrics->increment('integration.event_replay', $count, 'outbox');
+
+        return $count;
     }
 
     /**
@@ -35,7 +42,10 @@ final class ReplayService
      */
     public function replayInbox(array $filter): int
     {
-        return $this->replay(InboxRecord::query(), $filter, 'system', MessageStatus::Received, 'inbox');
+        $count = $this->replay(InboxRecord::query(), $filter, 'system', MessageStatus::Received, 'inbox');
+        $this->metrics->increment('integration.event_replay', $count, 'inbox');
+
+        return $count;
     }
 
     /**

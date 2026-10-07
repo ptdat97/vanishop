@@ -1,4 +1,4 @@
-VaniShop 0.3.24
+VaniShop 0.3.25
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -998,6 +998,9 @@ class Modules\Returns\Events\ReturnResolved
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+interface Modules\Shared\Contracts\Metrics
+  increment(string $name, int $by = 1, string $key = 'all'): void
+  gauge(string $name, int $value, string $key = 'all'): void
 class Modules\Storefront\Contracts\Data\SlotView
   __construct(string $view, array $data = array (
 ))

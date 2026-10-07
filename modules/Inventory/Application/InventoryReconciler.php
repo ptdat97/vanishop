@@ -14,6 +14,7 @@ use Modules\Inventory\Persistence\Models\InventoryReconciliationLine;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Contracts\Metrics;
 use Throwable;
 
 /**
@@ -33,6 +34,7 @@ final class InventoryReconciler
         private readonly InventorySync $sync,
         private readonly VariantDirectory $variants,
         private readonly CurrentContext $context,
+        private readonly Metrics $metrics,
     ) {}
 
     /**
@@ -183,6 +185,8 @@ final class InventoryReconciler
                     'run_id' => $runId, 'source' => $source, 'discrepancies' => $discrepancies, 'repaired' => $repaired, 'skipped' => $skipped,
                 ]);
             }
+
+            $this->metrics->increment('inventory.reconciliation_mismatch', $discrepancies, $source);
 
             return ['id' => $runId, 'checked' => $checked, 'discrepancies' => $discrepancies, 'repaired' => $repaired, 'skipped' => $skipped];
         });

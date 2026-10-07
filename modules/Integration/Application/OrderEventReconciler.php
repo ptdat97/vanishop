@@ -18,6 +18,7 @@ use Modules\Payment\Contracts\Payments;
 use Modules\Returns\Contracts\Returns;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Contracts\Metrics;
 
 /**
  * Đối soát đơn ↔ event feed: bù event bị mất khi tiến trình chết giữa commit nghiệp vụ và lúc ghi feed
@@ -51,6 +52,7 @@ final class OrderEventReconciler
         private readonly Payments $payments,
         private readonly Returns $returns,
         private readonly ShipmentReader $shipments,
+        private readonly Metrics $metrics,
     ) {}
 
     /**
@@ -105,6 +107,9 @@ final class OrderEventReconciler
             if ($discrepancies > 0) {
                 Log::warning('Đối soát event đơn hàng có chênh lệch.', ['run_id' => $runId, 'discrepancies' => $discrepancies, 'repaired' => $repaired]);
             }
+
+            $this->metrics->increment('integration.event_reconciliation_mismatch', $discrepancies);
+            $this->metrics->increment('integration.event_rebuilt', $repaired);
 
             return ['id' => $runId, 'checked' => $checked, 'discrepancies' => $discrepancies, 'repaired' => $repaired];
         });

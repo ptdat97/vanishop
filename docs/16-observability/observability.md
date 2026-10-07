@@ -1,6 +1,6 @@
 # Observability
 
-> Trạng thái: **Designed**.
+> Trạng thái: **Partially Implemented** (Core 0.3.25). Đã có: correlation id ghi vào mọi dòng log; metric tối thiểu qua contract `Shared\Contracts\Metrics` (ghi vào Pulse), thẻ Pulse "Thương mại"; health check tổng hợp `GET /health`. Chưa có: tracing, cảnh báo tự động (§7), Prometheus/Grafana.
 
 ## 1. Mục tiêu
 
@@ -30,6 +30,38 @@ Request → Command → Domain Event → Outbox → Worker → Connector → Ext
 - Log tập trung lưu tại VN ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)), giữ 30 ngày nóng + 180 ngày lạnh.
 
 ## 4. Metrics
+
+### 4.1 Metric tối thiểu đã có (0.3.25)
+
+Module ghi qua `Modules\Shared\Contracts\Metrics` (`increment`, `gauge`), không phụ thuộc hệ giám sát. Mặc định `App\Observability\PulseMetrics` ghi vào Pulse, với kiểu `vani.<tên>` (counter dùng `Pulse::record`, gauge dùng `Pulse::set`). Đổi sang Prometheus/OTel chỉ cần đổi binding. Tên metric dưới đây là **công khai**, dashboard và cảnh báo dựa vào chúng. `key` là chiều phân nhóm ngắn, không chứa dữ liệu cá nhân hay id đơn.
+
+| Metric | Loại | Key | Nguồn |
+|---|---|---|---|
+| `orders.created` | counter | — | `OrderPlaced` |
+| `orders.failed` | counter | mã lỗi checkout | `CheckoutService::placeOrder` bị từ chối |
+| `orders.cancelled` | counter | nguồn huỷ | `OrderCancelled` |
+| `orders.lines_cancelled` | counter | — | `OrderLinesCancelled` |
+| `payments.captured` / `payments.failed` | counter | mã cổng | `PaymentCaptured` / `PaymentFailed` |
+| `payments.refunded` | counter | — | `RefundCompleted` |
+| `shipments.delivered` / `shipments.returned` / `shipments.failed_attempt` | counter | mã hãng | `ShipmentStatusChanged` |
+| `inventory.reservation_failed` | counter | `insufficient` / `no_stock_record` | `ReservationService::reserve` |
+| `integration.delivery_failed` | counter | target | `OutboxWorker` (lần gửi lỗi) |
+| `integration.event_replay` | counter | `outbox` / `inbox` | `ReplayService` |
+| `integration.event_reconciliation_mismatch` / `integration.event_rebuilt` | counter | — | `vani:integration:reconcile-orders` |
+| `payments.reconciliation_mismatch` | counter | — | `vani:payment:verify` |
+| `inventory.reconciliation_mismatch` | counter | `internal` / mã nguồn | `vani:inventory:verify` / `vani:inventory:reconcile` |
+| `payments.pending`, `orders.pending` | gauge | mã cổng / — | `vani:metrics:snapshot` (mỗi phút) |
+| `integration.outbox_backlog`, `integration.outbox_failed`, `integration.inbox_failed` | gauge | — | như trên |
+| `inventory.reconciliation_open`, `payments.reconciliation_open` | gauge | — | như trên (dòng đối soát chưa xử lý) |
+| `plugin.active_transactions` | gauge | plugin id | như trên (số việc dở dang theo `guardDisable`) |
+
+Xem tại Admin → Hệ thống → Pulse (quyền `system.monitor`), thẻ "Thương mại" ở đầu dashboard. Thẻ đỏ các counter lỗi khi > 0.
+
+### 4.2 Health check
+
+`GET /health` (throttle 60/phút) gồm các kiểm tra: `database`, `cache`, `required_extensions`, `integration_outbox` (tồn > 1.000 hoặc có lỗi/dead thì `degraded`), `scheduler` (nhịp do `vani:metrics:snapshot` ghi, quá 5 phút thì `degraded`). Kết quả tổng hợp: `ok` / `degraded` → HTTP 200, `fail` → 503 để LB rút node. Chi tiết từng kiểm tra chỉ trả khi header `X-Health-Token` khớp `VANI_HEALTH_TOKEN`. `/up` của Laravel vẫn giữ, chỉ kiểm tra ứng dụng boot được.
+
+### 4.3 Metric mục tiêu (chưa có)
 
 | Nhóm | Metric |
 |---|---|

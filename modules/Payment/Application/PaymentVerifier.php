@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
+use Modules\Shared\Contracts\Metrics;
 use Throwable;
 
 /**
@@ -25,6 +26,7 @@ final class PaymentVerifier
     public function __construct(
         private readonly GatewayRegistry $gateways,
         private readonly PaymentService $payments,
+        private readonly Metrics $metrics,
     ) {}
 
     /**
@@ -84,6 +86,8 @@ final class PaymentVerifier
         if ($issues > 0) {
             Log::warning('Đối soát thanh toán với cổng có chênh lệch — cần xử lý tay.', ['run_id' => $runId, 'issues' => $issues]);
         }
+
+        $this->metrics->increment('payments.reconciliation_mismatch', $issues);
 
         return ['id' => $runId, 'checked' => $checked, 'skipped' => $skipped, 'issues' => $issues];
     }

@@ -38,6 +38,7 @@ use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Application\IdempotencyStore;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Contracts\Metrics;
 use Modules\Shared\Domain\Phone\PhoneNumber;
 use Throwable;
 
@@ -61,6 +62,7 @@ final class CheckoutService implements Checkout
         private readonly Customers $customers,
         private readonly CurrentContext $currentContext,
         private readonly Addresses $addresses,
+        private readonly Metrics $metrics,
     ) {}
 
     public function quote(CheckoutRequest $request): CheckoutQuote
@@ -73,6 +75,17 @@ final class CheckoutService implements Checkout
     }
 
     public function placeOrder(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult
+    {
+        try {
+            return $this->place($request, $idempotencyKey);
+        } catch (CheckoutRejected $rejected) {
+            $this->metrics->increment('orders.failed', 1, $rejected->errorCode());
+
+            throw $rejected;
+        }
+    }
+
+    private function place(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult
     {
         $scope = 'checkout:'.$request->cart->publicId;
         $stored = $this->idempotency->claim($scope, $idempotencyKey, $request->fingerprint());

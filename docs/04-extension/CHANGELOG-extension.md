@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.25 — 2026-10-07
+
+Observability tối thiểu (roadmap Phase 6). Chỉ thêm.
+
+### Thêm
+- `Shared\Contracts\Metrics` (`increment`, `gauge`): service contract ghi metric. Plugin dùng được, với tên dạng `plugin.<id>.<tên>` để không đụng tên của Core. Implementation phải nuốt lỗi của hệ giám sát.
+- Danh mục metric công khai của Core: [observability §4.1](../16-observability/observability.md). `vani:metrics:snapshot` (mỗi phút), thẻ Pulse "Thương mại".
+- `GET /health` (Core route); `health` thêm vào prefix storefront giữ chỗ.
+
 ## 0.3.24 — 2026-10-07
 
 Khai báo dữ liệu plugin + gỡ an toàn (roadmap Phase 5). Thêm + đổi hành vi gỡ.

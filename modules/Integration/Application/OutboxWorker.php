@@ -15,6 +15,7 @@ use Modules\Integration\Contracts\Data\DeliveryResult;
 use Modules\Integration\Domain\MessageStatus;
 use Modules\Integration\Domain\RetryPolicy;
 use Modules\Integration\Persistence\Models\OutboxRecord;
+use Modules\Shared\Contracts\Metrics;
 use Throwable;
 
 /**
@@ -31,6 +32,7 @@ final class OutboxWorker
     public function __construct(
         private readonly MessageRouter $router,
         private readonly RetryPolicy $retry,
+        private readonly Metrics $metrics,
         private readonly int $processingTimeoutSeconds = 600,
     ) {}
 
@@ -115,6 +117,9 @@ final class OutboxWorker
                 $result = DeliveryResult::retryable($exception::class.': '.$exception->getMessage());
             }
 
+            if ($result->kind !== 'ok' && $result->kind !== 'stale') {
+                $this->metrics->increment('integration.delivery_failed', 1, (string) $record->target);
+            }
             $this->apply($record, $result);
         } finally {
             Context::add('correlation_id', $previous);
