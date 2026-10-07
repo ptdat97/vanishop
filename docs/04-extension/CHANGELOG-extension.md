@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.27 — 2026-10-07
+
+Service contract nhập dữ liệu + plugin dữ liệu demo. Chỉ thêm.
+
+### Thêm
+- `Catalog\Contracts\CatalogImporter::upsertProduct(ProductImport): ImportedProduct`, DTO `ProductImport`, `ImportedProduct`.
+- `Pricing\Contracts\PriceImporter::setBasePrices(array)`.
+- `Inventory\Contracts\StockImporter::setOnHand(array, ?string, string)`.
+- Plugin `vani.demo-catalog`: `vani:demo:catalog [--source] [--limit] [--dry-run]` nhập sản phẩm demo có ảnh thật (VaniCommerce/public/image/catalog/products), là implementation tham chiếu cho 3 contract trên (R26). Các contract này cũng dùng cho đồng bộ catalog/giá từ ERP sau này.
+
 ## 0.3.26 — 2026-10-07
 
 Hợp đồng Integration API (roadmap Phase 6). Không đổi API plugin.

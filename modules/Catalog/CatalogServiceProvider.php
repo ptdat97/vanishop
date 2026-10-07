@@ -13,10 +13,12 @@ use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
 use Modules\Catalog\Application\Media\ImageVariants;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
+use Modules\Catalog\Application\Products\ProductImporter;
 use Modules\Catalog\Application\Search\DatabaseSearchProvider;
 use Modules\Catalog\Application\Search\SearchManager;
 use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\SearchReindexCommand;
+use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Contracts\SearchProvider;
@@ -46,6 +48,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(ImageVariants::class, fn (): ImageVariants => new ImageVariants(ImageManager::usingDriver(extension_loaded('imagick') ? ImagickDriver::class : GdDriver::class)));
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
+        $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->singleton(DatabaseSearchProvider::class);

@@ -1,0 +1,17 @@
+{
+    "id": "vani.demo-catalog",
+    "name": {
+        "vi": "Dữ liệu demo: catalog có ảnh",
+        "en": "Demo catalog with photos"
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\DemoCatalog\\DemoCatalogServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.27",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}
