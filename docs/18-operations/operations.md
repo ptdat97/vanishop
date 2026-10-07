@@ -65,6 +65,13 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 - Invalidate theo event (sản phẩm, giá, tồn) — dùng version key thay vì xoá hàng loạt.
 - Trang public (home, PLP, PDP) cache ở CDN ngắn (60–300s) + `stale-while-revalidate`; phần giá/tồn động tải qua API nếu cần độ chính xác cao.
 
+### Ảnh thu nhỏ (`public/cache`, 0.3.28)
+
+- `Media::url($width)` trỏ tới `/cache/media/{ab}/{checksum}-w{width}.{ext}`. File có sẵn → web server trả tĩnh; chưa có → request rơi vào `index.php`, Laravel resize một lần (khoá file, ghi atomic) rồi lưu lại. Chỉ chiều rộng trong `vanishop.media.cache.widths` và nhỏ hơn ảnh gốc mới được tạo (URL tuỳ ý → 404).
+- Nginx: location ảnh tĩnh phải fallback về Laravel, ví dụ `location /cache/ { try_files $uri /index.php?$query_string; expires 1y; }` — KHÔNG dùng `try_files $uri =404` cho `/cache/`.
+- Định dạng: giữ như gốc; bật plugin `vani.media-webp` để xuất WebP. Đổi định dạng/chất lượng → `php artisan vani:media:cache --clear` (dọn file cũ; bản mới tự tạo dần) hoặc `--warm` để tạo trước sau deploy.
+- Nhiều app server: mỗi server có cache riêng (an toàn vì tên file theo checksum, nội dung không đổi); đặt CDN phía trước để giảm số lần resize.
+
 ## 6. Giám sát & cảnh báo
 
 Xem [observability](../16-observability/observability.md) (log, metric, tracing, ngưỡng cảnh báo). Thêm synthetic check mỗi 5 phút cho: trang chủ, PDP, thêm giỏ, checkout COD với sản phẩm sandbox.

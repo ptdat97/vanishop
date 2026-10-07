@@ -21,7 +21,7 @@ final readonly class PluginManifest
      */
     public const KINDS = [
         'payment_gateway', 'shipping_carrier', 'shipping_rate', 'tax', 'promotion', 'notification_channel', 'search',
-        'integration', 'marketing', 'analytics', 'customer_service', 'content', 'theme_extension', 'language', 'feature',
+        'integration', 'image_format', 'marketing', 'analytics', 'customer_service', 'content', 'theme_extension', 'language', 'feature',
     ];
 
     /**

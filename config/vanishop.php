@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.27',
+    'version' => '0.3.28',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -55,6 +55,15 @@ return [
     'media' => [
         // Disk lưu ảnh catalog: 'public' cho dev (cần php artisan storage:link), S3-compatible tại VN cho production.
         'disk' => env('VANI_MEDIA_DISK', 'public'),
+
+        // Ảnh thu nhỏ tạo khi có request đầu tiên, lưu tại public/cache (lần sau web server trả file tĩnh). Giữ định
+        // dạng gốc; plugin đóng góp ImageFormat (vd. vani.media-webp) để đổi định dạng đầu ra.
+        'cache' => [
+            'path' => env('VANI_MEDIA_CACHE_PATH', public_path('cache')),
+            // Chỉ các chiều rộng này được tạo (chặn request tuỳ ý kích thước làm đầy đĩa/CPU).
+            'widths' => [160, 400, 800, 1600],
+            'quality' => 80,
+        ],
     ],
 
     /*

@@ -60,7 +60,7 @@ final class ProductController
                     'status' => $style->status->value,
                     'brand' => $style->brand?->name,
                     'colors' => $style->colors->count(),
-                    'image_url' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first()?->media->url(),
+                    'image_url' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first()?->media->url(160),
                 ])->all(),
                 'links' => ['prev' => $styles->previousPageUrl(), 'next' => $styles->nextPageUrl()],
                 'total' => $styles->total(),
@@ -137,7 +137,7 @@ final class ProductController
                     'code' => $styleColor->color->code,
                     'name' => $styleColor->color->translate('name'),
                     'hex' => $styleColor->color->hex,
-                    'images' => $styleColor->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->url()])->all(),
+                    'images' => $styleColor->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->url(400)])->all(),
                 ])->all(),
                 'variants' => $style->variants
                     ->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $variant->styleColor->position, $variant->size->sort_order))

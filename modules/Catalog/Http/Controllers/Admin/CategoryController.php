@@ -67,7 +67,7 @@ final class CategoryController
                 'position' => $category->position,
                 'lock_version' => $category->lock_version,
                 'translations' => $category->translationsByLocale(),
-                'image_url' => $image?->media->url(),
+                'image_url' => $image?->media->url(400),
             ],
             'parents' => $this->parentOptions($tree->tree(), exclude: $category->id),
         ]);

@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.28 — 2026-10-07
+
+Cache ảnh thu nhỏ tại `public/cache` + extension point định dạng ảnh. Chỉ thêm (đổi hành vi URL ảnh, xem dưới).
+
+### Thêm
+- `Catalog\Contracts\ImageFormat` (tag `catalog.image-format`, kind manifest `image_format`): `supports(mime)`, `extension()`, `encoder(quality)` — chọn định dạng đầu ra của ảnh thu nhỏ. Không có plugin → giữ định dạng gốc.
+- Plugin `vani.media-webp`: JPEG (+ PNG, tuỳ chọn) → WebP; cấu hình `convert_png`, `quality`.
+- `vani:media:cache --clear|--warm`.
+
+### Đổi hành vi
+- `Media::url($width)` trả `/cache/media/{ab}/{checksum}-w{width}.{ext}` (tạo khi có request đầu tiên, ghi vào `vanishop.media.cache.path`), không còn tạo sẵn WebP 400/800/1600 trên disk media lúc tải ảnh lên. Chiều rộng cấu hình ở `vanishop.media.cache.widths` (mặc định 160/400/800/1600). Muốn WebP như trước: bật `vani.media-webp`.
+
 ## 0.3.27 — 2026-10-07
 
 Service contract nhập dữ liệu + plugin dữ liệu demo. Chỉ thêm.

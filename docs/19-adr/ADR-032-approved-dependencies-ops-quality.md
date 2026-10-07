@@ -11,7 +11,7 @@
 | `league/flysystem-aws-s3-v3` | runtime | Ảnh catalog trên S3-compatible tại VN (`VANI_MEDIA_DISK=s3`, `AWS_ENDPOINT`); disk `s3_backup` riêng cho backup |
 | `spatie/laravel-backup` | runtime | Backup DB + `storage/app` hằng đêm (02:00), dọn bản cũ, `backup:monitor`; đích `VANI_BACKUP_DISKS` (mặc định `local`). Không backup mã nguồn (triển khai qua CI) |
 | `laravel/pulse` | runtime | Metric tự host (request/query chậm, queue, exception) — dữ liệu ở lại VN. Dashboard `/{VANI_ADMIN_PATH}/system/pulse`, quyền `system.monitor` |
-| `intervention/image` | runtime | Bản WebP 400/800/1600 px tạo khi tải ảnh (`ImageVariants`), `Media::url($width)`; ảnh gốc giữ nguyên; lỗi xử lý → dùng gốc |
+| `intervention/image` | runtime | Ảnh thu nhỏ theo chiều rộng tạo khi có request đầu tiên, cache tại `public/cache` (`ImageCache`, `Media::url($width)`, 0.3.28); định dạng gốc hoặc WebP qua plugin `vani.media-webp` (`ImageFormat`); ảnh gốc giữ nguyên; lỗi xử lý → dùng gốc |
 | `larastan/larastan` | dev | Phân tích tĩnh level 5 + baseline (217 lỗi cũ), CI chặn lỗi mới; giảm dần baseline |
 | `roave/security-advisories` | dev | Chặn cài gói có lỗ hổng đã công bố; CI thêm `composer audit` |
 | `rector/rector`, `driftingly/rector-laravel` | dev | Chạy có chủ đích (`composer rector`), không tự động: lần chạy đầu đề xuất đổi ~500 file (hằng có kiểu, first-class callable…) — áp theo đợt, có review, vì đổi chữ ký public API |

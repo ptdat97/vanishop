@@ -1,0 +1,17 @@
+{
+    "id": "vani.media-webp",
+    "name": {
+        "vi": "Ảnh WebP",
+        "en": "WebP images"
+    },
+    "version": "1.0.0",
+    "kind": "image_format",
+    "provider": "Plugin\\MediaWebp\\MediaWebpServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.28",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

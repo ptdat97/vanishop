@@ -114,6 +114,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.cms` (trang `/trang/*`, tin tức `/tin-tuc`, Markdown, hẹn giờ, xem trước, SEO, link header/footer, khối "Bài viết mới", sitemap, Storefront API) | **Implemented** (Core 0.3.14) — thay cho `vani.blog`; URL cố định; WYSIWYG hoãn |
 | `vani.lookbook` | P2 |
 | `vani.demo-catalog` (dữ liệu demo: sản phẩm có ảnh thật từ VaniCommerce, tham chiếu CatalogImporter/PriceImporter/StockImporter) | **Implemented** (Core 0.3.27) |
+| `vani.media-webp` (ảnh thu nhỏ trong `public/cache` xuất WebP; `ImageFormat`) | **Implemented** (Core 0.3.28) |
 
 ## 4. Quy tắc
 
