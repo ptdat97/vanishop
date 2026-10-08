@@ -16,7 +16,7 @@ final class StorefrontPrefixes
     /** Đoạn đầu của route Core + đường dẫn hệ thống. */
     public const RESERVED = [
         'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'tra-cuu-don', 'tai-khoan',
-        'p', 'api', 'storage', 'build', 'vendor', 'up', 'health', 'robots.txt', 'sitemap.xml', 'favicon.ico', 'livewire', 'sanctum',
+        'p', 'api', 'storage', 'build', 'vendor', 'up', 'health', 'robots.txt', 'sitemap.xml', 'favicon.ico', 'livewire', 'sanctum', 'cache', '_vani',
     ];
 
     /** @var array<string, string> prefix => plugin id */

@@ -21,6 +21,7 @@ use Modules\Extension\Application\Storefront\StorefrontPrefixes;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Shared\Http\SessionlessRoutes;
 use Modules\Shared\Support\AdminPath;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -263,7 +264,11 @@ abstract class PluginServiceProvider extends ServiceProvider
      * `$prefix` (0.3.14): URL đẹp cho nội dung (vd. `tin-tuc` → /tin-tuc/…); không được trùng route Core hay plugin
      * khác (ném lỗi lúc boot). Gọi nhiều lần với prefix khác nhau được; tên route vẫn là storefront.p.{slug}.…
      */
-    protected function storefrontPages(string $file, ?string $prefix = null): void
+    /**
+     * @param  bool  $cacheable  trang công khai (chỉ GET, không phụ thuộc khách) → chạy không phiên, CDN cache được
+     *                           (`vani.page-cache`, 0.3.34); link có chữ ký (xem trước) tự động không cache
+     */
+    protected function storefrontPages(string $file, ?string $prefix = null, bool $cacheable = false): void
     {
         if ($prefix !== null) {
             $this->app->make(StorefrontPrefixes::class)->claim($prefix, $this->pluginId());
@@ -275,7 +280,8 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.plugin-active:'.$this->pluginId()])
+        Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? ['vani.page-cache'] : [])])
+            ->withoutMiddleware($cacheable ? SessionlessRoutes::MIDDLEWARE : [])
             ->prefix($prefix ?? "p/{$slug}")
             ->name("storefront.p.{$slug}.")
             ->group($file);

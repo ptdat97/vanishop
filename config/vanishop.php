@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.33',
+    'version' => '0.3.34',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -36,7 +36,7 @@ return [
     */
     'reserved_paths' => [
         'api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico',
-        'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'p', 'tra-cuu-don',
+        'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'p', 'tra-cuu-don', 'cache', '_vani',
     ],
 
     /*
@@ -45,6 +45,13 @@ return [
     'storefront' => [
         'themes_path' => $relativeToBase(env('VANI_THEMES_PATH', 'custom/theme')),
         'theme' => env('VANI_THEME', 'vani-base'),
+        // Trang công khai (trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm, CMS) render không phiên, CDN cache được.
+        // Phần riêng của khách (giỏ, đăng nhập, thông báo) lấy qua GET /_vani/phien (không cache).
+        'page_cache' => [
+            'enabled' => (bool) env('VANI_PAGE_CACHE', true),
+            's_maxage' => (int) env('VANI_PAGE_CACHE_TTL', 300),
+            'stale_while_revalidate' => 600,
+        ],
     ],
 
     // Proxy tin cậy (load balancer/CDN đứng trước app): IP/CIDR phân tách dấu phẩy, hoặc '*' khi app chỉ nhận

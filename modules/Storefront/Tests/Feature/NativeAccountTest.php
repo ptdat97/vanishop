@@ -24,7 +24,7 @@ beforeEach(function () {
     ];
 });
 
-it('trang tài khoản cần đăng nhập; đăng nhập OTP → gộp giỏ vãng lai, header đổi thành Tài khoản', function () {
+it('trang tài khoản cần đăng nhập; đăng nhập OTP → gộp giỏ vãng lai, phiên báo Tài khoản + số món', function () {
     $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2]);
 
@@ -32,7 +32,8 @@ it('trang tài khoản cần đăng nhập; đăng nhập OTP → gộp giỏ v�
 
     $this->get('/tai-khoan')->assertOk()->assertSee('+84912345678')->assertSee('Đăng xuất');
     $this->get('/gio-hang')->assertSee('600.000 ₫');
-    $this->get('/')->assertSee('Tài khoản');
+    // Trang chủ cache được (giống nhau với mọi khách); nhãn header lấy qua /_vani/phien.
+    $this->getJson('/_vani/phien')->assertJsonPath('signed_in', true)->assertJsonPath('account.label', 'Tài khoản')->assertJsonPath('cart.count', 2);
 });
 
 it('mã OTP sai → lỗi form, chưa đăng nhập', function () {

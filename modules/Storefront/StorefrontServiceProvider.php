@@ -21,6 +21,7 @@ use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Contracts\StorefrontBlock;
+use Modules\Storefront\Http\Middleware\PublicPageCache;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -52,6 +53,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $navigation->add('storefront', 'Giao diện', 'admin.storefront.home', 'storefront.manage', 600);
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
+        $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 

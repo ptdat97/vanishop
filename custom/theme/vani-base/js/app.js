@@ -70,3 +70,38 @@ document.querySelectorAll('form[data-confirm]').forEach((form) => {
         }
     });
 });
+
+// Trang cache được (không phiên, storefront §5): lấy phần riêng của khách — đăng nhập, số món trong giỏ, thông báo/lỗi
+// của lần gửi trước. Không có JS: trang vẫn mua được, chỉ không hiện các chi tiết này.
+const sessionUrl = document.documentElement.dataset.vaniSession;
+if (sessionUrl) {
+    fetch(sessionUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((session) => {
+            if (!session) return;
+            const account = document.querySelector('[data-vani-account]');
+            if (account) {
+                account.textContent = session.account.label;
+                account.setAttribute('href', session.account.url);
+            }
+            const count = document.querySelector('[data-vani-cart-count]');
+            if (count && session.cart.count > 0) {
+                count.textContent = String(session.cart.count);
+                count.hidden = false;
+            }
+            const status = document.querySelector('[data-vani-flash="status"]');
+            if (status && session.flash.status) {
+                status.textContent = session.flash.status;
+                status.hidden = false;
+            }
+            Object.entries(session.flash.errors || {}).forEach(([field, message]) => {
+                const target = document.querySelector(`[data-vani-error-for="${field}"]`) || document.querySelector('[data-vani-error-for="business"]');
+                if (target && message) {
+                    target.textContent = message;
+                    target.hidden = false;
+                }
+            });
+        })
+        .catch(() => {});
+}
+

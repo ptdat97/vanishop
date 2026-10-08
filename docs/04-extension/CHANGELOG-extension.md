@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.34 — 2026-10-08
+
+Cache CDN cho trang công khai của storefront (roadmap Phase 7, [storefront §5](../14-storefront/storefront.md)).
+
+### Thêm
+- `PluginServiceProvider::storefrontPages($file, $prefix, bool $cacheable = false)`: `true` → trang của plugin chạy không phiên, CDN cache được (middleware `vani.page-cache`). `vani.cms` 1.2.0 dùng cho `/trang`, `/tin-tuc`.
+- `Shared\Http\SessionlessRoutes::MIDDLEWARE`; endpoint `GET /_vani/phien`; tiền tố giữ chỗ `cache`, `_vani`.
+
+### Đổi hành vi
+- Trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm không còn phiên: view/slot trên các trang này **không** đọc được phiên, `old()`, khách đăng nhập (`request()->attributes->get('customer')` luôn null). Plugin có slot cá nhân hoá trên các trang này phải chuyển sang tải bằng JS/API.
+- `POST /gio-hang` miễn CSRF (cookie phiên SameSite=Lax). Livewire không tự chèn script vào trang HTML.
+
 ## 0.3.33 — 2026-10-08
 
 Capability giữa plugin (roadmap Phase 5). Chỉ thêm.

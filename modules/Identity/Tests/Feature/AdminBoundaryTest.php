@@ -66,7 +66,8 @@ it('Admin dùng cookie phiên riêng giới hạn theo đường dẫn Admin', f
         ->and($adminSession['vanishop_admin_session']->getPath())->toBe('/admin')
         ->and($adminSession['XSRF-TOKEN']->getPath())->toBe('/admin');
 
-    $storefront = $this->get('/');
+    // Trang có phiên của storefront (trang công khai như trang chủ chạy không phiên — storefront §5).
+    $storefront = $this->get('/gio-hang');
     $storefrontCookies = collect($storefront->headers->getCookies())->keyBy(fn ($cookie) => $cookie->getName());
 
     expect($storefrontCookies)->not->toHaveKey('vanishop_admin_session')

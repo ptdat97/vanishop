@@ -11,19 +11,25 @@ use Modules\Storefront\Http\Controllers\Web\OrderController;
 use Modules\Storefront\Http\Controllers\Web\ProductController;
 use Modules\Storefront\Http\Controllers\Web\ReturnController;
 use Modules\Storefront\Http\Controllers\Web\SeoController;
+use Modules\Storefront\Http\Controllers\Web\SessionController;
 use Modules\Storefront\Http\Controllers\Web\TrackOrderController;
+use Modules\Storefront\Http\Middleware\PublicPageCache;
 
 /*
 | Native storefront (SSR, ADR-025). Đoạn đầu đường dẫn nằm trong vanishop.reserved_paths (Admin không được trùng).
 */
 
 Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.theme'])->name('storefront.')->group(function (): void {
-    Route::get('/', HomeController::class)->name('home');
-    Route::get('/danh-muc/{slug}', [CatalogController::class, 'category'])->name('category');
-    Route::get('/thuong-hieu', [CatalogController::class, 'brands'])->name('brands');
-    Route::get('/thuong-hieu/{slug}', [CatalogController::class, 'brand'])->name('brand');
-    Route::get('/tim-kiem', [CatalogController::class, 'search'])->name('search');
-    Route::get('/san-pham/{slug}', [ProductController::class, 'show'])->name('product');
+    // Trang công khai: không phiên, CDN cache được (storefront §5); phần riêng của khách qua GET /_vani/phien.
+    Route::withoutMiddleware(PublicPageCache::SESSIONLESS)->middleware('vani.page-cache')->group(function (): void {
+        Route::get('/', HomeController::class)->name('home');
+        Route::get('/danh-muc/{slug}', [CatalogController::class, 'category'])->name('category');
+        Route::get('/thuong-hieu', [CatalogController::class, 'brands'])->name('brands');
+        Route::get('/thuong-hieu/{slug}', [CatalogController::class, 'brand'])->name('brand');
+        Route::get('/tim-kiem', [CatalogController::class, 'search'])->name('search');
+        Route::get('/san-pham/{slug}', [ProductController::class, 'show'])->name('product');
+    });
+    Route::get('/_vani/phien', SessionController::class)->name('session');
 
     Route::get('/gio-hang', [CartController::class, 'show'])->name('cart');
     Route::middleware('throttle:vani-cart-create')->post('/gio-hang', [CartController::class, 'add'])->name('cart.add');

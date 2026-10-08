@@ -10,7 +10,8 @@
 > | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
 > | Tài khoản `/tai-khoan` (đăng nhập OTP, tổng quan, đơn hàng + huỷ, địa chỉ; giỏ vãng lai gộp khi đăng nhập), tra cứu đơn `/tra-cuu-don`, `robots.txt`, `sitemap.xml` | Implemented (2026-10-02) |
 > | Đổi/trả trên native (2026-10-08): partial `order-returns` trên `/tai-khoan/don-hang/{id}` và `/don-hang/{id}` (token đơn trong phiên) — danh sách yêu cầu + huỷ khi chờ duyệt, form chọn số lượng, trả hoàn tiền hoặc đổi size/màu cùng mẫu (size hết hàng bị khoá), lý do, ghi chú; `POST /don-hang/{id}/doi-tra`, `POST /don-hang/{id}/doi-tra/{return}/huy`; không cần JS. Đổi mẫu khác: qua CSKH | Implemented |
-> | Page builder cho trang khác ngoài trang chủ; hreflang; header cache CDN (cần tách phiên khỏi trang công khai); giỏ/giá thành viên tải qua API | Designed |
+> | Cache CDN trang công khai (0.3.34, §5): không phiên, `Cache-Control: public, s-maxage`, phần riêng của khách qua `/_vani/phien` | Implemented |
+> | Page builder cho trang khác ngoài trang chủ; hreflang; giỏ/giá thành viên tải qua API; purge CDN theo event | Designed |
 > | Địa chỉ checkout | Có `vani.provinces-vn`: chọn tỉnh/phường (JS tải phường theo tỉnh; không JS: nút tải lại). Không có danh mục: nhập tự do | Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc
@@ -101,7 +102,12 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 
 ## 5. Hiệu năng và SEO
 
-- SSR cho trang public, cache CDN 60–300s + `stale-while-revalidate`; phần cá nhân hoá (giỏ, giá thành viên) tải qua API sau khi trang hiện.
+- **Cache trang công khai (Implemented, 0.3.34):** trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm và trang CMS (`/trang/…`, `/tin-tuc/…`) dùng middleware `vani.page-cache`. Các trang này chạy **không phiên** (bỏ `StartSession`, `ShareErrorsFromSession`, CSRF, nhận diện khách — `Shared\Http\SessionlessRoutes`), nên HTML giống nhau với mọi khách, không `Set-Cookie` và không ghi phiên mỗi lượt xem. Response: `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600`, `Vary: Accept-Encoding, X-Vani-Locale` (`VANI_PAGE_CACHE`, `VANI_PAGE_CACHE_TTL`). Không cache: link có chữ ký (xem trước CMS), phản hồi khác 200.
+  - **Phần riêng của khách** (nhãn Đăng nhập/Tài khoản, số món trong giỏ, thông báo flash, lỗi form của lần gửi trước) lấy bằng JS từ `GET /_vani/phien` (`private, no-store`, flash đọc xong là hết) và điền vào `[data-vani-account]`, `[data-vani-cart-count]`, `[data-vani-flash]`, `[data-vani-error-for]`. Không JS: trang vẫn mua được, header hiện như khách vãng lai.
+  - Form "thêm vào giỏ" trên trang sản phẩm không có token CSRF (HTML dùng chung); `POST /gio-hang` được miễn CSRF — an toàn vì cookie phiên `SameSite=Lax` (form chéo trang không mang phiên theo).
+  - **Quy tắc cho theme/plugin:** view và slot trên trang công khai không được đọc phiên, `old()`, `@csrf`, khách đăng nhập hay dữ liệu riêng của khách. Cá nhân hoá (giá thành viên ở Phase 8, gợi ý theo khách) tải qua API sau khi trang hiện. Plugin bật cache cho trang của mình bằng `storefrontPages($file, prefix: …, cacheable: true)`.
+  - Livewire chỉ dùng cho Pulse, tắt tự chèn script (`config/livewire.php`), vì script đó mang token CSRF theo phiên.
+  - Cập nhật nội dung (giá, tồn, sản phẩm) hiện ra trên CDN sau tối đa `s-maxage` (mặc định 5 phút). Purge chủ động theo event: chưa có.
 - Cache ứng dụng: `style:{id}:v{version}`, `brand:{id}:v{version}`; invalidate theo event (`ProductUpdated`, `PriceChanged`, `AvailabilityChanged`).
 - URL: một website ([store-and-brand §4](../12-store/store-and-brand.md)): `/san-pham/{slug}`, `/danh-muc/{slug}`, `/thuong-hieu/{slug}`…
 - SEO: một canonical cho mỗi sản phẩm (không lặp theo brand), một sitemap (chia file khi lớn, gồm trang brand), schema.org `Product`/`Offer` có `brand`, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.

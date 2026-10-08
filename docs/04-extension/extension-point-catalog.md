@@ -148,7 +148,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
 | `storefrontRoutes()` | Storefront API của plugin dưới `/api/storefront/v1/x/{slug}/…` (không ghi đè route Core) — Implemented (0.3.3) |
 | `accountPage(key, label, route)` | Mục menu tài khoản khách native trỏ tới trang của plugin — Implemented (0.3.9) |
-| `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3). `prefix:` (0.3.14): URL đẹp `/{prefix}/…` (vd. `/tin-tuc`), không trùng route Core (`StorefrontPrefixes::RESERVED`, arch test) hay plugin khác — tham chiếu `vani.cms` |
+| `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3). `prefix:` (0.3.14): URL đẹp `/{prefix}/…` (vd. `/tin-tuc`), không trùng route Core (`StorefrontPrefixes::RESERVED`, arch test) hay plugin khác — tham chiếu `vani.cms`. `cacheable: true` (0.3.34): trang không phiên, CDN cache được ([storefront §5](../14-storefront/storefront.md)) |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
 | `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |

@@ -50,8 +50,8 @@
             <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price']])</p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
 
+            {{-- Trang cache được (không phiên): không có @csrf/old(); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
             <form action="{{ route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
-                @csrf
                 @foreach ($product['colors'] as $color)
                     @php($variants = array_values(array_filter($product['variants'], fn ($variant) => $variant['color_code'] === $color['code'])))
                     @continue($variants === [])
@@ -60,7 +60,7 @@
                         <div class="flex flex-wrap gap-2">
                             @foreach ($variants as $variant)
                                 <label @class(['cursor-pointer rounded border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:font-semibold', 'opacity-50' => ! $variant['available'] || $variant['price'] === null])>
-                                    <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $variant['price'] === null) @checked(old('variant_id') == $variant['id'])>
+                                    <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $variant['price'] === null)>
                                     {{ $variant['size_code'] }}
                                     @if ($variant['low_stock'])<span class="text-xs text-accent">sắp hết</span>@endif
                                     @unless ($variant['available'])<span class="sr-only">(hết hàng)</span>@endunless
@@ -69,11 +69,11 @@
                         </div>
                     </fieldset>
                 @endforeach
-                @error('variant_id')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" hidden></p>
 
                 <div class="flex items-center gap-3">
                     <label for="quantity" class="text-sm">Số lượng</label>
-                    <input id="quantity" name="quantity" type="number" min="1" max="20" value="{{ old('quantity', 1) }}" class="w-20 rounded border border-slate-300 px-2 py-1.5">
+                    <input id="quantity" name="quantity" type="number" min="1" max="20" value="1" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
                 <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || $product['price'] === null)>

@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(AssignCorrelationId::class);
         // Phải chạy trước StartSession để Admin dùng cookie phiên riêng (ADR-020).
         $middleware->web(prepend: [ConfigureAdminSession::class]);
+        // Thêm vào giỏ từ trang sản phẩm đã cache (không có token CSRF trong HTML, storefront §5). An toàn: cookie phiên
+        // SameSite=Lax nên form chéo trang không mang phiên theo — không đụng được giỏ của nạn nhân.
+        $middleware->validateCsrfTokens(except: ['gio-hang']);
         $middleware->alias(['vani.inertia' => HandleInertiaRequests::class]);
         $middleware->group('vani.admin', [AdminGate::class, HandleInertiaRequests::class]);
         // CurrentContext (actor, locale) phải có TRƯỚC route model binding.
