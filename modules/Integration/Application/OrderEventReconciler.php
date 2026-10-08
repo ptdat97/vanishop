@@ -156,7 +156,7 @@ final class OrderEventReconciler
                 'data' => fn (): array => $this->payloads->returnCreated($order, $return->publicId, $return->number, $return->source)];
             if ($return->status === 'resolved') {
                 $expected[] = ['type' => 'return.resolved', 'match' => ['return_id' => $return->publicId],
-                    'data' => fn (): array => $this->payloads->returnResolved($order, $return->publicId, $return->number, (int) $return->refundedAmount)];
+                    'data' => fn (): array => $this->payloads->returnResolved($order, $return->publicId, $return->number, (int) $return->refundedAmount, $return->replacementOrderId === null ? null : $this->orders->find($return->replacementOrderId)?->number)];
             }
         }
 

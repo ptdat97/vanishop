@@ -26,5 +26,8 @@ final readonly class ReturnView
         public array $lines,
         public array $events,
         public int $lockVersion,
+        /** refund | exchange (0.3.32) */
+        public string $resolution = 'refund',
+        public ?int $replacementOrderId = null,
     ) {}
 }

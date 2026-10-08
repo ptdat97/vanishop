@@ -42,6 +42,8 @@ final class CanonicalPayloads
             'number' => $order->number,
             'public_id' => $order->publicId,
             'source' => $order->source,
+            // Đơn thay thế của đổi hàng (source = exchange, 0.3.32): số đơn gốc; đơn thường là null.
+            'parent_order_number' => $order->parentOrderId === null ? null : $this->orders->find($order->parentOrderId)?->number,
             'customer_id' => $order->customerId,
             'status' => $order->status->value,
             'payment_status' => $order->paymentStatus,

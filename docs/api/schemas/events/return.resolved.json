@@ -38,6 +38,21 @@
             "type": "boolean",
             "const": true,
             "description": "Có khi event được bù bởi đối soát (vani:integration:reconcile-orders)."
+        },
+        "resolution": {
+            "type": "string",
+            "enum": [
+                "refund",
+                "exchange"
+            ],
+            "description": "0.3.32: exchange = đổi hàng (có đơn thay thế); refunded_amount là phần hoàn thừa (thường 0)."
+        },
+        "replacement_order_number": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "Số đơn thay thế khi đổi hàng (event order.created riêng, source = exchange)."
         }
     }
 }

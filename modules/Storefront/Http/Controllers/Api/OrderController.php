@@ -49,6 +49,8 @@ final class OrderController
             'lines' => ['required', 'array', 'min:1', 'max:50'],
             'lines.*.order_line_id' => ['required', 'integer'],
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+            // Đổi hàng (0.3.32): variant thay thế cho từng dòng (phải có cho mọi dòng); bỏ trống = trả hàng hoàn tiền.
+            'lines.*.exchange_variant_id' => ['nullable', 'integer'],
             'reason_code' => ['required', 'string', Rule::in((array) config('vanishop.returns.reasons'))],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
@@ -56,10 +58,14 @@ final class OrderController
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
 
         $lines = [];
+        $exchanges = [];
         foreach ($data['lines'] as $line) {
             $lines[(int) $line['order_line_id']] = ($lines[(int) $line['order_line_id']] ?? 0) + (int) $line['quantity'];
+            if (isset($line['exchange_variant_id'])) {
+                $exchanges[(int) $line['order_line_id']] = (int) $line['exchange_variant_id'];
+            }
         }
-        $returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer');
+        $returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer', $exchanges);
 
         return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))], 201);
     }

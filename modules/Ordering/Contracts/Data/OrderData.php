@@ -37,5 +37,7 @@ final readonly class OrderData
          * @var array{code?: ?string, label?: ?string, source?: ?string, fee?: int}
          */
         public array $shippingMethod = [],
+        /** Đơn gốc nếu đây là đơn thay thế (đổi hàng, 0.3.32). */
+        public ?int $parentOrderId = null,
     ) {}
 }

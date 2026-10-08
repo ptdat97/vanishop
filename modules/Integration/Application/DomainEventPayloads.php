@@ -62,9 +62,12 @@ final class DomainEventPayloads
     /**
      * @return array<string, mixed>
      */
-    public function returnResolved(OrderData $order, string $returnId, ?string $number, int $refundedAmount): array
+    public function returnResolved(OrderData $order, string $returnId, ?string $number, int $refundedAmount, ?string $replacementOrderNumber = null): array
     {
-        return ['order_number' => $order->number, 'return_id' => $returnId, 'return_number' => $number, 'refunded_amount' => $refundedAmount, 'currency' => $order->currencyCode];
+        return [
+            'order_number' => $order->number, 'return_id' => $returnId, 'return_number' => $number, 'refunded_amount' => $refundedAmount, 'currency' => $order->currencyCode,
+            'resolution' => $replacementOrderNumber === null ? 'refund' : 'exchange', 'replacement_order_number' => $replacementOrderNumber,
+        ];
     }
 
     /**

@@ -13,11 +13,13 @@ use Modules\Checkout\Application\Calculators\SubtotalCalculator;
 use Modules\Checkout\Application\Calculators\TaxStage;
 use Modules\Checkout\Application\CheckoutService;
 use Modules\Checkout\Application\Listeners\UndoCancelledOrder;
+use Modules\Checkout\Application\ReplacementOrderService;
 use Modules\Checkout\Application\Tax\ConfiguredTaxCalculator;
 use Modules\Checkout\Application\Tax\NoTax;
 use Modules\Checkout\Application\Validators\CoreCheckoutValidator;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutValidator;
+use Modules\Checkout\Contracts\ReplacementOrders;
 use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Contracts\TaxCalculator;
@@ -39,6 +41,7 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Checkout::class, CheckoutService::class);
+        $this->app->bind(ReplacementOrders::class, ReplacementOrderService::class);
         $this->app->bind(ShippingAddresses::class, Addresses::class);
 
         $this->app->make(Extensions::class)->tag([SubtotalCalculator::class, PromotionCalculator::class, ShippingCalculator::class, TaxStage::class, GuardCalculator::class], TotalsCalculator::TAG);

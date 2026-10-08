@@ -19,5 +19,7 @@ final readonly class OrderLineData
         public ?string $brandName = null,
         /** @var array<string, array<string, scalar|null>> */
         public array $options = [],
+        /** Đơn giá lúc đặt (snapshot) — đổi hàng cùng mẫu giữ đúng giá này (0.3.32). */
+        public int $unitAmount = 0,
     ) {}
 }

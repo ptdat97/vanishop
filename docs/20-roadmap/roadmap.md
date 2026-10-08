@@ -150,7 +150,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | `refund ≤ captured`, callback trùng ghi nhận một lần | ✅ | `RefundRules`, unique `(gateway, transaction)`; concurrency test IPN |
 | `return quantity ≤ fulfilled`, `refund ≤ captured`, 4 yêu cầu trả cùng lúc → 1 | ✅ | `ReturnConcurrencyTest`; khoá tình trạng lạ bị từ chối |
 | Phân biệt restock (`sellable`/`damaged`) | ✅ | Nhập kho chỉ khi `sellable` |
-| Đổi hàng (exchange) | ⬜ | Đơn thay thế liên kết `parent_order_id`, giá trị bù trừ với tiền hoàn |
+| Đổi hàng (exchange) | ✅ | 0.3.32: tạo đơn thay thế sau khi nhận hàng trả (`source = exchange`, `parent_order_id`), cùng mẫu không tính chênh, khác mẫu bù trừ theo giá hiện tại (khách bù COD / hoàn phần thừa), phí giao 0, giữ hàng + vận đơn như đơn thường; `ReplacementOrders` (Checkout); bất biến vòng đời có đường đi đổi hàng ([order §7.1](../09-order/order.md)) |
 | Tính lại khuyến mãi theo ngưỡng sau huỷ một phần | ✅ | 0.3.31: theo nguyên nhân — lỗi shop giữ ưu đãi; khách bớt hàng → `recheck` (rule `CartContentRule`) và thu hồi phần không còn đủ điều kiện, trần = tiền phần huỷ (tổng đơn không tăng); tiền hoàn/COD theo phần ròng; lượt dùng/ngân sách khớp giảm giá còn lại; bất biến I6 ([order §2.1](../09-order/order.md)) |
 
 Đối chiếu với prompt roadmap:
@@ -227,7 +227,7 @@ Không làm trong mục tiêu hiện tại: một cửa hàng, **một người 
 5. Phase 5: trạng thái `draining` + xác nhận `--force`. ✅ 2026-10-07 (Core 0.3.23)
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
 7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
-8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31). Còn: đổi hàng (đơn thay thế).
+8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31); đổi hàng ✅ 2026-10-08 (Core 0.3.32). Phase 2 xong.
 9. Phase 5, 7, 8 còn: capability theo tag giữa plugin; gửi yêu cầu đổi/trả trên storefront native; cache CDN; phân khúc khách, campaign.
 
 Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.

@@ -36,7 +36,7 @@ require_once __DIR__.'/../../../modules/Checkout/Tests/Feature/CheckoutTestHelpe
 beforeEach(function () {
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     FakeOnlineGateway::$refunds = [];
-    ['s' => $this->s, 'location' => $this->location] = C::store();
+    ['s' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();
     $this->api = '/api/storefront/v1';
 
     $this->place = function (int $quantity = 1, string $method = 'cod') {
@@ -266,5 +266,29 @@ it('khách bớt hàng đơn đã thanh toán online, phần còn lại dưới 
         ->and($order->fresh()->total_amount)->toBe(300_000)
         ->and((int) DB::table('promotion_usages')->where('order_id', $order->id)->value('discount_amount'))->toBe(0);
     ($this->ship)(Shipment::query()->where('status', '!=', 'cancelled')->sole(), ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
+    ($this->assertInvariants)();
+});
+
+it('đổi hàng cùng mẫu: hàng trả nhập kho, đơn thay thế 0đ giữ + trừ đúng hàng mới khi giao, không phát sinh thu/hoàn', function () {
+    [$order, $headers] = ($this->place)(1);
+    ($this->ship)(Shipment::query()->sole(), ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
+    $this->postJson("{$this->api}/orders/{$order->public_id}/returns", [
+        'lines' => [['order_line_id' => $order->lines()->value('id'), 'quantity' => 1, 'exchange_variant_id' => $this->m->id]], 'reason_code' => 'wrong_size',
+    ], $headers)->assertCreated();
+    $return = ReturnRequest::query()->sole();
+
+    $this->actingAs(T::staff(['admin.access', 'returns.view', 'returns.manage', 'returns.refund']), 'staff');
+    $this->post("/admin/returns/returns/{$return->id}/transition", ['to' => 'approved', 'lock_version' => $return->lock_version])->assertSessionHasNoErrors();
+    $this->post("/admin/returns/returns/{$return->id}/receive", ['conditions' => [$return->lines()->value('id') => 'sellable']])->assertSessionHasNoErrors();
+    $this->post("/admin/returns/returns/{$return->id}/resolve", [])->assertSessionHasNoErrors();
+
+    $replacement = Order::query()->where('parent_order_id', $order->id)->sole();
+    ($this->ship)(Shipment::query()->where('order_id', $replacement->id)->where('status', '!=', 'cancelled')->sole(), ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
+
+    $mOnHand = (int) DB::table('stock_levels')->where('variant_id', $this->m->id)->where('location_id', $this->location->id)->value('on_hand');
+    expect(($this->onHand)())->toBe(10) // S: bán 1, nhận lại 1
+        ->and($mOnHand)->toBe(9)
+        ->and(DB::table('refunds')->count())->toBe(0)
+        ->and($replacement->fresh()->total_amount)->toBe(0);
     ($this->assertInvariants)();
 });

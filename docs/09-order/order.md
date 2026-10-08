@@ -117,7 +117,7 @@ Một giỏ chứa sản phẩm của nhiều brand tạo **một đơn** (một
 
 > **Implemented (slice 9b)** — module `modules/Returns`: `return_requests` (số `<số đơn>-R<n>`, lý do, tiền hoàn tính được, tiền đã hoàn, `lock_version`), `return_lines` (tình trạng `sellable`/`damaged`), `return_events` (append-only). Khách gửi yêu cầu qua `POST /orders/{id}/returns` (token đơn) cho **dòng đã giao** trong hạn; nhân viên duyệt/từ chối/đang gửi về/nhận hàng/hoàn tất trong Admin (`/{admin}/returns/{brand}/returns`), panel "Đổi/trả" trên trang đơn. Invariant **tổng trả mỗi dòng ≤ số đã giao** (khoá dòng đơn qua `OrderTransitions::lock`; concurrency test 4 yêu cầu cùng lúc → 1). Tiền hoàn = phần của các đơn vị trả trong thành tiền dòng đã phân bổ giảm giá (largest remainder — trả nhiều lần không vượt), **không hoàn phí giao**; nhân viên có thể hoàn ít hơn (trừ phí hư hỏng), không được nhiều hơn. Nhận hàng: dòng bán được nhập lại kho (location của vận đơn đã giao, movement `return`), dòng hư hỏng không nhập. Hoàn tất → `Payments::refundOrder` (cổng hỗ trợ thì tự động, COD/chuyển khoản thì chờ nhân viên chuyển trả). `return_status` của đơn tính lại sau mỗi thay đổi; đơn có yêu cầu đang mở không tự `completed`. `ReturnPolicy` (tag `vani.returns.policies`) mặc định `days_window` (`VANI_RETURN_WINDOW_DAYS`; nhân viên tạo hộ không bị giới hạn ngày). Event `ReturnRequested`, `ReturnResolved`.
 >
-> **Khác thiết kế:** bước `inspected` gộp vào `received` (ghi tình trạng khi nhận). **Chưa có:** đổi hàng (tạo đơn thay thế), store credit, nhân viên tạo yêu cầu hộ khách trong Admin (service đã hỗ trợ `source = staff`), nhãn trả hàng của hãng vận chuyển, trả tại cửa hàng (plugin).
+> **Khác thiết kế:** bước `inspected` gộp vào `received` (ghi tình trạng khi nhận). **Đổi hàng:** §7.1 (0.3.32). **Chưa có:** store credit, nhân viên tạo yêu cầu hộ khách trong Admin (service đã hỗ trợ `source = staff`), nhãn trả hàng của hãng vận chuyển, trả tại cửa hàng (plugin).
 
 ```mermaid
 stateDiagram-v2
@@ -139,6 +139,17 @@ stateDiagram-v2
 | Trạng thái RMA, `ReturnPolicy` (mặc định `days_window`), tính tiền hoàn từ `line_total` đã phân bổ, nhập lại tồn (movement `return`, sellable hay không), hoàn tiền thủ công | Hoàn tiền tự động qua cổng (plugin payment), trả tại cửa hàng (`vani.store-omnichannel`), nhãn trả hàng của hãng VC |
 
 Invariant: tổng số lượng trả của một dòng ≤ số lượng đã giao (App, khoá dòng `order_lines` khi tạo RMA); tổng hoàn ≤ số đã thu (Payment).
+
+### 7.1 Đổi hàng (Implemented, 0.3.32)
+
+Yêu cầu đổi/trả có `resolution = exchange` khi khách (API: `lines[].exchange_variant_id`) hoặc nhân viên (Admin: SKU thay thế theo dòng) chọn sản phẩm thay thế cho **mọi** dòng trả; variant phải đang bán. Chính sách (Owner chốt 2026-10-08):
+
+- **Thời điểm:** đơn thay thế chỉ tạo khi hoàn tất — tức **sau khi đã nhận hàng trả** (`received → resolved`). Hàng trả bán được nhập kho như trả hàng thường.
+- **Giá trị:** cùng mẫu (đổi size/màu) → giữ đúng đơn giá đã mua, **không tính chênh**; khác mẫu → giá hiện tại, bù trừ với số tiền khách đã trả cho các món trả (`return_lines.refund_amount`): thiếu → khách bù qua thu hộ COD trên đơn thay thế; thừa → hoàn phần thừa trên đơn gốc (`Payments::refundOrder`, COD đã thu → yêu cầu hoàn tay). `ReturnService::exchangeQuote` (Admin hiển thị trước khi hoàn tất).
+- **Phí giao:** shop chịu (0đ). Không áp khuyến mãi.
+- **Đơn thay thế** (`Checkout\Contracts\ReplacementOrders`): `source = exchange`, `parent_order_id` = đơn gốc, người nhận/địa chỉ/phương thức giao lấy từ đơn gốc, giá trị bù là giảm giá `exchange_credit` trên dòng (adjustment cùng tên), thuế qua TaxCalculator, **giữ hàng** như đơn thường, **xác nhận ngay** → Fulfillment tạo vận đơn. Phải bù → `payment_method = cod`; 0đ → `payment_method = exchange`, `payment_status = paid`, không có khoản thanh toán. Hết hàng/variant ngừng bán → `return.exchange_unavailable`, yêu cầu giữ ở `received` để nhân viên xử lý (đổi lựa chọn → huỷ và tạo lại, hoặc từ chối).
+- `return_requests.replacement_order_id`; event `ReturnResolved` có `replacementOrderId`; payload `return.resolved` thêm `resolution`, `replacement_order_number`; `vanishop.order.v1` thêm `parent_order_number`.
+- **Giới hạn:** đơn thay thế có dòng 0đ (giá trị nằm ở đơn gốc) nên chỉ cho **đổi tiếp size/màu cùng mẫu**; trả hoàn tiền hoặc đổi mẫu khác từ đơn thay thế bị từ chối (`return.not_eligible` / `exchange_order`) — CSKH xử lý trên đơn gốc. Chưa có: đổi một phần (một số dòng hoàn tiền, số khác đổi trong cùng yêu cầu), gửi hàng thay thế trước khi nhận hàng trả, store credit.
 
 ## 8. Kiểm thử
 

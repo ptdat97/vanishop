@@ -44,6 +44,19 @@ final class ReturnRejected extends BusinessRuleViolation
         return new self('return.unknown_lines', 422, __('returns::messages.unknown_lines'), ['return_line_ids' => $lineIds]);
     }
 
+    /**
+     * @param  'lines'|'variant'  $reason
+     */
+    public static function exchangeInvalid(string $reason): self
+    {
+        return new self('return.exchange_invalid', 422, __("returns::messages.exchange_invalid.{$reason}"), ['reason' => $reason]);
+    }
+
+    public static function exchangeUnavailable(string $reason): self
+    {
+        return new self('return.exchange_unavailable', 409, __('returns::messages.exchange_unavailable', ['reason' => $reason]));
+    }
+
     public static function stale(): self
     {
         return new self('return.stale', 409, __('returns::messages.stale'));

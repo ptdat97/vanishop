@@ -13,10 +13,12 @@ interface Returns
 {
     /**
      * @param  array<int, int>  $lines  order_line_id => số lượng
+     * @param  array<int, int>  $exchanges  đổi hàng (0.3.32): order_line_id => variant thay thế, phải có cho MỌI dòng trả;
+     *                                      rỗng = trả hàng hoàn tiền
      *
      * @throws ReturnRejected
      */
-    public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source): ReturnView;
+    public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source, array $exchanges = []): ReturnView;
 
     /**
      * @return list<ReturnView>

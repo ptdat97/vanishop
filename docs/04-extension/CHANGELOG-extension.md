@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.32 — 2026-10-08
+
+Đổi hàng (roadmap Phase 2, [order §7.1](../09-order/order.md)). Chỉ thêm.
+
+### Thêm
+- `Checkout\Contracts\ReplacementOrders::place(ReplacementOrderRequest): PlacedOrder`, DTO `ReplacementOrderRequest`, `ReplacementLine`, lỗi `ReplacementUnavailable` (`checkout.replacement_unavailable`).
+- `Returns::request(..., array $exchanges = [])` (order_line_id => variant thay thế); `ReturnView::$resolution`, `$replacementOrderId`; `ReturnRejected::exchangeInvalid()`, `exchangeUnavailable()`; `ReturnResolved::$replacementOrderId`.
+- `OrderDraft::$parentOrderId`, `OrderData::$parentOrderId`, `OrderLineData::$unitAmount`.
+- Nguồn đơn `exchange`; payload `vanishop.order.v1` thêm `parent_order_number`; `return.resolved` thêm `resolution`, `replacement_order_number`.
+
 ## 0.3.31 — 2026-10-08
 
 Tính lại khuyến mãi khi khách bớt hàng (roadmap Phase 2, [order §2.1](../09-order/order.md)).

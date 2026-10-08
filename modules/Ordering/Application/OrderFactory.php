@@ -43,7 +43,7 @@ final class OrderFactory implements OrderWriter
             'subtotal_amount' => $draft->subtotalAmount, 'discount_amount' => $draft->discountAmount, 'shipping_amount' => $draft->shippingAmount,
             'tax_amount' => $draft->taxAmount, 'total_amount' => $draft->totalAmount,
             'meta' => $draft->meta === [] ? null : $draft->meta, 'customer_snapshot' => $draft->customer, 'shipping_address' => $draft->shippingAddress, 'shipping_method' => $draft->shippingMethod,
-            'note' => $draft->note, 'reservation_key' => $draft->reservationKey, 'source_cart_id' => $draft->sourceCartId, 'placed_at' => now(),
+            'note' => $draft->note, 'reservation_key' => $draft->reservationKey, 'source_cart_id' => $draft->sourceCartId, 'parent_order_id' => $draft->parentOrderId, 'placed_at' => now(),
         ]);
 
         foreach ($draft->lines as $line) {

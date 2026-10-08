@@ -8,6 +8,11 @@ use DateTimeImmutable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Checkout\Contracts\Data\ReplacementLine;
+use Modules\Checkout\Contracts\Data\ReplacementOrderRequest;
+use Modules\Checkout\Contracts\ReplacementOrders;
+use Modules\Checkout\Contracts\ReplacementUnavailable;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Identity\Contracts\AuditLogger;
@@ -16,6 +21,8 @@ use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Payment\Contracts\Payments;
+use Modules\Pricing\Contracts\Data\PricingContext;
+use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Returns\Contracts\Data\ReturnContext;
 use Modules\Returns\Contracts\Data\ReturnView;
 use Modules\Returns\Contracts\ReturnPolicy;
@@ -47,18 +54,36 @@ final class ReturnService implements Returns
         private readonly CurrentContext $context,
         private readonly Extensions $extensions,
         private readonly Settings $settings,
+        private readonly VariantDirectory $variants,
+        private readonly PriceResolver $prices,
+        private readonly ReplacementOrders $replacements,
     ) {}
 
-    public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source): ReturnView
+    public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source, array $exchanges = []): ReturnView
     {
         $lines = array_filter($lines, fn (int $quantity): bool => $quantity > 0);
         if ($lines === []) {
             throw ReturnRejected::quantityExceeded(0, 0);
         }
+        $exchanges = array_intersect_key($exchanges, $lines);
+        if ($exchanges !== [] && count($exchanges) !== count($lines)) {
+            throw ReturnRejected::exchangeInvalid('lines');
+        }
+        if ($exchanges !== []) {
+            $variants = $this->variants->find(array_values(array_unique($exchanges)));
+            foreach ($exchanges as $variantId) {
+                if (($variants[$variantId] ?? null)?->status !== 'active') {
+                    throw ReturnRejected::exchangeInvalid('variant');
+                }
+            }
+        }
 
-        $return = DB::transaction(function () use ($orderId, $lines, $reasonCode, $note, $source): ReturnRequest {
+        $return = DB::transaction(function () use ($orderId, $lines, $reasonCode, $note, $source, $exchanges): ReturnRequest {
             $this->transitions->lock($orderId);
             $order = $this->orders->find($orderId) ?? throw ReturnRejected::notEligible('not_delivered');
+            if ($order->source === 'exchange') {
+                $this->guardReplacementOrder($orderId, $lines, $exchanges);
+            }
             [$delivered, $deliveredAt] = $this->delivered($orderId);
 
             $decision = $this->policy()->evaluate(new ReturnContext($orderId, $lines, $reasonCode, $deliveredAt, now()->toDateTimeImmutable(), $source));
@@ -72,7 +97,7 @@ final class ReturnService implements Returns
 
             $return = ReturnRequest::query()->create([
                 'public_id' => (string) Str::ulid(), 'number' => $order->number.'-R'.($count + 1), 'order_id' => $orderId,
-                'status' => ReturnStatus::Requested, 'reason_code' => $reasonCode, 'customer_note' => $note === null ? null : mb_substr(trim($note), 0, 500),
+                'status' => ReturnStatus::Requested, 'reason_code' => $reasonCode, 'resolution' => $exchanges === [] ? 'refund' : 'exchange', 'customer_note' => $note === null ? null : mb_substr(trim($note), 0, 500),
                 'source' => $source, 'refund_amount' => 0, 'currency_code' => $order->currencyCode,
             ]);
 
@@ -86,7 +111,10 @@ final class ReturnService implements Returns
                 }
 
                 $refund = RefundCalculator::forUnits(Money::of($line->totalAmount, $order->currencyCode), $line->quantity, $taken[$lineId] ?? 0, $quantity);
-                ReturnLine::query()->create(['return_request_id' => $return->id, 'order_line_id' => $lineId, 'variant_id' => $line->variantId, 'quantity' => $quantity, 'refund_amount' => $refund->amount]);
+                ReturnLine::query()->create([
+                    'return_request_id' => $return->id, 'order_line_id' => $lineId, 'variant_id' => $line->variantId, 'exchange_variant_id' => $exchanges[$lineId] ?? null,
+                    'quantity' => $quantity, 'refund_amount' => $refund->amount,
+                ]);
                 $total += $refund->amount;
             }
 
@@ -188,11 +216,17 @@ final class ReturnService implements Returns
     }
 
     /**
-     * Hoàn tất: hoàn tiền (mặc định toàn bộ số tính được; có thể trừ phí hư hỏng) qua Payment.
+     * Hoàn tất: hoàn tiền (mặc định toàn bộ số tính được; có thể trừ phí hư hỏng) qua Payment. Yêu cầu đổi hàng →
+     * resolveExchange().
      */
     public function resolve(int $returnId, ?int $amount, ?string $note): void
     {
         $return = ReturnRequest::query()->findOrFail($returnId);
+        if ($return->resolution === 'exchange') {
+            $this->resolveExchange($returnId, $note);
+
+            return;
+        }
         $amount ??= $return->refund_amount;
         if ($amount < 0 || $amount > $return->refund_amount) {
             throw ReturnRejected::refundExceeds($return->refund_amount);
@@ -216,9 +250,114 @@ final class ReturnService implements Returns
         });
     }
 
+    /**
+     * Giá trị đổi hàng (order §7.1): cùng mẫu (đổi size/màu) giữ đúng đơn giá đã mua và không tính chênh; khác mẫu tính
+     * theo giá hiện tại, bù trừ với số tiền khách đã trả cho các món trả của nhóm này — khách bù phần thiếu (COD trên đơn
+     * thay thế) hoặc được hoàn phần thừa.
+     *
+     * @return array{lines: list<array{return_line_id: int, variant_id: int, sku: string, quantity: int, unit_amount: int, credit: int, same_style: bool}>, payable: int, refund: int}
+     */
+    public function exchangeQuote(int $returnId): array
+    {
+        $return = ReturnRequest::query()->with('lines')->findOrFail($returnId);
+        $orderLines = collect($this->orders->lines($return->order_id))->keyBy('id');
+        $variants = $this->variants->find(array_values(array_unique([...$return->lines->pluck('variant_id')->all(), ...$return->lines->pluck('exchange_variant_id')->filter()->all()])));
+
+        $other = $return->lines->filter(fn (ReturnLine $line): bool => ($variants[$line->exchange_variant_id]->styleId ?? null) !== ($variants[$line->variant_id]->styleId ?? -1));
+        $prices = $other->isEmpty() ? [] : $this->prices->forVariants($other->pluck('exchange_variant_id')->unique()->values()->all(), new PricingContext(now()->getTimestamp()));
+
+        $result = [];
+        $subtotals = [];
+        foreach ($return->lines as $line) {
+            $variant = $variants[$line->exchange_variant_id] ?? throw ReturnRejected::exchangeInvalid('variant');
+            $same = $other->doesntContain('id', $line->id);
+            $unit = $same ? (int) ($orderLines[$line->order_line_id]->unitAmount ?? 0) : ($prices[$line->exchange_variant_id]->amount->amount ?? throw ReturnRejected::exchangeUnavailable(__('returns::messages.exchange_invalid.variant')));
+            $result[$line->id] = ['return_line_id' => $line->id, 'variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $line->quantity, 'unit_amount' => $unit, 'credit' => $same ? $unit * $line->quantity : 0, 'same_style' => $same];
+            if (! $same) {
+                $subtotals[$line->id] = $unit * $line->quantity;
+            }
+        }
+
+        // Khác mẫu: gộp giá trị đã trả của các món trả, chia vào dòng thay thế theo tỷ lệ thành tiền (dư làm tròn vào dòng đầu).
+        $paid = (int) $other->sum('refund_amount');
+        $value = array_sum($subtotals);
+        $credit = min($paid, $value);
+        $allocated = 0;
+        foreach ($subtotals as $lineId => $subtotal) {
+            $share = $value === 0 ? 0 : intdiv($credit * $subtotal, $value);
+            $result[$lineId]['credit'] = $share;
+            $allocated += $share;
+        }
+        foreach ($subtotals as $lineId => $subtotal) {
+            $add = min($credit - $allocated, $subtotal - $result[$lineId]['credit']);
+            $result[$lineId]['credit'] += $add;
+            $allocated += $add;
+        }
+
+        return ['lines' => array_values($result), 'payable' => $value - $credit, 'refund' => $paid - $credit];
+    }
+
+    /**
+     * Đơn thay thế có dòng 0đ (giá trị đã bù từ đơn gốc): chỉ cho đổi tiếp size/màu cùng mẫu. Trả hoàn tiền / đổi mẫu khác
+     * sẽ tính sai vì tiền thật nằm ở đơn gốc — CSKH xử lý trên đơn gốc.
+     *
+     * @param  array<int, int>  $lines
+     * @param  array<int, int>  $exchanges
+     */
+    private function guardReplacementOrder(int $orderId, array $lines, array $exchanges): void
+    {
+        if ($exchanges === []) {
+            throw ReturnRejected::notEligible('exchange_order');
+        }
+        $orderLines = collect($this->orders->lines($orderId))->keyBy('id');
+        $variants = $this->variants->find(array_values(array_unique([...array_values($exchanges), ...$orderLines->only(array_keys($lines))->pluck('variantId')->all()])));
+        foreach ($exchanges as $lineId => $variantId) {
+            $original = $variants[$orderLines[$lineId]->variantId ?? 0] ?? null;
+            if ($original === null || ($variants[$variantId] ?? null)?->styleId !== $original->styleId) {
+                throw ReturnRejected::notEligible('exchange_order');
+            }
+        }
+    }
+
+    /**
+     * Hoàn tất đổi hàng (sau khi đã nhận hàng trả): tạo đơn thay thế (giữ hàng, COD phần khách bù), hoàn phần thừa trên
+     * đơn gốc. Hết hàng thay thế → từ chối, yêu cầu giữ nguyên trạng thái để nhân viên xử lý.
+     */
+    private function resolveExchange(int $returnId, ?string $note): void
+    {
+        $quote = $this->exchangeQuote($returnId);
+
+        DB::transaction(function () use ($returnId, $note, $quote): void {
+            $return = ReturnRequest::query()->whereKey($returnId)->lockForUpdate()->firstOrFail();
+            if (! $return->status->canMoveTo(ReturnStatus::Resolved)) {
+                throw ReturnRejected::invalidTransition($return->status->value, ReturnStatus::Resolved->value);
+            }
+
+            try {
+                $replacement = $this->replacements->place(new ReplacementOrderRequest($return->order_id, $return->number, array_map(
+                    fn (array $line): ReplacementLine => new ReplacementLine($line['variant_id'], $line['quantity'], $line['unit_amount'], $line['credit']),
+                    $quote['lines'],
+                )));
+            } catch (ReplacementUnavailable $exception) {
+                throw ReturnRejected::exchangeUnavailable($exception->getMessage());
+            }
+
+            if ($quote['refund'] > 0) {
+                $this->payments->refundOrder($return->order_id, Money::of($quote['refund'], $return->currency_code), "return:{$return->number}", "return:{$return->public_id}");
+            }
+
+            $return->update(['refunded_amount' => $quote['refund'], 'replacement_order_id' => $replacement->id, 'resolved_at' => now()]);
+            $this->move($return, ReturnStatus::Resolved, $note ?? "exchange:{$replacement->number}", 'staff');
+            $this->syncOrder($return->order_id);
+            $this->audit->record('return.exchanged', 'return_request', $return->id, ['replacement' => $replacement->number, 'payable' => $quote['payable'], 'refunded' => $quote['refund']]);
+            event(new ReturnResolved($return->id, $return->order_id, $quote['refund'], $return->public_id, $return->number, $replacement->id));
+        });
+    }
+
     public function view(ReturnRequest $return): ReturnView
     {
         $orderLines = collect($this->orders->lines($return->order_id))->keyBy('id');
+        $exchangeVariants = $return->resolution === 'exchange' ? $this->variants->find($return->lines()->pluck('exchange_variant_id')->filter()->unique()->values()->all()) : [];
 
         return new ReturnView(
             id: $return->id,
@@ -237,12 +376,15 @@ final class ReturnService implements Returns
                 'id' => $line->id, 'order_line_id' => $line->order_line_id, 'sku' => $orderLines[$line->order_line_id]->sku ?? '',
                 'name' => $orderLines[$line->order_line_id]->productName ?? '', 'quantity' => $line->quantity,
                 'refund_amount' => $line->refund_amount, 'condition' => $line->condition,
+                'exchange_variant_id' => $line->exchange_variant_id, 'exchange_sku' => $exchangeVariants[$line->exchange_variant_id ?? 0]->sku ?? null,
             ])->all(),
             events: DB::table('return_events')->where('return_request_id', $return->id)->orderBy('id')->get()->map(fn (object $event): array => [
                 'from' => $event->from_status, 'to' => $event->to_status, 'note' => $event->note, 'source' => $event->source,
                 'at' => Carbon::parse((string) $event->created_at)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
             ])->all(),
             lockVersion: $return->lock_version,
+            resolution: (string) $return->resolution,
+            replacementOrderId: $return->replacement_order_id,
         );
     }
 

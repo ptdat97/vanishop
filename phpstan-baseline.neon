@@ -451,36 +451,6 @@ parameters:
 			path: modules/Promotion/Testing/PromotionRuleContract.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$condition\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$order_line_id\.$#'
-			identifier: property.notFound
-			count: 6
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 3
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$refund_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnLine\:\:\$variant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
 			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$created_at\.$#'
 			identifier: property.notFound
 			count: 1
@@ -502,12 +472,6 @@ parameters:
 			message: '#^Offset ''order_line_id'' does not exist on array\{sku\: string, quantity\: int\}\.$#'
 			identifier: offsetAccess.notFound
 			count: 3
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Returns\\Persistence\\Models\\ReturnLine\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
 			path: modules/Returns/Application/ReturnService.php
 
 		-

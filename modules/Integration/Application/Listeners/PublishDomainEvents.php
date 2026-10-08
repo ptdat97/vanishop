@@ -97,7 +97,7 @@ final class PublishDomainEvents
 
     public function returnResolved(ReturnResolved $event): void
     {
-        $this->publish($event->orderId, 'return.resolved', fn (OrderData $order): array => $this->payloads->returnResolved($order, $event->publicId ?? (string) $event->returnId, $event->number, $event->refundedAmount));
+        $this->publish($event->orderId, 'return.resolved', fn (OrderData $order): array => $this->payloads->returnResolved($order, $event->publicId ?? (string) $event->returnId, $event->number, $event->refundedAmount, $event->replacementOrderId === null ? null : $this->orders->find($event->replacementOrderId)?->number));
     }
 
     public function shipmentStatusChanged(ShipmentStatusChanged $event): void

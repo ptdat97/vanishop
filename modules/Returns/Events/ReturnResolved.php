@@ -17,6 +17,7 @@ final readonly class ReturnResolved implements ShouldDispatchAfterCommit
     /**
      * @param  string|null  $publicId  0.3.17
      * @param  string|null  $number  0.3.17
+     * @param  int|null  $replacementOrderId  đơn thay thế khi đổi hàng (0.3.32)
      */
-    public function __construct(public int $returnId, public int $orderId, public int $refundedAmount, public ?string $publicId = null, public ?string $number = null) {}
+    public function __construct(public int $returnId, public int $orderId, public int $refundedAmount, public ?string $publicId = null, public ?string $number = null, public ?int $replacementOrderId = null) {}
 }

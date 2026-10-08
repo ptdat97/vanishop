@@ -35,6 +35,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
  * @property string|null $note
  * @property string $reservation_key
  * @property string|null $source_cart_id
+ * @property int|null $parent_order_id
  * @property array<string, mixed>|null $meta
  * @property int $lock_version
  * @property CarbonImmutable $placed_at

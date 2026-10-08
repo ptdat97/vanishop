@@ -39,5 +39,7 @@ final readonly class OrderDraft
         public ?string $sourceCartId,
         /** orders.meta: dữ liệu nhỏ của plugin, khoá theo plugin id (vani.order.before_create). */
         public array $meta = [],
+        /** Đơn gốc khi đây là đơn thay thế của đổi hàng (`source = exchange`, 0.3.32). */
+        public ?int $parentOrderId = null,
     ) {}
 }

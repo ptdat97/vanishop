@@ -34,13 +34,16 @@ const form = useForm({
     lines: Object.fromEntries(props.lines.map((line) => [line.id, 0])) as Record<number, number>,
     reason_code: props.reasons[0] ?? 'other',
     note: '',
+    exchange: false,
+    exchange_skus: Object.fromEntries(props.lines.map((line) => [line.id, ''])) as Record<number, string>,
 });
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const total = computed(() => Object.values(form.lines).reduce((sum, quantity) => sum + Number(quantity || 0), 0));
 const deadlineText = computed(() => (props.deadline ? new Date(props.deadline).toLocaleDateString('vi-VN') : null));
 
 function submit(): void {
-    form.post(props.storeUrl, { preserveScroll: true });
+    // Đổi hàng: gửi SKU thay thế (mặc định SKU cũ — nhân viên sửa thành size/màu khách muốn); không đổi thì bỏ trống.
+    form.transform((data) => ({ ...data, exchange_skus: data.exchange ? data.exchange_skus : {} })).post(props.storeUrl, { preserveScroll: true });
 }
 </script>
 
@@ -67,6 +70,7 @@ function submit(): void {
                         <th class="px-4 py-2 text-right font-medium">Đã mua</th>
                         <th class="px-4 py-2 text-right font-medium">Còn trả được</th>
                         <th class="px-4 py-2 text-right font-medium">Số lượng trả</th>
+                        <th v-if="form.exchange" class="px-4 py-2 font-medium">Đổi sang SKU</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,12 +96,28 @@ function submit(): void {
                                 :class="[inputClass, 'w-24 text-right']"
                             />
                         </td>
+                        <td v-if="form.exchange" class="px-4 py-2">
+                            <input
+                                v-model="form.exchange_skus[line.id]"
+                                :disabled="!form.lines[line.id]"
+                                :placeholder="line.sku"
+                                :class="[inputClass, 'w-48 font-mono uppercase']"
+                            />
+                            <p v-if="errors[`exchange_skus.${line.id}`]" class="mt-1 text-xs text-red-600">{{ errors[`exchange_skus.${line.id}`] }}</p>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
         <div class="grid max-w-xl gap-4">
+            <label class="flex items-start gap-2 text-sm">
+                <input v-model="form.exchange" type="checkbox" class="mt-1" />
+                <span>
+                    <span class="font-medium">Đổi hàng</span> thay vì hoàn tiền — nhập SKU thay thế cho từng dòng trả. Cùng mẫu (đổi size/màu): không tính chênh;
+                    mẫu khác: theo giá hiện tại, khách bù phần thiếu (COD) hoặc được hoàn phần thừa. Đơn thay thế tạo khi nhận hàng trả, miễn phí giao.
+                </span>
+            </label>
             <FormField label="Lý do" :error="form.errors.reason_code">
                 <select v-model="form.reason_code" :class="inputClass">
                     <option v-for="reason in reasons" :key="reason" :value="reason">
