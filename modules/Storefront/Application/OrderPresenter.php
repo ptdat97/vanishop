@@ -53,6 +53,13 @@ final class OrderPresenter
             'shipping_fee' => $money($order->amounts['shipping']),
             'tax_included' => $money($order->amounts['tax']),
             'total' => $money($order->amounts['total']),
+            // Tầng giá (Phase 8): niêm yết, giảm giá bán, khuyến mãi tự động, mã giảm giá, giảm khác (đã trừ vào tổng).
+            'pricing' => $order->pricing === [] ? null : [
+                'list_amount' => $money($order->pricing['list_amount']), 'markdown' => $money($order->pricing['markdown']),
+                'promotion_discount' => $money($order->pricing['promotion_discount']), 'voucher_discount' => $money($order->pricing['voucher_discount']),
+                'other_discount' => $money($order->pricing['other_discount']),
+                'vouchers' => array_values(array_filter(array_map(fn (array $promotion): ?string => $promotion['voucher'] ? $promotion['code'] : null, $order->pricing['promotions']))),
+            ],
             'timeline' => array_map(fn (array $event): array => ['type' => $event['type'], 'to' => $event['to'], 'at' => $event['at']], $order->events),
             'shipments' => array_values(array_map(fn (ShipmentView $shipment): array => [
                 'carrier' => $shipment->carrierLabel,

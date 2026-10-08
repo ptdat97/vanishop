@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $image_url
  * @property int $quantity
  * @property int $cancelled_quantity
+ * @property string|null $price_list_code bảng giá của giá bán (0.3.37)
  * @property int $unit_amount
  * @property int|null $compare_at_amount
  * @property int $subtotal_amount

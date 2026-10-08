@@ -114,7 +114,7 @@ final class CampaignController
             ],
             'report' => $report === null ? null : [
                 'orders' => $report['totals']->ordersCount, 'revenue' => $report['totals']->revenue, 'customers' => $report['totals']->customersCount,
-                'cancelled' => $report['totals']->cancelledCount, 'promotion_discount' => $report['promotion_discount'], 'usages' => $report['usages'],
+                'cancelled' => $report['totals']->cancelledCount, 'promotion_discount' => $report['promotion_discount'], 'usages' => $report['usages'], 'price_list_orders' => $report['price_list_orders'],
             ],
             'promotions' => Promotion::query()->where(fn ($query) => $query->whereNull('campaign_id')->when($campaign !== null, fn ($q) => $q->orWhere('campaign_id', $campaign?->id)))
                 ->orderByDesc('id')->get(['id', 'name', 'requires_voucher'])->map(fn (Promotion $promotion): array => ['id' => $promotion->id, 'name' => $promotion->name, 'requires_voucher' => $promotion->requires_voucher])->all(),

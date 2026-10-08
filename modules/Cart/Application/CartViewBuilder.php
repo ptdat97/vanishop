@@ -77,6 +77,7 @@ final class CartViewBuilder
                 lineTotal: $lineTotal,
                 issues: $issues,
                 options: (array) ($line->meta['options'] ?? []),
+                priceListCode: $price?->priceListCode,
             );
         }
 

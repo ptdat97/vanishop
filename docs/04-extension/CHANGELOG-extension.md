@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.37 — 2026-10-08
+
+Tầng giá trên đơn (roadmap Phase 8, [order §2.2](../09-order/order.md)). Chỉ thêm.
+
+### Thêm
+- `Ordering\Contracts\Data\PriceBreakdown`; `OrderReader::priceBreakdown(int)`; `OrderDetail::$pricing`; `OrderStatistics::orderIdsWithPriceLists(list<string>)`.
+- `order_lines.price_list_code`; `OrderLineDraft::$priceListCode`, `TotalsLine::$priceListCode`, `CartLineView::$priceListCode` (tham số tuỳ chọn cuối).
+- Payload `vanishop.order.v1` thêm `pricing` (schema cập nhật).
+
 ## 0.3.36 — 2026-10-08
 
 Campaign (roadmap Phase 8). Chỉ thêm.

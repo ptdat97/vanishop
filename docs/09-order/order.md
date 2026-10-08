@@ -53,6 +53,22 @@ Nhân viên huỷ bớt số lượng một số dòng (vd. hết hàng một si
   - Cần chi tiết giảm giá theo khuyến mãi trên dòng (`order_lines.meta.promotions`, `style_id`) — ghi từ 0.3.31; đơn đặt trước đó không thu hồi được (giữ ưu đãi).
   - Phí giao giữ nguyên trong mọi trường hợp (kể cả miễn phí giao theo ngưỡng).
 
+### 2.2 Tầng giá trên đơn (Implemented, 0.3.37)
+
+`OrderReader::priceBreakdown()` / `OrderDetail::$pricing` / payload `vanishop.order.v1.pricing` tách tổng đơn thành từng tầng, tính từ snapshot (không đổi khi catalog/khuyến mãi đổi):
+
+| Tầng | Nguồn |
+|---|---|
+| Giá niêm yết | `compare_at_amount` (nếu cao hơn giá bán) × số lượng hiện tại |
+| Giảm giá bán | niêm yết − tạm tính; theo `order_lines.price_list_code` (bảng giá sale/thành viên/campaign đã cho giá bán) |
+| Tạm tính | Σ `subtotal_amount` |
+| Khuyến mãi tự động | phần giảm của khuyến mãi không voucher (`meta.promotions` theo dòng) |
+| Mã giảm giá | phần giảm của khuyến mãi có voucher (mã lấy từ adjustment `promotion`) |
+| Giảm khác | bù giá trị hàng trả (đơn đổi hàng), phần không tách được (đơn trước 0.3.31) |
+| Phí giao, thuế | `shipping_amount`, `tax_amount` (VAT đã gồm trong tổng) |
+
+Bất biến (I7, `tests/Feature/Invariants`): niêm yết − giảm giá bán = tạm tính; tạm tính − khuyến mãi − mã giảm giá − giảm khác + phí giao = tổng; tổng các khoản giảm = `discount_amount`. Đúng cả sau huỷ một phần/thu hồi khuyến mãi (phần lẻ do làm tròn dồn vào khuyến mãi lớn nhất của dòng). Admin và trang đơn storefront hiển thị từng tầng; `order_adjustments` vẫn giữ làm lịch sử điều chỉnh.
+
 ## 3. Trạng thái: 4 chiều độc lập
 
 | Chiều | Giá trị | Ai kích hoạt |

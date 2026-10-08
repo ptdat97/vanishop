@@ -21,7 +21,7 @@ const props = defineProps<{
         promotion_ids: number[];
         price_list_ids: number[];
     };
-    report: null | { orders: number; revenue: number; customers: number; cancelled: number; promotion_discount: number; usages: number };
+    report: null | { orders: number; revenue: number; customers: number; cancelled: number; promotion_discount: number; usages: number; price_list_orders: number };
     promotions: Array<{ id: number; name: string; requires_voucher: boolean }>;
     priceLists: Array<{ id: number; code: string; name: string; type: string; status: string }>;
     can: { manage: boolean; price_lists: boolean };
@@ -78,7 +78,7 @@ function destroy(): void {
     <p v-if="errors.campaign" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.campaign }}</p>
 
     <section v-if="report" class="mb-6 grid gap-3 sm:grid-cols-4">
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đơn dùng khuyến mãi</div><div class="text-xl font-semibold">{{ report.orders }}</div></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đơn của campaign</div><div class="text-xl font-semibold">{{ report.orders }}</div><div class="text-xs text-slate-400">{{ report.usages }} lượt khuyến mãi · {{ report.price_list_orders }} đơn giá sale</div></div>
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Doanh thu các đơn</div><div class="text-xl font-semibold">{{ vnd(report.revenue) }}</div></div>
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đã giảm (khuyến mãi)</div><div class="text-xl font-semibold">{{ vnd(report.promotion_discount) }}</div></div>
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Khách / đơn huỷ</div><div class="text-xl font-semibold">{{ report.customers }} / {{ report.cancelled }}</div></div>

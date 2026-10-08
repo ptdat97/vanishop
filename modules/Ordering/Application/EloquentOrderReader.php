@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\Data\OrderStatus;
+use Modules\Ordering\Contracts\Data\PriceBreakdown;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
@@ -20,6 +21,13 @@ final class EloquentOrderReader implements OrderReader
         $order = Order::query()->find($orderId);
 
         return $order === null ? null : $this->toData($order);
+    }
+
+    public function priceBreakdown(int $orderId): ?PriceBreakdown
+    {
+        $order = Order::query()->with(['lines', 'adjustments'])->find($orderId);
+
+        return $order === null ? null : (new PriceBreakdownCalculator)->for($order);
     }
 
     public function findByPublicId(string $publicId): ?OrderData

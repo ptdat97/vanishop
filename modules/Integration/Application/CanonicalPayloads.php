@@ -65,6 +65,8 @@ final class CanonicalPayloads
                 'quantity' => $line->quantity,
                 'total_amount' => $line->totalAmount,
             ], array_values(array_filter($this->orders->lines($order->id), fn (OrderLineData $line): bool => $line->quantity > 0))), // dòng huỷ hết: chỉ có trong order.lines_cancelled
+            // Tầng giá (0.3.37): niêm yết, giảm giá bán, khuyến mãi, mã giảm giá, giảm khác, phí giao, thuế, tổng.
+            'pricing' => $this->orders->priceBreakdown($order->id)?->toArray(),
             'placed_at' => $order->placedAt,
             'updated_at' => $order->updatedAt,
         ];

@@ -105,19 +105,24 @@ final class CampaignService
     }
 
     /**
-     * Kết quả: đơn dùng khuyến mãi của campaign (doanh thu, giảm giá khuyến mãi, số khách). Đơn chỉ hưởng giá sale của
-     * bảng giá campaign mà không dùng khuyến mãi chưa được tính (dòng đơn chưa lưu nguồn bảng giá).
+     * Kết quả: đơn dùng khuyến mãi của campaign HOẶC mua món theo bảng giá của campaign (`order_lines.price_list_code`,
+     * từ 0.3.37) — doanh thu, số khách; tổng giảm khuyến mãi; số đơn hưởng giá sale/thành viên của campaign.
      *
-     * @return array{totals: SalesTotals, promotion_discount: int, usages: int}
+     * @return array{totals: SalesTotals, promotion_discount: int, usages: int, price_list_orders: int}
      */
     public function report(Campaign $campaign): array
     {
         $usages = DB::table('promotion_usages')->whereIn('promotion_id', Promotion::query()->where('campaign_id', $campaign->id)->select('id'))->where('status', 'applied');
+        $listIds = $this->priceListIds($campaign);
+        $codes = array_values(array_map(fn (array $list): string => $list['code'], array_filter($this->priceLists->schedulable(), fn (array $list): bool => in_array($list['id'], $listIds, true))));
+        $priceListOrders = $this->statistics->orderIdsWithPriceLists($codes);
+        $promotionOrders = (clone $usages)->distinct()->pluck('order_id')->map(fn ($id): int => (int) $id)->all();
 
         return [
-            'totals' => $this->statistics->summarize((clone $usages)->distinct()->pluck('order_id')->map(fn ($id): int => (int) $id)->all()),
+            'totals' => $this->statistics->summarize(array_values(array_unique([...$promotionOrders, ...$priceListOrders]))),
             'promotion_discount' => (int) (clone $usages)->sum('discount_amount'),
             'usages' => (clone $usages)->count(),
+            'price_list_orders' => count($priceListOrders),
         ];
     }
 

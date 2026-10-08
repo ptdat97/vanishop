@@ -53,6 +53,7 @@ final class OrderFactory implements OrderWriter
                 'compare_at_amount' => $line->compareAtAmount, 'subtotal_amount' => $line->subtotalAmount, 'discount_amount' => $line->discountAmount,
                 'total_amount' => $line->totalAmount, 'tax_rate_bp' => $line->taxRateBp, 'tax_amount' => $line->taxAmount,
                 'meta' => array_filter(['options' => $line->options, 'style_id' => $line->styleId, 'promotions' => $line->promotions]) ?: null,
+                'price_list_code' => $line->priceListCode,
             ]);
         }
         foreach ($draft->adjustments as $adjustment) {

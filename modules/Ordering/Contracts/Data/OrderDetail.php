@@ -42,5 +42,7 @@ final readonly class OrderDetail
         public bool $cancellableByCustomer,
         public int $lockVersion,
         public string $source = 'web',
+        /** Tầng giá (0.3.37): PriceBreakdown::toArray(). */
+        public array $pricing = [],
     ) {}
 }

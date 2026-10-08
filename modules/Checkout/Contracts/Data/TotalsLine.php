@@ -31,6 +31,8 @@ final readonly class TotalsLine
         public ?string $brandName = null,
         /** @var array<string, array<string, scalar|null>> tuỳ chọn dòng theo plugin id (CartLineOption) */
         public array $options = [],
+        /** Bảng giá của giá bán (0.3.37), lưu vào dòng đơn. */
+        public ?string $priceListCode = null,
     ) {}
 
     public function total(): Money
@@ -41,12 +43,12 @@ final readonly class TotalsLine
     public function withDiscount(Money $discount): self
     {
         return new self($this->key, $this->variantId, $this->brandId, $this->styleId, $this->sku, $this->name, $this->colorName, $this->sizeCode,
-            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $discount, $this->taxRateBp, $this->tax, $this->brandName, $this->options);
+            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $discount, $this->taxRateBp, $this->tax, $this->brandName, $this->options, $this->priceListCode);
     }
 
     public function withTax(int $rateBp, Money $tax): self
     {
         return new self($this->key, $this->variantId, $this->brandId, $this->styleId, $this->sku, $this->name, $this->colorName, $this->sizeCode,
-            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $this->discount, $rateBp, $tax, $this->brandName, $this->options);
+            $this->imageUrl, $this->quantity, $this->unitPrice, $this->compareAt, $this->subtotal, $this->discount, $rateBp, $tax, $this->brandName, $this->options, $this->priceListCode);
     }
 }

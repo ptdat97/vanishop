@@ -7,6 +7,24 @@
     "additionalProperties": true,
     "required": ["schema", "number", "public_id", "source", "customer_id", "status", "payment_status", "fulfillment_status", "return_status", "payment_method", "currency", "total_amount", "customer", "shipping_address", "lines", "placed_at", "updated_at"],
     "properties": {
+        "pricing": {
+            "type": ["object", "null"],
+            "description": "0.3.37: tầng giá từ snapshot — list_amount − markdown = subtotal; subtotal − promotion_discount − voucher_discount − other_discount + shipping = total (tax_included đã gồm).",
+            "required": ["list_amount", "markdown", "subtotal", "promotion_discount", "voucher_discount", "other_discount", "shipping", "tax_included", "total", "promotions", "price_lists"],
+            "properties": {
+                "list_amount": { "type": "integer" },
+                "markdown": { "type": "integer", "minimum": 0 },
+                "subtotal": { "type": "integer" },
+                "promotion_discount": { "type": "integer" },
+                "voucher_discount": { "type": "integer" },
+                "other_discount": { "type": "integer" },
+                "shipping": { "type": "integer" },
+                "tax_included": { "type": "integer" },
+                "total": { "type": "integer" },
+                "promotions": { "type": "array", "items": { "type": "object", "required": ["promotion_id", "name", "code", "voucher", "amount"] } },
+                "price_lists": { "type": "array", "items": { "type": "object", "required": ["code", "markdown"] } }
+            }
+        },
         "schema": { "type": "string", "const": "vanishop.order.v1" },
         "number": { "type": "string" },
         "public_id": { "type": "string", "pattern": "^[0-9A-Z]{26}$" },

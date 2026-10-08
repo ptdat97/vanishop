@@ -6,6 +6,7 @@ namespace Modules\Ordering\Application;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Ordering\Domain\LinePromotions;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Promotion\Contracts\Data\PromotionContext;
@@ -133,24 +134,11 @@ final class PromotionClawback
     }
 
     /**
-     * Giảm giá của từng khuyến mãi ứng với số lượng hiện tại của dòng.
-     *
      * @return array<int, int>
      */
     private function retained(OrderLine $line): array
     {
-        $amounts = (array) ($line->meta['promotions'] ?? []);
-        $basis = (int) ($line->meta['promotions_basis_qty'] ?? ($line->quantity + $line->cancelled_quantity));
-        if ($basis <= 0) {
-            return [];
-        }
-
-        $retained = [];
-        foreach ($amounts as $promotionId => $amount) {
-            $retained[(int) $promotionId] = intdiv((int) $amount * $line->quantity, $basis);
-        }
-
-        return $retained;
+        return LinePromotions::current($line->meta, $line->quantity, $line->cancelled_quantity);
     }
 
     /**

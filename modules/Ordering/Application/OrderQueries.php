@@ -77,6 +77,7 @@ final class OrderQueries
             cancellableByCustomer: OrderPolicy::customerCanCancel($order->order_status, (string) $order->fulfillment_status),
             lockVersion: $order->lock_version,
             source: (string) $order->source,
+            pricing: (new PriceBreakdownCalculator)->for($order)->toArray(),
         );
     }
 

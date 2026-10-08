@@ -11,6 +11,7 @@ use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\OrderActionRejected;
+use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
@@ -31,6 +32,8 @@ require_once __DIR__.'/../../../modules/Checkout/Tests/Feature/CheckoutTestHelpe
 |   I5 event tích hợp: mọi đơn có order.created; đơn huỷ có order.cancelled; đơn đã thu tiền có payment.captured.
 |   I6 tiền của đơn cân: tổng = Σ thành tiền dòng + phí giao; giảm giá đơn = Σ giảm giá dòng (cả sau huỷ một phần/thu hồi
 |      khuyến mãi).
+|   I7 tầng giá cân (0.3.37): niêm yết − giảm giá bán = tạm tính; tạm tính − khuyến mãi − mã giảm giá − giảm khác + phí
+|      giao = tổng; tổng các khoản giảm = giảm giá của đơn.
 */
 
 beforeEach(function () {
@@ -92,6 +95,11 @@ beforeEach(function () {
 
             expect($order->total_amount)->toBe((int) $order->lines()->sum('total_amount') + $order->shipping_amount, "I6 tổng đơn {$order->number}")
                 ->and($order->discount_amount)->toBe((int) $order->lines()->sum('discount_amount'), "I6 giảm giá đơn {$order->number}");
+            $pricing = app(OrderReader::class)->priceBreakdown($order->id);
+            $discounts = $pricing->promotionDiscount + $pricing->voucherDiscount + $pricing->otherDiscount;
+            expect($pricing->listAmount - $pricing->markdown)->toBe($pricing->subtotal, "I7 niêm yết {$order->number}")
+                ->and($pricing->subtotal - $discounts + $pricing->shipping)->toBe($order->total_amount, "I7 tổng {$order->number}")
+                ->and($discounts)->toBe($order->discount_amount, "I7 giảm giá {$order->number}");
 
             $events = DB::table('integration_events')->where('aggregate_id', $order->number)->pluck('event_type')->all();
             expect($events)->toContain('order.created');

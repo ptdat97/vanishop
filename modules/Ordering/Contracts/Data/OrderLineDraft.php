@@ -30,5 +30,7 @@ final readonly class OrderLineDraft
         public ?int $styleId = null,
         /** @var array<int, int> giảm giá của từng khuyến mãi trên dòng: promotion id => số tiền (tổng = discountAmount phần khuyến mãi) */
         public array $promotions = [],
+        /** Bảng giá của giá bán lúc đặt (0.3.37) — null: đơn thay thế/không rõ. */
+        public ?string $priceListCode = null,
     ) {}
 }

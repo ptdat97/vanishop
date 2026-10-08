@@ -7,6 +7,7 @@ namespace Modules\Ordering\Contracts;
 use DateTimeInterface;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
+use Modules\Ordering\Contracts\Data\PriceBreakdown;
 
 /**
  * Service contract: đọc đơn (snapshot).
@@ -50,6 +51,11 @@ interface OrderReader
      * @return list<array{cancellation_id: string, reason: string, amount: int, promotion_clawback: int, lines: list<array{order_line_id: int, variant_id: int, quantity: int, amount: int}>}>
      */
     public function cancellations(int $orderId): array;
+
+    /**
+     * Tầng giá của đơn (0.3.37): niêm yết, giảm giá bán, khuyến mãi, mã giảm giá, phí giao, thuế — từ snapshot.
+     */
+    public function priceBreakdown(int $orderId): ?PriceBreakdown;
 
     public function changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array;
 }

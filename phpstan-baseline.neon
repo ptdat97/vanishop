@@ -391,36 +391,6 @@ parameters:
 			path: modules/Inventory/Testing/InventoryStrategyContract.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Ordering/Application/OrderQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Ordering/Application/OrderQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$label\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Ordering/Application/OrderQueries.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Ordering/Application/OrderQueries.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Ordering\\Persistence\\Models\\OrderAdjustment\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: modules/Ordering/Application/OrderQueries.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
 			identifier: parameter.notFound
 			count: 1

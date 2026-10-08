@@ -49,4 +49,13 @@ interface OrderStatistics
      * @param  list<int>  $orderIds
      */
     public function summarize(array $orderIds): SalesTotals;
+
+    /**
+     * Đơn có ít nhất một dòng mua theo một trong các bảng giá (0.3.37, `order_lines.price_list_code`) — vd. đơn hưởng giá
+     * sale của campaign.
+     *
+     * @param  list<string>  $priceListCodes
+     * @return list<int>
+     */
+    public function orderIdsWithPriceLists(array $priceListCodes): array;
 }

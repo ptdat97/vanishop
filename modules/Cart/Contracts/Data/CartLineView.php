@@ -34,6 +34,8 @@ final readonly class CartLineView
         public array $issues,
         /** @var array<string, array<string, scalar|null>> tuỳ chọn theo plugin id (CartLineOption) */
         public array $options = [],
+        /** Bảng giá cho giá bán hiện tại (0.3.37) — lưu vào dòng đơn để biết món hưởng giá sale/thành viên nào. */
+        public ?string $priceListCode = null,
     ) {}
 
     public function blocksCheckout(): bool

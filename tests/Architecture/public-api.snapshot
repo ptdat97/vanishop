@@ -1,4 +1,4 @@
-VaniShop 0.3.36
+VaniShop 0.3.37
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -38,7 +38,7 @@ class Modules\Cart\Contracts\Data\CartLineView
   const ISSUE_INSUFFICIENT_STOCK = 'insufficient_stock'
   const ISSUE_PRICE_CHANGED = 'price_changed'
   __construct(int $id, int $variantId, int $quantity, ?Modules\Catalog\Contracts\Data\SellableVariant $variant, ?Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, ?Modules\Shared\Domain\Money\Money $snapshotPrice, ?Modules\Shared\Domain\Money\Money $lineTotal, array $issues, array $options = array (
-))
+), ?string $priceListCode = NULL)
   blocksCheckout(): bool
 class Modules\Cart\Contracts\Data\CartView
   __construct(string $id, string $status, string $currencyCode, array $lines, Modules\Shared\Domain\Money\Money $subtotal, int $itemCount)
@@ -213,7 +213,7 @@ class Modules\Checkout\Contracts\Data\TotalsContext
   linesTotal(): Modules\Shared\Domain\Money\Money
 class Modules\Checkout\Contracts\Data\TotalsLine
   __construct(int $key, int $variantId, ?int $brandId, int $styleId, string $sku, string $name, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, Modules\Shared\Domain\Money\Money $unitPrice, ?Modules\Shared\Domain\Money\Money $compareAt, Modules\Shared\Domain\Money\Money $subtotal, Modules\Shared\Domain\Money\Money $discount, int $taxRateBp = 0, ?Modules\Shared\Domain\Money\Money $tax = NULL, ?string $brandName = NULL, array $options = array (
-))
+), ?string $priceListCode = NULL)
   total(): Modules\Shared\Domain\Money\Money
   withDiscount(Modules\Shared\Domain\Money\Money $discount): self
   withTax(int $rateBp, Modules\Shared\Domain\Money\Money $tax): self
@@ -739,7 +739,8 @@ class Modules\Ordering\Contracts\Data\OrderData
 ), string $source = 'web', array $shippingMethod = array (
 ), ?int $parentOrderId = NULL)
 class Modules\Ordering\Contracts\Data\OrderDetail
-  __construct(int $id, string $publicId, string $number, string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod, array $customerStatus, string $currencyCode, array $amounts, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $placedAt, array $lines, array $adjustments, array $events, bool $cancellableByCustomer, int $lockVersion, string $source = 'web')
+  __construct(int $id, string $publicId, string $number, string $orderStatus, string $paymentStatus, string $fulfillmentStatus, string $returnStatus, string $paymentMethod, array $customerStatus, string $currencyCode, array $amounts, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $placedAt, array $lines, array $adjustments, array $events, bool $cancellableByCustomer, int $lockVersion, string $source = 'web', array $pricing = array (
+))
 class Modules\Ordering\Contracts\Data\OrderDraft
   __construct(string $publicId, string $source, ?int $customerId, string $currencyCode, string $paymentMethod, string $paymentStatus, array $lines, array $adjustments, int $subtotalAmount, int $discountAmount, int $shippingAmount, int $taxAmount, int $totalAmount, array $customer, array $shippingAddress, array $shippingMethod, ?string $note, string $reservationKey, ?string $sourceCartId, array $meta = array (
 ), ?int $parentOrderId = NULL)
@@ -749,7 +750,7 @@ class Modules\Ordering\Contracts\Data\OrderLineData
 class Modules\Ordering\Contracts\Data\OrderLineDraft
   __construct(int $variantId, string $sku, string $productName, ?string $colorName, string $sizeCode, ?string $imageUrl, int $quantity, int $unitAmount, ?int $compareAtAmount, int $subtotalAmount, int $discountAmount, int $totalAmount, int $taxRateBp, int $taxAmount, ?int $brandId = NULL, ?string $brandName = NULL, array $options = array (
 ), ?int $styleId = NULL, array $promotions = array (
-))
+), ?string $priceListCode = NULL)
 enum Modules\Ordering\Contracts\Data\OrderStatus
   const Pending = \Modules\Ordering\Contracts\Data\OrderStatus::Pending
   const Confirmed = \Modules\Ordering\Contracts\Data\OrderStatus::Confirmed
@@ -761,6 +762,9 @@ enum Modules\Ordering\Contracts\Data\OrderStatus
   static tryFrom(string|int $value): ?static
 class Modules\Ordering\Contracts\Data\PlacedOrder
   __construct(int $id, string $publicId, string $number, string $orderStatus, string $paymentStatus, int $totalAmount, string $currencyCode, string $accessToken = '')
+class Modules\Ordering\Contracts\Data\PriceBreakdown
+  __construct(int $listAmount, int $markdown, int $subtotal, int $promotionDiscount, int $voucherDiscount, int $otherDiscount, int $shipping, int $taxIncluded, int $total, array $promotions, array $priceLists)
+  toArray(): array
 class Modules\Ordering\Contracts\Data\SalesBucket
   __construct(string $key, string $label, int $ordersCount, int $quantity, int $revenue)
 enum Modules\Ordering\Contracts\Data\SalesDimension
@@ -792,6 +796,7 @@ interface Modules\Ordering\Contracts\OrderReader
   customerHasPlacedOrder(int $customerId): bool
   customerStats(int $customerId): array
   cancellations(int $orderId): array
+  priceBreakdown(int $orderId): ?Modules\Ordering\Contracts\Data\PriceBreakdown
   changedSince(?DateTimeInterface $since, ?int $afterId, int $limit): array
 interface Modules\Ordering\Contracts\OrderStatistics
   const MAX_DAYS = 366
@@ -800,6 +805,7 @@ interface Modules\Ordering\Contracts\OrderStatistics
   breakdown(Modules\Ordering\Contracts\Data\SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
   countByStatus(): array
   summarize(array $orderIds): Modules\Ordering\Contracts\Data\SalesTotals
+  orderIdsWithPriceLists(array $priceListCodes): array
 class Modules\Ordering\Contracts\OrderTransitionRejected extends Modules\Shared\Domain\BusinessRuleViolation
   __construct(Modules\Ordering\Contracts\Data\OrderStatus $from, Modules\Ordering\Contracts\Data\OrderStatus $to)
   errorCode(): string

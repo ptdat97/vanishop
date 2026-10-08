@@ -54,6 +54,19 @@ const props = defineProps<{
             label: string;
             amount: number;
         }>;
+        pricing: {
+            list_amount: number;
+            markdown: number;
+            subtotal: number;
+            promotion_discount: number;
+            voucher_discount: number;
+            other_discount: number;
+            shipping: number;
+            tax_included: number;
+            total: number;
+            promotions: Array<{ promotion_id: number; name: string; code: string | null; voucher: boolean; amount: number }>;
+            price_lists: Array<{ code: string; markdown: number }>;
+        };
         events: Array<{
             type: string;
             from: string | null;
@@ -244,16 +257,27 @@ function addNote(): void {
                         <template v-else>Lỗi shop: khách giữ nguyên ưu đãi.</template>
                     </p>
                 </form>
+                <!-- Tầng giá (Phase 8): niêm yết → giá bán → khuyến mãi → mã giảm giá → giảm khác → phí giao → tổng (VAT đã gồm). -->
                 <dl class="space-y-1 border-t border-slate-100 p-4 text-sm">
+                    <div class="flex justify-between text-slate-600">
+                        <dt>Giá niêm yết</dt>
+                        <dd>{{ vnd(order.pricing.list_amount) }}</dd>
+                    </div>
+                    <div v-if="order.pricing.markdown" class="flex justify-between text-slate-600">
+                        <dt>Giảm giá bán<span v-if="order.pricing.price_lists.length" class="font-mono text-xs"> ({{ order.pricing.price_lists.map((list) => list.code).join(', ') }})</span></dt>
+                        <dd>-{{ vnd(order.pricing.markdown) }}</dd>
+                    </div>
                     <div class="flex justify-between">
                         <dt>Tạm tính</dt>
-                        <dd>{{ vnd(order.amounts.subtotal) }}</dd>
+                        <dd>{{ vnd(order.pricing.subtotal) }}</dd>
                     </div>
-                    <div v-for="(adjustment, index) in order.adjustments" :key="index" class="flex justify-between text-slate-600">
-                        <dt>
-                            {{ adjustment.label }}<span v-if="adjustment.code" class="font-mono"> ({{ adjustment.code }})</span>
-                        </dt>
-                        <dd>{{ vnd(adjustment.amount) }}</dd>
+                    <div v-for="promotion in order.pricing.promotions" :key="promotion.promotion_id" class="flex justify-between text-slate-600">
+                        <dt>{{ promotion.voucher ? 'Mã giảm giá' : 'Khuyến mãi' }}: {{ promotion.name }}<span v-if="promotion.code" class="font-mono"> ({{ promotion.code }})</span></dt>
+                        <dd>-{{ vnd(promotion.amount) }}</dd>
+                    </div>
+                    <div v-if="order.pricing.other_discount" class="flex justify-between text-slate-600">
+                        <dt>Giảm khác</dt>
+                        <dd>-{{ vnd(order.pricing.other_discount) }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt>Phí giao ({{ order.shippingMethod.label }})</dt>
@@ -268,6 +292,13 @@ function addNote(): void {
                         <dd>{{ vnd(order.amounts.tax) }}</dd>
                     </div>
                 </dl>
+                <details v-if="order.adjustments.length" class="border-t border-slate-100 px-4 py-2 text-xs text-slate-600">
+                    <summary class="cursor-pointer">Lịch sử điều chỉnh ({{ order.adjustments.length }})</summary>
+                    <div v-for="(adjustment, index) in order.adjustments" :key="index" class="mt-1 flex justify-between">
+                        <span>{{ adjustment.label }}<span v-if="adjustment.code" class="font-mono"> ({{ adjustment.code }})</span></span>
+                        <span>{{ vnd(adjustment.amount) }}</span>
+                    </div>
+                </details>
             </section>
 
             <ExtensionTabs :tabs="extensions.tabs" />
