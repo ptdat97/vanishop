@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Pricing\Application\PriceListService;
+use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Http\Requests\PriceListRequest;
 use Modules\Pricing\Http\Requests\PricesRequest;
@@ -31,6 +32,7 @@ final class PriceListController
         Gate::authorize('pricing.view');
 
         $lists = PriceList::query()->withCount('prices')->orderByDesc('priority')->orderBy('code')->get();
+        $groupNames = array_column(app(CustomerGroupDirectory::class)->groups(), 'name', 'id');
 
         return Inertia::render('Pricing::PriceLists/Index', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
@@ -40,6 +42,7 @@ final class PriceListController
                     'code' => $list->code,
                     'name' => $list->name,
                     'type' => $list->type->value,
+                    'customer_group' => $groupNames[$list->customer_group_id] ?? null,
                     'priority' => $list->priority,
                     'status' => $list->status,
                     'starts_at' => $list->starts_at?->format('d/m/Y H:i'),
@@ -132,6 +135,7 @@ final class PriceListController
                 'code' => $list->code,
                 'name' => $list->name,
                 'type' => $list->type->value,
+                'customer_group_id' => $list->customer_group_id,
                 'priority' => $list->priority,
                 'starts_at' => $list->starts_at?->format('Y-m-d\TH:i'),
                 'ends_at' => $list->ends_at?->format('Y-m-d\TH:i'),
@@ -139,6 +143,7 @@ final class PriceListController
                 'lock_version' => $list->lock_version,
             ],
             'types' => array_column(PriceListType::cases(), 'value'),
+            'customerGroups' => app(CustomerGroupDirectory::class)->groups(),
         ]);
     }
 }

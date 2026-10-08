@@ -12,6 +12,7 @@ use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\Application\CartPresenter;
+use Modules\Storefront\Application\MemberPrices;
 use Modules\Storefront\Application\OrderPresenter;
 
 /**
@@ -67,5 +68,15 @@ final class AccountOrderController
         abort_unless($actor->type === ActorType::Customer && $actor->id !== null, 401);
 
         return $actor->id;
+    }
+
+    /**
+     * Giá thành viên của khách (Phase 8): `?variant_ids[]=…`, chỉ variant có giá theo nhóm thấp hơn giá chung.
+     */
+    public function prices(Request $request, MemberPrices $prices): JsonResponse
+    {
+        $customer = $request->attributes->get('customer');
+
+        return response()->json(['data' => $prices->for((int) $customer->id, array_map('intval', (array) $request->query('variant_ids', [])))]);
     }
 }

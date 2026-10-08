@@ -8,8 +8,10 @@ import { reactive, ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
-    filters: { q: string | null; status: string | null };
+    filters: { q: string | null; status: string | null; group: number | null; tag: string | null };
     statuses: string[];
+    groups: Array<{ id: number; code: string; name: string }>;
+    groupsUrl: string;
     customers: Array<{
         id: string;
         ref: number;
@@ -19,6 +21,7 @@ const props = defineProps<{
         status: string;
         registered: boolean;
         created_at: string | null;
+        group: string | null;
     }>;
     pagination: { page: number; last_page: number; total: number };
     extensions: Omit<ExtensionList, 'actions'>;
@@ -30,12 +33,15 @@ const statusLabels: Record<string, string> = {
     anonymized: 'Đã ẩn danh',
 };
 const q = ref(props.filters.q ?? '');
+const tag = ref(props.filters.tag ?? '');
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 
-function search(changes: { q?: string | null; status?: string | null; page?: number } = {}): void {
+function search(changes: { q?: string | null; status?: string | null; group?: number | null; page?: number } = {}): void {
     const next = {
         q: q.value || null,
         status: props.filters.status,
+        group: props.filters.group,
+        tag: tag.value || null,
         ...changes,
     };
     router.get(props.baseUrl, { ...Object.fromEntries(Object.entries(next).filter(([, value]) => value)), ext }, { preserveState: true });
@@ -44,7 +50,9 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
 
 <template>
     <Head title="Khách hàng" />
-    <PageHeader title="Khách hàng" :subtitle="`${pagination.total} khách`" />
+    <PageHeader title="Khách hàng" :subtitle="`${pagination.total} khách`">
+        <Link :href="groupsUrl" :class="secondaryButton">Nhóm khách</Link>
+    </PageHeader>
 
     <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="[inputClass, 'w-72']" placeholder="SĐT, email, tên hoặc mã khách" />
@@ -62,6 +70,15 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
                 {{ statusLabels[status] ?? status }}
             </option>
         </select>
+        <select
+            :class="[inputClass, 'w-44']"
+            :value="filters.group ?? ''"
+            @change="search({ group: Number(($event.target as HTMLSelectElement).value) || null })"
+        >
+            <option value="">Mọi nhóm</option>
+            <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option>
+        </select>
+        <input v-model="tag" :class="[inputClass, 'w-36']" placeholder="Tag" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
@@ -73,6 +90,7 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
                 <th class="px-4 py-2">SĐT</th>
                 <th class="px-4 py-2">Email</th>
                 <th class="px-4 py-2">Loại</th>
+                <th class="px-4 py-2">Nhóm</th>
                 <th class="px-4 py-2">Tạo lúc</th>
                 <th v-for="column in extensions.columns" :key="column.key" class="px-4 py-2">{{ column.label }}</th>
             </tr>
@@ -94,11 +112,12 @@ function search(changes: { q?: string | null; status?: string | null; page?: num
                 <td class="px-4 py-2 text-xs">
                     {{ customer.registered ? 'Tài khoản' : 'Khách vãng lai' }}
                 </td>
+                <td class="px-4 py-2 text-xs">{{ customer.group ?? '—' }}</td>
                 <td class="px-4 py-2 text-xs">{{ customer.created_at }}</td>
                 <td v-for="column in extensions.columns" :key="column.key" class="px-4 py-2 text-xs">{{ extensions.values[customer.ref]?.[column.key] ?? '—' }}</td>
             </tr>
             <tr v-if="!customers.length">
-                <td :colspan="5 + extensions.columns.length" class="px-4 py-6 text-center text-slate-500">Không có khách nào.</td>
+                <td :colspan="6 + extensions.columns.length" class="px-4 py-6 text-center text-slate-500">Không có khách nào.</td>
             </tr>
         </tbody>
     </table>

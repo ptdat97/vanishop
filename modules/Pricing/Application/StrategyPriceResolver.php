@@ -6,6 +6,7 @@ namespace Modules\Pricing\Application;
 
 use InvalidArgumentException;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Pricing\Contracts\PricingStrategy;
@@ -21,10 +22,16 @@ final class StrategyPriceResolver implements PriceResolver
         private readonly Extensions $extensions,
         private readonly Settings $settings,
         private readonly string $defaultCode,
+        private readonly CustomerGroupDirectory $groups = new NoCustomerGroups,
     ) {}
 
     public function forVariants(array $variantIds, PricingContext $context): array
     {
+        // Nhóm khách tra một lần ở đây để mọi strategy (kể cả của plugin) nhận cùng ngữ cảnh.
+        if ($context->customerGroupId === null && $context->customerId !== null) {
+            $context = new PricingContext($context->now, $this->groups->groupOf($context->customerId), $context->customerId);
+        }
+
         return $this->strategy()->resolve(array_values(array_unique($variantIds)), $context);
     }
 

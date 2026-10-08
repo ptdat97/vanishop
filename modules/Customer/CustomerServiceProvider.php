@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\CustomerAccountService;
+use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Application\CustomerSessionService;
 use Modules\Customer\Application\Listeners\RefreshCustomerStats;
@@ -19,6 +20,7 @@ use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\Customers;
+use Modules\Customer\Contracts\CustomerSegments;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\OtpSender;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
@@ -30,6 +32,7 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Events\OrderPlaced;
+use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 /**
@@ -47,6 +50,10 @@ final class CustomerServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Customers::class, CustomerService::class);
+        // Phân khúc khách: một instance mỗi request (cache nhóm khách khi tính giá nhiều lần).
+        $this->app->scoped(CustomerSegmentService::class);
+        $this->app->alias(CustomerSegmentService::class, CustomerSegments::class);
+        $this->app->bind(CustomerGroupDirectory::class, fn ($app): CustomerGroupDirectory => $app->make(CustomerSegmentService::class));
         $this->app->bind(CustomerSessions::class, CustomerSessionService::class);
         $this->app->bind(CustomerAccounts::class, CustomerAccountService::class);
         $this->app->bind(OtpService::class, fn ($app): OtpService => new OtpService(
@@ -70,6 +77,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         $permissions->register('customers.view', 'Xem khách hàng (cấp Owner)');
         $permissions->register('customers.merge', 'Hợp nhất khách hàng trùng');
         $permissions->register('customers.anonymize', 'Ẩn danh hoá khách hàng theo yêu cầu xoá');
+        $permissions->register('customers.segment', 'Quản lý nhóm khách và gán nhóm/tag cho khách');
 
         $navigation->add('customers', 'Khách hàng', 'admin.customers.index', 'customers.view', 450);
 

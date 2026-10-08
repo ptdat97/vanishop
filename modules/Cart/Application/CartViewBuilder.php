@@ -37,7 +37,8 @@ final class CartViewBuilder
         }
 
         $sellable = $variantIds === [] ? [] : $this->catalog->sellableVariants($variantIds, $locale, $now);
-        $prices = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($now));
+        // Giỏ của khách đăng nhập → giá theo nhóm khách (giá thành viên); giỏ vãng lai → giá chung.
+        $prices = $variantIds === [] ? [] : $this->prices->forVariants($variantIds, new PricingContext($now, customerId: $cart->customer_id));
         $stock = $variantIds === [] ? [] : $this->availability->forVariants($variantIds);
 
         $subtotal = Money::zero($cart->currency_code);

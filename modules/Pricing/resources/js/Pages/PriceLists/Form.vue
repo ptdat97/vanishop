@@ -11,6 +11,7 @@ const props = defineProps<{
         code: string;
         name: string;
         type: string;
+        customer_group_id: number | null;
         priority: number;
         starts_at: string | null;
         ends_at: string | null;
@@ -18,6 +19,7 @@ const props = defineProps<{
         lock_version: number;
     };
     types: string[];
+    customerGroups: Array<{ id: number; code: string; name: string }>;
 }>();
 
 const typeLabels: Record<string, string> = { base: 'Giá niêm yết (base)', sale: 'Khuyến mãi (sale)', member: 'Thành viên (member)' };
@@ -25,6 +27,7 @@ const form = useForm({
     code: props.priceList?.code ?? '',
     name: props.priceList?.name ?? '',
     type: props.priceList?.type ?? 'base',
+    customer_group_id: props.priceList?.customer_group_id ?? (null as number | null),
     priority: props.priceList?.priority ?? 0,
     starts_at: props.priceList?.starts_at ?? null,
     ends_at: props.priceList?.ends_at ?? null,
@@ -61,6 +64,12 @@ function destroy(): void {
         <FormField label="Loại" :error="form.errors.type">
             <select v-model="form.type" :class="inputClass">
                 <option v-for="type in types" :key="type" :value="type">{{ typeLabels[type] ?? type }}</option>
+            </select>
+        </FormField>
+        <FormField label="Nhóm khách" :hint="form.type === 'member' ? 'Bắt buộc với bảng giá thành viên.' : 'Để trống = áp cho mọi khách.'" :error="form.errors.customer_group_id">
+            <select v-model="form.customer_group_id" :class="inputClass">
+                <option :value="null">— Mọi khách —</option>
+                <option v-for="group in customerGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
             </select>
         </FormField>
         <FormField label="Priority" hint="Cao hơn thắng. Gợi ý: base = 0, sale = 10." :error="form.errors.priority">

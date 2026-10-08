@@ -208,7 +208,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 
 ### Phase 8. Promotion / Pricing
 
-Đã có: `PricingStrategy`, bảng giá, `price_history`, khuyến mãi (rule/action, voucher), snapshot giá và giảm giá vào đơn (không tính lại đơn cũ theo giá mới). Còn: phân khúc khách, campaign, tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế). Tính lại theo ngưỡng sau huỷ một phần: ✅ 0.3.31 (Phase 2).
+Đã có: `PricingStrategy`, bảng giá, `price_history`, khuyến mãi (rule/action, voucher), snapshot giá và giảm giá vào đơn (không tính lại đơn cũ theo giá mới). **Phân khúc khách + giá thành viên ✅ 0.3.35** (một nhóm/khách + tag; bảng giá theo nhóm; giỏ/checkout theo nhóm; trang cache hiện giá chung, giá thành viên tải sau; rule khuyến mãi theo nhóm/tag). Còn: campaign, tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế). Tính lại theo ngưỡng sau huỷ một phần: ✅ 0.3.31 (Phase 2).
 
 ### Phase 9. ERP connector — ❄️ đóng băng (2026-10-08)
 

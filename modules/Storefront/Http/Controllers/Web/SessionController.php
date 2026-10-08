@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
+use Modules\Storefront\Application\MemberPrices;
 use Modules\Storefront\Application\NativeCart;
 
 /**
@@ -16,6 +17,18 @@ use Modules\Storefront\Application\NativeCart;
  */
 final class SessionController
 {
+    /**
+     * Giá thành viên cho các variant trên trang đang xem (`?v[]=1&v[]=2`) — chỉ khi khách đăng nhập thuộc nhóm có giá riêng.
+     */
+    public function prices(Request $request, MemberPrices $prices): JsonResponse
+    {
+        $customer = $request->attributes->get('customer');
+        $ids = array_map('intval', (array) $request->query('v', []));
+
+        return response()->json($customer === null ? ['group' => null, 'prices' => []] : $prices->for((int) $customer->id, $ids))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function __invoke(Request $request, NativeCart $cart): JsonResponse
     {
         $customer = $request->attributes->get('customer');

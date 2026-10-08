@@ -94,6 +94,21 @@ if (sessionUrl) {
                 status.textContent = session.flash.status;
                 status.hidden = false;
             }
+            const memberPrice = document.querySelector('[data-vani-member-price]');
+            const variantIds = [...document.querySelectorAll('input[name="variant_id"]')].map((input) => input.value);
+            if (session.signed_in && memberPrice && variantIds.length) {
+                const query = new URLSearchParams(variantIds.map((id) => ['v[]', id]));
+                fetch(`${memberPrice.dataset.route}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                    .then((response) => (response.ok ? response.json() : null))
+                    .then((data) => {
+                        const prices = Object.values(data?.prices || {});
+                        if (!prices.length) return;
+                        const lowest = prices.reduce((min, price) => (price.amount < min.amount ? price : min));
+                        memberPrice.textContent = `Giá ${data.group ?? 'thành viên'}: ${prices.length < variantIds.length ? 'từ ' : ''}${lowest.formatted}`;
+                        memberPrice.hidden = false;
+                    })
+                    .catch(() => {});
+            }
             Object.entries(session.flash.errors || {}).forEach(([field, message]) => {
                 const target = document.querySelector(`[data-vani-error-for="${field}"]`) || document.querySelector('[data-vani-error-for="business"]');
                 if (target && message) {

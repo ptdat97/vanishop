@@ -2,6 +2,10 @@
 
 use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Persistence\Models\Brand;
+use Modules\Customer\Application\CustomerSegmentService;
+use Modules\Customer\Contracts\Customers;
+use Modules\Customer\Persistence\Models\Customer;
+use Modules\Customer\Persistence\Models\CustomerGroup;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Ordering\Contracts\OrderReader;
@@ -12,9 +16,11 @@ use Modules\Promotion\Contracts\Data\PromotionLine;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Plugin\PromotionRules\Domain\Rules\CustomerHasTagsRule;
 use Plugin\PromotionRules\Domain\Rules\FirstOrderOnlyRule;
 use Plugin\PromotionRules\Domain\Rules\InBrandsRule;
 use Plugin\PromotionRules\Domain\Rules\InCollectionsRule;
+use Plugin\PromotionRules\Domain\Rules\InCustomerGroupsRule;
 use Plugin\PromotionRules\Domain\Rules\MinOrderSubtotalRule;
 use Plugin\PromotionRules\Domain\Rules\MinQuantityRule;
 use Plugin\PromotionRules\PromotionRulesServiceProvider;
@@ -154,6 +160,32 @@ it('InBrandsRule: lọc các dòng thuộc thương hiệu chỉ định (theo s
 
     $this->brand->update(['status' => 'hidden']);
     expect($rule->evaluate($ctx, ['slugs' => ['brand-promo']], new Eligibility([1, 2, 3]))->keys)->toBe([]);
+});
+
+it('InCustomerGroupsRule / CustomerHasTagsRule: nhắm theo nhóm khách và tag; khách vãng lai không đủ điều kiện', function () {
+    $vip = app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => CustomerGroup::query()->create(['code' => 'vip', 'name' => 'VIP']));
+    $customerId = app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Customers::class)->resolveForCheckout('+84933333333', 'Mai', null));
+    $customer = Customer::query()->findOrFail($customerId);
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(CustomerSegmentService::class)->assign($customer, $vip->id, ['kol', 'khach si']));
+
+    $groups = app(InCustomerGroupsRule::class);
+    $tags = app(CustomerHasTagsRule::class);
+    $all = new Eligibility([1]);
+    $lines = [makeLine(key: 1, brandId: 1, styleId: 10, quantity: 1, unitPrice: 100_000)];
+
+    expect($groups->validateConfig(['groups' => ['vip']]))->toBe([])
+        ->and($groups->validateConfig(['groups' => ['khong-co']]))->not->toBeEmpty()
+        ->and($groups->validateConfig([]))->not->toBeEmpty()
+        ->and($groups->evaluate(makeContext($lines, $customerId), ['groups' => ['vip']], $all)->keys)->toBe([1])
+        ->and($groups->evaluate(makeContext($lines, $customerId), ['groups' => ['si']], $all)->keys)->toBe([])
+        ->and($groups->evaluate(makeContext($lines, null), ['groups' => ['vip']], $all)->keys)->toBe([]);
+
+    expect($tags->validateConfig(['tags' => ['kol'], 'match' => 'all']))->toBe([])
+        ->and($tags->validateConfig(['tags' => []]))->not->toBeEmpty()
+        ->and($tags->evaluate(makeContext($lines, $customerId), ['tags' => ['kol', 'vip-moi']], $all)->keys)->toBe([1])
+        ->and($tags->evaluate(makeContext($lines, $customerId), ['tags' => ['kol', 'vip-moi'], 'match' => 'all'], $all)->keys)->toBe([])
+        ->and($tags->evaluate(makeContext($lines, $customerId), ['tags' => ['kol', 'khach-si'], 'match' => 'all'], $all)->keys)->toBe([1])
+        ->and($tags->evaluate(makeContext($lines, null), ['tags' => ['kol']], $all)->keys)->toBe([]);
 });
 
 it('tích hợp: plugin đăng ký rule vào PromotionRegistry chỉ khi được bật', function () {

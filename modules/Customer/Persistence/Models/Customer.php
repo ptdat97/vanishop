@@ -24,6 +24,7 @@ use Modules\Customer\Domain\CustomerStatus;
  * @property Carbon|null $phone_verified_at
  * @property string|null $password
  * @property int|null $merged_into_id
+ * @property int|null $customer_group_id nhóm khách (0.3.35)
  * @property array<string, mixed>|null $meta
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at

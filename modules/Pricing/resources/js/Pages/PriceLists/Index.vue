@@ -10,6 +10,7 @@ defineProps<{
         code: string;
         name: string;
         type: string;
+        customer_group: string | null;
         priority: number;
         status: string;
         starts_at: string | null;
@@ -45,7 +46,7 @@ const typeLabels: Record<string, string> = { base: 'Giá niêm yết', sale: 'Kh
                     <div class="font-medium">{{ list.name }}</div>
                     <div class="font-mono text-xs text-slate-400">{{ list.code }}<span v-if="list.status !== 'active'"> · tắt</span></div>
                 </td>
-                <td class="px-4 py-2">{{ typeLabels[list.type] ?? list.type }}</td>
+                <td class="px-4 py-2">{{ typeLabels[list.type] ?? list.type }}<div v-if="list.customer_group" class="text-xs text-slate-500">Nhóm: {{ list.customer_group }}</div></td>
                 <td class="px-4 py-2">{{ list.priority }}</td>
                 <td class="px-4 py-2 text-xs">{{ list.starts_at ?? '—' }} → {{ list.ends_at ?? '—' }}</td>
                 <td class="px-4 py-2">{{ list.prices_count }}</td>

@@ -15,7 +15,8 @@
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
 > | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK — **plugin `vani.search-meilisearch`** từ 2026-10-14); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
 > | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá gán kênh, `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
-> | Giá thành viên theo nhóm khách, giá theo số lượng, import Excel giá | Designed |
+> | Giá thành viên theo nhóm khách (0.3.35): bảng giá gắn `customer_group_id` (loại `member` bắt buộc), `PricingContext.customerId` → `PriceResolver` tự tra nhóm qua `Pricing\Contracts\CustomerGroupDirectory` (module Customer cung cấp); giỏ/checkout của khách đăng nhập tính giá nhóm; trang công khai (cache) hiện giá chung, giá thành viên qua `/_vani/gia` và `GET /api/storefront/v1/me/prices` | Implemented |
+> | Giá theo số lượng, import Excel giá | Designed |
 > | Bộ sưu tập theo luật, merchandising ghim vị trí trong Admin | Designed |
 > | Resize ảnh: bản thu nhỏ tạo khi có request đầu tiên, cache tại `public/cache` (`ImageCache`, 0.3.28); WebP qua plugin `vani.media-webp` | Implemented |
 

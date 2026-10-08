@@ -14,6 +14,7 @@ use Modules\Customer\Application\AccountLifecycle;
 use Modules\Customer\Application\AddressBook;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerQueries;
+use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Application\CustomerStats;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
@@ -27,19 +28,24 @@ use Modules\Ordering\Contracts\Data\OrderDetail;
  */
 final class CustomerController
 {
-    public function index(Request $request, CustomerQueries $queries, AdminScreen $screen): Response
+    public function index(Request $request, CustomerQueries $queries, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
         $q = is_string($request->query('q')) ? $request->query('q') : null;
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $extensionFilters = (array) $request->query('ext', []);
-        $page = $queries->search($q, $status, ids: $screen->filterIds('customer', $extensionFilters));
+        $group = is_numeric($request->query('group')) ? (int) $request->query('group') : null;
+        $tag = is_string($request->query('tag')) && $request->query('tag') !== '' ? (string) $request->query('tag') : null;
+        $page = $queries->search($q, $status, ids: $screen->filterIds('customer', $extensionFilters), groupId: $group, tag: $tag);
+        $groupNames = collect($segments->groups())->pluck('name', 'id');
 
         return Inertia::render('Customer::Customers/Index', [
             'baseUrl' => route('admin.customers.index'),
-            'filters' => ['q' => $q, 'status' => $status],
+            'filters' => ['q' => $q, 'status' => $status, 'group' => $group, 'tag' => $tag],
             'statuses' => array_column(CustomerStatus::cases(), 'value'),
-            'customers' => collect($page->items())->map(fn (Customer $customer): array => $this->row($customer))->all(),
+            'groups' => $segments->groups(),
+            'groupsUrl' => route('admin.customer-groups.index'),
+            'customers' => collect($page->items())->map(fn (Customer $customer): array => [...$this->row($customer), 'group' => $groupNames[$customer->customer_group_id] ?? null])->all(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
             'extensions' => [
                 ...$screen->columns('customer', collect($page->items())->pluck('id')->all()),
@@ -49,7 +55,7 @@ final class CustomerController
         ]);
     }
 
-    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen): Response
+    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
         $model = $queries->byPublicId($customer) ?? abort(404);
@@ -63,6 +69,7 @@ final class CustomerController
                 'last_login_at' => $model->last_login_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
                 'merged_into' => $model->merged_into_id === null ? null : Customer::query()->whereKey($model->merged_into_id)->value('public_id'),
             ],
+            'segment' => ['customer_group_id' => $model->customer_group_id, 'tags' => $segments->tagsOf($model->id), 'groups' => $segments->groups()],
             'addresses' => $addresses->all($model->id),
             'consents' => $consents->all($model->id),
             'stats' => $stats->of($model),
@@ -73,6 +80,7 @@ final class CustomerController
             'can' => [
                 'merge' => Gate::allows('customers.merge', [ScopeRef::owner()]),
                 'anonymize' => Gate::allows('customers.anonymize', [ScopeRef::owner()]),
+                'segment' => Gate::allows('customers.segment', [ScopeRef::owner()]),
             ],
             'extensions' => ['id' => $model->id, 'actions' => $screen->actions('customer', 'detail'), 'tabs' => $screen->tabs('customer', $model->id)],
         ]);
@@ -100,6 +108,19 @@ final class CustomerController
         $lifecycle->anonymize($model->id, 'staff');
 
         return back()->with('success', __('customer::messages.anonymized'));
+    }
+
+    /**
+     * Gán nhóm khách + tag (Phase 8). Tag nhập phân tách dấu phẩy, chuẩn hoá thành slug.
+     */
+    public function segment(string $customer, Request $request, CustomerQueries $queries, CustomerSegmentService $segments): RedirectResponse
+    {
+        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        $model = $queries->byPublicId($customer) ?? abort(404);
+        $data = $request->validate(['customer_group_id' => ['nullable', 'integer'], 'tags' => ['nullable', 'string', 'max:1000']]);
+        $segments->assign($model, isset($data['customer_group_id']) ? (int) $data['customer_group_id'] : null, explode(',', (string) ($data['tags'] ?? '')));
+
+        return back()->with('success', __('customer::messages.segment_saved'));
     }
 
     /**

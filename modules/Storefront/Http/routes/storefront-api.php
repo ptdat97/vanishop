@@ -42,6 +42,8 @@ Route::post('orders/{order}/returns/{return}/cancel', [OrderController::class, '
 
 Route::middleware('vani.customer')->group(function () {
     Route::get('me/cart', [AccountOrderController::class, 'cart'])->name('me.cart');
+    // Giá thành viên theo nhóm khách (Phase 8): ?variant_ids[]=…; chỉ variant có giá thấp hơn giá chung.
+    Route::get('me/prices', [AccountOrderController::class, 'prices'])->name('me.prices');
     Route::get('me/orders', [AccountOrderController::class, 'index'])->name('me.orders.index');
     Route::get('me/orders/{order}', [AccountOrderController::class, 'show'])->where('order', '[0-9A-Z]{26}')->name('me.orders.show');
     Route::post('me/orders/{order}/cancel', [AccountOrderController::class, 'cancel'])->where('order', '[0-9A-Z]{26}')->name('me.orders.cancel');

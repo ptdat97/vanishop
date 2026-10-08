@@ -48,6 +48,8 @@
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
             <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price']])</p>
+            {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
+            <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('storefront.session.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
 
             {{-- Trang cache được (không phiên): không có @csrf/old(); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}

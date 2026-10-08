@@ -38,7 +38,7 @@
 | Địa chỉ | Sổ địa chỉ theo địa giới 2 cấp ([vietnam-localization](vietnam-localization.md)) |
 | Thống kê mua | Trên hồ sơ khách: ngày mua đầu, tổng chi tiêu, số đơn (tính lại khi đặt/huỷ/merge). Mua theo brand: báo cáo từ dòng đơn |
 | Consent | `customer_consents(channel[email|sms|zns|…], purpose, granted_at, revoked_at, source)` |
-| Phân khúc | Nhóm khách (VIP, nhân viên, KOL, sỉ), tag |
+| Phân khúc | **Implemented (0.3.35):** nhóm khách `customer_groups` — mỗi khách **tối đa một nhóm** (`customers.customer_group_id`, quyết định bảng giá thành viên) — và tag tự do `customer_tags` (slug, tối đa 20/khách). Admin: Khách hàng → Nhóm khách; gán nhóm/tag ở trang khách; lọc danh sách theo nhóm/tag. Quyền `customers.segment`. Contract `CustomerSegments` (nhóm + tag); rule khuyến mãi `in_customer_groups`, `customer_has_tags` (plugin `vani.promotion-rules` 0.3.0) |
 | Mở rộng | Tab hồ sơ do plugin thêm qua `customerProfileTabs()`; dữ liệu nhỏ trong `customers.meta.<plugin>` |
 
 ## 4. Xác thực khách

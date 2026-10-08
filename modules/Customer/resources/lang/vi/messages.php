@@ -21,4 +21,10 @@ return [
     'social_redirect' => 'Địa chỉ quay về không được phép.',
     'social_failed' => 'Không đăng nhập được bằng tài khoản này. Vui lòng thử lại hoặc dùng số điện thoại.',
     'social_phone_required' => 'Vui lòng xác minh số điện thoại để hoàn tất đăng nhập.',
+    'group_in_use' => 'Nhóm còn khách — chuyển khách sang nhóm khác trước khi xoá.',
+    'group_not_found' => 'Nhóm khách không tồn tại.',
+    'too_many_tags' => 'Tối đa :max tag cho một khách.',
+    'segment_saved' => 'Đã lưu nhóm và tag của khách.',
+    'group_saved' => 'Đã lưu nhóm khách.',
+    'group_deleted' => 'Đã xoá nhóm khách.',
 ];

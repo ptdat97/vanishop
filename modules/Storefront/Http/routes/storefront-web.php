@@ -30,6 +30,7 @@ Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.the
         Route::get('/san-pham/{slug}', [ProductController::class, 'show'])->name('product');
     });
     Route::get('/_vani/phien', SessionController::class)->name('session');
+    Route::get('/_vani/gia', [SessionController::class, 'prices'])->name('session.prices');
 
     Route::get('/gio-hang', [CartController::class, 'show'])->name('cart');
     Route::middleware('throttle:vani-cart-create')->post('/gio-hang', [CartController::class, 'add'])->name('cart.add');

@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.35 — 2026-10-08
+
+Phân khúc khách + giá thành viên (roadmap Phase 8). Chỉ thêm.
+
+### Thêm
+- `Pricing\Contracts\CustomerGroupDirectory` (`groupOf`, `groups`) — module Customer cung cấp; `PricingContext::$customerId` (PriceResolver tự tra nhóm khi `customerGroupId` chưa đặt).
+- `Customer\Contracts\CustomerSegments` (`segmentOf` → `CustomerSegment{groupId, groupCode, groupName, tags}`, `groups`).
+- Storefront: `GET /api/storefront/v1/me/prices?variant_ids[]=`, native `GET /_vani/gia?v[]=` (chỉ variant có giá nhóm thấp hơn giá chung).
+- `vani.promotion-rules` 0.3.0: rule `in_customer_groups` (`groups`: mã nhóm), `customer_has_tags` (`tags`, `match` any|all).
+
 ## 0.3.34 — 2026-10-08
 
 Cache CDN cho trang công khai của storefront (roadmap Phase 7, [storefront §5](../14-storefront/storefront.md)).

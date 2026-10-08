@@ -51,7 +51,8 @@ const props = defineProps<{
         total: number;
         placed_at: string;
     }>;
-    can: { merge: boolean; anonymize: boolean };
+    can: { merge: boolean; anonymize: boolean; segment: boolean };
+    segment: { customer_group_id: number | null; tags: string[]; groups: Array<{ id: number; code: string; name: string }> };
     extensions: ExtensionDetail & { id: number };
 }>();
 
@@ -62,6 +63,11 @@ const statusLabels: Record<string, string> = {
     anonymized: 'Đã ẩn danh',
 };
 const mergeForm = useForm({ target: '' });
+const segmentForm = useForm({ customer_group_id: props.segment.customer_group_id, tags: props.segment.tags.join(', ') });
+
+function saveSegment(): void {
+    segmentForm.put(`${props.baseUrl}/${props.customer.id}/segment`, { preserveScroll: true });
+}
 
 function merge(): void {
     if (!confirm('Chuyển toàn bộ đơn, địa chỉ, consent của khách này sang khách đích? Không hoàn tác được.')) return;
@@ -131,6 +137,22 @@ function anonymize(): void {
         </div>
 
         <div class="space-y-6">
+            <form class="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="saveSegment">
+                <h2 class="font-semibold">Nhóm & tag</h2>
+                <label class="block">
+                    <span class="text-slate-500">Nhóm khách (quyết định giá thành viên)</span>
+                    <select v-model="segmentForm.customer_group_id" :class="inputClass" :disabled="!can.segment">
+                        <option :value="null">— Không nhóm —</option>
+                        <option v-for="group in segment.groups" :key="group.id" :value="group.id">{{ group.name }}</option>
+                    </select>
+                </label>
+                <label class="block">
+                    <span class="text-slate-500">Tag (phân tách dấu phẩy)</span>
+                    <input v-model="segmentForm.tags" :class="inputClass" :disabled="!can.segment" placeholder="vd. khach-si, kol" />
+                </label>
+                <p v-for="(error, key) in segmentForm.errors" :key="key" class="text-red-600">{{ error }}</p>
+                <button v-if="can.segment" type="submit" :class="secondaryButton" :disabled="segmentForm.processing">Lưu</button>
+            </form>
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <h2 class="mb-3 font-semibold">Hồ sơ</h2>
                 <dl class="space-y-1">

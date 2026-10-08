@@ -218,7 +218,7 @@ final class CartService implements Carts
         $this->assertQuantity($quantity);
 
         $variant = $this->catalog->sellableVariants([$variantId], $this->locale(), $this->now())[$variantId] ?? null;
-        $price = $this->prices->forVariants([$variantId], new PricingContext($this->now()))[$variantId] ?? null;
+        $price = $this->prices->forVariants([$variantId], new PricingContext($this->now(), customerId: $cart->customer_id))[$variantId] ?? null;
         if ($variant === null || $price === null) {
             throw CartRejected::variantUnavailable($variantId);
         }
@@ -265,7 +265,7 @@ final class CartService implements Carts
         $existing = CartLine::query()->where('cart_id', $into->id)->get()->keyBy(fn (CartLine $line): string => "{$line->variant_id}|{$line->options_hash}");
         $variantIds = $incoming->pluck('variant_id')->all();
         $sellable = $this->catalog->sellableVariants($variantIds, $this->locale(), $this->now());
-        $prices = $this->prices->forVariants($variantIds, new PricingContext($this->now()));
+        $prices = $this->prices->forVariants($variantIds, new PricingContext($this->now(), customerId: $into->customer_id));
         $stock = $this->availability->forVariants($variantIds);
         $lineCount = $existing->count();
 

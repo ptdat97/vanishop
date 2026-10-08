@@ -1,4 +1,4 @@
-VaniShop 0.3.34
+VaniShop 0.3.35
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -273,6 +273,9 @@ class Modules\Customer\Contracts\CustomerRejected extends Modules\Shared\Domain\
   errorCode(): string
   status(): int
   details(): array
+interface Modules\Customer\Contracts\CustomerSegments
+  segmentOf(int $customerId): Modules\Customer\Contracts\Data\CustomerSegment
+  groups(): array
 interface Modules\Customer\Contracts\CustomerSessions
   requestLoginOtp(string $phone, string $ip): array
   loginWithOtp(string $phone, string $code, ?string $device = NULL): array
@@ -288,6 +291,8 @@ class Modules\Customer\Contracts\Data\CustomerContact
 class Modules\Customer\Contracts\Data\CustomerData
   __construct(int $id, string $publicId, ?string $phone, ?string $email, ?string $fullName, string $status, bool $registered, ?string $birthDate = NULL, ?string $gender = NULL, bool $hasPassword = false)
   toArray(): array
+class Modules\Customer\Contracts\Data\CustomerSegment
+  __construct(?int $groupId, ?string $groupCode, ?string $groupName, array $tags)
 class Modules\Customer\Contracts\Data\ExternalIdentity
   __construct(string $provider, string $subject, ?string $phone = NULL, bool $phoneVerified = false, ?string $email = NULL, bool $emailVerified = false, ?string $fullName = NULL)
 enum Modules\Customer\Contracts\Data\OtpPurpose
@@ -943,8 +948,11 @@ class Modules\Payment\Events\RefundCreated
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+interface Modules\Pricing\Contracts\CustomerGroupDirectory
+  groupOf(int $customerId): ?int
+  groups(): array
 class Modules\Pricing\Contracts\Data\PricingContext
-  __construct(int $now, ?int $customerGroupId = NULL)
+  __construct(int $now, ?int $customerGroupId = NULL, ?int $customerId = NULL)
 class Modules\Pricing\Contracts\Data\ResolvedPrice
   __construct(int $variantId, Modules\Shared\Domain\Money\Money $amount, ?Modules\Shared\Domain\Money\Money $compareAt, ?int $discountPercent, string $priceListCode)
 interface Modules\Pricing\Contracts\PriceImporter

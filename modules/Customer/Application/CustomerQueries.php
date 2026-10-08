@@ -17,7 +17,7 @@ final class CustomerQueries
      * @param  list<int>|null  $ids  giới hạn theo bộ lọc của plugin
      * @return LengthAwarePaginator<int, Customer>
      */
-    public function search(?string $q, ?string $status, int $perPage = 30, ?array $ids = null): LengthAwarePaginator
+    public function search(?string $q, ?string $status, int $perPage = 30, ?array $ids = null, ?int $groupId = null, ?string $tag = null): LengthAwarePaginator
     {
         $q = trim((string) $q);
         $phone = $q === '' ? null : PhoneNumber::tryFromString($q);
@@ -28,6 +28,8 @@ final class CustomerQueries
                 ? $query->where('phone', $phone->e164)
                 : $query->where('email', 'like', '%'.mb_strtolower($q).'%')->orWhere('full_name', 'like', "%{$q}%")->orWhere('public_id', strtoupper($q))))
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
+            ->when($groupId !== null, fn ($query) => $query->where('customer_group_id', $groupId))
+            ->when($tag !== null && $tag !== '', fn ($query) => $query->whereIn('id', fn ($sub) => $sub->select('customer_id')->from('customer_tags')->where('tag', $tag)))
             ->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();
