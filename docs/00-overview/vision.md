@@ -24,7 +24,7 @@ VaniShop là **Commerce Kernel** của Owner, chạy **một cửa hàng** ([ADR
 | Fashion commerce | Core: mô hình Style → Màu → Size ([catalog-pricing](../03-domains/catalog-pricing.md)) |
 | Native storefront và headless/API-first | Core: Storefront Application + API dùng chung catalog/giá/tồn ([storefront](../14-storefront/storefront.md)) |
 | ERP và tích hợp ngoài | Core: Integration platform; connector là plugin |
-| Marketplace/Seller, Creator/Affiliate | Plugin ([marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md)) |
+| Marketplace/Seller, Creator/Affiliate | Plugin — ❄️ đóng băng từ 2026-10-08 ([marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md)) |
 | Nghiệp vụ riêng | Plugin qua Extension Points |
 
 > **Core cung cấp commerce primitives và business invariants. Capability đặc thù nghiệp vụ được xây ngoài Core qua Extension Points.** Mục tiêu cuối cùng: một Commerce Kernel ổn định, extension point rõ ràng, plugin phát triển độc lập, nâng cấp an toàn, không fork Core.

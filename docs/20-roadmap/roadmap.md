@@ -1,6 +1,8 @@
 # Roadmap
 
-> Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.19). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
+> Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.19). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4).
+>
+> **Mục tiêu hiện tại (2026-10-08): một cửa hàng, một người bán.** Phase 9 (ERP connector) và Phase 10 (Marketplace / Creator / Affiliate) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho chúng. Chỉ mở lại khi Owner quyết định. Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
 
 ## 1. Nguyên tắc
 
@@ -26,7 +28,7 @@
 flowchart LR
     F[0. Foundation] --> C[1. Catalog] --> P[2. Product/Style] --> V[3. Variant & Price] --> I[4. Inventory] --> CA[5. Cart] --> CO[6. Checkout] --> PA[7. Payment] --> O[8. Order] --> S[9. Shipment]
     S --> PL[10. Proof plugins<br/>VietQR · GHN · PromotionRules]
-    PL --> X[11+. Mở rộng<br/>Integration/ERP · Một cửa hàng (ADR-028) ·<br/>Marketplace · Creator · Merchandising]
+    PL --> X[11+. Mở rộng<br/>Integration · Một cửa hàng (ADR-028) · Merchandising<br/>ERP connector, Marketplace, Creator: đóng băng]
 ```
 
 ## 2. Các slice
@@ -69,7 +71,7 @@ Xếp trước slice 12 theo quyết định của Owner (checkout trước đó
 
 ### Tiến độ slice 11 — Integration platform (2026-10-10)
 
-Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc ERP cụ thể chờ Owner chốt ERP.
+Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc ERP cụ thể **đóng băng** (Phase 9).
 
 - [x] Event feed `integration_events` + transactional outbox (fan-out cùng transaction với feed) + bridge domain event → event tích hợp (`vanishop.order.v1`)
 - [x] Outbox worker nhiều tiến trình (`SKIP LOCKED`), thứ tự theo đơn, backoff 1m→24h, `failed`/`dead`, thu hồi message kẹt; concurrency test trên MySQL
@@ -82,7 +84,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 - [x] Circuit breaker theo connector (5 lỗi retryable liên tiếp → hoãn 60s, không tốn lượt thử; lỗi dữ liệu không tính)
 - [x] Đối soát đơn ↔ event feed hằng giờ, bù event thiếu (`reconciled: true`), báo cáo `integration_reconciliations` — bịt khe hở do domain event phát sau commit
 - [ ] `integration_ownerships`, đối soát tồn/thanh toán, metric/cảnh báo, các endpoint ghi còn lại, JSON Schema
-- [ ] Connector ERP (plugin) — chờ chốt ERP; contract `ErpConnector`
+- [ ] ~~Connector ERP (plugin), contract `ErpConnector`~~ — đóng băng (Phase 9, 2026-10-08)
 
 ### Tiến độ slice 10 — Proof plugins (2026-10-09)
 
@@ -111,7 +113,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 
 | Thứ tự | Hạng mục | Tài liệu |
 |---|---|---|
-| 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation) + ERP connector khi chốt ERP. **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
+| 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation). **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên. ERP connector: đóng băng (Phase 9) | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
 | 12 ✅ | **Chuyển sang một cửa hàng** (xong 2026-10-02) ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): brand thành thực thể Catalog (trang brand, facet, rule khuyến mãi, snapshot dòng đơn); gỡ `BelongsToBrand`, module Brand tenant + Channel, brand workspace, plugin scope theo brand, `X-Vani-Channel`; giỏ nhiều brand → một đơn; số đơn một dãy; Core `0.3.0` | [store-and-brand §6](../12-store/store-and-brand.md) |
 | 12b 🟡 | **Native storefront** (xong phần lõi 2026-10-02: theme + theme con, trang SSR đến đặt hàng, slot, tài khoản native, tra cứu đơn, robots/sitemap; còn page builder, cache CDN, sửa hồ sơ native): theme `vani-base` SSR-first, controller Storefront dùng chung Presenter với API, một theme đang hoạt động + theme con, trang `/thuong-hieu/{slug}`, component slot + khai báo slot storefront trong `hooks.php`, test JS tắt/slot lỗi | [storefront](../14-storefront/storefront.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) |
 | 12c 🟡 | (Phần Core xong 2026-10-02; GHN thật hoãn) PR Core: vận đơn chọn carrier theo `shippingMethod.source` của đơn (rơi về mặc định khi carrier không bật); `vani.ghn` gọi API GHN thật (báo cước có cache, đặt đơn idempotent) | [shipping-carrier](../05-plugin/contracts/shipping-carrier.md) |
@@ -119,7 +121,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới); phần phụ thuộc
 | 13 | Plugin go-live P1 còn lại: `vani.tracking-pixels` (`vani.vnpay`: đã có 2026-10-03, chờ chạy thử sandbox; `vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
-| Later | Marketplace, Creator/Affiliate, advanced merchandising, recommendation | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |
+| Later | Advanced merchandising, recommendation. (Marketplace, Creator/Affiliate: đóng băng — Phase 10) | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |
 
 ## 4. Hardening Commerce Kernel (từ 2026-10-04)
 
@@ -208,13 +210,13 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 
 Đã có: `PricingStrategy`, bảng giá, `price_history`, khuyến mãi (rule/action, voucher), snapshot giá và giảm giá vào đơn (không tính lại đơn cũ theo giá mới). Còn: phân khúc khách, campaign, tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế), tính lại theo ngưỡng sau huỷ một phần.
 
-### Phase 9. ERP connector
+### Phase 9. ERP connector — ❄️ đóng băng (2026-10-08)
 
-Chỉ làm khi contract tích hợp ổn định (Phase 4, 6) và Owner chốt ERP. Connector là plugin qua `Connector`/`InboundHandler`/`ExternalReferences`/`Mappings`, không đưa SDK hay logic ERP vào Core ([erp-integration](../11-integration/erp-integration.md)).
+Không làm trong mục tiêu hiện tại (một cửa hàng, một người bán). Ghi lại để mở lại sau: chỉ làm khi contract tích hợp ổn định (Phase 4, 6) và Owner chốt ERP. Connector là plugin qua `Connector`/`InboundHandler`/`ExternalReferences`/`Mappings`, không đưa SDK hay logic ERP vào Core ([erp-integration](../11-integration/erp-integration.md)).
 
-### Phase 10. Marketplace / Creator / Affiliate
+### Phase 10. Marketplace / Creator / Affiliate — ❄️ đóng băng (2026-10-08)
 
-Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `vani.attribution`. Các plugin này dùng Catalog/Pricing/Order/Payment/Inventory/Customer/Integration qua contract công khai. Chỉ bắt đầu sau khi Phase 1–6 đạt Done.
+Không làm trong mục tiêu hiện tại: một cửa hàng, **một người bán** (không seller, không commission, không creator/affiliate). Ghi lại để mở lại sau: plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `vani.attribution`. Các plugin này dùng Catalog/Pricing/Order/Payment/Inventory/Customer/Integration qua contract công khai. Chỉ bắt đầu sau khi Phase 1–6 đạt Done.
 
 ### Việc kế tiếp đề xuất
 
@@ -225,10 +227,14 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 5. Phase 5: trạng thái `draining` + xác nhận `--force`. ✅ 2026-10-07 (Core 0.3.23)
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
 7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
+8. Phase 2 còn: tính lại khuyến mãi theo ngưỡng sau huỷ một phần; đổi hàng (đơn thay thế).
+9. Phase 5, 7, 8 còn: capability theo tag giữa plugin; gửi yêu cầu đổi/trả trên storefront native; cache CDN; phân khúc khách, campaign.
+
+Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.
 
 ## 5. Go-live gate
 
-- [ ] Slice 0–10 đạt Done (slice 12 và 12d đã xong 2026-10-02); slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
+- [ ] Slice 0–10 đạt Done (slice 12 và 12d đã xong 2026-10-02); slice 11 ở phần lõi (ERP connector đóng băng, không phải điều kiện go-live).
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
 - [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
 - [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)). → **Một phần**: correlation id trong mọi dòng log; metric tối thiểu + thẻ Pulse "Thương mại" + `GET /health` (0.3.25). Cảnh báo tự động qua email/plugin (0.3.30). Còn thiếu: tracing, gọi điện on-call.
@@ -243,7 +249,7 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 | Extension point thiếu/sai khiến plugin phải hack Core | Cao | Slice 10 là bài kiểm tra bắt buộc; bổ sung extension point bằng PR Core tổng quát |
 | Tài liệu lệch khỏi implementation | Cao | `status.md` cập nhật mỗi PR; OpenAPI viết cùng code; rule R24 |
 | Over-engineering DDD | Trung bình | Phân biệt context "rich" và "CRUD" ([ADR-002](../19-adr/ADR-002-ddd-boundaries.md)) |
-| Vai trò ODO/ERP chưa chốt | Cao | Fulfillment `internal` trước; Integration API chuẩn |
+| Vai trò ODO/ERP chưa chốt | Thấp (Phase 9 đóng băng) | Fulfillment `internal`; Integration API chuẩn sẵn cho khi mở lại |
 | Oversell mùa sale | Trung bình | Reservation atomic + Redis gate + concurrency test |
 | Vi phạm license BeikeShop | Trung bình | [clean-room](../01-principles/clean-room-license.md) + CI grep |
 | Phạm vi Core phình to | Cao | Tiêu chí [commerce-kernel §1](../02-architecture/commerce-kernel.md) khi review |

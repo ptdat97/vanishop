@@ -1,6 +1,6 @@
 # ERP Integration
 
-> Trạng thái: **Designed** (abstraction). Chưa chốt ERP cụ thể; vai trò **ODO tạm hoãn**. Quyết định: [ADR-007](../19-adr/ADR-007-erp-integration.md).
+> Trạng thái: **❄️ Đóng băng** (2026-10-08, roadmap Phase 9). Abstraction đã thiết kế giữ để tham khảo; không làm connector ERP nào cho tới khi Owner mở lại. Nền tảng tích hợp chung (event feed, outbox/inbox, Integration API) vẫn duy trì. Vai trò **ODO tạm hoãn**. Quyết định: [ADR-007](../19-adr/ADR-007-erp-integration.md).
 
 ## 1. Khái niệm
 

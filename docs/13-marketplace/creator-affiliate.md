@@ -1,6 +1,6 @@
 # Creator / Affiliate / Attribution (plugin `vani.creator`)
 
-> Trạng thái: **Designed** (ranh giới và extension point). Đợt **Later**.
+> Trạng thái: **❄️ Đóng băng** (2026-10-08, roadmap Phase 10) — mục tiêu hiện tại là một cửa hàng, một người bán. Giữ làm tham khảo khi Owner mở lại; không triển khai. Trước đó: **Designed**, đợt **Later**.
 
 Không nhúng logic Creator vào Checkout Core. Attribution **độc lập với Order** và liên kết với đơn qua ID.
 

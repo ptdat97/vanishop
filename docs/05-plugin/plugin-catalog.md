@@ -96,15 +96,15 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 ### Tích hợp hệ thống
 | Plugin | Contract | Đợt |
 |---|---|---|
-| `vani.erp-<tên>` (Odoo, SAP B1, MISA AMIS…) | `ErpConnector` ([erp-integration](../11-integration/erp-integration.md)) | Khi chốt ERP |
+| `vani.erp-<tên>` (Odoo, SAP B1, MISA AMIS…) | `ErpConnector` ([erp-integration](../11-integration/erp-integration.md)) | ❄️ Đóng băng (Phase 9) |
 | `vani.odo` | `Connector` hoặc Integration Client | Khi chốt vai trò ODO |
 | `vani.pos-sync` | `Connector` / Integration API | P3 |
 
 ### Mô hình kinh doanh mới
 | Plugin | Tài liệu | Đợt |
 |---|---|---|
-| `vani.marketplace` | [marketplace](../13-marketplace/marketplace.md) | Later |
-| `vani.creator` (creator/affiliate/attribution) | [creator-affiliate](../13-marketplace/creator-affiliate.md) | Later |
+| `vani.marketplace` | [marketplace](../13-marketplace/marketplace.md) | ❄️ Đóng băng (Phase 10) |
+| `vani.creator` (creator/affiliate/attribution) | [creator-affiliate](../13-marketplace/creator-affiliate.md) | ❄️ Đóng băng (Phase 10) |
 
 ### Báo cáo & nội dung
 | Plugin | Đợt |

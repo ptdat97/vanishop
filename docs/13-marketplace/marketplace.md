@@ -1,6 +1,6 @@
 # Marketplace (plugin `vani.marketplace`)
 
-> Trạng thái: **Designed** (chỉ ranh giới và extension point). Chưa có kế hoạch triển khai; đợt **Later** ([plugin-catalog](../05-plugin/plugin-catalog.md)). Quyết định: [ADR-015](../19-adr/ADR-015-marketplace-architecture.md).
+> Trạng thái: **❄️ Đóng băng** (2026-10-08, roadmap Phase 10) — mục tiêu hiện tại là một cửa hàng, một người bán. Nội dung dưới đây chỉ là ranh giới đã thiết kế, giữ để tham khảo khi Owner mở lại; không triển khai, không thêm extension point cho nó. Trước đó: **Designed**, đợt **Later** ([plugin-catalog](../05-plugin/plugin-catalog.md)). Quyết định: [ADR-015](../19-adr/ADR-015-marketplace-architecture.md).
 
 Marketplace **không được làm biến dạng Commerce Core**. Seller là một khái niệm của plugin. Core không có cột `seller_id` và không có logic commission.
 
