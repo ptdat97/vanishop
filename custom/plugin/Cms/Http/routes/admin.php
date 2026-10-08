@@ -12,5 +12,4 @@ foreach (['pages', 'posts'] as $kind) {
     Route::put("{$kind}/{id}", [ContentController::class, 'update'])->defaults('kind', $kind)->whereNumber('id')->name("{$kind}.update");
     Route::delete("{$kind}/{id}", [ContentController::class, 'destroy'])->defaults('kind', $kind)->whereNumber('id')->name("{$kind}.destroy");
 }
-Route::post('uploads', [ContentController::class, 'upload'])->middleware('throttle:60,1')->name('uploads');
 Route::post('preview', [ContentController::class, 'preview'])->name('preview');

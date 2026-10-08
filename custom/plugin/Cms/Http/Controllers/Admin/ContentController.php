@@ -8,12 +8,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Contracts\MediaDirectory;
 use Plugin\Cms\Infrastructure\CmsMedia;
 use Plugin\Cms\Infrastructure\Markdown;
 use Plugin\Cms\Infrastructure\Navigation;
@@ -31,7 +34,8 @@ final class ContentController
     private const TIMEZONE = 'Asia/Ho_Chi_Minh';
 
     public function __construct(
-        private readonly CmsMedia $media,
+        private readonly CmsMedia $covers,
+        private readonly MediaDirectory $media,
         private readonly Markdown $markdown,
     ) {}
 
@@ -92,20 +96,14 @@ final class ContentController
     public function destroy(int $id, string $kind): RedirectResponse
     {
         Gate::authorize('cms.manage');
-        $this->find($kind, $id)->delete();
+        $item = $this->find($kind, $id);
+        DB::transaction(function () use ($item, $kind): void {
+            $item->delete();
+            $this->media->releaseUsages($this->ownerType($kind), $item->id);
+        });
         Navigation::forget();
 
         return redirect()->route("admin.plugins.vani-cms.{$kind}.index")->with('success', 'Đã xoá.');
-    }
-
-    /** Ảnh cho nội dung (ảnh bìa, chèn vào bài): trả đường dẫn lưu + URL công khai. */
-    public function upload(Request $request): JsonResponse
-    {
-        Gate::authorize('cms.manage');
-        $request->validate(['image' => ['required', 'image', 'mimes:'.implode(',', CmsMedia::MIMES), 'max:'.CmsMedia::MAX_KB]]);
-        $path = $this->media->store($request->file('image'));
-
-        return response()->json(['path' => $path, 'url' => $this->media->url($path)]);
     }
 
     /** Xem trước Markdown đã render (cùng bộ render với storefront). */
@@ -126,8 +124,8 @@ final class ContentController
                 'meta_title' => $item->meta_title, 'meta_description' => $item->meta_description, 'status' => $item->status,
                 'published_at' => $item->published_at?->timezone(self::TIMEZONE)->format('Y-m-d\TH:i'),
                 'excerpt' => $item instanceof Post ? $item->excerpt : null,
-                'cover_path' => $item instanceof Post ? $item->cover_path : null,
-                'cover_url' => $item instanceof Post ? $this->media->url($item->cover_path) : null,
+                'cover_media_id' => $item instanceof Post ? $item->cover_media_id : null,
+                'cover_url' => $item instanceof Post ? $this->covers->coverUrl($item, 800) : null,
                 'show_in_header' => $item instanceof Page && $item->show_in_header,
                 'show_in_footer' => $item instanceof Page && $item->show_in_footer,
                 'sort_order' => $item instanceof Page ? $item->sort_order : 0,
@@ -149,7 +147,7 @@ final class ContentController
             'pages' => route('admin.plugins.vani-cms.pages.index'), 'posts' => route('admin.plugins.vani-cms.posts.index'),
             'index' => route("admin.plugins.vani-cms.{$kind}.index"), 'create' => route("admin.plugins.vani-cms.{$kind}.create"),
             'store' => route("admin.plugins.vani-cms.{$kind}.store"),
-            'upload' => route('admin.plugins.vani-cms.uploads'), 'preview' => route('admin.plugins.vani-cms.preview'),
+            'preview' => route('admin.plugins.vani-cms.preview'),
         ];
     }
 
@@ -166,9 +164,16 @@ final class ContentController
             'status' => ['required', Rule::in([Content::DRAFT, Content::PUBLISHED])],
             'published_at' => ['nullable', 'date'],
             ...($kind === 'posts'
-                ? ['excerpt' => ['nullable', 'string', 'max:500'], 'cover_path' => ['nullable', 'string', 'max:255', 'regex:#^cms/[0-9]{4}/[0-9]{2}/[a-z0-9]+\.(jpe?g|png|webp|gif)$#']]
+                ? ['excerpt' => ['nullable', 'string', 'max:500'], 'cover_media_id' => ['nullable', 'integer'], 'remove_cover' => ['boolean']]
                 : ['show_in_header' => ['boolean'], 'show_in_footer' => ['boolean'], 'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535']]),
         ]);
+
+        $cover = isset($data['cover_media_id']) ? (int) $data['cover_media_id'] : null;
+        $removeCover = (bool) ($data['remove_cover'] ?? false);
+        unset($data['cover_media_id'], $data['remove_cover']);
+        if ($cover !== null && $this->media->find([$cover]) === []) {
+            throw ValidationException::withMessages(['cover_media_id' => 'Ảnh bìa không còn trong Thư viện ảnh.']);
+        }
 
         // Giờ nhập theo giờ VN; đăng mà không chọn giờ → đăng ngay (giữ giờ đăng cũ nếu đã có).
         $publishedAt = isset($data['published_at']) ? Carbon::parse($data['published_at'], self::TIMEZONE)->utc() : null;
@@ -176,12 +181,28 @@ final class ContentController
             $publishedAt = $item->published_at ?? now();
         }
 
-        $item->fill([...$data, 'published_at' => $publishedAt, ...($kind === 'pages' ? [
+        $item->fill([...$data, 'published_at' => $publishedAt, ...($kind === 'posts' ? [
+            // Ảnh bìa từ thư viện thay ảnh bìa kiểu cũ (cover_path); không chọn gì → giữ ảnh cũ trừ khi bấm "Bỏ".
+            'cover_media_id' => $removeCover ? null : $cover,
+            ...($cover !== null || $removeCover ? ['cover_path' => null] : []),
+        ] : []), ...($kind === 'pages' ? [
             'show_in_header' => $request->boolean('show_in_header'), 'show_in_footer' => $request->boolean('show_in_footer'),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
         ] : [])]);
-        $item->save();
+        DB::transaction(function () use ($item, $kind): void {
+            $item->save();
+            // Ảnh đang dùng (bìa + chèn trong bài) → Thư viện ảnh không cho xoá.
+            $this->media->syncUsages($this->ownerType($kind), $item->id, 'body', Markdown::mediaIds($item->body));
+            if ($item instanceof Post) {
+                $this->media->syncUsages(CmsMedia::POST, $item->id, 'cover', $item->cover_media_id === null ? [] : [$item->cover_media_id]);
+            }
+        });
         Navigation::forget();
+    }
+
+    private function ownerType(string $kind): string
+    {
+        return $kind === 'pages' ? CmsMedia::PAGE : CmsMedia::POST;
     }
 
     private function status(Content $item): string

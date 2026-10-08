@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.29 — 2026-10-08
+
+Thư viện ảnh dùng chung cho plugin. Chỉ thêm.
+
+### Thêm
+- `Catalog\Contracts\MediaDirectory`: `find(ids)` → `MediaData` (`urlFor(width)`, `srcset()`), `syncUsages(ownerType, ownerId, role, mediaIds)`, `releaseUsages(ownerType, ?ownerId)`. Plugin lưu id ảnh (chọn qua `MediaPicker` ở Admin — `@admin/Components/Media/MediaPicker.vue`) và khai báo nơi dùng để Thư viện ảnh chặn xoá ảnh đang dùng.
+- Quyền `media.view`, `media.manage`; prop Inertia chia sẻ `urls.media`.
+- `vani.cms` 1.1.0 dùng contract này (ảnh bìa `cover_media_id`, ảnh trong bài `media:ID`); bỏ endpoint `POST /{admin}/plugins/vani-cms/uploads`.
+
 ## 0.3.28 — 2026-10-07
 
 Cache ảnh thu nhỏ tại `public/cache` + extension point định dạng ảnh. Chỉ thêm (đổi hành vi URL ảnh, xem dưới).

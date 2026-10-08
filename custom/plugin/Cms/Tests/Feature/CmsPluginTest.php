@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Media\ImageCache;
+use Modules\Catalog\Persistence\Models\Media;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
@@ -129,18 +131,38 @@ it('Admin: tạo trang (slug từ tiêu đề có dấu), slug trùng → lỗi,
     Carbon::setTestNow();
 });
 
-it('Admin: bài viết có ảnh bìa tải lên; xem trước Markdown; quyền xem không sửa được; plugin tắt → 404', function () {
+it('Admin: bài viết dùng ảnh bìa + ảnh trong bài từ Thư viện ảnh; xem trước Markdown; quyền xem không sửa được; plugin tắt → 404', function () {
     Storage::fake('public');
+    config(['vanishop.media.cache.path' => storage_path('framework/testing/image-cache-'.bin2hex(random_bytes(4)))]);
+    app()->forgetInstance(ImageCache::class);
+    $this->editor = StaffUser::factory()->withPermissions(['admin.access', 'cms.view', 'cms.manage', 'media.view', 'media.manage'])->create();
     $this->actingAs($this->editor, 'staff');
+    [$cover, $inline] = $this->postJson('/admin/media/upload', ['images' => [UploadedFile::fake()->image('bia.jpg', 2000, 1125), UploadedFile::fake()->image('ao.jpg', 1200, 1500)]])->assertOk()->json('items');
 
-    $upload = $this->post("{$this->admin}/uploads", ['image' => UploadedFile::fake()->image('bia.jpg', 800, 450)])->assertOk();
-    Storage::disk('public')->assertExists($upload->json('path'));
-    $this->post("{$this->admin}/uploads", ['image' => UploadedFile::fake()->create('x.pdf', 10, 'application/pdf')])->assertSessionHasErrors('image');
+    $body = "Gợi ý...\n\n![Áo đi biển](media:{$inline['id']})\n\n![đã xoá](media:999999)";
+    $this->post("{$this->admin}/posts", ['title' => 'Mặc gì đi biển', 'body' => $body, 'status' => 'published', 'cover_media_id' => $cover['id']])->assertRedirect()->assertSessionHasNoErrors();
+    $this->post("{$this->admin}/posts", ['title' => 'Ảnh lạ', 'body' => 'x', 'status' => 'draft', 'cover_media_id' => 999_999])->assertSessionHasErrors('cover_media_id');
+    $post = Post::query()->sole();
+    expect($post->cover_media_id)->toBe($cover['id']);
 
-    $this->post("{$this->admin}/posts", ['title' => 'Mặc gì đi biển', 'body' => 'Gợi ý...', 'status' => 'published', 'cover_path' => $upload->json('path')])->assertRedirect()->assertSessionHasNoErrors();
-    $this->post("{$this->admin}/posts", ['title' => 'Ảnh lạ', 'body' => 'x', 'status' => 'draft', 'cover_path' => '../../.env'])->assertSessionHasErrors('cover_path');
-    expect(Post::query()->sole()->cover_path)->toBe($upload->json('path'));
-    $this->get('/tin-tuc/mac-gi-di-bien')->assertOk()->assertSee(Storage::disk('public')->url($upload->json('path')));
+    $html = $this->get('/tin-tuc/mac-gi-di-bien')->assertOk()->getContent();
+    $prefix = fn (array $item) => '/cache/media/'.substr(Media::query()->find($item['id'])->checksum, 0, 2).'/';
+    expect($html)->toContain($prefix($cover).Media::query()->find($cover['id'])->checksum.'-w1600.jpg')
+        ->toContain('alt="Áo đi biển"')
+        ->toContain('srcset="')
+        ->toContain($prefix($inline).Media::query()->find($inline['id'])->checksum.'-w800.jpg')
+        ->not->toContain('media:')
+        ->not->toContain('đã xoá');
+
+    // Ảnh đang dùng ở CMS không xoá được trong Thư viện ảnh; xoá bài → xoá được.
+    $this->postJson('/admin/media/items/delete', ['ids' => [$cover['id'], $inline['id']]])->assertOk()->assertJsonPath('deleted', 0)->assertJsonPath('in_use', 2);
+
+    // Lưu lại không gửi ảnh bìa → bỏ ảnh bìa chỉ khi bấm "Bỏ"; ảnh trong bài bỏ khỏi nội dung → hết "đang dùng".
+    $this->put("{$this->admin}/posts/{$post->id}", ['title' => 'Mặc gì đi biển', 'body' => 'Không còn ảnh', 'status' => 'published', 'cover_media_id' => $cover['id']])->assertSessionHasNoErrors();
+    $this->postJson('/admin/media/items/delete', ['ids' => [$inline['id']]])->assertOk()->assertJsonPath('deleted', 1);
+    $this->put("{$this->admin}/posts/{$post->id}", ['title' => 'Mặc gì đi biển', 'body' => 'x', 'status' => 'published', 'remove_cover' => true])->assertSessionHasNoErrors();
+    expect($post->refresh()->cover_media_id)->toBeNull();
+    $this->postJson('/admin/media/items/delete', ['ids' => [$cover['id']]])->assertOk()->assertJsonPath('deleted', 1);
 
     $this->postJson("{$this->admin}/preview", ['body' => '**đậm** <b>thô</b>'])->assertOk()->assertJsonPath('html', "<p><strong>đậm</strong> thô</p>\n");
 
@@ -151,6 +173,22 @@ it('Admin: bài viết có ảnh bìa tải lên; xem trước Markdown; quyền
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable(CmsServiceProvider::ID));
     $this->get('/tin-tuc/mac-gi-di-bien')->assertNotFound();
     $this->actingAs($this->editor, 'staff')->get("{$this->admin}/posts")->assertNotFound();
+});
+
+it('bài tạo ở CMS 1.0 (cover_path) vẫn hiện ảnh bìa; xoá bài bỏ ghi nhận đang dùng ảnh', function () {
+    Storage::fake('public');
+    cmsPost(['cover_path' => 'cms/2026/10/abc.jpg']);
+    $this->get('/tin-tuc/bo-suu-tap-thu')->assertOk()->assertSee(Storage::disk('public')->url('cms/2026/10/abc.jpg'));
+
+    $this->editor = StaffUser::factory()->withPermissions(['admin.access', 'cms.view', 'cms.manage', 'media.view', 'media.manage'])->create();
+    $this->actingAs($this->editor, 'staff');
+    [$image] = $this->postJson('/admin/media/upload', ['images' => [UploadedFile::fake()->image('a.jpg', 600, 400)]])->assertOk()->json('items');
+    $post = Post::query()->sole();
+    $this->put("{$this->admin}/posts/{$post->id}", ['title' => $post->title, 'body' => "![](media:{$image['id']})", 'status' => 'published'])->assertSessionHasNoErrors();
+    expect($post->refresh()->cover_path)->toBe('cms/2026/10/abc.jpg');
+
+    $this->delete("{$this->admin}/posts/{$post->id}")->assertRedirect();
+    $this->postJson('/admin/media/items/delete', ['ids' => [$image['id']]])->assertOk()->assertJsonPath('deleted', 1);
 });
 
 it('khối "Bài viết mới" cho page builder trang chủ', function () {

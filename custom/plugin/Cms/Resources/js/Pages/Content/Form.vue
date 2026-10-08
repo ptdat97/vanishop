@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
+import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
-import { HttpError, postJson } from '@admin/http';
+import { postJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { MediaItem } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { kindLabels, type Kind } from './labels';
@@ -18,7 +20,7 @@ type Item = {
     status: 'draft' | 'published';
     published_at: string | null;
     excerpt: string | null;
-    cover_path: string | null;
+    cover_media_id: number | null;
     cover_url: string | null;
     show_in_header: boolean;
     show_in_footer: boolean;
@@ -34,7 +36,6 @@ const props = defineProps<{
     urls: {
         index: string;
         store: string;
-        upload: string;
         preview: string;
         item: string | null;
     };
@@ -49,7 +50,8 @@ const form = useForm({
     status: props.item?.status ?? 'draft',
     published_at: props.item?.published_at ?? '',
     excerpt: props.item?.excerpt ?? '',
-    cover_path: props.item?.cover_path ?? '',
+    cover_media_id: props.item?.cover_media_id ?? (null as number | null),
+    remove_cover: false,
     show_in_header: props.item?.show_in_header ?? false,
     show_in_footer: props.item?.show_in_footer ?? false,
     sort_order: props.item?.sort_order ?? 0,
@@ -57,7 +59,7 @@ const form = useForm({
 const coverUrl = ref<string | null>(props.item?.cover_url ?? null);
 const previewHtml = ref<string | null>(null);
 const busy = ref(false);
-const uploadError = ref<string | null>(null);
+const picking = ref<'cover' | 'body' | null>(null);
 const bodyField = ref<HTMLTextAreaElement | null>(null);
 const label = computed(() => kindLabels[props.kind].singular);
 const prefix = computed(() => (props.kind === 'pages' ? '/trang/' : '/tin-tuc/'));
@@ -94,49 +96,34 @@ async function togglePreview(): Promise<void> {
     }
 }
 
-async function upload(file: File): Promise<{ path: string; url: string } | null> {
-    uploadError.value = null;
-    const data = new FormData();
-    data.append('image', file);
-    busy.value = true;
-    try {
-        return await postJson<{ path: string; url: string }>(props.urls.upload, data);
-    } catch (error) {
-        uploadError.value = error instanceof HttpError ? (error.errors.image?.[0] ?? error.message) : 'Không tải được ảnh.';
-        return null;
-    } finally {
-        busy.value = false;
-    }
-}
-
-async function insertImage(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    const result = await upload(file);
-    if (!result) return;
-    const markdown = `\n![](${result.url})\n`;
+/** Ảnh từ Thư viện ảnh chèn dạng `![mô tả](media:ID)`: URL thật (kèm srcset) được tạo lúc hiển thị. */
+function insertImages(items: MediaItem[]): void {
+    const markdown = items.map((item) => `\n![${item.name.replace(/\.[a-z0-9]+$/i, '').replace(/[[\]]/g, '')}](media:${item.id})\n`).join('');
     const field = bodyField.value;
     const at = field?.selectionStart ?? form.body.length;
     form.body = form.body.slice(0, at) + markdown + form.body.slice(at);
 }
 
-async function setCover(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    const result = await upload(file);
-    if (result) {
-        form.cover_path = result.path;
-        coverUrl.value = result.url;
+function setCover([item]: MediaItem[]): void {
+    if (item) {
+        form.cover_media_id = item.id;
+        form.remove_cover = false;
+        coverUrl.value = item.thumb_url;
     }
 }
 
 function removeCover(): void {
-    form.cover_path = '';
+    form.cover_media_id = null;
+    form.remove_cover = true;
     coverUrl.value = null;
+}
+
+function onPicked(items: MediaItem[]): void {
+    if (picking.value === 'cover') {
+        setCover(items);
+    } else {
+        insertImages(items);
+    }
 }
 </script>
 
@@ -173,10 +160,7 @@ function removeCover(): void {
                 <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
                     <span class="text-sm font-medium">Nội dung (Markdown)</span>
                     <div class="flex items-center gap-2">
-                        <label v-if="can.manage" :class="[secondaryButton, 'cursor-pointer']">
-                            Chèn ảnh
-                            <input type="file" accept="image/*" class="hidden" @change="insertImage" />
-                        </label>
+                        <button v-if="can.manage" type="button" :class="secondaryButton" :disabled="previewHtml !== null" @click="picking = 'body'">Chèn ảnh</button>
                         <button type="button" :class="secondaryButton" :disabled="busy" @click="togglePreview">
                             {{ previewHtml === null ? 'Xem trước' : 'Soạn tiếp' }}
                         </button>
@@ -196,10 +180,10 @@ function removeCover(): void {
                 <p v-if="form.errors.body" class="mt-1 text-sm text-red-600">
                     {{ form.errors.body }}
                 </p>
-                <p v-if="uploadError" class="mt-1 text-sm text-red-600">
-                    {{ uploadError }}
+                <p class="mt-1 text-xs text-slate-500">
+                    Hỗ trợ tiêu đề (##), in đậm, danh sách, liên kết, ảnh, bảng. HTML thô không được hiển thị. Ảnh chèn từ thư viện có dạng
+                    <code>![mô tả](media:123)</code> — sửa phần mô tả cho đúng nội dung ảnh.
                 </p>
-                <p class="mt-1 text-xs text-slate-500">Hỗ trợ tiêu đề (##), in đậm, danh sách, liên kết, ảnh, bảng. HTML thô không được hiển thị.</p>
             </div>
         </div>
 
@@ -225,14 +209,11 @@ function removeCover(): void {
                 <h2 class="text-sm font-medium">Ảnh bìa</h2>
                 <img v-if="coverUrl" :src="coverUrl" alt="" class="w-full rounded" />
                 <div v-if="can.manage" class="flex gap-2">
-                    <label :class="[secondaryButton, 'cursor-pointer']">
-                        {{ coverUrl ? 'Đổi ảnh' : 'Chọn ảnh' }}
-                        <input type="file" accept="image/*" class="hidden" @change="setCover" />
-                    </label>
+                    <button type="button" :class="secondaryButton" @click="picking = 'cover'">{{ coverUrl ? 'Đổi ảnh' : 'Chọn ảnh' }}</button>
                     <button v-if="coverUrl" type="button" :class="secondaryButton" @click="removeCover">Bỏ</button>
                 </div>
-                <p v-if="form.errors.cover_path" class="text-sm text-red-600">
-                    {{ form.errors.cover_path }}
+                <p v-if="form.errors.cover_media_id" class="text-sm text-red-600">
+                    {{ form.errors.cover_media_id }}
                 </p>
             </section>
 
@@ -265,6 +246,13 @@ function removeCover(): void {
             </section>
         </aside>
     </form>
+    <MediaPicker
+        :open="picking !== null"
+        :title="picking === 'cover' ? 'Chọn ảnh bìa' : 'Chèn ảnh vào nội dung'"
+        :multiple="picking === 'body'"
+        @update:open="(value) => !value && (picking = null)"
+        @select="onPicked"
+    />
 </template>
 
 <style scoped>
@@ -297,6 +285,7 @@ function removeCover(): void {
 }
 .vani-admin-prose :deep(img) {
     max-width: 100%;
+    height: auto;
 }
 .vani-admin-prose :deep(th),
 .vani-admin-prose :deep(td) {

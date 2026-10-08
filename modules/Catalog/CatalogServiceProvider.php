@@ -11,6 +11,7 @@ use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
 use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
+use Modules\Catalog\Application\Media\EloquentMediaDirectory;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
@@ -24,6 +25,7 @@ use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Contracts\ImageFormat;
+use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Events\ProductArchived;
@@ -57,6 +59,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         ));
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
+        $this->app->bind(MediaDirectory::class, EloquentMediaDirectory::class);
         $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);

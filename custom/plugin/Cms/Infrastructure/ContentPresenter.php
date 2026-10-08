@@ -39,7 +39,7 @@ final class ContentPresenter
         return [
             'slug' => $post->slug, 'title' => $post->title,
             'excerpt' => $post->excerpt ?: $this->markdown->plain($post->body, 200),
-            'cover_url' => $this->media->url($post->cover_path),
+            'cover_url' => $this->media->coverUrl($post),
             'url' => route('storefront.p.vani-cms.post', $post->slug),
             'published_at' => $post->published_at?->toIso8601String(),
             'published_date' => $post->published_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y'),

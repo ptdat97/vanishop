@@ -4,33 +4,28 @@ declare(strict_types=1);
 
 namespace Plugin\Cms\Infrastructure;
 
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Modules\Catalog\Contracts\MediaDirectory;
+use Plugin\Cms\Persistence\Post;
 
 /**
- * Ảnh của nội dung (ảnh bìa, ảnh trong bài) — cùng disk với ảnh catalog (`vanishop.media.disk`), thư mục `cms/`.
+ * Ảnh bìa của bài viết: từ Thư viện ảnh dùng chung (`cover_media_id`, 1.1.0); bài tạo ở 1.0 còn `cover_path` (file CMS
+ * tự lưu trong thư mục `cms/` của disk media) thì vẫn hiển thị.
  */
 final class CmsMedia
 {
-    public const MIMES = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    public const POST = 'plg.cms.post';
 
-    public const MAX_KB = 5120;
+    public const PAGE = 'plg.cms.page';
 
-    public function store(UploadedFile $file): string
+    public function __construct(private readonly MediaDirectory $media) {}
+
+    public function coverUrl(Post $post, int $width = 1600): ?string
     {
-        $extension = strtolower($file->guessExtension() ?? $file->getClientOriginalExtension());
+        if ($post->cover_media_id !== null) {
+            return ($this->media->find([$post->cover_media_id])[$post->cover_media_id] ?? null)?->urlFor($width);
+        }
 
-        return (string) $file->storeAs('cms/'.now()->format('Y/m'), Str::lower((string) Str::ulid()).'.'.$extension, ['disk' => $this->disk()]);
-    }
-
-    public function url(?string $path): ?string
-    {
-        return $path === null || $path === '' ? null : Storage::disk($this->disk())->url($path);
-    }
-
-    private function disk(): string
-    {
-        return (string) config('vanishop.media.disk', 'public');
+        return $post->cover_path === null || $post->cover_path === '' ? null : Storage::disk((string) config('vanishop.media.disk', 'public'))->url($post->cover_path);
     }
 }

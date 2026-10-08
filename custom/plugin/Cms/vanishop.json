@@ -4,17 +4,18 @@
         "vi": "Nội dung (CMS)",
         "en": "Content (CMS)"
     },
-    "version": "1.0.0",
+    "version": "1.1.0",
     "kind": "content",
     "provider": "Plugin\\Cms\\CmsServiceProvider",
     "requires": {
-        "vanishop": "^0.3.14",
+        "vanishop": "^0.3.29",
         "plugins": {}
     },
     "conflicts": [],
     "permissions": ["cms.view", "cms.manage"],
     "author": "VaniShop Team",
     "data": {
-        "owned": ["plg_cms_pages", "plg_cms_posts"]
+        "owned": ["plg_cms_pages", "plg_cms_posts"],
+        "references": { "plg_cms_posts.cover_media_id": "media.id" }
     }
 }
