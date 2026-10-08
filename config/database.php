@@ -61,6 +61,8 @@ return [
             'engine' => null,
             // ADR-016: READ COMMITTED — tránh gap lock gây deadlock khi giữ hàng song song.
             'isolation_level' => env('DB_ISOLATION_LEVEL', 'READ COMMITTED'),
+            // Backup (spatie/laravel-backup): snapshot nhất quán InnoDB, KHÔNG LOCK TABLES — không chặn ghi đơn khi dump.
+            'dump' => ['use_single_transaction', 'dump_binary_path' => env('DB_DUMP_BINARY_PATH', '')],
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

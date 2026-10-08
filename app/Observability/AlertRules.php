@@ -133,6 +133,18 @@ final class AlertRules
 
                 return $failed === 0 ? null : $this->incident(Alert::HIGH, 'Job queue thất bại', "{$failed} job thất bại trong 60 phút. Xem Horizon → Failed jobs.");
             },
+            'backup.drill_stale' => function () use ($config): ?array {
+                if (! app()->isProduction()) {
+                    return null;
+                }
+                $days = (int) $config['backup_drill_days'];
+                $last = DB::table('backup_drills')->where('status', 'ok')->max('created_at');
+                if ($last !== null && now()->diffInDays($last, true) <= $days) {
+                    return null;
+                }
+
+                return $this->incident(Alert::NORMAL, 'Quá hạn diễn tập khôi phục backup', ($last === null ? 'Chưa có lần diễn tập khôi phục nào thành công' : "Lần diễn tập thành công gần nhất: {$last} (UTC)")." — yêu cầu ít nhất mỗi {$days} ngày. Chạy php artisan vani:backup:drill.");
+            },
             'reconciliation.open' => function (): ?array {
                 $inventory = DB::table('inventory_reconciliation_lines')->whereNull('resolved_at')->count();
                 $payments = Schema::hasTable('payment_reconciliation_lines') ? DB::table('payment_reconciliation_lines')->whereNull('resolved_at')->count() : 0;

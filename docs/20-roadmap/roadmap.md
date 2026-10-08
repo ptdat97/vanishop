@@ -238,7 +238,7 @@ Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
 - [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
 - [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)). → **Một phần**: correlation id trong mọi dòng log; metric tối thiểu + thẻ Pulse "Thương mại" + `GET /health` (0.3.25). Cảnh báo tự động qua email/plugin (0.3.30). Còn thiếu: tracing, gọi điện on-call.
-- [ ] Bảo mật: pentest, đường dẫn Admin bí mật + kiểm soát bù trừ của ADR-020, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)).
+- [ ] Bảo mật: pentest, đường dẫn Admin bí mật + kiểm soát bù trừ của ADR-020, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)). → **Một phần**: header bảo mật + `vani:security:check` (2026-10-08); diễn tập khôi phục tự động `vani:backup:drill` + cảnh báo quá hạn (2026-10-08, cần chạy lại trên production/staging với bucket thật). Còn: pentest bên thứ ba, CSP.
 - [ ] Pháp lý: một pháp nhân vận hành website bán hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)), thông báo/đăng ký với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
 - [ ] Staging/production đặt tại VN tại nhà cung cấp Owner chọn ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)).
 

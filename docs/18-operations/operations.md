@@ -89,6 +89,8 @@ Xem [observability](../16-observability/observability.md) (log, metric, tracing,
 - MySQL: binlog (row-based) cho PITR giữ 14 ngày + snapshot/backup hằng ngày (Percona XtraBackup hoặc snapshot dịch vụ managed) giữ 35 ngày, lưu khác vùng.
 - Object storage: versioning.
 - **RPO ≤ 5 phút, RTO ≤ 2 giờ**; diễn tập khôi phục mỗi quý.
+- Diễn tập tự động hoá bằng `php artisan vani:backup:drill [--fresh] [--disk=] [--keep]`: lấy bản backup mới nhất trên disk backup → giải nén dump (có mật khẩu nếu đặt) → nạp vào DB tạm `<db>_drill_<thời gian>` (không đụng DB đang chạy) → đối chiếu bảng `migrations` và số dòng các bảng nghiệp vụ chính với DB thật → xoá DB tạm → ghi kết quả vào `backup_drills` (bằng chứng). Mã thoát 1 nếu không đạt. Cảnh báo `backup.drill_stale` (production) khi không có lần đạt nào trong `VANI_ALERT_BACKUP_DRILL_DAYS` (100) ngày. Thời gian chạy (`duration_ms`) là số đo RTO phần DB.
+- Dump dùng `--single-transaction` (snapshot InnoDB, không `LOCK TABLES`) — backup ban đêm không chặn ghi đơn hàng.
 
 ## 9. Chuẩn bị mùa cao điểm (11.11, 12.12, Tết)
 

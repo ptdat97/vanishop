@@ -197,7 +197,8 @@ server {
 - `backup:run` (02:00) sao lưu **DB + `storage/app`** (mã nguồn không backup — triển khai lại từ git). Ảnh trên S3 dùng versioning của nhà cung cấp. Giữ: mọi bản 7 ngày, hằng ngày 16 ngày, hằng tuần 8 tuần, hằng tháng 4 tháng.
 - `backup:monitor` (09:00) gửi email cảnh báo nếu backup cũ/thiếu (`MAIL_*` phải đúng).
 - Khôi phục: tải file zip từ bucket backup → giải nén (mật khẩu `BACKUP_ARCHIVE_PASSWORD`) → import dump SQL vào DB mới → chép `storage/app` → `php artisan optimize` → `vani:plugin:doctor`.
-- Diễn tập khôi phục lên môi trường staging mỗi quý; mục tiêu RPO/RTO ở [operations §8](operations.md).
+- Diễn tập khôi phục mỗi quý và sau mỗi lần đổi cấu hình backup: `php artisan vani:backup:drill --fresh` (nạp bản mới nhất vào DB tạm, đối chiếu, xoá DB tạm, ghi `backup_drills`). Tài khoản DB cần quyền `CREATE`/`DROP` database (hoặc chạy lệnh trên staging trỏ tới cùng bucket backup). Cần `mysql`/`mysqldump` cùng phiên bản server trên PATH (hoặc `DB_DUMP_BINARY_PATH`). Mục tiêu RPO/RTO ở [operations §8](operations.md).
+- Lệnh trên chỉ kiểm phần DB; diễn tập đầy đủ trên staging vẫn cần chép `storage/app`, `optimize`, `vani:plugin:doctor` và đặt thử một đơn.
 
 ## 10. Kiểm tra sau deploy & khi có sự cố
 

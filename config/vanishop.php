@@ -71,6 +71,8 @@ return [
         'payment_min_sample' => 10,
         // Cổng thu tiền ngoài hệ thống (không tính tỷ lệ thất bại).
         'offline_gateways' => ['cod', 'manual_bank_transfer'],
+        // Diễn tập khôi phục backup thành công gần nhất không quá N ngày (production; operations §8 — mỗi quý).
+        'backup_drill_days' => (int) env('VANI_ALERT_BACKUP_DRILL_DAYS', 100),
     ],
 
     'security' => [
