@@ -80,7 +80,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         $permissions->register('customers.anonymize', 'Ẩn danh hoá khách hàng theo yêu cầu xoá');
         $permissions->register('customers.segment', 'Quản lý nhóm khách và gán nhóm/tag cho khách');
 
-        $navigation->add('customers', 'Khách hàng', 'admin.customers.index', 'customers.view', 450);
+        $navigation->add('customers', 'Khách hàng', 'admin.customers.index', 'customers.view', 450, group: 'sales');
 
         $router->aliasMiddleware('vani.customer', AuthenticateCustomer::class);
         $router->aliasMiddleware('vani.customer-session', CustomerSession::class);

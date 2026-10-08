@@ -1,4 +1,4 @@
-VaniShop 0.3.37
+VaniShop 0.3.38
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -468,7 +468,7 @@ abstract class Modules\Extension\PluginServiceProvider extends Illuminate\Suppor
   protected adminTab(string $resource, string $key, string $label, Closure $rows, int $order = 500): void
   protected adminFilter(string $resource, string $key, string $label, Closure|array $options, Closure $apply, int $order = 500): void
   protected publishHooks(string $file): void
-  protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500): void
+  protected adminMenu(string $key, string $label, string $route, ?string $permission = NULL, int $order = 500, string $group = 'extensions'): void
   protected permissions(array $permissions): void
   protected adminRoutes(string $file): void
   protected storefrontRoutes(string $file): void

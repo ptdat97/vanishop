@@ -175,7 +175,7 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `pluginPath($path)` | Implemented | Đường dẫn trong thư mục plugin |
 | `onFilter` / `onAction` / `onValidate` / `onSlot` | Implemented | Nghe hook public, chỉ chạy khi plugin active |
 | `onEvent($event, $handler)` | Implemented (2026-10-13) | Nghe domain event: chỉ chạy khi plugin đang bật (code hiện còn lọc theo `brandId` của event — bỏ ở slice 12); lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
-| `adminMenu($key, $label, $route, $permission, $order)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active |
+| `adminMenu($key, $label, $route, $permission, $order, $group)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active. `$group` (0.3.38): nhóm accordion trên sidebar — `sales`, `catalog`, `marketing`, `content`, `system`, mặc định `extensions` ("Mở rộng") |
 | `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
 | `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |
 | `webhookRoutes($file)` | Implemented | `/api/integrations/{slug}/…` |

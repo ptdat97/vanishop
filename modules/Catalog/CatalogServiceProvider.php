@@ -90,8 +90,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $permissions->register('media.view', 'Xem và chọn ảnh từ Thư viện ảnh');
         $permissions->register('media.manage', 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)');
 
-        $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100);
-        $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 110);
+        $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100, group: 'catalog');
+        $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 110, group: 'catalog');
 
         if (! $this->app->routesAreCached()) {
             Route::group([], $this->modulePath('Http/routes/media-cache.php'));

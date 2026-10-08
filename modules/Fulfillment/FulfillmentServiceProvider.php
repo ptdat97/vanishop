@@ -62,7 +62,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $permissions->register('fulfillment.view', 'Xem vận đơn');
         $permissions->register('fulfillment.manage', 'Tạo/cập nhật/huỷ vận đơn');
 
-        $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60);
+        $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60, group: 'sales');
 
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);

@@ -93,7 +93,7 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
         $permissions->register('integration.replay', 'Gửi lại message tích hợp lỗi');
         $permissions->register('integration.manage', 'Quản lý Integration Client và webhook');
 
-        $navigation->add('integration', 'Tích hợp', 'admin.integration.health', 'integration.view', 800);
+        $navigation->add('integration', 'Tích hợp', 'admin.integration.health', 'integration.view', 800, group: 'system');
 
         $router->aliasMiddleware('vani.integration-client', AuthenticateIntegrationClient::class);
         $router->aliasMiddleware('vani.integration-scope', RequireIntegrationScope::class);

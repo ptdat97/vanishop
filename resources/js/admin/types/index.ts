@@ -8,12 +8,20 @@ export interface NavigationItem {
     key: string;
     label: string;
     url: string;
+    /** Nhóm accordion trên sidebar; null = mục cấp trên cùng. */
+    group: string | null;
+}
+
+export interface NavigationGroup {
+    key: string;
+    label: string;
 }
 
 export interface SharedProps {
     app: { name: string; locale: string };
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
+    navigationGroups: NavigationGroup[];
     urls: { logout?: string; media?: string | null };
     [key: string]: unknown;
 }

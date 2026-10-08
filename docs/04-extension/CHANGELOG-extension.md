@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.38 — 2026-10-08
+
+Sidebar Admin dạng accordion. Chỉ thêm (tham số tuỳ chọn cuối).
+
+### Thêm
+- `PluginServiceProvider::adminMenu(..., string $group = 'extensions')` — nhóm menu: `sales`, `catalog`, `marketing`, `content`, `system`, `extensions` (mặc định, "Mở rộng"). Nhóm chưa đăng ký → `extensions`.
+- `AdminNavigation::group(key, label, order)`, `visibleGroups()`; `add(..., ?string $group)`. Mục trong prop Inertia `navigation` có thêm `group`; prop mới `navigationGroups`.
+
 ## 0.3.37 — 2026-10-08
 
 Tầng giá trên đơn (roadmap Phase 8, [order §2.2](../09-order/order.md)). Chỉ thêm.

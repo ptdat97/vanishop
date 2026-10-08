@@ -62,7 +62,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $permissions->register('inventory.transfer', 'Tạo/điều phối chuyển kho');
         $permissions->register('inventory.locations.manage', 'Quản lý kho/cửa hàng (cấp Owner)');
 
-        $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 300);
+        $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 300, group: 'catalog');
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:inventory:release-expired')->everyMinute()->withoutOverlapping()->onOneServer();

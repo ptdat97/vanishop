@@ -52,6 +52,8 @@ final class HandleInertiaRequests extends Middleware
                 'staff' => $staff instanceof StaffUser ? ['id' => $staff->id, 'name' => $staff->name, 'email' => $staff->email] : null,
             ],
             'navigation' => fn (): array => $staff instanceof StaffUser ? app(AdminNavigation::class)->visibleItems() : [],
+            // Nhóm accordion của sidebar (chỉ nhóm có mục hiển thị).
+            'navigationGroups' => fn (): array => $staff instanceof StaffUser ? app(AdminNavigation::class)->visibleGroups() : [],
             // media: Thư viện ảnh cho modal chọn ảnh (MediaPicker); null khi nhân viên không có quyền media.view.
             'urls' => fn (): array => $staff instanceof StaffUser ? [
                 'logout' => route('admin.logout'),

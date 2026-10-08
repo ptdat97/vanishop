@@ -46,7 +46,7 @@ final class CmsServiceProvider extends PluginServiceProvider
         $this->onSlot('vani.storefront.header.nav', fn (): ?SlotView => $this->links('header'));
         $this->onSlot('vani.storefront.footer.columns', fn (): ?SlotView => $this->links('footer'));
 
-        $this->adminMenu('cms', 'Nội dung', 'admin.plugins.vani-cms.pages.index', 'cms.view', 620);
+        $this->adminMenu('cms', 'Nội dung', 'admin.plugins.vani-cms.pages.index', 'cms.view', 620, 'content');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
         $this->adminPages('Cms', $this->pluginPath('Resources/js/Pages'));
     }

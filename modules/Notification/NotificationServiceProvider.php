@@ -55,7 +55,7 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         $permissions->register('notifications.view', 'Xem mẫu tin và nhật ký gửi');
         $permissions->register('notifications.manage', 'Sửa mẫu tin');
 
-        $navigation->add('notifications', 'Thông báo', 'admin.notifications.templates.index', 'notifications.view', 750);
+        $navigation->add('notifications', 'Thông báo', 'admin.notifications.templates.index', 'notifications.view', 750, group: 'marketing');
 
         Event::listen(OrderPlaced::class, [SendOrderNotifications::class, 'orderPlaced']);
         Event::listen(OrderCancelled::class, [SendOrderNotifications::class, 'orderCancelled']);

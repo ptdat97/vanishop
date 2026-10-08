@@ -37,7 +37,7 @@ final class PromotionServiceProvider extends ModuleServiceProvider
         $permissions->register('promotion.view', 'Xem khuyến mãi');
         $permissions->register('promotion.manage', 'Tạo/sửa khuyến mãi và voucher');
 
-        $navigation->add('promotion', 'Khuyến mãi', 'admin.promotion.home', 'promotion.view', 250);
+        $navigation->add('promotion', 'Khuyến mãi', 'admin.promotion.home', 'promotion.view', 250, group: 'marketing');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('promotion', $this->modulePath('Http/routes/admin-workspace.php'));

@@ -44,7 +44,7 @@ final class OrderingServiceProvider extends ModuleServiceProvider
         $permissions->register('orders.manage', 'Xác nhận đơn, đổi địa chỉ, ghi chú');
         $permissions->register('orders.cancel', 'Huỷ đơn');
 
-        $navigation->add('orders', 'Đơn hàng', 'admin.orders.home', 'orders.view', 50);
+        $navigation->add('orders', 'Đơn hàng', 'admin.orders.home', 'orders.view', 50, group: 'sales');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('orders', $this->modulePath('Http/routes/admin-workspace.php'));

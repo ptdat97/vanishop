@@ -139,10 +139,15 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $permissions->register('settings.manage', 'Sửa cấu hình theo phạm vi (Core và plugin)');
 
         $navigation = $this->app->make(AdminNavigation::class);
+        $navigation->group('sales', 'Bán hàng', 45);
+        $navigation->group('catalog', 'Sản phẩm', 95);
+        $navigation->group('marketing', 'Marketing', 240);
+        $navigation->group('content', 'Nội dung & giao diện', 590);
+        $navigation->group('system', 'Hệ thống', 890);
         $navigation->add('dashboard', 'Tổng quan', 'admin.dashboard', 'admin.access', 0);
         $navigation->add('reports', 'Báo cáo', 'admin.reports.index', 'admin.access', 40, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);
-        $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 900);
-        $navigation->add('settings', 'Cấu hình', 'admin.settings.index', 'settings.manage', 950);
+        $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 900, group: 'system');
+        $navigation->add('settings', 'Cấu hình', 'admin.settings.index', 'settings.manage', 950, group: 'system');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
         $this->bootModuleResources();
