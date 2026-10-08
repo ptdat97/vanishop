@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReservation;
+use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderTransitions;
@@ -17,7 +18,9 @@ use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
+use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Domain\Money\Money;
 
 /**
  * Thao tác trên đơn ngoài luồng đặt hàng: xác nhận, huỷ, đổi địa chỉ, ghi chú. Mọi thao tác ghi order_events.
@@ -30,6 +33,8 @@ final class OrderCommands
         private readonly AuditLogger $audit,
         private readonly ShippingAddresses $addresses,
         private readonly InventoryReservation $inventory,
+        private readonly PromotionClawback $clawback,
+        private readonly PromotionEngine $promotions,
     ) {}
 
     public function confirm(int $orderId, string $reason): void
@@ -91,16 +96,19 @@ final class OrderCommands
      * giữ của phần huỷ, ghi adjustment `cancellation` + order_events. Sau commit: OrderLinesCancelled (dựng lại vận đơn,
      * hoàn tiền/giảm thu hộ). Phí giao giữ nguyên.
      *
+     * Khách yêu cầu bớt hàng (`$cause = Customer`): phần khuyến mãi mà hàng còn lại không còn đủ điều kiện được thu hồi
+     * (adjustment `promotion_clawback`), tối đa bằng số tiền phần huỷ — tiền hoàn/giảm thu hộ là phần chênh ròng.
+     *
      * @param  array<int, int>  $quantities  order_line_id => số lượng huỷ
      */
-    public function cancelLines(int $orderId, array $quantities, string $reason, int $expectedLockVersion): void
+    public function cancelLines(int $orderId, array $quantities, string $reason, int $expectedLockVersion, LineCancellationCause $cause = LineCancellationCause::Shop): void
     {
         $quantities = array_filter($quantities, fn (int $quantity): bool => $quantity > 0);
         if ($quantities === []) {
             throw OrderActionRejected::invalidCancelQuantities();
         }
 
-        DB::transaction(function () use ($orderId, $quantities, $reason, $expectedLockVersion): void {
+        DB::transaction(function () use ($orderId, $quantities, $reason, $expectedLockVersion, $cause): void {
             $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
             if ($order->lock_version !== $expectedLockVersion) {
                 throw OrderActionRejected::stale();
@@ -149,9 +157,28 @@ final class OrderCommands
                 $breakdown[] = ['order_line_id' => $line->id, 'quantity' => $quantity, 'subtotal' => $part['subtotal'], 'discount' => $part['discount'], 'tax' => $part['tax'], 'total' => $part['total'], 'unit_amount' => $line->unit_amount, 'tax_rate_bp' => $line->tax_rate_bp];
             }
 
+            $clawback = $cause === LineCancellationCause::Customer
+                ? $this->clawback->calculate($order, $lines, $totals['total'])
+                : ['total' => 0, 'lines' => [], 'promotions' => [], 'detail' => []];
+            $clawbackTax = 0;
+            foreach ($clawback['lines'] as $lineId => $amount) {
+                $line = $lines->get($lineId);
+                $total = $line->total_amount + $amount;
+                // Thuế theo tỷ lệ thành tiền (đúng cho VAT đã gồm trong giá); dòng đang 0đ → tính VAT đã gồm theo thuế suất.
+                $tax = $line->total_amount > 0
+                    ? intdiv(2 * $line->tax_amount * $total + $line->total_amount, 2 * $line->total_amount)
+                    : Money::of($total, $order->currency_code)->includedTax($line->tax_rate_bp)->amount;
+                $clawbackTax += $tax - $line->tax_amount;
+                $line->update([
+                    'discount_amount' => $line->discount_amount - $amount, 'total_amount' => $total, 'tax_amount' => $tax,
+                    'meta' => $this->clawback->lineMetaAfter($line, $clawback['detail'][$lineId] ?? []),
+                ]);
+            }
+            $net = $totals['total'] - $clawback['total'];
+
             $order->update([
-                'subtotal_amount' => $order->subtotal_amount - $totals['subtotal'], 'discount_amount' => $order->discount_amount - $totals['discount'],
-                'tax_amount' => $order->tax_amount - $totals['tax'], 'total_amount' => $order->total_amount - $totals['total'],
+                'subtotal_amount' => $order->subtotal_amount - $totals['subtotal'], 'discount_amount' => $order->discount_amount - $totals['discount'] - $clawback['total'],
+                'tax_amount' => $order->tax_amount - $totals['tax'] + $clawbackTax, 'total_amount' => $order->total_amount - $net,
                 'lock_version' => $order->lock_version + 1,
             ]);
             $cancellationId = (string) Str::ulid();
@@ -159,11 +186,24 @@ final class OrderCommands
                 'order_id' => $order->id, 'type' => 'cancellation', 'source' => 'core', 'code' => $cancellationId, 'label' => 'Huỷ một phần: '.$reason,
                 'amount' => -$totals['total'], 'meta' => json_encode(['lines' => $breakdown, 'totals' => $totals], JSON_UNESCAPED_UNICODE), 'created_at' => now(), 'updated_at' => now(),
             ]);
+            if ($clawback['total'] > 0) {
+                DB::table('order_adjustments')->insert([
+                    'order_id' => $order->id, 'type' => 'promotion_clawback', 'source' => 'core', 'code' => $cancellationId,
+                    'label' => 'Thu hồi khuyến mãi không còn đủ điều kiện', 'amount' => $clawback['total'],
+                    'meta' => json_encode(['lines' => $clawback['lines'], 'promotions' => $clawback['promotions'], 'tax' => $clawbackTax], JSON_UNESCAPED_UNICODE),
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+            // Ngân sách/lượt dùng khuyến mãi phản ánh giảm giá còn thực sự trên đơn (cả phần của hàng đã huỷ).
+            $this->promotions->adjustUsage($order->id, $this->clawback->currentByPromotion($lines));
             $this->inventory->releaseQuantities((string) $order->reservation_key, $release, "order_lines_cancelled:{$cancellationId}");
-            $this->event($order->id, 'lines_cancelled', $reason, ['cancellation_id' => $cancellationId, 'lines' => $breakdown, 'totals' => $totals]);
-            $this->audit->record('order.lines_cancelled', 'order', $order->id, ['reason' => $reason, 'lines' => $cancelled, 'amount' => $totals['total']]);
+            $this->event($order->id, 'lines_cancelled', $reason, [
+                'cancellation_id' => $cancellationId, 'cause' => $cause->value, 'lines' => $breakdown,
+                'totals' => [...$totals, 'promotion_clawback' => $clawback['total'], 'net' => $net],
+            ]);
+            $this->audit->record('order.lines_cancelled', 'order', $order->id, ['reason' => $reason, 'cause' => $cause->value, 'lines' => $cancelled, 'amount' => $net, 'promotion_clawback' => $clawback['total']]);
 
-            event(new OrderLinesCancelled($order->id, $order->public_id, $cancellationId, $cancelled, $totals['total'], $reason, 'staff'));
+            event(new OrderLinesCancelled($order->id, $order->public_id, $cancellationId, $cancelled, $net, $reason, 'staff', $cause->value, $clawback['total']));
         });
     }
 

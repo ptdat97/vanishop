@@ -77,7 +77,7 @@ final class PublishDomainEvents
 
     public function orderLinesCancelled(OrderLinesCancelled $event): void
     {
-        $this->publish($event->orderId, 'order.lines_cancelled', fn (OrderData $order): array => $this->payloads->linesCancelled($order, $event->cancellationId, $event->reason, $event->amount, $event->lines));
+        $this->publish($event->orderId, 'order.lines_cancelled', fn (OrderData $order): array => $this->payloads->linesCancelled($order, $event->cancellationId, $event->reason, $event->amount, $event->lines, $event->promotionClawback));
     }
 
     public function paymentCaptured(PaymentCaptured $event): void

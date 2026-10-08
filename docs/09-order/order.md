@@ -44,7 +44,14 @@ Nhân viên huỷ bớt số lượng một số dòng (vd. hết hàng một si
 - **Dữ liệu** (đúng ADR-012: snapshot tên/SKU/đơn giá/thuế suất giữ nguyên): `quantity` và tiền dòng là phần còn hiệu lực; `cancelled_quantity` cộng dồn; tiền phần huỷ chia theo tỷ lệ q/Q (làm tròn xuống, giữ "thành tiền = tạm tính − giảm giá"); tổng đơn giảm tương ứng, **phí giao giữ nguyên**. Mỗi lần huỷ: `order_adjustments` (`cancellation`, `code` = id lần huỷ, `meta` = tạm tính/giảm/thuế/thành tiền theo dòng — đủ lập chứng từ điều chỉnh) + `order_events` `lines_cancelled` + audit. Dòng huỷ hết giữ lại với `quantity = 0` (MySQL: `CHECK (quantity >= 0 AND quantity + cancelled_quantity > 0)`).
 - **Cùng transaction**: nhả hàng giữ của phần huỷ (`InventoryReservation::releaseQuantities`, từ dòng giữ mới nhất).
 - **Sau commit** (`OrderLinesCancelled`): Fulfillment huỷ vận đơn chưa rời kho (cả ở hãng) và tạo lại theo số còn lại, thu hộ = tổng mới; Payment giảm số tiền COD cần thu, hoặc hoàn phần huỷ (idempotent theo id lần huỷ; cổng không hỗ trợ → yêu cầu hoàn tay); Customer tính lại thống kê; Integration phát `order.lines_cancelled`.
-- Chưa làm: tính lại khuyến mãi theo ngưỡng (vd. miễn phí giao khi đủ X) sau khi huỷ — giữ nguyên giảm giá đã phân bổ.
+- **Khuyến mãi sau huỷ (0.3.31)** — nhân viên chọn **nguyên nhân** (`LineCancellationCause`, mặc định `shop`):
+  - `shop` (lỗi shop: hết hàng, sai giá…): khách **giữ nguyên ưu đãi**; chỉ phần giảm giá của hàng bị huỷ đi theo phần huỷ.
+  - `customer` (khách yêu cầu bớt hàng): Promotion kiểm tra lại các khuyến mãi đã áp trên phần hàng còn lại (`PromotionEngine::recheck`, chỉ rule `CartContentRule` — ngưỡng tiền, số lượng, bộ sưu tập, brand; rule như "đơn đầu tiên" coi như vẫn đạt). Phần giảm giá không còn đủ điều kiện được **thu hồi**: dòng tăng thành tiền (thuế tính lại theo tỷ lệ), adjustment `promotion_clawback` (+), event `lines_cancelled` ghi `cause`, `totals.promotion_clawback`, `totals.net`.
+  - **Trần**: tổng thu hồi ≤ tiền phần vừa huỷ → tổng đơn sau huỷ không bao giờ vượt tổng trước đó (khách không trả nhiều hơn số đã đồng ý). Tiền hoàn/giảm thu hộ COD = phần chênh **ròng** (`OrderLinesCancelled::$amount`).
+  - Không bao giờ tăng giảm giá; khuyến mãi không kiểm tra lại được (đã xoá, plugin rule tắt) giữ nguyên.
+  - Mọi lần huỷ một phần: `promotion_usages.discount_amount` và ngân sách đã dùng giảm về đúng giảm giá còn trên đơn (`PromotionEngine::adjustUsage`).
+  - Cần chi tiết giảm giá theo khuyến mãi trên dòng (`order_lines.meta.promotions`, `style_id`) — ghi từ 0.3.31; đơn đặt trước đó không thu hồi được (giữ ưu đãi).
+  - Phí giao giữ nguyên trong mọi trường hợp (kể cả miễn phí giao theo ngưỡng).
 
 ## 3. Trạng thái: 4 chiều độc lập
 

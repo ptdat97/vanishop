@@ -82,7 +82,9 @@ final class EloquentOrderReader implements OrderReader
                 return [
                     'cancellation_id' => (string) ($data['cancellation_id'] ?? ''),
                     'reason' => (string) $event->reason,
-                    'amount' => (int) ($data['totals']['total'] ?? 0),
+                    // Số tiền đơn giảm ròng (đã trừ khuyến mãi thu hồi, 0.3.31) — khớp OrderLinesCancelled::$amount.
+                    'amount' => (int) ($data['totals']['net'] ?? $data['totals']['total'] ?? 0),
+                    'promotion_clawback' => (int) ($data['totals']['promotion_clawback'] ?? 0),
                     'lines' => array_map(fn (array $line): array => [
                         'order_line_id' => (int) $line['order_line_id'], 'variant_id' => (int) ($variants[$line['order_line_id']] ?? 0),
                         'quantity' => (int) $line['quantity'], 'amount' => (int) $line['total'],

@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://vanishop.dev/schemas/events/order.lines_cancelled.json",
     "title": "data của event order.lines_cancelled (v1)",
-    "description": "Huỷ một phần (0.3.18): `order` là ảnh chụp SAU khi huỷ (số lượng, tổng đã giảm); `lines` là phần bị huỷ. Bên nhận khử trùng lặp theo `cancellation_id`.",
+    "description": "Huỷ một phần (0.3.18): `order` là ảnh chụp SAU khi huỷ (số lượng, tổng đã giảm); `lines` là phần bị huỷ. Bên nhận khử trùng lặp theo `cancellation_id`. Khách yêu cầu bớt hàng mà phần còn lại không đủ điều kiện khuyến mãi → `promotion_clawback` > 0 (0.3.31).",
     "type": "object",
     "additionalProperties": false,
     "required": [
@@ -26,7 +26,12 @@
         "amount": {
             "type": "integer",
             "minimum": 0,
-            "description": "Tổng tiền phần huỷ (sau giảm giá)."
+            "description": "Tổng đơn giảm (ròng): tiền phần huỷ sau giảm giá − `promotion_clawback`. Là số tiền hoàn/giảm thu hộ."
+        },
+        "promotion_clawback": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Khuyến mãi thu hồi vì phần hàng còn lại không còn đủ điều kiện (chỉ khi khách yêu cầu bớt hàng, 0.3.31). 0 nếu không có."
         },
         "lines": {
             "type": "array",

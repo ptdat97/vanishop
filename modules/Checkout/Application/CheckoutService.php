@@ -258,6 +258,13 @@ final class CheckoutService implements Checkout
     {
         $contact = (array) $request->contact;
         $email = trim((string) ($contact['email'] ?? ''));
+        // Giảm giá theo từng khuyến mãi trên từng dòng — để tính lại khi khách bớt hàng (huỷ một phần, order §2.1).
+        $promotionsByLine = [];
+        foreach ($totals->promotions->applied ?? [] as $applied) {
+            foreach ($applied->lineDiscounts as $key => $discount) {
+                $promotionsByLine[$key][$applied->promotionId] = $discount->amount;
+            }
+        }
 
         return new OrderDraft(
             publicId: $publicId,
@@ -270,6 +277,7 @@ final class CheckoutService implements Checkout
                 $line->variantId, $line->sku, $line->name, $line->colorName, $line->sizeCode, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, $line->compareAt?->amount, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
                 $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName, $line->options,
+                $line->styleId, $promotionsByLine[$line->key] ?? [],
             ), $totals->lines),
             adjustments: array_map(fn (Adjustment $adjustment): OrderAdjustmentDraft => new OrderAdjustmentDraft(
                 $adjustment->type, $adjustment->source, $adjustment->code, $adjustment->label, $adjustment->amount->amount, $adjustment->meta,

@@ -20,3 +20,7 @@ php artisan vani:plugin:enable vani.promotion-rules --scope=brand:1 # hoặc the
 ```
 
 Khi được bật, các điều kiện trên tự động xuất hiện trong form tạo/sửa khuyến mãi tại trang Admin.
+
+## Kiểm tra lại khi khách bớt hàng (0.2.0, Core 0.3.31)
+
+`min_order_subtotal`, `min_quantity`, `in_collections`, `in_brands` implement `CartContentRule`: khi nhân viên huỷ một phần với nguyên nhân "khách yêu cầu bớt hàng", Core kiểm tra lại các rule này trên phần hàng còn lại và thu hồi ưu đãi không còn đủ điều kiện. `first_order_only` không được kiểm tra lại (đơn đã tồn tại thì luôn "không còn là đơn đầu tiên").

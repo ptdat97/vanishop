@@ -52,7 +52,7 @@ final class OrderFactory implements OrderWriter
                 'size_code' => $line->sizeCode, 'image_url' => $line->imageUrl, 'quantity' => $line->quantity, 'unit_amount' => $line->unitAmount,
                 'compare_at_amount' => $line->compareAtAmount, 'subtotal_amount' => $line->subtotalAmount, 'discount_amount' => $line->discountAmount,
                 'total_amount' => $line->totalAmount, 'tax_rate_bp' => $line->taxRateBp, 'tax_amount' => $line->taxAmount,
-                'meta' => $line->options === [] ? null : ['options' => $line->options],
+                'meta' => array_filter(['options' => $line->options, 'style_id' => $line->styleId, 'promotions' => $line->promotions]) ?: null,
             ]);
         }
         foreach ($draft->adjustments as $adjustment) {

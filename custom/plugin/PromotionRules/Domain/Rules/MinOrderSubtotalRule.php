@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Plugin\PromotionRules\Domain\Rules;
 
+use Modules\Promotion\Contracts\CartContentRule;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
-use Modules\Promotion\Contracts\PromotionRule;
 
 /**
  * Rule: giá trị giỏ hàng (tổng tiền các dòng ứng viên) phải đạt tối thiểu min_subtotal.
  * Cấu hình: {"min_subtotal": 500000}
  */
-final class MinOrderSubtotalRule implements PromotionRule
+final class MinOrderSubtotalRule implements CartContentRule
 {
     public const TYPE = 'min_order_subtotal';
 

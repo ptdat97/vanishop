@@ -107,6 +107,7 @@ const cancellingLines = ref(false);
 const cancelLinesForm = useForm({
     lines: Object.fromEntries(props.order.lines.map((line) => [line.id, 0])) as Record<number, number>,
     reason: '',
+    cause: 'shop' as 'shop' | 'customer',
     lock_version: props.order.lockVersion,
 });
 const cancelTotal = computed(() => Object.values(cancelLinesForm.lines).reduce((sum, quantity) => sum + Number(quantity || 0), 0));
@@ -224,19 +225,31 @@ function addNote(): void {
                     </tbody>
                 </table>
                 <form v-if="cancellingLines" class="flex flex-wrap items-end gap-3 border-t border-slate-100 bg-red-50/40 p-4 text-sm" @submit.prevent="cancelLines">
+                    <FormField label="Nguyên nhân" :error="cancelLinesForm.errors.cause" class="min-w-56">
+                        <select v-model="cancelLinesForm.cause" :class="inputClass">
+                            <option value="shop">Lỗi shop (hết hàng, sai giá…)</option>
+                            <option value="customer">Khách yêu cầu bớt hàng</option>
+                        </select>
+                    </FormField>
                     <FormField label="Lý do huỷ một phần" :error="cancelLinesForm.errors.reason" class="min-w-64 flex-1">
                         <input v-model="cancelLinesForm.reason" :class="inputClass" maxlength="255" required placeholder="Vd. hết hàng size M" />
                     </FormField>
                     <button type="submit" :class="dangerButton" :disabled="cancelLinesForm.processing || cancelTotal === 0">Huỷ {{ cancelTotal }} sản phẩm</button>
                     <button type="button" :class="secondaryButton" @click="cancellingLines = false">Thôi</button>
-                    <p class="w-full text-xs text-slate-500">Tiền phần huỷ: COD giảm số thu hộ; đã thanh toán thì hoàn tự động (cổng hỗ trợ) hoặc tạo yêu cầu hoàn tay. Vận đơn chưa rời kho được tạo lại.</p>
+                    <p class="w-full text-xs text-slate-500">
+                        Tiền phần huỷ: COD giảm số thu hộ; đã thanh toán thì hoàn tự động (cổng hỗ trợ) hoặc tạo yêu cầu hoàn tay. Vận đơn chưa rời kho được tạo lại.
+                        <template v-if="cancelLinesForm.cause === 'customer'">
+                            Khách bớt hàng: khuyến mãi mà phần còn lại không còn đủ điều kiện (vd. dưới ngưỡng) được thu hồi, trừ vào tiền hoàn/giảm thu hộ — không vượt tiền phần huỷ.
+                        </template>
+                        <template v-else>Lỗi shop: khách giữ nguyên ưu đãi.</template>
+                    </p>
                 </form>
                 <dl class="space-y-1 border-t border-slate-100 p-4 text-sm">
                     <div class="flex justify-between">
                         <dt>Tạm tính</dt>
                         <dd>{{ vnd(order.amounts.subtotal) }}</dd>
                     </div>
-                    <div v-for="adjustment in order.adjustments" :key="adjustment.label" class="flex justify-between text-slate-600">
+                    <div v-for="(adjustment, index) in order.adjustments" :key="index" class="flex justify-between text-slate-600">
                         <dt>
                             {{ adjustment.label }}<span v-if="adjustment.code" class="font-mono"> ({{ adjustment.code }})</span>
                         </dt>

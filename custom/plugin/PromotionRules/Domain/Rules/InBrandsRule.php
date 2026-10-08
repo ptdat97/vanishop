@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Plugin\PromotionRules\Domain\Rules;
 
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Promotion\Contracts\CartContentRule;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
-use Modules\Promotion\Contracts\PromotionRule;
 
 /**
  * Rule: chỉ áp dụng cho sản phẩm thuộc một trong các thương hiệu chỉ định (brand là thuộc tính catalog, ADR-028).
  * Cấu hình: {"slugs": ["urbanx", "lumiere"]}
  */
-final class InBrandsRule implements PromotionRule
+final class InBrandsRule implements CartContentRule
 {
     public const TYPE = 'in_brands';
 

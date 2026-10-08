@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Plugin\PromotionRules\Domain\Rules;
 
 use Modules\Catalog\Contracts\CollectionDirectory;
+use Modules\Promotion\Contracts\CartContentRule;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
-use Modules\Promotion\Contracts\PromotionRule;
 
 /**
  * Rule: chỉ áp dụng cho các sản phẩm thuộc một trong các bộ sưu tập chỉ định.
  * Cấu hình: {"slugs": ["he-2026", "giam-gia"]}
  */
-final class InCollectionsRule implements PromotionRule
+final class InCollectionsRule implements CartContentRule
 {
     public const TYPE = 'in_collections';
 

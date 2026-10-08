@@ -7,6 +7,7 @@ namespace Modules\Ordering\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Checkout\Contracts\ShippingAddresses;
@@ -14,6 +15,7 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
+use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Domain\CustomerStatus;
 use Modules\Ordering\Domain\OrderPolicy;
@@ -117,13 +119,14 @@ final class OrderController
             'lines' => ['required', 'array', 'min:1'],
             'lines.*' => ['integer', 'min:0', 'max:100000'],
             'reason' => ['required', 'string', 'max:255'],
+            'cause' => ['nullable', Rule::enum(LineCancellationCause::class)],
             'lock_version' => ['required', 'integer', 'min:0'],
         ]);
         $quantities = [];
         foreach ($data['lines'] as $lineId => $quantity) {
             $quantities[(int) $lineId] = (int) $quantity;
         }
-        $commands->cancelLines($order->id, $quantities, $data['reason'], (int) $data['lock_version']);
+        $commands->cancelLines($order->id, $quantities, $data['reason'], (int) $data['lock_version'], LineCancellationCause::from($data['cause'] ?? 'shop'));
 
         return back()->with('success', __('ordering::messages.lines_cancelled'));
     }

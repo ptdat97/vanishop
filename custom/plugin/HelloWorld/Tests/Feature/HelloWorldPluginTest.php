@@ -156,7 +156,7 @@ it('giao dịch: lời chúc gói quà trên form thêm giỏ (native) → giỏ
         'shipping_method' => 'standard', 'payment_method' => 'cod', 'expected_total' => 330_000, 'idempotency_key' => 'gift-order-0001',
     ]);
     $order = Order::query()->withoutGlobalScopes()->sole();
-    expect($order->lines()->sole()->meta)->toBe(['options' => ['vani.hello-world' => ['message' => 'Chúc mừng sinh nhật!']]]);
+    expect($order->lines()->sole()->meta['options'])->toBe(['vani.hello-world' => ['message' => 'Chúc mừng sinh nhật!']]);
     $this->get("/don-hang/{$order->public_id}")->assertSee('Chúc mừng sinh nhật!');
 });
 

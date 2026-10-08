@@ -18,6 +18,9 @@ final readonly class OrderLinesCancelled implements ShouldDispatchAfterCommit
     /**
      * @param  list<array{order_line_id: int, variant_id: int, quantity: int, amount: int}>  $lines  phần huỷ (amount = thành tiền sau giảm giá)
      * @param  string  $cancellationId  định danh lần huỷ (ULID) — khoá idempotency cho hoàn tiền
+     * @param  int  $amount  tổng đơn giảm (ròng) = Σ amount của dòng − `$promotionClawback` — số tiền cần hoàn/giảm thu hộ
+     * @param  string  $cause  `shop` | `customer` (0.3.31)
+     * @param  int  $promotionClawback  khuyến mãi thu hồi vì phần còn lại không đủ điều kiện (chỉ khi `customer`, 0.3.31)
      */
     public function __construct(
         public int $orderId,
@@ -27,5 +30,7 @@ final readonly class OrderLinesCancelled implements ShouldDispatchAfterCommit
         public int $amount,
         public string $reason,
         public string $source,
+        public string $cause = 'shop',
+        public int $promotionClawback = 0,
     ) {}
 }

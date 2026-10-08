@@ -45,7 +45,9 @@ interface OrderReader
     /**
      * Các lần huỷ một phần của đơn (đọc, 0.3.21): theo thứ tự thời gian.
      *
-     * @return list<array{cancellation_id: string, reason: string, amount: int, lines: list<array{order_line_id: int, variant_id: int, quantity: int, amount: int}>}>
+     * `amount` = tổng đơn giảm ròng (đã trừ `promotion_clawback` — khuyến mãi thu hồi khi khách bớt hàng, 0.3.31).
+     *
+     * @return list<array{cancellation_id: string, reason: string, amount: int, promotion_clawback: int, lines: list<array{order_line_id: int, variant_id: int, quantity: int, amount: int}>}>
      */
     public function cancellations(int $orderId): array;
 

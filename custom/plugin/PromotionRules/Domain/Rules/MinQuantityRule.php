@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Plugin\PromotionRules\Domain\Rules;
 
+use Modules\Promotion\Contracts\CartContentRule;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
-use Modules\Promotion\Contracts\PromotionRule;
 
 /**
  * Rule: tổng số lượng sản phẩm trong các dòng ứng viên phải đạt tối thiểu min_quantity.
  * Cấu hình: {"min_quantity": 2}
  */
-final class MinQuantityRule implements PromotionRule
+final class MinQuantityRule implements CartContentRule
 {
     public const TYPE = 'min_quantity';
 

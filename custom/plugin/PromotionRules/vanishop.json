@@ -4,11 +4,11 @@
         "vi": "Bộ điều kiện khuyến mãi",
         "en": "Promotion Rules Pack"
     },
-    "version": "0.1.0",
+    "version": "0.2.0",
     "kind": "promotion",
     "provider": "Plugin\\PromotionRules\\PromotionRulesServiceProvider",
     "requires": {
-        "vanishop": "^0.3",
+        "vanishop": "^0.3.31",
         "plugins": {}
     },
     "conflicts": [],

@@ -27,10 +27,10 @@ final class DomainEventPayloads
      * @param  list<array{order_line_id: int, variant_id: int, quantity: int, amount: int}>  $lines
      * @return array<string, mixed>
      */
-    public function linesCancelled(OrderData $order, string $cancellationId, string $reason, int $amount, array $lines): array
+    public function linesCancelled(OrderData $order, string $cancellationId, string $reason, int $amount, array $lines, int $promotionClawback = 0): array
     {
         return $this->order($order, [
-            'cancellation_id' => $cancellationId, 'reason' => $reason, 'amount' => $amount,
+            'cancellation_id' => $cancellationId, 'reason' => $reason, 'amount' => $amount, 'promotion_clawback' => $promotionClawback,
             'lines' => array_map(fn (array $line): array => ['line_id' => $line['order_line_id'], 'variant_id' => $line['variant_id'], 'quantity' => $line['quantity'], 'amount' => $line['amount']], $lines),
         ]);
     }

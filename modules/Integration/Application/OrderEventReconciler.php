@@ -138,7 +138,7 @@ final class OrderEventReconciler
 
         foreach ($this->orders->cancellations($order->id) as $cancellation) {
             $expected[] = ['type' => 'order.lines_cancelled', 'match' => ['cancellation_id' => $cancellation['cancellation_id']],
-                'data' => fn (): array => $this->payloads->linesCancelled($order, $cancellation['cancellation_id'], $cancellation['reason'], $cancellation['amount'], $cancellation['lines'])];
+                'data' => fn (): array => $this->payloads->linesCancelled($order, $cancellation['cancellation_id'], $cancellation['reason'], $cancellation['amount'], $cancellation['lines'], $cancellation['promotion_clawback'])];
         }
 
         $settlements = $this->payments->settlementsForOrder($order->id);

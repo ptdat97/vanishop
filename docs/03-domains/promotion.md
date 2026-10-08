@@ -92,6 +92,7 @@ flowchart LR
 - Ngân sách: tương tự, `budget_used_amount + x <= budget_amount` trong câu `UPDATE` có điều kiện.
 - Flash sale đông khách: cổng chặn Redis counter trước.
 - `OrderCancelled` → usage `reverted`, trả lượt voucher (idempotent theo `order_id`).
+- **Huỷ một phần (0.3.31)**: `adjustUsage` đưa `promotion_usages.discount_amount` + ngân sách về giảm giá còn trên đơn. Khách bớt hàng → `recheck` (chỉ rule đánh dấu `CartContentRule`, áp lại action theo thứ tự đã áp, không xét trạng thái/lượt/ngân sách hiện tại) để Ordering thu hồi phần không còn đủ điều kiện ([order §2.1](../09-order/order.md)). Rule plugin chỉ phụ thuộc dòng hàng nên `implements CartContentRule`; rule phụ thuộc lịch sử khách/thời điểm/nguồn thì không.
 
 ## 6. Ví dụ plugin rule
 

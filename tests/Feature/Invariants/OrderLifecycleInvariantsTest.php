@@ -9,10 +9,13 @@ use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Application\OrderCommands;
+use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
+use Modules\Promotion\Contracts\PromotionRule;
+use Modules\Promotion\Tests\Fixtures\MinSubtotalFixtureRule;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -26,6 +29,8 @@ require_once __DIR__.'/../../../modules/Checkout/Tests/Feature/CheckoutTestHelpe
 |   I3 đơn đã huỷ hoặc hàng đã rời kho → không còn hàng giữ active của đơn.
 |   I4 tiền hoàn đã xong ≤ tiền đã thu của mỗi payment.
 |   I5 event tích hợp: mọi đơn có order.created; đơn huỷ có order.cancelled; đơn đã thu tiền có payment.captured.
+|   I6 tiền của đơn cân: tổng = Σ thành tiền dòng + phí giao; giảm giá đơn = Σ giảm giá dòng (cả sau huỷ một phần/thu hồi
+|      khuyến mãi).
 */
 
 beforeEach(function () {
@@ -84,6 +89,9 @@ beforeEach(function () {
             if ($terminal) {
                 expect(DB::table('stock_reservations')->where('reservation_key', $order->reservation_key)->where('status', 'active')->count())->toBe(0, "I3 đơn {$order->number}");
             }
+
+            expect($order->total_amount)->toBe((int) $order->lines()->sum('total_amount') + $order->shipping_amount, "I6 tổng đơn {$order->number}")
+                ->and($order->discount_amount)->toBe((int) $order->lines()->sum('discount_amount'), "I6 giảm giá đơn {$order->number}");
 
             $events = DB::table('integration_events')->where('aggregate_id', $order->number)->pluck('event_type')->all();
             expect($events)->toContain('order.created');
@@ -233,5 +241,30 @@ it('huỷ một phần đơn đã thanh toán online: hoàn đúng phần huỷ 
         ->and(($this->onHand)())->toBe(10);
     ($this->ship)(Shipment::query()->where('status', '!=', 'cancelled')->sole(), ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
     expect(($this->onHand)())->toBe(9);
+    ($this->assertInvariants)();
+});
+
+it('khách bớt hàng đơn đã thanh toán online, phần còn lại dưới ngưỡng khuyến mãi: thu hồi ưu đãi, hoàn đúng phần chênh ròng (một lần)', function () {
+    app(Extensions::class)->tag([MinSubtotalFixtureRule::class], PromotionRule::TAG);
+    $promotion = C::promotion(['name' => 'Giảm 100k đơn từ 600k', 'action_type' => 'amount_off', 'action_config' => ['amount' => 100_000]]);
+    T::seed(fn () => $promotion->rules()->create(['rule_type' => 'fixture_min_subtotal', 'config' => ['min' => 600_000]]));
+
+    $created = $this->postJson("{$this->api}/carts")->assertCreated();
+    $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
+    $cart = $created->json('data.id');
+    $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 2], $headers)->assertOk();
+    $payment = $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => 'fake_online', 'expected_total' => 500_000]), [...$headers, 'Idempotency-Key' => "k-{$cart}"])
+        ->assertCreated()->json('data.payment');
+    $order = Order::query()->latest('id')->first();
+    $this->postJson('/api/payments/fake_online/callback', FakeOnlineGateway::callbackPayload($payment['id'], 'TXN-CLAW-1', 'paid', 500_000))->assertOk();
+
+    // Bớt 1: phần huỷ 250k (300k − 50k giảm); còn 300k < 600k → thu hồi 50k còn lại → hoàn 200k, khách trả 300k (miễn phí giao giữ nguyên).
+    $line = $order->lines()->sole();
+    ($this->system)(fn () => app(OrderCommands::class)->cancelLines($order->id, [$line->id => 1], 'khách bớt 1', $order->fresh()->lock_version, LineCancellationCause::Customer));
+
+    expect((int) DB::table('refunds')->where('status', 'completed')->sum('amount'))->toBe(200_000)
+        ->and($order->fresh()->total_amount)->toBe(300_000)
+        ->and((int) DB::table('promotion_usages')->where('order_id', $order->id)->value('discount_amount'))->toBe(0);
+    ($this->ship)(Shipment::query()->where('status', '!=', 'cancelled')->sole(), ShipmentStatus::PickedUp, ShipmentStatus::Delivered);
     ($this->assertInvariants)();
 });

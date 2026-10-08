@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.31 — 2026-10-08
+
+Tính lại khuyến mãi khi khách bớt hàng (roadmap Phase 2, [order §2.1](../09-order/order.md)).
+
+### Thêm
+- `Promotion\Contracts\CartContentRule` (đánh dấu, extends `PromotionRule`): rule chỉ phụ thuộc dòng hàng — được kiểm tra lại khi khách bớt hàng. `vani.promotion-rules` 0.2.0: `min_order_subtotal`, `min_quantity`, `in_collections`, `in_brands` đánh dấu; `first_order_only` không.
+- `PromotionEngine::recheck(PromotionContext, list<int>)`, `PromotionEngine::adjustUsage(int, array)` (Core là implementation duy nhất; plugin không implement contract này).
+- `Ordering\Contracts\Data\LineCancellationCause` (`shop` | `customer`); `OrderLineDraft` thêm `styleId`, `promotions` (tham số tuỳ chọn cuối).
+- `OrderLinesCancelled` thêm `$cause`, `$promotionClawback` (mặc định `'shop'`, `0`); `OrderReader::cancellations()` thêm `promotion_clawback`; payload `order.lines_cancelled` thêm `promotion_clawback`.
+
+### Đổi hành vi
+- `OrderLinesCancelled::$amount` / payload `amount` / `cancellations()[].amount` là số tiền đơn giảm **ròng** (phần huỷ − khuyến mãi thu hồi). Chỉ khác số cũ khi `cause = customer` và có thu hồi.
+- Huỷ một phần (mọi nguyên nhân) giảm `promotion_usages.discount_amount` và `promotions.budget_used_amount` về giảm giá còn trên đơn (đơn đặt từ 0.3.31).
+
 ## 0.3.30 — 2026-10-08
 
 Cảnh báo tự động (roadmap Phase 6). Chỉ thêm.
