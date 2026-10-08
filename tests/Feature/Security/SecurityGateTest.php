@@ -36,4 +36,24 @@ it('vani:security:check: cấu hình production chuẩn → qua; mỗi lỗi ngh
     'admin path' => [['vanishop.admin.path' => 'admin'], 'VANI_ADMIN_PATH'],
     'mail log' => [['mail.default' => 'log'], 'MAIL_MAILER'],
     'safe mode' => [['vanishop.plugins.safe_mode' => true], 'SAFE_MODE'],
+    'load test ips' => [['vanishop.load_test.bypass_ips' => ['10.0.0.9']], 'VANI_LOAD_TEST_IPS'],
 ]);
+
+it('IP máy load test bỏ qua rate limit storefront ngoài production; ở production vẫn bị giới hạn', function () {
+    config(['vanishop.load_test.bypass_ips' => ['10.0.0.9']]);
+    $track = fn (string $ip) => $this->withServerVariables(['REMOTE_ADDR' => $ip])->getJson('/api/storefront/v1/orders/track?number=X&phone=0912345678');
+
+    foreach (range(1, 11) as $attempt) {
+        expect($track('10.0.0.9')->status())->not->toBe(429);
+    }
+    foreach (range(1, 10) as $attempt) {
+        $track('10.0.0.1');
+    }
+    expect($track('10.0.0.1')->status())->toBe(429);
+
+    app()->detectEnvironment(fn () => 'production');
+    foreach (range(1, 10) as $attempt) {
+        $track('10.0.0.9');
+    }
+    expect($track('10.0.0.9')->status())->toBe(429);
+});

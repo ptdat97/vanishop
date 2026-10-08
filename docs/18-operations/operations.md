@@ -94,7 +94,7 @@ Xem [observability](../16-observability/observability.md) (log, metric, tracing,
 
 ## 9. Chuẩn bị mùa cao điểm (11.11, 12.12, Tết)
 
-- Load test (k6) kịch bản flash sale trước 2 tuần: 3× tải dự kiến.
+- Load test (k6, `scripts/load/storefront.js`, overview §7) kịch bản flash sale trước 2 tuần: 3× tải dự kiến; nhớ xoá `VANI_LOAD_TEST_IPS` khỏi staging sau khi chạy.
 - Pre-warm cache, tăng worker, tạm dừng job `bulk`.
 - Flash sale: hàng đợi phòng chờ (waiting room) ở CDN nếu cần; counter tồn Redis.
 - Đóng băng deploy (code freeze) 48h trước và trong sự kiện.

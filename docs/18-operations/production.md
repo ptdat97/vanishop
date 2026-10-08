@@ -38,6 +38,7 @@ Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `c
 | `BACKUP_ARCHIVE_PASSWORD` | Chuỗi mạnh | File backup chứa dữ liệu khách |
 | `MAIL_*` | SMTP/dịch vụ email thật | Email đơn hàng, cảnh báo backup, cảnh báo vận hành |
 | `VANI_ALERT_EMAILS` | Email người trực, phân tách dấu phẩy | Nhận cảnh báo tự động (`vani:alerts:check`); trống = chỉ ghi log và hiện trên Tổng quan Admin |
+| `VANI_LOAD_TEST_IPS` | **Để trống** | Chỉ đặt trên staging khi load test (IP máy k6 bỏ qua rate limit); `vani:security:check` báo lỗi nếu còn ở production |
 | `VNPAY_SANDBOX` | `false` (khi đã có hợp đồng) | Cùng `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` thật |
 | `VANI_PLUGINS_SAFE_MODE` | `false` | Chỉ bật khi xử lý sự cố — §10 |
 | `APP_SCHEDULE_TIMEZONE` | Giữ mặc định `Asia/Ho_Chi_Minh` | Lịch hằng đêm (backup 02:00, đối soát 03:30/04:00) theo giờ VN; dữ liệu vẫn lưu UTC |

@@ -75,6 +75,11 @@ return [
         'backup_drill_days' => (int) env('VANI_ALERT_BACKUP_DRILL_DAYS', 100),
     ],
 
+    // Load test (scripts/load): IP máy phát tải được bỏ qua rate limit storefront — chỉ staging/dev, bị bỏ qua ở production.
+    'load_test' => [
+        'bypass_ips' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_LOAD_TEST_IPS', ''))))),
+    ],
+
     'security' => [
         // HSTS (giây) khi HTTPS + production. Hạ xuống (vd. 300) trong tuần đầu go-live nếu chưa chắc mọi subdomain có HTTPS.
         'hsts_max_age' => (int) env('VANI_HSTS_MAX_AGE', 31536000),

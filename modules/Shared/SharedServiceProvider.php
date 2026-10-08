@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Modules\Shared\Console\PruneIdempotencyKeysCommand;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
+use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 final class SharedServiceProvider extends ModuleServiceProvider
@@ -29,7 +30,7 @@ final class SharedServiceProvider extends ModuleServiceProvider
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('vani.storefront-context', ResolveStorefrontContext::class);
-        RateLimiter::for('storefront-api', fn (Request $request): Limit => Limit::perMinute(240)->by((string) $request->ip()));
+        RateLimiter::for('storefront-api', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 240));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:idempotency:prune')->hourly()->withoutOverlapping()->onOneServer();

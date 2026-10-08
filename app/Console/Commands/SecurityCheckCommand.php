@@ -54,6 +54,7 @@ final class SecurityCheckCommand extends Command
             ['error', 'MAIL_MAILER đang là log/array — email đơn hàng và cảnh báo sẽ không gửi', in_array((string) config('mail.default'), ['log', 'array'], true)],
             ['error', 'VANI_PLUGINS_SAFE_MODE đang bật — không plugin nào được nạp (mất thanh toán/giao hàng)', (bool) config('vanishop.plugins.safe_mode')],
             ['error', 'VANI_OTP_LOG_SENDER đang bật — mã OTP bị ghi ra log', (bool) config('vanishop.customer.otp.log_sender')],
+            ['error', 'VANI_LOAD_TEST_IPS phải trống ở production (bỏ qua rate limit cho IP phát tải)', (array) config('vanishop.load_test.bypass_ips') !== []],
             ['warning', 'VANI_ADMIN_IP_ALLOWLIST trống — mọi IP vào được trang đăng nhập Admin', (array) config('vanishop.admin.ip_allowlist') === []],
             ['warning', 'VANI_HEALTH_TOKEN trống — /health không trả chi tiết cho giám sát', (string) config('vanishop.health.token') === ''],
             ['warning', 'VANI_TRUSTED_PROXIES trống — sau LB/CDN, IP khách và HTTPS sẽ sai', trim((string) config('vanishop.trusted_proxies')) === ''],

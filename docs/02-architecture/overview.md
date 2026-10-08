@@ -171,3 +171,26 @@ Cách đọc số liệu:
 - Dữ liệu demo rất nhỏ; catalog thật (hàng chục nghìn SKU) cần đo lại vì listing có phân trang và facet.
 
 → Mục "Load test đạt NFR" của [go-live gate](../20-roadmap/roadmap.md) **chưa đóng**: hiện mới xác nhận latency, chưa xác nhận tải.
+
+### Đo NFR lần 2 (2026-10-08) và kịch bản load test
+
+Đo latency trên dev qua Herd (nginx + PHP-FPM, `APP_DEBUG=true`, MySQL local, 29 style / 94 variant), **không có CDN** — mỗi request đều render ở origin, nên đây là trường hợp xấu hơn "cache nóng". `./scripts/load/smoke-pages.sh` (ab, c=10; trang 200 request, API 60 request):
+
+| Endpoint | P50 | **P95** | Throughput | Kết quả |
+|---|---|---|---|---|
+| `GET /` | 61 ms | **91 ms** | ~143 req/s | ✅ < 300 ms |
+| `GET /danh-muc/{slug}` | 49 ms | **61 ms** | ~192 req/s | ✅ < 300 ms |
+| `GET /san-pham/{slug}` | 40 ms | **43 ms** | ~240 req/s | ✅ < 300 ms |
+| `GET /api/storefront/v1/products` | 54 ms | **58 ms** | ~170 req/s | ✅ < 200 ms |
+| `GET /api/storefront/v1/products/{slug}` | 40 ms | **43 ms** | ~232 req/s | ✅ < 200 ms |
+
+Load test tải (500 đơn/phút, 5.000 req/s qua CDN) chạy trên **staging** bằng k6: `scripts/load/storefront.js` — 3 kịch bản song song: `browse` (trang HTML + `/_vani/phien`), `api` (listing/PDP), `checkout` (tạo giỏ → thêm hàng → báo giá → đặt đơn COD). Ngưỡng: P95 trang < 300 ms, API < 200 ms, checkout < 1 s, lỗi < 1%.
+
+```bash
+# staging: VANI_LOAD_TEST_IPS=<IP máy k6>  (bỏ qua rate limit storefront; bị bỏ qua ở production, vani:security:check báo lỗi)
+k6 run -e BASE=https://staging.shop.vn -e ORDERS_PER_MIN=500 -e PAGE_RPS=200 -e API_RPS=50 -e DURATION=10m scripts/load/storefront.js
+```
+
+- 5.000 req/s là tải **qua CDN** — đo bằng k6 trỏ vào domain có CDN (tỷ lệ HIT là điều cần xem); `PAGE_RPS` trỏ thẳng origin để đo năng lực origin khi CDN MISS.
+- Đơn COD giữ hàng thật: seed tồn đủ lớn; sau khi chạy kiểm tra **0 oversell** (tồn không âm, `stock_levels.reserved` ≤ `on_hand`, đối soát tồn kho), rồi huỷ/dọn đơn load test.
+- Chưa chạy: cần môi trường staging (ADR-018) và cài k6 trên máy phát tải.

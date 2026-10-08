@@ -33,6 +33,7 @@ use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
+use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Support\ModuleServiceProvider;
 
 /**
@@ -88,7 +89,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         Event::listen(OrderCancelled::class, RefreshCustomerStats::class);
         Event::listen(OrderLinesCancelled::class, RefreshCustomerStats::class);
 
-        RateLimiter::for('vani-customer-auth', fn (Request $request): Limit => Limit::perMinute(20)->by('customer-auth:'.$request->ip()));
+        RateLimiter::for('vani-customer-auth', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 20, 'customer-auth:'));
 
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));

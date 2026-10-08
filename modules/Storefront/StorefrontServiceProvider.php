@@ -14,6 +14,7 @@ use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Storefront\AccountPages;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
@@ -70,9 +71,9 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.
         // Tra cứu đơn bằng số đơn + SĐT: chặn dò số điện thoại.
-        RateLimiter::for('vani-order-track', fn (Request $request): Limit => Limit::perMinute(10)->by((string) $request->ip()));
-        RateLimiter::for('vani-checkout', fn (Request $request): Limit => Limit::perMinute(20)->by((string) $request->ip()));
-        RateLimiter::for('vani-cart-create', fn (Request $request): Limit => Limit::perMinute(30)->by((string) $request->ip()));
+        RateLimiter::for('vani-order-track', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 10));
+        RateLimiter::for('vani-checkout', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 20));
+        RateLimiter::for('vani-cart-create', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 30));
 
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));
         $this->loadWebRoutes($this->modulePath('Http/routes/storefront-web.php'));
