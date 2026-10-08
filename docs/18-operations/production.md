@@ -36,7 +36,8 @@ Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `c
 | `VANI_MEDIA_DISK` + `AWS_*`, `AWS_ENDPOINT` | `s3` + endpoint nhà cung cấp VN | Web node stateless |
 | `VANI_BACKUP_DISKS` / `VANI_BACKUP_S3_BUCKET` | `s3_backup` / bucket riêng, khác vùng | Backup không nằm cùng máy với DB |
 | `BACKUP_ARCHIVE_PASSWORD` | Chuỗi mạnh | File backup chứa dữ liệu khách |
-| `MAIL_*` | SMTP/dịch vụ email thật | Email đơn hàng, cảnh báo backup |
+| `MAIL_*` | SMTP/dịch vụ email thật | Email đơn hàng, cảnh báo backup, cảnh báo vận hành |
+| `VANI_ALERT_EMAILS` | Email người trực, phân tách dấu phẩy | Nhận cảnh báo tự động (`vani:alerts:check`); trống = chỉ ghi log và hiện trên Tổng quan Admin |
 | `VNPAY_SANDBOX` | `false` (khi đã có hợp đồng) | Cùng `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` thật |
 | `VANI_PLUGINS_SAFE_MODE` | `false` | Chỉ bật khi xử lý sự cố — §10 |
 | `APP_SCHEDULE_TIMEZONE` | Giữ mặc định `Asia/Ho_Chi_Minh` | Lịch hằng đêm (backup 02:00, đối soát 03:30/04:00) theo giờ VN; dữ liệu vẫn lưu UTC |
@@ -142,7 +143,7 @@ Lịch (giờ VN; xem đầy đủ: `php artisan schedule:list`):
 
 | Tần suất | Lệnh |
 |---|---|
-| Mỗi phút | `vani:inventory:release-expired`, `vani:payment:expire`, `vani:payment:reconcile`, `vani:integration:dispatch`, `vani:integration:process-inbox`, `vani:metrics:snapshot` (kèm nhịp tim scheduler cho `/health`) |
+| Mỗi phút | `vani:inventory:release-expired`, `vani:payment:expire`, `vani:payment:reconcile`, `vani:integration:dispatch`, `vani:integration:process-inbox`, `vani:metrics:snapshot` (kèm nhịp tim scheduler cho `/health`), `vani:alerts:check` (cảnh báo tự động) |
 | 5 phút | `vani:cart:detect-abandoned`, `vani:plugin:finish-draining`, `horizon:snapshot` |
 | 15 phút | `vani:plugin:health` |
 | Hằng giờ | `vani:integration:reconcile-orders`, `vani:orders:complete-delivered`, `vani:idempotency:prune` |
@@ -224,6 +225,6 @@ Sự cố thường gặp:
 
 ## 12. Chưa có (cần biết khi vận hành)
 
-- **Cảnh báo tự động** (Phase 6): chưa có hệ thống tự gửi cảnh báo khi `/health` xấu, queue tồn, thanh toán treo. Tạm thời dùng dịch vụ giám sát ngoài gọi `/health` mỗi 1–5 phút + `backup:monitor` gửi email.
+- **Cảnh báo tự động** đã có (0.3.30, [observability §7.1](../16-observability/observability.md)): email tới `VANI_ALERT_EMAILS`, thêm Telegram/Slack/Zalo bằng plugin `AlertChannel`. Vẫn cần dịch vụ giám sát ngoài gọi `/health` mỗi 1–5 phút, vì khi scheduler/server chết thì không còn gì tự gửi cảnh báo. Chưa có gọi điện on-call.
 - Tracing, Prometheus/Grafana chưa có ([observability](../16-observability/observability.md)).
 - Một web node là cấu hình đã kiểm chứng; nhiều node cần Redis dùng chung, media trên S3 và cân nhắc CDN trước `/cache/`.

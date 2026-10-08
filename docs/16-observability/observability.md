@@ -1,6 +1,6 @@
 # Observability
 
-> Trạng thái: **Partially Implemented** (Core 0.3.25). Đã có: correlation id ghi vào mọi dòng log; metric tối thiểu qua contract `Shared\Contracts\Metrics` (ghi vào Pulse), thẻ Pulse "Thương mại"; health check tổng hợp `GET /health`. Chưa có: tracing, cảnh báo tự động (§7), Prometheus/Grafana.
+> Trạng thái: **Partially Implemented** (Core 0.3.30). Đã có: correlation id ghi vào mọi dòng log; metric tối thiểu qua contract `Shared\Contracts\Metrics` (ghi vào Pulse), thẻ Pulse "Thương mại"; health check tổng hợp `GET /health`; cảnh báo tự động `vani:alerts:check` (§7). Chưa có: tracing, Prometheus/Grafana.
 
 ## 1. Mục tiêu
 
@@ -87,6 +87,30 @@ Công cụ: Laravel Pulse (dashboard ứng dụng) + Prometheus/Grafana tự hos
 - Admin có màn hình "Timeline đơn hàng": gộp tất cả các log trên theo `order_id`/`correlation_id`.
 
 ## 7. Cảnh báo
+
+### 7.1 Đã có (0.3.30)
+
+`vani:alerts:check` chạy mỗi phút (scheduler, một server), đánh giá các điều kiện dưới đây và báo qua mọi kênh `Shared\Contracts\AlertChannel` đang bật. Core có kênh `mail` (gửi ngay tới `VANI_ALERT_EMAILS`, không qua queue); plugin đóng góp kênh khác (Telegram, Slack, Zalo…) qua `contribute(AlertChannel::TAG, …)`. Lỗi của một kênh được cô lập.
+
+Trạng thái lưu ở `alert_states`: sự cố mới → báo ngay; còn → nhắc lại sau 30 phút (khẩn), 2 giờ (cao), 1 ngày (thường); hết → báo "đã ổn". Không gửi lặp mỗi phút. Cảnh báo đang mở hiện ở ô "Cảnh báo vận hành" trên trang Tổng quan Admin (quyền `system.monitor`). Metric `alerts.fired` (key = mức). `--dry-run` chỉ in, không gửi.
+
+| Mã | Mức | Điều kiện |
+|---|---|---|
+| `database` | Khẩn | Không truy vấn được DB (chống lặp bằng cache) |
+| `extensions.required_missing` | Khẩn | Thiếu extension bắt buộc (thanh toán, giao hàng, thuế…) |
+| `integration.order_event_dead` | Khẩn | Có message `order.*` ở trạng thái `dead` |
+| `payments.failure_rate` | Khẩn | > 30% khoản thanh toán online thất bại trong 60 phút (tối thiểu 10 khoản; bỏ `cod`, `manual_bank_transfer`) |
+| `queue.wait` | Khẩn | Queue Redis chờ > 120s (Horizon) |
+| `integration.outbox_backlog` | Cao | Outbox tồn > 500 hoặc message chờ gửi quá 5 phút |
+| `integration.dead` | Cao | Message outbox (không phải `order.*`) hoặc inbox ở `dead` |
+| `plugins.failed` | Cao | Plugin ở trạng thái `failed` |
+| `plugins.health` | Cao | `vani:plugin:health` báo `error` |
+| `jobs.failed` | Cao | Có job thất bại trong 60 phút |
+| `reconciliation.open` | Thường | Còn dòng đối soát tồn/thanh toán chưa xử lý |
+
+Ngưỡng ở `vanishop.alerts` (`VANI_ALERT_OUTBOX_BACKLOG`, `VANI_ALERT_QUEUE_WAIT`). Scheduler chết thì lệnh này không chạy: dùng giám sát ngoài gọi `GET /health` (mục `scheduler`). Chưa có: tỷ lệ checkout lỗi theo 5 phút, replica lag, deadlock, slow query, gọi điện on-call.
+
+### 7.2 Mục tiêu
 
 | Mức | Điều kiện |
 |---|---|

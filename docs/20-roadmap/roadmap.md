@@ -190,7 +190,8 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Schema event công khai + test luồng thật | ✅ | `docs/api/schemas`, R32 |
 | Contract test cho extension point | ✅ | Mọi extension point domain có bộ trong `Modules\*\Testing` (R26) |
 | `/api/integration/v1`: HMAC, scope, IP allowlist, rate limit, cursor (`/events`, `/orders`) | 🟡 | OpenAPI + error contract công bố ✅ (0.3.26, `docs/api/openapi/integration-v1.json`, test hợp đồng). Còn endpoint ghi (fulfillments, cancellation-decisions, snapshots, catalog, prices, returns receipts, pos-orders, cod-reconciliations, jobs) — làm khi có hệ thống ngoài cần (ERP/POS) |
-| Metric tối thiểu | ✅ | 0.3.25: contract `Shared\Contracts\Metrics` (Pulse), counter từ nghiệp vụ + đối soát, gauge `vani:metrics:snapshot` mỗi phút, thẻ Pulse "Thương mại"; danh mục ở [observability §4.1](../16-observability/observability.md). Chưa có: cảnh báo tự động, tracing |
+| Metric tối thiểu | ✅ | 0.3.25: contract `Shared\Contracts\Metrics` (Pulse), counter từ nghiệp vụ + đối soát, gauge `vani:metrics:snapshot` mỗi phút, thẻ Pulse "Thương mại"; danh mục ở [observability §4.1](../16-observability/observability.md). Chưa có: tracing |
+| Cảnh báo tự động | ✅ | 0.3.30: `vani:alerts:check` mỗi phút, 11 điều kiện khẩn/cao/thường, trạng thái `alert_states` (không gửi lặp, nhắc lại theo mức, báo hết), kênh `mail` + extension point `AlertChannel` cho plugin, ô cảnh báo trên Tổng quan ([observability §7.1](../16-observability/observability.md)) |
 | Health check | ✅ | 0.3.25: `GET /health` (database, cache, extension bắt buộc, outbox, nhịp scheduler); `fail` → 503; chi tiết theo `X-Health-Token` |
 
 ### Phase 7. Storefront / Search
@@ -223,14 +224,14 @@ Plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `van
 4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay). ✅ 2026-10-07 (Core 0.3.22)
 5. Phase 5: trạng thái `draining` + xác nhận `--force`. ✅ 2026-10-07 (Core 0.3.23)
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
-7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26). Còn: cảnh báo tự động.
+7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
 
 ## 5. Go-live gate
 
 - [ ] Slice 0–10 đạt Done (slice 12 và 12d đã xong 2026-10-02); slice 11 ở mức cần thiết cho ERP (nếu Owner yêu cầu ERP trước go-live).
 - [ ] Plugin P1 hoạt động trên staging với tài khoản sandbox thật.
 - [ ] Load test đạt NFR ([overview §7](../02-architecture/overview.md)); concurrency test pass.
-- [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)). → **Một phần**: correlation id trong mọi dòng log; metric tối thiểu + thẻ Pulse "Thương mại" + `GET /health` (0.3.25). Còn thiếu: tracing, cảnh báo tự động.
+- [ ] Observability: dashboard, cảnh báo khẩn, correlation id xuyên suốt ([observability](../16-observability/observability.md)). → **Một phần**: correlation id trong mọi dòng log; metric tối thiểu + thẻ Pulse "Thương mại" + `GET /health` (0.3.25). Cảnh báo tự động qua email/plugin (0.3.30). Còn thiếu: tracing, gọi điện on-call.
 - [ ] Bảo mật: pentest, đường dẫn Admin bí mật + kiểm soát bù trừ của ADR-020, secret scan, backup/restore đã diễn tập ([security](../15-security/security.md), [operations](../18-operations/operations.md)).
 - [ ] Pháp lý: một pháp nhân vận hành website bán hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)), thông báo/đăng ký với Bộ Công Thương, chính sách, consent ([vietnam-localization](../03-domains/vietnam-localization.md)).
 - [ ] Staging/production đặt tại VN tại nhà cung cấp Owner chọn ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)).

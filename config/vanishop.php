@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.29',
+    'version' => '0.3.30',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -50,6 +50,21 @@ return [
     // Proxy tin cậy (load balancer/CDN đứng trước app): IP/CIDR phân tách dấu phẩy, hoặc '*' khi app chỉ nhận
     // traffic qua LB. Trống = không tin X-Forwarded-* (IP khách, HTTPS sẽ sai nếu có LB).
     'trusted_proxies' => env('VANI_TRUSTED_PROXIES', ''),
+
+    // Cảnh báo tự động (vani:alerts:check mỗi phút, observability §7). Kênh mặc định: email; plugin thêm kênh khác.
+    'alerts' => [
+        'mail_to' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_ALERT_EMAILS', ''))))),
+        // Nhắc lại khi cảnh báo còn (phút) theo mức độ.
+        'repeat_minutes' => ['critical' => 30, 'high' => 120, 'normal' => 1440],
+        'outbox_backlog' => (int) env('VANI_ALERT_OUTBOX_BACKLOG', 500),
+        'outbox_lag_minutes' => 5,
+        'queue_wait_seconds' => (int) env('VANI_ALERT_QUEUE_WAIT', 120),
+        // Tỷ lệ thanh toán online thất bại trong 60 phút (khi có ít nhất `payment_min_sample` khoản đã có kết quả).
+        'payment_failure_rate' => 0.3,
+        'payment_min_sample' => 10,
+        // Cổng thu tiền ngoài hệ thống (không tính tỷ lệ thất bại).
+        'offline_gateways' => ['cod', 'manual_bank_transfer'],
+    ],
 
     'health' => [
         // Token để GET /health trả chi tiết từng kiểm tra (header X-Health-Token). Trống = chỉ trả status.

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Livewire\Pulse\CommerceMetricsCard;
+use App\Observability\MailAlertChannel;
+use App\Observability\OpenAlertsWidget;
 use App\Observability\PulseMetrics;
 use App\Observability\RecordCommerceMetrics;
 use Illuminate\Console\Scheduling\Schedule;
@@ -13,7 +15,10 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Horizon;
 use Livewire\Livewire;
+use Modules\Extension\Contracts\DashboardWidget;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Shared\Contracts\AlertChannel;
 use Modules\Shared\Contracts\Metrics;
 
 class AppServiceProvider extends ServiceProvider
@@ -42,7 +47,11 @@ class AppServiceProvider extends ServiceProvider
             $schedule->command('backup:monitor')->dailyAt('09:00')->onOneServer();
             $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
             $schedule->command('vani:metrics:snapshot')->everyMinute()->withoutOverlapping()->onOneServer();
+            $schedule->command('vani:alerts:check')->everyMinute()->withoutOverlapping()->onOneServer();
         });
+        // Cảnh báo tự động: kênh email của Core; plugin thêm kênh qua AlertChannel::TAG.
+        $this->app->make(Extensions::class)->tag([MailAlertChannel::class], AlertChannel::TAG);
+        $this->app->make(Extensions::class)->tag([OpenAlertsWidget::class], DashboardWidget::TAG);
         // Counter thương mại từ domain event (sau commit) — Phase 6 observability.
         foreach (RecordCommerceMetrics::listeners() as $event => $method) {
             Event::listen($event, [RecordCommerceMetrics::class, $method]);

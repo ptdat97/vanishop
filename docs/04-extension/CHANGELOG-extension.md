@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.30 — 2026-10-08
+
+Cảnh báo tự động (roadmap Phase 6). Chỉ thêm.
+
+### Thêm
+- `Shared\Contracts\AlertChannel` (tag `vani.alert-channels`): kênh nhận cảnh báo; Core có `mail` (`VANI_ALERT_EMAILS`). DTO `Shared\Contracts\Data\Alert` (`key`, `severity` critical/high/normal, `state` firing/reminder/resolved, `subject()`).
+- `vani:alerts:check [--dry-run]` (mỗi phút), bảng `alert_states`, metric `alerts.fired`, ô Tổng quan `open_alerts`.
+
 ## 0.3.29 — 2026-10-08
 
 Thư viện ảnh dùng chung cho plugin. Chỉ thêm.
