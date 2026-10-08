@@ -65,7 +65,7 @@ final class OrderQueries
             note: $masked ? null : $order->note,
             placedAt: $order->placed_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
             lines: $order->lines->map(fn (OrderLine $line): array => [
-                'id' => $line->id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
+                'id' => $line->id, 'variant_id' => $line->variant_id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
                 'image_url' => $line->image_url, 'quantity' => $line->quantity, 'cancelled_quantity' => $line->cancelled_quantity, 'unit_amount' => $line->unit_amount, 'compare_at_amount' => $line->compare_at_amount,
                 'discount_amount' => $line->discount_amount, 'total_amount' => $line->total_amount, 'tax_rate_bp' => $line->tax_rate_bp, 'tax_amount' => $line->tax_amount,
                 'options' => (array) ($line->meta['options'] ?? []),

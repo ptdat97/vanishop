@@ -42,7 +42,7 @@ final class OrderPresenter
             'shipping_address' => $order->shippingAddress,
             'shipping_method' => ['label' => $order->shippingMethod['label'] ?? null, 'fee' => $money((int) ($order->shippingMethod['fee'] ?? 0))],
             'lines' => array_map(fn (array $line): array => [
-                'id' => $line['id'], 'sku' => $line['sku'], 'name' => $line['name'], 'color_name' => $line['color_name'], 'size_code' => $line['size_code'], 'image_url' => $line['image_url'],
+                'id' => $line['id'], 'variant_id' => $line['variant_id'] ?? null, 'sku' => $line['sku'], 'name' => $line['name'], 'color_name' => $line['color_name'], 'size_code' => $line['size_code'], 'image_url' => $line['image_url'],
                 'quantity' => $line['quantity'], 'unit_price' => $money($line['unit_amount']), 'compare_at' => $money($line['compare_at_amount']),
                 'discount' => $money($line['discount_amount']), 'total' => $money($line['total_amount']),
                 'options' => $line['options'] ?? [],
@@ -62,7 +62,7 @@ final class OrderPresenter
                 'events' => $shipment->events,
             ], array_filter($this->shipments->forOrder($order->id), fn (ShipmentView $shipment): bool => $shipment->status !== 'cancelled'))),
             'returns' => array_map(fn (ReturnView $return): array => [
-                'id' => $return->publicId, 'number' => $return->number, 'status' => $return->status, 'reason_code' => $return->reasonCode,
+                'id' => $return->publicId, 'number' => $return->number, 'status' => $return->status, 'reason_code' => $return->reasonCode, 'resolution' => $return->resolution,
                 'refund' => $money($return->refundedAmount ?? $return->refundAmount), 'created_at' => $return->createdAt,
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),

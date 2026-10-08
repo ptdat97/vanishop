@@ -10,6 +10,7 @@
             <p class="mb-6 text-sm text-slate-500">{{ $order['placed_at'] }} · {{ $order['status']['label'] ?? $order['order_status'] }}</p>
             @include('theme::partials.order-summary')
             <x-vani::hook-slot name="vani.storefront.account.order_detail" :args="[$order]" />
+            @include('theme::partials.order-returns')
 
             @if ($order['can_cancel'])
                 <form action="{{ route('storefront.account.order.cancel', $order['id']) }}" method="post" class="mt-8 flex flex-wrap items-end gap-2">

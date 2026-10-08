@@ -202,7 +202,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 |---|---|---|
 | SSR-first, JS tuỳ chọn cho luồng mua | ✅ | ADR-025 |
 | Home/danh mục/thương hiệu/tìm kiếm/PDP/giỏ/checkout/tài khoản/đơn | ✅ | |
-| Gửi yêu cầu đổi/trả trên storefront native | ⬜ | Hiện chỉ có qua API |
+| Gửi yêu cầu đổi/trả trên storefront native | ✅ | 2026-10-08: trang đơn (tài khoản + token phiên) có danh sách yêu cầu, huỷ khi chờ duyệt, form trả hoàn tiền / đổi size-màu cùng mẫu (size hết hàng bị khoá), chạy không cần JS ([storefront](../14-storefront/storefront.md)) |
 | Abstraction tìm kiếm | ✅ | `SearchProvider` (`database` trong Core, Meilisearch là plugin). Không thêm abstraction `SearchEngine` mới |
 | Cache CDN | ⬜ | Cần tách phiên khỏi trang công khai |
 
@@ -228,7 +228,7 @@ Không làm trong mục tiêu hiện tại: một cửa hàng, **một người 
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
 7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
 8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31); đổi hàng ✅ 2026-10-08 (Core 0.3.32). Phase 2 xong.
-9. Phase 5, 7, 8 còn: capability theo tag giữa plugin; gửi yêu cầu đổi/trả trên storefront native; cache CDN; phân khúc khách, campaign.
+9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Còn Phase 5, 7, 8: capability theo tag giữa plugin; cache CDN; phân khúc khách, campaign.
 
 Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.
 

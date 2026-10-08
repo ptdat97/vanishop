@@ -11,13 +11,14 @@ use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Payment\Contracts\Payments;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\PaymentPresenter;
+use Modules\Storefront\Application\ReturnFormPresenter;
 
 /**
  * Trang cảm ơn / chi tiết đơn vừa đặt: token xem đơn giữ trong phiên (thay header X-Vani-Order-Token của API).
  */
 final class OrderController
 {
-    public function show(Request $request, string $order, Session $session, CustomerOrders $orders, OrderPresenter $presenter, Payments $payments, PaymentPresenter $paymentPresenter): View
+    public function show(Request $request, string $order, Session $session, CustomerOrders $orders, OrderPresenter $presenter, Payments $payments, PaymentPresenter $paymentPresenter, ReturnFormPresenter $returnForm): View
     {
         $stored = (array) $session->get("vani.orders.{$order}", []);
         $customer = $request->attributes->get('customer');
@@ -29,8 +30,11 @@ final class OrderController
         $paymentId = (string) ($stored['payment']['id'] ?? '');
         $payment = $paymentId === '' ? null : $payments->view($paymentId);
 
+        $presented = $presenter->present($detail);
+
         return view('theme::pages.order', [
-            'order' => $presenter->present($detail),
+            'order' => $presented,
+            'returnForm' => $returnForm->present($presented),
             'payment' => $payment === null || $payment->orderPublicId !== $order ? ($stored['payment'] ?? null) : $paymentPresenter->present($payment),
         ]);
     }

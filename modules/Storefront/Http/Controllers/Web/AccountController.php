@@ -13,6 +13,7 @@ use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\OrderPresenter;
+use Modules\Storefront\Application\ReturnFormPresenter;
 
 /**
  * Tài khoản khách trên native storefront: đăng nhập OTP (token trong phiên), đơn hàng, địa chỉ. Cùng contract
@@ -97,13 +98,14 @@ final class AccountController
         ]);
     }
 
-    public function order(Request $request, string $order): View
+    public function order(Request $request, string $order, ReturnFormPresenter $returnForm): View
     {
         $customer = $this->required($request);
         $detail = $this->orders->showForCustomer($customer->id, $order);
         abort_if($detail === null, 404);
+        $presented = $this->presenter->present($detail);
 
-        return view('theme::pages.account.order', ['order' => $this->presenter->present($detail)]);
+        return view('theme::pages.account.order', ['order' => $presented, 'returnForm' => $returnForm->present($presented)]);
     }
 
     public function cancelOrder(Request $request, string $order): RedirectResponse

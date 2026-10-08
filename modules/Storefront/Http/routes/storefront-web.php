@@ -9,6 +9,7 @@ use Modules\Storefront\Http\Controllers\Web\CheckoutController;
 use Modules\Storefront\Http\Controllers\Web\HomeController;
 use Modules\Storefront\Http\Controllers\Web\OrderController;
 use Modules\Storefront\Http\Controllers\Web\ProductController;
+use Modules\Storefront\Http\Controllers\Web\ReturnController;
 use Modules\Storefront\Http\Controllers\Web\SeoController;
 use Modules\Storefront\Http\Controllers\Web\TrackOrderController;
 
@@ -33,6 +34,11 @@ Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.the
     Route::middleware('throttle:vani-checkout')->post('/thanh-toan', [CheckoutController::class, 'store'])->name('checkout.store');
 
     Route::get('/don-hang/{order}', [OrderController::class, 'show'])->name('order');
+    // Đổi/trả (khách): quyền theo token đơn trong phiên hoặc tài khoản sở hữu đơn.
+    Route::middleware('throttle:10,1')->group(function (): void {
+        Route::post('/don-hang/{order}/doi-tra', [ReturnController::class, 'store'])->name('order.returns.store');
+        Route::post('/don-hang/{order}/doi-tra/{return}/huy', [ReturnController::class, 'cancel'])->name('order.returns.cancel');
+    });
 
     Route::get('/tra-cuu-don', [TrackOrderController::class, 'show'])->name('track');
     Route::middleware('throttle:vani-order-track')->post('/tra-cuu-don', [TrackOrderController::class, 'search'])->name('track.search');
