@@ -32,6 +32,7 @@ final class PluginDoctor
         private readonly Extensions $extensions,
         private readonly PluginHealth $health,
         private readonly string $coreVersion,
+        private readonly PluginCapabilities $capabilities,
     ) {}
 
     /**
@@ -78,6 +79,11 @@ final class PluginDoctor
             }
 
             $active = array_values(array_diff($enabled, [$id]));
+            if ($running($record)) {
+                foreach ($this->capabilities->missingFor($manifest, $active) as $tag) {
+                    $add($id, self::ERROR, 'capability_missing', 'Thiếu capability '.$this->capabilities->describe($tag).': không có implementation nào đang bật.');
+                }
+            }
             foreach ($this->resolver->problemsFor($id, $manifests, $running($record) ? $active : array_values(array_diff($records->keys()->all(), [$id])), $this->coreVersion) as $problem) {
                 $add($id, $problem->code === 'inactive_dependency' && ! $running($record) ? self::WARNING : self::ERROR, $problem->code, $problem->message);
             }

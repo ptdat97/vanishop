@@ -6,6 +6,7 @@ namespace Modules\Extension\Application\Plugins;
 
 use Composer\Semver\Comparator;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
+use Modules\Extension\Domain\Plugin\DependencyProblem;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Domain\Plugin\PluginManifest;
 use Modules\Extension\Domain\Plugin\PluginStatus;
@@ -28,6 +29,7 @@ final class PluginManager
         private readonly AuditLogger $audit,
         private readonly ConsoleKernel $console,
         private readonly RequiredExtensions $required,
+        private readonly PluginCapabilities $capabilities,
         private readonly string $coreVersion,
         private readonly PluginDataGuard $dataGuard = new PluginDataGuard,
     ) {}
@@ -80,6 +82,10 @@ final class PluginManager
             $this->resolver->problemsFor($pluginId, $this->manifests->all(), $active, $this->coreVersion),
             fn ($problem): bool => $problem->code !== 'not_found',
         ));
+        $manifest = $this->manifests->find($pluginId);
+        if ($manifest !== null) {
+            array_push($problems, ...$this->capabilityProblems($manifest, $active));
+        }
         if ($problems !== []) {
             throw new PluginOperationFailed("Không thể bật [{$pluginId}]:", $problems);
         }
@@ -230,6 +236,10 @@ final class PluginManager
 
         $others = array_values(array_diff($this->installedIds(), [$pluginId]));
         $problems = $this->resolver->problemsFor($pluginId, $this->manifests->all(), $others, $this->coreVersion);
+        // Bản mới khai thêm capability: plugin đang chạy phải có sẵn nguồn, không thì nâng xong sẽ chạy thiếu.
+        if (in_array($record->status, [PluginStatus::Enabled, PluginStatus::Draining], true)) {
+            array_push($problems, ...$this->capabilityProblems($manifest, array_values(array_diff($this->enabledIds(), [$pluginId]))));
+        }
         if ($problems !== []) {
             throw new PluginOperationFailed("Không thể nâng [{$pluginId}] lên {$manifest->version}:", $problems);
         }
@@ -384,5 +394,22 @@ final class PluginManager
         if ($broken !== []) {
             throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: đây là implementation cuối cùng của ".implode(', ', $broken).' — bật plugin thay thế trước.');
         }
+
+        $needed = $this->capabilities->brokenWithout($pluginId, $this->manifests->all(), $this->activeIds(), $this->enabledIds());
+        if ($needed !== []) {
+            throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: là nguồn cuối cùng của capability mà plugin khác cần (".implode('; ', $needed).') — bật plugin thay thế hoặc tắt plugin cần trước.');
+        }
+    }
+
+    /**
+     * @param  list<string>  $active
+     * @return list<DependencyProblem>
+     */
+    private function capabilityProblems(PluginManifest $manifest, array $active): array
+    {
+        return array_map(
+            fn (string $tag): DependencyProblem => new DependencyProblem($manifest->id, 'missing_capability', 'Cần ít nhất một implementation đang bật của '.$this->capabilities->describe($tag).' — bật plugin cung cấp trước.'),
+            $this->capabilities->missingFor($manifest, $active),
+        );
     }
 }

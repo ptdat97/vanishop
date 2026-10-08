@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.33 — 2026-10-08
+
+Capability giữa plugin (roadmap Phase 5). Chỉ thêm.
+
+### Thêm
+- Manifest `requires.capabilities`: danh sách tag extension point cần ít nhất một implementation đang bật (Core hoặc plugin bất kỳ). `vani:plugin:enable` từ chối khi thiếu (`missing_capability`); tắt/ngừng plugin là nguồn cuối cùng mà plugin đang chạy khác cần bị chặn; `vani:plugin:upgrade` kiểm tra capability mới khai; doctor `capability_missing`.
+
 ## 0.3.32 — 2026-10-08
 
 Đổi hàng (roadmap Phase 2, [order §7.1](../09-order/order.md)). Chỉ thêm.

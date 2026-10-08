@@ -27,6 +27,7 @@
 | `provider` | ✔ | FQCN của provider, extends `Modules\Extension\PluginServiceProvider` |
 | `requires.vanishop` | ✔ | Ràng buộc Composer semver với `config('vanishop.version')` (hiện `0.2.0`) |
 | `requires.plugins` | | `{ "plugin.id": "^x.y" }` → sắp thứ tự nạp, chặn bật khi thiếu |
+| `requires.capabilities` | | `["tag.extension-point"]` (0.3.33) → cần ≥1 implementation đang bật (Core hoặc plugin bất kỳ); chặn bật khi thiếu, chặn tắt nguồn cuối cùng; nguồn `draining` không tính là thay thế |
 | `conflicts` | | Kiểm tra hai chiều |
 | `scopes` | | **Deprecated** ([ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md)): plugin bật/tắt toàn cửa hàng. Code hiện vẫn đọc (`owner`, `brand`, `channel`) cho tới slice 12 |
 | `permissions` | | Hiển thị khi cài |

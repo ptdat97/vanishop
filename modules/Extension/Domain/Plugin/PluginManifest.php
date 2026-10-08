@@ -45,6 +45,13 @@ final readonly class PluginManifest
         public bool $bundled = false,
         /** Khai báo dữ liệu (owned / references / retained) — 0.3.24. */
         public PluginDataDeclaration $data = new PluginDataDeclaration,
+        /**
+         * Capability cần có (0.3.33, `requires.capabilities`): tag extension point mà plugin cần ít nhất một implementation
+         * đang bật (của Core hoặc plugin bất kỳ) — vd. `vani.payment.gateways`. Khác `requires.plugins` (cần đúng plugin).
+         *
+         * @var list<string>
+         */
+        public array $requiresCapabilities = [],
     ) {}
 
     /**
@@ -78,6 +85,13 @@ final readonly class PluginManifest
             throw InvalidManifest::because($path, 'thiếu requires.vanishop');
         }
 
+        $capabilities = array_values(array_unique(array_map('strval', (array) ($requires['capabilities'] ?? []))));
+        foreach ($capabilities as $tag) {
+            if (preg_match('/^[a-z0-9]+(?:[.-][a-z0-9]+)+$/', $tag) !== 1) {
+                throw InvalidManifest::because($path, "requires.capabilities: tag [{$tag}] không hợp lệ (dạng vani.payment.gateways)");
+            }
+        }
+
         $name = is_array($data['name']) ? $data['name'] : ['vi' => (string) $data['name']];
 
         return new self(
@@ -93,6 +107,7 @@ final readonly class PluginManifest
             path: $path,
             bundled: (bool) ($data['bundled'] ?? false),
             data: PluginDataDeclaration::fromArray(is_array($data['data'] ?? null) ? $data['data'] : [], $path),
+            requiresCapabilities: $capabilities,
         );
     }
 

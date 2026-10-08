@@ -183,7 +183,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Trạng thái `draining`: ngừng nhận giao dịch mới nhưng vẫn xử lý giao dịch cũ (IPN, webhook, query), tự tắt khi hết | ✅ | 0.3.23: `vani:plugin:disable --drain`, `Extensions::acceptsNewTransactions` (checkout thanh toán/giao hàng, hãng cho vận đơn mới), `vani:plugin:finish-draining` (5 phút), doctor báo `draining`; enable huỷ ngừng |
 | `--force` cần xác nhận tường minh | ✅ | 0.3.23: liệt kê việc dở dang, hỏi xác nhận; không tương tác cần `--yes`; audit `forced` |
 | Khai báo dữ liệu plugin (owned / referenced / retained), chặn gỡ khi còn tham chiếu | ✅ | 0.3.24: manifest `data`; `uninstall` chặn khi còn việc dở dang; `--purge` chặn khi plugin khác tham chiếu, khoá ngoại thật từ bảng ngoài, `retained` chưa `--drop-retained`; doctor `data_undeclared`/`data_owned_missing`/`data_reference_invalid` |
-| "Required capabilities" giữa plugin | 🟡 | Hiện qua `requires.plugins` + `publishHooks`; capability theo tag (plugin cần ≥1 implementation của tag X) là bổ sung có thể làm |
+| "Required capabilities" giữa plugin | ✅ | 0.3.33: manifest `requires.capabilities` (tag cần ≥1 implementation đang bật, Core hoặc plugin bất kỳ) — chặn bật khi thiếu, chặn tắt/ngừng nguồn cuối cùng mà plugin đang chạy cần (draining không tính là thay thế), kiểm tra khi nâng version, doctor `capability_missing`. Phụ thuộc đúng plugin vẫn qua `requires.plugins` + `publishHooks` |
 
 ### Phase 6. API, contract, observability
 
@@ -228,7 +228,7 @@ Không làm trong mục tiêu hiện tại: một cửa hàng, **một người 
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
 7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
 8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31); đổi hàng ✅ 2026-10-08 (Core 0.3.32). Phase 2 xong.
-9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Còn Phase 5, 7, 8: capability theo tag giữa plugin; cache CDN; phân khúc khách, campaign.
+9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Phase 5: capability theo tag ✅ 2026-10-08 (Core 0.3.33) — Phase 5 xong. Còn Phase 7, 8: cache CDN; phân khúc khách, campaign.
 
 Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.
 

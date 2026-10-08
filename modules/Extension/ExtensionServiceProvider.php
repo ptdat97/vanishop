@@ -23,6 +23,7 @@ use Modules\Extension\Application\Hooks\Points\ResponseHooks;
 use Modules\Extension\Application\Hooks\Points\ViewHooks;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginCapabilities;
 use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginHealth;
 use Modules\Extension\Application\Plugins\PluginLoader;
@@ -102,7 +103,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
         $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(
-            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), $app->make(Extensions::class), $app->make(PluginHealth::class), (string) config('vanishop.version'),
+            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), $app->make(Extensions::class), $app->make(PluginHealth::class), (string) config('vanishop.version'), $app->make(PluginCapabilities::class),
         ));
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));
         $this->app->singleton(PluginStateCache::class, fn ($app): PluginStateCache => new PluginStateCache($app->make(Filesystem::class), (string) config('vanishop.plugins.cache')));
@@ -115,6 +116,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             $app->make(AuditLogger::class),
             $app->make(ConsoleKernel::class),
             $app->make(RequiredExtensions::class),
+            $app->make(PluginCapabilities::class),
             (string) config('vanishop.version'),
         ));
 

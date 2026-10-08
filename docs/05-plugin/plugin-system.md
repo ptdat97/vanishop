@@ -65,6 +65,7 @@ custom/plugin/VietQr/
 | `provider` | ✔ | ServiceProvider |
 | `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver) |
 | `requires.plugins` | | `{ "vani.einvoice": "^1.0" }` |
+| `requires.capabilities` | | `["vani.payment.gateways"]` (0.3.33): tag extension point cần **ít nhất một** implementation đang bật — của Core hoặc plugin bất kỳ. Thiếu → không bật được (`missing_capability`); plugin là nguồn cuối cùng → không tắt được; doctor `capability_missing`. Dùng khi cần "có cổng thanh toán nào đó" thay vì phụ thuộc đúng một plugin |
 | `conflicts` | | Danh sách plugin id không được bật cùng lúc |
 | `scopes` | | **Bỏ** từ ADR-028 (plugin bật/tắt toàn cửa hàng); loader bỏ qua |
 | `permissions` | | Quyền plugin cần; hiển thị khi cài |
