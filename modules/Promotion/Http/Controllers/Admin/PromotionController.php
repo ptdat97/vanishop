@@ -50,6 +50,7 @@ final class PromotionController
                 'ends_at' => $promotion->ends_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
             ])->all(),
             'canManage' => Gate::allows('promotion.manage'),
+            'campaignsUrl' => route('admin.promotion.campaigns.index'),
         ]);
     }
 

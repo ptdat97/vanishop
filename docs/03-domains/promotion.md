@@ -94,6 +94,17 @@ flowchart LR
 - `OrderCancelled` → usage `reverted`, trả lượt voucher (idempotent theo `order_id`).
 - **Huỷ một phần (0.3.31)**: `adjustUsage` đưa `promotion_usages.discount_amount` + ngân sách về giảm giá còn trên đơn. Khách bớt hàng → `recheck` (chỉ rule đánh dấu `CartContentRule`, áp lại action theo thứ tự đã áp, không xét trạng thái/lượt/ngân sách hiện tại) để Ordering thu hồi phần không còn đủ điều kiện ([order §2.1](../09-order/order.md)). Rule plugin chỉ phụ thuộc dòng hàng nên `implements CartContentRule`; rule phụ thuộc lịch sử khách/thời điểm/nguồn thì không.
 
+## 5.1 Campaign (Implemented, 0.3.36)
+
+Campaign gói **khuyến mãi + bảng giá sale/thành viên** chạy chung một lịch (vd. "Sale 11.11"). Admin → Khuyến mãi → Campaign.
+
+- `campaigns` (mã, tên, `starts_at`/`ends_at`, `status` `draft`/`active`/`stopped`); `promotions.campaign_id`; `campaign_price_lists` (bảng giá thuộc tối đa một campaign).
+- **Campaign sở hữu lịch:** khi lưu/kích hoạt/dừng, lịch và trạng thái được ghi xuống từng thành viên — khuyến mãi trực tiếp, bảng giá qua `Pricing\Contracts\PriceListSchedule` (không gắn được bảng giá `base`). Thành viên tự kiểm tra khung giờ khi tính giá/khuyến mãi, không có job định kỳ.
+- Nháp → thành viên tắt. Kích hoạt → bật theo lịch (trạng thái hiển thị: Sắp chạy / Đang chạy / Đã kết thúc). **Dừng ngay** → mọi thành viên tắt tức thì, campaign không sửa/bật lại được. Chỉ xoá được campaign nháp (thành viên được tách ra).
+- Gắn bảng giá cần thêm quyền `pricing.manage`; người chỉ có `promotion.manage` sửa campaign không đụng danh sách bảng giá.
+- **Báo cáo** trên trang campaign: số đơn dùng khuyến mãi của campaign, doanh thu (`OrderStatistics::summarize`), tổng giảm khuyến mãi, số khách, đơn huỷ. Chưa tính: đơn chỉ hưởng giá sale của bảng giá campaign mà không dùng khuyến mãi (dòng đơn chưa lưu nguồn bảng giá).
+- Tách thành viên khỏi campaign không đổi trạng thái của thành viên đó.
+
 ## 6. Ví dụ plugin rule
 
 ```php

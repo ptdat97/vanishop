@@ -41,4 +41,12 @@ interface OrderStatistics
      * @return array<string, int>
      */
     public function countByStatus(): array;
+
+    /**
+     * Tổng hợp một tập đơn bất kỳ (0.3.36, vd. đơn dùng khuyến mãi của một campaign): doanh thu/giảm giá/phí giao của
+     * đơn không huỷ, số đơn huỷ, số khách. Không giới hạn thời gian.
+     *
+     * @param  list<int>  $orderIds
+     */
+    public function summarize(array $orderIds): SalesTotals;
 }

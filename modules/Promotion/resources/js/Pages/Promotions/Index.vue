@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PageHeader from '@admin/Components/PageHeader.vue';
-import { primaryButton } from '@admin/styles';
+import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps<{
@@ -22,6 +22,7 @@ defineProps<{
         ends_at: string | null;
     }>;
     canManage: boolean;
+    campaignsUrl: string;
 }>();
 
 const vnd = new Intl.NumberFormat('vi-VN');
@@ -36,6 +37,7 @@ function describe(type: string, config: Record<string, number>): string {
     <Head title="Khuyến mãi" />
     <p class="mb-2 text-sm text-slate-500">Khuyến mãi</p>
     <PageHeader title="Khuyến mãi" subtitle="Priority cao đánh giá trước. Loại độc quyền chỉ áp khi chưa có khuyến mãi nào khác; tổng giảm mỗi dòng không vượt giá sàn.">
+        <Link :href="campaignsUrl" :class="secondaryButton">Campaign</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm khuyến mãi</Link>
     </PageHeader>
     <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">

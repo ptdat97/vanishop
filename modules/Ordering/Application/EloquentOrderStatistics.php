@@ -37,6 +37,24 @@ final class EloquentOrderStatistics implements OrderStatistics
         );
     }
 
+    public function summarize(array $orderIds): SalesTotals
+    {
+        $orderIds = array_values(array_unique(array_map('intval', $orderIds)));
+        if ($orderIds === []) {
+            return new SalesTotals(0, 0, 0, 0, 0, 0);
+        }
+
+        $rows = collect(array_chunk($orderIds, 1000))->map(fn (array $chunk) => DB::table('orders')->whereIn('id', $chunk)
+            ->selectRaw('sum(case when order_status <> ? then 1 else 0 end) as orders_count, sum(case when order_status <> ? then total_amount else 0 end) as revenue, sum(case when order_status <> ? then discount_amount else 0 end) as discount, sum(case when order_status <> ? then shipping_amount else 0 end) as shipping, sum(case when order_status = ? then 1 else 0 end) as cancelled', array_fill(0, 5, OrderStatus::Cancelled->value))
+            ->first());
+        $customers = DB::table('orders')->whereIn('id', $orderIds)->where('order_status', '<>', OrderStatus::Cancelled->value)->whereNotNull('customer_id')->distinct()->count('customer_id');
+
+        return new SalesTotals(
+            (int) $rows->sum('orders_count'), (int) $rows->sum('revenue'), (int) $rows->sum('discount'),
+            (int) $rows->sum('shipping'), (int) $rows->sum('cancelled'), $customers,
+        );
+    }
+
     public function daily(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
     {
         $this->guardRange($from, $to);

@@ -12,6 +12,7 @@ use Modules\Promotion\Domain\Stacking;
 /**
  * @property int $id
  * @property string $name
+ * @property int|null $campaign_id campaign sở hữu lịch chạy (0.3.36)
  * @property string $status
  * @property Carbon|null $starts_at
  * @property Carbon|null $ends_at
@@ -28,7 +29,7 @@ use Modules\Promotion\Domain\Stacking;
  */
 final class Promotion extends Model
 {
-    protected $fillable = ['name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
+    protected $fillable = ['campaign_id', 'name', 'status', 'starts_at', 'ends_at', 'priority', 'stacking', 'requires_voucher', 'action_type', 'action_config',
         'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version'];
 
     protected function casts(): array

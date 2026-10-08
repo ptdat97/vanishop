@@ -208,7 +208,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 
 ### Phase 8. Promotion / Pricing
 
-Đã có: `PricingStrategy`, bảng giá, `price_history`, khuyến mãi (rule/action, voucher), snapshot giá và giảm giá vào đơn (không tính lại đơn cũ theo giá mới). **Phân khúc khách + giá thành viên ✅ 0.3.35** (một nhóm/khách + tag; bảng giá theo nhóm; giỏ/checkout theo nhóm; trang cache hiện giá chung, giá thành viên tải sau; rule khuyến mãi theo nhóm/tag). Còn: campaign, tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế). Tính lại theo ngưỡng sau huỷ một phần: ✅ 0.3.31 (Phase 2).
+Đã có: `PricingStrategy`, bảng giá, `price_history`, khuyến mãi (rule/action, voucher), snapshot giá và giảm giá vào đơn (không tính lại đơn cũ theo giá mới). **Phân khúc khách + giá thành viên ✅ 0.3.35** (một nhóm/khách + tag; bảng giá theo nhóm; giỏ/checkout theo nhóm; trang cache hiện giá chung, giá thành viên tải sau; rule khuyến mãi theo nhóm/tag). **Campaign ✅ 0.3.36** (gói khuyến mãi + bảng giá sale/member chung lịch, kích hoạt/dừng khẩn cấp, báo cáo). Còn: tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế). Tính lại theo ngưỡng sau huỷ một phần: ✅ 0.3.31 (Phase 2).
 
 ### Phase 9. ERP connector — ❄️ đóng băng (2026-10-08)
 
@@ -228,7 +228,7 @@ Không làm trong mục tiêu hiện tại: một cửa hàng, **một người 
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
 7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
 8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31); đổi hàng ✅ 2026-10-08 (Core 0.3.32). Phase 2 xong.
-9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Phase 5: capability theo tag ✅ 2026-10-08 (Core 0.3.33) — Phase 5 xong. Phase 7: cache CDN ✅ 2026-10-08 (Core 0.3.34) — Phase 7 xong. Còn Phase 8: phân khúc khách, campaign.
+9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Phase 5: capability theo tag ✅ 2026-10-08 (Core 0.3.33) — Phase 5 xong. Phase 7: cache CDN ✅ 2026-10-08 (Core 0.3.34) — Phase 7 xong. Phase 8: phân khúc khách + giá thành viên ✅ (0.3.35), campaign ✅ (0.3.36). Còn Phase 8: tách rõ từng tầng điều chỉnh trên đơn (giá niêm yết, giá bán, khuyến mãi, coupon, phí giao, thuế).
 
 Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.
 

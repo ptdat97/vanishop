@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.36 — 2026-10-08
+
+Campaign (roadmap Phase 8). Chỉ thêm.
+
+### Thêm
+- `Pricing\Contracts\PriceListSchedule` (`schedulable`, `schedule`) — điều khiển lịch/bật-tắt bảng giá sale/member từ module khác.
+- `OrderStatistics::summarize(list<int> $orderIds): SalesTotals` (Core là implementation duy nhất).
+- Campaign trong module Promotion: `campaigns`, `promotions.campaign_id`, `campaign_price_lists`; Admin `/{admin}/promotion/campaigns`.
+
 ## 0.3.35 — 2026-10-08
 
 Phân khúc khách + giá thành viên (roadmap Phase 8). Chỉ thêm.

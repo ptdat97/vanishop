@@ -11,9 +11,11 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Pricing\Application\BasePriceImporter;
 use Modules\Pricing\Application\NoCustomerGroups;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
+use Modules\Pricing\Application\PriceListScheduler;
 use Modules\Pricing\Application\StrategyPriceResolver;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Contracts\PriceImporter;
+use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Pricing\Contracts\PricingStrategy;
 use Modules\Shared\Support\ModuleServiceProvider;
@@ -33,6 +35,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->tag([PriceListPriorityStrategy::class], PricingStrategy::TAG);
         $this->app->make(Extensions::class)->requires(PricingStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược chọn giá');
         $this->app->bind(PriceImporter::class, BasePriceImporter::class);
+        $this->app->bind(PriceListSchedule::class, PriceListScheduler::class);
         $this->app->bindIf(CustomerGroupDirectory::class, NoCustomerGroups::class); // module Customer ghi đè
         $this->app->bind(PriceResolver::class, fn ($app): StrategyPriceResolver => new StrategyPriceResolver(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.pricing.strategy', 'price_list_priority'), $app->make(CustomerGroupDirectory::class),
