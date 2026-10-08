@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignCorrelationId::class);
+        $middleware->append(SecurityHeaders::class);
         // Phải chạy trước StartSession để Admin dùng cookie phiên riêng (ADR-020).
         $middleware->web(prepend: [ConfigureAdminSession::class]);
         // Thêm vào giỏ từ trang sản phẩm đã cache (không có token CSRF trong HTML, storefront §5). An toàn: cookie phiên

@@ -73,6 +73,11 @@ return [
         'offline_gateways' => ['cod', 'manual_bank_transfer'],
     ],
 
+    'security' => [
+        // HSTS (giây) khi HTTPS + production. Hạ xuống (vd. 300) trong tuần đầu go-live nếu chưa chắc mọi subdomain có HTTPS.
+        'hsts_max_age' => (int) env('VANI_HSTS_MAX_AGE', 31536000),
+    ],
+
     'health' => [
         // Token để GET /health trả chi tiết từng kiểm tra (header X-Health-Token). Trống = chỉ trả status.
         'token' => env('VANI_HEALTH_TOKEN', ''),

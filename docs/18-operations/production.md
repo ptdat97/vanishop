@@ -95,6 +95,7 @@ php artisan migrate --force             # migration Core: chỉ expand/contract 
 php artisan vani:plugin:doctor          # báo plugin cần nâng version / lỗi tương thích
 php artisan vani:plugin:upgrade <id>    # cho từng plugin doctor báo cần nâng (chạy migration của plugin)
 php artisan optimize                    # BẮT BUỘC — gồm vani:plugin:cache (xem lưu ý 1)
+php artisan vani:security:check         # mã thoát 1 = cấu hình production sai (APP_DEBUG, cookie secure, …) → dừng deploy
 
 ln -sfn releases/<mới> current          # chuyển traffic
 sudo systemctl reload php8.4-fpm        # xoá OPcache của bản cũ

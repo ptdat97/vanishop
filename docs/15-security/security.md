@@ -81,6 +81,20 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 - Bot/scraping, flash sale: WAF/CDN (Cloudflare hoặc tương đương), captcha (Turnstile) khi nghi ngờ.
 - Pentest trước go-live và hằng năm.
 
+### 5.1 Rà soát trước go-live (2026-10-08)
+
+| Hạng mục | Kết quả |
+|---|---|
+| Secret trong lịch sử git (key AWS, private key, token/password dạng chuỗi dài) | Không phát hiện; `.env*` không được track |
+| `composer audit`, `npm audit --omit=dev` | 0 lỗ hổng (1 gói dev abandoned: `symplify/rule-doc-generator-contracts`, không chạy ở production) |
+| Output không escape trong Blade (`{!! !!}`) | Chỉ còn: `nl2br(e(...))`, HTML Markdown đã bỏ HTML thô + chặn link `javascript:` (CMS), JSON-LD `JSON_HEX_TAG` — an toàn |
+| SQL thô ghép biến | Chỉ số nguyên đã ép kiểu hoặc giá trị enum cố định — không có injection |
+| Đăng nhập Admin | Khoá tạm sau 5 lần sai, allowlist IP, cookie phiên riêng giới hạn đường dẫn, idle timeout, chặn mật khẩu bị lộ (ADR-020) |
+| Header bảo mật | **Đã thêm** `App\Http\Middleware\SecurityHeaders`: `X-Content-Type-Options: nosniff`, `X-Frame-Options` (Admin `DENY`, storefront `SAMEORIGIN`), `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Strict-Transport-Security` khi HTTPS + production (`VANI_HSTS_MAX_AGE`). Không ghi đè header đã có (CDN/plugin) |
+| Cấu hình production | **Đã thêm** `php artisan vani:security:check` — lỗi (mã thoát 1): `APP_ENV`, `APP_DEBUG`, `APP_KEY`, `APP_URL` https, `SESSION_SECURE_COOKIE`, đường dẫn Admin mặc định, mailer log/array, safe mode, OTP ghi log; cảnh báo: allowlist Admin, token health, trusted proxies, queue/cache/session driver, đích backup, email cảnh báo, hook strict |
+| CSP | **Chưa bật**: layout có `<style>` token theme và JSON-LD inline, Inertia/Vite. Bước tiếp: `Content-Security-Policy-Report-Only` với nonce cho script/style inline, theo dõi một thời gian rồi chuyển sang chặn |
+| Pentest bên thứ ba | Chưa — cần trước go-live (go-live gate) |
+
 ## 6. Thanh toán
 
 - **Không** lưu/không đi qua server dữ liệu thẻ → phạm vi PCI-DSS SAQ-A (redirect/hosted fields của cổng).
