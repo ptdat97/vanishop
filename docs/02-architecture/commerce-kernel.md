@@ -1,6 +1,6 @@
 # Microkernel thương mại: Kernel, Core và Plugin
 
-> Trạng thái: **Partially Implemented**. Vòng 0, 1, 3 có code; plugin hệ thống, extension point bắt buộc, plugin công bố hook: Designed. Quyết định: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (mở rộng [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md)). Đánh giá đối chiếu code: [kernel-review](kernel-review.md).
+> Trạng thái: **Implemented** (Core 0.3.39). Bốn vòng có code; plugin hệ thống (slice 12d), extension point bắt buộc, plugin công bố hook (`publishHooks`, 0.3.6); ranh giới vòng giữ bằng arch test R28/R29 (§10). Quyết định: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (mở rộng [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md)). Đánh giá đối chiếu code: [kernel-review](kernel-review.md).
 
 > **Kernel không biết thương mại. Core giữ primitive, bất biến và extension point. Nghiệp vụ — kể cả mặc định mang chính sách kinh doanh — là plugin.**
 
@@ -117,7 +117,7 @@ flowchart TD
 |---|---|---|---|---|
 | `PaymentGateway` | ≥ 1 | `cod`, `manual_bank_transfer` | **Plugin hệ thống** `vani.cod`, `vani.bank-transfer` | ✅ `custom/plugin/Cod`, `custom/plugin/BankTransfer` (2026-10-02) |
 | `ShippingRateProvider` | ≥ 1 | `standard` (phí cố định) | **Plugin hệ thống** `vani.shipping-flat-rate` | ✅ `custom/plugin/ShippingFlatRate` |
-| `TaxCalculator` | đúng 1 | `vn_vat_inclusive` | **Plugin hệ thống** `vani.tax-vn-vat`; Core giữ `none` (không thuế) làm dự phòng | ✅ `custom/plugin/TaxVnVat`; `NoTax` ở `modules/Checkout/Application/Tax` |
+| `TaxCalculator` | đúng 1 | `vn_vat_inclusive` (cấu hình cửa hàng `vanishop.tax.calculator`) | **Plugin hệ thống** `vani.tax-vn-vat`; Core giữ `none` (không thuế) làm dự phòng và không nhắc mã của plugin | ✅ `custom/plugin/TaxVnVat`; `NoTax` ở `modules/Checkout/Application/Tax` |
 | `ShippingCarrier` | ≥ 1 | `manual` (nhập mã vận đơn) | Core (trung lập) | `modules/Fulfillment/Application/Carriers` |
 | `NotificationChannel` | ≥ 1 | `mail` | Core (trung lập) | `modules/Notification/Application/Channels` |
 | `OtpSender` | ≥ 1 | `email` (`log` chỉ dev) | Core (trung lập) | `modules/Customer/Application/OtpSenders` |
@@ -169,7 +169,7 @@ Done khi: cài mới → 4 plugin hệ thống tự bật, E2E COD chạy; tắt
 
 Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố `LoyaltyLedger` cho `vani.promotion-advanced` đổi điểm; `vani.marketplace` công bố `SellerDirectory` cho `vani.creator`):
 
-- Contract/event đặt trong `Plugin\<Name>\Contracts`, `Plugin\<Name>\Events`; hook khai báo trong `custom/plugin/<Name>/hooks.php` với tên `<plugin-id>.<…>` (Designed: registry hiện chỉ đọc `modules/*/hooks.php`).
+- Contract/event đặt trong `Plugin\<Name>\Contracts`, `Plugin\<Name>\Events`; hook khai báo trong file của plugin, đăng ký bằng `PluginServiceProvider::publishHooks($file)` với tên `<plugin-id>.<…>` (Implemented 0.3.6, tham chiếu `vani.hello-world.greeting`).
 - Plugin dùng khai báo `requires.plugins`; resolver sắp thứ tự nạp và chặn tắt plugin đang được phụ thuộc (đã có).
 - Theo cùng compatibility policy (SemVer của plugin cung cấp) và có contract test nếu là extension contract.
 
@@ -193,3 +193,15 @@ Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố
 3. Plugin dùng extension point mới, khai báo `requires.vanishop` là phiên bản có nó.
 
 Ví dụ **sai**: thêm `if ($order->meta['creator_id'])` vào `PlaceOrder`. Ví dụ **đúng**: Core có hook `vani.order.after_create`, plugin Creator nghe hook đó và ghi attribution vào bảng riêng.
+
+## 10. Giữ ranh giới vòng (Implemented 0.3.39)
+
+Ranh giới không chỉ dựa vào review — vi phạm làm đỏ arch test:
+
+| Ranh giới | Kiểm tra | Cách làm đúng khi cần |
+|---|---|---|
+| Vòng 0 không biết thương mại | R29 (`ArchitectureTest`): `Shared`/`Tenancy`/`Identity`/`Extension` không dùng module vòng 1 (trừ `Tests/`) | Registry của vòng 0 nhận khai báo từ module sở hữu. Ví dụ: tài nguyên Admin mở rộng được — Catalog/Ordering/Customer gọi `AdminScreen::declareResource()` trong `register()`, Extension không còn danh sách `product`/`order`/`customer` |
+| Vòng 1 không biết vòng 2–3 | R4 (không `use Plugin\`); R28 (`MicrokernelTest`): `modules/` không có implementation cổng/phí giao/thuế ngoài danh sách trung lập, và không có literal trùng mã `code()` của cổng/thuế/hãng do plugin cung cấp hay id plugin | Chọn theo **capability** hoặc **cấu hình**. Ví dụ: đơn đổi hàng thu chênh qua `Payments::collectOnDeliveryGateway()` (cổng có `collectsOnDelivery`), cảnh báo tỷ lệ lỗi bỏ qua `Payments::offlineGateways()`; thuế mặc định đặt ở `config/vanishop.php` của cửa hàng, Core chỉ biết `none` |
+| Plugin không dùng nội bộ Core | R5 | Thiếu thì thêm extension point (§9) |
+
+Giới hạn: R28 chỉ so literal trong `modules/`; `config/vanishop.php` là cấu hình của cửa hàng (được nhắc mã plugin làm mặc định), và mã phương thức giao của `ShippingRateProvider` nằm trong option nên không kiểm được tĩnh.

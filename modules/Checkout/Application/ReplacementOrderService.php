@@ -31,15 +31,14 @@ use Modules\Shared\Domain\Money\Money;
 
 /**
  * Đơn thay thế khi đổi hàng (order §7.1): giá trị hàng trả bù vào dòng dưới dạng giảm giá `exchange_credit`. Khách phải
- * bù phần chênh → thu hộ COD; không phải bù (0đ) → không có khoản thanh toán (`payment_method = exchange`, `paid`).
+ * bù phần chênh → thu khi giao qua cổng có `collectsOnDelivery` đang bật (Core không gắn mã cổng — ADR-029); không có
+ * cổng như vậy → ReplacementUnavailable `no_collect_on_delivery`. Không phải bù (0đ) → không có khoản thanh toán
+ * (`payment_method = exchange`, `paid`).
  * Đơn được xác nhận ngay (shop đã duyệt đổi) → Fulfillment tạo vận đơn như đơn thường. Phí giao 0, không khuyến mãi.
  * Người nhận/địa chỉ/phương thức giao lấy từ đơn gốc.
  */
 final class ReplacementOrderService implements ReplacementOrders
 {
-    /** Khách bù phần chênh khi nhận hàng. */
-    public const PAYMENT_METHOD = 'cod';
-
     /** Không phải trả thêm (giá trị hàng trả đã bù đủ). */
     public const NO_PAYMENT = 'exchange';
 
@@ -100,14 +99,17 @@ final class ReplacementOrderService implements ReplacementOrders
         $credit = $sum(fn (TotalsLine $line): int => $line->discount->amount);
         $total = $sum(fn (TotalsLine $line): int => $line->total()->amount);
 
-        $method = $total > 0 ? self::PAYMENT_METHOD : self::NO_PAYMENT;
+        $method = self::NO_PAYMENT;
+        if ($total > 0) {
+            $method = $this->payments->collectOnDeliveryGateway() ?? throw new ReplacementUnavailable([], 'no_collect_on_delivery');
+        }
         $placed = $this->writer->create(new OrderDraft(
             publicId: $publicId,
             source: 'exchange',
             customerId: $parent->customerId,
             currencyCode: $currency,
             paymentMethod: $method,
-            paymentStatus: $total > 0 ? $this->paymentMethods->initialPaymentStatus(self::PAYMENT_METHOD) : 'paid',
+            paymentStatus: $total > 0 ? $this->paymentMethods->initialPaymentStatus($method) : 'paid',
             lines: array_map(fn (TotalsLine $line): OrderLineDraft => new OrderLineDraft(
                 $line->variantId, $line->sku, $line->name, $line->colorName, $line->sizeCode, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, null, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
@@ -133,7 +135,7 @@ final class ReplacementOrderService implements ReplacementOrders
             parentOrderId: $parent->id,
         ));
         if ($total > 0) {
-            $this->payments->createForOrder($placed, self::PAYMENT_METHOD);
+            $this->payments->createForOrder($placed, $method);
         }
         $this->transitions->transition($placed->id, OrderStatus::Confirmed, 'exchange', 'system');
 

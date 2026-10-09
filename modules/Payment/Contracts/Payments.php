@@ -29,6 +29,20 @@ interface Payments
     public function collectsOnDelivery(string $gatewayCode): bool;
 
     /**
+     * Cổng thu khi giao đang nhận giao dịch mới (0.3.39) — Core cần thu phần chênh mà không gắn mã cổng cụ thể
+     * (đơn đổi hàng). Nhiều cổng → cổng đầu tiên theo thứ tự đăng ký; không có → null.
+     */
+    public function collectOnDeliveryGateway(): ?string;
+
+    /**
+     * Mã cổng thu tiền ngoài hệ thống (0.3.39): thu khi giao hoặc nhân viên xác nhận thủ công — không có kết quả
+     * online để đo tỷ lệ thất bại.
+     *
+     * @return list<string>
+     */
+    public function offlineGateways(): array;
+
+    /**
      * Tạo payment cho đơn — TRONG transaction PlaceOrder. Trả thời gian giữ hàng (giây, null = không hết hạn).
      *
      * @return array{public_id: string, ttl: int|null}

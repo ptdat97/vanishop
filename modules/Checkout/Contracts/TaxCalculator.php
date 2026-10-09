@@ -8,7 +8,7 @@ use Modules\Checkout\Contracts\Data\TotalsContext;
 
 /**
  * Extension point (tag `vani.tax.calculators`, chọn theo `vanishop.tax.calculator`). Tách thuế theo từng dòng
- * SAU khi đã trừ giảm giá phân bổ. Chọn qua `core.tax.calculator` (mặc định `vn_vat_inclusive` — plugin hệ thống `vani.tax-vn-vat`); Core giữ `none` làm dự phòng.
+ * SAU khi đã trừ giảm giá phân bổ. Chọn qua `core.tax.calculator` (mặc định `vanishop.tax.calculator` của cửa hàng); Core chỉ có `none` làm dự phòng.
  */
 interface TaxCalculator
 {

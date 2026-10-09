@@ -13,6 +13,7 @@ use Modules\Extension\Application\Plugins\PluginHealth;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
+use Modules\Payment\Contracts\Payments;
 use Modules\Shared\Contracts\Data\Alert;
 use Throwable;
 
@@ -30,6 +31,7 @@ final class AlertRules
     public function __construct(
         private readonly RequiredExtensions $required,
         private readonly PluginHealth $pluginHealth,
+        private readonly Payments $payments,
     ) {}
 
     /**
@@ -71,7 +73,7 @@ final class AlertRules
             },
             'payments.failure_rate' => function () use ($config): ?array {
                 $rows = DB::table('payments')->where('updated_at', '>=', now()->subHour())
-                    ->whereNotIn('gateway_code', (array) $config['offline_gateways'])
+                    ->whereNotIn('gateway_code', $this->payments->offlineGateways())
                     ->whereIn('status', ['paid', 'failed', 'refunded', 'partially_refunded'])
                     ->selectRaw("count(*) as total, sum(case when status = 'failed' then 1 else 0 end) as failed")->first();
                 $total = (int) ($rows->total ?? 0);

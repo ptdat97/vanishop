@@ -77,6 +77,29 @@ final class PaymentService implements Payments
         return $this->gateways->get($gatewayCode)?->capabilities()->collectsOnDelivery ?? false;
     }
 
+    public function collectOnDeliveryGateway(): ?string
+    {
+        foreach ($this->gateways->all() as $code => $gateway) {
+            if ($gateway->capabilities()->collectsOnDelivery && $this->extensions->acceptsNewTransactions($gateway)) {
+                return (string) $code;
+            }
+        }
+
+        return null;
+    }
+
+    public function offlineGateways(): array
+    {
+        $codes = [];
+        foreach ($this->gateways->all() as $code => $gateway) {
+            if ($gateway->capabilities()->collectsOnDelivery || $gateway->capabilities()->manualConfirmation) {
+                $codes[] = (string) $code;
+            }
+        }
+
+        return $codes;
+    }
+
     public function createForOrder(PlacedOrder $order, string $gatewayCode): array
     {
         $gateway = $this->gateways->get($gatewayCode) ?? throw PaymentRejected::gatewayUnavailable($gatewayCode);

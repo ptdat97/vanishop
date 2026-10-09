@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -140,6 +141,21 @@ it('hết hàng thay thế → không hoàn tất, yêu cầu giữ nguyên đ�
     expect($return->fresh()->status->value)->toBe('received')
         ->and(Order::query()->where('parent_order_id', $order->id)->exists())->toBeFalse()
         ->and(DB::table('payments')->count())->toBe(1);
+});
+
+it('khách phải bù chênh mà không còn cổng thu khi giao nhận giao dịch mới → không hoàn tất (Core không gắn mã cổng)', function () {
+    [$order, $headers] = ($this->deliveredOrder)();
+    ($this->requestExchange)($order, $headers, $this->premium->id)->assertCreated();
+    $return = ReturnRequest::query()->sole();
+    ($this->receive)($return);
+
+    DB::table('plugins')->where('id', 'vani.cod')->update(['status' => 'draining']);
+    PluginActivation::forgetCache();
+    app(PluginActivation::class)->flush();
+
+    $this->post("{$this->admin}/{$return->id}/resolve", [])->assertSessionHasErrors('business');
+    expect($return->fresh()->status->value)->toBe('received')
+        ->and(Order::query()->where('parent_order_id', $order->id)->exists())->toBeFalse();
 });
 
 it('nhân viên tạo yêu cầu đổi hàng hộ khách bằng SKU thay thế', function () {

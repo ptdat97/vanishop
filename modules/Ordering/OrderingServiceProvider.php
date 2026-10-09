@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Ordering;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
@@ -32,6 +33,8 @@ final class OrderingServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(OrderWriter::class, OrderFactory::class);
+        // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
+        $this->app->make(AdminScreen::class)->declareResource('order');
         $this->app->bind(OrderReader::class, EloquentOrderReader::class);
         $this->app->bind(OrderStatistics::class, EloquentOrderStatistics::class);
         $this->app->bind(OrderTransitions::class, OrderTransitionService::class);

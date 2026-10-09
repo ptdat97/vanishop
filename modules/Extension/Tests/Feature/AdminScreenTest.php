@@ -66,3 +66,14 @@ it('thao tác: kiểm tra quyền, ghi audit, hàng loạt báo số thành côn
     $this->post('/admin/extensions/product/actions/vani.cod/khong-co', ['ids' => [1]])->assertNotFound();
     $this->post('/admin/extensions/product/actions/vani.cod/sync', ['ids' => []])->assertSessionHasErrors('ids');
 });
+
+it('tài nguyên do module sở hữu màn hình khai báo; plugin mở rộng tài nguyên chưa khai báo → lỗi', function () {
+    expect($this->registry->resources())->toContain('product', 'order', 'customer');
+
+    expect(fn () => $this->registry->column('invoice', 'vani.cod', 'x', 'X', fn (array $ids): array => []))
+        ->toThrow(InvalidArgumentException::class, 'invoice');
+
+    $this->registry->declareResource('invoice');
+    $this->registry->column('invoice', 'vani.cod', 'x', 'X', fn (array $ids): array => array_fill_keys($ids, 'v'));
+    expect($this->registry->columns('invoice', [7])['values'])->toBe([7 => ['vani.cod:x' => 'v']]);
+});

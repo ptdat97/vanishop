@@ -16,8 +16,8 @@
 | R6 | Plugin không được phá invariant: trạng thái đơn chỉ đổi qua state machine; tồn chỉ đổi qua reservation/movement; tiền luôn là `Money`; thao tác luôn qua kiểm tra quyền của Core. | Contract test + review |
 | R26 | Mỗi extension point **public** phải có ít nhất **một implementation tham chiếu** (mặc định của Core hoặc plugin trong repo) và, với extension contract, **bộ contract test** trong `Modules\<Ctx>\Testing`. Extension point chưa ai dùng được coi là chưa kiểm chứng. | Review + contract test |
 | R27 | **Plugin-first**: capability nghiệp vụ mới mặc định là plugin. Đưa vào Core chỉ khi thoả tiêu chí [commerce-kernel §2](../02-architecture/commerce-kernel.md) và có ADR. | Review + ADR |
-| R28 | Core (`modules/`) không chứa **tích hợp nhà cung cấp** (HTTP tới cổng, hãng, SaaS) và không chứa **chính sách kinh doanh/đặc thù thị trường** (COD, chuyển khoản, phí ship, thuế suất quốc gia); những thứ đó là plugin hệ thống hoặc plugin nghiệp vụ ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)). | Arch test (Designed) + review |
-| R29 | Vòng 0 (Shared, Tenancy, Identity, Extension) không phụ thuộc module thương mại nào. | Arch test |
+| R28 | Core (`modules/`) không chứa **tích hợp nhà cung cấp** (HTTP tới cổng, hãng, SaaS) và không chứa **chính sách kinh doanh/đặc thù thị trường** (COD, chuyển khoản, phí ship, thuế suất quốc gia); những thứ đó là plugin hệ thống hoặc plugin nghiệp vụ ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)). Core không gắn mã implementation hay id của plugin: chọn theo capability/cấu hình. | Arch test `MicrokernelTest` + review |
+| R29 | Vòng 0 (Shared, Tenancy, Identity, Extension) không phụ thuộc module thương mại nào; tên tài nguyên thương mại (vd. tài nguyên Admin) do module sở hữu khai báo vào registry của vòng 0. | Arch test `ArchitectureTest` (R29) |
 
 ## B. Module và DDD
 

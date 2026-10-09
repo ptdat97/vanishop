@@ -26,6 +26,7 @@ use Modules\Customer\Contracts\OtpSender;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Customer\Http\Middleware\CustomerSession;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
@@ -51,6 +52,8 @@ final class CustomerServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(Customers::class, CustomerService::class);
+        // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
+        $this->app->make(AdminScreen::class)->declareResource('customer');
         // Phân khúc khách: một instance mỗi request (cache nhóm khách khi tính giá nhiều lần).
         $this->app->scoped(CustomerSegmentService::class);
         $this->app->alias(CustomerSegmentService::class, CustomerSegments::class);

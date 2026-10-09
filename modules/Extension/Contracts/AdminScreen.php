@@ -8,12 +8,28 @@ use Closure;
 
 /**
  * Service contract: màn hình Admin của Core lấy phần mở rộng do plugin khai báo (ADR-030, extension-surface-v2 §4.A).
- * Tài nguyên: `product`, `order`, `customer` (đã nối), các tài nguyên khác theo đợt sau. Id truyền cho plugin là id
- * nội bộ (int) của bản ghi Core. Chỉ trả phần của plugin đang bật.
+ * Tài nguyên do module sở hữu màn hình khai báo (`declareResource`, 0.3.39) — Extension (vòng 0) không biết tên tài
+ * nguyên thương mại nào (R29). Id truyền cho plugin là id nội bộ (int) của bản ghi Core. Chỉ trả phần của plugin đang bật.
  */
 interface AdminScreen
 {
+    /**
+     * @deprecated 0.3.39 — danh sách cố định cũ, không còn dùng để kiểm tra; đọc `resources()`. Gỡ ở 1.0.
+     */
     public const RESOURCES = ['product', 'order', 'customer'];
+
+    /**
+     * Module sở hữu màn hình Admin khai báo tài nguyên mở rộng được (gọi trong `register()` của ServiceProvider, trước khi
+     * plugin boot). Plugin đăng ký phần mở rộng cho tài nguyên chưa khai báo → InvalidArgumentException.
+     */
+    public function declareResource(string $resource): void;
+
+    /**
+     * Tài nguyên đã khai báo, theo thứ tự khai báo.
+     *
+     * @return list<string>
+     */
+    public function resources(): array;
 
     /**
      * Phần form của plugin + giá trị hiện tại (null khi tạo mới).

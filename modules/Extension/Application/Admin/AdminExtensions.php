@@ -23,10 +23,27 @@ final class AdminExtensions implements AdminScreen
     /** @var array<string, array<string, array<string, mixed>>> loại => "resource|plugin|key" => định nghĩa */
     private array $items = ['section' => [], 'column' => [], 'action' => [], 'tab' => [], 'filter' => []];
 
+    /** @var array<string, true> */
+    private array $resources = [];
+
     /**
      * @param  Closure(): PluginActivation  $activation
      */
     public function __construct(private readonly Closure $activation) {}
+
+    public function declareResource(string $resource): void
+    {
+        if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $resource) !== 1) {
+            throw new \InvalidArgumentException("Tài nguyên Admin [{$resource}] không hợp lệ.");
+        }
+
+        $this->resources[$resource] = true;
+    }
+
+    public function resources(): array
+    {
+        return array_keys($this->resources);
+    }
 
     /**
      * @param  list<FieldDefinition>  $fields
@@ -218,7 +235,7 @@ final class AdminExtensions implements AdminScreen
      */
     private function put(string $type, string $resource, string $plugin, string $key, array $definition): void
     {
-        if (! in_array($resource, AdminScreen::RESOURCES, true)) {
+        if (! isset($this->resources[$resource])) {
             throw new \InvalidArgumentException("Tài nguyên Admin [{$resource}] chưa hỗ trợ mở rộng.");
         }
         if (preg_match('/^[a-z][a-z0-9_.-]{0,63}$/', $key) !== 1) {

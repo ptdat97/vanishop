@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.38',
+    'version' => '0.3.39',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -69,8 +69,7 @@ return [
         // Tỷ lệ thanh toán online thất bại trong 60 phút (khi có ít nhất `payment_min_sample` khoản đã có kết quả).
         'payment_failure_rate' => 0.3,
         'payment_min_sample' => 10,
-        // Cổng thu tiền ngoài hệ thống (không tính tỷ lệ thất bại).
-        'offline_gateways' => ['cod', 'manual_bank_transfer'],
+        // Cổng thu tiền ngoài hệ thống (thu khi giao, xác nhận thủ công) không tính vào tỷ lệ: lấy theo capability của cổng.
         // Diễn tập khôi phục backup thành công gần nhất không quá N ngày (production; operations §8 — mỗi quý).
         'backup_drill_days' => (int) env('VANI_ALERT_BACKUP_DRILL_DAYS', 100),
     ],

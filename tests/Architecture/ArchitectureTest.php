@@ -24,6 +24,17 @@ foreach ($modules as $module) {
         ->not->toUse('Illuminate\\Support\\Facades\\DB');
 }
 
+// Vòng 0 (microkernel, ADR-029) không biết thương mại: không dùng module nào ngoài vòng 0, kể cả Contracts/Events.
+// Test của vòng 0 được dùng helper/fixture thương mại để kiểm tra tích hợp.
+$ring0 = ['Shared', 'Tenancy', 'Identity', 'Extension'];
+$commerce = array_map(fn (string $module): string => "Modules\\{$module}", array_values(array_diff($modules, $ring0)));
+foreach ($ring0 as $module) {
+    arch("R29: vòng 0 {$module} không phụ thuộc module thương mại")
+        ->expect("Modules\\{$module}")
+        ->not->toUse($commerce)
+        ->ignoring("Modules\\{$module}\\Tests");
+}
+
 // Plugin chỉ được dùng Contracts/, Events/ và PluginServiceProvider — không dùng tầng nội bộ của module.
 // Ngoại lệ có chủ đích: Modules\Shared\Domain\Money là value object của shared kernel, mọi contract
 // (PaymentGateway, ShippingCarrier, Promotion…) đều dùng nên plugin phải dùng được.

@@ -7,7 +7,8 @@ namespace Modules\Checkout\Contracts;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
 /**
- * Không tạo được đơn thay thế: variant không còn bán hoặc không đủ hàng (0.3.32).
+ * Không tạo được đơn thay thế: variant không còn bán, không đủ hàng (0.3.32) hoặc không có cổng thu khi giao để thu phần
+ * chênh (`no_collect_on_delivery`, 0.3.39).
  */
 final class ReplacementUnavailable extends BusinessRuleViolation
 {
@@ -18,7 +19,11 @@ final class ReplacementUnavailable extends BusinessRuleViolation
         public readonly array $variantIds,
         public readonly string $reason,
     ) {
-        parent::__construct(($reason === 'insufficient_stock' ? 'Không đủ hàng để đổi' : 'Sản phẩm đổi không còn bán').' (variant '.implode(', ', $variantIds).').');
+        parent::__construct(match ($reason) {
+            'insufficient_stock' => 'Không đủ hàng để đổi (variant '.implode(', ', $variantIds).').',
+            'no_collect_on_delivery' => 'Không có cổng thu tiền khi giao đang bật để thu phần chênh.',
+            default => 'Sản phẩm đổi không còn bán (variant '.implode(', ', $variantIds).').',
+        });
     }
 
     public function errorCode(): string

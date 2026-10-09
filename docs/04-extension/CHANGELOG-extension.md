@@ -4,6 +4,26 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.39 — 2026-10-10
+
+Củng cố microkernel ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): vòng 0 không còn biết tên tài nguyên thương mại, Core không còn gắn mã cổng/thuế của plugin hệ thống. Chỉ thêm + một hằng deprecated.
+
+### Thêm
+- `AdminScreen::declareResource(string)`, `resources()` — module sở hữu màn hình Admin khai báo tài nguyên mở rộng được (Catalog `product`, Ordering `order`, Customer `customer`), gọi trong `register()`. Plugin vẫn gọi `admin*` trong `boot()` như trước.
+- `Payments::collectOnDeliveryGateway(): ?string` — cổng có `collectsOnDelivery` đang nhận giao dịch mới; `Payments::offlineGateways(): list<string>` — cổng thu khi giao hoặc xác nhận thủ công.
+
+### Đổi hành vi
+- Đơn đổi hàng phải bù chênh thu qua cổng `collectOnDeliveryGateway()` thay vì mã `cod` cố định; không có cổng như vậy → `ReplacementUnavailable` lý do `no_collect_on_delivery` (yêu cầu đổi giữ `received`).
+- Cảnh báo `payments.failure_rate` loại cổng theo capability; bỏ cấu hình `vanishop.alerts.offline_gateways`.
+- Mặc định dự phòng của `core.tax.calculator` trong Core là `none`; mặc định của cửa hàng vẫn ở `vanishop.tax.calculator` (`VANI_TAX_CALCULATOR`, `vn_vat_inclusive`).
+
+### Deprecated
+- `AdminScreen::RESOURCES` — không còn dùng để kiểm tra; đọc `resources()`. Gỡ ở 1.0.
+
+### Arch test
+- R29: vòng 0 (`Shared`, `Tenancy`, `Identity`, `Extension`) không dùng module thương mại (trừ `Tests/`).
+- R28: `modules/` không chứa literal trùng mã `code()` của `PaymentGateway`/`TaxCalculator`/`ShippingCarrier` do plugin cung cấp hay id plugin.
+
 ## 0.3.38 — 2026-10-08
 
 Sidebar Admin dạng accordion. Chỉ thêm (tham số tuỳ chọn cuối).

@@ -14,7 +14,7 @@ use Modules\Ordering\Contracts\Data\PlacedOrder;
 interface ReplacementOrders
 {
     /**
-     * @throws ReplacementUnavailable variant không bán được / không đủ hàng
+     * @throws ReplacementUnavailable variant không bán được / không đủ hàng / không có cổng thu khi giao
      */
     public function place(ReplacementOrderRequest $request): PlacedOrder;
 }

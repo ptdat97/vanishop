@@ -55,14 +55,14 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->requires(TaxCalculator::TAG, Requirement::ExactlyOne, 'Cách tính thuế');
         $this->app->make(Extensions::class)->kindContract('tax', TaxCalculator::TAG);
         $this->app->bind(TaxCalculator::class, fn ($app): TaxCalculator => new ConfiguredTaxCalculator(
-            $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.tax.calculator', 'vn_vat_inclusive'),
+            $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.tax.calculator', NoTax::CODE),
         ));
     }
 
     public function boot(): void
     {
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', 'tax.calculator', 'Cách tính thuế', 'select', (string) config('vanishop.tax.calculator', 'vn_vat_inclusive'),
+            'core', 'tax.calculator', 'Cách tính thuế', 'select', (string) config('vanishop.tax.calculator', NoTax::CODE),
             optionsFromTag: TaxCalculator::TAG, help: 'TaxCalculator của cửa hàng. Implementation đã chọn không có hiệu lực (plugin tắt) → mặc định, rồi `none`.',
         ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
