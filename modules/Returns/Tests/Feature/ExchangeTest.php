@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -144,6 +145,7 @@ it('hết hàng thay thế → không hoàn tất, yêu cầu giữ nguyên đ�
 });
 
 it('khách phải bù chênh mà không còn cổng thu khi giao nhận giao dịch mới → không hoàn tất (Core không gắn mã cổng)', function () {
+    expect(collect(app(PluginDoctor::class)->diagnose())->pluck('code'))->not->toContain('collect_on_delivery_missing');
     [$order, $headers] = ($this->deliveredOrder)();
     ($this->requestExchange)($order, $headers, $this->premium->id)->assertCreated();
     $return = ReturnRequest::query()->sole();
@@ -155,7 +157,9 @@ it('khách phải bù chênh mà không còn cổng thu khi giao nhận giao d�
 
     $this->post("{$this->admin}/{$return->id}/resolve", [])->assertSessionHasErrors('business');
     expect($return->fresh()->status->value)->toBe('received')
-        ->and(Order::query()->where('parent_order_id', $order->id)->exists())->toBeFalse();
+        ->and(Order::query()->where('parent_order_id', $order->id)->exists())->toBeFalse()
+        // Doctor báo trước tình huống này (Payment đăng ký kiểm tra qua Extensions::doctorCheck).
+        ->and(collect(app(PluginDoctor::class)->diagnose())->pluck('code'))->toContain('collect_on_delivery_missing');
 });
 
 it('nhân viên tạo yêu cầu đổi hàng hộ khách bằng SKU thay thế', function () {

@@ -150,6 +150,7 @@ Không đặt hằng trên interface: một class có thể implement nhiều co
 |---|---|
 | `vani:plugin:disable` (gỡ yêu cầu tắt trước) | Từ chối nếu plugin là implementation đang bật cuối cùng của extension point bắt buộc |
 | `vani:plugin:doctor`, `vani:install` | Báo lỗi `required_extension_missing` khi extension point bắt buộc không có implementation đang bật |
+| `vani:plugin:doctor` | Cảnh báo từ kiểm tra module đăng ký qua `Extensions::doctorCheck()` (0.3.40), vd. Payment: `collect_on_delivery_missing` — còn cổng nhưng không cổng nào thu khi giao (đổi hàng bù chênh cần) |
 | Runtime | Không cổng nào khả dụng: checkout trả `checkout.invalid` với issue `no_payment_method` thay vì lỗi 500 |
 
 ## 6. Lộ trình chuyển (slice 12d)
@@ -203,5 +204,7 @@ Ranh giới không chỉ dựa vào review — vi phạm làm đỏ arch test:
 | Vòng 0 không biết thương mại | R29 (`ArchitectureTest`): `Shared`/`Tenancy`/`Identity`/`Extension` không dùng module vòng 1 (trừ `Tests/`) | Registry của vòng 0 nhận khai báo từ module sở hữu. Ví dụ: tài nguyên Admin mở rộng được — Catalog/Ordering/Customer gọi `AdminScreen::declareResource()` trong `register()`, Extension không còn danh sách `product`/`order`/`customer` |
 | Vòng 1 không biết vòng 2–3 | R4 (không `use Plugin\`); R28 (`MicrokernelTest`): `modules/` không có implementation cổng/phí giao/thuế ngoài danh sách trung lập, và không có literal trùng mã `code()` của cổng/thuế/hãng do plugin cung cấp hay id plugin | Chọn theo **capability** hoặc **cấu hình**. Ví dụ: đơn đổi hàng thu chênh qua `Payments::collectOnDeliveryGateway()` (cổng có `collectsOnDelivery`), cảnh báo tỷ lệ lỗi bỏ qua `Payments::offlineGateways()`; thuế mặc định đặt ở `config/vanishop.php` của cửa hàng, Core chỉ biết `none` |
 | Plugin không dùng nội bộ Core | R5 | Thiếu thì thêm extension point (§9) |
+
+Tham số mang chính sách thị trường của một bất biến Core (vd. trần giảm giá của giá sàn — VN 50%, NĐ 81/2018) theo cùng cách: cơ chế ở Core với mặc định trung lập (`PromotionEvaluator::NO_CAP_BP`, không giới hạn), mức cụ thể ở cấu hình cửa hàng. Lý do đổi trả (`wrong_size`, `defective`…) là trung lập, ở lại Core.
 
 Giới hạn: R28 chỉ so literal trong `modules/`; `config/vanishop.php` là cấu hình của cửa hàng (được nhắc mã plugin làm mặc định), và mã phương thức giao của `ShippingRateProvider` nằm trong option nên không kiểm được tĩnh.

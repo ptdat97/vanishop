@@ -45,6 +45,10 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         $this->app->bind(Payments::class, PaymentService::class);
         // Cổng thanh toán đều là plugin (COD, chuyển khoản: plugin hệ thống vani.cod, vani.bank-transfer — ADR-029).
         $this->app->make(Extensions::class)->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
+        // Đơn đổi hàng thu phần chênh khi giao (Returns → ReplacementOrders): thiếu cổng thu khi giao thì đổi khác mẫu đắt hơn bị từ chối.
+        $this->app->make(Extensions::class)->doctorCheck('collect_on_delivery_missing', fn (): ?string => $this->app->make(Payments::class)->collectOnDeliveryGateway() === null
+            ? 'Không có cổng thu tiền khi giao (collectsOnDelivery) đang nhận giao dịch mới — đổi hàng phải bù chênh sẽ bị từ chối. Bật vani.cod hoặc cổng tương tự.'
+            : null);
         $this->app->make(Extensions::class)->kindContract('payment_gateway', PaymentGateway::TAG);
     }
 

@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.40 — 2026-10-10
+
+Microkernel: kiểm tra vận hành do module đăng ký cho doctor; trần giảm giá trung lập trong Core. Chỉ thêm.
+
+### Thêm
+- `Extensions::doctorCheck(string $code, callable(): ?string)`, `doctorChecks()` — module (hoặc plugin) đăng ký kiểm tra; `vani:plugin:doctor` báo cảnh báo mã `$code` (plugin `core`), kiểm tra ném lỗi → lỗi `doctor_check_failed`. Extension không biết nghiệp vụ của kiểm tra.
+- Payment đăng ký `collect_on_delivery_missing`: không có cổng `collectsOnDelivery` nhận giao dịch mới → đổi hàng phải bù chênh sẽ bị từ chối.
+
+### Đổi hành vi
+- Không cấu hình `vanishop.promotion.max_discount_bp` → không giới hạn (`PromotionEvaluator::NO_CAP_BP` = 10000) thay vì 50%. Cấu hình cửa hàng giữ 5000 (NĐ 81/2018), hành vi hiện tại không đổi.
+
 ## 0.3.39 — 2026-10-10
 
 Củng cố microkernel ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): vòng 0 không còn biết tên tài nguyên thương mại, Core không còn gắn mã cổng/thuế của plugin hệ thống. Chỉ thêm + một hằng deprecated.

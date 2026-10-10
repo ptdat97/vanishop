@@ -138,6 +138,19 @@ final class PluginDoctor
             $add('core', self::ERROR, 'required_extension_missing', "Extension point bắt buộc [{$tag}] ({$label}) không có implementation nào đang bật.");
         }
 
+        foreach ($this->extensions->doctorChecks() as $code => $check) {
+            try {
+                $message = $check();
+            } catch (Throwable $exception) {
+                $add('core', self::ERROR, 'doctor_check_failed', "Kiểm tra [{$code}] lỗi: {$exception->getMessage()}");
+
+                continue;
+            }
+            if ($message !== null) {
+                $add('core', self::WARNING, $code, $message);
+            }
+        }
+
         foreach ($this->loader->failures() as $id => $error) {
             $add($id, self::ERROR, 'boot_failed', "Lỗi khi nạp ở tiến trình này: {$error}");
         }

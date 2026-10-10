@@ -127,4 +127,18 @@ interface Extensions
      * @return array<string, string> kind => tag
      */
     public function kindContracts(): array;
+
+    /**
+     * Kiểm tra cấu hình vận hành do module sở hữu đăng ký cho `vani:plugin:doctor` (0.3.40) — Extension (vòng 0) không
+     * biết nghiệp vụ, chỉ chạy kiểm tra. `$check` trả thông điệp cảnh báo hoặc null (ổn); ném lỗi → doctor báo
+     * `doctor_check_failed`. Mức cảnh báo: thiếu hẳn implementation bắt buộc dùng `requires()` (lỗi).
+     *
+     * @param  callable(): (string|null)  $check
+     */
+    public function doctorCheck(string $code, callable $check): void;
+
+    /**
+     * @return array<string, callable(): (string|null)> mã => kiểm tra
+     */
+    public function doctorChecks(): array;
 }

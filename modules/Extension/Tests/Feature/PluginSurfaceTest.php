@@ -69,3 +69,18 @@ it('doctor: plugin khai loại gắn extension point mà không đóng góp → 
         ->and($issues['health_warning'] ?? null)->toBe('Token sắp hết hạn');
     File::deleteDirectory($root);
 });
+
+it('doctorCheck: module đăng ký kiểm tra; cảnh báo hiện trong doctor, kiểm tra lỗi → doctor_check_failed', function () {
+    $extensions = app(Extensions::class);
+    $extensions->doctorCheck('acme_ok', fn (): ?string => null);
+    $extensions->doctorCheck('acme_warn', fn (): ?string => 'Thiếu cấu hình X.');
+    $extensions->doctorCheck('acme_broken', fn (): ?string => throw new RuntimeException('hỏng'));
+
+    $issues = collect(app(PluginDoctor::class)->diagnose())->where('plugin', 'core')->keyBy('code');
+    expect($issues->has('acme_ok'))->toBeFalse()
+        ->and($issues['acme_warn'])->toMatchArray(['level' => PluginDoctor::WARNING, 'message' => 'Thiếu cấu hình X.'])
+        ->and($issues['doctor_check_failed'])->toMatchArray(['level' => PluginDoctor::ERROR])
+        ->and($issues['doctor_check_failed']['message'])->toContain('acme_broken');
+
+    expect(fn () => $extensions->doctorCheck('Sai Mã', fn (): ?string => null))->toThrow(InvalidArgumentException::class);
+});

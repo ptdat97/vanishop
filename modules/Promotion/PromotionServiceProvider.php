@@ -28,7 +28,8 @@ final class PromotionServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->kindContract('promotion', PromotionRule::TAG);
         $this->app->bind(PromotionEngine::class, fn ($app): PromotionEvaluator => new PromotionEvaluator(
             $app->make(PromotionRegistry::class),
-            (int) config('vanishop.promotion.max_discount_bp', 5000),
+            // Giá sàn là bất biến của engine; mức trần do cửa hàng cấu hình (VN: 50%, NĐ 81/2018). Không cấu hình → không giới hạn.
+            (int) config('vanishop.promotion.max_discount_bp', PromotionEvaluator::NO_CAP_BP),
         ));
     }
 

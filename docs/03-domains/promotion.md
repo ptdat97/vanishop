@@ -82,7 +82,7 @@ flowchart LR
 ```
 
 - **Stacking**: `exclusive` có priority cao nhất thắng và dừng; `combinable` cộng dồn theo thứ tự priority, mỗi action tính trên giá **sau** action trước.
-- **Giá sàn**: tổng giảm của một dòng không vượt `max_discount_bp` của cửa hàng (mặc định 5000 = 50%, phù hợp quy định KM VN — [vietnam-localization §6](vietnam-localization.md)).
+- **Giá sàn**: tổng giảm của một dòng không vượt `max_discount_bp` của cửa hàng (cấu hình cửa hàng 5000 = 50%, phù hợp quy định KM VN; Core không cấu hình = không giới hạn — [vietnam-localization §6](vietnam-localization.md)).
 - Kết quả lưu vào `order_adjustments` (snapshot: mã promotion, tên, số tiền, dòng áp dụng).
 
 ## 5. Transaction và concurrency

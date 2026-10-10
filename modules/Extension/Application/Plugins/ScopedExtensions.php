@@ -50,6 +50,9 @@ final class ScopedExtensions implements Extensions
     /** @var array<string, list<callable(object): (string|null)>> tag => kiểm tra */
     private array $disableGuards = [];
 
+    /** @var array<string, callable(): (string|null)> mã => kiểm tra của doctor */
+    private array $doctorChecks = [];
+
     public function __construct(
         private readonly Container $container,
         private readonly Closure $activation,
@@ -224,5 +227,19 @@ final class ScopedExtensions implements Extensions
     public function kindContracts(): array
     {
         return $this->kindContracts;
+    }
+
+    public function doctorCheck(string $code, callable $check): void
+    {
+        if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $code) !== 1) {
+            throw new \InvalidArgumentException("Mã kiểm tra doctor [{$code}] không hợp lệ.");
+        }
+
+        $this->doctorChecks[$code] = $check;
+    }
+
+    public function doctorChecks(): array
+    {
+        return $this->doctorChecks;
     }
 }

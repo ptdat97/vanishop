@@ -26,6 +26,9 @@ use Modules\Shared\Domain\Money\Money;
  */
 final class PromotionEvaluator implements PromotionEngine
 {
+    /** Trần 100% giá dòng — không giới hạn ngoài tổng không âm (mặc định trung lập của Core, ADR-029). */
+    public const NO_CAP_BP = 10_000;
+
     public function __construct(
         private readonly PromotionRegistry $registry,
         private readonly int $maxDiscountBasisPoints,

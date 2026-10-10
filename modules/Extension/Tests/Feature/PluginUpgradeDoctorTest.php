@@ -65,6 +65,10 @@ it('doctor: báo version cần nâng, migration chưa chạy, plugin failed, man
     foreach (array_keys(app(Extensions::class)->requirements()) as $tag) {
         app(Extensions::class)->tag([stdClass::class], $tag);
     }
+    // Kiểm tra vận hành của module (vd. cổng thu khi giao) cũng phụ thuộc plugin hệ thống — xem ở test của module đó.
+    foreach (array_keys(app(Extensions::class)->doctorChecks()) as $code) {
+        app(Extensions::class)->doctorCheck($code, fn (): ?string => null);
+    }
 
     expect(app(PluginDoctor::class)->diagnose())->toBe([
         ['plugin' => 'fixture.future', 'level' => 'warning', 'code' => 'incompatible_core', 'message' => 'Chưa cài; cần VaniShop ^9.0, hiện tại '.config('vanishop.version').'.'],
