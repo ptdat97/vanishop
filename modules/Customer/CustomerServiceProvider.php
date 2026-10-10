@@ -67,6 +67,8 @@ final class CustomerServiceProvider extends ModuleServiceProvider
             (int) config('vanishop.customer.otp.per_phone', 3),
             (int) config('vanishop.customer.otp.per_ip', 10),
             (int) config('vanishop.customer.otp.window', 600),
+            (int) config('vanishop.customer.otp.ttl', 300),
+            (int) config('vanishop.customer.otp.max_attempts', 5),
         ));
         $this->app->bind(AuthService::class, fn ($app): AuthService => new AuthService(
             $app->make(OtpService::class), $app->make(CustomerService::class), (int) config('vanishop.customer.token_ttl_days', 90),
@@ -92,7 +94,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         Event::listen(OrderCancelled::class, RefreshCustomerStats::class);
         Event::listen(OrderLinesCancelled::class, RefreshCustomerStats::class);
 
-        RateLimiter::for('vani-customer-auth', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 20, 'customer-auth:'));
+        RateLimiter::for('vani-customer-auth', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.customer_auth', 20), 'customer-auth:'));
 
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));

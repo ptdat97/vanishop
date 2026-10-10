@@ -21,6 +21,7 @@ use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleColor;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Nhập sản phẩm qua các service Admin sẵn có (ProductService, StyleColorService, VariantService, TaxonomyService,
@@ -38,7 +39,7 @@ final class ProductImporter implements CatalogImporter
 
     public function upsertProduct(ProductImport $import): ImportedProduct
     {
-        if ($import->colors === [] || $import->sizes === [] || ! isset($import->translations['vi']['name'])) {
+        if ($import->colors === [] || $import->sizes === [] || ! isset($import->translations[StoreLocale::default()]['name'])) {
             throw new InvalidArgumentException('ProductImport cần ít nhất một màu, một size và tên tiếng Việt.');
         }
 
@@ -100,7 +101,7 @@ final class ProductImporter implements CatalogImporter
         }
         $parentId = isset($data['parent_slug']) ? Category::query()->where('slug', $data['parent_slug'])->value('id') : null;
 
-        return $this->categories->create(new CategoryInput($data['slug'], CategoryStatus::Active, ['vi' => ['name' => $data['name']]], $parentId === null ? null : (int) $parentId));
+        return $this->categories->create(new CategoryInput($data['slug'], CategoryStatus::Active, [StoreLocale::default() => ['name' => $data['name']]], $parentId === null ? null : (int) $parentId));
     }
 
     /**
@@ -109,7 +110,7 @@ final class ProductImporter implements CatalogImporter
     private function color(array $data, int $position): Color
     {
         return Color::query()->where('code', $data['code'])->first()
-            ?? $this->taxonomy->saveColor(['code' => $data['code'], 'color_family' => $data['family'] ?? 'multi', 'hex' => $data['hex'], 'position' => $position, 'translations' => ['vi' => ['name' => $data['name']]]]);
+            ?? $this->taxonomy->saveColor(['code' => $data['code'], 'color_family' => $data['family'] ?? 'multi', 'hex' => $data['hex'], 'position' => $position, 'translations' => [StoreLocale::default() => ['name' => $data['name']]]]);
     }
 
     private function size(string $code, int $index): Size

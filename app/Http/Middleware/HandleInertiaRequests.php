@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Inertia cho Admin (chỉ gắn vào route Admin; storefront dùng Blade).
@@ -47,7 +48,8 @@ final class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
-            'app' => ['name' => config('app.name'), 'locale' => app()->getLocale()],
+            // locales: ngôn ngữ bản dịch của cửa hàng (mặc định đứng đầu, bắt buộc có bản dịch).
+            'app' => ['name' => config('app.name'), 'locale' => app()->getLocale(), 'locales' => StoreLocale::options(), 'defaultLocale' => StoreLocale::default()],
             'auth' => [
                 'staff' => $staff instanceof StaffUser ? ['id' => $staff->id, 'name' => $staff->name, 'email' => $staff->email] : null,
             ],

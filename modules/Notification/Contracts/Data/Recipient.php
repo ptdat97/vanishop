@@ -12,6 +12,7 @@ final readonly class Recipient
         public ?string $email = null,
         public ?string $name = null,
         public ?int $customerId = null,
-        public string $locale = 'vi',
+        /** Ngôn ngữ nhận thông báo; null = ngôn ngữ mặc định của cửa hàng (0.3.41, trước là 'vi'). */
+        public ?string $locale = null,
     ) {}
 }

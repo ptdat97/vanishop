@@ -59,7 +59,7 @@ final class AccountOrderController
      */
     public function cart(Request $request, Carts $carts, CartPresenter $cartPresenter): JsonResponse
     {
-        return response()->json(['data' => $cartPresenter->present($carts->forCustomer($this->customerId(), (string) config('vanishop.currency', 'VND')))]);
+        return response()->json(['data' => $cartPresenter->present($carts->forCustomer($this->customerId(), (string) config('vanishop.currency')))]);
     }
 
     private function customerId(): int

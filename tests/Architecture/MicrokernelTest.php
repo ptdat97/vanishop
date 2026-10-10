@@ -96,3 +96,38 @@ it('modules/ không gắn mã implementation hay id của plugin (Core không bi
 
     expect($offenders)->toBe([]);
 });
+
+it('modules/ không ghi cứng giá trị thị trường của cửa hàng — múi giờ, ngôn ngữ, tiền tệ, định dạng lấy từ config/vanishop.php', function () {
+    $market = [];
+    foreach (DateTimeZone::listIdentifiers() as $zone) {
+        $market[$zone] = 'múi giờ';
+    }
+    unset($market['UTC']);
+    foreach ((array) config('vanishop.locale.supported') as $locale) {
+        $market[$locale] = 'ngôn ngữ';
+    }
+    foreach ((array) config('vanishop.locale.formats') as $format) {
+        $market[$format] = 'định dạng ngày';
+    }
+    $market[(string) config('vanishop.currency')] = 'tiền tệ';
+    // Bảng số chữ số thập phân theo ISO 4217 (dữ liệu chuẩn); hằng deprecated giữ cho tương thích tới 1.0.
+    $allowed = ['Shared/Domain/Money/Currency.php', 'Extension/Contracts/Data/ReportPeriod.php'];
+
+    $offenders = [];
+    $root = realpath(__DIR__.'/../../modules');
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+    foreach ($files as $file) {
+        $path = $file->getRealPath();
+        $relative = substr($path, strlen($root) + 1);
+        if ($file->getExtension() !== 'php' || preg_match('#/(Tests|Testing|lang|database|Database|migrations)/#', $path) === 1 || in_array($relative, $allowed, true)) {
+            continue;
+        }
+        foreach (token_get_all((string) file_get_contents($path)) as $token) {
+            if (is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING && isset($market[$literal = stripcslashes(substr($token[1], 1, -1))])) {
+                $offenders[] = "{$relative}:{$token[2]} '{$literal}' ({$market[$literal]})";
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});

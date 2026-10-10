@@ -11,6 +11,7 @@ use Modules\Integration\Persistence\Models\InboxRecord;
 use Modules\Integration\Persistence\Models\IntegrationClient;
 use Modules\Integration\Persistence\Models\OutboxRecord;
 use Modules\Integration\Persistence\Models\WebhookSubscription;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Dữ liệu màn hình vận hành "Integration Health" (payload đã che PII).
@@ -55,7 +56,7 @@ final class HealthQueries
                 ->map(fn (InboxRecord $record): array => [
                     'id' => $record->id, 'target' => $record->system, 'type' => $record->message_type, 'reference' => $record->external_event_id,
                     'status' => $record->status->value, 'attempts' => $record->attempts, 'last_error' => $record->last_error,
-                    'at' => $record->received_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                    'at' => StoreClock::format($record->received_at),
                     'payload' => PayloadMasker::mask($record->payload), 'correlation_id' => $record->correlation_id,
                 ])->all();
         }
@@ -66,7 +67,7 @@ final class HealthQueries
             ->map(fn (OutboxRecord $record): array => [
                 'id' => $record->id, 'target' => $record->target, 'type' => $record->message_type, 'reference' => "{$record->aggregate_type}:{$record->aggregate_id}",
                 'status' => $record->status->value, 'attempts' => $record->attempts, 'last_error' => $record->last_error,
-                'at' => $record->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'at' => StoreClock::format($record->created_at),
                 'payload' => PayloadMasker::mask($record->payload), 'correlation_id' => $record->correlation_id,
             ])->all();
     }
@@ -84,7 +85,7 @@ final class HealthQueries
                 'subscriptions' => $client->subscriptions->map(fn (WebhookSubscription $subscription): array => [
                     'id' => $subscription->id, 'url' => $subscription->url, 'event_types' => $subscription->event_types,
                     'status' => $subscription->status,
-                    'failing_since' => $subscription->failing_since?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                    'failing_since' => StoreClock::format($subscription->failing_since),
                 ])->all(),
             ])->all();
     }

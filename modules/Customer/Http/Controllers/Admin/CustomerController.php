@@ -22,6 +22,7 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Khách hàng của cửa hàng.
@@ -64,9 +65,10 @@ final class CustomerController
             'baseUrl' => route('admin.customers.index'),
             'customer' => [
                 ...$this->row($model),
-                'birth_date' => $model->birth_date?->format('d/m/Y'),
+                // Ngày sinh là ngày lịch, không đổi múi giờ.
+                'birth_date' => $model->birth_date?->format((string) config('vanishop.locale.formats.date')),
                 'gender' => $model->gender,
-                'last_login_at' => $model->last_login_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'last_login_at' => StoreClock::format($model->last_login_at),
                 'merged_into' => $model->merged_into_id === null ? null : Customer::query()->whereKey($model->merged_into_id)->value('public_id'),
             ],
             'segment' => ['customer_group_id' => $model->customer_group_id, 'tags' => $segments->tagsOf($model->id), 'groups' => $segments->groups()],
@@ -131,7 +133,7 @@ final class CustomerController
         return [
             'id' => $customer->public_id, 'ref' => $customer->id, 'phone' => $customer->phone, 'email' => $customer->email, 'full_name' => $customer->full_name,
             'status' => $customer->status->value, 'registered' => $customer->isRegistered(),
-            'created_at' => $customer->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+            'created_at' => StoreClock::format($customer->created_at),
         ];
     }
 }

@@ -7,6 +7,7 @@ namespace Modules\Inventory\Application;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockMovement;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Truy vấn đọc cho màn hình tồn kho trong Admin.
@@ -51,7 +52,7 @@ final class StockQueries
         return StockMovement::query()->where('variant_id', $variantId)->orderByDesc('id')->limit($limit)->get()
             ->map(fn (StockMovement $movement): array => [
                 'id' => $movement->id,
-                'at' => $movement->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i:s'),
+                'at' => StoreClock::format($movement->created_at, 'datetime_seconds'),
                 'location' => $codes[$movement->location_id] ?? (string) $movement->location_id,
                 'type' => $movement->type->value,
                 'on_hand_delta' => $movement->on_hand_delta,

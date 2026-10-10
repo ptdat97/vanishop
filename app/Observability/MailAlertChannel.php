@@ -8,6 +8,7 @@ use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Mail;
 use Modules\Shared\Contracts\AlertChannel;
 use Modules\Shared\Contracts\Data\Alert;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Kênh cảnh báo mặc định của Core: email tới VANI_ALERT_EMAILS, gửi ngay (không qua queue). Danh sách trống → bỏ qua.
@@ -32,7 +33,7 @@ final class MailAlertChannel implements AlertChannel
             $alert->detail,
             '',
             'Mức độ: '.$alert->severity.' · Mã: '.$alert->key,
-            'Bắt đầu: '.$alert->since->setTimezone(new \DateTimeZone('Asia/Ho_Chi_Minh'))->format('d/m/Y H:i').' (giờ VN)',
+            'Bắt đầu: '.StoreClock::format($alert->since).' ('.StoreClock::timezone().')',
             'Website: '.config('app.url'),
         ]);
 

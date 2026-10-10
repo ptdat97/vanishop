@@ -116,6 +116,6 @@ final class NativeCart
 
     private function currency(): string
     {
-        return (string) config('vanishop.currency', 'VND');
+        return (string) config('vanishop.currency');
     }
 }

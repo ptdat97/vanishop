@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Persistence\Models\Color;
+use Modules\Shared\Support\StoreLocale;
 
 final class ColorRequest extends FormRequest
 {
@@ -33,8 +34,8 @@ final class ColorRequest extends FormRequest
             'color_family' => ['required', Rule::enum(ColorFamily::class)],
             'hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'position' => ['required', 'integer', 'min:0'],
-            'translations.vi.name' => ['required', 'string', 'max:255'],
-            'translations.en.name' => ['nullable', 'string', 'max:255'],
+            'translations.'.StoreLocale::default().'.name' => ['required', 'string', 'max:255'],
+            'translations.*.name' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -50,7 +51,7 @@ final class ColorRequest extends FormRequest
             'color_family' => $data['color_family'],
             'hex' => $data['hex'] ?? null,
             'position' => (int) $data['position'],
-            'translations' => array_filter($data['translations'], fn (array $t): bool => filled($t['name'] ?? null)),
+            'translations' => array_filter(array_intersect_key($data['translations'], array_flip(StoreLocale::supported())), fn (array $t): bool => filled($t['name'] ?? null)),
         ];
     }
 }

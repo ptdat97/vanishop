@@ -14,6 +14,7 @@ use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
 use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Shared\Support\MoneyFormatter;
 
 final class SharedServiceProvider extends ModuleServiceProvider
 {
@@ -25,12 +26,13 @@ final class SharedServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->scoped(CurrentContext::class);
+        $this->app->singleton(MoneyFormatter::class, fn (): MoneyFormatter => MoneyFormatter::fromConfig());
     }
 
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('vani.storefront-context', ResolveStorefrontContext::class);
-        RateLimiter::for('storefront-api', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, 240));
+        RateLimiter::for('storefront-api', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.storefront_api', 240)));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:idempotency:prune')->hourly()->withoutOverlapping()->onOneServer();

@@ -52,7 +52,7 @@ interface OtpSender
 }
 ```
 
-- OTP 6 số, TTL 5 phút, tối đa 5 lần thử; giới hạn tần suất theo SĐT + IP (chống SMS pumping, [security](../15-security/security.md)).
+- OTP 6 số, TTL 5 phút, tối đa 5 lần thử (cấu hình `vanishop.customer.otp.ttl|max_attempts`); giới hạn tần suất theo SĐT + IP (chống SMS pumping, [security](../15-security/security.md)).
 - Storefront dùng session cookie; mobile/headless dùng Sanctum token.
 
 ## 5. Giao tiếp khách hàng

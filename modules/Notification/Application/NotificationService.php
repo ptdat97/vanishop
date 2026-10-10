@@ -15,6 +15,7 @@ use Modules\Notification\Contracts\Notifier;
 use Modules\Notification\Domain\TemplateRenderer;
 use Modules\Notification\Persistence\Models\NotificationLog;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Chọn template cho từng kênh, render, ghi nhật ký rồi xếp hàng gửi. Render lúc xếp hàng
@@ -54,18 +55,19 @@ final class NotificationService implements Notifier
     }
 
     /**
-     * Template đang bật theo kênh. Thiếu locale → 'vi'.
+     * Template đang bật theo kênh. Thiếu locale → ngôn ngữ mặc định của cửa hàng.
      *
      * @return array<string, NotificationTemplate> channel => template
      */
     private function templates(NotificationRequest $request): array
     {
+        $locale = $request->recipient->locale ?? StoreLocale::default();
         $rows = NotificationTemplate::query()
             ->where('type', $request->type)
             ->where('active', true)
-            ->whereIn('locale', array_unique([$request->recipient->locale, 'vi']))
+            ->whereIn('locale', array_unique([$locale, StoreLocale::default()]))
             ->get()
-            ->sortBy(fn (NotificationTemplate $template): int => $template->locale === $request->recipient->locale ? 0 : 1);
+            ->sortBy(fn (NotificationTemplate $template): int => $template->locale === $locale ? 0 : 1);
 
         $picked = [];
         foreach ($rows as $template) {
@@ -75,7 +77,7 @@ final class NotificationService implements Notifier
         // Kênh chưa có mẫu trong DB → mẫu mặc định do Core/plugin khai báo (NotificationCatalog).
         foreach ($this->catalog->types()[$request->type]->defaults ?? [] as $channel => $default) {
             $picked[$channel] ??= new NotificationTemplate([
-                'type' => $request->type, 'channel' => $channel, 'locale' => 'vi',
+                'type' => $request->type, 'channel' => $channel, 'locale' => StoreLocale::default(),
                 'subject' => $default['subject'] ?? null, 'body' => $default['body'] ?? null, 'meta' => $default['meta'] ?? null, 'active' => true,
             ]);
         }

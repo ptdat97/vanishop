@@ -26,7 +26,7 @@ final class CartController
 
     public function store(Request $request): JsonResponse
     {
-        $created = $this->carts->create((string) config('vanishop.currency', 'VND'));
+        $created = $this->carts->create((string) config('vanishop.currency'));
 
         return response()->json([
             'data' => $this->presenter->present($created->view),

@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use Modules\Catalog\Application\Products\ProductInput;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Models\Style;
+use Modules\Shared\Support\StoreLocale;
 
 final class ProductRequest extends FormRequest
 {
@@ -34,7 +35,7 @@ final class ProductRequest extends FormRequest
             'category_ids' => ['array', 'max:20'],
             'category_ids.*' => ['integer', 'distinct'],
             'primary_category_id' => ['nullable', 'integer'],
-            'translations.vi.name' => ['required', 'string', 'max:255'],
+            'translations.'.StoreLocale::default().'.name' => ['required', 'string', 'max:255'],
             'translations.*.name' => ['nullable', 'string', 'max:255'],
             'translations.*.description' => ['nullable', 'string', 'max:20000'],
             'translations.*.care_instructions' => ['nullable', 'string', 'max:5000'],
@@ -47,7 +48,7 @@ final class ProductRequest extends FormRequest
     public function toInput(): ProductInput
     {
         $translations = array_filter(
-            array_intersect_key((array) $this->input('translations', []), array_flip(['vi', 'en'])),
+            array_intersect_key((array) $this->input('translations', []), array_flip(StoreLocale::supported())),
             fn (mixed $fields): bool => is_array($fields) && filled($fields['name'] ?? null),
         );
 

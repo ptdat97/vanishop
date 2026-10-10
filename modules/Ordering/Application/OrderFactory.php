@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Application;
 
-use DateTimeImmutable;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -18,6 +17,7 @@ use Modules\Ordering\Events\OrderPlaced;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Application\NumberSequences;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\StoreClock;
 
 final class OrderFactory implements OrderWriter
 {
@@ -29,9 +29,9 @@ final class OrderFactory implements OrderWriter
     public function create(OrderDraft $draft): PlacedOrder
     {
         $this->assertBalanced($draft);
-        $now = new DateTimeImmutable('now', new \DateTimeZone('Asia/Ho_Chi_Minh'));
+        $now = StoreClock::now();
         $period = OrderNumber::period($now);
-        $number = OrderNumber::format((string) config('vanishop.orders.number_prefix', 'VN'), $period, $this->sequences->next('order', $period));
+        $number = OrderNumber::format((string) config('vanishop.orders.number_prefix', ''), $period, $this->sequences->next('order', $period));
 
         $accessToken = Str::random(40);
         $order = Order::query()->create([

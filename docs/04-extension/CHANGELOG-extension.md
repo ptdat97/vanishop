@@ -4,6 +4,25 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.41 — 2026-10-10
+
+Thông số thị trường và vận hành ra `config/vanishop.php` (Core không ghi cứng múi giờ, ngôn ngữ, tiền tệ, định dạng, rate limit…). Bảng khoá: [production §2](../18-operations/production.md).
+
+### Thêm
+- `Shared\Support\StoreClock` (`timezone()`, `format($at, 'date'|'datetime'|'datetime_seconds'|'short_datetime')`, `toInput`, `fromInput`, `now`) và `StoreLocale` (`default()`, `supported()`, `options()`, `isSupported()`) — plugin và theme dùng thay cho giá trị ghi cứng.
+- `MoneyFormatter`: constructor nhận dấu phân cách/ký hiệu (mặc định trung lập `1,250,000 VND`), container dựng theo `vanishop.locale.money`; `formatAmount(int, string)`.
+- Prop Inertia `app.locales` (`{code, label}`), `app.defaultLocale` — form bản dịch của Admin theo ngôn ngữ cấu hình.
+
+### Đổi
+- `Notification\Contracts\Data\Recipient::$locale`: `?string`, mặc định `null` = ngôn ngữ mặc định của cửa hàng (trước: `'vi'`).
+- `ReportPeriod`: `$timezone` mặc định theo `vanishop.locale.timezone`; `ReportPeriod::TIMEZONE` deprecated (gỡ ở 1.0).
+- Validate bản dịch catalog: bắt buộc ngôn ngữ mặc định, chỉ nhận ngôn ngữ trong `locale.supported`.
+- **Sửa lỗi**: khung giờ bảng giá nhập/hiển thị theo giờ cửa hàng và lưu UTC (trước: giờ nhập bị lưu như UTC — lệch 7 giờ ở VN).
+- `PluginManifest`: `name` dạng chuỗi dùng cho mọi ngôn ngữ (không còn gán `vi`).
+
+### Arch test
+- `MicrokernelTest`: `modules/` không có literal múi giờ, mã ngôn ngữ, tiền tệ, định dạng ngày của cửa hàng (trừ bảng ISO 4217 và hằng deprecated).
+
 ## 0.3.40 — 2026-10-10
 
 Microkernel: kiểm tra vận hành do module đăng ký cho doctor; trần giảm giá trung lập trong Core. Chỉ thêm.

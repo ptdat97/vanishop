@@ -23,6 +23,7 @@ use Modules\Ordering\Domain\OrderStateMachine;
 use Modules\Ordering\Domain\PaymentStatus;
 use Modules\Ordering\Http\Requests\ShippingAddressRequest;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Shared\Support\StoreClock;
 
 final class OrderController
 {
@@ -48,7 +49,7 @@ final class OrderController
             'orders' => collect($page->items())->map(fn (Order $order): array => [
                 'id' => $order->id,
                 'number' => $order->number,
-                'placed_at' => $order->placed_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'placed_at' => StoreClock::format($order->placed_at),
                 'customer' => (string) ($order->customer_snapshot['full_name'] ?? ''),
                 'phone' => (string) $order->customer_phone,
                 'total' => $order->total_amount,

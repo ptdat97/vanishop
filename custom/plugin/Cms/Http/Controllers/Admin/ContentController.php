@@ -7,7 +7,6 @@ namespace Plugin\Cms\Http\Controllers\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -17,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\MediaDirectory;
+use Modules\Shared\Support\StoreClock;
 use Plugin\Cms\Infrastructure\CmsMedia;
 use Plugin\Cms\Infrastructure\Markdown;
 use Plugin\Cms\Infrastructure\Navigation;
@@ -30,8 +30,6 @@ use Plugin\Cms\Persistence\Post;
 final class ContentController
 {
     // Tham số route truyền theo vị trí: tham số URI (`id`) đứng trước giá trị mặc định (`kind`).
-
-    private const TIMEZONE = 'Asia/Ho_Chi_Minh';
 
     public function __construct(
         private readonly CmsMedia $covers,
@@ -53,8 +51,8 @@ final class ContentController
             'search' => $search,
             'items' => $items->through(fn (Content $item): array => [
                 'id' => $item->id, 'title' => $item->title, 'slug' => $item->slug, 'status' => $this->status($item),
-                'published_at' => $item->published_at?->timezone(self::TIMEZONE)->format('d/m/Y H:i'),
-                'updated_at' => $item->updated_at?->timezone(self::TIMEZONE)->format('d/m/Y H:i'),
+                'published_at' => StoreClock::format($item->published_at),
+                'updated_at' => StoreClock::format($item->updated_at),
                 'url' => $item->isPublic() ? $this->publicUrl($kind, $item->slug) : null,
             ]),
             'can' => ['manage' => Gate::allows('cms.manage')],
@@ -122,7 +120,7 @@ final class ContentController
             'item' => $item === null ? null : [
                 'id' => $item->id, 'title' => $item->title, 'slug' => $item->slug, 'body' => $item->body,
                 'meta_title' => $item->meta_title, 'meta_description' => $item->meta_description, 'status' => $item->status,
-                'published_at' => $item->published_at?->timezone(self::TIMEZONE)->format('Y-m-d\TH:i'),
+                'published_at' => StoreClock::toInput($item->published_at),
                 'excerpt' => $item instanceof Post ? $item->excerpt : null,
                 'cover_media_id' => $item instanceof Post ? $item->cover_media_id : null,
                 'cover_url' => $item instanceof Post ? $this->covers->coverUrl($item, 800) : null,
@@ -176,7 +174,7 @@ final class ContentController
         }
 
         // Giờ nhập theo giờ VN; đăng mà không chọn giờ → đăng ngay (giữ giờ đăng cũ nếu đã có).
-        $publishedAt = isset($data['published_at']) ? Carbon::parse($data['published_at'], self::TIMEZONE)->utc() : null;
+        $publishedAt = isset($data['published_at']) ? StoreClock::fromInput($data['published_at']) : null;
         if ($data['status'] === Content::PUBLISHED && $publishedAt === null) {
             $publishedAt = $item->published_at ?? now();
         }

@@ -103,7 +103,7 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
 
             return $client instanceof IntegrationClient
                 ? Limit::perMinute(max(1, $client->rate_limit))->by('integration-client:'.$client->id)
-                : Limit::perMinute(60)->by('integration-ip:'.$request->ip());
+                : Limit::perMinute((int) config('vanishop.rate_limits.integration_anonymous', 60))->by('integration-ip:'.$request->ip());
         });
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

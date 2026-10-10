@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -24,12 +25,13 @@ const props = defineProps<{
     can: { manage: boolean };
 }>();
 
+const { locales, defaultLocale } = useStoreLocales();
 const editing = ref<Template | null>(null);
 const creating = ref(false);
 const form = useForm({
     type: 'order_placed',
     channel: 'mail',
-    locale: 'vi',
+    locale: defaultLocale,
     subject: '',
     body: '',
     meta_json: '',
@@ -45,7 +47,7 @@ function open(template: Template | null): void {
     form.defaults({
         type: template?.type ?? 'order_placed',
         channel: template?.channel ?? 'mail',
-        locale: template?.locale ?? 'vi',
+        locale: template?.locale ?? defaultLocale,
         subject: template?.subject ?? '',
         body: template?.body ?? '',
         meta_json: template?.meta ? JSON.stringify(template.meta, null, 2) : '',
@@ -114,8 +116,7 @@ function remove(template: Template): void {
             <label>
                 Ngôn ngữ
                 <select v-model="form.locale" :class="inputClass">
-                    <option value="vi">Tiếng Việt</option>
-                    <option value="en">English</option>
+                    <option v-for="option in locales" :key="option.code" :value="option.code">{{ option.label }}</option>
                 </select>
             </label>
         </div>

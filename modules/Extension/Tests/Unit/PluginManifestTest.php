@@ -35,3 +35,9 @@ it('từ chối manifest thiếu trường bắt buộc', function () use ($vali
 
     PluginManifest::fromArray($data, '/p');
 })->throws(InvalidManifest::class, 'provider');
+
+it('tên plugin: theo locale, tên chuỗi dùng cho mọi ngôn ngữ, thiếu thì tên đầu tiên', function () use ($valid) {
+    expect(PluginManifest::fromArray([...$valid, 'name' => 'Cổng VietQR'], '/p')->displayName('fr'))->toBe('Cổng VietQR')
+        ->and(PluginManifest::fromArray([...$valid, 'name' => ['vi' => 'Cổng', 'en' => 'Gateway']], '/p')->displayName('fr'))->toBe('Cổng')
+        ->and(PluginManifest::fromArray([...$valid, 'name' => ['vi' => 'Cổng', 'en' => 'Gateway']], '/p')->displayName('en'))->toBe('Gateway');
+});

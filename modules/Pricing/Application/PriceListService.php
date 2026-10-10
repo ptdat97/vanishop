@@ -45,7 +45,7 @@ final class PriceListService
                 }
             }
 
-            $list ??= new PriceList(['currency_code' => 'VND']);
+            $list ??= new PriceList(['currency_code' => (string) config('vanishop.currency')]);
             $list->fill($data)->save();
 
             $this->audit->record($list->wasRecentlyCreated ? 'pricing.price_list.created' : 'pricing.price_list.updated', 'price_list', $list->id, ['code' => $list->code]);

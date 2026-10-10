@@ -6,6 +6,7 @@ namespace Modules\Integration\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Event feed (append-only).
@@ -42,7 +43,7 @@ final class IntegrationEventRecord extends Model
             'event_id' => $this->event_id,
             'event_type' => $this->event_type,
             'schema_version' => $this->schema_version,
-            'occurred_at' => $this->occurred_at->timezone('Asia/Ho_Chi_Minh')->toIso8601String(),
+            'occurred_at' => $this->occurred_at->timezone(StoreClock::timezone())->toIso8601String(),
             'source' => 'vanishop',
             'aggregate' => ['type' => $this->aggregate_type, 'id' => $this->aggregate_id],
             'correlation_id' => $this->correlation_id,

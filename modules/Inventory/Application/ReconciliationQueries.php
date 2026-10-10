@@ -8,6 +8,7 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\InventoryReconciliation;
 use Modules\Inventory\Persistence\Models\InventoryReconciliationLine;
 use Modules\Inventory\Persistence\Models\Location;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Truy vấn đọc cho màn hình "Đối soát tồn kho" trong Admin (roadmap Phase 3).
@@ -72,6 +73,6 @@ final class ReconciliationQueries
 
     private function formatDate(mixed $date): ?string
     {
-        return $date?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i');
+        return StoreClock::format($date);
     }
 }

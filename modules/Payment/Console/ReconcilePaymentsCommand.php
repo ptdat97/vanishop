@@ -27,7 +27,7 @@ final class ReconcilePaymentsCommand extends Command
     public function handle(CurrentContext $context, GatewayRegistry $gateways, PaymentService $payments): int
     {
         $context->runAs(ContextScope::system('vani:payment:reconcile'), function () use ($gateways, $payments): void {
-            Payment::query()->where('status', PaymentStatus::Pending)->where('created_at', '<', now()->subMinutes(5))
+            Payment::query()->where('status', PaymentStatus::Pending)->where('created_at', '<', now()->subMinutes((int) config('vanishop.payment.reconcile_after_minutes', 5)))
                 ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()->subHour()))
                 ->orderBy('id')->chunkById(100, function ($batch) use ($gateways, $payments): void {
                     foreach ($batch as $payment) {

@@ -6,7 +6,6 @@ namespace Modules\Promotion\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -15,6 +14,7 @@ use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Promotion\Application\CampaignService;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Campaign (roadmap Phase 8): gói khuyến mãi + bảng giá chạy chung lịch, kích hoạt/dừng khẩn cấp một nút, báo cáo kết
@@ -22,8 +22,6 @@ use Modules\Promotion\Persistence\Models\Promotion;
  */
 final class CampaignController
 {
-    private const TIMEZONE = 'Asia/Ho_Chi_Minh';
-
     public function index(CampaignService $campaigns): Response
     {
         Gate::authorize('promotion.view');
@@ -33,8 +31,8 @@ final class CampaignController
             'promotionsUrl' => route('admin.promotion.promotions.index'),
             'campaigns' => Campaign::query()->withCount('promotions')->orderByDesc('starts_at')->get()->map(fn (Campaign $campaign): array => [
                 'id' => $campaign->id, 'code' => $campaign->code, 'name' => $campaign->name, 'state' => $campaign->state(),
-                'starts_at' => $campaign->starts_at->timezone(self::TIMEZONE)->format('d/m/Y H:i'),
-                'ends_at' => $campaign->ends_at->timezone(self::TIMEZONE)->format('d/m/Y H:i'),
+                'starts_at' => StoreClock::format($campaign->starts_at),
+                'ends_at' => StoreClock::format($campaign->ends_at),
                 'promotions_count' => (int) $campaign->getAttribute('promotions_count'),
                 'price_lists_count' => count($campaigns->priceListIds($campaign)),
             ])->all(),
@@ -106,8 +104,8 @@ final class CampaignController
             'baseUrl' => route('admin.promotion.campaigns.index'),
             'campaign' => $campaign === null ? null : [
                 'id' => $campaign->id, 'code' => $campaign->code, 'name' => $campaign->name, 'description' => $campaign->description,
-                'starts_at' => $campaign->starts_at->timezone(self::TIMEZONE)->format('Y-m-d\TH:i'),
-                'ends_at' => $campaign->ends_at->timezone(self::TIMEZONE)->format('Y-m-d\TH:i'),
+                'starts_at' => StoreClock::toInput($campaign->starts_at),
+                'ends_at' => StoreClock::toInput($campaign->ends_at),
                 'status' => $campaign->status, 'state' => $campaign->state(), 'lock_version' => $campaign->lock_version,
                 'promotion_ids' => $campaign->promotions()->pluck('id')->all(),
                 'price_list_ids' => $campaigns->priceListIds($campaign),
@@ -139,7 +137,7 @@ final class CampaignController
             'price_list_ids' => ['array'],
             'price_list_ids.*' => ['integer'],
         ]);
-        $toUtc = fn (string $local): string => Carbon::parse($local, self::TIMEZONE)->utc()->toDateTimeString();
+        $toUtc = fn (string $local): string => StoreClock::fromInput($local)->toDateTimeString();
 
         return [
             ['code' => $data['code'], 'name' => $data['name'], 'description' => $data['description'] ?? null, 'starts_at' => $toUtc($data['starts_at']), 'ends_at' => $toUtc($data['ends_at'])],

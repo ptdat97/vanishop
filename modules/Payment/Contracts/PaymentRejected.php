@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payment\Contracts;
 
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Support\MoneyFormatter;
 
 final class PaymentRejected extends BusinessRuleViolation
 {
@@ -38,7 +39,7 @@ final class PaymentRejected extends BusinessRuleViolation
 
     public static function refundExceeds(int $refundable): self
     {
-        return new self('payment.refund_exceeds', 422, __('payment::messages.refund_exceeds', ['amount' => number_format($refundable, 0, ',', '.')]), ['refundable' => $refundable]);
+        return new self('payment.refund_exceeds', 422, __('payment::messages.refund_exceeds', ['amount' => app(MoneyFormatter::class)->formatAmount($refundable, (string) config('vanishop.currency'))]), ['refundable' => $refundable]);
     }
 
     public function errorCode(): string

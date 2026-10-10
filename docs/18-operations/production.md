@@ -41,9 +41,27 @@ Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `c
 | `VANI_LOAD_TEST_IPS` | **Để trống** | Chỉ đặt trên staging khi load test (IP máy k6 bỏ qua rate limit); `vani:security:check` báo lỗi nếu còn ở production |
 | `VNPAY_SANDBOX` | `false` (khi đã có hợp đồng) | Cùng `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` thật |
 | `VANI_PLUGINS_SAFE_MODE` | `false` | Chỉ bật khi xử lý sự cố — §10 |
-| `APP_SCHEDULE_TIMEZONE` | Giữ mặc định `Asia/Ho_Chi_Minh` | Lịch hằng đêm (backup 02:00, đối soát 03:30/04:00) theo giờ VN; dữ liệu vẫn lưu UTC |
+| `VANI_TIMEZONE` | Giữ mặc định `Asia/Ho_Chi_Minh` | Giờ hiển thị/nhập trong Admin, email cảnh báo, số đơn theo tháng, kỳ báo cáo; mặc định cho `APP_SCHEDULE_TIMEZONE`. Dữ liệu vẫn lưu UTC |
+| `APP_SCHEDULE_TIMEZONE` | Không đặt (theo `VANI_TIMEZONE`) | Lịch hằng đêm (backup 02:00, đối soát 03:30/04:00) |
 
 Không đặt `VANI_OTP_LOG_SENDER=true` ở production (ghi OTP ra log).
+
+### Thông số thị trường và vận hành (0.3.41)
+
+Core không ghi cứng các giá trị dưới đây — tất cả nằm trong `config/vanishop.php` (đổi bằng biến môi trường nếu có, không thì sửa file rồi `php artisan optimize`):
+
+| Nhóm | Khoá | Mặc định |
+|---|---|---|
+| Thị trường | `locale.default` (`VANI_LOCALE`), `locale.supported`, `locale.labels` | `vi`; `vi`, `en` |
+| | `locale.timezone` (`VANI_TIMEZONE`), `locale.formats.*` | `Asia/Ho_Chi_Minh`; `d/m/Y`, `d/m/Y H:i`… |
+| | `locale.money.*` (dấu phân cách, ký hiệu), `currency` (`VANI_CURRENCY`) | `1.250.000 ₫`; `VND` |
+| | `promotion.max_discount_bp`, `tax.calculator`, `orders.number_prefix` | 5000 (NĐ 81/2018); `vn_vat_inclusive`; `VN` |
+| Rate limit (request/phút/IP) | `rate_limits.storefront_api` (`VANI_RATE_STOREFRONT_API`), `cart_create`, `checkout`, `order_track`, `customer_auth`, `payment_callbacks`, `shipping_webhooks`, `integration_anonymous` | 240, 30, 20, 10, 20, 600, 600, 60 |
+| Bảo mật | `admin.login_max_attempts` (`VANI_ADMIN_LOGIN_MAX_ATTEMPTS`), `customer.otp.ttl`/`max_attempts` (`VANI_OTP_TTL`, `VANI_OTP_MAX_ATTEMPTS`), `integration.signature_tolerance` | 5; 300 giây/5 lần; 300 giây |
+| Plugin | `plugins.breaker.threshold`/`cooldown` (`VANI_PLUGIN_BREAKER_*`) | 5 lỗi/phút → bỏ qua 300 giây |
+| Ảnh, thanh toán | `media.max_upload_kb` (`VANI_MEDIA_MAX_UPLOAD_KB`), `media.max_files_per_upload`, `payment.reconcile_after_minutes` | 10240 KB, 20 ảnh; 5 phút |
+
+Giới hạn cấu trúc (độ sâu danh mục, độ dài SKU, số khối trang chủ…) vẫn là hằng trong code — đổi chúng là đổi thiết kế, không phải vận hành.
 
 ## 3. Bố cục thư mục trên server
 

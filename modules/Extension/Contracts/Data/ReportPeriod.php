@@ -8,13 +8,20 @@ use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Khoảng thời gian báo cáo [from, to) theo múi giờ cửa hàng. Core dựng từ lựa chọn trên Admin.
  */
 final readonly class ReportPeriod
 {
+    /**
+     * @deprecated 0.3.41 — múi giờ lấy từ cấu hình cửa hàng (`vanishop.locale.timezone`); không truyền `$timezone` là
+     * dùng giá trị đó. Gỡ ở 1.0.
+     */
     public const TIMEZONE = 'Asia/Ho_Chi_Minh';
+
+    public string $timezone;
 
     public const PRESETS = ['today' => 'Hôm nay', '7d' => '7 ngày', '30d' => '30 ngày', 'this_month' => 'Tháng này', 'last_month' => 'Tháng trước', 'custom' => 'Tuỳ chọn'];
 
@@ -22,8 +29,9 @@ final readonly class ReportPeriod
         public DateTimeImmutable $from,
         public DateTimeImmutable $to,
         public string $preset = 'custom',
-        public string $timezone = self::TIMEZONE,
+        ?string $timezone = null,
     ) {
+        $this->timezone = $timezone ?? StoreClock::timezone();
         if ($to <= $from) {
             throw new InvalidArgumentException('Ngày kết thúc phải sau ngày bắt đầu.');
         }
@@ -32,8 +40,9 @@ final readonly class ReportPeriod
     /**
      * `custom`: `$start`/`$end` là ngày Y-m-d (bao gồm cả ngày kết thúc).
      */
-    public static function fromPreset(string $preset, ?string $start = null, ?string $end = null, ?DateTimeImmutable $now = null, string $timezone = self::TIMEZONE): self
+    public static function fromPreset(string $preset, ?string $start = null, ?string $end = null, ?DateTimeImmutable $now = null, ?string $timezone = null): self
     {
+        $timezone ??= StoreClock::timezone();
         $zone = new DateTimeZone($timezone);
         // CarbonImmutable::now() theo đồng hồ của ứng dụng (test cố định được giờ).
         $today = DateTimeImmutable::createFromInterface($now ?? CarbonImmutable::now())->setTimezone($zone)->setTime(0, 0);

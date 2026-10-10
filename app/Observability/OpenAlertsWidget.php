@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Observability;
 
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Extension\Contracts\DashboardWidget;
 use Modules\Extension\Contracts\Data\Column;
 use Modules\Extension\Contracts\Data\Table;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Ô "Cảnh báo vận hành" trên trang Tổng quan: các cảnh báo đang mở (alert_states), mức nặng trước.
@@ -50,7 +50,7 @@ final class OpenAlertsWidget implements DashboardWidget
                 'level' => self::LEVELS[$row->severity] ?? $row->severity,
                 'title' => $row->title,
                 'detail' => $row->detail,
-                'since' => Carbon::parse($row->fired_at)->timezone('Asia/Ho_Chi_Minh')->format('d/m H:i'),
+                'since' => StoreClock::format((string) $row->fired_at, 'short_datetime'),
             ])->values()->all();
 
         return new Table(

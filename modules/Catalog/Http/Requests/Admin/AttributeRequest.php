@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Domain\AttributeKind;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Shared\Support\StoreLocale;
 
 final class AttributeRequest extends FormRequest
 {
@@ -36,12 +37,12 @@ final class AttributeRequest extends FormRequest
             'is_filterable' => ['required', 'boolean'],
             'position' => ['required', 'integer', 'min:0'],
             'lock_version' => [$attribute instanceof Attribute ? 'required' : 'nullable', 'integer', 'min:0'],
-            'translations.vi.name' => ['required', 'string', 'max:255'],
-            'translations.en.name' => ['nullable', 'string', 'max:255'],
+            'translations.'.StoreLocale::default().'.name' => ['required', 'string', 'max:255'],
+            'translations.*.name' => ['nullable', 'string', 'max:255'],
             'values' => ['array', 'max:500'],
             'values.*.code' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9_-]*$/', 'distinct'],
-            'values.*.translations.vi.label' => ['required', 'string', 'max:255'],
-            'values.*.translations.en.label' => ['nullable', 'string', 'max:255'],
+            'values.*.translations.'.StoreLocale::default().'.label' => ['required', 'string', 'max:255'],
+            'values.*.translations.*.label' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -58,10 +59,10 @@ final class AttributeRequest extends FormRequest
             'input_type' => $data['input_type'],
             'is_filterable' => (bool) $data['is_filterable'],
             'position' => (int) $data['position'],
-            'translations' => array_filter($data['translations'], fn (array $t): bool => filled($t['name'] ?? null)),
+            'translations' => array_filter(array_intersect_key($data['translations'], array_flip(StoreLocale::supported())), fn (array $t): bool => filled($t['name'] ?? null)),
             'values' => array_map(fn (array $value): array => [
                 'code' => $value['code'],
-                'translations' => array_filter($value['translations'], fn (array $t): bool => filled($t['label'] ?? null)),
+                'translations' => array_filter(array_intersect_key($value['translations'], array_flip(StoreLocale::supported())), fn (array $t): bool => filled($t['label'] ?? null)),
             ], array_values($data['values'] ?? [])),
         ];
     }

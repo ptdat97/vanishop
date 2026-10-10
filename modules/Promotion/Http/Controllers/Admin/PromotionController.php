@@ -17,6 +17,7 @@ use Modules\Promotion\Http\Requests\PromotionRequest;
 use Modules\Promotion\Http\Requests\VoucherRequest;
 use Modules\Promotion\Persistence\Models\Promotion;
 use Modules\Promotion\Persistence\Models\Voucher;
+use Modules\Shared\Support\StoreClock;
 
 final class PromotionController
 {
@@ -46,8 +47,8 @@ final class PromotionController
                 'usage_count' => $promotion->usage_count,
                 'usage_limit' => $promotion->usage_limit,
                 'vouchers_count' => $promotion->vouchers_count,
-                'starts_at' => $promotion->starts_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
-                'ends_at' => $promotion->ends_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'starts_at' => StoreClock::format($promotion->starts_at),
+                'ends_at' => StoreClock::format($promotion->ends_at),
             ])->all(),
             'canManage' => Gate::allows('promotion.manage'),
             'campaignsUrl' => route('admin.promotion.campaigns.index'),
@@ -121,8 +122,8 @@ final class PromotionController
             'promotion' => $promotion === null ? null : [
                 ...$promotion->only(['id', 'name', 'status', 'priority', 'requires_voucher', 'action_type', 'action_config', 'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version']),
                 'stacking' => $promotion->stacking->value,
-                'starts_at' => $promotion->starts_at?->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i'),
-                'ends_at' => $promotion->ends_at?->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i'),
+                'starts_at' => StoreClock::toInput($promotion->starts_at),
+                'ends_at' => StoreClock::toInput($promotion->ends_at),
                 'rules' => $promotion->rules->map(fn ($rule): array => ['type' => $rule->rule_type, 'label' => $registry->rule($rule->rule_type)?->label(), 'config' => $rule->config])->all(),
             ],
             'vouchers' => $promotion === null ? [] : $promotion->vouchers()->orderByDesc('id')->limit(200)->get()->map(fn (Voucher $voucher): array => [
@@ -131,7 +132,7 @@ final class PromotionController
                 'status' => $voucher->status,
                 'used_count' => $voucher->used_count,
                 'usage_limit' => $voucher->usage_limit,
-                'expires_at' => $voucher->expires_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'expires_at' => StoreClock::format($voucher->expires_at),
             ])->all(),
             'vouchersTotal' => $promotion?->vouchers()->count() ?? 0,
             'actions' => array_map(fn ($action): array => ['type' => $action->type(), 'label' => $action->label()], array_values($registry->actions())),

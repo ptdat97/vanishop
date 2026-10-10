@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Ordering\Application;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Domain\CustomerStatus;
@@ -14,6 +13,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderAdjustment;
 use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\StoreClock;
 
 final class OrderQueries
 {
@@ -63,7 +63,7 @@ final class OrderQueries
             shippingAddress: $address,
             shippingMethod: (array) $order->shipping_method,
             note: $masked ? null : $order->note,
-            placedAt: $order->placed_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+            placedAt: StoreClock::format($order->placed_at),
             lines: $order->lines->map(fn (OrderLine $line): array => [
                 'id' => $line->id, 'variant_id' => $line->variant_id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
                 'image_url' => $line->image_url, 'quantity' => $line->quantity, 'cancelled_quantity' => $line->cancelled_quantity, 'unit_amount' => $line->unit_amount, 'compare_at_amount' => $line->compare_at_amount,
@@ -97,7 +97,7 @@ final class OrderQueries
                 'source' => $internal ? $event->source : null,
                 'actor' => $internal && $event->actor_type !== null ? $event->actor_type.($event->actor_id !== null ? '#'.$event->actor_id : '') : null,
                 'data' => $internal && $event->data !== null ? json_decode((string) $event->data, true) : null,
-                'at' => Carbon::parse((string) $event->created_at)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'at' => StoreClock::format((string) $event->created_at),
             ])->all();
     }
 

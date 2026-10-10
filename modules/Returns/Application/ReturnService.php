@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Returns\Application;
 
 use DateTimeImmutable;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Catalog\Contracts\VariantDirectory;
@@ -36,6 +35,7 @@ use Modules\Returns\Persistence\Models\ReturnLine;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\StoreClock;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -371,7 +371,7 @@ final class ReturnService implements Returns
             refundAmount: $return->refund_amount,
             refundedAmount: $return->refunded_amount,
             currencyCode: $return->currency_code,
-            createdAt: $return->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i') ?? '',
+            createdAt: StoreClock::format($return->created_at) ?? '',
             lines: $return->lines()->get()->map(fn (ReturnLine $line): array => [
                 'id' => $line->id, 'order_line_id' => $line->order_line_id, 'sku' => $orderLines[$line->order_line_id]->sku ?? '',
                 'name' => $orderLines[$line->order_line_id]->productName ?? '', 'quantity' => $line->quantity,
@@ -380,7 +380,7 @@ final class ReturnService implements Returns
             ])->all(),
             events: DB::table('return_events')->where('return_request_id', $return->id)->orderBy('id')->get()->map(fn (object $event): array => [
                 'from' => $event->from_status, 'to' => $event->to_status, 'note' => $event->note, 'source' => $event->source,
-                'at' => Carbon::parse((string) $event->created_at)->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'at' => StoreClock::format((string) $event->created_at),
             ])->all(),
             lockVersion: $return->lock_version,
             resolution: (string) $return->resolution,

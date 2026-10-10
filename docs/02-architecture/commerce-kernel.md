@@ -207,4 +207,6 @@ Ranh giới không chỉ dựa vào review — vi phạm làm đỏ arch test:
 
 Tham số mang chính sách thị trường của một bất biến Core (vd. trần giảm giá của giá sàn — VN 50%, NĐ 81/2018) theo cùng cách: cơ chế ở Core với mặc định trung lập (`PromotionEvaluator::NO_CAP_BP`, không giới hạn), mức cụ thể ở cấu hình cửa hàng. Lý do đổi trả (`wrong_size`, `defective`…) là trung lập, ở lại Core.
 
+Giá trị **thị trường và vận hành** (múi giờ, ngôn ngữ, tiền tệ, định dạng ngày/tiền, rate limit, OTP, breaker, giới hạn upload…) nằm ở `config/vanishop.php`, Core đọc qua `StoreClock`/`StoreLocale`/`MoneyFormatter` hoặc `config()` — arch test chặn literal múi giờ/ngôn ngữ/tiền tệ/định dạng trong `modules/` (0.3.41). Plugin tích hợp một nhà cung cấp cụ thể vẫn được dùng giá trị của giao thức nhà cung cấp (vd. VNPay: giờ GMT+7, `VND`).
+
 Giới hạn: R28 chỉ so literal trong `modules/`; `config/vanishop.php` là cấu hình của cửa hàng (được nhắc mã plugin làm mặc định), và mã phương thức giao của `ShippingRateProvider` nằm trong option nên không kiểm được tĩnh.

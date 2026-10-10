@@ -18,8 +18,6 @@ use Modules\Identity\Persistence\Models\StaffUser;
 
 final class StaffSessionController
 {
-    private const MAX_ATTEMPTS = 5;
-
     public function create(): Response
     {
         return Inertia::render('Identity::Auth/Login', ['action' => route('admin.login.store')]);
@@ -29,7 +27,7 @@ final class StaffSessionController
     {
         $key = $request->throttleKey();
 
-        if (RateLimiter::tooManyAttempts($key, self::MAX_ATTEMPTS)) {
+        if (RateLimiter::tooManyAttempts($key, (int) config('vanishop.admin.login_max_attempts', 5))) {
             throw ValidationException::withMessages([
                 'email' => __('identity::auth.throttle', ['seconds' => RateLimiter::availableIn($key)]),
             ]);

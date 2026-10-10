@@ -7,6 +7,7 @@ namespace Modules\Catalog\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Shared\Support\StoreLocale;
 
 final class CollectionRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ final class CollectionRequest extends FormRequest
                 Rule::unique('collections', 'slug')->ignore($collection instanceof ProductCollection ? $collection->id : null)],
             'status' => ['required', Rule::in(['active', 'hidden'])],
             'position' => ['required', 'integer', 'min:0'],
-            'translations.vi.name' => ['required', 'string', 'max:255'],
+            'translations.'.StoreLocale::default().'.name' => ['required', 'string', 'max:255'],
             'translations.*.name' => ['nullable', 'string', 'max:255'],
             'translations.*.description' => ['nullable', 'string', 'max:5000'],
             'style_codes' => ['nullable', 'string', 'max:20000'],
@@ -41,7 +42,7 @@ final class CollectionRequest extends FormRequest
             'status' => (string) $this->validated('status'),
             'position' => (int) $this->validated('position'),
             'translations' => array_filter(
-                array_intersect_key((array) $this->input('translations', []), array_flip(['vi', 'en'])),
+                array_intersect_key((array) $this->input('translations', []), array_flip(StoreLocale::supported())),
                 fn (mixed $fields): bool => is_array($fields) && filled($fields['name'] ?? null),
             ),
         ];

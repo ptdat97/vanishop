@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use Modules\Catalog\Application\Categories\CategoryInput;
 use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Shared\Support\StoreLocale;
 
 final class CategoryRequest extends FormRequest
 {
@@ -36,7 +37,7 @@ final class CategoryRequest extends FormRequest
             'position' => ['required', 'integer', 'min:0', 'max:100000'],
             'lock_version' => [$category instanceof Category ? 'required' : 'nullable', 'integer', 'min:0'],
             'translations' => ['required', 'array'],
-            'translations.vi.name' => ['required', 'string', 'max:255'],
+            'translations.'.StoreLocale::default().'.name' => ['required', 'string', 'max:255'],
             'translations.*' => ['array'],
             'translations.*.name' => ['nullable', 'string', 'max:255'],
             'translations.*.description' => ['nullable', 'string', 'max:20000'],
@@ -48,7 +49,7 @@ final class CategoryRequest extends FormRequest
     public function toInput(): CategoryInput
     {
         $translations = array_filter(
-            array_intersect_key((array) $this->validated('translations'), array_flip(['vi', 'en'])),
+            array_intersect_key((array) $this->validated('translations'), array_flip(StoreLocale::supported())),
             fn (array $fields): bool => filled($fields['name'] ?? null),
         );
 

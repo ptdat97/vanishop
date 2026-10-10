@@ -17,6 +17,7 @@ use Modules\Pricing\Http\Requests\PriceListRequest;
 use Modules\Pricing\Http\Requests\PricesRequest;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Support\StoreClock;
 
 final class PriceListController
 {
@@ -45,8 +46,8 @@ final class PriceListController
                     'customer_group' => $groupNames[$list->customer_group_id] ?? null,
                     'priority' => $list->priority,
                     'status' => $list->status,
-                    'starts_at' => $list->starts_at?->format('d/m/Y H:i'),
-                    'ends_at' => $list->ends_at?->format('d/m/Y H:i'),
+                    'starts_at' => StoreClock::format($list->starts_at),
+                    'ends_at' => StoreClock::format($list->ends_at),
                     'prices_count' => $list->prices_count,
                 ])->all(),
             'canManage' => Gate::allows('pricing.manage'),
@@ -137,8 +138,8 @@ final class PriceListController
                 'type' => $list->type->value,
                 'customer_group_id' => $list->customer_group_id,
                 'priority' => $list->priority,
-                'starts_at' => $list->starts_at?->format('Y-m-d\TH:i'),
-                'ends_at' => $list->ends_at?->format('Y-m-d\TH:i'),
+                'starts_at' => StoreClock::toInput($list->starts_at),
+                'ends_at' => StoreClock::toInput($list->ends_at),
                 'status' => $list->status,
                 'lock_version' => $list->lock_version,
             ],

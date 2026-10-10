@@ -4,6 +4,7 @@ import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
+import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -27,7 +28,8 @@ const props = defineProps<{
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories')?.url ?? '');
-const locale = ref<'vi' | 'en'>('vi');
+const { locales, defaultLocale } = useStoreLocales();
+const locale = ref(defaultLocale);
 
 const emptyTranslation = { name: '', description: '', meta_title: '', meta_description: '' };
 const form = useForm({
@@ -36,10 +38,7 @@ const form = useForm({
     status: props.category?.status ?? 'active',
     position: props.category?.position ?? 0,
     lock_version: props.category?.lock_version ?? null,
-    translations: {
-        vi: { ...emptyTranslation, ...props.category?.translations.vi },
-        en: { ...emptyTranslation, ...props.category?.translations.en },
-    },
+    translations: translationsFor(locales, emptyTranslation, props.category?.translations),
 });
 
 const imageForm = useForm<{ image: File | null; alt: string }>({ image: null, alt: '' });
@@ -91,11 +90,11 @@ function removeImage(): void {
     <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 lg:col-span-2">
             <div class="flex gap-2 text-sm">
-                <button v-for="code in ['vi', 'en'] as const" :key="code" type="button" class="rounded px-2 py-1" :class="locale === code ? 'bg-slate-900 text-white' : 'bg-slate-100'" @click="locale = code">
-                    {{ code === 'vi' ? 'Tiếng Việt' : 'English' }}
+                <button v-for="option in locales" :key="option.code" type="button" class="rounded px-2 py-1" :class="locale === option.code ? 'bg-slate-900 text-white' : 'bg-slate-100'" @click="locale = option.code">
+                    {{ option.label }}
                 </button>
             </div>
-            <FormField :label="locale === 'vi' ? 'Tên (bắt buộc)' : 'Tên'" :error="errors[`translations.${locale}.name`]">
+            <FormField :label="locale === defaultLocale ? 'Tên (bắt buộc)' : 'Tên'" :error="errors[`translations.${locale}.name`]">
                 <input v-model="form.translations[locale].name" :class="inputClass" type="text" />
             </FormField>
             <FormField label="Mô tả" :error="errors[`translations.${locale}.description`]">

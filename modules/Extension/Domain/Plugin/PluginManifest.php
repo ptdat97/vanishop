@@ -92,7 +92,8 @@ final readonly class PluginManifest
             }
         }
 
-        $name = is_array($data['name']) ? $data['name'] : ['vi' => (string) $data['name']];
+        // Tên dạng chuỗi không gắn ngôn ngữ: khoá `*` dùng cho mọi locale.
+        $name = is_array($data['name']) ? $data['name'] : ['*' => (string) $data['name']];
 
         return new self(
             id: $id,
@@ -111,8 +112,11 @@ final readonly class PluginManifest
         );
     }
 
-    public function displayName(string $locale = 'vi'): string
+    /**
+     * Tên theo locale; thiếu → tên không gắn ngôn ngữ → tên đầu tiên trong manifest → id.
+     */
+    public function displayName(?string $locale = null): string
     {
-        return $this->name[$locale] ?? $this->name['vi'] ?? $this->name['en'] ?? $this->id;
+        return ($locale === null ? null : $this->name[$locale] ?? null) ?? $this->name['*'] ?? array_values($this->name)[0] ?? $this->id;
     }
 }

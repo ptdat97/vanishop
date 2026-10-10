@@ -85,8 +85,8 @@ final class MediaLibraryController
         Gate::authorize('media.manage');
         $data = $request->validate([
             'folder' => ['nullable', 'string', 'max:191'],
-            'images' => ['required', 'array', 'min:1', 'max:'.self::MAX_FILES_PER_UPLOAD],
-            'images.*' => [File::image()->types(self::UPLOAD_TYPES)->max(self::MAX_UPLOAD_KB)],
+            'images' => ['required', 'array', 'min:1', 'max:'.(int) config('vanishop.media.max_files_per_upload', self::MAX_FILES_PER_UPLOAD)],
+            'images.*' => [File::image()->types(self::UPLOAD_TYPES)->max((int) config('vanishop.media.max_upload_kb', self::MAX_UPLOAD_KB))],
         ]);
         $stored = $manager->upload(array_values($request->file('images', [])), (string) ($data['folder'] ?? ''));
 

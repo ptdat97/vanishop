@@ -76,7 +76,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
             return $open === 0 ? null : "còn {$open} khoản thanh toán chờ/giữ tiền qua cổng {$gateway->code()}";
         });
 
-        RateLimiter::for('payment-callbacks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));
+        RateLimiter::for('payment-callbacks', fn (Request $request): Limit => Limit::perMinute((int) config('vanishop.rate_limits.payment_callbacks', 600))->by((string) $request->ip()));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:payment:expire')->everyMinute()->withoutOverlapping()->onOneServer();

@@ -64,8 +64,10 @@ it('từ chối trọng số không hợp lệ', function (array $weights) {
     Money::vnd(100)->allocate($weights);
 })->with([[[]], [[0, 0]], [[1, -1]]])->throws(InvalidArgumentException::class);
 
-it('định dạng tiền theo kiểu Việt Nam', function () {
-    $formatter = new MoneyFormatter;
+it('định dạng tiền theo cấu hình (kiểu Việt Nam); mặc định trung lập', function () {
+    expect((new MoneyFormatter)->format(Money::vnd(1_250_000)))->toBe('1,250,000 VND');
+
+    $formatter = new MoneyFormatter('.', ',', ['VND' => '₫', 'USD' => '$']);
 
     expect($formatter->format(Money::vnd(1_250_000)))->toBe('1.250.000 ₫')
         ->and($formatter->format(Money::vnd(-5_000)))->toBe('-5.000 ₫')

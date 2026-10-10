@@ -6,13 +6,18 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.40',
+    'version' => '0.3.41',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
         'cache' => $relativeToBase(env('VANI_PLUGINS_CACHE', 'bootstrap/cache/vanishop-plugins.php')),
         // Tắt toàn bộ plugin khi có sự cố (xem docs/05-plugin/plugin-system.md §8).
         'safe_mode' => (bool) env('VANI_PLUGINS_SAFE_MODE', false),
+        // Circuit breaker cho lời gọi plugin trên luồng tuỳ chọn (Extensions::call): N lỗi trong 1 phút → bỏ qua M giây.
+        'breaker' => [
+            'threshold' => (int) env('VANI_PLUGIN_BREAKER_THRESHOLD', 5),
+            'cooldown' => (int) env('VANI_PLUGIN_BREAKER_COOLDOWN', 300),
+        ],
     ],
 
     /*
@@ -27,6 +32,8 @@ return [
         'session_cookie' => env('VANI_ADMIN_SESSION_COOKIE', 'vanishop_admin_session'),
         // Hết phiên sau N phút không hoạt động.
         'idle_minutes' => (int) env('VANI_ADMIN_IDLE_MINUTES', 30),
+        // Đăng nhập sai quá N lần (theo email + IP) → khoá tạm (thời gian khoá do RateLimiter, 60 giây).
+        'login_max_attempts' => (int) env('VANI_ADMIN_LOGIN_MAX_ATTEMPTS', 5),
         // Kiểm tra mật khẩu có trong danh sách bị lộ (gọi dịch vụ ngoài, chỉ gửi 5 ký tự đầu của hash SHA-1).
         'check_breached_passwords' => (bool) env('VANI_ADMIN_CHECK_BREACHED_PASSWORDS', env('APP_ENV') === 'production'),
     ],
@@ -52,6 +59,20 @@ return [
             's_maxage' => (int) env('VANI_PAGE_CACHE_TTL', 300),
             'stale_while_revalidate' => 600,
         ],
+    ],
+
+    // Rate limit (số request mỗi phút theo IP; integration-api có client dùng hạn mức riêng của client).
+    'rate_limits' => [
+        'storefront_api' => (int) env('VANI_RATE_STOREFRONT_API', 240),
+        'cart_create' => 30,
+        'checkout' => 20,
+        'order_track' => 10,
+        'customer_auth' => 20,
+        // Callback/webhook từ cổng, hãng: cao vì đối tác gửi dồn từ ít IP.
+        'payment_callbacks' => 600,
+        'shipping_webhooks' => 600,
+        // Integration API khi chưa xác định được client.
+        'integration_anonymous' => 60,
     ],
 
     // Proxy tin cậy (load balancer/CDN đứng trước app): IP/CIDR phân tách dấu phẩy, hoặc '*' khi app chỉ nhận
@@ -92,6 +113,9 @@ return [
     'media' => [
         // Disk lưu ảnh catalog: 'public' cho dev (cần php artisan storage:link), S3-compatible tại VN cho production.
         'disk' => env('VANI_MEDIA_DISK', 'public'),
+        // Thư viện ảnh: dung lượng tối đa mỗi ảnh (KB) và số ảnh mỗi lần tải lên.
+        'max_upload_kb' => (int) env('VANI_MEDIA_MAX_UPLOAD_KB', 10 * 1024),
+        'max_files_per_upload' => 20,
 
         // Ảnh thu nhỏ tạo khi có request đầu tiên, lưu tại public/cache (lần sau web server trả file tĩnh). Giữ định
         // dạng gốc; plugin đóng góp ImageFormat (vd. vani.media-webp) để đổi định dạng đầu ra.
@@ -104,11 +128,30 @@ return [
     ],
 
     /*
-    | Ngôn ngữ storefront: mặc định + danh sách được hỗ trợ (đổi bằng header X-Vani-Locale).
+    | Thị trường của cửa hàng: ngôn ngữ, múi giờ, định dạng hiển thị. Core không ghi cứng giá trị nào trong số này.
     */
     'locale' => [
+        // Ngôn ngữ mặc định + danh sách hỗ trợ (storefront đổi bằng header X-Vani-Locale). Mặc định cũng là ngôn ngữ
+        // dự phòng của bản dịch, mẫu thông báo và dữ liệu nhập (tên sản phẩm bắt buộc có bản dịch này).
         'default' => env('VANI_LOCALE', 'vi'),
         'supported' => ['vi', 'en'],
+        // Tên hiển thị của ngôn ngữ (tab bản dịch trong Admin).
+        'labels' => ['vi' => 'Tiếng Việt', 'en' => 'English'],
+        // Múi giờ hiển thị và nhập liệu (Admin, email, số đơn theo tháng, kỳ báo cáo). DB lưu UTC.
+        'timezone' => env('VANI_TIMEZONE', 'Asia/Ho_Chi_Minh'),
+        // Định dạng ngày giờ hiển thị (PHP date()).
+        'formats' => [
+            'date' => 'd/m/Y',
+            'datetime' => 'd/m/Y H:i',
+            'datetime_seconds' => 'd/m/Y H:i:s',
+            'short_datetime' => 'd/m H:i',
+        ],
+        // Định dạng tiền: 1.250.000 ₫. Ký hiệu theo mã tiền tệ (thiếu → in mã).
+        'money' => [
+            'thousands_separator' => '.',
+            'decimal_separator' => ',',
+            'symbols' => ['VND' => '₫', 'USD' => '$'],
+        ],
     ],
 
     /*
@@ -146,6 +189,8 @@ return [
     'payment' => [
         // Cổng giữ tiền (CapturesLater): `shipped` = thu khi vận đơn rời kho; `manual` = nhân viên bấm thu.
         'capture_on' => env('VANI_PAYMENT_CAPTURE_ON', 'shipped'),
+        // vani:payment:reconcile chỉ hỏi cổng về khoản pending tạo trước N phút (tránh đua với callback đang tới).
+        'reconcile_after_minutes' => (int) env('VANI_PAYMENT_RECONCILE_AFTER_MINUTES', 5),
     ],
 
     'fulfillment' => [
@@ -194,6 +239,9 @@ return [
             'per_phone' => (int) env('VANI_OTP_PER_PHONE', 3),
             'per_ip' => (int) env('VANI_OTP_PER_IP', 10),
             'window' => (int) env('VANI_OTP_WINDOW', 600),
+            // Hiệu lực mã (giây) và số lần nhập sai tối đa.
+            'ttl' => (int) env('VANI_OTP_TTL', 300),
+            'max_attempts' => (int) env('VANI_OTP_MAX_ATTEMPTS', 5),
             // CHỈ dev: ghi mã OTP vào log khi chưa có kênh SMS/ZNS.
             'log_sender' => (bool) env('VANI_OTP_LOG_SENDER', env('APP_ENV') === 'local'),
         ],
@@ -210,6 +258,8 @@ return [
         // Circuit breaker theo connector: mở sau N lỗi retryable liên tiếp, thử lại sau M giây.
         'circuit_threshold' => (int) env('VANI_INTEGRATION_CIRCUIT_THRESHOLD', 5),
         'circuit_cooldown' => (int) env('VANI_INTEGRATION_CIRCUIT_COOLDOWN', 60),
+        // Integration API: lệch thời gian tối đa (giây) giữa timestamp trong chữ ký HMAC và giờ server (chống replay).
+        'signature_tolerance' => (int) env('VANI_INTEGRATION_SIGNATURE_TOLERANCE', 300),
     ],
 
     'search' => [

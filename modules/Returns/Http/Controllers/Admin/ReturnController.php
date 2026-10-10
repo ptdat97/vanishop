@@ -16,6 +16,7 @@ use Modules\Ordering\Contracts\OrderReader;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnRequest;
+use Modules\Shared\Support\StoreClock;
 
 final class ReturnController
 {
@@ -39,7 +40,7 @@ final class ReturnController
                 ->orderByDesc('id')->limit(100)->get()->map(fn (ReturnRequest $return): array => [
                     'id' => $return->id, 'number' => $return->number, 'status' => $return->status->value, 'reason_code' => $return->reason_code,
                     'refund_amount' => $return->refund_amount, 'source' => $return->source,
-                    'created_at' => $return->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                    'created_at' => StoreClock::format($return->created_at),
                 ])->all(),
         ]);
     }

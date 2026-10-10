@@ -6,6 +6,7 @@ namespace Modules\Inventory\Application;
 
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockTransfer;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Truy vấn đọc cho màn hình chuyển kho trong Admin.
@@ -30,7 +31,7 @@ final class StockTransferQueries
                 'reference' => $transfer->reference,
                 'cancel_reason' => $transfer->cancel_reason,
                 'items' => (int) $transfer->lines->sum('quantity'),
-                'at' => ($transfer->received_at ?? $transfer->shipped_at ?? $transfer->created_at)?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'at' => StoreClock::format($transfer->received_at ?? $transfer->shipped_at ?? $transfer->created_at),
                 'lines' => $transfer->lines->map(fn ($line): array => [
                     'variant_id' => (int) $line->variant_id,
                     'quantity' => (int) $line->quantity,

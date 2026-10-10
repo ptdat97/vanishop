@@ -2,6 +2,7 @@
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -13,14 +14,12 @@ const props = defineProps<{
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'collections')?.url ?? '');
+const { locales, defaultLocale } = useStoreLocales();
 const form = useForm({
     slug: props.collection?.slug ?? '',
     status: props.collection?.status ?? 'active',
     position: props.collection?.position ?? 0,
-    translations: {
-        vi: { name: props.collection?.translations.vi?.name ?? '', description: props.collection?.translations.vi?.description ?? '' },
-        en: { name: props.collection?.translations.en?.name ?? '', description: props.collection?.translations.en?.description ?? '' },
-    },
+    translations: translationsFor(locales, { name: '', description: '' }, props.collection?.translations),
     style_codes: props.collection?.style_codes ?? '',
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
@@ -49,10 +48,12 @@ function destroy(): void {
     </PageHeader>
 
     <form class="grid max-w-4xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">
-        <FormField label="Tên (vi)" :error="errors['translations.vi.name']"><input v-model="form.translations.vi.name" :class="inputClass" /></FormField>
-        <FormField label="Tên (en)"><input v-model="form.translations.en.name" :class="inputClass" /></FormField>
-        <FormField label="Mô tả (vi)"><textarea v-model="form.translations.vi.description" :class="inputClass" rows="3" /></FormField>
-        <FormField label="Mô tả (en)"><textarea v-model="form.translations.en.description" :class="inputClass" rows="3" /></FormField>
+        <FormField v-for="option in locales" :key="`name-${option.code}`" :label="`Tên (${option.label})${option.code === defaultLocale ? ' *' : ''}`" :error="errors[`translations.${option.code}.name`]">
+            <input v-model="form.translations[option.code].name" :class="inputClass" />
+        </FormField>
+        <FormField v-for="option in locales" :key="`description-${option.code}`" :label="`Mô tả (${option.label})`">
+            <textarea v-model="form.translations[option.code].description" :class="inputClass" rows="3" />
+        </FormField>
         <FormField label="Slug" :error="errors.slug"><input v-model="form.slug" :class="inputClass" /></FormField>
         <div class="grid grid-cols-2 gap-4">
             <FormField label="Trạng thái" :error="errors.status">

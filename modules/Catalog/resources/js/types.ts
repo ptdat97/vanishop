@@ -15,4 +15,5 @@ export interface CategoryNode {
     children: CategoryNode[];
 }
 
-export type Translations<T extends string> = Partial<Record<'vi' | 'en', Partial<Record<T, string | null>>>>;
+/** Bản dịch theo mã ngôn ngữ của cửa hàng (`vanishop.locale.supported`). */
+export type Translations<T extends string> = Partial<Record<string, Partial<Record<T, string | null>>>>;

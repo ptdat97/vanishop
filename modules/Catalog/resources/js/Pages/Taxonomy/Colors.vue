@@ -2,6 +2,7 @@
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -20,7 +21,8 @@ const props = defineProps<{ nav: NavItem[]; colors: ColorRow[]; families: string
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'colors')?.url ?? '');
 const editingId = ref<number | null>(null);
 
-const form = useForm({ code: '', color_family: 'white', hex: '' as string | null, position: 0, translations: { vi: { name: '' }, en: { name: '' } } });
+const { locales, defaultLocale } = useStoreLocales();
+const form = useForm({ code: '', color_family: 'white', hex: '' as string | null, position: 0, translations: translationsFor(locales, { name: '' }) });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function edit(color: ColorRow): void {
@@ -30,14 +32,14 @@ function edit(color: ColorRow): void {
         color_family: color.color_family,
         hex: color.hex,
         position: color.position,
-        translations: { vi: { name: color.translations.vi?.name ?? '' }, en: { name: color.translations.en?.name ?? '' } },
+        translations: translationsFor(locales, { name: '' }, color.translations),
     });
     form.reset();
 }
 
 function cancel(): void {
     editingId.value = null;
-    form.defaults({ code: '', color_family: 'white', hex: '', position: 0, translations: { vi: { name: '' }, en: { name: '' } } });
+    form.defaults({ code: '', color_family: 'white', hex: '', position: 0, translations: translationsFor(locales, { name: '' }) });
     form.reset();
     form.clearErrors();
 }
@@ -77,7 +79,7 @@ function destroy(color: ColorRow): void {
                 <tr v-for="color in colors" :key="color.id" class="border-t border-slate-100">
                     <td class="flex items-center gap-2 px-4 py-2">
                         <span class="inline-block h-4 w-4 rounded-full border border-slate-300" :style="{ background: color.hex ?? 'transparent' }" />
-                        {{ color.translations.vi?.name }}
+                        {{ color.translations[defaultLocale]?.name }}
                     </td>
                     <td class="px-4 py-2 font-mono text-xs">{{ color.code }}</td>
                     <td class="px-4 py-2">{{ color.color_family }}</td>
@@ -96,8 +98,9 @@ function destroy(color: ColorRow): void {
 
         <form v-if="canManage" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
             <h2 class="text-sm font-medium">{{ editingId ? 'Sửa màu' : 'Thêm màu' }}</h2>
-            <FormField label="Tên (vi)" :error="errors['translations.vi.name']"><input v-model="form.translations.vi.name" :class="inputClass" /></FormField>
-            <FormField label="Tên (en)"><input v-model="form.translations.en.name" :class="inputClass" /></FormField>
+            <FormField v-for="option in locales" :key="option.code" :label="`Tên (${option.label})`" :error="errors[`translations.${option.code}.name`]">
+                <input v-model="form.translations[option.code].name" :class="inputClass" />
+            </FormField>
             <FormField label="Mã" hint="Chữ in hoa, ví dụ IVR" :error="errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
             <FormField label="Nhóm màu" :error="errors.color_family">
                 <select v-model="form.color_family" :class="inputClass">

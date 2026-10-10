@@ -51,10 +51,10 @@ final class HmacSignature
         return $timestamp === null || $signatures === [] ? null : ['timestamp' => $timestamp, 'signatures' => $signatures];
     }
 
-    public static function verify(string $secret, string $payload, string $header, int $now): bool
+    public static function verify(string $secret, string $payload, string $header, int $now, int $toleranceSeconds = self::TOLERANCE_SECONDS): bool
     {
         $parsed = self::parse($header);
-        if ($parsed === null || abs($now - $parsed['timestamp']) > self::TOLERANCE_SECONDS) {
+        if ($parsed === null || abs($now - $parsed['timestamp']) > $toleranceSeconds) {
             return false;
         }
 

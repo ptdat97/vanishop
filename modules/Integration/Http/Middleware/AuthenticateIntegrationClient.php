@@ -14,6 +14,7 @@ use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\StoreLocale;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -46,7 +47,7 @@ final class AuthenticateIntegrationClient
         }
 
         $payload = HmacSignature::requestPayload($request->getMethod(), $request->getRequestUri(), $request->getContent());
-        if (! HmacSignature::verify($key->secret, $payload, $signature, now()->getTimestamp())) {
+        if (! HmacSignature::verify($key->secret, $payload, $signature, now()->getTimestamp(), (int) config('vanishop.integration.signature_tolerance', HmacSignature::TOLERANCE_SECONDS))) {
             throw IntegrationAccessDenied::unauthenticated();
         }
 
@@ -56,7 +57,7 @@ final class AuthenticateIntegrationClient
 
         $request->attributes->set(self::ATTRIBUTE, $client);
         Context::add('integration_client', $client->code);
-        $this->context->set(new ContextScope(new Actor(ActorType::Integration, $client->id, $client->code), 'vi'));
+        $this->context->set(new ContextScope(new Actor(ActorType::Integration, $client->id, $client->code), StoreLocale::default()));
 
         return $next($request);
     }

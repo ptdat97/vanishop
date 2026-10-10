@@ -68,7 +68,7 @@ return [
     'timezone' => 'UTC',
 
     // Lịch chạy (backup 02:00, đối soát tồn 03:30, đối soát thanh toán 04:00…) tính theo giờ Việt Nam; dữ liệu vẫn lưu UTC.
-    'schedule_timezone' => env('APP_SCHEDULE_TIMEZONE', 'Asia/Ho_Chi_Minh'),
+    'schedule_timezone' => env('APP_SCHEDULE_TIMEZONE', env('VANI_TIMEZONE', 'Asia/Ho_Chi_Minh')),
 
     /*
     |--------------------------------------------------------------------------

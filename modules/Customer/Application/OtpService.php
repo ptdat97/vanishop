@@ -28,6 +28,8 @@ final class OtpService
         private readonly int $perPhone = 3,
         private readonly int $perIp = 10,
         private readonly int $windowSeconds = 600,
+        private readonly int $ttlSeconds = 300,
+        private readonly int $maxAttempts = 5,
     ) {}
 
     /**
@@ -58,7 +60,7 @@ final class OtpService
 
             return (int) DB::table('customer_otps')->insertGetId([
                 'phone' => $e164, 'purpose' => $purpose->value, 'code_hash' => OtpCode::hash($this->secret, $e164, $code), 'channel' => 'pending',
-                'expires_at' => now()->addSeconds(OtpCode::TTL_SECONDS), 'ip' => $ip, 'created_at' => now(),
+                'expires_at' => now()->addSeconds($this->ttlSeconds), 'ip' => $ip, 'created_at' => now(),
             ]);
         });
 
@@ -68,7 +70,7 @@ final class OtpService
                 $sender->send($contact, $code, $purpose);
                 DB::table('customer_otps')->where('id', $otpId)->update(['channel' => $sender->channel()]);
 
-                return ['channel' => $sender->channel(), 'expires_in' => OtpCode::TTL_SECONDS];
+                return ['channel' => $sender->channel(), 'expires_in' => $this->ttlSeconds];
             } catch (OtpDeliveryFailed $exception) {
                 Log::warning('Gửi OTP thất bại, thử kênh khác.', ['channel' => $sender->channel(), 'error' => $exception->getMessage()]);
             }
@@ -97,7 +99,7 @@ final class OtpService
             if (! hash_equals((string) $otp->code_hash, OtpCode::hash($this->secret, $e164, $code))) {
                 $attempts = (int) $otp->attempts + 1;
                 DB::table('customer_otps')->where('id', $otp->id)->update([
-                    'attempts' => $attempts, 'consumed_at' => $attempts >= OtpCode::MAX_ATTEMPTS ? now() : null,
+                    'attempts' => $attempts, 'consumed_at' => $attempts >= $this->maxAttempts ? now() : null,
                 ]);
 
                 return false;

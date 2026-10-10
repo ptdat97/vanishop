@@ -141,3 +141,19 @@ it('hiển thị cây danh mục theo thứ tự', function () {
             ->where('tree.0.children.0.slug', 'a')
             ->where('tree.0.children.1.slug', 'b'));
 });
+
+it('ngôn ngữ bản dịch theo cấu hình cửa hàng: bắt buộc ngôn ngữ mặc định, bỏ ngôn ngữ không hỗ trợ, Admin nhận danh sách', function () {
+    config(['vanishop.locale.default' => 'en', 'vanishop.locale.supported' => ['en', 'fr'], 'vanishop.locale.labels' => ['en' => 'English', 'fr' => 'Français']]);
+    $this->actingAs($this->staff, 'staff');
+
+    $this->post($this->base, categoryPayload(['translations' => ['en' => ['name' => '']]]))->assertSessionHasErrors('translations.en.name');
+    $this->post($this->base, categoryPayload(['translations' => ['fr' => ['name' => 'Chemises']]]))->assertRedirect();
+
+    $category = T::seed(fn () => Category::query()->where('slug', 'ao-so-mi')->sole());
+    expect(T::seed(fn () => $category->translations()->pluck('locale')->sort()->values()->all()))->toBe(['en', 'fr'])
+        ->and(T::seed(fn () => $category->translate('name', 'de')))->toBe('Shirts'); // thiếu → ngôn ngữ mặc định
+
+    $this->get("{$this->base}/create")->assertInertia(fn (Assert $page) => $page
+        ->where('app.defaultLocale', 'en')
+        ->where('app.locales', [['code' => 'en', 'label' => 'English'], ['code' => 'fr', 'label' => 'Français']]));
+});

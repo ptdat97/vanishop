@@ -17,8 +17,14 @@ export interface NavigationGroup {
     label: string;
 }
 
+/** Ngôn ngữ bản dịch của cửa hàng (`vanishop.locale`), mặc định đứng đầu. */
+export interface StoreLocaleOption {
+    code: string;
+    label: string;
+}
+
 export interface SharedProps {
-    app: { name: string; locale: string };
+    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string };
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
     navigationGroups: NavigationGroup[];

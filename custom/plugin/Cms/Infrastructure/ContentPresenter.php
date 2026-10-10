@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Plugin\Cms\Infrastructure;
 
+use Modules\Shared\Support\StoreClock;
 use Plugin\Cms\Persistence\Page;
 use Plugin\Cms\Persistence\Post;
 
@@ -42,7 +43,7 @@ final class ContentPresenter
             'cover_url' => $this->media->coverUrl($post),
             'url' => route('storefront.p.vani-cms.post', $post->slug),
             'published_at' => $post->published_at?->toIso8601String(),
-            'published_date' => $post->published_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y'),
+            'published_date' => StoreClock::format($post->published_at, 'date'),
         ];
     }
 

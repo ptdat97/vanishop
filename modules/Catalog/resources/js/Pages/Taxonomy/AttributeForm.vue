@@ -2,6 +2,7 @@
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -9,7 +10,7 @@ import type { NavItem, Translations } from '../../types';
 
 interface ValueRow {
     code: string;
-    translations: { vi: { label: string }; en: { label: string } };
+    translations: Record<string, { label: string }>;
 }
 
 const props = defineProps<{
@@ -30,6 +31,7 @@ const props = defineProps<{
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'attributes')?.url ?? '');
+const { locales, defaultLocale } = useStoreLocales();
 
 const form = useForm({
     code: props.attribute?.code ?? '',
@@ -38,13 +40,10 @@ const form = useForm({
     is_filterable: props.attribute?.is_filterable ?? false,
     position: props.attribute?.position ?? 0,
     lock_version: props.attribute?.lock_version ?? null,
-    translations: {
-        vi: { name: props.attribute?.translations.vi?.name ?? '' },
-        en: { name: props.attribute?.translations.en?.name ?? '' },
-    },
+    translations: translationsFor(locales, { name: '' }, props.attribute?.translations),
     values: (props.attribute?.values ?? []).map<ValueRow>((value) => ({
         code: value.code,
-        translations: { vi: { label: value.translations.vi?.label ?? '' }, en: { label: value.translations.en?.label ?? '' } },
+        translations: translationsFor(locales, { label: '' }, value.translations),
     })),
 });
 
@@ -52,7 +51,7 @@ const errors = computed(() => form.errors as Record<string, string | undefined>)
 const hasOptions = computed(() => form.input_type === 'select' || form.input_type === 'multiselect');
 
 function addValue(): void {
-    form.values.push({ code: '', translations: { vi: { label: '' }, en: { label: '' } } });
+    form.values.push({ code: '', translations: translationsFor(locales, { label: '' }) });
 }
 
 function removeValue(index: number): void {
@@ -84,11 +83,8 @@ function destroy(): void {
 
     <form class="max-w-3xl space-y-6" @submit.prevent="submit">
         <div class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
-            <FormField label="Tên (tiếng Việt)" :error="errors['translations.vi.name']">
-                <input v-model="form.translations.vi.name" :class="inputClass" type="text" />
-            </FormField>
-            <FormField label="Tên (English)" :error="errors['translations.en.name']">
-                <input v-model="form.translations.en.name" :class="inputClass" type="text" />
+            <FormField v-for="option in locales" :key="option.code" :label="`Tên (${option.label})${option.code === defaultLocale ? ' *' : ''}`" :error="errors[`translations.${option.code}.name`]">
+                <input v-model="form.translations[option.code].name" :class="inputClass" type="text" />
             </FormField>
             <FormField label="Mã" hint="Chữ thường, số, gạch dưới. Ví dụ: material" :error="errors.code">
                 <input v-model="form.code" :class="inputClass" type="text" />
@@ -118,15 +114,12 @@ function destroy(): void {
                 <button type="button" :class="secondaryButton" @click="addValue">Thêm giá trị</button>
             </div>
             <p v-if="errors.values" class="text-sm text-red-600">{{ errors.values }}</p>
-            <div v-for="(value, index) in form.values" :key="index" class="grid items-start gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+            <div v-for="(value, index) in form.values" :key="index" class="grid items-start gap-2 sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))_auto]" :style="{ '--cols': locales.length + 1 }">
                 <FormField label="Mã" :error="errors[`values.${index}.code`]">
                     <input v-model="value.code" :class="inputClass" type="text" />
                 </FormField>
-                <FormField label="Nhãn (vi)" :error="errors[`values.${index}.translations.vi.label`]">
-                    <input v-model="value.translations.vi.label" :class="inputClass" type="text" />
-                </FormField>
-                <FormField label="Nhãn (en)">
-                    <input v-model="value.translations.en.label" :class="inputClass" type="text" />
+                <FormField v-for="option in locales" :key="option.code" :label="`Nhãn (${option.label})`" :error="errors[`values.${index}.translations.${option.code}.label`]">
+                    <input v-model="value.translations[option.code].label" :class="inputClass" type="text" />
                 </FormField>
                 <button type="button" class="mt-6 text-sm text-red-600" @click="removeValue(index)">Bỏ</button>
             </div>

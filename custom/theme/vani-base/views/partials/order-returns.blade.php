@@ -35,7 +35,7 @@
                 <form action="{{ route('storefront.order.returns.store', $order['id']) }}" method="post" class="mt-4 space-y-4 text-sm">
                     @csrf
                     @if ($returnForm['deadline'])
-                        <p class="text-slate-500">Hạn đổi/trả: {{ \Illuminate\Support\Carbon::parse($returnForm['deadline'])->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y') }}</p>
+                        <p class="text-slate-500">Hạn đổi/trả: {{ \Modules\Shared\Support\StoreClock::format($returnForm['deadline'], 'date') }}</p>
                     @endif
 
                     <fieldset>

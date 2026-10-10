@@ -39,6 +39,19 @@ it('khung giờ phải hợp lệ; mã duy nhất', function () {
     $this->post($this->base, listPayload())->assertSessionHasErrors('code');
 });
 
+it('khung giờ nhập và hiển thị theo múi giờ cửa hàng (vanishop.locale.timezone), lưu UTC', function () {
+    config(['vanishop.locale.timezone' => 'Asia/Ho_Chi_Minh']);
+    $this->post($this->base, listPayload(['starts_at' => '2026-11-11T08:00']))->assertSessionHasNoErrors();
+
+    $list = T::seed(fn () => PriceList::query()->sole());
+    expect($list->starts_at->utc()->format('Y-m-d H:i'))->toBe('2026-11-11 01:00');
+    $this->get("{$this->base}/{$list->id}/edit")->assertInertia(fn (Assert $page) => $page->where('priceList.starts_at', '2026-11-11T08:00'));
+
+    config(['vanishop.locale.timezone' => 'Asia/Tokyo', 'vanishop.locale.formats.datetime' => 'Y/m/d H:i']);
+    $this->get("{$this->base}/{$list->id}/edit")->assertInertia(fn (Assert $page) => $page->where('priceList.starts_at', '2026-11-11T10:00'));
+    $this->get($this->base)->assertInertia(fn (Assert $page) => $page->where('priceLists.0.starts_at', '2026/11/11 10:00'));
+});
+
 it('nhập giá hàng loạt, ghi lịch sử giá, audit và phát PriceChanged', function () {
     Event::fake([PriceChanged::class]);
     $list = P::priceList(['code' => 'base'], []);

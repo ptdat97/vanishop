@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * CRUD mẫu tin: một mẫu cho mỗi (loại, kênh, locale); optimistic lock; audit.
@@ -21,7 +22,7 @@ final class TemplateAdmin
      */
     public function create(array $data): NotificationTemplate
     {
-        $data['locale'] ??= 'vi';
+        $data['locale'] ??= StoreLocale::default();
         $this->assertUnique($data, null);
         $this->assertContent($data);
         $template = NotificationTemplate::query()->create($data);
@@ -67,7 +68,7 @@ final class TemplateAdmin
     private function assertUnique(array $data, ?int $exceptId): void
     {
         $exists = NotificationTemplate::query()
-            ->where('type', $data['type'])->where('channel', $data['channel'])->where('locale', $data['locale'] ?? 'vi')
+            ->where('type', $data['type'])->where('channel', $data['channel'])->where('locale', $data['locale'] ?? StoreLocale::default())
             ->when($exceptId !== null, fn ($query) => $query->whereKeyNot($exceptId))
             ->exists();
         if ($exists) {

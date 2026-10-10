@@ -19,6 +19,7 @@ use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\StoreClock;
 
 final class PaymentController
 {
@@ -47,8 +48,8 @@ final class PaymentController
                 'status' => $payment->status->value,
                 'amount' => $payment->amount,
                 'refunded_amount' => $payment->refunded_amount,
-                'created_at' => $payment->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
-                'expires_at' => $payment->expires_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'created_at' => StoreClock::format($payment->created_at),
+                'expires_at' => StoreClock::format($payment->expires_at),
                 'can_confirm' => in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed, PaymentStatus::Expired], true)
                     && ($gateways->get($payment->gateway_code)?->capabilities()->manualConfirmation ?? false),
                 'can_capture' => $payment->status === PaymentStatus::Authorized && $gateways->get($payment->gateway_code) instanceof CapturesLater,
@@ -56,7 +57,7 @@ final class PaymentController
             ])->all(),
             'refunds' => $refunds->map(fn (Refund $refund): array => [
                 'id' => $refund->id, 'payment_id' => $refund->payment_id, 'amount' => $refund->amount, 'reason' => $refund->reason,
-                'created_at' => $refund->created_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'created_at' => StoreClock::format($refund->created_at),
             ])->all(),
             'can' => [
                 'confirm' => Gate::allows('payments.confirm'),

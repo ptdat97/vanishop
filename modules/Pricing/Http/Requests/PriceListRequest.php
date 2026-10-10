@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Support\StoreClock;
 
 final class PriceListRequest extends FormRequest
 {
@@ -52,8 +53,9 @@ final class PriceListRequest extends FormRequest
             'type' => (string) $this->validated('type'),
             'customer_group_id' => $this->validated('customer_group_id') === null ? null : (int) $this->validated('customer_group_id'),
             'priority' => (int) $this->validated('priority'),
-            'starts_at' => $this->validated('starts_at'),
-            'ends_at' => $this->validated('ends_at'),
+            // Nhân viên nhập theo giờ cửa hàng; lưu UTC.
+            'starts_at' => $this->validated('starts_at') === null ? null : StoreClock::fromInput((string) $this->validated('starts_at'))->toDateTimeString(),
+            'ends_at' => $this->validated('ends_at') === null ? null : StoreClock::fromInput((string) $this->validated('ends_at'))->toDateTimeString(),
             'status' => (string) $this->validated('status'),
         ];
     }

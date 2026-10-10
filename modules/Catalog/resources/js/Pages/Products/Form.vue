@@ -5,6 +5,7 @@ import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
+import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -51,7 +52,8 @@ const props = defineProps<{
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
 const productUrl = computed(() => (props.product ? `${baseUrl.value}/${props.product.id}` : ''));
-const locale = ref<'vi' | 'en'>('vi');
+const { locales, defaultLocale } = useStoreLocales();
+const locale = ref(defaultLocale);
 const statusLabels: Record<string, string> = { draft: 'Nháp', active: 'Đang bán', archived: 'Lưu trữ' };
 
 const emptyTranslation = { name: '', description: '', care_instructions: '', meta_title: '', meta_description: '' };
@@ -70,10 +72,7 @@ const form = useForm({
     category_ids: props.product?.category_ids ?? ([] as number[]),
     primary_category_id: props.product?.primary_category_id ?? null,
     brand_id: props.product?.brand_id ?? null,
-    translations: {
-        vi: { ...emptyTranslation, ...props.product?.translations.vi },
-        en: { ...emptyTranslation, ...props.product?.translations.en },
-    },
+    translations: translationsFor(locales, emptyTranslation, props.product?.translations),
     attributes: initialAttributes,
     extensions: initialExtensionValues(props.extensionSections),
 });
@@ -151,11 +150,11 @@ function removeImage(color: ColorEntry, imageId: number): void {
         <div class="space-y-6 lg:col-span-2">
             <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
                 <div class="flex gap-2 text-sm">
-                    <button v-for="code in ['vi', 'en'] as const" :key="code" type="button" class="rounded px-2 py-1" :class="locale === code ? 'bg-slate-900 text-white' : 'bg-slate-100'" @click="locale = code">
-                        {{ code === 'vi' ? 'Tiếng Việt' : 'English' }}
+                    <button v-for="option in locales" :key="option.code" type="button" class="rounded px-2 py-1" :class="locale === option.code ? 'bg-slate-900 text-white' : 'bg-slate-100'" @click="locale = option.code">
+                        {{ option.label }}
                     </button>
                 </div>
-                <FormField :label="locale === 'vi' ? 'Tên sản phẩm (bắt buộc)' : 'Tên sản phẩm'" :error="errors[`translations.${locale}.name`]">
+                <FormField :label="locale === defaultLocale ? 'Tên sản phẩm (bắt buộc)' : 'Tên sản phẩm'" :error="errors[`translations.${locale}.name`]">
                     <input v-model="form.translations[locale].name" :class="inputClass" />
                 </FormField>
                 <FormField label="Mô tả" :error="errors[`translations.${locale}.description`]">

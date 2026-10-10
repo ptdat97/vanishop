@@ -6,10 +6,11 @@ namespace Modules\Shared\Persistence\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Nội dung đa ngôn ngữ lưu ở bảng <entity>_translations(…, locale, fields).
- * Đọc theo locale hiện tại, fallback về 'vi' rồi bản dịch đầu tiên.
+ * Đọc theo locale hiện tại, fallback về ngôn ngữ mặc định của cửa hàng rồi bản dịch đầu tiên.
  *
  * Model dùng trait phải khai báo translationModel() và translatableFields().
  *
@@ -17,8 +18,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 trait HasTranslations
 {
-    public const FALLBACK_LOCALE = 'vi';
-
     /**
      * @return class-string<Model>
      */
@@ -48,7 +47,7 @@ trait HasTranslations
         $translations = $this->translations;
 
         $translation = $translations->firstWhere('locale', $locale)
-            ?? $translations->firstWhere('locale', self::FALLBACK_LOCALE)
+            ?? $translations->firstWhere('locale', StoreLocale::default())
             ?? $translations->first();
 
         $value = $translation?->getAttribute($field);

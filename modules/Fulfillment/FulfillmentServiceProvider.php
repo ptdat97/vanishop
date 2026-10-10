@@ -80,7 +80,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
             return $open === 0 ? null : "còn {$open} vận đơn chưa kết thúc của hãng {$carrier->code()}";
         });
 
-        RateLimiter::for('shipping-webhooks', fn (Request $request): Limit => Limit::perMinute(600)->by((string) $request->ip()));
+        RateLimiter::for('shipping-webhooks', fn (Request $request): Limit => Limit::perMinute((int) config('vanishop.rate_limits.shipping_webhooks', 600))->by((string) $request->ip()));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:orders:complete-delivered')->hourly()->withoutOverlapping()->onOneServer();

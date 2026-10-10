@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Modules\Customer\Domain;
 
 /**
- * OTP 6 số, TTL 5 phút, tối đa 5 lần thử (docs/03-domains/customer.md §4).
+ * OTP 6 số (docs/03-domains/customer.md §4). Hiệu lực và số lần thử: cấu hình `vanishop.customer.otp.ttl|max_attempts`.
  */
 final class OtpCode
 {
     public const LENGTH = 6;
-
-    public const TTL_SECONDS = 300;
-
-    public const MAX_ATTEMPTS = 5;
 
     public static function generate(): string
     {

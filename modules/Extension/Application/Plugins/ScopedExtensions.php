@@ -20,10 +20,6 @@ use Throwable;
  */
 final class ScopedExtensions implements Extensions
 {
-    private const BREAKER_THRESHOLD = 5;
-
-    private const BREAKER_COOLDOWN = 300;
-
     /** @var array<string, array<string, string|null>> tag => abstract => plugin id (null = Core) */
     private array $contributions = [];
 
@@ -126,10 +122,10 @@ final class ScopedExtensions implements Extensions
 
             if ($breaker !== null) {
                 Cache::add("{$breaker}:failures", 0, now()->addMinute());
-                if (Cache::increment("{$breaker}:failures") >= self::BREAKER_THRESHOLD) {
-                    Cache::put("{$breaker}:open", true, now()->addSeconds(self::BREAKER_COOLDOWN));
+                if (Cache::increment("{$breaker}:failures") >= (int) config('vanishop.plugins.breaker.threshold', 5)) {
+                    Cache::put("{$breaker}:open", true, now()->addSeconds((int) config('vanishop.plugins.breaker.cooldown', 300)));
                     Cache::forget("{$breaker}:failures");
-                    Log::error('Plugin lỗi liên tục — tạm bỏ qua trên luồng tuỳ chọn.', ['plugin' => $plugin, 'cooldown_seconds' => self::BREAKER_COOLDOWN]);
+                    Log::error('Plugin lỗi liên tục — tạm bỏ qua trên luồng tuỳ chọn.', ['plugin' => $plugin, 'cooldown_seconds' => (int) config('vanishop.plugins.breaker.cooldown', 300)]);
                 }
             }
 

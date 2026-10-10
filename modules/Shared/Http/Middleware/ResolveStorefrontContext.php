@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\App;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\StoreLocale;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -29,9 +30,7 @@ final class ResolveStorefrontContext
     public function handle(Request $request, Closure $next): Response
     {
         $requested = (string) $request->headers->get(self::LOCALE_HEADER, '');
-        $locale = in_array($requested, (array) config('vanishop.locale.supported', ['vi']), true)
-            ? $requested
-            : (string) config('vanishop.locale.default', 'vi');
+        $locale = StoreLocale::isSupported($requested) ? $requested : StoreLocale::default();
 
         $source = (string) $request->headers->get(self::SOURCE_HEADER, '');
         $request->attributes->set('order_source', in_array($source, self::SOURCES, true) ? $source : 'web');

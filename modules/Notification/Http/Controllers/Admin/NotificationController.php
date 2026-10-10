@@ -17,6 +17,8 @@ use Modules\Notification\Contracts\Data\NotificationType;
 use Modules\Notification\Contracts\NotificationCatalog;
 use Modules\Notification\Persistence\Models\NotificationLog;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
+use Modules\Shared\Support\StoreClock;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Mẫu tin & nhật ký gửi — cấp Owner.
@@ -78,8 +80,8 @@ final class NotificationController
             'logs' => collect($page->items())->map(fn (NotificationLog $log): array => [
                 'id' => $log->id, 'type' => $log->type, 'channel' => $log->channel, 'recipient' => $this->mask($log->recipient),
                 'status' => $log->status, 'attempts' => $log->attempts, 'error' => $log->error, 'subject' => $log->subject,
-                'created_at' => $log->created_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
-                'sent_at' => $log->sent_at?->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i'),
+                'created_at' => StoreClock::format($log->created_at),
+                'sent_at' => StoreClock::format($log->sent_at),
             ])->all(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
         ]);
@@ -95,7 +97,7 @@ final class NotificationController
         return [
             'type' => [$required, 'string', 'max:64', 'regex:/^[a-z0-9_]+$/'],
             'channel' => [$required, 'string', 'max:32', 'regex:/^[a-z0-9_]+$/'],
-            'locale' => ['nullable', Rule::in(['vi', 'en'])],
+            'locale' => ['nullable', Rule::in(StoreLocale::supported())],
             'subject' => ['nullable', 'string', 'max:190'],
             'body' => ['nullable', 'string', 'max:5000'],
             'meta' => ['nullable', 'array'],
