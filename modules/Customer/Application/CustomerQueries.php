@@ -6,7 +6,7 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Modules\Customer\Persistence\Models\Customer;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 /**
  * Truy vấn cho màn hình Admin khách hàng.
@@ -20,7 +20,7 @@ final class CustomerQueries
     public function search(?string $q, ?string $status, int $perPage = 30, ?array $ids = null, ?int $groupId = null, ?string $tag = null): LengthAwarePaginator
     {
         $q = trim((string) $q);
-        $phone = $q === '' ? null : PhoneNumber::tryFromString($q);
+        $phone = $q === '' ? null : Phones::parse($q);
 
         return Customer::query()
             ->when($status !== null && $status !== '', fn ($query) => $query->where('status', $status))

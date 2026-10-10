@@ -8,7 +8,7 @@ use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Persistence\Models\Order;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 final class CustomerOrderService implements CustomerOrders
 {
@@ -19,7 +19,7 @@ final class CustomerOrderService implements CustomerOrders
 
     public function track(string $number, string $phone): ?OrderDetail
     {
-        $e164 = PhoneNumber::tryFromString($phone)?->e164;
+        $e164 = Phones::parse($phone)?->e164;
         if ($e164 === null) {
             return null;
         }

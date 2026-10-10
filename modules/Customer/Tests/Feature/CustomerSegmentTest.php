@@ -12,7 +12,7 @@ use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Pricing\Persistence\Models\PriceList;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/CustomerTestHelpers.php';
@@ -30,9 +30,9 @@ beforeEach(function () {
     ])->prices()->create(['variant_id' => $this->s->id, 'amount' => 250_000]));
     $this->signIn = function (string $phone = '0912345678'): Customer {
         $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone]);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[PhoneNumber::fromString($phone)->e164.'|login']]);
+        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']]);
 
-        return Customer::query()->where('phone', PhoneNumber::fromString($phone)->e164)->sole();
+        return Customer::query()->where('phone', Phones::fromString($phone)->e164)->sole();
     };
     $this->admin = fn (array $permissions = ['admin.access', 'customers.view', 'customers.segment']) => $this->actingAs(T::staff($permissions), 'staff');
 });

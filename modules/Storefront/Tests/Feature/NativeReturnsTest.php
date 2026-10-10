@@ -11,7 +11,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -44,7 +44,7 @@ beforeEach(function () {
     };
     $this->signIn = function (): void {
         $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[PhoneNumber::fromString('0912345678')->e164.'|login']]);
+        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login']]);
     };
 });
 

@@ -39,7 +39,7 @@ use Modules\Shared\Application\IdempotencyStore;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Contracts\Metrics;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 use Throwable;
 
 /**
@@ -162,7 +162,7 @@ final class CheckoutService implements Checkout
         }
 
         $contact = (array) $request->contact;
-        $phone = PhoneNumber::tryFromString((string) ($contact['phone'] ?? ''));
+        $phone = Phones::parse((string) ($contact['phone'] ?? ''));
         if ($phone === null || trim((string) ($contact['full_name'] ?? '')) === '') {
             return null;
         }
@@ -289,7 +289,7 @@ final class CheckoutService implements Checkout
             totalAmount: $totals->grandTotal->amount,
             customer: [
                 'full_name' => trim((string) $contact['full_name']),
-                'phone' => PhoneNumber::fromString((string) $contact['phone'])->e164,
+                'phone' => Phones::fromString((string) $contact['phone'])->e164,
                 'email' => $email === '' ? null : mb_strtolower($email),
             ],
             // Chụp tên tỉnh/phường chuẩn theo danh mục địa giới (nếu có).

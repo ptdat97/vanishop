@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.42 — 2026-10-10
+
+Luật số điện thoại Việt Nam ra khỏi Core thành plugin hệ thống `vani.phone-vn` (ADR-029).
+
+### Thêm
+- Extension point `Shared\Contracts\PhoneNumberPolicy` (`TAG = vani.phone.policies`; `code()`, `normalize(string): ?string` → E.164, `national(string $e164)`). Bắt buộc đúng 1, chọn bằng `vanishop.locale.phone_policy` (mặc định `vn`); Core có `international` (chỉ nhận `+…`/`00…`).
+- `Shared\Support\Phones::parse()` / `fromString()` — đọc số người dùng nhập theo policy đang chọn.
+- Plugin hệ thống `vani.phone-vn` (bundled) — `vn`: 0912…, 84…, +84…, số bàn 02….
+
+### Đổi (không thuộc snapshot, plugin trong repo đã cập nhật)
+- `Shared\Domain\Phone\PhoneNumber`: bỏ `fromString`/`tryFromString` (luật VN); dựng bằng `PhoneNumber::of(e164, national)` hoặc `Phones`. `national()`, `masked()`, `equals()` giữ nguyên.
+- `vani.sms-brandname` tự đổi +84 → 0… theo giao thức eSMS; số ngoài VN → `esms.unsupported_number`.
+- `vani:plugin:doctor`: cảnh báo `bundled_not_installed` khi plugin hệ thống chưa cài; quy trình deploy chạy `vani:install` thay cho `migrate --force` ([production §5](../18-operations/production.md)).
+
 ## 0.3.41 — 2026-10-10
 
 Thông số thị trường và vận hành ra `config/vanishop.php` (Core không ghi cứng múi giờ, ngôn ngữ, tiền tệ, định dạng, rate limit…). Bảng khoá: [production §2](../18-operations/production.md).

@@ -12,7 +12,7 @@ use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 final class CustomerService implements Customers
 {
@@ -30,7 +30,7 @@ final class CustomerService implements Customers
 
     public function resolveForCheckout(string $phone, string $fullName, ?string $email): int
     {
-        $customer = $this->findOrCreateByPhone(PhoneNumber::fromString($phone)->e164, $fullName);
+        $customer = $this->findOrCreateByPhone(Phones::fromString($phone)->e164, $fullName);
 
         $changes = [];
         if (($customer->full_name ?? '') === '' && trim($fullName) !== '') {

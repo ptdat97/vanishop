@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Persistence\Models\CustomerAddress;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 /**
  * Sổ địa chỉ: tối đa 20, luôn đúng một địa chỉ mặc định khi sổ không rỗng. Có danh mục địa giới (plugin
@@ -116,7 +116,7 @@ final class AddressBook
         return [
             'label' => isset($data['label']) && trim((string) $data['label']) !== '' ? trim((string) $data['label']) : null,
             'full_name' => trim((string) $data['full_name']),
-            'phone' => (PhoneNumber::tryFromString((string) $data['phone']) ?? throw CustomerRejected::phoneInvalid())->e164,
+            'phone' => (Phones::parse((string) $data['phone']) ?? throw CustomerRejected::phoneInvalid())->e164,
             ...array_intersect_key($location, array_flip(self::LOCATION_FIELDS)),
             'street_line' => trim((string) $data['street_line']),
         ];

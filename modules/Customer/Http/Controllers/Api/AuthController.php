@@ -15,7 +15,7 @@ use Modules\Customer\Application\OtpService;
 use Modules\Customer\Application\SocialLogin;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Data\OtpPurpose;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 /**
  * Đăng nhập khách: OTP (mặc định) hoặc mật khẩu. Trả `meta.token` (Bearer, chỉ một lần). Gửi kèm
@@ -121,6 +121,6 @@ final class AuthController
 
     private function phone(string $input): string
     {
-        return PhoneNumber::tryFromString($input)?->e164 ?? throw ValidationException::withMessages(['phone' => __('Số điện thoại không hợp lệ.')]);
+        return Phones::parse($input)?->e164 ?? throw ValidationException::withMessages(['phone' => __('Số điện thoại không hợp lệ.')]);
     }
 }

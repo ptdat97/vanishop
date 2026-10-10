@@ -17,7 +17,7 @@ Làm sao để mọi thay đổi nghiệp vụ (cổng, hãng, luật khuyến m
    |---|---|---|
    | **0. Microkernel** | Shared, Tenancy (cửa hàng), Identity, Extension | Không biết thương mại: vòng đời plugin, registry extension, hook bus, event bus theo plugin, cấu hình, quyền, audit, `Money`, idempotency, context |
    | **1. Commerce Core** | Catalog, Pricing, Inventory, Customer, Cart, Promotion (engine), Checkout (totals engine), Ordering, Payment (abstraction + sổ giao dịch), Fulfillment (abstraction), Returns (khung), Notification (khung), Integration (khung), Storefront (tầng ghép) | Primitive + bất biến + extension point. **Không** chứa tích hợp nhà cung cấp, **không** chứa chính sách kinh doanh/đặc thù thị trường |
-   | **2. Plugin hệ thống** | `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` | Mặc định để bán được đơn đầu tiên tại VN; đóng gói sẵn, tự cài + bật khi cài đặt, tắt/thay được |
+   | **2. Plugin hệ thống** | `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` (sau thêm `vani.provinces-vn`, `vani.phone-vn` — 0.3.42) | Mặc định để bán được đơn đầu tiên tại VN; đóng gói sẵn, tự cài + bật khi cài đặt, tắt/thay được |
    | **3. Plugin nghiệp vụ** | Cổng, hãng, rule khuyến mãi, loyalty, ERP, marketplace, creator, báo cáo… | Mọi capability còn lại |
 
 2. **Plugin-first**: capability mới mặc định là plugin. Muốn đưa vào Core phải thoả tiêu chí ở [commerce-kernel §2](../02-architecture/commerce-kernel.md) và có ADR.

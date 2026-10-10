@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.41',
+    'version' => '0.3.42',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -137,6 +137,9 @@ return [
         'supported' => ['vi', 'en'],
         // Tên hiển thị của ngôn ngữ (tab bản dịch trong Admin).
         'labels' => ['vi' => 'Tiếng Việt', 'en' => 'English'],
+        // Luật số điện thoại (PhoneNumberPolicy): `vn` — plugin hệ thống vani.phone-vn (0912…, 84…, +84…); Core chỉ có
+        // `international` (chỉ nhận số dạng +…). Implementation không có hiệu lực → `international`.
+        'phone_policy' => env('VANI_PHONE_POLICY', 'vn'),
         // Múi giờ hiển thị và nhập liệu (Admin, email, số đơn theo tháng, kỳ báo cáo). DB lưu UTC.
         'timezone' => env('VANI_TIMEZONE', 'Asia/Ho_Chi_Minh'),
         // Định dạng ngày giờ hiển thị (PHP date()).

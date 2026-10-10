@@ -5,7 +5,7 @@ use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -15,7 +15,7 @@ beforeEach(function () {
     ['s' => $this->s] = C::store();
     $this->signIn = function (string $phone = '0912345678'): void {
         $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone])->assertRedirect('/tai-khoan/dang-nhap');
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[PhoneNumber::fromString($phone)->e164.'|login']])->assertRedirect('/tai-khoan');
+        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']])->assertRedirect('/tai-khoan');
     };
     $this->checkoutPayload = [
         'contact' => ['full_name' => 'Lan', 'phone' => '0912345678'],

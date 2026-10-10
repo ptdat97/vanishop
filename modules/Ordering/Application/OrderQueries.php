@@ -12,7 +12,7 @@ use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderAdjustment;
 use Modules\Ordering\Persistence\Models\OrderLine;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreClock;
 
 final class OrderQueries
@@ -24,7 +24,7 @@ final class OrderQueries
     public function search(array $filters, int $perPage = 30): LengthAwarePaginator
     {
         $q = trim((string) ($filters['q'] ?? ''));
-        $phone = $q === '' ? null : PhoneNumber::tryFromString($q);
+        $phone = $q === '' ? null : Phones::parse($q);
 
         return Order::query()
             ->when(($filters['status'] ?? null) !== null && $filters['status'] !== '', fn ($query) => $query->where('order_status', $filters['status']))
@@ -43,7 +43,7 @@ final class OrderQueries
         $customer = (array) $order->customer_snapshot;
         $address = array_map('strval', (array) $order->shipping_address);
         if ($masked) {
-            $customer = ['full_name' => self::maskName((string) ($customer['full_name'] ?? '')), 'phone' => PhoneNumber::tryFromString((string) ($customer['phone'] ?? ''))?->masked() ?? '', 'email' => null];
+            $customer = ['full_name' => self::maskName((string) ($customer['full_name'] ?? '')), 'phone' => Phones::parse((string) ($customer['phone'] ?? ''))?->masked() ?? '', 'email' => null];
             $address = ['province_name' => $address['province_name'] ?? '', 'ward_name' => $address['ward_name'] ?? '', 'street_line' => '***'];
         }
 

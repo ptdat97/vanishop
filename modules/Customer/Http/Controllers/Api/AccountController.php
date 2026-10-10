@@ -16,7 +16,7 @@ use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Application\OtpService;
 use Modules\Customer\Contracts\Data\OtpPurpose;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 /**
  * /me — tài khoản của khách đã đăng nhập.
@@ -119,7 +119,7 @@ final class AccountController
         return [
             'label' => ['nullable', 'string', 'max:32'],
             'full_name' => [$required, 'string', 'max:120'],
-            'phone' => [$required, 'string', 'max:20', fn (string $attribute, mixed $value, Closure $fail) => PhoneNumber::tryFromString((string) $value) === null ? $fail(__('Số điện thoại không hợp lệ.')) : null],
+            'phone' => [$required, 'string', 'max:20', fn (string $attribute, mixed $value, Closure $fail) => Phones::parse((string) $value) === null ? $fail(__('Số điện thoại không hợp lệ.')) : null],
             'province_code' => [$required, 'string', 'max:8'],
             // Có danh mục địa giới: tên lấy theo mã (không bắt buộc gửi); không có: AddressBook bắt buộc tên.
             'province_name' => ['sometimes', 'nullable', 'string', 'max:64'],

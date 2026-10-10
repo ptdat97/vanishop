@@ -53,6 +53,7 @@ Core không ghi cứng các giá trị dưới đây — tất cả nằm trong 
 | Nhóm | Khoá | Mặc định |
 |---|---|---|
 | Thị trường | `locale.default` (`VANI_LOCALE`), `locale.supported`, `locale.labels` | `vi`; `vi`, `en` |
+| | `locale.phone_policy` (`VANI_PHONE_POLICY`) | `vn` (plugin `vani.phone-vn`; tắt → chỉ nhận `+…`) |
 | | `locale.timezone` (`VANI_TIMEZONE`), `locale.formats.*` | `Asia/Ho_Chi_Minh`; `d/m/Y`, `d/m/Y H:i`… |
 | | `locale.money.*` (dấu phân cách, ký hiệu), `currency` (`VANI_CURRENCY`) | `1.250.000 ₫`; `VND` |
 | | `promotion.max_discount_bp`, `tax.calculator`, `orders.number_prefix` | 5000 (NĐ 81/2018); `vn_vat_inclusive`; `VN` |
@@ -110,7 +111,7 @@ ln -sfn ../../shared/.env .env
 rm -rf storage && ln -s ../../shared/storage storage
 rm -rf public/cache && ln -s ../../../shared/public-cache public/cache
 
-php artisan migrate --force             # migration Core: chỉ expand/contract (§8)
+php artisan vani:install                # migrate (Core: chỉ expand/contract, §8) + cài plugin hệ thống mới ra ở bản này; plugin đã tắt có chủ đích giữ nguyên
 php artisan vani:plugin:doctor          # báo plugin cần nâng version / lỗi tương thích
 php artisan vani:plugin:upgrade <id>    # cho từng plugin doctor báo cần nâng (chạy migration của plugin)
 php artisan optimize                    # BẮT BUỘC — gồm vani:plugin:cache (xem lưu ý 1)
@@ -123,6 +124,8 @@ php artisan vani:plugin:doctor && curl -fsS -H "X-Health-Token: $TOKEN" https://
 ```
 
 ### Lưu ý khi deploy
+
+> **Bản 0.3.42 thêm plugin hệ thống `vani.phone-vn`** (luật SĐT Việt Nam). Deploy phải chạy `vani:install` (đã có ở bước trên): thiếu plugin này Core chỉ nhận số dạng `+84…` → khách nhập `0912…` bị từ chối ở checkout/OTP. `vani:plugin:doctor` báo `bundled_not_installed` khi còn thiếu.
 
 1. **Plugin chỉ được nạp từ `bootstrap/cache/vanishop-plugins.php`.** File này ghi khi install/enable/disable, nên một release mới (thư mục hoặc container mới) chưa có nó → **không plugin nào được nạp**: mất COD, cổng thanh toán, phí giao, thuế… mà không báo lỗi lúc boot. `php artisan optimize` đã gồm `vani:plugin:cache` (dựng lại từ DB); có thể chạy riêng `php artisan vani:plugin:cache`. `optimize:clear` **không** xoá file này. Không xoá thủ công `bootstrap/cache/vanishop-plugins.php` trên server đang chạy.
 2. **Đổi `.env` phải chạy lại `php artisan optimize`** (config đã cache); sau đó reload PHP-FPM và `horizon:terminate`.

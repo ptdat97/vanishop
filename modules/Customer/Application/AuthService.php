@@ -17,7 +17,7 @@ use Modules\Customer\Events\CustomerRegistered;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerIdentity;
 use Modules\Customer\Persistence\Models\CustomerToken;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 /**
  * Đăng nhập khách: OTP (mặc định) hoặc mật khẩu (tuỳ chọn, đặt sau khi đã xác thực SĐT). Phiên API là token
@@ -68,7 +68,7 @@ final class AuthService
             $customer = $linked === null ? null : Customer::query()->whereKey($linked->customer_id)->where('status', CustomerStatus::Active)->first();
 
             if ($customer === null) {
-                $phone = $identity->phoneVerified ? PhoneNumber::tryFromString((string) $identity->phone) : null;
+                $phone = $identity->phoneVerified ? Phones::parse((string) $identity->phone) : null;
                 $customer = match (true) {
                     $phone !== null => $this->customers->findOrCreateByPhone($phone->e164, $identity->fullName),
                     $identity->emailVerified && $identity->email !== null => Customer::query()->where('status', CustomerStatus::Active)

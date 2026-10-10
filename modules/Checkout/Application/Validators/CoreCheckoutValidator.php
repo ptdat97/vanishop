@@ -10,7 +10,7 @@ use Modules\Checkout\Contracts\CheckoutValidator;
 use Modules\Checkout\Contracts\Data\CheckoutIssue;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Checkout\Contracts\Data\Totals;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 /**
  * Kiểm tra bắt buộc của Core: giỏ bán được, liên hệ, địa chỉ, giao hàng, thanh toán.
@@ -39,7 +39,7 @@ final class CoreCheckoutValidator implements CheckoutValidator
         if (trim((string) ($contact['full_name'] ?? '')) === '') {
             $issues[] = new CheckoutIssue('required', __('checkout::messages.name_required'), 'contact.full_name');
         }
-        if (PhoneNumber::tryFromString((string) ($contact['phone'] ?? '')) === null) {
+        if (Phones::parse((string) ($contact['phone'] ?? '')) === null) {
             $issues[] = new CheckoutIssue('phone_invalid', __('checkout::messages.phone_invalid'), 'contact.phone');
         }
 

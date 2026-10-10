@@ -1,0 +1,18 @@
+{
+    "id": "vani.phone-vn",
+    "name": {
+        "vi": "Số điện thoại Việt Nam",
+        "en": "Vietnam phone numbers"
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\PhoneVn\\PhoneVnServiceProvider",
+    "bundled": true,
+    "requires": {
+        "vanishop": "^0.3",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

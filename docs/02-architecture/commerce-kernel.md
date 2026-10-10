@@ -14,7 +14,7 @@
 │  ┌────────────────────────────────────────────────────────────────────┐  │
 │  │ 2. Plugin hệ thống   custom/plugin/* (bundled, tự cài + bật)       │  │
 │  │    vani.cod · vani.bank-transfer · vani.shipping-flat-rate ·       │  │
-│  │    vani.tax-vn-vat                                                 │  │
+│  │    vani.tax-vn-vat · vani.provinces-vn · vani.phone-vn             │  │
 │  │  ┌──────────────────────────────────────────────────────────────┐  │  │
 │  │  │ 1. Commerce Core   modules/*                                 │  │  │
 │  │  │    Catalog · Pricing · Inventory · Customer · Cart ·         │  │  │
@@ -118,6 +118,7 @@ flowchart TD
 | `PaymentGateway` | ≥ 1 | `cod`, `manual_bank_transfer` | **Plugin hệ thống** `vani.cod`, `vani.bank-transfer` | ✅ `custom/plugin/Cod`, `custom/plugin/BankTransfer` (2026-10-02) |
 | `ShippingRateProvider` | ≥ 1 | `standard` (phí cố định) | **Plugin hệ thống** `vani.shipping-flat-rate` | ✅ `custom/plugin/ShippingFlatRate` |
 | `TaxCalculator` | đúng 1 | `vn_vat_inclusive` (cấu hình cửa hàng `vanishop.tax.calculator`) | **Plugin hệ thống** `vani.tax-vn-vat`; Core giữ `none` (không thuế) làm dự phòng và không nhắc mã của plugin | ✅ `custom/plugin/TaxVnVat`; `NoTax` ở `modules/Checkout/Application/Tax` |
+| `PhoneNumberPolicy` (Shared) | đúng 1 | `vn` (cấu hình cửa hàng `vanishop.locale.phone_policy`) | **Plugin hệ thống** `vani.phone-vn`; Core giữ `international` (chỉ nhận `+…`) | ✅ `custom/plugin/PhoneVn` (0.3.42); `modules/Shared/Application/Phone` |
 | `ShippingCarrier` | ≥ 1 | `manual` (nhập mã vận đơn) | Core (trung lập) | `modules/Fulfillment/Application/Carriers` |
 | `NotificationChannel` | ≥ 1 | `mail` | Core (trung lập) | `modules/Notification/Application/Channels` |
 | `OtpSender` | ≥ 1 | `email` (`log` chỉ dev) | Core (trung lập) | `modules/Customer/Application/OtpSenders` |

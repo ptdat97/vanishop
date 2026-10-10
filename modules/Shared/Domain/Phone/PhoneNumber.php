@@ -5,43 +5,34 @@ declare(strict_types=1);
 namespace Modules\Shared\Domain\Phone;
 
 /**
- * Số điện thoại Việt Nam, chuẩn hoá về E.164 (+84…).
- *
- * Chấp nhận: 0912345678, 84912345678, +84 912 345 678, (+84) 912-345-678, 02438123456.
+ * Số điện thoại đã chuẩn hoá: E.164 + dạng hiển thị trong nước. Luật đọc chuỗi người dùng nhập thuộc thị trường —
+ * dựng qua `Modules\Shared\Support\Phones` (extension point PhoneNumberPolicy), không đoán ở đây.
  */
 final readonly class PhoneNumber
 {
-    private function __construct(public string $e164) {}
+    private function __construct(
+        public string $e164,
+        private string $national,
+    ) {}
 
-    public static function fromString(string $input): self
+    /**
+     * @throws InvalidPhoneNumber khi `$e164` không đúng dạng E.164
+     */
+    public static function of(string $e164, ?string $national = null): self
     {
-        return self::tryFromString($input) ?? throw new InvalidPhoneNumber($input);
-    }
-
-    public static function tryFromString(string $input): ?self
-    {
-        $digits = preg_replace('/\D+/', '', $input) ?? '';
-
-        if (str_starts_with($digits, '84')) {
-            $national = substr($digits, 2);
-        } elseif (str_starts_with($digits, '0')) {
-            $national = substr($digits, 1);
-        } else {
-            return null;
+        if (preg_match('/^\+[1-9]\d{6,14}$/', $e164) !== 1) {
+            throw new InvalidPhoneNumber($e164);
         }
 
-        $isMobile = preg_match('/^[35789]\d{8}$/', $national) === 1;
-        $isLandline = preg_match('/^2\d{9}$/', $national) === 1;
-
-        return $isMobile || $isLandline ? new self('+84'.$national) : null;
+        return new self($e164, $national ?? $e164);
     }
 
     /**
-     * Dạng hiển thị trong nước: 0912345678.
+     * Dạng hiển thị trong nước (vd. VN: 0912345678).
      */
     public function national(): string
     {
-        return '0'.substr($this->e164, 3);
+        return $this->national;
     }
 
     /**
@@ -49,9 +40,9 @@ final readonly class PhoneNumber
      */
     public function masked(): string
     {
-        $national = $this->national();
+        $national = $this->national;
 
-        return substr($national, 0, 3).str_repeat('*', strlen($national) - 6).substr($national, -3);
+        return substr($national, 0, 3).str_repeat('*', max(0, strlen($national) - 6)).substr($national, -3);
     }
 
     public function equals(self $other): bool

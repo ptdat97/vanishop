@@ -8,7 +8,7 @@ use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Data\OtpPurpose;
-use Modules\Shared\Domain\Phone\PhoneNumber;
+use Modules\Shared\Support\Phones;
 
 final class CustomerSessionService implements CustomerSessions
 {
@@ -49,6 +49,6 @@ final class CustomerSessionService implements CustomerSessions
 
     private function e164(string $phone): string
     {
-        return PhoneNumber::tryFromString($phone)?->e164 ?? throw CustomerRejected::otpInvalid();
+        return Phones::parse($phone)?->e164 ?? throw CustomerRejected::otpInvalid();
     }
 }

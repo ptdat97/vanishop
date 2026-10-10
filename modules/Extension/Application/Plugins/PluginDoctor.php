@@ -114,6 +114,10 @@ final class PluginDoctor
         }
 
         foreach ($manifests as $id => $manifest) {
+            // Plugin hệ thống mới ra ở bản Core sau chưa được cài trên hệ thống đang chạy (deploy chỉ migrate).
+            if (! $records->has($id) && $manifest->bundled) {
+                $add($id, self::WARNING, 'bundled_not_installed', 'Plugin hệ thống chưa cài — chạy php artisan vani:install.');
+            }
             if (! $records->has($id) && ! $this->satisfiesCore($manifest->requiresCore)) {
                 $add($id, self::WARNING, 'incompatible_core', "Chưa cài; cần VaniShop {$manifest->requiresCore}, hiện tại {$this->coreVersion}.");
             }

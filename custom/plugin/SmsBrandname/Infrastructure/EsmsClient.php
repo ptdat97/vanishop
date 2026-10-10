@@ -7,7 +7,6 @@ namespace Plugin\SmsBrandname\Infrastructure;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Modules\Notification\Contracts\Data\SendResult;
-use Modules\Shared\Domain\Phone\PhoneNumber;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 /**
@@ -38,12 +37,16 @@ final class EsmsClient
         if (! $this->configured() || $brandname === '') {
             return SendResult::permanent('esms.not_configured');
         }
+        // eSMS chỉ gửi trong nước và nhận số dạng 0… (giao thức của nhà cung cấp, không theo luật SĐT của cửa hàng).
+        if (preg_match('/^\+84\d{9,10}$/', $e164) !== 1) {
+            return SendResult::permanent('esms.unsupported_number');
+        }
 
         try {
             $response = Http::connectTimeout(3)->timeout(10)->acceptJson()->post(rtrim($this->apiBase, '/').'/SendMultipleMessage_V4_post_json/', [
                 'ApiKey' => $this->apiKey,
                 'SecretKey' => $this->secretKey,
-                'Phone' => PhoneNumber::fromString($e164)->national(),
+                'Phone' => '0'.substr($e164, 3),
                 'Content' => VietnameseText::stripDiacritics($content),
                 'Brandname' => $brandname,
                 'SmsType' => '2',
