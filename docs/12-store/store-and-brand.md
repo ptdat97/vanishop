@@ -20,7 +20,7 @@ Owner (1 bản cài đặt)
 | **Cửa hàng** | Toàn bộ bản cài đặt: một website, một người bán | Một tenant trong nhiều tenant |
 | **Pháp nhân vận hành** | Thông tin người bán (tên công ty, MST, địa chỉ, tài khoản nhận tiền) của cửa hàng; một bản ghi | Chiều phạm vi dữ liệu |
 | **Brand** | Nhóm sản phẩm theo thương hiệu, để duyệt, lọc, khuyến mãi, báo cáo | Phạm vi dữ liệu, storefront, giao diện, quyền |
-| **Nguồn đơn** | `web`, `app`, `zalo`, `admin`, `pos`, `marketplace` — ghi trên đơn để báo cáo | Kênh có catalog/giá riêng |
+| **Nguồn đơn** | `web`, `app`, `zalo`, `admin`, `pos` — ghi trên đơn để báo cáo | Kênh có catalog/giá riêng |
 | **Location** | Kho hoặc cửa hàng vật lý giữ hàng | Brand hay kênh |
 
 ## 2. Brand trong Catalog

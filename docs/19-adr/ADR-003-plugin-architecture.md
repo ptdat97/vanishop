@@ -3,7 +3,7 @@
 - Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner
 
 ## Context
-Nghiệp vụ thay đổi liên tục: cổng thanh toán, hãng vận chuyển, luật khuyến mãi, loyalty, ERP, marketplace, creator. Owner muốn tài liệu và Core tập trung vào phần lõi.
+Nghiệp vụ thay đổi liên tục: cổng thanh toán, hãng vận chuyển, luật khuyến mãi, loyalty, hoá đơn điện tử, ERP. Owner muốn tài liệu và Core tập trung vào phần lõi.
 
 ## Problem
 Làm sao thêm capability mà không sửa và không fork Core, và nâng cấp Core an toàn?

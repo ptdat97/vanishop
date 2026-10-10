@@ -4,7 +4,7 @@
 
 > Các mục pháp lý dưới đây là **tóm tắt để định hướng kỹ thuật**, cần bộ phận pháp chế xác nhận văn bản hiện hành trước khi go-live (quy định thay đổi thường xuyên).
 
-> **Core** đảm nhận các nền tảng VN: địa giới hành chính (§1), SĐT/tên/tiếng Việt (§2), tiền tệ/ngày (§3), các yêu cầu pháp lý về thông tin website, consent, lịch sử giá (§6). **Plugin**: thanh toán/vận chuyển VN (§4), hoá đơn điện tử (§5), sàn TMĐT (§7) — xem [plugin-catalog](../05-plugin/plugin-catalog.md).
+> **Core** đảm nhận các nền tảng VN: địa giới hành chính (§1), SĐT/tên/tiếng Việt (§2), tiền tệ/ngày (§3), các yêu cầu pháp lý về thông tin website, consent, lịch sử giá (§6). **Plugin**: thanh toán/vận chuyển VN (§4), hoá đơn điện tử (§5), Zalo Mini App (§7) — xem [plugin-catalog](../05-plugin/plugin-catalog.md).
 
 ## 1. Địa chỉ & địa giới hành chính *(core)*
 
@@ -65,19 +65,18 @@
 
 | Chủ đề | Văn bản (tham khảo) | Tác động kỹ thuật |
 |---|---|---|
-| Website TMĐT bán hàng | Nghị định 52/2013/NĐ-CP, sửa đổi bởi NĐ 85/2021/NĐ-CP; **Luật Thương mại điện tử** (theo dõi hiệu lực & văn bản hướng dẫn) | **Một pháp nhân bán hàng trên website của mình** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) → website TMĐT bán hàng: **thông báo** với Bộ Công Thương (online.gov.vn). Không bán hàng của pháp nhân khác trên website (nếu có, website thành sàn và phải đăng ký, xem plugin marketplace) |
+| Website TMĐT bán hàng | Nghị định 52/2013/NĐ-CP, sửa đổi bởi NĐ 85/2021/NĐ-CP; **Luật Thương mại điện tử** (theo dõi hiệu lực & văn bản hướng dẫn) | **Một pháp nhân bán hàng trên website của mình** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) → website TMĐT bán hàng: **thông báo** với Bộ Công Thương (online.gov.vn). Không bán hàng của pháp nhân khác trên website ([ADR-033](../19-adr/ADR-033-out-of-scope.md)) |
 | Thông tin bắt buộc | NĐ 52/2013 & 85/2021 | Trang chính sách: đổi trả, vận chuyển, thanh toán, bảo mật, giải quyết khiếu nại; điều khoản sử dụng. Quy trình checkout hiển thị rõ tổng giá, phí, cho phép khách xem lại trước khi xác nhận |
 | Bảo vệ dữ liệu cá nhân | **Nghị định 13/2023/NĐ-CP**, **Luật Bảo vệ dữ liệu cá nhân 2025** (hiệu lực 01/01/2026) | Consent rõ ràng từng mục đích, quyền truy cập/xoá/rút consent, đánh giá tác động xử lý DLCN, thông báo vi phạm, hạn chế chuyển dữ liệu ra nước ngoài (chọn vị trí lưu trữ) — xem [security](../15-security/security.md) |
 | Bảo vệ người tiêu dùng | Luật Bảo vệ quyền lợi người tiêu dùng 2023 | Ghi âm/lưu vết giao dịch, chính sách đổi trả rõ ràng, không điều khoản bất lợi ẩn |
 | Khuyến mãi | Luật Thương mại, **Nghị định 81/2018/NĐ-CP** (và văn bản thay thế nếu có) | Mức giảm tối đa (thường 50%, trừ trường hợp đặc biệt), thời gian KM, thông báo/đăng ký KM với Sở Công Thương; lưu lịch sử giá để chứng minh giá gốc |
 | Quảng cáo, tin nhắn | Luật Quảng cáo, Nghị định về chống tin nhắn rác | SMS/Email marketing cần consent, có cách từ chối, giới hạn khung giờ gửi |
 | Nhãn hàng hoá | Nghị định 43/2017 & 111/2021 | PDP hiển thị xuất xứ, thành phần/chất liệu, hướng dẫn sử dụng/bảo quản |
-| Thuế | Luật Quản lý thuế, quy định với sàn/website TMĐT | Báo cáo doanh thu, xuất dữ liệu cho kế toán |
+| Thuế | Luật Quản lý thuế, quy định với website TMĐT | Báo cáo doanh thu, xuất dữ liệu cho kế toán |
 
-## 7. Sàn TMĐT & mạng xã hội *(plugin, đợt P3)*
+## 7. Zalo Mini App và đơn do nhân viên tạo
 
-- Plugin Shopee / Lazada / TikTok Shop: đẩy sản phẩm & tồn (có thể chừa tồn bằng `InventoryStrategy`), kéo đơn về (`source = marketplace`) → vào luồng fulfillment chung.
-- Social commerce: đơn từ Facebook/Zalo/livestream do CSKH tạo trong Admin (`source = admin`), dùng chung tồn/khuyến mãi.
+- Khách liên hệ qua kênh bất kỳ: nhân viên tạo đơn trong Admin (`source = admin`), dùng chung tồn/khuyến mãi.
 - Zalo Mini App của cửa hàng (tuỳ chọn) dùng Storefront API.
 
 ## 8. Hành vi người dùng & UX

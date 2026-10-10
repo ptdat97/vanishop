@@ -6,7 +6,7 @@
 
 ## 1. Mục tiêu
 
-Mọi capability trong [plugin-catalog](../05-plugin/plugin-catalog.md) (P1 → Later) phải **viết được bằng plugin, không sửa `modules/`**. Hiện các extension point đủ cho capability "thay thế" (cổng thanh toán, hãng, thuế, rule khuyến mãi, kênh gửi) nhưng thiếu cho capability "bổ sung" — loại cần thêm dữ liệu, màn hình, thao tác và trang riêng (loyalty, hoá đơn điện tử, size chart, wishlist, omnichannel, marketplace).
+Mọi capability trong [plugin-catalog](../05-plugin/plugin-catalog.md) (P1 → Later) phải **viết được bằng plugin, không sửa `modules/`**. Hiện các extension point đủ cho capability "thay thế" (cổng thanh toán, hãng, thuế, rule khuyến mãi, kênh gửi) nhưng thiếu cho capability "bổ sung" — loại cần thêm dữ liệu, màn hình, thao tác và trang riêng (loyalty, hoá đơn điện tử, size chart, wishlist, omnichannel).
 
 Thước đo: sau EP v2, bảng §7 không còn ô "cần sửa Core".
 
@@ -59,7 +59,7 @@ Học T1 nhưng thay "lọc mảng dữ liệu view" bằng **registry khai báo
 | `adminFormSection(resource, key, label, fields, load, save, order)` | Form tạo/sửa resource | Size chart (product), mã số thuế (customer), SEO nâng cao (category/brand) |
 | `adminColumn(resource, key, label, resolve, filter?, sortable?)` | Bảng danh sách | Hạng thành viên (customer), số HĐĐT (order), điểm rủi ro COD (order) |
 | `adminAction(resource, key, label, permission, handle, scope: row\|bulk\|detail, confirm?)` | Nút trên chi tiết / chọn nhiều | Xuất lại HĐĐT, gửi lại ZNS, đẩy đơn sang sàn |
-| `adminTab(resource, key, label, rows)` | Tab trên trang chi tiết (dòng nhãn/giá trị; UI phức tạp → trang riêng `adminPages`) | Lịch sử điểm (customer), seller (product) |
+| `adminTab(resource, key, label, rows)` | Tab trên trang chi tiết (dòng nhãn/giá trị; UI phức tạp → trang riêng `adminPages`) | Lịch sử điểm (customer), bảng size (product) |
 | `adminFilter(resource, key, label, options, apply)` | Bộ lọc danh sách; `apply` trả **id** thoả — plugin không chạm truy vấn của Core | "Đơn có HĐĐT lỗi" |
 
 ```php
@@ -135,7 +135,7 @@ Core gọi qua `Extensions::call()` (lỗi → bỏ dữ liệu của plugin đ�
 | `meta` trên `cart_lines` và `order_lines` | Cột JSON theo không gian tên plugin; dòng đơn **chụp** `meta` của dòng giỏ lúc đặt (bất biến sau đó) | Gói quà, khắc tên, bundle |
 | `CartLineOption` (contract) | Plugin khai báo option nhận ở `POST /carts/{id}/lines` (`options.<plugin-id>.*`), validate + chuẩn hoá (W4a ✅). Phụ thu: Designed — `TotalsCalculator` chưa cộng được phí vào tổng (grandTotal = Σ dòng + ship) | Lời chúc gói quà; khắc tên có phí (sau) |
 | Hai dòng cùng variant khác option | Khoá dòng giỏ = (variant, hash(options)) thay cho unique variant | Bắt buộc khi có option |
-| `vani.checkout.context` (filter) | Bổ sung `PromotionContext::$attributes` từ request (mã giới thiệu, nguồn chiến dịch) trước khi đánh giá khuyến mãi | Creator/affiliate, UTM |
+| `vani.checkout.context` (filter) | Bổ sung `PromotionContext::$attributes` từ request (mã giới thiệu, nguồn chiến dịch) trước khi đánh giá khuyến mãi | Mã giới thiệu của cửa hàng, UTM |
 | `PaymentGateway` có bước **authorize → capture** (interface tuỳ chọn `CapturesLater`) | Event `PaymentAuthorized`; capture khi giao/xác nhận | Thẻ quốc tế, BNPL |
 
 Bất biến giữ nguyên: plugin không đổi giá niêm yết của dòng (chỉ thêm adjustment truy vết được), không đổi bảng chuyển trạng thái, không ghi ATS.
@@ -146,7 +146,7 @@ Nguyên tắc: **mọi chuyển trạng thái có ý nghĩa nghiệp vụ của 
 
 | Event mới | Phát khi | Plugin chờ |
 |---|---|---|
-| `OrderCompleted` | Hết hạn đổi trả sau giao (job đã có, chưa phát event) | Loyalty (điểm khả dụng), HĐĐT, creator (hoa hồng) |
+| `OrderCompleted` | Hết hạn đổi trả sau giao (job đã có, chưa phát event) | Loyalty (điểm khả dụng), HĐĐT |
 | `CartAbandoned` | Job phát hiện giỏ có khách/SĐT không hoạt động N phút | Abandoned cart |
 | `PaymentAuthorized` | Cổng xác nhận giữ tiền | Thẻ, BNPL |
 | `ProductDeleted` (nháp bị xoá), `CategoryChanged`, `BrandChanged` | CRUD catalog | Feed export, search ngoài |
@@ -156,7 +156,6 @@ Nguyên tắc: **mọi chuyển trạng thái có ý nghĩa nghiệp vụ của 
 ### 4.E Danh tính (S6)
 
 - `AuthProvider` (contract, tag `vani.customer.auth_providers`): bắt đầu đăng nhập (URL chuyển hướng), nhận callback → `ExternalIdentity(provider, subject, phone?, email?)`; Core ghép vào khách theo SĐT/email đã xác minh, phát `CustomerRegistered` nếu mới. Plugin: Zalo/Google/Facebook login.
-- `scopeTypes()` (registry): plugin khai báo loại scope phân quyền mới (vd. `seller`) + resolver "đối tượng thuộc scope nào"; Identity giữ việc kiểm tra quyền (học từ ghi chú marketplace, không thêm khái niệm seller vào Core).
 
 ### 4.F Nội dung (S5)
 
@@ -202,11 +201,11 @@ Làm extension point **ngay trước** plugin đầu tiên dùng nó (R26: plugi
 | **W1** ✅ (2026-10-02, Core 0.3.1) | Slot storefront mới (header, footer, bộ lọc PLP, ảnh PDP, checkout từng bước; slot tài khoản chờ trang `/tai-khoan`); `StorefrontEnricher` (tham chiếu `vani.hello-world`); `OrderCompleted` | `vani.tracking-pixels`, `vani.vnpay` (đã đủ EP) | 0.3.1 |
 | **W2** ✅ (2026-10-02, Core 0.3.2) | `adminFormSection`, `adminColumn`, `adminAction`, `adminTab`, `adminFilter` + `FieldDefinition`, trên `product` (form, cột, lọc), `order` (cột, lọc, thao tác chi tiết + hàng loạt, tab), `customer` (cột, lọc, thao tác, tab). Tham chiếu: `vani.hello-world`. Tài nguyên khác + Admin API: khi có plugin cần | `vani.einvoice`, `vani.size-advisor` | 0.3.2 |
 | **W3** ✅ (2026-10-02, Core 0.3.3) | `storefrontRoutes`, `storefrontPages` + `storefrontViews` (theme override), `CartAbandoned` (tham chiếu `vani.hello-world`). `accountPage()` có từ 0.3.9 cùng trang tài khoản native | `vani.wishlist`, `vani.abandoned-cart` | 0.3.3 |
-| **W4a** ✅ (2026-10-02, Core 0.3.4) | Tuỳ chọn dòng giỏ (`CartLineOption`, khoá dòng = variant + băm tuỳ chọn, chụp `order_lines.meta`), `vani.checkout.context`, slot `pdp.add_to_cart_fields`; tham chiếu `vani.hello-world`. **Phụ thu chưa làm**: grandTotal = Σ dòng + ship, adjustment chỉ để truy vết → cần dòng phí trong totals (quyết định riêng) | gói quà, `vani.creator` | 0.3.4 |
+| **W4a** ✅ (2026-10-02, Core 0.3.4) | Tuỳ chọn dòng giỏ (`CartLineOption`, khoá dòng = variant + băm tuỳ chọn, chụp `order_lines.meta`), `vani.checkout.context`, slot `pdp.add_to_cart_fields`; tham chiếu `vani.hello-world`. **Phụ thu chưa làm**: grandTotal = Σ dòng + ship, adjustment chỉ để truy vết → cần dòng phí trong totals (quyết định riêng) | gói quà | 0.3.4 |
 | **W4b** ✅ (2026-10-02, Core 0.3.5) | `CapturesLater` + `PaymentAuthorized`: giữ tiền → đơn xác nhận → thu khi vận đơn rời kho (hoặc nhân viên), huỷ đơn → void. Tham chiếu: cổng giả + contract test (plugin thật đầu tiên — thẻ quốc tế/BNPL — sẽ thay vai trò tham chiếu); hết hạn giữ tiền phía cổng: Designed | thẻ quốc tế, BNPL | 0.3.5 |
 | **W5a** ✅ (2026-10-02, Core 0.3.6) | `publishHooks()` (tên hook bắt đầu bằng id plugin) + arch test `requires.plugins`, `kind` chuẩn + `kind_mismatch`, `PluginHealthCheck` (tham chiếu SMS/ZNS) | `vani.hello-world` (hook `vani.hello-world.greeting`) | 0.3.6 |
 | **W5b** ✅ (2026-10-02, Core 0.3.7) | `AuthProvider` + API `/auth/social/*`, bảng `customer_identities`, ghép an toàn (không ghép theo email chưa xác minh, email đã xác minh chỉ ghép khách đang có). Tham chiếu: nhà cung cấp giả + contract test (plugin thật `vani.social-login` sẽ thay) | `vani.social-login` | 0.3.7 |
-| Hoãn | `scopeTypes()` (marketplace, Later), `integrationMessageTypes()` (khi chốt ERP) — chưa có plugin tham chiếu (R26) | — | — |
+| Hoãn | `integrationMessageTypes()` (khi chốt ERP) — chưa có plugin tham chiếu (R26). `scopeTypes()` bỏ ([ADR-033](../19-adr/ADR-033-out-of-scope.md)) | — | — |
 | **W6a** ✅ (2026-10-02, Core 0.3.10) | `StorefrontBlock` + page builder trang chủ (Admin), 4 khối Core, tham chiếu `vani.hello-world` | `vani.lookbook` | 0.3.10 |
 | **W6b** ✅ báo cáo (2026-10-02, Core 0.3.12) | `ReportProvider`/`DashboardWidget` + service contract `OrderStatistics`; Admin → Báo cáo (CSV), widget Tổng quan. **`MenuItemType` hoãn**: Core chưa có trình sửa menu storefront (header dùng cây danh mục) — làm cùng menu editor (R26) | `vani.reports` | 0.3.12 |
 | Later | `TranslationProvider`, `AgentTool` | — | — |
@@ -229,5 +228,4 @@ Mỗi đợt: cập nhật [extension-point-catalog](extension-point-catalog.md)
 | `vani.store-omnichannel` | Cần `FulfillmentMethod` + `ShipmentRecorder` (đã ở catalog §7, đợt P2) | Không (sau khi có 2 contract) |
 | `vani.social-login` | W5 `AuthProvider` | Không |
 | `vani.feed-export` | ✅ `CatalogReader`, `schedule()`; W1 events catalog | Không |
-| `vani.marketplace`, `vani.creator` | ✅ `order.after_create`; W4 `checkout.context`; W5 `scopeTypes()`; W2 Admin | Không |
 | `vani.reports` | W6 `ReportProvider`, `DashboardWidget` | Không |

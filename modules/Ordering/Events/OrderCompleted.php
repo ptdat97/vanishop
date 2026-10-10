@@ -9,7 +9,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 
 /**
  * Đơn hoàn tất: đã giao hết và quá hạn đổi trả (`vani:fulfillment:complete-orders`). Từ đây doanh thu không còn
- * bị đảo do trả hàng thông thường — loyalty (điểm khả dụng), hoá đơn điện tử, hoa hồng creator lắng nghe.
+ * bị đảo do trả hàng thông thường — loyalty (điểm khả dụng), hoá đơn điện tử lắng nghe.
  */
 final readonly class OrderCompleted implements ShouldDispatchAfterCommit
 {

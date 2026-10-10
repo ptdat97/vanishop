@@ -180,7 +180,7 @@ Microkernel chỉ đúng khi plugin trong [plugin-catalog](../05-plugin/plugin-c
 | `FulfillmentMethod` (`pickup`) + `ShipmentRecorder` | Contract | `vani.store-omnichannel` | P2 |
 | `DashboardWidget` + quyền đọc báo cáo | Contract | `vani.reports` (Reporting thành plugin) | P2 |
 | `adminApiRoutes()` | Registry | POS/app quản trị của plugin | P3 |
-| `integrationMessageTypes()` + JSON Schema | Registry | connector ERP, sàn TMĐT | Khi chốt ERP |
+| `integrationMessageTypes()` + JSON Schema | Registry | connector ERP | Khi chốt ERP |
 | Phụ thu theo tuỳ chọn dòng (dòng phí trong totals; grandTotal hiện = Σ dòng + ship) | Totals | khắc tên có phí, `vani.product-bundle` | Khi có plugin cần |
 
 Khi thêm một extension point từ bảng này: chuyển dòng tương ứng lên §1–§5, ghi [CHANGELOG-extension](CHANGELOG-extension.md), xoá khỏi bảng.

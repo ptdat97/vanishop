@@ -8,9 +8,9 @@
 
 ## 1. Trách nhiệm
 
-| Core (`modules/Promotion`) | Plugin (ví dụ `vani.promotion-rules`, `vani.creator`) |
+| Core (`modules/Promotion`) | Plugin (ví dụ `vani.promotion-rules`) |
 |---|---|
-| Mô hình promotion: phạm vi, thời gian, ưu tiên, stacking, ngân sách, giới hạn lượt | Rule điều kiện cụ thể: BxGy, giảm theo **brand**/collection/danh mục, đơn đầu tiên, VIP, flash sale, creator/seller discount |
+| Mô hình promotion: phạm vi, thời gian, ưu tiên, stacking, ngân sách, giới hạn lượt | Rule điều kiện cụ thể: BxGy, giảm theo **brand**/collection/danh mục, đơn đầu tiên, VIP, flash sale |
 | Voucher: mã, sinh hàng loạt, giới hạn lượt, gán khách | Hành động đặc thù: tặng quà, đồng giá combo |
 | `PromotionEngine`: đánh giá rule, áp action, chống chồng, phân bổ | Admin UI cho rule của plugin |
 | Action primitive: `percent_off`, `amount_off` (trên dòng/đơn/phí ship) | |
@@ -49,7 +49,7 @@ final readonly class PromotionContext
         public ?Money $shippingFee,
         public array $voucherCodes,
         public CarbonImmutable $now,
-        public array $attributes = [],        // plugin bổ sung qua hook (ví dụ creator_ref)
+        public array $attributes = [],        // plugin bổ sung qua hook (ví dụ mã giới thiệu, UTM)
     ) {}
 }
 ```

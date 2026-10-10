@@ -14,7 +14,7 @@ Cần kiến trúc vừa phát triển nhanh, vừa có ranh giới rõ để m�
 - Chỉ tách service khi có số liệu vận hành chứng minh (rule R19).
 
 ## Alternatives
-- Microservices từ đầu: transaction phân tán, chi phí vận hành cao, đội nhỏ không kham nổi.
+- Tách nhiều service chạy riêng từ đầu: transaction phân tán, chi phí vận hành cao, đội nhỏ không kham nổi — ngoài phạm vi dự án ([ADR-033](ADR-033-out-of-scope.md)).
 - Module trong `app/Modules`: đơn giản autoload nhưng lẫn với khung ứng dụng. Owner chọn thư mục gốc riêng.
 - Fork nền tảng có sẵn: vướng license và không khớp mô hình đa brand.
 

@@ -5,7 +5,7 @@
 - Tài liệu gốc: [extension-surface-v2](../04-extension/extension-surface-v2.md).
 
 ## Context
-Extension point hiện có đủ cho capability **thay thế** (cổng, hãng, thuế, rule, kênh gửi) nhưng thiếu cho capability **bổ sung**: loyalty, hoá đơn điện tử, size chart, wishlist, marketplace cần thêm trường/cột/thao tác vào màn hình Admin của Core, thêm dữ liệu vào sản phẩm/giỏ/đơn trả cho storefront, thêm trang và API riêng, thuộc tính trên dòng giỏ. Nghiên cứu hệ tham chiếu (BeikeShop v3.0.0.11, vai trò nghiên cứu, chỉ khái niệm) cho thấy nó giải quyết bằng điểm lọc dữ liệu view + điểm sau-lưu ở gần như mọi màn hình và điểm bọc quanh khối theme.
+Extension point hiện có đủ cho capability **thay thế** (cổng, hãng, thuế, rule, kênh gửi) nhưng thiếu cho capability **bổ sung**: loyalty, hoá đơn điện tử, size chart, wishlist cần thêm trường/cột/thao tác vào màn hình Admin của Core, thêm dữ liệu vào sản phẩm/giỏ/đơn trả cho storefront, thêm trang và API riêng, thuộc tính trên dòng giỏ. Nghiên cứu hệ tham chiếu (BeikeShop v3.0.0.11, vai trò nghiên cứu, chỉ khái niệm) cho thấy nó giải quyết bằng điểm lọc dữ liệu view + điểm sau-lưu ở gần như mọi màn hình và điểm bọc quanh khối theme.
 
 ## Problem
 Làm sao để plugin bổ sung capability ở Admin, storefront và luồng giao dịch mà không sửa `modules/`, không làm mất kiểu dữ liệu, không để plugin xoá/đổi phần của Core hay plugin khác?

@@ -18,7 +18,7 @@ final readonly class OrderDraft
      */
     public function __construct(
         public string $publicId,
-        /** Nguồn đơn: web | app | zalo | admin | pos | marketplace (báo cáo). */
+        /** Nguồn đơn: web | app | zalo | admin | pos | exchange (báo cáo). */
         public string $source,
         public ?int $customerId,
         public string $currencyCode,

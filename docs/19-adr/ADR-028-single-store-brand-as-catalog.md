@@ -10,7 +10,7 @@ ADR-008/019 thiết kế VaniShop như nền tảng **đa thương hiệu**: Own
 Owner đổi định hướng: **một website bán hàng, một giao diện**, các thương hiệu thời trang là **nhóm sản phẩm trong cùng một cửa hàng** — giống mô hình cửa hàng đơn phổ biến (BeikeShop, OpenCart, WooCommerce…), nơi brand chỉ là một thuộc tính của sản phẩm để duyệt và lọc.
 
 ## Problem
-Mô hình đa brand tốn kém ở mọi tầng (scope dữ liệu, test cô lập, theme theo brand, Admin theo workspace, plugin bật theo brand, order group cho giỏ nhiều brand), trong khi Owner chỉ cần một cửa hàng. Nó còn đẩy rủi ro pháp lý: một website của nhiều pháp nhân có thể bị xem là sàn TMĐT.
+Mô hình đa brand tốn kém ở mọi tầng (scope dữ liệu, test cô lập, theme theo brand, Admin theo workspace, plugin bật theo brand, order group cho giỏ nhiều brand), trong khi Owner chỉ cần một cửa hàng. Nó còn đẩy rủi ro pháp lý: một website bán hàng của nhiều pháp nhân có thể bị xem là website cung cấp dịch vụ TMĐT (phải đăng ký, không chỉ thông báo).
 
 ## Decision
 1. **Một Owner = một pháp nhân vận hành = một cửa hàng (store).** Một bản cài đặt phục vụ đúng một website trên một domain (`APP_URL`), một bộ thông tin người bán (tên công ty, MST, địa chỉ, tài khoản nhận tiền) dùng cho hoá đơn, chính sách, thông báo Bộ Công Thương.
@@ -19,7 +19,7 @@ Mô hình đa brand tốn kém ở mọi tầng (scope dữ liệu, test cô l�
    - `brands` thuộc module **Catalog**: mã, slug, logo, mô tả/SEO đa ngôn ngữ, thứ tự, trạng thái.
    - Mỗi Style có `brand_id` (tuỳ chọn). Brand dùng để: trang thương hiệu `/thuong-hieu/{slug}`, facet lọc và tìm kiếm, menu, điều kiện khuyến mãi (rule plugin), báo cáo doanh số theo brand, snapshot tên brand trên dòng đơn.
 4. **Mọi dữ liệu nghiệp vụ ở cấp cửa hàng**: danh mục, thuộc tính, màu/size, bộ sưu tập, bảng giá, khuyến mãi, voucher, kho, đơn hàng, số đơn, mẫu thông báo, cấu hình, plugin. Không có `BelongsToBrand`, không có brand workspace trong Admin.
-5. **Không còn "kênh bán" như một chiều cấu hình.** Storefront native và Storefront API (headless, app, Zalo Mini App) dùng **cùng** catalog, giá, tồn, khuyến mãi của cửa hàng. Nguồn đơn (`web`, `app`, `zalo`, `admin`, `pos`, `marketplace`) là **thuộc tính của đơn** để báo cáo, không là phạm vi dữ liệu. Sàn TMĐT/POS là connector plugin.
+5. **Không còn "kênh bán" như một chiều cấu hình.** Storefront native và Storefront API (headless, app, Zalo Mini App) dùng **cùng** catalog, giá, tồn, khuyến mãi của cửa hàng. Nguồn đơn (`web`, `app`, `zalo`, `admin`, `pos`) là **thuộc tính của đơn** để báo cáo, không là phạm vi dữ liệu. POS là connector plugin.
 6. **Phân quyền theo permission**, không theo brand. Scope còn lại: `owner` (toàn cửa hàng) và `location` (nhân viên cửa hàng/kho, Designed).
 7. **Plugin bật/tắt toàn cửa hàng.** Cấu hình (`Settings`) một cấp: cửa hàng.
 8. Giữ nguyên mọi bất biến thương mại: reservation, state machine, snapshot, `Money`, idempotency, outbox; giữ kiến trúc modular monolith + plugin + extension point.

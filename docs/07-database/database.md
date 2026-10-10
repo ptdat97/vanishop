@@ -95,7 +95,7 @@ erDiagram
 | Notification | `notification_templates`, `notification_logs` (unique `idempotency_key`) |
 | Integration | `integration_clients`, `integration_client_keys`, `integration_webhook_subscriptions`, `integration_events` (event feed, append-only), `integration_ownerships`, `integration_outbox`, `integration_inbox`, `integration_logs`, `integration_mappings`, `external_references`, `integration_reconciliations` |
 
-Bảng của plugin: xem README của từng plugin; ví dụ trong [marketplace](../13-marketplace/marketplace.md), [loyalty spec](../05-plugin/specs/loyalty.md).
+Bảng của plugin: xem README của từng plugin; ví dụ trong [loyalty spec](../05-plugin/specs/loyalty.md).
 
 ## 5. Index quan trọng
 

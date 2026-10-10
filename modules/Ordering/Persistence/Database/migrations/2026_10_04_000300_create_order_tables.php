@@ -14,7 +14,7 @@ return new class extends Migration
             $table->id();
             $table->char('public_id', 26)->unique();
             $table->string('number', 32)->unique();
-            $table->string('source', 16)->default('web'); // web | app | zalo | admin | pos | marketplace
+            $table->string('source', 16)->default('web'); // web | app | zalo | admin | pos | exchange
             $table->unsignedBigInteger('customer_id')->nullable()->index(); // FK khi có module Customer
             $table->char('currency_code', 3);
             $table->string('order_status', 16);

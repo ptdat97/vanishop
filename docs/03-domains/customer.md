@@ -30,7 +30,7 @@
 - **Một tài khoản cho cả cửa hàng** (một website). Trang tài khoản ở `/tai-khoan`; lịch sử đơn gồm sản phẩm mọi brand.
 - **Định danh chính là số điện thoại** (chuẩn hoá E.164 `+84…`); email là phụ.
 - Khách vãng lai đặt hàng → tạo **profile ẩn** theo SĐT; khi khách đăng ký bằng số đó và xác thực OTP thì hợp nhất lịch sử đơn.
-- Dữ liệu khách từ POS, sàn TMĐT (nếu có SĐT) đổ về qua [Integration](../11-integration/integration-platform.md), vào cùng hồ sơ.
+- Dữ liệu khách từ POS (nếu có SĐT) đổ về qua [Integration](../11-integration/integration-platform.md), vào cùng hồ sơ.
 
 | Nhóm dữ liệu | Trường |
 |---|---|

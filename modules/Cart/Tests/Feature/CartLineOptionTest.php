@@ -74,7 +74,7 @@ it('đặt hàng: tuỳ chọn chụp sang dòng đơn, giữ hàng cộng theo 
     app(Extensions::class)->tag(['test.needs_ref'], PromotionRegistry::RULES_TAG);
     $promotion = C::promotion(['requires_voucher' => false]);
     PromotionRuleRecord::query()->create(['promotion_id' => $promotion->id, 'rule_type' => 'needs_ref', 'config' => []]);
-    app(HookManager::class)->onFilter('vani.checkout.context', fn (array $attributes, $request): array => [...$attributes, 'vani.cod.ref' => 'CREATOR1'], 10, 'vani.cod');
+    app(HookManager::class)->onFilter('vani.checkout.context', fn (array $attributes, $request): array => [...$attributes, 'vani.cod.ref' => 'REF1'], 10, 'vani.cod');
 
     $this->postJson("/api/storefront/v1/checkout/{$this->cartId}/orders", C::orderPayload(['expected_total' => 540_000]), [...$this->headers, 'Idempotency-Key' => 'options-order-1'])->assertCreated();
 

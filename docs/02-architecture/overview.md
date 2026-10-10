@@ -14,7 +14,7 @@
 | API-first | Storefront native, headless, mobile, đối tác dùng chung Application layer | [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-010](../19-adr/ADR-010-api-versioning.md) |
 | Tích hợp hướng sự kiện | Hệ thống ngoài không làm hỏng checkout | [ADR-005](../19-adr/ADR-005-event-driven-integration.md), [ADR-013](../19-adr/ADR-013-outbox-inbox.md) |
 
-**Không** làm microservices. Chỉ tách service khi có lý do vận hành/scale đo được (rule R19).
+**Không** tách thành service chạy riêng ([ADR-033](../19-adr/ADR-033-out-of-scope.md), rule R19).
 
 ## 2. Sơ đồ ngữ cảnh (C4 level 1)
 
@@ -33,17 +33,16 @@ flowchart TB
     ODO[[ODO — tạm hoãn]]
     PAY[[Cổng thanh toán]]
     SHIP[[Hãng vận chuyển]]
-    MKT[[Sàn TMĐT]]
     NOTI[[Email / SMS / ZNS]]
     Customer --> SF & API
     Staff --> ADM
     SF & ADM & API --> CORE
     PLG --> CORE
-    PLG <--> PAY & SHIP & MKT & NOTI & ERP
+    PLG <--> PAY & SHIP & NOTI & ERP
     API <-.-> ERP & ODO
 ```
 
-Hệ thống ngoài kết nối theo hai cách ([integration-platform](../11-integration/integration-platform.md)): **tự gọi Integration API** (ERP, ODO, POS), hoặc **qua connector plugin** (cổng thanh toán, hãng vận chuyển, sàn TMĐT).
+Hệ thống ngoài kết nối theo hai cách ([integration-platform](../11-integration/integration-platform.md)): **tự gọi Integration API** (ERP, ODO, POS), hoặc **qua connector plugin** (cổng thanh toán, hãng vận chuyển).
 
 ## 3. Sơ đồ container (C4 level 2)
 

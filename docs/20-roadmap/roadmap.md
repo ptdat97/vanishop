@@ -2,7 +2,7 @@
 
 > Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.19). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4).
 >
-> **Mục tiêu hiện tại (2026-10-08): một cửa hàng, một người bán.** Phase 9 (ERP connector) và Phase 10 (Marketplace / Creator / Affiliate) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho chúng. Chỉ mở lại khi Owner quyết định. Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
+> **Mục tiêu hiện tại (2026-10-08): một cửa hàng, một người bán.** Phase 9 (ERP connector) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho nó. Chỉ mở lại khi Owner quyết định. Hạng mục **ngoài phạm vi** dự án (không phải đóng băng): [ADR-033](../19-adr/ADR-033-out-of-scope.md). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
 
 ## 1. Nguyên tắc
 
@@ -28,7 +28,7 @@
 flowchart LR
     F[0. Foundation] --> C[1. Catalog] --> P[2. Product/Style] --> V[3. Variant & Price] --> I[4. Inventory] --> CA[5. Cart] --> CO[6. Checkout] --> PA[7. Payment] --> O[8. Order] --> S[9. Shipment]
     S --> PL[10. Proof plugins<br/>VietQR · GHN · PromotionRules]
-    PL --> X[11+. Mở rộng<br/>Integration · Một cửa hàng (ADR-028) · Merchandising<br/>ERP connector, Marketplace, Creator: đóng băng]
+    PL --> X[11+. Mở rộng<br/>Integration · Một cửa hàng (ADR-028) · Merchandising<br/>ERP connector: đóng băng]
 ```
 
 ## 2. Các slice
@@ -120,14 +120,14 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 | 12d ✅ | **Microkernel** (xong 2026-10-02, trừ `vani.reports` — chưa có báo cáo để tách) ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): extension point bắt buộc + manifest `bundled` + `vani:install`; tách `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` khỏi module; Reporting thành `vani.reports`; arch test R28/R29; sau đó làm extension point còn thiếu theo đợt plugin ([catalog §7](../04-extension/extension-point-catalog.md)) | [commerce-kernel §6](../02-architecture/commerce-kernel.md) |
 | 13 | Plugin go-live P1 còn lại: `vani.tracking-pixels` (`vani.vnpay`: đã có 2026-10-03, chờ chạy thử sandbox; `vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
-| 15 | Plugin P3: loyalty, promotion nâng cao, sàn TMĐT, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
-| Later | Advanced merchandising, recommendation. (Marketplace, Creator/Affiliate: đóng băng — Phase 10) | [marketplace](../13-marketplace/marketplace.md), [creator-affiliate](../13-marketplace/creator-affiliate.md) |
+| 15 | Plugin P3: loyalty, promotion nâng cao, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
+| Later | Advanced merchandising, recommendation. | — |
 
 ## 4. Hardening Commerce Kernel (từ 2026-10-04)
 
 Mục tiêu là một Commerce Kernel nhỏ, đúng, có invariant mạnh và contract ổn định; business mở rộng bằng plugin, không sửa Core. Thứ tự phase dưới đây là bắt buộc. Mỗi phase báo cáo theo mẫu: Implemented, Changed, Tests, Invariants, Architecture impact, Migration impact, Known limitations, Next step.
 
-**Không ưu tiên** trong giai đoạn này: business module mới (marketplace, creator, affiliate, loyalty, social/livestream commerce, marketing nâng cao). Cũng không: fork Core vì một plugin, tạo hook để né thiết kế contract, biến mọi thứ thành event hay plugin, tách microservice, hoặc thêm dependency lớn khi code hiện có làm được.
+**Không ưu tiên** trong giai đoạn này: business module mới (loyalty, marketing nâng cao). Cũng không: fork Core vì một plugin, tạo hook để né thiết kế contract, biến mọi thứ thành event hay plugin, hoặc thêm dependency lớn khi code hiện có làm được.
 
 Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 
@@ -214,9 +214,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 
 Không làm trong mục tiêu hiện tại (một cửa hàng, một người bán). Ghi lại để mở lại sau: chỉ làm khi contract tích hợp ổn định (Phase 4, 6) và Owner chốt ERP. Connector là plugin qua `Connector`/`InboundHandler`/`ExternalReferences`/`Mappings`, không đưa SDK hay logic ERP vào Core ([erp-integration](../11-integration/erp-integration.md)).
 
-### Phase 10. Marketplace / Creator / Affiliate — ❄️ đóng băng (2026-10-08)
-
-Không làm trong mục tiêu hiện tại: một cửa hàng, **một người bán** (không seller, không commission, không creator/affiliate). Ghi lại để mở lại sau: plugin `vani.marketplace`, `vani.seller`, `vani.creator`, `vani.affiliate`, `vani.attribution`. Các plugin này dùng Catalog/Pricing/Order/Payment/Inventory/Customer/Integration qua contract công khai. Chỉ bắt đầu sau khi Phase 1–6 đạt Done.
+Phase 10 cũ đã bỏ: hạng mục ngoài phạm vi ([ADR-033](../19-adr/ADR-033-out-of-scope.md), 2026-10-10).
 
 ### Việc kế tiếp đề xuất
 
@@ -228,9 +226,9 @@ Không làm trong mục tiêu hiện tại: một cửa hàng, **một người 
 6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
 7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
 8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31); đổi hàng ✅ 2026-10-08 (Core 0.3.32). Phase 2 xong.
-9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Phase 5: capability theo tag ✅ 2026-10-08 (Core 0.3.33) — Phase 5 xong. Phase 7: cache CDN ✅ 2026-10-08 (Core 0.3.34) — Phase 7 xong. Phase 8: phân khúc khách + giá thành viên ✅ (0.3.35), campaign ✅ (0.3.36), tầng giá trên đơn ✅ (0.3.37) — Phase 8 xong. Hardening Phase 1–8 hoàn tất (Phase 9, 10 đóng băng); việc tiếp theo là go-live gate (§5).
+9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Phase 5: capability theo tag ✅ 2026-10-08 (Core 0.3.33) — Phase 5 xong. Phase 7: cache CDN ✅ 2026-10-08 (Core 0.3.34) — Phase 7 xong. Phase 8: phân khúc khách + giá thành viên ✅ (0.3.35), campaign ✅ (0.3.36), tầng giá trên đơn ✅ (0.3.37) — Phase 8 xong. Hardening Phase 1–8 hoàn tất (Phase 9 đóng băng); việc tiếp theo là go-live gate (§5).
 
-Phase 9 và Phase 10 đóng băng, không nằm trong danh sách này.
+Phase 9 đóng băng, không nằm trong danh sách này.
 
 ## 5. Go-live gate
 

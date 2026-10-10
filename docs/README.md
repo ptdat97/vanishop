@@ -1,6 +1,6 @@
 # VaniShop — Tài liệu kiến trúc
 
-> **VaniShop** là một **microkernel thương mại** trên Laravel (Modular Monolith + DDD + API-first): lõi nhỏ giữ primitive, bất biến và extension point; **nghiệp vụ thêm bằng plugin** ([ADR-029](19-adr/ADR-029-commerce-microkernel.md)). Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, marketplace, creator…) **bằng plugin, không fork Core**.
+> **VaniShop** là một **microkernel thương mại** trên Laravel (Modular Monolith + DDD + API-first): lõi nhỏ giữ primitive, bất biến và extension point; **nghiệp vụ thêm bằng plugin** ([ADR-029](19-adr/ADR-029-commerce-microkernel.md)). Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, hoá đơn điện tử, báo cáo…) **bằng plugin, không fork Core**. Những gì dự án không làm: [ADR-033](19-adr/ADR-033-out-of-scope.md).
 >
 > Chủ sở hữu: 1 Owner vận hành 1 website bán hàng tại Việt Nam; các thương hiệu thời trang của Owner là thuộc tính sản phẩm (trang brand, bộ lọc brand), không phải storefront riêng. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
 
@@ -8,8 +8,8 @@
                 ┌───────────────────────────────────────┐
                 │ 3. Plugin nghiệp vụ    custom/plugin/* │
                 │ Cổng TT · Hãng VC · Rule khuyến mãi ·  │
-                │ Loyalty · HĐĐT · ERP · Marketplace ·   │
-                │ Creator · Báo cáo · Wishlist …         │
+                │ Loyalty · HĐĐT · ERP · Báo cáo ·       │
+                │ Wishlist · Reviews …                   │
                 ├───────────────────────────────────────┤
                 │ 2. Plugin hệ thống (bundled)           │
                 │ COD · Chuyển khoản · Phí ship · VAT VN │
@@ -68,7 +68,6 @@
 | **10-payment** | [payment](10-payment/payment.md) |
 | **11-integration** | [integration-platform](11-integration/integration-platform.md) · [erp-integration](11-integration/erp-integration.md) |
 | **12-store** | [store-and-brand](12-store/store-and-brand.md) (mô hình một cửa hàng + lộ trình gỡ đa brand khỏi code) |
-| **13-marketplace** | [marketplace](13-marketplace/marketplace.md) · [creator-affiliate](13-marketplace/creator-affiliate.md) |
 | **14-storefront** | [storefront](14-storefront/storefront.md) |
 | **15-security** | [security](15-security/security.md) |
 | **16-observability** | [observability](16-observability/observability.md) |

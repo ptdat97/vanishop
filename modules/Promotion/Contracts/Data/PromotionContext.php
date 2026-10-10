@@ -11,7 +11,7 @@ final readonly class PromotionContext
     /**
      * @param  list<PromotionLine>  $lines
      * @param  list<string>  $voucherCodes
-     * @param  array<string, mixed>  $attributes  dữ liệu bổ sung (vd. creator_ref) do plugin đặt
+     * @param  array<string, mixed>  $attributes  dữ liệu bổ sung (vd. mã giới thiệu, UTM) do plugin đặt
      */
     public function __construct(
         public ?int $customerId,

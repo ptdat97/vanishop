@@ -6,7 +6,7 @@
 | Store | Cửa hàng | Toàn bộ bản cài đặt: một website, một giao diện, một bộ cấu hình ([store-and-brand](../12-store/store-and-brand.md)) |
 | Legal Entity | Pháp nhân vận hành | Công ty có MST đứng tên bán hàng trên website; xuất hoá đơn, nhận tiền. Một bản ghi |
 | Brand | Thương hiệu | Nhóm sản phẩm trong Catalog (trang brand, bộ lọc, điều kiện khuyến mãi, báo cáo). **Không** phải phạm vi dữ liệu |
-| Order source | Nguồn đơn | `web`, `app`, `zalo`, `admin`, `pos`, `marketplace` — thuộc tính của đơn để báo cáo |
+| Order source | Nguồn đơn | `web`, `app`, `zalo`, `admin`, `pos` — thuộc tính của đơn để báo cáo |
 | Channel | Kênh (cũ) | Khái niệm của mô hình đa brand (ADR-008), sẽ gỡ khỏi code ở slice 12. Không nhầm với **kênh gửi tin** (email/SMS/ZNS) của Notification |
 | Location | Địa điểm tồn kho | Kho hoặc cửa hàng giữ hàng |
 | Style | Mẫu sản phẩm | Sản phẩm hiển thị trên 1 trang chi tiết |
@@ -39,8 +39,6 @@
 | System of Record (SoR) | Hệ thống lưu gốc | Nơi lưu bản gốc đầy đủ và lâu dài của dữ liệu |
 | System of Authority (SoA) | Hệ thống có quyền ghi | Hệ thống duy nhất được ghi một loại dữ liệu trong một scope |
 | Correlation ID | Mã truy vết | Mã đi xuyên request → command → event → outbox → hệ thống ngoài |
-| Seller | Người bán | Khái niệm của plugin marketplace, không có trong Core |
-| Attribution | Ghi nhận nguồn đơn | Liên kết đơn/dòng đơn với creator/campaign (plugin creator) |
 | Plugin chính thức | Official plugin | Plugin nghiệp vụ do đội VaniShop phát triển trong `custom/plugin/` ([plugin-catalog](../05-plugin/plugin-catalog.md)) |
 | Điểm mở rộng | Extension point | Contract, domain event, hook, registry mà Core cam kết cho plugin; có loại public và internal ([extension-point-catalog](../04-extension/extension-point-catalog.md)) |
 | Hook | Điểm mở rộng | Filter/action công khai cho plugin |

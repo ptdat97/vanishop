@@ -34,7 +34,7 @@ final class ChannelSalesReport extends BreakdownReport
         return 'Kênh';
     }
 
-    private const CHANNELS = ['web' => 'Website', 'app' => 'Ứng dụng', 'zalo' => 'Zalo', 'admin' => 'Admin (nhân viên)', 'pos' => 'Tại cửa hàng', 'marketplace' => 'Sàn TMĐT'];
+    private const CHANNELS = ['web' => 'Website', 'app' => 'Ứng dụng', 'zalo' => 'Zalo', 'admin' => 'Admin (nhân viên)', 'pos' => 'Tại cửa hàng', 'exchange' => 'Đơn đổi hàng'];
 
     protected function displayLabel(SalesBucket $bucket): string
     {

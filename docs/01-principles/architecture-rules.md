@@ -61,3 +61,4 @@
 | R24 | Tài liệu phản ánh implementation. Cập nhật [status.md](../00-overview/status.md) khi trạng thái thay đổi. |
 | R25 | Không thêm dependency khi chưa được phê duyệt (theo AGENTS.md); dependency đã phê duyệt được ghi trong ADR. |
 | R33 | **Mỗi lỗi concurrency/nhất quán đã gặp phải thành regression test** (concurrency test trên MySQL, hoặc đường đi trong bộ bất biến `tests/Feature/Invariants`). Lỗi chỉ lộ trên MySQL (CHECK, thứ tự JSON, id trùng trên SQLite) phải có test chạy được trên MySQL. |
+| R34 | **Phạm vi**: hạng mục ngoài mục tiêu dự án ([ADR-033](../19-adr/ADR-033-out-of-scope.md)) không có tài liệu, plugin, extension point, cột, nguồn đơn hay ví dụ; tên chúng chỉ xuất hiện trong ADR-033. Kiểm tra: `tests/Architecture/ScopeTest.php`. |

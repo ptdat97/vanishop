@@ -1,6 +1,6 @@
 # Trạng thái triển khai
 
-> **Mục tiêu hiện tại (2026-10-08): một cửa hàng, một người bán.** Roadmap Phase 9 (ERP connector) và Phase 10 (Marketplace / Creator / Affiliate) đóng băng ([roadmap](../20-roadmap/roadmap.md)).
+> **Mục tiêu hiện tại (2026-10-08): một cửa hàng, một người bán.** Roadmap Phase 9 (ERP connector) đóng băng ([roadmap](../20-roadmap/roadmap.md)); hạng mục ngoài phạm vi: [ADR-033](../19-adr/ADR-033-out-of-scope.md).
 >
 > Cập nhật lần cuối: **2026-10-15**, sau Phase 3 (hardening): bảng đối soát tồn kho chung cho đối soát nội bộ và nguồn ngoài; trước đó là Phase 1 (chuyển kho có vòng đời) và đợt P0/P1 của [kernel-review](../02-architecture/kernel-review.md). Tài liệu này phải được cập nhật trong mọi PR làm thay đổi trạng thái một capability.
 

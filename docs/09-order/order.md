@@ -30,7 +30,7 @@ Sau khi tạo, đơn giữ **snapshot** và không phụ thuộc dữ liệu cat
 | Khách hàng | `orders.customer_id` + `customer_snapshot` (tên, SĐT, email lúc đặt) |
 | Vận chuyển | `orders.shipping_method` (carrier, dịch vụ, phí) |
 | Brand của sản phẩm | `order_lines.brand_id` + `brand_name` (snapshot, Designed — slice 12) |
-| Nguồn đơn, tiền tệ | `orders.source` (`web`/`app`/`zalo`/`admin`/`pos`/`marketplace`), `currency_code`. Code hiện còn `brand_id`, `channel_id`, `legal_entity_id` trên `orders` — gỡ ở slice 12 ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
+| Nguồn đơn, tiền tệ | `orders.source` (`web`/`app`/`zalo`/`admin`/`pos`; `exchange` cho đơn thay thế), `currency_code`. Code hiện còn `brand_id`, `channel_id`, `legal_entity_id` trên `orders` — gỡ ở slice 12 ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 
 **Được thay đổi sau khi tạo** (luôn có `order_events`): trạng thái (qua state machine); địa chỉ giao **trước khi** fulfillment bắt đầu (lệnh `ChangeShippingAddress`, snapshot cũ lưu trong event); ghi chú; `meta` của plugin.
 

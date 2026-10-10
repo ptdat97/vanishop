@@ -10,7 +10,7 @@
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ 3. Plugin nghiệp vụ   custom/plugin/*                                    │
 │    VietQR · VNPay · GHN · promotion-rules · loyalty · e-invoice · ERP ·  │
-│    marketplace · creator · báo cáo · wishlist · reviews …                │
+│    báo cáo · wishlist · reviews …                                        │
 │  ┌────────────────────────────────────────────────────────────────────┐  │
 │  │ 2. Plugin hệ thống   custom/plugin/* (bundled, tự cài + bật)       │  │
 │  │    vani.cod · vani.bank-transfer · vani.shipping-flat-rate ·       │  │
@@ -169,7 +169,7 @@ Done khi: cài mới → 4 plugin hệ thống tự bật, E2E COD chạy; tắt
 
 ## 7. Plugin công bố extension point
 
-Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố `LoyaltyLedger` cho `vani.promotion-advanced` đổi điểm; `vani.marketplace` công bố `SellerDirectory` cho `vani.creator`):
+Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố `LoyaltyLedger` cho `vani.promotion-advanced` đổi điểm; `vani.einvoice` công bố `EInvoiceProvider` cho plugin nhà cung cấp hoá đơn):
 
 - Contract/event đặt trong `Plugin\<Name>\Contracts`, `Plugin\<Name>\Events`; hook khai báo trong file của plugin, đăng ký bằng `PluginServiceProvider::publishHooks($file)` với tên `<plugin-id>.<…>` (Implemented 0.3.6, tham chiếu `vani.hello-world.greeting`).
 - Plugin dùng khai báo `requires.plugins`; resolver sắp thứ tự nạp và chặn tắt plugin đang được phụ thuộc (đã có).
@@ -194,7 +194,7 @@ Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố
 2. PR vào Core: contract/event/hook + tài liệu catalog + implementation tham chiếu + contract test (R26) + [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md).
 3. Plugin dùng extension point mới, khai báo `requires.vanishop` là phiên bản có nó.
 
-Ví dụ **sai**: thêm `if ($order->meta['creator_id'])` vào `PlaceOrder`. Ví dụ **đúng**: Core có hook `vani.order.after_create`, plugin Creator nghe hook đó và ghi attribution vào bảng riêng.
+Ví dụ **sai**: thêm `if ($order->meta['loyalty_points'])` vào `PlaceOrder`. Ví dụ **đúng**: Core có hook `vani.order.after_create`, plugin loyalty nghe hook đó và ghi điểm vào bảng riêng.
 
 ## 10. Giữ ranh giới vòng (Implemented 0.3.39)
 

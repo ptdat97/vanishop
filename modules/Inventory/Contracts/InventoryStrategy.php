@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Contracts;
 
 /**
- * Extension point (tag vani.inventory.strategies): điều chỉnh ATS bán online (ví dụ chừa tồn cho sàn TMĐT).
+ * Extension point (tag vani.inventory.strategies): điều chỉnh ATS bán online (ví dụ chừa tồn an toàn theo kho).
  * Core luôn lấy min(strategy, chuẩn) — strategy chỉ được GIẢM, không được tăng ATS.
  */
 interface InventoryStrategy

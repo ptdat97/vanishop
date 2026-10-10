@@ -74,7 +74,6 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 |---|---|---|
 | `vani.store-omnichannel` ([spec](specs/store-omnichannel.md)) | `FulfillmentMethod`, `SourcingStrategy` | P2 |
 | `vani.advanced-sourcing` | `SourcingStrategy` | P3 |
-| `vani.marketplace-allocation` (chừa tồn cho sàn TMĐT) | `InventoryStrategy` | P3 |
 
 ### Hoá đơn & thông báo
 | Plugin | Contract | Đợt |
@@ -84,12 +83,11 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.zalo-zns` ✅, `vani.sms-brandname` ✅ | `NotificationChannel`, `OtpSender` | P1 |
 | `vani.webpush` | `NotificationChannel` | P3 |
 
-### Sàn TMĐT, marketing, tìm kiếm
+### Marketing, tìm kiếm
 | Plugin | Contract | Đợt |
 |---|---|---|
 | `vani.tracking-pixels` (GA4, Meta, TikTok) | Slot storefront, events đơn | P1 |
 | `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
-| `vani.shopee`, `vani.lazada`, `vani.tiktokshop` | `Connector`, đơn kéo về có `source = marketplace` | P3 |
 | `vani.search-meilisearch` ✅ | `SearchProvider` + `ConfigurableSearchIndex` | P1 (tách từ Core 2026-10-14) |
 | `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
 | `vani.recommendation` | Hook listing, `StorefrontBlock` | Later |
@@ -101,11 +99,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.odo` | `Connector` hoặc Integration Client | Khi chốt vai trò ODO |
 | `vani.pos-sync` | `Connector` / Integration API | P3 |
 
-### Mô hình kinh doanh mới
-| Plugin | Tài liệu | Đợt |
-|---|---|---|
-| `vani.marketplace` | [marketplace](../13-marketplace/marketplace.md) | ❄️ Đóng băng (Phase 10) |
-| `vani.creator` (creator/affiliate/attribution) | [creator-affiliate](../13-marketplace/creator-affiliate.md) | ❄️ Đóng băng (Phase 10) |
+Hạng mục ngoài phạm vi dự án (không có plugin): [ADR-033](../19-adr/ADR-033-out-of-scope.md).
 
 ### Báo cáo & nội dung
 | Plugin | Đợt |

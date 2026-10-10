@@ -18,7 +18,6 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [012](ADR-012-order-snapshot.md) | Order là bản ghi bất biến có snapshot | Accepted |
 | [013](ADR-013-outbox-inbox.md) | Transactional Outbox / Inbox | Accepted |
 | [014](ADR-014-idempotency.md) | Idempotency cho API, webhook, job, message | Accepted |
-| [015](ADR-015-marketplace-architecture.md) | Marketplace là plugin, không biến dạng Core | Accepted |
 | [016](ADR-016-mysql.md) | MySQL 8.4 | Accepted |
 | [017](ADR-017-admin-ui-inertia.md) | Admin: Inertia + Vue 3 + TypeScript | Accepted |
 | [018](ADR-018-infrastructure-vietnam.md) | Hạ tầng và dữ liệu đặt tại Việt Nam | Accepted |
@@ -35,6 +34,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [029](ADR-029-commerce-microkernel.md) | **Microkernel thương mại: bốn vòng, nghiệp vụ là plugin, mặc định chính sách là plugin hệ thống** | Accepted |
 | [032](ADR-032-approved-dependencies-ops-quality.md) | **Dependency được duyệt: Horizon, S3, backup, Pulse, Intervention Image; Larastan, Rector, security advisories, type coverage** | Accepted |
 | [031](ADR-031-short-hook-syntax-auto-points.md) | **Cú pháp hook ngắn `vani_*` + điểm mở rộng tự động (mọi trang Admin, view storefront, API) giữ kiểm soát HookManager** | Accepted |
+| [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 
 "Accepted" nghĩa là quyết định đã được chốt, **không** có nghĩa là đã có code. Trạng thái implementation nằm ở [status](../00-overview/status.md).

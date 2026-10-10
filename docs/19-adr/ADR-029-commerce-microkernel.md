@@ -18,7 +18,7 @@ Làm sao để mọi thay đổi nghiệp vụ (cổng, hãng, luật khuyến m
    | **0. Microkernel** | Shared, Tenancy (cửa hàng), Identity, Extension | Không biết thương mại: vòng đời plugin, registry extension, hook bus, event bus theo plugin, cấu hình, quyền, audit, `Money`, idempotency, context |
    | **1. Commerce Core** | Catalog, Pricing, Inventory, Customer, Cart, Promotion (engine), Checkout (totals engine), Ordering, Payment (abstraction + sổ giao dịch), Fulfillment (abstraction), Returns (khung), Notification (khung), Integration (khung), Storefront (tầng ghép) | Primitive + bất biến + extension point. **Không** chứa tích hợp nhà cung cấp, **không** chứa chính sách kinh doanh/đặc thù thị trường |
    | **2. Plugin hệ thống** | `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` (sau thêm `vani.provinces-vn`, `vani.phone-vn` — 0.3.42) | Mặc định để bán được đơn đầu tiên tại VN; đóng gói sẵn, tự cài + bật khi cài đặt, tắt/thay được |
-   | **3. Plugin nghiệp vụ** | Cổng, hãng, rule khuyến mãi, loyalty, ERP, marketplace, creator, báo cáo… | Mọi capability còn lại |
+   | **3. Plugin nghiệp vụ** | Cổng, hãng, rule khuyến mãi, loyalty, hoá đơn điện tử, ERP, báo cáo… | Mọi capability còn lại |
 
 2. **Plugin-first**: capability mới mặc định là plugin. Muốn đưa vào Core phải thoả tiêu chí ở [commerce-kernel §2](../02-architecture/commerce-kernel.md) và có ADR.
 3. **Mặc định trung lập ở Core, mặc định chính sách ở plugin hệ thống.** Core chỉ giữ implementation mặc định **trung lập thị trường** cho extension point bắt buộc (vận đơn nhập tay, kênh `mail`, OTP email, tìm kiếm `database`, chọn giá theo priority, ATS chuẩn, sourcing theo hàng đang giữ, đổi trả theo số ngày, action `percent_off`/`amount_off`). COD, chuyển khoản, phí ship cố định, VAT VN chuyển thành plugin hệ thống.
@@ -29,7 +29,7 @@ Làm sao để mọi thay đổi nghiệp vụ (cổng, hãng, luật khuyến m
 ## Alternatives
 - **Giữ mặc định trong Core** (hiện trạng): đơn giản, nhưng Core mang chính sách VN (COD, VAT) và mỗi đổi chính sách lại chạm Core.
 - **Đẩy cả engine (promotion, totals, reservation) ra plugin**: Core mỏng hơn nhưng phá bất biến cần chung transaction; loại (rule R6, R14).
-- **Microservice cho từng capability**: trái R19.
+- **Tách mỗi capability thành service chạy riêng**: trái R19, ngoài phạm vi ([ADR-033](ADR-033-out-of-scope.md)).
 
 ## Consequences
 - (+) Core ổn định, đổi nghiệp vụ = đổi/thêm plugin; Core có thể dùng cho thị trường khác mà không sửa.

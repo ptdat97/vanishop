@@ -104,7 +104,7 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 ## 7. Một cửa hàng, không multi-tenant
 
 - Một bản cài đặt = một Owner = một cửa hàng (không multi-tenant SaaS, không cô lập theo brand — [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
-- **ABAC** ở mức vừa đủ: quyền = permission (RBAC) **và**, khi cần, thuộc tính bản ghi khớp với người dùng (location của nhân viên cửa hàng; seller/creator nếu có plugin). Hiện thực trong Policy, không dùng engine ABAC riêng.
+- **ABAC** ở mức vừa đủ: quyền = permission (RBAC) **và**, khi cần, thuộc tính bản ghi khớp với người dùng (vd. location của nhân viên cửa hàng). Hiện thực trong Policy, không dùng engine ABAC riêng.
 
 ## 8. Integration credentials
 

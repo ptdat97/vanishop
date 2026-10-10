@@ -2,7 +2,7 @@
 
 > Trạng thái: **Partially Implemented** (slice 11 — phần lõi, xem §11). Quyết định: [ADR-005](../19-adr/ADR-005-event-driven-integration.md), [ADR-013](../19-adr/ADR-013-outbox-inbox.md), [ADR-014](../19-adr/ADR-014-idempotency.md). ERP: [erp-integration](erp-integration.md).
 
-Module `modules/Integration` là **platform** dùng chung cho mọi tích hợp: ERP, ODO, POS, sàn TMĐT, hãng vận chuyển, cổng thanh toán, hoá đơn điện tử. Nó không chứa nghiệp vụ của domain, và không có connector cụ thể nào (connector là plugin).
+Module `modules/Integration` là **platform** dùng chung cho mọi tích hợp: ERP, ODO, POS, hãng vận chuyển, cổng thanh toán, hoá đơn điện tử. Nó không chứa nghiệp vụ của domain, và không có connector cụ thể nào (connector là plugin).
 
 ## 1. Thành phần
 

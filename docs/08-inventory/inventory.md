@@ -37,7 +37,7 @@ Reservation (authority: VaniShop)  ──►  ATS  ──►  Checkout
 
 | Entity | Vai trò | Bảng |
 |---|---|---|
-| **Location** | Kho, cửa hàng, điểm ảo (ký gửi, sàn, seller) | `locations` |
+| **Location** | Kho, cửa hàng, điểm ảo (ký gửi) | `locations` |
 | **StockLevel** | Trạng thái hiện tại theo `(location, variant)` | `stock_levels` |
 | **StockReservation** | Lượng hàng đang giữ cho một đơn | `stock_reservations` |
 | **StockMovement / InventoryLedger** | Nhật ký append-only mọi biến động | `stock_movements` |
@@ -66,7 +66,7 @@ ATS(location) = max(0, available)
 ATS           = InventoryStrategy.ats(variant)   // mặc định: Σ ATS(location) của các location giao online
 ```
 
-`InventoryStrategy` (ví dụ chừa tồn cho sàn TMĐT bằng plugin `vani.marketplace-allocation`) chỉ được **giảm** ATS so với công thức chuẩn, không được tăng. Core kiểm tra `min(strategy, standard)`.
+`InventoryStrategy` (ví dụ chừa tồn an toàn theo kho bằng plugin) chỉ được **giảm** ATS so với công thức chuẩn, không được tăng. Core kiểm tra `min(strategy, standard)`.
 
 ## 3. Vòng đời reservation
 
