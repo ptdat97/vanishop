@@ -63,7 +63,7 @@ Thanh thông báo và hộp ưu đãi lưu ở settings của `vani.cms` (nội 
 | Nhập điểm nổi bật, tắt hộp ưu đãi theo sản phẩm | `adminFormSection('product', …)` | ✅ |
 | Nhập banner ở form danh mục | `adminFormSection('category', …)` | ✅ 0.3.43 (G4) |
 | Hiện banner đầu trang danh mục | Slot đầu trang danh sách sản phẩm | ✅ 0.3.43 `vani.storefront.plp.before_listing` (ngữ cảnh danh mục/thương hiệu/tìm kiếm) |
-| Cấu hình nội dung theo ngôn ngữ | `settings()` | **Kiểm tra khi viết**: settings hiện có nhận giá trị theo ngôn ngữ chưa; nếu chưa, lưu ở bảng riêng của plugin |
+| Cấu hình nội dung theo ngôn ngữ | `settings()` | ✅ quy ước 0.3.43: mỗi ngôn ngữ một khoá (`announcement_lines.vi`, `.en`…); `rules` validate (màu, khoảng số) |
 
 ## 7. Quyền
 

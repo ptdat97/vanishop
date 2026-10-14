@@ -105,7 +105,9 @@ abstract class PluginServiceProvider extends ServiceProvider
      * Khai báo cấu hình của plugin (namespace = plugin id) → Admin → Cấu hình sinh form.
      * Đọc lúc chạy qua contract `Modules\Tenancy\Contracts\Settings::get($pluginId, $key, $default)`.
      *
-     * @param  list<array{key: string, label: string, type?: string, default?: mixed, options?: array<string, string>, help?: string}>  $definitions
+     * Giá trị theo ngôn ngữ: khai một khoá cho mỗi ngôn ngữ cửa hàng, vd. `message.vi`, `message.en` (`StoreLocale::supported()`).
+     *
+     * @param  list<array{key: string, label: string, type?: string, default?: mixed, options?: array<string, string>, help?: string, rules?: list<mixed>}>  $definitions
      */
     protected function settings(array $definitions): void
     {
@@ -113,7 +115,7 @@ abstract class PluginServiceProvider extends ServiceProvider
         foreach ($definitions as $definition) {
             $settings->define(new SettingDefinition(
                 $this->pluginId(), $definition['key'], $definition['label'], $definition['type'] ?? 'string', $definition['default'] ?? null,
-                $definition['options'] ?? [], $definition['help'] ?? null,
+                $definition['options'] ?? [], $definition['help'] ?? null, rules: $definition['rules'] ?? [],
             ));
         }
     }

@@ -34,10 +34,10 @@ Không có bảng; thêm cấu hình vào plugin.
 | Khoá | Kiểu | Mặc định |
 |---|---|---|
 | `progress_enabled` | bool | bật |
-| `progress_message_pending` | chuỗi, bắt buộc có `{amount}` | như §2 |
-| `progress_message_achieved` | chuỗi | như §2 |
-| `progress_color` | màu (`#rrggbb`) | màu nhấn của theme |
-| `progress_positions` | nhiều lựa chọn: `cart`, `checkout`, `pdp`, `mini_cart` | `cart`, `checkout` |
+| `progress_message_pending` | chuỗi, `rules` bắt buộc có `{amount}` (0.3.43); mỗi ngôn ngữ một khoá `progress_message_pending.<locale>` | như §2 |
+| `progress_message_achieved` | chuỗi, mỗi ngôn ngữ một khoá | như §2 |
+| `progress_color` | chuỗi, `rules` `#rrggbb` | màu nhấn của theme |
+| `progress_on_cart`, `progress_on_checkout`, `progress_on_pdp` | bool (settings không có kiểu chọn nhiều) | bật, bật, tắt |
 
 ## 6. Extension point
 

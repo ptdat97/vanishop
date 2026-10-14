@@ -130,9 +130,9 @@ Tổng hợp từ các đặc tả; làm theo [commerce-kernel §9](../02-archit
 | G4 ✅ 0.3.43 | Tài nguyên Admin `category`, `brand` (`declareResource`) + form danh mục/thương hiệu render phần mở rộng | size-chart, store-content | Catalog + Admin Vue |
 | G5 ✅ 0.3.43 | Slot `vani.storefront.layout.body_start`, `vani.storefront.plp.before_listing` | store-content | Storefront `hooks.php` + theme `vani-base` |
 | G6 ✅ 0.3.43 | Theme phát sự kiện trình duyệt khi giỏ đổi (`vani:cart-updated`) | tracking-pixels | Theme `vani-base` |
-| G7 | Kiểm tra: `settings()` nhận giá trị theo ngôn ngữ; `CatalogReader` trả danh mục chính + chuỗi danh mục cha | store-content, size-chart | Tenancy/Extension, Catalog |
+| G7 ✅ 0.3.43 | Kiểm tra: `settings()` nhận giá trị theo ngôn ngữ; `CatalogReader` trả danh mục chính + chuỗi danh mục cha | store-content, size-chart | Tenancy/Extension, Catalog |
 
-Thứ tự đề xuất sau khi Owner duyệt: M1-core (G1–G7) → `vani.tracking-pixels` → `vani.shipping-flat-rate` 1.1 → `vani.size-chart` → `vani.lookbook` → `vani.cms` 1.2 → `vani.storefront-extras`.
+M1-core xong (G1–G7, Core 0.3.43). Tiếp theo: `vani.tracking-pixels` → `vani.shipping-flat-rate` 1.1 → `vani.size-chart` → `vani.lookbook` → `vani.cms` 1.2 → `vani.storefront-extras`.
 
 ## 6. Rủi ro
 

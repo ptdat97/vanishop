@@ -114,6 +114,8 @@ it('PDP có thuộc tính spec, breadcrumb, màu; ẩn thuộc tính internal', 
         ->assertJsonPath('data.attributes.0.value', 'Lụa')
         ->assertJsonPath('data.breadcrumb.0.slug', 'nu')
         ->assertJsonPath('data.breadcrumb.1.slug', 'dam')
+        ->assertJsonPath('data.breadcrumb.1.id', $this->dresses->id)
+        ->assertJsonPath('data.brand.id', $this->lumiere->id)
         ->assertJsonPath('data.colors.0.code', 'BLK');
     expect(collect($response->json('data.attributes'))->pluck('code')->all())->not->toContain('supplier');
 });

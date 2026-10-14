@@ -1129,7 +1129,8 @@ class Modules\Tenancy\Contracts\Data\SettingDefinition
   5 => 'select',
 )
   __construct(string $namespace, string $key, string $label, string $type = 'string', mixed $default = NULL, array $options = array (
-), ?string $help = NULL, ?string $optionsFromTag = NULL)
+), ?string $help = NULL, ?string $optionsFromTag = NULL, array $rules = array (
+))
 interface Modules\Tenancy\Contracts\LegalEntityDirectory
   all(): array
 interface Modules\Tenancy\Contracts\Settings

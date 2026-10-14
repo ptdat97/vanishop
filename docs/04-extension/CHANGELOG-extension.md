@@ -6,7 +6,7 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ## 0.3.43 — 2026-10-14
 
-M1-core G1–G6 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
+M1-core G1–G7 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
 
 ### Thêm
 - Service contract `Storefront\Contracts\ProductCards::forIds(list<int> $styleIds, string $locale)` — thẻ sản phẩm (cùng dạng item lưới, có `extensions` của enricher `product_card`) theo id style, giữ thứ tự, tối đa `MAX_IDS = 60`.
@@ -16,6 +16,8 @@ M1-core G1–G6 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-
 - Tài nguyên Admin `category`, `brand` (G4): `adminFormSection('category'|'brand', …)` hiện trong form danh mục và form thương hiệu (trang danh sách), lưu cùng transaction với Core. Prop Inertia trang thương hiệu `extensionSections` là map `new` / id thương hiệu → phần form. Cột, bộ lọc, thao tác, tab cho hai tài nguyên này: chưa nối.
 - Slot `vani.storefront.layout.body_start` (đầu `<body>`, trước header) và `vani.storefront.plp.before_listing` (args: ngữ cảnh `{type, category, brand}`, listing) — G5; theme `vani-base` render cả hai.
 - Sự kiện trình duyệt `vani:cart-updated` (G6) sau thay đổi giỏ native; `/_vani/phien` thêm khoá `cart_change`.
+- `SettingDefinition::$rules` (G7) và khoá `rules` trong `PluginServiceProvider::settings()` — rule validate Laravel cho giá trị sau ép kiểu. Giá trị theo ngôn ngữ: quy ước một khoá mỗi ngôn ngữ (`<khoá>.<locale>`).
+- Chi tiết sản phẩm (`CatalogReader::productDetail`, Storefront API): `breadcrumb[].id`; thẻ và chi tiết sản phẩm: `brand.id`.
 
 ## 0.3.42 — 2026-10-10
 

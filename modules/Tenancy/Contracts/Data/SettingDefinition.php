@@ -24,5 +24,12 @@ final readonly class SettingDefinition
         public ?string $help = null,
         /** (select) lấy lựa chọn từ mã (`code()`) các implementation của extension point này, vd. `ReturnPolicy::TAG`. */
         public ?string $optionsFromTag = null,
+        /**
+         * Rule validate thêm (Laravel) cho giá trị sau khi ép kiểu, vd. `['regex:/^#[0-9a-f]{6}$/i']` (0.3.43). Giá trị
+         * rỗng (đặt lại mặc định) không bị kiểm tra.
+         *
+         * @var list<mixed>
+         */
+        public array $rules = [],
     ) {}
 }

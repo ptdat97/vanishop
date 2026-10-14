@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Settings;
 
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
@@ -81,7 +82,14 @@ final class SettingsAdmin
                 continue;
             }
 
-            $this->settings->set($namespace, $key, $this->cast($definition, $value));
+            $value = $this->cast($definition, $value);
+            if ($definition->rules !== []) {
+                $validator = Validator::make(['value' => $value], ['value' => $definition->rules], [], ['value' => $definition->label]);
+                if ($validator->fails()) {
+                    throw ValidationException::withMessages(["values.{$key}" => $validator->errors()->first('value')]);
+                }
+            }
+            $this->settings->set($namespace, $key, $value);
             $this->audit->record('settings.updated', 'setting', "{$namespace}.{$key}", [
                 'value' => $definition->type === 'secret' ? '***' : $value,
             ]);

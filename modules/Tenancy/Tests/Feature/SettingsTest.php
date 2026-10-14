@@ -97,3 +97,18 @@ it('Admin → Cấu hình: form (lựa chọn lấy từ extension point), lưu/
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff');
     $this->get('/admin/settings')->assertForbidden();
 });
+
+it('rule validate thêm của cấu hình (0.3.43): sai → lỗi theo trường, không lưu; rỗng = đặt lại không bị kiểm tra', function () {
+    app(Settings::class)->define(new SettingDefinition('test', 'color', 'Màu thanh', rules: ['regex:/^#[0-9a-f]{6}$/i']));
+    app(Settings::class)->define(new SettingDefinition('test', 'message', 'Nội dung', rules: ['regex:/\{amount\}/']));
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
+
+    $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['color' => 'đỏ']])->assertSessionHasErrors('values.color');
+    $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['message' => 'Thêm tiền để miễn phí']])->assertSessionHasErrors('values.message');
+    expect(app(Settings::class)->explicit('test'))->toBe([]);
+
+    $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['color' => '#93C5FD', 'message' => 'Thêm {amount} nữa']])->assertSessionHasNoErrors();
+    expect(app(Settings::class)->get('test', 'color'))->toBe('#93C5FD');
+    $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['color' => '']])->assertSessionHasNoErrors();
+    expect(app(Settings::class)->get('test', 'color'))->toBeNull();
+});

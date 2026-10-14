@@ -60,7 +60,7 @@ Không có cấu hình toàn plugin ngoài bảng mặc định. Đơn vị hỗ
 | Gán theo danh mục/thương hiệu trong form danh mục/thương hiệu | `adminFormSection('category'|'brand', …)` | ✅ 0.3.43 (G4) |
 | Link + hộp thoại trên trang sản phẩm | Slot `vani.storefront.pdp.add_to_cart_fields` (hoặc `pdp.after_add_to_cart`) | ✅ |
 | Dữ liệu cho headless | `StorefrontEnricher` (`product`) | ✅ |
-| Biết danh mục chính, thương hiệu của sản phẩm | `CatalogReader` | ✅ (kiểm tra có trả danh mục chính + chuỗi cha khi viết) |
+| Biết danh mục chính, thương hiệu của sản phẩm | `CatalogReader::productDetail` — `breadcrumb[].id` (danh mục chính và các cha), `brand.id` | ✅ 0.3.43 |
 | Chọn ảnh | Thư viện ảnh (`MediaDirectory`) | ✅ |
 
 ## 7. Quyền

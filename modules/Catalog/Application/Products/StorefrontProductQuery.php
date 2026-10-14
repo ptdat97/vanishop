@@ -169,7 +169,7 @@ final class StorefrontProductQuery
             'slug' => $style->slug,
             'style_code' => $style->style_code,
             'name' => $style->translate('name', $locale),
-            'brand' => $style->brand === null ? null : ['slug' => $style->brand->slug, 'name' => $style->brand->name],
+            'brand' => $style->brand === null ? null : ['id' => $style->brand->id, 'slug' => $style->brand->slug, 'name' => $style->brand->name],
             'image_url' => $firstImage?->media->url(400),
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => $this->color($styleColor, $locale))->all(),
             'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
@@ -202,7 +202,7 @@ final class StorefrontProductQuery
         $ancestors = Category::query()->with('translations')->whereIn('id', $category->categoryPath()->ids)->get()->keyBy('id');
 
         return array_values(array_filter(array_map(
-            fn (int $id): ?array => $ancestors->has($id) ? ['slug' => $ancestors[$id]->slug, 'name' => $ancestors[$id]->translate('name', $locale)] : null,
+            fn (int $id): ?array => $ancestors->has($id) ? ['id' => $id, 'slug' => $ancestors[$id]->slug, 'name' => $ancestors[$id]->translate('name', $locale)] : null,
             $category->categoryPath()->ids,
         )));
     }
