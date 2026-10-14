@@ -117,3 +117,20 @@ it('form danh mục và thương hiệu mở cho plugin (0.3.43): phần form tr
         ->toThrow(RuntimeException::class);
     expect($brand->fresh()->name)->toBe('Lumière');
 });
+
+it('phần form có thể khai báo trường bằng closure (0.3.44): chỉ tính khi mở/lưu form, lựa chọn đọc lúc chạy', function () {
+    $calls = 0;
+    $choices = ['a' => 'Bảng A'];
+    $this->registry->section('product', 'vani.cod', 'chart', 'Bảng size', function () use (&$calls, &$choices): array {
+        $calls++;
+
+        return [FieldDefinition::select('chart', 'Bảng', $choices)];
+    }, load: fn (int $id): array => [], save: fn (int $id, array $values) => null);
+    expect($calls)->toBe(0);
+
+    $choices['b'] = 'Bảng B';
+    $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page
+        ->where('extensionSections.0.fields.0.options', ['a' => 'Bảng A', 'b' => 'Bảng B']));
+    $this->put("/admin/catalog/products/{$this->style->id}", ($this->payload)(['vani-cod' => ['chart' => ['chart' => 'x']]]))->assertSessionHasErrors('extensions.vani-cod.chart.chart');
+    expect($calls)->toBeGreaterThan(0);
+});

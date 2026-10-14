@@ -46,11 +46,11 @@ final class AdminExtensions implements AdminScreen
     }
 
     /**
-     * @param  list<FieldDefinition>  $fields
+     * @param  list<FieldDefinition>|Closure(): list<FieldDefinition>  $fields  closure: tính khi mở/lưu form (lựa chọn đọc từ DB, 0.3.44)
      * @param  Closure(int): array<string, mixed>  $load
      * @param  Closure(int, array<string, mixed>): void  $save
      */
-    public function section(string $resource, string $plugin, string $key, string $label, array $fields, Closure $load, Closure $save, int $order = 500): void
+    public function section(string $resource, string $plugin, string $key, string $label, array|Closure $fields, Closure $load, Closure $save, int $order = 500): void
     {
         $this->put('section', $resource, $plugin, $key, compact('label', 'fields', 'load', 'save', 'order'));
     }
@@ -96,7 +96,7 @@ final class AdminExtensions implements AdminScreen
             $values = $id === null ? [] : $this->guard($item, 'load', fn (): array => (array) ($item['load'])($id), []);
             $sections[] = [
                 'plugin' => $item['plugin'], 'input' => self::inputKey($item['plugin']), 'key' => $item['key'], 'label' => $item['label'],
-                'fields' => array_map(fn (FieldDefinition $field): array => $field->toArray(), $item['fields']),
+                'fields' => array_map(fn (FieldDefinition $field): array => $field->toArray(), $this->fields($item)),
                 'values' => $values,
             ];
         }
@@ -108,7 +108,7 @@ final class AdminExtensions implements AdminScreen
     {
         $rules = [];
         foreach ($this->active('section', $resource) as $item) {
-            foreach ($item['fields'] as $field) {
+            foreach ($this->fields($item) as $field) {
                 $rules['extensions.'.self::inputKey($item['plugin']).".{$item['key']}.{$field->key}"] = $field->rules();
             }
         }
@@ -123,7 +123,7 @@ final class AdminExtensions implements AdminScreen
             $id = $idOf($result);
             foreach ($this->active('section', $resource) as $item) {
                 $values = (array) ($input[self::inputKey($item['plugin'])][$item['key']] ?? []);
-                $known = array_map(fn (FieldDefinition $field): string => $field->key, $item['fields']);
+                $known = array_map(fn (FieldDefinition $field): string => $field->key, $this->fields($item));
                 ($item['save'])($id, array_intersect_key($values, array_flip($known)));
             }
 
@@ -228,6 +228,15 @@ final class AdminExtensions implements AdminScreen
         $item = $this->items['action']["{$resource}|{$plugin}|{$key}"] ?? null;
 
         return $item !== null && $this->isActive($item['plugin']) ? $item : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return list<FieldDefinition>
+     */
+    private function fields(array $item): array
+    {
+        return $item['fields'] instanceof Closure ? ($item['fields'])() : $item['fields'];
     }
 
     /**

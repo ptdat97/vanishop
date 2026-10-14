@@ -133,11 +133,11 @@ abstract class PluginServiceProvider extends ServiceProvider
      * Phần form của plugin trên màn hình tạo/sửa tài nguyên của Core (ADR-030 §4.A). `save` chạy trong transaction
      * lưu của Core, sau Core; lỗi → rollback cả form.
      *
-     * @param  list<FieldDefinition>  $fields
+     * @param  list<FieldDefinition>|Closure(): list<FieldDefinition>  $fields  closure: tính khi mở/lưu form, vd. lựa chọn đọc từ DB (0.3.44)
      * @param  Closure(int): array<string, mixed>  $load  id → giá trị hiện tại
      * @param  Closure(int, array<string, mixed>): void  $save
      */
-    protected function adminFormSection(string $resource, string $key, string $label, array $fields, Closure $load, Closure $save, int $order = 500): void
+    protected function adminFormSection(string $resource, string $key, string $label, array|Closure $fields, Closure $load, Closure $save, int $order = 500): void
     {
         $this->app->make(AdminExtensions::class)->section($resource, $this->pluginId(), $key, $label, $fields, $load, $save, $order);
     }

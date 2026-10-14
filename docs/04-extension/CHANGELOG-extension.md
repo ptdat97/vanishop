@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.44 — 2026-10-14
+
+Chỉ thêm.
+
+### Thêm
+- `PluginServiceProvider::adminFormSection(…, array|Closure $fields, …)` (và `AdminExtensions::section`): trường có thể khai báo bằng closure trả `list<FieldDefinition>`, chỉ tính khi mở/lưu form — cho lựa chọn đọc từ DB (vd. danh sách bảng size của `vani.size-chart`) mà không truy vấn lúc boot.
+
 ## 0.3.43 — 2026-10-14
 
 M1-core G1–G7 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
