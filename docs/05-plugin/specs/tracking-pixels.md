@@ -70,7 +70,7 @@ Khi `banner`: plugin hiện thanh đồng ý cookie đơn giản (Đồng ý / T
 |---|---|---|
 | Nhúng script đầu trang, cuối trang | Slot `vani.storefront.layout.head`, `vani.storefront.layout.body_end` | ✅ |
 | Dữ liệu sản phẩm/danh sách/tìm kiếm cho sự kiện | `StorefrontEnricher` (`product`, `product_card`) hoặc điểm tự động view storefront (ADR-031) | ✅ |
-| Sự kiện giỏ | JS nghe sự kiện DOM do theme phát sau thao tác giỏ thành công | **Gap**: theme `vani-base` cần phát sự kiện trình duyệt chuẩn (`vani:cart-updated` kèm dòng thay đổi) — thay đổi theme, không phải Core |
+| Sự kiện giỏ | JS nghe sự kiện DOM do theme phát sau thao tác giỏ thành công | ✅ 0.3.43 sự kiện `vani:cart-updated` ([storefront §5](../../14-storefront/storefront.md)) |
 | Trang đơn vừa đặt | Slot `vani.storefront.order.after_summary` | ✅ |
 | Sự kiện mua phía server | Event `OrderPlaced` qua `onEvent()`; `OrderReader` | ✅ |
 | Cờ đồng ý cookie lúc đặt hàng | `CheckoutRequest::$extra` (`vani.order.before_create`) | ✅ |

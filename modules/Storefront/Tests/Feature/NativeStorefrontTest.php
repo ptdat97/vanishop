@@ -224,3 +224,26 @@ it('slot đầu trang và đầu danh sách (0.3.43): body_start trước header
     $this->get("/thuong-hieu/{$this->urbanx->slug}")->assertOk()->assertSee("NGỮ-CẢNH:brand:{$this->urbanx->slug}:1", false);
     $this->get('/tim-kiem?q=thun')->assertOk()->assertSee('NGỮ-CẢNH:search:-:1', false);
 });
+
+it('thay đổi giỏ → trang kế tiếp có dữ liệu cho sự kiện vani:cart-updated, chỉ một lần (0.3.43)', function () {
+    $change = function (): ?array {
+        $html = $this->get('/gio-hang')->assertOk()->getContent();
+
+        return preg_match('/<script type="application\/json" data-vani-cart-change>(.*?)<\/script>/s', $html, $m) === 1 ? json_decode($m[1], true) : null;
+    };
+
+    $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2]);
+    expect($change())->toMatchArray(['action' => 'add', 'variant_id' => $this->s->id, 'quantity' => 2, 'unit_amount' => 300_000, 'currency' => 'VND'])
+        ->and($change())->toBeNull(); // flash một lần
+
+    $line = (int) collect(app(NativeCart::class)->current()->lines)->first()->id;
+    $this->post("/gio-hang/{$line}", ['quantity' => 5]);
+    expect($change())->toMatchArray(['action' => 'add', 'quantity' => 3]);
+    $this->post("/gio-hang/{$line}", ['quantity' => 1]);
+    expect($change())->toMatchArray(['action' => 'remove', 'quantity' => 4]);
+    $this->post("/gio-hang/{$line}", ['quantity' => 1]);
+    expect($change())->toBeNull(); // không đổi số lượng
+
+    $this->post("/gio-hang/{$line}/xoa");
+    expect($this->getJson('/_vani/phien')->json('cart_change'))->toMatchArray(['action' => 'remove', 'variant_id' => $this->s->id, 'quantity' => 1]);
+});

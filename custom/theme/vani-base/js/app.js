@@ -73,12 +73,31 @@ document.querySelectorAll('form[data-confirm]').forEach((form) => {
 
 // Trang cache được (không phiên, storefront §5): lấy phần riêng của khách — đăng nhập, số món trong giỏ, thông báo/lỗi
 // của lần gửi trước. Không có JS: trang vẫn mua được, chỉ không hiện các chi tiết này.
+/**
+ * Sự kiện trình duyệt khi giỏ đổi (0.3.43) — plugin (đo quảng cáo…) nghe `document.addEventListener('vani:cart-updated', …)`.
+ * detail: { action: 'add' | 'remove', variant_id, sku, name, quantity, unit_amount, currency }.
+ */
+function dispatchCartChange(change) {
+    if (change) {
+        document.dispatchEvent(new CustomEvent('vani:cart-updated', { detail: change }));
+    }
+}
+const inlineCartChange = document.querySelector('script[data-vani-cart-change]');
+if (inlineCartChange) {
+    try {
+        dispatchCartChange(JSON.parse(inlineCartChange.textContent || 'null'));
+    } catch {
+        // dữ liệu hỏng: bỏ qua
+    }
+}
+
 const sessionUrl = document.documentElement.dataset.vaniSession;
 if (sessionUrl) {
     fetch(sessionUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
         .then((response) => (response.ok ? response.json() : null))
         .then((session) => {
             if (!session) return;
+            dispatchCartChange(session.cart_change);
             const account = document.querySelector('[data-vani-account]');
             if (account) {
                 account.textContent = session.account.label;

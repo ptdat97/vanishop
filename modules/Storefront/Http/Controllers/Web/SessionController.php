@@ -46,6 +46,7 @@ final class SessionController
                 'status' => $request->session()->get('status'),
                 'errors' => array_map(fn (array $messages): string => (string) ($messages[0] ?? ''), $bag->toArray()),
             ],
+            'cart_change' => $request->session()->get(CartController::CHANGE_FLASH),
         ])->header('Cache-Control', 'private, no-store');
     }
 }

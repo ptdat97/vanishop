@@ -59,6 +59,10 @@
         </div>
     </footer>
 
+    {{-- Thay đổi giỏ của lần gửi trước → sự kiện `vani:cart-updated` (app.js). Trang có cache lấy qua /_vani/phien. --}}
+    @if (! $pageCache && session()->has(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))
+        <script type="application/json" data-vani-cart-change>@json(session(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))</script>
+    @endif
     <x-vani::hook-slot name="vani.storefront.layout.body_end" />
 </body>
 </html>
