@@ -1,0 +1,17 @@
+{
+    "id": "vani.tracking-pixels",
+    "name": {
+        "vi": "Theo dõi quảng cáo (Meta, GA4, GTM)",
+        "en": "Ad tracking (Meta, GA4, GTM)"
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\TrackingPixels\\TrackingPixelsServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.43",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

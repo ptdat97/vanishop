@@ -1,6 +1,6 @@
 # Đặc tả: Theo dõi quảng cáo (`vani.tracking-pixels`)
 
-> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin PixelTracking 1.0.0 của VaniCommerce (Owner). Đợt: M1. Quy trình: [vanicommerce-plugin-migration](../vanicommerce-plugin-migration.md).
+> Trạng thái: **Implemented** 2026-10-14 (`custom/plugin/TrackingPixels`, 1.0.0). Đặc tả Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin PixelTracking 1.0.0 của VaniCommerce (Owner). Đợt: M1. Quy trình: [vanicommerce-plugin-migration](../vanicommerce-plugin-migration.md).
 
 ## 1. Mục tiêu
 
@@ -10,7 +10,7 @@ Gửi sự kiện thương mại điện tử chuẩn tới Meta Pixel, Google A
 
 | Tính năng | Giữ / đổi |
 |---|---|
-| Nhúng script Meta Pixel, GA4, GTM (kèm thẻ `noscript` của GTM) | Giữ |
+| Nhúng script Meta Pixel, GA4, GTM (kèm thẻ `noscript` của GTM) | Giữ script; **bỏ** `noscript` của GTM (nạp GTM khi chưa đồng ý) |
 | Sự kiện trình duyệt: xem trang, xem sản phẩm, xem danh sách (danh mục), tìm kiếm, thêm vào giỏ, bỏ khỏi giỏ, bắt đầu thanh toán, chọn phương thức thanh toán, mua hàng | Giữ |
 | Mã sự kiện chung cho sự kiện mua (khử trùng giữa trình duyệt và server) | Giữ |
 | Gửi sự kiện mua từ server tới Meta (Conversions API) và GA4 (Measurement Protocol), băm SHA-256 email/SĐT/mã khách | Giữ, chuyển sang chạy nền (queue) |
@@ -43,7 +43,7 @@ Gửi sự kiện thương mại điện tử chuẩn tới Meta Pixel, Google A
 
 - Nghe `OrderPlaced`: dựng sự kiện mua (cùng mã sự kiện với trình duyệt, suy ra từ id công khai của đơn), đẩy job gửi Meta và/hoặc GA4. Job có timeout ngắn, thử lại có giới hạn, lỗi chỉ ghi log khi bật debug; không bao giờ ảnh hưởng đặt hàng.
 - Dữ liệu định danh gửi đi: email, SĐT (E.164), mã khách — **băm SHA-256** trước khi gửi; IP, user agent, cookie định danh của nền tảng (đọc lúc đặt hàng, lưu trong job, không lưu DB).
-- Gửi server-side chỉ khi khách đã đồng ý cookie (ghi nhận cờ đồng ý cùng yêu cầu đặt hàng); không đồng ý thì không gửi.
+- Gửi server-side chỉ khi khách đã đồng ý cookie: đọc cookie `vani_consent` (do thanh đồng ý hoặc biểu thức tuỳ chỉnh ghi) trong request đặt hàng; không đồng ý thì không gửi.
 
 ## 4. Dữ liệu
 
@@ -73,7 +73,7 @@ Khi `banner`: plugin hiện thanh đồng ý cookie đơn giản (Đồng ý / T
 | Sự kiện giỏ | JS nghe sự kiện DOM do theme phát sau thao tác giỏ thành công | ✅ 0.3.43 sự kiện `vani:cart-updated` ([storefront §5](../../14-storefront/storefront.md)) |
 | Trang đơn vừa đặt | Slot `vani.storefront.order.after_summary` | ✅ |
 | Sự kiện mua phía server | Event `OrderPlaced` qua `onEvent()`; `OrderReader` | ✅ |
-| Cờ đồng ý cookie lúc đặt hàng | `CheckoutRequest::$extra` (`vani.order.before_create`) | ✅ |
+| Cờ đồng ý cookie lúc đặt hàng | Cookie `vani_consent` đọc trong listener `OrderPlaced` (chạy sau commit, trong request) | ✅ |
 | Cấu hình | `settings()` (có secret) | ✅ |
 
 ## 7. Quyền

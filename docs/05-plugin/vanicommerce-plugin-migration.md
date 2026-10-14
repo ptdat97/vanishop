@@ -60,7 +60,7 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 
 | Đợt | Plugin cũ | Plugin VaniShop | Extension point chính |
 |---|---|---|---|
-| **M1** (go-live) | PixelTracking | `vani.tracking-pixels` ([đặc tả](specs/tracking-pixels.md)) | Slot storefront, events đơn |
+| **M1** (go-live) | PixelTracking | `vani.tracking-pixels` ✅ 2026-10-14 ([đặc tả](specs/tracking-pixels.md)) | Slot storefront, events đơn |
 | M1 | SizeChart | `vani.size-chart` ([đặc tả](specs/size-chart.md)) | `adminFormSection` (product), slot PDP |
 | M1 | FreeShippingProgress | gộp vào `vani.shipping-flat-rate` 1.1 ([đặc tả](specs/free-shipping-progress.md)) | Slot giỏ/checkout, `StorefrontEnricher` (cart) |
 | M1 | Lookbook | `vani.lookbook` ([đặc tả](specs/lookbook.md)) | `storefrontPages`, `StorefrontBlock`, Thư viện ảnh |

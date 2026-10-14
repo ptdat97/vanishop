@@ -89,7 +89,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 ### Marketing, tìm kiếm
 | Plugin | Contract | Đợt |
 |---|---|---|
-| `vani.tracking-pixels` (GA4, Meta, TikTok) | Slot storefront, events đơn | P1 |
+| `vani.tracking-pixels` ✅ (GA4, Meta, GTM; server-side Meta CAPI + GA4 MP; đồng ý cookie) | Slot storefront, `OrderPlaced`, sự kiện `vani:cart-updated` | **Implemented** 2026-10-14 |
 | `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
 | `vani.search-meilisearch` ✅ | `SearchProvider` + `ConfigurableSearchIndex` | P1 (tách từ Core 2026-10-14) |
 | `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
