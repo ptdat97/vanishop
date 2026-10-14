@@ -11,6 +11,7 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 
 /**
  * GET /products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk,linen&sort=&page=&per_page=
+ * GET /products?ids=12,7,30 — thẻ sản phẩm theo id (tối đa 30, giữ thứ tự, bỏ qua các bộ lọc khác; 0.3.43).
  */
 final class ProductListRequest extends FormRequest
 {
@@ -30,7 +31,16 @@ final class ProductListRequest extends FormRequest
             'sort' => ['nullable', Rule::in([ProductSearchQuery::SORT_NEWEST, ProductSearchQuery::SORT_CODE])],
             'page' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.ProductSearchQuery::MAX_PER_PAGE],
+            'ids' => ['nullable', 'string', 'regex:/^[1-9]\d{0,9}(,[1-9]\d{0,9}){0,29}$/'],
         ];
+    }
+
+    /**
+     * @return list<int>|null null = không lọc theo id
+     */
+    public function styleIds(): ?array
+    {
+        return $this->filled('ids') ? array_map('intval', explode(',', (string) $this->input('ids'))) : null;
     }
 
     public function toFilters(int $now): ProductFilters

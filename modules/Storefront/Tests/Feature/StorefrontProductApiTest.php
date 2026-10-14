@@ -5,9 +5,11 @@ use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers;
+use Modules\Storefront\Contracts\ProductCards;
 
 require_once __DIR__.'/../../../Catalog/Tests/Feature/CatalogTestHelpers.php';
 
@@ -168,4 +170,20 @@ it('công bố còn hàng / sắp hết theo tồn giao online, không lộ số
         ->and($variants[$m->sku])->toMatchArray(['available' => true, 'low_stock' => true])
         ->and($variants[$l->sku])->toMatchArray(['available' => false, 'low_stock' => false])
         ->and(json_encode($detail->json()))->not->toContain('on_hand');
+});
+
+it('thẻ sản phẩm theo id: giữ thứ tự, bỏ sản phẩm không hiển thị/trùng, cùng dạng lưới; giới hạn 30 id', function () {
+    $draft = T::seed(fn () => Style::query()->where('status', 'draft')->value('id'));
+    $ids = implode(',', [$this->linenShirt->id, $draft, 999999, $this->silkDress->id, $this->linenShirt->id]);
+
+    $response = $this->getJson("/api/storefront/v1/products?ids={$ids}&brand=urbanx")->assertOk();
+    expect(array_column($response->json('data'), 'slug'))->toBe(['ao-linen', 'dam-lua-den'])
+        ->and($response->json('meta.total'))->toBe(2)
+        ->and(array_keys($response->json('data.0')))->toEqualCanonicalizing(array_keys($this->getJson('/api/storefront/v1/products?q=linen')->json('data.0')));
+
+    $this->getJson('/api/storefront/v1/products?ids='.implode(',', range(1, 31)))->assertStatus(422);
+    $this->getJson('/api/storefront/v1/products?ids=1,abc')->assertStatus(422);
+
+    // Contract cho plugin: cùng kết quả.
+    expect(array_column(app(ProductCards::class)->forIds([$this->silkDress->id, $this->linenShirt->id], 'vi'), 'slug'))->toBe(['dam-lua-den', 'ao-linen']);
 });

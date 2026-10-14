@@ -20,7 +20,9 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
@@ -40,6 +42,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        $this->app->bind(ProductCards::class, ProductViews::class);
         $this->app->singleton(Themes::class, fn ($app): Themes => new Themes(
             (string) config('vanishop.storefront.themes_path'),
             $app->make(Settings::class),

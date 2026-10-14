@@ -68,6 +68,11 @@ final class StorefrontCatalog implements CatalogReader
         return $brand === null ? null : [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description];
     }
 
+    public function productsByIds(array $styleIds, string $locale, int $now): array
+    {
+        return $this->products->byIds($styleIds, $locale, $now);
+    }
+
     public function productDetail(string $slug, string $locale, int $now): ?array
     {
         return $this->products->detail($slug, $locale, $now);

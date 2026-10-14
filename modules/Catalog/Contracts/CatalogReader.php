@@ -47,6 +47,15 @@ interface CatalogReader
     public function searchProducts(ProductFilters $filters, string $locale): array;
 
     /**
+     * Sản phẩm đang hiển thị theo id style (0.3.43), cùng dạng item của `searchProducts` (có "variant_ids"), giữ thứ tự
+     * `$styleIds`; id không hiển thị/không tồn tại bị bỏ.
+     *
+     * @param  list<int>  $styleIds
+     * @return list<array<string, mixed>>
+     */
+    public function productsByIds(array $styleIds, string $locale, int $now): array;
+
+    /**
      * Chi tiết sản phẩm đang hiển thị; có "variants" (list<VariantView>) các variant đang bán.
      *
      * @return array<string, mixed>|null

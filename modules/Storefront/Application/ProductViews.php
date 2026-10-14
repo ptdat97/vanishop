@@ -11,13 +11,14 @@ use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Shared\Support\MoneyFormatter;
+use Modules\Storefront\Contracts\ProductCards;
 
 /**
  * Ghép dữ liệu sản phẩm cho storefront từ các module Core qua contract (Catalog + Pricing + Inventory).
  * Storefront chỉ công bố còn/hết hàng và "sắp hết", không lộ số tồn chính xác.
  * Native storefront và Storefront API cùng dùng lớp này (ADR-009).
  */
-final class ProductViews
+final class ProductViews implements ProductCards
 {
     public function __construct(
         private readonly CatalogReader $catalog,
@@ -33,21 +34,40 @@ final class ProductViews
     public function listing(ProductFilters $filters, string $locale, int $now): array
     {
         $listing = $this->catalog->searchProducts($filters, $locale);
+        $listing['items'] = $this->cards($listing['items'], $now);
 
-        $variantIds = array_merge(...array_map(fn (array $item): array => $item['variant_ids'], $listing['items'] ?: [['variant_ids' => []]]));
+        return $listing;
+    }
+
+    public function forIds(array $styleIds, string $locale): array
+    {
+        $now = now()->getTimestamp();
+        $ids = array_slice($styleIds, 0, self::MAX_IDS);
+
+        return $this->cards($this->catalog->productsByIds($ids, $locale, $now), $now);
+    }
+
+    /**
+     * Item catalog (có "variant_ids") → thẻ sản phẩm: khoảng giá, còn hàng, phần mở rộng của plugin.
+     *
+     * @param  list<array<string, mixed>>  $items
+     * @return list<array<string, mixed>>
+     */
+    private function cards(array $items, int $now): array
+    {
+        $variantIds = array_merge(...array_map(fn (array $item): array => $item['variant_ids'], $items ?: [['variant_ids' => []]]));
         $resolved = $this->resolve($variantIds, $now);
         $stock = $this->stock(array_keys($resolved));
 
-        $listing['items'] = array_map(function (array $item) use ($resolved, $stock): array {
+        $items = array_map(function (array $item) use ($resolved, $stock): array {
             $item['price'] = $this->range(array_values(array_intersect_key($resolved, array_flip($item['variant_ids']))));
             $item['in_stock'] = array_sum(array_intersect_key($stock, array_flip($item['variant_ids']))) > 0;
             unset($item['variant_ids']);
 
             return $item;
-        }, $listing['items']);
-        $listing['items'] = $this->enrichment->apply('product_card', $listing['items']);
+        }, $items);
 
-        return $listing;
+        return $this->enrichment->apply('product_card', $items);
     }
 
     /**

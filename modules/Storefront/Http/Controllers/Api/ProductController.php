@@ -13,6 +13,13 @@ final class ProductController
 {
     public function index(ProductListRequest $request, ProductViews $products): JsonResponse
     {
+        $ids = $request->styleIds();
+        if ($ids !== null) {
+            $items = $products->forIds($ids, App::getLocale());
+
+            return response()->json(['data' => $items, 'meta' => ['total' => count($items), 'page' => 1, 'per_page' => count($items), 'facets' => null]]);
+        }
+
         $now = now()->getTimestamp();
         $listing = $products->listing($request->toFilters($now), App::getLocale(), $now);
 

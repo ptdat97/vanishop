@@ -53,8 +53,8 @@ Không có bảng. Cấu hình khối lưu trong page builder của Core; cấu 
 | Nhu cầu | Extension point | Có sẵn? |
 |---|---|---|
 | Ba khối page builder | `StorefrontBlock` | ✅ |
-| **Thẻ sản phẩm theo danh sách id** cho khối và cho API "đã xem" | Service contract trả thẻ sản phẩm (giá, ảnh, nhãn) giống lưới Core | **Gap Core**: `ProductViews` là nội bộ Storefront; cần contract public (vd. `Storefront\Contracts\ProductCards::forIds(list<string> $publicIds, locale)`) — dùng chung cho `vani.lookbook` M3 và khối khác |
-| Lấy thẻ sản phẩm cho JS "đã xem" | Storefront API | **Gap Core**: `GET /api/storefront/v1/products` chưa lọc theo danh sách id; thêm tham số `ids[]` (tối đa 30) |
+| **Thẻ sản phẩm theo danh sách id** cho khối và cho API "đã xem" | Service contract trả thẻ sản phẩm (giá, ảnh, nhãn) giống lưới Core | ✅ 0.3.43 `Storefront\Contracts\ProductCards::forIds(list<int> $styleIds, locale)` |
+| Lấy thẻ sản phẩm cho JS "đã xem" | Storefront API `GET /api/storefront/v1/products?ids=…` (tối đa 30) | ✅ 0.3.43 |
 | Top sản phẩm theo số lượng bán | `OrderStatistics` | **Gap Core**: `breakdown(Product)` gom theo **tên** sản phẩm; cần phương thức trả id style theo số lượng (vd. `topStyles(from, to, limit)`), dựa trên `order_lines.style_id`, trừ dòng huỷ |
 | Thanh "Đã xem" trang sản phẩm / giỏ | Slot `vani.storefront.pdp.after_details`, `vani.storefront.cart.after_lines` | ✅ |
 | Poster | Thư viện ảnh | ✅ |
@@ -67,7 +67,7 @@ Không có màn hình riêng; khối cấu hình trong page builder (quyền hi�
 
 1. "Bán chạy": đơn huỷ và dòng huỷ không được tính; sản phẩm ngừng bán không xuất hiện; cửa hàng chưa có đơn → khối hiện sản phẩm mới nhất.
 2. "Đã xem": HTML trang (cache) không chứa sản phẩm đã xem của ai; JS hiện đúng thứ tự mới nhất, bỏ sản phẩm đang xem / đã trong giỏ, ẩn khi rỗng.
-3. API `ids[]` chỉ trả sản phẩm còn bán, giữ thứ tự id truyền vào, tối đa 30.
+3. API `ids` chỉ trả sản phẩm còn bán, giữ thứ tự id truyền vào, tối đa 30.
 4. "Video hero": URL không phải `https` hoặc không phải mp4/webm bị từ chối khi lưu; không tự phát → có nút phát; giảm chuyển động → không tự phát.
 5. Contract test cho ba `StorefrontBlock`.
 

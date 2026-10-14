@@ -36,7 +36,7 @@ final class StorefrontProductQuery
         $result = $this->search->search($filtered instanceof ProductSearchQuery ? $filtered : $query);
 
         $styles = Style::query()
-            ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')])
+            ->with(self::summaryRelations())
             ->whereIn('id', $result->styleIds)
             ->get()
             ->keyBy('id');
@@ -50,6 +50,34 @@ final class StorefrontProductQuery
         }
 
         return ['items' => $items, 'total' => $result->total, 'facets' => $result->facets];
+    }
+
+    /**
+     * Sản phẩm đang hiển thị theo id style, giữ thứ tự `$styleIds`; id trùng/không hiển thị bị bỏ.
+     *
+     * @param  list<int>  $styleIds
+     * @return list<array<string, mixed>>
+     */
+    public function byIds(array $styleIds, string $locale, int $now): array
+    {
+        $ids = array_values(array_unique(array_filter($styleIds, fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $at = new \DateTimeImmutable("@{$now}");
+        $styles = Style::query()->with(self::summaryRelations())->whereIn('id', $ids)->get()
+            ->filter(fn (Style $style): bool => PublishWindow::isVisible($style->status, $style->publishWindow(), $at))
+            ->keyBy('id');
+
+        $items = [];
+        foreach ($ids as $id) {
+            if ($styles->has($id)) {
+                $items[] = $this->summary($styles->get($id), $locale);
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -124,6 +152,14 @@ final class StorefrontProductQuery
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @return array<int|string, mixed>
+     */
+    private static function summaryRelations(): array
+    {
+        return ['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')];
+    }
+
     private function summary(Style $style, string $locale): array
     {
         $firstImage = $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first();
