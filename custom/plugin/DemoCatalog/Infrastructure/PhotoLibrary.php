@@ -10,13 +10,13 @@ use InvalidArgumentException;
  * Đọc thư mục ảnh chụp sản phẩm và gom thành sản phẩm demo:
  * - chuẩn hoá tên (`_1773799834VNQ07102 copy_1.jpg`, `vnq07102-copy-1776485158.jpg` → `vnq07102`) để bỏ ảnh tải lên
  *   nhiều lần — giữ file lớn nhất (bản gốc);
- * - ảnh cùng tiền tố máy chụp với số khung liền nhau (≤ 40) là cùng một bộ đồ → một sản phẩm, tối đa 4 ảnh.
+ * - ảnh cùng tiền tố máy chụp với số khung liền nhau (≤ 45) là cùng một bộ đồ → một sản phẩm, tối đa 4 ảnh.
  */
 final class PhotoLibrary
 {
     private const EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 
-    private const FRAME_GAP = 40;
+    private const FRAME_GAP = 45;
 
     private const MAX_PER_PRODUCT = 4;
 

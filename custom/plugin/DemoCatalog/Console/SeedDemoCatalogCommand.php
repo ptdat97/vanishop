@@ -17,7 +17,7 @@ use Plugin\DemoCatalog\Infrastructure\ImageResizer;
 final class SeedDemoCatalogCommand extends Command
 {
     protected $signature = 'vani:demo:catalog
-        {--source= : Thư mục ảnh (mặc định VANI_DEMO_IMAGES / VaniCommerce/public/image/catalog/products)}
+        {--source= : Thư mục ảnh (mặc định VANI_DEMO_IMAGES / ảnh đi kèm plugin resources/photos)}
         {--limit= : Chỉ nhập N sản phẩm đầu}
         {--dry-run : Chỉ in kế hoạch, không ghi gì}';
 

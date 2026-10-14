@@ -82,3 +82,15 @@ it('--dry-run chỉ in kế hoạch; thư mục nguồn không có → báo lỗ
 
     $this->artisan('vani:demo:catalog', ['--source' => '/khong/co/thu-muc'])->expectsOutputToContain('Không thấy thư mục ảnh demo')->assertFailed();
 });
+
+it('mặc định dùng bộ ảnh đi kèm plugin: 56 ảnh đã thu về ≤ 1600px → 25 sản phẩm', function () {
+    $source = config('vani.demo-catalog.source');
+    $groups = app(PhotoLibrary::class)->groups($source);
+
+    expect($source)->toBe(realpath(__DIR__.'/../../resources/photos') ?: $source)
+        ->and($groups)->toHaveCount(25)
+        ->and(array_sum(array_map(fn (array $group): int => count($group['files']), $groups)))->toBe(56)
+        // Bộ product-71 trong VaniCommerce (VNQ05143–05184) là một sản phẩm.
+        ->and(collect($groups)->firstWhere('key', 'vnq5143')['files'])->toHaveCount(4)
+        ->and(max(array_map(fn (string $file): int => max(array_slice(getimagesize($file) ?: [0, 0], 0, 2)), glob($source.'/*.jpg') ?: [])))->toBeLessThanOrEqual(1600);
+});
