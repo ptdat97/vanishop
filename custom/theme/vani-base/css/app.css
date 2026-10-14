@@ -3,6 +3,7 @@
 @source '../views';
 @source '../../../../modules/Storefront/resources/views';
 @source '../../../plugin/*/Resources/views';
+@source '../../../plugin/*/resources/views';
 
 /* Token của theme → CSS variables --vani-* (layout in từ theme.json + cấu hình `theme.tokens`). */
 @theme {

@@ -1,6 +1,6 @@
 # Đặc tả: Thanh tiến độ miễn phí giao hàng (bổ sung `vani.shipping-flat-rate` 1.1)
 
-> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin FreeShippingProgress 1.0.0 của VaniCommerce (Owner). Đợt: M1. Không tạo plugin mới: gộp vào plugin hệ thống `vani.shipping-flat-rate`, nơi đã có ngưỡng miễn phí giao (`free_over`).
+> Trạng thái: **Implemented** 2026-10-14 (`vani.shipping-flat-rate` 1.1.0). Đặc tả Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin FreeShippingProgress 1.0.0 của VaniCommerce (Owner). Đợt: M1. Không tạo plugin mới: gộp vào plugin hệ thống `vani.shipping-flat-rate`, nơi đã có ngưỡng miễn phí giao (`free_over`).
 
 ## 1. Mục tiêu
 
@@ -22,7 +22,7 @@ Cho khách thấy còn thiếu bao nhiêu để được miễn phí giao, khuy�
 - Số tiền xét ngưỡng **giống hệt** cách tính phí: tiền hàng sau giảm giá của giỏ (`TotalsContext::linesTotal()`), không gồm phí giao.
 - `remaining = max(0, free_over − tiền hàng)`, `percent = min(100, floor(tiền hàng / free_over × 100))`, `achieved = remaining = 0`.
 - Không hiện khi: chưa cấu hình `free_over`, giỏ trống, hoặc phương thức phí cố định không có hiệu lực (plugin tắt/draining).
-- Trang giỏ và thanh toán: cập nhật ngay khi giỏ đổi (dữ liệu lấy từ phản hồi API giỏ, không gọi thêm). Trang sản phẩm: trang có cache, nên số liệu tải sau bằng dữ liệu giỏ của phiên khách (đường lấy phần riêng của khách hiện có — [storefront](../../14-storefront/storefront.md)); không có giỏ thì hiện "Miễn phí giao cho đơn từ …".
+- Trang giỏ và thanh toán: cập nhật ngay khi giỏ đổi (dữ liệu lấy từ phản hồi API giỏ, không gọi thêm). Trang sản phẩm: trang có cache, nên **chỉ hiện ngưỡng chung** "Miễn phí vận chuyển cho đơn từ …" (bản đầu không tải giỏ của khách vào trang sản phẩm — `/_vani/phien` chưa trả tạm tính giỏ).
 - Số tiền định dạng theo `MoneyFormatter`.
 
 ## 4. Dữ liệu

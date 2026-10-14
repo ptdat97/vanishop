@@ -43,5 +43,6 @@ it('giỏ hàng: dữ liệu làm giàu gắn vào giỏ', function () {
     $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
     $cart = $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk()->json('data');
 
-    expect($cart['extensions'])->toBe(['vani.cod' => ['freeship_remaining' => 200_000]]);
+    // Chỉ kiểm phần của enricher test; plugin hệ thống (vd. vani.shipping-flat-rate) có thể thêm khoá riêng.
+    expect($cart['extensions']['vani.cod'])->toBe(['freeship_remaining' => 200_000]);
 });
