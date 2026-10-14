@@ -123,6 +123,24 @@ final class EloquentOrderStatistics implements OrderStatistics
         return $counts;
     }
 
+    public function topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
+    {
+        $this->guardRange($from, $to);
+
+        // Id style nằm trong `order_lines.meta` (chụp lúc đặt); dòng cũ không có thì không tính.
+        return $this->lines($from, $to)
+            ->whereNotNull('order_lines.meta->style_id')
+            ->where('orders.source', '!=', 'exchange')
+            ->select(['order_lines.meta->style_id as style_id', DB::raw('sum(order_lines.quantity) as sold')])
+            ->groupBy('order_lines.meta->style_id')
+            ->havingRaw('sum(order_lines.quantity) > 0')
+            ->orderByDesc('sold')->orderByRaw('cast(style_id as signed)')
+            ->limit(max(1, min($limit, 100)))
+            ->get()
+            ->map(fn (object $row): array => ['style_id' => (int) $row->style_id, 'quantity' => (int) $row->sold])
+            ->all();
+    }
+
     private function orders(DateTimeImmutable $from, DateTimeImmutable $to): Builder
     {
         return DB::table('orders')

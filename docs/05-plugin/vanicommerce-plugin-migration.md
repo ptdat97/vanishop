@@ -126,7 +126,7 @@ Tổng hợp từ các đặc tả; làm theo [commerce-kernel §9](../02-archit
 |---|---|---|---|
 | G1 ✅ 0.3.43 | Service contract thẻ sản phẩm (`ProductCards`) theo danh sách id công khai (giống lưới Core) | storefront-extras (bán chạy, đã xem); lookbook M3 | Storefront |
 | G2 ✅ 0.3.43 | `GET /api/storefront/v1/products?ids=…` (tối đa 30, giữ thứ tự, chỉ hàng còn bán) | storefront-extras (đã xem) | Storefront |
-| G3 | `OrderStatistics`: top style theo số lượng bán trong khoảng thời gian (trừ dòng huỷ) | storefront-extras (bán chạy) | Ordering |
+| G3 ✅ 0.3.43 | `OrderStatistics::topStyles`: top style theo số lượng bán trong khoảng thời gian (trừ dòng huỷ) | storefront-extras (bán chạy) | Ordering |
 | G4 | Tài nguyên Admin `category`, `brand` (`declareResource`) + form danh mục/thương hiệu render phần mở rộng | size-chart, store-content | Catalog + Admin Vue |
 | G5 | Slot `vani.storefront.layout.body_start`, `vani.storefront.plp.before_listing` | store-content | Storefront `hooks.php` + theme `vani-base` |
 | G6 | Theme phát sự kiện trình duyệt khi giỏ đổi (`vani:cart-updated`) | tracking-pixels | Theme `vani-base` |

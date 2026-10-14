@@ -36,6 +36,14 @@ interface OrderStatistics
     public function breakdown(SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array;
 
     /**
+     * Sản phẩm (style) bán chạy theo **số lượng** trong khoảng (0.3.43): đơn không huỷ, số lượng dòng sau huỷ một phần (`quantity` đã trừ phần huỷ), không tính
+     * đơn thay thế khi đổi hàng; hàng trả lại không trừ; dòng không có id style (đơn cũ) bị bỏ. Số lượng giảm dần, cùng số lượng thì id nhỏ trước. Tối đa 100.
+     *
+     * @return list<array{style_id: int, quantity: int}>
+     */
+    public function topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array;
+
+    /**
      * Số đơn hiện tại theo trạng thái đơn (`order_status`) — dùng cho "đơn cần xử lý".
      *
      * @return array<string, int>

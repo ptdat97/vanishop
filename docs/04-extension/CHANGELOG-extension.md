@@ -6,12 +6,13 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ## 0.3.43 — 2026-10-14
 
-M1-core G1/G2 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
+M1-core G1–G3 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
 
 ### Thêm
 - Service contract `Storefront\Contracts\ProductCards::forIds(list<int> $styleIds, string $locale)` — thẻ sản phẩm (cùng dạng item lưới, có `extensions` của enricher `product_card`) theo id style, giữ thứ tự, tối đa `MAX_IDS = 60`.
 - `CatalogReader::productsByIds(list<int>, locale, now)` — item catalog theo id style, chỉ sản phẩm đang hiển thị (Core là implementation duy nhất).
 - Storefront API: `GET /api/storefront/v1/products?ids=…` (tối đa 30).
+- `OrderStatistics::topStyles(from, to, limit = 20): list<array{style_id, quantity}>` — G3; id style lấy từ `order_lines.meta.style_id`, số lượng sau huỷ một phần, bỏ đơn huỷ và đơn đổi hàng (Core là implementation duy nhất).
 
 ## 0.3.42 — 2026-10-10
 

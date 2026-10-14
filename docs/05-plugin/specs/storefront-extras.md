@@ -55,7 +55,7 @@ Không có bảng. Cấu hình khối lưu trong page builder của Core; cấu 
 | Ba khối page builder | `StorefrontBlock` | ✅ |
 | **Thẻ sản phẩm theo danh sách id** cho khối và cho API "đã xem" | Service contract trả thẻ sản phẩm (giá, ảnh, nhãn) giống lưới Core | ✅ 0.3.43 `Storefront\Contracts\ProductCards::forIds(list<int> $styleIds, locale)` |
 | Lấy thẻ sản phẩm cho JS "đã xem" | Storefront API `GET /api/storefront/v1/products?ids=…` (tối đa 30) | ✅ 0.3.43 |
-| Top sản phẩm theo số lượng bán | `OrderStatistics` | **Gap Core**: `breakdown(Product)` gom theo **tên** sản phẩm; cần phương thức trả id style theo số lượng (vd. `topStyles(from, to, limit)`), dựa trên `order_lines.style_id`, trừ dòng huỷ |
+| Top sản phẩm theo số lượng bán | `OrderStatistics` | ✅ 0.3.43 `OrderStatistics::topStyles(from, to, limit)` (id style chụp trong `order_lines.meta`; số lượng sau huỷ một phần; bỏ đơn huỷ, đơn đổi hàng) |
 | Thanh "Đã xem" trang sản phẩm / giỏ | Slot `vani.storefront.pdp.after_details`, `vani.storefront.cart.after_lines` | ✅ |
 | Poster | Thư viện ảnh | ✅ |
 

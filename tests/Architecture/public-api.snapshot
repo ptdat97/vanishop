@@ -808,6 +808,7 @@ interface Modules\Ordering\Contracts\OrderStatistics
   totals(DateTimeImmutable $from, DateTimeImmutable $to): Modules\Ordering\Contracts\Data\SalesTotals
   daily(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
   breakdown(Modules\Ordering\Contracts\Data\SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
+  topStyles(DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array
   countByStatus(): array
   summarize(array $orderIds): Modules\Ordering\Contracts\Data\SalesTotals
   orderIdsWithPriceLists(array $priceListCodes): array
