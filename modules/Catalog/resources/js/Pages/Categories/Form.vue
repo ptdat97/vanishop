@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import type { MediaItem } from '@admin/types';
+import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -25,6 +26,7 @@ const props = defineProps<{
         image_url: string | null;
     };
     parents: Array<{ id: number; label: string }>;
+    extensionSections: ExtensionSection[];
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories')?.url ?? '');
@@ -39,6 +41,7 @@ const form = useForm({
     position: props.category?.position ?? 0,
     lock_version: props.category?.lock_version ?? null,
     translations: translationsFor(locales, emptyTranslation, props.category?.translations),
+    extensions: initialExtensionValues(props.extensionSections),
 });
 
 const imageForm = useForm<{ image: File | null; alt: string }>({ image: null, alt: '' });
@@ -106,6 +109,7 @@ function removeImage(): void {
             <FormField label="Meta description (SEO)" :error="errors[`translations.${locale}.meta_description`]">
                 <textarea v-model="form.translations[locale].meta_description" :class="inputClass" rows="2" />
             </FormField>
+            <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 
         <div class="space-y-4">

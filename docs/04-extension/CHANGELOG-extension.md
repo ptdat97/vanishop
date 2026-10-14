@@ -6,13 +6,14 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ## 0.3.43 — 2026-10-14
 
-M1-core G1–G3 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
+M1-core G1–G4 ([kế hoạch chuyển plugin §5.1](../05-plugin/vanicommerce-plugin-migration.md)). Chỉ thêm.
 
 ### Thêm
 - Service contract `Storefront\Contracts\ProductCards::forIds(list<int> $styleIds, string $locale)` — thẻ sản phẩm (cùng dạng item lưới, có `extensions` của enricher `product_card`) theo id style, giữ thứ tự, tối đa `MAX_IDS = 60`.
 - `CatalogReader::productsByIds(list<int>, locale, now)` — item catalog theo id style, chỉ sản phẩm đang hiển thị (Core là implementation duy nhất).
 - Storefront API: `GET /api/storefront/v1/products?ids=…` (tối đa 30).
 - `OrderStatistics::topStyles(from, to, limit = 20): list<array{style_id, quantity}>` — G3; id style lấy từ `order_lines.meta.style_id`, số lượng sau huỷ một phần, bỏ đơn huỷ và đơn đổi hàng (Core là implementation duy nhất).
+- Tài nguyên Admin `category`, `brand` (G4): `adminFormSection('category'|'brand', …)` hiện trong form danh mục và form thương hiệu (trang danh sách), lưu cùng transaction với Core. Prop Inertia trang thương hiệu `extensionSections` là map `new` / id thương hiệu → phần form. Cột, bộ lọc, thao tác, tab cho hai tài nguyên này: chưa nối.
 
 ## 0.3.42 — 2026-10-10
 

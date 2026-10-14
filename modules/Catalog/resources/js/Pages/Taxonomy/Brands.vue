@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { initialExtensionValues, type ExtensionSection } from '@admin/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -18,17 +20,20 @@ interface BrandRow {
     styles_count: number;
 }
 
-const props = defineProps<{ nav: NavItem[]; brands: BrandRow[]; canManage: boolean }>();
+// extensionSections: phần form của plugin — khoá `new` cho form thêm, id thương hiệu cho form sửa.
+const props = defineProps<{ nav: NavItem[]; brands: BrandRow[]; canManage: boolean; extensionSections: Record<string, ExtensionSection[]> }>();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'brands')?.url ?? '');
 const editingId = ref<number | null>(null);
 
-const empty = () => ({ code: '', slug: '', name: '', description: '' as string | null, status: 'active' as 'active' | 'hidden', position: 0 });
+const sectionsFor = (id: number | null): ExtensionSection[] => props.extensionSections[id === null ? 'new' : String(id)] ?? [];
+const sections = computed(() => sectionsFor(editingId.value));
+const empty = () => ({ code: '', slug: '', name: '', description: '' as string | null, status: 'active' as 'active' | 'hidden', position: 0, extensions: initialExtensionValues(sectionsFor(null)) });
 const form = useForm(empty());
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function edit(brand: BrandRow): void {
     editingId.value = brand.id;
-    form.defaults({ code: brand.code, slug: brand.slug, name: brand.name, description: brand.description, status: brand.status, position: brand.position });
+    form.defaults({ code: brand.code, slug: brand.slug, name: brand.name, description: brand.description, status: brand.status, position: brand.position, extensions: initialExtensionValues(sectionsFor(brand.id)) });
     form.reset();
 }
 
@@ -106,6 +111,7 @@ function destroy(brand: BrandRow): void {
                 </select>
             </FormField>
             <FormField label="Thứ tự" :error="errors.position"><input v-model.number="form.position" :class="inputClass" type="number" min="0" /></FormField>
+            <ExtensionFormSections v-model="form.extensions" :sections="sections" :errors="errors" />
             <div class="flex gap-2">
                 <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
                 <button v-if="editingId" type="button" :class="secondaryButton" @click="cancel">Huỷ</button>

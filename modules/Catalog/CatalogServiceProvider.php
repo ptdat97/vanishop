@@ -62,6 +62,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
         // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
         $this->app->make(AdminScreen::class)->declareResource('product');
+        $this->app->make(AdminScreen::class)->declareResource('category');
+        $this->app->make(AdminScreen::class)->declareResource('brand');
         $this->app->bind(MediaDirectory::class, EloquentMediaDirectory::class);
         $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);

@@ -1,6 +1,8 @@
 <?php
 
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Persistence\Models\Brand;
+use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Contracts\Data\FieldDefinition;
@@ -76,4 +78,42 @@ it('tài nguyên do module sở hữu màn hình khai báo; plugin mở rộng t
     $this->registry->declareResource('invoice');
     $this->registry->column('invoice', 'vani.cod', 'x', 'X', fn (array $ids): array => array_fill_keys($ids, 'v'));
     expect($this->registry->columns('invoice', [7])['values'])->toBe([7 => ['vani.cod:x' => 'v']]);
+});
+
+it('form danh mục và thương hiệu mở cho plugin (0.3.43): phần form trong props, lưu cùng transaction, lỗi plugin rollback', function () {
+    $saved = [];
+    foreach (['category', 'brand'] as $resource) {
+        $this->registry->section($resource, 'vani.cod', 'size', 'Bảng size', [FieldDefinition::string('chart', 'Bảng', required: true)],
+            load: function (int $id) use (&$saved, $resource): array {
+                return ['chart' => $saved["{$resource}:{$id}"] ?? null];
+            },
+            save: function (int $id, array $values) use (&$saved, $resource): void {
+                if ($values['chart'] === 'boom') {
+                    throw new RuntimeException('plugin hỏng');
+                }
+                $saved["{$resource}:{$id}"] = $values['chart'];
+            },
+        );
+    }
+    $category = T::seed(fn () => Category::factory()->create(['slug' => 'dam']));
+    $brand = Brand::factory()->create(['code' => 'LM', 'slug' => 'lumiere', 'name' => 'Lumière']);
+    $categoryPayload = fn (array $extensions, string $name = 'Đầm') => ['slug' => 'dam', 'parent_id' => null, 'status' => 'active', 'position' => 0,
+        'lock_version' => $category->fresh()->lock_version, 'translations' => ['vi' => ['name' => $name]], 'extensions' => $extensions];
+    $brandPayload = fn (array $extensions, string $name = 'Lumière') => ['code' => 'LM', 'slug' => 'lumiere', 'name' => $name, 'description' => null, 'status' => 'active', 'position' => 0, 'extensions' => $extensions];
+
+    $this->put("/admin/catalog/categories/{$category->id}", $categoryPayload([]))->assertSessionHasErrors('extensions.vani-cod.size.chart');
+    $this->put("/admin/catalog/categories/{$category->id}", $categoryPayload(['vani-cod' => ['size' => ['chart' => 'đầm-nữ']]]))->assertSessionHasNoErrors();
+    $this->put("/admin/catalog/brands/{$brand->id}", $brandPayload(['vani-cod' => ['size' => ['chart' => 'lumiere']]]))->assertSessionHasNoErrors();
+    $this->post('/admin/catalog/brands', [...$brandPayload(['vani-cod' => ['size' => ['chart' => 'mới']]], 'Urban X'), 'code' => 'UX', 'slug' => 'urban-x'])->assertSessionHasNoErrors();
+    $newBrand = Brand::query()->where('code', 'UX')->sole();
+    expect($saved)->toBe(["category:{$category->id}" => 'đầm-nữ', "brand:{$brand->id}" => 'lumiere', "brand:{$newBrand->id}" => 'mới']);
+
+    $this->get("/admin/catalog/categories/{$category->id}/edit")->assertInertia(fn (Assert $page) => $page->where('extensionSections.0.values.chart', 'đầm-nữ'));
+    $this->get('/admin/catalog/brands')->assertInertia(fn (Assert $page) => $page
+        ->where("extensionSections.{$brand->id}.0.values.chart", 'lumiere')
+        ->where('extensionSections.new.0.values', []));
+
+    expect(fn () => $this->withoutExceptionHandling()->put("/admin/catalog/brands/{$brand->id}", $brandPayload(['vani-cod' => ['size' => ['chart' => 'boom']]], 'Không lưu')))
+        ->toThrow(RuntimeException::class);
+    expect($brand->fresh()->name)->toBe('Lumière');
 });

@@ -17,6 +17,7 @@ use Modules\Catalog\Http\Requests\Admin\CategoryImageRequest;
 use Modules\Catalog\Http\Requests\Admin\CategoryRequest;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Extension\Contracts\AdminScreen;
 
 final class CategoryController
 {
@@ -41,14 +42,16 @@ final class CategoryController
             'nav' => CatalogNavigation::all(),
             'category' => null,
             'parents' => $this->parentOptions($tree->tree()),
+            'extensionSections' => app(AdminScreen::class)->formSections('category', null),
         ]);
     }
 
-    public function store(CategoryRequest $request, CategoryService $categories): RedirectResponse
+    public function store(CategoryRequest $request, CategoryService $categories, AdminScreen $screen): RedirectResponse
     {
         Gate::authorize('catalog.manage');
+        $request->validate($screen->validationRules('category'));
 
-        $category = $this->orFormError(fn () => $categories->create($request->toInput()));
+        $category = $this->orFormError(fn () => $screen->saving('category', (array) $request->input('extensions', []), fn () => $categories->create($request->toInput()), fn ($category): int => $category->id));
 
         return redirect()->route('admin.catalog.categories.edit', ['category' => $category->id])->with('success', __('catalog::messages.saved'));
     }
@@ -73,14 +76,16 @@ final class CategoryController
                 'image_url' => $image?->media->url(400),
             ],
             'parents' => $this->parentOptions($tree->tree(), exclude: $category->id),
+            'extensionSections' => app(AdminScreen::class)->formSections('category', $category->id),
         ]);
     }
 
-    public function update(Category $category, CategoryRequest $request, CategoryService $categories): RedirectResponse
+    public function update(Category $category, CategoryRequest $request, CategoryService $categories, AdminScreen $screen): RedirectResponse
     {
         Gate::authorize('catalog.manage');
+        $request->validate($screen->validationRules('category'));
 
-        $this->orFormError(fn () => $categories->update($category, $request->toInput(), (int) $request->validated('lock_version')));
+        $this->orFormError(fn () => $screen->saving('category', (array) $request->input('extensions', []), fn () => $categories->update($category, $request->toInput(), (int) $request->validated('lock_version')), fn (): int => $category->id));
 
         return back()->with('success', __('catalog::messages.saved'));
     }
