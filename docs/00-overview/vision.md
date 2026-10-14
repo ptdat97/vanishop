@@ -12,6 +12,10 @@ Owner kinh doanh thời trang với **nhiều thương hiệu** (ví dụ: công
 
 Hệ quả: khách hàng bị tách, tồn kho không nhìn được toàn cục, đối soát COD và hoá đơn thủ công.
 
+### 1.1 Vì sao có VaniShop thay cho VaniCommerce
+
+Owner đang bán và viết plugin trên **VaniCommerce**, một nền tảng dẫn xuất từ BeikeShop. Lõi đó mang ràng buộc bản quyền (OSL-3.0 và điều khoản thương mại của bên giữ bản quyền — [clean-room-license §1](../01-principles/clean-room-license.md)): không tự do bán, đóng mã hay gỡ thông tin bản quyền. Vì mục đích **phát triển độc lập**, VaniShop ra đời làm **bản thay thế**, viết mới hoàn toàn theo quy trình clean-room, và giữ cách làm plugin **gần gũi** với người đã viết các plugin hiện có trong `VaniCommerce/plugins/`: plugin vẫn là thư mục tự chứa có manifest, cấu hình, màn hình Admin, khối storefront, bật/tắt độc lập, hook ngắn `vani_*`. Các plugin đó (của Owner) được chuyển sang bằng cách viết đặc tả rồi viết lại trên extension point của VaniShop ([ADR-034](../19-adr/ADR-034-vanicommerce-plugin-migration.md), [kế hoạch](../05-plugin/vanicommerce-plugin-migration.md)).
+
 ## 2. Tầm nhìn
 
 > **Một cửa hàng — một website — một giao diện — nhiều thương hiệu trong cùng catalog — một khách hàng — một bức tranh tồn kho.**

@@ -2,6 +2,8 @@
 
 > Trạng thái: ba plugin chứng minh kiến trúc đã **cài đặt trong repo** (slice 10 — xem [roadmap](../20-roadmap/roadmap.md)); các plugin còn lại ở mức **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md`.
 
+> Plugin chuyển từ `VaniCommerce/plugins/` (43 plugin của Owner): phân loại, đợt M1–M3 và quy trình đặc tả → viết lại ở [vanicommerce-plugin-migration](vanicommerce-plugin-migration.md). Plugin mới phát sinh từ đó (`vani.size-chart`, `vani.storefront-extras`, `vani.ghtk`, `vani.twilio-verify`, `vani.product-qna`, `vani.reviews`, `vani.product-compare`, `vani.scarcity-signals`, `vani.pre-order`, `vani.workflow`, `vani.marketing-automation`) được thêm vào bảng dưới khi bắt đầu đặc tả.
+
 ## 1. Core có sẵn và plugin hệ thống
 
 Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặc định **trung lập thị trường**; mặc định mang chính sách kinh doanh/đặc thù VN là **plugin hệ thống** (đóng gói sẵn, tự bật). Đã tách khỏi module ở slice 12d (2026-10-02); `php artisan vani:install` cài + bật ([commerce-kernel §6](../02-architecture/commerce-kernel.md)).
@@ -51,7 +53,8 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 ### Vận chuyển
 | Plugin | Contract | Đợt |
 |---|---|---|
-| `vani.ghn` ✅ (thay cho `vani.ghtk`) | `ShippingCarrier` | P1 |
+| `vani.ghn` ✅ | `ShippingCarrier` | P1 |
+| `vani.ghtk` (chuyển từ VnShipping — [đợt M2](vanicommerce-plugin-migration.md)) | `ShippingCarrier` + `ShippingRateProvider` | P2 |
 | `vani.viettelpost`, `vani.jt`, `vani.ninjavan` | `ShippingCarrier` | P2 |
 | `vani.ahamove` | `ShippingCarrier` | P3 |
 | `vani.cod-reconciliation` | Events fulfillment, `PaymentRecorder`, Admin pages | P2 |

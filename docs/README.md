@@ -3,6 +3,8 @@
 > **VaniShop** là một **microkernel thương mại** trên Laravel (Modular Monolith + DDD + API-first): lõi nhỏ giữ primitive, bất biến và extension point; **nghiệp vụ thêm bằng plugin** ([ADR-029](19-adr/ADR-029-commerce-microkernel.md)). Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, hoá đơn điện tử, báo cáo…) **bằng plugin, không fork Core**. Những gì dự án không làm: [ADR-033](19-adr/ADR-033-out-of-scope.md).
 >
 > Chủ sở hữu: 1 Owner vận hành 1 website bán hàng tại Việt Nam; các thương hiệu thời trang của Owner là thuộc tính sản phẩm (trang brand, bộ lọc brand), không phải storefront riêng. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
+>
+> **Vì sao có VaniShop**: VaniCommerce (nền tảng Owner đang dùng) dẫn xuất từ BeikeShop nên vướng bản quyền; để phát triển độc lập, VaniShop là **bản thay thế** viết mới, giữ cách làm plugin gần gũi để chuyển các plugin hiện có trong `VaniCommerce/plugins/` sang ([ADR-034](19-adr/ADR-034-vanicommerce-plugin-migration.md), [kế hoạch chuyển plugin](05-plugin/vanicommerce-plugin-migration.md)).
 
 ```text
                 ┌───────────────────────────────────────┐
@@ -50,6 +52,7 @@
 | Đang viết plugin, cần **chữ ký chính xác + checklist** | [05-plugin/contracts](05-plugin/contracts/README.md) |
 | Tra extension point / hook public | [extension-point-catalog](04-extension/extension-point-catalog.md), `php artisan vani:plugin:hooks` |
 | So với hệ tham chiếu VaniCommerce: học gì, giữ gì | [reference-comparison](02-architecture/reference-comparison.md) (đọc lưu ý clean-room trước) |
+| Chuyển một plugin từ `VaniCommerce/plugins/` sang | [vanicommerce-plugin-migration](05-plugin/vanicommerce-plugin-migration.md) (đặc tả → viết lại) |
 
 ## Cấu trúc
 

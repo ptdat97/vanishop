@@ -9,7 +9,7 @@
 BeikeShop v3.0.0.11 (bản tham khảo **đã được xoá khỏi máy phát triển ngày 2026-09-28**) phát hành theo:
 
 1. **Open Software License v3.0 (OSL-3.0)** — license copyleft: sản phẩm phái sinh (*derivative work*) khi phân phối **hoặc cung cấp qua mạng** (điều khoản "External Deployment") phải công bố mã nguồn theo cùng license.
-2. **Điều khoản bản quyền bổ sung** của Chengdu GuangDa Network Technology Co., Ltd.:
+2. **Điều khoản bản quyền bổ sung** của bên giữ bản quyền BeikeShop:
    - Không được bán/cho thuê hệ thống **và sản phẩm phái sinh** nếu chưa có văn bản cho phép.
    - Phải giữ thông tin bản quyền; muốn gỡ cần được cho phép.
 
@@ -28,9 +28,14 @@ Nếu VaniShop chứa mã (kể cả đã sửa, đổi tên) từ BeikeShop, n�
 
 > Nguyên tắc ngón tay cái: **nếu bạn đang mở file BeikeShop trong một cửa sổ và gõ code VaniShop ở cửa sổ kia — dừng lại.**
 
-### 2.1 VaniCommerce cũng thuộc diện clean-room
+### 2.1 VaniCommerce: vì sao có VaniShop, và phần nào thuộc diện clean-room
 
-`~/Ecommerce/VaniCommerce` là nền tảng **dẫn xuất từ BeikeShop** (cùng họ helper hook, header phiên khách, cấu trúc plugin, bảng mô tả đa ngôn ngữ). Áp dụng **đúng các quy tắc như với BeikeShop**: không mở mã nguồn/tài liệu của nó khi code VaniShop, không đưa vào context AI agent khi sinh code, không chép tên hook/bảng/class/chuỗi. Kết quả nghiên cứu đã được viết lại bằng thiết kế của VaniShop tại [reference-comparison](../02-architecture/reference-comparison.md); người code chỉ đọc tài liệu đó.
+`~/Ecommerce/VaniCommerce` là nền tảng Owner đang dùng, **dẫn xuất từ BeikeShop** (cùng họ helper hook, header phiên khách, cấu trúc plugin, bảng mô tả đa ngôn ngữ), nên mang theo các ràng buộc bản quyền ở §1. Để **phát triển độc lập** và toàn quyền với mã nguồn, Owner làm **VaniShop là bản thay thế VaniCommerce**, viết mới hoàn toàn; đồng thời giữ cách làm plugin **gần gũi** với người đã viết plugin trên VaniCommerce (thư mục plugin tự chứa, manifest, cấu hình, bật/tắt, hook ngắn `vani_*`) để các plugin hiện có chuyển sang được ([ADR-034](../19-adr/ADR-034-vanicommerce-plugin-migration.md)).
+
+| Phần | Quy tắc |
+|---|---|
+| **Lõi VaniCommerce** (mọi thứ ngoài `plugins/`) | Như BeikeShop: không mở mã nguồn/tài liệu khi code VaniShop, không đưa vào context AI agent khi sinh code, không chép tên hook/bảng/class/chuỗi. Kết quả nghiên cứu đã viết lại tại [reference-comparison](../02-architecture/reference-comparison.md); người code chỉ đọc tài liệu đó |
+| **`VaniCommerce/plugins/*`** (43 plugin, Owner xác nhận thuộc quyền Owner — 2026-10-14) | Được đọc **ở vai trò viết đặc tả** để chuyển sang VaniShop. Dữ liệu, nội dung, chuỗi hiển thị do Owner viết được dùng lại. Code **không** chép: viết lại từ đặc tả trên extension point VaniShop (plugin cũ gọi API và theo cấu trúc của lõi dẫn xuất BeikeShop). Không mang header bản quyền, comment của bên thứ ba. Quy trình: [vanicommerce-plugin-migration](../05-plugin/vanicommerce-plugin-migration.md) |
 
 ## 3. Quy trình clean-room
 

@@ -6,7 +6,7 @@
 
 Hệ tham chiếu là **VaniCommerce** (`~/Ecommerce/VaniCommerce`), một nền tảng Laravel SSR-first **dẫn xuất từ BeikeShop**: header phiên khách, helper hook, cấu trúc plugin và bảng `*_descriptions` của nó trùng với những chuỗi mà [clean-room](../01-principles/clean-room-license.md) cấm. Vì vậy:
 
-- VaniCommerce chịu **cùng quy tắc với BeikeShop**: không mở mã nguồn/tài liệu của nó khi code VaniShop, không đưa vào context của AI agent khi sinh code.
+- Lõi VaniCommerce chịu **cùng quy tắc với BeikeShop**: không mở mã nguồn/tài liệu của nó khi code VaniShop, không đưa vào context của AI agent khi sinh code. Plugin trong `VaniCommerce/plugins/` (của Owner) chuyển sang theo quy trình đặc tả → viết lại ([ADR-034](../19-adr/ADR-034-vanicommerce-plugin-migration.md)).
 - Tài liệu này là **đầu ra của vai trò nghiên cứu**: chỉ ghi **khái niệm** bằng lời của VaniShop, không chép tên hook, tên bảng, tên class, cấu trúc file hay chuỗi thông báo. Người code chỉ đọc tài liệu này và các tài liệu nó dẫn tới.
 
 ## 1. Kết luận
