@@ -1,6 +1,6 @@
 # Đặc tả: Khối storefront bổ sung (`vani.storefront-extras`)
 
-> Trạng thái: **Đặc tả — chờ Owner duyệt** (M0, 2026-10-14). Nguồn: plugin StorefrontBlocks 1.0.0 và Bestseller 1.0.1 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Hai plugin cũ gộp thành một plugin VaniShop.
+> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin StorefrontBlocks 1.0.0 và Bestseller 1.0.1 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Hai plugin cũ gộp thành một plugin VaniShop.
 
 ## 1. Mục tiêu
 

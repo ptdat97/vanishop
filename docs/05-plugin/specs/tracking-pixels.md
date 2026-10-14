@@ -1,6 +1,6 @@
 # Đặc tả: Theo dõi quảng cáo (`vani.tracking-pixels`)
 
-> Trạng thái: **Đặc tả — chờ Owner duyệt** (M0, 2026-10-14). Nguồn: plugin PixelTracking 1.0.0 của VaniCommerce (Owner). Đợt: M1. Quy trình: [vanicommerce-plugin-migration](../vanicommerce-plugin-migration.md).
+> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin PixelTracking 1.0.0 của VaniCommerce (Owner). Đợt: M1. Quy trình: [vanicommerce-plugin-migration](../vanicommerce-plugin-migration.md).
 
 ## 1. Mục tiêu
 

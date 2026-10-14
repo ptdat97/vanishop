@@ -1,6 +1,6 @@
 # Đặc tả: Bảng size và gợi ý size (`vani.size-chart`)
 
-> Trạng thái: **Đặc tả — chờ Owner duyệt** (M0, 2026-10-14). Nguồn: plugin SizeChart 1.1.0 của VaniCommerce (Owner). Đợt: M1. Thay cho mục `vani.size-advisor` trong [plugin-catalog](../plugin-catalog.md).
+> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin SizeChart 1.1.0 của VaniCommerce (Owner). Đợt: M1. Thay cho mục `vani.size-advisor` trong [plugin-catalog](../plugin-catalog.md).
 
 ## 1. Mục tiêu
 

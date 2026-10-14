@@ -1,6 +1,6 @@
 # Đặc tả: Lookbook (`vani.lookbook`)
 
-> Trạng thái: **Đặc tả — chờ Owner duyệt** (M0, 2026-10-14). Nguồn: plugin Lookbook 1.1.1 của VaniCommerce (Owner). Đợt: M1. Đợt M3 (`OutfitBundle`) sẽ thêm gắn sản phẩm lên ảnh.
+> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin Lookbook 1.1.1 của VaniCommerce (Owner). Đợt: M1. Đợt M3 (`OutfitBundle`) sẽ thêm gắn sản phẩm lên ảnh.
 
 ## 1. Mục tiêu
 

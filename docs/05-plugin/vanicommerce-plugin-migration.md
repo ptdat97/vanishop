@@ -115,7 +115,7 @@ Sau mỗi plugin: cập nhật bảng ở §3 (✅ + commit), [plugin-catalog](p
 
 | Việc | Trạng thái |
 |---|---|
-| Đặc tả 7 plugin M1 (6 đặc tả: Bestseller gộp với StorefrontBlocks) | ✅ 2026-10-14, **chờ Owner duyệt** |
+| Đặc tả 7 plugin M1 (6 đặc tả: Bestseller gộp với StorefrontBlocks) | ✅ 2026-10-14, **Owner đã duyệt** (gán bảng size sản phẩm → danh mục → thương hiệu → mặc định; nội dung Markdown an toàn; bán chạy theo số lượng 7/30/90 ngày; pixel có thanh đồng ý cookie; "đã xem" lưu trong trình duyệt; gộp plugin và bỏ phần đã có như đặc tả) |
 | Phiếu đối chiếu nhóm A (16 plugin đã có tương đương) | Chưa làm |
 
 ### 5.1 Khoảng trống Core phải làm trước M1 (một lát "M1-core")

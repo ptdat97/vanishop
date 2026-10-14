@@ -1,6 +1,6 @@
 # Đặc tả: Nội dung bổ sung của cửa hàng (bổ sung `vani.cms` 1.2)
 
-> Trạng thái: **Đặc tả — chờ Owner duyệt** (M0, 2026-10-14). Nguồn: plugin ExtraContent 1.2.0 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Không tạo plugin mới: phần cần chuyển gộp vào `vani.cms`.
+> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin ExtraContent 1.2.0 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Không tạo plugin mới: phần cần chuyển gộp vào `vani.cms`.
 
 ## 1. Mục tiêu
 

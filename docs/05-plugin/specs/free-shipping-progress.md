@@ -1,6 +1,6 @@
 # Đặc tả: Thanh tiến độ miễn phí giao hàng (bổ sung `vani.shipping-flat-rate` 1.1)
 
-> Trạng thái: **Đặc tả — chờ Owner duyệt** (M0, 2026-10-14). Nguồn: plugin FreeShippingProgress 1.0.0 của VaniCommerce (Owner). Đợt: M1. Không tạo plugin mới: gộp vào plugin hệ thống `vani.shipping-flat-rate`, nơi đã có ngưỡng miễn phí giao (`free_over`).
+> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin FreeShippingProgress 1.0.0 của VaniCommerce (Owner). Đợt: M1. Không tạo plugin mới: gộp vào plugin hệ thống `vani.shipping-flat-rate`, nơi đã có ngưỡng miễn phí giao (`free_over`).
 
 ## 1. Mục tiêu
 
