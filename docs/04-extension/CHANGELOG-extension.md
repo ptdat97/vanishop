@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.45 — 2026-10-14
+
+Chỉ thêm.
+
+### Thêm
+- `ProductImport::$replaceImages` (mặc định `false`): `true` thì màu đã có ảnh được thay bằng ảnh nhập (trước: chỉ thêm ảnh cho màu chưa có ảnh). `vani.demo-catalog` dùng qua `vani:demo:catalog --refresh-images`.
+
+### Sửa
+- Thư viện ảnh: tải lên ảnh trùng checksum với bản ghi có sẵn mà **file đã mất trên disk** thì ghi lại file đúng đường dẫn cũ (trước: trả bản ghi cũ, ảnh hỏng mãi).
+
 ## 0.3.44 — 2026-10-14
 
 Chỉ thêm.

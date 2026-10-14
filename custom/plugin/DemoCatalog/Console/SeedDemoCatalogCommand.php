@@ -19,7 +19,8 @@ final class SeedDemoCatalogCommand extends Command
     protected $signature = 'vani:demo:catalog
         {--source= : Thư mục ảnh (mặc định VANI_DEMO_IMAGES / ảnh đi kèm plugin resources/photos)}
         {--limit= : Chỉ nhập N sản phẩm đầu}
-        {--dry-run : Chỉ in kế hoạch, không ghi gì}';
+        {--dry-run : Chỉ in kế hoạch, không ghi gì}
+        {--refresh-images : Thay ảnh của sản phẩm demo đã có (vd. sau khi file ảnh bị mất hoặc đổi bộ ảnh)}';
 
     protected $description = 'Nhập sản phẩm demo có ảnh thật (plugin vani.demo-catalog)';
 
@@ -39,7 +40,8 @@ final class SeedDemoCatalogCommand extends Command
 
             $resizer = new ImageResizer((int) config('vani.demo-catalog.max_dimension', 1600));
             $summary = $context->runAs(ContextScope::system('vani:demo:catalog'), fn (): array => $builder->build($source, $resizer, $limit,
-                fn (string $key, string $name, bool $created, int $images) => $this->line(sprintf('  %s %-10s %s (%d ảnh)', $created ? '+' : '=', $key, $name, $images))));
+                fn (string $key, string $name, bool $created, int $images) => $this->line(sprintf('  %s %-10s %s (%d ảnh)', $created ? '+' : '=', $key, $name, $images)),
+                (bool) $this->option('refresh-images')));
         } catch (InvalidArgumentException $exception) {
             $this->error($exception->getMessage());
 

@@ -31,6 +31,13 @@ final class MediaLibrary
 
         $existing = Media::query()->where('checksum', $checksum)->first();
         if ($existing !== null) {
+            // Bản ghi còn nhưng file đã mất trên disk (mất volume, dọn nhầm): ghi lại đúng đường dẫn cũ — cùng checksum nên
+            // cùng nội dung; ảnh thu nhỏ cũ vẫn khớp.
+            $storage = Storage::disk($existing->disk);
+            if (! $storage->exists($existing->path)) {
+                $storage->putFileAs(dirname($existing->path), $file, basename($existing->path));
+            }
+
             return $existing;
         }
 

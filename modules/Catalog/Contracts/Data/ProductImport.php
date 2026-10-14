@@ -27,5 +27,7 @@ final readonly class ProductImport
         public array $colors,
         public array $sizes,
         public bool $active = true,
+        /** true: màu đã có ảnh thì thay bằng ảnh nhập (0.3.45); false (mặc định): chỉ thêm ảnh cho màu chưa có ảnh. */
+        public bool $replaceImages = false,
     ) {}
 }

@@ -64,6 +64,11 @@ final class ProductImporter implements CatalogImporter
                 $color = $this->color($colorData, $position);
                 $styleColor = StyleColor::query()->where('style_id', $style->id)->where('color_id', $color->id)->first()
                     ?? $this->styleColors->addColor($style, $color->id);
+                if ($colorData['images'] !== [] && $import->replaceImages) {
+                    foreach ($styleColor->gallery()->get() as $image) {
+                        $this->styleColors->removeImage($style, $styleColor, $image);
+                    }
+                }
                 if ($colorData['images'] !== [] && ! $styleColor->gallery()->exists()) {
                     $files = array_map(fn (string $path): UploadedFile => new UploadedFile($path, basename($path), null, null, true), array_slice($colorData['images'], 0, StyleColorService::MAX_IMAGES_PER_COLOR));
                     $this->styleColors->addImages($style, $styleColor, $files);

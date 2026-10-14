@@ -68,7 +68,7 @@ final class DemoCatalogBuilder
     /**
      * @return array{products: int, created: int, images: int, skus: int, stock_location: string|null}
      */
-    public function build(string $source, ImageResizer $resizer, ?int $limit = null, ?callable $progress = null): array
+    public function build(string $source, ImageResizer $resizer, ?int $limit = null, ?callable $progress = null, bool $refreshImages = false): array
     {
         $groups = $this->photos->groups($source);
         if ($limit !== null) {
@@ -93,6 +93,7 @@ final class DemoCatalogBuilder
                     categories: [self::CATEGORY],
                     colors: [[...$color, 'images' => $images]],
                     sizes: ['S', 'M', 'L'],
+                    replaceImages: $refreshImages,
                 ));
 
                 foreach ($result->skus as $sku) {

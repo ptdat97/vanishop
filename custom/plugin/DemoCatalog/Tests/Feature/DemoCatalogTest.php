@@ -94,3 +94,20 @@ it('mặc định dùng bộ ảnh đi kèm plugin: 56 ảnh đã thu về ≤ 1
         ->and(collect($groups)->firstWhere('key', 'vnq5143')['files'])->toHaveCount(4)
         ->and(max(array_map(fn (string $file): int => max(array_slice(getimagesize($file) ?: [0, 0], 0, 2)), glob($source.'/*.jpg') ?: [])))->toBeLessThanOrEqual(1600);
 });
+
+it('--refresh-images thay ảnh của sản phẩm demo đã có; file ảnh mất trên disk được ghi lại khi nhập cùng ảnh', function () {
+    $this->artisan('vani:demo:catalog', ['--source' => $this->source])->assertSuccessful();
+    $paths = DB::table('media')->pluck('path')->all();
+    Storage::disk('public')->delete($paths); // mất file (vd. mất volume)
+
+    // Chạy lại bình thường: màu đã có ảnh → không thay, file vẫn mất.
+    $this->artisan('vani:demo:catalog', ['--source' => $this->source])->expectsOutputToContain('0 ảnh mới')->assertSuccessful();
+    expect(Storage::disk('public')->exists($paths[0]))->toBeFalse();
+
+    // --refresh-images: thay ảnh, cùng nội dung (cùng checksum) → bản ghi cũ được dùng lại và file được ghi lại.
+    $this->artisan('vani:demo:catalog', ['--source' => $this->source, '--refresh-images' => true])->expectsOutputToContain('4 ảnh mới')->assertSuccessful();
+    foreach ($paths as $path) {
+        expect(Storage::disk('public')->exists($path))->toBeTrue();
+    }
+    expect(DB::table('mediables')->where('role', 'gallery')->count())->toBe(4);
+});
