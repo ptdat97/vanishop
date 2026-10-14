@@ -61,7 +61,7 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 | Đợt | Plugin cũ | Plugin VaniShop | Extension point chính |
 |---|---|---|---|
 | **M1** (go-live) | PixelTracking | `vani.tracking-pixels` ✅ 2026-10-14 ([đặc tả](specs/tracking-pixels.md)) | Slot storefront, events đơn |
-| M1 | SizeChart | `vani.size-chart` ([đặc tả](specs/size-chart.md)) | `adminFormSection` (product), slot PDP |
+| M1 | SizeChart | `vani.size-chart` ✅ 2026-10-14 ([đặc tả](specs/size-chart.md)) | `adminFormSection` (product), slot PDP |
 | M1 | FreeShippingProgress | gộp vào `vani.shipping-flat-rate` 1.1 ✅ 2026-10-14 ([đặc tả](specs/free-shipping-progress.md)) | Slot giỏ/checkout, `StorefrontEnricher` (cart) |
 | M1 | Lookbook | `vani.lookbook` ([đặc tả](specs/lookbook.md)) | `storefrontPages`, `StorefrontBlock`, Thư viện ảnh |
 | M1 | ExtraContent | gộp vào `vani.cms` 1.2 ([đặc tả](specs/store-content.md)) | `StorefrontBlock`, slot danh mục/brand |
@@ -118,7 +118,7 @@ Sau mỗi plugin: cập nhật bảng ở §3 (✅ + commit), [plugin-catalog](p
 | Đặc tả 7 plugin M1 (6 đặc tả: Bestseller gộp với StorefrontBlocks) | ✅ 2026-10-14, **Owner đã duyệt** (gán bảng size sản phẩm → danh mục → thương hiệu → mặc định; nội dung Markdown an toàn; bán chạy theo số lượng 7/30/90 ngày; pixel có thanh đồng ý cookie; "đã xem" lưu trong trình duyệt; gộp plugin và bỏ phần đã có như đặc tả) |
 | Phiếu đối chiếu nhóm A (16 plugin đã có tương đương) | Chưa làm |
 
-**Kiểm tra clean-room (bước 5) của các plugin đã chuyển**: grep chuỗi đặc trưng và tên class/hook/hàm của plugin cũ = 0; so dòng (≥ 30 ký tự) với plugin cũ: `vani.tracking-pixels` 3 dòng trùng — đều là cú pháp chuẩn theo tài liệu công khai của Google (`window.dataLayer = window.dataLayer \|\| []`, xoá `ecommerce` trước khi push, chèn thẻ script); thanh tiến độ `vani.shipping-flat-rate` 1.1: 0 dòng. (`jscpd` chưa cài — dùng so dòng đơn giản đến khi có công cụ được duyệt.)
+**Kiểm tra clean-room (bước 5) của các plugin đã chuyển**: grep chuỗi đặc trưng và tên class/hook/hàm của plugin cũ = 0; so dòng (≥ 30 ký tự) với plugin cũ: `vani.tracking-pixels` 3 dòng trùng — đều là cú pháp chuẩn theo tài liệu công khai của Google (`window.dataLayer = window.dataLayer \|\| []`, xoá `ecommerce` trước khi push, chèn thẻ script); thanh tiến độ `vani.shipping-flat-rate` 1.1: 0 dòng; `vani.size-chart`: 1 dòng khuôn mẫu migration của Laravel. (`jscpd` chưa cài — dùng so dòng đơn giản đến khi có công cụ được duyệt.)
 
 ### 5.1 Khoảng trống Core phải làm trước M1 (một lát "M1-core")
 

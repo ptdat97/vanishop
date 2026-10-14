@@ -1,0 +1,20 @@
+{
+    "id": "vani.size-chart",
+    "name": {
+        "vi": "Bảng size và gợi ý size",
+        "en": "Size chart and size advisor"
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\SizeChart\\SizeChartServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.44",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": ["size_chart.view", "size_chart.manage"],
+    "author": "VaniShop Team",
+    "data": {
+        "owned": ["plg_size_charts", "plg_size_chart_assignments"]
+    }
+}

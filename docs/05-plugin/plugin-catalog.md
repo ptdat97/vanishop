@@ -69,7 +69,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.wishlist` | Storefront route, events `AvailabilityChanged`, `PriceChanged` | P2 |
 | `vani.social-login` | Auth provider registry | P2 |
 | `vani.loyalty` ([spec](specs/loyalty.md)) | `TotalsCalculator`, events đơn | P3 |
-| `vani.size-advisor` | `StorefrontBlock`, `customerProfileTabs()` | P3 |
+| `vani.size-chart` ✅ (bảng size + gợi ý size; thay `vani.size-advisor`) | `StorefrontEnricher`, slot PDP, `adminFormSection` sản phẩm/danh mục/thương hiệu | **Implemented** 2026-10-14 |
 | `vani.product-bundle` | `TotalsCalculator`, `InventoryReservation` | P3 |
 
 ### Omnichannel & tồn kho

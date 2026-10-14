@@ -1,6 +1,6 @@
 # Đặc tả: Bảng size và gợi ý size (`vani.size-chart`)
 
-> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin SizeChart 1.1.0 của VaniCommerce (Owner). Đợt: M1. Thay cho mục `vani.size-advisor` trong [plugin-catalog](../plugin-catalog.md).
+> Trạng thái: **Implemented** 2026-10-14 (`custom/plugin/SizeChart` 1.0.0). Đặc tả Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin SizeChart 1.1.0 của VaniCommerce (Owner). Đợt: M1. Thay cho mục `vani.size-advisor` trong [plugin-catalog](../plugin-catalog.md).
 
 ## 1. Mục tiêu
 
@@ -16,7 +16,7 @@ Hiện bảng kích thước trên trang sản phẩm và giúp khách chọn si
 | Áp dụng: không gán sản phẩm nào = dùng cho mọi sản phẩm; gán = chỉ các sản phẩm đó; nhiều bảng khớp thì lấy bảng sửa gần nhất | **Đổi**: gán theo sản phẩm, danh mục, thương hiệu, có thứ tự ưu tiên rõ (§3.2) |
 | Gợi ý size: bật/tắt; luật gồm khoảng chiều cao (cm), khoảng cân nặng (kg) → size, kèm ghi chú; khách nhập chiều cao/cân nặng, tính ở trình duyệt | Giữ |
 | API cho headless: bảng size của sản phẩm | **Đổi**: nằm trong dữ liệu sản phẩm của Storefront API (`extensions.vani.size-chart`) |
-| Cache theo sản phẩm, xoá khi sửa bảng | Giữ |
+| Cache theo sản phẩm, xoá khi sửa bảng | **Đổi**: không cache riêng — 1–2 truy vấn mỗi trang sản phẩm, trang đã có cache CDN |
 
 ## 3. Hành vi
 
@@ -32,7 +32,7 @@ Hiện bảng kích thước trên trang sản phẩm và giúp khách chọn si
 
 ### 3.3 Admin
 
-- Admin → Sản phẩm → **Bảng size**: danh sách (tên, áp dụng cho, trạng thái), tạo/sửa/xoá. Form: tên theo ngôn ngữ cửa hàng, đơn vị gốc/hiển thị, khối nội dung (thêm/xoá/kéo thứ tự; ảnh chọn từ Thư viện ảnh; bảng sửa như lưới, thêm/bớt hàng cột), gợi ý size (bật, danh sách luật), gán danh mục/thương hiệu, đánh dấu mặc định.
+- Admin → Sản phẩm → **Bảng size**: danh sách (tên, áp dụng cho, trạng thái), tạo/sửa/xoá. Form: tên theo ngôn ngữ cửa hàng, đơn vị gốc/hiển thị, khối nội dung (thêm/xoá/đổi thứ tự; ảnh chọn từ Thư viện ảnh; bảng sửa như lưới, thêm/bớt hàng cột), gợi ý size (bật, danh sách luật), đánh dấu mặc định. Gán danh mục/thương hiệu làm ở form danh mục/thương hiệu (G4), không ở form bảng size.
 - Form sản phẩm có mục "Bảng size": chọn bảng gán riêng cho sản phẩm hoặc "Theo danh mục/thương hiệu".
 - Xoá bảng đang gán: hỏi xác nhận; gỡ mọi gán.
 

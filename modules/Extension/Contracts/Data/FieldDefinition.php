@@ -13,7 +13,7 @@ final readonly class FieldDefinition
     public const TYPES = ['string', 'text', 'int', 'bool', 'select', 'date'];
 
     /**
-     * @param  array<string, string>  $options  (select) giá trị => nhãn
+     * @param  array<array-key, string>  $options  (select) giá trị => nhãn
      */
     public function __construct(
         public string $key,
@@ -53,7 +53,7 @@ final readonly class FieldDefinition
     }
 
     /**
-     * @param  array<string, string>  $options
+     * @param  array<array-key, string>  $options
      */
     public static function select(string $key, string $label, array $options, bool $required = false, ?string $help = null): self
     {
