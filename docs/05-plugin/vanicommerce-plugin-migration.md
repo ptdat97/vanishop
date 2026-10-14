@@ -128,7 +128,7 @@ Tổng hợp từ các đặc tả; làm theo [commerce-kernel §9](../02-archit
 | G2 ✅ 0.3.43 | `GET /api/storefront/v1/products?ids=…` (tối đa 30, giữ thứ tự, chỉ hàng còn bán) | storefront-extras (đã xem) | Storefront |
 | G3 ✅ 0.3.43 | `OrderStatistics::topStyles`: top style theo số lượng bán trong khoảng thời gian (trừ dòng huỷ) | storefront-extras (bán chạy) | Ordering |
 | G4 ✅ 0.3.43 | Tài nguyên Admin `category`, `brand` (`declareResource`) + form danh mục/thương hiệu render phần mở rộng | size-chart, store-content | Catalog + Admin Vue |
-| G5 | Slot `vani.storefront.layout.body_start`, `vani.storefront.plp.before_listing` | store-content | Storefront `hooks.php` + theme `vani-base` |
+| G5 ✅ 0.3.43 | Slot `vani.storefront.layout.body_start`, `vani.storefront.plp.before_listing` | store-content | Storefront `hooks.php` + theme `vani-base` |
 | G6 | Theme phát sự kiện trình duyệt khi giỏ đổi (`vani:cart-updated`) | tracking-pixels | Theme `vani-base` |
 | G7 | Kiểm tra: `settings()` nhận giá trị theo ngôn ngữ; `CatalogReader` trả danh mục chính + chuỗi danh mục cha | store-content, size-chart | Tenancy/Extension, Catalog |
 

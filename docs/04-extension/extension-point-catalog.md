@@ -122,6 +122,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | Slot | Vị trí | Ví dụ plugin |
 |---|---|---|
 | `vani.storefront.layout.head` | Cuối `<head>` | Pixel tracking, meta xác minh |
+| `vani.storefront.layout.body_start` | Đầu `<body>`, trước header (0.3.43); HTML có cache, không dùng dữ liệu riêng của khách | Thanh thông báo |
 | `vani.storefront.layout.body_end` | Cuối `<body>` | Chat, script đo lường |
 | `vani.storefront.plp.card_badges` | Nhãn trên thẻ sản phẩm ở danh sách | "Mới", "Bán chạy", "Freeship" |
 | `vani.storefront.pdp.after_title` | Dưới tên sản phẩm | Đánh giá sao |
@@ -134,6 +135,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.order.after_summary` | Trang cảm ơn / chi tiết đơn | Hướng dẫn chuyển khoản, điểm đã cộng |
 | `vani.storefront.header.nav` / `header.actions` | Menu chính / cụm thao tác cạnh giỏ (0.3.1) | Trang plugin; wishlist, điểm |
 | `vani.storefront.footer.columns` | Cột footer (0.3.1) | Chính sách, đăng ký nhận tin |
+| `vani.storefront.plp.before_listing` | Đầu trang danh sách, trên bộ lọc và lưới (0.3.43); args: ngữ cảnh `{type: category\|brand\|search, category, brand}`, listing | Banner danh mục |
 | `vani.storefront.plp.filters` | Bộ lọc bổ sung trang danh sách (0.3.1) | Lọc theo dữ liệu plugin |
 | `vani.storefront.pdp.gallery_after` | Dưới ảnh sản phẩm (0.3.1) | Video, 360° |
 | `vani.storefront.checkout.contact_after` / `address_after` / `payment_after` | Sau từng bước checkout (0.3.1); trường `extra[<plugin id>]` | Mã số thuế HĐĐT, ghi chú giao, ưu đãi theo cổng |

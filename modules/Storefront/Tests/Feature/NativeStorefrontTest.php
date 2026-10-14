@@ -210,3 +210,17 @@ it('PDP có ảnh: ảnh chính + thumbnail từ {url, alt}, data-images cho JS 
     expect(substr_count($html, 'data-gallery-thumb '))->toBe(2)
         ->and($html)->toContain('data-images=\'[{"url":');
 });
+
+it('slot đầu trang và đầu danh sách (0.3.43): body_start trước header, before_listing nhận ngữ cảnh danh mục/thương hiệu/tìm kiếm', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.layout.body_start', fn () => new HtmlString('<div>THÔNG-BÁO</div>'));
+    $hooks->onSlot('vani.storefront.plp.before_listing', fn (array $context, array $listing) => new HtmlString('<p>NGỮ-CẢNH:'.$context['type'].':'.($context['category']['slug'] ?? $context['brand']['slug'] ?? '-').':'.$listing['total'].'</p>'));
+
+    $home = $this->get('/')->assertOk()->getContent();
+    expect(strpos($home, 'THÔNG-BÁO'))->toBeLessThan(strpos($home, '<header'));
+
+    $category = T::seed(fn () => Category::factory()->create(['slug' => 'dam-test']));
+    $this->get('/danh-muc/dam-test')->assertOk()->assertSee('NGỮ-CẢNH:category:dam-test:0', false);
+    $this->get("/thuong-hieu/{$this->urbanx->slug}")->assertOk()->assertSee("NGỮ-CẢNH:brand:{$this->urbanx->slug}:1", false);
+    $this->get('/tim-kiem?q=thun')->assertOk()->assertSee('NGỮ-CẢNH:search:-:1', false);
+});

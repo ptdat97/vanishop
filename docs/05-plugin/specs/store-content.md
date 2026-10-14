@@ -58,11 +58,11 @@ Thanh thông báo và hộp ưu đãi lưu ở settings của `vani.cms` (nội 
 
 | Nhu cầu | Extension point | Có sẵn? |
 |---|---|---|
-| Thanh thông báo trên cùng | Slot ở đầu `<body>`, trước header | **Gap**: chưa có slot, cần thêm `vani.storefront.layout.body_start` (khai báo ở `modules/Storefront/hooks.php` + theme `vani-base`) |
+| Thanh thông báo trên cùng | Slot ở đầu `<body>`, trước header | ✅ 0.3.43 `vani.storefront.layout.body_start` |
 | Hộp ưu đãi / điểm nổi bật | Slot `vani.storefront.pdp.after_price`, `pdp.after_add_to_cart`, `pdp.after_details`, `pdp.after_title`; `StorefrontEnricher` (`product`) | ✅ |
 | Nhập điểm nổi bật, tắt hộp ưu đãi theo sản phẩm | `adminFormSection('product', …)` | ✅ |
 | Nhập banner ở form danh mục | `adminFormSection('category', …)` | ✅ 0.3.43 (G4) |
-| Hiện banner đầu trang danh mục | Slot đầu trang danh sách sản phẩm | **Gap**: chưa có slot trước bộ lọc PLP; cần `vani.storefront.plp.before_listing` (biết danh mục/thương hiệu đang xem) |
+| Hiện banner đầu trang danh mục | Slot đầu trang danh sách sản phẩm | ✅ 0.3.43 `vani.storefront.plp.before_listing` (ngữ cảnh danh mục/thương hiệu/tìm kiếm) |
 | Cấu hình nội dung theo ngôn ngữ | `settings()` | **Kiểm tra khi viết**: settings hiện có nhận giá trị theo ngôn ngữ chưa; nếu chưa, lưu ở bảng riêng của plugin |
 
 ## 7. Quyền

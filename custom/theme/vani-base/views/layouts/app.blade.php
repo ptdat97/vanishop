@@ -13,6 +13,7 @@
     <x-vani::hook-slot name="vani.storefront.layout.head" />
 </head>
 <body class="min-h-screen bg-surface font-sans text-slate-900 antialiased">
+    <x-vani::hook-slot name="vani.storefront.layout.body_start" />
     <header class="border-b border-slate-200">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
             <a href="{{ route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>

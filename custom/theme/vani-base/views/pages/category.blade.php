@@ -8,5 +8,5 @@
     @if ($category['description'])
         <p class="mb-6 text-slate-600">{{ $category['description'] }}</p>
     @endif
-    @include('theme::partials.listing')
+    @include('theme::partials.listing', ['listingContext' => ['type' => 'category', 'category' => $category, 'brand' => null]])
 @endsection

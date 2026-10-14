@@ -1,5 +1,7 @@
 @php($facets = $listing['facets'])
 @php($pages = (int) ceil($listing['total'] / max(1, $listing['per_page'])))
+{{-- $listingContext: trang gọi truyền vào (danh mục / thương hiệu); mặc định là trang tìm kiếm. --}}
+<x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingContext ?? ['type' => 'search', 'category' => null, 'brand' => null], $listing]" />
 <div class="grid gap-8 md:grid-cols-[14rem_1fr]">
     <aside class="space-y-6 text-sm" aria-label="Bộ lọc">
         @if (! empty($facets['brands']) && ! request()->routeIs('storefront.brand'))

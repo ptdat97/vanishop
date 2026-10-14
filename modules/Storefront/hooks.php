@@ -14,6 +14,13 @@ return [
         'args' => [],
         'description' => 'Cuối <head> mọi trang storefront (pixel tracking, meta xác minh).',
     ],
+    'vani.storefront.layout.body_start' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.43',
+        'args' => [],
+        'description' => 'Đầu <body>, trước header, mọi trang storefront (thanh thông báo). Nằm trong HTML có cache CDN: không dùng dữ liệu riêng của khách.',
+    ],
     'vani.storefront.layout.body_end' => [
         'type' => 'slot',
         'visibility' => 'public',
@@ -104,6 +111,16 @@ return [
         'since' => '0.3.1',
         'args' => [],
         'description' => 'Cột bổ sung ở footer (chính sách, đăng ký nhận tin).',
+    ],
+    'vani.storefront.plp.before_listing' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.43',
+        'args' => [
+            'context' => 'array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}',
+            'listing' => 'array<string, mixed> (ProductViews::listing)',
+        ],
+        'description' => 'Đầu trang danh sách sản phẩm, trên bộ lọc và lưới (banner danh mục, giới thiệu thương hiệu).',
     ],
     'vani.storefront.plp.filters' => [
         'type' => 'slot',

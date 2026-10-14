@@ -16,5 +16,5 @@
             @endif
         </div>
     </header>
-    @include('theme::partials.listing')
+    @include('theme::partials.listing', ['listingContext' => ['type' => 'brand', 'category' => null, 'brand' => $brand]])
 @endsection
