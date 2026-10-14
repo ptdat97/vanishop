@@ -60,13 +60,13 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 
 | Đợt | Plugin cũ | Plugin VaniShop | Extension point chính |
 |---|---|---|---|
-| **M1** (go-live) | PixelTracking | `vani.tracking-pixels` | Slot storefront, events đơn |
-| M1 | SizeChart | `vani.size-chart` | `adminFormSection` (product), slot PDP |
-| M1 | FreeShippingProgress | gộp vào `vani.shipping-flat-rate` (thanh tiến độ) | Slot giỏ/checkout, `StorefrontEnricher` (cart) |
-| M1 | Lookbook | `vani.lookbook` | `storefrontPages`, `StorefrontBlock`, Thư viện ảnh |
-| M1 | ExtraContent | gộp vào `vani.cms` (khối HTML cho danh mục/brand) | `StorefrontBlock`, slot danh mục/brand |
-| M1 | Bestseller | khối "Bán chạy" trong `vani.reports` hoặc plugin riêng | `StorefrontBlock`, `OrderStatistics` |
-| M1 | StorefrontBlocks (Core đã có khung `StorefrontBlock` + page builder; chuyển ba khối: đã xem, video hero, trang hàng mới) | `vani.storefront-extras` | `StorefrontBlock`, `storefrontPages` |
+| **M1** (go-live) | PixelTracking | `vani.tracking-pixels` ([đặc tả](specs/tracking-pixels.md)) | Slot storefront, events đơn |
+| M1 | SizeChart | `vani.size-chart` ([đặc tả](specs/size-chart.md)) | `adminFormSection` (product), slot PDP |
+| M1 | FreeShippingProgress | gộp vào `vani.shipping-flat-rate` 1.1 ([đặc tả](specs/free-shipping-progress.md)) | Slot giỏ/checkout, `StorefrontEnricher` (cart) |
+| M1 | Lookbook | `vani.lookbook` ([đặc tả](specs/lookbook.md)) | `storefrontPages`, `StorefrontBlock`, Thư viện ảnh |
+| M1 | ExtraContent | gộp vào `vani.cms` 1.2 ([đặc tả](specs/store-content.md)) | `StorefrontBlock`, slot danh mục/brand |
+| M1 | Bestseller | khối "Bán chạy" trong `vani.storefront-extras` ([đặc tả](specs/storefront-extras.md)) | `StorefrontBlock`, `OrderStatistics` |
+| M1 | StorefrontBlocks (Core đã có khung `StorefrontBlock` + page builder; chuyển khối đã xem, video hero; trang hàng mới đã có) | `vani.storefront-extras` ([đặc tả](specs/storefront-extras.md)) | `StorefrontBlock`, Storefront API |
 | **M2** | VnShipping (GHTK) | `vani.ghtk` | `ShippingCarrier` + `ShippingRateProvider` (mẫu `vani.ghn`) |
 | M2 | OrderTracking | bổ sung `vani.ghn`/`vani.ghtk` + slot tra cứu đơn | Webhook/đồng bộ hãng, `shipment_events` |
 | M2 | CodReconcile | `vani.cod-reconciliation` | Events fulfillment, `adminPages`, đối soát thanh toán |
@@ -111,7 +111,30 @@ Tổng: 16 (A) + 16 (B) + 6 (C) + 5 (D) = 43.
 
 Sau mỗi plugin: cập nhật bảng ở §3 (✅ + commit), [plugin-catalog](plugin-catalog.md), [status](../00-overview/status.md).
 
-## 5. Rủi ro
+## 5. Đợt M0 — tiến độ
+
+| Việc | Trạng thái |
+|---|---|
+| Đặc tả 7 plugin M1 (6 đặc tả: Bestseller gộp với StorefrontBlocks) | ✅ 2026-10-14, **chờ Owner duyệt** |
+| Phiếu đối chiếu nhóm A (16 plugin đã có tương đương) | Chưa làm |
+
+### 5.1 Khoảng trống Core phải làm trước M1 (một lát "M1-core")
+
+Tổng hợp từ các đặc tả; làm theo [commerce-kernel §9](../02-architecture/commerce-kernel.md) (contract + contract test + CHANGELOG), mỗi mục có plugin M1 làm implementation tham chiếu.
+
+| # | Khoảng trống | Dùng cho | Nơi sửa |
+|---|---|---|---|
+| G1 | Service contract thẻ sản phẩm theo danh sách id công khai (giống lưới Core) | storefront-extras (bán chạy, đã xem); lookbook M3 | Storefront |
+| G2 | `GET /api/storefront/v1/products?ids[]=…` (tối đa 30, giữ thứ tự, chỉ hàng còn bán) | storefront-extras (đã xem) | Storefront |
+| G3 | `OrderStatistics`: top style theo số lượng bán trong khoảng thời gian (trừ dòng huỷ) | storefront-extras (bán chạy) | Ordering |
+| G4 | Tài nguyên Admin `category`, `brand` (`declareResource`) + form danh mục/thương hiệu render phần mở rộng | size-chart, store-content | Catalog + Admin Vue |
+| G5 | Slot `vani.storefront.layout.body_start`, `vani.storefront.plp.before_listing` | store-content | Storefront `hooks.php` + theme `vani-base` |
+| G6 | Theme phát sự kiện trình duyệt khi giỏ đổi (`vani:cart-updated`) | tracking-pixels | Theme `vani-base` |
+| G7 | Kiểm tra: `settings()` nhận giá trị theo ngôn ngữ; `CatalogReader` trả danh mục chính + chuỗi danh mục cha | store-content, size-chart | Tenancy/Extension, Catalog |
+
+Thứ tự đề xuất sau khi Owner duyệt: M1-core (G1–G7) → `vani.tracking-pixels` → `vani.shipping-flat-rate` 1.1 → `vani.size-chart` → `vani.lookbook` → `vani.cms` 1.2 → `vani.storefront-extras`.
+
+## 6. Rủi ro
 
 | Rủi ro | Kiểm soát |
 |---|---|
