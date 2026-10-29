@@ -36,4 +36,12 @@ return [
     'media_deleted' => 'Đã xoá :deleted ảnh.',
     'media_in_use_skipped' => ':count ảnh đang được dùng nên không xoá.',
     'media_moved' => 'Đã chuyển :count ảnh.',
+    'link_type_in_use' => 'Loại liên kết còn sản phẩm đang dùng, hãy tắt thay vì xoá.',
+    'too_many_links' => 'Mỗi loại liên kết tối đa :max sản phẩm.',
+    'links_added' => 'Đã liên kết thêm :count sản phẩm.',
+    'video_driver_unavailable' => 'Nền tảng video chưa được bật (cần plugin, vd. vani.video-youtube).',
+    'video_reference_invalid' => 'Không nhận ra video. :hint',
+    'video_already_added' => 'Sản phẩm đã có video này.',
+    'too_many_videos' => 'Mỗi sản phẩm tối đa :max video.',
+    'video_order_invalid' => 'Thứ tự video không hợp lệ.',
 ];

@@ -35,6 +35,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [032](ADR-032-approved-dependencies-ops-quality.md) | **Dependency được duyệt: Horizon, S3, backup, Pulse, Intervention Image; Larastan, Rector, security advisories, type coverage** | Accepted |
 | [031](ADR-031-short-hook-syntax-auto-points.md) | **Cú pháp hook ngắn `vani_*` + điểm mở rộng tự động (mọi trang Admin, view storefront, API) giữ kiểm soát HookManager** | Accepted |
 | [034](ADR-034-vanicommerce-plugin-migration.md) | **VaniShop thay VaniCommerce; plugin của Owner chuyển sang bằng đặc tả rồi viết lại** | Accepted |
+| [035](ADR-035-product-links-videos-from-vanilo.md) | **Liên kết sản phẩm và video sản phẩm phỏng theo Vanilo (MIT), không phụ thuộc gói Vanilo** | Accepted |
 | [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 

@@ -9,8 +9,10 @@ import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
+import ProductLinks from '../../Components/ProductLinks.vue';
+import ProductVideos from '../../Components/ProductVideos.vue';
 import VariantMatrix from '../../Components/VariantMatrix.vue';
-import type { NavItem, Translations } from '../../types';
+import type { LinkGroupRow, NavItem, Translations, VideoRow } from '../../types';
 
 type Fields = 'name' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
 type AttributeValue = number | number[] | string | boolean | null;
@@ -40,6 +42,8 @@ const props = defineProps<{
         attributes: Record<number, AttributeValue>;
         colors: ColorEntry[];
         variants: Array<{ id: number; sku: string; barcode: string | null; status: string; weight_gram: number | null; color_code: string; size_code: string }>;
+        links: LinkGroupRow[];
+        videos: VideoRow[];
     };
     categories: Array<{ id: number; label: string }>;
     brands: Array<{ id: number; label: string }>;
@@ -47,11 +51,14 @@ const props = defineProps<{
     availableColors: Array<{ id: number; label: string }>;
     statuses: string[];
     availableSizes: Array<{ id: number; label: string; system: string }>;
+    linkTypes: Array<{ id: number; label: string; is_active: boolean }>;
+    videoDrivers: Array<{ code: string; label: string; hint: string }>;
     extensionSections: ExtensionSection[];
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
 const productUrl = computed(() => (props.product ? `${baseUrl.value}/${props.product.id}` : ''));
+const linkTypesUrl = computed(() => props.nav.find((item) => item.key === 'link-types')?.url ?? '');
 const { locales, defaultLocale } = useStoreLocales();
 const locale = ref(defaultLocale);
 const statusLabels: Record<string, string> = { draft: 'Nháp', active: 'Đang bán', archived: 'Lưu trữ' };
@@ -231,7 +238,9 @@ function removeImage(color: ColorEntry, imageId: number): void {
             </div>
             <MediaPicker :open="pickingFor !== null" :title="`Ảnh cho màu ${pickingFor?.name ?? pickingFor?.code ?? ''}`" @update:open="(value) => !value && (pickingFor = null)" @select="attachFromLibrary" />
             <VariantMatrix v-if="product" :product-url="productUrl" :variants="product.variants" :sizes="availableSizes" />
-            <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh và biến thể.</p>
+            <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
+            <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
+            <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh, biến thể, video và sản phẩm liên kết.</p>
             <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 

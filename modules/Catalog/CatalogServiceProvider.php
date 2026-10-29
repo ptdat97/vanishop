@@ -28,6 +28,7 @@ use Modules\Catalog\Contracts\ImageFormat;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Catalog\Contracts\VideoDriver;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
 use Modules\Catalog\Events\ProductUpdated;
@@ -75,6 +76,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->kindContract('search', SearchProvider::TAG);
         // Định dạng ảnh thu nhỏ (WebP/AVIF…) là plugin (vani.media-webp); không có → giữ định dạng gốc.
         $this->app->make(Extensions::class)->kindContract('image_format', ImageFormat::TAG);
+        // Nền tảng video sản phẩm (YouTube…) là plugin (vani.video-youtube); không có → không thêm được video.
+        $this->app->make(Extensions::class)->kindContract('video', VideoDriver::TAG);
         $this->app->bind(SearchManager::class, fn ($app): SearchManager => new SearchManager($app->make(Extensions::class), (string) config('vanishop.search.provider')));
     }
 

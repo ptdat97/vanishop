@@ -11,6 +11,7 @@ use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Color;
+use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Identity\Contracts\AuditLogger;
 
@@ -137,6 +138,35 @@ final class TaxonomyService
     {
         $size->delete();
         $this->audit->record('catalog.size.deleted', 'size', $size->id, ['code' => $size->code]);
+    }
+
+    /**
+     * @param  array{code: string, is_active: bool, position: int, translations: array<string, array{name: string}>}  $data
+     */
+    public function saveLinkType(array $data, ?LinkType $type = null): LinkType
+    {
+        return DB::transaction(function () use ($data, $type): LinkType {
+            $type ??= new LinkType;
+            $type->fill(['code' => $data['code'], 'is_active' => $data['is_active'], 'position' => $data['position']])->save();
+            $type->syncTranslations($data['translations']);
+
+            $this->audit->record($type->wasRecentlyCreated ? 'catalog.link_type.created' : 'catalog.link_type.updated', 'link_type', $type->id, ['code' => $type->code]);
+
+            return $type;
+        });
+    }
+
+    /**
+     * Không xoá loại còn liên kết sản phẩm (tắt bằng is_active = false).
+     */
+    public function deleteLinkType(LinkType $type): void
+    {
+        if ($type->groups()->exists()) {
+            throw ValidationException::withMessages(['link_type' => __('catalog::messages.link_type_in_use')]);
+        }
+
+        $type->delete();
+        $this->audit->record('catalog.link_type.deleted', 'link_type', $type->id, ['code' => $type->code]);
     }
 
     /**

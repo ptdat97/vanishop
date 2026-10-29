@@ -1,0 +1,17 @@
+{
+    "id": "vani.video-youtube",
+    "name": {
+        "vi": "Video YouTube",
+        "en": "YouTube videos"
+    },
+    "version": "1.0.0",
+    "kind": "video",
+    "provider": "Plugin\\VideoYoutube\\VideoYoutubeServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.46",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

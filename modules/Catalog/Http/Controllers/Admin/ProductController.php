@@ -12,15 +12,19 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
+use Modules\Catalog\Application\Products\StyleLinkService;
+use Modules\Catalog\Application\Products\VideoDrivers;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Http\Requests\Admin\ProductRequest;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Color;
+use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Catalog\Persistence\Models\Variant;
+use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Shared\Domain\Text\VietnameseText;
 
@@ -93,7 +97,7 @@ final class ProductController
     {
         Gate::authorize('catalog.manage');
 
-        return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'colors.color.translations', 'colors.gallery.media', 'variants.size', 'variants.styleColor.color']), $tree);
+        return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'colors.color.translations', 'colors.gallery.media', 'variants.size', 'variants.styleColor.color', 'videos']), $tree);
     }
 
     public function update(Style $product, ProductRequest $request, ProductService $products, AdminScreen $screen): RedirectResponse
@@ -116,6 +120,8 @@ final class ProductController
     private function form(?Style $style, CategoryTreeQuery $tree): Response
     {
         $attributes = Attribute::query()->with(['translations', 'values.translations'])->orderBy('position')->orderBy('code')->get();
+        $linkTypes = LinkType::query()->with('translations')->orderBy('position')->orderBy('code')->get();
+        $videoDrivers = app(VideoDrivers::class);
 
         return Inertia::render('Catalog::Products/Form', [
             'nav' => CatalogNavigation::all(),
@@ -150,7 +156,20 @@ final class ProductController
                         'color_code' => $variant->styleColor->color->code,
                         'size_code' => $variant->size->code,
                     ])->values()->all(),
+                'links' => $this->linkFormValues($style, $linkTypes),
+                // Driver đã tắt/gỡ: vẫn liệt kê để gỡ được, storefront không hiện.
+                'videos' => $style->videos->map(fn (Video $video): array => [
+                    'id' => $video->id,
+                    'driver' => $video->driver,
+                    'reference' => $video->reference,
+                    'title' => $video->title,
+                    'available' => ($view = $videoDrivers->view($video)) !== null,
+                    'watch_url' => $view['watch_url'] ?? null,
+                    'thumbnail_url' => $view['thumbnail_url'] ?? null,
+                ])->all(),
             ],
+            'linkTypes' => $linkTypes->map(fn (LinkType $type): array => ['id' => $type->id, 'label' => $type->translate('name') ?? $type->code, 'is_active' => $type->is_active])->all(),
+            'videoDrivers' => array_values(array_map(fn ($driver): array => ['code' => $driver->code(), 'label' => $driver->label(), 'hint' => $driver->inputHint()], $videoDrivers->all())),
             'extensionSections' => app(AdminScreen::class)->formSections('product', $style?->id),
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => Brand::query()->orderBy('position')->orderBy('name')->get(['id', 'name'])->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
@@ -188,6 +207,26 @@ final class ProductController
         }
 
         return $values;
+    }
+
+    /**
+     * Sản phẩm liên kết mà sản phẩm này nhìn thấy, theo loại.
+     *
+     * @param  Collection<int, LinkType>  $linkTypes
+     * @return list<array{type_id: int, name: string, products: list<array{id: int, style_code: string, name: string|null}>}>
+     */
+    private function linkFormValues(Style $style, Collection $linkTypes): array
+    {
+        $linked = app(StyleLinkService::class)->linkedStyleIds($style->id);
+        $styles = Style::query()->with('translations')->whereKey(array_merge([], ...array_values($linked)))->get()->keyBy('id');
+
+        return $linkTypes->filter(fn (LinkType $type): bool => isset($linked[$type->id]))
+            ->map(fn (LinkType $type): array => [
+                'type_id' => $type->id,
+                'name' => $type->translate('name') ?? $type->code,
+                'products' => array_values(array_filter(array_map(fn (int $id): ?array => $styles->has($id)
+                    ? ['id' => $id, 'style_code' => $styles[$id]->style_code, 'name' => $styles[$id]->translate('name')] : null, $linked[$type->id]))),
+            ])->values()->all();
     }
 
     /**

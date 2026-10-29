@@ -56,7 +56,9 @@ interface CatalogReader
     public function productsByIds(array $styleIds, string $locale, int $now): array;
 
     /**
-     * Chi tiết sản phẩm đang hiển thị; có "variants" (list<VariantView>) các variant đang bán.
+     * Chi tiết sản phẩm đang hiển thị; có "variants" (list<VariantView>) các variant đang bán, "videos" (video của driver
+     * đang bật) và "links" (0.3.46: list<{code, name, style_ids}> — id có thể gồm sản phẩm không hiển thị, lọc bằng
+     * `productsByIds`).
      *
      * @return array<string, mixed>|null
      */

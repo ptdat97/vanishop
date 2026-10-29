@@ -36,4 +36,12 @@ return [
     'media_deleted' => 'Deleted :deleted images.',
     'media_in_use_skipped' => ':count images are in use and were not deleted.',
     'media_moved' => 'Moved :count images.',
+    'link_type_in_use' => 'This link type is still used by products; deactivate it instead of deleting.',
+    'too_many_links' => 'Each link type allows at most :max products.',
+    'links_added' => 'Linked :count more products.',
+    'video_driver_unavailable' => 'This video platform is not enabled (requires a plugin, e.g. vani.video-youtube).',
+    'video_reference_invalid' => 'Video not recognised. :hint',
+    'video_already_added' => 'This product already has that video.',
+    'too_many_videos' => 'Each product allows at most :max videos.',
+    'video_order_invalid' => 'Invalid video order.',
 ];

@@ -13,10 +13,12 @@ use Modules\Catalog\Domain\AttributeKind;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleAttributeValue;
 use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Catalog\Persistence\Models\Variant;
+use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Facades\Hook;
 
 /**
@@ -25,7 +27,11 @@ use Modules\Extension\Facades\Hook;
  */
 final class StorefrontProductQuery
 {
-    public function __construct(private readonly SearchManager $search) {}
+    public function __construct(
+        private readonly SearchManager $search,
+        private readonly StyleLinkService $links,
+        private readonly VideoDrivers $videos,
+    ) {}
 
     /**
      * @return array{items: list<array<string, mixed>>, total: int, facets: array<string, mixed>}
@@ -86,7 +92,7 @@ final class StorefrontProductQuery
     public function detail(string $slug, string $locale, int $now): ?array
     {
         $style = Style::query()
-            ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations',
+            ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
                 'variants' => fn ($query) => $query->where('status', 'active')->with(['size', 'styleColor.color'])])
             ->where('slug', $slug)
             ->first();
@@ -116,7 +122,28 @@ final class StorefrontProductQuery
                     'size_code' => $variant->size->code,
                     'size_system' => $variant->size->size_system->value,
                 ])->values()->all(),
+            'videos' => array_values(array_filter($style->videos->map(fn (Video $video): ?array => $this->videos->view($video))->all())),
+            'links' => $this->links($style, $locale),
         ];
+    }
+
+    /**
+     * Sản phẩm liên kết theo loại đang bật, theo thứ tự loại; chỉ có id style — tầng ghép lọc sản phẩm không hiển thị
+     * và dựng thẻ sản phẩm (giá, tồn) bằng `productsByIds`.
+     *
+     * @return list<array{code: string, name: string|null, style_ids: list<int>}>
+     */
+    private function links(Style $style, string $locale): array
+    {
+        $linked = $this->links->linkedStyleIds($style->id);
+        if ($linked === []) {
+            return [];
+        }
+
+        return LinkType::query()->with('translations')->whereKey(array_keys($linked))->where('is_active', true)->orderBy('position')->orderBy('id')->get()
+            ->map(fn (LinkType $type): array => ['code' => $type->code, 'name' => $type->translate('name', $locale), 'style_ids' => $linked[$type->id]])
+            ->values()
+            ->all();
     }
 
     /**

@@ -92,9 +92,36 @@ final class ProductViews implements ProductCards
         ], $product['variants']);
         $product['price'] = $this->range(array_values($resolved));
         $product['in_stock'] = array_sum($stock) > 0;
+        $product['links'] = $this->links($product['links'] ?? [], $locale, $now);
         unset($product['variant_ids']);
 
         return $this->enrichment->applyOne('product', $product);
+    }
+
+    /**
+     * Sản phẩm liên kết → thẻ sản phẩm (một lần truy vấn cho mọi loại); loại không còn sản phẩm hiển thị bị bỏ.
+     *
+     * @param  list<array{code: string, name: string|null, style_ids: list<int>}>  $links
+     * @return list<array{code: string, name: string|null, products: list<array<string, mixed>>}>
+     */
+    private function links(array $links, string $locale, int $now): array
+    {
+        $ids = array_values(array_unique(array_merge(...array_column($links, 'style_ids') ?: [[]])));
+        if ($ids === []) {
+            return [];
+        }
+
+        $cards = array_column($this->cards($this->catalog->productsByIds($ids, $locale, $now), $now), null, 'id');
+
+        $result = [];
+        foreach ($links as $link) {
+            $products = array_values(array_filter(array_map(fn (int $id): ?array => $cards[$id] ?? null, $link['style_ids'])));
+            if ($products !== []) {
+                $result[] = ['code' => $link['code'], 'name' => $link['name'], 'products' => $products];
+            }
+        }
+
+        return $result;
     }
 
     /**

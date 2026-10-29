@@ -125,6 +125,14 @@ final class Style extends Model
         return $this->belongsToMany(ProductCollection::class, 'collection_style', 'style_id', 'collection_id')->withPivot('position');
     }
 
+    /**
+     * @return BelongsToMany<Video, $this>
+     */
+    public function videos(): BelongsToMany
+    {
+        return $this->belongsToMany(Video::class)->withPivot('position')->orderByPivot('position')->orderBy('videos.id');
+    }
+
     protected static function newFactory(): StyleFactory
     {
         return StyleFactory::new();

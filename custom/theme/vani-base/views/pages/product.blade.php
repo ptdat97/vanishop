@@ -101,4 +101,33 @@
             <x-vani::hook-slot name="vani.storefront.pdp.after_details" :args="[$product]" />
         </div>
     </div>
+
+    {{-- Video: embed_url do plugin VideoDriver trả về (https), theme tự dựng iframe. --}}
+    @if (($product['videos'] ?? []) !== [])
+        <section class="mt-12">
+            <h2 class="mb-4 text-lg font-medium">Video</h2>
+            <div class="grid gap-6 md:grid-cols-2">
+                @foreach ($product['videos'] as $video)
+                    @if ($video['embed_url'] !== null)
+                        <div class="aspect-video overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
+                            <iframe src="{{ $video['embed_url'] }}" title="{{ $video['title'] ?? $product['name'] }}" loading="lazy" class="h-full w-full" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        </div>
+                    @else
+                        <a href="{{ $video['watch_url'] }}" target="_blank" rel="noopener" class="block text-sm underline">{{ $video['title'] ?? $video['watch_url'] }}</a>
+                    @endif
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @foreach ($product['links'] ?? [] as $link)
+        <section class="mt-12">
+            <h2 class="mb-4 text-lg font-medium">{{ $link['name'] ?? $link['code'] }}</h2>
+            <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+                @foreach (array_slice($link['products'], 0, 8) as $linked)
+                    @include('theme::partials.product-card', ['product' => $linked])
+                @endforeach
+            </div>
+        </section>
+    @endforeach
 @endsection

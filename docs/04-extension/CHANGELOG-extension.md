@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.46 — 2026-10-29
+
+Chỉ thêm. Liên kết sản phẩm và video sản phẩm, phỏng theo module Links/Video của Vanilo (MIT) ([ADR-035](../19-adr/ADR-035-product-links-videos-from-vanilo.md)).
+
+### Thêm
+- Extension point `Catalog\Contracts\VideoDriver` (tag `catalog.video-driver`, kind manifest `video`): `code()`, `label()`, `inputHint()`, `reference(input)` (chuẩn hoá link/ID, null = sai), `watchUrl()`, `embedUrl()` (src iframe https, null = không nhúng), `thumbnail()`; DTO `Data\VideoThumbnail`. Không có mặc định trong Core; tham chiếu: plugin `vani.video-youtube`.
+- `CatalogReader::productDetail()` có thêm `videos` (chỉ video của driver đang bật) và `links` (`list<{code, name, style_ids}>`); `ProductViews::detail` (Storefront API `GET /products/{slug}`, hook `vani.storefront.pdp.*`) đổi `links[].style_ids` thành `links[].products` (thẻ sản phẩm, đã lọc sản phẩm không hiển thị).
+
 ## 0.3.45 — 2026-10-14
 
 Chỉ thêm.
