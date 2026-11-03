@@ -26,4 +26,28 @@ return [
         'args' => ['query' => 'Modules\\Catalog\\Contracts\\Data\\ProductSearchQuery'],
         'description' => 'Sửa truy vấn danh sách/tìm kiếm sản phẩm storefront (merchandising: lọc, sắp xếp). Phải trả về ProductSearchQuery; kiểu khác bị bỏ qua.',
     ],
+    'vani.service.catalog.search' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.47',
+        'on_error' => 'skip',
+        'args' => ['result' => 'array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array<string, mixed>}', 'filters' => 'Modules\\Catalog\\Contracts\\Data\\ProductFilters', 'locale' => 'string'],
+        'description' => 'Kết quả tìm kiếm/danh sách sản phẩm storefront (CatalogReader::searchProducts). Thêm khoá vào item/facet dưới id plugin; không đổi giá (giá do Pricing).',
+    ],
+    'vani.service.catalog.product_detail' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.47',
+        'on_error' => 'skip',
+        'args' => ['product' => 'array<string, mixed>', 'slug' => 'string', 'locale' => 'string'],
+        'description' => 'Chi tiết sản phẩm storefront (CatalogReader::productDetail), chỉ khi tìm thấy. Thêm khoá dưới id plugin.',
+    ],
+    'vani.service.catalog.category_tree' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.47',
+        'on_error' => 'skip',
+        'args' => ['tree' => 'list<array<string, mixed>>', 'locale' => 'string'],
+        'description' => 'Cây danh mục storefront đang hiển thị (cũng là nguồn của CatalogReader::category).',
+    ],
 ];

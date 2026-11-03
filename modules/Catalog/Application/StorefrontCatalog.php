@@ -29,7 +29,7 @@ final class StorefrontCatalog implements CatalogReader
 
     public function categoryTree(string $locale): array
     {
-        return $this->present($this->categories->tree(activeOnly: true, locale: $locale));
+        return hook_filter('vani.service.catalog.category_tree', $this->present($this->categories->tree(activeOnly: true, locale: $locale)), $locale);
     }
 
     public function category(string $slug, string $locale): ?array
@@ -42,7 +42,7 @@ final class StorefrontCatalog implements CatalogReader
         $query = $this->toSearchQuery($filters);
         $result = $this->products->list($query, $locale);
 
-        return [
+        return hook_filter('vani.service.catalog.search', [
             'items' => $result['items'],
             'total' => $result['total'],
             'page' => $query->page,
@@ -52,7 +52,7 @@ final class StorefrontCatalog implements CatalogReader
                 'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
                 'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
             ],
-        ];
+        ], $filters, $locale);
     }
 
     public function brands(): array
@@ -75,7 +75,9 @@ final class StorefrontCatalog implements CatalogReader
 
     public function productDetail(string $slug, string $locale, int $now): ?array
     {
-        return $this->products->detail($slug, $locale, $now);
+        $detail = $this->products->detail($slug, $locale, $now);
+
+        return $detail === null ? null : hook_filter('vani.service.catalog.product_detail', $detail, $slug, $locale);
     }
 
     public function sellableVariants(array $variantIds, string $locale, int $now): array

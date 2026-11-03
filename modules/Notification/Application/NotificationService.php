@@ -31,6 +31,7 @@ final class NotificationService implements Notifier
 
     public function notify(NotificationRequest $request): array
     {
+        $request = hook_filter('vani.service.notification.request', $request);
         $available = $this->channels->all();
         $queued = [];
 

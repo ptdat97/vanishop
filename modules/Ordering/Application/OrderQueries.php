@@ -47,7 +47,7 @@ final class OrderQueries
             $address = ['province_name' => $address['province_name'] ?? '', 'ward_name' => $address['ward_name'] ?? '', 'street_line' => '***'];
         }
 
-        return new OrderDetail(
+        return hook_filter('vani.service.ordering.order_detail', new OrderDetail(
             id: $order->id,
             publicId: $order->public_id,
             number: $order->number,
@@ -78,7 +78,7 @@ final class OrderQueries
             lockVersion: $order->lock_version,
             source: (string) $order->source,
             pricing: (new PriceBreakdownCalculator)->for($order)->toArray(),
-        );
+        ), $order, $masked);
     }
 
     /**

@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.47 — 2026-11-03
+
+Chỉ thêm. Hook tại kết quả service theo phong cách BeikeShop ([ADR-036](../19-adr/ADR-036-service-result-hooks.md), [catalog §4.2](extension-point-catalog.md)).
+
+### Thêm
+- Helper `hook_filter()`, `hook_action()`, `add_hook_filter()`, `add_hook_action()` — bí danh của `vani_*`, cùng HookManager.
+- Hook filter `vani.service.checkout.totals` (`TotalsContext`, trước guard), `vani.service.checkout.quote`, `vani.service.pricing.prices`, `vani.service.promotion.result`, `vani.service.catalog.search`, `vani.service.catalog.product_detail`, `vani.service.catalog.category_tree`, `vani.service.ordering.order_detail`, `vani.service.customer.profile_attributes`, `vani.service.notification.request`, `vani.service.fulfillment.shipment_data`.
+- `TotalsPipeline::GUARD_PRIORITY = 900`.
+
 ## 0.3.46 — 2026-10-29
 
 Chỉ thêm. Liên kết sản phẩm và video sản phẩm, phỏng theo module Links/Video của Vanilo (MIT) ([ADR-035](../19-adr/ADR-035-product-links-videos-from-vanilo.md)).

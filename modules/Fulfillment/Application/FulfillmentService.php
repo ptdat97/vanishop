@@ -235,7 +235,7 @@ final class FulfillmentService
         $order = $this->orders->find($shipment->order_id);
         $lines = collect($this->orders->lines($shipment->order_id))->keyBy('id');
 
-        return new ShipmentData(
+        return hook_filter('vani.service.fulfillment.shipment_data', new ShipmentData(
             publicId: $shipment->public_id,
             orderNumber: $order->number ?? '',
             locationId: $shipment->location_id,
@@ -247,7 +247,7 @@ final class FulfillmentService
             address: $order->shippingAddress ?? [],
             codAmount: Money::of($shipment->cod_amount, $shipment->currency_code),
             trackingNumber: $trackingNumber ?? $shipment->tracking_number,
-        );
+        ), $shipment);
     }
 
     /**

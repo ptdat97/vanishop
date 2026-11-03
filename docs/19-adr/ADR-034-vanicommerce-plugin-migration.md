@@ -1,6 +1,6 @@
 # ADR-034 — VaniShop thay VaniCommerce; plugin của Owner chuyển sang bằng đặc tả rồi viết lại
 
-- Trạng thái: Accepted · Ngày: 2026-10-14 · Người quyết định: Owner
+- Trạng thái: Accepted, §4 sửa bởi [ADR-036](ADR-036-service-result-hooks.md) (2026-11-03: không bắt buộc đặc tả đầy đủ, dùng lại mã do Owner viết) · Ngày: 2026-10-14 · Người quyết định: Owner
 - Liên quan: [clean-room-license](../01-principles/clean-room-license.md), [ADR-003](ADR-003-plugin-architecture.md), [ADR-029](ADR-029-commerce-microkernel.md), [ADR-033](ADR-033-out-of-scope.md). Kế hoạch: [vanicommerce-plugin-migration](../05-plugin/vanicommerce-plugin-migration.md).
 
 ## Context

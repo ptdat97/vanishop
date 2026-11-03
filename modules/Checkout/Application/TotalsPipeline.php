@@ -17,6 +17,9 @@ use Modules\Shared\Domain\Money\Money;
  */
 final class TotalsPipeline
 {
+    /** Từ priority này trở lên là chốt chặn: hook `vani.service.checkout.totals` chạy ngay trước. */
+    public const GUARD_PRIORITY = 900;
+
     public function __construct(private readonly Extensions $extensions) {}
 
     public function run(TotalsContext $context): Totals
@@ -24,8 +27,17 @@ final class TotalsPipeline
         $calculators = array_values(array_filter($this->extensions->tagged(TotalsCalculator::TAG), fn (object $calculator): bool => $calculator instanceof TotalsCalculator));
         usort($calculators, fn (TotalsCalculator $a, TotalsCalculator $b): int => [$a->priority(), $a->code()] <=> [$b->priority(), $b->code()]);
 
+        $filtered = false;
         foreach ($calculators as $calculator) {
+            // Plugin sửa kết quả sau mọi calculator, trước chốt chặn (guard ≥ 900) — giảm giá sai vẫn bị cắt.
+            if (! $filtered && $calculator->priority() >= self::GUARD_PRIORITY) {
+                $context = hook_filter('vani.service.checkout.totals', $context);
+                $filtered = true;
+            }
             $context = $calculator->calculate($context);
+        }
+        if (! $filtered) {
+            $context = hook_filter('vani.service.checkout.totals', $context);
         }
 
         $sum = fn (callable $pick): Money => array_reduce($context->lines, fn (Money $carry, TotalsLine $line): Money => $carry->add($pick($line)), $context->money(0));

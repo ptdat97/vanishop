@@ -142,6 +142,34 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.checkout.contact_after` / `address_after` / `payment_after` | Sau từng bước checkout (0.3.1); trường `extra[<plugin id>]` | Mã số thuế HĐĐT, ghi chú giao, ưu đãi theo cổng |
 | `vani.storefront.account.menu` / `account.dashboard` / `account.order_detail` | Menu, tổng quan, chi tiết đơn trong `/tai-khoan` (0.3.9); mục menu có trang riêng: `accountPage()` | Điểm thưởng, ví, hoá đơn |
 
+### 4.2 Hook tại kết quả service (0.3.47, [ADR-036](../19-adr/ADR-036-service-result-hooks.md))
+
+Core gọi `hook_filter('vani.service.<module>.<kết quả>', $value, ...$args)` ngay tại kết quả của service nghiệp vụ; plugin nghe bằng `add_hook_filter()` trong `boot()`. Helper `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action` là bí danh của `vani_*`, cùng HookManager (khai báo, kiểm kiểu, plugin sở hữu, đo thời gian). Filter phải trả **cùng kiểu** với đầu vào (DTO bất biến: tạo bản mới qua `with*()`/constructor).
+
+| Hook | Giá trị | Args thêm | Lỗi listener | Mục đích |
+|---|---|---|---|---|
+| `vani.service.checkout.totals` | `TotalsContext` | — | fail (đặt hàng thất bại) | Sửa tổng sau mọi calculator, **trước** guard: giảm giá dòng, `Adjustment`, phí giao. Quote và đặt hàng cùng kết quả |
+| `vani.service.checkout.quote` | `CheckoutQuote` | `CheckoutRequest` | skip | Chỉ hiển thị (không đổi tiền ở đây) |
+| `vani.service.pricing.prices` | `array<int, ResolvedPrice>` | `PricingContext` | fail | Đổi giá hiệu lực theo variant (storefront, giỏ, checkout); không thêm/xoá khoá |
+| `vani.service.promotion.result` | `PromotionResult` | `PromotionContext` | fail | Sửa khuyến mãi đã áp / voucher bị từ chối |
+| `vani.service.catalog.search` | `array` (items, total, facets…) | `ProductFilters`, locale | skip | Bổ sung item/facet danh sách sản phẩm |
+| `vani.service.catalog.product_detail` | `array` | slug, locale | skip | Bổ sung chi tiết sản phẩm (khi tìm thấy) |
+| `vani.service.catalog.category_tree` | `list<array>` | locale | skip | Cây danh mục storefront |
+| `vani.service.ordering.order_detail` | `OrderDetail` | `Order`, masked | skip | Chi tiết đơn cho Admin/khách |
+| `vani.service.customer.profile_attributes` | `array` | customerId | fail | Dữ liệu khách tự sửa hồ sơ trước khi lưu |
+| `vani.service.notification.request` | `NotificationRequest` | — | fail | Yêu cầu gửi thông báo trước khi chọn kênh/mẫu |
+| `vani.service.fulfillment.shipment_data` | `ShipmentData` | `Shipment` | fail | Dữ liệu gửi hãng vận chuyển (không đổi `codAmount`) |
+
+```php
+// Plugin: giảm theo điểm thưởng (tương đương "thêm một dòng total" ở hệ tham chiếu)
+add_hook_filter('vani.service.checkout.totals', function (TotalsContext $context): TotalsContext {
+    return $context->withAdjustment(new Adjustment('loyalty', 'vani.loyalty', null, 'Đổi điểm', $context->money(-50_000)))
+        ->withLines(/* phân bổ 50.000đ vào giảm giá các dòng */);
+});
+```
+
+Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân bổ giảm giá về dòng (`TotalsLine::withDiscount`) là bắt buộc: `grandTotal` = Σ dòng + phí giao; `Adjustment` là bản ghi truy vết (lưu `order_adjustments`), không tự trừ tiền.
+
 ## 5. Registry (qua `PluginServiceProvider`)
 
 | Registry | Ví dụ |

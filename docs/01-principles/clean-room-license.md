@@ -35,7 +35,7 @@ Nếu VaniShop chứa mã (kể cả đã sửa, đổi tên) từ BeikeShop, n�
 | Phần | Quy tắc |
 |---|---|
 | **Lõi VaniCommerce** (mọi thứ ngoài `plugins/`) | Như BeikeShop: không mở mã nguồn/tài liệu khi code VaniShop, không đưa vào context AI agent khi sinh code, không chép tên hook/bảng/class/chuỗi. Kết quả nghiên cứu đã viết lại tại [reference-comparison](../02-architecture/reference-comparison.md); người code chỉ đọc tài liệu đó |
-| **`VaniCommerce/plugins/*`** (43 plugin, Owner xác nhận thuộc quyền Owner — 2026-10-14) | Được đọc **ở vai trò viết đặc tả** để chuyển sang VaniShop. Dữ liệu, nội dung, chuỗi hiển thị do Owner viết được dùng lại. Code **không** chép: viết lại từ đặc tả trên extension point VaniShop (plugin cũ gọi API và theo cấu trúc của lõi dẫn xuất BeikeShop). Không mang header bản quyền, comment của bên thứ ba. Quy trình: [vanicommerce-plugin-migration](../05-plugin/vanicommerce-plugin-migration.md) |
+| **`VaniCommerce/plugins/*`** (Owner xác nhận thuộc quyền Owner — 2026-10-14) | **Từ [ADR-036](../19-adr/ADR-036-service-result-hooks.md) (2026-11-03):** mã do Owner viết được dùng lại, không bắt buộc đặc tả đầy đủ; phần gọi lõi cũ viết lại trên hook/contract VaniShop; plugin của bên thứ ba vẫn viết lại. Trước đó: được đọc **ở vai trò viết đặc tả** để chuyển sang VaniShop. Dữ liệu, nội dung, chuỗi hiển thị do Owner viết được dùng lại. Code **không** chép: viết lại từ đặc tả trên extension point VaniShop (plugin cũ gọi API và theo cấu trúc của lõi dẫn xuất BeikeShop). Không mang header bản quyền, comment của bên thứ ba. Quy trình: [vanicommerce-plugin-migration](../05-plugin/vanicommerce-plugin-migration.md) |
 
 ## 3. Quy trình clean-room
 
@@ -87,7 +87,7 @@ Dán vào mô tả PR:
 
 - **So sánh độ tương đồng** chỉ thực hiện khi **audit** (trước phát hành thương mại, hoặc khi có nghi vấn): người được chỉ định (không thuộc nhóm phát triển) dùng bản BeikeShop lưu trữ ngoài máy dev để chạy công cụ phát hiện code trùng (`jscpd`, `PMD CPD`, `moss`) với `modules/`, `custom/plugin/`, `app/`, `resources/`. Ngưỡng cảnh báo: bất kỳ khối ≥ 10 dòng trùng.
 - **Kiểm tra license dependency**: `composer licenses` và `npx license-checker --onlyAllow "MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC"` trong CI.
-- **Grep chuỗi đặc trưng** trong CI: `beike`, `guangda`, `bk_`, `hook_filter(`, `hook_action(` → fail build nếu xuất hiện trong `app/`, `modules/`, `custom/`, `resources/`, `lang/`, `database/`.
+- **Grep chuỗi đặc trưng** trong CI: `beike`, `guangda` → fail build nếu xuất hiện trong `app/`, `modules/`, `custom/`, `resources/`, `lang/`, `database/`. (`hook_filter()`/`hook_action()` là helper của VaniShop từ 0.3.47 — [ADR-036](../19-adr/ADR-036-service-result-hooks.md).)
 
 ## 7. Lưu trữ mã nguồn tham khảo
 

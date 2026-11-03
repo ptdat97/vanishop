@@ -40,6 +40,21 @@ return [
         'args' => ['options' => 'list<Modules\\Checkout\\Contracts\\Data\\ShippingOption>', 'context' => 'Modules\\Checkout\\Contracts\\Data\\TotalsContext'],
         'description' => 'Sửa danh sách phương thức giao (lọc, đổi phí). Không gọi mạng.',
     ],
+    'vani.service.checkout.totals' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.47',
+        'args' => ['context' => 'Modules\\Checkout\\Contracts\\Data\\TotalsContext'],
+        'description' => 'Kết quả totals pipeline sau mọi calculator (giá, khuyến mãi, phí giao, thuế), trước chốt chặn guard. Trả TotalsContext mới qua with*() — thêm giảm giá dòng (withLines), Adjustment, đổi phí giao (withShipping). Giảm giá vượt tổng dòng bị guard cắt. Chạy cả khi quote và trong transaction đặt hàng: không I/O mạng. Lỗi listener → đặt hàng thất bại.',
+    ],
+    'vani.service.checkout.quote' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.47',
+        'on_error' => 'skip',
+        'args' => ['quote' => 'Modules\\Checkout\\Contracts\\Data\\CheckoutQuote', 'request' => 'Modules\\Checkout\\Contracts\\Data\\CheckoutRequest'],
+        'description' => 'Kết quả xem trước checkout (tổng, phương thức giao/thanh toán) trước khi trả về khách. Chỉ để hiển thị: tiền phải sửa ở vani.service.checkout.totals, nếu không tổng khi đặt hàng sẽ khác (totals_changed).',
+    ],
     'vani.order.after_create' => [
         'type' => 'action',
         'visibility' => 'public',

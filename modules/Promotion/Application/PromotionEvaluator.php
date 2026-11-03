@@ -36,6 +36,11 @@ final class PromotionEvaluator implements PromotionEngine
 
     public function evaluate(PromotionContext $context): PromotionResult
     {
+        return hook_filter('vani.service.promotion.result', $this->evaluateRules($context), $context);
+    }
+
+    private function evaluateRules(PromotionContext $context): PromotionResult
+    {
         if ($context->lines === []) {
             return new PromotionResult([], array_map(fn (string $code) => new VoucherRejection($code, 'not_applicable'), $context->voucherCodes));
         }
