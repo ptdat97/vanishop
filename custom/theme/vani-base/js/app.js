@@ -113,6 +113,24 @@ if (sessionUrl) {
                 status.textContent = session.flash.status;
                 status.hidden = false;
             }
+            // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
+            const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
+            if (session.signed_in && hiddenPrices.length && session.prices_url) {
+                const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['p[]', id]));
+                fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                    .then((response) => (response.ok ? response.json() : null))
+                    .then((data) => {
+                        hiddenPrices.forEach((el) => {
+                            const price = data?.products?.[el.dataset.vaniPriceFor];
+                            if (!price) return;
+                            const span = document.createElement('span');
+                            span.className = 'font-semibold text-primary';
+                            span.textContent = price.max.amount !== price.min.amount ? `${price.min.formatted} – ${price.max.formatted}` : price.min.formatted;
+                            el.replaceWith(span);
+                        });
+                    })
+                    .catch(() => {});
+            }
             const memberPrice = document.querySelector('[data-vani-member-price]');
             const variantIds = [...document.querySelectorAll('input[name="variant_id"]')].map((input) => input.value);
             if (session.signed_in && memberPrice && variantIds.length) {

@@ -32,13 +32,16 @@ Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.the
     Route::get('/_vani/phien', SessionController::class)->name('session');
     Route::get('/_vani/gia', [SessionController::class, 'prices'])->name('session.prices');
 
-    Route::get('/gio-hang', [CartController::class, 'show'])->name('cart');
-    Route::middleware('throttle:vani-cart-create')->post('/gio-hang', [CartController::class, 'add'])->name('cart.add');
-    Route::post('/gio-hang/{line}', [CartController::class, 'update'])->whereNumber('line')->name('cart.update');
-    Route::post('/gio-hang/{line}/xoa', [CartController::class, 'remove'])->whereNumber('line')->name('cart.remove');
+    // Ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`): giỏ và checkout chuyển sang đăng nhập.
+    Route::middleware('vani.prices-visible')->group(function (): void {
+        Route::get('/gio-hang', [CartController::class, 'show'])->name('cart');
+        Route::middleware('throttle:vani-cart-create')->post('/gio-hang', [CartController::class, 'add'])->name('cart.add');
+        Route::post('/gio-hang/{line}', [CartController::class, 'update'])->whereNumber('line')->name('cart.update');
+        Route::post('/gio-hang/{line}/xoa', [CartController::class, 'remove'])->whereNumber('line')->name('cart.remove');
 
-    Route::get('/thanh-toan', [CheckoutController::class, 'show'])->name('checkout');
-    Route::middleware('throttle:vani-checkout')->post('/thanh-toan', [CheckoutController::class, 'store'])->name('checkout.store');
+        Route::get('/thanh-toan', [CheckoutController::class, 'show'])->name('checkout');
+        Route::middleware('throttle:vani-checkout')->post('/thanh-toan', [CheckoutController::class, 'store'])->name('checkout.store');
+    });
 
     Route::get('/don-hang/{order}', [OrderController::class, 'show'])->name('order');
     // Đổi/trả (khách): quyền theo token đơn trong phiên hoặc tài khoản sở hữu đơn.

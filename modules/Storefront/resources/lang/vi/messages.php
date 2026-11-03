@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'sign_in_to_view_prices' => 'Vui lòng đăng nhập để xem giá và đặt hàng.',
+    'sign_in_for_price' => 'Đăng nhập để xem giá',
     'maintenance_title' => 'Cửa hàng đang bảo trì',
     'maintenance' => 'Chúng tôi đang nâng cấp cửa hàng và sẽ quay lại sớm. Cảm ơn bạn đã kiên nhẫn.',
     'sign_in_to_checkout' => 'Vui lòng đăng nhập để đặt hàng.',

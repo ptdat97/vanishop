@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.50 — 2026-11-03
+
+Chỉ thêm (dữ liệu có thể là `null` khi cửa hàng bật ẩn giá). Ẩn giá với khách chưa đăng nhập ([reference-parity §3.2](../20-roadmap/reference-parity-refactor.md), R1).
+
+### Thêm
+- Cấu hình `core`/`storefront.price_visibility` (`public` | `members`, mặc định `public`).
+- `ProductCards::forIds()`, Storefront API `/products`, `/products/{slug}`, dữ liệu thẻ/PDP mà enricher `product_card`/`product` và slot storefront nhận: trường `price_hidden` (bool). Khi `true`: `price` và `variants[].price` là `null` — plugin hiện giá/đo quảng cáo phải xử lý `null`.
+- Storefront API: `/products` nhận Bearer token khách (`vani.customer:optional`); giỏ (`carts/{cart}`, `lines`) và checkout trả 403 `storefront.sign_in_to_view_prices` khi giá bị ẩn với người gọi. Middleware `vani.prices-visible` dùng được cho route plugin cần giá.
+- `GET /_vani/gia?p[]={style_id}` trả `products` (khoảng giá theo sản phẩm) cho khách đã đăng nhập khi bật ẩn giá; `GET /_vani/phien` có `prices_url`. Theme: phần tử `[data-vani-price-for="{style_id}"]` được JS thay bằng giá.
+
 ## 0.3.49 — 2026-11-03
 
 Chỉ thêm. Cấu hình vận hành storefront — bảo trì và khách vãng lai ([reference-parity §3.2](../20-roadmap/reference-parity-refactor.md), R1).

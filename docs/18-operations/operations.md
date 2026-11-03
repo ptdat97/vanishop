@@ -64,7 +64,7 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 - Cache theo khoá có version: `product:{style}:v{version}`, `brand:{id}:v{version}`.
 - Invalidate theo event (sản phẩm, giá, tồn) — dùng version key thay vì xoá hàng loạt.
 - Trang public (home, PLP, PDP) cache ở CDN ngắn (60–300s) + `stale-while-revalidate`; phần giá/tồn động tải qua API nếu cần độ chính xác cao.
-- **Bật/tắt bảo trì storefront** (`core`/`storefront.maintenance`, [storefront §5](../14-storefront/storefront.md)): CDN vẫn phục vụ bản trang đã cache tới khi hết `s-maxage` + `stale-while-revalidate`. Sau khi đổi, **xoá cache CDN** của trang storefront (Core chưa purge tự động). IPN cổng thanh toán và webhook vận chuyển vẫn chạy trong lúc bảo trì.
+- **Bật/tắt bảo trì storefront hoặc đổi chế độ hiện giá** (`core`/`storefront.maintenance`, `core`/`storefront.price_visibility`, [storefront §5](../14-storefront/storefront.md)): CDN vẫn phục vụ bản trang đã cache tới khi hết `s-maxage` + `stale-while-revalidate`. Sau khi đổi, **xoá cache CDN** của trang storefront (Core chưa purge tự động). IPN cổng thanh toán và webhook vận chuyển vẫn chạy trong lúc bảo trì.
 
 ### Ảnh thu nhỏ (`public/cache`, 0.3.28)
 

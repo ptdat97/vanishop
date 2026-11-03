@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'sign_in_to_view_prices' => 'Please sign in to see prices and order.',
+    'sign_in_for_price' => 'Sign in to see prices',
     'maintenance_title' => 'We will be back soon',
     'maintenance' => 'The store is undergoing maintenance and will be back shortly. Thank you for your patience.',
     'sign_in_to_checkout' => 'Please sign in to place your order.',

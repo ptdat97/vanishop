@@ -15,21 +15,27 @@ Route::get('categories', [CategoryController::class, 'index'])->name('categories
 Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show');
-Route::get('products', [ProductController::class, 'index'])->name('products.index');
-Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+// Khách đăng nhập (Bearer) thấy giá khi cửa hàng ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`).
+Route::middleware('vani.customer:optional')->group(function () {
+    Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+});
 Route::get('address/provinces', [AddressController::class, 'provinces'])->name('address.provinces');
 Route::get('address/provinces/{province}/wards', [AddressController::class, 'wards'])->where('province', '[0-9A-Za-z_-]{1,16}')->name('address.wards');
 
 // Giỏ & checkout: dùng được khi chưa đăng nhập (token giỏ) hoặc đã đăng nhập (Bearer, giỏ của khách).
 Route::middleware('vani.customer:optional')->group(function () {
     Route::post('carts', [CartController::class, 'store'])->middleware('throttle:vani-cart-create')->name('carts.store');
-    Route::get('carts/{cart}', [CartController::class, 'show'])->name('carts.show');
-    Route::post('carts/{cart}/lines', [CartController::class, 'addLine'])->name('carts.lines.store');
-    Route::patch('carts/{cart}/lines/{line}', [CartController::class, 'updateLine'])->whereNumber('line')->name('carts.lines.update');
-    Route::delete('carts/{cart}/lines/{line}', [CartController::class, 'removeLine'])->whereNumber('line')->name('carts.lines.destroy');
+    // Ẩn giá với khách chưa đăng nhập: giỏ (có giá) và checkout → 403 storefront.sign_in_to_view_prices. Tạo giỏ rỗng vẫn được.
+    Route::middleware('vani.prices-visible')->group(function () {
+        Route::get('carts/{cart}', [CartController::class, 'show'])->name('carts.show');
+        Route::post('carts/{cart}/lines', [CartController::class, 'addLine'])->name('carts.lines.store');
+        Route::patch('carts/{cart}/lines/{line}', [CartController::class, 'updateLine'])->whereNumber('line')->name('carts.lines.update');
+        Route::delete('carts/{cart}/lines/{line}', [CartController::class, 'removeLine'])->whereNumber('line')->name('carts.lines.destroy');
 
-    Route::post('checkout/{cart}/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
-    Route::post('checkout/{cart}/orders', [CheckoutController::class, 'placeOrder'])->middleware('throttle:vani-checkout')->name('checkout.orders.store');
+        Route::post('checkout/{cart}/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
+        Route::post('checkout/{cart}/orders', [CheckoutController::class, 'placeOrder'])->middleware('throttle:vani-checkout')->name('checkout.orders.store');
+    });
 });
 
 Route::get('payments/{payment}', [PaymentController::class, 'show'])->where('payment', '[0-9A-Z]{26}')->name('payments.show');

@@ -47,7 +47,7 @@
             <h1 class="text-2xl font-semibold">{{ $product['name'] }}</h1>
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
-            <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price']])</p>
+            <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
             <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('storefront.session.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
@@ -61,8 +61,10 @@
                         <legend class="mb-2 text-sm font-medium">Màu: {{ $color['name'] }}</legend>
                         <div class="flex flex-wrap gap-2">
                             @foreach ($variants as $variant)
-                                <label @class(['cursor-pointer rounded border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:font-semibold', 'opacity-50' => ! $variant['available'] || $variant['price'] === null])>
-                                    <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $variant['price'] === null)>
+                                {{-- Giá bị ẩn (khách chưa đăng nhập): vẫn chọn được; thêm giỏ chuyển sang đăng nhập. --}}
+                                @php($unpriced = $variant['price'] === null && empty($product['price_hidden']))
+                                <label @class(['cursor-pointer rounded border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:font-semibold', 'opacity-50' => ! $variant['available'] || $unpriced])>
+                                    <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $unpriced)>
                                     {{ $variant['size_code'] }}
                                     @if ($variant['low_stock'])<span class="text-xs text-accent">sắp hết</span>@endif
                                     @unless ($variant['available'])<span class="sr-only">(hết hàng)</span>@endunless
@@ -78,7 +80,7 @@
                     <input id="quantity" name="quantity" type="number" min="1" max="20" value="1" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
-                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || $product['price'] === null)>
+                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || ($product['price'] === null && empty($product['price_hidden'])))>
                     {{ $product['in_stock'] ? 'Thêm vào giỏ' : 'Hết hàng' }}
                 </button>
             </form>

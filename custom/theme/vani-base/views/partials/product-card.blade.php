@@ -11,7 +11,7 @@
         @endif
         <h3 class="text-sm font-medium group-hover:underline">{{ $product['name'] }}</h3>
     </a>
-    <p class="mt-1">@include('theme::partials.price', ['price' => $product['price']])</p>
+    <p class="mt-1">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
     @unless ($product['in_stock'])
         <p class="text-xs text-slate-500">Hết hàng</p>
     @endunless

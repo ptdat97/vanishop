@@ -20,11 +20,13 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
+use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
 use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
@@ -60,6 +62,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
         $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
+        $router->aliasMiddleware('vani.prices-visible', RequireVisiblePrices::class);
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 
@@ -81,6 +84,11 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'core', 'storefront.maintenance_message', 'Thông báo bảo trì', 'text',
             help: 'Nội dung trang bảo trì. Để trống: dùng câu mặc định của theme.',
             rules: ['max:1000'],
+        ));
+        $settings->define(new SettingDefinition(
+            'core', PriceVisibility::SETTING, 'Hiện giá', 'select', PriceVisibility::PUBLIC,
+            options: [PriceVisibility::PUBLIC => 'Mọi người', PriceVisibility::MEMBERS => 'Chỉ khách đã đăng nhập'],
+            help: '"Chỉ khách đã đăng nhập": khách chưa đăng nhập thấy "Đăng nhập để xem giá", không thêm giỏ/đặt hàng được; Storefront API trả giá null, JSON-LD không có giá. Trang đã cache ở CDN còn bản cũ tới khi hết TTL — xoá cache CDN sau khi đổi.',
         ));
 
         // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.
