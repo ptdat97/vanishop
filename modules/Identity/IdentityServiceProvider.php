@@ -7,9 +7,11 @@ namespace Modules\Identity;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
+use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Application\DatabaseAuditLogger;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Identity\Application\ScopedRbacAuthorizer;
+use Modules\Identity\Application\ScopeOptions;
 use Modules\Identity\Console\CreateStaffCommand;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\Authorizer;
@@ -29,13 +31,14 @@ final class IdentityServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(PermissionRegistry::class);
+        $this->app->singleton(ScopeOptions::class);
         $this->app->scoped(Authorizer::class, ScopedRbacAuthorizer::class);
         $this->app->scoped(AuditLogger::class, DatabaseAuditLogger::class);
         // Chụp khi config đã nạp và trước mọi request; dùng để trả phiên về mặc định cho request storefront.
         $this->app->singleton(ConfigureAdminSession::DEFAULTS_BINDING, fn (): array => ConfigureAdminSession::snapshotDefaults());
     }
 
-    public function boot(Router $router, PermissionRegistry $permissions): void
+    public function boot(Router $router, PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $this->app->make(ConfigureAdminSession::DEFAULTS_BINDING);
 
@@ -47,6 +50,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
 
         $permissions->register('admin.access', 'Truy cập trang quản trị');
         $permissions->register('staff.manage', 'Quản lý nhân viên và vai trò');
+        $navigation->add('staff', 'Nhân viên', 'admin.staff.index', 'staff.manage', 920, group: 'system');
 
         // Permission đã khai báo trong registry được quyết định bởi RBAC theo phạm vi.
         // Tham số đầu tiên có thể là ScopeRef để kiểm tra theo location.
@@ -61,6 +65,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         });
 
         $this->loadWebRoutes($this->modulePath('Http/routes/admin-auth.php'));
+        $this->loadAdminSectionRoutes('staff', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
 
         if ($this->app->runningInConsole()) {

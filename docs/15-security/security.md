@@ -47,6 +47,11 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
   - `Gate::allows('orders.cancel')`: có permission ở phạm vi cửa hàng.
   - Thao tác tại một location (Designed): `Gate::allows('stock.adjust', [ScopeRef::location($id)])`.
   - Code hiện còn scope `legal_entity`/`brand` và global scope `BelongsToBrand` (mô hình cũ ADR-008) — gỡ ở slice 12.
+- **Quản trị nhân viên/vai trò (Implemented, R1-4, Core 0.3.51 — [reference-parity §3.3](../20-roadmap/reference-parity-refactor.md))**: Admin → Hệ thống → Nhân viên / Vai trò, quyền `staff.manage`.
+  - Tạo nhân viên = **mời qua email** (link đặt mật khẩu một lần, 24 giờ, bảng `staff_invite_tokens`); Admin không đặt mật khẩu hộ. Trạng thái `invited` → `active` khi đặt mật khẩu; `locked` khi bị khoá (đăng xuất ngay, xoay `remember_token`, huỷ link còn hạn). Không xoá cứng nhân viên.
+  - Chặn: tự khoá/tự đổi vai trò của mình; khoá hoặc hạ quyền **Owner cuối cùng** (nhân viên `active` có vai trò `*` ở phạm vi owner — kiểm tra trong transaction có khoá dòng); **cấp quyền mình không có** (gán vai trò hoặc thêm quyền vào vai trò; vai trò `*` chỉ Owner cấp được). Không cấp `*` qua giao diện — chỉ vai trò hệ thống `owner_admin` (tạo bởi `vani:staff:create-owner`). Vai trò hệ thống không sửa/xoá; vai trò đang gán không xoá.
+  - Phạm vi `location`: Inventory đăng ký danh sách kho vào `Identity\Application\ScopeOptions` (Identity ở vòng 0 không đọc bảng thương mại).
+  - **Quên mật khẩu Admin**: `/{admin}/quen-mat-khau` → link một lần 60 phút (`staff_password_reset_tokens`), chỉ nhân viên `active`; thông báo giống nhau dù email có hay không; giới hạn 3 lần/10 phút theo email + IP và 10 lần/10 phút theo IP; link sinh từ `APP_URL` (§5.2). Mọi thao tác ghi audit `identity.staff.*`, `identity.role.*`.
 - **Phê duyệt 2 bước** (maker–checker) cho thao tác nhạy cảm: hoàn tiền > ngưỡng, điều chỉnh tồn lớn, khuyến mãi giảm > X%, export dữ liệu khách.
 
 ## 3. Audit log

@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.51 — 2026-11-03
+
+Chỉ thêm. Quản trị nhân viên, vai trò, quên mật khẩu Admin ([reference-parity §3.3](../20-roadmap/reference-parity-refactor.md), R1).
+
+### Thêm
+- `Identity\Contracts\StaffRejected` (lỗi nghiệp vụ 422): `identity.staff_self`, `identity.last_owner`, `identity.exceeds_own_permissions`, `identity.role_in_use`, `identity.system_role`.
+- Admin → Hệ thống → Nhân viên (`admin.staff.*`) và Vai trò (`admin.staff.roles.*`), quyền `staff.manage`. Quyền plugin đăng ký qua `PermissionRegistry` tự hiện trong màn hình vai trò, nhóm theo tiền tố mã (`plugin.*` → nhóm `plugin`).
+- Trạng thái nhân viên `invited` (đã mời, chưa đặt mật khẩu) và `locked` (bị khoá); chỉ `active` đăng nhập được.
+
 ## 0.3.50 — 2026-11-03
 
 Chỉ thêm (dữ liệu có thể là `null` khi cửa hàng bật ẩn giá). Ẩn giá với khách chưa đăng nhập ([reference-parity §3.2](../20-roadmap/reference-parity-refactor.md), R1).

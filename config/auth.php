@@ -111,6 +111,19 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+        // Nhân viên Admin (module Identity, reference-parity §3.3): quên mật khẩu và lời mời đặt mật khẩu lần đầu.
+        'staff' => [
+            'provider' => 'staff_users',
+            'table' => 'staff_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'staff_invites' => [
+            'provider' => 'staff_users',
+            'table' => 'staff_invite_tokens',
+            'expire' => 1440,
+            'throttle' => 0,
+        ],
     ],
 
     /*

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $code
  * @property string $name
+ * @property bool $is_system
  */
 final class Role extends Model
 {
@@ -27,6 +28,14 @@ final class Role extends Model
     public function permissions(): HasMany
     {
         return $this->hasMany(RolePermission::class);
+    }
+
+    /**
+     * @return HasMany<StaffRoleAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(StaffRoleAssignment::class);
     }
 
     /**

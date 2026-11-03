@@ -20,7 +20,7 @@ final class StaffSessionController
 {
     public function create(): Response
     {
-        return Inertia::render('Identity::Auth/Login', ['action' => route('admin.login.store')]);
+        return Inertia::render('Identity::Auth/Login', ['action' => route('admin.login.store'), 'forgotUrl' => route('admin.password.request')]);
     }
 
     public function store(StaffLoginRequest $request, RecordStaffLogin $recordLogin): RedirectResponse

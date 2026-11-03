@@ -296,12 +296,6 @@ parameters:
 			path: modules/Fulfillment/Http/Controllers/Admin/ShipmentController.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Identity\\Persistence\\Models\\StaffUser\:\:\$last_login_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Identity/Application/RecordStaffLogin.php
-
-		-
 			message: '#^Method Modules\\Integration\\Application\\ConnectorRegistry\:\:connectors\(\) invoked with 1 parameter, 0 required\.$#'
 			identifier: arguments.count
 			count: 1

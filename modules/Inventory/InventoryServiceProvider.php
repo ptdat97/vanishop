@@ -9,6 +9,8 @@ use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Application\ScopeOptions;
+use Modules\Identity\Domain\ScopeType;
 use Modules\Inventory\Application\AuthoritySyncService;
 use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Application\ReturnService;
@@ -24,6 +26,7 @@ use Modules\Inventory\Contracts\InventoryReturns;
 use Modules\Inventory\Contracts\InventoryStrategy;
 use Modules\Inventory\Contracts\InventorySync;
 use Modules\Inventory\Contracts\StockImporter;
+use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -51,7 +54,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         ));
     }
 
-    public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
+    public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, ScopeOptions $scopes): void
     {
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'inventory.strategy', 'Cách tính số bán được (ATS)', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
@@ -63,6 +66,9 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $permissions->register('inventory.locations.manage', 'Quản lý kho/cửa hàng (cấp Owner)');
 
         $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 300, group: 'catalog');
+        // Admin → Nhân viên: gán vai trò theo phạm vi một location.
+        $scopes->register(ScopeType::Location, fn (): array => Location::query()->orderBy('code')->get(['id', 'code', 'name'])
+            ->mapWithKeys(fn (Location $location): array => [$location->id => "{$location->code} — {$location->name}"])->all());
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:inventory:release-expired')->everyMinute()->withoutOverlapping()->onOneServer();

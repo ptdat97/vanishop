@@ -16,11 +16,20 @@ use Modules\Identity\Persistence\Database\Factories\StaffUserFactory;
  * @property string $name
  * @property string $email
  * @property string $status
+ * @property \Illuminate\Support\Carbon|null $last_login_at
  */
 final class StaffUser extends Authenticatable
 {
     /** @use HasFactory<StaffUserFactory> */
     use HasFactory;
+
+    public const STATUS_ACTIVE = 'active';
+
+    /** Đã mời, chưa đặt mật khẩu qua link — không đăng nhập được. */
+    public const STATUS_INVITED = 'invited';
+
+    /** Bị khoá bởi quản trị — không đăng nhập, không nhận link đặt lại mật khẩu. Không xoá cứng nhân viên (audit). */
+    public const STATUS_LOCKED = 'locked';
 
     protected $fillable = ['name', 'email', 'password', 'status', 'last_login_at'];
 
@@ -44,7 +53,7 @@ final class StaffUser extends Authenticatable
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     protected static function newFactory(): StaffUserFactory

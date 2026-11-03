@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import GuestLayout from '@admin/Layouts/GuestLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 defineOptions({ layout: GuestLayout });
 
-const props = defineProps<{ action: string }>();
+const props = defineProps<{ action: string; forgotUrl: string }>();
+const page = usePage<{ flash?: { success?: string | null } }>();
+const notice = computed(() => page.props.flash?.success);
 
 const form = useForm({
     email: '',
@@ -22,6 +25,7 @@ function submit(): void {
     <div class="flex min-h-screen items-center justify-center px-4">
         <form class="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-6" @submit.prevent="submit">
             <h1 class="text-lg font-semibold">Đăng nhập quản trị</h1>
+            <p v-if="notice" class="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{{ notice }}</p>
             <div>
                 <label for="email" class="mb-1 block text-sm font-medium">Email</label>
                 <input id="email" v-model="form.email" type="email" autocomplete="username" required class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
@@ -39,6 +43,7 @@ function submit(): void {
             <button type="submit" :disabled="form.processing" class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">
                 Đăng nhập
             </button>
+            <Link :href="forgotUrl" class="block text-center text-sm text-indigo-600 hover:underline">Quên mật khẩu?</Link>
         </form>
     </div>
 </template>
