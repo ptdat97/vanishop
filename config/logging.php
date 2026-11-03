@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\AttachContextProcessor;
 use App\Logging\ContextProcessor;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
@@ -63,7 +64,7 @@ return [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'tap' => [ContextProcessor::class],
+            'tap' => [AttachContextProcessor::class],
             'replace_placeholders' => true,
         ],
 
@@ -72,7 +73,7 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
-            'tap' => [ContextProcessor::class],
+            'tap' => [AttachContextProcessor::class],
             'replace_placeholders' => true,
         ],
 
@@ -81,7 +82,7 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => 3,
-            'tap' => [ContextProcessor::class],
+            'tap' => [AttachContextProcessor::class],
             'replace_placeholders' => true,
         ],
 

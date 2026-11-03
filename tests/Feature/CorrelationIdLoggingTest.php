@@ -2,6 +2,7 @@
 
 use App\Logging\ContextProcessor;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\Log;
 use Monolog\Handler\TestHandler;
 use Monolog\Level;
 use Monolog\Logger;
@@ -87,3 +88,16 @@ it('chạy được trong pipeline Monolog thật', function () {
     expect($records)->not->toBeEmpty()
         ->and($records[0]->extra)->toHaveKey('correlation_id', 'trace-pipeline-789');
 });
+
+it('channel single/daily cấu hình trong config/logging.php ghi được log kèm correlation_id', function (string $channel) {
+    $path = storage_path('framework/testing/log-'.uniqid().'.log');
+    config(["logging.channels.{$channel}.path" => $path]);
+    Context::add('correlation_id', 'trace-channel-456');
+
+    Log::channel($channel)->warning('ghi thật');
+
+    $files = glob(dirname($path).'/'.pathinfo($path, PATHINFO_FILENAME).'*.log') ?: [];
+    expect($files)->not->toBeEmpty()
+        ->and(file_get_contents($files[0]))->toContain('ghi thật')->toContain('trace-channel-456');
+    array_map('unlink', $files);
+})->with(['single', 'daily']);
