@@ -33,6 +33,7 @@ final class PluginDoctor
         private readonly PluginHealth $health,
         private readonly string $coreVersion,
         private readonly PluginCapabilities $capabilities,
+        private readonly PluginSeeders $seeders,
     ) {}
 
     /**
@@ -92,6 +93,11 @@ final class PluginDoctor
             $pending = array_diff(array_map(fn (string $file): string => basename($file, '.php'), $migrations), $ranMigrations);
             if ($pending !== []) {
                 $add($id, self::WARNING, 'migrations_pending', count($pending).' migration chưa chạy: '.implode(', ', $pending));
+            }
+
+            $pendingSeeders = $pending === [] ? $this->seeders->pending($manifest) : [];
+            if ($pendingSeeders !== []) {
+                $add($id, self::WARNING, 'seeders_pending', count($pendingSeeders).' seeder chưa chạy — chạy vani:plugin:seed '.$id.': '.implode(', ', $pendingSeeders));
             }
 
             // Khai báo dữ liệu (0.3.24): plugin có migration phải khai data.owned; bảng/cột khai báo phải tồn tại.

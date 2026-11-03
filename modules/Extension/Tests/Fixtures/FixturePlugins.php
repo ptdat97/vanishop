@@ -47,6 +47,21 @@ final class FixturePlugins
         return $root;
     }
 
+    /**
+     * Seeder giả trong `Database/Seeders/` của plugin (namespace theo provider giả) — nạp ngay vì thư mục tạm không
+     * nằm trong autoload. `$body` là thân hàm run().
+     */
+    public static function withSeeder(string $root, string $directory, string $class, string $body, string $parent = '\\Illuminate\\Database\\Seeder'): void
+    {
+        $files = new Filesystem;
+        $files->ensureDirectoryExists("{$root}/{$directory}/Database/Seeders");
+        $file = "{$root}/{$directory}/Database/Seeders/{$class}.php";
+        $files->put($file, "<?php\n\nnamespace Modules\\Extension\\Tests\\Fixtures\\Database\\Seeders;\n\nfinal class {$class} extends {$parent}\n{\n    public function run(): void\n    {\n        {$body}\n    }\n}\n");
+        if (! class_exists("Modules\\Extension\\Tests\\Fixtures\\Database\\Seeders\\{$class}", false)) {
+            require $file;
+        }
+    }
+
     public static function withMigration(string $root, string $directory): void
     {
         $files = new Filesystem;

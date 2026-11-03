@@ -28,6 +28,7 @@ custom/plugin/VietQr/
 │   └── routes/{webhooks,admin-api}.php
 ├── Config/vietqr.php
 ├── Database/{migrations,factories}/   # bảng plg_vietqr_*
+├── Database/Seeders/             # (0.3.53) dữ liệu ban đầu, tự chạy khi cài/nâng cấp — namespace Plugin\VietQr\Database\Seeders
 ├── Resources/{views,lang,js/Pages}/
 ├── settings-schema.json
 ├── README.md                     # đặc tả + hướng dẫn cấu hình
@@ -113,7 +114,7 @@ Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:pl
 
 ## 5. CLI
 
-`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`, `upgrade`, `doctor`: **Implemented**. Kiểm tra extension point bắt buộc trong `disable`/`doctor`: **Implemented** ([commerce-kernel §5](../02-architecture/commerce-kernel.md)).
+`list`, `install`, `enable`, `disable`, `uninstall`, `hooks`, `upgrade`, `doctor`, `seed` (0.3.53): **Implemented**. Kiểm tra extension point bắt buộc trong `disable`/`doctor`: **Implemented** ([commerce-kernel §5](../02-architecture/commerce-kernel.md)).
 
 **Chặn tắt khi còn việc dở dang** (0.3.16): module sở hữu dữ liệu đăng ký `Extensions::guardDisable($tag, $check)`; `disable` từ chối khi implementation của plugin còn việc chưa xong, nêu lý do:
 
@@ -134,6 +135,7 @@ php artisan vani:plugin:disable vani.vietqr [--drain | --force [--yes]]   # còn
 php artisan vani:plugin:finish-draining           # (lịch 5 phút) tắt plugin draining đã hết việc dở dang
 php artisan vani:plugin:uninstall vani.vietqr [--purge [--drop-retained [--yes]]]   # --purge: rollback migration, xoá bảng owned (chặn khi còn tham chiếu/khoá ngoại/dữ liệu lưu giữ)
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
+php artisan vani:plugin:seed vani.vietqr [--rerun]  # (0.3.53) chạy seeder chưa chạy (sau khi sửa seeder lỗi); --rerun chạy lại tất cả
 php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit
 php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, migration chờ, plugin failed, thiếu manifest/provider, không tương thích, cache không dùng chung ở production; exit 1 khi có lỗi
 ```
@@ -145,7 +147,7 @@ php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, mi
 | Màn hình | Hành vi | Quyền |
 |---|---|---|
 | Danh sách `/{admin}/plugins` | Icon (hoặc chữ cái đầu), tên + mô tả theo ngôn ngữ, id, tác giả, loại, phiên bản (báo bản mới khi manifest > bản đã cài), trạng thái, lỗi, sức khoẻ. Tìm theo tên/id/mô tả/tác giả, lọc theo loại và trạng thái. Link "Cấu hình" khi plugin có cấu hình | `extension.plugins.view` |
-| Chi tiết `/{admin}/plugins/{id}` | Thông tin manifest, thư mục, yêu cầu Core; plugin cần (kèm trạng thái), capability cần, plugin phụ thuộc ngược, xung đột, lý do chưa cài được; quyền khai báo, hook đang nghe (khi đang bật), bảng dữ liệu (đánh dấu lưu giữ), màn hình Admin của plugin; việc dở dang | `extension.plugins.view` |
+| Chi tiết `/{admin}/plugins/{id}` | Thông tin manifest, thư mục, yêu cầu Core; seeder và thời điểm đã chạy (0.3.53); plugin cần (kèm trạng thái), capability cần, plugin phụ thuộc ngược, xung đột, lý do chưa cài được; quyền khai báo, hook đang nghe (khi đang bật), bảng dữ liệu (đánh dấu lưu giữ), màn hình Admin của plugin; việc dở dang | `extension.plugins.view` |
 | Thao tác (trên trang chi tiết) | Chỉ hiện nút hợp lệ theo trạng thái: `discovered` → Cài; `installed`/`disabled` → Bật, Gỡ; `enabled` → Tắt; `draining` → Bật lại, Tắt ngay; `failed` → Gỡ; có bản mới → Nâng cấp. Tắt khi còn việc dở dang: "Ngừng an toàn" (drain) hoặc "Tắt ngay" (phải tick xác nhận, = `--force`). Gỡ mặc định giữ dữ liệu; "Xoá cả dữ liệu" (= `--purge`, tuỳ chọn xoá bảng lưu giữ = `--drop-retained`) phải gõ lại id. Lỗi của `PluginManager` (phụ thuộc, extension point bắt buộc, việc dở dang, dữ liệu còn tham chiếu) hiện nguyên văn | `extension.plugins.manage` |
 | Cấu hình `/{admin}/plugins/{id}/settings` | Form sinh từ `SettingDefinition` của namespace plugin (giống Admin → Cấu hình); 404 khi plugin không khai báo cấu hình | `settings.manage` |
 
@@ -165,11 +167,12 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 
 | Hành động | Hành vi |
 |---|---|
-| install | Chạy migration trong `Database/migrations` của plugin (bảng `plg_<plugin>_*`), ghi version |
-| upgrade | So version manifest với version đã cài → chạy migration chưa chạy; migration **phải tương thích ngược** (expand/contract) |
+| install | Chạy migration trong `Database/migrations` của plugin (bảng `plg_<plugin>_*`), **rồi seeder** trong `Database/Seeders/` (0.3.53), ghi version |
+| seed (0.3.53) | Seeder = class kế thừa `Illuminate\Database\Seeder` trong `Database/Seeders/`, namespace theo provider (`Plugin\VietQr\VietQrServiceProvider` → `Plugin\VietQr\Database\Seeders\*`), chạy theo thứ tự tên file (cần thứ tự khác: một seeder gọi `$this->call([...])`). Mỗi seeder chạy **một lần cho mỗi lần cài**, trong transaction riêng, ghi `plugin_seeders(plugin_id, seeder, ran_at)`; audit ghi `seeded`. Seeder chạy khi provider của plugin **chưa** nạp trong request đó → chỉ dùng DB/model, không dùng binding của plugin. Phải idempotent (upsert/`insertOrIgnore`) vì `vani:plugin:seed --rerun` chạy lại. Seeder lỗi → plugin `failed`; sửa xong chạy `vani:plugin:seed {id}` → về `installed`. Doctor: `seeders_pending` |
+| upgrade | So version manifest với version đã cài → chạy migration chưa chạy rồi seeder chưa chạy (seeder mới của bản mới); migration **phải tương thích ngược** (expand/contract) |
 | disable | Không đụng dữ liệu |
 | uninstall | Giữ bảng (mặc định). Từ chối khi implementation của plugin còn việc dở dang (gỡ xong provider không nạp nữa → IPN/webhook 404) |
-| uninstall `--purge` | Chạy `down()` của migration theo thứ tự ngược. **Từ chối** (0.3.24) khi: plugin khác đang cài khai `data.references` trỏ vào bảng `owned`; có khoá ngoại thật từ bảng ngoài plugin trỏ vào bảng `owned`; có `data.retained` mà chưa `--drop-retained` (CLI hỏi xác nhận, không tương tác cần `--yes`). Audit ghi `dropped_retained` |
+| uninstall `--purge` | Chạy `down()` của migration theo thứ tự ngược, xoá ghi nhận seeder (cài lại seed lại từ đầu; gỡ không `--purge` giữ ghi nhận vì dữ liệu còn). **Từ chối** (0.3.24) khi: plugin khác đang cài khai `data.references` trỏ vào bảng `owned`; có khoá ngoại thật từ bảng ngoài plugin trỏ vào bảng `owned`; có `data.retained` mà chưa `--drop-retained` (CLI hỏi xác nhận, không tương tác cần `--yes`). Audit ghi `dropped_retained` |
 | Lỗi migration | MySQL không rollback được DDL → plugin chuyển `failed` + `last_error`; migration phải idempotent (`if (! Schema::hasTable(...))`) để chạy lại an toàn |
 
 ## 8. Xử lý lỗi và cô lập

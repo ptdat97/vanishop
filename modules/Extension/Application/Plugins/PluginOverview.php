@@ -30,6 +30,7 @@ final class PluginOverview
         private readonly Settings $settings,
         private readonly HookManager $hooks,
         private readonly AdminNavigation $navigation,
+        private readonly PluginSeeders $seeders,
         private readonly string $coreVersion,
     ) {}
 
@@ -100,6 +101,7 @@ final class PluginOverview
             'data' => ['owned' => $manifest->data->owned, 'references' => $manifest->data->references, 'retained' => $manifest->data->retained],
             // Chưa cài: lý do không cài được (Core không tương thích, thiếu plugin phụ thuộc, xung đột).
             'problems' => $record === null ? array_map(fn (DependencyProblem $problem): string => $problem->message, $this->resolver->problemsFor($pluginId, $this->manifests->all(), $installed, $this->coreVersion)) : [],
+            'seeders' => $record === null ? array_map(fn (string $seeder): array => ['seeder' => $seeder, 'ran_at' => null], $this->seeders->discover($manifest)) : $this->seeders->status($manifest),
             'in_use' => $active ? $this->plugins->inUse($pluginId) : [],
             'hooks' => array_keys(array_filter($this->hooks->listenerOwners(), fn (array $owners): bool => in_array($pluginId, $owners, true))),
             'admin_pages' => $active ? $this->navigation->forPlugin($pluginId) : [],

@@ -30,6 +30,7 @@ final class PluginManager
         private readonly ConsoleKernel $console,
         private readonly RequiredExtensions $required,
         private readonly PluginCapabilities $capabilities,
+        private readonly PluginSeeders $seeders,
         private readonly string $coreVersion,
         private readonly PluginDataGuard $dataGuard = new PluginDataGuard,
     ) {}
@@ -63,7 +64,17 @@ final class PluginManager
             throw new PluginOperationFailed("Migration của [{$pluginId}] lỗi: {$exception->getMessage()}");
         }
 
-        $this->audit->record('extension.plugin.installed', 'plugin', $pluginId, ['version' => $manifest->version]);
+        // Dữ liệu ban đầu sau migration. Lỗi → failed; sửa seeder rồi `vani:plugin:seed` (hoặc gỡ + cài lại).
+        try {
+            $seeded = $this->seeders->run($manifest);
+        } catch (PluginOperationFailed $exception) {
+            $record->update(['status' => PluginStatus::Failed, 'last_error' => $exception->getMessage()]);
+            $this->rebuildCache();
+
+            throw $exception;
+        }
+
+        $this->audit->record('extension.plugin.installed', 'plugin', $pluginId, ['version' => $manifest->version] + ($seeded === [] ? [] : ['seeded' => $seeded]));
         $this->rebuildCache();
 
         return $record->refresh();
@@ -208,6 +219,7 @@ final class PluginManager
                 throw new PluginOperationFailed("Không thể xoá dữ liệu của [{$pluginId}]: ".implode('; ', $blockers).'. Gỡ không --purge để giữ dữ liệu.');
             }
             $this->rollbackMigrations($manifest);
+            $this->seeders->forget($pluginId);
         }
 
         $record->delete();
@@ -251,13 +263,21 @@ final class PluginManager
 
             throw new PluginOperationFailed("Migration khi nâng [{$pluginId}] lỗi: {$exception->getMessage()}");
         }
+        // Bản mới thêm seeder → chỉ chạy seeder chưa chạy.
+        try {
+            $seeded = $this->seeders->run($manifest);
+        } catch (PluginOperationFailed $exception) {
+            $this->markFailed($pluginId, "upgrade {$from} → {$manifest->version}: {$exception->getMessage()}");
+
+            throw $exception;
+        }
 
         $record->update([
             'version' => $manifest->version,
             'status' => $record->status === PluginStatus::Failed ? PluginStatus::Installed : $record->status,
             'last_error' => null,
         ]);
-        $this->audit->record('extension.plugin.upgraded', 'plugin', $pluginId, ['from' => $from, 'to' => $manifest->version]);
+        $this->audit->record('extension.plugin.upgraded', 'plugin', $pluginId, ['from' => $from, 'to' => $manifest->version] + ($seeded === [] ? [] : ['seeded' => $seeded]));
         $this->afterStateChange();
 
         return $record->refresh();
@@ -286,6 +306,29 @@ final class PluginManager
         }
 
         return $result;
+    }
+
+    /**
+     * Chạy seeder chưa chạy của plugin đã cài (`vani:plugin:seed`); `$rerun` chạy lại tất cả (seeder phải idempotent).
+     * Plugin `failed` vì seeder: seed thành công → về `installed` (bật lại bằng enable).
+     *
+     * @return list<string> seeder đã chạy
+     */
+    public function seed(string $pluginId, bool $rerun = false): array
+    {
+        $record = $this->recordOrFail($pluginId);
+        $manifest = $this->manifestOrFail($pluginId);
+
+        $ran = $this->seeders->run($manifest, $rerun);
+        if ($record->status === PluginStatus::Failed && str_contains((string) $record->last_error, 'Seeder [')) {
+            $record->update(['status' => PluginStatus::Installed, 'last_error' => null]);
+            $this->rebuildCache();
+        }
+        if ($ran !== []) {
+            $this->audit->record('extension.plugin.seeded', 'plugin', $pluginId, ['seeders' => $ran, 'rerun' => $rerun]);
+        }
+
+        return $ran;
     }
 
     public function markFailed(string $pluginId, string $error): void

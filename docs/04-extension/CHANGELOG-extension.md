@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.53 — 2026-11-03
+
+Chỉ thêm. Seeder của plugin ([plugin-system §7](../05-plugin/plugin-system.md)).
+
+### Thêm
+- Quy ước `Database/Seeders/` trong plugin: class kế thừa `Illuminate\Database\Seeder`, namespace theo provider (`Plugin\<Tên>\Database\Seeders`). Cài plugin (CLI và Admin) chạy migration **rồi** seeder; nâng cấp chạy seeder mới. Mỗi seeder một lần cho mỗi lần cài, transaction riêng, ghi `plugin_seeders`. Seeder phải idempotent và không dùng binding của plugin (provider chưa nạp lúc cài).
+- Lệnh `vani:plugin:seed {plugin} [--rerun]`; doctor `seeders_pending`; audit `extension.plugin.seeded`, trường `seeded` trong audit cài/nâng cấp.
+
 ## 0.3.52 — 2026-11-03
 
 Chỉ thêm. Admin → Plugin quản lý được vòng đời và cấu hình ([plugin-system §5b](../05-plugin/plugin-system.md)).

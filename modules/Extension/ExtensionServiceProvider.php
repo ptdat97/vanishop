@@ -31,6 +31,7 @@ use Modules\Extension\Application\Plugins\PluginHealth;
 use Modules\Extension\Application\Plugins\PluginLoader;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginOverview;
+use Modules\Extension\Application\Plugins\PluginSeeders;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
@@ -47,6 +48,7 @@ use Modules\Extension\Console\PluginHealthCommand;
 use Modules\Extension\Console\PluginHooksCommand;
 use Modules\Extension\Console\PluginInstallCommand;
 use Modules\Extension\Console\PluginListCommand;
+use Modules\Extension\Console\PluginSeedCommand;
 use Modules\Extension\Console\PluginUninstallCommand;
 use Modules\Extension\Console\PluginUpgradeCommand;
 use Modules\Extension\Contracts\AdminScreen;
@@ -106,7 +108,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(DependencyResolver::class);
         $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(
-            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), $app->make(Extensions::class), $app->make(PluginHealth::class), (string) config('vanishop.version'), $app->make(PluginCapabilities::class),
+            $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), $app->make(Extensions::class), $app->make(PluginHealth::class), (string) config('vanishop.version'), $app->make(PluginCapabilities::class), $app->make(PluginSeeders::class),
         ));
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));
         $this->app->singleton(PluginStateCache::class, fn ($app): PluginStateCache => new PluginStateCache($app->make(Filesystem::class), (string) config('vanishop.plugins.cache')));
@@ -121,6 +123,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             $app->make(ConsoleKernel::class),
             $app->make(RequiredExtensions::class),
             $app->make(PluginCapabilities::class),
+            $app->make(PluginSeeders::class),
             (string) config('vanishop.version'),
         ));
 
@@ -167,6 +170,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
                 PluginHealthCommand::class,
                 PluginListCommand::class,
                 PluginInstallCommand::class,
+                PluginSeedCommand::class,
                 PluginEnableCommand::class,
                 PluginDisableCommand::class,
                 PluginFinishDrainingCommand::class,

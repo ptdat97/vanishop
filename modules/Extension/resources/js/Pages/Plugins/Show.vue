@@ -36,6 +36,7 @@ const props = defineProps<{
         problems: string[];
         in_use: string[];
         hooks: string[];
+        seeders: Array<{ seeder: string; ran_at: string | null }>;
         admin_pages: Array<{ label: string; url: string }>;
         actions: string[];
     };
@@ -143,6 +144,15 @@ const formatDate = (value: string | null): string => (value ? new Date(value).to
                         {{ plugin.data.owned.map((table) => (plugin.data.retained.includes(table) ? `${table} (lưu giữ)` : table)).join(', ') }}
                     </p>
                     <p v-else>—</p>
+                </div>
+                <div v-if="plugin.seeders.length">
+                    <div class="text-slate-500">Dữ liệu ban đầu (seeder — tự chạy khi cài/nâng cấp)</div>
+                    <ul>
+                        <li v-for="item in plugin.seeders" :key="item.seeder" class="font-mono text-xs">
+                            {{ item.seeder.split('\\').pop() }} ·
+                            <span :class="item.ran_at ? 'text-emerald-700' : 'text-amber-700'">{{ item.ran_at ? `đã chạy ${formatDate(item.ran_at)}` : 'chưa chạy' }}</span>
+                        </li>
+                    </ul>
                 </div>
                 <div v-if="plugin.admin_pages.length">
                     <div class="text-slate-500">Màn hình Admin</div>
