@@ -18,6 +18,7 @@
 | R27 | **Plugin-first**: capability nghiệp vụ mới mặc định là plugin. Đưa vào Core chỉ khi thoả tiêu chí [commerce-kernel §2](../02-architecture/commerce-kernel.md) và có ADR. | Review + ADR |
 | R28 | Core (`modules/`) không chứa **tích hợp nhà cung cấp** (HTTP tới cổng, hãng, SaaS) và không chứa **chính sách kinh doanh/đặc thù thị trường** (COD, chuyển khoản, phí ship, thuế suất quốc gia); những thứ đó là plugin hệ thống hoặc plugin nghiệp vụ ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)). Core không gắn mã implementation hay id của plugin: chọn theo capability/cấu hình. | Arch test `MicrokernelTest` + review |
 | R29 | Vòng 0 (Shared, Tenancy, Identity, Extension) không phụ thuộc module thương mại nào; tên tài nguyên thương mại (vd. tài nguyên Admin) do module sở hữu khai báo vào registry của vòng 0. | Arch test `ArchitectureTest` (R29) |
+| R35 | Plugin **không thay thế Core từ bên trong**: không `bind`/`singleton`/`scoped`/`instance`/`extend` một abstract thuộc `Modules\`; không kế thừa class Core ngoài `PluginServiceProvider` và class trong `Contracts`; không chèn middleware toàn cục hay theo nhóm (chạy cả trên route Core). Muốn thay một capability thì đăng ký implementation của Contract qua tag; route và middleware của plugin chỉ gắn vào route của plugin. | Arch test `MicrokernelTest` (R35) |
 
 ## B. Module và DDD
 

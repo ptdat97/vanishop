@@ -10,6 +10,7 @@ use Modules\Checkout\Application\Tax\ConfiguredTaxCalculator;
 use Modules\Checkout\Application\Tax\NoTax;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Contracts\TaxCalculator;
+use Modules\Extension\PluginServiceProvider;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Shared\Contracts\PhoneNumberPolicy;
@@ -131,6 +132,58 @@ it('modules/ không ghi cứng giá trị thị trường của cửa hàng — 
             if (is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING && isset($market[$literal = stripcslashes(substr($token[1], 1, -1))])) {
                 $offenders[] = "{$relative}:{$token[2]} '{$literal}' ({$market[$literal]})";
             }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
+
+it('R35: plugin không thay binding, không kế thừa class nội bộ của Core, không chèn middleware vào route Core', function () {
+    $pluginRoot = realpath(__DIR__.'/../../custom/plugin');
+    $offenders = [];
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS));
+    foreach ($files as $file) {
+        $path = $file->getRealPath();
+        if ($file->getExtension() !== 'php' || preg_match('#/Tests/#', $path) === 1) {
+            continue;
+        }
+        $relative = substr($path, strlen($pluginRoot) + 1);
+        $source = (string) file_get_contents($path);
+        $line = fn (int $offset): int => substr_count($source, "\n", 0, $offset) + 1;
+
+        $imports = [];
+        preg_match_all('/^use\s+([\w\\\\]+)(?:\s+as\s+(\w+))?;/m', $source, $uses, PREG_SET_ORDER);
+        foreach ($uses as $use) {
+            $imports[($use[2] ?? '') !== '' ? $use[2] : class_basename($use[1])] = $use[1];
+        }
+
+        // Thay implementation Core đã đăng ký: dùng Contract + tag thay vì ghi đè container.
+        preg_match_all('/->(?:bind|bindIf|singleton|singletonIf|scoped|scopedIf|instance|extend)\(\s*\\\\?([\w\\\\]+)::class/', $source, $calls, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        foreach ($calls as [$call, [$name]]) {
+            $head = strstr($name.'\\', '\\', true);
+            $abstract = isset($imports[$head]) ? $imports[$head].substr($name, strlen($head)) : $name;
+            if (str_starts_with($abstract, 'Modules\\')) {
+                $offenders[] = "{$relative}:{$line($call[1])} ghi đè binding {$abstract}";
+            }
+        }
+
+        // Middleware toàn cục hoặc theo nhóm chạy trên cả route của Core.
+        preg_match_all('/->(?:pushMiddlewareToGroup|prependMiddlewareToGroup|appendMiddlewareToGroup|middlewareGroup|pushMiddleware|prependMiddleware)\(/', $source, $middleware, PREG_OFFSET_CAPTURE);
+        foreach ($middleware[0] as [$call, $offset]) {
+            $offenders[] = "{$relative}:{$line($offset)} chèn middleware {$call}";
+        }
+
+        $class = 'Plugin\\'.str_replace('/', '\\', substr($relative, 0, -4));
+        if (! class_exists($class)) {
+            continue;
+        }
+        // Base class được kế thừa: PluginServiceProvider và class trong Contracts (API public, R5).
+        $parent = get_parent_class($class);
+        while ($parent !== false && str_starts_with($parent, 'Plugin\\')) {
+            $parent = get_parent_class($parent);
+        }
+        if ($parent !== false && str_starts_with($parent, 'Modules\\') && $parent !== PluginServiceProvider::class && ! str_contains($parent, '\\Contracts\\')) {
+            $offenders[] = "{$class} kế thừa {$parent}";
         }
     }
 

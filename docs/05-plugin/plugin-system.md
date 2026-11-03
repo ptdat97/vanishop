@@ -245,3 +245,6 @@ Designed ([commerce-kernel §7](../02-architecture/commerce-kernel.md)). Plugin 
 7. Thiếu extension point thì mở PR vào Core, không vá Core từ trong plugin (rule R1).
 8. Plugin vào hệ thống qua repo + CI, không upload qua Admin ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)).
 9. Checklist theo loại plugin: [contracts/](contracts/README.md).
+10. Không ghi đè binding, class, route hay middleware của Core (rule R35); thay capability bằng implementation của Contract.
+
+Các rule trên là **ranh giới kiến trúc, không phải sandbox bảo mật**: plugin chạy cùng process PHP với Core nên về kỹ thuật vẫn đọc/ghi được mọi bảng và mọi binding trong container. Arch test chỉ chặn vi phạm viết rõ trong mã nguồn. An toàn dựa vào việc chỉ cài plugin có mã nguồn đã review và đi qua CI ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)); không cài plugin không rõ nguồn gốc.
