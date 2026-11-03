@@ -12,6 +12,7 @@ use Modules\Extension\Domain\Plugin\PluginStatus;
  * @property string $version
  * @property PluginStatus $status
  * @property string|null $last_error
+ * @property \Illuminate\Support\Carbon|null $installed_at
  */
 final class PluginRecord extends Model
 {

@@ -30,6 +30,7 @@ use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginHealth;
 use Modules\Extension\Application\Plugins\PluginLoader;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Application\Plugins\PluginOverview;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
@@ -110,6 +111,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ManifestRepository::class, fn (): ManifestRepository => new ManifestRepository((string) config('vanishop.plugins.path')));
         $this->app->singleton(PluginStateCache::class, fn ($app): PluginStateCache => new PluginStateCache($app->make(Filesystem::class), (string) config('vanishop.plugins.cache')));
         $this->app->singleton(PluginLoader::class, fn ($app): PluginLoader => new PluginLoader($app, $app->make(PluginStateCache::class), (bool) config('vanishop.plugins.safe_mode')));
+        $this->app->when(PluginOverview::class)->needs('$coreVersion')->give(fn (): string => (string) config('vanishop.version'));
         $this->app->bind(PluginManager::class, fn ($app): PluginManager => new PluginManager(
             $app->make(ManifestRepository::class),
             $app->make(DependencyResolver::class),

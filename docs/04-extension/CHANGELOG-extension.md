@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.52 — 2026-11-03
+
+Chỉ thêm. Admin → Plugin quản lý được vòng đời và cấu hình ([plugin-system §5b](../05-plugin/plugin-system.md)).
+
+### Thêm
+- Manifest `vanishop.json` có thêm trường tuỳ chọn: `description` (chuỗi hoặc `{locale: nội dung}`), `author` (đã có trong ví dụ, nay được đọc), `icon` (đường dẫn tương đối tới file `svg`/`png`/`webp`/`jpg` trong thư mục plugin, ≤ 256 KB; đường dẫn có `..` → manifest không hợp lệ).
+- Admin → Plugin: chi tiết `/{admin}/plugins/{id}`, cài/bật/tắt (thường, ngừng an toàn, tắt ngay có xác nhận)/gỡ (giữ hoặc xoá dữ liệu, xoá phải gõ lại id)/nâng cấp — gọi `PluginManager`, cùng kiểm tra và audit với `vani:plugin:*` (quyền `extension.plugins.manage`).
+- Trang cấu hình riêng `/{admin}/plugins/{id}/settings` cho cấu hình plugin khai báo bằng `SettingDefinition` (namespace = id plugin, quyền `settings.manage`) — không cần tự làm màn hình cấu hình.
+- Màn hình Admin plugin thêm vào menu (`AdminNavigation::add(..., pluginId)`) hiện trong trang chi tiết plugin.
+
 ## 0.3.51 — 2026-11-03
 
 Chỉ thêm. Quản trị nhân viên, vai trò, quên mật khẩu Admin ([reference-parity §3.3](../20-roadmap/reference-parity-refactor.md), R1).

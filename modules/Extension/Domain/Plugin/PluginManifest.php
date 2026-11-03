@@ -15,6 +15,9 @@ final readonly class PluginManifest
 
     private const VERSION_PATTERN = '/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/';
 
+    /** Icon hiển thị trong Admin → Plugin: file ảnh trong thư mục plugin (không ra ngoài thư mục). */
+    private const ICON_PATTERN = '/^(?!.*\.\.)[A-Za-z0-9_\/-]+\.(?:svg|png|webp|jpe?g)$/';
+
     /**
      * Loại plugin (ADR-030 §4.H). Loại gắn với một extension point (vd. `payment_gateway`) được module sở hữu contract
      * khai báo qua `Extensions::kindContract()`; doctor cảnh báo khi plugin không đóng góp contract đó.
@@ -52,6 +55,15 @@ final readonly class PluginManifest
          * @var list<string>
          */
         public array $requiresCapabilities = [],
+        /**
+         * Mô tả ngắn cho Admin → Plugin (0.3.52), locale => nội dung; chuỗi không gắn ngôn ngữ dùng khoá `*`.
+         *
+         * @var array<string, string>
+         */
+        public array $description = [],
+        public ?string $author = null,
+        /** Đường dẫn tương đối tới file icon trong thư mục plugin (0.3.52). */
+        public ?string $icon = null,
     ) {}
 
     /**
@@ -94,6 +106,13 @@ final readonly class PluginManifest
 
         // Tên dạng chuỗi không gắn ngôn ngữ: khoá `*` dùng cho mọi locale.
         $name = is_array($data['name']) ? $data['name'] : ['*' => (string) $data['name']];
+        $description = $data['description'] ?? [];
+        $description = is_array($description) ? $description : ['*' => (string) $description];
+
+        $icon = isset($data['icon']) ? (string) $data['icon'] : null;
+        if ($icon !== null && preg_match(self::ICON_PATTERN, $icon) !== 1) {
+            throw InvalidManifest::because($path, "icon [{$icon}] phải là đường dẫn tương đối tới file svg/png/webp/jpg trong thư mục plugin");
+        }
 
         return new self(
             id: $id,
@@ -109,6 +128,9 @@ final readonly class PluginManifest
             bundled: (bool) ($data['bundled'] ?? false),
             data: PluginDataDeclaration::fromArray(is_array($data['data'] ?? null) ? $data['data'] : [], $path),
             requiresCapabilities: $capabilities,
+            description: array_map('strval', $description),
+            author: isset($data['author']) ? (string) $data['author'] : null,
+            icon: $icon,
         );
     }
 
@@ -118,5 +140,17 @@ final readonly class PluginManifest
     public function displayName(?string $locale = null): string
     {
         return ($locale === null ? null : $this->name[$locale] ?? null) ?? $this->name['*'] ?? array_values($this->name)[0] ?? $this->id;
+    }
+
+    /** Mô tả theo locale, cùng thứ tự dự phòng như tên; không có → null. */
+    public function displayDescription(?string $locale = null): ?string
+    {
+        return ($locale === null ? null : $this->description[$locale] ?? null) ?? $this->description['*'] ?? array_values($this->description)[0] ?? null;
+    }
+
+    /** Đường dẫn tuyệt đối tới file icon nếu có và tồn tại. */
+    public function iconPath(): ?string
+    {
+        return $this->icon !== null && is_file("{$this->path}/{$this->icon}") ? "{$this->path}/{$this->icon}" : null;
     }
 }

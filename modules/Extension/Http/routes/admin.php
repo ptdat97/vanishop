@@ -7,6 +7,18 @@ use Modules\Extension\Http\Controllers\Admin\ReportController;
 use Modules\Extension\Http\Controllers\Admin\SettingsController;
 
 Route::get('plugins', [PluginController::class, 'index'])->name('plugins.index');
+// Admin → Plugin (plugin-system §5b). Id plugin dạng vendor.name.
+Route::prefix('plugins/{plugin}')->where(['plugin' => '[a-z0-9-]+\\.[a-z0-9-]+'])->name('plugins.')->group(function (): void {
+    Route::get('/', [PluginController::class, 'show'])->name('show');
+    Route::get('icon', [PluginController::class, 'icon'])->name('icon');
+    Route::get('settings', [PluginController::class, 'settings'])->name('settings');
+    Route::put('settings', [PluginController::class, 'updateSettings'])->name('settings.update');
+    Route::post('install', [PluginController::class, 'install'])->name('install');
+    Route::post('enable', [PluginController::class, 'enable'])->name('enable');
+    Route::post('disable', [PluginController::class, 'disable'])->name('disable');
+    Route::post('uninstall', [PluginController::class, 'uninstall'])->name('uninstall');
+    Route::post('upgrade', [PluginController::class, 'upgrade'])->name('upgrade');
+});
 Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('extensions/{resource}/actions/{plugin}/{key}', AdminActionController::class)

@@ -72,6 +72,9 @@ custom/plugin/VietQr/
 | `settings_schema` | | (cũ) thay bằng `settings()` trong provider |
 | `data` | (bắt buộc khi có migration) | **0.3.24.** `owned`: bảng `plg_*` do migration của plugin tạo (`--purge` xoá). `references`: cột của plugin trỏ sang dữ liệu khác, `"plg_bang.cot": "bang.cot"`. `retained`: bảng phải lưu giữ (chứng từ/pháp lý), ⊆ `owned`. Doctor: `data_undeclared` (có migration, chưa khai `owned`), `data_owned_missing`, `data_reference_invalid` |
 | `kind` | ✔ | Loại plugin, thuộc `PluginManifest::KINDS` (`payment_gateway`, `shipping_carrier`, `shipping_rate`, `tax`, `promotion`, `notification_channel`, `search`, `integration`, `marketing`, `analytics`, `customer_service`, `content`, `theme_extension`, `language`, `feature`). Loại gắn với extension point → doctor cảnh báo nếu không đóng góp |
+| `description` | | (0.3.52) Mô tả ngắn cho Admin → Plugin; chuỗi hoặc `{ "vi": "…", "en": "…" }` |
+| `author` | | Tác giả, hiện trong Admin → Plugin |
+| `icon` | | (0.3.52) Đường dẫn tương đối tới file `svg`/`png`/`webp`/`jpg` trong thư mục plugin, ≤ 256 KB. Có `..` → manifest không hợp lệ. Phục vụ qua Admin với CSP chặn script (SVG) |
 | `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không tắt được nếu là implementation đang bật cuối cùng của extension point bắt buộc. Implemented (`vani:install`) |
 
 ## 4. Vòng đời
@@ -134,6 +137,19 @@ php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listen
 php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit
 php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, migration chờ, plugin failed, thiếu manifest/provider, không tương thích, cache không dùng chung ở production; exit 1 khi có lỗi
 ```
+
+## 5b. Admin → Plugin (0.3.52)
+
+Đặc tả do Owner mô tả (2026-11-03), không tham khảo mã lõi VaniCommerce (clean-room).
+
+| Màn hình | Hành vi | Quyền |
+|---|---|---|
+| Danh sách `/{admin}/plugins` | Icon (hoặc chữ cái đầu), tên + mô tả theo ngôn ngữ, id, tác giả, loại, phiên bản (báo bản mới khi manifest > bản đã cài), trạng thái, lỗi, sức khoẻ. Tìm theo tên/id/mô tả/tác giả, lọc theo loại và trạng thái. Link "Cấu hình" khi plugin có cấu hình | `extension.plugins.view` |
+| Chi tiết `/{admin}/plugins/{id}` | Thông tin manifest, thư mục, yêu cầu Core; plugin cần (kèm trạng thái), capability cần, plugin phụ thuộc ngược, xung đột, lý do chưa cài được; quyền khai báo, hook đang nghe (khi đang bật), bảng dữ liệu (đánh dấu lưu giữ), màn hình Admin của plugin; việc dở dang | `extension.plugins.view` |
+| Thao tác (trên trang chi tiết) | Chỉ hiện nút hợp lệ theo trạng thái: `discovered` → Cài; `installed`/`disabled` → Bật, Gỡ; `enabled` → Tắt; `draining` → Bật lại, Tắt ngay; `failed` → Gỡ; có bản mới → Nâng cấp. Tắt khi còn việc dở dang: "Ngừng an toàn" (drain) hoặc "Tắt ngay" (phải tick xác nhận, = `--force`). Gỡ mặc định giữ dữ liệu; "Xoá cả dữ liệu" (= `--purge`, tuỳ chọn xoá bảng lưu giữ = `--drop-retained`) phải gõ lại id. Lỗi của `PluginManager` (phụ thuộc, extension point bắt buộc, việc dở dang, dữ liệu còn tham chiếu) hiện nguyên văn | `extension.plugins.manage` |
+| Cấu hình `/{admin}/plugins/{id}/settings` | Form sinh từ `SettingDefinition` của namespace plugin (giống Admin → Cấu hình); 404 khi plugin không khai báo cấu hình | `settings.manage` |
+
+Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin và audit `extension.plugin.*` như CLI. Cài/nâng cấp chạy migration của plugin ngay trong request (cửa hàng một người bán, migration plugin nhỏ); migration lớn nên chạy bằng CLI. Không có: upload plugin `.zip`, chợ plugin, cập nhật từ xa (Owner bỏ qua, 2026-11-03).
 
 ## 6. Dependency resolution và tương thích
 

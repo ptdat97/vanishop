@@ -62,6 +62,19 @@ final class AdminNavigation
     }
 
     /**
+     * Màn hình Admin do một plugin thêm vào menu (Admin → Plugin → chi tiết), lọc theo quyền như menu.
+     *
+     * @return list<array{label: string, url: string}>
+     */
+    public function forPlugin(string $pluginId): array
+    {
+        $items = array_filter($this->items, fn (array $item): bool => $item['plugin'] === $pluginId && Route::has($item['route'])
+            && ($item['permission'] === null || Gate::allows($item['permission'])));
+
+        return array_values(array_map(fn (array $item): array => ['label' => __($item['label']), 'url' => route($item['route'])], $items));
+    }
+
+    /**
      * @return list<array{key: string, label: string, url: string, group: string|null}>
      */
     public function visibleItems(): array
