@@ -14,6 +14,7 @@ use Modules\Payment\Testing\PaymentGatewayContract;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Settings;
 use Plugin\VnPay\Infrastructure\VnPayGateway;
 use Plugin\VnPay\Infrastructure\VnPaySigner;
 use Plugin\VnPay\VnPayServiceProvider;
@@ -158,6 +159,15 @@ describe('vani.vnpay', function () {
         // VNPay gửi lại cùng IPN → 02 (đã xác nhận), không ghi nhận lần hai.
         ($this->ipn)(vnpayParams($payment['id'], 330_000))->assertOk()->assertExactJson(['RspCode' => '02', 'Message' => 'Order already confirmed']);
         expect(DB::table('payment_transactions')->where('type', 'callback')->count())->toBe(1);
+    });
+
+    it('bảo trì storefront (reference-parity §3.2): Storefront API trả 503 nhưng IPN vẫn được ghi nhận', function () {
+        $payment = ($this->order)()->json('data.payment');
+        app(Settings::class)->set('core', 'storefront.maintenance', true);
+
+        $this->postJson('/api/storefront/v1/carts')->assertStatus(503)->assertJsonPath('error.code', 'storefront.maintenance');
+        ($this->ipn)(vnpayParams($payment['id'], 330_000))->assertOk()->assertJsonPath('RspCode', '00');
+        expect(Payment::query()->sole()->status->value)->toBe('paid');
     });
 
     it('IPN luôn HTTP 200 kèm RspCode: sai chữ ký 97, không thấy đơn 01, sai số tiền 04; khách huỷ (24) → thanh toán thất bại', function () {

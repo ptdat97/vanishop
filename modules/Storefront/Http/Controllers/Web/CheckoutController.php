@@ -12,11 +12,13 @@ use Illuminate\Support\Str;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutRejected;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
+use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Storefront\Application\AddressOptions;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\PaymentPresenter;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Checkout của native storefront: một form, đặt hàng bằng POST thường (Idempotency-Key là trường ẩn sinh khi
@@ -29,6 +31,7 @@ final class CheckoutController
         private readonly NativeCart $cart,
         private readonly CheckoutPresenter $presenter,
         private readonly AddressOptions $addresses,
+        private readonly Settings $settings,
     ) {}
 
     public function show(Request $request): View|RedirectResponse
@@ -36,6 +39,9 @@ final class CheckoutController
         $key = $this->cart->current() === null ? null : $this->cart->key();
         if ($key === null) {
             return redirect()->route('storefront.cart');
+        }
+        if ($this->signInRequired($request)) {
+            return $this->toLogin();
         }
 
         $old = (array) $request->old();
@@ -75,6 +81,9 @@ final class CheckoutController
             'idempotency_key' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{8,128}$/'],
         ]);
 
+        if ($this->signInRequired($request)) {
+            return $this->toLogin();
+        }
         if ($request->input('action') === 'quote' || $this->cart->current() === null) {
             return redirect()->route('storefront.checkout')->withInput();
         }
@@ -99,6 +108,21 @@ final class CheckoutController
         }
 
         return redirect()->route('storefront.order', $order['id']);
+    }
+
+    /**
+     * Cửa hàng tắt khách vãng lai (`storefront.guest_checkout`) và khách chưa đăng nhập. Checkout vẫn tự chặn khi đặt
+     * hàng; ở đây chỉ để khách không phải điền form rồi mới bị từ chối.
+     */
+    private function signInRequired(Request $request): bool
+    {
+        return ! $request->attributes->has(AuthenticateCustomer::ATTRIBUTE)
+            && ! (bool) $this->settings->get('core', 'storefront.guest_checkout', true);
+    }
+
+    private function toLogin(): RedirectResponse
+    {
+        return redirect()->guest(route('storefront.account.login'))->with('status', __('storefront::messages.sign_in_to_checkout'));
     }
 
     /**

@@ -13,4 +13,5 @@ return [
     'payment_unavailable' => 'Phương thức thanh toán không khả dụng.',
     'no_payment_method' => 'Cửa hàng chưa có phương thức thanh toán nào khả dụng.',
     'idempotency_key_required' => 'Thiếu header Idempotency-Key.',
+    'sign_in_required' => 'Vui lòng đăng nhập để đặt hàng.',
 ];

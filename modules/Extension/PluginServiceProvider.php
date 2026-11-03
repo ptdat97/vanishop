@@ -254,7 +254,7 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context', 'vani.plugin-active:'.$this->pluginId(), 'vani.response-hooks:vani.api.storefront,api.storefront.'])
+        Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId(), 'vani.response-hooks:vani.api.storefront,api.storefront.'])
             ->prefix("api/storefront/v1/x/{$slug}")
             ->name("api.storefront.x.{$slug}.")
             ->group($file);
@@ -285,7 +285,7 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? ['vani.page-cache'] : [])])
+        Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? ['vani.page-cache'] : [])])
             ->withoutMiddleware($cacheable ? SessionlessRoutes::MIDDLEWARE : [])
             ->prefix($prefix ?? "p/{$slug}")
             ->name("storefront.p.{$slug}.")

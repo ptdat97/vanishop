@@ -65,6 +65,10 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
             'core', 'tax.calculator', 'Cách tính thuế', 'select', (string) config('vanishop.tax.calculator', NoTax::CODE),
             optionsFromTag: TaxCalculator::TAG, help: 'TaxCalculator của cửa hàng. Implementation đã chọn không có hiệu lực (plugin tắt) → mặc định, rồi `none`.',
         ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', CheckoutService::GUEST_CHECKOUT, 'Cho phép khách vãng lai đặt hàng', 'bool', true,
+            help: 'Tắt: phải đăng nhập (OTP) mới đặt được hàng — trang thanh toán chuyển sang đăng nhập, Storefront API trả 403 `checkout.sign_in_required`. Xem giá và thêm giỏ vẫn không cần đăng nhập.',
+        ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
 
         $this->bootModuleResources();

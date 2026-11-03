@@ -25,6 +25,7 @@ use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
+use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -58,6 +59,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
+        $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 
@@ -70,6 +72,15 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $settings->define(new SettingDefinition(
             'core', 'theme.tokens', 'Token giao diện (JSON)', 'text',
             help: 'Ghi đè token của theme, vd. {"color-primary": "#0f766e", "radius": "0.75rem"} → CSS variables --vani-*.',
+        ));
+        $settings->define(new SettingDefinition(
+            'core', 'storefront.maintenance', 'Bảo trì cửa hàng', 'bool', false,
+            help: 'Bật: storefront và Storefront API trả 503. IPN thanh toán, webhook vận chuyển, Integration API, /health vẫn chạy. Nhân viên xem trước qua Admin → Giao diện → "Xem trang" (cookie 12 giờ). Trang đã cache ở CDN còn hiện tới khi hết TTL — xoá cache CDN sau khi đổi.',
+        ));
+        $settings->define(new SettingDefinition(
+            'core', 'storefront.maintenance_message', 'Thông báo bảo trì', 'text',
+            help: 'Nội dung trang bảo trì. Để trống: dùng câu mặc định của theme.',
+            rules: ['max:1000'],
         ));
 
         // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.

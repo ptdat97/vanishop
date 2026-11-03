@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.49 — 2026-11-03
+
+Chỉ thêm. Cấu hình vận hành storefront — bảo trì và khách vãng lai ([reference-parity §3.2](../20-roadmap/reference-parity-refactor.md), R1).
+
+### Thêm
+- `CheckoutRejected::signInRequired()` — mã `checkout.sign_in_required` (HTTP 403) khi cửa hàng tắt `core`/`storefront.guest_checkout` mà khách chưa đăng nhập.
+- Cấu hình `core`/`storefront.maintenance`, `core`/`storefront.maintenance_message`: route storefront của plugin (`storefrontPages()`, `storefrontRoutes()`) trả 503 khi bảo trì; Storefront API trả lỗi `storefront.maintenance`. `webhookRoutes()` không bị ảnh hưởng.
+- View theme `theme::pages.maintenance` (biến `$message`); theme con override được.
+
 ## 0.3.48 — 2026-11-03
 
 Chỉ thêm. Hook hoá đợt 2 ([ADR-036](../19-adr/ADR-036-service-result-hooks.md)).

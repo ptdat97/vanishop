@@ -19,7 +19,7 @@ use Modules\Storefront\Http\Middleware\PublicPageCache;
 | Native storefront (SSR, ADR-025). Đoạn đầu đường dẫn nằm trong vanishop.reserved_paths (Admin không được trùng).
 */
 
-Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.theme'])->name('storefront.')->group(function (): void {
+Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.maintenance'])->name('storefront.')->group(function (): void {
     // Trang công khai: không phiên, CDN cache được (storefront §5); phần riêng của khách qua GET /_vani/phien.
     Route::withoutMiddleware(PublicPageCache::SESSIONLESS)->middleware('vani.page-cache')->group(function (): void {
         Route::get('/', HomeController::class)->name('home');
@@ -74,7 +74,7 @@ Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.the
     });
 });
 
-// SEO: không cần phiên/theme.
+// SEO: không cần phiên/theme; không chặn khi bảo trì (crawler vẫn đọc được robots/sitemap).
 Route::middleware('vani.storefront-context')->group(function (): void {
     Route::get('/robots.txt', [SeoController::class, 'robots'])->name('storefront.robots');
     Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('storefront.sitemap');

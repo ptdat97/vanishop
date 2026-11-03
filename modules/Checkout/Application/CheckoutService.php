@@ -40,6 +40,7 @@ use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Contracts\Metrics;
 use Modules\Shared\Support\Phones;
+use Modules\Tenancy\Contracts\Settings;
 use Throwable;
 
 /**
@@ -48,6 +49,8 @@ use Throwable;
  */
 final class CheckoutService implements Checkout
 {
+    public const GUEST_CHECKOUT = 'storefront.guest_checkout';
+
     public function __construct(
         private readonly Carts $carts,
         private readonly TotalsPipeline $pipeline,
@@ -63,6 +66,7 @@ final class CheckoutService implements Checkout
         private readonly CurrentContext $currentContext,
         private readonly Addresses $addresses,
         private readonly Metrics $metrics,
+        private readonly Settings $settings,
     ) {}
 
     public function quote(CheckoutRequest $request): CheckoutQuote
@@ -87,6 +91,11 @@ final class CheckoutService implements Checkout
 
     private function place(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult
     {
+        // Tắt khách vãng lai (`storefront.guest_checkout`, reference-parity §3.2): chặn ở đây cho mọi kênh (web, API, plugin).
+        if ($this->signedInCustomer() === null && ! (bool) $this->settings->get('core', self::GUEST_CHECKOUT, true)) {
+            throw CheckoutRejected::signInRequired();
+        }
+
         $scope = 'checkout:'.$request->cart->publicId;
         $stored = $this->idempotency->claim($scope, $idempotencyKey, $request->fingerprint());
         if ($stored !== null) {

@@ -37,6 +37,14 @@ final class CheckoutRejected extends BusinessRuleViolation
     }
 
     /**
+     * Cửa hàng tắt đặt hàng không đăng nhập (`storefront.guest_checkout`): khách đăng nhập (OTP) rồi đặt lại.
+     */
+    public static function signInRequired(): self
+    {
+        return new self('checkout.sign_in_required', 403, __('checkout::messages.sign_in_required'));
+    }
+
+    /**
      * @param  list<VoucherRejection>  $rejections
      */
     public static function vouchers(array $rejections): self

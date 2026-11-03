@@ -13,4 +13,5 @@ return [
     'payment_unavailable' => 'The payment method is not available.',
     'no_payment_method' => 'The store has no available payment method.',
     'idempotency_key_required' => 'Missing Idempotency-Key header.',
+    'sign_in_required' => 'Please sign in to place your order.',
 ];

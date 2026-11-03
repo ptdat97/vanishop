@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Storefront\Application\Maintenance;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Contracts\StorefrontBlock;
 
@@ -24,7 +25,7 @@ final class HomeBlocksController
         return redirect()->route('admin.storefront.home-blocks.edit');
     }
 
-    public function edit(PageBlocks $blocks): Response
+    public function edit(PageBlocks $blocks, Maintenance $maintenance): Response
     {
         Gate::authorize('storefront.manage');
 
@@ -36,7 +37,8 @@ final class HomeBlocksController
             ], $blocks->types())),
             'blocks' => $blocks->home() ?? [],
             'configured' => $blocks->home() !== null,
-            'previewUrl' => route('storefront.home'),
+            // Đang bảo trì: đi qua route phát cookie xem trước, không thì nhân viên chỉ thấy trang 503.
+            'previewUrl' => $maintenance->enabled() ? route('admin.storefront.maintenance.preview') : route('storefront.home'),
         ]);
     }
 

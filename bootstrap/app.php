@@ -15,6 +15,7 @@ use Modules\Shared\Http\Middleware\AssignCorrelationId;
 use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
 use Modules\Shared\Http\WebBusinessRuleRenderer;
 use Modules\Shared\Support\AdminPath;
+use Modules\Storefront\Application\Maintenance;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,6 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Thêm vào giỏ từ trang sản phẩm đã cache (không có token CSRF trong HTML, storefront §5). An toàn: cookie phiên
         // SameSite=Lax nên form chéo trang không mang phiên theo — không đụng được giỏ của nạn nhân.
         $middleware->validateCsrfTokens(except: ['gio-hang']);
+        // Cookie xem trước khi bảo trì tự ký HMAC; không mã hoá để Storefront API (nhóm `api`, không EncryptCookies) đọc được.
+        $middleware->encryptCookies(except: [Maintenance::COOKIE]);
         $middleware->alias(['vani.inertia' => HandleInertiaRequests::class]);
         $middleware->group('vani.admin', [AdminGate::class, HandleInertiaRequests::class]);
         // CurrentContext (actor, locale) phải có TRƯỚC route model binding.
