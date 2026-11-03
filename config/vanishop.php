@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.53',
+    'version' => '0.3.54',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -276,5 +276,8 @@ return [
         'strict' => (bool) env('VANI_HOOKS_STRICT', in_array(env('APP_ENV'), ['local', 'testing'], true)),
         // Listener chạy lâu hơn ngưỡng này (ms) được ghi cảnh báo `hook_duration_ms` kèm plugin.
         'slow_ms' => (float) env('VANI_HOOKS_SLOW_MS', 50),
+        // Ghi log debug mỗi lần gọi hook (tên, loại, plugin đang nghe) để dò luồng. Mặc định theo APP_DEBUG; rất nhiều
+        // dòng (mỗi view/trang Admin có điểm tự động) → tắt bằng VANI_HOOKS_TRACE=false khi không cần.
+        'trace' => (bool) env('VANI_HOOKS_TRACE', env('APP_DEBUG', false)),
     ],
 ];

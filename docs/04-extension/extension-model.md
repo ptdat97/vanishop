@@ -85,7 +85,7 @@ Hook::action('vani.order.after_create', $orderData);
 // Plugin đăng ký trong boot() qua helper của PluginServiceProvider (gắn plugin id → chỉ chạy khi plugin active)
 $this->onFilter('vani.integration.order_payload',
     fn (array $payload, OrderData $order): array => $payload + ['gift_wrap' => true],
-    priority: 20);
+    priority: 110);   // > 100 (mặc định) → chạy sau listener mặc định
 // Tương tự: onAction(), onValidate() (trả list lỗi), onSlot() (trả một phần tử UI)
 ```
 
@@ -96,9 +96,14 @@ $data = vani_filter('vani.catalog.product.view_data', $data, $product);   // Cor
 vani_action('vani.order.after_create', $order);
 
 // Trong plugin (vd. boot()): listener tự gắn với plugin theo vị trí file → tắt plugin là tắt listener
-vani_add_filter('vani.admin.page.ordering.orders.show', fn (array $props): array => [...$props, 'myPlugin' => [...]], 20);
+vani_add_filter('vani.admin.page.ordering.orders.show', fn (array $props): array => [...$props, 'myPlugin' => [...]], 110);
 vani_add_action('vani.order.after_create', fn (PlacedOrder $order) => ...);
+vani_add_slot('vani.storefront.pdp.after_price', fn (array $product) => new HtmlString('…'));   // 0.3.54
 ```
+
+Bí danh (ADR-036): `hook_filter`, `hook_action`, `add_hook_filter`, `add_hook_action`, `add_hook_slot` (0.3.54) — cùng HookManager. Mọi helper đăng ký có priority mặc định `HookManager::DEFAULT_PRIORITY` = **100**.
+
+**Dò luồng hook** (0.3.54): `VANI_HOOKS_TRACE=true` (mặc định theo `APP_DEBUG`) ghi log debug mỗi lần gọi hook — `Hook <loại>: <tên>` kèm danh sách plugin đang nghe (`core` = Core). Rất nhiều dòng (mỗi view/trang Admin có điểm tự động); tắt khi không cần. Production (`APP_DEBUG=false`) mặc định tắt.
 
 ### 4.2a Điểm mở rộng tự động (`experimental`)
 
@@ -145,7 +150,7 @@ return [
 | Filter phải trả về **đúng kiểu** đầu vào; Core kiểm tra kiểu ở môi trường non-production | Chặn plugin trả dữ liệu sai |
 | Thứ tự chạy theo `priority` (nhỏ chạy trước), cùng priority thì theo thứ tự nạp plugin | Có thể dự đoán |
 | Mỗi lần gọi hook được đo thời gian theo hook × plugin; quá 50 ms thì log cảnh báo kèm plugin id (**Implemented**; xuất metric `hook_duration_ms{hook,plugin}`: chưa) | Phát hiện plugin chậm |
-| Priority mặc định **10** trong `PluginServiceProvider` | Ghi tường minh khi thứ tự quan trọng |
+| Priority mặc định **100** cho mọi loại hook và mọi cách đăng ký (`HookManager::DEFAULT_PRIORITY`, 0.3.54; trước đó 10) | Cần chạy trước listener mặc định: < 100; chạy sau: > 100. Ghi tường minh khi thứ tự quan trọng |
 
 ## 5. Compatibility policy
 

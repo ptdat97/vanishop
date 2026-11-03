@@ -91,6 +91,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             fn (): PluginActivation => $app->make(PluginActivation::class),
             (bool) config('vanishop.hooks.strict'),
             (float) config('vanishop.hooks.slow_ms', 50),
+            (bool) config('vanishop.hooks.trace', false),
         ));
         $this->app->alias('eventy', Events::class);
 

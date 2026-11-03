@@ -83,7 +83,7 @@ final class VietQrServiceProvider extends PluginServiceProvider
 | Helper | Tác dụng | Hiệu lực |
 |---|---|---|
 | `contribute($tag, $class)` | Đóng góp implementation cho extension point. **Dùng hằng `TAG` trên interface**, không gõ chuỗi | Chỉ khi plugin bật |
-| `onFilter/onAction/onValidate/onSlot($hook, $cb, $priority = 10)` | Nghe hook public ([hook-signatures](hook-signatures.md)) | Chỉ khi plugin bật |
+| `onFilter/onAction/onValidate/onSlot($hook, $cb, $priority = 100)` | Nghe hook public ([hook-signatures](hook-signatures.md)) | Chỉ khi plugin bật |
 | `onEvent($event, $handler)` | Nghe domain event | Chỉ khi plugin bật |
 | `settings([...])` | Khai báo cấu hình → Admin → Cấu hình sinh form | Đọc bằng `Settings::get($pluginId, $key, $default)` |
 | `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ | Chạy khi plugin bật; chạy với actor `system` |

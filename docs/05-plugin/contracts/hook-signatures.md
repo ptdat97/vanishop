@@ -35,7 +35,7 @@ Tra hook đang có: `php artisan vani:plugin:hooks`. Không đoán tên hook; th
 
 ## 3. Priority
 
-Mặc định **10**; **số nhỏ chạy trước**. Cùng priority: theo thứ tự nạp plugin (thứ tự phụ thuộc). Ghi priority tường minh khi thứ tự quan trọng. Riêng `TotalsCalculator` (contract, không phải hook) dùng dải priority riêng: plugin 300–399.
+Mặc định **100** (`HookManager::DEFAULT_PRIORITY`, 0.3.54 — trước đó 10) cho filter, action, validate, slot; **số nhỏ chạy trước**: cần chạy trước listener mặc định dùng < 100, chạy sau dùng > 100. Cùng priority: theo thứ tự nạp plugin (thứ tự phụ thuộc). Ghi priority tường minh khi thứ tự quan trọng. Riêng `TotalsCalculator` (contract, không phải hook) dùng dải priority riêng: plugin 300–399.
 
 ## 4. Quy tắc khi chạy
 
@@ -97,4 +97,4 @@ $this->onEvent(OrderPlaced::class, AwardPendingPoints::class);   // class-string
 - [ ] Không I/O mạng trong hook chạy trong transaction; listener < 50 ms
 - [ ] Chỉ thêm khoá của mình, khoá theo plugin id
 - [ ] Event handler idempotent; việc cần đảm bảo tới nơi đi qua outbox
-- [ ] Priority tường minh khi thứ tự quan trọng (mặc định 10, nhỏ chạy trước)
+- [ ] Priority tường minh khi thứ tự quan trọng (mặc định 100, nhỏ chạy trước)

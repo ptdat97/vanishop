@@ -56,6 +56,7 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="VANI_PLUGINS_CACHE" value="storage/framework/testing/vanishop-plugins.php"/>
         <env name="VANI_HOOKS_STRICT" value="true"/>
+        <env name="VANI_HOOKS_TRACE" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>

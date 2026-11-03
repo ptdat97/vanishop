@@ -49,22 +49,22 @@ abstract class PluginServiceProvider extends ServiceProvider
         return $directory.($path !== '' ? '/'.$path : '');
     }
 
-    protected function onFilter(string $hook, callable $callback, int $priority = 10): void
+    protected function onFilter(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         $this->app->make(HookManager::class)->onFilter($hook, $callback, $priority, $this->pluginId());
     }
 
-    protected function onAction(string $hook, callable $callback, int $priority = 10): void
+    protected function onAction(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         $this->app->make(HookManager::class)->onAction($hook, $callback, $priority, $this->pluginId());
     }
 
-    protected function onValidate(string $hook, callable $callback, int $priority = 10): void
+    protected function onValidate(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         $this->app->make(HookManager::class)->onValidate($hook, $callback, $priority, $this->pluginId());
     }
 
-    protected function onSlot(string $hook, callable $callback, int $priority = 10): void
+    protected function onSlot(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         $this->app->make(HookManager::class)->onSlot($hook, $callback, $priority, $this->pluginId());
     }

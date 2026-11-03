@@ -144,7 +144,7 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 
 ### 4.2 Hook tại kết quả service (0.3.47, [ADR-036](../19-adr/ADR-036-service-result-hooks.md))
 
-Core gọi `hook_filter('vani.service.<module>.<kết quả>', $value, ...$args)` ngay tại kết quả của service nghiệp vụ; plugin nghe bằng `add_hook_filter()` trong `boot()`. Helper `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action` là bí danh của `vani_*`, cùng HookManager (khai báo, kiểm kiểu, plugin sở hữu, đo thời gian). Filter phải trả **cùng kiểu** với đầu vào (DTO bất biến: tạo bản mới qua `with*()`/constructor).
+Core gọi `hook_filter('vani.service.<module>.<kết quả>', $value, ...$args)` ngay tại kết quả của service nghiệp vụ; plugin nghe bằng `add_hook_filter()` trong `boot()`. Helper `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action`/`add_hook_slot` là bí danh của `vani_*`, cùng HookManager (khai báo, kiểm kiểu, plugin sở hữu, đo thời gian). Filter phải trả **cùng kiểu** với đầu vào (DTO bất biến: tạo bản mới qua `with*()`/constructor).
 
 | Hook | Giá trị | Args thêm | Lỗi listener | Mục đích |
 |---|---|---|---|---|

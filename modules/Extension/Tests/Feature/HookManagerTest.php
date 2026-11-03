@@ -105,3 +105,40 @@ it('đo hook_duration_ms theo hook × plugin; listener chậm hơn ngưỡng b�
         ->and($timings['test.filter']['plugin'])->toBe('core');
     Log::shouldHaveReceived('warning')->withArgs(fn (string $message, array $context): bool => $context['hook'] === 'test.action' && $context['hook_duration_ms'] > 5)->once();
 });
+
+it('priority mặc định 100 cho mọi loại hook: < 100 chạy trước listener mặc định, > 100 chạy sau', function () {
+    expect(HookManager::DEFAULT_PRIORITY)->toBe(100);
+
+    Hook::onFilter('test.filter', fn (string $v) => $v.'-mặc định');
+    Hook::onFilter('test.filter', fn (string $v) => $v.'-sau', 110);
+    Hook::onFilter('test.filter', fn (string $v) => $v.'-trước', 95);
+    Hook::onSlot('test.slot', fn () => 'mặc định');
+    Hook::onSlot('test.slot', fn () => 'trước', 95);
+
+    expect(Hook::filter('test.filter', 'x'))->toBe('x-trước-mặc định-sau')
+        ->and(Hook::slot('test.slot'))->toBe(['trước', 'mặc định']);
+});
+
+it('add_hook_slot / vani_add_slot chèn nội dung vào slot, cùng priority mặc định', function () {
+    add_hook_slot('test.slot', fn (string $name) => "chào {$name}");
+    vani_add_slot('test.slot', fn () => 'đầu tiên', 50);
+
+    expect(hook_filter('test.filter', 'x'))->toBe('x')
+        ->and(Hook::slot('test.slot', 'Lan'))->toBe(['đầu tiên', 'chào Lan']);
+});
+
+it('vanishop.hooks.trace: ghi log debug mỗi lần gọi hook kèm plugin đang nghe; tắt thì không ghi', function () {
+    $traced = new HookManager(new Events, app(HookRegistry::class), fn () => app(PluginActivation::class), true, trace: true);
+    $traced->onFilter('test.filter', fn (string $value): string => $value);
+    Log::spy();
+
+    $traced->filter('test.filter', 'x');
+    $traced->action('test.action');
+
+    Log::shouldHaveReceived('debug')->withArgs(fn (string $message, array $context): bool => $message === 'Hook filter: test.filter' && $context['listeners'] === ['core'])->once();
+    Log::shouldHaveReceived('debug')->withArgs(fn (string $message, array $context): bool => $message === 'Hook action: test.action' && $context['listeners'] === [])->once();
+
+    $quiet = new HookManager(new Events, app(HookRegistry::class), fn () => app(PluginActivation::class), true);
+    $quiet->filter('test.filter', 'x');
+    Log::shouldHaveReceived('debug')->twice();
+});

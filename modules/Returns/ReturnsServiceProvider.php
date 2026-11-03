@@ -44,7 +44,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $permissions->register('returns.refund', 'Hoàn tất đổi/trả và hoàn tiền');
 
         $navigation->add('returns', 'Đổi/trả', 'admin.returns.home', 'returns.view', 70, group: 'sales');
-        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 20);
+        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 110);
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('returns', $this->modulePath('Http/routes/admin-workspace.php'));

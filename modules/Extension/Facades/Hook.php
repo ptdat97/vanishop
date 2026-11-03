@@ -12,10 +12,10 @@ use Modules\Extension\Application\Hooks\HookManager;
  * @method static void action(string $name, mixed ...$args)
  * @method static array collect(string $name, mixed ...$args)
  * @method static array slot(string $name, mixed ...$args)
- * @method static void onFilter(string $name, callable $callback, int $priority = 10, ?string $pluginId = null)
- * @method static void onAction(string $name, callable $callback, int $priority = 10, ?string $pluginId = null)
- * @method static void onValidate(string $name, callable $callback, int $priority = 10, ?string $pluginId = null)
- * @method static void onSlot(string $name, callable $callback, int $priority = 10, ?string $pluginId = null)
+ * @method static void onFilter(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
+ * @method static void onAction(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
+ * @method static void onValidate(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
+ * @method static void onSlot(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
  *
  * @see HookManager
  */

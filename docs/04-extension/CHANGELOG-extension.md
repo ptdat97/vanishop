@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.54 — 2026-11-03
+
+**Có thể ảnh hưởng thứ tự chạy** — priority mặc định của hook đổi từ 10 sang 100.
+
+### Đổi
+- Priority mặc định cho mọi loại hook (filter, action, validate, slot) và mọi cách đăng ký (`PluginServiceProvider::on*`, `Hook::on*`, `vani_add_*`, `add_hook_*`) là `HookManager::DEFAULT_PRIORITY` = **100** (trước: 10). Số nhỏ vẫn chạy trước. Plugin đặt priority tường minh **nhỏ hơn 100** để chạy *sau* listener mặc định (vd. 20) giờ sẽ chạy *trước* — cộng thêm 90 để giữ thứ tự cũ (20 → 110, 5 → 95). Core đã chỉnh: panel đơn Admin Giao hàng 5 → 95, Đổi/trả 20 → 110. Plugin trong `custom/plugin` không đặt priority tường minh nên không bị ảnh hưởng.
+
+### Thêm
+- Helper `vani_add_slot()` / `add_hook_slot()`: chèn nội dung vào slot giao diện từ bất kỳ đâu, listener gắn plugin theo vị trí file như `vani_add_*`.
+- `vanishop.hooks.trace` (`VANI_HOOKS_TRACE`, mặc định theo `APP_DEBUG`): log debug mỗi lần gọi hook kèm plugin đang nghe.
+
 ## 0.3.53 — 2026-11-03
 
 Chỉ thêm. Seeder của plugin ([plugin-system §7](../05-plugin/plugin-system.md)).

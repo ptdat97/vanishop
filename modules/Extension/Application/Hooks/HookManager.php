@@ -23,6 +23,12 @@ use TorMorten\Eventy\Events;
  */
 final class HookManager
 {
+    /**
+     * Priority mặc định cho mọi loại hook (filter, action, validate, slot). Số nhỏ chạy trước. 100 chừa chỗ hai phía:
+     * cần chạy trước listener mặc định dùng < 100, cần chạy sau dùng > 100 (0.3.54; trước đó 10).
+     */
+    public const DEFAULT_PRIORITY = 100;
+
     /** Số tham số tối đa truyền cho listener (eventy yêu cầu khai báo trước). */
     private const MAX_ARGUMENTS = 16;
 
@@ -41,11 +47,14 @@ final class HookManager
         private readonly Closure $activation,
         private readonly bool $strict,
         private readonly float $slowMs = 50.0,
+        /** Ghi log debug mỗi lần gọi hook (tên, loại, số listener) để dò luồng khi phát triển — `vanishop.hooks.trace`. */
+        private readonly bool $trace = false,
     ) {}
 
     public function filter(string $name, mixed $value, mixed ...$args): mixed
     {
         $this->assertDeclared($name);
+        $this->trace($name, 'filter');
 
         return $this->events->filter($name, $value, ...$args);
     }
@@ -53,6 +62,7 @@ final class HookManager
     public function action(string $name, mixed ...$args): void
     {
         $this->assertDeclared($name);
+        $this->trace($name, 'action');
 
         $this->events->action($name, ...$args);
     }
@@ -65,6 +75,7 @@ final class HookManager
     public function collect(string $name, mixed ...$args): array
     {
         $this->assertDeclared($name);
+        $this->trace($name, 'validate');
 
         return array_values($this->events->filter($name, [], ...$args));
     }
@@ -77,11 +88,12 @@ final class HookManager
     public function slot(string $name, mixed ...$args): array
     {
         $this->assertDeclared($name);
+        $this->trace($name, 'slot');
 
         return array_values($this->events->filter($name, [], ...$args));
     }
 
-    public function onFilter(string $name, callable $callback, int $priority = 10, ?string $pluginId = null): void
+    public function onFilter(string $name, callable $callback, int $priority = self::DEFAULT_PRIORITY, ?string $pluginId = null): void
     {
         $this->listen($name, $pluginId, $priority, function (mixed $value, mixed ...$args) use ($name, $callback, $pluginId): mixed {
             if (! $this->isActive($pluginId)) {
@@ -114,7 +126,7 @@ final class HookManager
         });
     }
 
-    public function onAction(string $name, callable $callback, int $priority = 10, ?string $pluginId = null): void
+    public function onAction(string $name, callable $callback, int $priority = self::DEFAULT_PRIORITY, ?string $pluginId = null): void
     {
         $this->listen($name, $pluginId, $priority, function (mixed ...$args) use ($name, $callback, $pluginId): void {
             if (! $this->isActive($pluginId)) {
@@ -137,7 +149,7 @@ final class HookManager
     /**
      * Listener cho hook validate: $callback trả về list lỗi.
      */
-    public function onValidate(string $name, callable $callback, int $priority = 10, ?string $pluginId = null): void
+    public function onValidate(string $name, callable $callback, int $priority = self::DEFAULT_PRIORITY, ?string $pluginId = null): void
     {
         $this->listen($name, $pluginId, $priority, function (array $issues, mixed ...$args) use ($callback, $pluginId): array {
             return $this->isActive($pluginId) ? [...$issues, ...$callback(...$args)] : $issues;
@@ -147,7 +159,7 @@ final class HookManager
     /**
      * Listener cho slot UI: $callback trả về một phần tử hiển thị (ví dụ mảng mô tả card).
      */
-    public function onSlot(string $name, callable $callback, int $priority = 10, ?string $pluginId = null): void
+    public function onSlot(string $name, callable $callback, int $priority = self::DEFAULT_PRIORITY, ?string $pluginId = null): void
     {
         $this->listen($name, $pluginId, $priority, function (array $items, mixed ...$args) use ($name, $callback, $pluginId): array {
             if (! $this->isActive($pluginId)) {
@@ -195,6 +207,13 @@ final class HookManager
         ksort($this->listenerOwners);
 
         return $this->listenerOwners;
+    }
+
+    private function trace(string $name, string $type): void
+    {
+        if ($this->trace) {
+            Log::debug("Hook {$type}: {$name}", ['hook' => $name, 'type' => $type, 'listeners' => array_map(fn (?string $owner): string => $owner ?? 'core', $this->listenerOwners[$name] ?? [])]);
+        }
     }
 
     private function listen(string $name, ?string $pluginId, int $priority, Closure $listener): void

@@ -32,18 +32,31 @@ if (! function_exists('vani_action')) {
 if (! function_exists('vani_add_filter')) {
     /**
      * Đăng ký filter; trong thư mục plugin thì listener thuộc plugin đó (chỉ chạy khi plugin bật).
-     * `vani_add_filter('vani.admin.page.ordering.orders.show', fn (array $props) => [...], 20)`.
+     * `vani_add_filter('vani.admin.page.ordering.orders.show', fn (array $props) => [...], 110)`. Priority nhỏ chạy trước,
+     * mặc định HookManager::DEFAULT_PRIORITY (100).
      */
-    function vani_add_filter(string $hook, callable $callback, int $priority = 10): void
+    function vani_add_filter(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         app(HookManager::class)->onFilter($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
     }
 }
 
 if (! function_exists('vani_add_action')) {
-    function vani_add_action(string $hook, callable $callback, int $priority = 10): void
+    function vani_add_action(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         app(HookManager::class)->onAction($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
+    }
+}
+
+if (! function_exists('vani_add_slot')) {
+    /**
+     * Chèn nội dung vào slot giao diện (0.3.54): storefront trả `HtmlString`/`SlotView`, Admin trả mảng mô tả panel/card.
+     * `vani_add_slot('vani.storefront.pdp.after_price', fn (array $product) => new HtmlString('…'))`. Listener lỗi chỉ bị
+     * bỏ qua, không làm hỏng trang.
+     */
+    function vani_add_slot(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
+    {
+        app(HookManager::class)->onSlot($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
     }
 }
 
@@ -68,15 +81,22 @@ if (! function_exists('hook_action')) {
 }
 
 if (! function_exists('add_hook_filter')) {
-    function add_hook_filter(string $hook, callable $callback, int $priority = 10): void
+    function add_hook_filter(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         app(HookManager::class)->onFilter($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
     }
 }
 
 if (! function_exists('add_hook_action')) {
-    function add_hook_action(string $hook, callable $callback, int $priority = 10): void
+    function add_hook_action(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         app(HookManager::class)->onAction($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
+    }
+}
+
+if (! function_exists('add_hook_slot')) {
+    function add_hook_slot(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
+    {
+        app(HookManager::class)->onSlot($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
     }
 }

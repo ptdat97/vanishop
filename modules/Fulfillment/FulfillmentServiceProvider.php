@@ -67,7 +67,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
         Event::listen(OrderLinesCancelled::class, RebuildShipmentsOnLinesCancelled::class);
-        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 5);
+        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 95);
 
         // Tắt hãng còn vận đơn chưa kết thúc → webhook 404, trạng thái giao/COD/hàng hoàn không được cập nhật.
         $this->app->make(Extensions::class)->guardDisable(ShippingCarrier::CARRIERS_TAG, function (object $carrier): ?string {
