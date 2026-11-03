@@ -69,3 +69,4 @@ Hệ tham chiếu mạnh hơn ở bốn điểm, VaniShop nên học:
 1. Dựng theme `vani-base` theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), khai báo slot storefront trong registry cùng lúc với view ([roadmap §3](../20-roadmap/roadmap.md)).
 2. Viết thêm contract cho người viết plugin khi extension point tương ứng có plugin thật đầu tiên (`PromotionRule`, `NotificationChannel`, `Connector`).
 3. Giữ [system-map](system-map.md) đúng với code: đếm lại số liệu khi thêm module.
+4. Đặc tả chi tiết theo từng module cho bản v3 của hệ tham chiếu (2026-11-03), gồm hàm toàn cục và kế hoạch refactor: [reference-parity-refactor](../20-roadmap/reference-parity-refactor.md).

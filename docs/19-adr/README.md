@@ -37,6 +37,8 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [034](ADR-034-vanicommerce-plugin-migration.md) | **VaniShop thay VaniCommerce; plugin của Owner chuyển sang bằng đặc tả rồi viết lại** | Accepted |
 | [035](ADR-035-product-links-videos-from-vanilo.md) | **Liên kết sản phẩm và video sản phẩm phỏng theo Vanilo (MIT), không phụ thuộc gói Vanilo** | Accepted |
 | [036](ADR-036-service-result-hooks.md) | **Hook tại kết quả service theo phong cách BeikeShop (`hook_filter`); chuyển plugin không bắt buộc đặc tả đầy đủ** | Accepted |
+| [037](ADR-037-vani-helpers.md) | **Bộ helper ngắn `vani_*` (danh sách đóng) cho plugin và theme, mỗi helper uỷ quyền một contract** | Accepted |
+| [038](ADR-038-localized-storefront-urls.md) | **URL storefront theo ngôn ngữ: `vi` không tiền tố, `en` dưới `/en` với đường dẫn + slug tiếng Anh, hreflang** | Accepted |
 | [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 

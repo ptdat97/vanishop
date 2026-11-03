@@ -53,6 +53,7 @@
 | Tra extension point / hook public | [extension-point-catalog](04-extension/extension-point-catalog.md), `php artisan vani:plugin:hooks` |
 | So với hệ tham chiếu VaniCommerce: học gì, giữ gì | [reference-comparison](02-architecture/reference-comparison.md) (đọc lưu ý clean-room trước) |
 | Chuyển một plugin từ `VaniCommerce/plugins/` sang | [vanicommerce-plugin-migration](05-plugin/vanicommerce-plugin-migration.md) (đặc tả → viết lại) |
+| Bổ sung tính năng còn thiếu so với hệ tham chiếu v3, theo từng module; helper `vani_*` | [reference-parity-refactor](20-roadmap/reference-parity-refactor.md) (đặc tả + kế hoạch R0–R4) |
 
 ## Cấu trúc
 
