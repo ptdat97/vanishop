@@ -95,6 +95,18 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 | CSP | **Chưa bật**: layout có `<style>` token theme và JSON-LD inline, Inertia/Vite. Bước tiếp: `Content-Security-Policy-Report-Only` với nonce cho script/style inline, theo dõi một thời gian rồi chuyển sang chặn |
 | Pentest bên thứ ba | Chưa — cần trước go-live (go-live gate) |
 
+### 5.2 IP client và host an toàn (R1-1, 2026-11-03)
+
+| Kiểm soát | Thực hiện |
+|---|---|
+| **IP client** | Mọi nơi cần IP (rate limit, audit, OTP, allowlist Admin, cảnh báo đăng nhập IP mới, allowlist Integration client, log webhook) chỉ dùng `$request->ip()`. Không đọc trực tiếp `CF-Connecting-IP`, `X-Forwarded-For`, `X-Real-IP`, `True-Client-IP` hay `$_SERVER` — khách tự đặt được. |
+| Proxy tin cậy | `VANI_TRUSTED_PROXIES` (IP/CIDR phân tách dấu phẩy, hoặc `*` khi app chỉ nhận traffic qua LB) → `TrustProxies::at()` trong `AppServiceProvider`. **Trống = không tin proxy nào**: `X-Forwarded-*` bị bỏ qua, IP là IP kết nối. Chỉ header chuẩn `X-Forwarded-*` được dùng; CDN (Cloudflare…) phải chuyển IP khách vào `X-Forwarded-For` và IP của CDN/LB phải nằm trong danh sách. `vani:security:check` cảnh báo khi biến trống. |
+| **Host an toàn** | Ngoài môi trường `local`, `AppServiceProvider::useAppUrlOrigin()` gọi `URL::useOrigin(APP_URL)` + `URL::forceScheme()` cho **mọi** request: link trong email/thông báo, `robots.txt`, `sitemap.xml` (có cache), return URL gửi cổng thanh toán, link xem trước có chữ ký, canonical/JSON-LD và HTML cache đều sinh từ `APP_URL`, không từ header `Host`/`X-Forwarded-Host` — chặn host header injection và đầu độc cache. |
+| Vì sao không dùng `TrustHosts` | Chặn request sai `Host` bằng lỗi 400 cũng làm hỏng health check của LB gọi theo IP và cần danh sách host riêng; ép origin cho URL sinh ra đã đủ cho mục tiêu (không link nào mang host lạ) và đơn giản hơn. Có thể bật thêm ở tầng web server/LB nếu cần. |
+| Dev | Ở `local` không ép origin để truy cập bằng host khác `APP_URL` (artisan serve, Herd, laragon) không vỡ asset. Staging/production phải đặt `APP_URL` đúng domain công khai (link ký chỉ hợp lệ khi request đến đúng host đó). |
+
+Test: `tests/Feature/Security/SafeHostAndClientIpTest.php`, `tests/Feature/TrustedProxiesTest.php`.
+
 ## 6. Thanh toán
 
 - **Không** lưu/không đi qua server dữ liệu thẻ → phạm vi PCI-DSS SAQ-A (redirect/hosted fields của cổng).

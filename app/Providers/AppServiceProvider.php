@@ -12,6 +12,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Horizon\Horizon;
 use Livewire\Livewire;
@@ -44,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(PermissionRegistry $permissions): void
     {
         self::trustProxies((string) config('vanishop.trusted_proxies'));
+        self::useAppUrlOrigin((string) config('app.url'), (string) $this->app->environment());
         // Dashboard vận hành (Horizon, Pulse — ADR-032): chỉ nhân viên có quyền system.monitor.
         $permissions->register('system.monitor', 'Xem dashboard vận hành (queue, hiệu năng)');
         Gate::define('viewPulse', fn ($user = null): bool => $user !== null && Gate::forUser($user)->allows('system.monitor'));
@@ -79,5 +81,23 @@ class AppServiceProvider extends ServiceProvider
         if ($setting !== '') {
             TrustProxies::at($setting === '*' ? '*' : array_values(array_filter(array_map('trim', explode(',', $setting)))));
         }
+    }
+
+    /**
+     * Host an toàn (reference-parity §3.1-4): URL tuyệt đối (email, sitemap/robots, return URL gửi cổng thanh toán,
+     * link ký, canonical/JSON-LD, HTML cache) chỉ sinh từ `APP_URL` — không từ header `Host`/`X-Forwarded-Host` của
+     * request, tránh host header injection và đầu độc cache. Bỏ qua ở `local` để dev truy cập bằng host khác
+     * `APP_URL` (artisan serve, Herd, laragon) không vỡ asset; `APP_URL` không phải http(s) thì giữ mặc định.
+     */
+    public static function useAppUrlOrigin(string $appUrl, string $environment): void
+    {
+        $appUrl = rtrim(trim($appUrl), '/');
+        $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+        if ($environment === 'local' || ! in_array($scheme, ['http', 'https'], true)) {
+            return;
+        }
+
+        URL::useOrigin($appUrl);
+        URL::forceScheme($scheme);
     }
 }
