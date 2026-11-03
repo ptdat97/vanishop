@@ -8,6 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -18,6 +19,7 @@ use Modules\Extension\Application\Admin\Reports;
 use Modules\Extension\Application\Hooks\CallerPlugin;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
+use Modules\Extension\Application\Hooks\Points\EventHooks;
 use Modules\Extension\Application\Hooks\Points\HookedInertiaFactory;
 use Modules\Extension\Application\Hooks\Points\ResponseHooks;
 use Modules\Extension\Application\Hooks\Points\ViewHooks;
@@ -129,6 +131,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $router->aliasMiddleware('vani.plugin-active', EnsurePluginActive::class);
         $router->aliasMiddleware('vani.response-hooks', ResponseHooks::class);
         View::composer('theme::*', ViewHooks::class);
+        Event::listen(EventHooks::PATTERN, [EventHooks::class, 'handle']);
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:plugin:health')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command('vani:plugin:finish-draining')->everyFiveMinutes()->withoutOverlapping()->onOneServer();

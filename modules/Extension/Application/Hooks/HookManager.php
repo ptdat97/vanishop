@@ -92,7 +92,7 @@ final class HookManager
                 $result = $callback($value, ...$args);
             } catch (Throwable $exception) {
                 // Điểm đọc/hiển thị (on_error: skip): bỏ listener lỗi thay vì làm hỏng trang/API.
-                if (($this->registry->get($name)?->onError ?? 'fail') !== 'skip') {
+                if (! $this->skipsErrors($name)) {
                     throw $exception;
                 }
                 report($exception);
@@ -116,9 +116,20 @@ final class HookManager
 
     public function onAction(string $name, callable $callback, int $priority = 10, ?string $pluginId = null): void
     {
-        $this->listen($name, $pluginId, $priority, function (mixed ...$args) use ($callback, $pluginId): void {
-            if ($this->isActive($pluginId)) {
+        $this->listen($name, $pluginId, $priority, function (mixed ...$args) use ($name, $callback, $pluginId): void {
+            if (! $this->isActive($pluginId)) {
+                return;
+            }
+
+            try {
                 $callback(...$args);
+            } catch (Throwable $exception) {
+                // Điểm on_error: skip (vd. vani.event.*): listener lỗi không làm hỏng luồng đã commit.
+                if (! $this->skipsErrors($name)) {
+                    throw $exception;
+                }
+                report($exception);
+                Log::warning('Action lỗi, bỏ qua listener.', ['hook' => $name, 'plugin' => $pluginId]);
             }
         });
     }
@@ -236,6 +247,16 @@ final class HookManager
             is_object($input) => $output instanceof $input,
             default => get_debug_type($input) === get_debug_type($output),
         };
+    }
+
+    /**
+     * Hook khai báo `on_error: skip` (điểm đọc/hiển thị, vani.event.*): lỗi listener bị bỏ qua thay vì làm hỏng luồng.
+     */
+    private function skipsErrors(string $name): bool
+    {
+        $definition = $this->registry->get($name);
+
+        return $definition !== null && $definition->onError === 'skip';
     }
 
     private function isActive(?string $pluginId): bool

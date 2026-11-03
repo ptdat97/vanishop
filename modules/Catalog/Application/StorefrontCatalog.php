@@ -57,20 +57,20 @@ final class StorefrontCatalog implements CatalogReader
 
     public function brands(): array
     {
-        return Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
-            ->map(fn (Brand $brand): array => $this->brandView($brand))->all();
+        return hook_filter('vani.service.catalog.brands', Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
+            ->map(fn (Brand $brand): array => $this->brandView($brand))->all());
     }
 
     public function brand(string $slug): ?array
     {
         $brand = Brand::query()->where('slug', $slug)->where('status', Brand::ACTIVE)->first();
 
-        return $brand === null ? null : [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description];
+        return $brand === null ? null : hook_filter('vani.service.catalog.brand', [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description], $slug);
     }
 
     public function productsByIds(array $styleIds, string $locale, int $now): array
     {
-        return $this->products->byIds($styleIds, $locale, $now);
+        return hook_filter('vani.service.catalog.products_by_ids', $this->products->byIds($styleIds, $locale, $now), $locale);
     }
 
     public function productDetail(string $slug, string $locale, int $now): ?array

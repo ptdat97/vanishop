@@ -359,7 +359,7 @@ final class ReturnService implements Returns
         $orderLines = collect($this->orders->lines($return->order_id))->keyBy('id');
         $exchangeVariants = $return->resolution === 'exchange' ? $this->variants->find($return->lines()->pluck('exchange_variant_id')->filter()->unique()->values()->all()) : [];
 
-        return new ReturnView(
+        return hook_filter('vani.service.returns.view', new ReturnView(
             id: $return->id,
             publicId: $return->public_id,
             number: $return->number,
@@ -385,7 +385,7 @@ final class ReturnService implements Returns
             lockVersion: $return->lock_version,
             resolution: (string) $return->resolution,
             replacementOrderId: $return->replacement_order_id,
-        );
+        ), $return);
     }
 
     private function move(ReturnRequest $return, ReturnStatus $to, ?string $note, string $source): void

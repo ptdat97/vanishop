@@ -12,6 +12,14 @@ return [
         'args' => [],
         'description' => 'Thêm card vào trang tổng quan Admin. Listener trả về array{title: string, body: string}.',
     ],
+    'vani.event.*' => [
+        'type' => 'action',
+        'visibility' => 'public',
+        'on_error' => 'skip',
+        'since' => '0.3.48',
+        'args' => ['event' => 'object'],
+        'description' => 'Điểm tự động cho MỌI domain event Core (Modules\\<Module>\\Events\\<Event>): `vani.event.<module>.<event>` viết snake_case (OrderPlaced → vani.event.ordering.order_placed), tham số là đối tượng event. Chạy sau commit, đồng bộ trong request: việc chậm/gọi mạng đẩy vào queue. Lỗi listener bị bỏ qua.',
+    ],
     'vani.admin.page.*' => [
         'type' => 'filter',
         'visibility' => 'public',

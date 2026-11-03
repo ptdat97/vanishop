@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.48 — 2026-11-03
+
+Chỉ thêm. Hook hoá đợt 2 ([ADR-036](../19-adr/ADR-036-service-result-hooks.md)).
+
+### Thêm
+- Điểm tự động `vani.event.*`: mọi domain event Core (`Modules\*\Events\*`) thành hook action `vani.event.<module>.<event>`, tham số là đối tượng event, lỗi listener bị bỏ qua.
+- Hook filter `vani.service.catalog.products_by_ids`, `vani.service.catalog.brands`, `vani.service.catalog.brand`, `vani.service.payment.view`, `vani.service.returns.view`.
+
+### Sửa
+- Hook kiểu action khai báo `on_error: skip` giờ bỏ qua listener lỗi (trước: chỉ filter áp dụng).
+
 ## 0.3.47 — 2026-11-03
 
 Chỉ thêm. Hook tại kết quả service theo phong cách BeikeShop ([ADR-036](../19-adr/ADR-036-service-result-hooks.md), [catalog §4.2](extension-point-catalog.md)).

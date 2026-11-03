@@ -180,11 +180,6 @@ parameters:
 			count: 1
 			path: modules/Customer/Http/Controllers/Api/AuthController.php
 
-		-
-			message: '#^Using nullsafe property access "\?\-\>onError" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: modules/Extension/Application/Hooks/HookManager.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>last_error" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

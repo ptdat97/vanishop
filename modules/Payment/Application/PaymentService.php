@@ -577,7 +577,7 @@ final class PaymentService implements Payments
         $order = $this->orders->find($payment->order_id);
         $action = $payment->meta['action'] ?? null;
 
-        return new PaymentView(
+        return hook_filter('vani.service.payment.view', new PaymentView(
             publicId: $payment->public_id, gatewayCode: $payment->gateway_code, status: $payment->status->value, amount: $payment->amount,
             currencyCode: $payment->currency_code, orderPublicId: $order->publicId ?? '', orderNumber: $order->number ?? '',
             expiresAt: $payment->expires_at?->toIso8601String(),
@@ -585,6 +585,6 @@ final class PaymentService implements Payments
                 ? new PaymentInitiation((string) $action['type'], $action['url'] ?? null, $action['qr'] ?? null, (array) ($action['instructions'] ?? []))
                 : null,
             actionError: $actionError,
-        );
+        ), $payment);
     }
 }

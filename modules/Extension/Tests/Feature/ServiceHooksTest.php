@@ -7,7 +7,9 @@ use Modules\Checkout\Contracts\Data\TotalsLine;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Hooks\HookRegistry;
+use Modules\Extension\Application\Hooks\Points\EventHooks;
 use Modules\Extension\Domain\Hooks\HookNotDeclared;
+use Modules\Ordering\Events\OrderPlaced;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Shared\Domain\Money\Money;
@@ -89,4 +91,27 @@ it('vani.service.catalog.product_detail: listener lỗi bị bỏ (on_error skip
     $detail = app(CatalogReader::class)->productDetail($this->s->style->slug, 'vi', now()->getTimestamp());
 
     expect($detail['vani.cod'])->toBe(['badge' => 'Mới']);
+});
+
+it('vani.service.catalog.brands: thêm khoá vào thương hiệu trên Storefront API', function () {
+    app(HookManager::class)->onFilter('vani.service.catalog.brands', fn (array $brands): array => array_map(fn (array $brand): array => [...$brand, 'vani.cod' => true], $brands), 10, 'vani.cod');
+
+    expect(app(CatalogReader::class)->brands()[0])->toHaveKey('vani.cod');
+});
+
+it('vani.event.*: mọi domain event Core thành hook action; listener lỗi bị bỏ, đơn vẫn đặt được', function () {
+    expect(EventHooks::hookName(OrderPlaced::class))->toBe('vani.event.ordering.order_placed')
+        ->and(EventHooks::hookName('App\Events\Something'))->toBeNull();
+
+    $seen = [];
+    app(HookManager::class)->onAction('vani.event.ordering.order_placed', function (OrderPlaced $event) use (&$seen): void {
+        $seen[] = $event->number;
+    }, 10, 'vani.cod');
+    app(HookManager::class)->onAction('vani.event.ordering.order_placed', fn (): never => throw new RuntimeException('plugin hỏng'), 20, 'vani.cod');
+    app(HookManager::class)->onAction('vani.event.ordering.order_placed', fn () => $seen[] = 'off', 30, 'vani.not-enabled');
+
+    $total = ($this->quote)()->json('data.total.amount');
+    $this->postJson("/api/storefront/v1/checkout/{$this->cartId}/orders", C::orderPayload(['expected_total' => $total]), [...$this->headers, 'Idempotency-Key' => 'event-hook-1'])->assertCreated();
+
+    expect($seen)->toBe([Order::query()->sole()->number]);
 });

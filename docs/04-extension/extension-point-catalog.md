@@ -159,6 +159,10 @@ Core gọi `hook_filter('vani.service.<module>.<kết quả>', $value, ...$args)
 | `vani.service.customer.profile_attributes` | `array` | customerId | fail | Dữ liệu khách tự sửa hồ sơ trước khi lưu |
 | `vani.service.notification.request` | `NotificationRequest` | — | fail | Yêu cầu gửi thông báo trước khi chọn kênh/mẫu |
 | `vani.service.fulfillment.shipment_data` | `ShipmentData` | `Shipment` | fail | Dữ liệu gửi hãng vận chuyển (không đổi `codAmount`) |
+| `vani.service.catalog.products_by_ids` | `list<array>` | locale | skip | Thẻ sản phẩm theo id (bán chạy, đã xem) — 0.3.48 |
+| `vani.service.catalog.brands` / `catalog.brand` | `list<array>` / `array` | — / slug | skip | Danh sách / trang thương hiệu — 0.3.48 |
+| `vani.service.payment.view` | `PaymentView` | `Payment` | skip | Hướng dẫn thanh toán hiển thị cho khách (không đổi tiền/trạng thái) — 0.3.48 |
+| `vani.service.returns.view` | `ReturnView` | `ReturnRequest` | skip | Yêu cầu đổi/trả hiển thị cho Admin/khách — 0.3.48 |
 
 ```php
 // Plugin: giảm theo điểm thưởng (tương đương "thêm một dòng total" ở hệ tham chiếu)
@@ -167,6 +171,8 @@ add_hook_filter('vani.service.checkout.totals', function (TotalsContext $context
         ->withLines(/* phân bổ 50.000đ vào giảm giá các dòng */);
 });
 ```
+
+**Domain event → hook action (0.3.48):** mọi event `Modules\<Module>\Events\<Event>` tự thành action `vani.event.<module>.<event>` (snake_case), tham số là đối tượng event — `add_hook_action('vani.event.ordering.order_placed', fn (OrderPlaced $e) => …)`. Event Core phát **sau commit**; listener chạy đồng bộ trong request nên việc chậm/gọi mạng đẩy vào queue; lỗi listener bị bỏ qua (`on_error: skip`). Danh sách event: §3.
 
 Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân bổ giảm giá về dòng (`TotalsLine::withDiscount`) là bắt buộc: `grandTotal` = Σ dòng + phí giao; `Adjustment` là bản ghi truy vết (lưu `order_adjustments`), không tự trừ tiền.
 
