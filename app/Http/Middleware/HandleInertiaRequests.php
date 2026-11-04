@@ -70,6 +70,7 @@ final class HandleInertiaRequests extends Middleware
             // media: Thư viện ảnh cho modal chọn ảnh (MediaPicker); null khi nhân viên không có quyền media.view.
             'urls' => fn (): array => $staff instanceof StaffUser ? [
                 'logout' => route('admin.logout'),
+                'profile' => route('admin.profile.edit'),
                 'media' => Gate::forUser($staff)->allows('media.view') ? route('admin.media.index') : null,
             ] : [],
             'flash' => fn (): array => ['success' => $request->session()->get('success')],

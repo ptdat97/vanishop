@@ -61,6 +61,22 @@ final class StaffPasswords
     }
 
     /**
+     * Link đặt mật khẩu cho CLI (`vani:staff:reset-password`, §3.3-5): nhân viên đang hoạt động → link đặt lại; chưa nhận
+     * lời mời → link lời mời mới. Không gửi email, không in mật khẩu. Nhân viên bị khoá → null.
+     */
+    public function issueLink(StaffUser $staff): ?string
+    {
+        if ($staff->status === StaffUser::STATUS_LOCKED) {
+            return null;
+        }
+        $invited = $staff->status === StaffUser::STATUS_INVITED;
+        $token = $this->broker($invited ? self::INVITE : self::RESET)->createToken($staff);
+        $this->audit->record('identity.staff.password_link_issued', 'staff_user', $staff->id, ['via' => 'console', 'kind' => $invited ? 'invite' : 'reset']);
+
+        return route($invited ? 'admin.invitation.show' : 'admin.password.reset', ['token' => $token, 'email' => $staff->email]);
+    }
+
+    /**
      * Đặt mật khẩu bằng link. Lời mời → nhân viên chuyển sang `active`. Sai/hết hạn token, sai trạng thái → false.
      */
     public function complete(string $broker, string $email, string $token, string $password): bool

@@ -21,4 +21,7 @@ return [
     'reset_body' => "Chào :name,\n\nCó yêu cầu đặt lại mật khẩu quản trị cho tài khoản của bạn. Mở link sau trong :minutes phút:\n:url\n\nNếu không phải bạn yêu cầu, hãy bỏ qua email này — mật khẩu không đổi.",
     'invite_subject' => 'Lời mời quản trị :store',
     'invite_body' => "Chào :name,\n\nBạn được mời làm nhân viên quản trị :store. Đặt mật khẩu để bắt đầu (link có hiệu lực :hours giờ):\n:url",
+    'profile_saved' => 'Đã lưu hồ sơ.',
+    'password_changed' => 'Đã đổi mật khẩu.',
+    'current_password_wrong' => 'Mật khẩu hiện tại không đúng.',
 ];

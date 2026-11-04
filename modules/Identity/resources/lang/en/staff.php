@@ -21,4 +21,7 @@ return [
     'reset_body' => "Hi :name,\n\nA password reset was requested for your admin account. Open this link within :minutes minutes:\n:url\n\nIf you did not request it, ignore this email — your password stays the same.",
     'invite_subject' => ':store admin invitation',
     'invite_body' => "Hi :name,\n\nYou have been invited to manage :store. Set your password to get started (link valid for :hours hours):\n:url",
+    'profile_saved' => 'Profile saved.',
+    'password_changed' => 'Password changed.',
+    'current_password_wrong' => 'The current password is incorrect.',
 ];

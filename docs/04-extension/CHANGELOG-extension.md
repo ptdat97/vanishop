@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.72 — 2026-11-05
+
+Không đổi public API. Hồ sơ nhân viên ([reference-parity §3.3-3/5](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Cột `staff_users.locale`; Admin chạy theo ngôn ngữ của nhân viên (`App::getLocale()` trong request Admin) — plugin dịch thông báo Admin bằng `__()` như thường.
+- Inertia shared `urls.profile`; lệnh `vani:staff:reset-password`.
+
 ## 0.3.71 — 2026-11-04
 
 Chỉ thêm. Bộ lọc cấu hình được + gợi ý tìm kiếm ([reference-parity §3.5-1/4](../20-roadmap/reference-parity-refactor.md)).

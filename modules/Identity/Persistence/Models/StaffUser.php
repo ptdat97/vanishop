@@ -7,6 +7,7 @@ namespace Modules\Identity\Persistence\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Carbon;
 use Modules\Identity\Persistence\Database\Factories\StaffUserFactory;
 
 /**
@@ -16,7 +17,8 @@ use Modules\Identity\Persistence\Database\Factories\StaffUserFactory;
  * @property string $name
  * @property string $email
  * @property string $status
- * @property \Illuminate\Support\Carbon|null $last_login_at
+ * @property string|null $locale ngôn ngữ Admin riêng (null = mặc định của cửa hàng)
+ * @property Carbon|null $last_login_at
  */
 final class StaffUser extends Authenticatable
 {
@@ -31,7 +33,7 @@ final class StaffUser extends Authenticatable
     /** Bị khoá bởi quản trị — không đăng nhập, không nhận link đặt lại mật khẩu. Không xoá cứng nhân viên (audit). */
     public const STATUS_LOCKED = 'locked';
 
-    protected $fillable = ['name', 'email', 'password', 'status', 'last_login_at'];
+    protected $fillable = ['name', 'email', 'password', 'status', 'locale', 'last_login_at'];
 
     protected $hidden = ['password', 'remember_token'];
 

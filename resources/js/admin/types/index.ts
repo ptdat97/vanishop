@@ -49,7 +49,7 @@ export interface SharedProps {
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
     navigationGroups: NavigationGroup[];
-    urls: { logout?: string; media?: string | null };
+    urls: { logout?: string; profile?: string; media?: string | null };
     [key: string]: unknown;
 }
 

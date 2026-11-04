@@ -13,6 +13,7 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Identity\Application\ScopedRbacAuthorizer;
 use Modules\Identity\Application\ScopeOptions;
 use Modules\Identity\Console\CreateStaffCommand;
+use Modules\Identity\Console\ResetStaffPasswordCommand;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\Authorizer;
 use Modules\Identity\Contracts\Data\ScopeRef;
@@ -65,11 +66,12 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         });
 
         $this->loadWebRoutes($this->modulePath('Http/routes/admin-auth.php'));
+        $this->loadAdminRoutes($this->modulePath('Http/routes/admin-profile.php'));
         $this->loadAdminSectionRoutes('staff', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([CreateStaffCommand::class]);
+            $this->commands([CreateStaffCommand::class, ResetStaffPasswordCommand::class]);
         }
     }
 }
