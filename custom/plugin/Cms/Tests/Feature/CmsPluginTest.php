@@ -218,3 +218,12 @@ it('trang và tin tức có bản tiếng Anh dưới /en/pages, /en/news (ADR-0
     $this->get('/en/news')->assertOk()->assertSee(url('/en/news/bo-suu-tap-thu'), false);
     expect(vani_route('storefront.p.vani-cms.page', 'gioi-thieu', 'en'))->toBe(url('/en/pages/gioi-thieu'));
 });
+
+it('nội dung CMS chỉ một ngôn ngữ: bản /en noindex, canonical về bản tiếng Việt', function () {
+    cmsPage();
+
+    $this->get('/en/pages/gioi-thieu')->assertOk()
+        ->assertSee('<meta name="robots" content="noindex,follow">', false)
+        ->assertSee('<link rel="canonical" href="'.url('/trang/gioi-thieu').'">', false);
+    $this->get('/trang/gioi-thieu')->assertDontSee('name="robots"', false);
+});

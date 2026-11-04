@@ -2,10 +2,6 @@
 
 @section('title', 'Hồ sơ')
 
-@push('head')
-    <meta name="robots" content="noindex">
-@endpush
-
 @section('content')
     <div class="grid gap-8 md:grid-cols-[12rem_1fr]">
         @include('theme::partials.account-menu')

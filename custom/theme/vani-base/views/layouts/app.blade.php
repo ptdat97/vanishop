@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@hasSection('title')@yield('title') — @endif{{ config('app.name') }}</title>
     @hasSection('description')<meta name="description" content="@yield('description')">@endif
-    @hasSection('canonical')<link rel="canonical" href="@yield('canonical')">@endif
+    @hasSection('canonical')<link rel="canonical" href="@yield('canonical')">@elseif ($seo['canonical'] ?? null)<link rel="canonical" href="{{ $seo['canonical'] }}">@endif
+    @if ($seo['robots'] ?? null)<meta name="robots" content="{{ $seo['robots'] }}">@endif
+    @foreach ($seo['hreflang'] ?? [] as $hreflang => $href)<link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">@endforeach
     <style>:root{@foreach ($themeTokens ?? [] as $token => $value)--vani-{{ $token }}:{{ $value }};@endforeach}</style>
     @vite(['custom/theme/vani-base/css/app.css', 'custom/theme/vani-base/js/app.js'])
     @stack('head')
@@ -45,6 +47,13 @@
             </details>
             <div class="flex items-center gap-4 text-sm">
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
+                @if (count($seo['switcher'] ?? []) > 1)
+                    <nav aria-label="Ngôn ngữ" class="flex gap-1 text-xs uppercase">
+                        @foreach ($seo['switcher'] as $option)
+                            <a href="{{ $option['url'] }}" hreflang="{{ $option['locale'] }}" lang="{{ $option['locale'] }}" title="{{ $option['label'] }}" @if ($option['current']) aria-current="true" class="font-semibold" @else class="text-slate-500" @endif>{{ $option['locale'] }}</a>
+                        @endforeach
+                    </nav>
+                @endif
                 {{-- Trang cache được: luôn render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
                 <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? 'Tài khoản' : 'Đăng nhập' }}</a>
                 <a href="{{ vani_route('storefront.cart') }}">Giỏ hàng <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>

@@ -30,9 +30,11 @@ use Modules\Storefront\Application\Links\UrlLinkType;
 use Modules\Storefront\Application\Menus\MenuPresenter;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
+use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Contracts\LinkResolver;
 use Modules\Storefront\Contracts\LinkType;
+use Modules\Storefront\Contracts\PageSeo;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
@@ -59,6 +61,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         // Không chia sẻ instance: ghi nhớ phân giải link/menu chỉ trong một lượt render (một instance), không sống qua
         // request — kể cả khi tiến trình phục vụ nhiều request (Octane, queue) — để đổi slug thấy ngay.
         $this->app->bind(LinkResolver::class, LinkRegistry::class);
+        $this->app->bind(PageSeo::class, PageAlternates::class);
         $this->app->singleton(Themes::class, fn ($app): Themes => new Themes(
             (string) config('vanishop.storefront.themes_path'),
             $app->make(Settings::class),
@@ -77,7 +80,10 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
         $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
         $router->aliasMiddleware('vani.prices-visible', RequireVisiblePrices::class);
-        View::composer('theme::layouts.app', fn ($view) => $view->with('menus', $this->app->make(MenuPresenter::class)));
+        View::composer('theme::layouts.app', fn ($view) => $view->with([
+            'menus' => $this->app->make(MenuPresenter::class),
+            'seo' => $this->app->make(PageAlternates::class)->tags(),
+        ]));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 

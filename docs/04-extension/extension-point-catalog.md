@@ -73,6 +73,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
+| `PageSeo` | Trang storefront khai báo URL tương ứng theo ngôn ngữ + ngôn ngữ đã dịch (`alternates`), hoặc `noindex()`; layout sinh canonical/hreflang/robots/nút chuyển ngôn ngữ. **Implemented** (0.3.61, ADR-038) | Storefront |
 | `LinkResolver` | Phân giải `LinkTarget` → `ResolvedLink {url, label, exists}` theo ngôn ngữ, theo lô; loại đang có, tìm đối tượng. **Implemented** (0.3.58) | Storefront |
 | `CatalogLookup` | Đối tượng catalog đang hiển thị theo id (`category`, `collection`, `brand`, `product`), một truy vấn mỗi loại; tìm cho Admin. **Implemented** (0.3.58) | Catalog |
 | `CustomerAccounts` | Khách tự quản lý hồ sơ, mật khẩu, sổ địa chỉ, xoá tài khoản (`deletionBlockers`, `requestDeletionOtp`, `deleteAccount` — 0.3.57) (bề mặt ngoài Storefront API, vd. native storefront). **Implemented** (0.3.13) | Customer |

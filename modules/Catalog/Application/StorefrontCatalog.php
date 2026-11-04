@@ -159,6 +159,7 @@ final class StorefrontCatalog implements CatalogReader
             'id' => $node['id'],
             'slug' => $node['slug'],
             'slugs' => $node['slugs'],
+            'locales' => $node['locales'],
             'name' => $node['name'],
             'description' => $node['description'],
             'image_url' => $node['image_url'],

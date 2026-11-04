@@ -2,10 +2,6 @@
 
 @section('title', 'Đăng nhập')
 
-@push('head')
-    <meta name="robots" content="noindex">
-@endpush
-
 @section('content')
     <div class="mx-auto max-w-sm">
         <h1 class="mb-6 text-2xl font-semibold">Đăng nhập</h1>

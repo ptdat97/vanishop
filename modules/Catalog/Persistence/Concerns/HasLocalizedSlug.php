@@ -38,6 +38,19 @@ trait HasLocalizedSlug
     }
 
     /**
+     * Ngôn ngữ đã có bản dịch (bản dịch có tên không rỗng) — trang ngôn ngữ chưa dịch không được index (ADR-038 §5).
+     *
+     * @return list<string>
+     */
+    public function translatedLocales(): array
+    {
+        return array_values(array_intersect(
+            StoreLocale::supported(),
+            $this->translations->filter(fn ($translation): bool => trim((string) $translation->getAttribute('name')) !== '')->pluck('locale')->all(),
+        ));
+    }
+
+    /**
      * Tìm theo slug ở `$locale`: ngôn ngữ mặc định chỉ khớp slug gốc; ngôn ngữ khác khớp slug của bản dịch hoặc slug
      * gốc (link cũ/không có slug riêng — nơi gọi chuyển hướng 301 sang slug riêng nếu có).
      *

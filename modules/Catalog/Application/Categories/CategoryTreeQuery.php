@@ -76,6 +76,7 @@ final class CategoryTreeQuery
             'parent_id' => $category->parent_id,
             'slug' => $locale === null ? $category->slug : $category->slugFor($locale),
             'slugs' => $category->slugs(),
+            'locales' => $category->translatedLocales(),
             'name' => $category->translate('name', $locale),
             'description' => $category->translate('description', $locale),
             'status' => $category->status->value,

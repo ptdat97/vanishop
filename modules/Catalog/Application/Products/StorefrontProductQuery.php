@@ -196,6 +196,8 @@ final class StorefrontProductQuery
         return [
             'id' => $style->id,
             'slug' => $style->slugFor($locale),
+            // Ngôn ngữ đã dịch (ADR-038): sitemap, hreflang, noindex cho trang chưa dịch.
+            'locales' => $style->translatedLocales(),
             'style_code' => $style->style_code,
             'name' => $style->translate('name', $locale),
             'brand' => $style->brand === null ? null : ['id' => $style->brand->id, 'slug' => $style->brand->slug, 'name' => $style->brand->name],

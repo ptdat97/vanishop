@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.61 — 2026-11-04
+
+SEO theo ngôn ngữ (ADR-038 mục 5–7).
+
+### Thêm
+- `Storefront\Contracts\PageSeo` (`alternates(urls, translated)`, `noindex()`); layout theme nhận `$seo` (`canonical`, `robots`, `hreflang`, `switcher`).
+- Dữ liệu catalog có `locales` (ngôn ngữ đã dịch) trên sản phẩm và nút danh mục.
+
+### Đổi
+- `vani-base`: canonical/robots/hreflang do layout sinh — bỏ `@section('canonical')` ở trang sản phẩm, danh mục, thương hiệu và `<meta name="robots">` tĩnh ở trang giao dịch; thêm nút chuyển ngôn ngữ ở header. Theme riêng đặt `@section('canonical')` vẫn được ưu tiên.
+- `sitemap.xml` liệt kê URL mọi bản đã dịch, kèm `xhtml:link`; khoá cache `vani:sitemap` (không theo locale).
+- `vani.cms`: trang/bài khai báo một ngôn ngữ (bản `/en` `noindex`, canonical về bản tiếng Việt).
+
 ## 0.3.60 — 2026-11-04
 
 Slug theo ngôn ngữ (ADR-038 mục 4).

@@ -1,7 +1,7 @@
 # ADR-038 — URL storefront theo ngôn ngữ: tiếng Việt không tiền tố, tiếng Anh dưới `/en`
 
 - Trạng thái: Accepted · Ngày: 2026-11-03 · Người quyết định: Owner
-- Triển khai: **Partially Implemented** — ✅ mục 1–3, 9 (định tuyến, ngôn ngữ từ URL, `LocalizedUrls`/`vani_route`, tiền tố plugin theo ngôn ngữ — Core 0.3.59; bảng đường dẫn ở `config/vanishop.php` `locale.paths` thay vì một class, vì arch test chặn mã ngôn ngữ trong `modules/`); ✅ mục 4 slug theo ngôn ngữ cho sản phẩm, danh mục, bộ sưu tập (Core 0.3.60; slug của `vani.cms` theo ngôn ngữ: chưa — nội dung plugin chưa đa ngôn ngữ); mục 5–8, 10 làm tiếp.
+- Triển khai: **Partially Implemented** — ✅ mục 1–3, 9 (định tuyến, ngôn ngữ từ URL, `LocalizedUrls`/`vani_route`, tiền tố plugin theo ngôn ngữ — Core 0.3.59; bảng đường dẫn ở `config/vanishop.php` `locale.paths` thay vì một class, vì arch test chặn mã ngôn ngữ trong `modules/`); ✅ mục 4 slug theo ngôn ngữ cho sản phẩm, danh mục, bộ sưu tập (Core 0.3.60; slug của `vani.cms` theo ngôn ngữ: chưa — nội dung plugin chưa đa ngôn ngữ); ✅ mục 5–7 (noindex bản chưa dịch, canonical/hreflang, sitemap đa ngôn ngữ, nút chuyển ngôn ngữ — contract `Storefront\Contracts\PageSeo`, Core 0.3.61; JSON-LD theo ngôn ngữ của trang vì dữ liệu đã theo locale); mục 8, 10 làm tiếp.
 - Liên quan: [ADR-025](ADR-025-native-storefront-ssr-slots.md), [ADR-037](ADR-037-vani-helpers.md), [reference-parity-refactor §3.16-7](../20-roadmap/reference-parity-refactor.md), [storefront](../14-storefront/storefront.md), [vietnam-localization](../03-domains/vietnam-localization.md).
 
 ## Context

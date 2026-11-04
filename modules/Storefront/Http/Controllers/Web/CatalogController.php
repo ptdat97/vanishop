@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\ProductViews;
+use Modules\Storefront\Application\Seo\PageAlternates;
+use Modules\Storefront\Contracts\PageSeo;
 use Modules\Storefront\Http\Requests\ProductListRequest;
 
 /**
@@ -22,13 +24,14 @@ final class CatalogController
         private readonly ProductViews $products,
     ) {}
 
-    public function category(ProductListRequest $request, string $slug): View|RedirectResponse
+    public function category(ProductListRequest $request, string $slug, PageSeo $seo): View|RedirectResponse
     {
         $category = $this->catalog->category($slug, App::getLocale());
         abort_if($category === null, 404);
         if ($category['slug'] !== $slug) {
             return redirect()->to(LocalizedUrls::route('storefront.category', [$category['slug'], ...$request->query()]), 301);
         }
+        $seo->alternates(PageAlternates::forSlugs('storefront.category', $category['slugs']), $category['locales']);
         $request->merge(['category' => $slug]);
 
         return view('theme::pages.category', ['category' => $category, ...$this->listing($request)]);

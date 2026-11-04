@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Storefront\Contracts\PageSeo;
 use Plugin\Cms\Infrastructure\ContentPresenter;
 use Plugin\Cms\Persistence\Content;
 use Plugin\Cms\Persistence\Page;
@@ -21,11 +22,12 @@ final class StorefrontController
 {
     private const PER_PAGE = 12;
 
-    public function __construct(private readonly ContentPresenter $presenter) {}
+    public function __construct(private readonly ContentPresenter $presenter, private readonly PageSeo $seo) {}
 
     public function page(Request $request, string $slug): View
     {
         $page = $this->visible(Page::query(), $request, $slug);
+        $this->singleLanguage('storefront.p.vani-cms.page', $slug);
 
         return view('vani-cms::pages.page', ['page' => $this->presenter->page($page), 'preview' => ! $page->isPublic()]);
     }
@@ -43,6 +45,7 @@ final class StorefrontController
     public function post(Request $request, string $slug): View
     {
         $post = $this->visible(Post::query(), $request, $slug);
+        $this->singleLanguage('storefront.p.vani-cms.post', $slug);
 
         return view('vani-cms::pages.post', ['post' => $this->presenter->post($post), 'preview' => ! $post->isPublic()]);
     }
@@ -83,5 +86,18 @@ final class StorefrontController
         abort_if($item === null || (! $item->isPublic() && ! $request->hasValidSignature()), 404);
 
         return $item;
+    }
+
+    /**
+     * Nội dung CMS chưa đa ngôn ngữ: chỉ bản ngôn ngữ mặc định được index; bản /en hiện cùng nội dung với `noindex` và
+     * canonical về bản mặc định (ADR-038 §5).
+     */
+    private function singleLanguage(string $route, string $slug): void
+    {
+        $urls = [];
+        foreach ((array) config('vanishop.locale.supported', []) as $locale) {
+            $urls[(string) $locale] = vani_route($route, $slug, (string) $locale);
+        }
+        $this->seo->alternates($urls, [(string) config('vanishop.locale.default')]);
     }
 }

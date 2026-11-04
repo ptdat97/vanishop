@@ -2,7 +2,6 @@
 
 @section('title', $page['meta_title'])
 @section('description', $page['meta_description'])
-@section('canonical', $page['url'])
 
 @if ($preview)
     @push('head')

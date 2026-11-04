@@ -2,7 +2,6 @@
 
 @section('title', $brand['meta_title'] ?? $brand['name'])
 @section('description', $brand['meta_description'] ?? '')
-@section('canonical', vani_route('storefront.brand', $brand['slug']))
 
 @section('content')
     <header class="mb-6 flex items-center gap-4">

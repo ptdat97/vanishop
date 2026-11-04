@@ -2,7 +2,6 @@
 
 @section('title', $product['meta_title'] ?? $product['name'])
 @section('description', $product['meta_description'] ?? '')
-@section('canonical', vani_route('storefront.product', $product['slug']))
 
 @push('head')
     <script type="application/ld+json">{!! \Modules\Storefront\View\StructuredData::product($product) !!}</script>
