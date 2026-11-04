@@ -44,7 +44,7 @@ final class PageAlternates implements PageSeo
         $default = StoreLocale::default();
         $urls = $declared['urls'] ?? $this->fromRoute();
         $translated = $declared['translated'] ?? array_keys($urls);
-        $public = (bool) $this->request->attributes->get(PublicPageCache::ATTRIBUTE) && ! ($declared['noindex'] ?? false);
+        $public = (bool) $this->request->attributes->get(PublicPageCache::PUBLIC_PAGE) && ! ($declared['noindex'] ?? false);
 
         $switcher = [];
         foreach (StoreLocale::options() as $option) {

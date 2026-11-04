@@ -66,11 +66,11 @@
                         @endforeach
                     </nav>
                 @endif
-                {{-- Trang cache được: luôn render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
+                {{-- Không CDN: render sẵn theo khách. Trang cache CDN: render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
                 <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}</a>
                 {{-- Giỏ mini (§3.8): JS điền vài dòng gần nhất + tạm tính từ /_vani/phien; không JS vẫn là link tới giỏ. --}}
                 <div class="group relative">
-                    <a href="{{ vani_route('storefront.cart') }}">{{ __('Giỏ hàng') }} <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
+                    <a href="{{ vani_route('storefront.cart') }}">{{ __('Giỏ hàng') }} <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif class="rounded-full bg-primary px-1.5 text-xs text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span></a>
                     <div data-vani-mini-cart hidden class="invisible absolute right-0 z-20 mt-2 w-72 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-3 text-sm shadow-lg group-hover:visible group-focus-within:visible">
                         <ul class="divide-y divide-slate-100" data-vani-mini-cart-lines></ul>
                         <p class="mt-2 flex justify-between font-medium"><span>{{ __('Tạm tính') }}</span><span data-vani-mini-cart-subtotal></span></p>
@@ -141,6 +141,10 @@
     {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
     @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên')])
     <script type="application/json" data-vani-i18n>@json($jsStrings)</script>
+    @if ($customerState !== null)
+        {{-- Cùng dữ liệu với /_vani/phien (trừ flash — đã render ở trên) để JS dựng giỏ mini, giá thành viên như trang cache CDN. --}}
+        <script type="application/json" data-vani-session-state>@json($customerState)</script>
+    @endif
     <x-vani::hook-slot name="vani.storefront.layout.body_end" />
 </body>
 </html>

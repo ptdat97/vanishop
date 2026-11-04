@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Storefront;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\App;
@@ -17,10 +18,12 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Http\RateLimits;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\CustomerSessionState;
 use Modules\Storefront\Application\Links\BrandLinkType;
 use Modules\Storefront\Application\Links\CategoryLinkType;
 use Modules\Storefront\Application\Links\CollectionLinkType;
@@ -39,6 +42,7 @@ use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\PageSeo;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
+use Modules\Storefront\Http\LocalizedPaths;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
 use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
 use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
@@ -80,6 +84,12 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
+        // Thêm vào giỏ từ trang đã cache CDN (không có token CSRF trong HTML, storefront §5), mọi ngôn ngữ. An toàn: cookie
+        // phiên SameSite=Lax nên form chéo trang không mang phiên theo — không đụng được giỏ của nạn nhân.
+        PreventRequestForgery::except(array_map(
+            fn (string $locale): string => trim(LocalizedPaths::prefix($locale).'/'.LocalizedPaths::path('cart', $locale), '/'),
+            StoreLocale::supported(),
+        ));
         $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
         $router->aliasMiddleware('vani.prices-visible', RequireVisiblePrices::class);
         View::composer('theme::layouts.app', fn ($view) => $view->with([
@@ -87,6 +97,8 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'seo' => $this->app->make(PageAlternates::class)->tags(),
             // Đầu/chân trang theo schema theme (§3.16-3): $themeSettings['footer']['copyright']…
             'themeSettings' => $this->app->make(ThemeSettings::class)->values(App::getLocale()),
+            // Không CDN (mặc định): phần riêng của khách render sẵn; có CDN thì JS lấy qua /_vani/phien (storefront §5).
+            'customerState' => request()->attributes->has(PublicPageCache::ATTRIBUTE) ? null : $this->app->make(CustomerSessionState::class)->for(request(), App::getLocale()),
         ]));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');

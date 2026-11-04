@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.67',
+    'version' => '0.3.68',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -54,10 +54,11 @@ return [
     'storefront' => [
         'themes_path' => $relativeToBase(env('VANI_THEMES_PATH', 'custom/theme')),
         'theme' => env('VANI_THEME', 'vani-base'),
-        // Trang công khai (trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm, CMS) render không phiên, CDN cache được.
-        // Phần riêng của khách (giỏ, đăng nhập, thông báo) lấy qua GET /_vani/phien (không cache).
+        // Cache CDN cho trang công khai — TUỲ CHỌN NÂNG CAO khi deploy có CDN (storefront §5). Mặc định tắt: mọi trang
+        // chạy có phiên, render sẵn phần riêng của khách. Bật: trang công khai render không phiên, CDN cache theo
+        // s-maxage, phần riêng của khách (giỏ, đăng nhập, thông báo) lấy bằng JS qua GET /_vani/phien.
         'page_cache' => [
-            'enabled' => (bool) env('VANI_PAGE_CACHE', true),
+            'enabled' => (bool) env('VANI_PAGE_CACHE', false),
             's_maxage' => (int) env('VANI_PAGE_CACHE_TTL', 300),
             'stale_while_revalidate' => 600,
         ],

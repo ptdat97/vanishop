@@ -202,11 +202,14 @@ server {
 
 `$realpath_root` (không phải `$document_root`) để PHP-FPM theo đúng release mới sau khi đổi symlink.
 
-### CDN cho trang công khai (0.3.34)
+### CDN cho trang công khai (tuỳ chọn nâng cao, 0.3.34; mặc định tắt từ 0.3.68)
 
-- Trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm, CMS trả `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600` và không `Set-Cookie`. Cấu hình CDN **tôn trọng header gốc** (không ép cache mọi thứ), khoá cache theo URL đầy đủ (gồm query cho tìm kiếm/lọc), không cache response có `Set-Cookie` hoặc `private`.
+Không có CDN thì giữ mặc định `VANI_PAGE_CACHE=false`: mọi trang chạy có phiên, render sẵn theo khách, `private, no-store` — đầy đủ chức năng, chỉ không có cache biên. Khi đặt CDN trước app: bật `VANI_PAGE_CACHE=true`, cấu hình CDN theo các mục dưới, rồi `php artisan config:cache`. Hiển thị cho khách như nhau ở hai chế độ (phần riêng của khách chuyển sang tải bằng JS qua `/_vani/phien`).
+
+
+- Khi bật: trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm, CMS trả `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600` và không `Set-Cookie`. Cấu hình CDN **tôn trọng header gốc** (không ép cache mọi thứ), khoá cache theo URL đầy đủ (gồm query cho tìm kiếm/lọc), không cache response có `Set-Cookie` hoặc `private`.
 - **Không** cache: `/_vani/*`, `/gio-hang`, `/thanh-toan`, `/don-hang/*`, `/tai-khoan/*`, `/api/*`, đường dẫn Admin. Các route này đã trả `private`/`no-store`, nhưng nên có rule loại trừ ở CDN cho chắc.
-- TTL đổi bằng `VANI_PAGE_CACHE_TTL` (giây); tắt bằng `VANI_PAGE_CACHE=false` (trang vẫn chạy không phiên, chỉ thành `private, no-store`). Giá/tồn mới hiện trên CDN sau tối đa TTL — khi đổi giá đồng loạt (sale lớn), purge ở CDN hoặc hạ TTL trước đó.
+- TTL đổi bằng `VANI_PAGE_CACHE_TTL` (giây); tắt bằng `VANI_PAGE_CACHE=false` (về chế độ có phiên; nên tắt trước khi gỡ CDN). Giá/tồn mới hiện trên CDN sau tối đa TTL — khi đổi giá đồng loạt (sale lớn), purge ở CDN hoặc hạ TTL trước đó.
 
 ## 8. Rollback
 

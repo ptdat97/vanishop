@@ -146,70 +146,84 @@ function renderMiniCart(cart) {
     box.hidden = false;
 }
 
+/**
+ * Phần riêng của khách (storefront §5): không CDN thì layout nhúng sẵn `script[data-vani-session-state]`; trang cache CDN
+ * lấy từ /_vani/phien (thêm flash + cart_change). Cùng một hàm áp dụng → hai chế độ hiển thị như nhau.
+ */
+function applySession(session) {
+    if (!session) return;
+    dispatchCartChange(session.cart_change);
+    const account = document.querySelector('[data-vani-account]');
+    if (account) {
+        account.textContent = session.account.label;
+        account.setAttribute('href', session.account.url);
+    }
+    const count = document.querySelector('[data-vani-cart-count]');
+    if (count && session.cart.count > 0) {
+        count.textContent = String(session.cart.count);
+        count.hidden = false;
+    }
+    renderMiniCart(session.cart);
+    const status = document.querySelector('[data-vani-flash="status"]');
+    if (status && session.flash?.status) {
+        status.textContent = session.flash.status;
+        status.hidden = false;
+    }
+    // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
+    const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
+    if (session.signed_in && hiddenPrices.length && session.prices_url) {
+        const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['p[]', id]));
+        fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                hiddenPrices.forEach((el) => {
+                    const price = data?.products?.[el.dataset.vaniPriceFor];
+                    if (!price) return;
+                    const span = document.createElement('span');
+                    span.className = 'font-semibold text-primary';
+                    span.textContent = price.max.amount !== price.min.amount ? `${price.min.formatted} – ${price.max.formatted}` : price.min.formatted;
+                    el.replaceWith(span);
+                });
+            })
+            .catch(() => {});
+    }
+    const memberPrice = document.querySelector('[data-vani-member-price]');
+    const variantIds = [...document.querySelectorAll('input[name="variant_id"]')].map((input) => input.value);
+    if (session.signed_in && memberPrice && variantIds.length) {
+        const query = new URLSearchParams(variantIds.map((id) => ['v[]', id]));
+        fetch(`${memberPrice.dataset.route}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                const prices = Object.values(data?.prices || {});
+                if (!prices.length) return;
+                const lowest = prices.reduce((min, price) => (price.amount < min.amount ? price : min));
+                memberPrice.textContent = t(prices.length < variantIds.length ? 'member_price_from' : 'member_price', { group: data.group ?? t('member'), price: lowest.formatted });
+                memberPrice.hidden = false;
+            })
+            .catch(() => {});
+    }
+    Object.entries(session.flash?.errors || {}).forEach(([field, message]) => {
+        const target = document.querySelector(`[data-vani-error-for="${field}"]`) || document.querySelector('[data-vani-error-for="business"]');
+        if (target && message) {
+            target.textContent = message;
+            target.hidden = false;
+        }
+    });
+}
+
+const inlineSession = document.querySelector('script[data-vani-session-state]');
+if (inlineSession) {
+    try {
+        applySession(JSON.parse(inlineSession.textContent || 'null'));
+    } catch {
+        // dữ liệu hỏng: bỏ qua
+    }
+}
+
 const sessionUrl = document.documentElement.dataset.vaniSession;
 if (sessionUrl) {
     fetch(sessionUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
         .then((response) => (response.ok ? response.json() : null))
-        .then((session) => {
-            if (!session) return;
-            dispatchCartChange(session.cart_change);
-            const account = document.querySelector('[data-vani-account]');
-            if (account) {
-                account.textContent = session.account.label;
-                account.setAttribute('href', session.account.url);
-            }
-            const count = document.querySelector('[data-vani-cart-count]');
-            if (count && session.cart.count > 0) {
-                count.textContent = String(session.cart.count);
-                count.hidden = false;
-            }
-            renderMiniCart(session.cart);
-            const status = document.querySelector('[data-vani-flash="status"]');
-            if (status && session.flash.status) {
-                status.textContent = session.flash.status;
-                status.hidden = false;
-            }
-            // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
-            const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
-            if (session.signed_in && hiddenPrices.length && session.prices_url) {
-                const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['p[]', id]));
-                fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-                    .then((response) => (response.ok ? response.json() : null))
-                    .then((data) => {
-                        hiddenPrices.forEach((el) => {
-                            const price = data?.products?.[el.dataset.vaniPriceFor];
-                            if (!price) return;
-                            const span = document.createElement('span');
-                            span.className = 'font-semibold text-primary';
-                            span.textContent = price.max.amount !== price.min.amount ? `${price.min.formatted} – ${price.max.formatted}` : price.min.formatted;
-                            el.replaceWith(span);
-                        });
-                    })
-                    .catch(() => {});
-            }
-            const memberPrice = document.querySelector('[data-vani-member-price]');
-            const variantIds = [...document.querySelectorAll('input[name="variant_id"]')].map((input) => input.value);
-            if (session.signed_in && memberPrice && variantIds.length) {
-                const query = new URLSearchParams(variantIds.map((id) => ['v[]', id]));
-                fetch(`${memberPrice.dataset.route}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-                    .then((response) => (response.ok ? response.json() : null))
-                    .then((data) => {
-                        const prices = Object.values(data?.prices || {});
-                        if (!prices.length) return;
-                        const lowest = prices.reduce((min, price) => (price.amount < min.amount ? price : min));
-                        memberPrice.textContent = t(prices.length < variantIds.length ? 'member_price_from' : 'member_price', { group: data.group ?? t('member'), price: lowest.formatted });
-                        memberPrice.hidden = false;
-                    })
-                    .catch(() => {});
-            }
-            Object.entries(session.flash.errors || {}).forEach(([field, message]) => {
-                const target = document.querySelector(`[data-vani-error-for="${field}"]`) || document.querySelector('[data-vani-error-for="business"]');
-                if (target && message) {
-                    target.textContent = message;
-                    target.hidden = false;
-                }
-            });
-        })
+        .then(applySession)
         .catch(() => {});
 }
-

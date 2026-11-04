@@ -84,7 +84,8 @@ describe('bảo trì', function () {
             ->get(route('admin.storefront.maintenance.preview'))->assertForbidden();
     });
 
-    it('tắt bảo trì → trang công khai cache lại bình thường', function () {
+    it('tắt bảo trì → trang công khai cache lại bình thường (chế độ CDN)', function () {
+        config(['vanishop.storefront.page_cache.enabled' => true]);
         $this->settings->set('core', 'storefront.maintenance', false);
 
         $this->get('/')->assertOk()->assertHeader('Cache-Control', 'max-age=0, public, s-maxage=300, stale-while-revalidate=600');
@@ -147,7 +148,8 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
         };
     });
 
-    it('trang cache (PDP, danh sách): không có giá, không JSON-LD offers; vẫn cache công khai', function (string $path) {
+    it('trang cache CDN (PDP, danh sách): không có giá, không JSON-LD offers; vẫn cache công khai', function (string $path) {
+        config(['vanishop.storefront.page_cache.enabled' => true]);
         $path = str_replace('{product}', $this->product, $path);
 
         $this->get($path)->assertOk()
@@ -158,7 +160,8 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
             ->assertDontSee('"offers"', false);
     })->with(['sản phẩm' => '{product}', 'thương hiệu' => '/thuong-hieu/lumiere', 'tìm kiếm' => '/tim-kiem?q=dam']);
 
-    it('HTML cache vẫn là bản ẩn giá khi khách đã đăng nhập; giá điền sau qua /_vani/gia', function () {
+    it('HTML cache CDN vẫn là bản ẩn giá khi khách đã đăng nhập; giá điền sau qua /_vani/gia', function () {
+        config(['vanishop.storefront.page_cache.enabled' => true]);
         $guest = $this->get($this->product)->getContent();
         $styleId = $this->s->style->id;
         $this->getJson("/_vani/gia?p[]={$styleId}")->assertOk()->assertJsonPath('products', []);

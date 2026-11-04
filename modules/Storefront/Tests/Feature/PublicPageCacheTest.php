@@ -10,11 +10,13 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 /*
-| Roadmap Phase 7 (storefront §5): trang công khai chạy không phiên → HTML giống nhau với mọi khách, không Set-Cookie,
-| Cache-Control public cho CDN. Phần riêng của khách qua GET /_vani/phien (không cache).
+| Chế độ CDN (tuỳ chọn nâng cao, storefront §5): trang công khai chạy không phiên → HTML giống nhau với mọi khách, không
+| Set-Cookie, Cache-Control public cho CDN. Phần riêng của khách qua GET /_vani/phien (không cache).
+| Chế độ mặc định (không CDN): StorefrontWithoutCdnTest.
 */
 
 beforeEach(function () {
+    config(['vanishop.storefront.page_cache.enabled' => true]);
     H::fakeOtp();
     ['s' => $this->s, 'brand' => $this->brand] = C::store();
     $this->product = '/san-pham/'.$this->s->style->slug;
@@ -63,13 +65,10 @@ it('/_vani/phien: đăng nhập, số món trong giỏ; lỗi thêm giỏ từ t
     $this->getJson('/_vani/phien')->assertJsonPath('signed_in', true)->assertJsonPath('account.label', 'Tài khoản')->assertJsonPath('cart.count', 2);
 });
 
-it('tắt bằng cấu hình hoặc link có chữ ký (xem trước) → private, no-store; vẫn không phiên', function () {
-    config(['vanishop.storefront.page_cache.enabled' => false]);
-    $off = $this->get('/')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
-    expect($off->headers->getCookies())->toBe([]);
-
-    config(['vanishop.storefront.page_cache.enabled' => true]);
-    $this->get(URL::temporarySignedRoute('storefront.product', now()->addMinutes(5), ['slug' => $this->s->style->slug]))
+it('link có chữ ký (xem trước), trang lỗi → private, no-store; vẫn không phiên', function () {
+    $preview = $this->get(URL::temporarySignedRoute('storefront.product', now()->addMinutes(5), ['slug' => $this->s->style->slug]))
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private');
+    expect($preview->headers->getCookies())->toBe([]);
+    $this->get('/en')->assertOk()->assertSee(url('/_vani/phien?locale=en'), false);
     $this->get('/san-pham/khong-ton-tai')->assertNotFound()->assertHeader('Cache-Control', 'no-store, private');
 });

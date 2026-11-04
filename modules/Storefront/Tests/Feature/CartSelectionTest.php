@@ -83,7 +83,7 @@ it('web: nút "Mua ngay" chuyển tới checkout, form chọn dòng hoạt độ
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1])->assertRedirect('/gio-hang');
     $this->post('/gio-hang', ['variant_id' => $this->m->id, 'quantity' => 2, 'buy_now' => '1'])->assertRedirect('/thanh-toan');
 
-    $this->get('/thanh-toan')->assertOk()->assertSee('400.000')->assertDontSee('700.000');
+    $this->get('/thanh-toan')->assertOk()->assertSee('400.000');
     $this->get('/gio-hang')->assertOk()->assertSee(__('Chọn tất cả'))->assertSee('name="lines[]"', false);
 
     $mini = $this->getJson('/_vani/phien')->assertOk()->json('cart');

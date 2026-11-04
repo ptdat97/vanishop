@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.68 — 2026-11-04
+
+Cache CDN cho trang công khai thành tuỳ chọn nâng cao ([storefront §5](../14-storefront/storefront.md)).
+
+### Đổi
+- `VANI_PAGE_CACHE` mặc định **false**: trang công khai chạy có phiên (khách, `$errors`, flash có sẵn khi render), `Cache-Control: private, no-store`. Bật lại khi deploy có CDN. Trước đây tắt chỉ đổi header, trang vẫn không phiên.
+- Thuộc tính request `vani.page_cache` (`PublicPageCache::ATTRIBUTE`) chỉ có khi chế độ CDN bật; thêm `vani.public_page` (`PublicPageCache::PUBLIC_PAGE`) cho mọi trang công khai — SEO (canonical, hreflang) dùng cờ này.
+- Miễn CSRF cho `POST` giỏ ở mọi ngôn ngữ (trước chỉ `/gio-hang`; `/en/cart` từ trang cache bị 419).
+- `/_vani/phien`: nhãn tài khoản theo `?locale=`.
+
+### Thêm
+- Layout theme nhận `$customerState` (null ở chế độ CDN): `{signed_in, account{label, url}, cart{count, subtotal, lines}, prices_url}`; `vani-base` render sẵn số món và nhúng `script[data-vani-session-state]`, `app.js` dùng chung một hàm cho dữ liệu nhúng và `/_vani/phien`. Theme tự viết nên làm tương tự để chạy đúng khi không có CDN.
+
 ## 0.3.67 — 2026-11-04
 
 Chỉ thêm. Ảnh responsive ([storefront §4d](../14-storefront/storefront.md)).

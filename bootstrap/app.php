@@ -28,9 +28,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
         // Phải chạy trước StartSession để Admin dùng cookie phiên riêng (ADR-020).
         $middleware->web(prepend: [ConfigureAdminSession::class]);
-        // Thêm vào giỏ từ trang sản phẩm đã cache (không có token CSRF trong HTML, storefront §5). An toàn: cookie phiên
-        // SameSite=Lax nên form chéo trang không mang phiên theo — không đụng được giỏ của nạn nhân.
-        $middleware->validateCsrfTokens(except: ['gio-hang']);
         // Cookie xem trước khi bảo trì tự ký HMAC; không mã hoá để Storefront API (nhóm `api`, không EncryptCookies) đọc được.
         $middleware->encryptCookies(except: [Maintenance::COOKIE]);
         $middleware->alias(['vani.inertia' => HandleInertiaRequests::class]);

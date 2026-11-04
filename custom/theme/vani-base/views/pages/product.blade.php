@@ -47,7 +47,7 @@
             <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ vani_route('storefront.session.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
 
-            {{-- Trang cache được (không phiên): không có @csrf/old(); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
+            {{-- Không @csrf/old() để HTML như nhau ở cả chế độ cache CDN (không phiên); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
             <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
                 @foreach ($product['colors'] as $color)
                     @php($variants = array_values(array_filter($product['variants'], fn ($variant) => $variant['color_code'] === $color['code'])))
@@ -68,7 +68,8 @@
                         </div>
                     </fieldset>
                 @endforeach
-                <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" hidden></p>
+                {{-- Không CDN: lỗi của lần gửi trước render sẵn; trang cache CDN: JS điền từ /_vani/phien. --}}
+                <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" @unless ($errors->has('variant_id')) hidden @endunless>{{ $errors->first('variant_id') }}</p>
 
                 <div class="flex items-center gap-3">
                     <label for="quantity" class="text-sm">{{ __('Số lượng') }}</label>

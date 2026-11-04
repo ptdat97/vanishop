@@ -27,7 +27,6 @@ it('ngôn ngữ lấy từ URL, không theo header; link trong trang theo ngôn 
     expect($html)->toContain('<html lang="en"')
         ->toContain(url('/en/brands'))
         ->toContain(url("/en/products/{$this->style->slug}"))
-        ->toContain(url('/_vani/phien?locale=en'))
         ->not->toContain(url("/san-pham/{$this->style->slug}"));
 
     $vi = $this->get('/', ['X-Vani-Locale' => 'en'])->assertOk()->getContent();
