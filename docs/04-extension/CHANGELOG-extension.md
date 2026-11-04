@@ -13,7 +13,8 @@ Chuỗi giao diện storefront theo ngôn ngữ.
 - Layout xuất khối `<script type="application/json" data-vani-i18n>` (id → chuỗi đã dịch) cho `app.js`.
 
 ### Đổi
-- View `vani-base`, `vani.cms`, `vani.size-chart` bọc chữ hiển thị bằng `__()`. Theme con override view nên làm tương tự (khoá = câu tiếng Việt) để có bản tiếng Anh.
+- View `vani-base`, `vani.cms`, `vani.size-chart`, `vani.tracking-pixels`, `vani.hello-world` bọc chữ hiển thị bằng `__()`. Theme con override view nên làm tương tự (khoá = câu tiếng Việt) để có bản tiếng Anh.
+- Nhãn trạng thái đơn cho khách (`customerStatus.label` trong chi tiết đơn, API `/me/orders`) theo ngôn ngữ của request (`ordering::labels.customer_status`).
 
 ## 0.3.62 — 2026-11-04
 

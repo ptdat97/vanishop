@@ -13,11 +13,11 @@ use Inertia\Response;
 use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
+use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderStatus;
-use Modules\Ordering\Domain\CustomerStatus;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStateMachine;
 use Modules\Ordering\Domain\PaymentStatus;
@@ -57,7 +57,7 @@ final class OrderController
                 'order_status' => $order->order_status->value,
                 'payment_status' => $order->payment_status,
                 'payment_method' => $order->payment_method,
-                'label' => CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
+                'label' => CustomerStatusLabel::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
             ])->all(),
             'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'total' => $page->total()],
             'extensions' => [

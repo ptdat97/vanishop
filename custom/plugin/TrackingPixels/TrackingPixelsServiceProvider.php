@@ -28,6 +28,8 @@ final class TrackingPixelsServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
+        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
         $this->settings($this->definitions());
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-tracking-pixels');
 

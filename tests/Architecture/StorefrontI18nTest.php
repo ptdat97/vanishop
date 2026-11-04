@@ -34,6 +34,8 @@ it('view storefront không có chữ tiếng Việt ngoài __() / trans_choice (
             $source = preg_replace('/\{\{--.*?--\}\}/s', '', (string) file_get_contents($file->getPathname()));
             foreach (explode("\n", (string) $source) as $number => $line) {
                 $rest = preg_replace("/(?:__|trans_choice)\\('(?:[^'\\\\]|\\\\.)*'/u", '', $line);
+                // Comment JS trong <script> của view (không hiển thị).
+                $rest = preg_replace('#(?<!:)//.*$|/\*.*?\*/#u', '', (string) $rest);
                 if (preg_match('/['.VIETNAMESE.']/u', (string) $rest) === 1) {
                     $offenders[] = substr($file->getPathname(), strlen(realpath(__DIR__.'/../..')) + 1).':'.($number + 1);
                 }

@@ -7,7 +7,6 @@ namespace Modules\Ordering\Application;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\Data\OrderDetail;
-use Modules\Ordering\Domain\CustomerStatus;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderAdjustment;
@@ -56,7 +55,7 @@ final class OrderQueries
             fulfillmentStatus: (string) $order->fulfillment_status,
             returnStatus: (string) $order->return_status,
             paymentMethod: (string) $order->payment_method,
-            customerStatus: CustomerStatus::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status),
+            customerStatus: CustomerStatusLabel::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status),
             currencyCode: $order->currency_code,
             amounts: ['subtotal' => $order->subtotal_amount, 'discount' => $order->discount_amount, 'shipping' => $order->shipping_amount, 'tax' => $order->tax_amount, 'total' => $order->total_amount],
             customer: ['full_name' => (string) ($customer['full_name'] ?? ''), 'phone' => (string) ($customer['phone'] ?? ''), 'email' => $customer['email'] ?? null],

@@ -30,6 +30,8 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
+        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
         $this->permissions(['hello-world.view' => 'Xem trang Hello World']);
         $this->publishHooks($this->pluginPath('hooks.php'));
 
