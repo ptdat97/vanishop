@@ -213,7 +213,7 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 
 **Đặc tả cần làm**
 1. **Khách xác nhận đã nhận hàng**: trên trang đơn (native + API), khi vận đơn ở trạng thái đã giao hoặc đang giao quá N ngày, khách bấm "Đã nhận hàng" → ghi `order_events` nguồn `customer`, cho phép đơn hoàn tất sớm hơn hạn tự động **chỉ khi** hết hạn đổi trả hoặc khách xác nhận không đổi trả (tuỳ cấu hình `ordering.complete_on_customer_confirm`, mặc định false). Không đổi bảng chuyển.
-2. **Thanh toán lại**: đơn online chưa thanh toán còn hạn → nút "Thanh toán" tạo lại `PaymentInitiation` từ cổng đã chọn (hoặc cho đổi cổng nếu cổng cũ không khả dụng). Kiểm tra Payment đã hỗ trợ khởi tạo lại chưa.
+2. ✅ (R3, 2026-11-05, Core 0.3.75 — trước đó `initiate` chỉ dùng được cho khoản đang chờ và trang đơn chỉ hiện thanh toán khi còn phiên lúc đặt; nay `Payments::retry`/`latestForOrder`, khoản lỗi/đổi cổng → lượt mới cùng hạn) **Thanh toán lại**: đơn online chưa thanh toán còn hạn → nút "Thanh toán" tạo lại `PaymentInitiation` từ cổng đã chọn (hoặc cho đổi cổng nếu cổng cũ không khả dụng). Kiểm tra Payment đã hỗ trợ khởi tạo lại chưa.
 3. **Không làm**: plugin sửa bảng chuyển (lý do ở [reference-comparison §3](../02-architecture/reference-comparison.md)).
 
 **Vị trí**: Core `Ordering` + `Payment` + `Storefront`. **Ưu tiên**: P1 (2), P2 (1).

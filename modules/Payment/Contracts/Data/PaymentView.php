@@ -17,5 +17,7 @@ final readonly class PaymentView
         public ?string $expiresAt,
         public ?PaymentInitiation $action,
         public ?string $actionError = null,
+        /** Khách bấm "Thanh toán lại" được (0.3.75): đang chờ/lỗi, còn hạn, cổng online. */
+        public bool $retryable = false,
     ) {}
 }

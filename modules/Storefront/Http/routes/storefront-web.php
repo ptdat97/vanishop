@@ -57,6 +57,7 @@ foreach (StoreLocale::supported() as $locale) {
             });
 
             Route::get($p('order'), [OrderController::class, 'show'])->name('order');
+            Route::middleware('throttle:10,1')->post($p('order.pay'), [OrderController::class, 'pay'])->name('order.pay');
             // Đổi/trả (khách): quyền theo token đơn trong phiên hoặc tài khoản sở hữu đơn.
             Route::middleware('throttle:10,1')->group(function () use ($p): void {
                 Route::post($p('order.returns.store'), [ReturnController::class, 'store'])->name('order.returns.store');

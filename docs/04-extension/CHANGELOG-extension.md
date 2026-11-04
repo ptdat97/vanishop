@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.75 — 2026-11-05
+
+Chỉ thêm. Thanh toán lại ([reference-parity §3.11-2](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- `Payments::latestForOrder(orderId)`, `Payments::retry(orderId, ?gatewayCode)`; `PaymentView::$retryable`; `PaymentRejected::expired()` (`payment.expired` 409).
+- Khoản đang chờ cùng cổng → khởi tạo lại (link/QR mới); khoản lỗi hoặc đổi cổng online → khoản cũ `cancelled`, khoản mới cùng số tiền và cùng `expires_at` (`meta.retry_of`). Plugin cổng: mỗi lượt có `publicId` riêng — dùng làm mã giao dịch như hiện nay là đủ.
+- Storefront API `POST /orders/{id}/payment/retry` (`gateway` tuỳ chọn); web `storefront.order.pay`; thanh toán của trang đơn (`payment.retryable`) lấy theo khoản mới nhất, không cần phiên lúc đặt.
+
 ## 0.3.74 — 2026-11-05
 
 Danh mục lý do đổi trả + khách báo đã gửi hàng về ([reference-parity §3.13-1/2](../20-roadmap/reference-parity-refactor.md)).

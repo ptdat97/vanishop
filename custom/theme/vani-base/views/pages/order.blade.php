@@ -8,10 +8,15 @@
 
     @if (($payment['status'] ?? null) === 'paid')
         <p role="status" class="mb-6 rounded-[var(--radius-theme)] bg-emerald-50 px-4 py-2 text-sm text-emerald-800">{{ __('Đã nhận thanh toán.') }}</p>
-    @elseif (in_array($payment['status'] ?? null, ['pending', 'failed'], true) && ($payment['action']['type'] ?? null) === 'redirect' && ! empty($payment['action']['url']))
-        <section class="mb-6 rounded-[var(--radius-theme)] border border-amber-300 bg-amber-50 p-4 text-sm">
+    @elseif (($payment['retryable'] ?? false) && (($payment['action']['type'] ?? null) === 'redirect' || ($payment['status'] ?? null) === 'failed' || ($payment['action'] ?? null) === null))
+        {{-- Thanh toán lại (§3.11-2): luôn qua POST để lấy link mới của cổng (link cũ có thể hết hạn); lỗi → lượt thanh toán mới. --}}
+        <section class="mb-6 rounded-[var(--radius-theme)] border border-amber-300 bg-amber-50 p-4 text-sm" data-payment-retry>
             <p class="mb-3">{{ ($payment['status'] ?? null) === 'failed' ? __('Thanh toán chưa thành công.') : __('Đơn đang chờ thanh toán.') }}</p>
-            <a href="{{ $payment['action']['url'] }}" rel="noopener" class="inline-block rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('Thanh toán ngay') }}</a>
+            @if ($payment['error'] ?? null)<p class="mb-3 text-red-700">{{ $payment['error'] }}</p>@endif
+            <form action="{{ vani_route('storefront.order.pay', $order['id']) }}" method="post">
+                @csrf
+                <button type="submit" class="rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ ($payment['status'] ?? null) === 'failed' ? __('Thanh toán lại') : __('Thanh toán ngay') }}</button>
+            </form>
         </section>
     @elseif (($payment['status'] ?? null) === 'pending' && ($payment['action']['type'] ?? null) === 'qr' && ! empty($payment['action']['qr']))
         <section class="mb-6 rounded-[var(--radius-theme)] border border-amber-300 bg-amber-50 p-4 text-sm">

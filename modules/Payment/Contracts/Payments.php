@@ -57,6 +57,20 @@ interface Payments
     public function view(string $paymentPublicId): ?PaymentView;
 
     /**
+     * Khoản thanh toán mới nhất của đơn (0.3.75) — trang đơn hiện trạng thái thanh toán không cần phiên vừa đặt.
+     */
+    public function latestForOrder(int $orderId): ?PaymentView;
+
+    /**
+     * Thanh toán lại (0.3.75, reference-parity §3.11-2): đơn online chưa trả, còn hạn. Khoản đang chờ cùng cổng → khởi tạo
+     * lại (lấy link/QR mới nếu cổng cấp); khoản đã lỗi hoặc đổi sang cổng online khác → huỷ khoản cũ, tạo lượt mới cùng
+     * số tiền và cùng hạn. Cổng thu khi giao/xác nhận tay, khoản đã trả/hết hạn → PaymentRejected.
+     *
+     * @throws PaymentRejected
+     */
+    public function retry(int $orderId, ?string $gatewayCode = null): PaymentView;
+
+    /**
      * Nhân viên xác nhận đã nhận tiền (chuyển khoản thủ công). Idempotent.
      */
     public function confirmManually(int $paymentId, string $note): void;

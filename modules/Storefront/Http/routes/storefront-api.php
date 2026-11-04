@@ -47,6 +47,7 @@ Route::get('orders/{order}', [OrderController::class, 'show'])->where('order', '
 Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->where('order', '[0-9A-Z]{26}')->name('orders.cancel');
 Route::post('orders/{order}/returns', [OrderController::class, 'requestReturn'])->where('order', '[0-9A-Z]{26}')->middleware('throttle:vani-checkout')->name('orders.returns.store');
 Route::post('orders/{order}/returns/{return}/cancel', [OrderController::class, 'cancelReturn'])->where(['order' => '[0-9A-Z]{26}', 'return' => '[0-9A-Z]{26}'])->name('orders.returns.cancel');
+Route::post('orders/{order}/payment/retry', [OrderController::class, 'retryPayment'])->where('order', '[0-9A-Z]{26}')->middleware('throttle:10,1')->name('orders.payment.retry');
 Route::post('orders/{order}/returns/{return}/shipped', [OrderController::class, 'markReturnShipped'])->where(['order' => '[0-9A-Z]{26}', 'return' => '[0-9A-Z]{26}'])->middleware('throttle:10,1')->name('orders.returns.shipped');
 
 Route::middleware('vani.customer')->group(function () {

@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.74',
+    'version' => '0.3.75',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -164,6 +164,7 @@ return [
                 'order.returns.store' => 'don-hang/{order}/doi-tra',
                 'order.returns.cancel' => 'don-hang/{order}/doi-tra/{return}/huy',
                 'order.returns.shipped' => 'don-hang/{order}/doi-tra/{return}/da-gui',
+                'order.pay' => 'don-hang/{order}/thanh-toan',
                 'track' => 'tra-cuu-don',
                 'account' => 'tai-khoan',
                 'account.login' => 'tai-khoan/dang-nhap',
@@ -198,6 +199,7 @@ return [
                 'order.returns.store' => 'orders/{order}/returns',
                 'order.returns.cancel' => 'orders/{order}/returns/{return}/cancel',
                 'order.returns.shipped' => 'orders/{order}/returns/{return}/shipped',
+                'order.pay' => 'orders/{order}/pay',
                 'track' => 'track-order',
                 'account' => 'account',
                 'account.login' => 'account/login',

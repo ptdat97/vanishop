@@ -1,4 +1,4 @@
-VaniShop 0.3.74
+VaniShop 0.3.75
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -954,7 +954,7 @@ class Modules\Payment\Contracts\Data\PaymentInitiation
 ), ?string $gatewayReference = NULL)
   static none(): self
 class Modules\Payment\Contracts\Data\PaymentView
-  __construct(string $publicId, string $gatewayCode, string $status, int $amount, string $currencyCode, string $orderPublicId, string $orderNumber, ?string $expiresAt, ?Modules\Payment\Contracts\Data\PaymentInitiation $action, ?string $actionError = NULL)
+  __construct(string $publicId, string $gatewayCode, string $status, int $amount, string $currencyCode, string $orderPublicId, string $orderNumber, ?string $expiresAt, ?Modules\Payment\Contracts\Data\PaymentInitiation $action, ?string $actionError = NULL, bool $retryable = false)
 class Modules\Payment\Contracts\InvalidCallback extends RuntimeException
 interface Modules\Payment\Contracts\PaymentGateway
   const TAG = 'vani.payment.gateways'
@@ -970,6 +970,7 @@ class Modules\Payment\Contracts\PaymentRejected extends Modules\Shared\Domain\Bu
   static gatewayUnavailable(string $code): self
   static notFound(): self
   static invalidState(string $status): self
+  static expired(): self
   static captureFailed(string $gatewayMessage): self
   static refundExceeds(int $refundable): self
   errorCode(): string
@@ -984,6 +985,8 @@ interface Modules\Payment\Contracts\Payments
   createForOrder(Modules\Ordering\Contracts\Data\PlacedOrder $order, string $gatewayCode): array
   initiate(string $paymentPublicId): Modules\Payment\Contracts\Data\PaymentView
   view(string $paymentPublicId): ?Modules\Payment\Contracts\Data\PaymentView
+  latestForOrder(int $orderId): ?Modules\Payment\Contracts\Data\PaymentView
+  retry(int $orderId, ?string $gatewayCode = NULL): Modules\Payment\Contracts\Data\PaymentView
   confirmManually(int $paymentId, string $note): void
   captureAuthorized(int $paymentId, string $source): void
   refund(int $paymentId, Modules\Shared\Domain\Money\Money $amount, string $reason, string $idempotencyKey): void

@@ -147,6 +147,55 @@ final class PaymentService implements Payments
         return $payment === null ? null : $this->toView($payment);
     }
 
+    public function latestForOrder(int $orderId): ?PaymentView
+    {
+        $payment = Payment::query()->where('order_id', $orderId)->latest('id')->first();
+
+        return $payment === null ? null : $this->toView($payment);
+    }
+
+    public function retry(int $orderId, ?string $gatewayCode = null): PaymentView
+    {
+        $publicId = DB::transaction(function () use ($orderId, $gatewayCode): string {
+            $current = Payment::query()->where('order_id', $orderId)->latest('id')->lockForUpdate()->first() ?? throw PaymentRejected::notFound();
+            if (! in_array($current->status, [PaymentStatus::Pending, PaymentStatus::Failed], true)) {
+                throw PaymentRejected::invalidState($current->status->value);
+            }
+            if ($current->expires_at !== null && ! $current->expires_at->isFuture()) {
+                throw PaymentRejected::expired();
+            }
+            $target = $gatewayCode ?? $current->gateway_code;
+            if (! $this->online($target)) {
+                throw PaymentRejected::gatewayUnavailable($target);
+            }
+            if ($current->status === PaymentStatus::Pending && $target === $current->gateway_code) {
+                return $current->public_id;
+            }
+
+            // Lượt mới: cổng thường không nhận lại mã giao dịch đã lỗi. Giữ hạn cũ — hàng của đơn giữ tới hạn đó.
+            $current->update(['status' => PaymentStatus::Cancelled, 'lock_version' => $current->lock_version + 1]);
+            $this->recordTransaction($current, 'retry_cancel', "retry:{$current->public_id}", null, 'ok', []);
+            $next = Payment::query()->create([
+                'public_id' => (string) Str::ulid(), 'order_id' => $current->order_id, 'gateway_code' => $target,
+                'amount' => $current->amount, 'currency_code' => $current->currency_code, 'status' => PaymentStatus::Pending,
+                'expires_at' => $current->expires_at, 'meta' => ['retry_of' => $current->public_id],
+            ]);
+            $this->audit->record('payment.retried', 'payment', $next->id, ['from' => $current->public_id, 'gateway' => $target]);
+
+            return $next->public_id;
+        });
+
+        return $this->initiate($publicId);
+    }
+
+    /** Cổng đang bật và thanh toán trực tuyến (không thu khi giao, không xác nhận tay). */
+    private function online(string $gatewayCode): bool
+    {
+        $gateway = $this->gateways->get($gatewayCode);
+
+        return $gateway !== null && ! $gateway->capabilities()->collectsOnDelivery && ! $gateway->capabilities()->manualConfirmation;
+    }
+
     /**
      * Callback đã xác minh chữ ký. Trả false nếu là bản trùng (đã xử lý trước đó).
      */
@@ -585,6 +634,8 @@ final class PaymentService implements Payments
                 ? new PaymentInitiation((string) $action['type'], $action['url'] ?? null, $action['qr'] ?? null, (array) ($action['instructions'] ?? []))
                 : null,
             actionError: $actionError,
+            retryable: in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed], true)
+                && ($payment->expires_at === null || $payment->expires_at->isFuture()) && $this->online($payment->gateway_code),
         ), $payment);
     }
 }

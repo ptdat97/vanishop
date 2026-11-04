@@ -9,8 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Validation\Rule;
 use Modules\Ordering\Contracts\CustomerOrders;
+use Modules\Payment\Contracts\Payments;
 use Modules\Returns\Contracts\Returns;
 use Modules\Storefront\Application\OrderPresenter;
+use Modules\Storefront\Application\PaymentPresenter;
 
 /**
  * Đơn của khách vãng lai: tra cứu bằng số đơn + SĐT (thông tin bị che), xem/huỷ bằng access token trả lúc đặt.
@@ -92,6 +94,19 @@ final class OrderController
         $returns->markShipped($detail->id, $return, $data['tracking_number'] ?? null, 'customer');
 
         return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))]);
+    }
+
+    /**
+     * Thanh toán lại (0.3.75, §3.11-2): đơn online chưa trả, còn hạn; `gateway` tuỳ chọn để đổi sang cổng online khác.
+     * Trả khoản thanh toán (kèm `action` mới của cổng).
+     */
+    public function retryPayment(Request $request, string $order, Payments $payments, PaymentPresenter $paymentPresenter): JsonResponse
+    {
+        $data = $request->validate(['gateway' => ['nullable', 'string', 'max:64']]);
+        $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
+        abort_if($detail === null, 404, __('ordering::messages.not_found'));
+
+        return response()->json(['data' => $paymentPresenter->present($payments->retry($detail->id, $data['gateway'] ?? null))]);
     }
 
     public function cancel(Request $request, string $order): JsonResponse

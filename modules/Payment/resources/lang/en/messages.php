@@ -11,4 +11,5 @@ return [
     'refund_completed' => 'Refund recorded.',
     'capture_failed' => 'The gateway refused to capture the authorized amount. Check with the gateway or contact the customer.',
     'captured' => 'Payment captured.',
+    'expired' => 'The payment window for this order has expired.',
 ];

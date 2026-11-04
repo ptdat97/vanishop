@@ -32,6 +32,11 @@ final class PaymentRejected extends BusinessRuleViolation
         return new self('payment.invalid_state', 409, __('payment::messages.invalid_state', ['status' => $status]), ['status' => $status]);
     }
 
+    public static function expired(): self
+    {
+        return new self('payment.expired', 409, __('payment::messages.expired'));
+    }
+
     public static function captureFailed(string $gatewayMessage): self
     {
         return new self('payment.capture_failed', 502, __('payment::messages.capture_failed'), ['gateway_message' => $gatewayMessage]);

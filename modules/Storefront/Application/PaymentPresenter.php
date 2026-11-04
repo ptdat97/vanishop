@@ -26,6 +26,7 @@ final class PaymentPresenter
                 'instructions' => $view->action->instructions === [] ? null : $view->action->instructions,
             ],
             'error' => $view->actionError,
+            'retryable' => $view->retryable,
             'order' => ['id' => $view->orderPublicId, 'number' => $view->orderNumber],
         ];
     }
