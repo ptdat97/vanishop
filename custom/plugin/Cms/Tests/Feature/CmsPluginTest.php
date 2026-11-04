@@ -13,7 +13,10 @@ use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\Application\PageBlocks;
+use Modules\Storefront\Testing\LinkTypeContract;
 use Plugin\Cms\CmsServiceProvider;
+use Plugin\Cms\Infrastructure\ArticleLinkType;
+use Plugin\Cms\Infrastructure\PageLinkType;
 use Plugin\Cms\Persistence\Page;
 use Plugin\Cms\Persistence\Post;
 
@@ -41,6 +44,13 @@ function cmsPost(array $attributes = []): Post
         'published_at' => now()->subDay(), ...$attributes,
     ]);
 }
+
+LinkTypeContract::define('vani.cms page', fn () => app(PageLinkType::class),
+    visible: fn () => (string) cmsPage()->id,
+    hidden: fn () => (string) cmsPage(['slug' => 'nhap', 'status' => 'draft'])->id);
+LinkTypeContract::define('vani.cms article', fn () => app(ArticleLinkType::class),
+    visible: fn () => (string) cmsPost()->id,
+    hidden: fn () => (string) cmsPost(['slug' => 'hen-gio', 'published_at' => now()->addDay()])->id);
 
 beforeEach(function () {
     installCms();

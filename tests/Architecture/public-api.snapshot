@@ -1,4 +1,4 @@
-VaniShop 0.3.57
+VaniShop 0.3.58
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -60,6 +60,15 @@ class Modules\Cart\Events\CartUpdated
   static broadcast(...$arguments)
 interface Modules\Catalog\Contracts\CatalogImporter
   upsertProduct(Modules\Catalog\Contracts\Data\ProductImport $import): Modules\Catalog\Contracts\Data\ImportedProduct
+interface Modules\Catalog\Contracts\CatalogLookup
+  const KINDS = array (
+  0 => 'category',
+  1 => 'collection',
+  2 => 'brand',
+  3 => 'product',
+)
+  visible(string $kind, array $ids, string $locale): array
+  search(string $kind, string $query, string $locale, int $limit = 20): array
 interface Modules\Catalog\Contracts\CatalogReader
   categoryTree(string $locale): array
   category(string $slug, string $locale): ?array
@@ -1117,9 +1126,33 @@ interface Modules\Shared\Contracts\PhoneNumberPolicy
   code(): string
   normalize(string $input): ?string
   national(string $e164): string
+class Modules\Storefront\Contracts\Data\LinkTarget
+  __construct(string $type, string $value, array $label = array (
+))
+  static fromArray(array $data): ?self
+  toArray(): array
+  labelFor(string $locale): ?string
+class Modules\Storefront\Contracts\Data\ResolvedLink
+  __construct(string $url, string $label, bool $exists)
+  static missing(): self
 class Modules\Storefront\Contracts\Data\SlotView
   __construct(string $view, array $data = array (
 ))
+interface Modules\Storefront\Contracts\LinkResolver
+  resolve(Modules\Storefront\Contracts\Data\LinkTarget $target, string $locale): Modules\Storefront\Contracts\Data\ResolvedLink
+  resolveMany(array $targets, string $locale): array
+  accepts(Modules\Storefront\Contracts\Data\LinkTarget $target): bool
+  types(): array
+  search(string $type, string $query, string $locale, int $limit = 20): array
+interface Modules\Storefront\Contracts\LinkType
+  const TAG = 'vani.storefront.link_types'
+  type(): string
+  label(): string
+  searchable(): bool
+  options(): array
+  search(string $query, string $locale, int $limit = 20): array
+  accepts(string $value): bool
+  resolve(array $values, string $locale): array
 interface Modules\Storefront\Contracts\ProductCards
   const MAX_IDS = 60
   forIds(array $styleIds, string $locale): array

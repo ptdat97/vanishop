@@ -40,6 +40,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [037](ADR-037-vani-helpers.md) | **Bộ helper ngắn `vani_*` (danh sách đóng) cho plugin và theme, mỗi helper uỷ quyền một contract** | Accepted |
 | [038](ADR-038-localized-storefront-urls.md) | **URL storefront theo ngôn ngữ: `vi` không tiền tố, `en` dưới `/en` với đường dẫn + slug tiếng Anh, hreflang** | Accepted |
 | [039](ADR-039-admin-ui-reka.md) | Bộ component Admin trên Reka UI (headless) + Tailwind; trang module/plugin chỉ dùng `@admin/Components` | Accepted |
+| [040](ADR-040-typed-links-menus.md) | Link có kiểu (`LinkTarget`, `LinkResolver`, extension point `LinkType`) và menu storefront theo vị trí theme khai báo; nháp/xuất bản/phiên bản | Accepted |
 | [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 

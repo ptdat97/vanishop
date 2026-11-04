@@ -20,9 +20,19 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\Links\BrandLinkType;
+use Modules\Storefront\Application\Links\CategoryLinkType;
+use Modules\Storefront\Application\Links\CollectionLinkType;
+use Modules\Storefront\Application\Links\LinkRegistry;
+use Modules\Storefront\Application\Links\ProductLinkType;
+use Modules\Storefront\Application\Links\RouteLinkType;
+use Modules\Storefront\Application\Links\UrlLinkType;
+use Modules\Storefront\Application\Menus\MenuPresenter;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Contracts\LinkResolver;
+use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
@@ -46,6 +56,9 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(ProductCards::class, ProductViews::class);
+        // Không chia sẻ instance: ghi nhớ phân giải link/menu chỉ trong một lượt render (một instance), không sống qua
+        // request — kể cả khi tiến trình phục vụ nhiều request (Octane, queue) — để đổi slug thấy ngay.
+        $this->app->bind(LinkResolver::class, LinkRegistry::class);
         $this->app->singleton(Themes::class, fn ($app): Themes => new Themes(
             (string) config('vanishop.storefront.themes_path'),
             $app->make(Settings::class),
@@ -56,13 +69,15 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     public function boot(Router $router, PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
-        $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ)');
+        $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
+        $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ, menu)');
         $navigation->add('storefront', 'Giao diện', 'admin.storefront.home', 'storefront.manage', 600, group: 'content');
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
         $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
         $router->aliasMiddleware('vani.prices-visible', RequireVisiblePrices::class);
+        View::composer('theme::layouts.app', fn ($view) => $view->with('menus', $this->app->make(MenuPresenter::class)));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 

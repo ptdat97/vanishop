@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.58 — 2026-11-04
+
+Chỉ thêm. Link có kiểu và menu storefront (R1-6, [ADR-040](../19-adr/ADR-040-typed-links-menus.md)).
+
+### Thêm
+- `Storefront\Contracts\LinkType` (tag `vani.storefront.link_types`) — extension point loại link; contract test `Modules\Storefront\Testing\LinkTypeContract`.
+- `Storefront\Contracts\LinkResolver`, `Data\LinkTarget`, `Data\ResolvedLink`.
+- `Catalog\Contracts\CatalogLookup` (`visible(kind, ids, locale)`, `search(kind, query, locale, limit)`).
+- `theme.json` khai báo `menus` (vị trí + độ sâu); layout theme nhận `$menus` (`MenuPresenter::items(location, locale)`); partial `theme::partials.menu`, `theme::partials.menu-list` của `vani-base`.
+- Admin JS: trang `Storefront::Design/Menus`.
+- `vani.cms` 1.3.0: loại link `page`, `article`.
+
 ## 0.3.57 — 2026-11-04
 
 Chỉ thêm. Khách tự xoá tài khoản (R1-5, [reference-parity-refactor §3.15-1](../20-roadmap/reference-parity-refactor.md)).

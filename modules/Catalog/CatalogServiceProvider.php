@@ -11,6 +11,7 @@ use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
 use Modules\Catalog\Application\Collections\EloquentCollectionDirectory;
+use Modules\Catalog\Application\EloquentCatalogLookup;
 use Modules\Catalog\Application\Media\EloquentMediaDirectory;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Application\Media\MediaLibrary;
@@ -22,6 +23,7 @@ use Modules\Catalog\Application\StorefrontCatalog;
 use Modules\Catalog\Console\MediaCacheCommand;
 use Modules\Catalog\Console\SearchReindexCommand;
 use Modules\Catalog\Contracts\CatalogImporter;
+use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\CollectionDirectory;
 use Modules\Catalog\Contracts\ImageFormat;
@@ -69,6 +71,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
+        $this->app->bind(CatalogLookup::class, EloquentCatalogLookup::class);
         $this->app->singleton(DatabaseSearchProvider::class);
         // Meilisearch/Algolia/Elasticsearch là plugin (vani.search-meilisearch…).
         $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchProvider::TAG);

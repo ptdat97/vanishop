@@ -9,6 +9,7 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import type { ExtensionField, ExtensionFieldValue } from '@admin/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import DesignTabs from '../../Components/DesignTabs.vue';
 
 type BlockType = { type: string; label: string; fields: ExtensionField[] };
 type Block = { type: string; config: Record<string, ExtensionFieldValue> };
@@ -52,6 +53,7 @@ async function reset(): Promise<void> {
         <button v-if="configured" type="button" :class="dangerButton" @click="reset">Dùng mặc định</button>
         <button type="button" :class="primaryButton" :disabled="form.processing" @click="save">Lưu</button>
     </PageHeader>
+    <DesignTabs active="home" />
 
     <div class="space-y-4">
         <section v-for="(block, index) in form.blocks" :key="index" class="rounded-lg border border-slate-200 bg-white p-4" :data-block="block.type">

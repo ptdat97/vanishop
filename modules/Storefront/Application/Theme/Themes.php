@@ -54,6 +54,7 @@ final class Themes
                 parent: isset($data['parent']) && $data['parent'] !== '' ? (string) $data['parent'] : null,
                 path: dirname($file),
                 tokens: array_filter(array_map('strval', (array) ($data['tokens'] ?? [])), self::safeValue(...)),
+                menus: isset($data['menus']) ? self::parseMenus((array) $data['menus']) : null,
             );
         }
         ksort($this->themes);
@@ -124,6 +125,40 @@ final class Themes
         }
 
         return $tokens;
+    }
+
+    /**
+     * Vị trí menu của theme đang hoạt động (theme gần nhất trong chuỗi có khai báo `menus`).
+     *
+     * @return array<string, array{label: string, depth: int}>
+     */
+    public function menuLocations(): array
+    {
+        foreach ($this->chain() as $theme) {
+            if ($theme->menus !== null) {
+                return $theme->menus;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * `menus` trong theme.json: `{"header": {"label": "Menu chính", "depth": 3}}`; mã `[a-z][a-z0-9_]*`, độ sâu 1–3.
+     *
+     * @param  array<mixed>  $menus
+     * @return array<string, array{label: string, depth: int}>
+     */
+    private static function parseMenus(array $menus): array
+    {
+        $locations = [];
+        foreach ($menus as $code => $menu) {
+            if (is_string($code) && preg_match('/^[a-z][a-z0-9_]{0,31}$/', $code) === 1 && is_array($menu)) {
+                $locations[$code] = ['label' => (string) ($menu['label'] ?? $code), 'depth' => max(1, min(3, (int) ($menu['depth'] ?? 1)))];
+            }
+        }
+
+        return $locations;
     }
 
     /**

@@ -6,12 +6,15 @@ namespace Plugin\Cms;
 
 use Modules\Extension\PluginServiceProvider;
 use Modules\Storefront\Contracts\Data\SlotView;
+use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\SitemapProvider;
 use Modules\Storefront\Contracts\StorefrontBlock;
+use Plugin\Cms\Infrastructure\ArticleLinkType;
 use Plugin\Cms\Infrastructure\CmsSitemap;
 use Plugin\Cms\Infrastructure\LatestPostsBlock;
 use Plugin\Cms\Infrastructure\Markdown;
 use Plugin\Cms\Infrastructure\Navigation;
+use Plugin\Cms\Infrastructure\PageLinkType;
 
 /**
  * Plugin nội dung: trang (/trang/{slug}: giới thiệu, chính sách…) và tin tức (/tin-tuc), soạn bằng Markdown trong
@@ -43,6 +46,8 @@ final class CmsServiceProvider extends PluginServiceProvider
 
         $this->contribute(StorefrontBlock::TAG, LatestPostsBlock::class);
         $this->contribute(SitemapProvider::TAG, CmsSitemap::class);
+        $this->contribute(LinkType::TAG, PageLinkType::class);
+        $this->contribute(LinkType::TAG, ArticleLinkType::class);
         $this->onSlot('vani.storefront.header.nav', fn (): ?SlotView => $this->links('header'));
         $this->onSlot('vani.storefront.footer.columns', fn (): ?SlotView => $this->links('footer'));
 

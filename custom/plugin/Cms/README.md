@@ -16,6 +16,7 @@ Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `
   - Nâng từ 1.0: `php artisan vani:plugin:upgrade vani.cms`.
 - **Khối page builder** `cms_latest_posts` (bài viết mới) dùng cho trang chủ.
 - **Sitemap:** các trang và bài đã đăng được đưa vào `/sitemap.xml`.
+- **Link cho menu** (từ 1.3.0, Core 0.3.58): loại link `page` (Trang nội dung) và `article` (Bài viết) cho Admin → Giao diện → Menu. Chỉ nội dung đang công khai mới hiện; nháp/hẹn giờ chưa tới thì mục menu tự ẩn.
 - **Storefront API** (headless): `GET /api/storefront/v1/x/vani-cms/pages/{slug}`, `GET …/posts?per_page=`, `GET …/posts/{slug}`.
 - **Dữ liệu:** bảng `plg_cms_pages`, `plg_cms_posts`. Tắt plugin thì URL, menu, khối và API đều biến mất; dữ liệu vẫn giữ.
 
@@ -26,4 +27,4 @@ Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `
 ## Chưa làm
 
 - **Trình soạn thảo WYSIWYG** (hoãn, Owner 2026-10-03): hiện soạn bằng Markdown. Khi làm cần trình soạn thảo trực quan ở Admin (gói npm) và bộ làm sạch HTML theo allowlist ở server (gói PHP), nên phải duyệt dependency theo R25 + ghi ADR. Giữ Markdown làm định dạng lưu, hoặc chuyển sang HTML đã làm sạch: quyết định khi làm.
-- Đa ngôn ngữ, chuyên mục/thẻ cho bài viết, menu tuỳ biến (`MenuItemType`), lịch sử phiên bản.
+- Đa ngôn ngữ, chuyên mục/thẻ cho bài viết, lịch sử phiên bản. Link `article_category` khi có chuyên mục.

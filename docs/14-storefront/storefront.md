@@ -100,6 +100,16 @@ interface StorefrontBlock
 
 Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendation).
 
+## 4a. Link có kiểu và menu
+
+> **Implemented** (Core 0.3.58, [ADR-040](../19-adr/ADR-040-typed-links-menus.md)).
+
+- **Link có kiểu** `LinkTarget {type, value, label?}` phân giải lúc render bằng `LinkResolver` (URL + nhãn theo ngôn ngữ; đối tượng đã ẩn/xoá → bỏ). Loại Core: `category`, `collection` (→ `/tim-kiem?collection=`), `brand`, `product`, `route` (trang công khai cho phép), `url` (`/…`, `http(s)://`, `mailto:`, `tel:`). Plugin thêm loại qua `LinkType` (vd. `vani.cms`: `page`, `article`).
+- **Vị trí menu** do `theme.json` khai báo (`menus`); `vani-base`: `header` 3 cấp (cấp 2–3 mở khi rê chuột/focus), `mobile` 2 cấp (mặc định dùng menu `header`), `footer_1..4` 1 cấp. Vị trí chưa xuất bản → link mặc định của theme.
+- **Admin → Giao diện → Menu** (quyền `storefront.manage`): cây theo vị trí, sắp bằng nút ↑ ↓ ← →; mỗi mục có link, nhãn theo ngôn ngữ, huy hiệu Mới/Sale, ảnh (cấp 1), bật/tắt, khung giờ hiển thị. Lưu nháp → Xuất bản; bỏ nháp; khôi phục 10 bản xuất bản trước. Lưu ở `core.storefront.menu.<vị trí>`.
+- Theme render: `$menus->items('header', app()->getLocale())` (layout) → `list<{label, url|null, badge, image_url, children}>` hoặc `null` (chưa xuất bản). Partial `theme::partials.menu` (ngang, nhiều cấp), `theme::partials.menu-list` (dọc).
+- Phân giải theo lô (một truy vấn mỗi loại), không cache qua request; trang có cache CDN đổi theo `s-maxage`.
+
 ## 5. Hiệu năng và SEO
 
 - **Cache trang công khai (Implemented, 0.3.34):** trang chủ, danh mục, thương hiệu, tìm kiếm, sản phẩm và trang CMS (`/trang/…`, `/tin-tuc/…`) dùng middleware `vani.page-cache`. Các trang này chạy **không phiên** (bỏ `StartSession`, `ShareErrorsFromSession`, CSRF, nhận diện khách — `Shared\Http\SessionlessRoutes`), nên HTML giống nhau với mọi khách, không `Set-Cookie` và không ghi phiên mỗi lượt xem. Response: `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=600`, `Vary: Accept-Encoding, X-Vani-Locale` (`VANI_PAGE_CACHE`, `VANI_PAGE_CACHE_TTL`). Không cache: link có chữ ký (xem trước CMS), phản hồi khác 200.

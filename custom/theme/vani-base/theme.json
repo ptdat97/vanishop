@@ -7,5 +7,31 @@
         "color-surface": "#ffffff",
         "radius": "0.5rem",
         "font-sans": "'Instrument Sans', ui-sans-serif, system-ui, sans-serif"
+    },
+    "menus": {
+        "header": {
+            "label": "Menu chính (đầu trang)",
+            "depth": 3
+        },
+        "mobile": {
+            "label": "Menu di động",
+            "depth": 2
+        },
+        "footer_1": {
+            "label": "Chân trang — cột 1",
+            "depth": 1
+        },
+        "footer_2": {
+            "label": "Chân trang — cột 2",
+            "depth": 1
+        },
+        "footer_3": {
+            "label": "Chân trang — cột 3",
+            "depth": 1
+        },
+        "footer_4": {
+            "label": "Chân trang — cột 4",
+            "depth": 1
+        }
     }
 }

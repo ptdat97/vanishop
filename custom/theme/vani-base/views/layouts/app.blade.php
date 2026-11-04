@@ -22,10 +22,27 @@
                 <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="Tìm sản phẩm…"
                        class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
             </form>
-            <nav class="flex gap-4 text-sm" aria-label="Menu chính">
-                <a href="{{ route('storefront.brands') }}">Thương hiệu</a>
+            @php($headerMenu = ($menus ?? null)?->items('header', app()->getLocale()))
+            @php($mobileMenu = ($menus ?? null)?->items('mobile', app()->getLocale()) ?? $headerMenu)
+            <nav class="hidden gap-4 text-sm md:flex" aria-label="Menu chính">
+                @if ($headerMenu !== null)
+                    @include('theme::partials.menu', ['items' => $headerMenu])
+                @else
+                    <a href="{{ route('storefront.brands') }}">Thương hiệu</a>
+                @endif
                 <x-vani::hook-slot name="vani.storefront.header.nav" />
             </nav>
+            <details class="w-full text-sm md:hidden">
+                <summary class="cursor-pointer select-none py-1">Danh mục</summary>
+                <nav aria-label="Menu di động" class="mt-2 space-y-1">
+                    @if ($mobileMenu !== null)
+                        @include('theme::partials.menu-list', ['items' => $mobileMenu])
+                    @else
+                        <a href="{{ route('storefront.brands') }}" class="block py-1">Thương hiệu</a>
+                    @endif
+                    <x-vani::hook-slot name="vani.storefront.header.nav" />
+                </nav>
+            </details>
             <div class="flex items-center gap-4 text-sm">
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
                 {{-- Trang cache được: luôn render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
@@ -53,7 +70,14 @@
 
     <footer class="mt-12 border-t border-slate-200">
         <div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 text-sm text-slate-500 md:grid-cols-4">
-            <nav class="space-y-1" aria-label="Hỗ trợ"><a href="{{ route('storefront.track') }}" class="block">Tra cứu đơn hàng</a></nav>
+            @php($footerMenus = collect(['footer_1', 'footer_2', 'footer_3', 'footer_4'])->mapWithKeys(fn ($location) => [$location => ($menus ?? null)?->items($location, app()->getLocale())])->filter(fn ($items) => $items !== null))
+            @forelse ($footerMenus as $location => $items)
+                <nav class="space-y-1" aria-label="{{ $location }}" data-menu="{{ $location }}">
+                    @include('theme::partials.menu-list', ['items' => $items])
+                </nav>
+            @empty
+                <nav class="space-y-1" aria-label="Hỗ trợ"><a href="{{ route('storefront.track') }}" class="block">Tra cứu đơn hàng</a></nav>
+            @endforelse
             <x-vani::hook-slot name="vani.storefront.footer.columns" />
             <p class="md:col-span-4">© {{ date('Y') }} {{ config('app.name') }}</p>
         </div>
