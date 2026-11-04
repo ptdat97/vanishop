@@ -2,13 +2,14 @@
 import { Link } from '@inertiajs/vue3';
 
 /** Chuyển giữa các màn hình của Admin → Giao diện. */
-defineProps<{ active: 'home' | 'menus' }>();
+defineProps<{ active: 'home' | 'menus' | 'theme-settings' }>();
 
 const tabs = [
     { key: 'home', label: 'Trang chủ', route: 'home-blocks' },
     { key: 'menus', label: 'Menu', route: 'menus' },
+    { key: 'theme-settings', label: 'Đầu & chân trang', route: 'theme-settings' },
 ] as const;
-const base = window.location.pathname.replace(/\/(home-blocks|menus)(\/.*)?$/, '');
+const base = window.location.pathname.replace(/\/(home-blocks|menus|theme-settings)(\/.*)?$/, '');
 </script>
 
 <template>

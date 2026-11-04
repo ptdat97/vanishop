@@ -54,7 +54,7 @@ View fallback: theme đang hoạt động → `custom/theme/vani-base` → view 
 
 ```
 custom/theme/vani-base/
-├── theme.json            # tên, parent, blocks hỗ trợ, token mặc định
+├── theme.json            # tên, parent, blocks hỗ trợ, token mặc định, menus, settings (đầu/chân trang)
 ├── views/                # layouts, components, pages (pdp, plp, cart, checkout, account)
 ├── css/app.css           # @theme dùng CSS variables từ token
 └── js/app.js             # Alpine components (chỉ UI: gallery, chọn size, mini-cart)
@@ -125,6 +125,15 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - **Admin → Giao diện → Menu** (quyền `storefront.manage`): cây theo vị trí, sắp bằng nút ↑ ↓ ← →; mỗi mục có link, nhãn theo ngôn ngữ, huy hiệu Mới/Sale, ảnh (cấp 1), bật/tắt, khung giờ hiển thị. Lưu nháp → Xuất bản; bỏ nháp; khôi phục 10 bản xuất bản trước. Lưu ở `core.storefront.menu.<vị trí>`.
 - Theme render: `$menus->items('header', app()->getLocale())` (layout) → `list<{label, url|null, badge, image_url, children}>` hoặc `null` (chưa xuất bản). Partial `theme::partials.menu` (ngang, nhiều cấp), `theme::partials.menu-list` (dọc).
 - Phân giải theo lô (một truy vấn mỗi loại), không cache qua request; trang có cache CDN đổi theo `s-maxage`.
+
+## 4b. Đầu & chân trang theo schema theme
+
+> **Implemented** (Core 0.3.65, [reference-parity §3.16-3](../20-roadmap/reference-parity-refactor.md)).
+
+- Theme khai báo trường trong `theme.json` → `settings`: `{"<nhóm>": {"label": "…", "fields": [{"key", "label", "type", "required?", "max?", "help?", "options?", "translatable?"}]}}`. `type` là kiểu của `FieldDefinition` (`string`, `text`, `int`, `bool`, `select`, `date`) hoặc `url` (chỉ `http(s)`), `email`. `translatable: true` (chỉ `string`/`text`) → một ô mỗi ngôn ngữ, bản trống rơi về ngôn ngữ mặc định. Trường khai báo sai bị bỏ (ghi log). Core không cứng trường nào.
+- Theme con không khai báo `settings` → dùng schema **và giá trị** của theme cha gần nhất có khai báo; tự khai báo → thay hẳn. Giá trị lưu ở `core.storefront.theme_settings.<theme khai báo>`.
+- **Admin → Giao diện → Đầu & chân trang** (quyền `storefront.manage`): form sinh từ schema, lỗi theo `settings.<nhóm>.<trường>[.<ngôn ngữ>]`, ghi audit `storefront.theme_settings_updated`.
+- Layout nhận `$themeSettings[<nhóm>][<trường>]` theo ngôn ngữ trang (mọi trường đều có khoá: chưa nhập = `null`, `bool` = `false`). `vani-base`: `header` (thanh thông báo + link), `footer` (điện thoại, email, địa chỉ, Facebook/Instagram/TikTok/YouTube/Zalo, phương thức thanh toán — mỗi dòng một nhãn, dòng bản quyền — trống = `© năm + tên cửa hàng`).
 
 ## 5. Hiệu năng và SEO
 

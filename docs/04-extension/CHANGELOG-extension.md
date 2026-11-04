@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.65 — 2026-11-04
+
+Chỉ thêm. Đầu & chân trang theo schema theme ([storefront §4b](../14-storefront/storefront.md)).
+
+### Thêm
+- `theme.json` khai báo `settings` (nhóm → trường kiểu `FieldDefinition` + `url`/`email`, `translatable`); theme con không khai báo thì dùng của theme cha.
+- Layout theme nhận `$themeSettings` (giá trị theo ngôn ngữ trang). `vani-base` khai báo `header` (thanh thông báo), `footer` (liên hệ, mạng xã hội, phương thức thanh toán, bản quyền).
+- Admin → Giao diện → Đầu & chân trang.
+
 ## 0.3.64 — 2026-11-04
 
 Chỉ thêm. Chọn dòng giỏ để thanh toán, mua ngay, giỏ mini ([reference-parity §3.8](../20-roadmap/reference-parity-refactor.md)).

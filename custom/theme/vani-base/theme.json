@@ -33,5 +33,88 @@
             "label": "Chân trang — cột 4",
             "depth": 1
         }
+    },
+    "settings": {
+        "header": {
+            "label": "Đầu trang",
+            "fields": [
+                {
+                    "key": "announcement",
+                    "label": "Thanh thông báo",
+                    "type": "string",
+                    "max": 200,
+                    "translatable": true,
+                    "help": "Dòng chữ trên cùng mọi trang, vd. Miễn phí giao hàng đơn từ 500.000 ₫. Để trống = ẩn."
+                },
+                {
+                    "key": "announcement_url",
+                    "label": "Link của thanh thông báo",
+                    "type": "url"
+                }
+            ]
+        },
+        "footer": {
+            "label": "Chân trang",
+            "fields": [
+                {
+                    "key": "contact_phone",
+                    "label": "Điện thoại",
+                    "type": "string",
+                    "max": 32
+                },
+                {
+                    "key": "contact_email",
+                    "label": "Email",
+                    "type": "email"
+                },
+                {
+                    "key": "contact_address",
+                    "label": "Địa chỉ",
+                    "type": "text",
+                    "max": 500,
+                    "translatable": true
+                },
+                {
+                    "key": "facebook_url",
+                    "label": "Facebook",
+                    "type": "url"
+                },
+                {
+                    "key": "instagram_url",
+                    "label": "Instagram",
+                    "type": "url"
+                },
+                {
+                    "key": "tiktok_url",
+                    "label": "TikTok",
+                    "type": "url"
+                },
+                {
+                    "key": "youtube_url",
+                    "label": "YouTube",
+                    "type": "url"
+                },
+                {
+                    "key": "zalo_url",
+                    "label": "Zalo",
+                    "type": "url"
+                },
+                {
+                    "key": "payment_methods",
+                    "label": "Phương thức thanh toán hiển thị",
+                    "type": "text",
+                    "max": 500,
+                    "help": "Mỗi dòng một tên, vd. COD, Chuyển khoản. Hiện thành nhãn ở chân trang."
+                },
+                {
+                    "key": "copyright",
+                    "label": "Dòng bản quyền",
+                    "type": "string",
+                    "max": 200,
+                    "translatable": true,
+                    "help": "Để trống = © năm + tên cửa hàng."
+                }
+            ]
+        }
     }
 }

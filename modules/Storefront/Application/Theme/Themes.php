@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Storefront\Application\Theme;
 
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use JsonException;
+use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -55,6 +57,7 @@ final class Themes
                 path: dirname($file),
                 tokens: array_filter(array_map('strval', (array) ($data['tokens'] ?? [])), self::safeValue(...)),
                 menus: isset($data['menus']) ? self::parseMenus((array) $data['menus']) : null,
+                settings: isset($data['settings']) ? self::parseSettings($name, (array) $data['settings']) : null,
             );
         }
         ksort($this->themes);
@@ -141,6 +144,77 @@ final class Themes
         }
 
         return [];
+    }
+
+    /**
+     * Schema cấu hình của theme đang hoạt động (theme gần nhất trong chuỗi có khai báo `settings`). Giá trị lưu theo
+     * theme khai báo schema → theme con dùng schema của cha thì dùng luôn giá trị đã nhập.
+     *
+     * @return array{theme: string, sections: array<string, ThemeSettingSection>}|null
+     */
+    public function settingsSchema(): ?array
+    {
+        foreach ($this->chain() as $theme) {
+            if ($theme->settings !== null) {
+                return ['theme' => $theme->name, 'sections' => $theme->settings];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * `settings` trong theme.json: `{"footer": {"label": "Chân trang", "fields": [{"key": "copyright", "label": "…",
+     * "type": "string", "translatable": true}]}}`. Kiểu: kiểu của FieldDefinition hoặc `url`/`email`. Trường sai bị bỏ.
+     *
+     * @param  array<mixed>  $sections
+     * @return array<string, ThemeSettingSection>
+     */
+    private static function parseSettings(string $theme, array $sections): array
+    {
+        $parsed = [];
+        foreach ($sections as $code => $section) {
+            if (! is_string($code) || preg_match('/^[a-z][a-z0-9_]{0,31}$/', $code) !== 1 || ! is_array($section)) {
+                continue;
+            }
+
+            $fields = [];
+            $translatable = [];
+            $formats = [];
+            foreach ((array) ($section['fields'] ?? []) as $field) {
+                if (! is_array($field)) {
+                    continue;
+                }
+                $type = (string) ($field['type'] ?? 'string');
+                $format = in_array($type, ThemeSettingSection::FORMATS, true) ? $type : null;
+                try {
+                    $definition = new FieldDefinition(
+                        key: (string) ($field['key'] ?? ''),
+                        label: (string) ($field['label'] ?? ($field['key'] ?? '')),
+                        type: $format === null ? $type : 'string',
+                        required: (bool) ($field['required'] ?? false),
+                        options: array_map('strval', (array) ($field['options'] ?? [])),
+                        help: isset($field['help']) ? (string) $field['help'] : null,
+                        max: max(1, min(5000, (int) ($field['max'] ?? ($type === 'text' ? 2000 : 255)))),
+                    );
+                } catch (InvalidArgumentException $exception) {
+                    Log::warning('Bỏ qua trường cấu hình theme khai báo sai.', ['theme' => $theme, 'section' => $code, 'error' => $exception->getMessage()]);
+
+                    continue;
+                }
+                $fields[] = $definition;
+                if ($format !== null) {
+                    $formats[$definition->key] = $format;
+                }
+                if (($field['translatable'] ?? false) === true && in_array($definition->type, ['string', 'text'], true)) {
+                    $translatable[] = $definition->key;
+                }
+            }
+
+            $parsed[$code] = new ThemeSettingSection($code, (string) ($section['label'] ?? $code), $fields, $translatable, $formats);
+        }
+
+        return $parsed;
     }
 
     /**

@@ -16,6 +16,18 @@
 </head>
 <body class="min-h-screen bg-surface font-sans text-slate-900 antialiased">
     <x-vani::hook-slot name="vani.storefront.layout.body_start" />
+    {{-- Đầu & chân trang do cửa hàng nhập theo schema `settings` trong theme.json (Admin → Giao diện → Đầu & chân trang). --}}
+    @php($headerSettings = $themeSettings['header'] ?? [])
+    @php($footerSettings = $themeSettings['footer'] ?? [])
+    @if ($headerSettings['announcement'] ?? null)
+        <div class="bg-primary px-4 py-2 text-center text-sm text-white" data-vani-announcement>
+            @if ($headerSettings['announcement_url'] ?? null)
+                <a href="{{ $headerSettings['announcement_url'] }}" class="underline">{{ $headerSettings['announcement'] }}</a>
+            @else
+                {{ $headerSettings['announcement'] }}
+            @endif
+        </div>
+    @endif
     <header class="border-b border-slate-200">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
             <a href="{{ vani_route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
@@ -96,7 +108,29 @@
                 <nav class="space-y-1" aria-label="{{ __('Hỗ trợ') }}"><a href="{{ vani_route('storefront.track') }}" class="block">{{ __('Tra cứu đơn hàng') }}</a></nav>
             @endforelse
             <x-vani::hook-slot name="vani.storefront.footer.columns" />
-            <p class="md:col-span-4">© {{ date('Y') }} {{ config('app.name') }}</p>
+            @php($socials = array_filter(['Facebook' => $footerSettings['facebook_url'] ?? null, 'Instagram' => $footerSettings['instagram_url'] ?? null, 'TikTok' => $footerSettings['tiktok_url'] ?? null, 'YouTube' => $footerSettings['youtube_url'] ?? null, 'Zalo' => $footerSettings['zalo_url'] ?? null]))
+            @php($payments = array_values(array_filter(array_map('trim', preg_split('/\R/', (string) ($footerSettings['payment_methods'] ?? ''))))))
+            @if (($footerSettings['contact_phone'] ?? null) || ($footerSettings['contact_email'] ?? null) || ($footerSettings['contact_address'] ?? null) || $socials !== [])
+                <address class="space-y-1 not-italic" data-vani-footer-contact>
+                    <p class="font-medium text-slate-700">{{ __('Liên hệ') }}</p>
+                    @if ($footerSettings['contact_phone'] ?? null)<a href="tel:{{ preg_replace('/[^\d+]/', '', $footerSettings['contact_phone']) }}" class="block">{{ $footerSettings['contact_phone'] }}</a>@endif
+                    @if ($footerSettings['contact_email'] ?? null)<a href="mailto:{{ $footerSettings['contact_email'] }}" class="block">{{ $footerSettings['contact_email'] }}</a>@endif
+                    @if ($footerSettings['contact_address'] ?? null)<p>{!! nl2br(e($footerSettings['contact_address'])) !!}</p>@endif
+                    @if ($socials !== [])
+                        <p class="flex flex-wrap gap-3 pt-1">
+                            @foreach ($socials as $network => $url)<a href="{{ $url }}" rel="noopener" target="_blank">{{ $network }}</a>@endforeach
+                        </p>
+                    @endif
+                </address>
+            @endif
+            <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-4">
+                <p>{{ ($footerSettings['copyright'] ?? null) ?: '© '.date('Y').' '.config('app.name') }}</p>
+                @if ($payments !== [])
+                    <ul class="flex flex-wrap gap-2" aria-label="{{ __('Phương thức thanh toán') }}">
+                        @foreach ($payments as $payment)<li class="rounded border border-slate-300 px-2 py-0.5 text-xs">{{ $payment }}</li>@endforeach
+                    </ul>
+                @endif
+            </div>
         </div>
     </footer>
 

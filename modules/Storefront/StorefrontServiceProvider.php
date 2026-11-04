@@ -7,6 +7,7 @@ namespace Modules\Storefront;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
@@ -32,6 +33,7 @@ use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Application\Theme\ThemeSettings;
 use Modules\Storefront\Contracts\LinkResolver;
 use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\PageSeo;
@@ -73,7 +75,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     {
         $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
         $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
-        $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ, menu)');
+        $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ, menu, đầu & chân trang)');
         $navigation->add('storefront', 'Giao diện', 'admin.storefront.home', 'storefront.manage', 600, group: 'content');
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
@@ -83,6 +85,8 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         View::composer('theme::layouts.app', fn ($view) => $view->with([
             'menus' => $this->app->make(MenuPresenter::class),
             'seo' => $this->app->make(PageAlternates::class)->tags(),
+            // Đầu/chân trang theo schema theme (§3.16-3): $themeSettings['footer']['copyright']…
+            'themeSettings' => $this->app->make(ThemeSettings::class)->values(App::getLocale()),
         ]));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');

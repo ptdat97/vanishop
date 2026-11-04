@@ -40,6 +40,8 @@ return [
         'cancelled' => 'Đã huỷ',
     ],
     'account_deleted' => 'Tài khoản đã được xoá. Thông tin cá nhân của bạn đã được gỡ khỏi cửa hàng.',
+    'theme_settings_saved' => 'Đã lưu đầu & chân trang.',
+    'theme_settings_none' => 'Giao diện đang dùng không khai báo cấu hình đầu/chân trang.',
     'menu_saved' => 'Đã lưu nháp menu.',
     'menu_published' => 'Đã xuất bản menu.',
     'menu_discarded' => 'Đã bỏ thay đổi chưa xuất bản.',

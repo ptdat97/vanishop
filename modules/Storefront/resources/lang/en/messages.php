@@ -20,6 +20,8 @@ return [
     'address_saved' => 'Address saved.',
     'address_deleted' => 'Address deleted.',
     'account_deleted' => 'Your account has been deleted. Your personal data has been removed from the store.',
+    'theme_settings_saved' => 'Header & footer saved.',
+    'theme_settings_none' => 'The active theme does not declare header/footer settings.',
     'menu_saved' => 'Menu draft saved.',
     'menu_published' => 'Menu published.',
     'menu_discarded' => 'Unpublished changes discarded.',
