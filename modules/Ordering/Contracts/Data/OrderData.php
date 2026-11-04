@@ -39,5 +39,7 @@ final readonly class OrderData
         public array $shippingMethod = [],
         /** Đơn gốc nếu đây là đơn thay thế (đổi hàng, 0.3.32). */
         public ?int $parentOrderId = null,
+        /** Ngôn ngữ khách dùng lúc đặt (0.3.62, ADR-038 §8): mẫu thông báo theo ngôn ngữ này. */
+        public ?string $locale = null,
     ) {}
 }

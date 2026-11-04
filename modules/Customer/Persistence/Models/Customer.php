@@ -32,7 +32,7 @@ use Modules\Customer\Domain\CustomerStatus;
 final class Customer extends Model
 {
     protected $fillable = [
-        'public_id', 'phone', 'email', 'full_name', 'birth_date', 'gender', 'status', 'registered_at', 'phone_verified_at',
+        'public_id', 'phone', 'email', 'full_name', 'birth_date', 'gender', 'preferred_locale', 'status', 'registered_at', 'phone_verified_at',
         'password', 'merged_into_id', 'meta', 'last_login_at', 'orders_count', 'total_spent', 'first_order_at', 'last_order_at',
     ];
 

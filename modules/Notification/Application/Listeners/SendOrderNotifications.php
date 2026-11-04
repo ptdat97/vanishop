@@ -83,6 +83,7 @@ final class SendOrderNotifications
                     email: $order->recipient['email'] ?? null,
                     name: $order->recipient['full_name'],
                     customerId: $order->customerId,
+                    locale: $order->locale,
                 );
                 $variables = [
                     'store_name' => (string) config('app.name'),

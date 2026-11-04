@@ -25,7 +25,7 @@ flowchart LR
     J --> C{{NotificationChannel<br/>mail · sms · zns}}
 ```
 
-- **Chọn mẫu tin**: với mỗi kênh, mẫu đang bật của loại tin; locale của người nhận ghi đè `vi`. Kênh chỉ dùng khi plugin cung cấp kênh đang bật và `canReach()` người nhận (email cho `mail`, SĐT cho `sms`/`zns`).
+- **Chọn mẫu tin**: với mỗi kênh, mẫu đang bật của loại tin; locale của người nhận ghi đè `vi` (tin đơn hàng: `orders.locale` — 0.3.62). Kênh chỉ dùng khi plugin cung cấp kênh đang bật và `canReach()` người nhận (email cho `mail`, SĐT cho `sms`/`zns`).
 - **Render lúc xếp hàng**: `subject`, `body` và mọi chuỗi trong `meta` (tham số riêng của kênh, vd. ZNS `template_id` + `params`) được render rồi lưu vào nhật ký → mọi lần thử gửi cùng một nội dung.
 - **Idempotent (R18)**: `idempotency_key = <key của sự việc>:<kênh>` unique; listener chạy lại không gửi trùng. Key của Core: `order_placed:<order id>`, `order_cancelled:<order id>`, `shipment_shipped:<shipment id>`, `shipment_delivered:<shipment id>`.
 - **Retry**: `SendResult::retryable` → thử lại (backoff 1m, 5m, 15m, 1h; tối đa 5 lần), `permanent` → `failed`. Exception bất ngờ coi như retryable.

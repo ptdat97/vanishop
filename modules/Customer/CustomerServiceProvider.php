@@ -15,6 +15,7 @@ use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Application\CustomerSessionService;
 use Modules\Customer\Application\Listeners\RefreshCustomerStats;
+use Modules\Customer\Application\Listeners\RememberPreferredLocale;
 use Modules\Customer\Application\OtpSenders\EmailOtpSender;
 use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
@@ -91,6 +92,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         $router->aliasMiddleware('vani.customer-session', CustomerSession::class);
 
         Event::listen(OrderPlaced::class, RefreshCustomerStats::class);
+        Event::listen(OrderPlaced::class, RememberPreferredLocale::class);
         Event::listen(OrderCancelled::class, RefreshCustomerStats::class);
         Event::listen(OrderLinesCancelled::class, RefreshCustomerStats::class);
 

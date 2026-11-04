@@ -28,6 +28,7 @@ Sau khi tạo, đơn giữ **snapshot** và không phụ thuộc dữ liệu cat
 | Thuế | `order_lines.tax_rate_bp`, `tax_amount` |
 | Địa chỉ, người nhận | `orders.shipping_address` (JSON) |
 | Khách hàng | `orders.customer_id` + `customer_snapshot` (tên, SĐT, email lúc đặt) |
+| Ngôn ngữ khách dùng lúc đặt | `orders.locale` (0.3.62, ADR-038): trang web theo URL, Storefront API theo `X-Vani-Locale`, Admin theo ngôn ngữ Admin; đơn cũ `null` = ngôn ngữ mặc định |
 | Vận chuyển | `orders.shipping_method` (carrier, dịch vụ, phí) |
 | Brand của sản phẩm | `order_lines.brand_id` + `brand_name` (snapshot, Designed — slice 12) |
 | Nguồn đơn, tiền tệ | `orders.source` (`web`/`app`/`zalo`/`admin`/`pos`; `exchange` cho đơn thay thế), `currency_code`. Code hiện còn `brand_id`, `channel_id`, `legal_entity_id` trên `orders` — gỡ ở slice 12 ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |

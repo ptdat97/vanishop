@@ -18,6 +18,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Application\NumberSequences;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\StoreClock;
+use Modules\Shared\Support\StoreLocale;
 
 final class OrderFactory implements OrderWriter
 {
@@ -36,7 +37,7 @@ final class OrderFactory implements OrderWriter
         $accessToken = Str::random(40);
         $order = Order::query()->create([
             'customer_phone' => $draft->customer['phone'], 'access_token_hash' => hash('sha256', $accessToken),
-            'public_id' => $draft->publicId, 'number' => $number, 'source' => $draft->source,
+            'public_id' => $draft->publicId, 'number' => $number, 'source' => $draft->source, 'locale' => $this->locale(),
             'customer_id' => $draft->customerId, 'currency_code' => $draft->currencyCode,
             'order_status' => OrderStatus::Pending, 'payment_status' => $draft->paymentStatus, 'fulfillment_status' => 'unfulfilled', 'return_status' => 'none',
             'payment_method' => $draft->paymentMethod,
@@ -70,9 +71,19 @@ final class OrderFactory implements OrderWriter
             'data' => json_encode(['payment_method' => $draft->paymentMethod, 'total' => $draft->totalAmount]), 'created_at' => now(),
         ]);
 
-        event(new OrderPlaced($order->id, $order->public_id, $number, $draft->customerId, $draft->totalAmount, $draft->currencyCode));
+        event(new OrderPlaced($order->id, $order->public_id, $number, $draft->customerId, $draft->totalAmount, $draft->currencyCode, $order->locale));
 
         return new PlacedOrder($order->id, $order->public_id, $number, OrderStatus::Pending->value, $draft->paymentStatus, $draft->totalAmount, $draft->currencyCode, $accessToken);
+    }
+
+    /**
+     * Ngôn ngữ của request đặt hàng (trang web theo URL, Storefront API theo header); không hợp lệ → mặc định.
+     */
+    private function locale(): string
+    {
+        $locale = (string) $this->context->locale();
+
+        return StoreLocale::isSupported($locale) ? $locale : StoreLocale::default();
     }
 
     /**

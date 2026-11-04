@@ -6,6 +6,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Application\ConsentService;
+use Modules\Customer\Persistence\Models\Customer;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -129,4 +130,22 @@ it('Admin: xem/sửa mẫu tin (khoá lạc quan, chống trùng), xem nhật k�
 
     $this->get('/admin/notifications/logs')->assertInertia(fn (Assert $page) => $page->component('Notification::Logs/Index')
         ->where('logs.0.recipient', 'la***@example.com'));
+});
+
+it('đơn lưu ngôn ngữ lúc đặt; email theo mẫu ngôn ngữ của đơn, thiếu mẫu thì dùng ngôn ngữ mặc định (ADR-038 §8)', function () {
+    NotificationTemplate::query()->create(['type' => 'order_placed', 'channel' => 'mail', 'locale' => 'en', 'subject' => 'Order {{ order_number }} received', 'body' => 'Hi {{ customer_name }}', 'active' => true]);
+
+    $vi = ($this->placeOrder)('locale-vi');
+    $api = '/api/storefront/v1';
+    $headers = ['X-Vani-Locale' => 'en'];
+    $created = $this->postJson("{$api}/carts", [], $headers)->assertCreated();
+    $headers['X-Vani-Cart-Token'] = $created->json('meta.token');
+    $this->postJson("{$api}/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
+    $number = $this->postJson("{$api}/checkout/{$created->json('data.id')}/orders", C::orderPayload(['expected_total' => 330_000]), [...$headers, 'Idempotency-Key' => 'locale-en'])->assertCreated()->json('data.number');
+    $en = Order::query()->withoutGlobalScopes()->where('number', $number)->sole();
+
+    expect($vi->locale)->toBe('vi')->and($en->locale)->toBe('en')
+        ->and(Customer::query()->find($en->customer_id)?->preferred_locale)->toBe('en');
+    $subjects = array_map(fn ($mail) => $mail->getOriginalMessage()->getSubject(), ($this->mails)());
+    expect($subjects)->toContain(config('app.name').": đã nhận đơn {$vi->number}")->toContain("Order {$en->number} received");
 });

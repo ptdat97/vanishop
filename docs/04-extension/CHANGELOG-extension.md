@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.62 — 2026-11-04
+
+Chỉ thêm. Ngôn ngữ của đơn và khách (ADR-038 mục 8).
+
+### Thêm
+- Cột `orders.locale`, `customers.preferred_locale`.
+- `OrderData::$locale`, `OrderPlaced::$locale`, `CustomerData::$preferredLocale` (tham số cuối, có mặc định); `CustomerData::toArray()` có `preferred_locale`.
+- Thông báo đơn hàng chọn mẫu theo `orders.locale` (rơi về ngôn ngữ mặc định khi thiếu mẫu).
+
 ## 0.3.61 — 2026-11-04
 
 SEO theo ngôn ngữ (ADR-038 mục 5–7).

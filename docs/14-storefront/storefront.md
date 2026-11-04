@@ -102,7 +102,9 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 
 ## 3a. URL theo ngôn ngữ
 
-> **Partially Implemented** (Core 0.3.59, [ADR-038](../19-adr/ADR-038-localized-storefront-urls.md)): định tuyến + sinh URL. Slug theo ngôn ngữ, hreflang/canonical, sitemap, locale của đơn: làm tiếp.
+> **Implemented** (Core 0.3.59–0.3.62, [ADR-038](../19-adr/ADR-038-localized-storefront-urls.md)).
+
+- Đơn lưu `locale` lúc đặt (trang web theo URL, Storefront API theo header); thông báo giao dịch chọn mẫu theo ngôn ngữ của đơn, thiếu mẫu thì dùng ngôn ngữ mặc định. Khách có `preferred_locale` (cập nhật khi đặt hàng/sửa hồ sơ).
 
 - Tiếng Việt giữ URL hiện tại; tiếng Anh dưới `/en` với đường dẫn tiếng Anh (`/en/products/{slug}`, `/en/category/{slug}`, `/en/brands`, `/en/cart`, `/en/account/…`). Bảng đường dẫn: `config/vanishop.php` → `locale.paths`. Tên route: `storefront.*` (mặc định), `storefront.en.*`.
 - Ngôn ngữ của trang web lấy **từ URL** (`vani.storefront-context:<locale>` trên nhóm route), bỏ qua header `X-Vani-Locale` (Storefront API vẫn dùng header). Trang có cache chỉ `Vary: Accept-Encoding`.

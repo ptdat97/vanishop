@@ -134,6 +134,7 @@ final class EloquentOrderReader implements OrderReader
             source: (string) $order->source,
             shippingMethod: (array) ($order->shipping_method ?? []),
             parentOrderId: $order->parent_order_id === null ? null : (int) $order->parent_order_id,
+            locale: $order->locale,
         );
     }
 }

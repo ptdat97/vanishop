@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Customer\Application;
 
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Customer\Contracts\CustomerRejected;
@@ -13,6 +14,7 @@ use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Shared\Support\Phones;
+use Modules\Shared\Support\StoreLocale;
 
 final class CustomerService implements Customers
 {
@@ -96,6 +98,12 @@ final class CustomerService implements Customers
             $attributes['email'] = $email === '' ? null : $email;
         }
 
+        // Khách sửa hồ sơ ở trang/ứng dụng ngôn ngữ nào thì đó là ngôn ngữ khách dùng (ADR-038 §8).
+        $locale = App::getLocale();
+        if (StoreLocale::isSupported($locale)) {
+            $attributes['preferred_locale'] = $locale;
+        }
+
         try {
             $customer->update($attributes);
         } catch (UniqueConstraintViolationException) {
@@ -110,6 +118,7 @@ final class CustomerService implements Customers
         return new CustomerData(
             $customer->id, $customer->public_id, $customer->phone, $customer->email, $customer->full_name, $customer->status->value,
             $customer->isRegistered(), $customer->birth_date?->format('Y-m-d'), $customer->gender, $customer->password !== null,
+            $customer->preferred_locale,
         );
     }
 }

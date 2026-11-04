@@ -18,5 +18,7 @@ final readonly class OrderPlaced implements ShouldDispatchAfterCommit
         public ?int $customerId,
         public int $totalAmount,
         public string $currencyCode,
+        /** Ngôn ngữ của đơn (0.3.62, ADR-038 §8). */
+        public ?string $locale = null,
     ) {}
 }
