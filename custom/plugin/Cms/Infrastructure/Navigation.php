@@ -33,10 +33,10 @@ final class Navigation
             ];
         });
 
-        $url = fn (array $link): array => ['label' => $link['label'], 'url' => route('storefront.p.vani-cms.page', $link['slug'])];
+        $url = fn (array $link): array => ['label' => $link['label'], 'url' => vani_route('storefront.p.vani-cms.page', $link['slug'])];
         $header = array_map($url, $data['header']);
         if ($data['blog']) {
-            $header[] = ['label' => 'Tin tức', 'url' => route('storefront.p.vani-cms.blog')];
+            $header[] = ['label' => 'Tin tức', 'url' => vani_route('storefront.p.vani-cms.blog')];
         }
 
         return ['header' => $header, 'footer' => array_map($url, $data['footer'])];

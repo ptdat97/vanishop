@@ -1,7 +1,7 @@
 @extends('theme::layouts.app')
 
 @section('title', 'Tin tức')
-@section('canonical', route('storefront.p.vani-cms.blog'))
+@section('canonical', vani_route('storefront.p.vani-cms.blog'))
 
 @section('content')
     <h1 class="mb-6 text-3xl font-semibold">Tin tức</h1>

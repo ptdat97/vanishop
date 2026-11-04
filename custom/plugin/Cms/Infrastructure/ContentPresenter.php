@@ -27,7 +27,7 @@ final class ContentPresenter
             'slug' => $page->slug, 'title' => $page->title, 'html' => $this->markdown->html($page->body),
             'meta_title' => $page->meta_title ?: $page->title,
             'meta_description' => $page->meta_description ?: $this->markdown->plain($page->body),
-            'url' => route('storefront.p.vani-cms.page', $page->slug),
+            'url' => vani_route('storefront.p.vani-cms.page', $page->slug),
             'updated_at' => $page->updated_at?->toIso8601String(),
         ];
     }
@@ -41,7 +41,7 @@ final class ContentPresenter
             'slug' => $post->slug, 'title' => $post->title,
             'excerpt' => $post->excerpt ?: $this->markdown->plain($post->body, 200),
             'cover_url' => $this->media->coverUrl($post),
-            'url' => route('storefront.p.vani-cms.post', $post->slug),
+            'url' => vani_route('storefront.p.vani-cms.post', $post->slug),
             'published_at' => $post->published_at?->toIso8601String(),
             'published_date' => StoreClock::format($post->published_at, 'date'),
         ];

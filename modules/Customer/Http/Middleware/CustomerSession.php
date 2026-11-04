@@ -11,6 +11,7 @@ use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\LocalizedUrls;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -36,7 +37,7 @@ final class CustomerSession
                 $request->session()->forget(self::SESSION_KEY);
             }
             if ($mode === 'required') {
-                return redirect()->guest(route('storefront.account.login'));
+                return redirect()->guest(LocalizedUrls::route('storefront.account.login'));
             }
 
             return $next($request);

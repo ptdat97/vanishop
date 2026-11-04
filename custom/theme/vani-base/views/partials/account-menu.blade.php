@@ -6,7 +6,7 @@
         <a href="{{ $item['url'] }}" class="block rounded px-3 py-2" data-account-page="{{ $item['key'] }}">{{ $item['label'] }}</a>
     @endforeach
     <x-vani::hook-slot name="vani.storefront.account.menu" />
-    <form action="{{ route('storefront.account.logout') }}" method="post" class="pt-2">
+    <form action="{{ vani_route('storefront.account.logout') }}" method="post" class="pt-2">
         @csrf
         <button type="submit" class="px-3 py-2 text-slate-500 underline">Đăng xuất</button>
     </form>

@@ -24,16 +24,16 @@
                             <li>{{ $blocker['label'] }}</li>
                         @endforeach
                     </ul>
-                    <p class="mt-2">Vui lòng chờ hoàn tất hoặc <a href="{{ route('storefront.account.orders') }}" class="underline">xem đơn hàng</a>.</p>
+                    <p class="mt-2">Vui lòng chờ hoàn tất hoặc <a href="{{ vani_route('storefront.account.orders') }}" class="underline">xem đơn hàng</a>.</p>
                 </div>
             @elseif (! $otpSent)
-                <form action="{{ route('storefront.account.delete.otp') }}" method="post">
+                <form action="{{ vani_route('storefront.account.delete.otp') }}" method="post">
                     @csrf
                     <p class="mb-3 text-sm">Mã xác nhận sẽ được gửi tới {{ $customer->phone }}.</p>
                     <button type="submit" class="rounded-[var(--radius-theme)] border border-red-600 px-4 py-2 font-medium text-red-700">Gửi mã xác nhận</button>
                 </form>
             @else
-                <form action="{{ route('storefront.account.delete.confirm') }}" method="post" class="space-y-3">
+                <form action="{{ vani_route('storefront.account.delete.confirm') }}" method="post" class="space-y-3">
                     @csrf
                     <div>
                         <label for="code" class="block text-sm">Mã xác nhận gửi tới {{ $customer->phone }}</label>
@@ -42,10 +42,10 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <button type="submit" class="rounded-[var(--radius-theme)] bg-red-600 px-4 py-2 font-medium text-white">Xoá vĩnh viễn tài khoản</button>
-                        <a href="{{ route('storefront.account.profile') }}" class="text-sm underline">Thôi, giữ tài khoản</a>
+                        <a href="{{ vani_route('storefront.account.profile') }}" class="text-sm underline">Thôi, giữ tài khoản</a>
                     </div>
                 </form>
-                <form action="{{ route('storefront.account.delete.otp') }}" method="post" class="mt-3">
+                <form action="{{ vani_route('storefront.account.delete.otp') }}" method="post" class="mt-3">
                     @csrf
                     <button type="submit" class="text-sm text-slate-500 underline">Gửi lại mã</button>
                 </form>

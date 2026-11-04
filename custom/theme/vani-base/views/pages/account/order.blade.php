@@ -13,7 +13,7 @@
             @include('theme::partials.order-returns')
 
             @if ($order['can_cancel'])
-                <form action="{{ route('storefront.account.order.cancel', $order['id']) }}" method="post" class="mt-8 flex flex-wrap items-end gap-2">
+                <form action="{{ vani_route('storefront.account.order.cancel', $order['id']) }}" method="post" class="mt-8 flex flex-wrap items-end gap-2">
                     @csrf
                     <div class="flex-1">
                         <label for="reason" class="block text-sm">Lý do huỷ</label>

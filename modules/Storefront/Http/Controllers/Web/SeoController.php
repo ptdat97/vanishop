@@ -11,6 +11,7 @@ use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Contracts\SitemapProvider;
 
 /**
@@ -42,23 +43,23 @@ final class SeoController
 
     private function build(CatalogReader $catalog, Extensions $extensions): string
     {
-        $urls = [url('/'), route('storefront.brands')];
+        $urls = [url('/'), LocalizedUrls::route('storefront.brands')];
         $walk = function (array $nodes) use (&$walk, &$urls): void {
             foreach ($nodes as $node) {
-                $urls[] = route('storefront.category', $node['slug']);
+                $urls[] = LocalizedUrls::route('storefront.category', $node['slug']);
                 $walk($node['children'] ?? []);
             }
         };
         $walk($catalog->categoryTree(App::getLocale()));
         foreach ($catalog->brands() as $brand) {
-            $urls[] = route('storefront.brand', $brand['slug']);
+            $urls[] = LocalizedUrls::route('storefront.brand', $brand['slug']);
         }
 
         $now = now()->getTimestamp();
         for ($page = 1; count($urls) < self::MAX_URLS; $page++) {
             $items = $catalog->searchProducts(new ProductFilters(now: $now, page: $page, perPage: ProductSearchQuery::MAX_PER_PAGE), App::getLocale())['items'];
             foreach ($items as $item) {
-                $urls[] = route('storefront.product', $item['slug']);
+                $urls[] = LocalizedUrls::route('storefront.product', $item['slug']);
             }
             if (count($items) < ProductSearchQuery::MAX_PER_PAGE) {
                 break;

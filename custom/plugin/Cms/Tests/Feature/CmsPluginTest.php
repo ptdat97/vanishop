@@ -209,3 +209,12 @@ it('khối "Bài viết mới" cho page builder trang chủ', function () {
     $blocks->saveHome([['type' => 'cms_latest_posts', 'config' => ['title' => 'Góc thời trang', 'limit' => 3]]]);
     $this->get('/')->assertOk()->assertSee('Góc thời trang')->assertSee('Bộ sưu tập thu');
 });
+
+it('trang và tin tức có bản tiếng Anh dưới /en/pages, /en/news (ADR-038)', function () {
+    cmsPage();
+    cmsPost();
+
+    $this->get('/en/pages/gioi-thieu')->assertOk()->assertSee('<html lang="en"', false);
+    $this->get('/en/news')->assertOk()->assertSee(url('/en/news/bo-suu-tap-thu'), false);
+    expect(vani_route('storefront.p.vani-cms.page', 'gioi-thieu', 'en'))->toBe(url('/en/pages/gioi-thieu'));
+});

@@ -18,7 +18,7 @@
 @section('content')
     <article class="mx-auto max-w-3xl">
         @include('vani-cms::_preview-notice')
-        <nav class="mb-4 text-sm text-slate-500"><a href="{{ route('storefront.p.vani-cms.blog') }}" class="underline">Tin tức</a></nav>
+        <nav class="mb-4 text-sm text-slate-500"><a href="{{ vani_route('storefront.p.vani-cms.blog') }}" class="underline">Tin tức</a></nav>
         <h1 class="mb-2 text-3xl font-semibold">{{ $post['title'] }}</h1>
         @if ($post['published_date'])
             <p class="mb-6 text-sm text-slate-500"><time datetime="{{ $post['published_at'] }}">{{ $post['published_date'] }}</time></p>

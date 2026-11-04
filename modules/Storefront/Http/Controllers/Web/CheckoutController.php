@@ -14,6 +14,7 @@ use Modules\Checkout\Contracts\CheckoutRejected;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
@@ -38,7 +39,7 @@ final class CheckoutController
     {
         $key = $this->cart->current() === null ? null : $this->cart->key();
         if ($key === null) {
-            return redirect()->route('storefront.cart');
+            return redirect()->to(LocalizedUrls::route('storefront.cart'));
         }
         if ($this->signInRequired($request)) {
             return $this->toLogin();
@@ -85,13 +86,13 @@ final class CheckoutController
             return $this->toLogin();
         }
         if ($request->input('action') === 'quote' || $this->cart->current() === null) {
-            return redirect()->route('storefront.checkout')->withInput();
+            return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput();
         }
 
         try {
             $result = $this->checkout->placeOrder($this->toRequest($data, $request, (int) $data['expected_total']), (string) $data['idempotency_key']);
         } catch (CheckoutRejected $exception) {
-            return redirect()->route('storefront.checkout')->withInput()->withErrors($this->errors($exception));
+            return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput()->withErrors($this->errors($exception));
         }
 
         $order = $result->body;
@@ -107,7 +108,7 @@ final class CheckoutController
             return redirect()->away($action->url);
         }
 
-        return redirect()->route('storefront.order', $order['id']);
+        return redirect()->to(LocalizedUrls::route('storefront.order', $order['id']));
     }
 
     /**
@@ -122,7 +123,7 @@ final class CheckoutController
 
     private function toLogin(): RedirectResponse
     {
-        return redirect()->guest(route('storefront.account.login'))->with('status', __('storefront::messages.sign_in_to_checkout'));
+        return redirect()->guest(LocalizedUrls::route('storefront.account.login'))->with('status', __('storefront::messages.sign_in_to_checkout'));
     }
 
     /**

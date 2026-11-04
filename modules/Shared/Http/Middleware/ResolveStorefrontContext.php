@@ -14,8 +14,9 @@ use Modules\Shared\Support\StoreLocale;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Storefront API: khách vãng lai + ngôn ngữ (mặc định `vi`, đổi bằng header X-Vani-Locale — không theo
- * Accept-Language). Nguồn đơn (`web`/`app`/`zalo`) lấy từ header X-Vani-Source, mặc định `web`.
+ * Khách vãng lai + ngôn ngữ. Storefront API: header X-Vani-Locale (mặc định ngôn ngữ cửa hàng, không theo
+ * Accept-Language). Trang web native: ngôn ngữ cố định theo nhóm route (`vani.storefront-context:en`, ADR-038) — lấy
+ * từ URL, bỏ qua header. Nguồn đơn (`web`/`app`/`zalo`) lấy từ header X-Vani-Source, mặc định `web`.
  */
 final class ResolveStorefrontContext
 {
@@ -27,9 +28,9 @@ final class ResolveStorefrontContext
 
     public function __construct(private readonly CurrentContext $context) {}
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, ?string $routeLocale = null): Response
     {
-        $requested = (string) $request->headers->get(self::LOCALE_HEADER, '');
+        $requested = $routeLocale ?? (string) $request->headers->get(self::LOCALE_HEADER, '');
         $locale = StoreLocale::isSupported($requested) ? $requested : StoreLocale::default();
 
         $source = (string) $request->headers->get(self::SOURCE_HEADER, '');

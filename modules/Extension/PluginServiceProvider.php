@@ -9,6 +9,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
+use InvalidArgumentException;
 use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
@@ -23,6 +24,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Http\SessionlessRoutes;
 use Modules\Shared\Support\AdminPath;
+use Modules\Shared\Support\StoreLocale;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
 use ReflectionClass;
@@ -195,7 +197,7 @@ abstract class PluginServiceProvider extends ServiceProvider
         $definitions = require $file;
         foreach (array_keys($definitions) as $name) {
             if (! str_starts_with((string) $name, $this->pluginId().'.')) {
-                throw new \InvalidArgumentException("Hook [{$name}] của plugin [{$this->pluginId()}] phải bắt đầu bằng \"{$this->pluginId()}.\".");
+                throw new InvalidArgumentException("Hook [{$name}] của plugin [{$this->pluginId()}] phải bắt đầu bằng \"{$this->pluginId()}.\".");
             }
         }
 
@@ -268,15 +270,25 @@ abstract class PluginServiceProvider extends ServiceProvider
      *
      * `$prefix` (0.3.14): URL đẹp cho nội dung (vd. `tin-tuc` → /tin-tuc/…); không được trùng route Core hay plugin
      * khác (ném lỗi lúc boot). Gọi nhiều lần với prefix khác nhau được; tên route vẫn là storefront.p.{slug}.…
-     */
-    /**
+     *
+     * Theo ngôn ngữ (0.3.59, ADR-038): mảng `['vi' => 'tin-tuc', 'en' => 'news']` đăng ký thêm /en/news/… (tên
+     * storefront.en.p.{slug}.…). Chỉ khai báo chuỗi → trang chỉ có bản ngôn ngữ mặc định; `vani_route()` trả URL đó.
+     *
+     * @param  string|array<string, string>|null  $prefix
      * @param  bool  $cacheable  trang công khai (chỉ GET, không phụ thuộc khách) → chạy không phiên, CDN cache được
      *                           (`vani.page-cache`, 0.3.34); link có chữ ký (xem trước) tự động không cache
      */
-    protected function storefrontPages(string $file, ?string $prefix = null, bool $cacheable = false): void
+    protected function storefrontPages(string $file, string|array|null $prefix = null, bool $cacheable = false): void
     {
-        if ($prefix !== null) {
-            $this->app->make(StorefrontPrefixes::class)->claim($prefix, $this->pluginId());
+        $default = StoreLocale::default();
+        $prefixes = is_array($prefix) ? array_intersect_key($prefix, array_flip(StoreLocale::supported())) : [$default => $prefix];
+        if (! array_key_exists($default, $prefixes)) {
+            throw new InvalidArgumentException("storefrontPages: thiếu tiền tố cho ngôn ngữ mặc định [{$default}].");
+        }
+        foreach ($prefixes as $locale => $localePrefix) {
+            if ($localePrefix !== null) {
+                $this->app->make(StorefrontPrefixes::class)->claim($localePrefix, $this->pluginId(), $locale);
+            }
         }
 
         if ($this->app->routesAreCached()) {
@@ -285,11 +297,14 @@ abstract class PluginServiceProvider extends ServiceProvider
 
         $slug = $this->pluginSlug();
 
-        Route::middleware(['web', 'vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? ['vani.page-cache'] : [])])
-            ->withoutMiddleware($cacheable ? SessionlessRoutes::MIDDLEWARE : [])
-            ->prefix($prefix ?? "p/{$slug}")
-            ->name("storefront.p.{$slug}.")
-            ->group($file);
+        foreach ($prefixes as $locale => $localePrefix) {
+            $path = $localePrefix ?? "p/{$slug}";
+            Route::middleware(['web', 'vani.storefront-context:'.$locale, 'vani.customer-session', 'vani.theme', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId(), ...($cacheable ? ['vani.page-cache'] : [])])
+                ->withoutMiddleware($cacheable ? SessionlessRoutes::MIDDLEWARE : [])
+                ->prefix($locale === $default ? $path : "{$locale}/{$path}")
+                ->name($locale === $default ? "storefront.p.{$slug}." : "storefront.{$locale}.p.{$slug}.")
+                ->group($file);
+        }
 
         $this->refreshRouteLookups();
     }

@@ -11,7 +11,7 @@
         @include('theme::partials.account-menu')
         <section class="max-w-lg">
             <h1 class="mb-6 text-2xl font-semibold">Hồ sơ</h1>
-            <form action="{{ route('storefront.account.profile.update') }}" method="post" class="space-y-3">
+            <form action="{{ vani_route('storefront.account.profile.update') }}" method="post" class="space-y-3">
                 @csrf
                 @method('PUT')
                 <div>
@@ -50,7 +50,7 @@
 
             <h2 class="mb-1 mt-10 text-lg font-semibold">{{ $customer->hasPassword ? 'Đổi mật khẩu' : 'Đặt mật khẩu' }}</h2>
             <p class="mb-4 text-sm text-slate-500">Bạn vẫn đăng nhập được bằng mã OTP gửi tới số điện thoại.</p>
-            <form action="{{ route('storefront.account.password.update') }}" method="post" class="space-y-3">
+            <form action="{{ vani_route('storefront.account.password.update') }}" method="post" class="space-y-3">
                 @csrf
                 @method('PUT')
                 @if ($customer->hasPassword)
@@ -73,7 +73,7 @@
             </form>
 
             <h2 class="mb-1 mt-10 text-lg font-semibold">Xoá tài khoản</h2>
-            <p class="text-sm text-slate-500">Gỡ thông tin cá nhân của bạn khỏi cửa hàng. <a href="{{ route('storefront.account.delete') }}" class="text-red-700 underline">Xoá tài khoản</a></p>
+            <p class="text-sm text-slate-500">Gỡ thông tin cá nhân của bạn khỏi cửa hàng. <a href="{{ vani_route('storefront.account.delete') }}" class="text-red-700 underline">Xoá tài khoản</a></p>
         </section>
     </div>
 @endsection

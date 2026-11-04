@@ -17,7 +17,7 @@ abstract class CatalogLinkType implements LinkType
     /** @return 'category'|'collection'|'brand'|'product' */
     abstract protected function kind(): string;
 
-    abstract protected function url(string $slug): string;
+    abstract protected function url(string $slug, string $locale): string;
 
     public function type(): string
     {
@@ -52,7 +52,7 @@ abstract class CatalogLinkType implements LinkType
         $ids = array_map('intval', array_filter($values, $this->accepts(...)));
         $resolved = [];
         foreach ($this->catalog->visible($this->kind(), $ids, $locale) as $id => $item) {
-            $resolved[(string) $id] = ['url' => $this->url($item['slug']), 'label' => $item['name']];
+            $resolved[(string) $id] = ['url' => $this->url($item['slug'], $locale), 'label' => $item['name']];
         }
 
         return $resolved;

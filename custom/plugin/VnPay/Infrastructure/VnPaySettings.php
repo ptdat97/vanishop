@@ -52,7 +52,7 @@ final class VnPaySettings
     {
         $configured = trim((string) config('vani.vnpay.return_url', ''));
 
-        return $configured !== '' ? $configured : route('storefront.p.vani-vnpay.return');
+        return $configured !== '' ? $configured : vani_route('storefront.p.vani-vnpay.return');
     }
 
     public function signer(): VnPaySigner

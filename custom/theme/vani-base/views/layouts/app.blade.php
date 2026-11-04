@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 @php($pageCache = (bool) request()->attributes->get('vani.page_cache'))
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($pageCache) data-vani-session="{{ route('storefront.session') }}" @endif>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($pageCache) data-vani-session="{{ vani_route('storefront.session', ['locale' => app()->getLocale()]) }}" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,8 +16,8 @@
     <x-vani::hook-slot name="vani.storefront.layout.body_start" />
     <header class="border-b border-slate-200">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
-            <a href="{{ route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
-            <form action="{{ route('storefront.search') }}" method="get" role="search" class="flex-1">
+            <a href="{{ vani_route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
+            <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="flex-1">
                 <label for="q" class="sr-only">Tìm kiếm</label>
                 <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="Tìm sản phẩm…"
                        class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
@@ -28,7 +28,7 @@
                 @if ($headerMenu !== null)
                     @include('theme::partials.menu', ['items' => $headerMenu])
                 @else
-                    <a href="{{ route('storefront.brands') }}">Thương hiệu</a>
+                    <a href="{{ vani_route('storefront.brands') }}">Thương hiệu</a>
                 @endif
                 <x-vani::hook-slot name="vani.storefront.header.nav" />
             </nav>
@@ -38,7 +38,7 @@
                     @if ($mobileMenu !== null)
                         @include('theme::partials.menu-list', ['items' => $mobileMenu])
                     @else
-                        <a href="{{ route('storefront.brands') }}" class="block py-1">Thương hiệu</a>
+                        <a href="{{ vani_route('storefront.brands') }}" class="block py-1">Thương hiệu</a>
                     @endif
                     <x-vani::hook-slot name="vani.storefront.header.nav" />
                 </nav>
@@ -46,8 +46,8 @@
             <div class="flex items-center gap-4 text-sm">
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
                 {{-- Trang cache được: luôn render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
-                <a href="{{ request()->attributes->has('customer') ? route('storefront.account') : route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? 'Tài khoản' : 'Đăng nhập' }}</a>
-                <a href="{{ route('storefront.cart') }}">Giỏ hàng <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
+                <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? 'Tài khoản' : 'Đăng nhập' }}</a>
+                <a href="{{ vani_route('storefront.cart') }}">Giỏ hàng <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
             </div>
         </div>
     </header>
@@ -76,7 +76,7 @@
                     @include('theme::partials.menu-list', ['items' => $items])
                 </nav>
             @empty
-                <nav class="space-y-1" aria-label="Hỗ trợ"><a href="{{ route('storefront.track') }}" class="block">Tra cứu đơn hàng</a></nav>
+                <nav class="space-y-1" aria-label="Hỗ trợ"><a href="{{ vani_route('storefront.track') }}" class="block">Tra cứu đơn hàng</a></nav>
             @endforelse
             <x-vani::hook-slot name="vani.storefront.footer.columns" />
             <p class="md:col-span-4">© {{ date('Y') }} {{ config('app.name') }}</p>

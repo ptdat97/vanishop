@@ -1,7 +1,7 @@
 @extends('theme::layouts.app')
 
 @section('title', $category['name'])
-@section('canonical', route('storefront.category', $category['slug']))
+@section('canonical', vani_route('storefront.category', $category['slug']))
 
 @section('content')
     <h1 class="mb-2 text-2xl font-semibold">{{ $category['name'] }}</h1>

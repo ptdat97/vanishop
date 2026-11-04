@@ -17,7 +17,7 @@ abstract class ContentLinkType implements LinkType
     /** @return Builder<Content> */
     abstract protected function query(): Builder;
 
-    abstract protected function url(string $slug): string;
+    abstract protected function url(string $slug, string $locale): string;
 
     public function searchable(): bool
     {
@@ -48,7 +48,7 @@ abstract class ContentLinkType implements LinkType
         $ids = array_map('intval', array_filter($values, $this->accepts(...)));
 
         return $ids === [] ? [] : $this->query()->published()->whereIn('id', $ids)->get()
-            ->mapWithKeys(fn (Content $content): array => [(string) $content->id => ['url' => $this->url($content->slug), 'label' => $content->title]])
+            ->mapWithKeys(fn (Content $content): array => [(string) $content->id => ['url' => $this->url($content->slug, $locale), 'label' => $content->title]])
             ->all();
     }
 }

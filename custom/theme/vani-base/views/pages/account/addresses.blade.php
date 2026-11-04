@@ -12,7 +12,7 @@
         <section>
             <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 class="text-2xl font-semibold">Địa chỉ nhận hàng</h1>
-                <a href="{{ route('storefront.account.addresses.create') }}" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2 text-sm">Thêm địa chỉ</a>
+                <a href="{{ vani_route('storefront.account.addresses.create') }}" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2 text-sm">Thêm địa chỉ</a>
             </div>
             @forelse ($addresses as $address)
                 <div class="mb-3 rounded-[var(--radius-theme)] border border-slate-200 p-4 text-sm" data-address="{{ $address['id'] }}">
@@ -22,14 +22,14 @@
                     </p>
                     <p class="text-slate-600">{{ $address['street_line'] ?? '' }}, {{ $address['ward_name'] ?? '' }}, {{ $address['province_name'] ?? '' }}</p>
                     <div class="mt-2 flex flex-wrap gap-4">
-                        <a href="{{ route('storefront.account.addresses.edit', $address['id']) }}" class="underline">Sửa</a>
+                        <a href="{{ vani_route('storefront.account.addresses.edit', $address['id']) }}" class="underline">Sửa</a>
                         @if (empty($address['is_default']))
-                            <form action="{{ route('storefront.account.addresses.default', $address['id']) }}" method="post">
+                            <form action="{{ vani_route('storefront.account.addresses.default', $address['id']) }}" method="post">
                                 @csrf
                                 <button type="submit" class="underline">Đặt mặc định</button>
                             </form>
                         @endif
-                        <form action="{{ route('storefront.account.addresses.destroy', $address['id']) }}" method="post" data-confirm="Xoá địa chỉ này?">
+                        <form action="{{ vani_route('storefront.account.addresses.destroy', $address['id']) }}" method="post" data-confirm="Xoá địa chỉ này?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-red-600 underline">Xoá</button>

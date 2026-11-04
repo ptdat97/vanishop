@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Http\Controllers\Web\AccountController;
 use Modules\Storefront\Http\Controllers\Web\AccountSettingsController;
 use Modules\Storefront\Http\Controllers\Web\CartController;
@@ -13,72 +14,84 @@ use Modules\Storefront\Http\Controllers\Web\ReturnController;
 use Modules\Storefront\Http\Controllers\Web\SeoController;
 use Modules\Storefront\Http\Controllers\Web\SessionController;
 use Modules\Storefront\Http\Controllers\Web\TrackOrderController;
+use Modules\Storefront\Http\LocalizedPaths;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
 
 /*
 | Native storefront (SSR, ADR-025). Đoạn đầu đường dẫn nằm trong vanishop.reserved_paths (Admin không được trùng).
+| Đăng ký một lần cho mỗi ngôn ngữ (ADR-038): mặc định không tiền tố (`storefront.*`), ngôn ngữ khác dưới `/<locale>`
+| (`storefront.<locale>.*`); đường dẫn theo bảng LocalizedPaths.
 */
 
-Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.theme', 'vani.maintenance'])->name('storefront.')->group(function (): void {
-    // Trang công khai: không phiên, CDN cache được (storefront §5); phần riêng của khách qua GET /_vani/phien.
-    Route::withoutMiddleware(PublicPageCache::SESSIONLESS)->middleware('vani.page-cache')->group(function (): void {
-        Route::get('/', HomeController::class)->name('home');
-        Route::get('/danh-muc/{slug}', [CatalogController::class, 'category'])->name('category');
-        Route::get('/thuong-hieu', [CatalogController::class, 'brands'])->name('brands');
-        Route::get('/thuong-hieu/{slug}', [CatalogController::class, 'brand'])->name('brand');
-        Route::get('/tim-kiem', [CatalogController::class, 'search'])->name('search');
-        Route::get('/san-pham/{slug}', [ProductController::class, 'show'])->name('product');
-    });
-    Route::get('/_vani/phien', SessionController::class)->name('session');
-    Route::get('/_vani/gia', [SessionController::class, 'prices'])->name('session.prices');
+foreach (StoreLocale::supported() as $locale) {
+    $p = fn (string $key): string => LocalizedPaths::path($key, $locale);
 
-    // Ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`): giỏ và checkout chuyển sang đăng nhập.
-    Route::middleware('vani.prices-visible')->group(function (): void {
-        Route::get('/gio-hang', [CartController::class, 'show'])->name('cart');
-        Route::middleware('throttle:vani-cart-create')->post('/gio-hang', [CartController::class, 'add'])->name('cart.add');
-        Route::post('/gio-hang/{line}', [CartController::class, 'update'])->whereNumber('line')->name('cart.update');
-        Route::post('/gio-hang/{line}/xoa', [CartController::class, 'remove'])->whereNumber('line')->name('cart.remove');
+    Route::middleware(['vani.storefront-context:'.$locale, 'vani.customer-session', 'vani.theme', 'vani.maintenance'])
+        ->prefix(LocalizedPaths::prefix($locale))
+        ->name(LocalizedPaths::namePrefix($locale))
+        ->group(function () use ($locale, $p): void {
+            // Trang công khai: không phiên, CDN cache được (storefront §5); phần riêng của khách qua GET /_vani/phien.
+            Route::withoutMiddleware(PublicPageCache::SESSIONLESS)->middleware('vani.page-cache')->group(function () use ($p): void {
+                Route::get($p('home'), HomeController::class)->name('home');
+                Route::get($p('category'), [CatalogController::class, 'category'])->name('category');
+                Route::get($p('brands'), [CatalogController::class, 'brands'])->name('brands');
+                Route::get($p('brand'), [CatalogController::class, 'brand'])->name('brand');
+                Route::get($p('search'), [CatalogController::class, 'search'])->name('search');
+                Route::get($p('product'), [ProductController::class, 'show'])->name('product');
+            });
+            if ($locale === StoreLocale::default()) {
+                Route::get('/_vani/phien', SessionController::class)->name('session');
+                Route::get('/_vani/gia', [SessionController::class, 'prices'])->name('session.prices');
+            }
 
-        Route::get('/thanh-toan', [CheckoutController::class, 'show'])->name('checkout');
-        Route::middleware('throttle:vani-checkout')->post('/thanh-toan', [CheckoutController::class, 'store'])->name('checkout.store');
-    });
+            // Ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`): giỏ và checkout chuyển sang đăng nhập.
+            Route::middleware('vani.prices-visible')->group(function () use ($p): void {
+                Route::get($p('cart'), [CartController::class, 'show'])->name('cart');
+                Route::middleware('throttle:vani-cart-create')->post($p('cart'), [CartController::class, 'add'])->name('cart.add');
+                Route::post($p('cart.update'), [CartController::class, 'update'])->whereNumber('line')->name('cart.update');
+                Route::post($p('cart.remove'), [CartController::class, 'remove'])->whereNumber('line')->name('cart.remove');
 
-    Route::get('/don-hang/{order}', [OrderController::class, 'show'])->name('order');
-    // Đổi/trả (khách): quyền theo token đơn trong phiên hoặc tài khoản sở hữu đơn.
-    Route::middleware('throttle:10,1')->group(function (): void {
-        Route::post('/don-hang/{order}/doi-tra', [ReturnController::class, 'store'])->name('order.returns.store');
-        Route::post('/don-hang/{order}/doi-tra/{return}/huy', [ReturnController::class, 'cancel'])->name('order.returns.cancel');
-    });
+                Route::get($p('checkout'), [CheckoutController::class, 'show'])->name('checkout');
+                Route::middleware('throttle:vani-checkout')->post($p('checkout'), [CheckoutController::class, 'store'])->name('checkout.store');
+            });
 
-    Route::get('/tra-cuu-don', [TrackOrderController::class, 'show'])->name('track');
-    Route::middleware('throttle:vani-order-track')->post('/tra-cuu-don', [TrackOrderController::class, 'search'])->name('track.search');
+            Route::get($p('order'), [OrderController::class, 'show'])->name('order');
+            // Đổi/trả (khách): quyền theo token đơn trong phiên hoặc tài khoản sở hữu đơn.
+            Route::middleware('throttle:10,1')->group(function () use ($p): void {
+                Route::post($p('order.returns.store'), [ReturnController::class, 'store'])->name('order.returns.store');
+                Route::post($p('order.returns.cancel'), [ReturnController::class, 'cancel'])->name('order.returns.cancel');
+            });
 
-    Route::get('/tai-khoan/dang-nhap', [AccountController::class, 'login'])->name('account.login');
-    Route::middleware('throttle:vani-customer-auth')->group(function (): void {
-        Route::post('/tai-khoan/dang-nhap/otp', [AccountController::class, 'requestOtp'])->name('account.otp');
-        Route::post('/tai-khoan/dang-nhap', [AccountController::class, 'verify'])->name('account.verify');
-    });
-    Route::middleware('vani.customer-session:required')->group(function (): void {
-        Route::get('/tai-khoan', [AccountController::class, 'dashboard'])->name('account');
-        Route::get('/tai-khoan/don-hang', [AccountController::class, 'orders'])->name('account.orders');
-        Route::get('/tai-khoan/don-hang/{order}', [AccountController::class, 'order'])->name('account.order');
-        Route::post('/tai-khoan/don-hang/{order}/huy', [AccountController::class, 'cancelOrder'])->name('account.order.cancel');
-        Route::get('/tai-khoan/dia-chi', [AccountController::class, 'addresses'])->name('account.addresses');
-        Route::get('/tai-khoan/ho-so', [AccountSettingsController::class, 'profile'])->name('account.profile');
-        Route::put('/tai-khoan/ho-so', [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
-        Route::put('/tai-khoan/mat-khau', [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
-        Route::get('/tai-khoan/xoa', [AccountSettingsController::class, 'deletion'])->name('account.delete');
-        Route::post('/tai-khoan/xoa/otp', [AccountSettingsController::class, 'requestDeletionOtp'])->middleware('throttle:vani-customer-auth')->name('account.delete.otp');
-        Route::post('/tai-khoan/xoa', [AccountSettingsController::class, 'destroyAccount'])->middleware('throttle:vani-customer-auth')->name('account.delete.confirm');
-        Route::get('/tai-khoan/dia-chi/them', [AccountSettingsController::class, 'createAddress'])->name('account.addresses.create');
-        Route::post('/tai-khoan/dia-chi', [AccountSettingsController::class, 'storeAddress'])->name('account.addresses.store');
-        Route::get('/tai-khoan/dia-chi/{address}/sua', [AccountSettingsController::class, 'editAddress'])->whereNumber('address')->name('account.addresses.edit');
-        Route::put('/tai-khoan/dia-chi/{address}', [AccountSettingsController::class, 'updateAddress'])->whereNumber('address')->name('account.addresses.update');
-        Route::post('/tai-khoan/dia-chi/{address}/mac-dinh', [AccountSettingsController::class, 'defaultAddress'])->whereNumber('address')->name('account.addresses.default');
-        Route::delete('/tai-khoan/dia-chi/{address}', [AccountSettingsController::class, 'destroyAddress'])->whereNumber('address')->name('account.addresses.destroy');
-        Route::post('/tai-khoan/dang-xuat', [AccountController::class, 'logout'])->name('account.logout');
-    });
-});
+            Route::get($p('track'), [TrackOrderController::class, 'show'])->name('track');
+            Route::middleware('throttle:vani-order-track')->post($p('track'), [TrackOrderController::class, 'search'])->name('track.search');
+
+            Route::get($p('account.login'), [AccountController::class, 'login'])->name('account.login');
+            Route::middleware('throttle:vani-customer-auth')->group(function () use ($p): void {
+                Route::post($p('account.otp'), [AccountController::class, 'requestOtp'])->name('account.otp');
+                Route::post($p('account.login'), [AccountController::class, 'verify'])->name('account.verify');
+            });
+            Route::middleware('vani.customer-session:required')->group(function () use ($p): void {
+                Route::get($p('account'), [AccountController::class, 'dashboard'])->name('account');
+                Route::get($p('account.orders'), [AccountController::class, 'orders'])->name('account.orders');
+                Route::get($p('account.order'), [AccountController::class, 'order'])->name('account.order');
+                Route::post($p('account.order.cancel'), [AccountController::class, 'cancelOrder'])->name('account.order.cancel');
+                Route::get($p('account.addresses'), [AccountController::class, 'addresses'])->name('account.addresses');
+                Route::get($p('account.profile'), [AccountSettingsController::class, 'profile'])->name('account.profile');
+                Route::put($p('account.profile'), [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
+                Route::put($p('account.password'), [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
+                Route::get($p('account.delete'), [AccountSettingsController::class, 'deletion'])->name('account.delete');
+                Route::post($p('account.delete.otp'), [AccountSettingsController::class, 'requestDeletionOtp'])->middleware('throttle:vani-customer-auth')->name('account.delete.otp');
+                Route::post($p('account.delete'), [AccountSettingsController::class, 'destroyAccount'])->middleware('throttle:vani-customer-auth')->name('account.delete.confirm');
+                Route::get($p('account.addresses.create'), [AccountSettingsController::class, 'createAddress'])->name('account.addresses.create');
+                Route::post($p('account.addresses'), [AccountSettingsController::class, 'storeAddress'])->name('account.addresses.store');
+                Route::get($p('account.addresses.edit'), [AccountSettingsController::class, 'editAddress'])->whereNumber('address')->name('account.addresses.edit');
+                Route::put($p('account.addresses.item'), [AccountSettingsController::class, 'updateAddress'])->whereNumber('address')->name('account.addresses.update');
+                Route::post($p('account.addresses.default'), [AccountSettingsController::class, 'defaultAddress'])->whereNumber('address')->name('account.addresses.default');
+                Route::delete($p('account.addresses.item'), [AccountSettingsController::class, 'destroyAddress'])->whereNumber('address')->name('account.addresses.destroy');
+                Route::post($p('account.logout'), [AccountController::class, 'logout'])->name('account.logout');
+            });
+        });
+}
 
 // SEO: không cần phiên/theme; không chặn khi bảo trì (crawler vẫn đọc được robots/sitemap).
 Route::middleware('vani.storefront-context')->group(function (): void {

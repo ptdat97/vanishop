@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartLineView;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\CartPresenter;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Http\Requests\LineOptions;
@@ -45,7 +46,7 @@ final class CartController
         $this->carts->addLine($this->cart->keyOrCreate(), (int) $data['variant_id'], $quantity, LineOptions::from($request->input('options')));
         $line = collect($this->cart->current()->lines ?? [])->firstWhere('variantId', (int) $data['variant_id']);
 
-        return redirect()->route('storefront.cart')->with('status', __('storefront::messages.added_to_cart'))
+        return redirect()->to(LocalizedUrls::route('storefront.cart'))->with('status', __('storefront::messages.added_to_cart'))
             ->with(self::CHANGE_FLASH, $line === null ? null : $this->change('add', $line, $quantity));
     }
 
@@ -59,7 +60,7 @@ final class CartController
         $this->carts->updateLine($key, $line, (int) $data['quantity']);
         $delta = (int) $data['quantity'] - ($before->quantity ?? 0);
 
-        return redirect()->route('storefront.cart')
+        return redirect()->to(LocalizedUrls::route('storefront.cart'))
             ->with(self::CHANGE_FLASH, $before === null || $delta === 0 ? null : $this->change($delta > 0 ? 'add' : 'remove', $before, abs($delta)));
     }
 
@@ -71,7 +72,7 @@ final class CartController
         $before = $this->line($line);
         $this->carts->removeLine($key, $line);
 
-        return redirect()->route('storefront.cart')
+        return redirect()->to(LocalizedUrls::route('storefront.cart'))
             ->with(self::CHANGE_FLASH, $before === null ? null : $this->change('remove', $before, $before->quantity));
     }
 

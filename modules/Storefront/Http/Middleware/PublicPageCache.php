@@ -44,7 +44,8 @@ final class PublicPageCache
         }
 
         $response->headers->set('Cache-Control', sprintf('public, max-age=0, s-maxage=%d, stale-while-revalidate=%d', (int) ($config['s_maxage'] ?? 300), (int) ($config['stale_while_revalidate'] ?? 600)));
-        $response->headers->set('Vary', 'Accept-Encoding, X-Vani-Locale');
+        // Ngôn ngữ nằm trong URL (ADR-038) nên không Vary theo header ngôn ngữ.
+        $response->headers->set('Vary', 'Accept-Encoding');
 
         return $response;
     }

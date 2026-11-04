@@ -100,6 +100,16 @@ interface StorefrontBlock
 
 Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin thêm block qua tag `vani.content.blocks` (ví dụ lookbook, recommendation).
 
+## 3a. URL theo ngôn ngữ
+
+> **Partially Implemented** (Core 0.3.59, [ADR-038](../19-adr/ADR-038-localized-storefront-urls.md)): định tuyến + sinh URL. Slug theo ngôn ngữ, hreflang/canonical, sitemap, locale của đơn: làm tiếp.
+
+- Tiếng Việt giữ URL hiện tại; tiếng Anh dưới `/en` với đường dẫn tiếng Anh (`/en/products/{slug}`, `/en/category/{slug}`, `/en/brands`, `/en/cart`, `/en/account/…`). Bảng đường dẫn: `config/vanishop.php` → `locale.paths`. Tên route: `storefront.*` (mặc định), `storefront.en.*`.
+- Ngôn ngữ của trang web lấy **từ URL** (`vani.storefront-context:<locale>` trên nhóm route), bỏ qua header `X-Vani-Locale` (Storefront API vẫn dùng header). Trang có cache chỉ `Vary: Accept-Encoding`.
+- **Theme và plugin sinh URL bằng `vani_route('storefront.…', $params)`** (ngôn ngữ hiện hành; route chưa có bản ngôn ngữ → URL mặc định); class trong `modules/` dùng `Shared\Support\LocalizedUrls::route()`. Gọi `route('storefront.…')` trực tiếp sẽ ra URL tiếng Việt trên trang tiếng Anh.
+- Plugin: `storefrontPages($file, prefix: ['vi' => 'tin-tuc', 'en' => 'news'])`; `vani.cms`: `/en/pages/{slug}`, `/en/news`.
+- `/_vani/phien?locale=en` (trang có cache gọi bằng JS) trả link tài khoản theo ngôn ngữ của trang.
+
 ## 4a. Link có kiểu và menu
 
 > **Implemented** (Core 0.3.58, [ADR-040](../19-adr/ADR-040-typed-links-menus.md)).

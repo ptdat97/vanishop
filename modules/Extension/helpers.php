@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Modules\Extension\Application\Hooks\CallerPlugin;
 use Modules\Extension\Application\Hooks\HookManager;
+use Modules\Shared\Support\LocalizedUrls;
+use Modules\Storefront\Contracts\Data\LinkTarget;
+use Modules\Storefront\Contracts\LinkResolver;
 
 /*
 | Cú pháp ngắn cho hook — gọi được ở mọi nơi (Core, plugin, view). Vẫn đi qua HookManager nên giữ nguyên các bảo
@@ -98,5 +101,39 @@ if (! function_exists('add_hook_slot')) {
     function add_hook_slot(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
     {
         app(HookManager::class)->onSlot($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
+    }
+}
+
+/*
+| URL storefront theo ngôn ngữ (ADR-037/038) — cho view theme, view và code plugin. Class trong modules/ dùng
+| Modules\Shared\Support\LocalizedUrls trực tiếp.
+*/
+
+if (! function_exists('vani_route')) {
+    /**
+     * URL storefront theo ngôn ngữ hiện hành (hoặc `$locale`): `vani_route('storefront.product', $slug)` → `/san-pham/…`
+     * trên trang tiếng Việt, `/en/products/…` trên trang tiếng Anh. Route chưa có bản theo ngôn ngữ → URL mặc định.
+     */
+    function vani_route(string $name, mixed $parameters = [], ?string $locale = null, bool $absolute = true): string
+    {
+        return LocalizedUrls::route($name, $parameters, $locale, $absolute);
+    }
+}
+
+if (! function_exists('vani_link')) {
+    /**
+     * URL của link có kiểu theo ngôn ngữ hiện hành; null khi đối tượng đã ẩn/xoá. `vani_link(['type' => 'category', 'value' => '12'])`.
+     *
+     * @param  LinkTarget|array<string, mixed>  $target
+     */
+    function vani_link(LinkTarget|array $target): ?string
+    {
+        $target = is_array($target) ? LinkTarget::fromArray($target) : $target;
+        if ($target === null) {
+            return null;
+        }
+        $resolved = app(LinkResolver::class)->resolve($target, app()->getLocale());
+
+        return $resolved->exists ? $resolved->url : null;
     }
 }

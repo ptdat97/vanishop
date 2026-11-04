@@ -21,7 +21,8 @@ Cần cú pháp ngắn cho plugin và view, mà không tạo một đường th�
    | `vani_staff` | `(): ?Actor` | Actor nhân viên trong `CurrentContext` |
    | `vani_admin_url` | `(string $routeName, array $params = []): string` | `route()` với tiền tố route Admin (`VANI_ADMIN_PATH`) |
    | `vani_image` | `(?int $mediaId, int $width): string` | **Contract mới** `Catalog\Contracts\MediaUrls` (§3); `null` → ảnh placeholder |
-   | `vani_link` | `(LinkTarget\|array $target): ?string` | `Storefront\Contracts\LinkResolver` — có khi hạng mục link có kiểu xong ([reference-parity-refactor §3.16-1](../20-roadmap/reference-parity-refactor.md)) |
+   | `vani_link` | `(LinkTarget\|array $target): ?string` | `Storefront\Contracts\LinkResolver` (Implemented 0.3.59); null khi đối tượng đã ẩn/xoá |
+   | `vani_route` | `(string $name, mixed $parameters = [], ?string $locale = null, bool $absolute = true): string` | `Shared\Support\LocalizedUrls::route` — URL storefront theo ngôn ngữ ([ADR-038](ADR-038-localized-storefront-urls.md), thêm 2026-11-04, Implemented 0.3.59) |
    | `vani_asset` | `(string $pluginId, string $path): string` | Manifest tài nguyên tĩnh đã publish của plugin (§3.4-2 cùng tài liệu) |
    | `vani_plugin` | `(string $pluginId): ?PluginInfo` | **Contract mới** chỉ đọc `Extension\Contracts\PluginDirectory` (§3): id, tên, phiên bản, đã bật |
 

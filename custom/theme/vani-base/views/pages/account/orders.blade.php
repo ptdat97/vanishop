@@ -11,7 +11,7 @@
             @if ($pages > 1)
                 <nav class="mt-6 flex gap-2 text-sm" aria-label="Phân trang">
                     @for ($i = 1; $i <= $pages; $i++)
-                        <a href="{{ route('storefront.account.orders', ['page' => $i]) }}" @class(['rounded border px-3 py-1', 'border-primary font-semibold' => $i === $page])>{{ $i }}</a>
+                        <a href="{{ vani_route('storefront.account.orders', ['page' => $i]) }}" @class(['rounded border px-3 py-1', 'border-primary font-semibold' => $i === $page])>{{ $i }}</a>
                     @endfor
                 </nav>
             @endif

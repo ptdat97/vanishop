@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\Maintenance;
 
 /**
@@ -19,7 +20,7 @@ final class MaintenancePreviewController
         Gate::authorize('storefront.manage');
         $audit->record('storefront.maintenance_preview', 'storefront', 'maintenance', ['hours' => Maintenance::BYPASS_HOURS]);
 
-        return redirect()->route('storefront.home')
+        return redirect()->to(LocalizedUrls::route('storefront.home'))
             ->withCookie($maintenance->bypassCookie());
     }
 }

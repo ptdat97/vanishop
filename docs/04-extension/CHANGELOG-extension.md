@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.59 — 2026-11-04
+
+URL storefront theo ngôn ngữ, phần định tuyến (ADR-038 mục 1–3, 9).
+
+### Thêm
+- Route storefront tiếng Anh dưới `/en` (tên `storefront.en.*`); bảng đường dẫn `config/vanishop.php` → `locale.paths`.
+- `Shared\Support\LocalizedUrls` (`route`, `name`, `has`, `baseName`); helper `vani_route()`, `vani_link()` (ADR-037).
+- `PluginServiceProvider::storefrontPages()` nhận `prefix` dạng mảng theo ngôn ngữ.
+
+### Đổi
+- Trang web native lấy ngôn ngữ từ URL, không còn theo header `X-Vani-Locale`; trang có cache bỏ `X-Vani-Locale` khỏi `Vary`.
+- `StorefrontPrefixes::claim($prefix, $pluginId, ?$locale)`, `all()` trả khoá `locale:prefix`; mã ngôn ngữ và đường dẫn tiếng Anh của Core bị giữ chỗ.
+- Theme `vani-base`, `vani.cms`, `vani.vnpay` sinh URL bằng `vani_route()`. Theme riêng còn gọi `route('storefront.…')` sẽ ra URL tiếng Việt trên trang tiếng Anh — đổi sang `vani_route()`.
+
 ## 0.3.58 — 2026-11-04
 
 Chỉ thêm. Link có kiểu và menu storefront (R1-6, [ADR-040](../19-adr/ADR-040-typed-links-menus.md)).

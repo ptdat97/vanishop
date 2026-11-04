@@ -5,7 +5,7 @@
 @section('content')
     <h1 class="mb-6 text-2xl font-semibold">Thanh toán</h1>
 
-    <form action="{{ route('storefront.checkout.store') }}" method="post" class="grid gap-8 md:grid-cols-[1fr_22rem]">
+    <form action="{{ vani_route('storefront.checkout.store') }}" method="post" class="grid gap-8 md:grid-cols-[1fr_22rem]">
         @csrf
         <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', $idempotencyKey) }}">
         <input type="hidden" name="expected_total" value="{{ $quote['total']['amount'] }}">

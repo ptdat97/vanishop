@@ -1,7 +1,7 @@
 {{-- $price: khoảng giá của ProductViews (min/max/compare_at/discount_percent) hoặc null. $product (tuỳ chọn): khi
      `price_hidden` (cửa hàng ẩn giá với khách chưa đăng nhập) hiện link đăng nhập; JS điền giá cho khách đã đăng nhập. --}}
 @if (! empty($product['price_hidden']))
-    <a href="{{ route('storefront.account.login') }}" class="text-sm font-medium text-primary underline" data-vani-price-for="{{ $product['id'] }}">{{ __('storefront::messages.sign_in_for_price') }}</a>
+    <a href="{{ vani_route('storefront.account.login') }}" class="text-sm font-medium text-primary underline" data-vani-price-for="{{ $product['id'] }}">{{ __('storefront::messages.sign_in_for_price') }}</a>
 @elseif ($price === null)
     <span class="text-sm text-slate-500">Chưa có giá</span>
 @else

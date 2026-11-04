@@ -12,7 +12,7 @@
                         · <span>{{ __('storefront::messages.return_statuses.'.$return['status']) }}</span>
                     </p>
                     @if ($return['status'] === 'requested')
-                        <form action="{{ route('storefront.order.returns.cancel', [$order['id'], $return['id']]) }}" method="post">
+                        <form action="{{ vani_route('storefront.order.returns.cancel', [$order['id'], $return['id']]) }}" method="post">
                             @csrf
                             <button type="submit" class="text-sm text-red-700 underline">Huỷ yêu cầu</button>
                         </form>
@@ -32,7 +32,7 @@
         @if (($returnForm ?? null) !== null)
             <details class="rounded-[var(--radius-theme)] border border-slate-200 p-4" @if ($errors->has('lines') || $errors->has('business')) open @endif>
                 <summary class="cursor-pointer font-medium">Gửi yêu cầu đổi/trả</summary>
-                <form action="{{ route('storefront.order.returns.store', $order['id']) }}" method="post" class="mt-4 space-y-4 text-sm">
+                <form action="{{ vani_route('storefront.order.returns.store', $order['id']) }}" method="post" class="mt-4 space-y-4 text-sm">
                     @csrf
                     @if ($returnForm['deadline'])
                         <p class="text-slate-500">Hạn đổi/trả: {{ \Modules\Shared\Support\StoreClock::format($returnForm['deadline'], 'date') }}</p>

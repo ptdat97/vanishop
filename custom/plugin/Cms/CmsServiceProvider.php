@@ -40,8 +40,8 @@ final class CmsServiceProvider extends PluginServiceProvider
         $this->permissions(['cms.view' => 'Xem nội dung (trang, bài viết)', 'cms.manage' => 'Soạn, đăng, xoá nội dung']);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-cms');
-        $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: 'trang', cacheable: true);
-        $this->storefrontPages($this->pluginPath('Http/routes/blog.php'), prefix: 'tin-tuc', cacheable: true);
+        $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'trang', 'en' => 'pages'], cacheable: true);
+        $this->storefrontPages($this->pluginPath('Http/routes/blog.php'), prefix: ['vi' => 'tin-tuc', 'en' => 'news'], cacheable: true);
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
 
         $this->contribute(StorefrontBlock::TAG, LatestPostsBlock::class);

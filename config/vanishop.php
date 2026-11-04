@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.58',
+    'version' => '0.3.59',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -44,6 +44,8 @@ return [
     'reserved_paths' => [
         'api', 'tai-khoan', 'up', 'build', 'storage', 'sitemap.xml', 'robots.txt', 'favicon.ico',
         'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'p', 'tra-cuu-don', 'cache', '_vani',
+        // Tiền tố ngôn ngữ không mặc định (ADR-038).
+        'en',
     ],
 
     /*
@@ -137,6 +139,74 @@ return [
         'supported' => ['vi', 'en'],
         // Tên hiển thị của ngôn ngữ (tab bản dịch trong Admin).
         'labels' => ['vi' => 'Tiếng Việt', 'en' => 'English'],
+        // Đường dẫn storefront theo ngôn ngữ (ADR-038), khoá = tên route bỏ `storefront.`. Ngôn ngữ mặc định không tiền
+        // tố; ngôn ngữ khác dưới `/<mã>`. Ngôn ngữ (hoặc khoá) chưa khai báo dùng đường dẫn của ngôn ngữ mặc định.
+        'paths' => [
+            'vi' => [
+                'home' => '/',
+                'category' => 'danh-muc/{slug}',
+                'brands' => 'thuong-hieu',
+                'brand' => 'thuong-hieu/{slug}',
+                'search' => 'tim-kiem',
+                'product' => 'san-pham/{slug}',
+                'cart' => 'gio-hang',
+                'cart.update' => 'gio-hang/{line}',
+                'cart.remove' => 'gio-hang/{line}/xoa',
+                'checkout' => 'thanh-toan',
+                'order' => 'don-hang/{order}',
+                'order.returns.store' => 'don-hang/{order}/doi-tra',
+                'order.returns.cancel' => 'don-hang/{order}/doi-tra/{return}/huy',
+                'track' => 'tra-cuu-don',
+                'account' => 'tai-khoan',
+                'account.login' => 'tai-khoan/dang-nhap',
+                'account.otp' => 'tai-khoan/dang-nhap/otp',
+                'account.orders' => 'tai-khoan/don-hang',
+                'account.order' => 'tai-khoan/don-hang/{order}',
+                'account.order.cancel' => 'tai-khoan/don-hang/{order}/huy',
+                'account.addresses' => 'tai-khoan/dia-chi',
+                'account.addresses.create' => 'tai-khoan/dia-chi/them',
+                'account.addresses.edit' => 'tai-khoan/dia-chi/{address}/sua',
+                'account.addresses.item' => 'tai-khoan/dia-chi/{address}',
+                'account.addresses.default' => 'tai-khoan/dia-chi/{address}/mac-dinh',
+                'account.profile' => 'tai-khoan/ho-so',
+                'account.password' => 'tai-khoan/mat-khau',
+                'account.delete' => 'tai-khoan/xoa',
+                'account.delete.otp' => 'tai-khoan/xoa/otp',
+                'account.logout' => 'tai-khoan/dang-xuat',
+            ],
+            'en' => [
+                'home' => '/',
+                'category' => 'category/{slug}',
+                'brands' => 'brands',
+                'brand' => 'brands/{slug}',
+                'search' => 'search',
+                'product' => 'products/{slug}',
+                'cart' => 'cart',
+                'cart.update' => 'cart/{line}',
+                'cart.remove' => 'cart/{line}/remove',
+                'checkout' => 'checkout',
+                'order' => 'orders/{order}',
+                'order.returns.store' => 'orders/{order}/returns',
+                'order.returns.cancel' => 'orders/{order}/returns/{return}/cancel',
+                'track' => 'track-order',
+                'account' => 'account',
+                'account.login' => 'account/login',
+                'account.otp' => 'account/login/otp',
+                'account.orders' => 'account/orders',
+                'account.order' => 'account/orders/{order}',
+                'account.order.cancel' => 'account/orders/{order}/cancel',
+                'account.addresses' => 'account/addresses',
+                'account.addresses.create' => 'account/addresses/new',
+                'account.addresses.edit' => 'account/addresses/{address}/edit',
+                'account.addresses.item' => 'account/addresses/{address}',
+                'account.addresses.default' => 'account/addresses/{address}/default',
+                'account.profile' => 'account/profile',
+                'account.password' => 'account/password',
+                'account.delete' => 'account/delete',
+                'account.delete.otp' => 'account/delete/otp',
+                'account.logout' => 'account/logout',
+            ],
+        ],
         // Luật số điện thoại (PhoneNumberPolicy): `vn` — plugin hệ thống vani.phone-vn (0912…, 84…, +84…); Core chỉ có
         // `international` (chỉ nhận số dạng +…). Implementation không có hiệu lực → `international`.
         'phone_policy' => env('VANI_PHONE_POLICY', 'vn'),

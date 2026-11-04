@@ -11,6 +11,7 @@ use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\ReturnFormPresenter;
@@ -34,7 +35,7 @@ final class AccountController
     public function login(Request $request): View|RedirectResponse
     {
         if ($this->customer($request) !== null) {
-            return redirect()->route('storefront.account');
+            return redirect()->to(LocalizedUrls::route('storefront.account'));
         }
 
         return view('theme::pages.account.login', ['phone' => $request->session()->get(self::PENDING_PHONE)]);
@@ -46,7 +47,7 @@ final class AccountController
         $this->sessions->requestLoginOtp($data['phone'], (string) $request->ip());
         $request->session()->put(self::PENDING_PHONE, $data['phone']);
 
-        return redirect()->route('storefront.account.login')->with('status', __('storefront::messages.otp_sent'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.login'))->with('status', __('storefront::messages.otp_sent'));
     }
 
     public function verify(Request $request, NativeCart $cart): RedirectResponse
@@ -54,7 +55,7 @@ final class AccountController
         $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
         $phone = (string) $request->session()->get(self::PENDING_PHONE, '');
         if ($phone === '') {
-            return redirect()->route('storefront.account.login');
+            return redirect()->to(LocalizedUrls::route('storefront.account.login'));
         }
 
         $session = $this->sessions->loginWithOtp($phone, $data['code'], 'web');
@@ -63,7 +64,7 @@ final class AccountController
         $request->session()->put(self::TOKEN, $session['token']);
         $cart->attachGuestCartTo($session['customer']->id);
 
-        return redirect()->intended(route('storefront.account'));
+        return redirect()->intended(LocalizedUrls::route('storefront.account'));
     }
 
     public function logout(Request $request): RedirectResponse
@@ -72,7 +73,7 @@ final class AccountController
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('storefront.home');
+        return redirect()->to(LocalizedUrls::route('storefront.home'));
     }
 
     public function dashboard(Request $request): View
@@ -114,7 +115,7 @@ final class AccountController
         $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
         $this->orders->cancelForCustomer($customer->id, $order, $data['reason']);
 
-        return redirect()->route('storefront.account.order', $order)->with('status', __('storefront::messages.order_cancelled'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.order', $order))->with('status', __('storefront::messages.order_cancelled'));
     }
 
     public function addresses(Request $request): View

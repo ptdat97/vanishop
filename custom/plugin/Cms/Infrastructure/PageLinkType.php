@@ -24,8 +24,8 @@ final class PageLinkType extends ContentLinkType
         return Page::query();
     }
 
-    protected function url(string $slug): string
+    protected function url(string $slug, string $locale): string
     {
-        return route('storefront.p.vani-cms.page', $slug);
+        return vani_route('storefront.p.vani-cms.page', $slug, $locale);
     }
 }

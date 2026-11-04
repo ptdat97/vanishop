@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\PriceVisibility;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -36,9 +37,9 @@ final class RequireVisiblePrices
         }
 
         // Thêm giỏ từ trang sản phẩm: đăng nhập xong quay lại trang đó, không phải URL POST.
-        $intended = $request->isMethod('GET') ? $request->fullUrl() : url()->previous(route('storefront.home'));
+        $intended = $request->isMethod('GET') ? $request->fullUrl() : url()->previous(LocalizedUrls::route('storefront.home'));
         $request->session()->put('url.intended', $intended);
 
-        return redirect()->route('storefront.account.login')->with('status', $message);
+        return redirect()->to(LocalizedUrls::route('storefront.account.login'))->with('status', $message);
     }
 }

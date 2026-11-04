@@ -4,6 +4,7 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Cache;
 use Modules\Extension\Application\Storefront\StorefrontPrefixes;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Contracts\SitemapProvider;
 
 it('prefix storefront của plugin: không trùng Core, plugin khác, sai định dạng thì bị từ chối', function () {
@@ -15,13 +16,18 @@ it('prefix storefront của plugin: không trùng Core, plugin khác, sai địn
         ->and(fn () => $prefixes->claim('san-pham', 'vani.b'))->toThrow(InvalidArgumentException::class, 'Core')
         ->and(fn () => $prefixes->claim('admin', 'vani.b'))->toThrow(InvalidArgumentException::class, 'Core')
         ->and(fn () => $prefixes->claim('Tin_Tuc', 'vani.b'))->toThrow(InvalidArgumentException::class, 'không hợp lệ')
-        ->and($prefixes->all())->toBe(['tin-tuc' => 'vani.a']);
+        ->and($prefixes->all())->toBe(['vi:tin-tuc' => 'vani.a']);
 });
 
 it('danh sách giữ chỗ bao phủ đoạn đầu mọi route storefront của Core', function () {
     $segments = collect(app('router')->getRoutes()->getRoutes())
-        ->filter(fn (Route $route): bool => str_starts_with((string) $route->getName(), 'storefront.') && ! str_starts_with((string) $route->getName(), 'storefront.p.'))
-        ->map(fn (Route $route): string => explode('/', trim($route->uri(), '/'))[0])
+        ->filter(fn (Route $route): bool => str_starts_with((string) $route->getName(), 'storefront.') && preg_match('/^storefront\.([a-z]{2}\.)?p\./', (string) $route->getName()) !== 1)
+        // Route theo ngôn ngữ (/en/…, ADR-038): mã ngôn ngữ luôn bị giữ chỗ, xét đoạn ngay sau nó.
+        ->map(function (Route $route): string {
+            $segments = explode('/', trim($route->uri(), '/'));
+
+            return in_array($segments[0], StoreLocale::supported(), true) ? ($segments[1] ?? '') : $segments[0];
+        })
         ->reject(fn (string $segment): bool => $segment === '')
         ->unique()->values()->all();
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application\Links;
 
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Contracts\LinkType;
 
 /**
@@ -58,7 +59,7 @@ final class RouteLinkType implements LinkType
         $resolved = [];
         foreach ($values as $value) {
             if ($this->accepts($value) && app('router')->has($value)) {
-                $resolved[$value] = ['url' => route($value), 'label' => self::ROUTES[$value]];
+                $resolved[$value] = ['url' => LocalizedUrls::route($value, [], $locale), 'label' => self::ROUTES[$value]];
             }
         }
 

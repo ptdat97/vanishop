@@ -1,5 +1,5 @@
 <article class="group">
-    <a href="{{ route('storefront.product', $product['slug']) }}" class="block">
+    <a href="{{ vani_route('storefront.product', $product['slug']) }}" class="block">
         <div class="aspect-[3/4] overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
             @if ($product['image_url'])
                 <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" width="300" height="400" class="h-full w-full object-cover">

@@ -8,7 +8,7 @@
 
 @section('content')
     <h1 class="mb-6 text-2xl font-semibold">Tra cứu đơn hàng</h1>
-    <form action="{{ route('storefront.track.search') }}" method="post" class="mb-8 grid max-w-xl gap-3 sm:grid-cols-[1fr_1fr_auto]">
+    <form action="{{ vani_route('storefront.track.search') }}" method="post" class="mb-8 grid max-w-xl gap-3 sm:grid-cols-[1fr_1fr_auto]">
         @csrf
         <div>
             <label for="number" class="block text-sm">Mã đơn</label>

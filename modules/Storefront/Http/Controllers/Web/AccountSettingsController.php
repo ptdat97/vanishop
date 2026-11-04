@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
 
 /**
@@ -44,7 +45,7 @@ final class AccountSettingsController
         ]);
         $this->accounts->updateProfile($customer->id, $data);
 
-        return redirect()->route('storefront.account.profile')->with('status', __('storefront::messages.profile_saved'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', __('storefront::messages.profile_saved'));
     }
 
     public function updatePassword(Request $request): RedirectResponse
@@ -56,7 +57,7 @@ final class AccountSettingsController
         ]);
         $this->accounts->setPassword($customer->id, $data['current_password'] ?? null, $data['password']);
 
-        return redirect()->route('storefront.account.profile')->with('status', __('storefront::messages.password_saved'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', __('storefront::messages.password_saved'));
     }
 
     public function deletion(Request $request): View
@@ -76,7 +77,7 @@ final class AccountSettingsController
         $this->accounts->requestDeletionOtp($customer->id, (string) $request->ip());
         $request->session()->put('vani.delete_otp_sent', true);
 
-        return redirect()->route('storefront.account.delete')->with('status', __('storefront::messages.otp_sent'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.delete'))->with('status', __('storefront::messages.otp_sent'));
     }
 
     public function destroyAccount(Request $request): RedirectResponse
@@ -89,7 +90,7 @@ final class AccountSettingsController
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('storefront.home')->with('status', __('storefront::messages.account_deleted'));
+        return redirect()->to(LocalizedUrls::route('storefront.home'))->with('status', __('storefront::messages.account_deleted'));
     }
 
     public function createAddress(Request $request): View
@@ -107,7 +108,7 @@ final class AccountSettingsController
         }
         $this->accounts->addAddress($customer->id, $this->validatedAddress($request));
 
-        return redirect()->route('storefront.account.addresses')->with('status', __('storefront::messages.address_saved'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));
     }
 
     public function editAddress(Request $request, int $address): View
@@ -126,7 +127,7 @@ final class AccountSettingsController
         }
         $this->accounts->updateAddress($customer->id, $address, $this->validatedAddress($request));
 
-        return redirect()->route('storefront.account.addresses')->with('status', __('storefront::messages.address_saved'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));
     }
 
     public function defaultAddress(Request $request, int $address): RedirectResponse
@@ -134,7 +135,7 @@ final class AccountSettingsController
         $customer = $this->required($request);
         $this->accounts->updateAddress($customer->id, $address, ['is_default' => true]);
 
-        return redirect()->route('storefront.account.addresses')->with('status', __('storefront::messages.address_saved'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));
     }
 
     public function destroyAddress(Request $request, int $address): RedirectResponse
@@ -142,7 +143,7 @@ final class AccountSettingsController
         $customer = $this->required($request);
         $this->accounts->deleteAddress($customer->id, $address);
 
-        return redirect()->route('storefront.account.addresses')->with('status', __('storefront::messages.address_deleted'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_deleted'));
     }
 
     /**

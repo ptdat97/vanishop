@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application\Links;
 
+use Modules\Shared\Support\LocalizedUrls;
+
 final class BrandLinkType extends CatalogLinkType
 {
     public function label(): string
@@ -16,8 +18,8 @@ final class BrandLinkType extends CatalogLinkType
         return 'brand';
     }
 
-    protected function url(string $slug): string
+    protected function url(string $slug, string $locale): string
     {
-        return route('storefront.brand', $slug);
+        return LocalizedUrls::route('storefront.brand', $slug, $locale);
     }
 }

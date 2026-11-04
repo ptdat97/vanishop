@@ -11,7 +11,7 @@
         @include('theme::partials.account-menu')
         <section class="max-w-lg">
             <h1 class="mb-6 text-2xl font-semibold">{{ $address ? 'Sửa địa chỉ' : 'Thêm địa chỉ' }}</h1>
-            <form action="{{ $address ? route('storefront.account.addresses.update', $address['id']) : route('storefront.account.addresses.store') }}" method="post" class="space-y-3">
+            <form action="{{ $address ? vani_route('storefront.account.addresses.update', $address['id']) : vani_route('storefront.account.addresses.store') }}" method="post" class="space-y-3">
                 @csrf
                 @if ($address)
                     @method('PUT')
@@ -67,7 +67,7 @@
                 </label>
                 <div class="flex gap-3">
                     <button type="submit" class="rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">Lưu địa chỉ</button>
-                    <a href="{{ route('storefront.account.addresses') }}" class="px-4 py-2 underline">Huỷ</a>
+                    <a href="{{ vani_route('storefront.account.addresses') }}" class="px-4 py-2 underline">Huỷ</a>
                 </div>
             </form>
         </section>

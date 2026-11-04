@@ -9,7 +9,7 @@
     @if ($categories !== [])
         <nav aria-label="Danh mục" class="mb-8 flex flex-wrap gap-3 text-sm">
             @foreach ($categories as $category)
-                <a href="{{ route('storefront.category', $category['slug']) }}" class="rounded-full border border-slate-300 px-4 py-1.5">{{ $category['name'] }}</a>
+                <a href="{{ vani_route('storefront.category', $category['slug']) }}" class="rounded-full border border-slate-300 px-4 py-1.5">{{ $category['name'] }}</a>
             @endforeach
         </nav>
     @endif
@@ -19,7 +19,7 @@
             <h2 class="mb-4 text-lg font-semibold">Thương hiệu</h2>
             <div class="flex flex-wrap gap-4">
                 @foreach ($brands as $brand)
-                    <a href="{{ route('storefront.brand', $brand['slug']) }}" class="flex h-16 min-w-32 items-center justify-center rounded-[var(--radius-theme)] border border-slate-200 px-4">
+                    <a href="{{ vani_route('storefront.brand', $brand['slug']) }}" class="flex h-16 min-w-32 items-center justify-center rounded-[var(--radius-theme)] border border-slate-200 px-4">
                         @if ($brand['logo_url'])
                             <img src="{{ $brand['logo_url'] }}" alt="{{ $brand['name'] }}" class="max-h-10" loading="lazy">
                         @else

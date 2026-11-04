@@ -24,14 +24,14 @@ beforeEach(function () {
     };
 });
 
-it('trang công khai: không Set-Cookie, Cache-Control public cho CDN, Vary theo locale', function (string $path) {
+it('trang công khai: không Set-Cookie, Cache-Control public cho CDN, không Vary theo header ngôn ngữ (ngôn ngữ trong URL)', function (string $path) {
     $path = str_replace('{product}', $this->product, $path);
     $response = $this->get($path)->assertOk()
         ->assertHeader('Cache-Control', 'max-age=0, public, s-maxage=300, stale-while-revalidate=600')
         ->assertSee('data-vani-session=', false);
 
     expect($response->headers->getCookies())->toBe([])
-        ->and($response->headers->get('Vary'))->toContain('X-Vani-Locale');
+        ->and($response->headers->get('Vary'))->toBe('Accept-Encoding');
 })->with(['trang chủ' => '/', 'sản phẩm' => '{product}', 'thương hiệu' => '/thuong-hieu', 'tìm kiếm' => '/tim-kiem?q=dam']);
 
 it('HTML giống hệt nhau khi khách đã đăng nhập (không lộ dữ liệu riêng vào bản cache)', function () {

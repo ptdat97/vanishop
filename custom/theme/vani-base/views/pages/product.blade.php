@@ -2,7 +2,7 @@
 
 @section('title', $product['meta_title'] ?? $product['name'])
 @section('description', $product['meta_description'] ?? '')
-@section('canonical', route('storefront.product', $product['slug']))
+@section('canonical', vani_route('storefront.product', $product['slug']))
 
 @push('head')
     <script type="application/ld+json">{!! \Modules\Storefront\View\StructuredData::product($product) !!}</script>
@@ -11,9 +11,9 @@
 @section('content')
     @if ($product['breadcrumb'] !== [])
         <nav aria-label="Breadcrumb" class="mb-4 text-sm text-slate-500">
-            <a href="{{ route('storefront.home') }}">Trang chủ</a>
+            <a href="{{ vani_route('storefront.home') }}">Trang chủ</a>
             @foreach ($product['breadcrumb'] as $crumb)
-                / <a href="{{ route('storefront.category', $crumb['slug']) }}">{{ $crumb['name'] }}</a>
+                / <a href="{{ vani_route('storefront.category', $crumb['slug']) }}">{{ $crumb['name'] }}</a>
             @endforeach
         </nav>
     @endif
@@ -42,18 +42,18 @@
 
         <div>
             @if ($product['brand'])
-                <a href="{{ route('storefront.brand', $product['brand']['slug']) }}" class="text-sm uppercase tracking-wide text-slate-500">{{ $product['brand']['name'] }}</a>
+                <a href="{{ vani_route('storefront.brand', $product['brand']['slug']) }}" class="text-sm uppercase tracking-wide text-slate-500">{{ $product['brand']['name'] }}</a>
             @endif
             <h1 class="text-2xl font-semibold">{{ $product['name'] }}</h1>
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
             <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
-            <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('storefront.session.prices') }}" hidden></p>
+            <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ vani_route('storefront.session.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
 
             {{-- Trang cache được (không phiên): không có @csrf/old(); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
-            <form action="{{ route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
+            <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
                 @foreach ($product['colors'] as $color)
                     @php($variants = array_values(array_filter($product['variants'], fn ($variant) => $variant['color_code'] === $color['code'])))
                     @continue($variants === [])
