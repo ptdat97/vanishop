@@ -20,27 +20,27 @@
         <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
             <a href="{{ vani_route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
             <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="flex-1">
-                <label for="q" class="sr-only">Tìm kiếm</label>
-                <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="Tìm sản phẩm…"
+                <label for="q" class="sr-only">{{ __('Tìm kiếm') }}</label>
+                <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="{{ __('Tìm sản phẩm…') }}"
                        class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
             </form>
             @php($headerMenu = ($menus ?? null)?->items('header', app()->getLocale()))
             @php($mobileMenu = ($menus ?? null)?->items('mobile', app()->getLocale()) ?? $headerMenu)
-            <nav class="hidden gap-4 text-sm md:flex" aria-label="Menu chính">
+            <nav class="hidden gap-4 text-sm md:flex" aria-label="{{ __('Menu chính') }}">
                 @if ($headerMenu !== null)
                     @include('theme::partials.menu', ['items' => $headerMenu])
                 @else
-                    <a href="{{ vani_route('storefront.brands') }}">Thương hiệu</a>
+                    <a href="{{ vani_route('storefront.brands') }}">{{ __('Thương hiệu') }}</a>
                 @endif
                 <x-vani::hook-slot name="vani.storefront.header.nav" />
             </nav>
             <details class="w-full text-sm md:hidden">
-                <summary class="cursor-pointer select-none py-1">Danh mục</summary>
-                <nav aria-label="Menu di động" class="mt-2 space-y-1">
+                <summary class="cursor-pointer select-none py-1">{{ __('Danh mục') }}</summary>
+                <nav aria-label="{{ __('Menu di động') }}" class="mt-2 space-y-1">
                     @if ($mobileMenu !== null)
                         @include('theme::partials.menu-list', ['items' => $mobileMenu])
                     @else
-                        <a href="{{ vani_route('storefront.brands') }}" class="block py-1">Thương hiệu</a>
+                        <a href="{{ vani_route('storefront.brands') }}" class="block py-1">{{ __('Thương hiệu') }}</a>
                     @endif
                     <x-vani::hook-slot name="vani.storefront.header.nav" />
                 </nav>
@@ -48,15 +48,15 @@
             <div class="flex items-center gap-4 text-sm">
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
                 @if (count($seo['switcher'] ?? []) > 1)
-                    <nav aria-label="Ngôn ngữ" class="flex gap-1 text-xs uppercase">
+                    <nav aria-label="{{ __('Ngôn ngữ') }}" class="flex gap-1 text-xs uppercase">
                         @foreach ($seo['switcher'] as $option)
                             <a href="{{ $option['url'] }}" hreflang="{{ $option['locale'] }}" lang="{{ $option['locale'] }}" title="{{ $option['label'] }}" @if ($option['current']) aria-current="true" class="font-semibold" @else class="text-slate-500" @endif>{{ $option['locale'] }}</a>
                         @endforeach
                     </nav>
                 @endif
                 {{-- Trang cache được: luôn render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
-                <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? 'Tài khoản' : 'Đăng nhập' }}</a>
-                <a href="{{ vani_route('storefront.cart') }}">Giỏ hàng <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
+                <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}</a>
+                <a href="{{ vani_route('storefront.cart') }}">{{ __('Giỏ hàng') }} <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
             </div>
         </div>
     </header>
@@ -85,7 +85,7 @@
                     @include('theme::partials.menu-list', ['items' => $items])
                 </nav>
             @empty
-                <nav class="space-y-1" aria-label="Hỗ trợ"><a href="{{ vani_route('storefront.track') }}" class="block">Tra cứu đơn hàng</a></nav>
+                <nav class="space-y-1" aria-label="{{ __('Hỗ trợ') }}"><a href="{{ vani_route('storefront.track') }}" class="block">{{ __('Tra cứu đơn hàng') }}</a></nav>
             @endforelse
             <x-vani::hook-slot name="vani.storefront.footer.columns" />
             <p class="md:col-span-4">© {{ date('Y') }} {{ config('app.name') }}</p>
@@ -96,6 +96,9 @@
     @if (! $pageCache && session()->has(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))
         <script type="application/json" data-vani-cart-change>@json(session(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))</script>
     @endif
+    {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
+    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên')])
+    <script type="application/json" data-vani-i18n>@json($jsStrings)</script>
     <x-vani::hook-slot name="vani.storefront.layout.body_end" />
 </body>
 </html>

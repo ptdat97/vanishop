@@ -1,9 +1,9 @@
 @extends('theme::layouts.app')
 
-@section('title', 'Thương hiệu')
+@section('title', __('Thương hiệu'))
 
 @section('content')
-    <h1 class="mb-6 text-2xl font-semibold">Thương hiệu</h1>
+    <h1 class="mb-6 text-2xl font-semibold">{{ __('Thương hiệu') }}</h1>
     <ul class="grid grid-cols-2 gap-4 md:grid-cols-4">
         @foreach ($brands as $brand)
             <li>

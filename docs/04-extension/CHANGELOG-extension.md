@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.63 — 2026-11-04
+
+Chuỗi giao diện storefront theo ngôn ngữ.
+
+### Thêm
+- Theme nạp `lang/<locale>.json` theo chuỗi theme (cha trước, con ghi đè); `vani-base` có `lang/en.json`. `vani.cms`, `vani.size-chart` có `Resources/lang/en.json`.
+- Layout xuất khối `<script type="application/json" data-vani-i18n>` (id → chuỗi đã dịch) cho `app.js`.
+
+### Đổi
+- View `vani-base`, `vani.cms`, `vani.size-chart` bọc chữ hiển thị bằng `__()`. Theme con override view nên làm tương tự (khoá = câu tiếng Việt) để có bản tiếng Anh.
+
 ## 0.3.62 — 2026-11-04
 
 Chỉ thêm. Ngôn ngữ của đơn và khách (ADR-038 mục 8).

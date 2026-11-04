@@ -49,3 +49,12 @@ it('thêm vào giỏ ở trang tiếng Anh quay về giỏ tiếng Anh', functio
     $variant = Variant::query()->first();
     $this->post('/en/cart', ['variant_id' => $variant->id, 'quantity' => 1])->assertRedirect(url('/en/cart'));
 });
+
+it('giao diện theme theo ngôn ngữ trang: /en tiếng Anh, / tiếng Việt', function () {
+    $en = $this->get('/en/cart')->assertOk()->getContent();
+    expect($en)->toContain('Your cart is empty.')->toContain('Search products…')->not->toContain('Giỏ hàng trống.')
+        ->toContain('Loading');
+
+    $this->get('/gio-hang')->assertOk()->assertSee('Giỏ hàng trống.')->assertDontSee('Your cart is empty.');
+    $this->get("/en/products/{$this->style->slug}")->assertSee('Add to cart');
+});

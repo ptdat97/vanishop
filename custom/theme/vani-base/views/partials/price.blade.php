@@ -3,7 +3,7 @@
 @if (! empty($product['price_hidden']))
     <a href="{{ vani_route('storefront.account.login') }}" class="text-sm font-medium text-primary underline" data-vani-price-for="{{ $product['id'] }}">{{ __('storefront::messages.sign_in_for_price') }}</a>
 @elseif ($price === null)
-    <span class="text-sm text-slate-500">Chưa có giá</span>
+    <span class="text-sm text-slate-500">{{ __('Chưa có giá') }}</span>
 @else
     <span class="font-semibold text-primary" data-price>
         {{ $price['min']['formatted'] }}@if ($price['max']['amount'] !== $price['min']['amount']) – {{ $price['max']['formatted'] }}@endif

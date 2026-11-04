@@ -10,7 +10,7 @@
 @section('content')
     @if ($product['breadcrumb'] !== [])
         <nav aria-label="Breadcrumb" class="mb-4 text-sm text-slate-500">
-            <a href="{{ vani_route('storefront.home') }}">Trang chủ</a>
+            <a href="{{ vani_route('storefront.home') }}">{{ __('Trang chủ') }}</a>
             @foreach ($product['breadcrumb'] as $crumb)
                 / <a href="{{ vani_route('storefront.category', $crumb['slug']) }}">{{ $crumb['name'] }}</a>
             @endforeach
@@ -30,7 +30,7 @@
             @if (count($images) > 1)
                 <div class="mt-3 grid grid-cols-4 gap-2" data-gallery-thumbs>
                     @foreach ($images as $index => $image)
-                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" @class(['aspect-[3/4] overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) aria-label="Ảnh {{ $index + 1 }} của {{ $product['name'] }}">
+                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" @class(['aspect-[3/4] overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) aria-label="{{ __('Ảnh :index của :name', ['index' => $index + 1, 'name' => $product['name']]) }}">
                             <img src="{{ $image['url'] }}" alt="" loading="lazy" width="150" height="200" class="h-full w-full object-cover">
                         </button>
                     @endforeach
@@ -57,7 +57,7 @@
                     @php($variants = array_values(array_filter($product['variants'], fn ($variant) => $variant['color_code'] === $color['code'])))
                     @continue($variants === [])
                     <fieldset data-color-group data-images='@json(array_values($color['images']))'>
-                        <legend class="mb-2 text-sm font-medium">Màu: {{ $color['name'] }}</legend>
+                        <legend class="mb-2 text-sm font-medium">{{ __('Màu: :name', ['name' => $color['name']]) }}</legend>
                         <div class="flex flex-wrap gap-2">
                             @foreach ($variants as $variant)
                                 {{-- Giá bị ẩn (khách chưa đăng nhập): vẫn chọn được; thêm giỏ chuyển sang đăng nhập. --}}
@@ -65,8 +65,8 @@
                                 <label @class(['cursor-pointer rounded border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:font-semibold', 'opacity-50' => ! $variant['available'] || $unpriced])>
                                     <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $unpriced)>
                                     {{ $variant['size_code'] }}
-                                    @if ($variant['low_stock'])<span class="text-xs text-accent">sắp hết</span>@endif
-                                    @unless ($variant['available'])<span class="sr-only">(hết hàng)</span>@endunless
+                                    @if ($variant['low_stock'])<span class="text-xs text-accent">{{ __('sắp hết') }}</span>@endif
+                                    @unless ($variant['available'])<span class="sr-only">{{ __('(hết hàng)') }}</span>@endunless
                                 </label>
                             @endforeach
                         </div>
@@ -75,12 +75,12 @@
                 <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" hidden></p>
 
                 <div class="flex items-center gap-3">
-                    <label for="quantity" class="text-sm">Số lượng</label>
+                    <label for="quantity" class="text-sm">{{ __('Số lượng') }}</label>
                     <input id="quantity" name="quantity" type="number" min="1" max="20" value="1" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
                 <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || ($product['price'] === null && empty($product['price_hidden'])))>
-                    {{ $product['in_stock'] ? 'Thêm vào giỏ' : 'Hết hàng' }}
+                    {{ $product['in_stock'] ? __('Thêm vào giỏ') : __('Hết hàng') }}
                 </button>
             </form>
             <x-vani::hook-slot name="vani.storefront.pdp.after_add_to_cart" :args="[$product]" />

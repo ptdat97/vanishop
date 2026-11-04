@@ -26,6 +26,8 @@ final class SizeChartServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
+        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
         $this->permissions(['size_chart.view' => 'Xem bảng size', 'size_chart.manage' => 'Quản lý bảng size']);
         $this->adminMenu('size-charts', 'Bảng size', 'admin.plugins.vani-size-chart.index', 'size_chart.view', 260, group: 'catalog');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));

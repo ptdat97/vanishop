@@ -1,5 +1,5 @@
 @if ($orders === [])
-    <p class="text-sm text-slate-500">Chưa có đơn hàng.</p>
+    <p class="text-sm text-slate-500">{{ __('Chưa có đơn hàng.') }}</p>
 @else
     <ul class="divide-y divide-slate-200 border-y border-slate-200 text-sm">
         @foreach ($orders as $order)

@@ -38,6 +38,20 @@ final class UseActiveTheme
         View::getFinder()->flush();
         View::share('themeTokens', $this->themes->tokens());
 
+        // Chuỗi giao diện của theme (`<theme>/lang/<locale>.json`, khoá = câu tiếng Việt): cha trước, con ghi đè.
+        $loader = app('translator')->getLoader();
+        $added = false;
+        foreach (array_reverse($chain) as $theme) {
+            $path = "{$theme->path}/lang";
+            if (is_dir($path) && ! in_array($path, $loader->jsonPaths(), true)) {
+                $loader->addJsonPath($path);
+                $added = true;
+            }
+        }
+        if ($added) {
+            app('translator')->setLoaded([]);
+        }
+
         return $next($request);
     }
 }

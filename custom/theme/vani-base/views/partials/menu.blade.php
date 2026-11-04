@@ -14,7 +14,7 @@
                 @if ($level === 1 && $item['image_url'])<img src="{{ $item['image_url'] }}" alt="" class="h-6 w-6 rounded object-cover">@endif
                 {{ $item['label'] }}
                 @if ($item['badge'])
-                    <span @class(['rounded-full px-1.5 text-[10px] font-semibold uppercase text-white', 'bg-emerald-600' => $item['badge'] === 'new', 'bg-red-600' => $item['badge'] === 'sale'])>{{ $item['badge'] === 'new' ? 'Mới' : 'Sale' }}</span>
+                    <span @class(['rounded-full px-1.5 text-[10px] font-semibold uppercase text-white', 'bg-emerald-600' => $item['badge'] === 'new', 'bg-red-600' => $item['badge'] === 'sale'])>{{ $item['badge'] === 'new' ? __('Mới') : 'Sale' }}</span>
                 @endif
             @if ($item['url'] !== null)</a>@else</span>@endif
             @if ($item['children'] !== [])

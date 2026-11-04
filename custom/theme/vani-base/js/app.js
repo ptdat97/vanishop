@@ -4,6 +4,16 @@
  */
 document.documentElement.classList.add('js');
 
+// Chuỗi giao diện đã dịch theo ngôn ngữ trang (layout xuất JSON `data-vani-i18n`, khoá = id ổn định).
+const i18n = (() => {
+    try {
+        return JSON.parse(document.querySelector('script[data-vani-i18n]')?.textContent ?? '{}');
+    } catch {
+        return {};
+    }
+})();
+const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, value]) => text.replace(`:${name}`, value), i18n[key] ?? key);
+
 // PDP: chọn màu → đổi ảnh chính theo bộ ảnh của màu (data-images trên fieldset màu).
 document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
     const main = gallery.querySelector('[data-gallery-main]');
@@ -45,9 +55,9 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
     }
 
     province.addEventListener('change', async () => {
-        ward.replaceChildren(new Option('— Đang tải… —', ''));
+        ward.replaceChildren(new Option(t('wards_loading'), ''));
         if (!province.value) {
-            ward.replaceChildren(new Option('— Chọn tỉnh/thành trước —', ''));
+            ward.replaceChildren(new Option(t('province_first'), ''));
             return;
         }
         try {
@@ -55,9 +65,9 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
                 headers: { Accept: 'application/json' },
             });
             const { data } = await response.json();
-            ward.replaceChildren(new Option('— Chọn phường/xã —', ''), ...data.map((item) => new Option(item.name, item.code)));
+            ward.replaceChildren(new Option(t('choose_ward'), ''), ...data.map((item) => new Option(item.name, item.code)));
         } catch {
-            ward.replaceChildren(new Option('— Không tải được, thử lại —', ''));
+            ward.replaceChildren(new Option(t('wards_failed'), ''));
         }
     });
 });
@@ -141,7 +151,7 @@ if (sessionUrl) {
                         const prices = Object.values(data?.prices || {});
                         if (!prices.length) return;
                         const lowest = prices.reduce((min, price) => (price.amount < min.amount ? price : min));
-                        memberPrice.textContent = `Giá ${data.group ?? 'thành viên'}: ${prices.length < variantIds.length ? 'từ ' : ''}${lowest.formatted}`;
+                        memberPrice.textContent = t(prices.length < variantIds.length ? 'member_price_from' : 'member_price', { group: data.group ?? t('member'), price: lowest.formatted });
                         memberPrice.hidden = false;
                     })
                     .catch(() => {});
