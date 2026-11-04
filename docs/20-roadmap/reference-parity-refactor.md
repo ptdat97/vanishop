@@ -133,8 +133,8 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 **VaniShop hiện có**: `Hook` (filter/action/collect/slot, registry, strict mode, đo thời gian), manifest `vanishop.json`, dependency resolver, lifecycle, `adminFormSection`/`adminColumn`/…, `storefrontRoutes`/`storefrontPages`, slot storefront, hook service `vani.service.*`, helper `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action`/`vani_*`.
 
 **Đặc tả cần làm**
-1. **Helper ngắn cho plugin và theme** — §4.
-2. **Tài nguyên tĩnh của plugin**: plugin khai báo thư mục `public` trong manifest; khi bật plugin, Core **publish** sang `public/plugins/<id>/` với tên file có hash (cache dài hạn), không phục vụ qua route PHP. Helper `vani_asset()` trả URL. Gỡ plugin xoá thư mục publish.
+1. ✅ (R2, 2026-11-04, Core 0.3.69) **Helper ngắn cho plugin và theme** — §4, [ADR-037](../19-adr/ADR-037-vani-helpers.md).
+2. ✅ (R2, 2026-11-04, Core 0.3.69 — publish cả trong `vani:plugin:cache` khi deploy) **Tài nguyên tĩnh của plugin**: plugin khai báo thư mục `public` trong manifest; khi bật plugin, Core **publish** sang `public/plugins/<id>/` với tên file có hash (cache dài hạn), không phục vụ qua route PHP. Helper `vani_asset()` trả URL. Gỡ plugin xoá thư mục publish.
 3. **Ảnh của plugin**: plugin muốn ảnh thu nhỏ thì đăng ký ảnh vào Thư viện media Core (đã có khử trùng lặp), không tự resize.
 4. **Không làm**: bọc/thay HTML của view (giữ quyết định [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): slot chỉ nối thêm, thay khối bằng override view trong theme); kiểm tra cập nhật từ máy chủ ngoài ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)).
 5. **`TranslationProvider`** (Later → P2): plugin dịch máy đăng ký nhà cung cấp; form bản dịch Admin hiện nút "Dịch từ tiếng Việt" cho từng trường khi có ít nhất một provider bật. Kết quả chỉ điền vào form, nhân viên lưu bằng tay.

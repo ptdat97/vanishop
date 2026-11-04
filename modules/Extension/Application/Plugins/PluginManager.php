@@ -33,6 +33,7 @@ final class PluginManager
         private readonly PluginSeeders $seeders,
         private readonly string $coreVersion,
         private readonly PluginDataGuard $dataGuard = new PluginDataGuard,
+        private readonly ?PluginAssets $assets = null,
     ) {}
 
     public function install(string $pluginId): PluginRecord
@@ -102,6 +103,9 @@ final class PluginManager
         }
 
         $record->update(['status' => PluginStatus::Enabled]);
+        if ($manifest !== null) {
+            $this->assets?->publish($manifest);
+        }
 
         $this->audit->record('extension.plugin.enabled', 'plugin', $pluginId);
         $this->afterStateChange();
@@ -223,6 +227,7 @@ final class PluginManager
         }
 
         $record->delete();
+        $this->assets?->remove($pluginId);
 
         $this->audit->record('extension.plugin.uninstalled', 'plugin', $pluginId, ['purge' => $purge] + ($purge && $dropRetained ? ['dropped_retained' => $manifest?->data->retained ?? []] : []));
         $this->afterStateChange();
@@ -277,6 +282,9 @@ final class PluginManager
             'status' => $record->status === PluginStatus::Failed ? PluginStatus::Installed : $record->status,
             'last_error' => null,
         ]);
+        if (in_array($record->status, [PluginStatus::Enabled, PluginStatus::Draining], true)) {
+            $this->assets?->publish($manifest);
+        }
         $this->audit->record('extension.plugin.upgraded', 'plugin', $pluginId, ['from' => $from, 'to' => $manifest->version] + ($seeded === [] ? [] : ['seeded' => $seeded]));
         $this->afterStateChange();
 

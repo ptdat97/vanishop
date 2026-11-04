@@ -1,6 +1,7 @@
 # ADR-037 — Bộ helper ngắn `vani_*` cho plugin và theme
 
 - Trạng thái: Accepted · Ngày: 2026-11-03 · Người quyết định: Owner
+- Triển khai: **Implemented** (Core 0.3.59: `vani_route`, `vani_link`; 0.3.69: còn lại + `MediaUrls`, `PluginDirectory`, arch test mục 4, helper trong `public-api.snapshot`). `vani_admin_url` nhận tham số kiểu `mixed` như `route()`; `vani_image` trả chuỗi rỗng khi không có ảnh và chưa cấu hình ảnh thay thế; `vani_asset` trả chuỗi rỗng khi file chưa publish. `PluginDirectory` có thêm `asset()` để `vani_asset` chỉ gọi một contract.
 - Liên quan: [ADR-034](ADR-034-vanicommerce-plugin-migration.md), [ADR-036](ADR-036-service-result-hooks.md), [reference-parity-refactor §4](../20-roadmap/reference-parity-refactor.md). Danh mục: [extension-point-catalog](../04-extension/extension-point-catalog.md).
 
 ## Context

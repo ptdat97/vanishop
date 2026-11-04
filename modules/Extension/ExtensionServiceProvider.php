@@ -25,7 +25,9 @@ use Modules\Extension\Application\Hooks\Points\ResponseHooks;
 use Modules\Extension\Application\Hooks\Points\ViewHooks;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginAssets;
 use Modules\Extension\Application\Plugins\PluginCapabilities;
+use Modules\Extension\Application\Plugins\PluginDirectoryService;
 use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginHealth;
 use Modules\Extension\Application\Plugins\PluginLoader;
@@ -53,6 +55,7 @@ use Modules\Extension\Console\PluginUninstallCommand;
 use Modules\Extension\Console\PluginUpgradeCommand;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\PluginDirectory;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
 use Modules\Identity\Application\PermissionRegistry;
@@ -126,7 +129,13 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             $app->make(PluginCapabilities::class),
             $app->make(PluginSeeders::class),
             (string) config('vanishop.version'),
+            assets: $app->make(PluginAssets::class),
         ));
+        $this->app->singleton(PluginAssets::class, fn (): PluginAssets => new PluginAssets(
+            (string) config('vanishop.plugins.assets.path'),
+            config('vanishop.plugins.assets.url') === null ? null : (string) config('vanishop.plugins.assets.url'),
+        ));
+        $this->app->bind(PluginDirectory::class, PluginDirectoryService::class);
 
         // Nạp plugin đã cài: đặt ở register() để provider của plugin được boot cùng vòng với Core.
         $this->app->make(PluginLoader::class)->load();

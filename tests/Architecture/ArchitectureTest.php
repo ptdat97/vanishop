@@ -107,3 +107,25 @@ it('Tag extension point chỉ được định nghĩa trong Contracts (plugin th
 
     expect($offenders)->toBe([]);
 });
+
+it('ADR-037: class trong modules/ không gọi helper vani_* dành cho plugin/theme (inject contract)', function () {
+    $helpers = ['vani_setting', 'vani_money', 'vani_locale', 'vani_customer', 'vani_staff', 'vani_admin_url', 'vani_image', 'vani_asset', 'vani_plugin', 'vani_route', 'vani_link'];
+    $offenders = [];
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('modules'), FilesystemIterator::SKIP_DOTS)) as $file) {
+        $path = (string) $file;
+        if (! str_ends_with($path, '.php') || str_ends_with($path, '.blade.php') || str_contains($path, '/Tests/') || $path === base_path('modules/Extension/helpers.php')) {
+            continue;
+        }
+        $tokens = token_get_all((string) file_get_contents($path));
+        foreach ($tokens as $index => $token) {
+            if (is_array($token) && $token[0] === T_STRING && in_array(strtolower($token[1]), $helpers, true)) {
+                $next = $tokens[$index + 1] ?? null;
+                if ($next === '(') {
+                    $offenders[] = substr($path, strlen(base_path()) + 1).':'.$token[2].' '.$token[1];
+                }
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});

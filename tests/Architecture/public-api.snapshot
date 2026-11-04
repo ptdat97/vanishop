@@ -1,4 +1,4 @@
-VaniShop 0.3.68
+VaniShop 0.3.69
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -145,6 +145,10 @@ interface Modules\Catalog\Contracts\MediaDirectory
   find(array $ids): array
   syncUsages(string $ownerType, int $ownerId, string $role, array $mediaIds): void
   releaseUsages(string $ownerType, ?int $ownerId = NULL): void
+interface Modules\Catalog\Contracts\MediaUrls
+  url(int $mediaId, ?int $width = NULL): ?string
+  urls(array $mediaIds, ?int $width = NULL): array
+  image(?int $mediaId, ?int $width = NULL): ?string
 interface Modules\Catalog\Contracts\SearchProvider
   const TAG = 'vani.search.providers'
   code(): string
@@ -430,6 +434,8 @@ class Modules\Extension\Contracts\Data\HealthStatus
 class Modules\Extension\Contracts\Data\Metric
   __construct(string $label, int|float $value, string $format = 'number', ?string $hint = NULL)
   toArray(): array
+class Modules\Extension\Contracts\Data\PluginInfo
+  __construct(string $id, string $name, string $version, string $kind, bool $enabled, ?string $author = NULL)
 class Modules\Extension\Contracts\Data\ReportPeriod
   const TIMEZONE = 'Asia/Ho_Chi_Minh'
   const PRESETS = array (
@@ -473,6 +479,9 @@ interface Modules\Extension\Contracts\Extensions
   kindContracts(): array
   doctorCheck(string $code, callable $check): void
   doctorChecks(): array
+interface Modules\Extension\Contracts\PluginDirectory
+  find(string $pluginId): ?Modules\Extension\Contracts\Data\PluginInfo
+  asset(string $pluginId, string $path): ?string
 interface Modules\Extension\Contracts\PluginHealthCheck
   const TAG = 'vani.health.checks'
   check(): Modules\Extension\Contracts\Data\HealthStatus
@@ -1208,3 +1217,26 @@ interface Modules\Tenancy\Contracts\Settings
   explicit(string $namespace): array
   define(Modules\Tenancy\Contracts\Data\SettingDefinition $definition): void
   definitions(?string $namespace = NULL): array
+function add_hook_action(string $hook, callable $callback, int $priority = 100): void
+function add_hook_filter(string $hook, callable $callback, int $priority = 100): void
+function add_hook_slot(string $hook, callable $callback, int $priority = 100): void
+function hook_action(string $hook, mixed ...$args): void
+function hook_filter(string $hook, mixed $value, mixed ...$args): mixed
+function vani_action(string $hook, mixed ...$args): void
+function vani_add_action(string $hook, callable $callback, int $priority = 100): void
+function vani_add_filter(string $hook, callable $callback, int $priority = 100): void
+function vani_add_slot(string $hook, callable $callback, int $priority = 100): void
+function vani_admin_url(string $routeName, mixed $parameters = array (
+)): string
+function vani_asset(string $pluginId, string $path): string
+function vani_customer(): ?Modules\Customer\Contracts\Data\CustomerData
+function vani_filter(string $hook, mixed $value, mixed ...$args): mixed
+function vani_image(?int $mediaId, int $width): string
+function vani_link(Modules\Storefront\Contracts\Data\LinkTarget|array $target): ?string
+function vani_locale(): string
+function vani_money(int $amount): string
+function vani_plugin(string $pluginId): ?Modules\Extension\Contracts\Data\PluginInfo
+function vani_route(string $name, mixed $parameters = array (
+), ?string $locale = NULL, bool $absolute = true): string
+function vani_setting(string $namespace, string $key, mixed $default = NULL): mixed
+function vani_staff(): ?Modules\Shared\Context\Actor

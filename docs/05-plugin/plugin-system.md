@@ -75,6 +75,7 @@ custom/plugin/VietQr/
 | `kind` | ✔ | Loại plugin, thuộc `PluginManifest::KINDS` (`payment_gateway`, `shipping_carrier`, `shipping_rate`, `tax`, `promotion`, `notification_channel`, `search`, `integration`, `marketing`, `analytics`, `customer_service`, `content`, `theme_extension`, `language`, `feature`). Loại gắn với extension point → doctor cảnh báo nếu không đóng góp |
 | `description` | | (0.3.52) Mô tả ngắn cho Admin → Plugin; chuỗi hoặc `{ "vi": "…", "en": "…" }` |
 | `author` | | Tác giả, hiện trong Admin → Plugin |
+| `assets` | | (0.3.69) Thư mục tài nguyên tĩnh tương đối trong plugin (vd. `"public"`). Bật/nâng plugin và `php artisan vani:plugin:cache` (trong `optimize`, khi deploy) publish sang `public/plugins/<id>/` với tên file có hash nội dung (chỉ css/js/ảnh/font/json/map — không PHP); gỡ plugin thì xoá. URL: `vani_asset('<id>', 'css/a.css')` (ADR-037) |
 | `icon` | | (0.3.52) Đường dẫn tương đối tới file `svg`/`png`/`webp`/`jpg` trong thư mục plugin, ≤ 256 KB. Có `..` → manifest không hợp lệ. Phục vụ qua Admin với CSP chặn script (SVG) |
 | `bundled` | | `true` = **plugin hệ thống** ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): tự cài + bật khi dựng hệ thống; không tắt được nếu là implementation đang bật cuối cùng của extension point bắt buộc. Implemented (`vani:install`) |
 

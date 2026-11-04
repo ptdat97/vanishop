@@ -64,6 +64,8 @@ final readonly class PluginManifest
         public ?string $author = null,
         /** Đường dẫn tương đối tới file icon trong thư mục plugin (0.3.52). */
         public ?string $icon = null,
+        /** Thư mục tài nguyên tĩnh (0.3.69, `assets`), tương đối trong thư mục plugin — publish sang public/plugins/<id>/. */
+        public ?string $assets = null,
     ) {}
 
     /**
@@ -114,6 +116,11 @@ final readonly class PluginManifest
             throw InvalidManifest::because($path, "icon [{$icon}] phải là đường dẫn tương đối tới file svg/png/webp/jpg trong thư mục plugin");
         }
 
+        $assets = isset($data['assets']) ? trim((string) $data['assets'], '/') : null;
+        if ($assets !== null && preg_match('#^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*$#', $assets) !== 1) {
+            throw InvalidManifest::because($path, "assets [{$assets}] phải là thư mục tương đối trong thư mục plugin");
+        }
+
         return new self(
             id: $id,
             name: array_map('strval', $name),
@@ -131,6 +138,7 @@ final readonly class PluginManifest
             description: array_map('strval', $description),
             author: isset($data['author']) ? (string) $data['author'] : null,
             icon: $icon,
+            assets: $assets,
         );
     }
 

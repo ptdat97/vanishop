@@ -6,11 +6,16 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.68',
+    'version' => '0.3.69',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
         'cache' => $relativeToBase(env('VANI_PLUGINS_CACHE', 'bootstrap/cache/vanishop-plugins.php')),
+        // Tài nguyên tĩnh của plugin (manifest `assets`) publish ra đây khi bật plugin / `vani:plugin:assets` (deploy).
+        'assets' => [
+            'path' => env('VANI_PLUGINS_ASSETS_PATH', public_path('plugins')),
+            'url' => env('VANI_PLUGINS_ASSETS_URL'),
+        ],
         // Tắt toàn bộ plugin khi có sự cố (xem docs/05-plugin/plugin-system.md §8).
         'safe_mode' => (bool) env('VANI_PLUGINS_SAFE_MODE', false),
         // Circuit breaker cho lời gọi plugin trên luồng tuỳ chọn (Extensions::call): N lỗi trong 1 phút → bỏ qua M giây.

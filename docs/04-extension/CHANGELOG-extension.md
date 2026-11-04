@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.69 — 2026-11-04
+
+Chỉ thêm. Helper ADR-037 + tài nguyên tĩnh plugin (reference-parity §3.4-1/2).
+
+### Thêm
+- Helper `vani_setting`, `vani_money`, `vani_locale`, `vani_customer`, `vani_staff`, `vani_admin_url`, `vani_image`, `vani_asset`, `vani_plugin` (`modules/Extension/helpers.php`); chữ ký mọi helper giờ nằm trong `public-api.snapshot`.
+- `Catalog\Contracts\MediaUrls` (`url`, `urls`, `image` — ảnh thay thế từ `core`/`storefront.placeholder_image`).
+- `Extension\Contracts\PluginDirectory` (`find`, `asset`), `Extension\Contracts\Data\PluginInfo`.
+- Manifest `assets`: thư mục tài nguyên tĩnh publish sang `public/plugins/<id>/` (tên có hash) khi bật/nâng plugin và `vani:plugin:cache`; gỡ plugin thì xoá. Cấu hình `vanishop.plugins.assets.path|url` (`VANI_PLUGINS_ASSETS_PATH`, `VANI_PLUGINS_ASSETS_URL`).
+- Arch test: class trong `modules/` không gọi helper ADR-037.
+
 ## 0.3.68 — 2026-11-04
 
 Cache CDN cho trang công khai thành tuỳ chọn nâng cao ([storefront §5](../14-storefront/storefront.md)).

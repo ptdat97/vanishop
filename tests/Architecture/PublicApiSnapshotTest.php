@@ -62,6 +62,15 @@ it('public API cho plugin khớp snapshot (đổi API phải ghi CHANGELOG-exten
         }
     }
 
+    // Helper toàn cục cho plugin/theme (ADR-036, ADR-037) cũng là public API.
+    $helpers = array_filter(get_defined_functions()['user'], fn (string $function): bool => (new ReflectionFunction($function))->getFileName() === base_path('modules/Extension/helpers.php'));
+    sort($helpers);
+    foreach ($helpers as $function) {
+        $reflection = new ReflectionFunction($function);
+        $return = $reflection->getReturnType() === null ? '' : ': '.$reflection->getReturnType();
+        $lines[] = "function {$reflection->getName()}(".implode(', ', array_map('publicApiSignature', $reflection->getParameters())).")$return";
+    }
+
     $snapshot = __DIR__.'/public-api.snapshot';
     $current = 'VaniShop '.config('vanishop.version')."\n".implode("\n", $lines)."\n";
     if (getenv('VANI_UPDATE_API_SNAPSHOT') === '1' || ! is_file($snapshot)) {
