@@ -6,6 +6,7 @@ namespace Modules\Storefront\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Validation\Rule;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Returns\Contracts\Returns;
@@ -51,7 +52,8 @@ final class OrderController
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
             // Đổi hàng (0.3.32): variant thay thế cho từng dòng (phải có cho mọi dòng); bỏ trống = trả hàng hoàn tiền.
             'lines.*.exchange_variant_id' => ['nullable', 'integer'],
-            'reason_code' => ['required', 'string', Rule::in((array) config('vanishop.returns.reasons'))],
+            // Mã lý do trong danh mục đang bật (Admin → Đổi trả → Lý do, 0.3.74).
+            'reason_code' => ['required', 'string', Rule::in(array_column($returns->reasons(App::getLocale()), 'code'))],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
         $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
@@ -75,6 +77,19 @@ final class OrderController
         $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
         $returns->cancel($detail->id, $return, 'customer');
+
+        return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))]);
+    }
+
+    /**
+     * Khách báo đã gửi hàng về (0.3.74): yêu cầu đã duyệt → đang gửi về, mã vận đơn trả tuỳ chọn.
+     */
+    public function markReturnShipped(Request $request, string $order, string $return, Returns $returns): JsonResponse
+    {
+        $data = $request->validate(['tracking_number' => ['nullable', 'string', 'max:64']]);
+        $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
+        abort_if($detail === null, 404, __('ordering::messages.not_found'));
+        $returns->markShipped($detail->id, $return, $data['tracking_number'] ?? null, 'customer');
 
         return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))]);
     }

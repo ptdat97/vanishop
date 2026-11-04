@@ -29,6 +29,7 @@ const props = defineProps<{
         events: Array<{ from: string | null; to: string; note: string | null; source: string; at: string }>;
         lockVersion: number;
         resolution: 'refund' | 'exchange';
+        returnTrackingNumber: string | null;
     };
     exchangeQuote: null | {
         lines: Array<{ return_line_id: number; sku: string; quantity: number; unit_amount: number; credit: number; same_style: boolean }>;
@@ -85,6 +86,7 @@ function resolve(): void {
     </PageHeader>
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
     <p v-if="props.return.customerNote" class="mb-4 rounded bg-amber-50 p-3 text-sm">Khách ghi chú: {{ props.return.customerNote }}</p>
+    <p v-if="props.return.returnTrackingNumber" class="mb-4 rounded bg-slate-50 p-3 text-sm">Mã vận đơn khách gửi về: <span class="font-mono">{{ props.return.returnTrackingNumber }}</span></p>
 
     <section class="mb-6 space-y-2">
         <DataTable :columns="columns" :rows="props.return.lines" :row-label="(line) => line.sku">

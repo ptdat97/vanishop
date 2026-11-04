@@ -21,4 +21,10 @@ return [
     ],
     'exchange_unavailable' => 'Could not create the replacement order: :reason',
     'exchanged' => 'Exchange completed, replacement order :number created.',
+    'reason_invalid' => 'The return reason is invalid or no longer available.',
+    'reason_name_required' => 'A name in the default language is required.',
+    'reason_code_locked' => 'This reason is in use: its code cannot change, only its name or status.',
+    'reason_in_use' => 'This reason is used by return requests: it can be disabled, not deleted.',
+    'reason_saved' => 'Reason saved.',
+    'reason_deleted' => 'Reason deleted.',
 ];

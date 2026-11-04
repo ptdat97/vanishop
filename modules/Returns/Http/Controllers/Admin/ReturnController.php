@@ -6,6 +6,7 @@ namespace Modules\Returns\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -13,6 +14,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Returns\Application\ReturnReasons;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnRequest;
@@ -20,6 +22,8 @@ use Modules\Shared\Support\StoreClock;
 
 final class ReturnController
 {
+    public function __construct(private readonly ReturnReasons $reasons) {}
+
     public function home(): RedirectResponse
     {
         Gate::authorize('returns.view');
@@ -33,8 +37,9 @@ final class ReturnController
         $status = (string) $request->query('status', '');
 
         return Inertia::render('Returns::Returns/Index', [
-            'labels' => __('returns::labels'),
+            'labels' => $this->labels(),
             'baseUrl' => route('admin.returns.returns.index'),
+            'reasonsUrl' => route('admin.returns.reasons.index'),
             'status' => $status,
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
             'returns' => ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
@@ -57,7 +62,7 @@ final class ReturnController
         $returnable = $returns->returnable($order);
 
         return Inertia::render('Returns::Returns/Create', [
-            'labels' => __('returns::labels'),
+            'labels' => $this->labels(),
             'storeUrl' => route('admin.returns.returns.store'),
             'orderUrl' => route('admin.orders.orders.show', ['order' => $order]),
             'order' => ['id' => $data->id, 'number' => $data->number],
@@ -66,7 +71,7 @@ final class ReturnController
                 'id' => $line->id, 'sku' => $line->sku, 'name' => $line->productName, 'color' => $line->colorName, 'size' => $line->sizeCode,
                 'ordered' => $line->quantity, 'returnable' => (int) ($returnable['lines'][$line->id] ?? 0),
             ], $orders->lines($order)),
-            'reasons' => (array) config('vanishop.returns.reasons'),
+            'reasons' => array_column($this->reasons->active(App::getLocale()), 'code'),
         ]);
     }
 
@@ -77,7 +82,7 @@ final class ReturnController
             'order_id' => ['required', 'integer'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*' => ['integer', 'min:0', 'max:1000'],
-            'reason_code' => ['required', 'string', Rule::in((array) config('vanishop.returns.reasons'))],
+            'reason_code' => ['required', 'string', Rule::in(array_column($this->reasons->active(App::getLocale()), 'code'))],
             'note' => ['nullable', 'string', 'max:500'],
             // Đổi hàng: SKU thay thế theo dòng (order_line_id => SKU).
             'exchange_skus' => ['array'],
@@ -107,7 +112,7 @@ final class ReturnController
         $canManage = Gate::allows('returns.manage');
 
         return Inertia::render('Returns::Returns/Show', [
-            'labels' => __('returns::labels'),
+            'labels' => $this->labels(),
             'baseUrl' => route('admin.returns.returns.index'),
             'orderUrl' => route('admin.orders.orders.show', ['order' => $return->order_id]),
             'orderNumber' => $orders->find($return->order_id)?->number,
@@ -167,5 +172,15 @@ final class ReturnController
         }
 
         return back()->with('success', __('returns::messages.resolved'));
+    }
+
+    /**
+     * Nhãn Admin; tên lý do lấy từ danh mục (cả lý do đã tắt — yêu cầu cũ vẫn hiện đúng tên).
+     *
+     * @return array<string, mixed>
+     */
+    private function labels(): array
+    {
+        return [...(array) __('returns::labels'), 'reason' => array_map(fn ($reason): string => $this->reasons->label($reason->code, App::getLocale()), $this->reasons->all())];
     }
 }

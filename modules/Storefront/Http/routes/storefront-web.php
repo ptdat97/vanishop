@@ -61,6 +61,7 @@ foreach (StoreLocale::supported() as $locale) {
             Route::middleware('throttle:10,1')->group(function () use ($p): void {
                 Route::post($p('order.returns.store'), [ReturnController::class, 'store'])->name('order.returns.store');
                 Route::post($p('order.returns.cancel'), [ReturnController::class, 'cancel'])->name('order.returns.cancel');
+                Route::post($p('order.returns.shipped'), [ReturnController::class, 'shipped'])->name('order.returns.shipped');
             });
 
             Route::get($p('track'), [TrackOrderController::class, 'show'])->name('track');

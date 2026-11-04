@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.74 — 2026-11-05
+
+Danh mục lý do đổi trả + khách báo đã gửi hàng về ([reference-parity §3.13-1/2](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- `Returns::reasons(locale)`, `reasonLabel(code, locale)`, `markShipped(orderId, returnPublicId, trackingNumber, source)`; `ReturnView::$returnTrackingNumber`; `ReturnRejected::reasonInvalid()`.
+- Bảng `return_reasons` (dữ liệu ban đầu từ `vanishop.returns.reasons`), cột `return_requests.return_tracking_number`.
+- Storefront API `POST /orders/{id}/returns/{returnId}/shipped` (`tracking_number` tuỳ chọn); đơn có `returns[].reason` (tên theo ngôn ngữ) và `returns[].return_tracking_number`. Route web `storefront.order.returns.shipped`.
+
+### Đổi
+- Lý do hợp lệ = lý do đang bật trong danh mục (không còn đọc `vanishop.returns.reasons` — chỉ là dữ liệu ban đầu). `Returns::request` từ chối lý do không có/đã tắt (`return.reason_invalid`) cho mọi kênh.
+
 ## 0.3.73 — 2026-11-05
 
 Chỉ thêm. Khối lượng + số rút gọn ([reference-parity §3.1-1/2, §3.10-2](../20-roadmap/reference-parity-refactor.md)).

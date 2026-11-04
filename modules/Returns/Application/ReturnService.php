@@ -57,6 +57,7 @@ final class ReturnService implements Returns
         private readonly VariantDirectory $variants,
         private readonly PriceResolver $prices,
         private readonly ReplacementOrders $replacements,
+        private readonly ReturnReasons $reasons,
     ) {}
 
     public function request(int $orderId, array $lines, string $reasonCode, ?string $note, string $source, array $exchanges = []): ReturnView
@@ -64,6 +65,10 @@ final class ReturnService implements Returns
         $lines = array_filter($lines, fn (int $quantity): bool => $quantity > 0);
         if ($lines === []) {
             throw ReturnRejected::quantityExceeded(0, 0);
+        }
+        // Lý do phải có trong danh mục và đang bật (§3.13-1) — cho mọi kênh: web, API, Admin.
+        if (! $this->reasons->isActive($reasonCode)) {
+            throw ReturnRejected::reasonInvalid($reasonCode);
         }
         $exchanges = array_intersect_key($exchanges, $lines);
         if ($exchanges !== [] && count($exchanges) !== count($lines)) {
@@ -149,6 +154,35 @@ final class ReturnService implements Returns
         $days = (int) config('vanishop.fulfillment.return_window_days', 7);
 
         return ['lines' => $lines, 'deadline' => $deliveredAt?->modify("+{$days} days")->format(DATE_ATOM)];
+    }
+
+    public function reasons(string $locale): array
+    {
+        return $this->reasons->active($locale);
+    }
+
+    public function reasonLabel(string $code, string $locale): string
+    {
+        return $this->reasons->label($code, $locale);
+    }
+
+    public function markShipped(int $orderId, string $returnPublicId, ?string $trackingNumber, string $source): ReturnView
+    {
+        $return = ReturnRequest::query()->where('order_id', $orderId)->where('public_id', $returnPublicId)->firstOrFail();
+        $tracking = $trackingNumber === null || trim($trackingNumber) === '' ? null : mb_substr(trim($trackingNumber), 0, 64);
+
+        DB::transaction(function () use ($return, $tracking, $source): void {
+            $locked = ReturnRequest::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status !== ReturnStatus::Approved) {
+                throw ReturnRejected::invalidTransition($locked->status->value, ReturnStatus::InTransit->value);
+            }
+            $locked->update(['return_tracking_number' => $tracking]);
+            $this->move($locked, ReturnStatus::InTransit, $tracking === null ? 'shipped_by_customer' : "shipped_by_customer: {$tracking}", $source);
+            $this->syncOrder($locked->order_id);
+            $this->audit->record('return.in_transit', 'return_request', $locked->id, ['number' => $locked->number, 'tracking' => $tracking, 'source' => $source]);
+        });
+
+        return $this->view($return->fresh());
     }
 
     public function cancel(int $orderId, string $returnPublicId, string $source): ReturnView
@@ -385,6 +419,7 @@ final class ReturnService implements Returns
             lockVersion: $return->lock_version,
             resolution: (string) $return->resolution,
             replacementOrderId: $return->replacement_order_id,
+            returnTrackingNumber: $return->return_tracking_number,
         ), $return);
     }
 

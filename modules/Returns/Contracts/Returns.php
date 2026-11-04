@@ -33,4 +33,23 @@ interface Returns
     public function returnable(int $orderId): array;
 
     public function cancel(int $orderId, string $returnPublicId, string $source): ReturnView;
+
+    /**
+     * Lý do đổi trả đang bật (0.3.74, Admin → Đổi trả → Lý do), theo thứ tự hiển thị — cho form của khách.
+     *
+     * @return list<array{code: string, label: string, store_fault: bool}>
+     */
+    public function reasons(string $locale): array;
+
+    /**
+     * Tên lý do theo ngôn ngữ (cả lý do đã tắt); mã lạ → chính mã.
+     */
+    public function reasonLabel(string $code, string $locale): string;
+
+    /**
+     * Khách báo đã gửi hàng về (0.3.74): yêu cầu đã duyệt → đang gửi về, kèm mã vận đơn trả (tuỳ chọn).
+     *
+     * @throws ReturnRejected trạng thái khác "đã duyệt"
+     */
+    public function markShipped(int $orderId, string $returnPublicId, ?string $trackingNumber, string $source): ReturnView;
 }

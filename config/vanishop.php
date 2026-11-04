@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.73',
+    'version' => '0.3.74',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -163,6 +163,7 @@ return [
                 'order' => 'don-hang/{order}',
                 'order.returns.store' => 'don-hang/{order}/doi-tra',
                 'order.returns.cancel' => 'don-hang/{order}/doi-tra/{return}/huy',
+                'order.returns.shipped' => 'don-hang/{order}/doi-tra/{return}/da-gui',
                 'track' => 'tra-cuu-don',
                 'account' => 'tai-khoan',
                 'account.login' => 'tai-khoan/dang-nhap',
@@ -196,6 +197,7 @@ return [
                 'order' => 'orders/{order}',
                 'order.returns.store' => 'orders/{order}/returns',
                 'order.returns.cancel' => 'orders/{order}/returns/{return}/cancel',
+                'order.returns.shipped' => 'orders/{order}/returns/{return}/shipped',
                 'track' => 'track-order',
                 'account' => 'account',
                 'account.login' => 'account/login',
@@ -292,6 +294,7 @@ return [
     'returns' => [
         // ReturnPolicy (extension point). days_window dùng VANI_RETURN_WINDOW_DAYS.
         'policy' => env('VANI_RETURN_POLICY', 'days_window'),
+        // Chỉ là dữ liệu ban đầu của danh mục lý do (migration 0.3.74); sau đó quản lý ở Admin → Đổi trả → Lý do.
         'reasons' => ['wrong_size', 'not_as_described', 'defective', 'changed_mind', 'other'],
     ],
 

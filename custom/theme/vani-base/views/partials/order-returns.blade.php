@@ -23,8 +23,25 @@
                         <li>{{ $line['name'] }} × {{ $line['quantity'] }}</li>
                     @endforeach
                 </ul>
+                @if ($return['reason'] ?? null)
+                    <p class="mt-1 text-slate-500">{{ __('Lý do: :reason', ['reason' => $return['reason']]) }}</p>
+                @endif
                 @if (($return['resolution'] ?? 'refund') === 'refund')
                     <p class="mt-1 text-slate-500">{{ __('Tiền hoàn dự kiến: :amount', ['amount' => $return['refund']['formatted'] ?? '']) }}</p>
+                @endif
+                @if ($return['return_tracking_number'] ?? null)
+                    <p class="mt-1 text-slate-500">{{ __('Mã vận đơn gửi về: :number', ['number' => $return['return_tracking_number']]) }}</p>
+                @endif
+                {{-- Đã duyệt: khách báo đã gửi hàng về (§3.13-2), mã vận đơn tuỳ chọn. --}}
+                @if ($return['status'] === 'approved')
+                    <form action="{{ vani_route('storefront.order.returns.shipped', [$order['id'], $return['id']]) }}" method="post" class="mt-3 flex flex-wrap items-end gap-2" data-return-shipped>
+                        @csrf
+                        <label class="text-sm">
+                            <span class="block text-slate-500">{{ __('Mã vận đơn gửi về (nếu có)') }}</span>
+                            <input name="tracking_number" maxlength="64" class="mt-1 rounded border border-slate-300 px-2 py-1">
+                        </label>
+                        <button type="submit" class="rounded-[var(--radius-theme)] bg-primary px-4 py-1.5 text-sm font-medium text-white">{{ __('Tôi đã gửi hàng về') }}</button>
+                    </form>
                 @endif
             </div>
         @endforeach

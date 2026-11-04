@@ -26,4 +26,5 @@ return [
     'menu_published' => 'Menu published.',
     'menu_discarded' => 'Unpublished changes discarded.',
     'menu_restored' => 'Previous version restored to draft. Publish to apply.',
+    'return_shipped' => 'Thanks — we have noted that you shipped the items back. We will let you know when they arrive.',
 ];

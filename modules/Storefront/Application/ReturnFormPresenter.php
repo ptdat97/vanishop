@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application;
 
+use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Contracts\AvailabilityReader;
+use Modules\Returns\Contracts\Returns;
 
 /**
  * Dữ liệu form đổi/trả trên storefront native (order §7, §7.1): dòng còn trả được + lựa chọn đổi size/màu CÙNG MẪU
@@ -18,6 +20,7 @@ final class ReturnFormPresenter
         private readonly VariantDirectory $variants,
         private readonly CatalogReader $catalog,
         private readonly AvailabilityReader $availability,
+        private readonly Returns $returns,
     ) {}
 
     /**
@@ -64,10 +67,8 @@ final class ReturnFormPresenter
             ];
         }
 
-        $reasons = [];
-        foreach ((array) config('vanishop.returns.reasons') as $code) {
-            $reasons[$code] = __("storefront::messages.return_reasons.{$code}");
-        }
+        // Danh mục lý do do Admin quản lý (§3.13-1), theo ngôn ngữ trang.
+        $reasons = array_column($this->returns->reasons(App::getLocale()), 'label', 'code');
 
         return ['lines' => $lines, 'reasons' => $reasons, 'deadline' => $order['returnable']['deadline'] ?? null];
     }

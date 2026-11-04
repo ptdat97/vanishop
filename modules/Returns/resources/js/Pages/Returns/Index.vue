@@ -8,6 +8,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { type ReturnLabels, returnStatusTone } from '../../labels';
 
 const props = defineProps<{
+    reasonsUrl: string;
     baseUrl: string;
     labels: ReturnLabels;
     status: string;
@@ -30,7 +31,9 @@ function filter(status: string): void {
 <template>
     <Head title="Đổi/trả" />
     <p class="mb-2 text-sm text-slate-500">Đổi/trả</p>
-    <PageHeader title="Yêu cầu đổi/trả" subtitle="Tiền hoàn tính từ thành tiền dòng đã trừ giảm giá; không hoàn phí giao." />
+    <PageHeader title="Yêu cầu đổi/trả" subtitle="Tiền hoàn tính từ thành tiền dòng đã trừ giảm giá; không hoàn phí giao.">
+        <Link :href="reasonsUrl" :class="secondaryButton">Lý do đổi trả</Link>
+    </PageHeader>
 
     <div class="mb-4 flex flex-wrap gap-2">
         <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">Tất cả</button>

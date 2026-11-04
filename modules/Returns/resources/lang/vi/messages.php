@@ -21,4 +21,10 @@ return [
     ],
     'exchange_unavailable' => 'Không tạo được đơn đổi hàng: :reason',
     'exchanged' => 'Đã hoàn tất đổi hàng, tạo đơn thay thế :number.',
+    'reason_invalid' => 'Lý do đổi trả không hợp lệ hoặc đã ngừng dùng.',
+    'reason_name_required' => 'Cần tên lý do ở ngôn ngữ mặc định.',
+    'reason_code_locked' => 'Lý do đã được dùng: không đổi mã được, chỉ đổi tên hoặc tắt.',
+    'reason_in_use' => 'Lý do đã được dùng trong yêu cầu đổi trả: chỉ tắt được, không xoá.',
+    'reason_saved' => 'Đã lưu lý do.',
+    'reason_deleted' => 'Đã xoá lý do.',
 ];

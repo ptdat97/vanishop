@@ -231,8 +231,8 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 **VaniShop hiện có**: Returns đầy đủ vòng đời, đổi hàng, khách gửi/huỷ yêu cầu, `ReturnPolicy`.
 
 **Đặc tả cần làm**
-1. **Danh mục lý do đổi trả** do Admin quản lý (tên vi/en, thứ tự, bật/tắt, cờ "lỗi do cửa hàng" → dùng cho quy tắc phí ship trả hàng và báo cáo). Lý do đã dùng không xoá được, chỉ tắt. Kiểm tra hiện lý do đang là enum hay text.
-2. **Khách báo "đã gửi hàng về"** kèm mã vận đơn trả (tuỳ chọn) → chuyển yêu cầu sang trạng thái đang gửi về (đã có trạng thái).
+1. ✅ (R3, 2026-11-05, Core 0.3.74 — trước là danh sách mã trong config; nay bảng `return_reasons`, Admin → Đổi trả → Lý do đổi trả; cờ "lỗi do cửa hàng" mới lưu, chưa có quy tắc phí ship trả hàng dùng nó) **Danh mục lý do đổi trả** do Admin quản lý (tên vi/en, thứ tự, bật/tắt, cờ "lỗi do cửa hàng" → dùng cho quy tắc phí ship trả hàng và báo cáo). Lý do đã dùng không xoá được, chỉ tắt. Kiểm tra hiện lý do đang là enum hay text.
+2. ✅ (R3, 2026-11-05, Core 0.3.74 — web + `POST /orders/{id}/returns/{returnId}/shipped`) **Khách báo "đã gửi hàng về"** kèm mã vận đơn trả (tuỳ chọn) → chuyển yêu cầu sang trạng thái đang gửi về (đã có trạng thái).
 3. **Ảnh đính kèm** yêu cầu (tối đa 5, qua Thư viện media, chỉ khách sở hữu đơn và nhân viên xem được) — P2.
 
 **Vị trí**: Core `Returns`. **Ưu tiên**: P1 (1, 2), P2 (3).

@@ -29,5 +29,7 @@ final readonly class ReturnView
         /** refund | exchange (0.3.32) */
         public string $resolution = 'refund',
         public ?int $replacementOrderId = null,
+        /** Mã vận đơn khách gửi hàng về (0.3.74). */
+        public ?string $returnTrackingNumber = null,
     ) {}
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application;
 
+use Illuminate\Support\Facades\App;
 use Modules\Fulfillment\Contracts\Data\ShipmentView;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Ordering\Contracts\Data\OrderDetail;
@@ -69,7 +70,9 @@ final class OrderPresenter
                 'events' => $shipment->events,
             ], array_filter($this->shipments->forOrder($order->id), fn (ShipmentView $shipment): bool => $shipment->status !== 'cancelled'))),
             'returns' => array_map(fn (ReturnView $return): array => [
-                'id' => $return->publicId, 'number' => $return->number, 'status' => $return->status, 'reason_code' => $return->reasonCode, 'resolution' => $return->resolution,
+                'id' => $return->publicId, 'number' => $return->number, 'status' => $return->status, 'reason_code' => $return->reasonCode,
+                'reason' => $this->returns->reasonLabel($return->reasonCode, App::getLocale()), 'resolution' => $return->resolution,
+                'return_tracking_number' => $return->returnTrackingNumber,
                 'refund' => $money($return->refundedAmount ?? $return->refundAmount), 'created_at' => $return->createdAt,
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),

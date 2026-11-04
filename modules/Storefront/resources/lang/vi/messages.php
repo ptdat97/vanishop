@@ -46,4 +46,5 @@ return [
     'menu_published' => 'Đã xuất bản menu.',
     'menu_discarded' => 'Đã bỏ thay đổi chưa xuất bản.',
     'menu_restored' => 'Đã đưa phiên bản cũ vào nháp. Xuất bản để áp dụng.',
+    'return_shipped' => 'Đã ghi nhận bạn gửi hàng về. Cửa hàng sẽ báo khi nhận được.',
 ];

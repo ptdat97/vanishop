@@ -21,6 +21,7 @@ use Modules\Returns\Domain\ReturnStatus;
  * @property int $lock_version
  * @property string $resolution refund | exchange (0.3.32)
  * @property int|null $replacement_order_id đơn thay thế khi đổi hàng
+ * @property string|null $return_tracking_number mã vận đơn khách gửi hàng về (0.3.74)
  */
 final class ReturnRequest extends Model
 {

@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Controllers\Web;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Modules\Ordering\Contracts\CustomerOrders;
@@ -32,7 +33,7 @@ final class ReturnController
             'lines' => ['required', 'array', 'max:50'],
             'lines.*.quantity' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'lines.*.exchange_variant_id' => ['nullable', 'integer'],
-            'reason_code' => ['required', 'string', Rule::in((array) config('vanishop.returns.reasons'))],
+            'reason_code' => ['required', 'string', Rule::in(array_column($this->returns->reasons(App::getLocale()), 'code'))],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -62,6 +63,17 @@ final class ReturnController
         $this->returns->cancel($this->detail($request, $order, $session)->id, $return, 'customer');
 
         return back()->with('status', __('storefront::messages.return_cancelled'));
+    }
+
+    /**
+     * Khách báo đã gửi hàng về (§3.13-2), kèm mã vận đơn trả nếu có.
+     */
+    public function shipped(Request $request, string $order, string $return, Session $session): RedirectResponse
+    {
+        $data = $request->validate(['tracking_number' => ['nullable', 'string', 'max:64']]);
+        $this->returns->markShipped($this->detail($request, $order, $session)->id, $return, $data['tracking_number'] ?? null, 'customer');
+
+        return back()->with('status', __('storefront::messages.return_shipped'));
     }
 
     private function detail(Request $request, string $order, Session $session): OrderDetail

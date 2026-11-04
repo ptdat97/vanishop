@@ -71,6 +71,7 @@ Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác
 | GET | `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản (plugin) |
 | POST | `/orders/{id}/returns` | Khách gửi yêu cầu đổi/trả (`lines[{order_line_id, quantity, exchange_variant_id?}]`, `reason_code` ∈ `vanishop.returns.reasons`, `note`), header `X-Vani-Order-Token`. Có `exchange_variant_id` cho mọi dòng = **đổi hàng** (0.3.32, [order §7.1](../09-order/order.md)). Lỗi `return.not_eligible` (chưa giao / quá hạn / đơn thay thế chỉ đổi cùng mẫu), `return.quantity_exceeded`, `return.exchange_invalid`. Đơn trả về có `returns[]` (thêm `resolution` refund/exchange) và `returnable{lines{order_line_id: số còn trả được}, deadline}`; `lines[].variant_id` (2026-10-08). **Implemented** |
 | POST | `/orders/{id}/returns/{returnId}/cancel` | Khách huỷ yêu cầu còn chờ duyệt. **Implemented** |
+| POST | `/orders/{id}/returns/{returnId}/shipped` | Khách báo đã gửi hàng về (0.3.74): yêu cầu đã duyệt → `in_transit`, body `tracking_number` tuỳ chọn (≤ 64). Trạng thái khác → `return.transition_invalid` 409. `reason_code` khi gửi yêu cầu phải là lý do đang bật (Admin → Đổi trả → Lý do đổi trả). **Implemented** |
 | POST | `/me/returns` | Tạo yêu cầu đổi trả (khi có tài khoản khách) |
 | GET | `/address/provinces`, `/address/provinces/{code}/wards` | Địa giới hành chính (khi có `AddressDirectory`, vd. `vani.provinces-vn`). **Implemented** (0.3.11) |
 | GET | `/search?q=&filter[...]` | Tìm kiếm qua `SearchProvider` (facet màu, size còn hàng, giá) |
