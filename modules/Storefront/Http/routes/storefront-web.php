@@ -50,6 +50,7 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::middleware('throttle:vani-cart-create')->post($p('cart'), [CartController::class, 'add'])->name('cart.add');
                 Route::post($p('cart.update'), [CartController::class, 'update'])->whereNumber('line')->name('cart.update');
                 Route::post($p('cart.remove'), [CartController::class, 'remove'])->whereNumber('line')->name('cart.remove');
+                Route::post($p('cart.select'), [CartController::class, 'select'])->name('cart.select');
 
                 Route::get($p('checkout'), [CheckoutController::class, 'show'])->name('checkout');
                 Route::middleware('throttle:vani-checkout')->post($p('checkout'), [CheckoutController::class, 'store'])->name('checkout.store');

@@ -34,7 +34,7 @@ Tài liệu này được viết theo [clean-room §3](../01-principles/clean-ro
 | Hook (filter/action/blade), plugin loader, trường cấu hình plugin | `Extension` | Đã có và chặt hơn; thiếu helper ngắn (§4) |
 | Sản phẩm, SKU, thuộc tính, danh mục, thương hiệu, liên kết sản phẩm, lượt xem | `Catalog` | Thiếu ghi nhận lượt xem/"đã xem" (§3.5) |
 | Giá theo nhóm khách (hệ số giảm toàn đơn) | `Pricing` (giá thành viên) | Khác chủ đích: giá theo dòng, không giảm toàn đơn (§3.6) |
-| Giỏ hàng, chọn dòng để thanh toán, mua ngay, giỏ mini | `Cart` | Thiếu chọn dòng + mua ngay (§3.8) |
+| Giỏ hàng, chọn dòng để thanh toán, mua ngay, giỏ mini | `Cart` | **Implemented** (Core 0.3.64, §3.8) |
 | Checkout, tổng tiền theo pipeline, thuế theo vùng, khối lượng | `Checkout` | Đã có pipeline; thuế VN là plugin |
 | Máy trạng thái đơn, lịch sử, vận đơn, thanh toán, tự huỷ/tự hoàn tất | `Ordering`, `Fulfillment`, `Payment` | Đã có, tách 4 chiều |
 | Đổi trả + lý do | `Returns` | Đã có; thiếu danh mục lý do do Admin quản lý (§3.13) |
@@ -185,6 +185,8 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 4. Concurrency: thao tác chọn dùng cùng khoá giỏ hiện có.
 
 **Vị trí**: Core `Cart` + `Checkout` + `Storefront`. **Ưu tiên**: P1. **Test**: feature (đặt đơn giữ dòng chưa chọn), invariant (đơn chỉ có dòng đã chọn), API schema.
+
+**Trạng thái**: **Implemented** (Core 0.3.64) — `cart_lines.selected`, `Carts::buyNow/select/deselect/selectOnly/markOrdered`, `PUT /carts/{id}/selection`, `POST /gio-hang/chon`, nút "Mua ngay", giỏ mini qua `/_vani/phien`. Sau khi đặt, dòng chưa chọn giữ nguyên trạng thái bỏ chọn. Test: `CartSelectionTest`, `tests/Feature/Invariants/CartSelectionInvariantsTest.php`.
 
 ### 3.9 Promotion
 

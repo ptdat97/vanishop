@@ -78,6 +78,7 @@ final class CartViewBuilder
                 issues: $issues,
                 options: (array) ($line->meta['options'] ?? []),
                 priceListCode: $price?->priceListCode,
+                selected: $line->selected && ! in_array(CartLineView::ISSUE_UNAVAILABLE, $issues, true),
             );
         }
 

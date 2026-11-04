@@ -35,6 +35,34 @@ interface Carts
     public function removeLine(CartKey $key, int $lineId): CartView;
 
     /**
+     * Mua ngay (0.3.64): thêm như addLine rồi chỉ chọn riêng dòng đó để thanh toán, trong cùng một lần khoá giỏ.
+     * Các dòng khác ở lại giỏ, bỏ chọn.
+     *
+     * @param  array<string, array<string, mixed>>  $options
+     */
+    public function buyNow(CartKey $key, int $variantId, int $quantity, array $options = []): CartView;
+
+    /**
+     * Chọn thêm các dòng để thanh toán (0.3.64). Dòng đang `unavailable` vẫn được ghi nhận nhưng không tính là đã chọn
+     * cho tới khi bán lại. Id không thuộc giỏ → CartRejected::lineNotFound.
+     *
+     * @param  list<int>  $lineIds
+     */
+    public function select(CartKey $key, array $lineIds): CartView;
+
+    /**
+     * @param  list<int>  $lineIds
+     */
+    public function deselect(CartKey $key, array $lineIds): CartView;
+
+    /**
+     * Chỉ chọn đúng các dòng này, bỏ chọn mọi dòng khác. Mảng rỗng = bỏ chọn tất cả.
+     *
+     * @param  list<int>  $lineIds
+     */
+    public function selectOnly(CartKey $key, array $lineIds): CartView;
+
+    /**
      * Gộp giỏ nguồn vào giỏ đích (khi khách đăng nhập): cộng dồn, kẹp theo giới hạn và số có thể bán,
      * bỏ dòng không còn bán; giỏ nguồn chuyển sang "merged".
      */
@@ -59,7 +87,15 @@ interface Carts
     public function lockForCheckout(CartKey $key): CartView;
 
     /**
-     * Đánh dấu giỏ đã đặt hàng (trong cùng transaction với lockForCheckout).
+     * Đánh dấu cả giỏ đã đặt hàng (trong cùng transaction với lockForCheckout).
      */
     public function markConverted(CartKey $key, string $orderPublicId): void;
+
+    /**
+     * Sau khi đặt đơn từ các dòng đã chọn (0.3.64, trong cùng transaction với lockForCheckout): xoá các dòng đó khỏi giỏ.
+     * Không còn dòng nào → giỏ chuyển "converted" như markConverted; còn dòng → giỏ vẫn mở, dòng còn lại giữ nguyên.
+     *
+     * @param  list<int>  $lineIds
+     */
+    public function markOrdered(CartKey $key, string $orderPublicId, array $lineIds): void;
 }

@@ -36,6 +36,8 @@ final readonly class CartLineView
         public array $options = [],
         /** Bảng giá cho giá bán hiện tại (0.3.37) — lưu vào dòng đơn để biết món hưởng giá sale/thành viên nào. */
         public ?string $priceListCode = null,
+        /** Chọn để thanh toán (0.3.64); dòng `unavailable` luôn false. */
+        public bool $selected = true,
     ) {}
 
     public function blocksCheckout(): bool

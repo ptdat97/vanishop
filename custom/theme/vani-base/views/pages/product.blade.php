@@ -79,9 +79,16 @@
                     <input id="quantity" name="quantity" type="number" min="1" max="20" value="1" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
-                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $product['in_stock'] || ($product['price'] === null && empty($product['price_hidden'])))>
-                    {{ $product['in_stock'] ? __('Thêm vào giỏ') : __('Hết hàng') }}
-                </button>
+                @php($cannotBuy = ! $product['in_stock'] || ($product['price'] === null && empty($product['price_hidden'])))
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled($cannotBuy)>
+                        {{ $product['in_stock'] ? __('Thêm vào giỏ') : __('Hết hàng') }}
+                    </button>
+                    {{-- Mua ngay (§3.8): thêm rồi chỉ thanh toán riêng món này; món khác vẫn ở lại giỏ. --}}
+                    @if ($product['in_stock'])
+                        <button type="submit" name="buy_now" value="1" class="flex-1 rounded-[var(--radius-theme)] border border-primary px-6 py-3 font-medium text-primary disabled:opacity-50" @disabled($cannotBuy)>{{ __('Mua ngay') }}</button>
+                    @endif
+                </div>
             </form>
             <x-vani::hook-slot name="vani.storefront.pdp.after_add_to_cart" :args="[$product]" />
 

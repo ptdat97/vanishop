@@ -47,6 +47,20 @@ document.querySelectorAll('[data-autosubmit]').forEach((input) => {
     input.addEventListener('change', () => input.form?.requestSubmit());
 });
 
+// Giỏ: chọn dòng để thanh toán — đổi ô chọn thì gửi form lựa chọn; "Chọn tất cả" đánh dấu mọi dòng chọn được.
+const selection = document.getElementById('cart-selection');
+if (selection) {
+    selection.querySelector('[data-selection-submit]')?.setAttribute('hidden', '');
+    const lines = document.querySelectorAll('[data-select-line]');
+    lines.forEach((input) => input.addEventListener('change', () => selection.requestSubmit()));
+    selection.querySelector('[data-select-all]')?.addEventListener('change', (event) => {
+        lines.forEach((input) => {
+            if (!input.disabled) input.checked = event.target.checked;
+        });
+        selection.requestSubmit();
+    });
+}
+
 // Checkout: chọn tỉnh → tải phường/xã từ Storefront API (không JS: nút "Tải danh sách phường/xã").
 document.querySelectorAll('[data-province-select]').forEach((province) => {
     const ward = province.form?.querySelector('[data-ward-select]');
@@ -101,6 +115,37 @@ if (inlineCartChange) {
     }
 }
 
+/** Giỏ mini ở header: vài dòng gần nhất + tạm tính (không khuyến mãi). Dựng bằng DOM, không chèn HTML từ dữ liệu. */
+function renderMiniCart(cart) {
+    const box = document.querySelector('[data-vani-mini-cart]');
+    const list = box?.querySelector('[data-vani-mini-cart-lines]');
+    if (!box || !list || !cart || !(cart.lines || []).length) return;
+
+    list.replaceChildren(
+        ...cart.lines.map((line) => {
+            const item = document.createElement('li');
+            item.className = 'flex items-center gap-2 py-2';
+            if (line.image_url) {
+                const image = document.createElement('img');
+                image.src = line.image_url;
+                image.alt = '';
+                image.className = 'h-10 w-10 rounded object-cover';
+                item.append(image);
+            }
+            const text = document.createElement('span');
+            text.className = 'flex-1';
+            text.textContent = `${line.name ?? ''}${line.variant ? ` (${line.variant})` : ''} × ${line.quantity}`;
+            const total = document.createElement('span');
+            total.textContent = line.line_total?.formatted ?? '';
+            item.append(text, total);
+
+            return item;
+        }),
+    );
+    box.querySelector('[data-vani-mini-cart-subtotal]').textContent = cart.subtotal?.formatted ?? '';
+    box.hidden = false;
+}
+
 const sessionUrl = document.documentElement.dataset.vaniSession;
 if (sessionUrl) {
     fetch(sessionUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
@@ -118,6 +163,7 @@ if (sessionUrl) {
                 count.textContent = String(session.cart.count);
                 count.hidden = false;
             }
+            renderMiniCart(session.cart);
             const status = document.querySelector('[data-vani-flash="status"]');
             if (status && session.flash.status) {
                 status.textContent = session.flash.status;

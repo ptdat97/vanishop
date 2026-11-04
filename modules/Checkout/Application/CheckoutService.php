@@ -133,7 +133,8 @@ final class CheckoutService implements Checkout
                 $payment = $this->paymentService->createForOrder($placed, (string) $request->paymentMethod);
                 $this->promotions->recordUsage($placed->id, $customerId, $totals->currencyCode, $totals->promotions ?? new PromotionResult([], []));
                 Hook::action('vani.order.after_create', $placed);
-                $this->carts->markConverted($request->cart, $publicId);
+                // Dòng đã vào đơn rời giỏ; dòng chưa chọn ở lại (giỏ chỉ đóng khi hết dòng).
+                $this->carts->markOrdered($request->cart, $publicId, array_map(fn (CartLineView $line): int => $line->id, $cart->selectedLines()));
 
                 $body = $this->present($placed, $totals, $payment['public_id'], (string) $request->paymentMethod);
                 $this->idempotency->complete($scope, $idempotencyKey, 201, $body);
@@ -184,7 +185,8 @@ final class CheckoutService implements Checkout
     private function context(CartView $cart, CheckoutRequest $request, ?int $customerId): TotalsContext
     {
         $lines = [];
-        foreach ($cart->lines as $line) {
+        // Chỉ dòng khách chọn để thanh toán (reference-parity §3.8): khuyến mãi, phí, thuế tính trên phần này.
+        foreach ($cart->selectedLines() as $line) {
             if ($line->variant === null || $line->unitPrice === null || in_array(CartLineView::ISSUE_UNAVAILABLE, $line->issues, true)) {
                 continue;
             }

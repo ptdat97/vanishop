@@ -40,14 +40,38 @@ final class CartController
         $data = $request->validate([
             'variant_id' => ['required', 'integer', 'min:1'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'buy_now' => ['nullable', 'boolean'],
         ], ['variant_id.required' => __('storefront::messages.choose_variant')]);
 
         $quantity = (int) ($data['quantity'] ?? 1);
-        $this->carts->addLine($this->cart->keyOrCreate(), (int) $data['variant_id'], $quantity, LineOptions::from($request->input('options')));
-        $line = collect($this->cart->current()->lines ?? [])->firstWhere('variantId', (int) $data['variant_id']);
+        $buyNow = $request->boolean('buy_now');
+        $key = $this->cart->keyOrCreate();
+        $options = LineOptions::from($request->input('options'));
+        $view = $buyNow
+            ? $this->carts->buyNow($key, (int) $data['variant_id'], $quantity, $options)
+            : $this->carts->addLine($key, (int) $data['variant_id'], $quantity, $options);
+        $line = collect($view->lines)->firstWhere('variantId', (int) $data['variant_id']);
 
-        return redirect()->to(LocalizedUrls::route('storefront.cart'))->with('status', __('storefront::messages.added_to_cart'))
-            ->with(self::CHANGE_FLASH, $line === null ? null : $this->change('add', $line, $quantity));
+        // Mua ngay (§3.8): chỉ dòng vừa thêm được chọn, đi thẳng tới checkout; các dòng khác ở lại giỏ.
+        $redirect = $buyNow
+            ? redirect()->to(LocalizedUrls::route('storefront.checkout'))
+            : redirect()->to(LocalizedUrls::route('storefront.cart'))->with('status', __('storefront::messages.added_to_cart'));
+
+        return $redirect->with(self::CHANGE_FLASH, $line === null ? null : $this->change('add', $line, $quantity));
+    }
+
+    /**
+     * Chọn dòng để thanh toán: `lines[]` là các dòng đã đánh dấu (form gửi cả khi JS tắt).
+     */
+    public function select(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['lines' => ['nullable', 'array', 'max:100'], 'lines.*' => ['integer', 'min:1']]);
+        $key = $this->cart->key();
+        abort_if($key === null, 404);
+
+        $this->carts->selectOnly($key, array_values(array_map('intval', $data['lines'] ?? [])));
+
+        return redirect()->to(LocalizedUrls::route('storefront.cart'));
     }
 
     public function update(Request $request, int $line): RedirectResponse

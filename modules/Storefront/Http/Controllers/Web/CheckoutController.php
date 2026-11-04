@@ -100,7 +100,7 @@ final class CheckoutController
             'token' => $order['access_token'],
             'payment' => $result->payment === null ? null : $payments->present($result->payment),
         ]);
-        $this->cart->forget();
+        // Không quên giỏ trong phiên: dòng chưa chọn còn ở lại (§3.8); giỏ đã đóng thì NativeCart::current() tự bỏ.
 
         // Cổng chuyển hướng (VNPay…): sang trang cổng ngay; khách quay về qua return URL của cổng → trang đơn.
         $action = $result->payment?->action;

@@ -30,11 +30,15 @@ final class CartPresenter
             'currency' => $cart->currencyCode,
             'item_count' => $cart->itemCount,
             'subtotal' => $this->money->toArray($cart->subtotal),
+            // Phần sẽ đặt hàng (dòng đã chọn, 0.3.64); `subtotal`/`item_count` vẫn tính cả giỏ.
+            'selected_subtotal' => $this->money->toArray($cart->selectedSubtotal()),
+            'selected_count' => array_sum(array_map(fn (CartLineView $line): int => $line->quantity, $cart->selectedLines())),
             'checkout_ready' => $cart->isCheckoutReady(),
             'lines' => array_map(fn (CartLineView $line): array => [
                 'id' => $line->id,
                 'variant_id' => $line->variantId,
                 'quantity' => $line->quantity,
+                'selected' => $line->selected,
                 'sku' => $line->variant?->sku,
                 'product' => $line->variant === null ? null : [
                     'slug' => $line->variant->slug,
@@ -52,6 +56,29 @@ final class CartPresenter
                 'options' => $line->options,
             ], $cart->lines),
         ]);
+    }
+
+    /**
+     * Giỏ mini cho header (§3.8): tổng số lượng, 3 dòng thêm gần nhất, tạm tính cả giỏ — không chạy khuyến mãi.
+     *
+     * @return array{count: int, subtotal: array<string, mixed>, lines: list<array<string, mixed>>}
+     */
+    public function mini(CartView $cart): array
+    {
+        $recent = array_slice(array_reverse($cart->lines), 0, 3);
+
+        return [
+            'count' => $cart->itemCount,
+            'subtotal' => $this->money->toArray($cart->subtotal),
+            'lines' => array_map(fn (CartLineView $line): array => [
+                'id' => $line->id,
+                'name' => $line->variant?->name,
+                'variant' => $line->variant === null ? null : trim(implode(' / ', array_filter([$line->variant->colorName, $line->variant->sizeCode]))),
+                'image_url' => $line->variant?->imageUrl,
+                'quantity' => $line->quantity,
+                'line_total' => $this->optional($line->lineTotal),
+            ], $recent),
+        ];
     }
 
     /**

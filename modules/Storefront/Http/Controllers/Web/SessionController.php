@@ -11,6 +11,7 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Storefront\Application\CartPresenter;
 use Modules\Storefront\Application\MemberPrices;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\PriceVisibility;
@@ -42,9 +43,10 @@ final class SessionController
         ])->header('Cache-Control', 'private, no-store');
     }
 
-    public function __invoke(Request $request, NativeCart $cart): JsonResponse
+    public function __invoke(Request $request, NativeCart $cart, CartPresenter $carts): JsonResponse
     {
         $customer = $request->attributes->get('customer');
+        $current = $cart->current();
         $locale = StoreLocale::isSupported((string) $request->query('locale')) ? (string) $request->query('locale') : StoreLocale::default();
         $errors = $request->session()->get('errors');
         $bag = $errors instanceof ViewErrorBag ? $errors->getBag('default') : new MessageBag;
@@ -56,7 +58,8 @@ final class SessionController
                 // Endpoint chỉ có ở ngôn ngữ mặc định; trang gọi truyền `?locale=` để link tài khoản đúng ngôn ngữ trang.
                 'url' => LocalizedUrls::route($customer !== null ? 'storefront.account' : 'storefront.account.login', [], $locale),
             ],
-            'cart' => ['count' => $cart->current()->itemCount ?? 0],
+            // Giỏ mini cho header (§3.8): `count` giữ nguyên cho theme cũ, thêm vài dòng gần nhất + tạm tính.
+            'cart' => $current === null ? ['count' => 0, 'subtotal' => null, 'lines' => []] : $carts->mini($current),
             'prices_url' => LocalizedUrls::route('storefront.session.prices'),
             'flash' => [
                 'status' => $request->session()->get('status'),

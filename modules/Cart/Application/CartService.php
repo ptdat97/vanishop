@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Cart\Application;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -69,23 +70,36 @@ final class CartService implements Carts
     public function addLine(CartKey $key, int $variantId, int $quantity, array $options = []): CartView
     {
         $options = $this->normalizeOptions($variantId, $options);
-        $hash = self::optionsHash($options);
 
-        return $this->mutate($key, function (Cart $cart) use ($variantId, $quantity, $options, $hash): void {
-            $line = CartLine::query()->where('cart_id', $cart->id)->where('variant_id', $variantId)->where('options_hash', $hash)->first();
-            if ($line === null && ! $this->limits->canAddLine(CartLine::query()->where('cart_id', $cart->id)->count())) {
-                throw CartRejected::tooManyLines($this->limits->maxLines);
-            }
+        return $this->mutate($key, fn (Cart $cart): CartLine => $this->add($cart, $variantId, $quantity, $options));
+    }
 
-            $this->assertQuantity($quantity);
-            [$variant, $price] = $this->guard($cart, $variantId, ($line->quantity ?? 0) + $quantity, $this->otherLinesQuantity($cart, $variantId, $line?->id), $options);
+    public function buyNow(CartKey $key, int $variantId, int $quantity, array $options = []): CartView
+    {
+        $options = $this->normalizeOptions($variantId, $options);
 
-            $line ??= new CartLine(['cart_id' => $cart->id, 'variant_id' => $variantId, 'options_hash' => $hash, 'meta' => $options === [] ? null : ['options' => $options]]);
-            $line->fill([
-                'quantity' => ($line->quantity ?? 0) + $quantity,
-                // Thêm lại = khách đã thấy giá hiện tại → làm mới giá chụp.
-                'unit_price_snapshot' => $price->amount->amount,
-            ])->save();
+        return $this->mutate($key, function (Cart $cart) use ($variantId, $quantity, $options): void {
+            $line = $this->add($cart, $variantId, $quantity, $options);
+            CartLine::query()->where('cart_id', $cart->id)->whereKeyNot($line->id)->update(['selected' => false]);
+        });
+    }
+
+    public function select(CartKey $key, array $lineIds): CartView
+    {
+        return $this->mutate($key, fn (Cart $cart) => $this->lines($cart, $lineIds)->update(['selected' => true]));
+    }
+
+    public function deselect(CartKey $key, array $lineIds): CartView
+    {
+        return $this->mutate($key, fn (Cart $cart) => $this->lines($cart, $lineIds)->update(['selected' => false]));
+    }
+
+    public function selectOnly(CartKey $key, array $lineIds): CartView
+    {
+        return $this->mutate($key, function (Cart $cart) use ($lineIds): void {
+            $this->lines($cart, $lineIds);
+            CartLine::query()->where('cart_id', $cart->id)->update(['selected' => false]);
+            CartLine::query()->where('cart_id', $cart->id)->whereKey($lineIds)->update(['selected' => true]);
         });
     }
 
@@ -187,6 +201,47 @@ final class CartService implements Carts
             'last_activity_at' => now(),
         ]);
         event(new CartUpdated($cart->public_id, $cart->customer_id));
+    }
+
+    public function markOrdered(CartKey $key, string $orderPublicId, array $lineIds): void
+    {
+        $cart = $this->find($key);
+        CartLine::query()->where('cart_id', $cart->id)->whereKey($lineIds)->delete();
+        if (! CartLine::query()->where('cart_id', $cart->id)->exists()) {
+            $this->markConverted($key, $orderPublicId);
+
+            return;
+        }
+
+        $cart->update(['meta' => [...($cart->meta ?? []), 'last_order_id' => $orderPublicId]]);
+        $this->touch($cart);
+    }
+
+    /**
+     * Thêm hoặc cộng dồn một dòng (giỏ đã khoá); trả dòng sau thay đổi (luôn ở trạng thái đã chọn).
+     *
+     * @param  array<string, array<string, scalar|null>>  $options  đã chuẩn hoá
+     */
+    private function add(Cart $cart, int $variantId, int $quantity, array $options): CartLine
+    {
+        $hash = self::optionsHash($options);
+        $line = CartLine::query()->where('cart_id', $cart->id)->where('variant_id', $variantId)->where('options_hash', $hash)->first();
+        if ($line === null && ! $this->limits->canAddLine(CartLine::query()->where('cart_id', $cart->id)->count())) {
+            throw CartRejected::tooManyLines($this->limits->maxLines);
+        }
+
+        $this->assertQuantity($quantity);
+        [, $price] = $this->guard($cart, $variantId, ($line->quantity ?? 0) + $quantity, $this->otherLinesQuantity($cart, $variantId, $line?->id), $options);
+
+        $line ??= new CartLine(['cart_id' => $cart->id, 'variant_id' => $variantId, 'options_hash' => $hash, 'meta' => $options === [] ? null : ['options' => $options]]);
+        $line->fill([
+            'quantity' => ($line->quantity ?? 0) + $quantity,
+            // Thêm lại = khách đã thấy giá hiện tại → làm mới giá chụp; và muốn mua → chọn lại dòng.
+            'unit_price_snapshot' => $price->amount->amount,
+            'selected' => true,
+        ])->save();
+
+        return $line;
     }
 
     /**
@@ -349,6 +404,23 @@ final class CartService implements Carts
     {
         return Cart::query()->where('customer_id', $customerId)
             ->where('status', CartStatus::Active)->latest('last_activity_at')->first();
+    }
+
+    /**
+     * Truy vấn các dòng của giỏ theo id; có id không thuộc giỏ → lineNotFound.
+     *
+     * @param  list<int>  $lineIds
+     * @return Builder<CartLine>
+     */
+    private function lines(Cart $cart, array $lineIds): Builder
+    {
+        $lineIds = array_values(array_unique(array_map('intval', $lineIds)));
+        $query = CartLine::query()->where('cart_id', $cart->id)->whereKey($lineIds);
+        if ((clone $query)->count() !== count($lineIds)) {
+            throw CartRejected::lineNotFound();
+        }
+
+        return $query;
     }
 
     private function line(Cart $cart, int $lineId): CartLine

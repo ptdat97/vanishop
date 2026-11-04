@@ -56,7 +56,15 @@
                 @endif
                 {{-- Trang cache được: luôn render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
                 <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}</a>
-                <a href="{{ vani_route('storefront.cart') }}">{{ __('Giỏ hàng') }} <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
+                {{-- Giỏ mini (§3.8): JS điền vài dòng gần nhất + tạm tính từ /_vani/phien; không JS vẫn là link tới giỏ. --}}
+                <div class="group relative">
+                    <a href="{{ vani_route('storefront.cart') }}">{{ __('Giỏ hàng') }} <span data-vani-cart-count hidden class="rounded-full bg-primary px-1.5 text-xs text-white"></span></a>
+                    <div data-vani-mini-cart hidden class="invisible absolute right-0 z-20 mt-2 w-72 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-3 text-sm shadow-lg group-hover:visible group-focus-within:visible">
+                        <ul class="divide-y divide-slate-100" data-vani-mini-cart-lines></ul>
+                        <p class="mt-2 flex justify-between font-medium"><span>{{ __('Tạm tính') }}</span><span data-vani-mini-cart-subtotal></span></p>
+                        <a href="{{ vani_route('storefront.cart') }}" class="mt-2 block text-center underline">{{ __('Xem giỏ hàng') }}</a>
+                    </div>
+                </div>
             </div>
         </div>
     </header>

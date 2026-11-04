@@ -16,7 +16,9 @@
 |---|---|
 | Phạm vi | Một giỏ cho cửa hàng, chứa sản phẩm **mọi brand**, đặt thành **một đơn** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Code hiện gắn giỏ với kênh và chặn đơn nhiều brand — gỡ ở slice 12 |
 | Định danh | `public_id` (ULID) + token bí mật (header `X-Vani-Cart-Token`; native: cookie HttpOnly), server chỉ lưu `sha256` ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)) |
-| Dòng giỏ | `variant_id`, `quantity`, `unit_price_snapshot` (giá lúc thêm, để cảnh báo "giá đã đổi"), `meta` |
+| Dòng giỏ | `variant_id`, `quantity`, `selected`, `unit_price_snapshot` (giá lúc thêm, để cảnh báo "giá đã đổi"), `meta` |
+| Chọn dòng (0.3.64) | `selected` mặc định true; `select`/`deselect`/`selectOnly` dưới cùng khoá giỏ. Checkout chỉ lấy dòng đã chọn (khuyến mãi, phí, thuế tính trên phần đó); dòng `unavailable` không tính là đã chọn; dòng chưa chọn không chặn thanh toán. Sau khi đặt, `markOrdered` xoá dòng đã vào đơn — giỏ chỉ `converted` khi hết dòng. Thêm lại dòng đã bỏ chọn → chọn lại |
+| Mua ngay | `buyNow` = thêm dòng + chỉ chọn riêng dòng đó, cùng một lần khoá; dòng khác ở lại giỏ (bỏ chọn) |
 | Gộp giỏ | Khi đăng nhập: cộng dồn số lượng, kẹp theo giới hạn dòng và ATS (không giảm dòng sẵn có của giỏ đích), bỏ dòng không còn bán, giỏ nguồn → `merged`, phát `CartUpdated` |
 | Giới hạn | Tối đa 20/variant, 50 dòng/giỏ (cấu hình `VANI_CART_MAX_LINE_QUANTITY`, `VANI_CART_MAX_LINES`) |
 | Đồng thời | Mọi thay đổi khoá dòng `carts` (`FOR UPDATE`) → nhiều tab cùng sửa không mất cập nhật (concurrency test) |
@@ -97,7 +99,7 @@ final class PlaceOrder
                 $payment = $this->payments->createIntent($order, $checkout->paymentMethod);
                 $this->promotions->recordUsage($order, $totals);                  // UPDATE có điều kiện
                 Hook::action('vani.order.after_create', OrderData::from($order)); // plugin ghi DB, không I/O
-                $this->carts->markConverted($cart, $order);
+                $this->carts->markOrdered($cart, $order, $cart->selectedLines()); // chỉ dòng đã chọn rời giỏ
                 $this->outbox->record(OrderPlacedMessage::from($order));
 
                 return new PlaceOrderResult($order, $payment);

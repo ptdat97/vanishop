@@ -4,6 +4,21 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.64 — 2026-11-04
+
+Chỉ thêm. Chọn dòng giỏ để thanh toán, mua ngay, giỏ mini ([reference-parity §3.8](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Cột `cart_lines.selected` (mặc định true). `CartLineView::$selected` (tham số cuối, mặc định true; dòng `unavailable` luôn false).
+- `Carts::buyNow()`, `select()`, `deselect()`, `selectOnly()` (cùng khoá giỏ với các thao tác khác), `Carts::markOrdered()` (xoá dòng đã vào đơn; giỏ chỉ `converted` khi hết dòng).
+- `CartView::selectedLines()`, `selectedSubtotal()`.
+- Storefront API: `PUT /carts/{id}/selection` (`mode` = `only`|`select`|`deselect`, `line_ids[]`), `buy_now` khi thêm dòng; giỏ trả thêm `lines[].selected`, `selected_subtotal`, `selected_count`.
+- `/_vani/phien`: `cart.subtotal`, `cart.lines[]` (3 dòng gần nhất) cho giỏ mini; `cart.count` giữ nguyên.
+
+### Đổi
+- `CartView::isCheckoutReady()` chỉ xét dòng đã chọn (cần ít nhất một); dòng chưa chọn hoặc ngừng bán không còn chặn thanh toán.
+- Checkout (`quote`, `placeOrder`) chỉ lấy dòng đã chọn — khuyến mãi, phí giao, thuế tính trên phần đó; sau khi đặt gọi `markOrdered` thay `markConverted`. Thêm lại một dòng đã bỏ chọn thì dòng được chọn lại.
+
 ## 0.3.63 — 2026-11-04
 
 Chuỗi giao diện storefront theo ngôn ngữ.

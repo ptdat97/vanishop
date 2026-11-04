@@ -104,6 +104,25 @@ it('báo giá đổi, hết hàng, ngừng bán trên dòng giỏ; subtotal bỏ
         ->and($view->isCheckoutReady())->toBeFalse();
 });
 
+it('dòng ngừng bán không tính là đã chọn và không chặn thanh toán phần đã chọn; dòng thiếu hàng chỉ chặn khi được chọn', function () {
+    $key = $this->carts->create('VND')->key;
+    $this->carts->addLine($key, $this->s->id, 1);
+    $this->carts->addLine($key, $this->m->id, 2);
+    $this->carts->addLine($key, $this->l->id, 1);
+    I::stock($this->warehouse, $this->m->id, 1);
+    T::seed(fn () => $this->l->update(['status' => 'inactive']));
+
+    $selected = fn () => collect($this->carts->view($key)->lines)->mapWithKeys(fn ($line) => [$line->variantId => $line->selected])->all();
+    expect($selected())->toBe([$this->s->id => true, $this->m->id => true, $this->l->id => false])
+        ->and($this->carts->view($key)->isCheckoutReady())->toBeFalse();
+
+    $lineOf = fn (int $variantId): int => collect($this->carts->view($key)->lines)->firstWhere('variantId', $variantId)->id;
+    $view = $this->carts->deselect($key, [$lineOf($this->m->id)]);
+    expect($view->isCheckoutReady())->toBeTrue()
+        ->and($view->selectedSubtotal()->amount)->toBe(500_000)
+        ->and($this->carts->select($key, [$lineOf($this->l->id)])->selectedLines())->toHaveCount(1);
+});
+
 it('token sai và giỏ đã đóng', function () {
     $created = $this->carts->create('VND');
     $wrong = new CartKey($created->key->publicId, 'sai-token');

@@ -7,7 +7,8 @@ namespace Modules\Cart\Contracts\Data;
 use Modules\Shared\Domain\Money\Money;
 
 /**
- * Giỏ để hiển thị. `subtotal` chỉ cộng các dòng bán được theo giá hiện tại; tổng cuối cùng
+ * Giỏ để hiển thị. `subtotal`/`itemCount` cộng mọi dòng bán được theo giá hiện tại (cả dòng chưa chọn);
+ * `selectedLines()`/`selectedSubtotal()` là phần sẽ đặt hàng (0.3.64). Tổng cuối cùng
  * (khuyến mãi, phí vận chuyển, thuế) do totals pipeline của Checkout tính.
  */
 final readonly class CartView
@@ -24,13 +25,39 @@ final readonly class CartView
         public int $itemCount,
     ) {}
 
+    /**
+     * Dòng sẽ vào đơn khi đặt hàng.
+     *
+     * @return list<CartLineView>
+     */
+    public function selectedLines(): array
+    {
+        return array_values(array_filter($this->lines, fn (CartLineView $line): bool => $line->selected));
+    }
+
+    public function selectedSubtotal(): Money
+    {
+        $subtotal = Money::zero($this->currencyCode);
+        foreach ($this->selectedLines() as $line) {
+            if ($line->lineTotal !== null && $line->variant !== null) {
+                $subtotal = $subtotal->add($line->lineTotal);
+            }
+        }
+
+        return $subtotal;
+    }
+
+    /**
+     * Đặt được khi giỏ mở, có ít nhất một dòng đã chọn và không dòng đã chọn nào thiếu hàng. Dòng chưa chọn không chặn.
+     */
     public function isCheckoutReady(): bool
     {
-        if ($this->status !== 'active' || $this->lines === []) {
+        $selected = $this->selectedLines();
+        if ($this->status !== 'active' || $selected === []) {
             return false;
         }
 
-        foreach ($this->lines as $line) {
+        foreach ($selected as $line) {
             if ($line->blocksCheckout()) {
                 return false;
             }
