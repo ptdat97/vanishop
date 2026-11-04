@@ -5,7 +5,7 @@
 > | Phần | Trạng thái |
 > |---|---|
 > | Theme `vani-base` (`custom/theme/vani-base`), theme đang hoạt động `core.theme` + theme con (`parent`), token `theme.tokens` → CSS variables | Implemented |
-> | Trang SSR: `/`, `/danh-muc/{slug}`, `/thuong-hieu`, `/thuong-hieu/{slug}`, `/tim-kiem`, `/san-pham/{slug}` (JSON-LD `Product`), `/gio-hang`, `/thanh-toan`, `/don-hang/{id}` — mua được hoàn toàn bằng form khi JS tắt | Implemented |
+> | Trang SSR: `/`, `/danh-muc/{slug}`, `/thuong-hieu`, `/thuong-hieu/{slug}`, `/tim-kiem`, `/san-pham/{slug}` (JSON-LD `Product`; breadcrumb + JSON-LD `BreadcrumbList` ở PDP, danh mục, thương hiệu — 0.3.66), `/gio-hang`, `/thanh-toan`, `/don-hang/{id}` — mua được hoàn toàn bằng form khi JS tắt | Implemented |
 > | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented (trừ `vani.storefront.account.menu` — chưa có trang tài khoản native) |
 > | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
 > | Tài khoản `/tai-khoan` (đăng nhập OTP, tổng quan, đơn hàng + huỷ, địa chỉ; giỏ vãng lai gộp khi đăng nhập), tra cứu đơn `/tra-cuu-don`, `robots.txt`, `sitemap.xml` | Implemented (2026-10-02) |
@@ -125,6 +125,13 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - **Admin → Giao diện → Menu** (quyền `storefront.manage`): cây theo vị trí, sắp bằng nút ↑ ↓ ← →; mỗi mục có link, nhãn theo ngôn ngữ, huy hiệu Mới/Sale, ảnh (cấp 1), bật/tắt, khung giờ hiển thị. Lưu nháp → Xuất bản; bỏ nháp; khôi phục 10 bản xuất bản trước. Lưu ở `core.storefront.menu.<vị trí>`.
 - Theme render: `$menus->items('header', app()->getLocale())` (layout) → `list<{label, url|null, badge, image_url, children}>` hoặc `null` (chưa xuất bản). Partial `theme::partials.menu` (ngang, nhiều cấp), `theme::partials.menu-list` (dọc).
 - Phân giải theo lô (một truy vấn mỗi loại), không cache qua request; trang có cache CDN đổi theo `s-maxage`.
+
+## 4c. Breadcrumb
+
+> **Implemented** (Core 0.3.66, [reference-parity §3.16-6](../20-roadmap/reference-parity-refactor.md)).
+
+- Partial `theme::partials.breadcrumb` nhận `$crumbs = list<{label, url?, link?}>` (`link` = `LinkTarget` hoặc `{type, value}`, phân giải bằng `vani_link`; link không còn → chữ thường). Tự thêm "Trang chủ" ở đầu; mục cuối là trang hiện tại (không link, `aria-current`). In kèm JSON-LD `BreadcrumbList` (`StructuredData::breadcrumbs`, mục cuối không có `item`), URL và tên theo ngôn ngữ trang.
+- `vani-base` dùng ở PDP (danh mục chính → sản phẩm), danh mục (`$category['breadcrumb']` — đường từ gốc, `CatalogReader::category`), thương hiệu (Thương hiệu → tên).
 
 ## 4b. Đầu & chân trang theo schema theme
 

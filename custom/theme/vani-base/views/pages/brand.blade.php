@@ -4,6 +4,7 @@
 @section('description', $brand['meta_description'] ?? '')
 
 @section('content')
+    @include('theme::partials.breadcrumb', ['crumbs' => [['label' => __('Thương hiệu'), 'url' => vani_route('storefront.brands')], ['label' => $brand['name']]]])
     <header class="mb-6 flex items-center gap-4">
         @if ($brand['logo_url'])
             <img src="{{ $brand['logo_url'] }}" alt="{{ $brand['name'] }}" class="h-14">

@@ -45,7 +45,7 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng (**Implemented**, code hiện lọc theo brand của kênh) |
+| GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng; `/categories/{slug}` có `breadcrumb[{id, slug, name}]` từ gốc (0.3.66) (**Implemented**, code hiện lọc theo brand của kênh) |
 | GET | `/brands`, `/brands/{slug}` | Danh sách brand đang hiện, chi tiết brand (logo, mô tả, SEO). Designed (slice 12) |
 | GET | `/products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`; `brand` + `meta.facets.brands`: Designed). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
 | GET | `/products?ids=12,7,30` | Thẻ sản phẩm theo id style (tối đa 30, giữ thứ tự, chỉ sản phẩm đang hiển thị; bỏ qua bộ lọc khác, `meta.facets = null`). **Implemented** 0.3.43 |

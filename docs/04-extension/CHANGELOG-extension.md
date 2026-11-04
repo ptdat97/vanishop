@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.66 — 2026-11-04
+
+Chỉ thêm. Breadcrumb ([storefront §4c](../14-storefront/storefront.md)).
+
+### Thêm
+- `CatalogReader::category()` trả thêm `breadcrumb` = list<{id, slug, name}> từ gốc tới chính danh mục (cả Storefront API `GET /categories/{slug}`).
+- `Storefront\View\StructuredData::breadcrumbs()` (JSON-LD `BreadcrumbList`); partial `theme::partials.breadcrumb` của `vani-base` dùng ở PDP, danh mục, thương hiệu.
+
 ## 0.3.65 — 2026-11-04
 
 Chỉ thêm. Đầu & chân trang theo schema theme ([storefront §4b](../14-storefront/storefront.md)).

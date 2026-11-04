@@ -8,14 +8,10 @@
 @endpush
 
 @section('content')
-    @if ($product['breadcrumb'] !== [])
-        <nav aria-label="Breadcrumb" class="mb-4 text-sm text-slate-500">
-            <a href="{{ vani_route('storefront.home') }}">{{ __('Trang chủ') }}</a>
-            @foreach ($product['breadcrumb'] as $crumb)
-                / <a href="{{ vani_route('storefront.category', $crumb['slug']) }}">{{ $crumb['name'] }}</a>
-            @endforeach
-        </nav>
-    @endif
+    @include('theme::partials.breadcrumb', ['crumbs' => [
+        ...array_map(fn (array $crumb): array => ['label' => $crumb['name'], 'url' => vani_route('storefront.category', $crumb['slug'])], $product['breadcrumb']),
+        ['label' => $product['name']],
+    ]])
 
     <div class="grid gap-8 md:grid-cols-2">
         {{-- Mỗi ảnh là {url, alt} (cùng hình dạng Storefront API). --}}

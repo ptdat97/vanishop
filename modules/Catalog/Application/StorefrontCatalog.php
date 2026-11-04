@@ -168,17 +168,21 @@ final class StorefrontCatalog implements CatalogReader
     }
 
     /**
+     * Tìm danh mục trong cây; kèm `breadcrumb` = đường từ gốc tới chính nó (cùng dạng breadcrumb của PDP).
+     *
      * @param  list<array<string, mixed>>  $nodes
+     * @param  list<array{id: int, slug: string, name: string}>  $trail
      * @return array<string, mixed>|null
      */
-    private function find(array $nodes, string $slug): ?array
+    private function find(array $nodes, string $slug, array $trail = []): ?array
     {
         foreach ($nodes as $node) {
+            $path = [...$trail, ['id' => $node['id'], 'slug' => $node['slug'], 'name' => $node['name']]];
             // Slug theo ngôn ngữ hoặc slug gốc (link cũ/chưa có slug riêng — trang chuyển hướng 301 sang slug riêng).
             if ($node['slug'] === $slug || ($node['slugs'][StoreLocale::default()] ?? null) === $slug) {
-                return $node;
+                return [...$node, 'breadcrumb' => $path];
             }
-            $found = $this->find($node['children'], $slug);
+            $found = $this->find($node['children'], $slug, $path);
             if ($found !== null) {
                 return $found;
             }

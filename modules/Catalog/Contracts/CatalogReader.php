@@ -23,6 +23,8 @@ interface CatalogReader
     public function categoryTree(string $locale): array;
 
     /**
+     * Danh mục đang hiện theo slug; có `breadcrumb` (0.3.66) = list<{id, slug, name}> từ gốc tới chính nó.
+     *
      * @return array<string, mixed>|null
      */
     public function category(string $slug, string $locale): ?array;
