@@ -58,6 +58,22 @@ final class ImageCache
     }
 
     /**
+     * Giá trị `srcset` (bản thu nhỏ + ảnh gốc) theo kích thước đã lưu trong DB — không đọc file; rỗng khi không có bản thu nhỏ.
+     */
+    public function srcset(Media $media): string
+    {
+        $sources = array_map(fn (int $width): string => $this->url($media, $width)." {$width}w", $this->widthsFor($media));
+        if ($sources === []) {
+            return '';
+        }
+        if ($media->width !== null) {
+            $sources[] = $this->url($media)." {$media->width}w";
+        }
+
+        return implode(', ', $sources);
+    }
+
+    /**
      * Chiều rộng bản cache dùng cho yêu cầu rộng $width (null = dùng ảnh gốc).
      */
     public function variantFor(Media $media, int $width): ?int

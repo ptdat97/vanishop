@@ -38,6 +38,14 @@ final class Media extends Model
     }
 
     /**
+     * `srcset` cho ảnh responsive (0.3.67); rỗng khi ảnh không có bản thu nhỏ.
+     */
+    public function srcset(): string
+    {
+        return app(ImageCache::class)->srcset($this);
+    }
+
+    /**
      * Nơi đang dùng ảnh (màu sản phẩm, danh mục…).
      *
      * @return HasMany<Mediable, $this>

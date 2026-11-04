@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.67 — 2026-11-04
+
+Chỉ thêm. Ảnh responsive ([storefront §4d](../14-storefront/storefront.md)).
+
+### Thêm
+- Thẻ sản phẩm (`CatalogReader` danh sách/`productsByIds`, Storefront API `GET /products`) có `image_srcset` (string|null).
+- `Storefront\View\ResponsiveImage::sizes()`; partial `theme::partials.image` của `vani-base`; `theme::partials.product-card` nhận `layout` = [vùng chứa px, cột desktop, cột mobile].
+
 ## 0.3.66 — 2026-11-04
 
 Chỉ thêm. Breadcrumb ([storefront §4c](../14-storefront/storefront.md)).

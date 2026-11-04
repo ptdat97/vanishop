@@ -202,6 +202,8 @@ final class StorefrontProductQuery
             'name' => $style->translate('name', $locale),
             'brand' => $style->brand === null ? null : ['id' => $style->brand->id, 'slug' => $style->brand->slug, 'name' => $style->brand->name],
             'image_url' => $firstImage?->media->url(400),
+            // Ảnh responsive (0.3.67): theme ghép `sizes` theo bố cục lưới; null khi ảnh không có bản thu nhỏ.
+            'image_srcset' => ($firstImage?->media->srcset() ?? '') ?: null,
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => $this->color($styleColor, $locale))->all(),
             'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
         ];

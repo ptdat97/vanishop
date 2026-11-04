@@ -2,7 +2,8 @@
     <a href="{{ vani_route('storefront.product', $product['slug']) }}" class="block">
         <div class="aspect-[3/4] overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
             @if ($product['image_url'])
-                <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" width="300" height="400" class="h-full w-full object-cover">
+                {{-- $layout: [vùng chứa px, cột desktop, cột mobile] của lưới đang dùng; mặc định lưới 4/2 trong khung 72rem. --}}
+                @include('theme::partials.image', ['src' => $product['image_url'], 'srcset' => $product['image_srcset'] ?? null, 'alt' => $product['name'], 'layout' => $layout ?? [1152, 4, 2], 'width' => 300, 'height' => 400, 'class' => 'h-full w-full object-cover'])
             @endif
         </div>
         <x-vani::hook-slot name="vani.storefront.plp.card_badges" :args="[$product]" />

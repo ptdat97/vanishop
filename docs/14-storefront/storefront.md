@@ -133,6 +133,14 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - Partial `theme::partials.breadcrumb` nhận `$crumbs = list<{label, url?, link?}>` (`link` = `LinkTarget` hoặc `{type, value}`, phân giải bằng `vani_link`; link không còn → chữ thường). Tự thêm "Trang chủ" ở đầu; mục cuối là trang hiện tại (không link, `aria-current`). In kèm JSON-LD `BreadcrumbList` (`StructuredData::breadcrumbs`, mục cuối không có `item`), URL và tên theo ngôn ngữ trang.
 - `vani-base` dùng ở PDP (danh mục chính → sản phẩm), danh mục (`$category['breadcrumb']` — đường từ gốc, `CatalogReader::category`), thương hiệu (Thương hiệu → tên).
 
+## 4d. Ảnh responsive
+
+> **Implemented** (Core 0.3.67, [reference-parity §3.16-5](../20-roadmap/reference-parity-refactor.md)).
+
+- Thẻ sản phẩm (danh sách, Storefront API, khối, sản phẩm liên kết) có `image_srcset`: các bản thu nhỏ Core tạo (`vanishop.media.cache.widths`, chỉ bề rộng nhỏ hơn ảnh gốc, định dạng theo `ImageFormat`) + ảnh gốc, tính từ kích thước đã lưu trong DB — không đọc file lúc render. `null` khi ảnh không có bản thu nhỏ.
+- `Storefront\View\ResponsiveImage::sizes(vùng chứa px|null, cột desktop, cột mobile, breakpoint = 768)` sinh `sizes`; partial `theme::partials.image` (`src`, `srcset`, `layout = [vùng chứa, cột, cột mobile]`, `width`/`height`). `vani-base`: lưới 4/2 trong khung 1152px (trang chủ, khối sản phẩm, sản phẩm liên kết), 3/2 cạnh cột lọc (≈ 896px).
+- Khối "Banner chính" vẫn nhận ảnh theo URL nên chưa có `srcset` (cần kiểu trường chọn ảnh từ thư viện cho `FieldDefinition`).
+
 ## 4b. Đầu & chân trang theo schema theme
 
 > **Implemented** (Core 0.3.65, [reference-parity §3.16-3](../20-roadmap/reference-parity-refactor.md)).

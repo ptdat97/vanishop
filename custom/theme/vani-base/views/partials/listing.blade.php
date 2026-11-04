@@ -44,7 +44,8 @@
         @else
             <div class="grid grid-cols-2 gap-6 md:grid-cols-3">
                 @foreach ($listing['items'] as $product)
-                    @include('theme::partials.product-card', ['product' => $product])
+                    {{-- Lưới 3 cột cạnh cột lọc 14rem: vùng chứa ≈ 1152 − 224 − 32 px. --}}
+                    @include('theme::partials.product-card', ['product' => $product, 'layout' => [896, 3, 2]])
                 @endforeach
             </div>
         @endif
