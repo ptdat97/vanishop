@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
+import DataTable from '@admin/Components/DataTable.vue';
+import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { recordOptions } from '@admin/options';
 import { dangerButton, inputClass, secondaryButton } from '@admin/styles';
 import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: { customer_status: Record<string, string> };
     customer: {
         id: string;
         phone: string | null;
@@ -56,12 +63,12 @@ const props = defineProps<{
     extensions: ExtensionDetail & { id: number };
 }>();
 
-const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
-const statusLabels: Record<string, string> = {
-    active: 'Hoạt động',
-    merged: 'Đã hợp nhất',
-    anonymized: 'Đã ẩn danh',
-};
+const orderColumns = [
+    { key: 'number', label: 'Đơn', class: 'font-mono text-xs' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'placed_at', label: 'Đặt lúc', class: 'text-xs text-slate-500' },
+    { key: 'total', label: 'Tổng', align: 'right' as const },
+];
 const mergeForm = useForm({ target: '' });
 const segmentForm = useForm({ customer_group_id: props.segment.customer_group_id, tags: props.segment.tags.join(', ') });
 
@@ -69,14 +76,28 @@ function saveSegment(): void {
     segmentForm.put(`${props.baseUrl}/${props.customer.id}/segment`, { preserveScroll: true });
 }
 
-function merge(): void {
-    if (!confirm('Chuyển toàn bộ đơn, địa chỉ, consent của khách này sang khách đích? Không hoàn tác được.')) return;
-    mergeForm.post(`${props.baseUrl}/${props.customer.id}/merge`);
+async function merge(): Promise<void> {
+    const confirmed = await confirmAction({
+        title: `Hợp nhất vào ${mergeForm.target}?`,
+        message: 'Toàn bộ đơn, địa chỉ, consent của khách này chuyển sang khách đích. Không hoàn tác được.',
+        confirmLabel: 'Hợp nhất',
+        tone: 'danger',
+    });
+    if (confirmed !== false) {
+        mergeForm.post(`${props.baseUrl}/${props.customer.id}/merge`);
+    }
 }
 
-function anonymize(): void {
-    if (!confirm('Ẩn danh hoá khách này (xoá thông tin cá nhân, giữ đơn hàng)? Không hoàn tác được.')) return;
-    router.post(`${props.baseUrl}/${props.customer.id}/anonymize`, {}, { preserveScroll: true });
+async function anonymize(): Promise<void> {
+    const confirmed = await confirmAction({
+        title: 'Ẩn danh hoá khách này?',
+        message: 'Xoá thông tin cá nhân, giữ đơn hàng. Không hoàn tác được.',
+        confirmLabel: 'Ẩn danh hoá',
+        tone: 'danger',
+    });
+    if (confirmed !== false) {
+        router.post(`${props.baseUrl}/${props.customer.id}/anonymize`, {}, { preserveScroll: true });
+    }
 }
 </script>
 
@@ -84,7 +105,7 @@ function anonymize(): void {
     <Head :title="customer.full_name ?? customer.id" />
     <PageHeader
         :title="customer.full_name ?? '(chưa có tên)'"
-        :subtitle="`${customer.id} · ${statusLabels[customer.status]} · ${customer.registered ? 'Tài khoản' : 'Khách vãng lai'}`"
+        :subtitle="`${customer.id} · ${labels.customer_status[customer.status] ?? customer.status} · ${customer.registered ? 'Tài khoản' : 'Khách vãng lai'}`"
     >
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <ExtensionActions :actions="extensions.actions" :ids="[extensions.id]" />
@@ -95,22 +116,10 @@ function anonymize(): void {
             <ExtensionTabs :tabs="extensions.tabs" />
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Đơn hàng gần đây</h2>
-                <table class="w-full text-sm">
-                    <tbody>
-                        <tr v-for="order in orders" :key="order.number" class="border-t border-slate-100">
-                            <td class="py-2 font-mono text-xs">
-                                {{ order.number }}
-                            </td>
-                            <td class="py-2">{{ order.status }}</td>
-                            <td class="py-2 text-right">
-                                {{ vnd(order.total) }}
-                            </td>
-                        </tr>
-                        <tr v-if="!orders.length">
-                            <td class="py-2 text-slate-500">Chưa có đơn.</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <DataTable :columns="orderColumns" :rows="orders" :row-key="(order) => order.number" empty-text="Chưa có đơn." bare>
+                    <template #cell-status="{ row }"><StatusBadge :label="row.status" /></template>
+                    <template #cell-total="{ row }"><MoneyText :amount="row.total" /></template>
+                </DataTable>
             </section>
 
             <section class="rounded-lg border border-slate-200 bg-white p-4">
@@ -119,7 +128,7 @@ function anonymize(): void {
                     <dt class="text-slate-500">Số đơn</dt>
                     <dd>{{ stats.orders_count }}</dd>
                     <dt class="text-slate-500">Tổng chi tiêu</dt>
-                    <dd>{{ vnd(stats.total_spent) }}</dd>
+                    <dd><MoneyText :amount="stats.total_spent" /></dd>
                     <dt class="text-slate-500">Mua đầu / gần nhất</dt>
                     <dd class="text-xs">{{ stats.first_order_at ?? '—' }} / {{ stats.last_order_at ?? '—' }}</dd>
                 </dl>
@@ -141,10 +150,7 @@ function anonymize(): void {
                 <h2 class="font-semibold">Nhóm & tag</h2>
                 <label class="block">
                     <span class="text-slate-500">Nhóm khách (quyết định giá thành viên)</span>
-                    <select v-model="segmentForm.customer_group_id" :class="inputClass" :disabled="!can.segment">
-                        <option :value="null">— Không nhóm —</option>
-                        <option v-for="group in segment.groups" :key="group.id" :value="group.id">{{ group.name }}</option>
-                    </select>
+                    <Select v-model="segmentForm.customer_group_id" :options="recordOptions(segment.groups, (group) => group.name)" empty-label="— Không nhóm —" :empty-value="null" :disabled="!can.segment" />
                 </label>
                 <label class="block">
                     <span class="text-slate-500">Tag (phân tách dấu phẩy)</span>

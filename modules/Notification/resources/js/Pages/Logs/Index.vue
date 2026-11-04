@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { codeOptions } from '@admin/options';
 import { inputClass, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: { log_status: Record<string, string> };
     filters: { status: string | null; q: string };
     statuses: string[];
     logs: Array<{
@@ -23,12 +29,15 @@ const props = defineProps<{
     pagination: { page: number; last_page: number; total: number };
 }>();
 
-const statusLabels: Record<string, string> = {
-    queued: 'Chờ gửi',
-    sent: 'Đã gửi',
-    failed: 'Lỗi',
-    skipped: 'Bỏ qua',
-};
+const columns = [
+    { key: 'created_at', label: 'Thời gian', class: 'text-xs' },
+    { key: 'type', label: 'Loại / kênh', class: 'font-mono text-xs' },
+    { key: 'recipient', label: 'Người nhận', class: 'font-mono text-xs' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'error', label: 'Lỗi', class: 'max-w-xs text-xs break-words text-red-700' },
+];
+const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' =>
+    (({ queued: 'info', sent: 'success', failed: 'danger' }) as const)[status as 'queued'] ?? 'neutral';
 const q = ref(props.filters.q);
 
 function search(changes: { status?: string | null; page?: number } = {}): void {
@@ -49,55 +58,23 @@ function search(changes: { status?: string | null; page?: number } = {}): void {
 
     <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="[inputClass, 'w-72']" placeholder="Người nhận hoặc khoá (vd. order_placed:12)" />
-        <select
-            :class="[inputClass, 'w-40']"
-            :value="filters.status ?? ''"
-            @change="
-                search({
-                    status: ($event.target as HTMLSelectElement).value || null,
-                })
-            "
-        >
-            <option value="">Mọi trạng thái</option>
-            <option v-for="status in statuses" :key="status" :value="status">
-                {{ statusLabels[status] ?? status }}
-            </option>
-        </select>
+        <div class="w-40">
+            <Select :model-value="filters.status ?? ''" :options="codeOptions(statuses, labels.log_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" @change="search({ status: $event || null })" />
+        </div>
         <button type="submit" :class="secondaryButton">Lọc</button>
     </form>
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Thời gian</th>
-                <th class="px-4 py-2">Loại / kênh</th>
-                <th class="px-4 py-2">Người nhận</th>
-                <th class="px-4 py-2">Trạng thái</th>
-                <th class="px-4 py-2">Lỗi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="log in logs" :key="log.id" class="border-t border-slate-100 align-top">
-                <td class="px-4 py-2 text-xs">
-                    {{ log.created_at }}
-                    <div v-if="log.sent_at" class="text-slate-400">gửi {{ log.sent_at }}</div>
-                </td>
-                <td class="px-4 py-2 font-mono text-xs">{{ log.type }} · {{ log.channel }}</td>
-                <td class="px-4 py-2 font-mono text-xs">{{ log.recipient }}</td>
-                <td class="px-4 py-2">{{ statusLabels[log.status] ?? log.status }} · {{ log.attempts }} lần</td>
-                <td class="max-w-xs px-4 py-2 text-xs break-words text-red-700">
-                    {{ log.error }}
-                </td>
-            </tr>
-            <tr v-if="!logs.length">
-                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có tin nào.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="logs" :row-class="() => 'align-top'" empty-text="Chưa có tin nào.">
+        <template #cell-created_at="{ row }">
+            {{ row.created_at }}
+            <div v-if="row.sent_at" class="text-slate-400">gửi {{ row.sent_at }}</div>
+        </template>
+        <template #cell-type="{ row }">{{ row.type }} · {{ row.channel }}</template>
+        <template #cell-status="{ row }">
+            <StatusBadge :label="labels.log_status[row.status] ?? row.status" :tone="tone(row.status)" />
+            <span class="ml-1 text-xs text-slate-500">{{ row.attempts }} lần</span>
+        </template>
+    </DataTable>
 
-    <div v-if="pagination.last_page > 1" class="mt-3 flex gap-2">
-        <button :class="secondaryButton" :disabled="pagination.page <= 1" @click="search({ page: pagination.page - 1 })">Trước</button>
-        <span class="px-2 py-2 text-sm text-slate-500">Trang {{ pagination.page }} / {{ pagination.last_page }}</span>
-        <button :class="secondaryButton" :disabled="pagination.page >= pagination.last_page" @click="search({ page: pagination.page + 1 })">Sau</button>
-    </div>
+    <Pagination :current="pagination.page" :last="pagination.last_page" @change="search({ page: $event })" />
 </template>

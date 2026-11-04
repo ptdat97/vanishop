@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
 import { getJson, HttpError, postJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
@@ -153,9 +155,9 @@ function onDrop(event: DragEvent): void {
     upload(Array.from(event.dataTransfer?.files ?? []).filter((file) => file.type.startsWith('image/')));
 }
 
-function createFolder(): void {
-    const name = prompt(folder.value ? `Tên thư mục con trong "${folder.value}":` : 'Tên thư mục mới:');
-    if (name?.trim()) {
+async function createFolder(): Promise<void> {
+    const name = await confirmAction({ title: folder.value ? `Tạo thư mục con trong "${folder.value}"` : 'Tạo thư mục mới', confirmLabel: 'Tạo', reason: { label: 'Tên thư mục', required: true } });
+    if (name) {
         run(async () => {
             const result = await postJson<{ path: string }>(url('folders'), { parent: folder.value, name });
             folder.value = result.path;
@@ -165,9 +167,9 @@ function createFolder(): void {
     }
 }
 
-function renameFolder(): void {
-    const name = prompt('Tên mới của thư mục:', folderName(folder.value));
-    if (name?.trim()) {
+async function renameFolder(): Promise<void> {
+    const name = await confirmAction({ title: 'Đổi tên thư mục', confirmLabel: 'Đổi tên', reason: { label: 'Tên mới', required: true, value: folderName(folder.value) } });
+    if (name) {
         run(async () => {
             const result = await postJson<{ path: string }>(url('folders/rename'), { path: folder.value, name });
             folder.value = result.path;
@@ -176,8 +178,8 @@ function renameFolder(): void {
     }
 }
 
-function deleteFolder(): void {
-    if (confirm(`Xoá thư mục "${folder.value}"? Chỉ xoá được thư mục rỗng.`)) {
+async function deleteFolder(): Promise<void> {
+    if ((await confirmAction({ title: `Xoá thư mục "${folder.value}"?`, message: 'Chỉ xoá được thư mục rỗng.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         run(async () => {
             const result = await postJson<{ message: string }>(url('folders/delete'), { path: folder.value });
             folder.value = folder.value.includes('/') ? folder.value.slice(0, folder.value.lastIndexOf('/')) : '';
@@ -186,10 +188,10 @@ function deleteFolder(): void {
     }
 }
 
-function renameItem(): void {
+async function renameItem(): Promise<void> {
     const [item] = selectedItems.value;
-    const name = prompt('Tên hiển thị của ảnh:', item.name);
-    if (name?.trim()) {
+    const name = await confirmAction({ title: 'Đổi tên ảnh', confirmLabel: 'Đổi tên', reason: { label: 'Tên hiển thị của ảnh', required: true, value: item.name } });
+    if (name) {
         run(() => postJson(url(`items/${item.id}/rename`), { name }));
     }
 }
@@ -203,8 +205,8 @@ function moveItems(): void {
     });
 }
 
-function deleteItems(): void {
-    if (confirm(`Xoá vĩnh viễn ${selected.value.size} ảnh? Ảnh đang dùng ở sản phẩm/danh mục sẽ được giữ lại.`)) {
+async function deleteItems(): Promise<void> {
+    if ((await confirmAction({ title: `Xoá vĩnh viễn ${selected.value.size} ảnh?`, message: 'Ảnh đang dùng ở sản phẩm/danh mục sẽ được giữ lại.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         run(async () => {
             const result = await postJson<{ message: string }>(url('items/delete'), { ids: selectedItems.value.map((item) => item.id) });
             selected.value = new Map();
@@ -247,9 +249,7 @@ onMounted(load);
             <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3">
                 <form class="flex flex-1 gap-2" @submit.prevent="search">
                     <input v-model="keyword" :class="inputClass" class="max-w-xs" type="search" placeholder="Tìm theo tên trong mọi thư mục…" />
-                    <select v-model="sort" :class="inputClass" class="max-w-40" @change="search">
-                        <option v-for="option in sorts" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    <div class="w-40"><Select v-model="sort" :options="sorts" aria-label="Sắp xếp" @change="search" /></div>
                 </form>
                 <label v-if="canManage" :class="primaryButton" class="cursor-pointer">
                     {{ uploading ? 'Đang tải lên…' : 'Tải ảnh lên' }}
@@ -305,9 +305,9 @@ onMounted(load);
                 <template v-if="canManage && selected.size">
                     <span class="ml-2 text-slate-500">Đã chọn {{ selected.size }}</span>
                     <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="renameItem">Đổi tên</button>
-                    <select v-model="moveTarget" :class="inputClass" class="max-w-44">
-                        <option v-for="path in ['', ...folders]" :key="path || '/'" :value="path">→ {{ path || 'Thư mục gốc' }}</option>
-                    </select>
+                    <div class="w-44">
+                        <Select v-model="moveTarget" :options="['', ...folders].map((path) => ({ value: path, label: `→ ${path || 'Thư mục gốc'}` }))" aria-label="Chuyển tới thư mục" />
+                    </div>
                     <button type="button" :class="secondaryButton" @click="moveItems">Chuyển</button>
                     <button type="button" :class="dangerButton" @click="deleteItems">Xoá</button>
                 </template>

@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
+import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { stateClasses, stateLabels } from './labels';
+import { campaignStateTone, type PromotionLabels } from '../../labels';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: PromotionLabels;
     campaign: null | {
         id: number;
         code: string;
@@ -27,7 +32,6 @@ const props = defineProps<{
     can: { manage: boolean; price_lists: boolean };
 }>();
 
-const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
 const form = useForm({
     code: props.campaign?.code ?? '',
     name: props.campaign?.name ?? '',
@@ -49,15 +53,18 @@ function save(): void {
     }
 }
 
-function act(action: 'activate' | 'stop'): void {
-    const message = action === 'stop' ? 'Dừng ngay campaign? Mọi khuyến mãi và bảng giá của campaign sẽ tắt và không bật lại được.' : 'Kích hoạt campaign? Khuyến mãi và bảng giá sẽ chạy theo lịch.';
-    if (props.campaign && confirm(message)) {
+async function act(action: 'activate' | 'stop'): Promise<void> {
+    const options =
+        action === 'stop'
+            ? { title: 'Dừng ngay campaign?', message: 'Mọi khuyến mãi và bảng giá của campaign sẽ tắt và không bật lại được.', confirmLabel: 'Dừng ngay', tone: 'danger' as const }
+            : { title: 'Kích hoạt campaign?', message: 'Khuyến mãi và bảng giá sẽ chạy theo lịch.', confirmLabel: 'Kích hoạt' };
+    if (props.campaign && (await confirmAction(options)) !== false) {
         router.post(`${props.baseUrl}/${props.campaign.id}/${action}`, {}, { preserveScroll: true });
     }
 }
 
-function destroy(): void {
-    if (props.campaign && confirm('Xoá campaign nháp?')) {
+async function destroy(): Promise<void> {
+    if (props.campaign && (await confirmAction({ title: 'Xoá campaign nháp?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.campaign.id}`);
     }
 }
@@ -66,7 +73,7 @@ function destroy(): void {
 <template>
     <Head :title="campaign ? campaign.name : 'Thêm campaign'" />
     <PageHeader :title="campaign ? campaign.name : 'Thêm campaign'">
-        <span v-if="campaign" class="rounded px-2 py-1 text-xs" :class="stateClasses[campaign.state]">{{ stateLabels[campaign.state] }}</span>
+        <StatusBadge v-if="campaign" :label="labels.campaign_state[campaign.state] ?? campaign.state" :tone="campaignStateTone(campaign.state)" />
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <template v-if="campaign && can.manage">
             <button v-if="campaign.status === 'draft'" type="button" :class="primaryButton" @click="act('activate')">Kích hoạt</button>
@@ -79,8 +86,8 @@ function destroy(): void {
 
     <section v-if="report" class="mb-6 grid gap-3 sm:grid-cols-4">
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đơn của campaign</div><div class="text-xl font-semibold">{{ report.orders }}</div><div class="text-xs text-slate-400">{{ report.usages }} lượt khuyến mãi · {{ report.price_list_orders }} đơn giá sale</div></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Doanh thu các đơn</div><div class="text-xl font-semibold">{{ vnd(report.revenue) }}</div></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đã giảm (khuyến mãi)</div><div class="text-xl font-semibold">{{ vnd(report.promotion_discount) }}</div></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Doanh thu các đơn</div><div class="text-xl font-semibold"><MoneyText :amount="report.revenue" /></div></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đã giảm (khuyến mãi)</div><div class="text-xl font-semibold"><MoneyText :amount="report.promotion_discount" /></div></div>
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Khách / đơn huỷ</div><div class="text-xl font-semibold">{{ report.customers }} / {{ report.cancelled }}</div></div>
     </section>
 
@@ -89,8 +96,8 @@ function destroy(): void {
             <FormField label="Tên" :error="errors.name"><input v-model="form.name" :class="inputClass" :disabled="!editable" placeholder="vd. Sale 11.11" /></FormField>
             <FormField label="Mã" hint="chữ thường, vd. sale-1111" :error="errors.code"><input v-model="form.code" :class="inputClass" :disabled="!editable" /></FormField>
             <FormField label="Mô tả" :error="errors.description"><textarea v-model="form.description" rows="2" :class="inputClass" :disabled="!editable" /></FormField>
-            <FormField label="Bắt đầu (giờ VN)" :error="errors.starts_at"><input v-model="form.starts_at" type="datetime-local" :class="inputClass" :disabled="!editable" /></FormField>
-            <FormField label="Kết thúc (giờ VN)" :error="errors.ends_at"><input v-model="form.ends_at" type="datetime-local" :class="inputClass" :disabled="!editable" /></FormField>
+            <FormField label="Bắt đầu (giờ cửa hàng)" :error="errors.starts_at"><DateInput v-model="form.starts_at" with-time :disabled="!editable" /></FormField>
+            <FormField label="Kết thúc (giờ cửa hàng)" :error="errors.ends_at"><DateInput v-model="form.ends_at" with-time :disabled="!editable" /></FormField>
             <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
             <button v-if="editable" type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
             <p class="text-xs text-slate-500">Campaign quyết định lịch và trạng thái của mọi thành viên: nháp → thành viên tắt; kích hoạt → bật theo lịch này; dừng → tắt ngay.</p>

@@ -28,6 +28,7 @@ final class StockTransferController
         Gate::authorize('inventory.view');
 
         return Inertia::render('Inventory::Transfers/Index', [
+            'labels' => __('inventory::labels'),
             'baseUrl' => route('admin.inventory.transfers.index'),
             'locations' => array_map(fn (Location $location): array => [
                 'id' => $location->id,

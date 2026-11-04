@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { labelOptions } from '@admin/options';
 import { inputClass, secondaryButton } from '@admin/styles';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
@@ -17,6 +21,7 @@ const props = defineProps<{
     productUrl: string;
     variants: VariantRow[];
     sizes: Array<{ id: number; label: string; system: string }>;
+    statusLabels: Record<string, string>;
 }>();
 
 const page = usePage<{ errors: Record<string, string> }>();
@@ -24,6 +29,15 @@ const errors = computed(() => page.props.errors ?? {});
 const selectedSizes = ref<number[]>([]);
 const editing = reactive<Record<number, VariantRow>>({});
 const systems = computed(() => [...new Set(props.sizes.map((size) => size.system))]);
+const columns = [
+    { key: 'color_code', label: 'Màu' },
+    { key: 'size_code', label: 'Size' },
+    { key: 'sku', label: 'SKU' },
+    { key: 'barcode', label: 'Barcode' },
+    { key: 'weight_gram', label: 'Khối lượng (g)' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 
 function generate(): void {
     router.post(`${props.productUrl}/variants/generate`, { size_ids: selectedSizes.value }, { preserveScroll: true, onSuccess: () => (selectedSizes.value = []) });
@@ -59,47 +73,31 @@ function save(id: number): void {
             <button type="button" :class="secondaryButton" :disabled="!selectedSizes.length" @click="generate">Tạo biến thể</button>
         </div>
 
-        <table v-if="variants.length" class="w-full text-sm">
-            <thead class="text-left text-slate-500">
-                <tr>
-                    <th class="py-1">Màu</th>
-                    <th class="py-1">Size</th>
-                    <th class="py-1">SKU</th>
-                    <th class="py-1">Barcode</th>
-                    <th class="py-1">Khối lượng (g)</th>
-                    <th class="py-1">Trạng thái</th>
-                    <th />
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="variant in variants" :key="variant.id" class="border-t border-slate-100 align-top">
-                    <td class="py-2">{{ variant.color_code }}</td>
-                    <td class="py-2">{{ variant.size_code }}</td>
-                    <template v-if="editing[variant.id]">
-                        <td class="py-1 pr-2"><input v-model="editing[variant.id].sku" :class="inputClass" /></td>
-                        <td class="py-1 pr-2"><input v-model="editing[variant.id].barcode" :class="inputClass" /></td>
-                        <td class="py-1 pr-2"><input v-model.number="editing[variant.id].weight_gram" :class="inputClass" type="number" min="0" /></td>
-                        <td class="py-1 pr-2">
-                            <select v-model="editing[variant.id].status" :class="inputClass">
-                                <option value="active">Đang bán</option>
-                                <option value="inactive">Ngừng bán</option>
-                            </select>
-                        </td>
-                        <td class="py-2 text-right">
-                            <button type="button" class="text-indigo-600" @click="save(variant.id)">Lưu</button>
-                            <button type="button" class="ml-2 text-slate-500" @click="delete editing[variant.id]">Huỷ</button>
-                        </td>
-                    </template>
-                    <template v-else>
-                        <td class="py-2 font-mono text-xs">{{ variant.sku }}</td>
-                        <td class="py-2 font-mono text-xs">{{ variant.barcode ?? '—' }}</td>
-                        <td class="py-2">{{ variant.weight_gram ?? '—' }}</td>
-                        <td class="py-2">{{ variant.status === 'active' ? 'Đang bán' : 'Ngừng bán' }}</td>
-                        <td class="py-2 text-right"><button type="button" class="text-indigo-600" @click="edit(variant)">Sửa</button></td>
-                    </template>
-                </tr>
-            </tbody>
-        </table>
+        <DataTable v-if="variants.length" :columns="columns" :rows="variants" :row-label="(variant) => variant.sku">
+            <template #cell-sku="{ row }">
+                <input v-if="editing[row.id]" v-model="editing[row.id].sku" :class="inputClass" aria-label="SKU" />
+                <span v-else class="font-mono text-xs">{{ row.sku }}</span>
+            </template>
+            <template #cell-barcode="{ row }">
+                <input v-if="editing[row.id]" v-model="editing[row.id].barcode" :class="inputClass" aria-label="Barcode" />
+                <span v-else class="font-mono text-xs">{{ row.barcode ?? '—' }}</span>
+            </template>
+            <template #cell-weight_gram="{ row }">
+                <input v-if="editing[row.id]" v-model.number="editing[row.id].weight_gram" :class="inputClass" type="number" min="0" aria-label="Khối lượng (g)" />
+                <template v-else>{{ row.weight_gram ?? '—' }}</template>
+            </template>
+            <template #cell-status="{ row }">
+                <Select v-if="editing[row.id]" v-model="editing[row.id].status" :options="labelOptions(statusLabels)" aria-label="Trạng thái" />
+                <StatusBadge v-else :label="statusLabels[row.status] ?? row.status" :tone="row.status === 'active' ? 'success' : 'neutral'" />
+            </template>
+            <template #cell-actions="{ row }">
+                <template v-if="editing[row.id]">
+                    <button type="button" class="text-indigo-600" @click="save(row.id)">Lưu</button>
+                    <button type="button" class="ml-2 text-slate-500" @click="delete editing[row.id]">Huỷ</button>
+                </template>
+                <button v-else type="button" class="text-indigo-600" @click="edit(row)">Sửa</button>
+            </template>
+        </DataTable>
         <p v-if="errors.sku || errors.barcode" class="text-sm text-red-600">{{ errors.sku ?? errors.barcode }}</p>
     </div>
 </template>

@@ -10,10 +10,10 @@ Admin có 59 trang (module + plugin) nhưng chưa có bộ component dùng chung
 Chọn nền tảng component cho Admin: đủ widget phức tạp (dialog, select, combobox, phân trang, toast, chọn ngày), truy cập được bằng bàn phím, không phá hệ style Tailwind và không khoá trang plugin vào một thư viện.
 
 ## Decision
-1. **Reka UI** (`reka-ui`, headless, MIT) làm nền cho widget có hành vi phức tạp; style bằng Tailwind theo token hiện có (indigo/slate). Dependency được duyệt (R25): `reka-ui` và `@internationalized/date` (khai báo trực tiếp khi làm `DateInput`; hiện đi kèm `reka-ui`).
+1. **Reka UI** (`reka-ui`, headless, MIT) làm nền cho widget có hành vi phức tạp; style bằng Tailwind theo token hiện có (indigo/slate). Dependency được duyệt (R25): `reka-ui`, `@internationalized/date` (cho `DateInput`).
 2. **Chỉ `resources/js/admin/Components` được import `reka-ui`.** Trang của module và plugin dùng bộ component `@admin/Components` — đây là API UI công khai cho plugin ([CHANGELOG-extension](../04-extension/CHANGELOG-extension.md)). Kiểm tra: `tests/Architecture/AdminUiTest.php`.
-3. Bộ component đợt đầu (thử trên trang Đơn hàng): `DataTable` (cột, slot `cell-<key>`, cột + chọn dòng của extension), `Pagination` (số trang), `Select`, `Combobox`, `StatusBadge`, `MoneyText` + `useMoney()`, `ConfirmDialog` + `confirmAction()` (thay `confirm()`/`prompt()`), `Toaster` (thông báo thành công, gắn trong `AdminLayout`). `DateInput` làm khi có trang cần.
-4. **Không ghi cứng thị trường ở client.** Nhãn trạng thái do server dịch (lang của module) và gửi trong props; tiền định dạng theo `app.money` (shared props, `MoneyFormatter::rules()`), cùng thuật toán với server. Arch test chặn `vi-VN`/`₫` mới trong `.vue`/`.ts`; trang chưa chuyển nằm trong danh sách chờ của test và giảm dần.
+3. Bộ component: `DataTable` (cột, slot `head-<key>`/`cell-<key>`/`expanded`/`footer`, cột + chọn dòng của extension, `rowKey`, `bare`), `Pagination` (số trang), `Select` (chuỗi/số/boolean, lựa chọn rỗng), `MultiSelect`, `Combobox`, `DateInput` (ngày hoặc ngày giờ, cùng định dạng `datetime-local`), `StatusBadge`, `MoneyText`, `ConfirmDialog` + `confirmAction()`/`promptFields()` (thay `confirm()`/`prompt()`), `Toaster` (thông báo thành công, gắn trong `AdminLayout`). Helper: `@admin/money` (`useMoney`), `@admin/datetime` (`useDateTime`), `@admin/options`.
+4. **Không ghi cứng thị trường ở client.** Nhãn trạng thái của module Core do server dịch: mỗi module có lang `labels.php` (`<module>::labels`), controller gửi prop `labels`. Tiền định dạng theo `app.money` (`MoneyFormatter::rules()`), ngày giờ theo `app.clock` (múi giờ + mẫu của `StoreClock`) — cùng kết quả với server. Plugin giữ nhãn riêng trong plugin.
 5. Lọc, sắp xếp, phân trang vẫn ở server (Inertia); `DataTable` không dùng thư viện bảng (TanStack Table) ở đợt này.
 
 ## Alternatives
@@ -23,11 +23,14 @@ Chọn nền tảng component cho Admin: đủ widget phức tạp (dialog, sele
 - **Tự viết toàn bộ không thư viện**: tốn công cho focus trap, điều khiển bàn phím, vị trí popover. Loại.
 - **Element UI**: chỉ chạy Vue 2, đã ngừng phát triển. Loại.
 
+### Hoàn thành (Core 0.3.56)
+Mọi trang Admin của module và plugin đã dùng bộ component. `tests/Architecture/AdminUiTest.php` khoá: chỉ `@admin/Components` import `reka-ui`; không `vi-VN`/`₫`/`Intl.*`/`toLocale*()` ngoài helper; không `<select>`, `<table>`, `type="date|datetime-local"`, `confirm()`/`prompt()`/`alert()` trong trang và component của module/plugin; module Core không có bảng nhãn viết cứng.
+
 ## Consequences
 - (+) Một hệ style; widget truy cập được bằng bàn phím; trang plugin độc lập với thư viện bên dưới.
 - (+) Bỏ dần `confirm()`/`prompt()`, nhãn trạng thái và định dạng tiền ghi cứng ở từng trang.
 - (−) Tự dựng và duy trì phần giao diện của component; Reka không có bảng dữ liệu, upload, cascader (dùng `MediaManager` sẵn có, hai `Combobox` nối nhau).
-- (−) JS của Admin tăng: tổng toàn bộ build 194,7 → 257,3 KB gzip sau đợt đầu (đo 2026-11-04).
+- (−) JS tăng: tổng toàn bộ build 194,7 → 289,5 KB gzip khi hoàn thành (đo 2026-11-04); `DateInput` (26,6 KB gzip) chỉ tải ở trang có ô ngày.
 - (−) `FlashMessage` không còn hiện thông báo thành công (chuyển sang `Toaster`); trang plugin tự đặt `FlashMessage` chỉ còn hiện lỗi chung.
 
 ## Trade-offs

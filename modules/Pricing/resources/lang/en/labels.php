@@ -1,0 +1,10 @@
+<?php
+
+/*
+| Nhãn hiển thị trong Admin (StatusBadge, Select) theo mã; mã chưa có nhãn hiển thị nguyên mã.
+*/
+
+return [
+    'price_list_type' => ['base' => 'List price (base)', 'sale' => 'Sale', 'member' => 'Member'],
+    'price_list_status' => ['active' => 'Active', 'inactive' => 'Inactive'],
+];

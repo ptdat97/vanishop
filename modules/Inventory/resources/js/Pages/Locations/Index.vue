@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
+import type { InventoryLabels } from '../../labels';
 
 defineProps<{
     baseUrl: string;
+    labels: InventoryLabels;
     locations: Array<{
         id: number;
         code: string;
@@ -17,7 +20,14 @@ defineProps<{
     }>;
 }>();
 
-const typeLabels: Record<string, string> = { warehouse: 'Kho', store: 'Cửa hàng', virtual: 'Ảo' };
+const columns = [
+    { key: 'name', label: 'Location' },
+    { key: 'type', label: 'Loại' },
+    { key: 'priority', label: 'Priority' },
+    { key: 'ships_online_orders', label: 'Bán online' },
+    { key: 'stock_authority', label: 'Quản lý tồn', class: 'font-mono text-xs' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 </script>
 
 <template>
@@ -25,34 +35,13 @@ const typeLabels: Record<string, string> = { warehouse: 'Kho', store: 'Cửa hà
     <PageHeader title="Kho & cửa hàng" subtitle="Priority cao hơn được giữ hàng trước khi bán online.">
         <Link :href="`${baseUrl}/create`" :class="primaryButton">Thêm location</Link>
     </PageHeader>
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Location</th>
-                <th class="px-4 py-2">Loại</th>
-                <th class="px-4 py-2">Priority</th>
-                <th class="px-4 py-2">Bán online</th>
-                <th class="px-4 py-2">Quản lý tồn</th>
-                <th />
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="location in locations" :key="location.id" class="border-t border-slate-100">
-                <td class="px-4 py-2">
-                    <div class="font-medium">{{ location.name }}</div>
-                    <div class="font-mono text-xs text-slate-400">{{ location.code }}<span v-if="location.status !== 'active'"> · tắt</span></div>
-                </td>
-                <td class="px-4 py-2">{{ typeLabels[location.type] ?? location.type }}</td>
-                <td class="px-4 py-2">{{ location.priority }}</td>
-                <td class="px-4 py-2">{{ location.ships_online_orders ? 'Có' : '—' }}</td>
-                <td class="px-4 py-2 font-mono text-xs">{{ location.stock_authority }}</td>
-                <td class="px-4 py-2 text-right">
-                    <Link :href="`${baseUrl}/${location.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link>
-                </td>
-            </tr>
-            <tr v-if="!locations.length">
-                <td colspan="6" class="px-4 py-6 text-center text-slate-500">Chưa có location nào.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="locations" :row-label="(location) => location.code" empty-text="Chưa có location nào.">
+        <template #cell-name="{ row }">
+            <div class="font-medium">{{ row.name }}</div>
+            <div class="font-mono text-xs text-slate-400">{{ row.code }}<span v-if="row.status !== 'active'"> · {{ labels.location_status[row.status] ?? row.status }}</span></div>
+        </template>
+        <template #cell-type="{ row }">{{ labels.location_type[row.type] ?? row.type }}</template>
+        <template #cell-ships_online_orders="{ row }">{{ row.ships_online_orders ? 'Có' : '—' }}</template>
+        <template #cell-actions="{ row }"><Link :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link></template>
+    </DataTable>
 </template>

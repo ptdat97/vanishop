@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -19,18 +22,23 @@ const props = defineProps<{
             updated_at: string | null;
             url: string | null;
         }>;
-        links: Array<{ url: string | null; label: string; active: boolean }>;
+        current_page: number;
+        last_page: number;
     };
     can: { manage: boolean };
     urls: { pages: string; posts: string; index: string; create: string };
 }>();
 
 const q = ref(props.search);
+const columns = [
+    { key: 'title', label: 'Tiêu đề' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'date', label: props.kind === 'posts' ? 'Ngày đăng' : 'Cập nhật', class: 'text-slate-600' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 
-function submitSearch(): void {
-    router.get(props.urls.index, q.value ? { q: q.value } : {}, {
-        preserveState: true,
-    });
+function submitSearch(page = 1): void {
+    router.get(props.urls.index, { q: q.value || undefined, page: page > 1 ? page : undefined }, { preserveState: true });
 }
 </script>
 
@@ -45,57 +53,25 @@ function submitSearch(): void {
         <Link v-for="(labels, key) in kindLabels" :key="key" :href="urls[key]" :class="[secondaryButton, kind === key ? 'border-indigo-500 text-red-700' : '']">
             {{ labels.plural }}
         </Link>
-        <form class="ml-auto flex gap-2" @submit.prevent="submitSearch">
+        <form class="ml-auto flex gap-2" @submit.prevent="submitSearch()">
             <input v-model="q" type="search" placeholder="Tìm theo tiêu đề" :class="[inputClass, 'w-56']" />
             <button type="submit" :class="secondaryButton">Tìm</button>
         </form>
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-slate-200 text-left text-slate-500">
-                    <th class="px-4 py-2 font-medium">Tiêu đề</th>
-                    <th class="px-4 py-2 font-medium">Trạng thái</th>
-                    <th class="px-4 py-2 font-medium">
-                        {{ kind === 'posts' ? 'Ngày đăng' : 'Cập nhật' }}
-                    </th>
-                    <th class="px-4 py-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="item in items.data" :key="item.id" class="border-b border-slate-100">
-                    <td class="px-4 py-2">
-                        <Link :href="`${urls.index}/${item.id}`" class="font-medium text-red-700 hover:underline">{{ item.title }}</Link>
-                        <div class="text-xs text-slate-400">/{{ kind === 'pages' ? 'trang' : 'tin-tuc' }}/{{ item.slug }}</div>
-                    </td>
-                    <td class="px-4 py-2">
-                        <span class="rounded px-2 py-0.5 text-xs" :class="statusLabels[item.status]?.class">{{
-                            statusLabels[item.status]?.label ?? item.status
-                        }}</span>
-                    </td>
-                    <td class="px-4 py-2 text-slate-600">
-                        {{ (kind === 'posts' ? item.published_at : item.updated_at) ?? '—' }}
-                    </td>
-                    <td class="px-4 py-2 text-right">
-                        <a v-if="item.url" :href="item.url" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:underline">Xem</a>
-                    </td>
-                </tr>
-                <tr v-if="!items.data.length">
-                    <td colspan="4" class="px-4 py-6 text-center text-slate-400">Chưa có {{ kindLabels[kind].singular }} nào.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <DataTable :columns="columns" :rows="items.data" :row-label="(item) => item.title" :empty-text="`Chưa có ${kindLabels[kind].singular} nào.`">
+        <template #cell-title="{ row }">
+            <Link :href="`${urls.index}/${row.id}`" class="font-medium text-red-700 hover:underline">{{ row.title }}</Link>
+            <div class="text-xs text-slate-400">/{{ kind === 'pages' ? 'trang' : 'tin-tuc' }}/{{ row.slug }}</div>
+        </template>
+        <template #cell-status="{ row }">
+            <StatusBadge :label="statusLabels[row.status]?.label ?? row.status" :tone="statusLabels[row.status]?.tone ?? 'neutral'" />
+        </template>
+        <template #cell-date="{ row }">{{ (kind === 'posts' ? row.published_at : row.updated_at) ?? '—' }}</template>
+        <template #cell-actions="{ row }">
+            <a v-if="row.url" :href="row.url" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:underline">Xem</a>
+        </template>
+    </DataTable>
 
-    <nav v-if="items.links.length > 3" class="mt-4 flex flex-wrap gap-1 text-sm">
-        <Link
-            v-for="(link, index) in items.links"
-            :key="index"
-            :href="link.url ?? ''"
-            class="rounded border px-3 py-1"
-            :class="[link.active ? 'border-indigo-500 text-red-700' : 'border-slate-200', link.url ? '' : 'pointer-events-none opacity-40']"
-            v-html="link.label"
-        />
-    </nav>
+    <Pagination :current="items.current_page" :last="items.last_page" @change="submitSearch" />
 </template>

@@ -1,11 +1,18 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { useDateTime } from '@admin/datetime';
+import { labelOptions, recordOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: { staff_status: Record<string, string>; scope_type: Record<string, string> };
     rolesUrl: string;
     filters: { q: string; role: number | null; status: string | null };
     roles: Array<{ id: number; name: string }>;
@@ -17,7 +24,14 @@ const props = defineProps<{
     };
 }>();
 
-const statusLabels: Record<string, string> = { active: 'Hoạt động', invited: 'Chờ nhận lời mời', locked: 'Đã khoá' };
+const formatDate = useDateTime();
+const columns = [
+    { key: 'name', label: 'Nhân viên' },
+    { key: 'roles', label: 'Vai trò' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'last_login_at', label: 'Đăng nhập gần nhất', class: 'text-slate-500' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 const q = ref(props.filters.q);
 
 function search(changes: { role?: number | null; status?: string | null; page?: number } = {}): void {
@@ -35,50 +49,26 @@ function search(changes: { role?: number | null; status?: string | null; page?: 
 
     <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="[inputClass, 'w-72']" placeholder="Tên hoặc email" />
-        <select :class="[inputClass, 'w-48']" :value="filters.role ?? ''" @change="search({ role: Number(($event.target as HTMLSelectElement).value) || null })">
-            <option value="">Mọi vai trò</option>
-            <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
-        </select>
-        <select :class="[inputClass, 'w-48']" :value="filters.status ?? ''" @change="search({ status: ($event.target as HTMLSelectElement).value || null })">
-            <option value="">Mọi trạng thái</option>
-            <option v-for="(label, value) in statusLabels" :key="value" :value="value">{{ label }}</option>
-        </select>
+        <div class="w-48">
+            <Select :model-value="filters.role" :options="recordOptions(roles, (role) => role.name)" empty-label="Mọi vai trò" :empty-value="null" aria-label="Vai trò" @change="search({ role: $event })" />
+        </div>
+        <div class="w-48">
+            <Select :model-value="filters.status ?? ''" :options="labelOptions(labels.staff_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" @change="search({ status: $event || null })" />
+        </div>
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Nhân viên</th>
-                <th class="px-4 py-2">Vai trò</th>
-                <th class="px-4 py-2">Trạng thái</th>
-                <th class="px-4 py-2">Đăng nhập gần nhất</th>
-                <th />
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="member in staff.data" :key="member.id" class="border-t border-slate-100">
-                <td class="px-4 py-2">
-                    <div class="font-medium">{{ member.name }}</div>
-                    <div class="text-xs text-slate-400">{{ member.email }}</div>
-                </td>
-                <td class="px-4 py-2">{{ member.roles.join(', ') || '—' }}</td>
-                <td class="px-4 py-2">
-                    <span :class="{ 'text-red-600': member.status === 'locked', 'text-amber-600': member.status === 'invited' }">{{ statusLabels[member.status] ?? member.status }}</span>
-                </td>
-                <td class="px-4 py-2 text-slate-500">{{ member.last_login_at ? new Date(member.last_login_at).toLocaleString('vi-VN') : '—' }}</td>
-                <td class="px-4 py-2 text-right">
-                    <Link :href="`${baseUrl}/${member.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link>
-                </td>
-            </tr>
-            <tr v-if="!staff.data.length">
-                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Không có nhân viên phù hợp.</td>
-            </tr>
-        </tbody>
-    </table>
-    <div v-if="staff.last_page > 1" class="mt-3 flex gap-2">
-        <button :class="secondaryButton" :disabled="staff.current_page <= 1" @click="search({ page: staff.current_page - 1 })">Trước</button>
-        <span class="px-2 py-2 text-sm text-slate-500">Trang {{ staff.current_page }} / {{ staff.last_page }}</span>
-        <button :class="secondaryButton" :disabled="staff.current_page >= staff.last_page" @click="search({ page: staff.current_page + 1 })">Sau</button>
-    </div>
+    <DataTable :columns="columns" :rows="staff.data" :row-label="(member) => member.email" empty-text="Không có nhân viên phù hợp.">
+        <template #cell-name="{ row }">
+            <div class="font-medium">{{ row.name }}</div>
+            <div class="text-xs text-slate-400">{{ row.email }}</div>
+        </template>
+        <template #cell-roles="{ row }">{{ row.roles.join(', ') || '—' }}</template>
+        <template #cell-status="{ row }">
+            <StatusBadge :label="labels.staff_status[row.status] ?? row.status" :tone="row.status === 'locked' ? 'danger' : row.status === 'invited' ? 'warning' : 'success'" />
+        </template>
+        <template #cell-last_login_at="{ row }">{{ formatDate(row.last_login_at) }}</template>
+        <template #cell-actions="{ row }"><Link :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link></template>
+    </DataTable>
+    <Pagination :current="staff.current_page" :last="staff.last_page" @change="search({ page: $event })" />
 </template>

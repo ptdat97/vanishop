@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import type { InventoryLabels } from '../../labels';
 
 type Level = { on_hand: number; reserved: number; safety_stock: number; available: number };
 
 const props = defineProps<{
     baseUrl: string;
+    labels: InventoryLabels;
     locationsUrl: string | null;
     transfersUrl: string | null;
     styleCode: string;
@@ -18,7 +23,11 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.styleCode);
-const actionLabels: Record<string, string> = { adjust: 'Cộng/trừ tồn', count: 'Kiểm kê (đặt số đếm)', safety: 'Tồn an toàn' };
+const columns = computed(() => [
+    { key: 'sku', label: 'SKU' },
+    ...props.locations.map((location, index) => ({ key: `location-${index}`, label: location.code })),
+    { key: 'actions', label: '', align: 'right' as const },
+]);
 const editing = ref<null | { sku: string; location: string }>(null);
 const form = useForm({ location_id: 0, variant_id: 0, action: 'adjust', quantity: 0, reason: '' });
 
@@ -56,42 +65,30 @@ function submit(): void {
     <p v-if="styleCode && !variants.length" class="text-sm text-slate-500">Không tìm thấy biến thể nào cho mã {{ styleCode }}.</p>
     <p v-else-if="variants.length && !locations.length" class="text-sm text-slate-500">Chưa có kho/cửa hàng nào.</p>
 
-    <div v-if="variants.length && locations.length" class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <p v-if="styleName" class="border-b border-slate-100 px-4 py-2 font-medium">{{ styleName }}</p>
-        <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-slate-500">
-                <tr>
-                    <th class="px-4 py-2">SKU</th>
-                    <th v-for="location in locations" :key="location.id" class="px-4 py-2">
-                        {{ location.code }}<span v-if="location.external" class="ml-1 text-xs text-amber-600">(đồng bộ)</span>
-                    </th>
-                    <th />
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="variant in variants" :key="variant.id" class="border-t border-slate-100 align-top">
-                    <td class="px-4 py-2">
-                        <div class="font-mono">{{ variant.sku }}</div>
-                        <div class="text-xs text-slate-400">{{ variant.color_code }} / {{ variant.size_code }}<span v-if="variant.status !== 'active'"> · tắt</span></div>
-                    </td>
-                    <td v-for="(level, index) in variant.levels" :key="index" class="px-4 py-2">
-                        <div class="font-semibold" :class="level.available > 0 ? 'text-emerald-700' : 'text-slate-400'">{{ level.available }}</div>
-                        <div class="text-xs text-slate-500">tồn {{ level.on_hand }} · giữ {{ level.reserved }} · an toàn {{ level.safety_stock }}</div>
-                        <button v-if="canAdjust" type="button" class="text-xs text-indigo-600 hover:underline" @click="open(variant, index)">Điều chỉnh</button>
-                    </td>
-                    <td class="px-4 py-2 text-right">
-                        <Link :href="`${baseUrl.replace(/\/stock$/, '/movements')}?variant=${variant.id}`" class="text-xs text-indigo-600 hover:underline">Lịch sử</Link>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div v-if="variants.length && locations.length">
+        <p v-if="styleName" class="mb-2 font-medium">{{ styleName }}</p>
+        <DataTable :columns="columns" :rows="variants" :row-class="() => 'align-top'" :row-label="(variant) => variant.sku">
+            <template v-for="(location, index) in locations" :key="location.id" #[`head-location-${index}`]>
+                {{ location.code }}<span v-if="location.external" class="ml-1 text-xs text-amber-600">(đồng bộ)</span>
+            </template>
+            <template #cell-sku="{ row }">
+                <div class="font-mono">{{ row.sku }}</div>
+                <div class="text-xs text-slate-400">{{ row.color_code }} / {{ row.size_code }}<span v-if="row.status !== 'active'"> · tắt</span></div>
+            </template>
+            <template v-for="(location, index) in locations" :key="location.id" #[`cell-location-${index}`]="{ row }">
+                <div class="font-semibold" :class="row.levels[index].available > 0 ? 'text-emerald-700' : 'text-slate-400'">{{ row.levels[index].available }}</div>
+                <div class="text-xs text-slate-500">tồn {{ row.levels[index].on_hand }} · giữ {{ row.levels[index].reserved }} · an toàn {{ row.levels[index].safety_stock }}</div>
+                <button v-if="canAdjust" type="button" class="text-xs text-indigo-600 hover:underline" @click="open(row, index)">Điều chỉnh</button>
+            </template>
+            <template #cell-actions="{ row }">
+                <Link :href="`${baseUrl.replace(/\/stock$/, '/movements')}?variant=${row.id}`" class="text-xs text-indigo-600 hover:underline">Lịch sử</Link>
+            </template>
+        </DataTable>
     </div>
 
     <form v-if="editing" class="mt-4 grid max-w-xl gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
         <p class="font-medium">{{ editing.sku }} tại {{ editing.location }}</p>
-        <select v-model="form.action" :class="inputClass">
-            <option v-for="(label, value) in actionLabels" :key="value" :value="value">{{ label }}</option>
-        </select>
+        <Select v-model="form.action" :options="labelOptions(labels.stock_action)" aria-label="Thao tác" />
         <input v-model.number="form.quantity" :class="inputClass" type="number" :placeholder="form.action === 'adjust' ? 'Ví dụ: 10 hoặc -2' : 'Số lượng'" />
         <input v-if="form.action !== 'safety'" v-model="form.reason" :class="inputClass" placeholder="Lý do (bắt buộc)" />
         <p v-for="(error, key) in form.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>

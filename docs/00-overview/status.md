@@ -48,7 +48,7 @@
 | MySQL | Implemented (dev) | `.env` dùng database `vanishop`; mức cô lập `READ COMMITTED` (ADR-016). **Máy dev đang chạy MySQL 9.7.2** (DBngin); CI dùng MySQL 8.4 theo ADR-016 |
 | Locale `vi`, `APP_NAME=VaniShop` | Implemented | `.env`, `.env.example` |
 | Inertia v3 + Vue 3 + TypeScript 5.9 (Admin) | Implemented | `resources/js/admin.ts`; build + `vue-tsc` pass |
-| Bộ component Admin trên Reka UI ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) | Partially Implemented (0.3.55) | `DataTable`, `Pagination`, `Select`, `Combobox`, `StatusBadge`, `MoneyText`, `ConfirmDialog`, `Toaster`; mới chuyển trang Đơn hàng (danh sách + chi tiết). Còn 12 trang ghi cứng `vi-VN`/`₫` (danh sách chờ trong `AdminUiTest`); chưa có `DateInput` |
+| Bộ component Admin trên Reka UI ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) | Implemented (0.3.56) | `DataTable`, `Pagination`, `Select`, `MultiSelect`, `Combobox`, `DateInput`, `StatusBadge`, `MoneyText`, `ConfirmDialog`, `Toaster`; mọi trang module/plugin đã chuyển; nhãn trạng thái từ `<module>::labels`; `AdminUiTest` khoá quy tắc |
 | CI | Implemented (chưa chạy trên GitHub) | `.github/workflows/ci.yml`: clean-room, license, Pint, vue-tsc, build, Pest (SQLite + MySQL 8.4), concurrency group trên MySQL 8.4 |
 | Larastan | Implemented | Level 5 + baseline (217 lỗi cũ, giảm dần), CI chặn lỗi mới; type coverage ≥ 97% (hiện 97,9%); `composer audit` trong CI (ADR-032) |
 | Redis, Horizon | Partially Implemented | Horizon đã cài + cấu hình (hàng đợi ưu tiên, dashboard dưới Admin, quyền `system.monitor`); dev vẫn dùng driver `database`, production đặt `QUEUE_CONNECTION=redis` (ADR-032) |

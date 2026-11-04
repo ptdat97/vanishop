@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { codeOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { NavItem, Translations } from '../../types';
+import type { CatalogLabels, NavItem, Translations } from '../../types';
 
 interface ValueRow {
     code: string;
@@ -15,6 +18,7 @@ interface ValueRow {
 
 const props = defineProps<{
     nav: NavItem[];
+    labels: CatalogLabels;
     attribute: null | {
         id: number;
         code: string;
@@ -66,8 +70,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.attribute && confirm('Xoá thuộc tính này?')) {
+async function destroy(): Promise<void> {
+    if (props.attribute && (await confirmAction({ title: 'Xoá thuộc tính này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${props.attribute.id}`);
     }
 }
@@ -93,14 +97,10 @@ function destroy(): void {
                 <input v-model.number="form.position" :class="inputClass" type="number" min="0" />
             </FormField>
             <FormField label="Loại" :error="errors.kind">
-                <select v-model="form.kind" :class="inputClass">
-                    <option v-for="kind in kinds" :key="kind" :value="kind">{{ kind === 'spec' ? 'spec: hiển thị & lọc' : 'internal: chỉ nội bộ' }}</option>
-                </select>
+                <Select v-model="form.kind" :options="codeOptions(kinds, labels.attribute_kind)" />
             </FormField>
             <FormField label="Kiểu nhập" :error="errors.input_type">
-                <select v-model="form.input_type" :class="inputClass">
-                    <option v-for="type in inputTypes" :key="type" :value="type">{{ type }}</option>
-                </select>
+                <Select v-model="form.input_type" :options="codeOptions(inputTypes)" />
             </FormField>
             <label class="flex items-center gap-2 text-sm sm:col-span-2">
                 <input v-model="form.is_filterable" type="checkbox" />

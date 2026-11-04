@@ -1,7 +1,15 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
+
+const columns = [
+    { key: 'name', label: 'Vai trò' },
+    { key: 'permissions_count', label: 'Số quyền' },
+    { key: 'assignments_count', label: 'Đang gán' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 
 defineProps<{
     baseUrl: string;
@@ -16,27 +24,12 @@ defineProps<{
         <Link :href="staffUrl" :class="secondaryButton">Nhân viên</Link>
         <Link :href="`${baseUrl}/create`" :class="primaryButton">Thêm vai trò</Link>
     </PageHeader>
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Vai trò</th>
-                <th class="px-4 py-2">Số quyền</th>
-                <th class="px-4 py-2">Đang gán</th>
-                <th />
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="role in roles" :key="role.id" class="border-t border-slate-100">
-                <td class="px-4 py-2">
-                    <div class="font-medium">{{ role.name }}</div>
-                    <div class="font-mono text-xs text-slate-400">{{ role.code }}<span v-if="role.is_system"> · hệ thống</span></div>
-                </td>
-                <td class="px-4 py-2">{{ role.is_system && role.permissions_count === 1 ? 'Toàn quyền' : role.permissions_count }}</td>
-                <td class="px-4 py-2">{{ role.assignments_count }}</td>
-                <td class="px-4 py-2 text-right">
-                    <Link :href="`${baseUrl}/${role.id}/edit`" class="text-indigo-600 hover:underline">{{ role.is_system ? 'Xem' : 'Sửa' }}</Link>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="roles" :row-label="(role) => role.name">
+        <template #cell-name="{ row }">
+            <div class="font-medium">{{ row.name }}</div>
+            <div class="font-mono text-xs text-slate-400">{{ row.code }}<span v-if="row.is_system"> · hệ thống</span></div>
+        </template>
+        <template #cell-permissions_count="{ row }">{{ row.is_system && row.permissions_count === 1 ? 'Toàn quyền' : row.permissions_count }}</template>
+        <template #cell-actions="{ row }"><Link :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">{{ row.is_system ? 'Xem' : 'Sửa' }}</Link></template>
+    </DataTable>
 </template>

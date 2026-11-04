@@ -33,3 +33,11 @@ export interface VideoRow {
     watch_url: string | null;
     thumbnail_url: string | null;
 }
+
+/** Nhãn theo mã từ `catalog::labels` (server dịch). */
+export interface CatalogLabels {
+    product_status: Record<string, string>;
+    variant_status: Record<string, string>;
+    visibility: Record<string, string>;
+    attribute_kind: Record<string, string>;
+}

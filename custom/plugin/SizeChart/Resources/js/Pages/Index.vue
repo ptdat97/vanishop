@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -11,6 +13,12 @@ defineProps<{
 }>();
 
 const targetLabels: Record<string, string> = { product: 'sản phẩm', category: 'danh mục', brand: 'thương hiệu' };
+const columns = [
+    { key: 'name', label: 'Tên' },
+    { key: 'unit', label: 'Đơn vị' },
+    { key: 'assignments', label: 'Áp dụng cho' },
+    { key: 'active', label: 'Trạng thái' },
+];
 </script>
 
 <template>
@@ -20,33 +28,15 @@ const targetLabels: Record<string, string> = { product: 'sản phẩm', category
     </PageHeader>
     <FlashMessage />
 
-    <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
-        <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-slate-500">
-                <tr>
-                    <th class="px-4 py-2">Tên</th>
-                    <th class="px-4 py-2">Đơn vị</th>
-                    <th class="px-4 py-2">Áp dụng cho</th>
-                    <th class="px-4 py-2">Trạng thái</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="chart in charts" :key="chart.id" class="border-t border-slate-100">
-                    <td class="px-4 py-2">
-                        <Link :href="`${urls.base}/${chart.id}`" class="font-medium text-indigo-600">{{ chart.name }}</Link>
-                        <span v-if="chart.is_default" class="ml-2 rounded bg-indigo-50 px-1.5 py-0.5 text-xs text-indigo-700">Mặc định</span>
-                    </td>
-                    <td class="px-4 py-2">{{ chart.unit }}</td>
-                    <td class="px-4 py-2">
-                        <span v-if="!Object.keys(chart.assignments).length" class="text-slate-400">—</span>
-                        <span v-for="(count, target) in chart.assignments" :key="target" class="mr-2">{{ count }} {{ targetLabels[target] ?? target }}</span>
-                    </td>
-                    <td class="px-4 py-2">{{ chart.active ? 'Đang bật' : 'Tắt' }}</td>
-                </tr>
-                <tr v-if="!charts.length">
-                    <td colspan="4" class="px-4 py-6 text-center text-slate-500">Chưa có bảng size.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <DataTable :columns="columns" :rows="charts" :row-label="(chart) => chart.name" empty-text="Chưa có bảng size.">
+        <template #cell-name="{ row }">
+            <Link :href="`${urls.base}/${row.id}`" class="font-medium text-indigo-600">{{ row.name }}</Link>
+            <span v-if="row.is_default" class="ml-2 rounded bg-indigo-50 px-1.5 py-0.5 text-xs text-indigo-700">Mặc định</span>
+        </template>
+        <template #cell-assignments="{ row }">
+            <span v-if="!Object.keys(row.assignments).length" class="text-slate-400">—</span>
+            <span v-for="(count, target) in row.assignments" :key="target" class="mr-2">{{ count }} {{ targetLabels[target] ?? target }}</span>
+        </template>
+        <template #cell-active="{ row }"><StatusBadge :label="row.active ? 'Đang bật' : 'Tắt'" :tone="row.active ? 'success' : 'neutral'" /></template>
+    </DataTable>
 </template>

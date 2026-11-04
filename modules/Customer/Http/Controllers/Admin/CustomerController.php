@@ -42,6 +42,7 @@ final class CustomerController
 
         return Inertia::render('Customer::Customers/Index', [
             'baseUrl' => route('admin.customers.index'),
+            'labels' => __('customer::labels'),
             'filters' => ['q' => $q, 'status' => $status, 'group' => $group, 'tag' => $tag],
             'statuses' => array_column(CustomerStatus::cases(), 'value'),
             'groups' => $segments->groups(),
@@ -63,6 +64,7 @@ final class CustomerController
 
         return Inertia::render('Customer::Customers/Show', [
             'baseUrl' => route('admin.customers.index'),
+            'labels' => __('customer::labels'),
             'customer' => [
                 ...$this->row($model),
                 // Ngày sinh là ngày lịch, không đổi múi giờ.

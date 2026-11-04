@@ -34,6 +34,7 @@ final class PromotionController
 
         return Inertia::render('Promotion::Promotions/Index', [
             'baseUrl' => route('admin.promotion.promotions.index'),
+            'labels' => __('promotion::labels'),
             'promotions' => Promotion::query()->withCount('vouchers')->orderByDesc('priority')->orderByDesc('id')->get()->map(fn (Promotion $promotion): array => [
                 'id' => $promotion->id,
                 'name' => $promotion->name,
@@ -119,6 +120,7 @@ final class PromotionController
     {
         return Inertia::render('Promotion::Promotions/Form', [
             'baseUrl' => route('admin.promotion.promotions.index'),
+            'labels' => __('promotion::labels'),
             'promotion' => $promotion === null ? null : [
                 ...$promotion->only(['id', 'name', 'status', 'priority', 'requires_voucher', 'action_type', 'action_config', 'usage_limit', 'usage_count', 'budget_amount', 'budget_used_amount', 'lock_version']),
                 'stacking' => $promotion->stacking->value,

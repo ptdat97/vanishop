@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { NavItem, Translations } from '../../types';
+import type { CatalogLabels, NavItem, Translations } from '../../types';
 
 const props = defineProps<{
     nav: NavItem[];
+    labels: CatalogLabels;
     collection: null | { id: number; slug: string; status: string; position: number; translations: Translations<'name' | 'description'>; style_codes: string };
 }>();
 
@@ -32,8 +36,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.collection && confirm('Xoá bộ sưu tập này? Sản phẩm không bị xoá.')) {
+async function destroy(): Promise<void> {
+    if (props.collection && (await confirmAction({ title: 'Xoá bộ sưu tập này?', message: 'Sản phẩm không bị xoá.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${props.collection.id}`);
     }
 }
@@ -57,10 +61,7 @@ function destroy(): void {
         <FormField label="Slug" :error="errors.slug"><input v-model="form.slug" :class="inputClass" /></FormField>
         <div class="grid grid-cols-2 gap-4">
             <FormField label="Trạng thái" :error="errors.status">
-                <select v-model="form.status" :class="inputClass">
-                    <option value="active">Hiển thị</option>
-                    <option value="hidden">Ẩn</option>
-                </select>
+                <Select v-model="form.status" :options="labelOptions(labels.visibility)" />
             </FormField>
             <FormField label="Thứ tự" :error="errors.position"><input v-model.number="form.position" :class="inputClass" type="number" min="0" /></FormField>
         </div>

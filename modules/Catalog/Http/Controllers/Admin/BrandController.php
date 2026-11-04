@@ -27,6 +27,7 @@ final class BrandController
 
         return Inertia::render('Catalog::Taxonomy/Brands', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'brands' => $brands->map(fn (Brand $brand): array => [
                 'id' => $brand->id,
                 'code' => $brand->code,

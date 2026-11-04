@@ -20,6 +20,7 @@ final class CollectionController
 
         return Inertia::render('Catalog::Collections/Index', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'collections' => ProductCollection::query()->with('translations')->withCount('styles')->orderBy('position')->orderBy('slug')->get()
                 ->map(fn (ProductCollection $collection): array => [
                     'id' => $collection->id,
@@ -72,6 +73,7 @@ final class CollectionController
     {
         return Inertia::render('Catalog::Collections/Form', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'collection' => $collection === null ? null : [
                 'id' => $collection->id,
                 'slug' => $collection->slug,

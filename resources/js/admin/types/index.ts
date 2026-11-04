@@ -32,6 +32,12 @@ export interface MoneyRules {
     symbol: string;
 }
 
+/** Múi giờ + mẫu ngày giờ của cửa hàng (`StoreClock`; mẫu theo PHP date()). */
+export interface StoreClockRules {
+    timezone: string;
+    formats: Record<'date' | 'datetime' | 'datetime_seconds' | 'short_datetime', string>;
+}
+
 /** Lựa chọn của Select/Combobox. */
 export interface Option {
     value: string;
@@ -39,7 +45,7 @@ export interface Option {
 }
 
 export interface SharedProps {
-    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string; money: MoneyRules };
+    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string; money: MoneyRules; clock: StoreClockRules };
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
     navigationGroups: NavigationGroup[];

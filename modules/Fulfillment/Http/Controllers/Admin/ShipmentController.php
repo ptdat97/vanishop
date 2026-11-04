@@ -43,6 +43,7 @@ final class ShipmentController
 
         return Inertia::render('Fulfillment::Shipments/Index', [
             'baseUrl' => route('admin.fulfillment.shipments.index'),
+            'labels' => __('fulfillment::labels'),
             'filters' => ['status' => $status, 'order' => $number],
             'statuses' => array_column(ShipmentStatus::cases(), 'value'),
             'order' => $order === null ? null : [

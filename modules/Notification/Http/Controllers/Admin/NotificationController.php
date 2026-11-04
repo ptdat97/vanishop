@@ -75,6 +75,7 @@ final class NotificationController
 
         return Inertia::render('Notification::Logs/Index', [
             'baseUrl' => route('admin.notifications.logs'),
+            'labels' => __('notification::labels'),
             'filters' => ['status' => $status, 'q' => $q],
             'statuses' => [NotificationLog::QUEUED, NotificationLog::SENT, NotificationLog::FAILED, NotificationLog::SKIPPED],
             'logs' => collect($page->items())->map(fn (NotificationLog $log): array => [

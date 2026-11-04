@@ -3,6 +3,8 @@ import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
 import { useStoreLocales } from '@admin/locales';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
@@ -99,8 +101,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.chart && confirm('Xoá bảng size này? Mọi gán cho sản phẩm/danh mục/thương hiệu sẽ bị bỏ.')) {
+async function destroy(): Promise<void> {
+    if (props.chart && (await confirmAction({ title: 'Xoá bảng size này?', message: 'Mọi gán cho sản phẩm/danh mục/thương hiệu sẽ bị bỏ.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${props.urls.base}/${props.chart.id}`);
     }
 }
@@ -137,14 +139,19 @@ function destroy(): void {
                     </div>
                     <template v-if="block.type === 'table'">
                         <div class="overflow-x-auto">
-                            <table class="text-sm">
-                                <tr v-for="(row, r) in block.rows" :key="r">
-                                    <td v-for="(_, c) in row" :key="c" class="p-0.5">
-                                        <input v-model="row[c]" :class="[inputClass, 'w-24', r === 0 || c === 0 ? 'font-medium' : '']" />
-                                    </td>
-                                    <td class="pl-2"><button v-if="r > 0" type="button" class="text-xs text-red-600" @click="block.rows.splice(r, 1)">Bỏ hàng</button></td>
-                                </tr>
-                            </table>
+                            <div class="inline-grid items-center gap-1 text-sm" :style="{ gridTemplateColumns: `repeat(${block.rows[0].length}, 6rem) auto` }">
+                                <template v-for="(row, r) in block.rows" :key="r">
+                                    <input
+                                        v-for="(_, c) in row"
+                                        :key="c"
+                                        v-model="row[c]"
+                                        :class="[inputClass, r === 0 || c === 0 ? 'font-medium' : '']"
+                                        :aria-label="`Hàng ${r + 1}, cột ${c + 1}`"
+                                    />
+                                    <button v-if="r > 0" type="button" class="pl-2 text-left text-xs text-red-600" @click="block.rows.splice(r, 1)">Bỏ hàng</button>
+                                    <span v-else />
+                                </template>
+                            </div>
                         </div>
                         <div class="flex gap-2 text-xs">
                             <button type="button" class="underline" @click="addRow(block.rows)">+ Hàng</button>
@@ -186,15 +193,15 @@ function destroy(): void {
                 <input v-model="form.names[option.code]" :class="inputClass" />
             </FormField>
             <FormField label="Đơn vị của bảng" :error="errors.base_unit">
-                <select v-model="form.base_unit" :class="inputClass">
-                    <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
-                </select>
+                <Select v-model="form.base_unit" :options="units.map((unit) => ({ value: unit, label: unit }))" />
             </FormField>
             <FormField label="Cho khách đổi sang" :error="errors.display_unit">
-                <select v-model="form.display_unit" :class="inputClass">
-                    <option :value="null">Không đổi</option>
-                    <option v-for="unit in units.filter((unit) => unit !== form.base_unit)" :key="unit" :value="unit">{{ unit }}</option>
-                </select>
+                <Select
+                    v-model="form.display_unit"
+                    :options="units.filter((unit) => unit !== form.base_unit).map((unit) => ({ value: unit, label: unit }))"
+                    empty-label="Không đổi"
+                    :empty-value="null"
+                />
             </FormField>
             <label class="flex items-center gap-2 text-sm"><input v-model="form.is_default" type="checkbox" /> Bảng mặc định của cửa hàng</label>
             <label class="flex items-center gap-2 text-sm"><input v-model="form.active" type="checkbox" /> Đang bật</label>

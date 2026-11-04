@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import DateInput from '@admin/Components/DateInput.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import InsightView from '@admin/Components/Insights/InsightView.vue';
 import type { MetricData, SeriesData, TableData } from '@admin/Components/Insights/types';
 import PageHeader from '@admin/Components/PageHeader.vue';
-import { inputClass, secondaryButton } from '@admin/styles';
+import { secondaryButton } from '@admin/styles';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
@@ -61,9 +62,9 @@ function choose(preset: string): void {
         >
             {{ label }}
         </button>
-        <input v-model="start" type="date" :class="[inputClass, 'w-40']" aria-label="Từ ngày" />
+        <div class="w-40"><DateInput v-model="start" aria-label="Từ ngày" /></div>
         <span class="text-slate-400">→</span>
-        <input v-model="end" type="date" :class="[inputClass, 'w-40']" aria-label="Đến ngày" />
+        <div class="w-40"><DateInput v-model="end" aria-label="Đến ngày" /></div>
         <button :class="[secondaryButton, period.preset === 'custom' ? 'border-indigo-500 text-red-700' : '']" @click="choose('custom')">Xem</button>
         <span v-if="errors.period" class="text-sm text-red-600">{{ errors.period }}</span>
     </div>

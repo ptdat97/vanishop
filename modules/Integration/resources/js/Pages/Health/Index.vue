@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { codeOptions } from '@admin/options';
 import { inputClass, secondaryButton } from '@admin/styles';
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -19,6 +24,7 @@ type Message = {
 
 const props = defineProps<{
     baseUrl: string;
+    labels: { message_status: Record<string, string> };
     filters: {
         box: 'outbox' | 'inbox';
         status: string | null;
@@ -52,26 +58,39 @@ const props = defineProps<{
     can: { replay: boolean; manage: boolean };
 }>();
 
-const statusLabels: Record<string, string> = {
-    pending: 'Chờ gửi',
-    received: 'Đã nhận',
-    processing: 'Đang xử lý',
-    sent: 'Đã gửi',
-    processed: 'Đã xử lý',
-    failed: 'Lỗi (chờ sửa)',
-    dead: 'Hết lượt thử',
-    ignored_stale: 'Bỏ qua (bản cũ)',
-};
 const opened = ref<number | null>(null);
+const messageColumns = [
+    { key: 'id', label: '#', class: 'font-mono text-xs' },
+    { key: 'target', label: 'Target', class: 'font-mono text-xs' },
+    { key: 'type', label: 'Loại', class: 'font-mono text-xs' },
+    { key: 'reference', label: 'Tham chiếu', class: 'font-mono text-xs' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'last_error', label: 'Lỗi gần nhất', class: 'max-w-xs text-xs break-words text-red-700' },
+    { key: 'actions', label: '', align: 'right' as const, class: 'whitespace-nowrap' },
+];
+const clientColumns = [
+    { key: 'name', label: 'Client' },
+    { key: 'scopes', label: 'Scope', class: 'font-mono text-xs' },
+    { key: 'active_keys', label: 'Key', class: 'text-xs' },
+    { key: 'subscriptions', label: 'Webhook', class: 'text-xs' },
+];
+
+function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' {
+    if (['failed', 'dead'].includes(status)) return 'danger';
+    if (['sent', 'processed'].includes(status)) return 'success';
+    if (['pending', 'received', 'processing'].includes(status)) return 'info';
+
+    return 'neutral';
+}
 
 function filter(changes: Partial<typeof props.filters>): void {
     const next = { ...props.filters, ...changes };
     router.get(props.baseUrl, Object.fromEntries(Object.entries(next).filter(([, value]) => value)), { preserveState: true });
 }
 
-function replay(ids: number[] | null): void {
+async function replay(ids: number[] | null): Promise<void> {
     const label = ids ? `${ids.length} message` : 'mọi message lỗi đang lọc';
-    if (!confirm(`Gửi lại ${label}? Message giữ nguyên ID nên phía nhận vẫn khử trùng lặp được.`)) return;
+    if ((await confirmAction({ title: `Gửi lại ${label}?`, message: 'Message giữ nguyên ID nên phía nhận vẫn khử trùng lặp được.', confirmLabel: 'Gửi lại' })) === false) return;
     const payload: {
         box: string;
         ids?: number[];
@@ -129,20 +148,9 @@ function resume(id: number): void {
         >
             {{ box === 'outbox' ? 'Gửi đi' : 'Nhận vào' }}
         </button>
-        <select
-            :class="[inputClass, 'w-48']"
-            :value="filters.status ?? ''"
-            @change="
-                filter({
-                    status: ($event.target as HTMLSelectElement).value || null,
-                })
-            "
-        >
-            <option value="">Lỗi + hết lượt</option>
-            <option v-for="status in statuses" :key="status" :value="status">
-                {{ statusLabels[status] ?? status }}
-            </option>
-        </select>
+        <div class="w-48">
+            <Select :model-value="filters.status ?? ''" :options="codeOptions(statuses, labels.message_status)" empty-label="Lỗi + hết lượt" aria-label="Trạng thái" @change="filter({ status: $event || null })" />
+        </div>
         <input
             :class="[inputClass, 'w-48']"
             :value="filters.target ?? ''"
@@ -156,106 +164,48 @@ function resume(id: number): void {
         <button v-if="can.replay && messages.length" :class="secondaryButton" @click="replay(null)">Gửi lại tất cả đang lọc</button>
     </div>
 
-    <table class="mb-8 w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">#</th>
-                <th class="px-4 py-2">Target</th>
-                <th class="px-4 py-2">Loại</th>
-                <th class="px-4 py-2">Tham chiếu</th>
-                <th class="px-4 py-2">Trạng thái</th>
-                <th class="px-4 py-2">Lỗi gần nhất</th>
-                <th />
-            </tr>
-        </thead>
-        <tbody>
-            <template v-for="message in messages" :key="message.id">
-                <tr class="border-t border-slate-100 align-top">
-                    <td class="px-4 py-2 font-mono text-xs">
-                        {{ message.id }}
-                        <div class="text-slate-400">{{ message.at }}</div>
-                    </td>
-                    <td class="px-4 py-2 font-mono text-xs">
-                        {{ message.target }}
-                    </td>
-                    <td class="px-4 py-2 font-mono text-xs">
-                        {{ message.type }}
-                    </td>
-                    <td class="px-4 py-2 font-mono text-xs">
-                        {{ message.reference }}
-                    </td>
-                    <td class="px-4 py-2">{{ statusLabels[message.status] ?? message.status }} · {{ message.attempts }} lần</td>
-                    <td class="max-w-xs px-4 py-2 text-xs break-words text-red-700">
-                        {{ message.last_error }}
-                    </td>
-                    <td class="px-4 py-2 text-right whitespace-nowrap">
-                        <button class="mr-3 text-indigo-600 hover:underline" @click="opened = opened === message.id ? null : message.id">Payload</button>
-                        <button
-                            v-if="can.replay && ['failed', 'dead'].includes(message.status)"
-                            class="text-indigo-600 hover:underline"
-                            @click="replay([message.id])"
-                        >
-                            Gửi lại
-                        </button>
-                    </td>
-                </tr>
-                <tr v-if="opened === message.id" class="border-t border-slate-100 bg-slate-50">
-                    <td colspan="7" class="px-4 py-2">
-                        <div class="mb-1 text-xs text-slate-500">Correlation ID: {{ message.correlation_id ?? '—' }}</div>
-                        <pre class="max-h-80 overflow-auto text-xs">{{ JSON.stringify(message.payload, null, 2) }}</pre>
-                    </td>
-                </tr>
+    <div class="mb-8">
+        <DataTable :columns="messageColumns" :rows="messages" :row-class="() => 'align-top'" :expanded="(message) => opened === message.id" empty-text="Không có message nào khớp bộ lọc.">
+            <template #cell-id="{ row }">
+                {{ row.id }}
+                <div class="text-slate-400">{{ row.at }}</div>
             </template>
-            <tr v-if="!messages.length">
-                <td colspan="7" class="px-4 py-6 text-center text-slate-500">Không có message nào khớp bộ lọc.</td>
-            </tr>
-        </tbody>
-    </table>
+            <template #cell-status="{ row }">
+                <StatusBadge :label="labels.message_status[row.status] ?? row.status" :tone="statusTone(row.status)" />
+                <span class="ml-1 text-xs text-slate-500">{{ row.attempts }} lần</span>
+            </template>
+            <template #cell-actions="{ row }">
+                <button class="mr-3 text-indigo-600 hover:underline" @click="opened = opened === row.id ? null : row.id">Payload</button>
+                <button v-if="can.replay && ['failed', 'dead'].includes(row.status)" class="text-indigo-600 hover:underline" @click="replay([row.id])">Gửi lại</button>
+            </template>
+            <template #expanded="{ row }">
+                <div class="mb-1 text-xs text-slate-500">Correlation ID: {{ row.correlation_id ?? '—' }}</div>
+                <pre class="max-h-80 overflow-auto text-xs">{{ JSON.stringify(row.payload, null, 2) }}</pre>
+            </template>
+        </DataTable>
+    </div>
 
     <h2 class="mb-2 text-lg font-semibold">Integration Client</h2>
     <p class="mb-3 text-sm text-slate-500">
         Tạo client, cấp key và đăng ký webhook bằng lệnh
         <code>php artisan vani:integration:client</code> và <code>vani:integration:webhook</code>.
     </p>
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Client</th>
-                <th class="px-4 py-2">Scope</th>
-                <th class="px-4 py-2">Key</th>
-                <th class="px-4 py-2">Webhook</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="client in clients" :key="client.id" class="border-t border-slate-100 align-top">
-                <td class="px-4 py-2">
-                    <div class="font-medium">{{ client.name }}</div>
-                    <div class="font-mono text-xs text-slate-400">{{ client.code }}<span v-if="client.status !== 'active'"> · tạm dừng</span></div>
-                </td>
-                <td class="px-4 py-2 font-mono text-xs">
-                    {{ client.scopes.join(', ') }}
-                </td>
-                <td class="px-4 py-2 text-xs">{{ client.active_keys }} còn hiệu lực</td>
-                <td class="px-4 py-2 text-xs">
-                    <div v-for="subscription in client.subscriptions" :key="subscription.id" class="mb-1">
-                        <span class="font-mono">{{ subscription.url }}</span>
-                        <span class="text-slate-400"> · {{ subscription.event_types.join(', ') }}</span>
-                        <span v-if="subscription.status === 'paused'" class="text-red-600"> · tạm dừng</span>
-                        <span v-else-if="subscription.failing_since" class="text-amber-600"> · lỗi từ {{ subscription.failing_since }}</span>
-                        <button
-                            v-if="can.manage && subscription.status === 'paused'"
-                            class="ml-2 text-indigo-600 hover:underline"
-                            @click="resume(subscription.id)"
-                        >
-                            Bật lại
-                        </button>
-                    </div>
-                    <span v-if="!client.subscriptions.length" class="text-slate-400">—</span>
-                </td>
-            </tr>
-            <tr v-if="!clients.length">
-                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có client nào.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="clientColumns" :rows="clients" :row-class="() => 'align-top'" empty-text="Chưa có client nào.">
+        <template #cell-name="{ row }">
+            <div class="font-medium">{{ row.name }}</div>
+            <div class="font-mono text-xs text-slate-400">{{ row.code }}<span v-if="row.status !== 'active'"> · tạm dừng</span></div>
+        </template>
+        <template #cell-scopes="{ row }">{{ row.scopes.join(', ') }}</template>
+        <template #cell-active_keys="{ row }">{{ row.active_keys }} còn hiệu lực</template>
+        <template #cell-subscriptions="{ row }">
+            <div v-for="subscription in row.subscriptions" :key="subscription.id" class="mb-1">
+                <span class="font-mono">{{ subscription.url }}</span>
+                <span class="text-slate-400"> · {{ subscription.event_types.join(', ') }}</span>
+                <span v-if="subscription.status === 'paused'" class="text-red-600"> · tạm dừng</span>
+                <span v-else-if="subscription.failing_since" class="text-amber-600"> · lỗi từ {{ subscription.failing_since }}</span>
+                <button v-if="can.manage && subscription.status === 'paused'" class="ml-2 text-indigo-600 hover:underline" @click="resume(subscription.id)">Bật lại</button>
+            </div>
+            <span v-if="!row.subscriptions.length" class="text-slate-400">—</span>
+        </template>
+    </DataTable>
 </template>

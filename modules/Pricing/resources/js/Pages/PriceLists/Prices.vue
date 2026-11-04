@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import { useMoney } from '@admin/money';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import type { SharedProps } from '@admin/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 interface Row {
@@ -28,7 +31,15 @@ const styleInput = ref(props.styleCode);
 const fillAmount = ref<number | null>(null);
 const form = useForm({ prices: props.rows.map((row) => ({ variant_id: row.variant_id, amount: row.amount, compare_at_amount: row.compare_at_amount })) });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
-const vnd = new Intl.NumberFormat('vi-VN');
+const money = useMoney();
+const symbol = usePage<SharedProps>().props.app.money.symbol;
+const columns = [
+    { key: 'sku', label: 'SKU', class: 'font-mono text-xs' },
+    { key: 'color_code', label: 'Màu' },
+    { key: 'size_code', label: 'Size' },
+    { key: 'amount', label: `Giá bán (${symbol})` },
+    { key: 'compare_at_amount', label: `Giá gốc (${symbol}, tuỳ chọn)` },
+];
 
 function load(): void {
     router.get(pricesUrl.value, { style: styleInput.value.trim() || undefined });
@@ -69,33 +80,17 @@ function save(): void {
             <input v-model.number="fillAmount" :class="inputClass" class="max-w-40" type="number" min="0" placeholder="Giá cho tất cả" />
             <button type="button" :class="secondaryButton" @click="fillAll">Áp cho mọi biến thể</button>
         </div>
-        <table class="w-full text-sm">
-            <thead class="text-left text-slate-500">
-                <tr>
-                    <th class="py-1">SKU</th>
-                    <th class="py-1">Màu</th>
-                    <th class="py-1">Size</th>
-                    <th class="py-1">Giá bán (₫)</th>
-                    <th class="py-1">Giá gốc (₫, tuỳ chọn)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(row, index) in rows" :key="row.variant_id" class="border-t border-slate-100 align-top" :class="{ 'text-slate-400': row.status !== 'active' }">
-                    <td class="py-2 font-mono text-xs">{{ row.sku }}</td>
-                    <td class="py-2">{{ row.color_code }}</td>
-                    <td class="py-2">{{ row.size_code }}</td>
-                    <td class="py-1 pr-2">
-                        <input v-model.number="form.prices[index].amount" :class="inputClass" type="number" min="0" step="1000" :disabled="!canManage" />
-                        <p v-if="form.prices[index].amount" class="mt-0.5 text-xs text-slate-400">{{ vnd.format(form.prices[index].amount ?? 0) }} ₫</p>
-                        <p v-if="errors[`prices.${index}.amount`]" class="text-xs text-red-600">{{ errors[`prices.${index}.amount`] }}</p>
-                    </td>
-                    <td class="py-1 pr-2">
-                        <input v-model.number="form.prices[index].compare_at_amount" :class="inputClass" type="number" min="0" step="1000" :disabled="!canManage" />
-                        <p v-if="errors[`prices.${index}.compare_at_amount`]" class="text-xs text-red-600">{{ errors[`prices.${index}.compare_at_amount`] }}</p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <DataTable :columns="columns" :rows="rows" :row-key="(row) => row.variant_id" :row-class="(row) => (row.status !== 'active' ? 'align-top text-slate-400' : 'align-top')">
+            <template #cell-amount="{ index }">
+                <input v-model.number="form.prices[index].amount" :class="inputClass" type="number" min="0" step="1000" :disabled="!canManage" aria-label="Giá bán" />
+                <p v-if="form.prices[index].amount" class="mt-0.5 text-xs text-slate-400">{{ money(form.prices[index].amount ?? 0) }}</p>
+                <p v-if="errors[`prices.${index}.amount`]" class="text-xs text-red-600">{{ errors[`prices.${index}.amount`] }}</p>
+            </template>
+            <template #cell-compare_at_amount="{ index }">
+                <input v-model.number="form.prices[index].compare_at_amount" :class="inputClass" type="number" min="0" step="1000" :disabled="!canManage" aria-label="Giá gốc" />
+                <p v-if="errors[`prices.${index}.compare_at_amount`]" class="text-xs text-red-600">{{ errors[`prices.${index}.compare_at_amount`] }}</p>
+            </template>
+        </DataTable>
         <p class="text-xs text-slate-500">Để trống giá bán = gỡ giá của biến thể khỏi bảng giá này. Mọi thay đổi được ghi vào lịch sử giá.</p>
         <button v-if="canManage" type="button" :class="primaryButton" :disabled="form.processing" @click="save">Lưu giá</button>
     </div>

@@ -38,6 +38,7 @@ final class StockController
         $levels = $queries->levels(array_map(fn ($variant): int => $variant->id, $rows));
 
         return Inertia::render('Inventory::Stock/Index', [
+            'labels' => __('inventory::labels'),
             'baseUrl' => route('admin.inventory.stock.index'),
             'locationsUrl' => Gate::allows('inventory.locations.manage', [ScopeRef::owner()]) ? route('admin.inventory.locations.index') : null,
             'transfersUrl' => route('admin.inventory.transfers.index'),

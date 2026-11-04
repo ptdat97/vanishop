@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.56 — 2026-11-04
+
+Hoàn thành bộ component Admin ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)). Chỉ thêm với plugin; trang Core đổi hình dạng một số prop.
+
+### Thêm
+- `@admin/Components`: `MultiSelect`, `DateInput` (`YYYY-MM-DD`, hoặc `withTime` → `YYYY-MM-DDTHH:mm`). `Select` nhận giá trị số/boolean/null (`emptyValue`) và phát sự kiện `change`. `DataTable`: slot `head-<key>`, `expanded`, `footer`; prop `rowKey`, `rowClass`, `extensionId`, `bare`; slot ô nhận `index`.
+- `@admin/confirm`: `promptFields({ fields })` hỏi nhiều giá trị một lần; trường có `value` ban đầu.
+- `@admin/datetime`: `useDateTime()`, `formatDateTime()` — định dạng theo `app.clock` (shared props mới: múi giờ + mẫu ngày giờ của cửa hàng). `@admin/options`: `labelOptions`, `codeOptions`, `recordOptions`.
+- Lang `labels.php` cho từng module Core có màn hình Admin; controller gửi prop `labels`.
+- `ExtensionFilters`/`ExtensionFormSections` dùng `Select`/`DateInput` (dữ liệu plugin khai báo không đổi).
+
+### Đổi
+- Trang danh sách sản phẩm: prop `products.links` thay bằng `products.current`/`products.last` (listener `vani.admin.page.catalog.products.index` đọc `links` cần sửa).
+- Nhãn trạng thái đơn chuyển từ `ordering::messages` sang `ordering::labels`.
+- `Insights/types` `formatValue(value, format, rules)` nhận thêm quy tắc tiền; component dùng `useFormatValue()`.
+
 ## 0.3.55 — 2026-11-04
 
 Bộ component Admin ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)). Chỉ thêm, trừ một thay đổi hiển thị của `FlashMessage`.

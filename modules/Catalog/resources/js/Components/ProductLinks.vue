@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
 import { inputClass, secondaryButton } from '@admin/styles';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -16,6 +18,7 @@ const errors = computed(() => page.props.errors ?? {});
 const typeId = ref<number | null>(props.linkTypes.find((type) => type.is_active)?.id ?? null);
 const codes = ref('');
 const oneWay = ref(false);
+const typeOptions = computed(() => props.linkTypes.map((type) => ({ value: type.id, label: `${type.label}${type.is_active ? '' : ' (đang tắt)'}` })));
 
 function add(): void {
     const styleCodes = codes.value.split(/[\s,;]+/).filter(Boolean);
@@ -28,8 +31,8 @@ function add(): void {
     }
 }
 
-function remove(group: LinkGroupRow, productId: number, code: string): void {
-    if (confirm(`Gỡ liên kết "${group.name}" với ${code}?`)) {
+async function remove(group: LinkGroupRow, productId: number, code: string): Promise<void> {
+    if ((await confirmAction({ title: `Gỡ liên kết "${group.name}" với ${code}?`, confirmLabel: 'Gỡ', tone: 'danger' })) !== false) {
         router.delete(`${props.productUrl}/links/${group.type_id}/${productId}`, { preserveScroll: true });
     }
 }
@@ -44,9 +47,7 @@ function remove(group: LinkGroupRow, productId: number, code: string): void {
         </p>
         <div v-else class="space-y-2 rounded-md bg-slate-50 p-3">
             <div class="flex flex-wrap gap-2">
-                <select v-model="typeId" :class="inputClass" class="max-w-56">
-                    <option v-for="type in linkTypes" :key="type.id" :value="type.id">{{ type.label }}{{ type.is_active ? '' : ' (đang tắt)' }}</option>
-                </select>
+                <div class="w-56"><Select v-model="typeId" :options="typeOptions" aria-label="Loại liên kết" /></div>
                 <input v-model="codes" :class="inputClass" class="min-w-48 flex-1" placeholder="Mã sản phẩm, cách nhau bằng dấu phẩy" @keydown.enter.prevent="add" />
                 <button type="button" :class="secondaryButton" :disabled="!typeId || !codes.trim()" @click="add">Liên kết</button>
             </div>

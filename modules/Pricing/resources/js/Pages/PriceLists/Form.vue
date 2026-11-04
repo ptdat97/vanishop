@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { codeOptions, labelOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: { price_list_type: Record<string, string>; price_list_status: Record<string, string> };
     priceList: null | {
         id: number;
         code: string;
@@ -22,7 +27,6 @@ const props = defineProps<{
     customerGroups: Array<{ id: number; code: string; name: string }>;
 }>();
 
-const typeLabels: Record<string, string> = { base: 'Giá niêm yết (base)', sale: 'Khuyến mãi (sale)', member: 'Thành viên (member)' };
 const form = useForm({
     code: props.priceList?.code ?? '',
     name: props.priceList?.name ?? '',
@@ -43,8 +47,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.priceList && confirm('Xoá bảng giá và toàn bộ giá trong bảng?')) {
+async function destroy(): Promise<void> {
+    if (props.priceList && (await confirmAction({ title: 'Xoá bảng giá?', message: 'Toàn bộ giá trong bảng cũng bị xoá.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.priceList.id}`);
     }
 }
@@ -62,26 +66,18 @@ function destroy(): void {
         <FormField label="Tên" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
         <FormField label="Mã" hint="Chữ thường, số, _ -. Ví dụ: base, sale-1111" :error="form.errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
         <FormField label="Loại" :error="form.errors.type">
-            <select v-model="form.type" :class="inputClass">
-                <option v-for="type in types" :key="type" :value="type">{{ typeLabels[type] ?? type }}</option>
-            </select>
+            <Select v-model="form.type" :options="codeOptions(types, labels.price_list_type)" />
         </FormField>
         <FormField label="Nhóm khách" :hint="form.type === 'member' ? 'Bắt buộc với bảng giá thành viên.' : 'Để trống = áp cho mọi khách.'" :error="form.errors.customer_group_id">
-            <select v-model="form.customer_group_id" :class="inputClass">
-                <option :value="null">— Mọi khách —</option>
-                <option v-for="group in customerGroups" :key="group.id" :value="group.id">{{ group.name }}</option>
-            </select>
+            <Select v-model="form.customer_group_id" :options="recordOptions(customerGroups, (group) => group.name)" empty-label="— Mọi khách —" :empty-value="null" />
         </FormField>
         <FormField label="Priority" hint="Cao hơn thắng. Gợi ý: base = 0, sale = 10." :error="form.errors.priority">
             <input v-model.number="form.priority" :class="inputClass" type="number" />
         </FormField>
-        <FormField label="Hiệu lực từ" :error="form.errors.starts_at"><input v-model="form.starts_at" :class="inputClass" type="datetime-local" /></FormField>
-        <FormField label="Hiệu lực đến" :error="form.errors.ends_at"><input v-model="form.ends_at" :class="inputClass" type="datetime-local" /></FormField>
+        <FormField label="Hiệu lực từ" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
+        <FormField label="Hiệu lực đến" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
         <FormField label="Trạng thái" :error="form.errors.status">
-            <select v-model="form.status" :class="inputClass">
-                <option value="active">Đang dùng</option>
-                <option value="inactive">Tắt</option>
-            </select>
+            <Select v-model="form.status" :options="labelOptions(labels.price_list_status)" />
         </FormField>
         <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>

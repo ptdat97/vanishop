@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import type { InventoryLabels } from '../../labels';
 
 type Line = {
     id: number;
@@ -19,6 +22,7 @@ type Line = {
 
 const props = defineProps<{
     backUrl: string;
+    labels: InventoryLabels;
     run: {
         id: number;
         source: string;
@@ -33,19 +37,15 @@ const props = defineProps<{
     lines: Line[];
 }>();
 
-const classificationLabels: Record<string, string> = {
-    external_mismatch: 'Nguồn ngoài ≠ VaniShop',
-    reserved_mismatch: 'Hàng giữ ≠ reserved',
-    reserved_off_ledger: 'reserved lệch sổ biến động',
-    on_hand_off_ledger: 'Tồn lệch sổ biến động',
-    negative_on_hand: 'Tồn âm',
-};
-
-const resolutionLabels: Record<string, string> = {
-    repaired: 'Đã sửa reserved',
-    applied: 'Đã áp số nguồn',
-    rejected: 'Bị từ chối — xem ghi chú',
-};
+const columns = [
+    { key: 'location', label: 'Kho', class: 'font-mono text-xs' },
+    { key: 'sku', label: 'SKU', class: 'font-mono text-xs' },
+    { key: 'classification', label: 'Loại chênh lệch' },
+    { key: 'expected', label: 'Đúng ra', align: 'right' as const },
+    { key: 'actual', label: 'Hiện tại', align: 'right' as const },
+    { key: 'difference', label: 'Chênh', align: 'right' as const, class: 'font-medium' },
+    { key: 'resolution', label: 'Trạng thái' },
+];
 
 const title = computed(() => `Đối soát #${props.run.id} — ${props.run.source_label}`);
 </script>
@@ -65,37 +65,13 @@ const title = computed(() => `Đối soát #${props.run.id} — ${props.run.sour
         <div><dt class="text-slate-500">Đã xử lý / còn mở</dt><dd class="mt-1">{{ run.repaired }} / {{ run.open }}</dd></div>
     </dl>
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Kho</th>
-                <th class="px-4 py-2">SKU</th>
-                <th class="px-4 py-2">Loại chênh lệch</th>
-                <th class="px-4 py-2 text-right">Đúng ra</th>
-                <th class="px-4 py-2 text-right">Hiện tại</th>
-                <th class="px-4 py-2 text-right">Chênh</th>
-                <th class="px-4 py-2">Trạng thái</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="line in lines" :key="line.id" class="border-t border-slate-100 align-top">
-                <td class="px-4 py-2 font-mono text-xs">{{ line.location }}</td>
-                <td class="px-4 py-2 font-mono text-xs">{{ line.sku }}</td>
-                <td class="px-4 py-2">{{ classificationLabels[line.classification] ?? line.classification }}</td>
-                <td class="px-4 py-2 text-right">{{ line.expected }}</td>
-                <td class="px-4 py-2 text-right">{{ line.actual }}</td>
-                <td class="px-4 py-2 text-right font-medium">{{ line.difference > 0 ? `+${line.difference}` : line.difference }}</td>
-                <td class="px-4 py-2">
-                    <span v-if="line.resolution" class="rounded bg-green-50 px-2 py-0.5 text-xs text-green-700">
-                        {{ resolutionLabels[line.resolution] ?? line.resolution }}
-                    </span>
-                    <span v-else class="rounded bg-red-50 px-2 py-0.5 text-xs text-red-700">Còn mở</span>
-                    <div v-if="line.note" class="mt-1 max-w-md text-xs text-slate-500">{{ line.note }}</div>
-                </td>
-            </tr>
-            <tr v-if="!lines.length">
-                <td colspan="7" class="px-4 py-6 text-center text-slate-500">Phiên này không có chênh lệch nào.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="lines" :row-class="() => 'align-top'" empty-text="Phiên này không có chênh lệch nào.">
+        <template #cell-classification="{ row }">{{ labels.discrepancy[row.classification] ?? row.classification }}</template>
+        <template #cell-difference="{ row }">{{ row.difference > 0 ? `+${row.difference}` : row.difference }}</template>
+        <template #cell-resolution="{ row }">
+            <StatusBadge v-if="row.resolution" :label="labels.resolution[row.resolution] ?? row.resolution" :tone="row.resolution === 'rejected' ? 'warning' : 'success'" />
+            <StatusBadge v-else label="Còn mở" tone="danger" />
+            <div v-if="row.note" class="mt-1 max-w-md text-xs text-slate-500">{{ row.note }}</div>
+        </template>
+    </DataTable>
 </template>

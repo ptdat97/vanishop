@@ -46,7 +46,7 @@ final class OrderController
             'filters' => ['status' => $filters['status'] ?? '', 'payment_status' => $filters['payment_status'] ?? '', 'q' => $filters['q'] ?? ''],
             'statuses' => array_column(OrderStatus::cases(), 'value'),
             'paymentStatuses' => PaymentStatus::VALUES,
-            'labels' => self::labels(),
+            'labels' => __('ordering::labels'),
             'orders' => collect($page->items())->map(fn (Order $order): array => [
                 'id' => $order->id,
                 'number' => $order->number,
@@ -78,7 +78,7 @@ final class OrderController
         return Inertia::render('Ordering::Orders/Show', [
             'baseUrl' => route('admin.orders.orders.index'),
             'order' => (array) $detail,
-            'labels' => self::labels(),
+            'labels' => __('ordering::labels'),
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
@@ -149,19 +149,5 @@ final class OrderController
         $commands->addNote($order->id, $data['note']);
 
         return back()->with('success', __('ordering::messages.note_added'));
-    }
-
-    /**
-     * Nhãn trạng thái/sự kiện theo ngôn ngữ Admin (StatusBadge); giá trị chưa có nhãn hiển thị mã gốc.
-     *
-     * @return array{order_status: array<string, string>, payment_status: array<string, string>, event_type: array<string, string>}
-     */
-    private static function labels(): array
-    {
-        return [
-            'order_status' => (array) __('ordering::messages.order_statuses'),
-            'payment_status' => (array) __('ordering::messages.payment_statuses'),
-            'event_type' => (array) __('ordering::messages.event_types'),
-        ];
     }
 }

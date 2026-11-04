@@ -24,6 +24,7 @@ final class LocationController
         Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);
 
         return Inertia::render('Inventory::Locations/Index', [
+            'labels' => __('inventory::labels'),
             'baseUrl' => route('admin.inventory.locations.index'),
             'locations' => Location::query()->orderByDesc('priority')->orderBy('code')->get()->map(fn (Location $location): array => [
                 'id' => $location->id,
@@ -69,6 +70,7 @@ final class LocationController
     private function form(?Location $location): Response
     {
         return Inertia::render('Inventory::Locations/Form', [
+            'labels' => __('inventory::labels'),
             'baseUrl' => route('admin.inventory.locations.index'),
             'location' => $location === null ? null : [
                 ...$location->only(['id', 'code', 'name', 'address', 'province_code', 'ships_online_orders', 'allows_pickup', 'accepts_returns', 'stock_authority', 'priority', 'status', 'lock_version']),

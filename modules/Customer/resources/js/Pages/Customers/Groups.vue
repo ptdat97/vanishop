@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import { confirmAction } from '@admin/confirm';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -18,6 +20,12 @@ const props = defineProps<{ baseUrl: string; customersUrl: string; groups: Group
 const editingId = ref<number | null>(null);
 const empty = () => ({ code: '', name: '', description: '' as string | null, position: 0 });
 const form = useForm(empty());
+const columns = [
+    { key: 'name', label: 'Tên' },
+    { key: 'code', label: 'Mã', class: 'font-mono text-xs' },
+    { key: 'customers_count', label: 'Khách' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function edit(group: GroupRow): void {
@@ -42,8 +50,8 @@ function submit(): void {
     }
 }
 
-function destroy(group: GroupRow): void {
-    if (confirm(`Xoá nhóm ${group.name}?`)) {
+async function destroy(group: GroupRow): Promise<void> {
+    if ((await confirmAction({ title: `Xoá nhóm ${group.name}?`, confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${group.id}`, { preserveScroll: true });
     }
 }
@@ -56,37 +64,23 @@ function destroy(group: GroupRow): void {
     </PageHeader>
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <table class="w-full rounded-lg border border-slate-200 bg-white text-sm lg:col-span-2">
-            <thead class="bg-slate-50 text-left text-slate-500">
-                <tr>
-                    <th class="px-4 py-2">Tên</th>
-                    <th class="px-4 py-2">Mã</th>
-                    <th class="px-4 py-2">Khách</th>
-                    <th />
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="group in groups" :key="group.id" class="border-t border-slate-100">
-                    <td class="px-4 py-2">
-                        <div class="font-medium">{{ group.name }}</div>
-                        <div v-if="group.description" class="text-xs text-slate-500">{{ group.description }}</div>
-                    </td>
-                    <td class="px-4 py-2 font-mono text-xs">{{ group.code }}</td>
-                    <td class="px-4 py-2">
-                        <Link :href="`${customersUrl}?group=${group.id}`" class="text-indigo-600 hover:underline">{{ group.customers_count }}</Link>
-                    </td>
-                    <td class="px-4 py-2 text-right">
-                        <template v-if="canManage">
-                            <button type="button" class="text-indigo-600 hover:underline" @click="edit(group)">Sửa</button>
-                            <button v-if="group.customers_count === 0" type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(group)">Xoá</button>
-                        </template>
-                    </td>
-                </tr>
-                <tr v-if="!groups.length">
-                    <td colspan="4" class="px-4 py-6 text-center text-slate-500">Chưa có nhóm khách.</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="lg:col-span-2">
+            <DataTable :columns="columns" :rows="groups" :row-label="(group) => group.name" empty-text="Chưa có nhóm khách.">
+                <template #cell-name="{ row }">
+                    <div class="font-medium">{{ row.name }}</div>
+                    <div v-if="row.description" class="text-xs text-slate-500">{{ row.description }}</div>
+                </template>
+                <template #cell-customers_count="{ row }">
+                    <Link :href="`${customersUrl}?group=${row.id}`" class="text-indigo-600 hover:underline">{{ row.customers_count }}</Link>
+                </template>
+                <template #cell-actions="{ row }">
+                    <template v-if="canManage">
+                        <button type="button" class="text-indigo-600 hover:underline" @click="edit(row)">Sửa</button>
+                        <button v-if="row.customers_count === 0" type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(row)">Xoá</button>
+                    </template>
+                </template>
+            </DataTable>
+        </div>
 
         <form v-if="canManage" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
             <h2 class="text-sm font-medium">{{ editingId ? 'Sửa nhóm' : 'Thêm nhóm' }}</h2>

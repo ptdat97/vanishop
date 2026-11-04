@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { codeOptions, labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import type { InventoryLabels } from '../../labels';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: InventoryLabels;
     location: null | {
         id: number;
         code: string;
@@ -24,7 +28,6 @@ const props = defineProps<{
     types: string[];
 }>();
 
-const typeLabels: Record<string, string> = { warehouse: 'Kho', store: 'Cửa hàng', virtual: 'Ảo (dropship, kho đối tác)' };
 const form = useForm({
     code: props.location?.code ?? '',
     name: props.location?.name ?? '',
@@ -59,9 +62,7 @@ function submit(): void {
         <FormField label="Tên" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
         <FormField label="Mã" hint="Chữ hoa, số, -. Ví dụ: WH-HCM, ST-Q1" :error="form.errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
         <FormField label="Loại" :error="form.errors.type">
-            <select v-model="form.type" :class="inputClass">
-                <option v-for="type in types" :key="type" :value="type">{{ typeLabels[type] ?? type }}</option>
-            </select>
+            <Select v-model="form.type" :options="codeOptions(types, labels.location_type)" />
         </FormField>
         <FormField label="Địa chỉ" :error="form.errors.address"><input v-model="form.address" :class="inputClass" /></FormField>
         <FormField label="Mã tỉnh/thành" :error="form.errors.province_code"><input v-model="form.province_code" :class="inputClass" /></FormField>
@@ -79,10 +80,7 @@ function submit(): void {
             </div>
         </FormField>
         <FormField label="Trạng thái" :error="form.errors.status">
-            <select v-model="form.status" :class="inputClass">
-                <option value="active">Đang dùng</option>
-                <option value="inactive">Tắt</option>
-            </select>
+            <Select v-model="form.status" :options="labelOptions(labels.location_status)" />
         </FormField>
         <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>

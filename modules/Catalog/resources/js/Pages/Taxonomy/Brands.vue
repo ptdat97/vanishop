@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection } from '@admin/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { NavItem } from '../../types';
+import type { CatalogLabels, NavItem } from '../../types';
 
 interface BrandRow {
     id: number;
@@ -21,9 +26,17 @@ interface BrandRow {
 }
 
 // extensionSections: phần form của plugin — khoá `new` cho form thêm, id thương hiệu cho form sửa.
-const props = defineProps<{ nav: NavItem[]; brands: BrandRow[]; canManage: boolean; extensionSections: Record<string, ExtensionSection[]> }>();
+const props = defineProps<{ nav: NavItem[]; labels: CatalogLabels; brands: BrandRow[]; canManage: boolean; extensionSections: Record<string, ExtensionSection[]> }>();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'brands')?.url ?? '');
 const editingId = ref<number | null>(null);
+const columns = [
+    { key: 'name', label: 'Tên', class: 'font-medium' },
+    { key: 'code', label: 'Mã', class: 'font-mono text-xs' },
+    { key: 'slug', label: 'Slug', class: 'font-mono text-xs' },
+    { key: 'styles_count', label: 'Sản phẩm' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 
 const sectionsFor = (id: number | null): ExtensionSection[] => props.extensionSections[id === null ? 'new' : String(id)] ?? [];
 const sections = computed(() => sectionsFor(editingId.value));
@@ -53,8 +66,8 @@ function submit(): void {
     }
 }
 
-function destroy(brand: BrandRow): void {
-    if (confirm(`Xoá thương hiệu ${brand.name}?`)) {
+async function destroy(brand: BrandRow): Promise<void> {
+    if ((await confirmAction({ title: `Xoá thương hiệu ${brand.name}?`, confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${brand.id}`, { preserveScroll: true });
     }
 }
@@ -66,36 +79,17 @@ function destroy(brand: BrandRow): void {
     <PageHeader title="Thương hiệu" subtitle="Thương hiệu là thuộc tính của sản phẩm: trang thương hiệu, bộ lọc, khuyến mãi và báo cáo theo brand." />
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <table class="w-full rounded-lg border border-slate-200 bg-white text-sm lg:col-span-2">
-            <thead class="bg-slate-50 text-left text-slate-500">
-                <tr>
-                    <th class="px-4 py-2">Tên</th>
-                    <th class="px-4 py-2">Mã</th>
-                    <th class="px-4 py-2">Slug</th>
-                    <th class="px-4 py-2">Sản phẩm</th>
-                    <th class="px-4 py-2">Trạng thái</th>
-                    <th />
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="brand in brands" :key="brand.id" class="border-t border-slate-100">
-                    <td class="px-4 py-2 font-medium">{{ brand.name }}</td>
-                    <td class="px-4 py-2 font-mono text-xs">{{ brand.code }}</td>
-                    <td class="px-4 py-2 font-mono text-xs">{{ brand.slug }}</td>
-                    <td class="px-4 py-2">{{ brand.styles_count }}</td>
-                    <td class="px-4 py-2">{{ brand.status === 'active' ? 'Đang hiện' : 'Ẩn' }}</td>
-                    <td class="px-4 py-2 text-right">
-                        <template v-if="canManage">
-                            <button type="button" class="text-indigo-600 hover:underline" @click="edit(brand)">Sửa</button>
-                            <button v-if="brand.styles_count === 0" type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(brand)">Xoá</button>
-                        </template>
-                    </td>
-                </tr>
-                <tr v-if="!brands.length">
-                    <td colspan="6" class="px-4 py-6 text-center text-slate-500">Chưa có thương hiệu nào.</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="lg:col-span-2">
+            <DataTable :columns="columns" :rows="brands" :row-label="(brand) => brand.name" empty-text="Chưa có thương hiệu nào.">
+                <template #cell-status="{ row }"><StatusBadge :label="labels.visibility[row.status] ?? row.status" :tone="row.status === 'active' ? 'success' : 'neutral'" /></template>
+                <template #cell-actions="{ row }">
+                    <template v-if="canManage">
+                        <button type="button" class="text-indigo-600 hover:underline" @click="edit(row)">Sửa</button>
+                        <button v-if="row.styles_count === 0" type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(row)">Xoá</button>
+                    </template>
+                </template>
+            </DataTable>
+        </div>
 
         <form v-if="canManage" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
             <h2 class="text-sm font-medium">{{ editingId ? 'Sửa thương hiệu' : 'Thêm thương hiệu' }}</h2>
@@ -104,11 +98,8 @@ function destroy(brand: BrandRow): void {
             <FormField label="Mã" hint="Chữ in hoa, ví dụ LM" :error="errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
             <FormField label="Slug" hint="Dùng cho URL /thuong-hieu/{slug}" :error="errors.slug"><input v-model="form.slug" :class="inputClass" /></FormField>
             <FormField label="Mô tả" :error="errors.description"><textarea v-model="form.description" rows="3" :class="inputClass" /></FormField>
-            <FormField label="Trạng thái" :error="errors.status">
-                <select v-model="form.status" :class="inputClass">
-                    <option value="active">Đang hiện</option>
-                    <option value="hidden">Ẩn (ẩn trang brand, sản phẩm vẫn bán)</option>
-                </select>
+            <FormField label="Trạng thái" hint="Ẩn: ẩn trang thương hiệu, sản phẩm vẫn bán." :error="errors.status">
+                <Select v-model="form.status" :options="labelOptions(labels.visibility) as Array<{ value: 'active' | 'hidden'; label: string }>" />
             </FormField>
             <FormField label="Thứ tự" :error="errors.position"><input v-model.number="form.position" :class="inputClass" type="number" min="0" /></FormField>
             <ExtensionFormSections v-model="form.extensions" :sections="sections" :errors="errors" />

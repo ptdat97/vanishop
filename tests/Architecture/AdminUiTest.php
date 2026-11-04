@@ -1,8 +1,10 @@
 <?php
 
 /*
-| ADR-039: Admin dùng Reka UI qua bộ component `@admin/Components`. Trang của module/plugin chỉ dùng bộ component đó
-| (đổi thư viện bên dưới không làm vỡ trang plugin), và không ghi cứng ngôn ngữ/ký hiệu tiền (dùng MoneyText/useMoney).
+| ADR-039: Admin dùng Reka UI qua bộ component `@admin/Components`. Trang và component của module/plugin chỉ dùng bộ
+| component đó (đổi thư viện bên dưới không làm vỡ trang plugin), không dùng hộp thoại của trình duyệt, không ghi cứng
+| ngôn ngữ/ký hiệu tiền (MoneyText, useMoney, useDateTime) và — với module Core — không ghi cứng nhãn trạng thái
+| (server dịch qua `<module>::labels`).
 */
 
 /**
@@ -23,6 +25,28 @@ function adminUiFiles(): array
     return $files;
 }
 
+/**
+ * File (ngoài bộ component dùng chung) có dòng khớp mẫu.
+ *
+ * @return list<string>
+ */
+function adminUiOffenders(string $pattern, bool $coreOnly = false): array
+{
+    $offenders = [];
+    foreach (adminUiFiles() as $file) {
+        if (str_starts_with($file, 'resources/js/admin/') || ($coreOnly && ! str_starts_with($file, 'modules/'))) {
+            continue;
+        }
+        foreach (file(base_path($file)) ?: [] as $number => $line) {
+            if (preg_match($pattern, $line) === 1) {
+                $offenders[] = "{$file}:".($number + 1);
+            }
+        }
+    }
+
+    return $offenders;
+}
+
 it('chỉ bộ component @admin/Components được import reka-ui', function () {
     $offenders = array_values(array_filter(
         adminUiFiles(),
@@ -32,27 +56,19 @@ it('chỉ bộ component @admin/Components được import reka-ui', function ()
     expect($offenders)->toBe([]);
 });
 
-it('giao diện Admin không ghi cứng ngôn ngữ hay ký hiệu tiền tệ (chỉ còn các trang chưa chuyển)', function () {
-    // Trang chưa chuyển sang MoneyText/useMoney — chuyển xong trang nào thì xoá khỏi danh sách.
-    $pending = [
-        'modules/Customer/resources/js/Pages/Customers/Show.vue',
-        'modules/Extension/resources/js/Pages/Plugins/Show.vue',
-        'modules/Fulfillment/resources/js/Pages/Shipments/Index.vue',
-        'modules/Identity/resources/js/Pages/Staff/Index.vue',
-        'modules/Payment/resources/js/Pages/Payments/Index.vue',
-        'modules/Pricing/resources/js/Pages/PriceLists/Prices.vue',
-        'modules/Promotion/resources/js/Pages/Campaigns/Form.vue',
-        'modules/Promotion/resources/js/Pages/Promotions/Form.vue',
-        'modules/Promotion/resources/js/Pages/Promotions/Index.vue',
-        'modules/Returns/resources/js/Pages/Returns/Create.vue',
-        'modules/Returns/resources/js/Pages/Returns/Index.vue',
-        'modules/Returns/resources/js/Pages/Returns/Show.vue',
-        'resources/js/admin/Components/Insights/types.ts',
-    ];
-
+it('giao diện Admin không ghi cứng ngôn ngữ hay ký hiệu tiền tệ', function () {
     $offenders = array_values(array_filter(adminUiFiles(), fn (string $file): bool => preg_match('/vi-VN|₫/u', (string) file_get_contents(base_path($file))) === 1));
-    sort($offenders);
 
-    expect(array_values(array_diff($offenders, $pending)))->toBe([], 'File mới ghi cứng vi-VN/₫: dùng MoneyText hoặc useMoney()')
-        ->and(array_values(array_diff($pending, $offenders)))->toBe([], 'File đã chuyển xong: xoá khỏi danh sách $pending');
+    expect($offenders)->toBe([])
+        ->and(adminUiOffenders('/\bIntl\.|\.toLocale(String|DateString|TimeString)\(/'))->toBe([], 'Định dạng tiền/ngày: MoneyText, useMoney() hoặc useDateTime()');
+});
+
+it('trang module/plugin dùng component chung thay cho phần tử thô và hộp thoại của trình duyệt', function () {
+    expect(adminUiOffenders('/<(select|table)[\s>]/'))->toBe([], 'Dùng Select/MultiSelect/Combobox/DataTable')
+        ->and(adminUiOffenders('/type="(date|datetime-local)"/'))->toBe([], 'Dùng DateInput')
+        ->and(adminUiOffenders('/(?<![\w.`])(window\.)?(confirm|prompt|alert)\(/'))->toBe([], 'Dùng confirmAction() hoặc promptFields()');
+});
+
+it('module Core không ghi cứng bảng nhãn trạng thái (server dịch qua <module>::labels)', function () {
+    expect(adminUiOffenders('/(Labels|labels)\s*(:[^=]*)?=\s*\{/', coreOnly: true))->toBe([]);
 });

@@ -31,6 +31,7 @@ final class PluginController
 
         return Inertia::render('Extension::Plugins/Index', [
             'baseUrl' => route('admin.plugins.index'),
+            'labels' => __('extension::labels'),
             'plugins' => $overview->rows(app()->getLocale()),
             'kinds' => PluginManifest::KINDS,
             'invalid' => array_values($manifests->invalid()),
@@ -45,6 +46,7 @@ final class PluginController
 
         return Inertia::render('Extension::Plugins/Show', [
             'baseUrl' => route('admin.plugins.index'),
+            'labels' => __('extension::labels'),
             'plugin' => $detail,
             'canManage' => Gate::allows('extension.plugins.manage'),
             'canConfigure' => Gate::allows('settings.manage', [ScopeRef::owner()]),

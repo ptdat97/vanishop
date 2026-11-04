@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { codeOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, router, useForm } from '@inertiajs/vue3';
@@ -20,6 +24,12 @@ interface ColorRow {
 const props = defineProps<{ nav: NavItem[]; colors: ColorRow[]; families: string[]; canManage: boolean }>();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'colors')?.url ?? '');
 const editingId = ref<number | null>(null);
+const columns = [
+    { key: 'name', label: 'Màu' },
+    { key: 'code', label: 'Mã', class: 'font-mono text-xs' },
+    { key: 'color_family', label: 'Nhóm' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 
 const { locales, defaultLocale } = useStoreLocales();
 const form = useForm({ code: '', color_family: 'white', hex: '' as string | null, position: 0, translations: translationsFor(locales, { name: '' }) });
@@ -53,8 +63,8 @@ function submit(): void {
     }
 }
 
-function destroy(color: ColorRow): void {
-    if (confirm(`Xoá màu ${color.code}?`)) {
+async function destroy(color: ColorRow): Promise<void> {
+    if ((await confirmAction({ title: `Xoá màu ${color.code}?`, confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${color.id}`, { preserveScroll: true });
     }
 }
@@ -66,35 +76,22 @@ function destroy(color: ColorRow): void {
     <PageHeader title="Màu" subtitle="Nhóm màu dùng cho bộ lọc trên storefront." />
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <table class="w-full rounded-lg border border-slate-200 bg-white text-sm lg:col-span-2">
-            <thead class="bg-slate-50 text-left text-slate-500">
-                <tr>
-                    <th class="px-4 py-2">Màu</th>
-                    <th class="px-4 py-2">Mã</th>
-                    <th class="px-4 py-2">Nhóm</th>
-                    <th />
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="color in colors" :key="color.id" class="border-t border-slate-100">
-                    <td class="flex items-center gap-2 px-4 py-2">
-                        <span class="inline-block h-4 w-4 rounded-full border border-slate-300" :style="{ background: color.hex ?? 'transparent' }" />
-                        {{ color.translations[defaultLocale]?.name }}
-                    </td>
-                    <td class="px-4 py-2 font-mono text-xs">{{ color.code }}</td>
-                    <td class="px-4 py-2">{{ color.color_family }}</td>
-                    <td class="px-4 py-2 text-right">
-                        <template v-if="canManage">
-                            <button type="button" class="text-indigo-600 hover:underline" @click="edit(color)">Sửa</button>
-                            <button type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(color)">Xoá</button>
-                        </template>
-                    </td>
-                </tr>
-                <tr v-if="!colors.length">
-                    <td colspan="4" class="px-4 py-6 text-center text-slate-500">Chưa có màu nào.</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="lg:col-span-2">
+            <DataTable :columns="columns" :rows="colors" :row-label="(color) => color.code" empty-text="Chưa có màu nào.">
+                <template #cell-name="{ row }">
+                    <span class="flex items-center gap-2">
+                        <span class="inline-block h-4 w-4 rounded-full border border-slate-300" :style="{ background: row.hex ?? 'transparent' }" />
+                        {{ row.translations[defaultLocale]?.name }}
+                    </span>
+                </template>
+                <template #cell-actions="{ row }">
+                    <template v-if="canManage">
+                        <button type="button" class="text-indigo-600 hover:underline" @click="edit(row)">Sửa</button>
+                        <button type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(row)">Xoá</button>
+                    </template>
+                </template>
+            </DataTable>
+        </div>
 
         <form v-if="canManage" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
             <h2 class="text-sm font-medium">{{ editingId ? 'Sửa màu' : 'Thêm màu' }}</h2>
@@ -103,9 +100,7 @@ function destroy(color: ColorRow): void {
             </FormField>
             <FormField label="Mã" hint="Chữ in hoa, ví dụ IVR" :error="errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
             <FormField label="Nhóm màu" :error="errors.color_family">
-                <select v-model="form.color_family" :class="inputClass">
-                    <option v-for="family in families" :key="family" :value="family">{{ family }}</option>
-                </select>
+                <Select v-model="form.color_family" :options="codeOptions(families)" />
             </FormField>
             <FormField label="Mã hex" hint="#FFFFF0" :error="errors.hex"><input v-model="form.hex" :class="inputClass" /></FormField>
             <FormField label="Thứ tự" :error="errors.position"><input v-model.number="form.position" :class="inputClass" type="number" min="0" /></FormField>

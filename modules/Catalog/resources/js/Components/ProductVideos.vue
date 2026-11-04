@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
 import { inputClass, secondaryButton } from '@admin/styles';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -37,8 +39,8 @@ function move(index: number, direction: -1 | 1): void {
     router.put(`${props.productUrl}/videos/order`, { order }, { preserveScroll: true });
 }
 
-function remove(video: VideoRow): void {
-    if (confirm('Gỡ video này khỏi sản phẩm?')) {
+async function remove(video: VideoRow): Promise<void> {
+    if ((await confirmAction({ title: 'Gỡ video này khỏi sản phẩm?', confirmLabel: 'Gỡ', tone: 'danger' })) !== false) {
         router.delete(`${props.productUrl}/videos/${video.id}`, { preserveScroll: true });
     }
 }
@@ -51,9 +53,9 @@ function remove(video: VideoRow): void {
         <p v-if="!drivers.length" class="text-sm text-slate-500">Chưa bật nền tảng video nào. Bật plugin (vd. "Video YouTube") trong Admin → Plugin.</p>
         <div v-else class="space-y-2 rounded-md bg-slate-50 p-3">
             <div class="flex flex-wrap gap-2">
-                <select v-if="drivers.length > 1" v-model="driver" :class="inputClass" class="max-w-40">
-                    <option v-for="item in drivers" :key="item.code" :value="item.code">{{ item.label }}</option>
-                </select>
+                <div v-if="drivers.length > 1" class="w-40">
+                    <Select v-model="driver" :options="drivers.map((item) => ({ value: item.code, label: item.label }))" aria-label="Nền tảng video" />
+                </div>
                 <input v-model="url" :class="inputClass" class="min-w-48 flex-1" :placeholder="hint" @keydown.enter.prevent="add" />
                 <input v-model="title" :class="inputClass" class="max-w-56" placeholder="Tiêu đề (không bắt buộc)" />
                 <button type="button" :class="secondaryButton" :disabled="!url.trim()" @click="add">Thêm video</button>

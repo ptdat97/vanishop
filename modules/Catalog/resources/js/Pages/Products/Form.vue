@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
+import MultiSelect from '@admin/Components/MultiSelect.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { codeOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
@@ -12,7 +17,7 @@ import CatalogTabs from '../../Components/CatalogTabs.vue';
 import ProductLinks from '../../Components/ProductLinks.vue';
 import ProductVideos from '../../Components/ProductVideos.vue';
 import VariantMatrix from '../../Components/VariantMatrix.vue';
-import type { LinkGroupRow, NavItem, Translations, VideoRow } from '../../types';
+import type { CatalogLabels, LinkGroupRow, NavItem, Translations, VideoRow } from '../../types';
 
 type Fields = 'name' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
 type AttributeValue = number | number[] | string | boolean | null;
@@ -27,6 +32,7 @@ interface ColorEntry {
 
 const props = defineProps<{
     nav: NavItem[];
+    labels: CatalogLabels;
     product: null | {
         id: number;
         style_code: string;
@@ -61,7 +67,12 @@ const productUrl = computed(() => (props.product ? `${baseUrl.value}/${props.pro
 const linkTypesUrl = computed(() => props.nav.find((item) => item.key === 'link-types')?.url ?? '');
 const { locales, defaultLocale } = useStoreLocales();
 const locale = ref(defaultLocale);
-const statusLabels: Record<string, string> = { draft: 'Nháp', active: 'Đang bán', archived: 'Lưu trữ' };
+const categoryOptions = computed(() => recordOptions(props.categories));
+const primaryCategoryOptions = computed(() => recordOptions(props.categories.filter((category) => form.category_ids.includes(category.id))));
+const booleanOptions = [
+    { value: true, label: 'Có' },
+    { value: false, label: 'Không' },
+];
 
 const emptyTranslation = { name: '', description: '', care_instructions: '', meta_title: '', meta_description: '' };
 const initialAttributes: Record<number, AttributeValue> = {};
@@ -93,8 +104,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.product && confirm('Xoá sản phẩm nháp này?')) {
+async function destroy(): Promise<void> {
+    if (props.product && (await confirmAction({ title: 'Xoá sản phẩm nháp này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(productUrl.value);
     }
 }
@@ -106,8 +117,8 @@ function addColor(): void {
     }
 }
 
-function removeColor(color: ColorEntry): void {
-    if (confirm(`Gỡ màu ${color.code} và toàn bộ ảnh của màu này?`)) {
+async function removeColor(color: ColorEntry): Promise<void> {
+    if ((await confirmAction({ title: `Gỡ màu ${color.code}?`, message: 'Toàn bộ ảnh của màu này cũng bị gỡ.', confirmLabel: 'Gỡ màu', tone: 'danger' })) !== false) {
         router.delete(`${productUrl.value}/colors/${color.id}`, { preserveScroll: true });
     }
 }
@@ -179,18 +190,19 @@ function removeImage(color: ColorEntry, imageId: number): void {
             <div v-if="attributeDefinitions.length" class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
                 <h2 class="text-sm font-medium sm:col-span-2">Thuộc tính</h2>
                 <FormField v-for="definition in attributeDefinitions" :key="definition.id" :label="`${definition.name}${definition.kind === 'internal' ? ' (nội bộ)' : ''}`" :error="errors[`attributes.${definition.id}`]">
-                    <select v-if="definition.input_type === 'select'" v-model="form.attributes[definition.id]" :class="inputClass">
-                        <option :value="null">—</option>
-                        <option v-for="value in definition.values" :key="value.id" :value="value.id">{{ value.label }}</option>
-                    </select>
-                    <select v-else-if="definition.input_type === 'multiselect'" v-model="form.attributes[definition.id]" :class="inputClass" multiple size="4">
-                        <option v-for="value in definition.values" :key="value.id" :value="value.id">{{ value.label }}</option>
-                    </select>
-                    <select v-else-if="definition.input_type === 'boolean'" v-model="form.attributes[definition.id]" :class="inputClass">
-                        <option :value="null">—</option>
-                        <option :value="true">Có</option>
-                        <option :value="false">Không</option>
-                    </select>
+                    <Select
+                        v-if="definition.input_type === 'select'"
+                        v-model="form.attributes[definition.id] as number | null"
+                        :options="recordOptions(definition.values, (value) => value.label ?? String(value.id))"
+                        empty-label="—"
+                        :empty-value="null"
+                    />
+                    <MultiSelect
+                        v-else-if="definition.input_type === 'multiselect'"
+                        v-model="form.attributes[definition.id] as number[]"
+                        :options="recordOptions(definition.values, (value) => value.label ?? String(value.id))"
+                    />
+                    <Select v-else-if="definition.input_type === 'boolean'" v-model="form.attributes[definition.id] as boolean | null" :options="booleanOptions" empty-label="—" :empty-value="null" />
                     <input v-else v-model="form.attributes[definition.id]" :class="inputClass" />
                 </FormField>
             </div>
@@ -199,10 +211,7 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 <div class="flex flex-wrap items-end justify-between gap-2">
                     <h2 class="text-sm font-medium">Màu và ảnh</h2>
                     <div class="flex gap-2">
-                        <select v-model="newColorId" :class="inputClass" class="max-w-56">
-                            <option :value="null">Chọn màu…</option>
-                            <option v-for="color in availableColors" :key="color.id" :value="color.id">{{ color.label }}</option>
-                        </select>
+                        <div class="w-56"><Select v-model="newColorId" :options="recordOptions(availableColors)" placeholder="Chọn màu…" aria-label="Màu cần thêm" /></div>
                         <button type="button" :class="secondaryButton" :disabled="!newColorId" @click="addColor">Thêm màu</button>
                     </div>
                 </div>
@@ -237,7 +246,7 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 <p v-if="!product.colors.length" class="text-sm text-slate-500">Chưa có màu. Thêm màu rồi tải ảnh cho từng màu (khuyến nghị tỉ lệ 4:5).</p>
             </div>
             <MediaPicker :open="pickingFor !== null" :title="`Ảnh cho màu ${pickingFor?.name ?? pickingFor?.code ?? ''}`" @update:open="(value) => !value && (pickingFor = null)" @select="attachFromLibrary" />
-            <VariantMatrix v-if="product" :product-url="productUrl" :variants="product.variants" :sizes="availableSizes" />
+            <VariantMatrix v-if="product" :product-url="productUrl" :variants="product.variants" :sizes="availableSizes" :status-labels="labels.variant_status" />
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
             <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh, biến thể, video và sản phẩm liên kết.</p>
@@ -252,32 +261,22 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 <input v-model="form.slug" :class="inputClass" />
             </FormField>
             <FormField label="Trạng thái" :error="errors.status">
-                <select v-model="form.status" :class="inputClass">
-                    <option v-for="status in statuses" :key="status" :value="status">{{ statusLabels[status] ?? status }}</option>
-                </select>
+                <Select v-model="form.status" :options="codeOptions(statuses, labels.product_status)" />
             </FormField>
             <FormField label="Hiển thị từ" :error="errors.published_from">
-                <input v-model="form.published_from" :class="inputClass" type="datetime-local" />
+                <DateInput v-model="form.published_from" with-time />
             </FormField>
             <FormField label="Hiển thị đến" :error="errors.published_to">
-                <input v-model="form.published_to" :class="inputClass" type="datetime-local" />
+                <DateInput v-model="form.published_to" with-time />
             </FormField>
             <FormField label="Danh mục" :error="errors.category_ids">
-                <select v-model="form.category_ids" :class="inputClass" multiple size="6">
-                    <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.label }}</option>
-                </select>
+                <MultiSelect v-model="form.category_ids" :options="categoryOptions" placeholder="Gõ để tìm danh mục" />
             </FormField>
             <FormField label="Thương hiệu" :error="errors.brand_id">
-                <select v-model="form.brand_id" :class="inputClass">
-                    <option :value="null">— Không —</option>
-                    <option v-for="brand in brands" :key="brand.id" :value="brand.id">{{ brand.label }}</option>
-                </select>
+                <Select v-model="form.brand_id" :options="recordOptions(brands)" empty-label="— Không —" :empty-value="null" />
             </FormField>
             <FormField label="Danh mục chính (breadcrumb)" :error="errors.primary_category_id">
-                <select v-model="form.primary_category_id" :class="inputClass">
-                    <option :value="null">—</option>
-                    <option v-for="category in categories.filter((c) => form.category_ids.includes(c.id))" :key="category.id" :value="category.id">{{ category.label }}</option>
-                </select>
+                <Select v-model="form.primary_category_id" :options="primaryCategoryOptions" empty-label="—" :empty-value="null" />
             </FormField>
             <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
             <button type="submit" :class="primaryButton" class="w-full" :disabled="form.processing">Lưu</button>

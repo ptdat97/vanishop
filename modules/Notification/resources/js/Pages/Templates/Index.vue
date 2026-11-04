@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -39,6 +42,14 @@ const form = useForm({
     lock_version: 0,
 });
 const metaError = ref<string | null>(null);
+const typeOptions = computed(() => Object.entries(props.types).map(([value, type]) => ({ value, label: type.label })));
+const localeOptions = locales.map((option) => ({ value: option.code, label: option.label }));
+const columns = [
+    { key: 'type', label: 'Loại tin' },
+    { key: 'channel', label: 'Kênh', class: 'font-mono text-xs' },
+    { key: 'body', label: 'Nội dung', class: 'max-w-md text-xs whitespace-pre-line text-slate-600' },
+    { key: 'actions', label: '', align: 'right' as const, class: 'whitespace-nowrap' },
+];
 const variableHint = computed(() => (props.types[form.type]?.variables ?? []).map((name) => '{' + '{ ' + name + ' }' + '}').join(', '));
 
 function open(template: Template | null): void {
@@ -81,11 +92,10 @@ function submit(): void {
     else payload.post(props.baseUrl, options);
 }
 
-function remove(template: Template): void {
-    if (confirm('Xoá mẫu tin này?'))
-        router.delete(`${props.baseUrl}/${template.id}`, {
-            preserveScroll: true,
-        });
+async function remove(template: Template): Promise<void> {
+    if ((await confirmAction({ title: 'Xoá mẫu tin này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+        router.delete(`${props.baseUrl}/${template.id}`, { preserveScroll: true });
+    }
 }
 </script>
 
@@ -100,11 +110,7 @@ function remove(template: Template): void {
         <div class="grid gap-3 md:grid-cols-3">
             <label>
                 Loại tin
-                <select v-model="form.type" :class="inputClass">
-                    <option v-for="(type, code) in types" :key="code" :value="code">
-                        {{ type.label }}
-                    </option>
-                </select>
+                <Select v-model="form.type" :options="typeOptions" aria-label="Loại tin" />
             </label>
             <label>
                 Kênh
@@ -115,9 +121,7 @@ function remove(template: Template): void {
             </label>
             <label>
                 Ngôn ngữ
-                <select v-model="form.locale" :class="inputClass">
-                    <option v-for="option in locales" :key="option.code" :value="option.code">{{ option.label }}</option>
-                </select>
+                <Select v-model="form.locale" :options="localeOptions" aria-label="Ngôn ngữ" />
             </label>
         </div>
         <label class="block">
@@ -147,32 +151,15 @@ function remove(template: Template): void {
         </div>
     </form>
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Loại tin</th>
-                <th class="px-4 py-2">Kênh</th>
-                <th class="px-4 py-2">Nội dung</th>
-                <th />
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="template in templates" :key="template.id" class="border-t border-slate-100 align-top">
-                <td class="px-4 py-2">
-                    {{ types[template.type]?.label ?? template.type }}
-                    <div class="font-mono text-xs text-slate-400">{{ template.type }} · {{ template.locale }}<span v-if="!template.active"> · tắt</span></div>
-                </td>
-                <td class="px-4 py-2 font-mono text-xs">
-                    {{ template.channel }}
-                </td>
-                <td class="max-w-md px-4 py-2 text-xs whitespace-pre-line text-slate-600">
-                    {{ template.subject ? `${template.subject}\n` : '' }}{{ template.body }}
-                </td>
-                <td class="px-4 py-2 text-right whitespace-nowrap">
-                    <button v-if="can.manage" class="mr-3 text-indigo-600 hover:underline" @click="open(template)">Sửa</button>
-                    <button v-if="can.manage" :class="dangerButton" @click="remove(template)">Xoá</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="templates" :row-class="() => 'align-top'" empty-text="Chưa có mẫu tin nào.">
+        <template #cell-type="{ row }">
+            {{ types[row.type]?.label ?? row.type }}
+            <div class="font-mono text-xs text-slate-400">{{ row.type }} · {{ row.locale }}<span v-if="!row.active"> · tắt</span></div>
+        </template>
+        <template #cell-body="{ row }">{{ row.subject ? `${row.subject}\n` : '' }}{{ row.body }}</template>
+        <template #cell-actions="{ row }">
+            <button v-if="can.manage" class="mr-3 text-indigo-600 hover:underline" @click="open(row)">Sửa</button>
+            <button v-if="can.manage" :class="dangerButton" @click="remove(row)">Xoá</button>
+        </template>
+    </DataTable>
 </template>

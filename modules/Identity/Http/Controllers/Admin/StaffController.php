@@ -38,6 +38,7 @@ final class StaffController
 
         return Inertia::render('Identity::Staff/Index', [
             'baseUrl' => route('admin.staff.index'),
+            'labels' => __('identity::labels'),
             'rolesUrl' => route('admin.staff.roles.index'),
             'filters' => ['q' => $search, 'role' => $role ?: null, 'status' => $status ?: null],
             'roles' => Role::query()->orderBy('name')->get(['id', 'name'])->all(),
@@ -116,6 +117,7 @@ final class StaffController
     {
         return Inertia::render('Identity::Staff/Form', [
             'baseUrl' => route('admin.staff.index'),
+            'labels' => __('identity::labels'),
             'staff' => $staff === null ? null : [
                 ...$staff->only(['id', 'name', 'email', 'status']),
                 'last_login_at' => $staff->last_login_at?->toIso8601String(),

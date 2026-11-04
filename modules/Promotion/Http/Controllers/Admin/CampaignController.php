@@ -28,6 +28,7 @@ final class CampaignController
 
         return Inertia::render('Promotion::Campaigns/Index', [
             'baseUrl' => route('admin.promotion.campaigns.index'),
+            'labels' => __('promotion::labels'),
             'promotionsUrl' => route('admin.promotion.promotions.index'),
             'campaigns' => Campaign::query()->withCount('promotions')->orderByDesc('starts_at')->get()->map(fn (Campaign $campaign): array => [
                 'id' => $campaign->id, 'code' => $campaign->code, 'name' => $campaign->name, 'state' => $campaign->state(),
@@ -102,6 +103,7 @@ final class CampaignController
 
         return Inertia::render('Promotion::Campaigns/Form', [
             'baseUrl' => route('admin.promotion.campaigns.index'),
+            'labels' => __('promotion::labels'),
             'campaign' => $campaign === null ? null : [
                 'id' => $campaign->id, 'code' => $campaign->code, 'name' => $campaign->name, 'description' => $campaign->description,
                 'starts_at' => StoreClock::toInput($campaign->starts_at),

@@ -3,18 +3,22 @@ import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSec
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { labelOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
-import type { NavItem, Translations } from '../../types';
+import type { CatalogLabels, NavItem, Translations } from '../../types';
 
 type Fields = 'name' | 'description' | 'meta_title' | 'meta_description';
 
 const props = defineProps<{
     nav: NavItem[];
+    labels: CatalogLabels;
     category: null | {
         id: number;
         slug: string;
@@ -55,8 +59,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.category && confirm('Xoá danh mục này?')) {
+async function destroy(): Promise<void> {
+    if (props.category && (await confirmAction({ title: 'Xoá danh mục này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${props.category.id}`);
     }
 }
@@ -118,16 +122,10 @@ function removeImage(): void {
                     <input v-model="form.slug" :class="inputClass" type="text" />
                 </FormField>
                 <FormField label="Danh mục cha" :error="errors.parent_id">
-                    <select v-model="form.parent_id" :class="inputClass">
-                        <option :value="null">— Gốc —</option>
-                        <option v-for="parent in parents" :key="parent.id" :value="parent.id">{{ parent.label }}</option>
-                    </select>
+                    <Select v-model="form.parent_id" :options="recordOptions(parents)" empty-label="— Gốc —" :empty-value="null" />
                 </FormField>
                 <FormField label="Trạng thái" :error="errors.status">
-                    <select v-model="form.status" :class="inputClass">
-                        <option value="active">Hiển thị</option>
-                        <option value="hidden">Ẩn</option>
-                    </select>
+                    <Select v-model="form.status" :options="labelOptions(labels.visibility)" />
                 </FormField>
                 <FormField label="Thứ tự" :error="errors.position">
                     <input v-model.number="form.position" :class="inputClass" type="number" min="0" />

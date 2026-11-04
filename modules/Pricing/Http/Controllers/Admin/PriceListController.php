@@ -37,6 +37,7 @@ final class PriceListController
 
         return Inertia::render('Pricing::PriceLists/Index', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
+            'labels' => __('pricing::labels'),
             'priceLists' => $lists
                 ->map(fn (PriceList $list): array => [
                     'id' => $list->id,
@@ -104,6 +105,7 @@ final class PriceListController
 
         return Inertia::render('Pricing::PriceLists/Prices', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
+            'labels' => __('pricing::labels'),
             'priceList' => ['id' => $priceList->id, 'code' => $priceList->code, 'name' => $priceList->name, 'type' => $priceList->type->value],
             'styleCode' => $styleCode,
             'styleName' => $rows[0]->styleName ?? null,
@@ -131,6 +133,7 @@ final class PriceListController
     {
         return Inertia::render('Pricing::PriceLists/Form', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
+            'labels' => __('pricing::labels'),
             'priceList' => $list === null ? null : [
                 'id' => $list->id,
                 'code' => $list->code,

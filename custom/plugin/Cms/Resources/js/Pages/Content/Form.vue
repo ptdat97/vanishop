@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import DateInput from '@admin/Components/DateInput.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
 import { postJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
@@ -73,8 +76,8 @@ function save(): void {
     }
 }
 
-function destroy(): void {
-    if (props.urls.item && confirm(`Xoá ${label.value} "${props.item?.title}"? Không khôi phục được.`)) {
+async function destroy(): Promise<void> {
+    if (props.urls.item && (await confirmAction({ title: `Xoá ${label.value} "${props.item?.title}"?`, message: 'Không khôi phục được.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(props.urls.item);
     }
 }
@@ -190,13 +193,17 @@ function onPicked(items: MediaItem[]): void {
         <aside class="space-y-4">
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <FormField label="Trạng thái" :error="form.errors.status">
-                    <select v-model="form.status" :class="inputClass" :disabled="!can.manage">
-                        <option value="draft">Nháp</option>
-                        <option value="published">Đăng</option>
-                    </select>
+                    <Select
+                        v-model="form.status"
+                        :options="[
+                            { value: 'draft', label: 'Nháp' },
+                            { value: 'published', label: 'Đăng' },
+                        ]"
+                        :disabled="!can.manage"
+                    />
                 </FormField>
                 <FormField label="Thời điểm đăng (giờ VN)" :error="form.errors.published_at">
-                    <input v-model="form.published_at" type="datetime-local" :class="inputClass" :disabled="!can.manage" />
+                    <DateInput v-model="form.published_at" with-time :disabled="!can.manage" />
                 </FormField>
                 <p class="text-xs text-slate-500">Đăng + để trống: đăng ngay. Chọn thời điểm trong tương lai: tự hiện khi tới giờ.</p>
                 <div v-if="can.manage" class="flex gap-2">

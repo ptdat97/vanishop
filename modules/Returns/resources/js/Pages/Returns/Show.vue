@@ -1,11 +1,20 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
+import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { useMoney } from '@admin/money';
+import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
+import { type ReturnLabels, returnStatusTone } from '../../labels';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: ReturnLabels;
     orderUrl: string;
     orderNumber: string | null;
     return: {
@@ -30,17 +39,27 @@ const props = defineProps<{
     can: { approve: boolean; reject: boolean; in_transit: boolean; receive: boolean; resolve: boolean };
 }>();
 
-const labels: Record<string, string> = { requested: 'Chờ duyệt', approved: 'Đã duyệt', in_transit: 'Đang gửi về', received: 'Đã nhận hàng', resolved: 'Hoàn tất', rejected: 'Từ chối', cancelled: 'Đã huỷ' };
-const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
+const money = useMoney();
+const columns = computed(() => [
+    { key: 'name', label: 'Sản phẩm' },
+    { key: 'quantity', label: 'SL' },
+    { key: 'refund_amount', label: isExchange.value ? 'Giá trị đã trả' : 'Tiền hoàn' },
+    ...(isExchange.value ? [{ key: 'exchange_sku', label: 'Đổi sang', class: 'font-mono text-xs' }] : []),
+    { key: 'condition', label: 'Tình trạng' },
+]);
 const url = computed(() => `${props.baseUrl}/${props.return.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const conditions = reactive<Record<number, string>>(Object.fromEntries(props.return.lines.map((line) => [line.id, 'sellable'])));
 const resolveForm = useForm({ amount: props.return.refundAmount, note: '' });
 const isExchange = computed(() => props.return.resolution === 'exchange');
 
-function transition(to: string): void {
-    const note = to === 'rejected' ? prompt('Lý do từ chối:') : null;
-    if (to === 'rejected' && !note) return;
+async function transition(to: string): Promise<void> {
+    let note: string | null = null;
+    if (to === 'rejected') {
+        const reason = await confirmAction({ title: `Từ chối yêu cầu ${props.return.number}?`, confirmLabel: 'Từ chối', tone: 'danger', reason: { label: 'Lý do từ chối', required: true } });
+        if (reason === false) return;
+        note = reason;
+    }
     router.post(`${url.value}/transition`, { to, note, lock_version: props.return.lockVersion }, { preserveScroll: true });
 }
 
@@ -56,7 +75,8 @@ function resolve(): void {
 <template>
     <Head :title="`Đổi/trả ${props.return.number}`" />
     <p class="mb-2 text-sm text-slate-500">Đổi/trả</p>
-    <PageHeader :title="`Yêu cầu ${props.return.number}`" :subtitle="labels[props.return.status] ?? props.return.status">
+    <div class="mb-2"><StatusBadge :label="labels.return_status[props.return.status] ?? props.return.status" :tone="returnStatusTone(props.return.status)" /></div>
+    <PageHeader :title="`Yêu cầu ${props.return.number}`" :subtitle="labels.return_status[props.return.status] ?? props.return.status">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <Link :href="orderUrl" :class="secondaryButton">Đơn {{ orderNumber }}</Link>
         <button v-if="can.approve" type="button" :class="primaryButton" @click="transition('approved')">Duyệt</button>
@@ -66,32 +86,19 @@ function resolve(): void {
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
     <p v-if="props.return.customerNote" class="mb-4 rounded bg-amber-50 p-3 text-sm">Khách ghi chú: {{ props.return.customerNote }}</p>
 
-    <section class="mb-6 rounded-lg border border-slate-200 bg-white">
-        <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-left text-slate-500">
-                <tr>
-                    <th class="px-4 py-2">Sản phẩm</th><th class="px-4 py-2">SL</th><th class="px-4 py-2">{{ isExchange ? 'Giá trị đã trả' : 'Tiền hoàn' }}</th>
-                    <th v-if="isExchange" class="px-4 py-2">Đổi sang</th><th class="px-4 py-2">Tình trạng</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="line in props.return.lines" :key="line.id" class="border-t border-slate-100">
-                    <td class="px-4 py-2">{{ line.name }}<div class="font-mono text-xs text-slate-400">{{ line.sku }}</div></td>
-                    <td class="px-4 py-2">{{ line.quantity }}</td>
-                    <td class="px-4 py-2">{{ vnd(line.refund_amount) }}</td>
-                    <td v-if="isExchange" class="px-4 py-2 font-mono text-xs">{{ line.exchange_sku ?? '—' }}</td>
-                    <td class="px-4 py-2">
-                        <select v-if="can.receive" v-model="conditions[line.id]" :class="inputClass">
-                            <option value="sellable">Bán lại được (nhập kho)</option>
-                            <option value="damaged">Hư hỏng (không nhập kho)</option>
-                        </select>
-                        <span v-else>{{ line.condition === 'damaged' ? 'Hư hỏng' : line.condition === 'sellable' ? 'Bán lại được' : '—' }}</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <div class="flex items-center justify-between border-t border-slate-100 p-4 text-sm">
-            <span>Tổng tiền hoàn tính được: <strong>{{ vnd(props.return.refundAmount) }}</strong><span v-if="props.return.refundedAmount !== null"> · đã hoàn {{ vnd(props.return.refundedAmount) }}</span></span>
+    <section class="mb-6 space-y-2">
+        <DataTable :columns="columns" :rows="props.return.lines" :row-label="(line) => line.sku">
+            <template #cell-name="{ row }">{{ row.name }}<div class="font-mono text-xs text-slate-400">{{ row.sku }}</div></template>
+            <template #cell-refund_amount="{ row }"><MoneyText :amount="row.refund_amount" /></template>
+            <template #cell-exchange_sku="{ row }">{{ row.exchange_sku ?? '—' }}</template>
+            <template #cell-condition="{ row }">
+                <Select v-if="can.receive" v-model="conditions[row.id]" :options="labelOptions(labels.condition)" aria-label="Tình trạng" />
+                <StatusBadge v-else-if="row.condition" :label="labels.condition[row.condition] ?? row.condition" :tone="row.condition === 'damaged' ? 'danger' : 'success'" />
+                <span v-else>—</span>
+            </template>
+        </DataTable>
+        <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-sm">
+            <span>Tổng tiền hoàn tính được: <strong><MoneyText :amount="props.return.refundAmount" /></strong><span v-if="props.return.refundedAmount !== null"> · đã hoàn <MoneyText :amount="props.return.refundedAmount" /></span></span>
             <button v-if="can.receive" type="button" :class="primaryButton" @click="receive">Xác nhận đã nhận hàng</button>
         </div>
     </section>
@@ -104,12 +111,12 @@ function resolve(): void {
         <p class="font-medium">Hoàn tất đổi hàng</p>
         <ul class="space-y-1 text-sm">
             <li v-for="line in exchangeQuote.lines" :key="line.return_line_id" class="flex justify-between gap-4">
-                <span><span class="font-mono">{{ line.sku }}</span> × {{ line.quantity }} <span class="text-xs text-slate-500">{{ line.same_style ? '(cùng mẫu — không tính chênh)' : `(giá hiện tại ${vnd(line.unit_amount)})` }}</span></span>
-                <span>{{ line.same_style ? '0 ₫' : vnd(line.unit_amount * line.quantity - line.credit) }}</span>
+                <span><span class="font-mono">{{ line.sku }}</span> × {{ line.quantity }} <span class="text-xs text-slate-500">{{ line.same_style ? '(cùng mẫu — không tính chênh)' : `(giá hiện tại ${money(line.unit_amount)})` }}</span></span>
+                <span>{{ money(line.same_style ? 0 : line.unit_amount * line.quantity - line.credit) }}</span>
             </li>
         </ul>
         <p class="text-sm">
-            Khách bù (thu hộ COD trên đơn thay thế): <strong>{{ vnd(exchangeQuote.payable) }}</strong> · Hoàn cho khách: <strong>{{ vnd(exchangeQuote.refund) }}</strong> · Phí giao: 0 ₫
+            Khách bù (thu hộ COD trên đơn thay thế): <strong><MoneyText :amount="exchangeQuote.payable" /></strong> · Hoàn cho khách: <strong><MoneyText :amount="exchangeQuote.refund" /></strong> · Phí giao: <MoneyText :amount="0" />
         </p>
         <input v-model="resolveForm.note" :class="inputClass" placeholder="Ghi chú" />
         <p v-for="(error, key) in resolveForm.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
@@ -129,7 +136,7 @@ function resolve(): void {
         <h2 class="mb-2 font-semibold">Lịch sử</h2>
         <ol class="space-y-1">
             <li v-for="(event, index) in props.return.events" :key="index">
-                <span class="text-xs text-slate-400">{{ event.at }}</span> · {{ labels[event.to] ?? event.to }}
+                <span class="text-xs text-slate-400">{{ event.at }}</span> · {{ labels.return_status[event.to] ?? event.to }}
                 <span v-if="event.note" class="text-slate-500">({{ event.note }})</span>
                 <span class="text-xs text-slate-400"> · {{ event.source }}</span>
             </li>

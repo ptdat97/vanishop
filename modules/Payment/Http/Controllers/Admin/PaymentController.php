@@ -39,6 +39,7 @@ final class PaymentController
 
         return Inertia::render('Payment::Payments/Index', [
             'baseUrl' => route('admin.payment.payments.index'),
+            'labels' => __('payment::labels'),
             'status' => $status,
             'statuses' => array_column(PaymentStatus::cases(), 'value'),
             'payments' => $payments->map(fn (Payment $payment): array => [

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Select from '@admin/Components/Select.vue';
+import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton } from '@admin/styles';
 import { useForm } from '@inertiajs/vue3';
 
@@ -25,6 +27,10 @@ const form = useForm({
     namespace: props.namespace,
     values: Object.fromEntries(props.fields.map((field) => [field.key, toInput(field)])) as Record<string, string>,
 });
+const booleanOptions = [
+    { value: '1', label: 'Có' },
+    { value: '0', label: 'Không' },
+];
 const display = (value: unknown): string => (value === null || value === undefined || value === '' ? '—' : String(value));
 
 function submit(): void {
@@ -41,14 +47,13 @@ function submit(): void {
                 <div v-if="field.help" class="text-xs text-slate-500">{{ field.help }}</div>
             </div>
             <div>
-                <select v-if="field.type === 'select' || field.type === 'bool'" v-model="form.values[field.key]" :class="inputClass">
-                    <option value="">(mặc định)</option>
-                    <template v-if="field.type === 'bool'">
-                        <option value="1">Có</option>
-                        <option value="0">Không</option>
-                    </template>
-                    <option v-for="(label, code) in field.options" v-else :key="code" :value="code">{{ label }}</option>
-                </select>
+                <Select
+                    v-if="field.type === 'select' || field.type === 'bool'"
+                    v-model="form.values[field.key]"
+                    :options="field.type === 'bool' ? booleanOptions : labelOptions(field.options)"
+                    empty-label="(mặc định)"
+                    :aria-label="field.label"
+                />
                 <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" placeholder="(mặc định)" />
                 <input
                     v-else

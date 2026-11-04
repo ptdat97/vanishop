@@ -31,6 +31,7 @@ final class HealthController
 
         return Inertia::render('Integration::Health/Index', [
             'baseUrl' => route('admin.integration.health'),
+            'labels' => __('integration::labels'),
             'filters' => ['box' => $box, 'status' => $status, 'target' => $target],
             'statuses' => array_column(MessageStatus::cases(), 'value'),
             'summary' => $queries->summary(),

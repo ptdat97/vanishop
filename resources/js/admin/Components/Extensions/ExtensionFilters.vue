@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { inputClass } from '@admin/styles';
+import Select from '@admin/Components/Select.vue';
 import type { ExtensionFilter } from '@admin/types';
 
-/** Bộ lọc do plugin khai báo; gửi lên dạng ext[<plugin>:<key>]. */
+/** Bộ lọc do plugin khai báo; gửi lên dạng ext[<plugin>:<key>] (rỗng = không lọc). */
 defineProps<{ filters: ExtensionFilter[] }>();
 const values = defineModel<Record<string, string>>({ required: true });
+
+const options = (filter: ExtensionFilter): Array<{ value: string; label: string }> => Object.entries(filter.options).map(([value, label]) => ({ value, label }));
 </script>
 
 <template>
-    <select v-for="filter in filters" :key="filter.key" v-model="values[filter.key]" :class="inputClass" :aria-label="filter.label">
-        <option :value="undefined">{{ filter.label }}: tất cả</option>
-        <option v-for="(label, value) in filter.options" :key="value" :value="value">{{ label }}</option>
-    </select>
+    <Select v-for="filter in filters" :key="filter.key" :model-value="values[filter.key] ?? ''" :options="options(filter)" :empty-label="`${filter.label}: tất cả`" :aria-label="filter.label" @update:model-value="values[filter.key] = $event" />
 </template>

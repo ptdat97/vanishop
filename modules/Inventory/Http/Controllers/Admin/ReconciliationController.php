@@ -31,6 +31,7 @@ final class ReconciliationController
         Gate::authorize('inventory.view');
 
         return Inertia::render('Inventory::Reconciliations/Show', [
+            'labels' => __('inventory::labels'),
             'backUrl' => route('admin.inventory.reconciliations.index'),
             'run' => $queries->run($reconciliation),
             'lines' => $queries->lines($reconciliation->id),

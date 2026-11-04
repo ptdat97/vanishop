@@ -1,15 +1,25 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
-import { stateClasses, stateLabels } from './labels';
+import { campaignStateTone, type PromotionLabels } from '../../labels';
 
 defineProps<{
     baseUrl: string;
+    labels: PromotionLabels;
     promotionsUrl: string;
     campaigns: Array<{ id: number; code: string; name: string; state: string; starts_at: string; ends_at: string; promotions_count: number; price_lists_count: number }>;
     canManage: boolean;
 }>();
+
+const columns = [
+    { key: 'name', label: 'Campaign' },
+    { key: 'state', label: 'Trạng thái' },
+    { key: 'period', label: 'Thời gian (giờ cửa hàng)', class: 'text-xs' },
+    { key: 'members', label: 'Thành viên', class: 'text-xs' },
+];
 </script>
 
 <template>
@@ -18,28 +28,13 @@ defineProps<{
         <Link :href="promotionsUrl" :class="secondaryButton">Khuyến mãi</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm campaign</Link>
     </PageHeader>
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Campaign</th>
-                <th class="px-4 py-2">Trạng thái</th>
-                <th class="px-4 py-2">Thời gian (giờ VN)</th>
-                <th class="px-4 py-2">Thành viên</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="campaign in campaigns" :key="campaign.id" class="border-t border-slate-100">
-                <td class="px-4 py-2">
-                    <Link :href="`${baseUrl}/${campaign.id}/edit`" class="font-medium text-indigo-600 hover:underline">{{ campaign.name }}</Link>
-                    <div class="font-mono text-xs text-slate-400">{{ campaign.code }}</div>
-                </td>
-                <td class="px-4 py-2"><span class="rounded px-2 py-0.5 text-xs" :class="stateClasses[campaign.state]">{{ stateLabels[campaign.state] ?? campaign.state }}</span></td>
-                <td class="px-4 py-2 text-xs">{{ campaign.starts_at }} → {{ campaign.ends_at }}</td>
-                <td class="px-4 py-2 text-xs">{{ campaign.promotions_count }} khuyến mãi · {{ campaign.price_lists_count }} bảng giá</td>
-            </tr>
-            <tr v-if="!campaigns.length">
-                <td colspan="4" class="px-4 py-6 text-center text-slate-500">Chưa có campaign.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="campaigns" :row-label="(campaign) => campaign.code" empty-text="Chưa có campaign.">
+        <template #cell-name="{ row }">
+            <Link :href="`${baseUrl}/${row.id}/edit`" class="font-medium text-indigo-600 hover:underline">{{ row.name }}</Link>
+            <div class="font-mono text-xs text-slate-400">{{ row.code }}</div>
+        </template>
+        <template #cell-state="{ row }"><StatusBadge :label="labels.campaign_state[row.state] ?? row.state" :tone="campaignStateTone(row.state)" /></template>
+        <template #cell-period="{ row }">{{ row.starts_at }} → {{ row.ends_at }}</template>
+        <template #cell-members="{ row }">{{ row.promotions_count }} khuyến mãi · {{ row.price_lists_count }} bảng giá</template>
+    </DataTable>
 </template>

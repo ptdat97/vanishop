@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -29,8 +30,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.role && window.confirm(`Xoá vai trò ${props.role.name}?`)) {
+async function destroy(): Promise<void> {
+    if (props.role && (await confirmAction({ title: `Xoá vai trò ${props.role.name}?`, confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.role.id}`);
     }
 }

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import Combobox from '@admin/Components/Combobox.vue';
+import DataTable from '@admin/Components/DataTable.vue';
+import MoneyText from '@admin/Components/MoneyText.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -157,6 +159,14 @@ const causeOptions = [
     { value: 'customer', label: 'Khách yêu cầu bớt hàng' },
 ];
 watch(() => addressForm.province_code, loadWards);
+const lineColumns = computed(() => [
+    { key: 'name', label: 'Sản phẩm' },
+    { key: 'quantity', label: 'SL' },
+    ...(cancellingLines.value ? [{ key: 'cancel', label: 'Huỷ' }] : []),
+    { key: 'unit_amount', label: 'Đơn giá' },
+    { key: 'discount_amount', label: 'Giảm' },
+    { key: 'total_amount', label: 'Thành tiền', align: 'right' as const },
+]);
 
 /** Trạng thái đích của sự kiện lịch sử: trạng thái đơn hoặc thanh toán, chưa có nhãn thì in mã. */
 function statusLabel(status: string): string {
@@ -216,51 +226,28 @@ function addNote(): void {
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             <section class="rounded-lg border border-slate-200 bg-white">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-left text-slate-500">
-                        <tr>
-                            <th class="px-4 py-2">Sản phẩm</th>
-                            <th class="px-4 py-2">SL</th>
-                            <th v-if="cancellingLines" class="px-4 py-2">Huỷ</th>
-                            <th class="px-4 py-2">Đơn giá</th>
-                            <th class="px-4 py-2">Giảm</th>
-                            <th class="px-4 py-2 text-right">Thành tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="line in order.lines" :key="line.sku" class="border-t border-slate-100">
-                            <td class="px-4 py-2">
-                                {{ line.name }}
-                                <div class="font-mono text-xs text-slate-400">
-                                    {{ line.sku }} · {{ line.color_name }} /
-                                    {{ line.size_code }}
-                                </div>
-                                <template v-for="(values, plugin) in line.options" :key="plugin"
-                                    ><div v-for="(value, field) in values" :key="field" class="text-xs text-amber-700">{{ field }}: {{ value }}</div></template
-                                >
-                            </td>
-                            <td class="px-4 py-2">
-                                {{ line.quantity }}
-                                <div v-if="line.cancelled_quantity" class="text-xs text-red-600">đã huỷ {{ line.cancelled_quantity }}</div>
-                            </td>
-                            <td v-if="cancellingLines" class="px-4 py-2">
-                                <input v-model.number="cancelLinesForm.lines[line.id]" type="number" min="0" :max="line.quantity" :class="[inputClass, 'w-20']" />
-                            </td>
-                            <td class="px-4 py-2">
-                                {{ money(line.unit_amount) }}
-                                <div v-if="line.compare_at_amount" class="text-xs text-slate-400 line-through">
-                                    {{ money(line.compare_at_amount) }}
-                                </div>
-                            </td>
-                            <td class="px-4 py-2">
-                                {{ line.discount_amount ? `−${money(line.discount_amount)}` : '—' }}
-                            </td>
-                            <td class="px-4 py-2 text-right">
-                                {{ money(line.total_amount) }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <DataTable :columns="lineColumns" :rows="order.lines" :row-key="(line) => line.sku" bare>
+                    <template #cell-name="{ row }">
+                        {{ row.name }}
+                        <div class="font-mono text-xs text-slate-400">{{ row.sku }} · {{ row.color_name }} / {{ row.size_code }}</div>
+                        <template v-for="(values, plugin) in row.options" :key="plugin">
+                            <div v-for="(value, field) in values" :key="field" class="text-xs text-amber-700">{{ field }}: {{ value }}</div>
+                        </template>
+                    </template>
+                    <template #cell-quantity="{ row }">
+                        {{ row.quantity }}
+                        <div v-if="row.cancelled_quantity" class="text-xs text-red-600">đã huỷ {{ row.cancelled_quantity }}</div>
+                    </template>
+                    <template #cell-cancel="{ row }">
+                        <input v-model.number="cancelLinesForm.lines[row.id]" type="number" min="0" :max="row.quantity" :class="[inputClass, 'w-20']" :aria-label="`Số lượng huỷ ${row.sku}`" />
+                    </template>
+                    <template #cell-unit_amount="{ row }">
+                        <MoneyText :amount="row.unit_amount" />
+                        <div v-if="row.compare_at_amount" class="text-xs text-slate-400 line-through"><MoneyText :amount="row.compare_at_amount" /></div>
+                    </template>
+                    <template #cell-discount_amount="{ row }"><MoneyText v-if="row.discount_amount" :amount="-row.discount_amount" /><template v-else>—</template></template>
+                    <template #cell-total_amount="{ row }"><MoneyText :amount="row.total_amount" /></template>
+                </DataTable>
                 <form v-if="cancellingLines" class="flex flex-wrap items-end gap-3 border-t border-slate-100 bg-red-50/40 p-4 text-sm" @submit.prevent="cancelLines">
                     <FormField label="Nguyên nhân" :error="cancelLinesForm.errors.cause" class="min-w-56">
                         <Select v-model="cancelLinesForm.cause" :options="causeOptions" />

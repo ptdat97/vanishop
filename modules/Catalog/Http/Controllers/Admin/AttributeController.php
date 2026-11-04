@@ -26,6 +26,7 @@ final class AttributeController
 
         return Inertia::render('Catalog::Taxonomy/Attributes', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'attributes' => $attributes->map(fn (Attribute $attribute): array => [
                 'id' => $attribute->id,
                 'code' => $attribute->code,
@@ -84,6 +85,7 @@ final class AttributeController
     {
         return Inertia::render('Catalog::Taxonomy/AttributeForm', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'attribute' => $attribute === null ? null : [
                 'id' => $attribute->id,
                 'code' => $attribute->code,

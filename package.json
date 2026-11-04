@@ -8,6 +8,7 @@
     },
     "devDependencies": {
         "@inertiajs/vue3": "^3.7.1",
+        "@internationalized/date": "^3.12.4",
         "@tailwindcss/vite": "^4.0.0",
         "@vitejs/plugin-vue": "^6.0.9",
         "concurrently": "^10.0.3",

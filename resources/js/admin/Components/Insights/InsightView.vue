@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import { computed } from 'vue';
-import { formatValue, type InsightData } from './types';
+import { type InsightData, useFormatValue } from './types';
 
 const props = defineProps<{ data: InsightData }>();
+const formatValue = useFormatValue();
+const columns = computed(() =>
+    props.data.kind === 'table' ? props.data.columns.map((column) => ({ key: column.key, label: column.label, align: column.format === 'text' ? ('left' as const) : ('right' as const), class: column.format === 'text' ? '' : 'tabular-nums' })) : [],
+);
 
 const max = computed(() => (props.data.kind === 'series' ? Math.max(1, ...props.data.values) : 1));
 </script>
@@ -33,25 +38,7 @@ const max = computed(() => (props.data.kind === 'series' ? Math.max(1, ...props.
         </div>
     </div>
 
-    <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-slate-200 text-left text-slate-500">
-                    <th v-for="column in data.columns" :key="column.key" class="py-2 pr-3 font-medium" :class="column.format === 'text' ? '' : 'text-right'">
-                        {{ column.label }}
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(row, index) in data.rows" :key="index" class="border-b border-slate-100">
-                    <td v-for="column in data.columns" :key="column.key" class="py-2 pr-3" :class="column.format === 'text' ? '' : 'text-right tabular-nums'">
-                        {{ formatValue(row[column.key], column.format) }}
-                    </td>
-                </tr>
-                <tr v-if="!data.rows.length">
-                    <td :colspan="data.columns.length" class="py-4 text-center text-slate-400">Không có dữ liệu.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <DataTable v-else :columns="columns" :rows="data.rows" bare>
+        <template v-for="column in data.columns" :key="column.key" #[`cell-${column.key}`]="{ row }">{{ formatValue(row[column.key], column.format) }}</template>
+    </DataTable>
 </template>

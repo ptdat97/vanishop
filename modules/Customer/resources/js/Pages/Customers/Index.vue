@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
+import Select from '@admin/Components/Select.vue';
+import { codeOptions, recordOptions } from '@admin/options';
 import { inputClass, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -8,6 +12,7 @@ import { reactive, ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: { customer_status: Record<string, string> };
     filters: { q: string | null; status: string | null; group: number | null; tag: string | null };
     statuses: string[];
     groups: Array<{ id: number; code: string; name: string }>;
@@ -27,11 +32,14 @@ const props = defineProps<{
     extensions: Omit<ExtensionList, 'actions'>;
 }>();
 
-const statusLabels: Record<string, string> = {
-    active: 'Hoạt động',
-    merged: 'Đã hợp nhất',
-    anonymized: 'Đã ẩn danh',
-};
+const columns = [
+    { key: 'full_name', label: 'Khách' },
+    { key: 'phone', label: 'SĐT', class: 'font-mono text-xs' },
+    { key: 'email', label: 'Email', class: 'text-xs' },
+    { key: 'registered', label: 'Loại', class: 'text-xs' },
+    { key: 'group', label: 'Nhóm', class: 'text-xs' },
+    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs' },
+];
 const q = ref(props.filters.q ?? '');
 const tag = ref(props.filters.tag ?? '');
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
@@ -56,75 +64,29 @@ function search(changes: { q?: string | null; status?: string | null; group?: nu
 
     <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="[inputClass, 'w-72']" placeholder="SĐT, email, tên hoặc mã khách" />
-        <select
-            :class="[inputClass, 'w-48']"
-            :value="filters.status ?? ''"
-            @change="
-                search({
-                    status: ($event.target as HTMLSelectElement).value || null,
-                })
-            "
-        >
-            <option value="">Mọi trạng thái</option>
-            <option v-for="status in statuses" :key="status" :value="status">
-                {{ statusLabels[status] ?? status }}
-            </option>
-        </select>
-        <select
-            :class="[inputClass, 'w-44']"
-            :value="filters.group ?? ''"
-            @change="search({ group: Number(($event.target as HTMLSelectElement).value) || null })"
-        >
-            <option value="">Mọi nhóm</option>
-            <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option>
-        </select>
+        <div class="w-48">
+            <Select :model-value="filters.status ?? ''" :options="codeOptions(statuses, labels.customer_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" @change="search({ status: $event || null })" />
+        </div>
+        <div class="w-44">
+            <Select :model-value="filters.group" :options="recordOptions(groups, (group) => group.name)" empty-label="Mọi nhóm" :empty-value="null" aria-label="Nhóm khách" @change="search({ group: $event })" />
+        </div>
         <input v-model="tag" :class="[inputClass, 'w-36']" placeholder="Tag" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Khách</th>
-                <th class="px-4 py-2">SĐT</th>
-                <th class="px-4 py-2">Email</th>
-                <th class="px-4 py-2">Loại</th>
-                <th class="px-4 py-2">Nhóm</th>
-                <th class="px-4 py-2">Tạo lúc</th>
-                <th v-for="column in extensions.columns" :key="column.key" class="px-4 py-2">{{ column.label }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="customer in customers" :key="customer.id" class="border-t border-slate-100">
-                <td class="px-4 py-2">
-                    <Link :href="`${baseUrl}/${customer.id}`" class="font-medium text-indigo-600 hover:underline">
-                        {{ customer.full_name ?? '(chưa có tên)' }}
-                    </Link>
-                    <div class="font-mono text-xs text-slate-400">
-                        {{ customer.id }}<span v-if="customer.status !== 'active'"> · {{ statusLabels[customer.status] }}</span>
-                    </div>
-                </td>
-                <td class="px-4 py-2 font-mono text-xs">
-                    {{ customer.phone ?? '—' }}
-                </td>
-                <td class="px-4 py-2 text-xs">{{ customer.email ?? '—' }}</td>
-                <td class="px-4 py-2 text-xs">
-                    {{ customer.registered ? 'Tài khoản' : 'Khách vãng lai' }}
-                </td>
-                <td class="px-4 py-2 text-xs">{{ customer.group ?? '—' }}</td>
-                <td class="px-4 py-2 text-xs">{{ customer.created_at }}</td>
-                <td v-for="column in extensions.columns" :key="column.key" class="px-4 py-2 text-xs">{{ extensions.values[customer.ref]?.[column.key] ?? '—' }}</td>
-            </tr>
-            <tr v-if="!customers.length">
-                <td :colspan="6 + extensions.columns.length" class="px-4 py-6 text-center text-slate-500">Không có khách nào.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="customers" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" empty-text="Không có khách nào.">
+        <template #cell-full_name="{ row }">
+            <Link :href="`${baseUrl}/${row.id}`" class="font-medium text-indigo-600 hover:underline">{{ row.full_name ?? '(chưa có tên)' }}</Link>
+            <div class="font-mono text-xs text-slate-400">
+                {{ row.id }}<span v-if="row.status !== 'active'"> · {{ labels.customer_status[row.status] ?? row.status }}</span>
+            </div>
+        </template>
+        <template #cell-phone="{ row }">{{ row.phone ?? '—' }}</template>
+        <template #cell-email="{ row }">{{ row.email ?? '—' }}</template>
+        <template #cell-registered="{ row }">{{ row.registered ? 'Tài khoản' : 'Khách vãng lai' }}</template>
+        <template #cell-group="{ row }">{{ row.group ?? '—' }}</template>
+    </DataTable>
 
-    <div v-if="pagination.last_page > 1" class="mt-3 flex gap-2">
-        <button :class="secondaryButton" :disabled="pagination.page <= 1" @click="search({ page: pagination.page - 1 })">Trước</button>
-        <span class="px-2 py-2 text-sm text-slate-500">Trang {{ pagination.page }} / {{ pagination.last_page }}</span>
-        <button :class="secondaryButton" :disabled="pagination.page >= pagination.last_page" @click="search({ page: pagination.page + 1 })">Sau</button>
-    </div>
+    <Pagination :current="pagination.page" :last="pagination.last_page" @change="search({ page: $event })" />
 </template>

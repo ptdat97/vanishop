@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import PageHeader from '@admin/Components/PageHeader.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { useDateTime } from '@admin/datetime';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import PluginIcon from '../../Components/PluginIcon.vue';
-import { kindLabels, statusClasses, statusLabels } from '../../pluginLabels';
+import { type PluginLabels, pluginStatusTone } from '../../pluginLabels';
 
 const props = defineProps<{
     baseUrl: string;
+    labels: PluginLabels;
     canManage: boolean;
     canConfigure: boolean;
     plugin: {
@@ -58,12 +62,14 @@ const purge = ref(false);
 const dropRetained = ref(false);
 const confirmId = ref('');
 
-function uninstall(): void {
-    if (!purge.value && !window.confirm(`Gỡ ${props.plugin.name}? Dữ liệu của plugin được giữ lại.`)) return;
+async function uninstall(): Promise<void> {
+    if (!purge.value && (await confirmAction({ title: `Gỡ ${props.plugin.name}?`, message: 'Dữ liệu của plugin được giữ lại.', confirmLabel: 'Gỡ plugin', tone: 'danger' })) === false) {
+        return;
+    }
     post('uninstall', { purge: purge.value, drop_retained: purge.value && dropRetained.value, confirm_id: confirmId.value });
 }
 
-const formatDate = (value: string | null): string => (value ? new Date(value).toLocaleString('vi-VN') : '—');
+const formatDate = useDateTime();
 </script>
 
 <template>
@@ -81,8 +87,8 @@ const formatDate = (value: string | null): string => (value ? new Date(value).to
                 <PluginIcon :src="plugin.has_icon ? url('icon') : null" :name="plugin.name" size="lg" />
                 <div class="text-sm">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span :class="[statusClasses[plugin.status], 'rounded px-2 py-0.5 text-xs']">{{ statusLabels[plugin.status] ?? plugin.status }}</span>
-                        <span class="text-slate-500">{{ kindLabels[plugin.kind] ?? plugin.kind }}</span>
+                        <StatusBadge :label="labels.plugin_status[plugin.status] ?? plugin.status" :tone="pluginStatusTone(plugin.status)" />
+                        <span class="text-slate-500">{{ labels.plugin_kind[plugin.kind] ?? plugin.kind }}</span>
                         <span v-if="plugin.bundled" class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">Hệ thống</span>
                     </div>
                     <p v-if="plugin.description" class="mt-2 text-slate-700">{{ plugin.description }}</p>
@@ -108,7 +114,7 @@ const formatDate = (value: string | null): string => (value ? new Date(value).to
                     <ul v-if="plugin.requires_plugins.length" class="list-inside list-disc">
                         <li v-for="dependency in plugin.requires_plugins" :key="dependency.id">
                             <Link :href="`${baseUrl}/${dependency.id}`" class="text-indigo-600 hover:underline">{{ dependency.name ?? dependency.id }}</Link>
-                            <span class="font-mono text-xs"> {{ dependency.constraint }}</span> · {{ statusLabels[dependency.status] ?? dependency.status }}
+                            <span class="font-mono text-xs"> {{ dependency.constraint }}</span> · {{ labels.plugin_status[dependency.status] ?? dependency.status }}
                         </li>
                     </ul>
                     <p v-else>—</p>

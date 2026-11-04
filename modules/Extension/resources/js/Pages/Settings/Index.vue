@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PageHeader from '@admin/Components/PageHeader.vue';
-import { inputClass } from '@admin/styles';
+import Select from '@admin/Components/Select.vue';
 import { Head, router } from '@inertiajs/vue3';
 import SettingsForm, { type SettingField } from '../../Components/SettingsForm.vue';
 
@@ -24,9 +24,14 @@ function go(changes: { namespace?: string }): void {
     />
 
     <div class="mb-4 flex flex-wrap gap-2">
-        <select :class="[inputClass, 'w-64']" :value="namespace" @change="go({ namespace: ($event.target as HTMLSelectElement).value })">
-            <option v-for="item in namespaces" :key="item" :value="item">{{ item === 'core' ? 'Core' : `Plugin ${item}` }}</option>
-        </select>
+        <div class="w-64">
+            <Select
+                :model-value="namespace"
+                :options="namespaces.map((item) => ({ value: item, label: item === 'core' ? 'Core' : `Plugin ${item}` }))"
+                aria-label="Nhóm cấu hình"
+                @change="go({ namespace: $event })"
+            />
+        </div>
     </div>
 
     <SettingsForm :key="namespace" :action="baseUrl" :namespace="namespace" :fields="fields" />

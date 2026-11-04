@@ -55,6 +55,7 @@ final class ProductController
 
         return Inertia::render('Catalog::Products/Index', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'filters' => ['q' => $search, 'status' => $status],
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
@@ -66,7 +67,8 @@ final class ProductController
                     'colors' => $style->colors->count(),
                     'image_url' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first()?->media->url(160),
                 ])->all(),
-                'links' => ['prev' => $styles->previousPageUrl(), 'next' => $styles->nextPageUrl()],
+                'current' => $styles->currentPage(),
+                'last' => $styles->lastPage(),
                 'total' => $styles->total(),
             ],
             'canManage' => Gate::allows('catalog.manage'),
@@ -125,6 +127,7 @@ final class ProductController
 
         return Inertia::render('Catalog::Products/Form', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'product' => $style === null ? null : [
                 'id' => $style->id,
                 'style_code' => $style->style_code,

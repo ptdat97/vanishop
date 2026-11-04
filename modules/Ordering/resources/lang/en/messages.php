@@ -15,8 +15,4 @@ return [
     'address_changed' => 'Shipping address changed.',
     'note_added' => 'Note added.',
 
-    // Nhãn hiển thị trong Admin (StatusBadge, lịch sử đơn).
-    'order_statuses' => ['pending' => 'Pending', 'confirmed' => 'Confirmed', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
-    'payment_statuses' => ['unpaid' => 'Unpaid', 'authorized' => 'Authorized', 'paid' => 'Paid', 'partially_refunded' => 'Partially refunded', 'refunded' => 'Refunded', 'cod_pending' => 'COD pending', 'cod_collected' => 'COD collected', 'failed' => 'Failed'],
-    'event_types' => ['placed' => 'Placed', 'status_changed' => 'Status changed', 'payment_status_changed' => 'Payment', 'address_changed' => 'Address changed', 'note' => 'Note'],
 ];

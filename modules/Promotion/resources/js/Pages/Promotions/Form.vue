@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
+import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
+import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import { confirmAction } from '@admin/confirm';
+import { codeOptions, labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import type { SharedProps } from '@admin/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import type { PromotionLabels } from '../../labels';
 
 /**
  * Cấu hình của một rule: JSON một cấp (số, chuỗi, boolean, danh sách giá trị đơn giản) — đủ cho các rule
@@ -15,6 +23,7 @@ type RuleInput = { type: string; config: Record<string, RuleValue> };
 
 const props = defineProps<{
     baseUrl: string;
+    labels: PromotionLabels;
     promotion: null | {
         id: number;
         name: string;
@@ -40,6 +49,15 @@ const props = defineProps<{
     stackings: string[];
 }>();
 
+const symbol = usePage<SharedProps>().props.app.money.symbol;
+const actionOptions = props.actions.map((action) => ({ value: action.type, label: action.label }));
+const ruleTypeOptions = props.ruleTypes.map((type) => ({ value: type.type, label: type.label }));
+const voucherColumns = [
+    { key: 'code', label: 'Mã', class: 'font-mono' },
+    { key: 'used_count', label: 'Đã dùng' },
+    { key: 'expires_at', label: 'Hết hạn', class: 'text-xs' },
+    { key: 'actions', label: '', align: 'right' as const },
+];
 const percent = ref(props.promotion?.action_config.basis_points ? props.promotion.action_config.basis_points / 100 : 10);
 const amount = ref(props.promotion?.action_config.amount ?? 50000);
 
@@ -106,8 +124,8 @@ function submit(): void {
     }
 }
 
-function destroy(): void {
-    if (props.promotion && confirm('Xoá khuyến mãi và toàn bộ voucher?')) {
+async function destroy(): Promise<void> {
+    if (props.promotion && (await confirmAction({ title: 'Xoá khuyến mãi?', message: 'Toàn bộ voucher của khuyến mãi cũng bị xoá.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.promotion.id}`);
     }
 }
@@ -131,37 +149,29 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
     <form class="grid max-w-3xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">
         <FormField label="Tên" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
         <FormField label="Trạng thái" :error="form.errors.status">
-            <select v-model="form.status" :class="inputClass">
-                <option value="active">Đang dùng</option>
-                <option value="inactive">Tắt</option>
-            </select>
+            <Select v-model="form.status" :options="labelOptions(labels.promotion_status)" />
         </FormField>
         <FormField label="Loại giảm" :error="form.errors.action_type">
-            <select v-model="form.action_type" :class="inputClass">
-                <option v-for="action in actions" :key="action.type" :value="action.type">{{ action.label }}</option>
-            </select>
+            <Select v-model="form.action_type" :options="actionOptions" />
         </FormField>
         <FormField v-if="form.action_type === 'percent_off'" label="Phần trăm giảm" :error="form.errors.action_config">
             <input v-model.number="percent" :class="inputClass" type="number" step="0.01" min="0.01" max="100" />
         </FormField>
-        <FormField v-else-if="form.action_type === 'amount_off'" label="Số tiền giảm (₫)" :error="form.errors.action_config">
+        <FormField v-else-if="form.action_type === 'amount_off'" :label="`Số tiền giảm (${symbol})`" :error="form.errors.action_config">
             <input v-model.number="amount" :class="inputClass" type="number" min="1" />
         </FormField>
-        <FormField label="Hiệu lực từ" :error="form.errors.starts_at"><input v-model="form.starts_at" :class="inputClass" type="datetime-local" /></FormField>
-        <FormField label="Hiệu lực đến" :error="form.errors.ends_at"><input v-model="form.ends_at" :class="inputClass" type="datetime-local" /></FormField>
+        <FormField label="Hiệu lực từ" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
+        <FormField label="Hiệu lực đến" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
         <FormField label="Priority" hint="Cao hơn được đánh giá trước." :error="form.errors.priority">
             <input v-model.number="form.priority" :class="inputClass" type="number" />
         </FormField>
         <FormField label="Kết hợp" :error="form.errors.stacking">
-            <select v-model="form.stacking" :class="inputClass">
-                <option value="combinable">Cộng dồn với khuyến mãi khác</option>
-                <option value="exclusive">Độc quyền</option>
-            </select>
+            <Select v-model="form.stacking" :options="codeOptions(stackings, labels.stacking)" />
         </FormField>
         <FormField label="Tổng lượt dùng tối đa" hint="Để trống = không giới hạn." :error="form.errors.usage_limit">
             <input v-model.number="form.usage_limit" :class="inputClass" type="number" min="1" />
         </FormField>
-        <FormField label="Ngân sách (₫)" hint="Tổng tiền giảm tối đa. Để trống = không giới hạn." :error="form.errors.budget_amount">
+        <FormField :label="`Ngân sách (${symbol})`" hint="Tổng tiền giảm tối đa. Để trống = không giới hạn." :error="form.errors.budget_amount">
             <input v-model.number="form.budget_amount" :class="inputClass" type="number" min="1" />
         </FormField>
         <label class="flex items-center gap-2 text-sm sm:col-span-2"><input v-model="form.requires_voucher" type="checkbox" /> Cần nhập mã voucher (bỏ chọn = tự động áp dụng)</label>
@@ -169,9 +179,7 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
             <p class="mb-2 text-sm font-medium">Điều kiện áp dụng (rule do Core/plugin cung cấp)</p>
             <p v-if="!ruleTypes.length" class="text-sm text-slate-500">Chưa có loại điều kiện nào. Cài và bật plugin cung cấp rule (ví dụ <code>vani.promotion-rules</code>) để dùng.</p>
             <div v-for="(rule, index) in rules" :key="index" class="mb-2 flex flex-wrap items-start gap-2">
-                <select v-model="rule.type" :class="inputClass">
-                    <option v-for="type in ruleTypes" :key="type.type" :value="type.type">{{ type.label }}</option>
-                </select>
+                <div class="w-56"><Select v-model="rule.type" :options="ruleTypeOptions" aria-label="Loại điều kiện" /></div>
                 <input v-model="rule.config" :class="[inputClass, 'flex-1 font-mono text-xs']" placeholder='{"amount": 500000}' />
                 <button type="button" :class="dangerButton" @click="rules.splice(index, 1)">Bỏ</button>
                 <p v-if="form.errors[`rules.${index}.config`] || form.errors[`rules.${index}.type`]" class="w-full text-sm text-red-600">
@@ -182,7 +190,7 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
             <p v-if="rulesError" class="mt-2 text-sm text-red-600">{{ rulesError }}</p>
         </div>
         <p v-if="promotion" class="text-sm text-slate-500 sm:col-span-2">
-            Đã dùng {{ promotion.usage_count }} lượt<span v-if="promotion.budget_amount">, {{ promotion.budget_used_amount.toLocaleString('vi-VN') }} ₫ ngân sách</span>.
+            Đã dùng {{ promotion.usage_count }} lượt<span v-if="promotion.budget_amount">, <MoneyText :amount="promotion.budget_used_amount" /> ngân sách</span>.
         </p>
         <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>
@@ -198,18 +206,13 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
             <button type="submit" :class="primaryButton" :disabled="voucherForm.processing">Tạo mã</button>
             <p v-for="(error, key) in voucherForm.errors" :key="key" class="text-sm text-red-600 sm:col-span-5">{{ error }}</p>
         </form>
-        <table class="w-full text-sm">
-            <thead class="text-left text-slate-500">
-                <tr><th class="py-1">Mã</th><th>Đã dùng</th><th>Hết hạn</th><th /></tr>
-            </thead>
-            <tbody>
-                <tr v-for="voucher in vouchers" :key="voucher.id" class="border-t border-slate-100">
-                    <td class="py-1 font-mono">{{ voucher.code }}<span v-if="voucher.status !== 'active'" class="text-xs text-slate-400"> · tắt</span></td>
-                    <td>{{ voucher.used_count }}<span v-if="voucher.usage_limit"> / {{ voucher.usage_limit }}</span></td>
-                    <td class="text-xs">{{ voucher.expires_at ?? '—' }}</td>
-                    <td class="text-right"><button type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(voucher)">{{ voucher.status === 'active' ? 'Tắt' : 'Bật' }}</button></td>
-                </tr>
-            </tbody>
-        </table>
+        <DataTable :columns="voucherColumns" :rows="vouchers" empty-text="Chưa có voucher.">
+            <template #cell-code="{ row }">{{ row.code }}<span v-if="row.status !== 'active'" class="font-sans text-xs text-slate-400"> · tắt</span></template>
+            <template #cell-used_count="{ row }">{{ row.used_count }}<span v-if="row.usage_limit"> / {{ row.usage_limit }}</span></template>
+            <template #cell-expires_at="{ row }">{{ row.expires_at ?? '—' }}</template>
+            <template #cell-actions="{ row }">
+                <button type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(row)">{{ row.status === 'active' ? 'Tắt' : 'Bật' }}</button>
+            </template>
+        </DataTable>
     </section>
 </template>

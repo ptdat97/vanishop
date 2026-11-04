@@ -29,6 +29,7 @@ final class CategoryController
 
         return Inertia::render('Catalog::Categories/Index', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'tree' => $tree->tree(),
             'canManage' => Gate::allows('catalog.manage'),
         ]);
@@ -40,6 +41,7 @@ final class CategoryController
 
         return Inertia::render('Catalog::Categories/Form', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'category' => null,
             'parents' => $this->parentOptions($tree->tree()),
             'extensionSections' => app(AdminScreen::class)->formSections('category', null),
@@ -65,6 +67,7 @@ final class CategoryController
 
         return Inertia::render('Catalog::Categories/Form', [
             'nav' => CatalogNavigation::all(),
+            'labels' => __('catalog::labels'),
             'category' => [
                 'id' => $category->id,
                 'slug' => $category->slug,

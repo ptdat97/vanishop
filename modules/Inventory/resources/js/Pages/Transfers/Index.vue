@@ -1,8 +1,14 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { recordOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import type { InventoryLabels } from '../../labels';
 
 type TransferLine = { variant_id: number; quantity: number; received_quantity: number | null };
 type Transfer = {
@@ -21,14 +27,24 @@ type Transfer = {
 
 const props = defineProps<{
     baseUrl: string;
+    labels: InventoryLabels;
     locations: Array<{ id: number; code: string; name: string; external: boolean }>;
     transfers: Transfer[];
     canManage: boolean;
 }>();
 
-const labels: Record<string, string> = { pending: 'Chờ gửi', shipped: 'Đang đi đường', received: 'Đã nhận', cancelled: 'Đã huỷ' };
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const internal = computed(() => props.locations.filter((location) => !location.external));
+const locationOptions = computed(() => recordOptions(internal.value, (location) => `${location.code} — ${location.name}`));
+const columns = [
+    { key: 'public_id', label: 'Mã' },
+    { key: 'route', label: 'Lộ trình', class: 'font-mono' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'items', label: 'Dòng', class: 'text-xs' },
+    { key: 'actions', label: '', align: 'right' as const, class: 'space-x-2' },
+];
+const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' =>
+    (({ pending: 'warning', shipped: 'info', received: 'success', cancelled: 'danger' }) as const)[status as 'pending'] ?? 'neutral';
 
 const form = useForm({
     from_location_id: internal.value[0]?.id ?? 0,
@@ -58,9 +74,11 @@ function receive(id: number): void {
     router.post(`${props.baseUrl}/${id}/receive`, {}, { preserveScroll: true });
 }
 
-function cancel(id: number): void {
-    const reason = prompt('Lý do huỷ phiếu chuyển kho:');
-    if (reason) router.post(`${props.baseUrl}/${id}/cancel`, { reason }, { preserveScroll: true });
+async function cancel(id: number): Promise<void> {
+    const reason = await confirmAction({ title: 'Huỷ phiếu chuyển kho?', confirmLabel: 'Huỷ phiếu', tone: 'danger', reason: { label: 'Lý do huỷ phiếu chuyển kho', required: true } });
+    if (reason !== false) {
+        router.post(`${props.baseUrl}/${id}/cancel`, { reason }, { preserveScroll: true });
+    }
 }
 </script>
 
@@ -75,15 +93,11 @@ function cancel(id: number): void {
         <div class="grid gap-3 sm:grid-cols-2">
             <label class="text-sm">
                 <span class="mb-1 block text-slate-500">Kho đi</span>
-                <select v-model.number="form.from_location_id" :class="inputClass">
-                    <option v-for="location in internal" :key="location.id" :value="location.id">{{ location.code }} — {{ location.name }}</option>
-                </select>
+                <Select v-model="form.from_location_id" :options="locationOptions" />
             </label>
             <label class="text-sm">
                 <span class="mb-1 block text-slate-500">Kho đến</span>
-                <select v-model.number="form.to_location_id" :class="inputClass">
-                    <option v-for="location in internal" :key="location.id" :value="location.id">{{ location.code }} — {{ location.name }}</option>
-                </select>
+                <Select v-model="form.to_location_id" :options="locationOptions" />
             </label>
         </div>
         <p v-if="!internal.length" class="text-sm text-amber-700">Chưa có kho nào do VaniShop quản lý tồn để chuyển.</p>
@@ -104,39 +118,23 @@ function cancel(id: number): void {
         </div>
     </form>
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Mã</th>
-                <th class="px-4 py-2">Lộ trình</th>
-                <th class="px-4 py-2">Trạng thái</th>
-                <th class="px-4 py-2">Dòng</th>
-                <th />
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="transfer in transfers" :key="transfer.id" class="border-t border-slate-100 align-top">
-                <td class="px-4 py-2">
-                    <div class="font-mono text-xs">{{ transfer.public_id }}</div>
-                    <div class="text-xs text-slate-400">{{ transfer.at }}</div>
-                </td>
-                <td class="px-4 py-2 font-mono">{{ transfer.from }} → {{ transfer.to }}</td>
-                <td class="px-4 py-2">
-                    {{ labels[transfer.status] ?? transfer.status }}
-                    <div v-if="transfer.cancel_reason" class="text-xs text-red-600">{{ transfer.cancel_reason }}</div>
-                </td>
-                <td class="px-4 py-2 text-xs">{{ transfer.items }} sản phẩm</td>
-                <td class="space-x-2 px-4 py-2 text-right">
-                    <template v-if="canManage">
-                        <button v-if="transfer.status === 'pending'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="ship(transfer.id)">Gửi hàng</button>
-                        <button v-if="transfer.status === 'shipped'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="receive(transfer.id)">Nhận hàng</button>
-                        <button v-if="transfer.status === 'pending' || transfer.status === 'shipped'" type="button" class="text-xs text-red-600 hover:underline" @click="cancel(transfer.id)">Huỷ</button>
-                    </template>
-                </td>
-            </tr>
-            <tr v-if="!transfers.length">
-                <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có phiếu chuyển kho.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="transfers" :row-class="() => 'align-top'" :row-label="(transfer) => transfer.public_id" empty-text="Chưa có phiếu chuyển kho.">
+        <template #cell-public_id="{ row }">
+            <div class="font-mono text-xs">{{ row.public_id }}</div>
+            <div class="text-xs text-slate-400">{{ row.at }}</div>
+        </template>
+        <template #cell-route="{ row }">{{ row.from }} → {{ row.to }}</template>
+        <template #cell-status="{ row }">
+            <StatusBadge :label="labels.transfer_status[row.status] ?? row.status" :tone="tone(row.status)" />
+            <div v-if="row.cancel_reason" class="mt-1 text-xs text-red-600">{{ row.cancel_reason }}</div>
+        </template>
+        <template #cell-items="{ row }">{{ row.items }} sản phẩm</template>
+        <template #cell-actions="{ row }">
+            <template v-if="canManage">
+                <button v-if="row.status === 'pending'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="ship(row.id)">Gửi hàng</button>
+                <button v-if="row.status === 'shipped'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="receive(row.id)">Nhận hàng</button>
+                <button v-if="row.status === 'pending' || row.status === 'shipped'" type="button" class="text-xs text-red-600 hover:underline" @click="cancel(row.id)">Huỷ</button>
+            </template>
+        </template>
+    </DataTable>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -14,10 +15,19 @@ type ReconciliationRun = {
     finished_at: string | null;
 };
 
-const props = defineProps<{
+defineProps<{
     baseUrl: string;
     runs: ReconciliationRun[];
 }>();
+
+const columns = [
+    { key: 'source_label', label: 'Nguồn' },
+    { key: 'started_at', label: 'Bắt đầu', class: 'text-slate-500' },
+    { key: 'checked', label: 'Đã kiểm', align: 'right' as const },
+    { key: 'discrepancies', label: 'Chênh lệch', align: 'right' as const },
+    { key: 'repaired', label: 'Đã xử lý', align: 'right' as const },
+    { key: 'open', label: 'Còn mở', align: 'right' as const },
+];
 </script>
 
 <template>
@@ -28,33 +38,8 @@ const props = defineProps<{
         subtitle="Kết quả của vani:inventory:verify (chạy hằng ngày) và vani:inventory:reconcile (nguồn ngoài). Chênh lệch còn mở phải xử lý tay."
     />
 
-    <table class="w-full rounded-lg border border-slate-200 bg-white text-sm">
-        <thead class="bg-slate-50 text-left text-slate-500">
-            <tr>
-                <th class="px-4 py-2">Nguồn</th>
-                <th class="px-4 py-2">Bắt đầu</th>
-                <th class="px-4 py-2 text-right">Đã kiểm</th>
-                <th class="px-4 py-2 text-right">Chênh lệch</th>
-                <th class="px-4 py-2 text-right">Đã xử lý</th>
-                <th class="px-4 py-2 text-right">Còn mở</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="run in runs" :key="run.id" class="border-t border-slate-100">
-                <td class="px-4 py-2">
-                    <Link :href="`${baseUrl}/${run.id}`" class="text-indigo-600 hover:underline">{{ run.source_label }}</Link>
-                </td>
-                <td class="px-4 py-2 text-slate-500">{{ run.started_at }}</td>
-                <td class="px-4 py-2 text-right">{{ run.checked }}</td>
-                <td class="px-4 py-2 text-right">{{ run.discrepancies }}</td>
-                <td class="px-4 py-2 text-right">{{ run.repaired }}</td>
-                <td :class="run.open > 0 ? 'px-4 py-2 text-right font-medium text-red-600' : 'px-4 py-2 text-right text-green-600'">
-                    {{ run.open }}
-                </td>
-            </tr>
-            <tr v-if="!runs.length">
-                <td colspan="6" class="px-4 py-6 text-center text-slate-500">Chưa có phiên đối soát nào.</td>
-            </tr>
-        </tbody>
-    </table>
+    <DataTable :columns="columns" :rows="runs" empty-text="Chưa có phiên đối soát nào.">
+        <template #cell-source_label="{ row }"><Link :href="`${baseUrl}/${row.id}`" class="text-indigo-600 hover:underline">{{ row.source_label }}</Link></template>
+        <template #cell-open="{ row }"><span :class="row.open > 0 ? 'font-medium text-red-600' : 'text-green-600'">{{ row.open }}</span></template>
+    </DataTable>
 </template>

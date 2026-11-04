@@ -33,6 +33,7 @@ final class ReturnController
         $status = (string) $request->query('status', '');
 
         return Inertia::render('Returns::Returns/Index', [
+            'labels' => __('returns::labels'),
             'baseUrl' => route('admin.returns.returns.index'),
             'status' => $status,
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
@@ -56,6 +57,7 @@ final class ReturnController
         $returnable = $returns->returnable($order);
 
         return Inertia::render('Returns::Returns/Create', [
+            'labels' => __('returns::labels'),
             'storeUrl' => route('admin.returns.returns.store'),
             'orderUrl' => route('admin.orders.orders.show', ['order' => $order]),
             'order' => ['id' => $data->id, 'number' => $data->number],
@@ -105,6 +107,7 @@ final class ReturnController
         $canManage = Gate::allows('returns.manage');
 
         return Inertia::render('Returns::Returns/Show', [
+            'labels' => __('returns::labels'),
             'baseUrl' => route('admin.returns.returns.index'),
             'orderUrl' => route('admin.orders.orders.show', ['order' => $return->order_id]),
             'orderNumber' => $orders->find($return->order_id)?->number,

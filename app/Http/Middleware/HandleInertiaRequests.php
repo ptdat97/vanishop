@@ -10,6 +10,7 @@ use Inertia\Middleware;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Support\MoneyFormatter;
+use Modules\Shared\Support\StoreClock;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -57,6 +58,8 @@ final class HandleInertiaRequests extends Middleware
                 'defaultLocale' => StoreLocale::default(),
                 // Định dạng tiền của cửa hàng cho MoneyText — cùng quy tắc với MoneyFormatter ở server.
                 'money' => app(MoneyFormatter::class)->rules((string) config('vanishop.currency')),
+                // Múi giờ + mẫu ngày giờ (PHP date()) của cửa hàng cho useDateTime — cùng quy tắc với StoreClock::format().
+                'clock' => ['timezone' => StoreClock::timezone(), 'formats' => (array) config('vanishop.locale.formats')],
             ],
             'auth' => [
                 'staff' => $staff instanceof StaffUser ? ['id' => $staff->id, 'name' => $staff->name, 'email' => $staff->email] : null,
