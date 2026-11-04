@@ -146,6 +146,68 @@ function renderMiniCart(cart) {
     box.hidden = false;
 }
 
+// Ô tìm kiếm: gợi ý sản phẩm, danh mục, thương hiệu khi gõ ≥ 2 ký tự (Storefront API). Dựng bằng DOM, không chèn HTML.
+document.querySelectorAll('form[data-vani-suggest]').forEach((form) => {
+    const input = form.querySelector('input[name="q"]');
+    const box = form.querySelector('[data-vani-suggest-box]');
+    if (!input || !box) return;
+    let timer;
+    let controller;
+    const group = (title, items, render) => {
+        if (!items.length) return [];
+        const heading = document.createElement('p');
+        heading.className = 'px-2 pt-2 text-xs font-medium uppercase text-slate-500';
+        heading.textContent = title;
+        return [heading, ...items.map(render)];
+    };
+    const link = (item, label) => {
+        const anchor = document.createElement('a');
+        anchor.href = item.url;
+        anchor.className = 'flex items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-100';
+        if (item.image_url) {
+            const image = document.createElement('img');
+            image.src = item.image_url;
+            image.alt = '';
+            image.className = 'h-8 w-8 rounded object-cover';
+            anchor.append(image);
+        }
+        anchor.append(document.createTextNode(label ?? item.name ?? ''));
+        return anchor;
+    };
+    const close = () => {
+        box.hidden = true;
+        box.replaceChildren();
+    };
+    input.addEventListener('input', () => {
+        clearTimeout(timer);
+        const query = input.value.trim();
+        if (query.length < 2) return close();
+        timer = setTimeout(() => {
+            controller?.abort();
+            controller = new AbortController();
+            fetch(`${form.dataset.vaniSuggest}?${new URLSearchParams({ q: query })}`, { headers: { Accept: 'application/json', 'X-Vani-Locale': form.dataset.locale || '' }, signal: controller.signal })
+                .then((response) => (response.ok ? response.json() : null))
+                .then((json) => {
+                    const data = json?.data;
+                    if (!data) return close();
+                    const nodes = [
+                        ...group(t('suggest_products'), data.products, (item) => link(item)),
+                        ...group(t('suggest_categories'), data.categories, (item) => link(item)),
+                        ...group(t('suggest_brands'), data.brands, (item) => link(item)),
+                    ];
+                    if (!nodes.length) return close();
+                    const all = link({ url: data.search_url }, t('suggest_all'));
+                    all.classList.add('mt-1', 'border-t', 'border-slate-100', 'font-medium');
+                    box.replaceChildren(...nodes, all);
+                    box.hidden = false;
+                })
+                .catch(() => {});
+        }, 200);
+    });
+    input.addEventListener('keydown', (event) => event.key === 'Escape' && close());
+    document.addEventListener('click', (event) => !form.contains(event.target) && close());
+});
+
 /**
  * Phần riêng của khách (storefront §5): không CDN thì layout nhúng sẵn `script[data-vani-session-state]`; trang cache CDN
  * lấy từ /_vani/phien (thêm flash + cart_change). Cùng một hàm áp dụng → hai chế độ hiển thị như nhau.

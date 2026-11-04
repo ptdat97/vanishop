@@ -45,4 +45,7 @@ return [
     'too_many_videos' => 'Each product allows at most :max videos.',
     'video_order_invalid' => 'Invalid video order.',
     'localized_slug_taken' => 'This slug is already used by another product, category or collection.',
+    'facet_unknown' => 'Unknown filter (attribute deleted or no longer filterable).',
+    'facet_display_invalid' => 'This display style is not available for this filter.',
+    'facets_saved' => 'Filters saved.',
 ];

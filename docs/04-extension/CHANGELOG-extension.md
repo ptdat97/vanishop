@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.71 — 2026-11-04
+
+Chỉ thêm. Bộ lọc cấu hình được + gợi ý tìm kiếm ([reference-parity §3.5-1/4](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Kết quả `CatalogReader::searchProducts` (và hook `vani.service.catalog.search`) có `filters` = list<{key, param, label, display, options[{value, label, count, swatch?}]}> theo cấu hình Admin → Catalog → Bộ lọc (`core`/`catalog.facets`); `facets` giữ nguyên. Storefront API `GET /products` trả `meta.filters`.
+- `CatalogReader::suggestions()`, hook `vani.service.catalog.suggestions`, Storefront API `GET /search/suggestions?q=&limit=`.
+- `ListingUrl` nhận khoá lồng dạng chấm (`attr.material`). Theme `vani-base` render `filters` (cả thuộc tính, ô màu) và dropdown gợi ý (`form[data-vani-suggest]`).
+
 ## 0.3.70 — 2026-11-04
 
 Chỉ thêm. Cấu hình storefront còn lại ([reference-parity §3.2](../20-roadmap/reference-parity-refactor.md)).

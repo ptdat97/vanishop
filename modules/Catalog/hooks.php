@@ -31,8 +31,16 @@ return [
         'visibility' => 'public',
         'since' => '0.3.47',
         'on_error' => 'skip',
-        'args' => ['result' => 'array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array<string, mixed>}', 'filters' => 'Modules\\Catalog\\Contracts\\Data\\ProductFilters', 'locale' => 'string'],
+        'args' => ['result' => 'array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array<string, mixed>, filters: list<array<string, mixed>>}', 'filters' => 'Modules\\Catalog\\Contracts\\Data\\ProductFilters', 'locale' => 'string'],
         'description' => 'Kết quả tìm kiếm/danh sách sản phẩm storefront (CatalogReader::searchProducts). Thêm khoá vào item/facet dưới id plugin; không đổi giá (giá do Pricing).',
+    ],
+    'vani.service.catalog.suggestions' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.3.71',
+        'on_error' => 'skip',
+        'args' => ['result' => 'array{products: list<array<string, mixed>>, categories: list<array<string, mixed>>, brands: list<array<string, mixed>>}', 'text' => 'string', 'locale' => 'string'],
+        'description' => 'Gợi ý tìm kiếm (CatalogReader::suggestions — ô tìm kiếm). Thêm khoá dưới id plugin; không thêm nhóm gợi ý mới vào khoá gốc.',
     ],
     'vani.service.catalog.product_detail' => [
         'type' => 'filter',

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\StorefrontProductQuery;
+use Modules\Catalog\Application\Search\FacetSettings;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
@@ -26,6 +28,7 @@ final class StorefrontCatalog implements CatalogReader
     public function __construct(
         private readonly CategoryTreeQuery $categories,
         private readonly StorefrontProductQuery $products,
+        private readonly FacetSettings $facetSettings,
     ) {}
 
     public function categoryTree(string $locale): array
@@ -42,18 +45,47 @@ final class StorefrontCatalog implements CatalogReader
     {
         $query = $this->toSearchQuery($filters, $locale);
         $result = $this->products->list($query, $locale);
+        $facets = [
+            'color_families' => $result['facets']['color_families'],
+            'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
+            'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
+        ];
 
         return hook_filter('vani.service.catalog.search', [
             'items' => $result['items'],
             'total' => $result['total'],
             'page' => $query->page,
             'per_page' => $query->limit(),
-            'facets' => [
-                'color_families' => $result['facets']['color_families'],
-                'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
-                'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
-            ],
+            'facets' => $facets,
+            'filters' => $this->filters($facets, $locale),
         ], $filters, $locale);
+    }
+
+    public function suggestions(string $text, string $locale, int $now, int $products = 5): array
+    {
+        $needle = self::fold($text);
+        if (mb_strlen($needle) < 2) {
+            return ['products' => [], 'categories' => [], 'brands' => []];
+        }
+
+        $found = $this->products->list($this->toSearchQuery(new ProductFilters(now: $now, text: $text, perPage: max(1, min(10, $products))), $locale), $locale);
+        $categories = [];
+        $walk = function (array $nodes) use (&$walk, &$categories, $needle): void {
+            foreach ($nodes as $node) {
+                if (count($categories) < 3 && str_contains(self::fold((string) $node['name']), $needle)) {
+                    $categories[] = ['id' => (int) $node['id'], 'slug' => (string) $node['slug'], 'name' => (string) $node['name']];
+                }
+                $walk($node['children']);
+            }
+        };
+        $walk($this->categoryTree($locale));
+        $brands = array_values(array_slice(array_filter($this->brands(), fn (array $brand): bool => str_contains(self::fold($brand['name']), $needle)), 0, 3));
+
+        return hook_filter('vani.service.catalog.suggestions', [
+            'products' => array_map(fn (array $item): array => ['id' => (int) $item['id'], 'slug' => (string) $item['slug'], 'name' => $item['name'], 'image_url' => $item['image_url']], $found['items']),
+            'categories' => $categories,
+            'brands' => array_map(fn (array $brand): array => ['slug' => $brand['slug'], 'name' => $brand['name'], 'logo_url' => $brand['logo_url']], $brands),
+        ], $text, $locale);
     }
 
     public function brands(): array
@@ -84,6 +116,14 @@ final class StorefrontCatalog implements CatalogReader
     public function sellableVariants(array $variantIds, string $locale, int $now): array
     {
         return $variantIds === [] ? [] : $this->products->sellable($variantIds, $locale, $now);
+    }
+
+    /**
+     * Chuẩn hoá để so khớp tên: chữ thường, bỏ dấu tiếng Việt (đ → d).
+     */
+    private static function fold(string $value): string
+    {
+        return Str::lower(Str::ascii(trim($value)));
     }
 
     /**
@@ -118,6 +158,36 @@ final class StorefrontCatalog implements CatalogReader
             page: $filters->page,
             perPage: $filters->perPage,
         );
+    }
+
+    /**
+     * Bộ lọc để hiển thị theo cấu hình Admin (§3.5-1): đúng thứ tự, bỏ facet tắt hoặc không có giá trị trong kết quả.
+     * `param` là khoá query của Storefront API / trang danh sách (`brand`, `color`, `attr.<mã>` = `attr[<mã>]`).
+     *
+     * @param  array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>}  $facets
+     * @return list<array{key: string, param: string, label: string, display: string, options: list<array{value: string, label: string, count: int, swatch?: string}>}>
+     */
+    private function filters(array $facets, string $locale): array
+    {
+        $attributes = collect($facets['attributes'])->keyBy('code');
+        $filters = [];
+        foreach ($this->facetSettings->configured($locale) as $facet) {
+            if (! $facet['enabled']) {
+                continue;
+            }
+            [$param, $options] = match ($facet['type']) {
+                'brand' => ['brand', array_map(fn (array $brand): array => ['value' => (string) $brand['slug'], 'label' => (string) $brand['name'], 'count' => (int) $brand['count']], $facets['brands'])],
+                'color' => ['color', array_map(fn (string $family, int $count): array => [
+                    'value' => $family, 'label' => __("catalog::labels.color_family.{$family}", [], $locale), 'count' => $count, 'swatch' => ColorFamily::tryFrom($family)?->swatch() ?? '#e5e7eb',
+                ], array_keys($facets['color_families']), array_values($facets['color_families']))],
+                default => ["attr.{$facet['code']}", array_map(fn (array $value): array => ['value' => (string) $value['code'], 'label' => (string) ($value['label'] ?? $value['code']), 'count' => (int) $value['count']], $attributes[$facet['code']]['values'] ?? [])],
+            };
+            if ($options !== []) {
+                $filters[] = ['key' => $facet['key'], 'param' => $param, 'label' => $facet['label'], 'display' => $facet['display'], 'options' => $options];
+            }
+        }
+
+        return $filters;
     }
 
     /**

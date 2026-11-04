@@ -45,4 +45,7 @@ return [
     'too_many_videos' => 'Mỗi sản phẩm tối đa :max video.',
     'video_order_invalid' => 'Thứ tự video không hợp lệ.',
     'localized_slug_taken' => 'Slug này đã được dùng cho sản phẩm/danh mục/bộ sưu tập khác.',
+    'facet_unknown' => 'Bộ lọc không tồn tại (thuộc tính đã xoá hoặc tắt lọc).',
+    'facet_display_invalid' => 'Kiểu hiển thị không dùng được cho bộ lọc này.',
+    'facets_saved' => 'Đã lưu bộ lọc.',
 ];

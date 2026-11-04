@@ -1,39 +1,32 @@
-@php($facets = $listing['facets'])
 @php($pages = (int) ceil($listing['total'] / max(1, $listing['per_page'])))
 {{-- $listingContext: trang gọi truyền vào (danh mục / thương hiệu); mặc định là trang tìm kiếm. --}}
 <x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingContext ?? ['type' => 'search', 'category' => null, 'brand' => null], $listing]" />
 <div class="grid gap-8 md:grid-cols-[14rem_1fr]">
     <aside class="space-y-6 text-sm" aria-label="{{ __('Bộ lọc') }}">
-        @if (! empty($facets['brands']) && ! request()->routeIs('storefront.brand'))
-            <section>
-                <h2 class="mb-2 font-semibold">{{ __('Thương hiệu') }}</h2>
-                <ul class="space-y-1">
-                    @foreach ($facets['brands'] as $brand)
+        {{-- Bộ lọc theo cấu hình Admin → Catalog → Bộ lọc (thứ tự, bật/tắt, kiểu hiển thị); link thường, chạy khi tắt JS. --}}
+        @foreach ($listing['filters'] ?? [] as $filter)
+            @continue($filter['key'] === 'brand' && request()->routeIs('storefront.brand', 'storefront.*.brand'))
+            <section data-filter="{{ $filter['key'] }}">
+                <h2 class="mb-2 font-semibold">{{ $filter['label'] }}</h2>
+                <ul @class(['flex flex-wrap gap-2' => $filter['display'] === 'swatch', 'space-y-1' => $filter['display'] !== 'swatch'])>
+                    @foreach ($filter['options'] as $option)
+                        @php($active = \Modules\Storefront\View\ListingUrl::active(request(), $filter['param'], $option['value']))
                         <li>
-                            <a href="{{ \Modules\Storefront\View\ListingUrl::toggle(request(), 'brand', $brand['slug']) }}"
-                               @class(['font-semibold text-primary' => \Modules\Storefront\View\ListingUrl::active(request(), 'brand', $brand['slug'])])>
-                                {{ $brand['name'] }} <span class="text-slate-400">({{ $brand['count'] }})</span>
+                            <a href="{{ \Modules\Storefront\View\ListingUrl::toggle(request(), $filter['param'], $option['value']) }}" @if ($active) aria-current="true" @endif
+                               @class(['font-semibold text-primary' => $active && $filter['display'] !== 'swatch'])
+                               @if ($filter['display'] === 'swatch') title="{{ $option['label'] }} ({{ $option['count'] }})" @endif>
+                                @if ($filter['display'] === 'swatch')
+                                    <span @class(['block h-7 w-7 rounded-full border', 'ring-2 ring-primary ring-offset-1' => $active, 'border-slate-300' => ! $active]) style="background: {{ $option['swatch'] ?? '#e5e7eb' }}"></span>
+                                    <span class="sr-only">{{ $option['label'] }} ({{ $option['count'] }})</span>
+                                @else
+                                    {{ $option['label'] }} <span class="text-slate-400">({{ $option['count'] }})</span>
+                                @endif
                             </a>
                         </li>
                     @endforeach
                 </ul>
             </section>
-        @endif
-        @if (! empty($facets['color_families']))
-            <section>
-                <h2 class="mb-2 font-semibold">{{ __('Màu') }}</h2>
-                <ul class="space-y-1">
-                    @foreach ($facets['color_families'] as $family => $count)
-                        <li>
-                            <a href="{{ \Modules\Storefront\View\ListingUrl::toggle(request(), 'color', $family) }}"
-                               @class(['font-semibold text-primary' => \Modules\Storefront\View\ListingUrl::active(request(), 'color', $family)])>
-                                {{ $family }} <span class="text-slate-400">({{ $count }})</span>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </section>
-        @endif
+        @endforeach
         <x-vani::hook-slot name="vani.storefront.plp.filters" :args="[$listing]" />
     </aside>
 

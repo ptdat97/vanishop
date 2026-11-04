@@ -6,6 +6,7 @@ use Modules\Catalog\Http\Controllers\Admin\BrandController;
 use Modules\Catalog\Http\Controllers\Admin\CategoryController;
 use Modules\Catalog\Http\Controllers\Admin\CollectionController;
 use Modules\Catalog\Http\Controllers\Admin\ColorController;
+use Modules\Catalog\Http\Controllers\Admin\FacetController;
 use Modules\Catalog\Http\Controllers\Admin\LinkTypeController;
 use Modules\Catalog\Http\Controllers\Admin\ProductColorController;
 use Modules\Catalog\Http\Controllers\Admin\ProductController;
@@ -24,6 +25,8 @@ Route::resource('brands', BrandController::class)->only(['index', 'store', 'upda
 Route::resource('attributes', AttributeController::class)->except('show');
 Route::resource('colors', ColorController::class)->only(['index', 'store', 'update', 'destroy']);
 Route::resource('sizes', SizeController::class)->only(['index', 'store', 'update', 'destroy']);
+Route::get('filters', [FacetController::class, 'index'])->name('filters.index');
+Route::put('filters', [FacetController::class, 'update'])->name('filters.update');
 Route::resource('link-types', LinkTypeController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['link-types' => 'linkType']);
 
 Route::resource('products', ProductController::class)->except('show');

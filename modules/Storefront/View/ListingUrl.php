@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 
 /**
  * URL cho bộ lọc/phân trang của trang danh sách: link thường (không cần JS — ADR-025), giữ các tham số khác,
- * giá trị nhiều lựa chọn nối bằng dấu phẩy như Storefront API (`?brand=a,b&color=black`).
+ * giá trị nhiều lựa chọn nối bằng dấu phẩy như Storefront API (`?brand=a,b&color=black`). Khoá lồng viết bằng dấu chấm:
+ * `attr.material` = `?attr[material]=silk,linen`.
  */
 final class ListingUrl
 {
@@ -18,7 +19,7 @@ final class ListingUrl
         $values = self::values($request, $key);
         $values = in_array($value, $values, true) ? array_values(array_diff($values, [$value])) : [...$values, $value];
 
-        $query[$key] = implode(',', $values);
+        data_set($query, $key, implode(',', $values));
         unset($query['page']);
 
         return self::url($request, $query);
@@ -39,7 +40,9 @@ final class ListingUrl
      */
     private static function values(Request $request, string $key): array
     {
-        return array_values(array_filter(array_map('trim', explode(',', (string) $request->query($key, ''))), fn (string $part): bool => $part !== ''));
+        $raw = data_get($request->query(), $key, '');
+
+        return array_values(array_filter(array_map('trim', explode(',', is_string($raw) ? $raw : '')), fn (string $part): bool => $part !== ''));
     }
 
     /**
@@ -47,7 +50,12 @@ final class ListingUrl
      */
     private static function url(Request $request, array $query): string
     {
-        $query = array_filter($query, fn (mixed $value): bool => $value !== '' && $value !== null && $value !== []);
+        $clean = function (array $values) use (&$clean): array {
+            $values = array_map(fn (mixed $value): mixed => is_array($value) ? $clean($value) : $value, $values);
+
+            return array_filter($values, fn (mixed $value): bool => $value !== '' && $value !== null && $value !== []);
+        };
+        $query = $clean($query);
 
         return $request->url().($query === [] ? '' : '?'.http_build_query($query));
     }

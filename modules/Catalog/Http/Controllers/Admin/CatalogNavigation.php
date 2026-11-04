@@ -27,6 +27,7 @@ final class CatalogNavigation
             ['colors', 'Màu'],
             ['sizes', 'Size'],
             ['link-types', 'Loại liên kết'],
+            ['filters', 'Bộ lọc'],
         ]);
     }
 }

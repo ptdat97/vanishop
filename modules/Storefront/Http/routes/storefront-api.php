@@ -18,6 +18,7 @@ Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show
 // Khách đăng nhập (Bearer) thấy giá khi cửa hàng ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`).
 Route::middleware('vani.customer:optional')->group(function () {
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('search/suggestions', [ProductController::class, 'suggestions'])->name('search.suggestions');
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 });
 Route::get('address/provinces', [AddressController::class, 'provinces'])->name('address.provinces');

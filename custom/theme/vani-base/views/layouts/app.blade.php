@@ -31,10 +31,13 @@
     <header class="border-b border-slate-200">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
             <a href="{{ vani_route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
-            <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="flex-1">
+            <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="relative flex-1"
+                  data-vani-suggest="{{ route('api.storefront.v1.search.suggestions') }}" data-locale="{{ app()->getLocale() }}">
                 <label for="q" class="sr-only">{{ __('Tìm kiếm') }}</label>
                 <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="{{ __('Tìm sản phẩm…') }}" @if (($popularSearches ?? []) !== []) list="vani-popular-searches" @endif
                        class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
+                {{-- Gợi ý khi gõ (§3.5-4, app.js): sản phẩm, danh mục, thương hiệu từ Storefront API. Không JS: tìm như thường. --}}
+                <div data-vani-suggest-box hidden class="absolute inset-x-0 top-full z-30 mt-1 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-2 text-sm shadow-lg"></div>
                 {{-- Từ khoá nổi bật (Admin → Cấu hình `storefront.popular_searches`): trình duyệt gợi ý khi ô còn trống. --}}
                 @if (($popularSearches ?? []) !== [])
                     <datalist id="vani-popular-searches">@foreach ($popularSearches as $term)<option value="{{ $term }}"></option>@endforeach</datalist>
@@ -143,7 +146,7 @@
         <script type="application/json" data-vani-cart-change>@json(session(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))</script>
     @endif
     {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
-    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên')])
+    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên'), 'suggest_products' => __('Sản phẩm'), 'suggest_categories' => __('Danh mục'), 'suggest_brands' => __('Thương hiệu'), 'suggest_all' => __('Xem tất cả kết quả')])
     <script type="application/json" data-vani-i18n>@json($jsStrings)</script>
     @if ($customerState !== null)
         {{-- Cùng dữ liệu với /_vani/phien (trừ flash — đã render ở trên) để JS dựng giỏ mini, giá thành viên như trang cache CDN. --}}
