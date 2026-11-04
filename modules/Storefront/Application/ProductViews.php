@@ -6,6 +6,7 @@ namespace Modules\Storefront\Application;
 
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
+use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
@@ -28,6 +29,7 @@ final class ProductViews implements ProductCards
         private readonly MoneyFormatter $money,
         private readonly Enrichment $enrichment,
         private readonly PriceVisibility $visibility,
+        private readonly MediaUrls $media,
     ) {}
 
     /**
@@ -62,7 +64,10 @@ final class ProductViews implements ProductCards
         $stock = $this->stock(array_keys($resolved));
 
         $hidden = $this->visibility->hidden();
-        $items = array_map(function (array $item) use ($resolved, $stock, $hidden): array {
+        // Sản phẩm thiếu ảnh → ảnh thay thế của cửa hàng (`storefront.placeholder_image`), tra một lần cho cả danh sách.
+        $placeholder = in_array(null, array_column($items, 'image_url'), true) ? $this->media->image(null, 400) : null;
+        $items = array_map(function (array $item) use ($resolved, $stock, $hidden, $placeholder): array {
+            $item['image_url'] ??= $placeholder;
             $item['price'] = $hidden ? null : $this->range(array_values(array_intersect_key($resolved, array_flip($item['variant_ids']))));
             $item['price_hidden'] = $hidden;
             $item['in_stock'] = array_sum(array_intersect_key($stock, array_flip($item['variant_ids']))) > 0;

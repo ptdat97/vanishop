@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * GET /products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk,linen&sort=&page=&per_page=
@@ -61,7 +62,8 @@ final class ProductListRequest extends FormRequest
             attributes: $attributes,
             sort: (string) $this->input('sort', ProductSearchQuery::SORT_NEWEST),
             page: (int) $this->input('page', 1),
-            perPage: (int) $this->input('per_page', 24),
+            // Không truyền per_page → cấu hình cửa hàng `storefront.per_page` (12–60).
+            perPage: (int) $this->input('per_page', $this->container->make(Settings::class)->get('core', 'storefront.per_page', 24)),
             brandSlugs: $split((string) $this->input('brand', '')),
         );
     }

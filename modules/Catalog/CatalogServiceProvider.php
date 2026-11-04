@@ -45,6 +45,8 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Settings;
 
 final class CatalogServiceProvider extends ModuleServiceProvider
 {
@@ -106,6 +108,12 @@ final class CatalogServiceProvider extends ModuleServiceProvider
 
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100, group: 'catalog');
         $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 110, group: 'catalog');
+
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'Ảnh thay thế (ID trong Thư viện ảnh)', 'int',
+            help: 'Hiện thay cho sản phẩm chưa có ảnh (thẻ sản phẩm, Storefront API) và cho vani_image() khi thiếu ảnh. Số ID xem ở Thư viện ảnh. Để trống: khung trống của theme.',
+            rules: ['min:1', 'exists:media,id'],
+        ));
 
         if (! $this->app->routesAreCached()) {
             Route::group([], $this->modulePath('Http/routes/media-cache.php'));

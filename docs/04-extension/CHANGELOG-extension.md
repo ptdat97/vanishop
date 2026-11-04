@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.70 — 2026-11-04
+
+Chỉ thêm. Cấu hình storefront còn lại ([reference-parity §3.2](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Khoá `core`: `storefront.per_page` (mặc định `ProductListRequest` khi không truyền `per_page`), `storefront.popular_searches`, `storefront.placeholder_image`.
+- Thẻ sản phẩm (`ProductCards`, Storefront API) thiếu ảnh có `image_url` = ảnh thay thế khi đã cấu hình.
+- Layout và trang tìm kiếm theme nhận `$popularSearches` (list<string>).
+
 ## 0.3.69 — 2026-11-04
 
 Chỉ thêm. Helper ADR-037 + tài nguyên tĩnh plugin (reference-parity §3.4-1/2).

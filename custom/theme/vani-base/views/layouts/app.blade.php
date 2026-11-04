@@ -33,8 +33,12 @@
             <a href="{{ vani_route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
             <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="flex-1">
                 <label for="q" class="sr-only">{{ __('Tìm kiếm') }}</label>
-                <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="{{ __('Tìm sản phẩm…') }}"
+                <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="{{ __('Tìm sản phẩm…') }}" @if (($popularSearches ?? []) !== []) list="vani-popular-searches" @endif
                        class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
+                {{-- Từ khoá nổi bật (Admin → Cấu hình `storefront.popular_searches`): trình duyệt gợi ý khi ô còn trống. --}}
+                @if (($popularSearches ?? []) !== [])
+                    <datalist id="vani-popular-searches">@foreach ($popularSearches as $term)<option value="{{ $term }}"></option>@endforeach</datalist>
+                @endif
             </form>
             @php($headerMenu = ($menus ?? null)?->items('header', app()->getLocale()))
             @php($mobileMenu = ($menus ?? null)?->items('mobile', app()->getLocale()) ?? $headerMenu)

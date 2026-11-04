@@ -32,6 +32,7 @@ use Modules\Storefront\Application\Links\ProductLinkType;
 use Modules\Storefront\Application\Links\RouteLinkType;
 use Modules\Storefront\Application\Links\UrlLinkType;
 use Modules\Storefront\Application\Menus\MenuPresenter;
+use Modules\Storefront\Application\PopularSearches;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
@@ -97,9 +98,11 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'seo' => $this->app->make(PageAlternates::class)->tags(),
             // Đầu/chân trang theo schema theme (§3.16-3): $themeSettings['footer']['copyright']…
             'themeSettings' => $this->app->make(ThemeSettings::class)->values(App::getLocale()),
+            'popularSearches' => PopularSearches::from($this->app->make(Settings::class)),
             // Không CDN (mặc định): phần riêng của khách render sẵn; có CDN thì JS lấy qua /_vani/phien (storefront §5).
             'customerState' => request()->attributes->has(PublicPageCache::ATTRIBUTE) ? null : $this->app->make(CustomerSessionState::class)->for(request(), App::getLocale()),
         ]));
+        View::composer('theme::pages.search', fn ($view) => $view->with('popularSearches', PopularSearches::from($this->app->make(Settings::class))));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 
@@ -126,6 +129,17 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'core', PriceVisibility::SETTING, 'Hiện giá', 'select', PriceVisibility::PUBLIC,
             options: [PriceVisibility::PUBLIC => 'Mọi người', PriceVisibility::MEMBERS => 'Chỉ khách đã đăng nhập'],
             help: '"Chỉ khách đã đăng nhập": khách chưa đăng nhập thấy "Đăng nhập để xem giá", không thêm giỏ/đặt hàng được; Storefront API trả giá null, JSON-LD không có giá. Trang đã cache ở CDN còn bản cũ tới khi hết TTL — xoá cache CDN sau khi đổi.',
+        ));
+
+        $settings->define(new SettingDefinition(
+            'core', 'storefront.per_page', 'Số sản phẩm mỗi trang', 'int', 24,
+            help: 'Trang danh mục, thương hiệu, tìm kiếm và Storefront API khi không truyền per_page (12–60).',
+            rules: ['min:12', 'max:60'],
+        ));
+        $settings->define(new SettingDefinition(
+            'core', PopularSearches::SETTING, 'Từ khoá tìm kiếm nổi bật', 'text',
+            help: 'Mỗi dòng một từ khoá (tối đa 10): gợi ý ở ô tìm kiếm và trang tìm kiếm khi chưa gõ.',
+            rules: ['max:1000'],
         ));
 
         // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.

@@ -3,10 +3,13 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Modules\Catalog\Application\Products\StyleColorService;
+use Modules\Catalog\Tests\Feature\CatalogTestHelpers;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Pricing\Tests\Feature\PricingTestHelpers;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\View\ResponsiveImage;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -42,4 +45,18 @@ it('ảnh nhỏ hơn mọi bề rộng cấu hình: không có srcset', function
     ]));
 
     expect($this->get('/thuong-hieu/'.$brand->slug)->assertOk()->getContent())->not->toContain('srcset=');
+});
+
+it('sản phẩm chưa có ảnh: thẻ sản phẩm dùng ảnh thay thế đã cấu hình (storefront.placeholder_image)', function () {
+    Storage::fake('public');
+    ['brand' => $brand, 's' => $variant] = C::store();
+    [$other] = PricingTestHelpers::variants(CatalogTestHelpers::product($brand->id, ['name' => 'Áo chưa ảnh']), ['M']);
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($variant->style, $variant->styleColor, [
+        UploadedFile::fake()->image('mau.jpg', 600, 800),
+    ]));
+    $media = $variant->styleColor->gallery()->with('media')->first()->media;
+
+    $this->getJson('/api/storefront/v1/products?ids='.$other->style_id)->assertJsonPath('data.0.image_url', null);
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Settings::class)->set('core', 'storefront.placeholder_image', $media->id));
+    $this->getJson('/api/storefront/v1/products?ids='.$other->style_id)->assertJsonPath('data.0.image_url', $media->url(400));
 });
