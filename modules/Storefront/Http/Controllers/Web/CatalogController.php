@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\Storefront\Http\Controllers\Web;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Http\Requests\ProductListRequest;
 
@@ -20,10 +22,13 @@ final class CatalogController
         private readonly ProductViews $products,
     ) {}
 
-    public function category(ProductListRequest $request, string $slug): View
+    public function category(ProductListRequest $request, string $slug): View|RedirectResponse
     {
         $category = $this->catalog->category($slug, App::getLocale());
         abort_if($category === null, 404);
+        if ($category['slug'] !== $slug) {
+            return redirect()->to(LocalizedUrls::route('storefront.category', [$category['slug'], ...$request->query()]), 301);
+        }
         $request->merge(['category' => $slug]);
 
         return view('theme::pages.category', ['category' => $category, ...$this->listing($request)]);

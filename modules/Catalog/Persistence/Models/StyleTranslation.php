@@ -10,5 +10,5 @@ final class StyleTranslation extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['style_id', 'locale', 'name', 'description', 'care_instructions', 'meta_title', 'meta_description'];
+    protected $fillable = ['style_id', 'locale', 'slug', 'name', 'description', 'care_instructions', 'meta_title', 'meta_description'];
 }

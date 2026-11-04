@@ -12,6 +12,7 @@ use Modules\Shared\Support\StoreLocale;
 final class CollectionRequest extends FormRequest
 {
     use AuthorizesCatalogManage;
+    use ValidatesLocalizedSlugs;
 
     /**
      * @return array<string, mixed>
@@ -29,6 +30,7 @@ final class CollectionRequest extends FormRequest
             'translations.*.name' => ['nullable', 'string', 'max:255'],
             'translations.*.description' => ['nullable', 'string', 'max:5000'],
             'style_codes' => ['nullable', 'string', 'max:20000'],
+            ...$this->localizedSlugRules('collections', 'collection_translations', 'collection_id', $collection instanceof ProductCollection ? $collection->id : null),
         ];
     }
 
@@ -41,10 +43,10 @@ final class CollectionRequest extends FormRequest
             'slug' => (string) $this->validated('slug'),
             'status' => (string) $this->validated('status'),
             'position' => (int) $this->validated('position'),
-            'translations' => array_filter(
+            'translations' => $this->normalizeLocalizedSlugs(array_filter(
                 array_intersect_key((array) $this->input('translations', []), array_flip(StoreLocale::supported())),
                 fn (mixed $fields): bool => is_array($fields) && filled($fields['name'] ?? null),
-            ),
+            )),
         ];
     }
 

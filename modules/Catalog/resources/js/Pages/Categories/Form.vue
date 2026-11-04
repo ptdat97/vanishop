@@ -9,12 +9,13 @@ import { labelOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
+import { slugify } from '@admin/slug';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem, Translations } from '../../types';
 
-type Fields = 'name' | 'description' | 'meta_title' | 'meta_description';
+type Fields = 'name' | 'slug' | 'description' | 'meta_title' | 'meta_description';
 
 const props = defineProps<{
     nav: NavItem[];
@@ -37,7 +38,7 @@ const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories
 const { locales, defaultLocale } = useStoreLocales();
 const locale = ref(defaultLocale);
 
-const emptyTranslation = { name: '', description: '', meta_title: '', meta_description: '' };
+const emptyTranslation = { name: '', slug: '', description: '', meta_title: '', meta_description: '' };
 const form = useForm({
     slug: props.category?.slug ?? '',
     parent_id: props.category?.parent_id ?? null,
@@ -104,6 +105,12 @@ function removeImage(): void {
             <FormField :label="locale === defaultLocale ? 'Tên (bắt buộc)' : 'Tên'" :error="errors[`translations.${locale}.name`]">
                 <input v-model="form.translations[locale].name" :class="inputClass" type="text" />
             </FormField>
+            <FormField v-if="locale !== defaultLocale" label="Slug riêng cho ngôn ngữ này" hint="Trống = dùng slug gốc. Đổi slug đã được index làm gãy link cũ." :error="errors[`translations.${locale}.slug`]">
+                    <div class="flex gap-2">
+                        <input v-model="form.translations[locale].slug" :class="inputClass" :placeholder="slugify(form.translations[locale].name ?? '') || form.slug" />
+                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">Tạo từ tên</button>
+                    </div>
+                </FormField>
             <FormField label="Mô tả" :error="errors[`translations.${locale}.description`]">
                 <textarea v-model="form.translations[locale].description" :class="inputClass" rows="4" />
             </FormField>

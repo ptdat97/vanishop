@@ -15,6 +15,7 @@ use Modules\Shared\Support\StoreLocale;
 final class ProductRequest extends FormRequest
 {
     use AuthorizesCatalogManage;
+    use ValidatesLocalizedSlugs;
 
     /**
      * @return array<string, mixed>
@@ -42,6 +43,7 @@ final class ProductRequest extends FormRequest
             'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
             'translations.*.meta_description' => ['nullable', 'string', 'max:512'],
             'attributes' => ['array'],
+            ...$this->localizedSlugRules('styles', 'style_translations', 'style_id', $ignore),
         ];
     }
 
@@ -56,7 +58,7 @@ final class ProductRequest extends FormRequest
             styleCode: (string) $this->validated('style_code'),
             slug: (string) $this->validated('slug'),
             status: StyleStatus::from((string) $this->validated('status')),
-            translations: $translations,
+            translations: $this->normalizeLocalizedSlugs($translations),
             publishedFrom: $this->dateTimeInput('published_from'),
             publishedTo: $this->dateTimeInput('published_to'),
             categoryIds: array_map('intval', (array) $this->validated('category_ids', [])),

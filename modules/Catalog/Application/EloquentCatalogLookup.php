@@ -29,7 +29,7 @@ final class EloquentCatalogLookup implements CatalogLookup
         $found = match ($kind) {
             'category' => $this->visibleCategories($ids, $locale),
             'collection' => ProductCollection::query()->with('translations')->whereIn('id', $ids)->where('status', 'active')->get()
-                ->map(fn (ProductCollection $collection): array => ['id' => $collection->id, 'slug' => $collection->slug, 'name' => (string) $collection->translate('name', $locale)])->all(),
+                ->map(fn (ProductCollection $collection): array => ['id' => $collection->id, 'slug' => $collection->slugFor($locale), 'name' => (string) $collection->translate('name', $locale)])->all(),
             'brand' => Brand::query()->whereIn('id', $ids)->where('status', Brand::ACTIVE)->get()
                 ->map(fn (Brand $brand): array => ['id' => $brand->id, 'slug' => $brand->slug, 'name' => $brand->name])->all(),
             'product' => $this->visibleProducts($ids, $locale),
@@ -99,7 +99,7 @@ final class EloquentCatalogLookup implements CatalogLookup
 
         return Style::query()->with('translations')->whereIn('id', $ids)->get()
             ->filter(fn (Style $style): bool => PublishWindow::isVisible($style->status, $style->publishWindow(), $now))
-            ->map(fn (Style $style): array => ['id' => $style->id, 'slug' => $style->slug, 'name' => (string) $style->translate('name', $locale)])
+            ->map(fn (Style $style): array => ['id' => $style->id, 'slug' => $style->slugFor($locale), 'name' => (string) $style->translate('name', $locale)])
             ->values()->all();
     }
 

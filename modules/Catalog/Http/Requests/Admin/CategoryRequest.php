@@ -14,6 +14,8 @@ use Modules\Shared\Support\StoreLocale;
 
 final class CategoryRequest extends FormRequest
 {
+    use ValidatesLocalizedSlugs;
+
     /**
      * Kiểm tra quyền trước khi validate (người chỉ có quyền xem nhận 403, không nhận lỗi form).
      */
@@ -43,6 +45,7 @@ final class CategoryRequest extends FormRequest
             'translations.*.description' => ['nullable', 'string', 'max:20000'],
             'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
             'translations.*.meta_description' => ['nullable', 'string', 'max:512'],
+            ...$this->localizedSlugRules('categories', 'category_translations', 'category_id', $category instanceof Category ? $category->id : null),
         ];
     }
 
@@ -56,7 +59,7 @@ final class CategoryRequest extends FormRequest
         return new CategoryInput(
             slug: (string) $this->validated('slug'),
             status: CategoryStatus::from((string) $this->validated('status')),
-            translations: $translations,
+            translations: $this->normalizeLocalizedSlugs($translations),
             parentId: $this->validated('parent_id') === null ? null : (int) $this->validated('parent_id'),
             position: (int) $this->validated('position'),
         );

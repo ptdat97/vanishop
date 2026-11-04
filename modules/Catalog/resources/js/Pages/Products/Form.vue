@@ -11,6 +11,7 @@ import { codeOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
+import { slugify } from '@admin/slug';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -19,7 +20,7 @@ import ProductVideos from '../../Components/ProductVideos.vue';
 import VariantMatrix from '../../Components/VariantMatrix.vue';
 import type { CatalogLabels, LinkGroupRow, NavItem, Translations, VideoRow } from '../../types';
 
-type Fields = 'name' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
+type Fields = 'name' | 'slug' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
 type AttributeValue = number | number[] | string | boolean | null;
 
 interface ColorEntry {
@@ -74,7 +75,7 @@ const booleanOptions = [
     { value: false, label: 'Không' },
 ];
 
-const emptyTranslation = { name: '', description: '', care_instructions: '', meta_title: '', meta_description: '' };
+const emptyTranslation = { name: '', slug: '', description: '', care_instructions: '', meta_title: '', meta_description: '' };
 const initialAttributes: Record<number, AttributeValue> = {};
 for (const definition of props.attributeDefinitions) {
     initialAttributes[definition.id] = props.product?.attributes[definition.id] ?? (definition.input_type === 'multiselect' ? [] : null);
@@ -174,6 +175,12 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 </div>
                 <FormField :label="locale === defaultLocale ? 'Tên sản phẩm (bắt buộc)' : 'Tên sản phẩm'" :error="errors[`translations.${locale}.name`]">
                     <input v-model="form.translations[locale].name" :class="inputClass" />
+                </FormField>
+                <FormField v-if="locale !== defaultLocale" label="Slug riêng cho ngôn ngữ này" hint="Trống = dùng slug gốc. Đổi slug đã được index làm gãy link cũ." :error="errors[`translations.${locale}.slug`]">
+                    <div class="flex gap-2">
+                        <input v-model="form.translations[locale].slug" :class="inputClass" :placeholder="slugify(form.translations[locale].name ?? '') || form.slug" />
+                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">Tạo từ tên</button>
+                    </div>
                 </FormField>
                 <FormField label="Mô tả" :error="errors[`translations.${locale}.description`]">
                     <textarea v-model="form.translations[locale].description" :class="inputClass" rows="6" />

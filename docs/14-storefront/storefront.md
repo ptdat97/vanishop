@@ -109,6 +109,7 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - **Theme và plugin sinh URL bằng `vani_route('storefront.…', $params)`** (ngôn ngữ hiện hành; route chưa có bản ngôn ngữ → URL mặc định); class trong `modules/` dùng `Shared\Support\LocalizedUrls::route()`. Gọi `route('storefront.…')` trực tiếp sẽ ra URL tiếng Việt trên trang tiếng Anh.
 - Plugin: `storefrontPages($file, prefix: ['vi' => 'tin-tuc', 'en' => 'news'])`; `vani.cms`: `/en/pages/{slug}`, `/en/news`.
 - `/_vani/phien?locale=en` (trang có cache gọi bằng JS) trả link tài khoản theo ngôn ngữ của trang.
+- **Slug theo ngôn ngữ** (0.3.60): bản dịch `en` của sản phẩm/danh mục/bộ sưu tập có slug riêng tuỳ chọn (Admin: ô "Slug riêng", nút "Tạo từ tên"); trống = slug gốc. `/en/products/{slug}` tra slug `en` trước rồi slug gốc; khớp slug gốc khi đã có slug `en` → 301. Trang tiếng Việt chỉ nhận slug gốc. Thương hiệu một slug cho mọi ngôn ngữ. Dữ liệu catalog trả `slug` theo ngôn ngữ được yêu cầu, chi tiết sản phẩm/danh mục kèm `slugs` (mọi ngôn ngữ).
 
 ## 4a. Link có kiểu và menu
 

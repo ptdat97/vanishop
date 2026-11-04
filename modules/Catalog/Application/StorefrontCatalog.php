@@ -16,6 +16,7 @@ use Modules\Catalog\Persistence\Models\AttributeValue;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Hiện thực CatalogReader cho storefront (native và Storefront API).
@@ -39,7 +40,7 @@ final class StorefrontCatalog implements CatalogReader
 
     public function searchProducts(ProductFilters $filters, string $locale): array
     {
-        $query = $this->toSearchQuery($filters);
+        $query = $this->toSearchQuery($filters, $locale);
         $result = $this->products->list($query, $locale);
 
         return hook_filter('vani.service.catalog.search', [
@@ -88,12 +89,12 @@ final class StorefrontCatalog implements CatalogReader
     /**
      * Slug/mã không tồn tại trong phạm vi → lọc ra rỗng (không âm thầm bỏ bộ lọc).
      */
-    private function toSearchQuery(ProductFilters $filters): ProductSearchQuery
+    private function toSearchQuery(ProductFilters $filters, string $locale): ProductSearchQuery
     {
         $categoryId = $filters->categorySlug === null ? null
-            : (Category::query()->where('slug', $filters->categorySlug)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
+            : (Category::query()->whereLocalizedSlug($filters->categorySlug, $locale)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
         $collectionId = $filters->collectionSlug === null ? null
-            : (ProductCollection::query()->where('slug', $filters->collectionSlug)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
+            : (ProductCollection::query()->whereLocalizedSlug($filters->collectionSlug, $locale)->where('status', 'active')->orderBy('id')->value('id') ?? -1);
 
         $brandIds = $filters->brandSlugs === [] ? []
             : (Brand::query()->whereIn('slug', $filters->brandSlugs)->where('status', Brand::ACTIVE)->pluck('id')->map(fn ($id): int => (int) $id)->all() ?: [-1]);
@@ -157,6 +158,7 @@ final class StorefrontCatalog implements CatalogReader
         return array_map(fn (array $node): array => [
             'id' => $node['id'],
             'slug' => $node['slug'],
+            'slugs' => $node['slugs'],
             'name' => $node['name'],
             'description' => $node['description'],
             'image_url' => $node['image_url'],
@@ -171,7 +173,8 @@ final class StorefrontCatalog implements CatalogReader
     private function find(array $nodes, string $slug): ?array
     {
         foreach ($nodes as $node) {
-            if ($node['slug'] === $slug) {
+            // Slug theo ngôn ngữ hoặc slug gốc (link cũ/chưa có slug riêng — trang chuyển hướng 301 sang slug riêng).
+            if ($node['slug'] === $slug || ($node['slugs'][StoreLocale::default()] ?? null) === $slug) {
                 return $node;
             }
             $found = $this->find($node['children'], $slug);

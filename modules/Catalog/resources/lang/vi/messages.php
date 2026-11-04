@@ -44,4 +44,5 @@ return [
     'video_already_added' => 'Sản phẩm đã có video này.',
     'too_many_videos' => 'Mỗi sản phẩm tối đa :max video.',
     'video_order_invalid' => 'Thứ tự video không hợp lệ.',
+    'localized_slug_taken' => 'Slug này đã được dùng cho sản phẩm/danh mục/bộ sưu tập khác.',
 ];

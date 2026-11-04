@@ -12,5 +12,5 @@ final class CategoryTranslation extends Model
 
     protected $table = 'category_translations';
 
-    protected $fillable = ['category_id', 'locale', 'name', 'description', 'meta_title', 'meta_description'];
+    protected $fillable = ['category_id', 'locale', 'slug', 'name', 'description', 'meta_title', 'meta_description'];
 }

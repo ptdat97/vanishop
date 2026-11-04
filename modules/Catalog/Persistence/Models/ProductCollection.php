@@ -6,6 +6,7 @@ namespace Modules\Catalog\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Modules\Catalog\Persistence\Concerns\HasLocalizedSlug;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
@@ -18,6 +19,7 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  */
 final class ProductCollection extends Model
 {
+    use HasLocalizedSlug;
     use HasTranslations;
 
     protected $table = 'collections';
@@ -36,7 +38,7 @@ final class ProductCollection extends Model
 
     public function translatableFields(): array
     {
-        return ['name', 'description'];
+        return ['name', 'description', 'slug'];
     }
 
     /**

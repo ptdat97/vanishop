@@ -44,4 +44,5 @@ return [
     'video_already_added' => 'This product already has that video.',
     'too_many_videos' => 'Each product allows at most :max videos.',
     'video_order_invalid' => 'Invalid video order.',
+    'localized_slug_taken' => 'This slug is already used by another product, category or collection.',
 ];

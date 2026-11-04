@@ -12,5 +12,5 @@ final class ProductCollectionTranslation extends Model
 
     protected $table = 'collection_translations';
 
-    protected $fillable = ['collection_id', 'locale', 'name', 'description'];
+    protected $fillable = ['collection_id', 'locale', 'slug', 'name', 'description'];
 }

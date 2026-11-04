@@ -94,7 +94,7 @@ final class StorefrontProductQuery
         $style = Style::query()
             ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
                 'variants' => fn ($query) => $query->where('status', 'active')->with(['size', 'styleColor.color'])])
-            ->where('slug', $slug)
+            ->whereLocalizedSlug($slug, $locale)
             ->first();
 
         if ($style === null || ! PublishWindow::isVisible($style->status, $style->publishWindow(), new \DateTimeImmutable("@{$now}"))) {
@@ -107,6 +107,8 @@ final class StorefrontProductQuery
             'care_instructions' => $style->translate('care_instructions', $locale),
             'meta_title' => $style->translate('meta_title', $locale),
             'meta_description' => $style->translate('meta_description', $locale),
+            // Slug theo từng ngôn ngữ (ADR-038): URL tương ứng của cùng sản phẩm, hreflang.
+            'slugs' => $style->slugs(),
             'breadcrumb' => $this->breadcrumb($style->primaryCategory, $locale),
             'attributes' => $this->attributes($style->attributeValues, $locale),
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => [
@@ -165,7 +167,7 @@ final class StorefrontProductQuery
                 brandId: $variant->style->brand_id,
                 styleId: $variant->style_id,
                 sku: $variant->sku,
-                slug: $variant->style->slug,
+                slug: $variant->style->slugFor($locale),
                 name: (string) $variant->style->translate('name', $locale),
                 colorCode: $variant->styleColor->color->code,
                 colorName: $variant->styleColor->color->translate('name', $locale),
@@ -193,7 +195,7 @@ final class StorefrontProductQuery
 
         return [
             'id' => $style->id,
-            'slug' => $style->slug,
+            'slug' => $style->slugFor($locale),
             'style_code' => $style->style_code,
             'name' => $style->translate('name', $locale),
             'brand' => $style->brand === null ? null : ['id' => $style->brand->id, 'slug' => $style->brand->slug, 'name' => $style->brand->name],
@@ -229,7 +231,7 @@ final class StorefrontProductQuery
         $ancestors = Category::query()->with('translations')->whereIn('id', $category->categoryPath()->ids)->get()->keyBy('id');
 
         return array_values(array_filter(array_map(
-            fn (int $id): ?array => $ancestors->has($id) ? ['id' => $id, 'slug' => $ancestors[$id]->slug, 'name' => $ancestors[$id]->translate('name', $locale)] : null,
+            fn (int $id): ?array => $ancestors->has($id) ? ['id' => $id, 'slug' => $ancestors[$id]->slugFor($locale), 'name' => $ancestors[$id]->translate('name', $locale)] : null,
             $category->categoryPath()->ids,
         )));
     }

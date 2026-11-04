@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Persistence\Concerns\HasLocalizedSlug;
 use Modules\Catalog\Persistence\Database\Factories\StyleFactory;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
@@ -36,6 +37,7 @@ final class Style extends Model
     /** @use HasFactory<StyleFactory> */
     use HasFactory;
 
+    use HasLocalizedSlug;
     use HasTranslations;
 
     protected $fillable = ['brand_id', 'style_code', 'slug', 'status', 'published_from', 'published_to', 'primary_category_id', 'search_text', 'meta', 'lock_version'];
@@ -58,7 +60,7 @@ final class Style extends Model
 
     public function translatableFields(): array
     {
-        return ['name', 'description', 'care_instructions', 'meta_title', 'meta_description'];
+        return ['name', 'description', 'care_instructions', 'meta_title', 'meta_description', 'slug'];
     }
 
     public function publishWindow(): PublishWindow

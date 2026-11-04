@@ -6,6 +6,7 @@ import { confirmAction } from '@admin/confirm';
 import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
+import { slugify } from '@admin/slug';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
@@ -14,7 +15,7 @@ import type { CatalogLabels, NavItem, Translations } from '../../types';
 const props = defineProps<{
     nav: NavItem[];
     labels: CatalogLabels;
-    collection: null | { id: number; slug: string; status: string; position: number; translations: Translations<'name' | 'description'>; style_codes: string };
+    collection: null | { id: number; slug: string; status: string; position: number; translations: Translations<'name' | 'slug' | 'description'>; style_codes: string };
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'collections')?.url ?? '');
@@ -23,7 +24,7 @@ const form = useForm({
     slug: props.collection?.slug ?? '',
     status: props.collection?.status ?? 'active',
     position: props.collection?.position ?? 0,
-    translations: translationsFor(locales, { name: '', description: '' }, props.collection?.translations),
+    translations: translationsFor(locales, { name: '', slug: '', description: '' }, props.collection?.translations),
     style_codes: props.collection?.style_codes ?? '',
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
@@ -55,6 +56,14 @@ async function destroy(): Promise<void> {
         <FormField v-for="option in locales" :key="`name-${option.code}`" :label="`Tên (${option.label})${option.code === defaultLocale ? ' *' : ''}`" :error="errors[`translations.${option.code}.name`]">
             <input v-model="form.translations[option.code].name" :class="inputClass" />
         </FormField>
+        <template v-for="option in locales" :key="`slug-${option.code}`">
+            <FormField v-if="option.code !== defaultLocale" :label="`Slug (${option.label})`" hint="Trống = dùng slug gốc. Đổi slug đã được index làm gãy link cũ." :error="errors[`translations.${option.code}.slug`]">
+                <div class="flex gap-2">
+                    <input v-model="form.translations[option.code].slug" :class="inputClass" :placeholder="slugify(form.translations[option.code].name ?? '') || form.slug" />
+                    <button type="button" :class="secondaryButton" :disabled="!form.translations[option.code].name" @click="form.translations[option.code].slug = slugify(form.translations[option.code].name ?? '')">Tạo từ tên</button>
+                </div>
+            </FormField>
+        </template>
         <FormField v-for="option in locales" :key="`description-${option.code}`" :label="`Mô tả (${option.label})`">
             <textarea v-model="form.translations[option.code].description" :class="inputClass" rows="3" />
         </FormField>

@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.60 — 2026-11-04
+
+Slug theo ngôn ngữ (ADR-038 mục 4).
+
+### Thêm
+- Cột `slug` (nullable, unique `(locale, slug)`) trên `style_translations`, `category_translations`, `collection_translations`.
+- Chi tiết sản phẩm (`CatalogReader::productDetail`) và nút danh mục (`categoryTree`, `category`) có `slugs` (mã ngôn ngữ → slug).
+
+### Đổi
+- `slug` trong dữ liệu catalog (danh sách, chi tiết, giỏ, breadcrumb, `CatalogLookup::visible`) là slug **theo ngôn ngữ được yêu cầu** (Storefront API theo `X-Vani-Locale`); trước: luôn slug gốc. `productDetail`/`category` và bộ lọc `category`/`collection` nhận slug theo ngôn ngữ hoặc slug gốc.
+
 ## 0.3.59 — 2026-11-04
 
 URL storefront theo ngôn ngữ, phần định tuyến (ADR-038 mục 1–3, 9).
