@@ -28,6 +28,11 @@ export default defineConfig({
             '@admin': fileURLToPath(new URL('./resources/js/admin', import.meta.url)),
         },
     },
+    // Trang Admin nạp lười (import.meta.glob) nên Vite chỉ thấy reka-ui khi mở trang đầu tiên dùng nó, rồi tối ưu lại
+    // giữa phiên → trình duyệt nhận 504 "Outdated Optimize Dep". Khai báo trước để tối ưu ngay khi khởi động.
+    optimizeDeps: {
+        include: ['vue', '@inertiajs/vue3', 'reka-ui', '@internationalized/date'],
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],
