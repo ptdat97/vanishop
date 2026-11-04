@@ -1,6 +1,7 @@
 # ADR-017 — Admin UI: Inertia + Vue 3 + TypeScript
 
 - Trạng thái: Accepted · Ngày: 2026-09-28 · Người quyết định: Owner
+- Bổ sung: [ADR-039](ADR-039-admin-ui-reka.md) (bộ component Admin trên Reka UI).
 
 ## Context
 Admin có nhiều CRUD, bảng lọc phức tạp, form động từ settings schema của plugin, màn hình vận hành.

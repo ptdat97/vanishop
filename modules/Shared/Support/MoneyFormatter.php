@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Shared\Support;
 
+use Modules\Shared\Domain\Money\Currency;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -47,6 +48,24 @@ final class MoneyFormatter
         $symbol = $this->symbols[$money->currency->code] ?? $money->currency->code;
 
         return "{$sign}{$integer}{$fraction} {$symbol}";
+    }
+
+    /**
+     * Quy tắc định dạng cho client (Admin `MoneyText` định dạng giống hệt `format()`).
+     *
+     * @return array{currency: string, exponent: int, thousandsSeparator: string, decimalSeparator: string, symbol: string}
+     */
+    public function rules(string $currency): array
+    {
+        $currency = Currency::of($currency);
+
+        return [
+            'currency' => $currency->code,
+            'exponent' => $currency->exponent,
+            'thousandsSeparator' => $this->thousandsSeparator,
+            'decimalSeparator' => $this->decimalSeparator,
+            'symbol' => $this->symbols[$currency->code] ?? $currency->code,
+        ];
     }
 
     /**

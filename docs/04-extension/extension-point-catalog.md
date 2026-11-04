@@ -181,7 +181,7 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 | Registry | Ví dụ |
 |---|---|
 | `adminMenu()` | Mục menu Admin + permission — Implemented |
-| `adminPages($namespace, $path)` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) — Implemented |
+| `adminPages($namespace, $path)` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) — Implemented. Giao diện dùng bộ component `@admin/Components` (`DataTable`, `Pagination`, `Select`, `Combobox`, `StatusBadge`, `MoneyText`, `confirmAction()`…), không import `reka-ui` trực tiếp ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) |
 | `permissions()` | Khai báo permission — Implemented (gán role mẫu: Designed) |
 | `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
 | `storefrontRoutes()` | Storefront API của plugin dưới `/api/storefront/v1/x/{slug}/…` (không ghi đè route Core) — Implemented (0.3.3) |

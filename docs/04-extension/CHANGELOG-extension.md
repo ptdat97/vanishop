@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.55 — 2026-11-04
+
+Bộ component Admin ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)). Chỉ thêm, trừ một thay đổi hiển thị của `FlashMessage`.
+
+### Thêm
+- Admin JS `@admin/Components`: `DataTable` (cột + slot `cell-<key>`, nhận `extensions` để thêm cột và ô chọn dòng của plugin, `v-model:selected`), `Pagination` (`current`/`last`, sự kiện `change`), `Select` (`emptyLabel` cho lựa chọn "tất cả" = chuỗi rỗng), `Combobox` (gõ để lọc), `StatusBadge` (`label` + `tone`), `MoneyText`; `ConfirmDialog` và `Toaster` gắn sẵn trong `AdminLayout`.
+- `@admin/confirm`: `confirmAction({ title, message?, confirmLabel?, tone?, reason? })` → `Promise<string | false>` thay `confirm()`/`prompt()`. `@admin/money`: `useMoney()`, `formatMoney(amount, rules)`.
+- Shared props `app.money` (`MoneyFormatter::rules()`): định dạng tiền của cửa hàng cho client.
+- Trang Admin của plugin chỉ dùng `@admin/Components`, không import `reka-ui` trực tiếp (arch test `AdminUiTest`).
+
+### Đổi
+- `FlashMessage` chỉ còn hiện lỗi chung; thông báo thành công (`flash.success`) hiện bằng toast của `AdminLayout`. Trang plugin đang đặt `FlashMessage` không cần sửa.
+- `ExtensionActions`: thao tác có `confirm: true` hỏi bằng hộp xác nhận của Admin thay `confirm()` của trình duyệt.
+
 ## 0.3.54 — 2026-11-03
 
 **Có thể ảnh hưởng thứ tự chạy** — priority mặc định của hook đổi từ 10 sang 100.

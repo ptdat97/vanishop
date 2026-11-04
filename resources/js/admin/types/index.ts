@@ -23,8 +23,23 @@ export interface StoreLocaleOption {
     label: string;
 }
 
+/** Quy tắc định dạng tiền của cửa hàng (`MoneyFormatter::rules()`). */
+export interface MoneyRules {
+    currency: string;
+    exponent: number;
+    thousandsSeparator: string;
+    decimalSeparator: string;
+    symbol: string;
+}
+
+/** Lựa chọn của Select/Combobox. */
+export interface Option {
+    value: string;
+    label: string;
+}
+
 export interface SharedProps {
-    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string };
+    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string; money: MoneyRules };
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
     navigationGroups: NavigationGroup[];

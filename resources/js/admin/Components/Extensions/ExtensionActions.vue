@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { confirmAction } from '@admin/confirm';
 import { secondaryButton } from '@admin/styles';
 import type { ExtensionAction } from '@admin/types';
 import { router } from '@inertiajs/vue3';
@@ -6,8 +7,8 @@ import { router } from '@inertiajs/vue3';
 /** Nút thao tác do plugin khai báo; Core kiểm tra quyền + ghi audit ở server. */
 const props = defineProps<{ actions: ExtensionAction[]; ids: number[] }>();
 
-function run(action: ExtensionAction): void {
-    if (props.ids.length === 0 || (action.confirm && !confirm(`${action.label}?`))) {
+async function run(action: ExtensionAction): Promise<void> {
+    if (props.ids.length === 0 || (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} mục đã chọn.` })) === false)) {
         return;
     }
     router.post(action.url, { ids: props.ids }, { preserveScroll: true });

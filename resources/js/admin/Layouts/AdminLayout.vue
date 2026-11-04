@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import ConfirmDialog from '../Components/ConfirmDialog.vue';
 import FlashMessage from '../Components/FlashMessage.vue';
+import Toaster from '../Components/Toaster.vue';
 import type { NavigationItem, SharedProps } from '../types';
 
 type NavigationEntry = { type: 'link'; item: NavigationItem } | { type: 'group'; key: string; label: string; items: NavigationItem[] };
@@ -137,5 +139,7 @@ function logout(): void {
                 <slot />
             </main>
         </div>
+        <Toaster />
+        <ConfirmDialog />
     </div>
 </template>

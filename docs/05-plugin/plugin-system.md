@@ -198,7 +198,7 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
 | `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |
 | `webhookRoutes($file)` | Implemented | `/api/integrations/{slug}/…` |
-| `adminPages($namespace, $path)` | Implemented | `Inertia::render('<Namespace>::<Trang>')` |
+| `adminPages($namespace, $path)` | Implemented | `Inertia::render('<Namespace>::<Trang>')`; giao diện dùng `@admin/Components`, không import `reka-ui` trực tiếp ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) |
 | `migrations($path)`, `translations($path, $namespace)` | Implemented | |
 | `settings([...])` | Implemented (2026-10-14) | Khai báo cấu hình (key, label, type `string/secret/text/int/bool/select`, default, options) → Admin → Cấu hình sinh form; đọc lúc chạy qua `Tenancy\Contracts\Settings::get($pluginId, $key, $default)`. Thay cho `settings_schema` JSON trong manifest |
 | `storefrontRoutes()`, `adminApiRoutes()`, `scheduledTasks()`… | Designed | Xem [extension-point-catalog §5](../04-extension/extension-point-catalog.md) |

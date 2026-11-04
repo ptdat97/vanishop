@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import Combobox from '@admin/Components/Combobox.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
+import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { confirmAction } from '@admin/confirm';
+import { useMoney } from '@admin/money';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { orderStatusTone, paymentStatusTone } from '../../statusTones';
 
 type Division = { code: string; name: string };
 type OrderLine = {
@@ -92,6 +98,7 @@ const props = defineProps<{
         note: boolean;
     };
     extensions: ExtensionDetail;
+    labels: { order_status: Record<string, string>; payment_status: Record<string, string>; event_type: Record<string, string> };
     addressDirectory: {
         provinces: Division[];
         wards: Division[];
@@ -99,7 +106,7 @@ const props = defineProps<{
     } | null;
 }>();
 
-const vnd = (amount: number): string => `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
+const money = useMoney();
 const url = computed(() => `${props.baseUrl}/${props.order.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const editingAddress = ref(false);
@@ -120,7 +127,7 @@ const cancellingLines = ref(false);
 const cancelLinesForm = useForm({
     lines: Object.fromEntries(props.order.lines.map((line) => [line.id, 0])) as Record<number, number>,
     reason: '',
-    cause: 'shop' as 'shop' | 'customer',
+    cause: 'shop',
     lock_version: props.order.lockVersion,
 });
 const cancelTotal = computed(() => Object.values(cancelLinesForm.lines).reduce((sum, quantity) => sum + Number(quantity || 0), 0));
@@ -143,21 +150,34 @@ async function loadWards(): Promise<void> {
         wardsError.value = true;
     }
 }
-const eventLabels: Record<string, string> = {
-    placed: 'Đặt hàng',
-    status_changed: 'Đổi trạng thái',
-    payment_status_changed: 'Thanh toán',
-    address_changed: 'Đổi địa chỉ',
-    note: 'Ghi chú',
-};
+const provinceOptions = computed(() => (props.addressDirectory?.provinces ?? []).map((province) => ({ value: province.code, label: province.name })));
+const wardOptions = computed(() => wards.value.map((ward) => ({ value: ward.code, label: ward.name })));
+const causeOptions = [
+    { value: 'shop', label: 'Lỗi shop (hết hàng, sai giá…)' },
+    { value: 'customer', label: 'Khách yêu cầu bớt hàng' },
+];
+watch(() => addressForm.province_code, loadWards);
+
+/** Trạng thái đích của sự kiện lịch sử: trạng thái đơn hoặc thanh toán, chưa có nhãn thì in mã. */
+function statusLabel(status: string): string {
+    return props.labels.order_status[status] ?? props.labels.payment_status[status] ?? status;
+}
 
 function confirmOrder(): void {
     router.post(`${url.value}/confirm`, {}, { preserveScroll: true });
 }
 
-function cancelOrder(): void {
-    const reason = prompt('Lý do huỷ đơn:');
-    if (reason) router.post(`${url.value}/cancel`, { reason }, { preserveScroll: true });
+async function cancelOrder(): Promise<void> {
+    const reason = await confirmAction({
+        title: `Huỷ đơn ${props.order.number}?`,
+        message: 'Hàng đang giữ được trả lại kho; đơn đã thanh toán được hoàn tiền theo cổng.',
+        confirmLabel: 'Huỷ đơn',
+        tone: 'danger',
+        reason: { label: 'Lý do huỷ đơn', required: true },
+    });
+    if (reason !== false) {
+        router.post(`${url.value}/cancel`, { reason }, { preserveScroll: true });
+    }
 }
 
 function saveAddress(): void {
@@ -178,6 +198,10 @@ function addNote(): void {
 <template>
     <Head :title="`Đơn ${order.number}`" />
     <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
+    <div class="mb-2 flex flex-wrap gap-2">
+        <StatusBadge :label="labels.order_status[order.orderStatus] ?? order.orderStatus" :tone="orderStatusTone(order.orderStatus)" />
+        <StatusBadge :label="labels.payment_status[order.paymentStatus] ?? order.paymentStatus" :tone="paymentStatusTone(order.paymentStatus)" />
+    </div>
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>
@@ -223,26 +247,23 @@ function addNote(): void {
                                 <input v-model.number="cancelLinesForm.lines[line.id]" type="number" min="0" :max="line.quantity" :class="[inputClass, 'w-20']" />
                             </td>
                             <td class="px-4 py-2">
-                                {{ vnd(line.unit_amount) }}
+                                {{ money(line.unit_amount) }}
                                 <div v-if="line.compare_at_amount" class="text-xs text-slate-400 line-through">
-                                    {{ vnd(line.compare_at_amount) }}
+                                    {{ money(line.compare_at_amount) }}
                                 </div>
                             </td>
                             <td class="px-4 py-2">
-                                {{ line.discount_amount ? `−${vnd(line.discount_amount)}` : '—' }}
+                                {{ line.discount_amount ? `−${money(line.discount_amount)}` : '—' }}
                             </td>
                             <td class="px-4 py-2 text-right">
-                                {{ vnd(line.total_amount) }}
+                                {{ money(line.total_amount) }}
                             </td>
                         </tr>
                     </tbody>
                 </table>
                 <form v-if="cancellingLines" class="flex flex-wrap items-end gap-3 border-t border-slate-100 bg-red-50/40 p-4 text-sm" @submit.prevent="cancelLines">
                     <FormField label="Nguyên nhân" :error="cancelLinesForm.errors.cause" class="min-w-56">
-                        <select v-model="cancelLinesForm.cause" :class="inputClass">
-                            <option value="shop">Lỗi shop (hết hàng, sai giá…)</option>
-                            <option value="customer">Khách yêu cầu bớt hàng</option>
-                        </select>
+                        <Select v-model="cancelLinesForm.cause" :options="causeOptions" />
                     </FormField>
                     <FormField label="Lý do huỷ một phần" :error="cancelLinesForm.errors.reason" class="min-w-64 flex-1">
                         <input v-model="cancelLinesForm.reason" :class="inputClass" maxlength="255" required placeholder="Vd. hết hàng size M" />
@@ -261,42 +282,42 @@ function addNote(): void {
                 <dl class="space-y-1 border-t border-slate-100 p-4 text-sm">
                     <div class="flex justify-between text-slate-600">
                         <dt>Giá niêm yết</dt>
-                        <dd>{{ vnd(order.pricing.list_amount) }}</dd>
+                        <dd>{{ money(order.pricing.list_amount) }}</dd>
                     </div>
                     <div v-if="order.pricing.markdown" class="flex justify-between text-slate-600">
                         <dt>Giảm giá bán<span v-if="order.pricing.price_lists.length" class="font-mono text-xs"> ({{ order.pricing.price_lists.map((list) => list.code).join(', ') }})</span></dt>
-                        <dd>-{{ vnd(order.pricing.markdown) }}</dd>
+                        <dd>-{{ money(order.pricing.markdown) }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt>Tạm tính</dt>
-                        <dd>{{ vnd(order.pricing.subtotal) }}</dd>
+                        <dd>{{ money(order.pricing.subtotal) }}</dd>
                     </div>
                     <div v-for="promotion in order.pricing.promotions" :key="promotion.promotion_id" class="flex justify-between text-slate-600">
                         <dt>{{ promotion.voucher ? 'Mã giảm giá' : 'Khuyến mãi' }}: {{ promotion.name }}<span v-if="promotion.code" class="font-mono"> ({{ promotion.code }})</span></dt>
-                        <dd>-{{ vnd(promotion.amount) }}</dd>
+                        <dd>-{{ money(promotion.amount) }}</dd>
                     </div>
                     <div v-if="order.pricing.other_discount" class="flex justify-between text-slate-600">
                         <dt>Giảm khác</dt>
-                        <dd>-{{ vnd(order.pricing.other_discount) }}</dd>
+                        <dd>-{{ money(order.pricing.other_discount) }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt>Phí giao ({{ order.shippingMethod.label }})</dt>
-                        <dd>{{ vnd(order.amounts.shipping) }}</dd>
+                        <dd>{{ money(order.amounts.shipping) }}</dd>
                     </div>
                     <div class="flex justify-between font-semibold">
                         <dt>Tổng</dt>
-                        <dd>{{ vnd(order.amounts.total) }}</dd>
+                        <dd>{{ money(order.amounts.total) }}</dd>
                     </div>
                     <div class="flex justify-between text-xs text-slate-500">
                         <dt>Trong đó VAT</dt>
-                        <dd>{{ vnd(order.amounts.tax) }}</dd>
+                        <dd>{{ money(order.amounts.tax) }}</dd>
                     </div>
                 </dl>
                 <details v-if="order.adjustments.length" class="border-t border-slate-100 px-4 py-2 text-xs text-slate-600">
                     <summary class="cursor-pointer">Lịch sử điều chỉnh ({{ order.adjustments.length }})</summary>
                     <div v-for="(adjustment, index) in order.adjustments" :key="index" class="mt-1 flex justify-between">
                         <span>{{ adjustment.label }}<span v-if="adjustment.code" class="font-mono"> ({{ adjustment.code }})</span></span>
-                        <span>{{ vnd(adjustment.amount) }}</span>
+                        <span>{{ money(adjustment.amount) }}</span>
                     </div>
                 </details>
             </section>
@@ -309,8 +330,8 @@ function addNote(): void {
                     <li v-for="(event, index) in order.events" :key="index" class="border-l-2 border-slate-200 pl-3">
                         <span class="text-xs text-slate-400">{{ event.at }}</span>
                         ·
-                        <span class="font-medium">{{ eventLabels[event.type] ?? event.type }}</span>
-                        <span v-if="event.to"> → {{ event.to }}</span>
+                        <span class="font-medium">{{ labels.event_type[event.type] ?? event.type }}</span>
+                        <span v-if="event.to"> → {{ statusLabel(event.to) }}</span>
                         <span v-if="event.reason" class="text-slate-500"> ({{ event.reason }})</span>
                         <span v-if="event.actor || event.source" class="text-xs text-slate-400"> · {{ event.actor ?? event.source }}</span>
                         <p v-if="event.type === 'note' && event.data" class="text-slate-700">
@@ -360,21 +381,11 @@ function addNote(): void {
                         ><input v-model="addressForm.street_line" :class="inputClass"
                     /></FormField>
                     <template v-if="addressDirectory">
-                        <FormField label="Tỉnh/thành" :error="addressForm.errors.province_code">
-                            <select v-model="addressForm.province_code" :class="inputClass" @change="loadWards">
-                                <option value="">— Chọn tỉnh/thành —</option>
-                                <option v-for="province in addressDirectory.provinces" :key="province.code" :value="province.code">
-                                    {{ province.name }}
-                                </option>
-                            </select>
+                        <FormField label="Tỉnh/thành" for="order-province" :error="addressForm.errors.province_code">
+                            <Combobox id="order-province" v-model="addressForm.province_code" :options="provinceOptions" placeholder="Gõ để tìm tỉnh/thành" />
                         </FormField>
-                        <FormField label="Phường/xã" :error="addressForm.errors.ward_code || (wardsError ? 'Không tải được danh sách phường/xã.' : undefined)">
-                            <select v-model="addressForm.ward_code" :class="inputClass">
-                                <option value="">— Chọn phường/xã —</option>
-                                <option v-for="ward in wards" :key="ward.code" :value="ward.code">
-                                    {{ ward.name }}
-                                </option>
-                            </select>
+                        <FormField label="Phường/xã" for="order-ward" :error="addressForm.errors.ward_code || (wardsError ? 'Không tải được danh sách phường/xã.' : undefined)">
+                            <Combobox id="order-ward" v-model="addressForm.ward_code" :options="wardOptions" placeholder="Gõ để tìm phường/xã" :disabled="!addressForm.province_code" />
                         </FormField>
                     </template>
                     <template v-else>

@@ -54,7 +54,10 @@ it('Admin: danh sách, lọc theo trạng thái, tìm theo số đơn hoặc SĐ
     $first = Order::query()->withoutGlobalScopes()->orderBy('id')->first();
     ($this->staff)();
 
-    $this->get($this->admin)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Index')->has('orders', 2)->where('pagination.total', 2));
+    $this->get($this->admin)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Index')->has('orders', 2)->where('pagination.total', 2)
+        ->where('labels.order_status.pending', 'Chờ xác nhận')
+        ->where('labels.payment_status.cod_pending', 'COD chờ thu')
+        ->where('app.money', ['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫']));
     $this->get("{$this->admin}?q=".strtolower($first->number))->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.number', $first->number));
     $this->get("{$this->admin}?q=0987000111")->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.phone', '+84987000111'));
     $this->get("{$this->admin}?status=cancelled")->assertInertia(fn (Assert $page) => $page->has('orders', 0));
@@ -69,7 +72,8 @@ it('Admin: chi tiết đơn có panel thanh toán do module Payment cung cấp',
         ->where('order.customerStatus.code', 'preparing')
         ->where('panels', fn ($panels) => collect($panels)->pluck('title')->sort()->values()->all() === ['Giao hàng', 'Thanh toán'])
         ->where('can.cancel', true)
-        ->where('can.confirm', false));
+        ->where('can.confirm', false)
+        ->where('labels.event_type.placed', 'Đặt hàng'));
 });
 
 it('Admin: xác nhận đơn COD khi tắt tự xác nhận', function () {

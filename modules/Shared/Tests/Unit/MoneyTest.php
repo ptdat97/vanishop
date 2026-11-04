@@ -74,3 +74,10 @@ it('định dạng tiền theo cấu hình (kiểu Việt Nam); mặc định tr
         ->and($formatter->format(Money::of(1_250, 'USD')))->toBe('12,50 $')
         ->and($formatter->toArray(Money::vnd(159_000)))->toBe(['amount' => 159_000, 'currency' => 'VND', 'formatted' => '159.000 ₫']);
 });
+
+it('quy tắc định dạng cho client khớp cấu hình; tiền tệ thiếu ký hiệu in mã', function () {
+    $formatter = new MoneyFormatter('.', ',', ['VND' => '₫']);
+
+    expect($formatter->rules('VND'))->toBe(['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫'])
+        ->and($formatter->rules('USD'))->toMatchArray(['exponent' => 2, 'symbol' => 'USD']);
+});
