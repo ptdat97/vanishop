@@ -4,7 +4,7 @@
         "vi": "Phí giao cố định",
         "en": "Flat-rate shipping"
     },
-    "version": "1.1.0",
+    "version": "1.2.0",
     "kind": "shipping_rate",
     "provider": "Plugin\\ShippingFlatRate\\ShippingFlatRateServiceProvider",
     "bundled": true,

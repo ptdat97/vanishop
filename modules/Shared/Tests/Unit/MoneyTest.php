@@ -78,6 +78,20 @@ it('định dạng tiền theo cấu hình (kiểu Việt Nam); mặc định tr
 it('quy tắc định dạng cho client khớp cấu hình; tiền tệ thiếu ký hiệu in mã', function () {
     $formatter = new MoneyFormatter('.', ',', ['VND' => '₫']);
 
-    expect($formatter->rules('VND'))->toBe(['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫'])
+    expect($formatter->rules('VND'))->toBe(['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫', 'compactUnits' => ['K', 'M', 'B']])
         ->and($formatter->rules('USD'))->toMatchArray(['exponent' => 2, 'symbol' => 'USD']);
+});
+
+it('số rút gọn cho dashboard: nghìn/triệu/tỷ theo ngôn ngữ, một chữ số thập phân, làm tròn sang đơn vị lớn hơn', function () {
+    $formatter = new MoneyFormatter('.', ',', ['VND' => '₫'], ['vi' => ['N', 'Tr', 'Tỷ'], 'en' => ['K', 'M', 'B']]);
+
+    expect($formatter->compact(950, 'vi'))->toBe('950')
+        ->and($formatter->compact(1_250, 'vi'))->toBe('1,3 N')
+        ->and($formatter->compact(2_400_000, 'vi'))->toBe('2,4 Tr')
+        ->and($formatter->compact(2_000_000, 'vi'))->toBe('2 Tr')
+        ->and($formatter->compact(999_950, 'vi'))->toBe('1 Tr')
+        ->and($formatter->compact(1_200_000_000, 'vi'))->toBe('1,2 Tỷ')
+        ->and($formatter->compact(-1_500, 'en'))->toBe('-1,5 K')
+        ->and($formatter->compact(3_000, 'fr'))->toBe('3 K')
+        ->and($formatter->compactMoney(Money::vnd(2_400_000), 'vi'))->toBe('2,4 Tr ₫');
 });

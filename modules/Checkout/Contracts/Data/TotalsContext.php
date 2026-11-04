@@ -6,6 +6,7 @@ namespace Modules\Checkout\Contracts\Data;
 
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Domain\Weight\Weight;
 
 /**
  * Trạng thái bất biến chạy qua các TotalsCalculator. Mỗi calculator trả bản mới qua with*().
@@ -62,6 +63,31 @@ final readonly class TotalsContext
     public function money(int $amount): Money
     {
         return Money::of($amount, $this->currencyCode);
+    }
+
+    /**
+     * Khối lượng hàng sẽ giao (gram, §3.10-2): tổng các dòng của đơn — chỉ dòng giỏ đã chọn. Cho ShippingRateProvider.
+     */
+    public function weight(): Weight
+    {
+        $weight = Weight::zero();
+        foreach ($this->lines as $line) {
+            $weight = $weight->add($line->weight());
+        }
+
+        return $weight;
+    }
+
+    /** Có dòng chưa nhập khối lượng → weight() thấp hơn thực tế; nhà vận chuyển tự quyết (khối lượng mặc định, từ chối…). */
+    public function missingWeight(): bool
+    {
+        foreach ($this->lines as $line) {
+            if ($line->weightGram === null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function linesTotal(): Money

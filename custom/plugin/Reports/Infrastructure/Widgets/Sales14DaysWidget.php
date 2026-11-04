@@ -48,7 +48,8 @@ final class Sales14DaysWidget implements DashboardWidget
         return new Series(
             array_map(fn (SalesBucket $day): string => $day->label, $days),
             array_map(fn (SalesBucket $day): int => $day->revenue, $days),
-            'money',
+            // Số rút gọn (Core 0.3.73): nhãn cột gọn hơn — "2,4 Tr ₫".
+            'money_compact',
             $this->label(),
         );
     }

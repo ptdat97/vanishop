@@ -63,8 +63,8 @@ Mỗi mục: **Tham chiếu** (hành vi đã quan sát, viết bằng lời) · 
 **VaniShop hiện có**: `Money` + `MoneyFormatter`, `StoreClock`, `StoreLocale`, `CurrentContext`/`ContextScope` (actor + locale theo request), correlation id.
 
 **Đặc tả cần làm**
-1. **Định dạng số rút gọn** cho dashboard: `1 250` → `1,3 N`, `2 400 000` → `2,4 Tr`, `1 200 000 000` → `1,2 Tỷ`; dấu thập phân theo locale; dùng trong `DashboardWidget`. Thuộc `Shared\Formats` (đã có `Formats` trong Extension — kiểm tra trước, mở rộng thay vì tạo mới).
-2. **Khối lượng**: một kiểu giá trị `Weight` (gram, số nguyên) + quy đổi từ kg/g/lb/oz khi nhập liệu. Lưu gram nguyên để tránh số thực trong tính phí ship. Kiểm tra cách Catalog/`vani.ghn` đang lưu khối lượng trước khi đổi.
+1. ✅ (R3, 2026-11-05, Core 0.3.73 — định dạng `compact`/`money_compact` của `Formats`, `MoneyFormatter::compact()`, đơn vị theo `vanishop.locale.compact_units`; `vani.reports` 1.1.0 dùng cho doanh thu 30 ngày, biểu đồ 14 ngày) **Định dạng số rút gọn** cho dashboard: `1 250` → `1,3 N`, `2 400 000` → `2,4 Tr`, `1 200 000 000` → `1,2 Tỷ`; dấu thập phân theo locale; dùng trong `DashboardWidget`. Thuộc `Shared\Formats` (đã có `Formats` trong Extension — kiểm tra trước, mở rộng thay vì tạo mới).
+2. ✅ (R3, 2026-11-05, Core 0.3.73 — Catalog đã lưu `variants.weight_gram` nguyên; `vani.ghn` chưa gửi khối lượng) **Khối lượng**: một kiểu giá trị `Weight` (gram, số nguyên) + quy đổi từ kg/g/lb/oz khi nhập liệu. Lưu gram nguyên để tránh số thực trong tính phí ship. Kiểm tra cách Catalog/`vani.ghn` đang lưu khối lượng trước khi đổi.
 3. ✅ (R1-1, 2026-11-03) **IP client**: không đọc header của CDN/proxy trực tiếp (giả mạo được). Chỉ dùng IP Laravel trả về sau khi cấu hình proxy tin cậy; ghi rõ trong [security](../15-security/security.md).
 4. ✅ (R1-1, 2026-11-03) **Host an toàn**: URL tuyệt đối (email, sitemap, callback cổng thanh toán) chỉ sinh từ `APP_URL`, không từ header `Host` của request. Thêm test cho link trong email khi request có `Host` lạ.
 5. **Không làm**: registry toàn cục theo request — VaniShop dùng `ContextScope` (có phạm vi, tự khôi phục), không có kho giá trị toàn cục ghi đè được.
@@ -200,7 +200,7 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 
 **Đặc tả cần làm**
 1. **Sản phẩm không cần giao**: **không làm** — Owner chỉ bán hàng vật lý (2026-11-03). Mọi đơn đều có giao hàng; không thêm cờ "không cần giao".
-2. **Khối lượng giỏ** truyền vào `ShippingRateProvider` (gram, tổng theo dòng đã chọn) — kiểm tra context hiện có trước.
+2. ✅ (R3, 2026-11-05, Core 0.3.73 — `TotalsLine::$weightGram`, `TotalsContext::weight()`/`missingWeight()`; `vani.shipping-flat-rate` 1.2.0 có phụ phí mỗi kg vượt mức tuỳ chọn) **Khối lượng giỏ** truyền vào `ShippingRateProvider` (gram, tổng theo dòng đã chọn) — kiểm tra context hiện có trước.
 3. **Thuế theo vùng**: **không làm** trong Core (một cửa hàng VN; VAT là plugin `vani.tax-vn-vat`).
 
 **Vị trí**: Core `Checkout`. **Ưu tiên**: P1 (2).

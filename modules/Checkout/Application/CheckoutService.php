@@ -196,6 +196,7 @@ final class CheckoutService implements Checkout
                 sku: $line->variant->sku, name: $line->variant->name, colorName: $line->variant->colorName, sizeCode: $line->variant->sizeCode,
                 imageUrl: $line->variant->imageUrl, quantity: $line->quantity, unitPrice: $line->unitPrice, compareAt: $line->compareAt,
                 subtotal: $line->unitPrice->multiply($line->quantity), discount: $line->unitPrice->multiply(0), priceListCode: $line->priceListCode,
+                weightGram: $line->variant->weightGram,
             );
         }
 

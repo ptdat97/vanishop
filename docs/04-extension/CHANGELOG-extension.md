@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.73 — 2026-11-05
+
+Chỉ thêm. Khối lượng + số rút gọn ([reference-parity §3.1-1/2, §3.10-2](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- `Shared\Domain\Weight\Weight` (gram nguyên; `of(1.2, 'kg')`, `add`, `multiply`, `kilograms`).
+- `SellableVariant::$weightGram`, `TotalsLine::$weightGram` (+ `weight()`), `TotalsContext::weight()` / `missingWeight()` — `ShippingRateProvider` tính phí theo khối lượng các dòng của đơn (chỉ dòng giỏ đã chọn). `Checkout\Testing\Samples` có khối lượng (1.100 g).
+- Định dạng `compact`, `money_compact` cho `Metric`/`Series`/`Column` (dashboard: 1,3 N · 2,4 Tr ₫); `MoneyFormatter::compact()`/`compactMoney()`; Admin `app.money.compactUnits`.
+- `vani.shipping-flat-rate` 1.2.0: `included_grams` + `fee_per_extra_kg`. `vani.reports` 1.1.0 (cần Core ^0.3.73): số rút gọn cho doanh thu.
+
 ## 0.3.72 — 2026-11-05
 
 Không đổi public API. Hồ sơ nhân viên ([reference-parity §3.3-3/5](../20-roadmap/reference-parity-refactor.md)).

@@ -22,3 +22,18 @@ it('phí và ngưỡng miễn phí theo cấu hình; Admin ghi đè .env', funct
     T::seed(fn () => app(Settings::class)->set('vani.shipping-flat-rate', 'free_over', 1));
     expect($options()[0]->fee->amount)->toBe(0);
 });
+
+it('phụ phí theo khối lượng giỏ (1.2.0): mỗi kg vượt mức gồm sẵn, làm tròn lên; chưa cấu hình thì không tính', function () {
+    config(['vani.shipping-flat-rate.fee' => 30_000, 'vani.shipping-flat-rate.free_over' => null]);
+    $fee = fn () => app(FlatRateShipping::class)->options(Samples::totalsContext())[0]->fee->amount;
+    expect(Samples::totalsContext()->weight()->grams)->toBe(1_100)->and($fee())->toBe(30_000);
+
+    T::seed(function () {
+        app(Settings::class)->set('vani.shipping-flat-rate', 'included_grams', 500);
+        app(Settings::class)->set('vani.shipping-flat-rate', 'fee_per_extra_kg', 5_000);
+    });
+    expect($fee())->toBe(35_000);
+
+    T::seed(fn () => app(Settings::class)->set('vani.shipping-flat-rate', 'included_grams', 2_000));
+    expect($fee())->toBe(30_000);
+});

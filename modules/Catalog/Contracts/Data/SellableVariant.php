@@ -21,5 +21,7 @@ final readonly class SellableVariant
         public string $sizeCode,
         public ?string $imageUrl,
         public ?string $brandName = null,
+        /** Khối lượng một sản phẩm (gram, 0.3.73); null = chưa nhập. */
+        public ?int $weightGram = null,
     ) {}
 }

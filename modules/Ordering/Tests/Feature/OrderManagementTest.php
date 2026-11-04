@@ -57,7 +57,7 @@ it('Admin: danh sách, lọc theo trạng thái, tìm theo số đơn hoặc SĐ
     $this->get($this->admin)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Index')->has('orders', 2)->where('pagination.total', 2)
         ->where('labels.order_status.pending', 'Chờ xác nhận')
         ->where('labels.payment_status.cod_pending', 'COD chờ thu')
-        ->where('app.money', ['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫'])
+        ->where('app.money', ['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫', 'compactUnits' => ['N', 'Tr', 'Tỷ']])
         ->where('app.clock.timezone', config('vanishop.locale.timezone'))
         ->where('app.clock.formats.datetime', config('vanishop.locale.formats.datetime')));
     $this->get("{$this->admin}?q=".strtolower($first->number))->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.number', $first->number));

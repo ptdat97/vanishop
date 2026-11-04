@@ -76,7 +76,7 @@ final class ReplacementOrderService implements ReplacementOrders
                 key: $index + 1, variantId: $variant->id, brandId: $variant->brandId, styleId: $variant->styleId, sku: $variant->sku, name: $variant->name,
                 colorName: $variant->colorName, sizeCode: $variant->sizeCode, imageUrl: $variant->imageUrl, quantity: $line->quantity,
                 unitPrice: Money::of($line->unitAmount, $currency), compareAt: null, subtotal: $subtotal,
-                discount: Money::of(min(max(0, $line->creditAmount), $subtotal->amount), $currency), brandName: $variant->brandName,
+                discount: Money::of(min(max(0, $line->creditAmount), $subtotal->amount), $currency), brandName: $variant->brandName, weightGram: $variant->weightGram,
             );
         }
         $context = new TotalsContext($parent->customerId, $currency, $lines, [], [], null, $parent->shippingAddress, now()->getTimestamp());

@@ -30,6 +30,8 @@ export interface MoneyRules {
     thousandsSeparator: string;
     decimalSeparator: string;
     symbol: string;
+    /** Đơn vị nghìn/triệu/tỷ của số rút gọn theo ngôn ngữ Admin. */
+    compactUnits: string[];
 }
 
 /** Múi giờ + mẫu ngày giờ của cửa hàng (`StoreClock`; mẫu theo PHP date()). */

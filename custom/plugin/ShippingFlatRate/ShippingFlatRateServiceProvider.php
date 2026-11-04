@@ -39,6 +39,9 @@ final class ShippingFlatRateServiceProvider extends PluginServiceProvider
         $definitions = [
             ['key' => 'fee', 'label' => 'Phí giao (₫)', 'type' => 'int', 'help' => 'Để trống = theo VANI_SHIPPING_FLAT_FEE.'],
             ['key' => 'free_over', 'label' => 'Miễn phí giao từ (₫)', 'type' => 'int', 'help' => 'Tiền hàng sau giảm giá. Để trống = theo VANI_SHIPPING_FREE_OVER.'],
+            // Phụ phí theo khối lượng (1.2.0): khối lượng giỏ (gram, dòng đã chọn) do Checkout truyền vào.
+            ['key' => 'included_grams', 'label' => 'Khối lượng gồm trong phí giao (gram)', 'type' => 'int', 'help' => 'Vượt mức này thì cộng phụ phí mỗi kg (làm tròn lên). Để trống = không tính theo khối lượng.', 'rules' => ['min:0']],
+            ['key' => 'fee_per_extra_kg', 'label' => 'Phụ phí mỗi kg vượt (₫)', 'type' => 'int', 'rules' => ['min:0']],
             ['key' => 'progress_enabled', 'label' => 'Hiện thanh tiến độ miễn phí giao', 'type' => 'bool', 'default' => true],
             ['key' => 'progress_on_cart', 'label' => 'Thanh tiến độ ở trang giỏ', 'type' => 'bool', 'default' => true],
             ['key' => 'progress_on_checkout', 'label' => 'Thanh tiến độ ở trang thanh toán', 'type' => 'bool', 'default' => true],

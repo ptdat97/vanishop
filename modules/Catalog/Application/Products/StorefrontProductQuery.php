@@ -174,6 +174,7 @@ final class StorefrontProductQuery
                 sizeCode: $variant->size->code,
                 imageUrl: $variant->styleColor->gallery->first()?->media->url(400),
                 brandName: $variant->style->brand?->name,
+                weightGram: $variant->weight_gram,
             )])
             ->all();
     }

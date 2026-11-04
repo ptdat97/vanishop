@@ -1,8 +1,10 @@
 <?php
 
 use Modules\Cart\Persistence\Models\Cart;
+use Modules\Catalog\Tests\Feature\CatalogTestHelpers;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -96,4 +98,19 @@ it('web: nút "Mua ngay" chuyển tới checkout, form chọn dòng hoạt độ
     $this->get('/gio-hang')->assertSee('700.000');
     $this->post('/gio-hang/chon', [])->assertRedirect('/gio-hang');
     $this->get('/gio-hang')->assertSee(__('Chọn ít nhất một sản phẩm để thanh toán.'));
+});
+
+it('khối lượng giỏ (chỉ dòng đã chọn, gram) đi tới phí giao: phụ phí theo kg của phí cố định', function () {
+    CatalogTestHelpers::seed(function () {
+        $this->s->update(['weight_gram' => 600]);
+        $this->m->update(['weight_gram' => 700]);
+        app(Settings::class)->set('vani.shipping-flat-rate', 'included_grams', 0);
+        app(Settings::class)->set('vani.shipping-flat-rate', 'fee_per_extra_kg', 10_000);
+    });
+    $first = ($this->add)($this->s, 1)->json('data.lines.0.id');
+    ($this->add)($this->m, 1);
+    ($this->select)(['line_ids' => [$first]])->assertOk();
+
+    // 600 g → làm tròn 1 kg: 30.000 + 10.000. Dòng M (700 g) chưa chọn không tính.
+    $this->postJson("{$this->api}/checkout/{$this->cart}/quote", [], $this->cartHeaders)->assertJsonPath('data.shipping_fee.amount', 40_000);
 });

@@ -11,7 +11,8 @@ use InvalidArgumentException;
  */
 final class Formats
 {
-    public const NUMERIC = ['number', 'money', 'percent'];
+    /** `compact`/`money_compact` (0.3.73): số rút gọn nghìn/triệu/tỷ cho dashboard — 1,3 N · 2,4 Tr ₫. */
+    public const NUMERIC = ['number', 'money', 'percent', 'compact', 'money_compact'];
 
     public static function guard(string $format, bool $allowText = false): void
     {

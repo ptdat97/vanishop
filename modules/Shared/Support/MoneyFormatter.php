@@ -20,6 +20,8 @@ final class MoneyFormatter
         private readonly string $thousandsSeparator = ',',
         private readonly string $decimalSeparator = '.',
         private readonly array $symbols = [],
+        /** @var array<string, list<string>> ngôn ngữ => đơn vị [nghìn, triệu, tỷ] cho số rút gọn */
+        private readonly array $compactUnits = [],
     ) {}
 
     public static function fromConfig(): self
@@ -28,6 +30,7 @@ final class MoneyFormatter
             (string) config('vanishop.locale.money.thousands_separator', ','),
             (string) config('vanishop.locale.money.decimal_separator', '.'),
             array_map('strval', (array) config('vanishop.locale.money.symbols', [])),
+            array_map(fn (mixed $units): array => array_values(array_map('strval', (array) $units)), (array) config('vanishop.locale.compact_units', [])),
         );
     }
 
@@ -51,11 +54,44 @@ final class MoneyFormatter
     }
 
     /**
+     * Số rút gọn cho dashboard (reference-parity §3.1-1): 1 250 → "1,3 N", 2 400 000 → "2,4 Tr", 1 200 000 000 → "1,2 Tỷ";
+     * một chữ số thập phân (bỏ ",0"), dưới 1 000 giữ nguyên. Đơn vị theo ngôn ngữ (`vanishop.locale.compact_units`),
+     * ngôn ngữ chưa khai báo → K/M/B.
+     */
+    public function compact(int|float $value, string $locale): string
+    {
+        $units = $this->compactUnits[$locale] ?? ['K', 'M', 'B'];
+        $absolute = abs($value);
+        $sign = $value < 0 ? '-' : '';
+        foreach ([[1_000_000_000, 2], [1_000_000, 1], [1_000, 0]] as [$step, $unit]) {
+            // So sau khi làm tròn: 999 950 → "1 Tr", không phải "1.000 N". Dưới 1 000 luôn giữ nguyên.
+            $rounded = round($absolute / $step, 1);
+            if ($absolute >= $step || ($rounded >= 1 && $step > 1_000)) {
+                $text = number_format($rounded, fmod($rounded, 1.0) === 0.0 ? 0 : 1, $this->decimalSeparator, $this->thousandsSeparator);
+
+                return "{$sign}{$text} ".($units[$unit] ?? '');
+            }
+        }
+
+        return $sign.number_format($absolute, fmod((float) $absolute, 1.0) === 0.0 ? 0 : 1, $this->decimalSeparator, $this->thousandsSeparator);
+    }
+
+    /**
+     * Tiền rút gọn: "2,4 Tr ₫" (tính theo đơn vị tiền chính, không theo đơn vị nhỏ nhất).
+     */
+    public function compactMoney(Money $money, string $locale): string
+    {
+        $symbol = $this->symbols[$money->currency->code] ?? $money->currency->code;
+
+        return $this->compact($money->amount / (10 ** $money->currency->exponent), $locale).' '.$symbol;
+    }
+
+    /**
      * Quy tắc định dạng cho client (Admin `MoneyText` định dạng giống hệt `format()`).
      *
-     * @return array{currency: string, exponent: int, thousandsSeparator: string, decimalSeparator: string, symbol: string}
+     * @return array{currency: string, exponent: int, thousandsSeparator: string, decimalSeparator: string, symbol: string, compactUnits: list<string>}
      */
-    public function rules(string $currency): array
+    public function rules(string $currency, ?string $locale = null): array
     {
         $currency = Currency::of($currency);
 
@@ -65,6 +101,7 @@ final class MoneyFormatter
             'thousandsSeparator' => $this->thousandsSeparator,
             'decimalSeparator' => $this->decimalSeparator,
             'symbol' => $this->symbols[$currency->code] ?? $currency->code,
+            'compactUnits' => $this->compactUnits[$locale ?? ''] ?? array_values($this->compactUnits)[0] ?? ['K', 'M', 'B'],
         ];
     }
 

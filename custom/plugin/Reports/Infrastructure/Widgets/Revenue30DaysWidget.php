@@ -44,6 +44,6 @@ final class Revenue30DaysWidget implements DashboardWidget
         $period = ReportPeriod::fromPreset('30d');
         $totals = $this->statistics->totals($period->from, $period->to);
 
-        return new Metric($this->label(), $totals->revenue, 'money', sprintf('%s đơn · TB %s ₫/đơn', number_format($totals->ordersCount, 0, ',', '.'), number_format($totals->averageOrderValue(), 0, ',', '.')));
+        return new Metric($this->label(), $totals->revenue, 'money_compact', sprintf('%s đơn · TB %s/đơn', number_format($totals->ordersCount, 0, ',', '.'), vani_money($totals->averageOrderValue())));
     }
 }

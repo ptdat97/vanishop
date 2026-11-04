@@ -57,7 +57,7 @@ final class HandleInertiaRequests extends Middleware
                 'locales' => StoreLocale::options(),
                 'defaultLocale' => StoreLocale::default(),
                 // Định dạng tiền của cửa hàng cho MoneyText — cùng quy tắc với MoneyFormatter ở server.
-                'money' => app(MoneyFormatter::class)->rules((string) config('vanishop.currency')),
+                'money' => app(MoneyFormatter::class)->rules((string) config('vanishop.currency'), app()->getLocale()),
                 // Múi giờ + mẫu ngày giờ (PHP date()) của cửa hàng cho useDateTime — cùng quy tắc với StoreClock::format().
                 'clock' => ['timezone' => StoreClock::timezone(), 'formats' => (array) config('vanishop.locale.formats')],
             ],

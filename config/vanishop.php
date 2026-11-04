@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.72',
+    'version' => '0.3.73',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -232,6 +232,11 @@ return [
             'thousands_separator' => '.',
             'decimal_separator' => ',',
             'symbols' => ['VND' => '₫', 'USD' => '$'],
+        ],
+        // Số rút gọn cho dashboard/báo cáo (định dạng `compact`): 1,3 N · 2,4 Tr · 1,2 Tỷ — đơn vị nghìn/triệu/tỷ theo ngôn ngữ.
+        'compact_units' => [
+            'vi' => ['N', 'Tr', 'Tỷ'],
+            'en' => ['K', 'M', 'B'],
         ],
     ],
 
