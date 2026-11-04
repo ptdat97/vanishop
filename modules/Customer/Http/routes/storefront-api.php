@@ -18,6 +18,7 @@ Route::middleware('vani.customer')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::get('me', [AccountController::class, 'show'])->name('me.show');
     Route::patch('me', [AccountController::class, 'update'])->name('me.update');
+    Route::get('me/delete', [AccountController::class, 'deletion'])->name('me.deletion');
     Route::post('me/delete', [AccountController::class, 'destroy'])->middleware('throttle:vani-customer-auth')->name('me.destroy');
     Route::put('me/password', [AccountController::class, 'password'])->middleware('throttle:vani-customer-auth')->name('me.password');
     Route::get('me/export', [AccountController::class, 'export'])->name('me.export');

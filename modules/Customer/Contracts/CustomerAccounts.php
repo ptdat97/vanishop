@@ -7,7 +7,7 @@ namespace Modules\Customer\Contracts;
 use Modules\Customer\Contracts\Data\CustomerData;
 
 /**
- * Service contract: khách tự quản lý tài khoản (hồ sơ, mật khẩu, sổ địa chỉ) — cho bề mặt ngoài Storefront API
+ * Service contract: khách tự quản lý tài khoản (hồ sơ, mật khẩu, sổ địa chỉ, xoá tài khoản) — cho bề mặt ngoài Storefront API
  * (native storefront). Cùng quy tắc với `/me` của API. Lỗi nghiệp vụ ném CustomerRejected.
  */
 interface CustomerAccounts
@@ -42,4 +42,24 @@ interface CustomerAccounts
     public function updateAddress(int $customerId, int $addressId, array $data): array;
 
     public function deleteAddress(int $customerId, int $addressId): void;
+
+    /**
+     * Việc còn dở chặn xoá tài khoản (đơn chưa hoàn tất, đổi trả đang mở, việc do plugin báo qua `vani.customer.before_delete`).
+     *
+     * @return list<array{type: string, reference: string, label: string}>
+     */
+    public function deletionBlockers(int $customerId): array;
+
+    /**
+     * Gửi OTP xác nhận xoá tới SĐT của tài khoản. Còn việc dở → `customer.deletion_blocked` (không gửi OTP).
+     *
+     * @return array{channel: string, expires_in: int}
+     */
+    public function requestDeletionOtp(int $customerId, string $ip): array;
+
+    /**
+     * Xoá tài khoản = ẩn danh hoá (giữ đơn theo nghĩa vụ kế toán), thu hồi mọi phiên. Còn việc dở →
+     * `customer.deletion_blocked`; sai OTP → `customer.otp_invalid`.
+     */
+    public function deleteAccount(int $customerId, string $code): void;
 }

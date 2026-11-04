@@ -67,6 +67,9 @@ Route::middleware(['vani.storefront-context', 'vani.customer-session', 'vani.the
         Route::get('/tai-khoan/ho-so', [AccountSettingsController::class, 'profile'])->name('account.profile');
         Route::put('/tai-khoan/ho-so', [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
         Route::put('/tai-khoan/mat-khau', [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
+        Route::get('/tai-khoan/xoa', [AccountSettingsController::class, 'deletion'])->name('account.delete');
+        Route::post('/tai-khoan/xoa/otp', [AccountSettingsController::class, 'requestDeletionOtp'])->middleware('throttle:vani-customer-auth')->name('account.delete.otp');
+        Route::post('/tai-khoan/xoa', [AccountSettingsController::class, 'destroyAccount'])->middleware('throttle:vani-customer-auth')->name('account.delete.confirm');
         Route::get('/tai-khoan/dia-chi/them', [AccountSettingsController::class, 'createAddress'])->name('account.addresses.create');
         Route::post('/tai-khoan/dia-chi', [AccountSettingsController::class, 'storeAddress'])->name('account.addresses.store');
         Route::get('/tai-khoan/dia-chi/{address}/sua', [AccountSettingsController::class, 'editAddress'])->whereNumber('address')->name('account.addresses.edit');

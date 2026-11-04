@@ -71,6 +71,9 @@
                 </div>
                 <button type="submit" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2">{{ $customer->hasPassword ? 'Đổi mật khẩu' : 'Đặt mật khẩu' }}</button>
             </form>
+
+            <h2 class="mb-1 mt-10 text-lg font-semibold">Xoá tài khoản</h2>
+            <p class="text-sm text-slate-500">Gỡ thông tin cá nhân của bạn khỏi cửa hàng. <a href="{{ route('storefront.account.delete') }}" class="text-red-700 underline">Xoá tài khoản</a></p>
         </section>
     </div>
 @endsection

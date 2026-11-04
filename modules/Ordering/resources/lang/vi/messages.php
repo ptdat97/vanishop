@@ -14,5 +14,6 @@ return [
     'address_invalid' => 'Tỉnh/thành hoặc phường/xã không hợp lệ theo danh mục hành chính hiện hành.',
     'address_changed' => 'Đã đổi địa chỉ giao hàng.',
     'note_added' => 'Đã thêm ghi chú.',
-
+    'deletion_open_order' => 'đơn :number chưa hoàn tất',
+    'deletion_open_return' => 'đổi trả của đơn :number đang xử lý',
 ];

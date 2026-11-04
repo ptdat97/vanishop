@@ -21,4 +21,5 @@ return [
     'social_redirect' => 'This return address is not allowed.',
     'social_failed' => 'Could not sign in with this account. Please try again or use your phone number.',
     'social_phone_required' => 'Please verify your phone number to finish signing in.',
+    'deletion_blocked' => 'The account cannot be deleted yet because of pending items: :items. Please wait until they are completed or contact the store.',
 ];

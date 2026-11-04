@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.57 — 2026-11-04
+
+Chỉ thêm. Khách tự xoá tài khoản (R1-5, [reference-parity-refactor §3.15-1](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Hook validate `vani.customer.before_delete` (`customerId`): plugin báo việc còn dở chặn xoá tài khoản, trả `list<array{type, reference, label}>`.
+- `CustomerAccounts::deletionBlockers()`, `requestDeletionOtp()`, `deleteAccount()`; lỗi `customer.deletion_blocked` (409, `details.blockers`).
+- Storefront API `GET /me/delete`; native `/tai-khoan/xoa` (gửi OTP, xác nhận, đăng xuất).
+
+### Đổi
+- `POST /me/delete` từ chối khi còn đơn chưa hoàn tất/đổi trả đang mở (trước: luôn ẩn danh hoá); kiểm tra trước khi tiêu OTP.
+
 ## 0.3.56 — 2026-11-04
 
 Hoàn thành bộ component Admin ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)). Chỉ thêm với plugin; trang Core đổi hình dạng một số prop.

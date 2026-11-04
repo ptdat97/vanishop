@@ -73,6 +73,7 @@ it('xuất dữ liệu cá nhân gồm hồ sơ, địa chỉ, consent, đơn h�
 it('xoá tài khoản = ẩn danh hoá (cần OTP): xoá PII, thu hồi phiên, giữ đơn; SĐT dùng lại được cho tài khoản mới', function () {
     H::guestOrder($this, $this->s->id, 'delete-order-1');
     $customer = Customer::query()->sole();
+    DB::table('orders')->update(['order_status' => 'completed']);
 
     $this->postJson(H::API.'/me/delete', ['code' => '000000'], H::auth($this->token))->assertStatus(422);
     $this->postJson(H::API.'/auth/otp/request', ['phone' => '0912345678', 'purpose' => 'delete_account'], H::CHANNEL)->assertStatus(202);
@@ -87,6 +88,28 @@ it('xoá tài khoản = ẩn danh hoá (cần OTP): xoá PII, thu hồi phiên, 
 
     H::login($this, '0912345678');
     expect(Customer::query()->count())->toBe(2);
+});
+
+it('xoá tài khoản bị từ chối khi còn đơn chưa hoàn tất hoặc đổi trả đang mở; OTP không bị tiêu', function () {
+    H::guestOrder($this, $this->s->id, 'delete-blocked-1');
+    $number = (string) DB::table('orders')->value('number');
+
+    $this->getJson(H::API.'/me/delete', H::auth($this->token))->assertOk()
+        ->assertJsonPath('data.deletable', false)
+        ->assertJsonPath('data.blockers.0.type', 'order')
+        ->assertJsonPath('data.blockers.0.reference', $number);
+    $this->postJson(H::API.'/auth/otp/request', ['phone' => '0912345678', 'purpose' => 'delete_account'], H::CHANNEL)->assertStatus(202);
+    $code = FakeOtpSender::$codes['+84912345678|delete_account'];
+    $this->postJson(H::API.'/me/delete', ['code' => $code], H::auth($this->token))
+        ->assertStatus(409)->assertJsonPath('error.code', 'customer.deletion_blocked')->assertJsonPath('error.details.blockers.0.reference', $number);
+
+    DB::table('orders')->update(['order_status' => 'completed', 'return_status' => 'requested']);
+    $this->getJson(H::API.'/me/delete', H::auth($this->token))->assertJsonPath('data.blockers.0.type', 'return');
+
+    DB::table('orders')->update(['return_status' => 'returned']);
+    $this->getJson(H::API.'/me/delete', H::auth($this->token))->assertJsonPath('data.deletable', true);
+    $this->postJson(H::API.'/me/delete', ['code' => $code], H::auth($this->token))->assertNoContent();
+    expect(Customer::query()->sole()->status->value)->toBe('anonymized');
 });
 
 it('sổ địa chỉ theo danh mục địa giới: mã sai/không khớp → 422, tên lấy theo danh mục; địa chỉ cũ vẫn đổi mặc định được', function () {

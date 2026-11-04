@@ -6,12 +6,14 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Customer\Contracts\CustomerRejected;
+use Modules\Customer\Contracts\Data\OtpPurpose;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
 use Modules\Customer\Persistence\Models\CustomerIdentity;
+use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\OrderWriter;
@@ -31,7 +33,55 @@ final class AccountLifecycle
         private readonly CustomerStats $stats,
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
+        private readonly OtpService $otp,
     ) {}
+
+    /**
+     * Việc còn dở chặn khách tự xoá tài khoản — do module/plugin sở hữu dữ liệu trả qua hook `vani.customer.before_delete`.
+     *
+     * @return list<array{type: string, reference: string, label: string}>
+     */
+    public function deletionBlockers(int $customerId): array
+    {
+        $blockers = [];
+        foreach (Hook::collect('vani.customer.before_delete', $customerId) as $blocker) {
+            if (is_array($blocker) && isset($blocker['type'], $blocker['reference'])) {
+                $blockers[] = ['type' => (string) $blocker['type'], 'reference' => (string) $blocker['reference'], 'label' => (string) ($blocker['label'] ?? $blocker['reference'])];
+            }
+        }
+
+        return $blockers;
+    }
+
+    /**
+     * Khách tự xoá tài khoản (quyền xoá dữ liệu): còn việc dở thì từ chối trước khi tiêu OTP; OTP mục đích
+     * `delete_account` gửi tới SĐT của tài khoản; rồi ẩn danh hoá (thu hồi mọi phiên, rút consent có ghi ledger).
+     */
+    public function deleteOwnAccount(int $customerId, string $code): void
+    {
+        $customer = Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
+        if (($blockers = $this->deletionBlockers($customerId)) !== []) {
+            throw CustomerRejected::deletionBlocked($blockers);
+        }
+
+        $this->otp->verify((string) $customer->phone, OtpPurpose::DeleteAccount, $code);
+        $this->anonymize($customerId, 'customer_request');
+    }
+
+    /**
+     * Gửi OTP xác nhận xoá tài khoản tới SĐT của khách; còn việc dở thì từ chối, không gửi.
+     *
+     * @return array{channel: string, expires_in: int}
+     */
+    public function requestDeletionOtp(int $customerId, string $ip): array
+    {
+        $customer = Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
+        if (($blockers = $this->deletionBlockers($customerId)) !== []) {
+            throw CustomerRejected::deletionBlocked($blockers);
+        }
+
+        return $this->otp->request((string) $customer->phone, OtpPurpose::DeleteAccount, $ip);
+    }
 
     /**
      * Chuyển đơn, địa chỉ, consent của khách nguồn sang khách đích; nguồn thành `merged` (giải phóng SĐT/email).

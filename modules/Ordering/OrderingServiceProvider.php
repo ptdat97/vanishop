@@ -6,7 +6,9 @@ namespace Modules\Ordering;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Extension\Facades\Hook;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Ordering\Application\CustomerDeletionGuard;
 use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
 use Modules\Ordering\Application\EloquentOrderStatistics;
@@ -52,5 +54,7 @@ final class OrderingServiceProvider extends ModuleServiceProvider
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('orders', $this->modulePath('Http/routes/admin-workspace.php'));
         $this->bootModuleResources();
+
+        Hook::onValidate('vani.customer.before_delete', fn (int $customerId): array => $this->app->make(CustomerDeletionGuard::class)($customerId));
     }
 }

@@ -19,4 +19,5 @@ return [
     'password_saved' => 'Password updated.',
     'address_saved' => 'Address saved.',
     'address_deleted' => 'Address deleted.',
+    'account_deleted' => 'Your account has been deleted. Your personal data has been removed from the store.',
 ];

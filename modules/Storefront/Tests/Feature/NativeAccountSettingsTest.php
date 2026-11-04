@@ -14,7 +14,7 @@ require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 beforeEach(function () {
     H::fakeOtp();
-    C::store();
+    $this->store = C::store();
     $this->signIn = function (string $phone = '0912345678'): Customer {
         $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone]);
         $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']])->assertRedirect('/tai-khoan');
@@ -103,4 +103,29 @@ it('không sửa/xoá được địa chỉ của khách khác', function () {
     $this->from('/tai-khoan/dia-chi')->delete("/tai-khoan/dia-chi/{$foreign->id}")->assertSessionHasErrors('business');
     $this->from('/tai-khoan/dia-chi')->post("/tai-khoan/dia-chi/{$foreign->id}/mac-dinh")->assertSessionHasErrors('business');
     expect($foreign->fresh())->not->toBeNull();
+});
+
+it('xoá tài khoản: gửi OTP tới SĐT của tài khoản, xác nhận thì ẩn danh hoá và đăng xuất', function () {
+    $customer = ($this->signIn)();
+
+    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Gửi mã xác nhận')->assertDontSee('Chưa xoá được tài khoản');
+    $this->post('/tai-khoan/xoa/otp')->assertRedirect('/tai-khoan/xoa');
+    $this->get('/tai-khoan/xoa')->assertSee('Xoá vĩnh viễn tài khoản');
+
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['code' => '000000'])->assertSessionHasErrors('business');
+    expect($customer->fresh()->status->value)->toBe('active');
+
+    $this->post('/tai-khoan/xoa', ['code' => FakeOtpSender::$codes['+84912345678|delete_account']])
+        ->assertRedirect('/')->assertSessionHas('status', 'Tài khoản đã được xoá. Thông tin cá nhân của bạn đã được gỡ khỏi cửa hàng.');
+    expect($customer->fresh())->status->value->toBe('anonymized')->phone->toBeNull();
+    $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');
+});
+
+it('xoá tài khoản: còn đơn chưa hoàn tất thì liệt kê đơn, không gửi OTP', function () {
+    ($this->signIn)();
+    $number = H::guestOrder($this, $this->store['s']->id, 'native-delete-blocked');
+
+    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Chưa xoá được tài khoản')->assertSee($number)->assertDontSee('Gửi mã xác nhận');
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa/otp')->assertSessionHasErrors('business');
+    expect(FakeOtpSender::$codes)->not->toHaveKey('+84912345678|delete_account');
 });

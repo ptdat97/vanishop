@@ -13,6 +13,7 @@ final class CustomerAccountService implements CustomerAccounts
         private readonly CustomerService $customers,
         private readonly AuthService $auth,
         private readonly AddressBook $addresses,
+        private readonly AccountLifecycle $lifecycle,
     ) {}
 
     public function updateProfile(int $customerId, array $attributes): CustomerData
@@ -51,5 +52,20 @@ final class CustomerAccountService implements CustomerAccounts
     public function deleteAddress(int $customerId, int $addressId): void
     {
         $this->addresses->delete($customerId, $addressId);
+    }
+
+    public function deletionBlockers(int $customerId): array
+    {
+        return $this->lifecycle->deletionBlockers($customerId);
+    }
+
+    public function requestDeletionOtp(int $customerId, string $ip): array
+    {
+        return $this->lifecycle->requestDeletionOtp($customerId, $ip);
+    }
+
+    public function deleteAccount(int $customerId, string $code): void
+    {
+        $this->lifecycle->deleteOwnAccount($customerId, $code);
     }
 }

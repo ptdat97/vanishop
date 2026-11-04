@@ -13,8 +13,6 @@ use Modules\Customer\Application\AddressBook;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerService;
-use Modules\Customer\Application\OtpService;
-use Modules\Customer\Contracts\Data\OtpPurpose;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Shared\Support\Phones;
 
@@ -99,14 +97,22 @@ final class AccountController
     /**
      * Xoá tài khoản = ẩn danh hoá; bắt buộc OTP mục đích `delete_account` gửi tới SĐT của tài khoản.
      */
-    public function destroy(Request $request, OtpService $otp, AccountLifecycle $lifecycle): JsonResponse
+    public function destroy(Request $request, AccountLifecycle $lifecycle): JsonResponse
     {
         $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
-        $customer = AuthenticateCustomer::customer($request);
-        $otp->verify((string) $customer->phone, OtpPurpose::DeleteAccount, $data['code']);
-        $lifecycle->anonymize($customer->id, 'customer_request');
+        $lifecycle->deleteOwnAccount(AuthenticateCustomer::customer($request)->id, $data['code']);
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Xoá được tài khoản chưa — trả danh sách việc còn dở (đơn chưa hoàn tất, đổi trả đang mở…) để app hiển thị trước khi xin OTP.
+     */
+    public function deletion(Request $request, AccountLifecycle $lifecycle): JsonResponse
+    {
+        $blockers = $lifecycle->deletionBlockers(AuthenticateCustomer::customer($request)->id);
+
+        return response()->json(['data' => ['deletable' => $blockers === [], 'blockers' => $blockers]]);
     }
 
     /**

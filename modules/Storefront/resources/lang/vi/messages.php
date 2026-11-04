@@ -39,4 +39,5 @@ return [
         'rejected' => 'Từ chối',
         'cancelled' => 'Đã huỷ',
     ],
+    'account_deleted' => 'Tài khoản đã được xoá. Thông tin cá nhân của bạn đã được gỡ khỏi cửa hàng.',
 ];

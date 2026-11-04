@@ -14,5 +14,6 @@ return [
     'address_invalid' => 'Invalid province or ward for the current administrative list.',
     'address_changed' => 'Shipping address changed.',
     'note_added' => 'Note added.',
-
+    'deletion_open_order' => 'order :number is not completed',
+    'deletion_open_return' => 'the return of order :number is in progress',
 ];

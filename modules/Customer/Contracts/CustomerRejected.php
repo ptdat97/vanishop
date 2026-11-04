@@ -96,6 +96,21 @@ final class CustomerRejected extends BusinessRuleViolation
         return new self($reason, 'customer.merge_invalid', 422);
     }
 
+    /**
+     * Khách tự xoá tài khoản khi còn việc dở (đơn chưa hoàn tất, đổi trả đang mở…).
+     *
+     * @param  list<array{type: string, reference: string, label: string}>  $blockers
+     */
+    public static function deletionBlocked(array $blockers): self
+    {
+        return new self(
+            __('customer::messages.deletion_blocked', ['items' => implode(', ', array_map(fn (array $blocker): string => $blocker['label'], $blockers))]),
+            'customer.deletion_blocked',
+            409,
+            ['blockers' => $blockers],
+        );
+    }
+
     public static function passwordMismatch(): self
     {
         return new self(__('customer::messages.password_mismatch'), 'customer.password_mismatch', 422);

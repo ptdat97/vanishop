@@ -72,7 +72,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
-| `CustomerAccounts` | Khách tự quản lý hồ sơ, mật khẩu, sổ địa chỉ (bề mặt ngoài Storefront API, vd. native storefront). **Implemented** (0.3.13) | Customer |
+| `CustomerAccounts` | Khách tự quản lý hồ sơ, mật khẩu, sổ địa chỉ, xoá tài khoản (`deletionBlockers`, `requestDeletionOtp`, `deleteAccount` — 0.3.57) (bề mặt ngoài Storefront API, vd. native storefront). **Implemented** (0.3.13) | Customer |
 | `Settings` | Đọc/ghi cấu hình, khai báo định nghĩa. **Implemented** (hiện kế thừa kênh → brand → pháp nhân → owner; sau slice 12: một cấp cửa hàng) | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
 | `CurrentContext` | Locale/actor hiện tại; `runAs()` (brand/channel: bỏ ở slice 12) | Shared |
@@ -102,6 +102,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 |---|---|---|---|
 | `vani.catalog.listing.query` | filter | không | Sửa truy vấn danh sách sản phẩm (merchandising); tham số/kết quả `ProductSearchQuery`, sai kiểu bị bỏ qua. **Implemented** (0.3) |
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
+| `vani.customer.before_delete` | validate | không (trước khi kiểm OTP; chỉ đọc) | Việc còn dở chặn khách tự xoá tài khoản; trả `list<{type, reference, label}>`, có mục → `customer.deletion_blocked`. Core: Ordering báo đơn chưa hoàn tất / đổi trả đang mở. Nhân viên ẩn danh hoá trong Admin không qua hook. **Implemented** (0.3.57) |
 | `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của cửa hàng); tham số `ProductDraft`. **Implemented** |
 | `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `(styleId, brandId)`. **Implemented** |
 | `vani.cart.validate_line` | validate | có (khoá giỏ; không I/O mạng) | Chặn thêm/tăng dòng giỏ (giới hạn mua mỗi khách, hàng chỉ bán tại cửa hàng…); tham số `CartLineDraft` (số lượng sau thay đổi). **Implemented** |

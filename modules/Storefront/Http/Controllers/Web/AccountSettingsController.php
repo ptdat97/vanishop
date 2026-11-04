@@ -14,7 +14,8 @@ use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Storefront\Application\AddressOptions;
 
 /**
- * Tài khoản khách trên native storefront: sửa hồ sơ, đặt/đổi mật khẩu, sổ địa chỉ (thêm/sửa/xoá/mặc định).
+ * Tài khoản khách trên native storefront: sửa hồ sơ, đặt/đổi mật khẩu, sổ địa chỉ (thêm/sửa/xoá/mặc định), xoá
+ * tài khoản (OTP tới SĐT của tài khoản; còn đơn/đổi trả đang xử lý thì chưa xoá được).
  * Form chạy không cần JS; tỉnh → phường: JS tải qua Storefront API, không JS có nút "Tải danh sách phường/xã".
  */
 final class AccountSettingsController
@@ -56,6 +57,39 @@ final class AccountSettingsController
         $this->accounts->setPassword($customer->id, $data['current_password'] ?? null, $data['password']);
 
         return redirect()->route('storefront.account.profile')->with('status', __('storefront::messages.password_saved'));
+    }
+
+    public function deletion(Request $request): View
+    {
+        $customer = $this->required($request);
+
+        return view('theme::pages.account.delete', [
+            'customer' => $customer,
+            'blockers' => $this->accounts->deletionBlockers($customer->id),
+            'otpSent' => (bool) $request->session()->get('vani.delete_otp_sent', false),
+        ]);
+    }
+
+    public function requestDeletionOtp(Request $request): RedirectResponse
+    {
+        $customer = $this->required($request);
+        $this->accounts->requestDeletionOtp($customer->id, (string) $request->ip());
+        $request->session()->put('vani.delete_otp_sent', true);
+
+        return redirect()->route('storefront.account.delete')->with('status', __('storefront::messages.otp_sent'));
+    }
+
+    public function destroyAccount(Request $request): RedirectResponse
+    {
+        $customer = $this->required($request);
+        $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
+        $this->accounts->deleteAccount($customer->id, $data['code']);
+
+        // Ẩn danh hoá đã thu hồi mọi token; bỏ phiên web để không còn dấu vết đăng nhập.
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('storefront.home')->with('status', __('storefront::messages.account_deleted'));
     }
 
     public function createAddress(Request $request): View
