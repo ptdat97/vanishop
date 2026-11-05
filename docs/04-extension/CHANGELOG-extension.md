@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.85 — 2026-11-05
+
+Chỉ thêm. Phục vụ `vani.scarcity-signals` (M2).
+
+### Thêm
+- `Ordering\Contracts\OrderStatistics::confirmedQuantitiesByStyle(from, to, ?styleIds)`: số lượng đã bán chắc chắn theo style — như `topStyles` nhưng chỉ đơn đã thu tiền (`authorized`, `paid`, `partially_refunded`, `cod_collected`) hoặc đã rời kho (`partially_shipped`, `shipped`, `delivered`); COD vừa đặt, đơn chưa trả, hoàn tiền toàn bộ không tính.
+- `StorefrontEnricher` resource `product_card`: phần tử có thêm `variant_ids` (chỉ cho enricher; bỏ trước khi trả ra).
+- Plugin `vani.scarcity-signals` 1.0.0.
+
 ## 0.3.84 — 2026-11-05
 
 Không đổi API plugin. Admin → Tồn kho sửa linh hoạt hơn.

@@ -24,7 +24,8 @@ interface StorefrontEnricher
     public function resource(): string;
 
     /**
-     * @param  list<array<string, mixed>>  $items  dữ liệu đã trình bày của Core (chỉ đọc), mỗi phần tử có `id`
+     * @param  list<array<string, mixed>>  $items  dữ liệu đã trình bày của Core (chỉ đọc), mỗi phần tử có `id`; `product_card`
+     *                                             có thêm `variant_ids` (0.3.85 — bỏ trước khi trả ra storefront/API)
      * @return array<int|string, array<string, mixed>> id → dữ liệu của plugin (bỏ qua phần tử không có gì để thêm)
      */
     public function enrich(array $items, string $locale): array;

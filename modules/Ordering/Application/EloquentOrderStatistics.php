@@ -17,6 +17,12 @@ use Modules\Ordering\Contracts\OrderStatistics;
 
 final class EloquentOrderStatistics implements OrderStatistics
 {
+    /** Đơn được coi là bán chắc chắn: đã thu tiền… */
+    private const CONFIRMED_PAYMENT = ['authorized', 'paid', 'partially_refunded', 'cod_collected'];
+
+    /** …hoặc hàng đã rời kho (COD đang giao). */
+    private const CONFIRMED_FULFILLMENT = ['partially_shipped', 'shipped', 'delivered'];
+
     public function totals(DateTimeImmutable $from, DateTimeImmutable $to): SalesTotals
     {
         $this->guardRange($from, $to);
@@ -138,6 +144,28 @@ final class EloquentOrderStatistics implements OrderStatistics
             ->limit(max(1, min($limit, 100)))
             ->get()
             ->map(fn (object $row): array => ['style_id' => (int) $row->style_id, 'quantity' => (int) $row->sold])
+            ->all();
+    }
+
+    public function confirmedQuantitiesByStyle(DateTimeImmutable $from, DateTimeImmutable $to, ?array $styleIds = null): array
+    {
+        $this->guardRange($from, $to);
+        if ($styleIds === []) {
+            return [];
+        }
+
+        return $this->lines($from, $to)
+            ->whereNotNull('order_lines.meta->style_id')
+            ->where('orders.source', '!=', 'exchange')
+            ->where(fn (Builder $query) => $query
+                ->whereIn('orders.payment_status', self::CONFIRMED_PAYMENT)
+                ->orWhereIn('orders.fulfillment_status', self::CONFIRMED_FULFILLMENT))
+            ->when($styleIds !== null, fn (Builder $query) => $query->whereIn('order_lines.meta->style_id', array_values(array_map('intval', (array) $styleIds))))
+            ->select(['order_lines.meta->style_id as style_id', DB::raw('sum(order_lines.quantity) as sold')])
+            ->groupBy('order_lines.meta->style_id')
+            ->havingRaw('sum(order_lines.quantity) > 0')
+            ->get()
+            ->mapWithKeys(fn (object $row): array => [(int) $row->style_id => (int) $row->sold])
             ->all();
     }
 

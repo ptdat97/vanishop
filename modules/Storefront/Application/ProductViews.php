@@ -71,12 +71,16 @@ final class ProductViews implements ProductCards
             $item['price'] = $hidden ? null : $this->range(array_values(array_intersect_key($resolved, array_flip($item['variant_ids']))));
             $item['price_hidden'] = $hidden;
             $item['in_stock'] = array_sum(array_intersect_key($stock, array_flip($item['variant_ids']))) > 0;
-            unset($item['variant_ids']);
 
             return $item;
         }, $items);
 
-        return $this->enrichment->apply('product_card', $items);
+        // Enricher thẻ sản phẩm thấy `variant_ids` (0.3.85, vd. nhãn "sắp hết" theo tồn từng variant); bỏ trước khi trả ra.
+        return array_map(function (array $item): array {
+            unset($item['variant_ids']);
+
+            return $item;
+        }, $this->enrichment->apply('product_card', $items));
     }
 
     /**
