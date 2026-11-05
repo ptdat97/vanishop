@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Plugin\DemoCatalog\Infrastructure;
+namespace Database\Seeders\Demo;
 
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;

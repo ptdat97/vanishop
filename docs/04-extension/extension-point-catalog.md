@@ -51,7 +51,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 |---|---|---|
 | `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant) (hiện lọc theo brand của kênh; sau slice 12: toàn cửa hàng, thêm danh sách/chi tiết brand). **Implemented** | Catalog |
 | `VariantDirectory` | Tra variant (theo mã style, theo id) cho module khác. **Implemented** | Catalog |
-| `CatalogImporter` | Nhập sản phẩm (`upsertProduct(ProductImport)`): idempotent theo mã style, tạo thương hiệu/danh mục/màu/size còn thiếu, ảnh từ file local qua thư viện media, sinh variant; không ghi đè nội dung đã sửa. **Implemented** (0.3.27), tham chiếu `vani.demo-catalog` | Catalog |
+| `CatalogImporter` | Nhập sản phẩm (`upsertProduct(ProductImport)`): idempotent theo mã style, tạo thương hiệu/danh mục/màu/size còn thiếu, ảnh từ file local qua thư viện media, sinh variant; không ghi đè nội dung đã sửa. **Implemented** (0.3.27), dùng bởi `database/seeders/Demo/CatalogSeeder` (trước: plugin `vani.demo-catalog`, đã gỡ 2026-11-05) | Catalog |
 | `ChannelDirectory` | Kênh bán của một brand. **Implemented**, sẽ gỡ cùng module Channel (slice 12) | Channel |
 | `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Plugin\DemoCatalog\Infrastructure;
+namespace Database\Seeders\Demo;
 
 use InvalidArgumentException;
 

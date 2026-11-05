@@ -103,7 +103,7 @@
 | `vani.hello-world` (plugin mẫu: slot hook, menu, permission, trang Admin) | Implemented, có test |
 | `vani.reports` (widget Tổng quan + 5 báo cáo bán hàng, quyền `reports.view`) | Implemented, có feature test (số liệu theo giờ VN, quyền, CSV) |
 | `vani.cms` (trang, tin tức, quyền `cms.view`/`cms.manage`) | Implemented, có feature test (XSS, hẹn giờ, xem trước ký, sitemap, API, ảnh) |
-| `vani.demo-catalog` (dữ liệu demo: `vani:demo:catalog` nhập 25 sản phẩm có ảnh thật, qua `CatalogImporter`/`PriceImporter`/`StockImporter`) | Implemented, có feature test (gom ảnh, nhập, idempotent, dry-run) |
+| Dữ liệu demo toàn dự án: `php artisan db:seed --class=DemoSeeder` (database/seeders/Demo — kho, 25 sản phẩm có ảnh thật, giá/sale/bộ sưu tập/tồn, mã giảm giá, nội dung plugin, trang chủ + menu + chân trang, 12 đơn nhiều trạng thái; thay plugin `vani.demo-catalog`, 2026-11-05) | Implemented, có feature test (gom ảnh, dựng cả cửa hàng, chạy lại không trùng) |
 | `vani.tracking-pixels` (Meta Pixel, GA4, GTM; sự kiện mua từ server qua queue; đồng ý cookie) — chuyển từ VaniCommerce, M1 | Implemented 2026-10-14, có feature test (không lộ dữ liệu khách ở trang cache, mua một lần, đồng ý cookie, băm dữ liệu, thử lại) |
 | `vani.shipping-flat-rate` 1.1 — thanh tiến độ miễn phí giao (cùng ngưỡng `free_over`), chuyển từ VaniCommerce, M1 | Implemented 2026-10-14, có feature test |
 | `vani.size-chart` — bảng size + gợi ý size, gán theo sản phẩm/danh mục/thương hiệu/mặc định; chuyển từ VaniCommerce, M1 | Implemented 2026-10-14, có feature test |

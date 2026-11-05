@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.86 — 2026-11-05
+
+Không đổi API plugin.
+
+### Gỡ
+- Plugin `vani.demo-catalog` và lệnh `vani:demo:catalog`: dữ liệu demo chuyển vào `database/seeders/DemoSeeder` (`php artisan db:seed --class=DemoSeeder`, từ chối chạy ở production). Bộ ảnh ở `database/seeders/Demo/photos`; cấu hình `vanishop.demo.images|image_max` (`VANI_DEMO_IMAGES`, `VANI_DEMO_IMAGE_MAX`). Contract `CatalogImporter`/`PriceImporter`/`StockImporter` giữ nguyên.
+
 ## 0.3.85 — 2026-11-05
 
 Chỉ thêm. Phục vụ `vani.scarcity-signals` (M2).

@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.85',
+    'version' => '0.3.86',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -317,6 +317,13 @@ return [
         // Giá sàn: tổng giảm của một dòng không vượt tỷ lệ này (basis points; 5000 = 50%, NĐ 81/2018 — pháp chế xác nhận).
         // Chính sách của cửa hàng tại VN; Core không cấu hình = 10000 (không giới hạn).
         'max_discount_bp' => (int) env('VANI_PROMOTION_MAX_DISCOUNT_BP', 5000),
+    ],
+
+    // Dữ liệu demo (`php artisan db:seed --class=DemoSeeder`, chỉ dev): thư mục ảnh sản phẩm (trống = bộ ảnh đi kèm
+    // database/seeders/Demo/photos) và cạnh dài tối đa khi nhập.
+    'demo' => [
+        'images' => env('VANI_DEMO_IMAGES'),
+        'image_max' => (int) env('VANI_DEMO_IMAGE_MAX', 1600),
     ],
 
     'inventory' => [

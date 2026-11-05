@@ -97,7 +97,7 @@ php artisan vani:plugin:doctor          # phải sạch lỗi (mã thoát 0)
 
 Bật thêm plugin nghiệp vụ (cổng thanh toán, hãng vận chuyển, `vani.media-webp`…) bằng `vani:plugin:install <id>` rồi `vani:plugin:enable <id>`, cấu hình ở Admin → Cấu hình.
 
-**Không chạy ở production:** `migrate:fresh`, `migrate:refresh`, `db:seed`, `vani:demo:catalog`, và không cài plugin `vani.demo-catalog`.
+**Không chạy ở production:** `migrate:fresh`, `migrate:refresh`, `db:seed` (kể cả `DemoSeeder` — tự từ chối khi `APP_ENV=production`).
 
 ## 5. Quy trình mỗi lần deploy
 
