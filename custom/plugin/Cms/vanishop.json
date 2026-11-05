@@ -4,18 +4,25 @@
         "vi": "Nội dung (CMS)",
         "en": "Content (CMS)"
     },
-    "version": "1.4.0",
+    "version": "1.5.0",
     "kind": "content",
     "provider": "Plugin\\Cms\\CmsServiceProvider",
     "requires": {
-        "vanishop": "^0.3.58",
+        "vanishop": "^0.3.81",
         "plugins": {}
     },
     "conflicts": [],
     "permissions": ["cms.view", "cms.manage"],
     "author": "VaniShop Team",
+    "assets": "public",
     "data": {
-        "owned": ["plg_cms_pages", "plg_cms_posts", "plg_cms_categories"],
-        "references": { "plg_cms_posts.cover_media_id": "media.id" }
+        "owned": ["plg_cms_pages", "plg_cms_posts", "plg_cms_categories", "plg_cms_product_extras", "plg_cms_category_banners"],
+        "references": {
+            "plg_cms_posts.cover_media_id": "media.id",
+            "plg_cms_product_extras.style_id": "styles.id",
+            "plg_cms_category_banners.category_id": "categories.id",
+            "plg_cms_category_banners.desktop_media_id": "media.id",
+            "plg_cms_category_banners.mobile_media_id": "media.id"
+        }
     }
 }

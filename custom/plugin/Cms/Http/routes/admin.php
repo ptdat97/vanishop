@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Plugin\Cms\Http\Controllers\Admin\BannerController;
 use Plugin\Cms\Http\Controllers\Admin\CategoryController;
 use Plugin\Cms\Http\Controllers\Admin\ContentController;
 
@@ -20,3 +21,10 @@ Route::get('categories', [CategoryController::class, 'index'])->name('categories
 Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
 Route::put('categories/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('categories.update');
 Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->whereNumber('category')->name('categories.destroy');
+// Banner đầu trang danh mục sản phẩm (1.5.0, store-content §3.3).
+Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
+Route::get('banners/create', [BannerController::class, 'create'])->name('banners.create');
+Route::post('banners', [BannerController::class, 'store'])->name('banners.store');
+Route::get('banners/{banner}', [BannerController::class, 'edit'])->whereNumber('banner')->name('banners.edit');
+Route::put('banners/{banner}', [BannerController::class, 'update'])->whereNumber('banner')->name('banners.update');
+Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->whereNumber('banner')->name('banners.destroy');

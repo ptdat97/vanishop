@@ -19,8 +19,14 @@ Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `
 - **Link cho menu** (từ 1.3.0, Core 0.3.58): loại link `page` (Trang nội dung) và `article` (Bài viết) cho Admin → Giao diện → Menu. Chỉ nội dung đang công khai mới hiện; nháp/hẹn giờ chưa tới thì mục menu tự ẩn.
 - **Chuyên mục tin tức** (từ 1.4.0): Admin → Nội dung → Bài viết → Chuyên mục. Một cấp, URL `/tin-tuc/{chuyên-mục}` dùng chung không gian đường dẫn với bài viết (lưu bị từ chối nếu trùng). Trang tin tức có thanh chuyên mục (chỉ chuyên mục có bài công khai); xoá chuyên mục thì bài của nó thành "không chuyên mục". Link menu `article_category`; chuyên mục vào sitemap.
 - **Sản phẩm trong bài** (từ 1.4.0): gắn tối đa 12 mẫu (tìm theo tên/mã, sắp thứ tự), hiện bằng thẻ sản phẩm của theme ở cuối bài; mẫu bị ẩn/ngừng bán tự bỏ khi hiển thị. Nâng từ bản trước: `php artisan vani:plugin:upgrade vani.cms`.
-- **Storefront API** (headless): `GET /api/storefront/v1/x/vani-cms/pages/{slug}`, `GET …/categories`, `GET …/posts?per_page=&category=`, `GET …/posts/{slug}` (có `category`, `products`).
-- **Dữ liệu:** bảng `plg_cms_pages`, `plg_cms_posts`, `plg_cms_categories`. Tắt plugin thì URL, menu, khối và API đều biến mất; dữ liệu vẫn giữ.
+- **Nội dung thêm** (từ 1.5.0, [đặc tả](../../../docs/05-plugin/specs/store-content.md)):
+  - *Thanh thông báo* đầu trang: nhiều dòng Markdown một dòng (đậm, link), tự xoay vòng (thời gian hiện/chuyển cấu hình), nút trước/sau, dừng khi rê chuột, không tự xoay khi hệ điều hành bật "giảm chuyển động"; màu nền/chữ; khung giờ từ–đến (giờ cửa hàng). Không JS: chỉ hiện dòng đầu. Đây là bản đầy đủ của dòng thông báo đơn trong theme (Giao diện → Đầu & chân trang) — khi bật, để trống dòng của theme.
+  - *Hộp ưu đãi* ở trang sản phẩm: một nội dung Markdown chung, vị trí sau giá / sau nút thêm vào giỏ / sau mô tả; ẩn riêng từng sản phẩm.
+  - *Điểm nổi bật*: form sản phẩm → Nội dung thêm, mỗi dòng một ý (tối đa 8, theo ngôn ngữ), hiện dưới tên sản phẩm.
+  - *Banner danh mục*: Admin → Nội dung → Banner danh mục (mỗi danh mục một banner, ảnh desktop + mobile từ Thư viện ảnh, nút link trong cửa hàng hoặc `https`), hiện trước bộ lọc.
+  - Cấu hình: Admin → Plugin → vani.cms → Cấu hình. Nâng từ bản trước: `php artisan vani:plugin:upgrade vani.cms` (thêm bảng + publish `announcement.js`).
+- **Storefront API** (headless): `GET /api/storefront/v1/x/vani-cms/pages/{slug}`, `GET …/categories`, `GET …/posts?per_page=&category=`, `GET …/posts/{slug}` (có `category`, `products`). Trang sản phẩm có `extensions["vani.cms"]` = `{highlights, promo_box}` (1.5.0).
+- **Dữ liệu:** bảng `plg_cms_pages`, `plg_cms_posts`, `plg_cms_categories`, `plg_cms_product_extras`, `plg_cms_category_banners`. Tắt plugin thì URL, menu, khối và API đều biến mất; dữ liệu vẫn giữ.
 
 ## Quyết định
 

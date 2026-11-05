@@ -183,6 +183,7 @@ final class ContentController
             'preview' => route('admin.plugins.vani-cms.preview'),
             'categories' => route('admin.plugins.vani-cms.categories.index'),
             'products' => route('admin.plugins.vani-cms.products'),
+            'banners' => route('admin.plugins.vani-cms.banners.index'),
         ];
     }
 

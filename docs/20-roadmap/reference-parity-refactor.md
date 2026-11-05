@@ -438,6 +438,8 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L15 | Từ điển dữ liệu sinh từ MySQL máy dev (9.x) — nếu CI MySQL 8.4 in kiểu/mặc định khác thì `--check` báo lệch: sinh lại từ CI | CI | Sinh lại bằng MySQL 8.4 khi lệch |
 | L16 | Ảnh đổi trả không tự xoá khi khách bị ẩn danh hoá hay sau thời hạn lưu; chỉ gửi kèm khi tạo yêu cầu (chưa có nút thêm ảnh sau) | Returns | Dọn theo chính sách lưu trữ; nút thêm ảnh khi yêu cầu còn mở |
 | L17 | Khối nhiều mục (trình chiếu 5 slide, lưới banner 4 ô, tab, biểu tượng) dùng số ô cố định vì `FieldDefinition` chưa có trường lặp | `vani.storefront-extras`, Extension | Kiểu trường danh sách (repeater) cho page builder |
+| L18 | Thanh thông báo `vani.cms` khi bật cache CDN: mốc **bắt đầu** chỉ đúng tới thời gian cache trang (mốc kết thúc JS kiểm thêm); thanh của plugin và dòng thông báo của theme độc lập (cửa hàng tự để trống một bên) | `vani.cms`, Storefront | Purge cache theo lịch, hoặc theme ẩn dòng của mình khi slot có nội dung |
+| L19 | Banner danh mục nhập ở trang riêng (Nội dung → Banner danh mục), chưa ở form danh mục — chờ kiểu trường chọn ảnh (L6); Admin chọn danh mục từ 200 danh mục đầu | `vani.cms`, Extension | Chuyển vào form danh mục khi có trường media |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

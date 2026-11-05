@@ -1,6 +1,6 @@
 # Đặc tả: Nội dung bổ sung của cửa hàng (bổ sung `vani.cms` 1.2)
 
-> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin ExtraContent 1.2.0 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Không tạo plugin mới: phần cần chuyển gộp vào `vani.cms`.
+> Trạng thái: **Implemented** (`vani.cms` 1.5.0 — số phiên bản sau 1.4.0 thay cho 1.2 dự kiến; Core ≥ 0.3.81, 2026-11-05). Khác đặc tả gốc: (1) banner danh mục nhập ở trang riêng Admin → Nội dung → Banner danh mục thay vì form danh mục, vì phần form của plugin chưa có kiểu trường chọn ảnh (backlog L6); (2) Storefront API có thêm `extensions.vani.cms.promo_box` (HTML, null khi tắt/ẩn) cho headless; (3) đối chiếu thanh thông báo với theme — xem §3.1. Đặc tả gốc — Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin ExtraContent 1.2.0 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Không tạo plugin mới: phần cần chuyển gộp vào `vani.cms`.
 
 ## 1. Mục tiêu
 
@@ -27,6 +27,7 @@ Cho Owner thêm nội dung bán hàng ngoài mô tả sản phẩm: thanh thông
 - Một dải trên cùng mọi trang storefront; mỗi dòng là một thông báo Markdown một dòng (cho phép đậm, link). Nhiều dòng thì xoay vòng: hiện mỗi dòng N ms, chuyển mờ M ms; có nút trước/sau; dừng khi rê chuột; tôn trọng "giảm chuyển động" của hệ điều hành (không tự xoay).
 - Có thể hẹn khung giờ hiển thị cho cả thanh (từ–đến, giờ cửa hàng).
 - Nội dung giống nhau cho mọi khách → nằm trong HTML có cache.
+- **Đối chiếu với theme (2026-11-05)**: từ Core 0.3.65 theme `vani-base` có dòng thông báo đơn trong schema `settings.header` (`announcement` một dòng chữ theo ngôn ngữ + `announcement_url`, Admin → Giao diện → Đầu & chân trang) — không xoay vòng, không Markdown, không hẹn giờ, không màu. Quyết định: giữ dòng của theme làm bản đơn giản (không cần plugin); thanh của `vani.cms` là bản đầy đủ, render qua slot `layout.body_start`, chỉ khi `announcement_enabled` bật. Hai thanh độc lập — trợ giúp cấu hình nhắc để trống dòng của theme khi bật thanh plugin. Khi cache CDN, mốc kết thúc được JS kiểm thêm (trang cache sau giờ kết thúc vẫn ẩn); mốc bắt đầu phụ thuộc thời gian cache (backlog L18).
 
 ### 3.2 Trang sản phẩm
 

@@ -26,7 +26,7 @@ const props = defineProps<{
         last_page: number;
     };
     can: { manage: boolean };
-    urls: { pages: string; posts: string; index: string; create: string; categories?: string };
+    urls: { pages: string; posts: string; index: string; create: string; categories?: string; banners?: string };
 }>();
 
 const q = ref(props.search);
@@ -46,6 +46,7 @@ function submitSearch(page = 1): void {
     <Head :title="`Nội dung — ${kindLabels[kind].plural}`" />
     <PageHeader title="Nội dung" subtitle="Trang (giới thiệu, chính sách…) và tin tức của cửa hàng. Soạn bằng Markdown.">
         <Link v-if="kind === 'posts' && urls.categories" :href="urls.categories" :class="secondaryButton">Chuyên mục</Link>
+        <Link v-if="urls.banners" :href="urls.banners" :class="secondaryButton">Banner danh mục</Link>
         <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm {{ kindLabels[kind].singular }}</Link>
     </PageHeader>
     <FlashMessage />
