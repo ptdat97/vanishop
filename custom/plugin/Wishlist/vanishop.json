@@ -1,0 +1,25 @@
+{
+    "id": "vani.wishlist",
+    "name": {
+        "vi": "Yêu thích",
+        "en": "Wishlist"
+    },
+    "description": {
+        "vi": "Khách lưu sản phẩm yêu thích (vãng lai lưu ở trình duyệt, gộp khi đăng nhập); báo khi có hàng lại hoặc giảm giá.",
+        "en": "Customers save favourite products (guests in the browser, merged on sign-in); alerts when back in stock or on sale."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\Wishlist\\WishlistServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.76",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team",
+    "assets": "public",
+    "data": {
+        "owned": ["plg_wishlist_items"]
+    }
+}
