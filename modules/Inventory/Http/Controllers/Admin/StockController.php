@@ -11,13 +11,19 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Identity\Contracts\Data\ScopeRef;
+use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\StockAdjustmentService;
+use Modules\Inventory\Application\StockCsv;
+use Modules\Inventory\Application\StockGrid;
 use Modules\Inventory\Application\StockQueries;
 use Modules\Inventory\Http\Requests\StockChangeRequest;
 use Modules\Inventory\Persistence\Models\Location;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class StockController
 {
+    private const PER_PAGE = 50;
+
     public function home(): RedirectResponse
     {
         Gate::authorize('inventory.view');
@@ -26,40 +32,135 @@ final class StockController
     }
 
     /**
-     * Lưới tồn: variant của một mã sản phẩm × location.
+     * Lưới tồn: mọi variant (tìm theo tên/mã/SKU, lọc hết hàng / sắp hết) × kho; sửa số tồn ngay trong ô (lưu cả trang).
+     * `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
-    public function index(Request $request, VariantDirectory $variants, StockQueries $queries): Response
+    public function index(Request $request, StockGrid $grid): Response
     {
         Gate::authorize('inventory.view');
 
-        $styleCode = trim((string) $request->query('style', ''));
-        $rows = $styleCode === '' ? [] : $variants->ofStyleCode($styleCode);
-        $locations = $queries->locations();
-        $levels = $queries->levels(array_map(fn ($variant): int => $variant->id, $rows));
+        $text = trim((string) $request->query('q', ''));
+        $style = trim((string) $request->query('style', ''));
+        $filter = in_array($request->query('filter'), StockGrid::FILTERS, true) ? (string) $request->query('filter') : 'all';
+        $page = max(1, (int) $request->query('page', 1));
+        $result = $grid->page($text, $style === '' ? null : $style, $filter, $page, self::PER_PAGE);
+        $canManageLocations = Gate::allows('inventory.locations.manage', [ScopeRef::owner()]);
+        $online = array_filter($result['locations'], fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders);
 
         return Inertia::render('Inventory::Stock/Index', [
             'labels' => __('inventory::labels'),
-            'baseUrl' => route('admin.inventory.stock.index'),
-            'locationsUrl' => Gate::allows('inventory.locations.manage', [ScopeRef::owner()]) ? route('admin.inventory.locations.index') : null,
-            'transfersUrl' => route('admin.inventory.transfers.index'),
-            'styleCode' => $styleCode,
-            'styleName' => $rows[0]->styleName ?? null,
+            'urls' => [
+                'base' => route('admin.inventory.stock.index'),
+                'batch' => route('admin.inventory.stock.batch'),
+                'change' => route('admin.inventory.stock.change'),
+                'export' => route('admin.inventory.stock.export'),
+                'import' => route('admin.inventory.stock.import'),
+                'movements' => route('admin.inventory.movements.index'),
+                'transfers' => route('admin.inventory.transfers.index'),
+                'locations' => $canManageLocations ? route('admin.inventory.locations.index') : null,
+                'default_location' => $canManageLocations && $result['locations'] === [] ? route('admin.inventory.stock.default-location') : null,
+            ],
+            'query' => ['q' => $text, 'style' => $style, 'filter' => $filter],
+            'pagination' => ['page' => $page, 'per_page' => self::PER_PAGE, 'total' => $result['total']],
+            'threshold' => (int) config('vanishop.inventory.low_stock_threshold', 3),
+            'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
             'locations' => array_map(fn (Location $location): array => [
-                'id' => $location->id,
-                'code' => $location->code,
-                'name' => $location->name,
-                'external' => ! $location->managesOnHand(),
-            ], $locations),
-            'variants' => array_map(fn ($variant): array => [
-                'id' => $variant->id,
-                'sku' => $variant->sku,
-                'color_code' => $variant->colorCode,
-                'size_code' => $variant->sizeCode,
-                'status' => $variant->status,
-                'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$variant->id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $locations),
-            ], $rows),
+                'id' => $location->id, 'code' => $location->code, 'name' => $location->name,
+                'external' => ! $location->managesOnHand(), 'online' => $location->status === 'active' && $location->ships_online_orders,
+            ], $result['locations']),
+            'variants' => $result['rows'],
             'canAdjust' => Gate::allows('inventory.adjust'),
         ]);
+    }
+
+    /**
+     * Lưu nhiều ô tồn một lần (như kiểm kê). Ô mà tồn đã đổi sau khi mở trang (`expected` khác) không bị ghi đè.
+     */
+    public function batch(Request $request, StockAdjustmentService $stock, StockQueries $queries): RedirectResponse
+    {
+        Gate::authorize('inventory.adjust');
+        $data = $request->validate([
+            'changes' => ['required', 'array', 'min:1', 'max:500'],
+            'changes.*.location_id' => ['required', 'integer'],
+            'changes.*.variant_id' => ['required', 'integer'],
+            'changes.*.on_hand' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'changes.*.expected' => ['required', 'integer'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+        $locations = collect($queries->locations())->keyBy('id');
+        $reason = trim((string) ($data['reason'] ?? '')) ?: __('inventory::messages.batch_reason');
+        $updated = 0;
+        $conflicts = 0;
+        foreach ($data['changes'] as $change) {
+            $location = $locations->get((int) $change['location_id']);
+            abort_if($location === null, 404);
+            $outcome = $stock->count($location, (int) $change['variant_id'], (int) $change['on_hand'], $reason, (int) $change['expected']);
+            if ($outcome === StockAdjustmentService::CONFLICT) {
+                $conflicts++;
+            } elseif ($outcome === StockAdjustmentService::UPDATED) {
+                $updated++;
+            }
+        }
+
+        $response = back()->with('success', __('inventory::messages.batch_saved', ['updated' => $updated]));
+
+        return $conflicts === 0 ? $response : $response->withErrors(['changes' => __('inventory::messages.batch_conflicts', ['count' => $conflicts])]);
+    }
+
+    /**
+     * Cửa hàng chưa có kho → tạo "Kho chính" (nút ở trang tồn kho).
+     */
+    public function defaultLocation(LocationService $locations): RedirectResponse
+    {
+        Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);
+        $created = $locations->ensureDefault();
+
+        return back()->with('success', $created === null ? __('inventory::messages.default_exists') : __('inventory::messages.default_created', ['name' => $created->name]));
+    }
+
+    public function export(Request $request, StockCsv $csv, StockQueries $queries): StreamedResponse
+    {
+        Gate::authorize('inventory.view');
+        $location = $request->filled('location') ? collect($queries->locations())->firstWhere('code', (string) $request->query('location')) : null;
+
+        return response()->streamDownload(function () use ($csv, $location): void {
+            $out = fopen('php://output', 'wb');
+            fwrite($out, "\xEF\xBB\xBF"); // Excel đọc đúng tiếng Việt
+            foreach ($csv->export($location) as $row) {
+                fputcsv($out, $row, ',', '"', '');
+            }
+            fclose($out);
+        }, 'ton-kho-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Tải file CSV → trang xem trước chênh lệch (chưa ghi gì).
+     */
+    public function import(Request $request, StockCsv $csv, StockQueries $queries): Response|RedirectResponse
+    {
+        Gate::authorize('inventory.adjust');
+        $data = $request->validate([
+            'file' => ['required', 'file', 'max:2048', 'mimes:csv,txt'],
+            'location_id' => ['nullable', 'integer'],
+        ]);
+        $location = isset($data['location_id']) ? collect($queries->locations())->firstWhere('id', (int) $data['location_id']) : null;
+        $file = $request->file('file');
+        $preview = $csv->preview($file->getRealPath(), $file->getClientOriginalName(), $location);
+
+        return Inertia::render('Inventory::Stock/Import', [
+            'preview' => $preview,
+            'statusLabels' => __('inventory::labels.import_status'),
+            'urls' => ['back' => route('admin.inventory.stock.index'), 'apply' => $preview['token'] === null ? null : route('admin.inventory.stock.import.apply', $preview['token'])],
+        ]);
+    }
+
+    public function applyImport(string $token, StockCsv $csv): RedirectResponse
+    {
+        Gate::authorize('inventory.adjust');
+        $result = $csv->apply($token);
+        $response = redirect()->route('admin.inventory.stock.index')->with('success', __('inventory::messages.import_applied', ['updated' => $result['updated']]));
+
+        return $result['conflicts'] === 0 ? $response : $response->withErrors(['changes' => __('inventory::messages.import_conflicts', ['count' => $result['conflicts']])]);
     }
 
     public function change(StockChangeRequest $request, VariantDirectory $variants, StockAdjustmentService $stock, StockQueries $queries): RedirectResponse

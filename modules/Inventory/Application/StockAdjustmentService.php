@@ -43,16 +43,28 @@ final class StockAdjustmentService
         }, attempts: 3);
     }
 
+    public const UPDATED = 'updated';
+
+    public const UNCHANGED = 'unchanged';
+
+    public const CONFLICT = 'conflict';
+
     /**
-     * Kiểm kê: đặt tồn vật lý về số đếm được.
+     * Kiểm kê: đặt tồn vật lý về số đếm được. `$expectedOnHand` (lưới tồn sửa nhiều ô, nhập CSV đã xem trước): tồn hiện tại
+     * khác số người dùng đã thấy (vd. vừa xuất kho) → không ghi, trả `conflict`.
+     *
+     * @return self::UPDATED|self::UNCHANGED|self::CONFLICT
      */
-    public function count(Location $location, int $variantId, int $onHand, string $reason): void
+    public function count(Location $location, int $variantId, int $onHand, string $reason, ?int $expectedOnHand = null): string
     {
         $this->guardAuthority($location);
 
-        DB::transaction(function () use ($location, $variantId, $onHand, $reason): void {
+        return DB::transaction(function () use ($location, $variantId, $onHand, $reason, $expectedOnHand): string {
             $record = $this->ledger->lock([[$location->id, $variantId]], createMissing: true)["{$location->id}:{$variantId}"];
             $before = $record->on_hand;
+            if ($expectedOnHand !== null && $before !== $expectedOnHand) {
+                return self::CONFLICT;
+            }
 
             try {
                 $after = $record->toDomain()->sync($onHand);
@@ -61,13 +73,15 @@ final class StockAdjustmentService
             }
 
             if ($after === null || $after->onHand === $before) {
-                return;
+                return self::UNCHANGED;
             }
 
             $this->ledger->save($record, $after, MovementType::Sync, $reason);
             $this->audit->record('inventory.stock.counted', 'stock_level', $record->id, ['location' => $location->code, 'variant_id' => $variantId, 'from' => $before, 'to' => $onHand]);
             event(new StockAdjusted($location->id, $variantId, $onHand - $before, $reason));
             event(new AvailabilityChanged([$variantId]));
+
+            return self::UPDATED;
         }, attempts: 3);
     }
 

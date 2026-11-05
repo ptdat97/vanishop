@@ -5,6 +5,8 @@
 */
 
 return [
+    'import_status' => ['change' => 'Thay đổi', 'same' => 'Không đổi', 'unknown_sku' => 'Không có SKU', 'unknown_location' => 'Không có kho', 'external' => 'Kho do hệ thống ngoài quản lý', 'duplicate' => 'Trùng dòng trước', 'invalid' => 'Số tồn không hợp lệ'],
+    'default_location' => 'Kho chính',
     'location_type' => ['warehouse' => 'Kho', 'store' => 'Cửa hàng', 'virtual' => 'Ảo (dropship, kho đối tác)'],
     'location_status' => ['active' => 'Đang dùng', 'inactive' => 'Tắt'],
     'stock_action' => ['adjust' => 'Cộng/trừ tồn', 'count' => 'Kiểm kê (đặt số đếm)', 'safety' => 'Tồn an toàn'],

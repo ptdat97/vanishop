@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
@@ -179,6 +180,8 @@ final class ProductController
             'linkTypes' => $linkTypes->map(fn (LinkType $type): array => ['id' => $type->id, 'label' => $type->translate('name') ?? $type->code, 'is_active' => $type->is_active])->all(),
             'videoDrivers' => array_values(array_map(fn ($driver): array => ['code' => $driver->code(), 'label' => $driver->label(), 'hint' => $driver->inputHint()], $videoDrivers->all())),
             'extensionSections' => app(AdminScreen::class)->formSections('product', $style?->id),
+            // Lưới tồn kho lọc theo sản phẩm (module Inventory — link theo tên route, Catalog không phụ thuộc Inventory).
+            'stockUrl' => $style !== null && Route::has('admin.inventory.stock.index') && Gate::allows('inventory.view') ? route('admin.inventory.stock.index', ['style' => $style->style_code]) : null,
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => Brand::query()->orderBy('position')->orderBy('name')->get(['id', 'name'])->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
             'attributeDefinitions' => $attributes->map(fn (Attribute $attribute): array => [

@@ -440,6 +440,8 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L17 | Khối nhiều mục (trình chiếu 5 slide, lưới banner 4 ô, tab, biểu tượng) dùng số ô cố định vì `FieldDefinition` chưa có trường lặp | `vani.storefront-extras`, Extension | Kiểu trường danh sách (repeater) cho page builder |
 | L18 | Thanh thông báo `vani.cms` khi bật cache CDN: mốc **bắt đầu** chỉ đúng tới thời gian cache trang (mốc kết thúc JS kiểm thêm); thanh của plugin và dòng thông báo của theme độc lập (cửa hàng tự để trống một bên) | `vani.cms`, Storefront | Purge cache theo lịch, hoặc theme ẩn dòng của mình khi slot có nội dung |
 | L19 | Banner danh mục nhập ở trang riêng (Nội dung → Banner danh mục), chưa ở form danh mục — chờ kiểu trường chọn ảnh (L6); Admin chọn danh mục từ 200 danh mục đầu | `vani.cms`, Extension | Chuyển vào form danh mục khi có trường media |
+| L20 | Tồn kho đợt 1: lưới lọc hết hàng/sắp hết tính trong PHP trên tối đa 5000 variant; nhập CSV ≤ 5000 dòng; form sản phẩm chỉ có nút sang lưới tồn (Catalog không được phụ thuộc Inventory, form section chỉ dành cho plugin) | Inventory, Catalog | Truy vấn lọc theo tồn ở DB khi catalog lớn; phần form Core↔Core nếu cần nhập tồn trong form sản phẩm |
+| L21 | Tồn kho đợt 2 chưa làm: form kho còn ô gõ tự do cho "Quản lý tồn" và Priority, mã tỉnh gõ tay; ngưỡng sắp hết và thời gian giữ hàng chỉ ở `.env`; tồn an toàn chỉ theo từng ô | Inventory | Đợt 2 theo đánh giá 2026-11-05 |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

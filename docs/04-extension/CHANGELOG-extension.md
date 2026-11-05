@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.83 — 2026-11-05
+
+Chỉ thêm. Tồn kho dễ cấu hình (đợt 1).
+
+### Thêm
+- `Catalog\Contracts\VariantDirectory::search(text, limit = 2000)`: tìm variant theo SKU, mã hoặc tên sản phẩm (chuỗi rỗng = mọi variant), sắp theo tên → màu → size.
+- Lệnh `vani:inventory:ensure-location` (cửa hàng chưa có kho → tạo `KHO-CHINH` "Kho chính": giao online, nhận hàng trả, VaniShop quản lý tồn); `vani:install` gọi lệnh này.
+- Admin → Tồn kho: lưới mọi sản phẩm (tìm, lọc hết hàng / sắp hết, phân trang), sửa số tồn trong ô và lưu nhiều ô một lần (như kiểm kê, ô có tồn đổi sau khi mở trang không bị ghi đè), nhập CSV có xem trước, xuất CSV; form sản phẩm có nút "Tồn kho".
+
+### Đổi
+- Inertia props của `Inventory::Stock/Index` đổi dạng (`urls`, `query`, `pagination`, `warnings`, `variants[].sellable`) — trang Core, không phải API plugin.
+
 ## 0.3.82 — 2026-11-05
 
 Không đổi API. Cửa hàng chỉ tiếng Việt (Owner 2026-11-05), giữ cơ chế đa ngôn ngữ.

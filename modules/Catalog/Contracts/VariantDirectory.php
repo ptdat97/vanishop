@@ -31,4 +31,12 @@ interface VariantDirectory
      * @return array<string, VariantData> sku => data (SKU không tồn tạithì không có mặt)
      */
     public function findBySkus(array $skus): array;
+
+    /**
+     * Tìm variant (cả ngừng bán) theo SKU, mã sản phẩm hoặc tên sản phẩm (0.3.83 — lưới tồn kho Admin); chuỗi rỗng = mọi
+     * variant. Theo thứ tự tên sản phẩm → màu → size, tối đa `$limit`.
+     *
+     * @return list<VariantData>
+     */
+    public function search(string $text, int $limit = 2000): array;
 }

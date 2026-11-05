@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Domain\Plugin\PluginStatus;
@@ -32,7 +33,9 @@ it('vani:install cài + bật 4 plugin hệ thống, chạy lại không đổi 
         ->assertSuccessful();
 
     expect(PluginRecord::query()->where('status', PluginStatus::Enabled)->orderBy('id')->pluck('id')->all())->toBe(BUNDLED)
-        ->and(collect(app(PluginDoctor::class)->diagnose())->where('code', 'required_extension_missing')->all())->toBe([]);
+        ->and(collect(app(PluginDoctor::class)->diagnose())->where('code', 'required_extension_missing')->all())->toBe([])
+        // Kho mặc định để cửa hàng mới bán được ngay (Inventory, gọi theo tên lệnh).
+        ->and(DB::table('locations')->pluck('code')->all())->toBe(['KHO-CHINH']);
 
     PluginRecord::query()->whereKey('vani.tax-vn-vat')->update(['status' => PluginStatus::Disabled]);
     $this->artisan('vani:install', ['--no-migrate' => true])->expectsOutputToContain('đã được cài từ trước')->assertSuccessful();

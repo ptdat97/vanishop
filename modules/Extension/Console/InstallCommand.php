@@ -45,6 +45,11 @@ final class InstallCommand extends Command
             }
         }
 
+        // Kho mặc định để cửa hàng mới bán được ngay (module Inventory; gọi theo tên lệnh — ring 0 không phụ thuộc Inventory).
+        if ($this->getApplication()?->has('vani:inventory:ensure-location')) {
+            $this->call('vani:inventory:ensure-location');
+        }
+
         $errors = array_filter($doctor->diagnose(), fn (array $issue): bool => $issue['level'] === PluginDoctor::ERROR);
         foreach ($errors as $issue) {
             $this->warn("[{$issue['plugin']}] {$issue['code']}: {$issue['message']}");

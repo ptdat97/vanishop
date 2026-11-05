@@ -12,7 +12,9 @@
 >
 > **Phase 3 (2026-10-15):** bảng đối soát tồn kho `inventory_reconciliations` + `inventory_reconciliation_lines` dùng chung cho đối soát nội bộ (`vani:inventory:verify` giờ lưu phiên + dòng, dòng đã sửa `resolution = repaired`) và nguồn ngoài (`vani:inventory:reconcile`, snapshot JSON, chỉ áp phía VaniShop khi location do nguồn đó quản lý); Admin → Tồn kho → Đối soát (chỉ đọc).
 >
-> **Chưa có:** import Excel, counter Redis cho flash sale, scope `location` trong RBAC, đối soát thanh toán với cổng (Phase 3 còn).
+> **Dễ cấu hình — đợt 1 (2026-11-05, Core 0.3.83):** `vani:install` tạo "Kho chính" (`KHO-CHINH`, giao online, VaniShop quản lý tồn) khi chưa có kho (`vani:inventory:ensure-location`; trang tồn có nút tạo khi thiếu, cảnh báo khi không kho nào giao online). Admin → Tồn kho: mọi sản phẩm (tìm theo tên/mã/SKU, lọc hết hàng / sắp hết theo số bán được online, 50 SKU/trang), gõ số tồn thẳng vào ô và lưu nhiều ô một lần (movement `sync` như kiểm kê, lý do mặc định "Cập nhật tồn"; ô có tồn đổi sau khi mở trang bị bỏ qua — so `expected`); cộng/trừ và tồn an toàn ở nút "⋯". Nhập CSV (`sku`, `on_hand`, `location` tuỳ chọn; dấu `,` hoặc `;`; ≤ 5000 dòng) có trang xem trước, áp dụng một lần trong 30 phút, cùng kiểm tra xung đột; xuất CSV (UTF-8 BOM, mở bằng Excel, nhập lại được). Form sản phẩm có nút "Tồn kho" → lưới lọc theo sản phẩm. Đợt 2 (form kho, cấu hình trong Admin, tồn an toàn theo kho): xem [đánh giá](../20-roadmap/reference-parity-refactor.md) §6b.
+>
+> **Chưa có:** import Excel (.xlsx — CSV đã có), counter Redis cho flash sale, scope `location` trong RBAC, đối soát thanh toán với cổng (Phase 3 còn).
 
 ## 1. Nguyên tắc
 

@@ -6,4 +6,6 @@ export interface InventoryLabels {
     transfer_status: Record<string, string>;
     discrepancy: Record<string, string>;
     resolution: Record<string, string>;
+    import_status: Record<string, string>;
+    default_location: string;
 }

@@ -46,6 +46,25 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->all();
     }
 
+    public function search(string $text, int $limit = 2000): array
+    {
+        $text = trim($text);
+        $like = '%'.addcslashes($text, '%_\\').'%';
+
+        return Variant::query()
+            ->with(['style.translations', 'styleColor.color', 'size'])
+            ->when($text !== '', fn ($query) => $query->where(fn ($inner) => $inner
+                ->where('sku', 'like', $like)
+                ->orWhereHas('style', fn ($style) => $style->where('style_code', 'like', $like)
+                    ->orWhereHas('translations', fn ($translation) => $translation->where('name', 'like', $like)))))
+            ->limit(max(1, $limit))
+            ->get()
+            ->sortBy(fn (Variant $variant): string => sprintf('%s|%s|%05d-%05d', mb_strtolower((string) $variant->style->translate('name')), $variant->style->style_code, $variant->styleColor->position, $variant->size->sort_order))
+            ->map(fn (Variant $variant): VariantData => $this->toData($variant))
+            ->values()
+            ->all();
+    }
+
     private function toData(Variant $variant): VariantData
     {
         return new VariantData(

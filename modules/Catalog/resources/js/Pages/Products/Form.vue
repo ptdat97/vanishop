@@ -33,6 +33,7 @@ interface ColorEntry {
 
 const props = defineProps<{
     nav: NavItem[];
+    stockUrl?: string | null;
     labels: CatalogLabels;
     product: null | {
         id: number;
@@ -160,6 +161,7 @@ function removeImage(color: ColorEntry, imageId: number): void {
     <CatalogTabs :nav="nav" active="products" />
     <PageHeader :title="product ? `Sửa: ${product.style_code}` : 'Thêm sản phẩm'">
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
+        <Link v-if="stockUrl" :href="stockUrl" :class="secondaryButton" data-stock-link>Tồn kho</Link>
         <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">Xoá</button>
     </PageHeader>
 
