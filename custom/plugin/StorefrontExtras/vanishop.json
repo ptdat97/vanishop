@@ -1,0 +1,22 @@
+{
+    "id": "vani.storefront-extras",
+    "name": {
+        "vi": "Khối giao diện bổ sung",
+        "en": "Storefront extras"
+    },
+    "description": {
+        "vi": "Khối trang chủ: bán chạy, đã xem, video hero, trình chiếu, lưới banner, sản phẩm theo tab, biểu tượng + chữ, nội dung Markdown; thanh \"Đã xem\" ở giỏ.",
+        "en": "Home page blocks: bestsellers, recently viewed, video hero, slideshow, banner grid, product tabs, icon features, Markdown content; recently viewed bar in the cart."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\StorefrontExtras\\StorefrontExtrasServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.81",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team",
+    "assets": "public"
+}

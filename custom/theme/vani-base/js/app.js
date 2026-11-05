@@ -208,7 +208,7 @@ document.querySelectorAll('form[data-vani-suggest]').forEach((form) => {
     document.addEventListener('click', (event) => !form.contains(event.target) && close());
 });
 
-// Trang sản phẩm: beacon lượt xem + "Đã xem gần đây" (§3.5-2). Danh sách chỉ ở trình duyệt (tối đa 12 mẫu).
+// Trang sản phẩm: beacon lượt xem + "Đã xem gần đây" (§3.5-2). Danh sách chỉ ở trình duyệt (tối đa 30 mẫu — khối "Đã xem" của plugin đọc chung).
 const recent = document.querySelector('[data-vani-recently-viewed]');
 if (recent) {
     const KEY = 'vani.recently_viewed';
@@ -221,7 +221,7 @@ if (recent) {
     }
     const others = ids.filter((id) => id !== current).slice(0, 6);
     try {
-        localStorage.setItem(KEY, JSON.stringify([current, ...ids.filter((id) => id !== current)].slice(0, 12)));
+        localStorage.setItem(KEY, JSON.stringify([current, ...ids.filter((id) => id !== current)].slice(0, 30)));
     } catch {
         // trình duyệt chặn lưu trữ: bỏ qua
     }

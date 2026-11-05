@@ -1,6 +1,6 @@
 # Đặc tả: Khối storefront bổ sung (`vani.storefront-extras`)
 
-> Trạng thái: **Đặc tả — Owner đã duyệt 2026-10-14** (M0). Nguồn: plugin StorefrontBlocks 1.0.0 và Bestseller 1.0.1 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Hai plugin cũ gộp thành một plugin VaniShop.
+> Trạng thái: **Implemented** (plugin 1.0.0, Core ≥ 0.3.81, 2026-11-05) — kèm khối §3.16-4 của [reference-parity](../../20-roadmap/reference-parity-refactor.md): trình chiếu, lưới banner 1–4 ô, sản phẩm theo tab, biểu tượng + chữ, nội dung Markdown (tường thương hiệu dùng khối Core `brand_grid`). Thanh "Đã xem" ở trang sản phẩm do theme `vani-base` làm sẵn (Core 0.3.79), plugin chỉ thêm ở giỏ (`recent_on_cart`, `recent_on_cart_limit`); danh sách trong trình duyệt là khoá `vani.recently_viewed` (tối đa 30) dùng chung với theme. Ảnh của khối nhập theo URL (chưa có kiểu trường chọn ảnh — roadmap §6b L6). Đặc tả gốc — Owner đã duyệt 2026-10-14 (M0). Nguồn: plugin StorefrontBlocks 1.0.0 và Bestseller 1.0.1 của VaniCommerce (Owner xác nhận có quyền). Đợt: M1. Hai plugin cũ gộp thành một plugin VaniShop.
 
 ## 1. Mục tiêu
 

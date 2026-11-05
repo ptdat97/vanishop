@@ -67,6 +67,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.cod-risk-guard` | `CheckoutValidator`, filter `vani.checkout.payment_methods` | P2 |
 | `vani.abandoned-cart` | Event `CartAbandoned`, `NotificationChannel` | P2 |
 | `vani.wishlist` ✅ (nút tim thẻ/PDP, `/tai-khoan/yeu-thich`, vãng lai lưu trình duyệt + gộp khi đăng nhập, báo có hàng lại/giảm giá — [đặc tả](specs/wishlist.md)) | `storefrontPages`, `accountRoutes` (0.3.76), `storefrontRoutes`, slot thẻ/PDP/header/body_end, `ProductCards`, `Notifier`, events `AvailabilityChanged`, `PriceChanged`, `CustomerMerged`, `CustomerAnonymized`, `assets` | **Implemented** 2026-11-05 (1.0.0) |
+| `vani.storefront-extras` ✅ (khối bán chạy, đã xem, video hero, trình chiếu, lưới banner, sản phẩm theo tab, biểu tượng + chữ, Markdown; "Đã xem" ở giỏ — [đặc tả](specs/storefront-extras.md)) | `StorefrontBlock`, `ProductCards`, `OrderStatistics`, `CatalogReader`, slot giỏ/body_end, `assets` | **Implemented** 2026-11-05 (1.0.0) |
 | `vani.social-login` | Auth provider registry | P2 |
 | `vani.loyalty` ([spec](specs/loyalty.md)) | `TotalsCalculator`, events đơn | P3 |
 | `vani.size-chart` ✅ (bảng size + gợi ý size; thay `vani.size-advisor`) | `StorefrontEnricher`, slot PDP, `adminFormSection` sản phẩm/danh mục/thương hiệu | **Implemented** 2026-10-14 |
