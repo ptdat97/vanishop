@@ -19,7 +19,9 @@ final class CustomerSessionState
     ) {}
 
     /**
-     * @return array{signed_in: bool, account: array{label: string, url: string}, cart: array{count: int, subtotal: array<string, mixed>|null, lines: list<array<string, mixed>>}, prices_url: string}
+     * `csrf_token` (0.3.76): JS của theme/plugin gửi POST từ trang cache CDN (HTML không có token).
+     *
+     * @return array{signed_in: bool, account: array{label: string, url: string}, cart: array{count: int, subtotal: array<string, mixed>|null, lines: list<array<string, mixed>>}, prices_url: string, csrf_token: string|null}
      */
     public function for(Request $request, string $locale): array
     {
@@ -34,6 +36,7 @@ final class CustomerSessionState
             ],
             'cart' => $current === null ? ['count' => 0, 'subtotal' => null, 'lines' => []] : $this->carts->mini($current),
             'prices_url' => LocalizedUrls::route('storefront.session.prices'),
+            'csrf_token' => $request->hasSession() ? $request->session()->token() : null,
         ];
     }
 }

@@ -214,6 +214,9 @@ document.querySelectorAll('form[data-vani-suggest]').forEach((form) => {
  */
 function applySession(session) {
     if (!session) return;
+    // Cho plugin (0.3.76): đọc `window.vaniSession` hoặc nghe `vani:session` — signed_in, csrf_token, cart…
+    window.vaniSession = session;
+    document.dispatchEvent(new CustomEvent('vani:session', { detail: session }));
     dispatchCartChange(session.cart_change);
     const account = document.querySelector('[data-vani-account]');
     if (account) {

@@ -54,3 +54,15 @@ it('sitemap gộp URL của SitemapProvider; provider lỗi chỉ bị bỏ ph�
 
     $this->get('/sitemap.xml')->assertOk()->assertSee('<loc>https://shop.test/trang/gioi-thieu</loc>', false)->assertSee(url('/'));
 });
+
+it('đường dẫn trang plugin dưới tài khoản (accountRoutes): không trùng trang tài khoản của Core, plugin khác, sai định dạng', function () {
+    $prefixes = new StorefrontPrefixes;
+    $prefixes->claimAccount('yeu-thich', 'vani.a', 'vi');
+    $prefixes->claimAccount('wishlist', 'vani.a', 'en');
+
+    expect(fn () => $prefixes->claimAccount('yeu-thich', 'vani.b', 'vi'))->toThrow(InvalidArgumentException::class, 'đã thuộc plugin [vani.a]')
+        ->and(fn () => $prefixes->claimAccount('don-hang', 'vani.b', 'vi'))->toThrow(InvalidArgumentException::class, 'Core')
+        ->and(fn () => $prefixes->claimAccount('orders', 'vani.b', 'en'))->toThrow(InvalidArgumentException::class, 'Core')
+        ->and(fn () => $prefixes->claimAccount('Yeu_Thich', 'vani.b', 'vi'))->toThrow(InvalidArgumentException::class, 'không hợp lệ')
+        ->and($prefixes->all())->toBe(['account:vi:yeu-thich' => 'vani.a', 'account:en:wishlist' => 'vani.a']);
+});

@@ -42,6 +42,29 @@ final class StorefrontPrefixes
     }
 
     /**
+     * Đoạn đường dẫn trang plugin dưới trang tài khoản (0.3.76, `accountRoutes`): không trùng trang tài khoản của Core
+     * (đoạn thứ hai của `account.*` trong `vanishop.locale.paths`) hay plugin khác.
+     */
+    public function claimAccount(string $segment, string $pluginId, string $locale): void
+    {
+        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $segment) !== 1) {
+            throw new InvalidArgumentException("Đường dẫn tài khoản [{$segment}] không hợp lệ (chữ thường, số, gạch nối).");
+        }
+        $paths = (array) config('vanishop.locale.paths.'.$locale, []) ?: (array) config('vanishop.locale.paths.'.StoreLocale::default(), []);
+        foreach ($paths as $name => $path) {
+            if (str_starts_with((string) $name, 'account.') && (explode('/', (string) $path)[1] ?? null) === $segment) {
+                throw new InvalidArgumentException("Đường dẫn tài khoản [{$segment}] ({$locale}) đã được Core dùng.");
+            }
+        }
+        $key = "account:{$locale}:{$segment}";
+        if (isset($this->claimed[$key]) && $this->claimed[$key] !== $pluginId) {
+            throw new InvalidArgumentException("Đường dẫn tài khoản [{$segment}] ({$locale}) đã thuộc plugin [{$this->claimed[$key]}].");
+        }
+
+        $this->claimed[$key] = $pluginId;
+    }
+
+    /**
      * @return array<string, string> "locale:prefix" => plugin id
      */
     public function all(): array

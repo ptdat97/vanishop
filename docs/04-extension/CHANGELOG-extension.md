@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.76 — 2026-11-05
+
+Chỉ thêm. Phục vụ plugin `vani.wishlist` 1.0.0 ([đặc tả](../05-plugin/specs/wishlist.md) §5).
+
+### Thêm
+- `PluginServiceProvider::accountRoutes($file, ['vi' => 'yeu-thich', 'en' => 'wishlist'])`: trang plugin dưới trang tài khoản (`/tai-khoan/…`, `/en/account/…`), bắt buộc đăng nhập, tên route `storefront.p.{slug}.account.…`; đoạn đường dẫn không trùng trang tài khoản Core/plugin khác (`StorefrontPrefixes::claimAccount`).
+- Dữ liệu phiên (`/_vani/phien`, `script[data-vani-session-state]`) có `csrf_token`; `vani-base` đặt `window.vaniSession` và phát `document` event `vani:session` (detail = dữ liệu phiên) — JS của plugin gửi POST từ trang cache CDN bằng header `X-CSRF-TOKEN`.
+
+### Đổi
+- Menu tài khoản của `vani-base`: link Core theo ngôn ngữ trang (`vani_route`), nhãn mục plugin qua `__()` (plugin dịch bằng JSON).
+
 ## 0.3.75 — 2026-11-05
 
 Chỉ thêm. Thanh toán lại ([reference-parity §3.11-2](../20-roadmap/reference-parity-refactor.md)).

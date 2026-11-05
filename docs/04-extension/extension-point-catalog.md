@@ -194,6 +194,7 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 | `storefrontPages(file, prefix, cacheable)` theo ngôn ngữ | `prefix` nhận mảng `['vi' => 'tin-tuc', 'en' => 'news']` → thêm `/en/news/…` (tên `storefront.en.p.{slug}.…`); chuỗi = chỉ ngôn ngữ mặc định. Sinh URL bằng `vani_route()` — Implemented (0.3.59, ADR-038) |
 | `storefrontPages()` + `storefrontViews()` | Trang native `/p/{slug}/…` trong layout theme; theme override view plugin tại `custom/theme/<theme>/plugins/{slug}/` — Implemented (0.3.3). `prefix:` (0.3.14): URL đẹp `/{prefix}/…` (vd. `/tin-tuc`), không trùng route Core (`StorefrontPrefixes::RESERVED`, arch test) hay plugin khác — tham chiếu `vani.cms`. `cacheable: true` (0.3.34): trang không phiên, CDN cache được ([storefront §5](../14-storefront/storefront.md)) |
 | Helper plugin/theme (ADR-037) | `vani_setting`, `vani_money`, `vani_locale`, `vani_customer`, `vani_staff`, `vani_admin_url`, `vani_image` (`Catalog\Contracts\MediaUrls`), `vani_link`, `vani_route`, `vani_asset`, `vani_plugin` (`Extension\Contracts\PluginDirectory`) — Implemented (0.3.69). Class trong `modules/` không dùng (arch test) |
+| `accountRoutes(file, segment)` | Trang plugin dưới `/tai-khoan/{segment}` (`/en/account/…`), bắt buộc đăng nhập — Implemented (0.3.76, tham chiếu `vani.wishlist`). Gắn menu bằng `accountPage()` |
 | `adminApiRoutes()` | `/api/admin/v1/plugins/{code}/…` |
 | `webhookRoutes()` | `/api/integrations/{slug}/…` — Implemented |
 | `adminRoutes()` | `/{VANI_ADMIN_PATH}/plugins/{slug}/…` (Inertia): Implemented |

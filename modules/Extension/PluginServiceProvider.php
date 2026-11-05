@@ -310,6 +310,41 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
+     * Trang của plugin dưới trang tài khoản khách (0.3.76): `/tai-khoan/{segment}/…`, `/en/account/{segment}/…`; bắt buộc
+     * đăng nhập (chưa đăng nhập → trang đăng nhập rồi quay lại). Tên route `storefront.p.{slug}.account.…`
+     * (`storefront.<locale>.p.{slug}.account.…`). Gắn vào menu tài khoản bằng accountPage().
+     *
+     * @param  string|array<string, string>  $segment  đoạn đường dẫn theo ngôn ngữ; chuỗi = chỉ ngôn ngữ mặc định
+     */
+    protected function accountRoutes(string $file, string|array $segment): void
+    {
+        $default = StoreLocale::default();
+        $segments = is_array($segment) ? array_intersect_key($segment, array_flip(StoreLocale::supported())) : [$default => $segment];
+        if (! array_key_exists($default, $segments)) {
+            throw new InvalidArgumentException("accountRoutes: thiếu đường dẫn cho ngôn ngữ mặc định [{$default}].");
+        }
+        foreach ($segments as $locale => $localeSegment) {
+            $this->app->make(StorefrontPrefixes::class)->claimAccount($localeSegment, $this->pluginId(), $locale);
+        }
+
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $slug = $this->pluginSlug();
+        foreach ($segments as $locale => $localeSegment) {
+            $paths = (array) config("vanishop.locale.paths.{$locale}", []);
+            $account = (string) ($paths['account'] ?? config("vanishop.locale.paths.{$default}.account"));
+            Route::middleware(['web', 'vani.storefront-context:'.$locale, 'vani.customer-session:required', 'vani.theme', 'vani.maintenance', 'vani.plugin-active:'.$this->pluginId()])
+                ->prefix(($locale === $default ? '' : "{$locale}/")."{$account}/{$localeSegment}")
+                ->name($locale === $default ? "storefront.p.{$slug}.account." : "storefront.{$locale}.p.{$slug}.account.")
+                ->group($file);
+        }
+
+        $this->refreshRouteLookups();
+    }
+
+    /**
      * View storefront của plugin (namespace riêng); theme override được tại custom/theme/<theme>/plugins/{slug}/.
      */
     protected function storefrontViews(string $path, string $namespace): void
