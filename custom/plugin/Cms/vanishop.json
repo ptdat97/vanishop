@@ -4,7 +4,7 @@
         "vi": "Nội dung (CMS)",
         "en": "Content (CMS)"
     },
-    "version": "1.3.0",
+    "version": "1.4.0",
     "kind": "content",
     "provider": "Plugin\\Cms\\CmsServiceProvider",
     "requires": {
@@ -15,7 +15,7 @@
     "permissions": ["cms.view", "cms.manage"],
     "author": "VaniShop Team",
     "data": {
-        "owned": ["plg_cms_pages", "plg_cms_posts"],
+        "owned": ["plg_cms_pages", "plg_cms_posts", "plg_cms_categories"],
         "references": { "plg_cms_posts.cover_media_id": "media.id" }
     }
 }

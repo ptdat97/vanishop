@@ -297,9 +297,9 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 **VaniShop hiện có**: `vani.cms` trang + tin tức, hẹn giờ, xem trước, SEO, sitemap, khối trang chủ.
 
 **Đặc tả cần làm** (bản `vani.cms` 1.3)
-1. Chuyên mục tin tức (một cấp, slug, SEO, thứ tự); URL `/tin-tuc/<chuyen-muc>` (giữ `/tin-tuc/<bai-viet>` hiện có, chuyên mục và bài viết không trùng slug — kiểm tra khi lưu).
-2. Gắn sản phẩm vào bài viết (tối đa 12 style, thứ tự), render bằng `ProductCards` ở cuối bài; style bị ẩn/lưu trữ thì bỏ qua.
-3. ✅ `LinkType` `page`, `article` cho menu (§3.16-1) — `vani.cms` 1.3.0; `article_category` khi có chuyên mục.
+1. ✅ (R4, 2026-11-05, `vani.cms` 1.4.0) Chuyên mục tin tức (một cấp, slug, SEO, thứ tự); URL `/tin-tuc/<chuyen-muc>` (giữ `/tin-tuc/<bai-viet>` hiện có, chuyên mục và bài viết không trùng slug — kiểm tra khi lưu).
+2. ✅ (R4, 2026-11-05, `vani.cms` 1.4.0) Gắn sản phẩm vào bài viết (tối đa 12 style, thứ tự), render bằng `ProductCards` ở cuối bài; style bị ẩn/lưu trữ thì bỏ qua.
+3. ✅ `LinkType` `page`, `article` cho menu (§3.16-1) — `vani.cms` 1.3.0; `article_category` — 1.4.0.
 
 **Ưu tiên**: P1 (3), P2 (1, 2).
 

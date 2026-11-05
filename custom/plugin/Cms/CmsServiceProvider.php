@@ -9,6 +9,7 @@ use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\SitemapProvider;
 use Modules\Storefront\Contracts\StorefrontBlock;
+use Plugin\Cms\Infrastructure\ArticleCategoryLinkType;
 use Plugin\Cms\Infrastructure\ArticleLinkType;
 use Plugin\Cms\Infrastructure\CmsSitemap;
 use Plugin\Cms\Infrastructure\LatestPostsBlock;
@@ -50,6 +51,7 @@ final class CmsServiceProvider extends PluginServiceProvider
         $this->contribute(SitemapProvider::TAG, CmsSitemap::class);
         $this->contribute(LinkType::TAG, PageLinkType::class);
         $this->contribute(LinkType::TAG, ArticleLinkType::class);
+        $this->contribute(LinkType::TAG, ArticleCategoryLinkType::class);
         $this->onSlot('vani.storefront.header.nav', fn (): ?SlotView => $this->links('header'));
         $this->onSlot('vani.storefront.footer.columns', fn (): ?SlotView => $this->links('footer'));
 

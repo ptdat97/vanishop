@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Storefront\Contracts\PageSeo;
 use Plugin\Cms\Infrastructure\ContentPresenter;
+use Plugin\Cms\Persistence\Category;
 use Plugin\Cms\Persistence\Content;
 use Plugin\Cms\Persistence\Page;
 use Plugin\Cms\Persistence\Post;
@@ -34,17 +35,22 @@ final class StorefrontController
 
     public function blog(Request $request): View
     {
-        $posts = Post::query()->published()->orderByDesc('published_at')->orderByDesc('id')->paginate(self::PER_PAGE)->withQueryString();
-
-        return view('vani-cms::pages.blog', [
-            'posts' => $posts->getCollection()->map(fn (Post $post): array => $this->presenter->postSummary($post))->all(),
-            'paginator' => $posts,
-        ]);
+        return $this->listing(null);
     }
 
+    /**
+     * /tin-tuc/{slug}: chuyên mục (1.4.0) hoặc bài viết — slug không trùng giữa hai loại (kiểm khi lưu).
+     */
     public function post(Request $request, string $slug): View
     {
-        $post = $this->visible(Post::query(), $request, $slug);
+        $category = Category::query()->where('slug', $slug)->first();
+        if ($category !== null) {
+            $this->singleLanguage('storefront.p.vani-cms.post', $slug);
+
+            return $this->listing($category);
+        }
+
+        $post = $this->visible(Post::query()->with('category'), $request, $slug);
         $this->singleLanguage('storefront.p.vani-cms.post', $slug);
 
         return view('vani-cms::pages.post', ['post' => $this->presenter->post($post), 'preview' => ! $post->isPublic()]);
@@ -59,7 +65,9 @@ final class StorefrontController
 
     public function apiPosts(Request $request): JsonResponse
     {
-        $posts = Post::query()->published()->orderByDesc('published_at')->orderByDesc('id')->paginate(min(50, max(1, (int) $request->query('per_page', self::PER_PAGE))));
+        $category = $request->filled('category') ? Category::query()->where('slug', (string) $request->query('category'))->first() ?? abort(404) : null;
+        $posts = Post::query()->published()->with('category')->when($category !== null, fn ($query) => $query->where('category_id', $category->id))
+            ->orderByDesc('published_at')->orderByDesc('id')->paginate(min(50, max(1, (int) $request->query('per_page', self::PER_PAGE))));
 
         return response()->json([
             'data' => $posts->getCollection()->map(fn (Post $post): array => $this->presenter->postSummary($post))->all(),
@@ -67,11 +75,30 @@ final class StorefrontController
         ]);
     }
 
+    public function apiCategories(): JsonResponse
+    {
+        return response()->json(['data' => Category::query()->orderBy('sort_order')->orderBy('name')->get()->map(fn (Category $category): array => $this->presenter->category($category))->all()]);
+    }
+
     public function apiPost(string $slug): JsonResponse
     {
-        $post = Post::query()->published()->where('slug', $slug)->first() ?? abort(404);
+        $post = Post::query()->published()->with('category')->where('slug', $slug)->first() ?? abort(404);
 
         return response()->json(['data' => $this->presenter->post($post)]);
+    }
+
+    private function listing(?Category $category): View
+    {
+        $posts = Post::query()->published()->with('category')->when($category !== null, fn ($query) => $query->where('category_id', $category->id))
+            ->orderByDesc('published_at')->orderByDesc('id')->paginate(self::PER_PAGE)->withQueryString();
+
+        return view('vani-cms::pages.blog', [
+            'posts' => $posts->getCollection()->map(fn (Post $post): array => $this->presenter->postSummary($post))->all(),
+            'paginator' => $posts,
+            'category' => $category === null ? null : $this->presenter->category($category),
+            'categories' => Category::query()->whereHas('posts', fn ($query) => $query->published())->orderBy('sort_order')->orderBy('name')->get()
+                ->map(fn (Category $item): array => $this->presenter->category($item))->all(),
+        ]);
     }
 
     /**

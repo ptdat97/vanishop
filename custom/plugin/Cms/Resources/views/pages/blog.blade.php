@@ -1,9 +1,24 @@
 @extends('theme::layouts.app')
 
-@section('title', __('Tin tức'))
+@section('title', $category['meta_title'] ?? __('Tin tức'))
+@if ($category['meta_description'] ?? null)
+    @section('description', $category['meta_description'])
+@endif
 
 @section('content')
-    <h1 class="mb-6 text-3xl font-semibold">{{ __('Tin tức') }}</h1>
+    <h1 class="mb-2 text-3xl font-semibold">{{ $category['name'] ?? __('Tin tức') }}</h1>
+    @if ($category['description'] ?? null)
+        <p class="mb-4 text-slate-600">{{ $category['description'] }}</p>
+    @endif
+    {{-- Chuyên mục (1.4.0): chỉ chuyên mục có bài công khai. --}}
+    @if (($categories ?? []) !== [])
+        <nav aria-label="{{ __('Chuyên mục') }}" class="mb-6 flex flex-wrap gap-2 text-sm" data-cms-categories>
+            <a href="{{ vani_route('storefront.p.vani-cms.blog') }}" @class(['rounded-full border px-3 py-1', 'border-primary font-semibold text-primary' => $category === null, 'border-slate-300' => $category !== null])>{{ __('Tất cả') }}</a>
+            @foreach ($categories as $item)
+                <a href="{{ $item['url'] }}" @class(['rounded-full border px-3 py-1', 'border-primary font-semibold text-primary' => ($category['slug'] ?? null) === $item['slug'], 'border-slate-300' => ($category['slug'] ?? null) !== $item['slug']])>{{ $item['name'] }}</a>
+            @endforeach
+        </nav>
+    @endif
     @if ($posts === [])
         <p class="text-sm text-slate-500">{{ __('Chưa có bài viết.') }}</p>
     @else

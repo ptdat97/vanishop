@@ -17,8 +17,10 @@ Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `
 - **Khối page builder** `cms_latest_posts` (bài viết mới) dùng cho trang chủ.
 - **Sitemap:** các trang và bài đã đăng được đưa vào `/sitemap.xml`.
 - **Link cho menu** (từ 1.3.0, Core 0.3.58): loại link `page` (Trang nội dung) và `article` (Bài viết) cho Admin → Giao diện → Menu. Chỉ nội dung đang công khai mới hiện; nháp/hẹn giờ chưa tới thì mục menu tự ẩn.
-- **Storefront API** (headless): `GET /api/storefront/v1/x/vani-cms/pages/{slug}`, `GET …/posts?per_page=`, `GET …/posts/{slug}`.
-- **Dữ liệu:** bảng `plg_cms_pages`, `plg_cms_posts`. Tắt plugin thì URL, menu, khối và API đều biến mất; dữ liệu vẫn giữ.
+- **Chuyên mục tin tức** (từ 1.4.0): Admin → Nội dung → Bài viết → Chuyên mục. Một cấp, URL `/tin-tuc/{chuyên-mục}` dùng chung không gian đường dẫn với bài viết (lưu bị từ chối nếu trùng). Trang tin tức có thanh chuyên mục (chỉ chuyên mục có bài công khai); xoá chuyên mục thì bài của nó thành "không chuyên mục". Link menu `article_category`; chuyên mục vào sitemap.
+- **Sản phẩm trong bài** (từ 1.4.0): gắn tối đa 12 mẫu (tìm theo tên/mã, sắp thứ tự), hiện bằng thẻ sản phẩm của theme ở cuối bài; mẫu bị ẩn/ngừng bán tự bỏ khi hiển thị. Nâng từ bản trước: `php artisan vani:plugin:upgrade vani.cms`.
+- **Storefront API** (headless): `GET /api/storefront/v1/x/vani-cms/pages/{slug}`, `GET …/categories`, `GET …/posts?per_page=&category=`, `GET …/posts/{slug}` (có `category`, `products`).
+- **Dữ liệu:** bảng `plg_cms_pages`, `plg_cms_posts`, `plg_cms_categories`. Tắt plugin thì URL, menu, khối và API đều biến mất; dữ liệu vẫn giữ.
 
 ## Quyết định
 
@@ -27,4 +29,4 @@ Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `
 ## Chưa làm
 
 - **Trình soạn thảo WYSIWYG** (hoãn, Owner 2026-10-03): hiện soạn bằng Markdown. Khi làm cần trình soạn thảo trực quan ở Admin (gói npm) và bộ làm sạch HTML theo allowlist ở server (gói PHP), nên phải duyệt dependency theo R25 + ghi ADR. Giữ Markdown làm định dạng lưu, hoặc chuyển sang HTML đã làm sạch: quyết định khi làm.
-- Đa ngôn ngữ, chuyên mục/thẻ cho bài viết, lịch sử phiên bản. Link `article_category` khi có chuyên mục.
+- Đa ngôn ngữ, thẻ (tag) cho bài viết, lịch sử phiên bản, lượt xem bài.

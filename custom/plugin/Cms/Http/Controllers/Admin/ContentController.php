@@ -15,11 +15,15 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Shared\Support\StoreClock;
+use Modules\Shared\Support\StoreLocale;
 use Plugin\Cms\Infrastructure\CmsMedia;
 use Plugin\Cms\Infrastructure\Markdown;
 use Plugin\Cms\Infrastructure\Navigation;
+use Plugin\Cms\Persistence\Category;
 use Plugin\Cms\Persistence\Content;
 use Plugin\Cms\Persistence\Page;
 use Plugin\Cms\Persistence\Post;
@@ -35,6 +39,7 @@ final class ContentController
         private readonly CmsMedia $covers,
         private readonly MediaDirectory $media,
         private readonly Markdown $markdown,
+        private readonly CatalogReader $catalog,
     ) {}
 
     public function index(Request $request, string $kind): Response
@@ -124,6 +129,9 @@ final class ContentController
                 'excerpt' => $item instanceof Post ? $item->excerpt : null,
                 'cover_media_id' => $item instanceof Post ? $item->cover_media_id : null,
                 'cover_url' => $item instanceof Post ? $this->covers->coverUrl($item, 800) : null,
+                'category_id' => $item instanceof Post ? $item->category_id : null,
+                // Sản phẩm gắn bài (1.4.0): id + tên để hiện danh sách đã chọn (mẫu ẩn vẫn liệt kê, có ghi chú).
+                'products' => $item instanceof Post ? $this->productOptions(array_map('intval', (array) $item->product_ids)) : [],
                 'show_in_header' => $item instanceof Page && $item->show_in_header,
                 'show_in_footer' => $item instanceof Page && $item->show_in_footer,
                 'sort_order' => $item instanceof Page ? $item->sort_order : 0,
@@ -133,7 +141,34 @@ final class ContentController
             ],
             'can' => ['manage' => Gate::allows('cms.manage')],
             'urls' => [...$this->urls($kind), 'item' => $item === null ? null : route("admin.plugins.vani-cms.{$kind}.update", $item->id)],
+            'categories' => $kind === 'posts' ? Category::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name'])->map(fn (Category $category): array => ['value' => $category->id, 'label' => $category->name])->all() : [],
         ]);
+    }
+
+    /**
+     * Tìm sản phẩm để gắn vào bài (đang hiển thị trên storefront).
+     */
+    public function products(Request $request): JsonResponse
+    {
+        Gate::authorize('cms.view');
+        $query = trim((string) $request->validate(['q' => ['nullable', 'string', 'max:100']])['q'] ?? '');
+        $items = $this->catalog->searchProducts(new ProductFilters(now: now()->getTimestamp(), text: $query, perPage: 20), StoreLocale::default())['items'];
+
+        return response()->json(['data' => array_map(fn (array $item): array => ['id' => (int) $item['id'], 'name' => (string) $item['name'], 'code' => (string) ($item['style_code'] ?? '')], $items)]);
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<array{id: int, name: string, visible: bool}>
+     */
+    private function productOptions(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $visible = collect($this->catalog->productsByIds($ids, StoreLocale::default(), now()->getTimestamp()))->keyBy('id');
+
+        return array_map(fn (int $id): array => ['id' => $id, 'name' => (string) ($visible[$id]['name'] ?? "#{$id}"), 'visible' => $visible->has($id)], $ids);
     }
 
     /**
@@ -146,6 +181,8 @@ final class ContentController
             'index' => route("admin.plugins.vani-cms.{$kind}.index"), 'create' => route("admin.plugins.vani-cms.{$kind}.create"),
             'store' => route("admin.plugins.vani-cms.{$kind}.store"),
             'preview' => route('admin.plugins.vani-cms.preview'),
+            'categories' => route('admin.plugins.vani-cms.categories.index'),
+            'products' => route('admin.plugins.vani-cms.products'),
         ];
     }
 
@@ -162,10 +199,21 @@ final class ContentController
             'status' => ['required', Rule::in([Content::DRAFT, Content::PUBLISHED])],
             'published_at' => ['nullable', 'date'],
             ...($kind === 'posts'
-                ? ['excerpt' => ['nullable', 'string', 'max:500'], 'cover_media_id' => ['nullable', 'integer'], 'remove_cover' => ['boolean']]
+                ? [
+                    'excerpt' => ['nullable', 'string', 'max:500'], 'cover_media_id' => ['nullable', 'integer'], 'remove_cover' => ['boolean'],
+                    'category_id' => ['nullable', 'integer', Rule::exists('plg_cms_categories', 'id')],
+                    'product_ids' => ['nullable', 'array', 'max:'.Post::MAX_PRODUCTS], 'product_ids.*' => ['integer', 'min:1', 'distinct'],
+                ]
                 : ['show_in_header' => ['boolean'], 'show_in_footer' => ['boolean'], 'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535']]),
         ]);
 
+        // /tin-tuc/{slug} dùng chung cho chuyên mục và bài viết (1.4.0).
+        if ($kind === 'posts' && Category::query()->where('slug', $data['slug'])->exists()) {
+            throw ValidationException::withMessages(['slug' => 'Đường dẫn đã là của một chuyên mục.']);
+        }
+        if ($kind === 'posts') {
+            $data['product_ids'] = array_values(array_map('intval', $data['product_ids'] ?? [])) ?: null;
+        }
         $cover = isset($data['cover_media_id']) ? (int) $data['cover_media_id'] : null;
         $removeCover = (bool) ($data['remove_cover'] ?? false);
         unset($data['cover_media_id'], $data['remove_cover']);

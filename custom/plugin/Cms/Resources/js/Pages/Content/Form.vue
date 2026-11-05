@@ -6,7 +6,7 @@ import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
-import { postJson } from '@admin/http';
+import { getJson, postJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -25,6 +25,8 @@ type Item = {
     excerpt: string | null;
     cover_media_id: number | null;
     cover_url: string | null;
+    category_id: number | null;
+    products: Array<{ id: number; name: string; visible: boolean }>;
     show_in_header: boolean;
     show_in_footer: boolean;
     sort_order: number;
@@ -41,8 +43,13 @@ const props = defineProps<{
         store: string;
         preview: string;
         item: string | null;
+        categories?: string;
+        products?: string;
     };
+    categories: Array<{ value: number; label: string }>;
 }>();
+
+type ProductOption = { id: number; name: string; visible?: boolean; code?: string };
 
 const form = useForm({
     title: props.item?.title ?? '',
@@ -55,11 +62,50 @@ const form = useForm({
     excerpt: props.item?.excerpt ?? '',
     cover_media_id: props.item?.cover_media_id ?? (null as number | null),
     remove_cover: false,
+    category_id: props.item?.category_id ?? (null as number | null),
+    product_ids: (props.item?.products ?? []).map((product) => product.id),
     show_in_header: props.item?.show_in_header ?? false,
     show_in_footer: props.item?.show_in_footer ?? false,
     sort_order: props.item?.sort_order ?? 0,
 });
 const coverUrl = ref<string | null>(props.item?.cover_url ?? null);
+// Sản phẩm gắn cuối bài (1.4.0): tối đa 12, giữ thứ tự.
+const MAX_PRODUCTS = 12;
+const chosen = ref<ProductOption[]>([...(props.item?.products ?? [])]);
+const productQuery = ref('');
+const productResults = ref<ProductOption[]>([]);
+let productTimer: ReturnType<typeof setTimeout> | undefined;
+
+function syncProducts(): void {
+    form.product_ids = chosen.value.map((product) => product.id);
+}
+
+function searchProducts(): void {
+    clearTimeout(productTimer);
+    productTimer = setTimeout(async () => {
+        if (!props.urls.products) return;
+        const response = await getJson<{ data: ProductOption[] }>(props.urls.products, { q: productQuery.value });
+        productResults.value = response.data.filter((product) => !chosen.value.some((item) => item.id === product.id));
+    }, 250);
+}
+
+function addProduct(product: ProductOption): void {
+    if (chosen.value.length >= MAX_PRODUCTS) return;
+    chosen.value.push({ ...product, visible: true });
+    productResults.value = productResults.value.filter((item) => item.id !== product.id);
+    syncProducts();
+}
+
+function moveProduct(index: number, delta: number): void {
+    const [product] = chosen.value.splice(index, 1);
+    chosen.value.splice(index + delta, 0, product);
+    syncProducts();
+}
+
+function removeProduct(index: number): void {
+    chosen.value.splice(index, 1);
+    syncProducts();
+}
 const previewHtml = ref<string | null>(null);
 const busy = ref(false);
 const picking = ref<'cover' | 'body' | null>(null);
@@ -210,6 +256,36 @@ function onPicked(items: MediaItem[]): void {
                     <button type="submit" :class="primaryButton" :disabled="form.processing || busy">Lưu</button>
                     <button v-if="item" type="button" :class="dangerButton" @click="destroy">Xoá</button>
                 </div>
+            </section>
+
+            <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                <FormField label="Chuyên mục" :error="form.errors.category_id">
+                    <Select v-model="form.category_id" :options="categories" empty-label="— Không chuyên mục —" :empty-value="null" :disabled="!can.manage" />
+                </FormField>
+                <Link v-if="urls.categories" :href="urls.categories" class="text-xs text-indigo-600 hover:underline">Quản lý chuyên mục</Link>
+            </section>
+
+            <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4" data-post-products>
+                <h2 class="text-sm font-medium">Sản phẩm trong bài ({{ chosen.length }}/{{ MAX_PRODUCTS }})</h2>
+                <ol v-if="chosen.length" class="space-y-1 text-sm">
+                    <li v-for="(product, index) in chosen" :key="product.id" class="flex items-center gap-1">
+                        <span class="flex-1 truncate" :class="product.visible === false ? 'text-slate-400' : ''">{{ product.name }}<template v-if="product.visible === false"> (đang ẩn)</template></span>
+                        <template v-if="can.manage">
+                            <button type="button" class="px-1 text-slate-500" :disabled="index === 0" aria-label="Lên" @click="moveProduct(index, -1)">↑</button>
+                            <button type="button" class="px-1 text-slate-500" :disabled="index === chosen.length - 1" aria-label="Xuống" @click="moveProduct(index, 1)">↓</button>
+                            <button type="button" class="px-1 text-red-600" aria-label="Bỏ" @click="removeProduct(index)">×</button>
+                        </template>
+                    </li>
+                </ol>
+                <template v-if="can.manage && chosen.length < MAX_PRODUCTS">
+                    <input v-model="productQuery" :class="inputClass" placeholder="Tìm sản phẩm theo tên/mã…" @input="searchProducts" />
+                    <ul v-if="productResults.length" class="max-h-48 overflow-auto rounded border border-slate-200 text-sm">
+                        <li v-for="product in productResults" :key="product.id">
+                            <button type="button" class="w-full px-2 py-1 text-left hover:bg-slate-50" @click="addProduct(product)">{{ product.name }} <span class="text-xs text-slate-400">{{ product.code }}</span></button>
+                        </li>
+                    </ul>
+                </template>
+                <p v-if="form.errors.product_ids" class="text-sm text-red-600">{{ form.errors.product_ids }}</p>
             </section>
 
             <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
