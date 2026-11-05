@@ -109,6 +109,18 @@ final class OrderController
         return response()->json(['data' => $paymentPresenter->present($payments->retry($detail->id, $data['gateway'] ?? null))]);
     }
 
+    /**
+     * Khách xác nhận đã nhận hàng (0.3.78, §3.11-1); `waive_returns` = không đổi trả đơn này.
+     */
+    public function confirmReceived(Request $request, string $order): JsonResponse
+    {
+        $data = $request->validate(['waive_returns' => ['sometimes', 'boolean']]);
+
+        return response()->json(['data' => $this->presenter->present(
+            $this->orders->confirmReceived($order, (string) $request->headers->get(self::TOKEN_HEADER, ''), (bool) ($data['waive_returns'] ?? false)),
+        )]);
+    }
+
     public function cancel(Request $request, string $order): JsonResponse
     {
         $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);

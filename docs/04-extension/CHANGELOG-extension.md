@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.78 — 2026-11-05
+
+Chỉ thêm. Khách xác nhận đã nhận hàng ([reference-parity §3.11-1](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- `CustomerOrders::confirmReceived(publicId, token, waiveReturns)`, `confirmReceivedForCustomer(customerId, publicId, waiveReturns)`; `OrderDetail::$receipt` (`confirmed_at`, `returns_waived`, `can_confirm`); `OrderActionRejected::cannotConfirmReceipt()` (`order.cannot_confirm_receipt` 409).
+- `orders.meta.returns_waived` → `Returns` từ chối yêu cầu mới (`return.not_eligible`, reason `waived`), `returnable()` rỗng.
+- Storefront API `POST /orders/{id}/received` (`waive_returns`); web `storefront.order.received`; đơn có `receipt`. Partial `theme::partials.order-receipt` của `vani-base`.
+
 ## 0.3.77 — 2026-11-05
 
 Không đổi public API. Trang thương hiệu theo chữ cái ([reference-parity §3.5-3](../20-roadmap/reference-parity-refactor.md)).

@@ -21,6 +21,7 @@ use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Thao tác trên đơn ngoài luồng đặt hàng: xác nhận, huỷ, đổi địa chỉ, ghi chú. Mọi thao tác ghi order_events.
@@ -35,6 +36,7 @@ final class OrderCommands
         private readonly InventoryReservation $inventory,
         private readonly PromotionClawback $clawback,
         private readonly PromotionEngine $promotions,
+        private readonly Settings $settings,
     ) {}
 
     public function confirm(int $orderId, string $reason): void
@@ -204,6 +206,39 @@ final class OrderCommands
             $this->audit->record('order.lines_cancelled', 'order', $order->id, ['reason' => $reason, 'cause' => $cause->value, 'lines' => $cancelled, 'amount' => $net, 'promotion_clawback' => $clawback['total']]);
 
             event(new OrderLinesCancelled($order->id, $order->public_id, $cancellationId, $cancelled, $net, $reason, 'staff', $cause->value, $clawback['total']));
+        });
+    }
+
+    /**
+     * Khách xác nhận đã nhận hàng (§3.11-1). `$waiveReturns`: khách xác nhận không đổi trả. Bật
+     * `core`/`ordering.complete_on_customer_confirm` + đã giao hết + không có đổi trả + (khách bỏ quyền đổi trả hoặc đã
+     * qua hạn đổi trả) → hoàn tất đơn ngay. Gọi lại khi đã xác nhận: không làm gì.
+     */
+    public function confirmReceived(int $orderId, bool $waiveReturns, string $source): void
+    {
+        DB::transaction(function () use ($orderId, $waiveReturns, $source): void {
+            $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
+            if (isset($order->meta['received_confirmed_at'])) {
+                return;
+            }
+            if (! OrderReceipt::canConfirm($order)) {
+                throw OrderActionRejected::cannotConfirmReceipt();
+            }
+
+            $order->update(['meta' => [...($order->meta ?? []), 'received_confirmed_at' => now()->toIso8601String(), 'returns_waived' => $waiveReturns], 'lock_version' => $order->lock_version + 1]);
+            $actor = $this->context->has() ? $this->context->actor() : null;
+            DB::table('order_events')->insert([
+                'order_id' => $order->id, 'type' => 'received_confirmed', 'from_status' => null, 'to_status' => null, 'reason' => $waiveReturns ? 'returns_waived' : null,
+                'actor_type' => $actor?->type->value, 'actor_id' => $actor?->id, 'source' => $source, 'correlation_id' => Context::get('correlation_id'),
+                'data' => json_encode(['returns_waived' => $waiveReturns]), 'created_at' => now(),
+            ]);
+
+            $deliveredAt = OrderReceipt::changedAt($order->id, 'delivered');
+            $windowPassed = $deliveredAt !== null && $deliveredAt->lt(now()->subDays((int) config('vanishop.fulfillment.return_window_days', 7)));
+            if ((bool) $this->settings->get('core', OrderReceipt::SETTING_COMPLETE, false) && $order->fulfillment_status === 'delivered'
+                && $order->return_status === 'none' && ($waiveReturns || $windowPassed)) {
+                $this->transitions->transition($order->id, OrderStatus::Completed, 'customer_confirmed_received', $source);
+            }
         });
     }
 

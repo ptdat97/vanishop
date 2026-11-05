@@ -77,6 +77,8 @@ final class OrderPresenter
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),
             'returnable' => $this->returns->returnable($order->id),
+            // Khách xác nhận đã nhận hàng (0.3.78): confirmed_at, returns_waived, can_confirm.
+            'receipt' => $order->receipt,
         ]);
     }
 }

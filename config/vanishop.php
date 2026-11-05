@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.77',
+    'version' => '0.3.78',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -165,6 +165,7 @@ return [
                 'order.returns.cancel' => 'don-hang/{order}/doi-tra/{return}/huy',
                 'order.returns.shipped' => 'don-hang/{order}/doi-tra/{return}/da-gui',
                 'order.pay' => 'don-hang/{order}/thanh-toan',
+                'order.received' => 'don-hang/{order}/da-nhan',
                 'track' => 'tra-cuu-don',
                 'account' => 'tai-khoan',
                 'account.login' => 'tai-khoan/dang-nhap',
@@ -200,6 +201,7 @@ return [
                 'order.returns.cancel' => 'orders/{order}/returns/{return}/cancel',
                 'order.returns.shipped' => 'orders/{order}/returns/{return}/shipped',
                 'order.pay' => 'orders/{order}/pay',
+                'order.received' => 'orders/{order}/received',
                 'track' => 'track-order',
                 'account' => 'account',
                 'account.login' => 'account/login',
@@ -291,6 +293,8 @@ return [
         'sourcing' => env('VANI_FULFILLMENT_SOURCING', 'reserved_locations'),
         // Số ngày sau khi giao để đơn chuyển "completed" (hết hạn đổi trả).
         'return_window_days' => (int) env('VANI_RETURN_WINDOW_DAYS', 7),
+        // Khách bấm "Đã nhận hàng" được khi đơn đang giao quá số ngày này (đã giao hết thì bấm được ngay).
+        'confirm_receipt_after_days' => (int) env('VANI_CONFIRM_RECEIPT_AFTER_DAYS', 5),
     ],
 
     'returns' => [

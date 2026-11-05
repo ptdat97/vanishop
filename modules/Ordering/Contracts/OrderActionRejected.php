@@ -43,6 +43,11 @@ final class OrderActionRejected extends BusinessRuleViolation
         return new self('order.stale', 409, __('ordering::messages.stale'));
     }
 
+    public static function cannotConfirmReceipt(): self
+    {
+        return new self('order.cannot_confirm_receipt', 409, __('ordering::messages.cannot_confirm_receipt'));
+    }
+
     public static function notFound(): self
     {
         return new self('order.not_found', 404, __('ordering::messages.not_found'));

@@ -2,6 +2,7 @@
 
 return [
     'policy' => [
+        'waived' => 'Khách đã xác nhận nhận hàng và không đổi trả đơn này.',
         'not_delivered' => 'Đơn hàng chưa được giao, chưa thể đổi/trả.',
         'window_expired' => 'Đã quá thời hạn đổi/trả.',
         'exchange_order' => 'Đơn đổi hàng chỉ đổi tiếp được size/màu cùng mẫu. Muốn trả hoàn tiền hoặc đổi mẫu khác, vui lòng liên hệ CSKH.',

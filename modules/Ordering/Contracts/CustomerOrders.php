@@ -32,6 +32,18 @@ interface CustomerOrders
     public function showForCustomer(int $customerId, string $publicId): ?OrderDetail;
 
     /**
+     * Khách xác nhận đã nhận hàng (0.3.78, §3.11-1) bằng token đơn; `$waiveReturns` = không đổi trả đơn này.
+     *
+     * @throws OrderActionRejected
+     */
+    public function confirmReceived(string $publicId, string $accessToken, bool $waiveReturns = false): OrderDetail;
+
+    /**
+     * @throws OrderActionRejected
+     */
+    public function confirmReceivedForCustomer(int $customerId, string $publicId, bool $waiveReturns = false): OrderDetail;
+
+    /**
      * @throws OrderActionRejected đơn không thuộc khách
      * @throws OrderTransitionRejected nếu đơn không còn huỷ được
      */

@@ -44,5 +44,11 @@ final readonly class OrderDetail
         public string $source = 'web',
         /** Tầng giá (0.3.37): PriceBreakdown::toArray(). */
         public array $pricing = [],
+        /**
+         * Khách xác nhận đã nhận hàng (0.3.78): `confirmed_at`, `returns_waived`, `can_confirm`.
+         *
+         * @var array{confirmed_at?: ?string, returns_waived?: bool, can_confirm?: bool}
+         */
+        public array $receipt = [],
     ) {}
 }

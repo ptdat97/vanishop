@@ -16,4 +16,5 @@ return [
     'note_added' => 'Note added.',
     'deletion_open_order' => 'order :number is not completed',
     'deletion_open_return' => 'the return of order :number is in progress',
+    'cannot_confirm_receipt' => 'You can confirm receipt only once the order has been delivered (or has been in transit for a while).',
 ];

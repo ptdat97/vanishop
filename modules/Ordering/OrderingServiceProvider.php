@@ -13,6 +13,7 @@ use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
 use Modules\Ordering\Application\EloquentOrderStatistics;
 use Modules\Ordering\Application\OrderFactory;
+use Modules\Ordering\Application\OrderReceipt;
 use Modules\Ordering\Application\OrderTransitionService;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\OrderReader;
@@ -20,6 +21,8 @@ use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Slice 6: tạo đơn (snapshot, số đơn, order_events). Slice 7: state machine + OrderTransitions (Payment cần).
@@ -50,6 +53,11 @@ final class OrderingServiceProvider extends ModuleServiceProvider
         $permissions->register('orders.cancel', 'Huỷ đơn');
 
         $navigation->add('orders', 'Đơn hàng', 'admin.orders.home', 'orders.view', 50, group: 'sales');
+
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', OrderReceipt::SETTING_COMPLETE, 'Hoàn tất đơn khi khách xác nhận đã nhận hàng', 'bool', false,
+            help: 'Bật: khách bấm "Đã nhận hàng" + chọn không đổi trả (hoặc đã quá hạn đổi trả) → đơn hoàn tất ngay thay vì chờ hết hạn đổi trả. Tắt: chỉ ghi nhận.',
+        ));
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('orders', $this->modulePath('Http/routes/admin-workspace.php'));

@@ -28,4 +28,5 @@ return [
     'menu_restored' => 'Previous version restored to draft. Publish to apply.',
     'return_shipped' => 'Thanks — we have noted that you shipped the items back. We will let you know when they arrive.',
     'payment_restarted' => 'A new payment request has been created. Follow the instructions below.',
+    'order_received' => 'Thanks for confirming you received your order.',
 ];

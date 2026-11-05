@@ -70,6 +70,22 @@ final class CustomerOrderService implements CustomerOrders
         return $this->queries->detail($order->fresh(['lines', 'adjustments']));
     }
 
+    public function confirmReceived(string $publicId, string $accessToken, bool $waiveReturns = false): OrderDetail
+    {
+        $order = $this->authorized($publicId, $accessToken) ?? throw OrderActionRejected::notFound();
+        $this->commands->confirmReceived($order->id, $waiveReturns, 'customer');
+
+        return $this->queries->detail($order->fresh(['lines', 'adjustments']));
+    }
+
+    public function confirmReceivedForCustomer(int $customerId, string $publicId, bool $waiveReturns = false): OrderDetail
+    {
+        $order = $this->owned($customerId, $publicId) ?? throw OrderActionRejected::notFound();
+        $this->commands->confirmReceived($order->id, $waiveReturns, 'customer');
+
+        return $this->queries->detail($order->fresh(['lines', 'adjustments']));
+    }
+
     private function owned(int $customerId, string $publicId): ?Order
     {
         return Order::query()->with(['lines', 'adjustments'])->where('public_id', $publicId)->where('customer_id', $customerId)->first();

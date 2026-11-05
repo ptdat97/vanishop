@@ -42,6 +42,26 @@ final class OrderController
     }
 
     /**
+     * Khách xác nhận đã nhận hàng (§3.11-1), tuỳ chọn "không đổi trả đơn này". Quyền như trang đơn: token trong phiên hoặc
+     * khách đăng nhập là chủ đơn.
+     */
+    public function received(Request $request, string $order, Session $session, CustomerOrders $orders): RedirectResponse
+    {
+        $waive = $request->boolean('waive_returns');
+        $stored = (array) $session->get("vani.orders.{$order}", []);
+        $customer = $request->attributes->get('customer');
+        if (($stored['token'] ?? '') !== '' && $orders->show($order, (string) $stored['token']) !== null) {
+            $orders->confirmReceived($order, (string) $stored['token'], $waive);
+        } elseif ($customer !== null) {
+            $orders->confirmReceivedForCustomer((int) $customer->id, $order, $waive);
+        } else {
+            abort(404);
+        }
+
+        return back()->with('status', __('storefront::messages.order_received'));
+    }
+
+    /**
      * Thanh toán lại (§3.11-2): đơn online chưa trả, còn hạn. Cổng chuyển hướng → sang trang cổng; QR/hướng dẫn → về trang đơn.
      */
     public function pay(Request $request, string $order, Session $session, CustomerOrders $orders, Payments $payments): RedirectResponse

@@ -77,6 +77,7 @@ final class OrderQueries
             lockVersion: $order->lock_version,
             source: (string) $order->source,
             pricing: (new PriceBreakdownCalculator)->for($order)->toArray(),
+            receipt: OrderReceipt::of($order),
         ), $order, $masked);
     }
 

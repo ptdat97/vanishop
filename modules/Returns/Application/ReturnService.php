@@ -86,6 +86,10 @@ final class ReturnService implements Returns
         $return = DB::transaction(function () use ($orderId, $lines, $reasonCode, $note, $source, $exchanges): ReturnRequest {
             $this->transitions->lock($orderId);
             $order = $this->orders->find($orderId) ?? throw ReturnRejected::notEligible('not_delivered');
+            // Khách đã xác nhận nhận hàng và chọn không đổi trả (§3.11-1) — kể cả nhân viên tạo hộ.
+            if ((bool) ($order->meta['returns_waived'] ?? false)) {
+                throw ReturnRejected::notEligible('waived');
+            }
             if ($order->source === 'exchange') {
                 $this->guardReplacementOrder($orderId, $lines, $exchanges);
             }
@@ -144,6 +148,9 @@ final class ReturnService implements Returns
 
     public function returnable(int $orderId): array
     {
+        if ((bool) ($this->orders->find($orderId)?->meta['returns_waived'] ?? false)) {
+            return ['lines' => [], 'deadline' => null];
+        }
         [$delivered, $deliveredAt] = $this->delivered($orderId);
         $taken = $this->takenQuantities($orderId);
         $lines = [];

@@ -2,6 +2,7 @@
 
 return [
     'policy' => [
+        'waived' => 'The customer confirmed receipt and waived returns for this order.',
         'not_delivered' => 'The order has not been delivered yet.',
         'window_expired' => 'The return window has passed.',
         'exchange_order' => 'A replacement order can only be exchanged again for another size/colour of the same product. Please contact support to return it for a refund or switch product.',

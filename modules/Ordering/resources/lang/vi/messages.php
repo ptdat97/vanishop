@@ -16,4 +16,5 @@ return [
     'note_added' => 'Đã thêm ghi chú.',
     'deletion_open_order' => 'đơn :number chưa hoàn tất',
     'deletion_open_return' => 'đổi trả của đơn :number đang xử lý',
+    'cannot_confirm_receipt' => 'Chỉ xác nhận đã nhận hàng khi đơn đã giao (hoặc đang giao đã lâu) và chưa xác nhận.',
 ];
