@@ -413,6 +413,26 @@ Mỗi hạng mục đi theo [Definition of Done chung](roadmap.md) (feature test
 
 Thứ tự trong một đợt theo nguyên tắc của roadmap: **Correctness → Consistency → Extensibility → Integration → Observability → Feature**.
 
+## 6b. Giới hạn còn lại — để xử lý sau (Owner, 2026-11-05)
+
+Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong đợt hiện tại; mở lại theo nhu cầu.
+
+| # | Giới hạn | Nơi | Hướng xử lý |
+|---|---|---|---|
+| L1 | Nội dung `vani.cms` (trang, bài viết) chỉ một ngôn ngữ; bản `/en` là `noindex` | `vani.cms` | Bản dịch + slug theo ngôn ngữ như Catalog (ADR-038 mục 4) |
+| L2 | Mẫu email tiếng Anh cửa hàng phải tự tạo (Admin → Thông báo); thiếu thì gửi bản `vi` | Notification | Mẫu mặc định `en` cho các loại tin Core |
+| L3 | Sắp xếp menu bằng nút ↑ ↓ ← →, chưa kéo-thả | Storefront Admin | Kéo-thả khi có component được duyệt (ADR-039) |
+| L4 | Có CDN: thay đổi (giá, slug, menu, cấu hình) thấy sau tối đa `s-maxage`; chưa purge theo event | Storefront | `CdnPurger` (plugin theo nhà cung cấp CDN) nghe event |
+| L5 | Sau khi đặt đơn, dòng giỏ chưa chọn giữ trạng thái bỏ chọn (không tự chọn lại) | Cart | Tuỳ chọn cấu hình nếu Owner muốn |
+| L6 | `FieldDefinition` / `SettingDefinition` chưa có kiểu chọn ảnh: khối "Banner chính" nhận URL (chưa `srcset`), ảnh phương thức thanh toán ở chân trang là nhãn chữ, `storefront.placeholder_image` nhập ID ảnh | Extension, Storefront, Catalog | Kiểu trường `media` (Admin dùng MediaPicker) |
+| L7 | Ảnh gallery PDP chưa `srcset` (JS đổi ảnh theo màu) | Theme `vani-base` | JS đổi cả `srcset` |
+| L8 | Bộ lọc chưa có giá và size | Catalog `SearchProvider` | Mở rộng `ProductSearchQuery` + provider database/Meilisearch |
+| L9 | Ngôn ngữ Admin riêng chỉ đổi chuỗi từ server; chữ trong giao diện Vue vẫn tiếng Việt | Admin | i18n cho Vue (cần duyệt dependency) |
+| L10 | Cờ "lỗi do cửa hàng" của lý do đổi trả chưa dùng cho phí ship trả hàng / báo cáo | Returns | Quy tắc phí trả hàng theo cờ |
+| L11 | `vani.ghn` chưa gửi khối lượng (Core đã có `weight()`); dòng thiếu khối lượng tính 0 g | `vani.ghn`, Catalog | Gửi `weight` khi đặt vận đơn; cảnh báo sản phẩm thiếu khối lượng |
+| L12 | `vani.wishlist`: bật CDN + tắt JS thì khách đăng nhập bấm tim bị 419; khách vãng lai chưa xem được danh sách khi chưa đăng nhập; chế độ ẩn giá `members` thì không báo giảm giá được | `vani.wishlist` | Trang danh sách vãng lai đọc `localStorage`; kiểm giá theo nhóm khách |
+| L13 | Chuỗi cũ `storefront::messages.return_reasons` không còn dùng (lý do lấy từ danh mục) | Storefront | Xoá khi dọn lang |
+
 ## 7. Quyết định của Owner (2026-11-03)
 
 | # | Câu hỏi | Quyết định | Ảnh hưởng |
