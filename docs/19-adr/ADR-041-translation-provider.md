@@ -1,6 +1,7 @@
 # ADR-041 — Dịch máy trong form bản dịch Admin (extension point `TranslationProvider`)
 
-- Trạng thái: **Proposed** · Ngày: 2026-11-05 · Người quyết định: Owner (chờ duyệt)
+- Trạng thái: **Proposed — hoãn** · Ngày: 2026-11-05 · Người quyết định: Owner (chờ duyệt)
+- Hoãn (Owner 2026-11-05): cửa hàng hiện chỉ tiếng Việt (`VANI_LOCALES=vi`) nên chưa cần dịch máy; xem lại khi bật ngôn ngữ thứ hai.
 - Liên quan: [reference-parity-refactor §3.4-5](../20-roadmap/reference-parity-refactor.md), [ADR-038](ADR-038-localized-storefront-urls.md) (bản `en` có URL riêng, bản chưa dịch `noindex`), [ADR-030](ADR-030-extension-surface-v2.md), [ADR-039](ADR-039-admin-ui-reka.md), [commerce-kernel](../02-architecture/commerce-kernel.md) (Core không biết nhà cung cấp cụ thể), R25 (dependency phải duyệt).
 
 ## Context

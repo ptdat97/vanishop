@@ -59,6 +59,7 @@ Với Owner, điều đó có nghĩa là:
 - **Không** thay thế ERP (kế toán, giá vốn, mua hàng, sản xuất) hay ODO (vận hành kho, pick–pack, điều phối vận chuyển).
 - **Không** tự xây POS (POS hiện hữu tích hợp qua API; POS riêng là tuỳ chọn về sau).
 - **Không** hỗ trợ bán xuyên biên giới / đa tiền tệ ở giai đoạn đầu (thiết kế schema vẫn chừa chỗ).
+- Hiện cửa hàng **chỉ tiếng Việt, chỉ VND** (Owner 2026-11-05). Cơ chế đa ngôn ngữ (`VANI_LOCALES`, bản dịch, URL theo ngôn ngữ — [ADR-038](../19-adr/ADR-038-localized-storefront-urls.md)) và tiền tệ trong dữ liệu (`currency`, [ADR-011](../19-adr/ADR-011-money-representation.md)) được giữ và có test, để mở sau mà không đổi schema.
 
 ## 5. Các bên liên quan (Stakeholders)
 

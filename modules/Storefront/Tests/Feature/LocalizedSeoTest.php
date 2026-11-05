@@ -63,3 +63,12 @@ it('sitemap: bản đã dịch có URL riêng + xhtml:link; bản chưa dịch k
         ->toContain('<xhtml:link rel="alternate" hreflang="en" href="'.$this->en.'"/>')
         ->toContain('<xhtml:link rel="alternate" hreflang="x-default" href="'.$this->vi.'"/>');
 });
+
+it('cửa hàng một ngôn ngữ (cấu hình mặc định): không hreflang, không nút chuyển ngôn ngữ, sitemap không có bản khác', function () {
+    config(['vanishop.locale.supported' => [config('vanishop.locale.default')]]);
+    translateStyle($this->style);
+
+    expect($this->get($this->vi)->assertOk()->getContent())->not->toContain('hreflang=')
+        ->and($this->get('/')->assertOk()->getContent())->not->toContain('hreflang=');
+    expect($this->get('/sitemap.xml')->assertOk()->getContent())->toContain('<loc>'.$this->vi.'</loc>')->not->toContain('/en');
+});

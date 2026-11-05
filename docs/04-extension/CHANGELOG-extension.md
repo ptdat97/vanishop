@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.82 — 2026-11-05
+
+Không đổi API. Cửa hàng chỉ tiếng Việt (Owner 2026-11-05), giữ cơ chế đa ngôn ngữ.
+
+### Đổi
+- `vanishop.locale.supported` đọc từ `VANI_LOCALES` (phân tách dấu phẩy), **mặc định chỉ `vi`** (trước: luôn `vi`, `en`). Khi chỉ một ngôn ngữ: không route `/<mã>`, không hreflang/nút chuyển ngôn ngữ, sitemap không có bản khác, Admin chỉ một tab bản dịch, cấu hình theo ngôn ngữ của plugin (`key.<mã>`) chỉ có khoá `vi`.
+- Plugin không giả định có `en`: lặp `StoreLocale::supported()` như trước. Test (phpunit) chạy `VANI_LOCALES=vi,en` để giữ cơ chế đa ngôn ngữ được kiểm.
+
 ## 0.3.81 — 2026-11-05
 
 Chỉ thêm. Ảnh đính kèm yêu cầu đổi trả ([reference-parity §3.13-3](../20-roadmap/reference-parity-refactor.md)).

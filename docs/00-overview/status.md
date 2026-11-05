@@ -46,7 +46,7 @@
 | `modules/` + autoload `Modules\`, `ModuleServiceProvider`, `config/modules.php` | Implemented | `app/Providers/ModuleServiceProvider.php` |
 | `custom/plugin/` + autoload `Plugin\`; `custom/theme/` | Implemented (thư mục theme còn trống) | |
 | MySQL | Implemented (dev) | `.env` dùng database `vanishop`; mức cô lập `READ COMMITTED` (ADR-016). **Máy dev đang chạy MySQL 9.7.2** (DBngin); CI dùng MySQL 8.4 theo ADR-016 |
-| Locale `vi`, `APP_NAME=VaniShop` | Implemented | `.env`, `.env.example` |
+| Locale `vi` (chỉ tiếng Việt — `VANI_LOCALES=vi`; thêm `en` khi cần, test chạy `vi,en`), tiền `VND`, `APP_NAME=VaniShop` | Implemented | `.env`, `.env.example` |
 | Inertia v3 + Vue 3 + TypeScript 5.9 (Admin) | Implemented | `resources/js/admin.ts`; build + `vue-tsc` pass |
 | Bộ component Admin trên Reka UI ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) | Implemented (0.3.56) | `DataTable`, `Pagination`, `Select`, `MultiSelect`, `Combobox`, `DateInput`, `StatusBadge`, `MoneyText`, `ConfirmDialog`, `Toaster`; mọi trang module/plugin đã chuyển; nhãn trạng thái từ `<module>::labels`; `AdminUiTest` khoá quy tắc |
 | CI | Implemented (chưa chạy trên GitHub) | `.github/workflows/ci.yml`: clean-room, license, Pint, vue-tsc, build, Pest (SQLite + MySQL 8.4), concurrency group trên MySQL 8.4 |

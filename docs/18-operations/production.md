@@ -52,7 +52,7 @@ Core không ghi cứng các giá trị dưới đây — tất cả nằm trong 
 
 | Nhóm | Khoá | Mặc định |
 |---|---|---|
-| Thị trường | `locale.default` (`VANI_LOCALE`), `locale.supported`, `locale.labels` | `vi`; `vi`, `en` |
+| Thị trường | `locale.default` (`VANI_LOCALE`), `locale.supported` (`VANI_LOCALES`, phân tách dấu phẩy), `locale.labels` | `vi`; chỉ `vi` (Owner 2026-11-05 — thêm `en` khi bán tiếng Anh; test chạy `vi,en`) |
 | | `locale.phone_policy` (`VANI_PHONE_POLICY`) | `vn` (plugin `vani.phone-vn`; tắt → chỉ nhận `+…`) |
 | | `locale.timezone` (`VANI_TIMEZONE`), `locale.formats.*` | `Asia/Ho_Chi_Minh`; `d/m/Y`, `d/m/Y H:i`… |
 | | `locale.money.*` (dấu phân cách, ký hiệu), `currency` (`VANI_CURRENCY`) | `1.250.000 ₫`; `VND` |

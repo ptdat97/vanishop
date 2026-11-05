@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.81',
+    'version' => '0.3.82',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -142,7 +142,9 @@ return [
         // Ngôn ngữ mặc định + danh sách hỗ trợ (storefront đổi bằng header X-Vani-Locale). Mặc định cũng là ngôn ngữ
         // dự phòng của bản dịch, mẫu thông báo và dữ liệu nhập (tên sản phẩm bắt buộc có bản dịch này).
         'default' => env('VANI_LOCALE', 'vi'),
-        'supported' => ['vi', 'en'],
+        // Hiện cửa hàng chỉ bán tiếng Việt (Owner 2026-11-05). Cơ chế đa ngôn ngữ (bản dịch, URL `/<mã>`, hreflang,
+        // tab bản dịch Admin) vẫn giữ: thêm ngôn ngữ = `VANI_LOCALES=vi,en` + khai `labels`/`paths`. Test chạy `vi,en`.
+        'supported' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_LOCALES', 'vi'))))),
         // Tên hiển thị của ngôn ngữ (tab bản dịch trong Admin).
         'labels' => ['vi' => 'Tiếng Việt', 'en' => 'English'],
         // Đường dẫn storefront theo ngôn ngữ (ADR-038), khoá = tên route bỏ `storefront.`. Ngôn ngữ mặc định không tiền

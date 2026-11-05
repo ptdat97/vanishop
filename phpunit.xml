@@ -56,6 +56,8 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="VANI_PLUGINS_CACHE" value="storage/framework/testing/vanishop-plugins.php"/>
         <env name="VANI_HOOKS_STRICT" value="true"/>
+        <!-- Cửa hàng chạy một ngôn ngữ; test giữ hai ngôn ngữ để không mất cơ chế đa ngôn ngữ. -->
+        <env name="VANI_LOCALES" value="vi,en"/>
         <env name="VANI_HOOKS_TRACE" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
