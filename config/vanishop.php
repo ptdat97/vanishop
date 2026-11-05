@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.80',
+    'version' => '0.3.81',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -300,6 +300,8 @@ return [
     'returns' => [
         // ReturnPolicy (extension point). days_window dùng VANI_RETURN_WINDOW_DAYS.
         'policy' => env('VANI_RETURN_POLICY', 'days_window'),
+        // Ảnh đính kèm yêu cầu đổi trả (§3.13-3): disk riêng tư (không public), tối đa 5 ảnh, mỗi ảnh ≤ 5 MB.
+        'attachments_disk' => env('VANI_RETURN_ATTACHMENTS_DISK', 'local'),
         // Chỉ là dữ liệu ban đầu của danh mục lý do (migration 0.3.74); sau đó quản lý ở Admin → Đổi trả → Lý do.
         'reasons' => ['wrong_size', 'not_as_described', 'defective', 'changed_mind', 'other'],
     ],

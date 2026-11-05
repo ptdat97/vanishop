@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Returns\Application;
 
 use DateTimeImmutable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Checkout\Contracts\Data\ReplacementLine;
@@ -31,6 +33,7 @@ use Modules\Returns\Domain\RefundCalculator;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Events\ReturnRequested;
 use Modules\Returns\Events\ReturnResolved;
+use Modules\Returns\Persistence\Models\ReturnAttachment;
 use Modules\Returns\Persistence\Models\ReturnLine;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\CurrentContext;
@@ -188,6 +191,33 @@ final class ReturnService implements Returns
             $this->syncOrder($locked->order_id);
             $this->audit->record('return.in_transit', 'return_request', $locked->id, ['number' => $locked->number, 'tracking' => $tracking, 'source' => $source]);
         });
+
+        return $this->view($return->fresh());
+    }
+
+    public function attachPhotos(int $orderId, string $returnPublicId, array $photos, string $source): ReturnView
+    {
+        $return = ReturnRequest::query()->where('order_id', $orderId)->where('public_id', $returnPublicId)->firstOrFail();
+        if (! in_array($return->status, [ReturnStatus::Requested, ReturnStatus::Approved], true)) {
+            throw ReturnRejected::attachmentsInvalid('closed');
+        }
+        foreach ($photos as $photo) {
+            if (! $photo instanceof UploadedFile || ! $photo->isValid() || ! in_array($photo->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'], true) || $photo->getSize() > 5 * 1024 * 1024) {
+                throw ReturnRejected::attachmentsInvalid('invalid_file');
+            }
+        }
+        if (ReturnAttachment::query()->where('return_request_id', $return->id)->count() + count($photos) > self::MAX_ATTACHMENTS) {
+            throw ReturnRejected::attachmentsInvalid('too_many');
+        }
+
+        $disk = (string) config('vanishop.returns.attachments_disk', 'local');
+        foreach ($photos as $photo) {
+            $path = $photo->storeAs("returns/{$return->public_id}", Str::ulid().'.'.($photo->guessExtension() ?? 'jpg'), $disk);
+            ReturnAttachment::query()->create([
+                'return_request_id' => $return->id, 'disk' => $disk, 'path' => (string) $path, 'mime_type' => (string) $photo->getMimeType(),
+                'size_bytes' => (int) $photo->getSize(), 'source' => $source, 'created_at' => now(),
+            ]);
+        }
 
         return $this->view($return->fresh());
     }
@@ -427,6 +457,10 @@ final class ReturnService implements Returns
             resolution: (string) $return->resolution,
             replacementOrderId: $return->replacement_order_id,
             returnTrackingNumber: $return->return_tracking_number,
+            attachments: ReturnAttachment::query()->where('return_request_id', $return->id)->orderBy('id')->get()->map(fn (ReturnAttachment $attachment): array => [
+                'id' => $attachment->id,
+                'url' => URL::temporarySignedRoute('returns.attachment', now()->addMinutes(30), ['attachment' => $attachment->id]),
+            ])->all(),
         ), $return);
     }
 

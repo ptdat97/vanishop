@@ -57,6 +57,9 @@ final class OrderController
             // Mã lý do trong danh mục đang bật (Admin → Đổi trả → Lý do, 0.3.74).
             'reason_code' => ['required', 'string', Rule::in(array_column($returns->reasons(App::getLocale()), 'code'))],
             'note' => ['nullable', 'string', 'max:500'],
+            // Ảnh đính kèm (§3.13-3), kiểm trước khi tạo yêu cầu để không tạo yêu cầu rồi mới báo ảnh lỗi.
+            'photos' => ['nullable', 'array', 'max:'.Returns::MAX_ATTACHMENTS],
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
         $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
@@ -69,7 +72,10 @@ final class OrderController
                 $exchanges[(int) $line['order_line_id']] = (int) $line['exchange_variant_id'];
             }
         }
-        $returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer', $exchanges);
+        $created = $returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer', $exchanges);
+        if (($data['photos'] ?? []) !== []) {
+            $returns->attachPhotos($detail->id, $created->publicId, array_values($data['photos']), 'customer');
+        }
 
         return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))], 201);
     }

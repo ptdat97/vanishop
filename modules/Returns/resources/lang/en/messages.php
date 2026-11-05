@@ -28,4 +28,5 @@ return [
     'reason_in_use' => 'This reason is used by return requests: it can be disabled, not deleted.',
     'reason_saved' => 'Reason saved.',
     'reason_deleted' => 'Reason deleted.',
+    'attachments' => ['too_many' => 'Up to :max photos per request.', 'invalid_file' => 'Photos must be JPEG, PNG or WebP, up to 5 MB.', 'closed' => 'This request has been processed; photos can no longer be added.'],
 ];

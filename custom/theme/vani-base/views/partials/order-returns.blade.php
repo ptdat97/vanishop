@@ -29,6 +29,13 @@
                 @if (($return['resolution'] ?? 'refund') === 'refund')
                     <p class="mt-1 text-slate-500">{{ __('Tiền hoàn dự kiến: :amount', ['amount' => $return['refund']['formatted'] ?? '']) }}</p>
                 @endif
+                @if (($return['attachments'] ?? []) !== [])
+                    <div class="mt-2 flex flex-wrap gap-2" data-return-photos>
+                        @foreach ($return['attachments'] as $attachment)
+                            <a href="{{ $attachment['url'] }}" target="_blank" rel="noopener"><img src="{{ $attachment['url'] }}" alt="{{ __('Ảnh đính kèm') }}" class="h-16 w-16 rounded object-cover" loading="lazy"></a>
+                        @endforeach
+                    </div>
+                @endif
                 @if ($return['return_tracking_number'] ?? null)
                     <p class="mt-1 text-slate-500">{{ __('Mã vận đơn gửi về: :number', ['number' => $return['return_tracking_number']]) }}</p>
                 @endif
@@ -49,7 +56,7 @@
         @if (($returnForm ?? null) !== null)
             <details class="rounded-[var(--radius-theme)] border border-slate-200 p-4" @if ($errors->has('lines') || $errors->has('business')) open @endif>
                 <summary class="cursor-pointer font-medium">{{ __('Gửi yêu cầu đổi/trả') }}</summary>
-                <form action="{{ vani_route('storefront.order.returns.store', $order['id']) }}" method="post" class="mt-4 space-y-4 text-sm">
+                <form action="{{ vani_route('storefront.order.returns.store', $order['id']) }}" method="post" class="mt-4 space-y-4 text-sm" enctype="multipart/form-data">
                     @csrf
                     @if ($returnForm['deadline'])
                         <p class="text-slate-500">{{ __('Hạn đổi/trả: :date', ['date' => \Modules\Shared\Support\StoreClock::format($returnForm['deadline'], 'date')]) }}</p>
@@ -111,6 +118,12 @@
                     <div>
                         <label for="return-note" class="block">{{ __('Ghi chú cho shop (không bắt buộc)') }}</label>
                         <textarea id="return-note" name="note" rows="2" maxlength="500" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">{{ old('note') }}</textarea>
+                    </div>
+                    <div>
+                        <label for="return-photos" class="block">{{ __('Ảnh sản phẩm (không bắt buộc, tối đa 5 ảnh)') }}</label>
+                        <input id="return-photos" name="photos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple class="mt-1 text-sm">
+                        @error('photos')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
+                        @error('photos.*')<p class="mt-1 text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <p class="text-xs text-slate-500">{{ __('Shop xác nhận yêu cầu rồi hướng dẫn gửi hàng về. Đổi hàng: shop gửi sản phẩm mới sau khi nhận hàng bạn gửi. Đổi sang mẫu khác vui lòng liên hệ shop.') }}</p>
                     <button type="submit" class="rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('Gửi yêu cầu') }}</button>

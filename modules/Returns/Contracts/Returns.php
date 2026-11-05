@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Returns\Contracts;
 
+use Illuminate\Http\UploadedFile;
 use Modules\Returns\Contracts\Data\ReturnView;
 
 /**
@@ -11,6 +12,8 @@ use Modules\Returns\Contracts\Data\ReturnView;
  */
 interface Returns
 {
+    public const MAX_ATTACHMENTS = 5;
+
     /**
      * @param  array<int, int>  $lines  order_line_id => số lượng
      * @param  array<int, int>  $exchanges  đổi hàng (0.3.32): order_line_id => variant thay thế, phải có cho MỌI dòng trả;
@@ -52,4 +55,14 @@ interface Returns
      * @throws ReturnRejected trạng thái khác "đã duyệt"
      */
     public function markShipped(int $orderId, string $returnPublicId, ?string $trackingNumber, string $source): ReturnView;
+
+    /**
+     * Ảnh đính kèm (0.3.81, §3.13-3): thêm ảnh cho yêu cầu còn mở (chờ duyệt / đã duyệt), tối đa MAX_ATTACHMENTS ảnh mỗi
+     * yêu cầu, JPEG/PNG/WebP ≤ 5 MB. Lưu ở disk riêng tư; ReturnView trả link có chữ ký ngắn hạn.
+     *
+     * @param  list<UploadedFile>  $photos
+     *
+     * @throws ReturnRejected
+     */
+    public function attachPhotos(int $orderId, string $returnPublicId, array $photos, string $source): ReturnView;
 }

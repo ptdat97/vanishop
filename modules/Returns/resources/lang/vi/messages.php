@@ -28,4 +28,5 @@ return [
     'reason_in_use' => 'Lý do đã được dùng trong yêu cầu đổi trả: chỉ tắt được, không xoá.',
     'reason_saved' => 'Đã lưu lý do.',
     'reason_deleted' => 'Đã xoá lý do.',
+    'attachments' => ['too_many' => 'Tối đa :max ảnh cho một yêu cầu.', 'invalid_file' => 'Ảnh phải là JPEG, PNG hoặc WebP, tối đa 5 MB.', 'closed' => 'Yêu cầu đã xử lý, không thêm ảnh được.'],
 ];

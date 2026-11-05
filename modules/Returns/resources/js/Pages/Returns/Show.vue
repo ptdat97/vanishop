@@ -30,6 +30,7 @@ const props = defineProps<{
         lockVersion: number;
         resolution: 'refund' | 'exchange';
         returnTrackingNumber: string | null;
+        attachments: Array<{ id: number; url: string }>;
     };
     exchangeQuote: null | {
         lines: Array<{ return_line_id: number; sku: string; quantity: number; unit_amount: number; credit: number; same_style: boolean }>;
@@ -86,6 +87,9 @@ function resolve(): void {
     </PageHeader>
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
     <p v-if="props.return.customerNote" class="mb-4 rounded bg-amber-50 p-3 text-sm">Khách ghi chú: {{ props.return.customerNote }}</p>
+    <div v-if="props.return.attachments?.length" class="mb-4 flex flex-wrap gap-2" data-return-photos>
+        <a v-for="photo in props.return.attachments" :key="photo.id" :href="photo.url" target="_blank" rel="noopener"><img :src="photo.url" alt="Ảnh khách gửi" class="h-24 w-24 rounded border border-slate-200 object-cover" /></a>
+    </div>
     <p v-if="props.return.returnTrackingNumber" class="mb-4 rounded bg-slate-50 p-3 text-sm">Mã vận đơn khách gửi về: <span class="font-mono">{{ props.return.returnTrackingNumber }}</span></p>
 
     <section class="mb-6 space-y-2">

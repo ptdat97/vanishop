@@ -73,6 +73,7 @@ final class OrderPresenter
                 'id' => $return->publicId, 'number' => $return->number, 'status' => $return->status, 'reason_code' => $return->reasonCode,
                 'reason' => $this->returns->reasonLabel($return->reasonCode, App::getLocale()), 'resolution' => $return->resolution,
                 'return_tracking_number' => $return->returnTrackingNumber,
+                'attachments' => $return->attachments,
                 'refund' => $money($return->refundedAmount ?? $return->refundAmount), 'created_at' => $return->createdAt,
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),

@@ -35,6 +35,9 @@ final class ReturnController
             'lines.*.exchange_variant_id' => ['nullable', 'integer'],
             'reason_code' => ['required', 'string', Rule::in(array_column($this->returns->reasons(App::getLocale()), 'code'))],
             'note' => ['nullable', 'string', 'max:500'],
+            // Ảnh đính kèm (§3.13-3), kiểm trước khi tạo yêu cầu để không tạo yêu cầu rồi mới báo ảnh lỗi.
+            'photos' => ['nullable', 'array', 'max:'.Returns::MAX_ATTACHMENTS],
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $lines = [];
@@ -54,6 +57,9 @@ final class ReturnController
         }
 
         $return = $this->returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer', $exchanges);
+        if (($data['photos'] ?? []) !== []) {
+            $this->returns->attachPhotos($detail->id, $return->publicId, array_values($data['photos']), 'customer');
+        }
 
         return back()->with('status', __('storefront::messages.return_requested', ['number' => $return->number]));
     }

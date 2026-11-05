@@ -26,6 +26,11 @@ final class ReturnRejected extends BusinessRuleViolation
         return new self('return.quantity_exceeded', 422, __('returns::messages.quantity_exceeded', ['allowed' => $allowed]), ['order_line_id' => $orderLineId, 'allowed' => $allowed]);
     }
 
+    public static function attachmentsInvalid(string $reason): self
+    {
+        return new self('return.attachments_invalid', 422, __("returns::messages.attachments.{$reason}", ['max' => Returns::MAX_ATTACHMENTS]), ['reason' => $reason]);
+    }
+
     public static function reasonInvalid(string $code): self
     {
         return new self('return.reason_invalid', 422, __('returns::messages.reason_invalid'), ['reason_code' => $code]);

@@ -31,5 +31,11 @@ final readonly class ReturnView
         public ?int $replacementOrderId = null,
         /** Mã vận đơn khách gửi hàng về (0.3.74). */
         public ?string $returnTrackingNumber = null,
+        /**
+         * Ảnh đính kèm (0.3.81): link có chữ ký, hết hạn sau 30 phút.
+         *
+         * @var list<array{id: int, url: string}>
+         */
+        public array $attachments = [],
     ) {}
 }

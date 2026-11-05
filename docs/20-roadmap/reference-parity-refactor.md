@@ -235,7 +235,7 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 **Đặc tả cần làm**
 1. ✅ (R3, 2026-11-05, Core 0.3.74 — trước là danh sách mã trong config; nay bảng `return_reasons`, Admin → Đổi trả → Lý do đổi trả; cờ "lỗi do cửa hàng" mới lưu, chưa có quy tắc phí ship trả hàng dùng nó) **Danh mục lý do đổi trả** do Admin quản lý (tên vi/en, thứ tự, bật/tắt, cờ "lỗi do cửa hàng" → dùng cho quy tắc phí ship trả hàng và báo cáo). Lý do đã dùng không xoá được, chỉ tắt. Kiểm tra hiện lý do đang là enum hay text.
 2. ✅ (R3, 2026-11-05, Core 0.3.74 — web + `POST /orders/{id}/returns/{returnId}/shipped`) **Khách báo "đã gửi hàng về"** kèm mã vận đơn trả (tuỳ chọn) → chuyển yêu cầu sang trạng thái đang gửi về (đã có trạng thái).
-3. **Ảnh đính kèm** yêu cầu (tối đa 5, qua Thư viện media, chỉ khách sở hữu đơn và nhân viên xem được) — P2.
+3. ✅ (R4, 2026-11-05, Core 0.3.81 — **khác đặc tả**: lưu ở disk riêng tư `vanishop.returns.attachments_disk` thay vì Thư viện ảnh, vì Thư viện ảnh công khai; xem qua link có chữ ký 30 phút) **Ảnh đính kèm** yêu cầu (tối đa 5, qua Thư viện media, chỉ khách sở hữu đơn và nhân viên xem được) — P2.
 
 **Vị trí**: Core `Returns`. **Ưu tiên**: P1 (1, 2), P2 (3).
 
@@ -436,6 +436,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L13 | Chuỗi cũ `storefront::messages.return_reasons` không còn dùng (lý do lấy từ danh mục) | Storefront | Xoá khi dọn lang |
 | L14 | Lượt xem: lần xem đầu chưa có cookie phiên lọc trùng theo IP + trình duyệt (chung NAT có thể đếm thiếu); `ProductViewed` không có khách khi trang chạy chế độ CDN chưa có phiên | Catalog, Storefront | Định danh người xem ẩn danh riêng (cookie ngắn hạn) nếu cần độ chính xác |
 | L15 | Từ điển dữ liệu sinh từ MySQL máy dev (9.x) — nếu CI MySQL 8.4 in kiểu/mặc định khác thì `--check` báo lệch: sinh lại từ CI | CI | Sinh lại bằng MySQL 8.4 khi lệch |
+| L16 | Ảnh đổi trả không tự xoá khi khách bị ẩn danh hoá hay sau thời hạn lưu; chỉ gửi kèm khi tạo yêu cầu (chưa có nút thêm ảnh sau) | Returns | Dọn theo chính sách lưu trữ; nút thêm ảnh khi yêu cầu còn mở |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.81 — 2026-11-05
+
+Chỉ thêm. Ảnh đính kèm yêu cầu đổi trả ([reference-parity §3.13-3](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- `Returns::attachPhotos(orderId, returnPublicId, photos, source)`, `Returns::MAX_ATTACHMENTS` (5); `ReturnView::$attachments` (`[{id, url}]` — link có chữ ký 30 phút, route `returns.attachment`); `ReturnRejected::attachmentsInvalid()` (`return.attachments_invalid`).
+- Bảng `return_attachments`; cấu hình `vanishop.returns.attachments_disk` (`VANI_RETURN_ATTACHMENTS_DISK`, mặc định `local` — không public).
+- Storefront API `POST /orders/{id}/returns` và form web nhận `photos[]` (JPEG/PNG/WebP ≤ 5 MB, tối đa 5); đơn có `returns[].attachments`.
+
 ## 0.3.80 — 2026-11-05
 
 Không đổi public API. Vận hành ([reference-parity §3.20](../20-roadmap/reference-parity-refactor.md)).
