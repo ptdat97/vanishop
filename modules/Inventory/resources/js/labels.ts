@@ -7,5 +7,6 @@ export interface InventoryLabels {
     discrepancy: Record<string, string>;
     resolution: Record<string, string>;
     import_status: Record<string, string>;
+    bulk_action: Record<string, string>;
     default_location: string;
 }

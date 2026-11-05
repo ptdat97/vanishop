@@ -70,10 +70,12 @@ it('lưới tồn: variant × location, ATS = tồn − giữ − an toàn', fun
         ->has('locations', 2)
         ->where('locations.0.code', 'WH-HN')
         ->where('locations.1.external', true)
-        ->has('variants', 2)
-        ->where('variants.0.levels.0.available', 8)
-        ->where('variants.1.levels.0.on_hand', 0)
-        ->where('variants.0.sellable', 8)
+        ->has('products', 1)
+        ->has('products.0.variants', 2)
+        ->where('products.0.variants.0.levels.0.available', 8)
+        ->where('products.0.variants.1.levels.0.on_hand', 0)
+        ->where('products.0.variants.0.sellable', 8)
+        ->where('products.0.sellable', 8)
         ->where('canAdjust', false)
         ->where('urls.locations', null));
 
@@ -119,14 +121,15 @@ it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, ph
     [$otherS] = P::variants($other, ['S']);
     I::stock($this->hn, $otherS->id, 20);
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'catalog.view', 'catalog.manage']), 'staff');
-    $skus = fn (string $query) => collect($this->get("{$this->stockUrl}{$query}")->assertOk()->viewData('page')['props']['variants'])->pluck('sku')->all();
+    $skus = fn (string $query) => collect($this->get("{$this->stockUrl}{$query}")->assertOk()->viewData('page')['props']['products'])->flatMap(fn (array $product) => $product['variants'])->pluck('sku')->all();
 
     expect($skus(''))->toHaveCount(3)
         ->and($skus('?q=thun'))->toBe([$otherS->sku])
         ->and($skus('?q='.$this->m->sku))->toBe([$this->m->sku])
         ->and($skus('?filter=out'))->toBe([$this->m->sku])
         ->and($skus('?filter=low'))->toBe([$this->s->sku])
-        ->and($skus('?style=LM-DR01'))->toHaveCount(2);
+        ->and($skus('?style=LM-DR01'))->toHaveCount(2)
+        ->and($skus('?q=LM-DR01&size='.T::seed(fn () => $this->m->size->code)))->toBe([$this->m->sku]);
 
     $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('stockUrl', fn (string $url) => str_ends_with($url, '/admin/inventory/stock?style=LM-DR01')));
 });
@@ -188,4 +191,38 @@ it('cửa hàng chưa có kho: trang tồn cảnh báo, nút tạo Kho chính; l
     $this->artisan('vani:inventory:ensure-location')->assertSuccessful();
     expect(T::seed(fn () => Location::query()->count()))->toBe(1);
     $this->get($this->stockUrl)->assertInertia(fn (Assert $page) => $page->where('warnings.no_location', false)->where('warnings.no_online_location', false));
+});
+
+it('sửa hàng loạt tại một kho: SKU đã chọn, cả sản phẩm hoặc mọi kết quả lọc; trừ quá tồn thì bỏ qua SKU đó', function () {
+    I::stock($this->hn, $this->s->id, 5);
+    $other = T::product($this->brand->id, ['style_code' => 'LM-TS02', 'name' => 'Áo thun']);
+    [$otherS, $otherM] = P::variants($other);
+    $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust']), 'staff');
+    $bulk = fn (array $data) => $this->post("{$this->stockUrl}/bulk", ['location_id' => $this->hn->id, ...$data]);
+
+    // Đặt tồn = 10 cho hai SKU đã chọn.
+    $bulk(['action' => 'set', 'quantity' => 10, 'variant_ids' => [$this->s->id, $this->m->id]])->assertSessionHasNoErrors()
+        ->assertSessionHas('success', 'Tại WH-HN: đã đổi 2 SKU, 0 SKU giữ nguyên.');
+    expect(stockOnHand($this->hn, $this->s->id))->toBe(10)->and(stockOnHand($this->hn, $this->m->id))->toBe(10);
+
+    // Chọn mọi kết quả lọc theo tên "thun" (cả trang khác): cộng 3, cần lý do.
+    $bulk(['action' => 'adjust', 'quantity' => 3, 'all' => true, 'criteria' => ['q' => 'thun']])->assertSessionHasErrors('reason');
+    $bulk(['action' => 'adjust', 'quantity' => 3, 'reason' => 'Nhập hàng', 'all' => true, 'criteria' => ['q' => 'thun']])->assertSessionHasNoErrors();
+    expect(stockOnHand($this->hn, $otherS->id))->toBe(3)->and(stockOnHand($this->hn, $otherM->id))->toBe(3)
+        ->and(stockOnHand($this->hn, $this->s->id))->toBe(10);
+
+    // Trừ 5 cho cả 4 SKU: SKU chỉ có 3 bị bỏ qua, phần còn lại vẫn áp.
+    $bulk(['action' => 'adjust', 'quantity' => -5, 'reason' => 'Hàng lỗi', 'variant_ids' => [$this->s->id, $this->m->id, $otherS->id, $otherM->id]])
+        ->assertSessionHasErrors('changes');
+    expect(stockOnHand($this->hn, $this->s->id))->toBe(5)->and(stockOnHand($this->hn, $otherS->id))->toBe(3);
+
+    // Tồn an toàn (được cả kho đồng bộ), số âm bị chặn; kho đồng bộ không đặt tồn được.
+    $bulk(['action' => 'safety', 'quantity' => 1, 'variant_ids' => [$this->s->id]])->assertSessionHasNoErrors();
+    $bulk(['action' => 'set', 'quantity' => -1, 'variant_ids' => [$this->s->id]])->assertSessionHasErrors('quantity');
+    $this->post("{$this->stockUrl}/bulk", ['location_id' => $this->erp->id, 'action' => 'set', 'quantity' => 1, 'variant_ids' => [$this->s->id]])->assertSessionHasErrors('location_id');
+    expect(T::seed(fn () => DB::table('stock_levels')->where('location_id', $this->hn->id)->where('variant_id', $this->s->id)->value('safety_stock')))->toBe(1)
+        ->and(AuditLog::query()->where('action', 'inventory.stock.bulk')->count())->toBe(4);
+
+    $this->actingAs(T::staff(['admin.access', 'inventory.view']), 'staff');
+    $bulk(['action' => 'set', 'quantity' => 1, 'variant_ids' => [$this->s->id]])->assertForbidden();
 });

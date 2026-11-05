@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.84 — 2026-11-05
+
+Không đổi API plugin. Admin → Tồn kho sửa linh hoạt hơn.
+
+### Đổi
+- Lưới tồn gom theo sản phẩm, phân trang theo sản phẩm (20/trang, mọi SKU của một sản phẩm cùng trang); lọc thêm màu, size.
+- Chọn nhiều: từng SKU, cả sản phẩm, cả trang, hoặc mọi SKU khớp bộ lọc → sửa hàng loạt tại một kho (`POST /{admin}/inventory/stock/bulk`): đặt số tồn, cộng/trừ (bắt buộc lý do), hết hàng (đặt 0), tồn an toàn. Mỗi SKU một biến động; SKU không áp được (trừ quá tồn) bỏ qua và báo số lượng; audit `inventory.stock.bulk` cho cả lô.
+- `StockAdjustmentService::setSafetyStock` trả `bool` (có thay đổi). Enter/Shift+Enter trong ô tồn chuyển xuống/lên dòng.
+
 ## 0.3.83 — 2026-11-05
 
 Chỉ thêm. Tồn kho dễ cấu hình (đợt 1).

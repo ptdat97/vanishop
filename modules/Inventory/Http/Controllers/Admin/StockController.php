@@ -7,12 +7,15 @@ namespace Modules\Inventory\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\StockAdjustmentService;
+use Modules\Inventory\Application\StockBulkEditor;
 use Modules\Inventory\Application\StockCsv;
 use Modules\Inventory\Application\StockGrid;
 use Modules\Inventory\Application\StockQueries;
@@ -22,7 +25,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class StockController
 {
-    private const PER_PAGE = 50;
+    /** Sản phẩm mỗi trang (mọi variant của một sản phẩm luôn cùng trang). */
+    private const PER_PAGE = 20;
 
     public function home(): RedirectResponse
     {
@@ -32,18 +36,16 @@ final class StockController
     }
 
     /**
-     * Lưới tồn: mọi variant (tìm theo tên/mã/SKU, lọc hết hàng / sắp hết) × kho; sửa số tồn ngay trong ô (lưu cả trang).
-     * `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
+     * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc màu, size, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
+     * hàng loạt. `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
     public function index(Request $request, StockGrid $grid): Response
     {
         Gate::authorize('inventory.view');
 
-        $text = trim((string) $request->query('q', ''));
-        $style = trim((string) $request->query('style', ''));
-        $filter = in_array($request->query('filter'), StockGrid::FILTERS, true) ? (string) $request->query('filter') : 'all';
+        $criteria = $this->criteria($request->query());
         $page = max(1, (int) $request->query('page', 1));
-        $result = $grid->page($text, $style === '' ? null : $style, $filter, $page, self::PER_PAGE);
+        $result = $grid->page($criteria, $page, self::PER_PAGE);
         $canManageLocations = Gate::allows('inventory.locations.manage', [ScopeRef::owner()]);
         $online = array_filter($result['locations'], fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders);
 
@@ -52,6 +54,7 @@ final class StockController
             'urls' => [
                 'base' => route('admin.inventory.stock.index'),
                 'batch' => route('admin.inventory.stock.batch'),
+                'bulk' => route('admin.inventory.stock.bulk'),
                 'change' => route('admin.inventory.stock.change'),
                 'export' => route('admin.inventory.stock.export'),
                 'import' => route('admin.inventory.stock.import'),
@@ -60,17 +63,64 @@ final class StockController
                 'locations' => $canManageLocations ? route('admin.inventory.locations.index') : null,
                 'default_location' => $canManageLocations && $result['locations'] === [] ? route('admin.inventory.stock.default-location') : null,
             ],
-            'query' => ['q' => $text, 'style' => $style, 'filter' => $filter],
-            'pagination' => ['page' => $page, 'per_page' => self::PER_PAGE, 'total' => $result['total']],
+            'query' => $criteria,
+            'options' => ['colors' => $result['colors'], 'sizes' => $result['sizes']],
+            'pagination' => ['page' => $page, 'per_page' => self::PER_PAGE, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
             'threshold' => (int) config('vanishop.inventory.low_stock_threshold', 3),
             'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
             'locations' => array_map(fn (Location $location): array => [
                 'id' => $location->id, 'code' => $location->code, 'name' => $location->name,
                 'external' => ! $location->managesOnHand(), 'online' => $location->status === 'active' && $location->ships_online_orders,
             ], $result['locations']),
-            'variants' => $result['rows'],
+            'products' => $result['products'],
             'canAdjust' => Gate::allows('inventory.adjust'),
         ]);
+    }
+
+    /**
+     * Sửa hàng loạt tại một kho: các SKU đã chọn (`variant_ids`) hoặc mọi SKU khớp bộ lọc (`all` + điều kiện lọc).
+     */
+    public function bulk(Request $request, StockGrid $grid, StockBulkEditor $editor, StockQueries $queries): RedirectResponse
+    {
+        Gate::authorize('inventory.adjust');
+        $data = $request->validate([
+            'location_id' => ['required', 'integer'],
+            'action' => ['required', Rule::in(StockBulkEditor::ACTIONS)],
+            'quantity' => ['required', 'integer', 'min:-100000', 'max:1000000'],
+            'reason' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn (): bool => $request->input('action') === 'adjust')],
+            'all' => ['boolean'],
+            'variant_ids' => ['exclude_if:all,true', 'required', 'array', 'min:1', 'max:'.StockBulkEditor::MAX_VARIANTS],
+            'variant_ids.*' => ['integer'],
+            'criteria' => ['nullable', 'array'],
+        ]);
+        if ($data['action'] !== 'adjust' && $data['quantity'] < 0) {
+            throw ValidationException::withMessages(['quantity' => __('inventory::messages.bulk_negative')]);
+        }
+        $location = collect($queries->locations())->firstWhere('id', (int) $data['location_id']);
+        abort_if($location === null, 404);
+
+        $ids = ($data['all'] ?? false) ? $grid->variantIds($this->criteria((array) ($data['criteria'] ?? []))) : array_map('intval', $data['variant_ids']);
+        $reason = trim((string) ($data['reason'] ?? '')) ?: __('inventory::messages.bulk_reason');
+        $result = $editor->apply($location, $ids, $data['action'], (int) $data['quantity'], $reason);
+
+        $response = back()->with('success', __('inventory::messages.bulk_done', ['updated' => $result['updated'], 'unchanged' => $result['unchanged'], 'location' => $location->code]));
+
+        return $result['skipped'] === 0 ? $response : $response->withErrors(['changes' => __('inventory::messages.bulk_skipped', ['count' => $result['skipped']])]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array{q: string, style: string, filter: string, color: string, size: string}
+     */
+    private function criteria(array $input): array
+    {
+        $filter = (string) ($input['filter'] ?? 'all');
+
+        return [
+            'q' => trim((string) ($input['q'] ?? '')), 'style' => trim((string) ($input['style'] ?? '')),
+            'filter' => in_array($filter, StockGrid::FILTERS, true) ? $filter : 'all',
+            'color' => trim((string) ($input['color'] ?? '')), 'size' => trim((string) ($input['size'] ?? '')),
+        ];
     }
 
     /**

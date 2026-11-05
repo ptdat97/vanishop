@@ -85,17 +85,22 @@ final class StockAdjustmentService
         }, attempts: 3);
     }
 
-    public function setSafetyStock(Location $location, int $variantId, int $safetyStock): void
+    /**
+     * @return bool có thay đổi
+     */
+    public function setSafetyStock(Location $location, int $variantId, int $safetyStock): bool
     {
-        DB::transaction(function () use ($location, $variantId, $safetyStock): void {
+        return DB::transaction(function () use ($location, $variantId, $safetyStock): bool {
             $record = $this->ledger->lock([[$location->id, $variantId]], createMissing: true)["{$location->id}:{$variantId}"];
             if ($record->safety_stock === $safetyStock) {
-                return;
+                return false;
             }
 
             $this->ledger->save($record, $record->toDomain()->withSafetyStock($safetyStock), MovementType::SafetyStock, "safety_stock={$safetyStock}");
             $this->audit->record('inventory.stock.safety_stock', 'stock_level', $record->id, ['location' => $location->code, 'variant_id' => $variantId, 'safety_stock' => $safetyStock]);
             event(new AvailabilityChanged([$variantId]));
+
+            return true;
         });
     }
 

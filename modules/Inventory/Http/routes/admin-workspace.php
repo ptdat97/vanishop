@@ -9,6 +9,7 @@ use Modules\Inventory\Http\Controllers\Admin\StockTransferController;
 Route::get('stock', [StockController::class, 'index'])->name('stock.index');
 Route::post('stock', [StockController::class, 'change'])->name('stock.change');
 Route::post('stock/batch', [StockController::class, 'batch'])->name('stock.batch');
+Route::post('stock/bulk', [StockController::class, 'bulk'])->name('stock.bulk');
 Route::post('stock/default-location', [StockController::class, 'defaultLocation'])->name('stock.default-location');
 Route::get('stock/export', [StockController::class, 'export'])->name('stock.export');
 Route::post('stock/import', [StockController::class, 'import'])->name('stock.import');

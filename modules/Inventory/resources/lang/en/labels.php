@@ -5,6 +5,7 @@
 */
 
 return [
+    'bulk_action' => ['set' => 'Set on hand =', 'adjust' => 'Add/remove stock', 'zero' => 'Sold out (on hand = 0)', 'safety' => 'Set safety stock ='],
     'import_status' => ['change' => 'Change', 'same' => 'Unchanged', 'unknown_sku' => 'Unknown SKU', 'unknown_location' => 'Unknown location', 'external' => 'Managed by an external system', 'duplicate' => 'Duplicate of an earlier row', 'invalid' => 'Invalid quantity'],
     'default_location' => 'Main warehouse',
     'location_type' => ['warehouse' => 'Warehouse', 'store' => 'Store', 'virtual' => 'Virtual (dropship, partner)'],
