@@ -2,6 +2,8 @@
 
 > Trạng thái: **Partially Implemented** (slice 0). Vị trí trong mô hình microkernel (vòng 0 Extension nạp plugin vòng 2–3): [commerce-kernel](../02-architecture/commerce-kernel.md). Đã có: manifest, dependency resolver, lifecycle, loader, cache, safe mode, `PluginServiceProvider`, CLI chính, plugin mẫu. Chi tiết từng phần ghi ngay trong các mục bên dưới. Quyết định: [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md) (chỉ triển khai qua mã nguồn), [ADR-027](../19-adr/ADR-027-plugin-data-no-core-columns.md) (dữ liệu plugin). **Viết plugin: đọc [contracts/](contracts/README.md)** (chữ ký chính xác, lỗi thường gặp, checklist).
 
+> **Chỉ plugin nội bộ** (Owner, 2026-11-05 — [ADR-033 mục 5](../19-adr/ADR-033-out-of-scope.md)): hiện cấm phát triển plugin cho bên thứ ba, chưa làm plugin SDK. Mọi plugin trong `custom/plugin/` do đội VaniShop viết, review, triển khai cùng mã nguồn.
+
 ## 1. Hướng phụ thuộc
 
 ```text

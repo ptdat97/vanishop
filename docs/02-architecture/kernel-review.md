@@ -11,7 +11,7 @@ VaniShop **không phải microkernel thuần** mà là **modular monolith có l�
 
 Với thương mại điện tử, lõi dày là **đúng**. Reservation, state machine đơn, tiền, snapshot và idempotency phải chạy trong cùng transaction, nên không thể đẩy ra plugin. Slice 10–Notification đã chứng minh mô hình chạy được: 6 plugin (VietQR, GHN, PromotionRules, SMS, ZNS, HelloWorld) cắm vào mà **không chạm tầng nội bộ** của Core, và arch test R5 giữ được điều đó.
 
-Tuy vậy, **bề mặt mở rộng (public API cho plugin) chưa đủ chặt để giao cho đội khác hoặc bên thứ ba viết plugin**. Có năm lỗ hổng chính:
+Tuy vậy, **bề mặt mở rộng (public API cho plugin) chưa đủ chặt để giao cho đội khác hoặc bên thứ ba viết plugin** (cập nhật 2026-11-05: plugin chỉ phát triển nội bộ, chưa làm SDK cho bên thứ ba — [ADR-033 mục 5](../19-adr/ADR-033-out-of-scope.md)). Có năm lỗ hổng chính:
 
 1. Một nửa số tag extension point nằm trong tầng `Application`, là tầng plugin bị cấm import.
 2. Plugin không có cách nghe domain event theo scope brand.

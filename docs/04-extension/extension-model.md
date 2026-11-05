@@ -154,6 +154,8 @@ return [
 
 ## 5. Compatibility policy
 
+"Public" ở đây là public **cho plugin nội bộ**: hiện không có plugin bên thứ ba và chưa làm plugin SDK ([ADR-033 mục 5](../19-adr/ADR-033-out-of-scope.md)). Policy dưới đây giữ để plugin nội bộ không vỡ khi Core đổi.
+
 Extension point public được đánh version theo **SemVer của Core**:
 
 | Thay đổi | Cho phép ở |

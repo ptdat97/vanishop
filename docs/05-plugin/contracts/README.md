@@ -2,6 +2,8 @@
 
 > Trạng thái: **Implemented** cho các contract liệt kê dưới đây (kiểm chứng từ `modules/*/Contracts/`, `modules/Extension/`). Danh mục đầy đủ extension point: [extension-point-catalog](../../04-extension/extension-point-catalog.md). Cơ chế và policy: [extension-model](../../04-extension/extension-model.md).
 
+> Người đọc: **đội VaniShop** — plugin chỉ phát triển nội bộ, chưa có SDK cho bên thứ ba ([ADR-033 mục 5](../../19-adr/ADR-033-out-of-scope.md)).
+
 Thư mục này trả lời câu hỏi **"viết plugin loại X thì phải implement chính xác cái gì, Core gọi lúc nào, sai thì chuyện gì xảy ra"**. Mỗi tài liệu có: chữ ký lấy từ code, thời điểm Core gọi (trong hay ngoài transaction), trách nhiệm plugin vs Core, lỗi thường gặp, checklist.
 
 | Tài liệu | Dùng khi |

@@ -22,6 +22,14 @@ VaniShop là phần mềm cho **một Owner, một website, một người bán*
 3. Tên các hạng mục **chỉ xuất hiện trong ADR này**. Test `tests/Architecture/ScopeTest.php` chặn chúng trong `docs/` và code.
 4. Mở lại một hạng mục cần ADR mới thay thế ADR này, do Owner quyết định.
 
+### Bổ sung 2026-11-05 — Plugin chỉ phát triển nội bộ (Owner)
+
+5. **Hiện tại cấm** phát triển plugin cho bên thứ ba và **chưa cần plugin SDK**: mọi plugin trong `custom/plugin/` do đội VaniShop viết, review và triển khai cùng mã nguồn ([ADR-026](ADR-026-plugin-deploy-via-code.md)). Khác các hạng mục ở mục 1: đây là quyết định **tạm thời theo nhu cầu**, không phải ngoài mục tiêu vĩnh viễn — được nhắc trong tài liệu, không thuộc danh sách ScopeTest chặn.
+   - **Không làm**: gói SDK/khung dự án tách riêng để người ngoài viết plugin, tài liệu "hướng dẫn cho nhà phát triển bên ngoài", cơ chế phân phối/ký số/xác minh plugin của bên khác, sandbox chạy mã không tin cậy, cài plugin qua upload hoặc từ máy chủ ngoài (ADR-026 đã loại).
+   - **Vẫn giữ** (phục vụ đội nội bộ): contract, hook, `PluginServiceProvider`, `docs/05-plugin/contracts/`, contract test, snapshot public API + `CHANGELOG-extension` và compatibility policy ([extension-model §5](../04-extension/extension-model.md)) — để plugin nội bộ không vỡ khi Core đổi, và để module Core/plugin tách bạch (R4, R5, R35).
+   - Khi thiết kế extension point: tối ưu cho người viết nội bộ (đọc được mã Core, chạy cùng test suite); không thêm lớp tương thích, ổn định API dài hạn hay kiểm soát quyền chỉ để phục vụ bên thứ ba.
+   - Mở lại (cho phép plugin bên thứ ba / làm SDK) cần ADR mới do Owner quyết định, kèm đánh giá bảo mật (mã bên ngoài chạy cùng tiến trình, cùng quyền DB).
+
 Không bị ảnh hưởng: nhân viên tạo đơn trong Admin (`source = admin`) cho khách liên hệ qua bất kỳ kênh nào; Zalo Mini App và app dùng Storefront API (`source = zalo`, `app`); campaign và mã giảm giá của cửa hàng.
 
 ## Alternatives

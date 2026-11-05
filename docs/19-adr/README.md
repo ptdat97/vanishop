@@ -42,7 +42,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [039](ADR-039-admin-ui-reka.md) | Bộ component Admin trên Reka UI (headless) + Tailwind; trang module/plugin chỉ dùng `@admin/Components` | Accepted |
 | [040](ADR-040-typed-links-menus.md) | Link có kiểu (`LinkTarget`, `LinkResolver`, extension point `LinkType`) và menu storefront theo vị trí theme khai báo; nháp/xuất bản/phiên bản | Accepted |
 | [041](ADR-041-translation-provider.md) | Dịch máy trong form bản dịch Admin: extension point `TranslationProvider` (plugin), kết quả chỉ điền vào form, nhân viên duyệt rồi lưu | Proposed |
-| [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) | Accepted |
+| [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) · bổ sung 2026-11-05: plugin chỉ phát triển nội bộ, chưa làm plugin SDK cho bên thứ ba | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 
 "Accepted" nghĩa là quyết định đã được chốt, **không** có nghĩa là đã có code. Trạng thái implementation nằm ở [status](../00-overview/status.md).
