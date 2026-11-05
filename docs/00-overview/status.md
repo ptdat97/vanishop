@@ -107,6 +107,7 @@
 | `vani.tracking-pixels` (Meta Pixel, GA4, GTM; sự kiện mua từ server qua queue; đồng ý cookie) — chuyển từ VaniCommerce, M1 | Implemented 2026-10-14, có feature test (không lộ dữ liệu khách ở trang cache, mua một lần, đồng ý cookie, băm dữ liệu, thử lại) |
 | `vani.shipping-flat-rate` 1.1 — thanh tiến độ miễn phí giao (cùng ngưỡng `free_over`), chuyển từ VaniCommerce, M1 | Implemented 2026-10-14, có feature test |
 | `vani.size-chart` — bảng size + gợi ý size, gán theo sản phẩm/danh mục/thương hiệu/mặc định; chuyển từ VaniCommerce, M1 | Implemented 2026-10-14, có feature test |
+| `vani.lookbook` — lookbook theo mùa/chủ đề (danh sách, thư viện ảnh, "Xem thêm tại" danh mục, khối trang chủ, link header, sitemap, Storefront API, Admin) — [đặc tả](../05-plugin/specs/lookbook.md) | Implemented 2026-11-05 (1.0.0), có feature test |
 | `vani.storefront-extras` — 8 khối trang chủ (bán chạy, đã xem, video hero, trình chiếu, lưới banner, sản phẩm theo tab, biểu tượng + chữ, Markdown) + "Đã xem" ở giỏ — [đặc tả](../05-plugin/specs/storefront-extras.md) | Implemented 2026-11-05 (1.0.0), contract test 8 khối |
 | `vani.wishlist` — yêu thích (thẻ sản phẩm, PDP, `/tai-khoan/yeu-thich`, vãng lai lưu trình duyệt + gộp khi đăng nhập, báo có hàng lại/giảm giá marketing, Storefront API) — [đặc tả](../05-plugin/specs/wishlist.md) | Implemented 2026-11-05 (1.0.0, Core 0.3.76), có feature test |
 | `vani.promotion-rules` (rule `min_order_subtotal`, `min_quantity`, `in_collections`, `first_order_only`, `in_brands`) | Implemented, có unit + feature + contract test |
