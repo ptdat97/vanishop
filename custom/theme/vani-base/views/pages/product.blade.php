@@ -135,4 +135,13 @@
             </div>
         </section>
     @endforeach
+
+    {{-- Lượt xem + "Đã xem gần đây" (§3.5-2): JS gửi beacon sau khi trang tải, lưu tối đa 12 mẫu trong trình duyệt và hiện
+         các mẫu đã xem khác (thẻ lấy từ Storefront API). HTML giống nhau với mọi khách; không JS → khung ẩn. --}}
+    <section class="mt-12" hidden data-vani-recently-viewed data-style-id="{{ $product['id'] }}"
+             data-view-url="{{ route('storefront.session.viewed') }}" data-products-url="{{ route('api.storefront.v1.products.index') }}" data-locale="{{ app()->getLocale() }}"
+             data-product-url="{{ vani_route('storefront.product', '__slug__') }}">
+        <h2 class="mb-4 text-lg font-medium">{{ __('Đã xem gần đây') }}</h2>
+        <div class="grid grid-cols-2 gap-6 md:grid-cols-6" data-vani-recently-viewed-list></div>
+    </section>
 @endsection

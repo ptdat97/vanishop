@@ -208,6 +208,64 @@ document.querySelectorAll('form[data-vani-suggest]').forEach((form) => {
     document.addEventListener('click', (event) => !form.contains(event.target) && close());
 });
 
+// Trang sản phẩm: beacon lượt xem + "Đã xem gần đây" (§3.5-2). Danh sách chỉ ở trình duyệt (tối đa 12 mẫu).
+const recent = document.querySelector('[data-vani-recently-viewed]');
+if (recent) {
+    const KEY = 'vani.recently_viewed';
+    const current = Number(recent.dataset.styleId);
+    let ids = [];
+    try {
+        ids = (JSON.parse(localStorage.getItem(KEY) || '[]') || []).map(Number).filter((id) => id > 0);
+    } catch {
+        ids = [];
+    }
+    const others = ids.filter((id) => id !== current).slice(0, 6);
+    try {
+        localStorage.setItem(KEY, JSON.stringify([current, ...ids.filter((id) => id !== current)].slice(0, 12)));
+    } catch {
+        // trình duyệt chặn lưu trữ: bỏ qua
+    }
+    const body = new FormData();
+    body.append('style_id', String(current));
+    if (!(navigator.sendBeacon && navigator.sendBeacon(recent.dataset.viewUrl, body))) {
+        fetch(recent.dataset.viewUrl, { method: 'POST', body, credentials: 'same-origin', keepalive: true }).catch(() => {});
+    }
+    if (others.length) {
+        fetch(`${recent.dataset.productsUrl}?ids=${others.join(',')}`, { headers: { Accept: 'application/json', 'X-Vani-Locale': recent.dataset.locale || '' } })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((json) => {
+                const cards = (json?.data || []).map((product) => {
+                    const link = document.createElement('a');
+                    link.href = recent.dataset.productUrl.replace('__slug__', encodeURIComponent(product.slug));
+                    link.className = 'block text-sm';
+                    if (product.image_url) {
+                        const image = document.createElement('img');
+                        image.src = product.image_url;
+                        image.alt = '';
+                        image.loading = 'lazy';
+                        image.className = 'mb-2 aspect-[3/4] w-full rounded-[var(--radius-theme)] object-cover';
+                        link.append(image);
+                    }
+                    const name = document.createElement('span');
+                    name.className = 'block font-medium';
+                    name.textContent = product.name || '';
+                    link.append(name);
+                    if (product.price?.min?.formatted) {
+                        const price = document.createElement('span');
+                        price.className = 'block text-primary';
+                        price.textContent = product.price.min.formatted;
+                        link.append(price);
+                    }
+                    return link;
+                });
+                if (!cards.length) return;
+                recent.querySelector('[data-vani-recently-viewed-list]').replaceChildren(...cards);
+                recent.hidden = false;
+            })
+            .catch(() => {});
+    }
+}
+
 /**
  * Phần riêng của khách (storefront §5): không CDN thì layout nhúng sẵn `script[data-vani-session-state]`; trang cache CDN
  * lấy từ /_vani/phien (thêm flash + cart_change). Cùng một hàm áp dụng → hai chế độ hiển thị như nhau.

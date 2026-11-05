@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.79 — 2026-11-05
+
+Chỉ thêm. Lượt xem sản phẩm + đã xem gần đây ([reference-parity §3.5-2](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Event `Catalog\Events\ProductViewed(styleId, ?customerId)` (đã lọc trùng cùng phiên 30 phút).
+- Contract `Catalog\Contracts\ProductViewStatistics` (`record`, `counts(styleIds, days)`, `top(days, limit)`); bảng `style_view_stats` (gom theo giờ, không lưu người xem).
+- Beacon `POST /_vani/xem` (`style_id`, miễn CSRF, 204). Theme `vani-base`: PDP gửi beacon, lưu tối đa 12 mẫu trong `localStorage` (`vani.recently_viewed` — plugin đọc được) và hiện "Đã xem gần đây" từ `GET /products?ids=`.
+
 ## 0.3.78 — 2026-11-05
 
 Chỉ thêm. Khách xác nhận đã nhận hàng ([reference-parity §3.11-1](../20-roadmap/reference-parity-refactor.md)).

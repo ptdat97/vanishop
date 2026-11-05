@@ -14,6 +14,7 @@ use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VideoDrivers;
+use Modules\Catalog\Contracts\ProductViewStatistics;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Http\Requests\Admin\ProductRequest;
 use Modules\Catalog\Persistence\Models\Attribute;
@@ -32,7 +33,7 @@ final class ProductController
 {
     use ConvertsDomainErrors;
 
-    public function index(Request $request, AdminScreen $screen): Response
+    public function index(Request $request, AdminScreen $screen, ProductViewStatistics $views): Response
     {
         Gate::authorize('catalog.view');
 
@@ -53,12 +54,16 @@ final class ProductController
             ->paginate(30)
             ->withQueryString();
 
+        // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang.
+        $viewCounts = $views->counts($styles->getCollection()->pluck('id')->all());
+
         return Inertia::render('Catalog::Products/Index', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
             'filters' => ['q' => $search, 'status' => $status],
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
+                    'views' => $viewCounts[$style->id] ?? 0,
                     'id' => $style->id,
                     'style_code' => $style->style_code,
                     'name' => $style->translate('name'),
