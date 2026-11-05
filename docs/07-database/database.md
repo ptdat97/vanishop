@@ -1,5 +1,7 @@
 # Database
 
+> Cột, kiểu, index, khoá ngoại thực tế của từng bảng: [schema.generated.md](schema.generated.md) (sinh bởi `php artisan vani:docs:schema`, CI kiểm khớp).
+
 > Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension, Catalog, Pricing, Inventory (trừ transfer/reconciliation), Cart, Promotion, Ordering (orders, order_lines, order_adjustments, order_events), Shared (`idempotency_keys`, `number_sequences`) ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md). Schema dưới đây theo định hướng một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); migration hiện có vẫn mang `brand_id`/`channel_id` phạm vi và các bảng Brand/Channel cũ — gỡ theo [store-and-brand §6](../12-store/store-and-brand.md).
 
 ## 1. Quy ước

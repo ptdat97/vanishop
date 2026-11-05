@@ -102,3 +102,13 @@ jobs:
           DB_DATABASE: vanishop_testing
           DB_USERNAME: root
           DB_PASSWORD: ''
+
+      - name: Từ điển dữ liệu khớp schema (MySQL 8.4, reference-parity §3.20)
+        run: php artisan migrate:fresh --force --no-interaction && php artisan vani:docs:schema --check
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: vanishop_testing
+          DB_USERNAME: root
+          DB_PASSWORD: ''

@@ -6,6 +6,7 @@ use Modules\Extension\Application\Storefront\StorefrontPrefixes;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Contracts\SitemapProvider;
+use Modules\Storefront\Http\Controllers\Web\SeoController;
 
 it('prefix storefront của plugin: không trùng Core, plugin khác, sai định dạng thì bị từ chối', function () {
     $prefixes = new StorefrontPrefixes;
@@ -65,4 +66,23 @@ it('đường dẫn trang plugin dưới tài khoản (accountRoutes): không tr
         ->and(fn () => $prefixes->claimAccount('orders', 'vani.b', 'en'))->toThrow(InvalidArgumentException::class, 'Core')
         ->and(fn () => $prefixes->claimAccount('Yeu_Thich', 'vani.b', 'vi'))->toThrow(InvalidArgumentException::class, 'không hợp lệ')
         ->and($prefixes->all())->toBe(['account:vi:yeu-thich' => 'vani.a', 'account:en:wishlist' => 'vani.a']);
+});
+
+it('sitemap vượt một file → sitemap index + /sitemap/{n}.xml; một file thì không có trang con', function () {
+    Cache::flush();
+    $this->get('/sitemap/1.xml')->assertNotFound();
+
+    app()->instance('test.sitemap.many', new class implements SitemapProvider
+    {
+        public function urls(int $limit): array
+        {
+            return array_map(fn (int $index): string => "https://shop.test/trang/{$index}", range(1, min($limit, SeoController::PER_FILE + 10)));
+        }
+    });
+    app(Extensions::class)->tag(['test.sitemap.many'], SitemapProvider::TAG);
+    Cache::flush();
+
+    $this->get('/sitemap.xml')->assertOk()->assertSee('<sitemapindex', false)->assertSee(url('/sitemap/2.xml'), false);
+    $this->get('/sitemap/2.xml')->assertOk()->assertSee('<urlset', false)->assertSee('https://shop.test/trang/'.(SeoController::PER_FILE + 10), false);
+    $this->get('/sitemap/3.xml')->assertNotFound();
 });

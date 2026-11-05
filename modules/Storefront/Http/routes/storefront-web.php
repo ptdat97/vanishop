@@ -103,4 +103,5 @@ foreach (StoreLocale::supported() as $locale) {
 Route::middleware('vani.storefront-context')->group(function (): void {
     Route::get('/robots.txt', [SeoController::class, 'robots'])->name('storefront.robots');
     Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('storefront.sitemap');
+    Route::get('/sitemap/{page}.xml', [SeoController::class, 'sitemapPage'])->whereNumber('page')->name('storefront.sitemap.page');
 });

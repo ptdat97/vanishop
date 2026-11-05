@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.80 — 2026-11-05
+
+Không đổi public API. Vận hành ([reference-parity §3.20](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- Sitemap index: quá 45 000 URL → `/sitemap.xml` là `sitemapindex`, file con `/sitemap/{n}.xml` (route `storefront.sitemap.page`); `SitemapProvider::urls($limit)` nhận trần lớn hơn (tới 900 000). Đoạn `sitemap` thêm vào danh sách giữ chỗ (plugin không dùng được làm prefix).
+- Lệnh `vani:docs:schema [--check]` → `docs/07-database/schema.generated.md`.
+
 ## 0.3.79 — 2026-11-05
 
 Chỉ thêm. Lượt xem sản phẩm + đã xem gần đây ([reference-parity §3.5-2](../20-roadmap/reference-parity-refactor.md)).

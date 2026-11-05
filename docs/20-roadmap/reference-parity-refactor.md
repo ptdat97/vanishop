@@ -162,6 +162,8 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 
 **VaniShop hiện có**: bảng giá `member` theo nhóm khách (0.3.35) — giá theo dòng, priority, khung giờ.
 
+**Trạng thái**: ✅ đã có từ `vani.promotion-rules` (rule `in_customer_groups`, có test) — kiểm tra 2026-11-05, không cần làm thêm.
+
 **Đặc tả**: **giữ khác biệt chủ đích**. Giảm theo nhóm khách là giá theo dòng (hiển thị đúng trên thẻ sản phẩm, PDP, giỏ), không phải dòng giảm cuối đơn. Nếu Owner cần "giảm X% toàn đơn cho nhóm VIP" thì làm bằng khuyến mãi tự động có rule "thuộc nhóm khách" (plugin `vani.promotion-rules` thêm rule `in_customer_groups`), để đi qua giá sàn, ngân sách, truy vết `order_adjustments`.
 
 **Vị trí**: plugin `vani.promotion-rules`. **Ưu tiên**: P2.
@@ -342,9 +344,9 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 | Bộ cài qua web, file đánh dấu đã cài | `vani:install` qua CLI | Giữ CLI ([reference-comparison §4](../02-architecture/reference-comparison.md)) |
 | Tạo/đổi mật khẩu quản trị gốc | `vani:staff:create-owner` | Thêm `vani:staff:reset-password` (§3.3) |
 | Cập nhật tỷ giá | — | Không làm (chỉ VND) |
-| Sinh sitemap ra file | `/sitemap.xml` động + `SitemapProvider` | Giữ; nếu > 50 000 URL thì chia sitemap index — kiểm tra |
+| Sinh sitemap ra file | `/sitemap.xml` động + `SitemapProvider` | ✅ (2026-11-05, Core 0.3.80) trước cắt cứng 45 000 URL; nay quá 45 000 → sitemap index + `/sitemap/{n}.xml` (trần 20 file) |
 | Tự huỷ đơn chưa thanh toán, tự hoàn tất đơn | Payment hết hạn, Fulfillment hoàn tất sau hạn đổi trả | Đã có |
-| Sinh từ điển dữ liệu Markdown | — | P2: `vani:docs:schema` sinh `docs/07-database/schema.generated.md` từ DB thật, chạy trong CI để tài liệu khớp schema |
+| Sinh từ điển dữ liệu Markdown | — | ✅ (2026-11-05, Core 0.3.80) `vani:docs:schema` sinh [`schema.generated.md`](../07-database/schema.generated.md) (bảng Core, bỏ `plg_*`); CI MySQL chạy `migrate:fresh` + `--check` |
 | Sửa giá trị sequence (PostgreSQL) | — | Không cần (MySQL) |
 | Chuyển dữ liệu từ nền tảng khác | `CatalogImporter`/`PriceImporter`/`StockImporter` | Giữ importer CSV; chuyển dữ liệu từ VaniCommerce viết script riêng một lần ngoài repo (theo [ADR-034](../19-adr/ADR-034-vanicommerce-plugin-migration.md)) |
 | Phiên hết hạn phát sự kiện | — | Không cần |
@@ -433,6 +435,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L12 | `vani.wishlist`: bật CDN + tắt JS thì khách đăng nhập bấm tim bị 419; khách vãng lai chưa xem được danh sách khi chưa đăng nhập; chế độ ẩn giá `members` thì không báo giảm giá được | `vani.wishlist` | Trang danh sách vãng lai đọc `localStorage`; kiểm giá theo nhóm khách |
 | L13 | Chuỗi cũ `storefront::messages.return_reasons` không còn dùng (lý do lấy từ danh mục) | Storefront | Xoá khi dọn lang |
 | L14 | Lượt xem: lần xem đầu chưa có cookie phiên lọc trùng theo IP + trình duyệt (chung NAT có thể đếm thiếu); `ProductViewed` không có khách khi trang chạy chế độ CDN chưa có phiên | Catalog, Storefront | Định danh người xem ẩn danh riêng (cookie ngắn hạn) nếu cần độ chính xác |
+| L15 | Từ điển dữ liệu sinh từ MySQL máy dev (9.x) — nếu CI MySQL 8.4 in kiểu/mặc định khác thì `--check` báo lệch: sinh lại từ CI | CI | Sinh lại bằng MySQL 8.4 khi lệch |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

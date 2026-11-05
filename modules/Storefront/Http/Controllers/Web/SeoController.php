@@ -16,12 +16,17 @@ use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Contracts\SitemapProvider;
 
 /**
- * robots.txt và sitemap.xml của native storefront (storefront §5): một sitemap gồm trang chủ, danh mục, thương hiệu,
- * sản phẩm đang hiển thị và URL plugin cung cấp (SitemapProvider). Cache 1 giờ. Đường dẫn Admin không được nhắc tới (bí mật, ADR-020).
+ * robots.txt và sitemap.xml của native storefront (storefront §5): trang chủ, danh mục, thương hiệu, sản phẩm đang hiển
+ * thị và URL plugin cung cấp (SitemapProvider). Quá PER_FILE URL (giới hạn 50 000 của giao thức sitemap) → `/sitemap.xml`
+ * là sitemap index trỏ tới `/sitemap/{n}.xml` (§3.20). Cache 1 giờ. Đường dẫn Admin không được nhắc tới (bí mật, ADR-020).
  */
 final class SeoController
 {
-    private const MAX_URLS = 45_000;
+    /** URL mỗi file sitemap (dưới giới hạn 50 000 của giao thức). */
+    public const PER_FILE = 45_000;
+
+    /** Trần tổng số URL (20 file) — chặn dựng sitemap vô hạn. */
+    private const MAX_URLS = self::PER_FILE * 20;
 
     public function robots(): Response
     {
@@ -37,16 +42,47 @@ final class SeoController
 
     public function sitemap(CatalogReader $catalog, Extensions $extensions): Response
     {
-        $xml = Cache::remember('vani:sitemap', 3600, fn (): string => $this->build($catalog, $extensions));
+        $files = $this->files($catalog, $extensions);
+        if (count($files) === 1) {
+            return $this->xml($files[0]);
+        }
 
+        $body = '';
+        foreach (array_keys($files) as $index) {
+            $body .= '<sitemap><loc>'.htmlspecialchars(route('storefront.sitemap.page', ['page' => $index + 1]), ENT_XML1).'</loc></sitemap>';
+        }
+
+        return $this->xml('<?xml version="1.0" encoding="UTF-8"?>'."\n".'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.$body.'</sitemapindex>'."\n");
+    }
+
+    public function sitemapPage(int $page, CatalogReader $catalog, Extensions $extensions): Response
+    {
+        $files = $this->files($catalog, $extensions);
+        abort_unless(count($files) > 1 && isset($files[$page - 1]), 404);
+
+        return $this->xml($files[$page - 1]);
+    }
+
+    /**
+     * @return list<string> XML từng file sitemap
+     */
+    private function files(CatalogReader $catalog, Extensions $extensions): array
+    {
+        return Cache::remember('vani:sitemap:files', 3600, fn (): array => $this->build($catalog, $extensions));
+    }
+
+    private function xml(string $xml): Response
+    {
         return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
     }
 
     /**
      * Sitemap đa ngôn ngữ (ADR-038 §6): mỗi bản đã dịch là một `<url>`, kèm `xhtml:link` tới mọi bản đã dịch và
      * `x-default` (ngôn ngữ mặc định). Bản chưa dịch không vào sitemap. URL của plugin (`SitemapProvider`) giữ nguyên.
+     *
+     * @return list<string>
      */
-    private function build(CatalogReader $catalog, Extensions $extensions): string
+    private function build(CatalogReader $catalog, Extensions $extensions): array
     {
         $locales = StoreLocale::supported();
         $default = StoreLocale::default();
@@ -94,7 +130,7 @@ final class SeoController
             }
         }
 
-        $body = '';
+        $entries = [];
         $seen = [];
         foreach ($groups as $group) {
             $links = '';
@@ -106,11 +142,14 @@ final class SeoController
             foreach ($group as $url) {
                 if (! isset($seen[$url])) {
                     $seen[$url] = true;
-                    $body .= '<url><loc>'.htmlspecialchars($url, ENT_XML1).'</loc>'.$links.'</url>';
+                    $entries[] = '<url><loc>'.htmlspecialchars($url, ENT_XML1).'</loc>'.$links.'</url>';
                 }
             }
         }
 
-        return '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'.$body.'</urlset>'."\n";
+        return array_map(
+            fn (array $chunk): string => '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'.implode('', $chunk).'</urlset>'."\n",
+            array_chunk($entries, self::PER_FILE) ?: [[]],
+        );
     }
 }

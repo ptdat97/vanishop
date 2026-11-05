@@ -18,7 +18,7 @@ final class StorefrontPrefixes
     public const RESERVED = [
         'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'tra-cuu-don', 'tai-khoan',
         'category', 'brands', 'search', 'products', 'cart', 'checkout', 'orders', 'track-order', 'account',
-        'p', 'api', 'storage', 'build', 'vendor', 'up', 'health', 'robots.txt', 'sitemap.xml', 'favicon.ico', 'livewire', 'sanctum', 'cache', '_vani',
+        'p', 'api', 'storage', 'build', 'vendor', 'up', 'health', 'robots.txt', 'sitemap.xml', 'sitemap', 'favicon.ico', 'livewire', 'sanctum', 'cache', '_vani',
     ];
 
     /** @var array<string, string> "locale:prefix" => plugin id */
