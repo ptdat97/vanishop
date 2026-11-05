@@ -69,6 +69,10 @@ it('trang module/plugin dùng component chung thay cho phần tử thô và hộ
         ->and(adminUiOffenders('/(?<![\w.`])(window\.)?(confirm|prompt|alert)\(/'))->toBe([], 'Dùng confirmAction() hoặc promptFields()');
 });
 
+it('không structuredClone dữ liệu trang (props của Inertia là Proxy phản ứng → DataCloneError, lỗi menu 2026-11-05)', function () {
+    expect(adminUiOffenders('/\\bstructuredClone\\(/'))->toBe([], 'Chép dữ liệu JSON bằng JSON.parse(JSON.stringify(...)) hoặc toRaw() rồi chép');
+});
+
 it('module Core không ghi cứng bảng nhãn trạng thái (server dịch qua <module>::labels)', function () {
     expect(adminUiOffenders('/(Labels|labels)\s*(:[^=]*)?=\s*\{/', coreOnly: true))->toBe([]);
 });

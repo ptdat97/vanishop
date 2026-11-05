@@ -67,15 +67,17 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 | M1 | ExtraContent | gộp vào `vani.cms` ✅ 1.5.0, 2026-11-05 ([đặc tả](specs/store-content.md)) | `StorefrontBlock`, slot danh mục/brand |
 | M1 | Bestseller | khối "Bán chạy" trong `vani.storefront-extras` ✅ 2026-11-05 ([đặc tả](specs/storefront-extras.md)) | `StorefrontBlock`, `OrderStatistics` |
 | M1 | StorefrontBlocks (Core đã có khung `StorefrontBlock` + page builder; chuyển khối đã xem, video hero; trang hàng mới đã có) | `vani.storefront-extras` ([đặc tả](specs/storefront-extras.md))  ✅ 2026-11-05| `StorefrontBlock`, Storefront API |
-| **M2** | VnShipping (GHTK) | `vani.ghtk` | `ShippingCarrier` + `ShippingRateProvider` (mẫu `vani.ghn`) |
-| M2 | OrderTracking | bổ sung `vani.ghn`/`vani.ghtk` + slot tra cứu đơn | Webhook/đồng bộ hãng, `shipment_events` |
-| M2 | CodReconcile | `vani.cod-reconciliation` | Events fulfillment, `adminPages`, đối soát thanh toán |
-| M2 | Social | `vani.social-login` | `AuthProvider` (W5b) |
-| M2 | TwilioVerifyLogin | `vani.twilio-verify` | `OtpSender` |
+| **M2** ❄️ | VnShipping (GHTK) | `vani.ghtk` (đóng băng — kết nối ngoài) | `ShippingCarrier` + `ShippingRateProvider` (mẫu `vani.ghn`) |
+| M2 ❄️ | OrderTracking (đóng băng — kết nối ngoài) | bổ sung `vani.ghn`/`vani.ghtk` + slot tra cứu đơn | Webhook/đồng bộ hãng, `shipment_events` |
+| M2 ❄️ | CodReconcile (đóng băng — dữ liệu đối soát từ hãng) | `vani.cod-reconciliation` | Events fulfillment, `adminPages`, đối soát thanh toán |
+| M2 ❄️ | Social (đóng băng — kết nối ngoài) | `vani.social-login` | `AuthProvider` (W5b) |
+| M2 ❄️ | TwilioVerifyLogin (đóng băng — kết nối ngoài) | `vani.twilio-verify` | `OtpSender` |
 | M2 | ProductQna | `vani.product-qna` | `storefrontRoutes`, slot PDP, `adminPages` |
 | M2 | ReviewsPro | `vani.reviews` | `storefrontRoutes`, slot PDP, `OrderCompleted` (xác minh mua), Thư viện ảnh |
 | M2 | ProductCompare | `vani.product-compare` | `storefrontPages`, slot thẻ sản phẩm |
 | M2 | ScarcitySignals | `vani.scarcity-signals` ✅ 2026-11-05 ([đặc tả](specs/scarcity-signals.md)) | `StorefrontEnricher` (product, product_card), `AvailabilityReader`, `OrderStatistics::confirmedQuantitiesByStyle` (0.3.85) |
+
+> ❄️ **Đóng băng (Owner, 2026-11-05):** tính năng cần kết nối dịch vụ bên ngoài (hãng vận chuyển, đăng nhập mạng xã hội, OTP, dịch máy — [ADR-041](../19-adr/ADR-041-translation-provider.md)…) tạm dừng; plugin kết nối đã có (`vani.ghn`, `vani.vnpay`, `vani.vietqr`, `vani.zalo-zns`, `vani.sms-brandname`, `vani.search-meilisearch`) chỉ sửa lỗi, không thêm tính năng. Tập trung Storefront; M2 còn làm: ProductQna, ReviewsPro, ProductCompare.
 
 ### C. Chuyển sang — cần thiết kế/extension point trước (6)
 

@@ -24,7 +24,9 @@ const props = defineProps<{
 const formatDate = useDateTime();
 const current = computed(() => props.locations.find((item) => item.code === props.location) ?? null);
 // Cây menu đệ quy: giữ bằng ref (kiểu của useForm không nhận kiểu đệ quy), gửi bằng router.
-const items = ref<MenuItem[]>(structuredClone(props.menu?.items ?? []));
+// Props của Inertia là Proxy phản ứng — structuredClone không chép được Proxy (DataCloneError); cây menu là JSON thuần.
+const cloneItems = (): MenuItem[] => JSON.parse(JSON.stringify(props.menu?.items ?? [])) as MenuItem[];
+const items = ref<MenuItem[]>(cloneItems());
 const saved = ref(JSON.stringify(items.value));
 const dirty = computed(() => JSON.stringify(items.value) !== saved.value);
 const processing = ref(false);
@@ -34,7 +36,7 @@ const locationUrl = (action = ''): string => `${props.baseUrl}/${props.location}
 provide(menuEditorKey, reactive({ linkTypes: props.linkTypes, searchUrl: props.searchUrl, linkLabels: { ...props.linkLabels }, images: { ...props.images } }));
 
 function reload(): void {
-    items.value = structuredClone(props.menu?.items ?? []);
+    items.value = cloneItems();
     saved.value = JSON.stringify(items.value);
 }
 

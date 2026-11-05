@@ -415,6 +415,8 @@ Mỗi hạng mục đi theo [Definition of Done chung](roadmap.md) (feature test
 
 Thứ tự trong một đợt theo nguyên tắc của roadmap: **Correctness → Consistency → Extensibility → Integration → Observability → Feature**.
 
+> ❄️ **Đóng băng (Owner, 2026-11-05):** tính năng cần kết nối dịch vụ bên ngoài (vận chuyển, đăng nhập mạng xã hội, OTP, dịch máy, Admin API §3.19) tạm dừng — chỉ sửa lỗi plugin kết nối đã có. Ưu tiên: **Storefront**.
+
 ## 6b. Giới hạn còn lại — để xử lý sau (Owner, 2026-11-05)
 
 Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong đợt hiện tại; mở lại theo nhu cầu.
