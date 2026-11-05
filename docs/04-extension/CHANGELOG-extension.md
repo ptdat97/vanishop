@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.77 — 2026-11-05
+
+Không đổi public API. Trang thương hiệu theo chữ cái ([reference-parity §3.5-3](../20-roadmap/reference-parity-refactor.md)).
+
+### Thêm
+- View `theme::pages.brands` nhận thêm `$brandGroups` (chữ cái => thương hiệu; bỏ dấu khi nhóm, Đ nhóm riêng, ký tự khác vào `#`). `$brands` giữ nguyên.
+
 ## 0.3.76 — 2026-11-05
 
 Chỉ thêm. Phục vụ plugin `vani.wishlist` 1.0.0 ([đặc tả](../05-plugin/specs/wishlist.md) §5).

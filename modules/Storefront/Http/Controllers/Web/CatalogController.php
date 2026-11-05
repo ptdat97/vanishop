@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Shared\Support\LocalizedUrls;
+use Modules\Storefront\Application\BrandIndex;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Contracts\PageSeo;
@@ -39,7 +40,10 @@ final class CatalogController
 
     public function brands(): View
     {
-        return view('theme::pages.brands', ['brands' => $this->catalog->brands()]);
+        $brands = $this->catalog->brands();
+
+        // Nhóm theo chữ cái đầu (§3.5-3); `brands` giữ thứ tự hiển thị cho theme cũ.
+        return view('theme::pages.brands', ['brands' => $brands, 'brandGroups' => BrandIndex::group($brands)]);
     }
 
     public function brand(ProductListRequest $request, string $slug): View
