@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.92',
+    'version' => '0.3.93',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -165,6 +165,7 @@ return [
                 'cart.update' => 'gio-hang/{line}',
                 'cart.remove' => 'gio-hang/{line}/xoa',
                 'cart.select' => 'gio-hang/chon',
+                'cart.voucher' => 'gio-hang/ma-giam-gia',
                 'checkout' => 'thanh-toan',
                 'order' => 'don-hang/{order}',
                 'order.returns.store' => 'don-hang/{order}/doi-tra',
@@ -201,6 +202,7 @@ return [
                 'cart.update' => 'cart/{line}',
                 'cart.remove' => 'cart/{line}/remove',
                 'cart.select' => 'cart/select',
+                'cart.voucher' => 'cart/voucher',
                 'checkout' => 'checkout',
                 'order' => 'orders/{order}',
                 'order.returns.store' => 'orders/{order}/returns',

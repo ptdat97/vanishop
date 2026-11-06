@@ -82,6 +82,20 @@ final class CartPresenter
     }
 
     /**
+     * Thay đổi giỏ cho sự kiện trình duyệt `vani:cart-updated` (đo quảng cáo, 0.3.43) — form POST (flash) và JSON dùng chung.
+     *
+     * @param  'add'|'remove'  $action
+     * @return array{action: string, variant_id: int, sku: string|null, name: string|null, quantity: int, unit_amount: int|null, currency: string|null}
+     */
+    public function change(string $action, CartLineView $line, int $quantity): array
+    {
+        return [
+            'action' => $action, 'variant_id' => $line->variantId, 'sku' => $line->variant?->sku, 'name' => $line->variant?->name,
+            'quantity' => $quantity, 'unit_amount' => $line->unitPrice?->amount, 'currency' => $line->unitPrice?->currency->code,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     private function optional(?Money $money): ?array

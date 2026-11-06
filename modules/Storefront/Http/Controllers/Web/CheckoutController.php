@@ -16,6 +16,7 @@ use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
+use Modules\Storefront\Application\CartVoucher;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\PaymentPresenter;
@@ -33,6 +34,7 @@ final class CheckoutController
         private readonly CheckoutPresenter $presenter,
         private readonly AddressOptions $addresses,
         private readonly Settings $settings,
+        private readonly CartVoucher $voucher,
     ) {}
 
     public function show(Request $request): View|RedirectResponse
@@ -46,6 +48,10 @@ final class CheckoutController
         }
 
         $old = (array) $request->old();
+        // Mã nhập ở giỏ (giữ trong phiên) điền sẵn khi khách chưa gửi form checkout.
+        if (! array_key_exists('voucher_code', $old) && $this->voucher->code() !== null) {
+            $old['voucher_code'] = $this->voucher->code();
+        }
         $quote = $this->presenter->quote($this->checkout->quote($this->toRequest($old, $request)));
 
         $directory = $this->addresses->directory();
@@ -53,6 +59,7 @@ final class CheckoutController
 
         return view('theme::pages.checkout', [
             'quote' => $quote,
+            'voucherCode' => (string) ($old['voucher_code'] ?? ''),
             'idempotencyKey' => (string) Str::ulid(),
             // Có danh mục địa giới (plugin): chọn tỉnh/phường; không có: nhập tự do.
             'provinces' => $directory?->provinces(),
@@ -96,6 +103,7 @@ final class CheckoutController
         }
 
         $order = $result->body;
+        $this->voucher->forget();
         $session->put("vani.orders.{$order['id']}", [
             'token' => $order['access_token'],
             'payment' => $result->payment === null ? null : $payments->present($result->payment),

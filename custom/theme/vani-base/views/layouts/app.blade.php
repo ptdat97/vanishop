@@ -80,15 +80,8 @@
                 @endif
                 {{-- Không CDN: render sẵn theo khách. Trang cache CDN: render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
                 <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}</a>
-                {{-- Giỏ mini (§3.8): JS điền vài dòng gần nhất + tạm tính từ /_vani/phien; không JS vẫn là link tới giỏ. --}}
-                <div class="group relative">
-                    <a href="{{ vani_route('storefront.cart') }}">{{ __('Giỏ hàng') }} <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif class="rounded-full bg-primary px-1.5 text-xs text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span></a>
-                    <div data-vani-mini-cart hidden class="invisible absolute right-0 z-20 mt-2 w-72 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-3 text-sm shadow-lg group-hover:visible group-focus-within:visible">
-                        <ul class="divide-y divide-slate-100" data-vani-mini-cart-lines></ul>
-                        <p class="mt-2 flex justify-between font-medium"><span>{{ __('Tạm tính') }}</span><span data-vani-mini-cart-subtotal></span></p>
-                        <a href="{{ vani_route('storefront.cart') }}" class="mt-2 block text-center underline">{{ __('Xem giỏ hàng') }}</a>
-                    </div>
-                </div>
+                {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); không JS vẫn là link tới trang giỏ. --}}
+                <a href="{{ vani_route('storefront.cart') }}" data-vani-cart-open aria-haspopup="dialog">{{ __('Giỏ hàng') }} <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif class="rounded-full bg-primary px-1.5 text-xs text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span></a>
             </div>
         </div>
     </header>
@@ -151,8 +144,43 @@
         <script type="application/json" data-vani-cart-change>@json(session(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))</script>
     @endif
     {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
-    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên'), 'suggest_products' => __('Sản phẩm'), 'suggest_categories' => __('Danh mục'), 'suggest_brands' => __('Thương hiệu'), 'suggest_all' => __('Xem tất cả kết quả'), 'carousel_prev' => __('Mục trước'), 'carousel_next' => __('Mục sau'), 'lightbox_prev' => __('Ảnh trước'), 'lightbox_next' => __('Ảnh sau'), 'lightbox_close' => __('Đóng'), 'lightbox_zoom' => __('Phóng to'), 'lightbox_error' => __('Không tải được ảnh.')])
+    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên'), 'suggest_products' => __('Sản phẩm'), 'suggest_categories' => __('Danh mục'), 'suggest_brands' => __('Thương hiệu'), 'suggest_all' => __('Xem tất cả kết quả'), 'carousel_prev' => __('Mục trước'), 'carousel_next' => __('Mục sau'), 'lightbox_prev' => __('Ảnh trước'), 'lightbox_next' => __('Ảnh sau'), 'lightbox_close' => __('Đóng'), 'lightbox_zoom' => __('Phóng to'), 'lightbox_error' => __('Không tải được ảnh.'), 'request_failed' => __('Có lỗi xảy ra, vui lòng thử lại.')])
     <script type="application/json" data-vani-i18n>@json($jsStrings)</script>
+    {{--
+        Giỏ mini offcanvas (0.3.93): <dialog> mở bằng showModal() — khoá nền, giữ focus, Esc đóng. Nội dung = partial
+        theme::partials.mini-cart do server render (CartController, JSON `html`).
+    --}}
+    <dialog class="vani-offcanvas" data-vani-offcanvas-cart aria-labelledby="vani-cart-title">
+        <div class="flex h-full flex-col">
+            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                <h2 id="vani-cart-title" class="text-lg font-semibold">{{ __('Giỏ hàng') }}</h2>
+                <button type="button" class="px-2 text-2xl leading-none text-slate-500 hover:text-slate-900" data-cart-close aria-label="{{ __('Đóng') }}">×</button>
+            </div>
+            <p class="mx-4 mt-3 hidden rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800" data-vani-cart-message role="status"></p>
+            <div class="flex min-h-0 flex-1 flex-col" data-vani-mini-cart-body aria-busy="true">
+                <p class="p-4 text-sm text-slate-500">{{ __('Đang tải…') }}</p>
+            </div>
+        </div>
+    </dialog>
+    {{-- URL cho window.vani (app.js) theo ngôn ngữ trang; giống nhau với mọi khách nên trang vẫn cache được. --}}
+    {{-- `987654321` = chỗ app.js thay bằng id dòng giỏ. --}}
+    @php($vaniUrls = [
+            'cart' => vani_route('storefront.cart'),
+            'cart_add' => vani_route('storefront.cart.add'),
+            'cart_line' => vani_route('storefront.cart.update', ['line' => 987654321]),
+            'cart_remove' => vani_route('storefront.cart.remove', ['line' => 987654321]),
+            'cart_select' => vani_route('storefront.cart.select'),
+            'cart_voucher' => vani_route('storefront.cart.voucher'),
+            'checkout' => vani_route('storefront.checkout'),
+            'login' => vani_route('storefront.account.login'),
+            'login_otp' => vani_route('storefront.account.otp'),
+            'login_verify' => vani_route('storefront.account.verify'),
+            'logout' => vani_route('storefront.account.logout'),
+            'search' => vani_route('storefront.search'),
+            'search_suggestions' => route('api.storefront.v1.search.suggestions'),
+            'session' => vani_route('storefront.session', ['locale' => app()->getLocale()]),
+    ])
+    <script type="application/json" data-vani-urls>@json($vaniUrls)</script>
     @if ($customerState !== null)
         {{-- Cùng dữ liệu với /_vani/phien (trừ flash — đã render ở trên) để JS dựng giỏ mini, giá thành viên như trang cache CDN. --}}
         <script type="application/json" data-vani-session-state>@json($customerState)</script>

@@ -1,3 +1,5 @@
+{{-- data-vani-listing (0.3.93): app.js thay vùng này khi lọc/phân trang (không tải lại trang); không JS là link thường. --}}
+<div data-vani-listing>
 @php($pages = (int) ceil($listing['total'] / max(1, $listing['per_page'])))
 {{-- $listingContext: trang gọi truyền vào (danh mục / thương hiệu); mặc định là trang tìm kiếm. --}}
 <x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingContext ?? ['type' => 'search', 'category' => null, 'brand' => null], $listing]" />
@@ -55,4 +57,5 @@
             </nav>
         @endif
     </section>
+</div>
 </div>

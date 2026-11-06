@@ -89,6 +89,8 @@
             .catch(() => {});
     });
 
+    // Theme thay HTML không tải lại trang (lọc/phân trang danh sách, giỏ mini — vani-base 0.3.93): tô lại nút tim mới.
+    document.addEventListener('vani:content-updated', () => session && render());
     if (window.vaniSession) start(window.vaniSession);
     document.addEventListener('vani:session', (event) => start(event.detail));
 })();

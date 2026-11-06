@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.93 — 2026-11-06
+
+Giỏ mini offcanvas + API cho frontend nạp dữ liệu không tải lại trang (native storefront, theme `vani-base`).
+
+### Thêm
+- Route web của storefront trả JSON khi request gửi `Accept: application/json` (cùng phiên, validation, throttle; form không JS giữ nguyên): giỏ `GET/POST gio-hang`, `gio-hang/{line}`, `gio-hang/{line}/xoa`, `gio-hang/chon` → `{cart, count, voucher, html, change, message, redirect}`; đăng nhập `tai-khoan/dang-nhap/otp` → `{message, phone}`, `tai-khoan/dang-nhap` → `{signed_in, redirect, csrf_token}`; `tai-khoan/dang-xuat`.
+- Mã giảm giá ở giỏ: `POST gio-hang/ma-giam-gia` (`cart.voucher`, en `cart/voucher`; `code` rỗng = bỏ mã) — giữ trong phiên (`Storefront\Application\CartVoucher`), checkout điền sẵn, đặt hàng xong thì quên. Trang giỏ có ô nhập mã (chạy cả khi tắt JS).
+- `window.vani` trong `app.js` của theme: `request`, `cart.{get,add,update,remove,select,applyVoucher,removeVoucher,open,close}`, `auth.{requestOtp,verify,logout}`, `search.{suggest,listing}`, `urls`. Sự kiện `vani:cart` (trạng thái giỏ), `vani:content-updated` (theme vừa thay HTML — plugin tô lại nút/nhãn).
+- Partial theme `partials.mini-cart` (nội dung giỏ mini, server render trong JSON `html`) và `partials.cart-voucher`; layout có `<dialog data-vani-offcanvas-cart>` và `script[data-vani-urls]`.
+- Lọc/phân trang danh sách (`[data-vani-listing]`) và đăng nhập OTP không tải lại trang; thêm vào giỏ ở trang sản phẩm mở giỏ mini.
+
+### Đổi
+- Header: "Giỏ hàng" mở giỏ mini offcanvas (không JS: link trang giỏ); bỏ dropdown giỏ mini cũ (`data-vani-mini-cart*`).
+- Lỗi nghiệp vụ (`BusinessRuleViolation`) trong request web gửi JSON: trả `{message, errors: {business}, code}` với mã trạng thái của lỗi thay vì trang lỗi 500.
+- `vani.wishlist` 1.0.1: tô lại nút tim khi nhận `vani:content-updated`.
+
 ## 0.3.92 — 2026-11-06
 
 Theme `vani-base`: carousel (Swiper 14) và xem ảnh phóng to (PhotoSwipe 5), cài qua npm (MIT), Vite tách chunk, tải theo nhu cầu (import động).

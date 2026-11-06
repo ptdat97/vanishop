@@ -14,6 +14,38 @@
     --font-sans: var(--vani-font-sans, ui-sans-serif, system-ui, sans-serif);
 }
 
+/*
+ * Offcanvas (giỏ mini, 0.3.93): <dialog> trượt từ phải, cao hết màn hình. Chỉ JS mở được (showModal) — không JS là link.
+ */
+.vani-offcanvas {
+    margin: 0 0 0 auto;
+    height: 100dvh;
+    max-height: 100dvh;
+    width: min(100vw, 26rem);
+    max-width: 100vw;
+    border: 0;
+    padding: 0;
+    background: var(--color-surface);
+    color: inherit;
+    box-shadow: -8px 0 24px rgb(15 23 42 / 0.12);
+}
+.vani-offcanvas::backdrop {
+    background: rgb(15 23 42 / 0.45);
+}
+.vani-offcanvas[open] {
+    animation: vani-offcanvas-in 0.2s ease-out;
+}
+@keyframes vani-offcanvas-in {
+    from {
+        transform: translateX(100%);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .vani-offcanvas[open] {
+        animation: none;
+    }
+}
+
 /* Nội dung SSR luôn hiện; JS chỉ tăng cường (ADR-025 quyết định 4). */
 [data-js-only] {
     display: none;

@@ -54,7 +54,11 @@
         <x-vani::hook-slot name="vani.storefront.cart.after_lines" :args="[$cart]" />
 
         <div class="mt-6 flex flex-col items-end gap-3">
+            <div class="w-full max-w-sm">@include('theme::partials.cart-voucher', ['voucher' => $voucher ?? null])</div>
             <p>{{ __('Tạm tính (:count sản phẩm đã chọn):', ['count' => $cart['selected_count']]) }} <strong>{{ $cart['selected_subtotal']['formatted'] }}</strong></p>
+            @if (($voucher ?? null) && $voucher['rejection'] === null && $voucher['discount']['amount'] > 0)
+                <p class="text-emerald-700">{{ __('Giảm giá') }}: −{{ $voucher['discount']['formatted'] }} · {{ __('Tổng tạm tính') }}: <strong>{{ $voucher['total']['formatted'] }}</strong></p>
+            @endif
             @if ($cart['checkout_ready'])
                 <a href="{{ vani_route('storefront.checkout') }}" class="rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white">{{ __('Thanh toán') }}</a>
             @elseif ($cart['selected_count'] === 0)

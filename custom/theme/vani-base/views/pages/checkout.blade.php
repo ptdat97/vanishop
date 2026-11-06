@@ -108,7 +108,7 @@
 
             <div class="flex gap-2">
                 <label for="voucher_code" class="sr-only">{{ __('Mã giảm giá') }}</label>
-                <input id="voucher_code" name="voucher_code" value="{{ old('voucher_code') }}" placeholder="{{ __('Mã giảm giá') }}" class="flex-1 rounded border border-slate-300 px-2 py-1.5">
+                <input id="voucher_code" name="voucher_code" value="{{ old('voucher_code', $voucherCode ?? '') }}" placeholder="{{ __('Mã giảm giá') }}" class="flex-1 rounded border border-slate-300 px-2 py-1.5">
                 <button type="submit" name="action" value="quote" class="rounded border border-slate-300 px-3">{{ __('Áp dụng') }}</button>
             </div>
             @foreach ($quote['rejected_vouchers'] as $rejected)

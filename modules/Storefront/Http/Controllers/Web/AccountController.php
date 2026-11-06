@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\Storefront\Http\Controllers\Web;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Ordering\Contracts\CustomerOrders;
@@ -41,20 +43,35 @@ final class AccountController
         return view('theme::pages.account.login', ['phone' => $request->session()->get(self::PENDING_PHONE)]);
     }
 
-    public function requestOtp(Request $request): RedirectResponse
+    /**
+     * Gửi mã OTP. JSON (`Accept: application/json`, `window.vani.auth.requestOtp`): `{message, phone}`.
+     */
+    public function requestOtp(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate(['phone' => ['required', 'string', 'max:20']]);
         $this->sessions->requestLoginOtp($data['phone'], (string) $request->ip());
         $request->session()->put(self::PENDING_PHONE, $data['phone']);
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => __('storefront::messages.otp_sent'), 'phone' => $data['phone']]);
+        }
+
         return redirect()->to(LocalizedUrls::route('storefront.account.login'))->with('status', __('storefront::messages.otp_sent'));
     }
 
-    public function verify(Request $request, NativeCart $cart): RedirectResponse
+    /**
+     * Xác thực OTP → đăng nhập, gộp giỏ vãng lai. JSON: `{signed_in, message, redirect, csrf_token}` — phiên được cấp lại nên
+     * JS phải dùng `csrf_token` mới cho request sau.
+     */
+    public function verify(Request $request, NativeCart $cart): RedirectResponse|JsonResponse
     {
         $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
         $phone = (string) $request->session()->get(self::PENDING_PHONE, '');
         if ($phone === '') {
+            if ($request->expectsJson()) {
+                throw ValidationException::withMessages(['phone' => __('validation.required', ['attribute' => 'phone'])]);
+            }
+
             return redirect()->to(LocalizedUrls::route('storefront.account.login'));
         }
 
@@ -64,14 +81,27 @@ final class AccountController
         $request->session()->put(self::TOKEN, $session['token']);
         $cart->attachGuestCartTo($session['customer']->id);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'signed_in' => true,
+                'message' => __('storefront::messages.signed_in'),
+                'redirect' => (string) $request->session()->pull('url.intended', LocalizedUrls::route('storefront.account')),
+                'csrf_token' => $request->session()->token(),
+            ]);
+        }
+
         return redirect()->intended(LocalizedUrls::route('storefront.account'));
     }
 
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request): RedirectResponse|JsonResponse
     {
         $this->sessions->logout((string) $request->session()->get(self::TOKEN, ''));
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($request->expectsJson()) {
+            return response()->json(['signed_in' => false, 'redirect' => LocalizedUrls::route('storefront.home'), 'csrf_token' => $request->session()->token()]);
+        }
 
         return redirect()->to(LocalizedUrls::route('storefront.home'));
     }
