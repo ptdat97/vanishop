@@ -33,6 +33,8 @@ const urls = (() => {
         return {};
     }
 })();
+// Trang giỏ đầy đủ (0.3.94): JSON trả thêm `page_html` để thay vùng này.
+const cartPage = document.querySelector('[data-vani-cart-page]');
 let csrfToken = null;
 let sessionLoaded;
 const sessionReady = new Promise((resolve) => {
@@ -52,6 +54,7 @@ async function csrf(refresh = false) {
 
 async function request(method, url, data = null, retried = false) {
     const headers = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+    if (cartPage) headers['X-Vani-Cart-View'] = 'page';
     let body;
     if (method !== 'GET') {
         headers['X-CSRF-TOKEN'] = await csrf();
@@ -101,6 +104,13 @@ function applyCart(state) {
         offcanvasBody.innerHTML = state.html; // HTML do Blade render (đã escape) — không chứa dữ liệu thô từ client.
         offcanvasBody.setAttribute('aria-busy', 'false');
         document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: offcanvasBody } }));
+    }
+    if (cartPage && typeof state.page_html === 'string') {
+        // Giữ chỗ focus (ô số lượng, ô chọn…) sau khi thay HTML.
+        const focusedId = document.activeElement && cartPage.contains(document.activeElement) ? document.activeElement.id : '';
+        cartPage.innerHTML = state.page_html; // HTML do Blade render (đã escape).
+        if (focusedId) document.getElementById(focusedId)?.focus();
+        document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: cartPage } }));
     }
     dispatchCartChange(state.change);
     document.dispatchEvent(new CustomEvent('vani:cart', { detail: state }));
@@ -312,21 +322,67 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
 });
 
 // Giỏ: đổi số lượng thì gửi form luôn (nút "Cập nhật" vẫn có cho trường hợp JS tắt).
-document.querySelectorAll('[data-autosubmit]').forEach((input) => {
-    input.addEventListener('change', () => input.form?.requestSubmit());
-});
+// Trang giỏ đầy đủ (0.3.94): sửa số lượng, xoá dòng, chọn dòng, mã giảm giá qua window.vani.cart — server trả `page_html`,
+// thay vùng [data-vani-cart-page] (không tải lại trang). Gắn sự kiện ở vùng bao ngoài vì nội dung bên trong được thay.
+// Không JS: các form POST như cũ (nút "Cập nhật"/"Áp dụng lựa chọn" chỉ hiện khi tắt JS — [data-no-js]).
+if (cartPage) {
+    const run = async (action) => {
+        const error = cartPage.querySelector('[data-vani-cart-error]');
+        if (error) error.hidden = true;
+        cartPage.setAttribute('aria-busy', 'true');
+        try {
+            const state = await action();
+            const status = document.querySelector('[data-vani-flash="status"]');
+            if (status && state?.message) {
+                status.textContent = state.message;
+                status.hidden = false;
+            }
+        } catch (failure) {
+            // Tải lại trạng thái giỏ (số lượng trên ô có thể đã đổi tay) rồi báo lỗi tại chỗ.
+            await cart.get().catch(() => {});
+            const field = failure.errors?.code ? 'code' : Object.keys(failure.errors || {})[0];
+            const target = field === 'code' ? cartPage.querySelector('[data-cart-voucher-error]') : cartPage.querySelector('[data-vani-cart-error]');
+            if (target) {
+                target.textContent = field ? firstError(failure, field) : failure.message;
+                target.hidden = false;
+            }
+        } finally {
+            cartPage.setAttribute('aria-busy', 'false');
+        }
+    };
+    const selectedLines = () => [...cartPage.querySelectorAll('[data-select-line]')].filter((input) => input.checked && !input.disabled).map((input) => Number(input.dataset.line));
 
-// Giỏ: chọn dòng để thanh toán — đổi ô chọn thì gửi form lựa chọn; "Chọn tất cả" đánh dấu mọi dòng chọn được.
-const selection = document.getElementById('cart-selection');
-if (selection) {
-    selection.querySelector('[data-selection-submit]')?.setAttribute('hidden', '');
-    const lines = document.querySelectorAll('[data-select-line]');
-    lines.forEach((input) => input.addEventListener('change', () => selection.requestSubmit()));
-    selection.querySelector('[data-select-all]')?.addEventListener('change', (event) => {
-        lines.forEach((input) => {
-            if (!input.disabled) input.checked = event.target.checked;
-        });
-        selection.requestSubmit();
+    cartPage.addEventListener('change', (event) => {
+        const target = event.target;
+        if (target.matches('[data-autosubmit][data-line]')) {
+            const quantity = Math.max(0, Number.parseInt(target.value, 10) || 0);
+            run(() => (quantity === 0 ? cart.remove(Number(target.dataset.line)) : cart.update(Number(target.dataset.line), quantity)));
+        } else if (target.matches('[data-select-all]')) {
+            cartPage.querySelectorAll('[data-select-line]').forEach((input) => {
+                if (!input.disabled) input.checked = target.checked;
+            });
+            run(() => cart.select(selectedLines()));
+        } else if (target.matches('[data-select-line]')) {
+            run(() => cart.select(selectedLines()));
+        }
+    });
+    cartPage.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (form.matches('[data-cart-remove-form]')) {
+            event.preventDefault();
+            run(() => cart.remove(Number(form.dataset.line)));
+        } else if (form.matches('[data-cart-update-form]')) {
+            event.preventDefault();
+            const quantity = Math.max(0, Number.parseInt(String(new FormData(form).get('quantity') ?? ''), 10) || 0);
+            run(() => (quantity === 0 ? cart.remove(Number(form.dataset.line)) : cart.update(Number(form.dataset.line), quantity)));
+        } else if (form.matches('[data-cart-voucher-form]')) {
+            event.preventDefault();
+            const code = String(new FormData(form).get('code') ?? '').trim();
+            run(() => (code === '' ? cart.removeVoucher() : cart.applyVoucher(code)));
+        } else if (form.id === 'cart-selection') {
+            event.preventDefault();
+            run(() => cart.select(selectedLines()));
+        }
     });
 }
 

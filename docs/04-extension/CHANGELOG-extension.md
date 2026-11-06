@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.94 — 2026-11-06
+
+Trang giỏ đầy đủ dùng cùng API giỏ (không tải lại trang).
+
+### Thêm
+- JSON giỏ nhận header `X-Vani-Cart-View: page` → thêm `page_html` (partial theme `partials.cart-page` — thân trang giỏ, `pages.cart` include lại). `window.vani` tự gửi header này khi trang có `[data-vani-cart-page]`.
+- Theme: thuộc tính `[data-no-js]` — phần tử chỉ hiện khi tắt JS (nút "Cập nhật" số lượng, "Áp dụng lựa chọn").
+
+### Đổi
+- Trang giỏ `vani-base`: sửa số lượng (0 = xoá), xoá dòng, chọn dòng / chọn tất cả, áp/bỏ mã giảm giá gọi `window.vani.cart` và thay vùng `[data-vani-cart-page]`; lỗi hiện tại chỗ. Không JS: form POST như cũ.
+
 ## 0.3.93 — 2026-11-06
 
 Giỏ mini offcanvas + API cho frontend nạp dữ liệu không tải lại trang (native storefront, theme `vani-base`).

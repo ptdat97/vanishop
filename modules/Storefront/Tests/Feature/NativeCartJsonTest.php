@@ -109,3 +109,25 @@ it('layout: nút "Giỏ hàng" mở offcanvas (không icon), khung dialog, URL c
     $english = json_decode(preg_match('#data-vani-urls>(.*?)</script>#s', $this->get('/en/search')->getContent(), $en) ? $en[1] : '{}', true);
     expect($english['cart_voucher'] ?? null)->toBe(url('/en/cart/voucher'));
 });
+
+it('trang giỏ đầy đủ (0.3.94): vùng thay được; JSON kèm X-Vani-Cart-View: page trả page_html sau sửa số lượng / chọn dòng / mã giảm giá', function () {
+    $line = $this->postJson('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2])->assertOk()->assertJsonPath('page_html', null)->json('cart.lines.0.id');
+    $this->postJson('/gio-hang', ['variant_id' => $this->m->id])->assertOk();
+
+    $this->get('/gio-hang')->assertOk()
+        ->assertSee('<div data-vani-cart-page aria-live="polite">', false)
+        ->assertSee('data-autosubmit data-line="'.$line.'"', false)
+        ->assertSee('data-cart-remove-form data-line="'.$line.'"', false)
+        ->assertSee('data-no-js>Cập nhật</button>', false);
+
+    $page = ['X-Vani-Cart-View' => 'page'];
+    $updated = $this->postJson("/gio-hang/{$line}", ['quantity' => 3], $page)->assertOk()->assertJsonPath('count', 4)->json('page_html');
+    expect($updated)->toContain('id="qty-'.$line.'" name="quantity" type="number" min="0" max="20" value="3"')->toContain('data-vani-cart-error');
+
+    // Bỏ chọn dòng thứ hai: tạm tính chỉ còn dòng đã chọn.
+    $selected = $this->postJson('/gio-hang/chon', ['lines' => [$line]], $page)->assertOk()->assertJsonPath('cart.selected_count', 3)->json('page_html');
+    expect($selected)->toContain('Tạm tính (3 sản phẩm đã chọn):')->toContain('900.000 ₫');
+
+    C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => null]);
+    expect($this->postJson('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'], $page)->assertOk()->json('page_html'))->toContain('Mã GIAM10')->toContain('810.000 ₫');
+});

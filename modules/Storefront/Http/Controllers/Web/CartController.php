@@ -26,6 +26,9 @@ final class CartController
     /** Flash một lần: thay đổi giỏ gần nhất (đọc ở layout hoặc /_vani/phien). */
     public const CHANGE_FLASH = 'vani.cart_change';
 
+    /** Header JS gửi để nhận thêm HTML thân trang giỏ (`page_html`). */
+    public const VIEW_HEADER = 'X-Vani-Cart-View';
+
     public function __construct(
         private readonly Carts $carts,
         private readonly NativeCart $cart,
@@ -148,7 +151,8 @@ final class CartController
     /**
      * Trạng thái giỏ cho JS: `cart` (như Storefront API), `count` (số món, cho nhãn ở header), `voucher` (mã đang giữ + mức
      * giảm), `html` (giỏ mini render bằng partial `theme::partials.mini-cart` — theme con override được), `change` (cho sự
-     * kiện `vani:cart-updated`), `message`, `redirect` (Mua ngay → checkout).
+     * kiện `vani:cart-updated`), `message`, `redirect` (Mua ngay → checkout). Trang giỏ gửi `X-Vani-Cart-View: page` (0.3.94)
+     * → thêm `page_html` (partial `theme::partials.cart-page`).
      */
     private function payload(?array $change = null, ?string $message = null, ?string $redirect = null): JsonResponse
     {
@@ -162,6 +166,7 @@ final class CartController
             'count' => $view->itemCount ?? 0,
             'voucher' => $voucher,
             'html' => view('theme::partials.mini-cart', ['cart' => $cart, 'voucher' => $voucher])->render(),
+            'page_html' => request()->header(self::VIEW_HEADER) === 'page' ? view('theme::partials.cart-page', ['cart' => $cart, 'voucher' => $voucher])->render() : null,
             'change' => $change,
             'message' => $message,
             'redirect' => $redirect,

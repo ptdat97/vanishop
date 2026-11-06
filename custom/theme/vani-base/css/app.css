@@ -55,6 +55,11 @@
     display: revert;
 }
 
+/* Nút chỉ cần khi tắt JS (vd. "Cập nhật" số lượng — có JS thì đổi là lưu ngay). */
+.js [data-no-js] {
+    display: none;
+}
+
 /*
  * Carousel (Swiper từ npm — app.js tải khi trang có `.vani-carousel`). Chưa khởi tạo (không JS, hoặc đang tải):
  * dải cuộn ngang scroll-snap — nội dung vẫn xem/vuốt được (ADR-025 quyết định 4). Khởi tạo xong: CSS của Swiper.
