@@ -14,7 +14,16 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
-                // Storefront (theme vani-base, token `font-sans`) và Admin: `@fonts('anivele')` trong layout theme và resources/views/admin.blade.php.
+                // Admin: Inter (SIL OFL 1.1) — `@fonts('inter')` trong resources/views/admin.blade.php. Bunny tải về lúc build,
+                // phục vụ từ public/build (trình duyệt không gọi ra ngoài). Chỉ preload bản thường; các độ đậm khác tải khi cần.
+                bunny('Inter', {
+                    alias: 'inter',
+                    weights: [400, 500, 600, 700],
+                    subsets: ['latin', 'latin-ext', 'vietnamese'],
+                    preload: [{ weight: 400, style: 'normal' }],
+                    optimizedFallbacks: false,
+                }),
+                // Storefront (theme vani-base, token `font-sans`): `@fonts('anivele')` trong layout theme.
                 local('Anivele', {
                     alias: 'anivele',
                     optimizedFallbacks: false,

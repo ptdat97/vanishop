@@ -5,6 +5,6 @@
 @source '../../custom/plugin/*/Resources/js';
 
 @theme {
-    /* Anivele (cùng font storefront): @font-face + preload do `@fonts('anivele')` (vite.config.js, provider local). */
-    --font-sans: 'Anivele', ui-sans-serif, system-ui, sans-serif;
+    /* Inter: @font-face + preload do `@fonts('inter')` (vite.config.js, provider bunny). */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
