@@ -10,8 +10,8 @@ namespace Modules\Extension\Contracts\Data;
  */
 final readonly class FieldDefinition
 {
-    /** `media` (0.3.87): id ảnh của Thư viện ảnh, Admin hiện ô chọn ảnh dùng chung. */
-    public const TYPES = ['string', 'text', 'int', 'bool', 'select', 'date', 'media'];
+    /** `media` (0.3.87): id ảnh của Thư viện ảnh; `video` (0.3.91): id video của Thư viện ảnh — ô chọn dùng chung. */
+    public const TYPES = ['string', 'text', 'int', 'bool', 'select', 'date', 'media', 'video'];
 
     /**
      * @param  array<array-key, string>  $options  (select) giá trị => nhãn
@@ -75,6 +75,14 @@ final readonly class FieldDefinition
     }
 
     /**
+     * Video của Thư viện ảnh (0.3.91, mp4/webm): giá trị là id; hiển thị bằng `vani_media($id)` (URL file gốc).
+     */
+    public static function video(string $key, string $label, bool $required = false, ?string $help = null): self
+    {
+        return new self($key, $label, 'video', $required, help: $help);
+    }
+
+    /**
      * @return list<mixed>
      */
     public function rules(): array
@@ -87,7 +95,7 @@ final readonly class FieldDefinition
             'bool' => ['nullable', 'boolean'],
             'select' => [$presence, 'string', 'in:'.implode(',', array_map('strval', array_keys($this->options)))],
             'date' => [$presence, 'date_format:Y-m-d'],
-            'media' => [$presence, 'integer', 'min:1'],
+            'media', 'video' => [$presence, 'integer', 'min:1'],
         };
     }
 

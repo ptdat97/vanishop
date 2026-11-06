@@ -46,6 +46,32 @@ final class Media extends Model
         return app(ImageCache::class)->srcset($this, $group);
     }
 
+    public const VIDEO_TYPES = ['video/mp4' => 'mp4', 'video/webm' => 'webm'];
+
+    /**
+     * MIME chuẩn hoá khi lưu: một số bản libmagic nhận MP4 là `application/mp4`.
+     */
+    public static function normalizeMime(string $mimeType): string
+    {
+        return $mimeType === 'application/mp4' ? 'video/mp4' : $mimeType;
+    }
+
+    /**
+     * Video (0.3.91): không có bản thu nhỏ, luôn dùng file gốc.
+     */
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->mime_type, 'video/');
+    }
+
+    /**
+     * @return 'image'|'video'
+     */
+    public function kind(): string
+    {
+        return $this->isVideo() ? 'video' : 'image';
+    }
+
     /**
      * Nơi đang dùng ảnh (màu sản phẩm, danh mục…).
      *

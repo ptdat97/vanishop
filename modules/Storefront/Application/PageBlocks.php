@@ -80,7 +80,7 @@ final class PageBlocks
             $known = array_map(fn (FieldDefinition $field): string => $field->key, $fields);
             $clean[] = ['type' => $type->type(), 'config' => array_intersect_key($config, array_flip($known))];
             foreach ($fields as $field) {
-                if ($field->type === 'media' && is_numeric($config[$field->key] ?? null)) {
+                if (in_array($field->type, ['media', 'video'], true) && is_numeric($config[$field->key] ?? null)) {
                     $mediaIds[] = (int) $config[$field->key];
                 }
             }

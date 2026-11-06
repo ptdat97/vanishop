@@ -9,8 +9,9 @@ import { computed, onMounted, ref } from 'vue';
 /**
  * Thư viện ảnh dùng chung: trang Admin → Thư viện ảnh và modal chọn ảnh (MediaPicker) ở các form.
  * `pick` bật chế độ chọn: nút "Chọn" phát `select` với các ảnh đã chọn; nhấp đúp một ảnh = chọn ngay.
+ * `kind` (0.3.91): `image` | `video` lọc loại tệp được duyệt/tải lên; `any` (mặc định, trang Thư viện) hiện cả hai.
  */
-const props = withDefaults(defineProps<{ libraryUrl: string; pick?: boolean; multiple?: boolean }>(), { pick: false, multiple: true });
+const props = withDefaults(defineProps<{ libraryUrl: string; pick?: boolean; multiple?: boolean; kind?: 'image' | 'video' | 'any' }>(), { pick: false, multiple: true, kind: 'any' });
 const emit = defineEmits<{ select: [items: MediaItem[]]; cancel: [] }>();
 
 interface BrowseResponse {
@@ -18,7 +19,14 @@ interface BrowseResponse {
     items: MediaItem[];
     meta: { page: number; last_page: number; total: number };
     can_manage: boolean;
+    limits?: { image_kb: number; video_kb: number };
 }
+
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const VIDEO_TYPES = ['video/mp4', 'video/webm'];
+const acceptedTypes = computed(() => (props.kind === 'image' ? IMAGE_TYPES : props.kind === 'video' ? VIDEO_TYPES : [...IMAGE_TYPES, ...VIDEO_TYPES]));
+const noun = computed(() => (props.kind === 'image' ? 'ảnh' : props.kind === 'video' ? 'video' : 'ảnh/video'));
+const limits = ref<{ image_kb: number; video_kb: number } | null>(null);
 
 const sorts = [
     { value: 'created_at:desc', label: 'Mới nhất' },
@@ -60,7 +68,10 @@ async function load(): Promise<void> {
     loading.value = true;
     const [sortBy, order] = sort.value.split(':');
     try {
-        const data = await getJson<BrowseResponse>(url('browse'), { folder: folder.value, keyword: keyword.value.trim(), sort: sortBy, order, page: page.value });
+        const query: Record<string, string | number> = { folder: folder.value, keyword: keyword.value.trim(), sort: sortBy, order, page: page.value };
+        if (props.kind !== 'any') query.kind = props.kind;
+        const data = await getJson<BrowseResponse>(url('browse'), query);
+        limits.value = data.limits ?? null;
         folders.value = data.folders;
         items.value = data.items;
         meta.value = data.meta;
@@ -133,7 +144,8 @@ async function upload(files: File[]): Promise<void> {
         const result = await postJson<{ message: string; items: MediaItem[] }>(url('upload'), body);
         if (props.pick) {
             const next = new Map(props.multiple ? selected.value : []);
-            (props.multiple ? result.items : result.items.slice(0, 1)).forEach((item) => next.set(item.id, item));
+            const matching = result.items.filter((item) => props.kind === 'any' || (item.kind ?? 'image') === props.kind);
+            (props.multiple ? matching : matching.slice(0, 1)).forEach((item) => next.set(item.id, item));
             selected.value = next;
         }
         if (searching.value) {
@@ -152,7 +164,7 @@ function onFileInput(event: Event): void {
 
 function onDrop(event: DragEvent): void {
     dragging.value = false;
-    upload(Array.from(event.dataTransfer?.files ?? []).filter((file) => file.type.startsWith('image/')));
+    upload(Array.from(event.dataTransfer?.files ?? []).filter((file) => acceptedTypes.value.includes(file.type)));
 }
 
 async function createFolder(): Promise<void> {
@@ -190,7 +202,7 @@ async function deleteFolder(): Promise<void> {
 
 async function renameItem(): Promise<void> {
     const [item] = selectedItems.value;
-    const name = await confirmAction({ title: 'Đổi tên ảnh', confirmLabel: 'Đổi tên', reason: { label: 'Tên hiển thị của ảnh', required: true, value: item.name } });
+    const name = await confirmAction({ title: `Đổi tên ${noun.value}`, confirmLabel: 'Đổi tên', reason: { label: `Tên hiển thị của ${noun.value}`, required: true, value: item.name } });
     if (name) {
         run(() => postJson(url(`items/${item.id}/rename`), { name }));
     }
@@ -206,7 +218,7 @@ function moveItems(): void {
 }
 
 async function deleteItems(): Promise<void> {
-    if ((await confirmAction({ title: `Xoá vĩnh viễn ${selected.value.size} ảnh?`, message: 'Ảnh đang dùng ở sản phẩm/danh mục sẽ được giữ lại.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: `Xoá vĩnh viễn ${selected.value.size} ${noun.value}?`, message: 'Tệp đang được dùng (sản phẩm, danh mục, khối trang chủ…) sẽ được giữ lại.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         run(async () => {
             const result = await postJson<{ message: string }>(url('items/delete'), { ids: selectedItems.value.map((item) => item.id) });
             selected.value = new Map();
@@ -252,15 +264,16 @@ onMounted(load);
                     <div class="w-40"><Select v-model="sort" :options="sorts" aria-label="Sắp xếp" @change="search" /></div>
                 </form>
                 <label v-if="canManage" :class="primaryButton" class="cursor-pointer">
-                    {{ uploading ? 'Đang tải lên…' : 'Tải ảnh lên' }}
-                    <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple :disabled="uploading" @change="onFileInput" />
+                    {{ uploading ? 'Đang tải lên…' : `Tải ${noun} lên` }}
+                    <input type="file" class="hidden" :accept="acceptedTypes.join(',')" multiple :disabled="uploading" @change="onFileInput" />
                 </label>
             </div>
 
             <p v-if="message" class="mx-3 mt-3 rounded px-3 py-2 text-sm" :class="message.type === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ message.text }}</p>
             <p class="px-3 pt-2 text-xs text-slate-500">
-                {{ searching ? `Kết quả tìm "${keyword.trim()}"` : folderName(folder) }} · {{ meta.total }} ảnh
-                <template v-if="canManage"> · kéo thả ảnh vào đây để tải lên thư mục này</template>
+                {{ searching ? `Kết quả tìm "${keyword.trim()}"` : folderName(folder) }} · {{ meta.total }} {{ noun }}
+                <template v-if="canManage"> · kéo thả {{ noun }} vào đây để tải lên thư mục này</template>
+                <template v-if="canManage && limits && kind !== 'image'"> · video MP4/WebM tối đa {{ Math.round(limits.video_kb / 1024) }} MB</template>
             </p>
 
             <div
@@ -282,18 +295,20 @@ onMounted(load);
                         @dblclick="pickNow(item)"
                     >
                         <div class="relative aspect-square bg-slate-100">
-                            <img :src="item.thumb_url" :alt="item.name" loading="lazy" class="h-full w-full object-cover" />
+                            <video v-if="item.kind === 'video'" :src="`${item.url}#t=0.5`" muted playsinline preload="metadata" class="h-full w-full object-cover" />
+                            <img v-else :src="item.thumb_url ?? item.url" :alt="item.name" loading="lazy" class="h-full w-full object-cover" />
+                            <span v-if="item.kind === 'video'" class="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 text-[10px] text-white">▶ Video</span>
                             <span v-if="item.usages_count" class="absolute top-1 left-1 rounded bg-emerald-600/90 px-1.5 text-[10px] text-white">Đang dùng {{ item.usages_count }}</span>
                             <span v-if="selected.has(item.id)" class="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs text-white">✓</span>
                         </div>
                         <div class="p-1.5 text-xs">
                             <p class="truncate font-medium">{{ item.name }}</p>
-                            <p class="text-slate-400">{{ item.width }}×{{ item.height }} · {{ size(item.size_bytes) }}</p>
+                            <p class="text-slate-400"><template v-if="item.width">{{ item.width }}×{{ item.height }} · </template>{{ size(item.size_bytes) }}</p>
                             <p v-if="searching" class="truncate text-slate-400">📁 {{ folderName(item.folder) }}</p>
                         </div>
                     </button>
                 </div>
-                <p v-if="!loading && !items.length" class="py-12 text-center text-sm text-slate-500">{{ searching ? 'Không tìm thấy ảnh.' : 'Thư mục chưa có ảnh.' }}</p>
+                <p v-if="!loading && !items.length" class="py-12 text-center text-sm text-slate-500">{{ searching ? `Không tìm thấy ${noun}.` : `Thư mục chưa có ${noun}.` }}</p>
                 <p v-if="loading" class="absolute inset-x-0 top-2 text-center text-xs text-slate-400">Đang tải…</p>
             </div>
 
@@ -315,7 +330,7 @@ onMounted(load);
 
                 <div v-if="pick" class="ml-auto flex gap-2">
                     <button type="button" :class="secondaryButton" @click="emit('cancel')">Huỷ</button>
-                    <button type="button" :class="primaryButton" :disabled="!selected.size" @click="emit('select', selectedItems)">Chọn {{ selected.size || '' }} ảnh</button>
+                    <button type="button" :class="primaryButton" :disabled="!selected.size" @click="emit('select', selectedItems)">Chọn {{ selected.size || '' }} {{ noun }}</button>
                 </div>
             </div>
         </section>

@@ -29,7 +29,7 @@ const error = (section: ExtensionSection, field: string): string | undefined => 
             />
             <DateInput v-else-if="field.type === 'date'" :id="id(section, field.key)" v-model="values[section.input][section.key][field.key] as string | null" />
             <input v-else-if="field.type === 'bool'" :id="id(section, field.key)" v-model="values[section.input][section.key][field.key] as boolean" type="checkbox" />
-            <MediaField v-else-if="field.type === 'media'" v-model="values[section.input][section.key][field.key] as number | null" :label="field.label.toLowerCase()" />
+            <MediaField v-else-if="field.type === 'media' || field.type === 'video'" v-model="values[section.input][section.key][field.key] as number | null" :kind="field.type === 'video' ? 'video' : 'image'" :label="field.label.toLowerCase()" />
             <input v-else :id="id(section, field.key)" v-model="values[section.input][section.key][field.key] as string | null" :class="inputClass" :type="field.type === 'int' ? 'number' : 'text'" />
         </FormField>
     </section>

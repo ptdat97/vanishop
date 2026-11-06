@@ -25,7 +25,7 @@ final class EloquentMediaDirectory implements MediaDirectory
             foreach ($this->cache->variantsFor($media) as $size) {
                 $variants[$size->width] = $media->url($size->width);
             }
-            $result[$media->id] = new MediaData($media->id, $media->original_name, $media->width, $media->height, $media->url(), $variants);
+            $result[$media->id] = new MediaData($media->id, $media->original_name, $media->width, $media->height, $media->url(), $variants, $media->mime_type);
         }
 
         return $result;

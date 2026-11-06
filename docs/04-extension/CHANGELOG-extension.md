@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.91 — 2026-11-06
+
+Thư viện ảnh chứa cả video (MP4/WebM).
+
+### Thêm
+- Tải lên MP4/WebM vào Thư viện ảnh (giới hạn riêng `media.max_video_kb` / `VANI_MEDIA_MAX_VIDEO_KB`, mặc định 100 MB); kích thước khung MP4 đọc từ hộp `tkhd` (WebM để trống). Video không có bản thu nhỏ: `vani_image()`/`MediaUrls` trả file gốc, `srcset` rỗng.
+- `FieldDefinition::video()` (kiểu trường `video`, giá trị là id) — ô chọn video trong form khối/phần form plugin; khối trang chủ khai báo video đang dùng (`storefront.home`) như ảnh.
+- Helper `vani_media(?int $id): string` — URL file gốc (ảnh hoặc video).
+- `MediaData::$mimeType` + `isVideo()`; duyệt Thư viện (`/admin/media/browse`) nhận `kind=image|video`, trả `kind` từng mục và `limits`.
+- Admin: `MediaManager`/`MediaPicker`/`MediaField` có prop `kind` (`MediaPicker`/`MediaField` mặc định `image` — ô chọn ảnh hiện có không thấy video).
+
+### Đổi
+- `vani.storefront-extras` 1.2.0 (cần Core `^0.3.91`): Video hero chọn video từ Thư viện ảnh (`video`, `video_mobile`) thay cho ô nhập `video_url`/`video_mobile_url`; cấu hình cũ có URL https .mp4/.webm vẫn hiện.
+
 ## 0.3.90 — 2026-11-06
 
 Ảnh chỉ chọn từ Thư viện ảnh (không còn nhập URL ảnh).

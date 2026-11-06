@@ -44,7 +44,7 @@ final class MediaManager
     /**
      * Có từ khoá → tìm theo tên trong mọi thư mục; không có → ảnh của thư mục đang mở (không gồm thư mục con).
      *
-     * @param  array{folder?: string|null, keyword?: string|null, sort?: string|null, order?: string|null}  $filters
+     * @param  array{folder?: string|null, keyword?: string|null, sort?: string|null, order?: string|null, kind?: string|null}  $filters
      * @return LengthAwarePaginator<int, Media>
      */
     public function search(array $filters, int $page = 1): LengthAwarePaginator
@@ -55,6 +55,9 @@ final class MediaManager
 
         return Media::query()
             ->withCount('usages')
+            // Lọc theo loại (0.3.91): ô chọn ảnh chỉ thấy ảnh, ô chọn video chỉ thấy video.
+            ->when(($filters['kind'] ?? null) === 'video', fn (Builder $query) => $query->where('mime_type', 'like', 'video/%'))
+            ->when(($filters['kind'] ?? null) === 'image', fn (Builder $query) => $query->where('mime_type', 'not like', 'video/%'))
             ->when(
                 $keyword !== '',
                 fn (Builder $query) => $query->where('original_name', 'like', '%'.addcslashes($keyword, '%_\\').'%'),

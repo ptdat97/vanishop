@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginAssets;
@@ -64,6 +66,27 @@ it('Video hero chỉ nhận https mp4/webm; Markdown bỏ HTML thô và link jav
 
     $html = app(MarkdownBlock::class)->resolve(['body' => "<script>alert(1)</script>\n\n[bấm](javascript:alert(1)) **đậm**"], 'vi')['html'];
     expect($html)->not->toContain('<script')->not->toContain('javascript:')->toContain('<strong>đậm</strong>');
+});
+
+it('Video hero 1.2.0: video chọn từ Thư viện ảnh (id), di động riêng; ảnh đặt nhầm vào ô video không được dùng làm video', function () {
+    $media = fn (string $name, string $mime): Media => Media::query()->create(['disk' => 'public', 'path' => "media/{$name}", 'folder' => '', 'original_name' => $name, 'mime_type' => $mime, 'size_bytes' => 1, 'width' => null, 'height' => null, 'checksum' => hash('sha256', $name)]);
+    $desktop = $media('hero.mp4', 'video/mp4');
+    $mobile = $media('doc.webm', 'video/webm');
+    $photo = $media('anh.jpg', 'image/jpeg');
+
+    $data = app(VideoHeroBlock::class)->resolve(['video' => $desktop->id, 'video_mobile' => $mobile->id, 'video_url' => 'https://cdn.shop.test/cu.mp4'], 'vi');
+    expect($data['video'])->toBe(['src' => vani_media($desktop->id), 'type' => 'video/mp4'])
+        ->and($data['videoMobile'])->toBe(['src' => vani_media($mobile->id), 'type' => 'video/webm'])
+        ->and(app(VideoHeroBlock::class)->resolve(['video_url' => 'https://cdn.shop.test/cu.webm?v=2'], 'vi')['video'])->toBe(['src' => 'https://cdn.shop.test/cu.webm?v=2', 'type' => 'video/webm'])
+        ->and(fn () => app(VideoHeroBlock::class)->resolve(['video' => $photo->id], 'vi'))->toThrow(InvalidArgumentException::class)
+        ->and(collect(app(VideoHeroBlock::class)->fields())->whereIn('key', ['video', 'video_mobile'])->pluck('type')->all())->toBe(['video', 'video']);
+
+    $html = view(app(VideoHeroBlock::class)->view(), $data)->render();
+    expect($html)->toContain('src="'.vani_media($mobile->id).'" media="(max-width: 767px)" type="video/webm"')->toContain('type="video/mp4"');
+
+    // Video đang dùng ở khối trang chủ được khai báo như ảnh — Thư viện ảnh không cho xoá.
+    app(PageBlocks::class)->saveHome([['type' => 'extras_video_hero', 'config' => ['video' => $desktop->id, 'video_mobile' => $mobile->id]]]);
+    expect(DB::table('mediables')->where('mediable_type', 'storefront.home')->pluck('media_id')->sort()->values()->all())->toBe([$desktop->id, $mobile->id]);
 });
 
 it('Sản phẩm theo tab: tab thiếu tên/nguồn hoặc không có sản phẩm bị bỏ; chọn tay giữ thứ tự id', function () {

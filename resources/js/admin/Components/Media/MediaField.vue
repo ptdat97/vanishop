@@ -12,8 +12,15 @@ import MediaPicker from './MediaPicker.vue';
  *
  *     <MediaField v-model="form.cover_media_id" />
  *     <MediaField v-model="form.media_ids" multiple :max="8" />
+ *     <MediaField v-model="form.video_media_id" kind="video" label="video" />   (0.3.91)
  */
-const props = withDefaults(defineProps<{ multiple?: boolean; max?: number; disabled?: boolean; label?: string }>(), { multiple: false, max: 50, disabled: false, label: 'ảnh' });
+const props = withDefaults(defineProps<{ multiple?: boolean; max?: number; disabled?: boolean; label?: string; kind?: 'image' | 'video' }>(), {
+    multiple: false,
+    max: 50,
+    disabled: false,
+    label: 'ảnh',
+    kind: 'image',
+});
 const model = defineModel<number | null | number[]>({ default: null });
 
 const libraryUrl = computed(() => usePage<SharedProps>().props.urls.media ?? null);
@@ -65,7 +72,8 @@ function move(index: number, delta: number): void {
     <div class="space-y-2" data-media-field>
         <ul v-if="ids.length" :class="multiple ? 'grid grid-cols-3 gap-2 sm:grid-cols-4' : ''">
             <li v-for="(id, index) in ids" :key="id" class="group relative overflow-hidden rounded border border-slate-200 bg-slate-50" :class="multiple ? 'aspect-square' : 'max-w-xs'">
-                <img v-if="previews[id]" :src="previews[id].thumb_url" :alt="previews[id].name" class="h-full w-full object-cover" :class="multiple ? '' : 'max-h-48'" />
+                <video v-if="previews[id]?.kind === 'video'" :src="previews[id].url" muted playsinline controls preload="metadata" class="h-full w-full object-cover" :class="multiple ? '' : 'max-h-48'" />
+                <img v-else-if="previews[id]" :src="previews[id].thumb_url ?? previews[id].url" :alt="previews[id].name" class="h-full w-full object-cover" :class="multiple ? '' : 'max-h-48'" />
                 <div v-else class="flex h-24 items-center justify-center text-xs text-slate-400">#{{ id }}</div>
                 <div v-if="!disabled" class="absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-white/80 p-1 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
                     <template v-if="multiple">
@@ -80,7 +88,7 @@ function move(index: number, delta: number): void {
         <button v-if="!disabled && libraryUrl && (!multiple || ids.length < max)" type="button" :class="secondaryButton" @click="picking = true">
             {{ multiple ? `Thêm ${label}` : ids.length ? `Đổi ${label}` : `Chọn ${label}` }}
         </button>
-        <p v-if="!libraryUrl" class="text-xs text-slate-500">Cần quyền xem Thư viện ảnh để chọn ảnh.</p>
-        <MediaPicker v-model:open="picking" :title="`Chọn ${label} từ thư viện`" :multiple="multiple" @select="pick" />
+        <p v-if="!libraryUrl" class="text-xs text-slate-500">Cần quyền xem Thư viện ảnh để chọn {{ label }}.</p>
+        <MediaPicker v-model:open="picking" :title="`Chọn ${label} từ thư viện`" :multiple="multiple" :kind="kind" @select="pick" />
     </div>
 </template>

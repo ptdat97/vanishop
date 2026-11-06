@@ -79,7 +79,7 @@ function addChild(item: MenuItem): void {
 function pickImage(items: MediaItem[]): void {
     if (picking.value && items[0]) {
         picking.value.image_media_id = items[0].id;
-        context.images[items[0].id] = items[0].thumb_url;
+        context.images[items[0].id] = items[0].thumb_url ?? items[0].url;
     }
     picking.value = null;
 }

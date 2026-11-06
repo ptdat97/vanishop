@@ -168,3 +168,40 @@ it('logo thương hiệu chọn từ Thư viện ảnh: khai báo đang dùng, s
     $this->delete("/admin/catalog/brands/{$brand->id}")->assertRedirect();
     expect(DB::table('mediables')->where('media_id', $logo['id'])->exists())->toBeFalse();
 });
+
+/** MP4 tối thiểu: ftyp + moov/trak/tkhd (version 0) mang kích thước khung $width×$height. */
+function fakeMp4(string $name, int $width, int $height): UploadedFile
+{
+    $box = fn (string $type, string $body): string => pack('N', 8 + strlen($body)).$type.$body;
+    $tkhd = "\0\0\0\x03".str_repeat("\0", 20).str_repeat("\0", 8).str_repeat("\0", 8).str_repeat("\0", 36).pack('N', $width * 65536).pack('N', $height * 65536);
+    $bytes = $box('ftyp', 'isom'."\0\0\x02\0".'isomiso2mp41').$box('moov', $box('trak', $box('tkhd', $tkhd)));
+
+    return UploadedFile::fake()->createWithContent($name, $bytes.str_repeat("\0", 2048));
+}
+
+it('video: tải lên MP4/WebM (giới hạn dung lượng riêng), đọc khung hình MP4, không có bản thu nhỏ; duyệt lọc theo loại', function () {
+    [$mp4] = uploadTo('', [fakeMp4('hero.mp4', 1920, 1080)]);
+    $webm = UploadedFile::fake()->createWithContent('doc.webm', "\x1A\x45\xDF\xA3\x9F\x42\x86\x81\x01\x42\xF7\x81\x01\x42\xF2\x81\x04\x42\xF3\x81\x08\x42\x82\x84webm\x42\x87\x81\x04\x42\x85\x81\x02".str_repeat("\0", 2048));
+    [$doc] = uploadTo('', [$webm]);
+    [$photo] = uploadTo('', [UploadedFile::fake()->image('anh.jpg', 800, 1200)]);
+
+    expect($mp4)->toMatchArray(['kind' => 'video', 'mime_type' => 'video/mp4', 'width' => 1920, 'height' => 1080, 'thumb_url' => null])
+        ->and($doc)->toMatchArray(['kind' => 'video', 'mime_type' => 'video/webm', 'width' => null, 'thumb_url' => null])
+        ->and($photo['kind'])->toBe('image')
+        ->and(vani_media($mp4['id']))->toBe($mp4['url'])
+        ->and(vani_image($mp4['id'], 400))->toBe($mp4['url']);
+
+    $this->getJson("{$this->base}/browse?kind=video&sort=original_name&order=asc")->assertOk()->assertJsonPath('items.*.name', ['doc.webm', 'hero.mp4'])
+        ->assertJsonPath('limits.video_kb', 100 * 1024);
+    $this->getJson("{$this->base}/browse?kind=image")->assertOk()->assertJsonPath('items.*.id', [$photo['id']]);
+    $this->getJson("{$this->base}/browse?kind=pdf")->assertUnprocessable();
+
+    config(['vanishop.media.max_video_kb' => 1]);
+    $this->postJson("{$this->base}/upload", ['images' => [fakeMp4('lon.mp4', 640, 360)]])->assertUnprocessable()->assertJsonValidationErrors('images.0');
+    $this->postJson("{$this->base}/upload", ['images' => [UploadedFile::fake()->create('clip.mov', 10, 'video/quicktime')]])->assertUnprocessable()->assertJsonValidationErrors('images.0');
+});
+
+it('kiểu trường video: FieldDefinition nhận id video của Thư viện ảnh', function () {
+    expect(FieldDefinition::video('clip', 'Video', required: true)->rules())->toBe(['required', 'integer', 'min:1'])
+        ->and(FieldDefinition::video('clip', 'Video')->type)->toBe('video');
+});

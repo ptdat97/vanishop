@@ -247,6 +247,16 @@ if (! function_exists('vani_product_ratio')) {
     }
 }
 
+if (! function_exists('vani_media')) {
+    /**
+     * URL file gốc của ảnh/video trong Thư viện ảnh (0.3.91 — video không có bản thu nhỏ). Chuỗi rỗng khi id không có.
+     */
+    function vani_media(?int $mediaId): string
+    {
+        return $mediaId === null ? '' : (app(MediaUrls::class)->url($mediaId) ?? '');
+    }
+}
+
 if (! function_exists('vani_srcset')) {
     /**
      * Giá trị `srcset` của ảnh (0.3.87): `<img src="{{ vani_image($id, 800) }}" srcset="{{ vani_srcset($id) }}" sizes="…">`.

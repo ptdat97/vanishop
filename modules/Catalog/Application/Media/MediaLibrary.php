@@ -12,7 +12,7 @@ use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\Mediable;
 
 /**
- * Lưu file ảnh (khử trùng lặp theo checksum) và gắn vào đối tượng theo vai trò. Ảnh thu nhỏ không tạo lúc tải lên mà
+ * Lưu file ảnh/video (khử trùng lặp theo checksum) và gắn vào đối tượng theo vai trò. Ảnh thu nhỏ không tạo lúc tải lên mà
  * khi có request đầu tiên (ImageCache, public/cache).
  */
 final class MediaLibrary
@@ -41,7 +41,11 @@ final class MediaLibrary
             return $existing;
         }
 
-        $dimensions = @getimagesize((string) $file->getRealPath()) ?: [null, null];
+        $mime = Media::normalizeMime((string) $file->getMimeType());
+        // Ảnh: kích thước từ getimagesize; video (0.3.91): đọc khung hình MP4 nếu được.
+        $dimensions = str_starts_with($mime, 'video/')
+            ? (VideoProbe::dimensions((string) $file->getRealPath(), $mime) ?? [null, null])
+            : (@getimagesize((string) $file->getRealPath()) ?: [null, null]);
         $path = $file->storeAs('media/'.substr($checksum, 0, 2), $checksum.'.'.$file->extension(), $this->disk);
 
         return Media::query()->create([
@@ -49,7 +53,7 @@ final class MediaLibrary
             'path' => $path,
             'folder' => $folder,
             'original_name' => mb_substr($file->getClientOriginalName(), 0, 255),
-            'mime_type' => (string) $file->getMimeType(),
+            'mime_type' => $mime,
             'size_bytes' => (int) $file->getSize(),
             'width' => $dimensions[0],
             'height' => $dimensions[1],

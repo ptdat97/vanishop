@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.90',
+    'version' => '0.3.91',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -123,6 +123,10 @@ return [
         'disk' => env('VANI_MEDIA_DISK', 'public'),
         // Thư viện ảnh: dung lượng tối đa mỗi ảnh (KB) và số ảnh mỗi lần tải lên.
         'max_upload_kb' => (int) env('VANI_MEDIA_MAX_UPLOAD_KB', 10 * 1024),
+        // Video (mp4, webm) trong Thư viện ảnh (0.3.91): dung lượng tối đa mỗi file (KB). Video không thu nhỏ — phục vụ file
+        // gốc (web server/CDN trả trực tiếp, hỗ trợ tua). Nhớ nâng upload_max_filesize/post_max_size của PHP và
+        // client_max_body_size của Nginx tương ứng.
+        'max_video_kb' => (int) env('VANI_MEDIA_MAX_VIDEO_KB', 100 * 1024),
         'max_files_per_upload' => 20,
 
         // Ảnh thu nhỏ tạo khi có request đầu tiên, lưu tại public/cache (lần sau web server trả file tĩnh). Giữ định

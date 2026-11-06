@@ -59,7 +59,7 @@ export interface SharedProps {
 export interface ExtensionField {
     key: string;
     label: string;
-    type: 'string' | 'text' | 'int' | 'bool' | 'select' | 'date' | 'media';
+    type: 'string' | 'text' | 'int' | 'bool' | 'select' | 'date' | 'media' | 'video';
     required: boolean;
     options: Record<string, string>;
     help: string | null;
@@ -123,7 +123,9 @@ export function initialExtensionValues(sections: ExtensionSection[]): ExtensionV
 export interface MediaItem {
     id: number;
     name: string;
-    thumb_url: string;
+    /** 0.3.91: `video` không có ảnh thu nhỏ (`thumb_url` null) — xem bằng thẻ <video> với `url`. */
+    kind?: 'image' | 'video';
+    thumb_url: string | null;
     url: string;
     width: number | null;
     height: number | null;

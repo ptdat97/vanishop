@@ -446,6 +446,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L21 | Tồn kho đợt 2 chưa làm: form kho còn ô gõ tự do cho "Quản lý tồn" và Priority, mã tỉnh gõ tay; ngưỡng sắp hết và thời gian giữ hàng chỉ ở `.env`; tồn an toàn chỉ theo từng ô | Inventory | Đợt 2 theo đánh giá 2026-11-05 |
 | L22 | Ảnh chọn ở cấu hình kiểu `media` (vd. "Ảnh thay thế") chưa khai báo "đang dùng" — vẫn xoá được trong Thư viện ảnh (`SettingsAdmin` ở vòng 0 không gọi được Catalog); trường `media` trong phần form của plugin do plugin tự `syncUsages` | Tenancy/Extension, Catalog | Event `SettingChanged` để Catalog khai báo ảnh của cấu hình `media` |
 | L23 | Ảnh bìa bài viết, ảnh trong nội dung Markdown, banner danh mục (bản desktop), logo thương hiệu chưa có `srcset`/kích thước có tên; ảnh sản phẩm cắt giữa ảnh (chưa chọn điểm lấy nét) | `vani.cms`, theme, Catalog | Khai báo kích thước có tên cho bìa bài viết/banner; điểm lấy nét theo ảnh trong Thư viện ảnh |
+| L24 | Video trong Thư viện ảnh (0.3.91): không tạo ảnh đại diện/poster tự động (lưới Thư viện xem trước bằng thẻ `<video>`), không nén/chuyển mã; WebM không đọc được kích thước khung; server chưa chặn id video đặt vào trường kiểu `media` (chỉ ô chọn lọc theo loại); video sản phẩm vẫn qua `VideoDriver` (YouTube…), chưa chọn từ thư viện; video lưu trên disk media, chưa có CDN/stream riêng | Catalog, `vani.storefront-extras` | ffmpeg (cần duyệt phụ thuộc) cho poster/chuyển mã; rule `media` kiểm loại tệp qua MediaDirectory; nguồn video thư viện cho gallery sản phẩm |
 
 ## 7. Quyết định của Owner (2026-11-03)
 

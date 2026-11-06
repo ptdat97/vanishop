@@ -20,7 +20,14 @@ final readonly class MediaData
         public ?int $height,
         public string $url,
         public array $variants,
+        /** 0.3.91: `video/mp4`, `video/webm` = video (không có bản thu nhỏ). */
+        public string $mimeType = 'image/jpeg',
     ) {}
+
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->mimeType, 'video/');
+    }
 
     /**
      * URL bản nhỏ nhất rộng ≥ $width; không có → ảnh gốc.

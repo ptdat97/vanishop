@@ -60,7 +60,7 @@ Core không ghi cứng các giá trị dưới đây — tất cả nằm trong 
 | Rate limit (request/phút/IP) | `rate_limits.storefront_api` (`VANI_RATE_STOREFRONT_API`), `cart_create`, `checkout`, `order_track`, `customer_auth`, `payment_callbacks`, `shipping_webhooks`, `integration_anonymous` | 240, 30, 20, 10, 20, 600, 600, 60 |
 | Bảo mật | `admin.login_max_attempts` (`VANI_ADMIN_LOGIN_MAX_ATTEMPTS`), `customer.otp.ttl`/`max_attempts` (`VANI_OTP_TTL`, `VANI_OTP_MAX_ATTEMPTS`), `integration.signature_tolerance` | 5; 300 giây/5 lần; 300 giây |
 | Plugin | `plugins.breaker.threshold`/`cooldown` (`VANI_PLUGIN_BREAKER_*`) | 5 lỗi/phút → bỏ qua 300 giây |
-| Ảnh, thanh toán | `media.max_upload_kb` (`VANI_MEDIA_MAX_UPLOAD_KB`), `media.max_files_per_upload`, `payment.reconcile_after_minutes` | 10240 KB, 20 ảnh; 5 phút |
+| Ảnh, thanh toán | `media.max_upload_kb` (`VANI_MEDIA_MAX_UPLOAD_KB`), `media.max_video_kb` (`VANI_MEDIA_MAX_VIDEO_KB`, video MP4/WebM), `media.max_files_per_upload`, `payment.reconcile_after_minutes` | 10240 KB, 102400 KB, 20 tệp; 5 phút |
 
 Giới hạn cấu trúc (độ sâu danh mục, độ dài SKU, số khối trang chủ…) vẫn là hằng trong code — đổi chúng là đổi thiết kế, không phải vận hành.
 
@@ -137,7 +137,7 @@ php artisan vani:plugin:doctor && curl -fsS -H "X-Health-Token: $TOKEN" https://
 8. **Callback/webhook phải vào được từ Internet**, không bị allowlist Admin hay WAF chặn: `/api/payments/{gateway}/callback` (IPN cổng thanh toán, GET+POST), `/api/shipping/{carrier}/webhook`, `/api/integration/v1/*` (ERP/POS, xác thực HMAC). URL đăng ký với VNPay/GHN phải là `https://` theo `APP_URL`.
 9. **Đổi `VANI_ADMIN_PATH`** làm mất đường dẫn cũ (kể cả Horizon/Pulse dưới `/{admin}/system/...`); báo nhân viên trước.
 10. **Không đổi `APP_KEY`** trên hệ thống đang chạy: secret plugin lưu mã hoá trong Cấu hình sẽ không đọc được.
-11. **Upload ảnh tối đa 10 MB/ảnh**: đặt `client_max_body_size` (Nginx) và `upload_max_filesize`/`post_max_size` (PHP) ≥ 12M nếu upload nhiều ảnh một lần thì lớn hơn.
+11. **Upload ảnh tối đa 10 MB/ảnh**: đặt `client_max_body_size` (Nginx) và `upload_max_filesize`/`post_max_size` (PHP) ≥ 12M nếu upload nhiều ảnh một lần thì lớn hơn. **Video** (Thư viện ảnh, 0.3.91) giới hạn riêng `VANI_MEDIA_MAX_VIDEO_KB` (mặc định 100 MB): Nginx/PHP phải ≥ giới hạn này, nếu không request bị chặn trước khi tới ứng dụng.
 12. **Đóng băng deploy** 48 giờ trước và trong các đợt sale lớn ([operations §9](operations.md)).
 
 ## 6. Tiến trình nền
