@@ -9,7 +9,12 @@
     @hasSection('canonical')<link rel="canonical" href="@yield('canonical')">@elseif ($seo['canonical'] ?? null)<link rel="canonical" href="{{ $seo['canonical'] }}">@endif
     @if ($seo['robots'] ?? null)<meta name="robots" content="{{ $seo['robots'] }}">@endif
     @foreach ($seo['hreflang'] ?? [] as $hreflang => $href)<link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">@endforeach
-    <style>:root{@foreach ($themeTokens ?? [] as $token => $value)--vani-{{ $token }}:{{ $value }};@endforeach}</style>
+    {{-- Token in thô (không escape): `&#039;` trong <style> làm hỏng font-family. Giá trị cửa hàng nhập đã lọc ở Themes::tokens() (chặn ;{}<>). --}}
+    <style>:root{@foreach ($themeTokens ?? [] as $token => $value)--vani-{!! $token !!}:{!! $value !!};@endforeach}</style>
+    {{-- Font mặc định của theme (Anivele, vite.config.js): chỉ nạp khi token `font-sans` còn dùng nó. --}}
+    @if (str_contains((string) ($themeTokens['font-sans'] ?? ''), 'Anivele'))
+        @fonts('anivele')
+    @endif
     @vite(['custom/theme/vani-base/css/app.css', 'custom/theme/vani-base/js/app.js'])
     @stack('head')
     <x-vani::hook-slot name="vani.storefront.layout.head" />

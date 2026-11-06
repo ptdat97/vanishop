@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
+import { bunny, local } from 'laravel-vite-plugin/fonts';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
@@ -13,6 +13,26 @@ export default defineConfig({
             fonts: [
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
+                }),
+                // Storefront (theme vani-base, token `font-sans`): `@fonts('anivele')` trong layout theme.
+                local('Anivele', {
+                    alias: 'anivele',
+                    optimizedFallbacks: false,
+                    variants: [
+                        { src: ['public/fonts/anivele/fe7027e3d2f79c7174b0-Regular.woff2', 'public/fonts/anivele/fe7027e3d2f79c7174b0-Regular.woff'], weight: 400 },
+                        { src: ['public/fonts/anivele/fe7027e3d2f79c7174b0-SemiBold.woff2', 'public/fonts/anivele/fe7027e3d2f79c7174b0-SemiBold.woff'], weight: 600 },
+                    ],
+                }),
+                // Admin: `@fonts('lexend')` trong resources/views/admin.blade.php. Chỉ độ đậm Admin dùng (thường, medium, semibold, bold).
+                local('Lexend', {
+                    alias: 'lexend',
+                    optimizedFallbacks: false,
+                    variants: [
+                        { src: 'public/fonts/lexend/Lexend-Regular.ttf', weight: 400 },
+                        { src: 'public/fonts/lexend/Lexend-Medium.ttf', weight: 500 },
+                        { src: 'public/fonts/lexend/Lexend-SemiBold.ttf', weight: 600 },
+                        { src: 'public/fonts/lexend/Lexend-Bold.ttf', weight: 700 },
+                    ],
                 }),
             ],
         }),

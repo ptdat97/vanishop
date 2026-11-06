@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Vite;
 use Modules\Extension\Application\Storefront\PluginViews;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
@@ -36,6 +37,9 @@ final class UseActiveTheme
         }
         // Finder nhớ đường dẫn view đã tìm; theme có thể đổi giữa các request cùng tiến trình (Octane, test).
         View::getFinder()->flush();
+        // Vite nhớ asset/font đã preload trong tiến trình → request sau mất `<link rel="preload">` của `@fonts`; HTML phải như
+        // nhau mọi request (cache trang, storefront §5).
+        Vite::flush();
         View::share('themeTokens', $this->themes->tokens());
 
         // Chuỗi giao diện của theme (`<theme>/lang/<locale>.json`, khoá = câu tiếng Việt): cha trước, con ghi đè.

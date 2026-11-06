@@ -146,6 +146,14 @@ describe('theme', function () {
 
         $this->get('/thuong-hieu')->assertSee('--vani-color-accent:#be123c', false)->assertDontSee('<script>x', false)->assertDontSee('--vani-radius:1rem;}', false);
     });
+
+    it('font mặc định của theme: token font-sans in nguyên dấu nháy trong <style> (không &#039;); đổi font thì không nạp Anivele', function () {
+        $this->get('/thuong-hieu')->assertOk()->assertSee("--vani-font-sans:'Anivele', ui-sans-serif", false)->assertDontSee('&#039;Anivele', false)
+            ->assertSee('anivele-400-normal', false);
+
+        T::seed(fn () => app(Settings::class)->set('core', 'theme.tokens', json_encode(['font-sans' => '"Be Vietnam Pro", sans-serif'])));
+        $this->get('/thuong-hieu')->assertOk()->assertSee('--vani-font-sans:"Be Vietnam Pro", sans-serif', false)->assertDontSee('anivele-400-normal', false);
+    });
 });
 
 describe('slot storefront', function () {

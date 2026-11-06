@@ -5,5 +5,6 @@
 @source '../../custom/plugin/*/Resources/js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Lexend: @font-face + preload do `@fonts('lexend')` (vite.config.js, provider local). */
+    --font-sans: 'Lexend', ui-sans-serif, system-ui, sans-serif;
 }
