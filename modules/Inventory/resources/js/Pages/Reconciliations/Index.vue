@@ -35,7 +35,7 @@ const columns = [
     <p class="mb-2 text-sm text-slate-500">Tồn kho</p>
     <PageHeader
         title="Đối soát tồn kho"
-        subtitle="Kết quả của vani:inventory:verify (chạy hằng ngày) và vani:inventory:reconcile (nguồn ngoài). Chênh lệch còn mở phải xử lý tay."
+        subtitle="Kết quả của vani:inventory:verify (chạy hằng ngày) và vani:warehouse:reconcile (nguồn ngoài, plugin Vận hành kho). Chênh lệch còn mở phải xử lý tay."
     />
 
     <DataTable :columns="columns" :rows="runs" empty-text="Chưa có phiên đối soát nào.">

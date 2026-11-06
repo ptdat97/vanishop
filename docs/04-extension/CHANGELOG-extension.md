@@ -4,6 +4,23 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.88 — 2026-11-06
+
+Tách vận hành kho thành plugin `vani.warehouse` (ADR-042); Inventory (engine, dữ liệu tồn) ở lại Core.
+
+### Thêm
+- `Inventory\Contracts\LocationRegistry` (`all`, `find`, `save` — audit, optimistic lock, mã trùng → ValidationException) + `Contracts\Data\LocationData` (`TYPES`, `managesOnHand()`).
+- `Inventory\Contracts\StockMovements` (`transferOut`, `transferIn`; `StockMovementRejected`): biến động chuyển kho qua sổ biến động, trong transaction của bên gọi.
+- `Inventory\Contracts\InventoryReconciliation::reconcileExternal()`.
+- Plugin `vani.warehouse` 1.0.0: Kho & cửa hàng, chuyển kho (`plg_warehouse_transfers(_lines)` — đổi tên từ `stock_transfers` khi nâng cấp), `vani:warehouse:reconcile`; chặn tắt khi còn phiếu đang đi đường.
+- Admin Core: "Kho chính" (sửa tên/địa chỉ/tỉnh) trên trang Tồn kho khi chưa bật `vani.warehouse`.
+
+### Đổi / gỡ
+- Gỡ khỏi Core: màn hình Kho & cửa hàng (`admin.inventory.locations.*`), chuyển kho (`admin.inventory.transfers.*`, quyền `inventory.transfer`), lệnh `vani:inventory:reconcile`, bảng/migration `stock_transfers(_lines)`. Thay bằng `admin.plugins.vani-warehouse.*`, quyền `warehouse.locations.manage` / `warehouse.transfer`, `vani:warehouse:reconcile`.
+- Event `Inventory\Events\StockTransfer*` giữ nguyên (do `vani.warehouse` phát).
+- `LocationService::save` kiểm mã kho trùng (ValidationException `code`).
+- Test kiến trúc: plugin không nhắc tên bảng tồn kho của Core / `Modules\Inventory\Persistence`.
+
 ## 0.3.87 — 2026-11-06
 
 Ảnh thu nhỏ cấu hình trong Admin, kích thước riêng của plugin, ô chọn ảnh dùng chung.

@@ -1,6 +1,8 @@
 # Inventory
 
-> Trạng thái: **Partially Implemented** (slice 4). Quyết định: [ADR-006](../19-adr/ADR-006-inventory-authority.md).
+> Trạng thái: **Partially Implemented** (slice 4). Quyết định: [ADR-006](../19-adr/ADR-006-inventory-authority.md), [ADR-042](../19-adr/ADR-042-inventory-warehouse-plugins.md).
+>
+> **Tách vận hành kho (2026-11-06, Core 0.3.88, ADR-042):** Inventory (Core) giữ engine + dữ liệu tồn (giữ hàng, sổ biến động, ATS, `InventorySync`, engine đối soát, `verify`, lưới tồn, Đối soát chỉ đọc) và chỉ có **Kho chính** (sửa tên/địa chỉ). Plugin **`vani.warehouse`**: thêm kho/cửa hàng, loại, khả năng, ưu tiên, authority ERP/POS; chuyển kho (`plg_warehouse_transfers`); `vani:warehouse:reconcile` (snapshot nguồn ngoài). Plugin gọi `LocationRegistry`, `StockMovements`, `InventoryReconciliation` — không chạm bảng tồn (test kiến trúc). Không có plugin: mọi kho do VaniShop quản lý, API đồng bộ ERP trả `not_data_owner`.
 >
 > **Đã có:** `locations` (cấp Owner, `stock_authority`, priority, khả năng giao online/nhận tại quầy/nhận trả, `lock_version`), `location_brands`, `channel_locations` (**thuộc Inventory**, không thuộc Channel, để Channel không phụ thuộc Inventory), `stock_levels`, `stock_reservations`, `stock_movements` (append-only); domain `StockLevel` + `Allocation` (thuần PHP); `InventoryReservation` (reserve idempotent theo `reservation_key`, release, commit), `AvailabilityReader`, `InventoryStrategy` mặc định `standard`; điều chỉnh tay / kiểm kê / tồn an toàn (chặn khi location do hệ thống ngoài quản lý); lệnh `vani:inventory:release-expired` (mỗi phút); Admin: kho & cửa hàng (Owner), lưới tồn variant × location, lịch sử biến động; Storefront API: `in_stock`, `available`, `low_stock` (không lộ số lượng).
 >

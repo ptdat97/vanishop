@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Contracts\Data\SyncOutcome;
+use Modules\Inventory\Contracts\InventoryReconciliation as InventoryReconciliationContract;
 use Modules\Inventory\Contracts\InventorySync;
 use Modules\Inventory\Persistence\Models\InventoryReconciliation;
 use Modules\Inventory\Persistence\Models\InventoryReconciliationLine;
@@ -26,7 +27,7 @@ use Throwable;
  * nguồn đó quản lý tồn (`locations.stock_authority === source` và khác `vanishop`).
  * Với location khác, chênh lệch chỉ được ghi lại để xử lý tay.
  */
-final class InventoryReconciler
+final class InventoryReconciler implements InventoryReconciliationContract
 {
     private const MAX_DETAILS = 100;
 

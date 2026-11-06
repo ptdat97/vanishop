@@ -12,7 +12,7 @@ use Modules\Inventory\Persistence\Models\InventoryReconciliation;
 
 /**
  * Màn hình "Đối soát tồn kho" — chỉ đọc, dữ liệu do `vani:inventory:verify`
- * (nội bộ) và `vani:inventory:reconcile` (nguồn ngoài) ghi.
+ * (nội bộ) và `vani:warehouse:reconcile` (nguồn ngoài, plugin vani.warehouse) ghi.
  */
 final class ReconciliationController
 {

@@ -38,6 +38,10 @@ final class LocationService
      */
     public function save(array $data, ?Location $location = null, ?int $expectedLockVersion = null): Location
     {
+        if (isset($data['code']) && Location::query()->where('code', $data['code'])->when($location !== null, fn ($query) => $query->whereKeyNot($location->id))->exists()) {
+            throw ValidationException::withMessages(['code' => __('validation.unique', ['attribute' => 'code'])]);
+        }
+
         return DB::transaction(function () use ($data, $location, $expectedLockVersion): Location {
             if ($location !== null) {
                 $updated = Location::query()->whereKey($location->id)->where('lock_version', $expectedLockVersion)->increment('lock_version');

@@ -23,16 +23,8 @@ return [
     'import_header' => 'Dòng đầu của file phải có cột sku và on_hand (location tuỳ chọn).',
     'import_too_many' => 'Tối đa :max dòng mỗi lần nhập.',
 
-    'transfer_created' => 'Đã tạo phiếu chuyển kho.',
-    'transfer_shipped' => 'Đã gửi hàng; tồn kho đi đã được trừ.',
-    'transfer_received' => 'Đã nhận hàng; tồn kho đến đã được cộng.',
-    'transfer_cancelled' => 'Đã huỷ phiếu chuyển kho.',
-    'transfer_no_lines' => 'Phiếu chuyển kho phải có ít nhất một dòng.',
-    'transfer_same_location' => 'Kho đi và kho đến phải khác nhau.',
+    'location_missing' => 'Kho không tồn tại.',
     'transfer_external_authority' => 'Chỉ chuyển kho giữa các location do VaniShop quản lý tồn vật lý.',
-    'transfer_invalid_transition' => 'Không thể chuyển phiếu từ [:from] sang [:to].',
-    'transfer_received_range' => 'Số nhận của variant #:variant phải trong khoảng 0–:max.',
-    'transfer_unknown_sku' => 'Không tìm thấy SKU [:sku].',
 
     'reconcile_source_required' => '--source là bắt buộc và phải khác "vanishop".',
     'reconcile_input_required' => 'Cần --file hoặc --json cho snapshot.',

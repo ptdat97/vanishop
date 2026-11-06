@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * Một lần đối soát tồn kho (nội bộ hoặc với nguồn ngoài) — dùng chung cho
- * `vani:inventory:verify` và `vani:inventory:reconcile` (roadmap Phase 3).
+ * `vani:inventory:verify` và `vani:warehouse:reconcile` (plugin vani.warehouse).
  *
  * @property int $id
  * @property string $source

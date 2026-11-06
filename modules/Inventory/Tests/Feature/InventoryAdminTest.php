@@ -28,40 +28,6 @@ function stockOnHand(Location $location, int $variantId): int
     return (int) DB::table('stock_levels')->where('location_id', $location->id)->where('variant_id', $variantId)->value('on_hand');
 }
 
-function locationPayload(array $overrides = []): array
-{
-    return array_replace([
-        'code' => 'WH-HCM', 'name' => 'Kho Hồ Chí Minh', 'type' => 'warehouse',
-        'ships_online_orders' => true, 'allows_pickup' => false, 'accepts_returns' => true,
-        'stock_authority' => 'vanishop', 'priority' => 5, 'status' => 'active',
-    ], $overrides);
-}
-
-it('tạo và sửa location, có optimistic lock và audit', function () {
-    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'inventory.locations.manage'])->create(), 'staff');
-
-    $this->get('/admin/inventory/locations')->assertInertia(fn (Assert $page) => $page->component('Inventory::Locations/Index')->has('locations', 2));
-    $this->post('/admin/inventory/locations', locationPayload())->assertSessionHasNoErrors();
-
-    $location = T::seed(fn () => Location::query()->where('code', 'WH-HCM')->sole());
-    $this->get("/admin/inventory/locations/{$location->id}/edit")->assertInertia(fn (Assert $page) => $page->component('Inventory::Locations/Form')
-        ->where('location.code', 'WH-HCM'));
-
-    $this->put("/admin/inventory/locations/{$location->id}", locationPayload(['name' => 'Kho Thủ Đức', 'lock_version' => 0]))->assertSessionHasNoErrors();
-    $this->put("/admin/inventory/locations/{$location->id}", locationPayload(['lock_version' => 0]))->assertSessionHasErrors('lock_version');
-
-    expect($location->fresh()->name)->toBe('Kho Thủ Đức')
-        ->and(AuditLog::query()->where('action', 'like', 'inventory.location.%')->count())->toBe(2);
-    $this->post('/admin/inventory/locations', locationPayload())->assertSessionHasErrors('code');
-});
-
-it('thiếu quyền quản lý kho thì không vào được màn hình location', function () {
-    $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust']), 'staff');
-
-    $this->get('/admin/inventory/locations')->assertForbidden();
-    $this->post('/admin/inventory/locations', locationPayload())->assertForbidden();
-});
-
 it('lưới tồn: variant × location, ATS = tồn − giữ − an toàn', function () {
     I::stock($this->hn, $this->s->id, 10, 2);
     $this->actingAs(T::staff(['admin.access', 'inventory.view']), 'staff');

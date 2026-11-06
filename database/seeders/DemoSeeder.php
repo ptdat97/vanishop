@@ -34,7 +34,7 @@ use RuntimeException;
 final class DemoSeeder extends Seeder
 {
     /** Plugin nội dung/giao diện (không gọi dịch vụ ngoài) — cài + bật nếu chưa. */
-    public const PLUGINS = ['vani.cms', 'vani.lookbook', 'vani.size-chart', 'vani.storefront-extras', 'vani.scarcity-signals', 'vani.wishlist', 'vani.media-webp'];
+    public const PLUGINS = ['vani.cms', 'vani.lookbook', 'vani.size-chart', 'vani.storefront-extras', 'vani.scarcity-signals', 'vani.wishlist', 'vani.media-webp', 'vani.warehouse'];
 
     public function run(CurrentContext $context, PluginManager $plugins, ManifestRepository $manifests): void
     {

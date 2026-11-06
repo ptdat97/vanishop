@@ -7,6 +7,7 @@ namespace Modules\Inventory\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -59,8 +60,10 @@ final class StockController
                 'export' => route('admin.inventory.stock.export'),
                 'import' => route('admin.inventory.stock.import'),
                 'movements' => route('admin.inventory.movements.index'),
-                'transfers' => route('admin.inventory.transfers.index'),
-                'locations' => $canManageLocations ? route('admin.inventory.locations.index') : null,
+                // Vận hành kho (nhiều kho, chuyển kho) thuộc plugin vani.warehouse (ADR-042): chỉ hiện khi plugin bật.
+                'transfers' => Route::has('admin.plugins.vani-warehouse.transfers.index') ? route('admin.plugins.vani-warehouse.transfers.index') : null,
+                'locations' => Route::has('admin.plugins.vani-warehouse.locations.index') && Gate::allows('warehouse.locations.manage', [ScopeRef::owner()]) ? route('admin.plugins.vani-warehouse.locations.index') : null,
+                'main_location' => ! Route::has('admin.plugins.vani-warehouse.locations.index') && $canManageLocations && count($result['locations']) === 1 ? route('admin.inventory.stock.location', $result['locations'][0]->id) : null,
                 'default_location' => $canManageLocations && $result['locations'] === [] ? route('admin.inventory.stock.default-location') : null,
             ],
             'query' => $criteria,
@@ -68,6 +71,7 @@ final class StockController
             'pagination' => ['page' => $page, 'per_page' => self::PER_PAGE, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
             'threshold' => (int) config('vanishop.inventory.low_stock_threshold', 3),
             'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
+            'mainLocation' => count($result['locations']) === 1 ? $result['locations'][0]->only(['id', 'name', 'address', 'province_code', 'lock_version']) : null,
             'locations' => array_map(fn (Location $location): array => [
                 'id' => $location->id, 'code' => $location->code, 'name' => $location->name,
                 'external' => ! $location->managesOnHand(), 'online' => $location->status === 'active' && $location->ships_online_orders,
@@ -160,6 +164,25 @@ final class StockController
     /**
      * Cửa hàng chưa có kho → tạo "Kho chính" (nút ở trang tồn kho).
      */
+    /**
+     * Kho chính của cửa hàng một kho (ADR-042): chỉ tên, địa chỉ, tỉnh. Loại kho, khả năng, ưu tiên, authority ngoài và
+     * thêm kho thuộc plugin vani.warehouse.
+     */
+    public function updateLocation(int $location, Request $request, LocationService $locations): RedirectResponse
+    {
+        Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);
+        $record = Location::query()->findOrFail($location);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'province_code' => ['nullable', 'string', 'max:16'],
+            'lock_version' => ['required', 'integer', 'min:0'],
+        ]);
+        $locations->save(collect($data)->except('lock_version')->all(), $record, (int) $data['lock_version']);
+
+        return back()->with('success', __('inventory::messages.saved'));
+    }
+
     public function defaultLocation(LocationService $locations): RedirectResponse
     {
         Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);

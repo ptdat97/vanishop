@@ -12,21 +12,26 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Identity\Application\ScopeOptions;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Inventory\Application\AuthoritySyncService;
+use Modules\Inventory\Application\EloquentLocationRegistry;
+use Modules\Inventory\Application\InventoryReconciler;
 use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Application\ReturnService;
 use Modules\Inventory\Application\StandardInventoryStrategy;
 use Modules\Inventory\Application\StockAvailability;
 use Modules\Inventory\Application\StockCountImporter;
+use Modules\Inventory\Application\StockMovementService;
 use Modules\Inventory\Console\EnsureDefaultLocationCommand;
-use Modules\Inventory\Console\ReconcileInventoryCommand;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
 use Modules\Inventory\Console\VerifyStockCommand;
 use Modules\Inventory\Contracts\AvailabilityReader;
+use Modules\Inventory\Contracts\InventoryReconciliation;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Inventory\Contracts\InventoryReturns;
 use Modules\Inventory\Contracts\InventoryStrategy;
 use Modules\Inventory\Contracts\InventorySync;
+use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Inventory\Contracts\StockImporter;
+use Modules\Inventory\Contracts\StockMovements;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
@@ -45,6 +50,10 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->bind(InventoryReturns::class, ReturnService::class);
         $this->app->bind(InventorySync::class, AuthoritySyncService::class);
         $this->app->bind(StockImporter::class, StockCountImporter::class);
+        // Contract cho vận hành kho (plugin vani.warehouse, ADR-042): kho, biến động chuyển kho, đối soát nguồn ngoài.
+        $this->app->bind(LocationRegistry::class, EloquentLocationRegistry::class);
+        $this->app->bind(StockMovements::class, StockMovementService::class);
+        $this->app->bind(InventoryReconciliation::class, InventoryReconciler::class);
         $this->app->singleton(StandardInventoryStrategy::class);
         $this->app->make(Extensions::class)->tag([StandardInventoryStrategy::class], InventoryStrategy::TAG);
         $this->app->make(Extensions::class)->requires(InventoryStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược tồn bán được');
@@ -63,8 +72,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         ));
         $permissions->register('inventory.view', 'Xem tồn kho');
         $permissions->register('inventory.adjust', 'Điều chỉnh/kiểm kê tồn kho');
-        $permissions->register('inventory.transfer', 'Tạo/điều phối chuyển kho');
-        $permissions->register('inventory.locations.manage', 'Quản lý kho/cửa hàng (cấp Owner)');
+        $permissions->register('inventory.locations.manage', 'Sửa thông tin Kho chính, tạo Kho chính (cấp Owner)');
 
         $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 300, group: 'catalog');
         // Admin → Nhân viên: gán vai trò theo phạm vi một location.
@@ -77,7 +85,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         });
 
         if ($this->app->runningInConsole()) {
-            $this->commands([EnsureDefaultLocationCommand::class, ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class, ReconcileInventoryCommand::class]);
+            $this->commands([EnsureDefaultLocationCommand::class, ReleaseExpiredReservationsCommand::class, VerifyStockCommand::class]);
         }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-owner.php'));

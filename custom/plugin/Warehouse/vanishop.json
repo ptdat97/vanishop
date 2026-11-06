@@ -1,0 +1,29 @@
+{
+    "id": "vani.warehouse",
+    "name": {
+        "vi": "Vận hành kho",
+        "en": "Warehouse operations"
+    },
+    "description": {
+        "vi": "Nhiều kho/cửa hàng (giao online, nhận tại quầy, nhận hàng trả, ưu tiên giữ hàng, kho do ERP/POS quản lý), chuyển kho, đối soát tồn với nguồn ngoài. Cửa hàng một kho không cần bật.",
+        "en": "Multiple warehouses/stores (online fulfilment, pickup, returns, allocation priority, ERP/POS-managed stock), stock transfers, reconciliation against external sources. Single-location shops do not need it."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\Warehouse\\WarehouseServiceProvider",
+    "requires": {
+        "vanishop": "^0.3.88",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": ["warehouse.locations.manage", "warehouse.transfer"],
+    "author": "VaniShop Team",
+    "data": {
+        "owned": ["plg_warehouse_transfers", "plg_warehouse_transfer_lines"],
+        "references": {
+            "plg_warehouse_transfers.from_location_id": "locations.id",
+            "plg_warehouse_transfers.to_location_id": "locations.id",
+            "plg_warehouse_transfer_lines.variant_id": "variants.id"
+        }
+    }
+}

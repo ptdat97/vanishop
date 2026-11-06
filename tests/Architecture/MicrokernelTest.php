@@ -189,3 +189,22 @@ it('R35: plugin không thay binding, không kế thừa class nội bộ của C
 
     expect($offenders)->toBe([]);
 });
+
+it('ADR-042: plugin không đọc/ghi thẳng bảng tồn kho của Core — đi qua contract Inventory (LocationRegistry, StockMovements, StockImporter, InventorySync…)', function () {
+    $pattern = '/[\'"](stock_levels|stock_reservations|stock_movements|inventory_reconciliations|inventory_reconciliation_lines)[\'".]|table\(\s*[\'"]locations[\'"]|(exists|unique):locations\b|Rule::(unique|exists)\(\s*[\'"]locations[\'"]|join\(\s*[\'"]locations[\'"]|Modules\\\\Inventory\\\\Persistence/';
+    $offenders = [];
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('custom/plugin'), FilesystemIterator::SKIP_DOTS));
+    foreach ($files as $file) {
+        $path = str_replace(base_path().'/', '', (string) $file);
+        if (! str_ends_with($path, '.php') || str_contains($path, '/Tests/')) {
+            continue;
+        }
+        foreach (file((string) $file) ?: [] as $number => $line) {
+            if (preg_match($pattern, $line) === 1) {
+                $offenders[] = $path.':'.($number + 1);
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});

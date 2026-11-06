@@ -3,28 +3,37 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
-use Modules\Inventory\Application\StockTransferService;
+use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Plugin\Warehouse\Application\TransferService;
+use Plugin\Warehouse\WarehouseServiceProvider;
 
 require_once __DIR__.'/../../../modules/Inventory/Tests/Feature/InventoryTestHelpers.php';
 
 /*
-| Bất biến tồn kho khi có chuyển kho (roadmap Phase 1):
+| Bất biến tồn kho khi có chuyển kho (plugin vani.warehouse, ADR-042 — chứng từ ở plugin, tồn ở Core):
 |   I1 reserved của mỗi stock_level = tổng hàng giữ đang active; on_hand, reserved ≥ 0.
 |   I2 thay đổi on_hand/reserved kể từ mốc = tổng stock_movements (sổ biến động đầy đủ).
 | Cuối mỗi bước vòng đời chạy `vani:inventory:verify` như trên production.
 */
 
 beforeEach(function () {
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
+        app(PluginManager::class)->install(WarehouseServiceProvider::ID);
+        app(PluginManager::class)->enable(WarehouseServiceProvider::ID);
+    });
+    app()->register(WarehouseServiceProvider::class);
+    $this->data = fn ($location) => app(LocationRegistry::class)->find($location->id);
     $this->brand = Brand::factory()->create();
     [$this->s, $this->m] = P::variants(T::product($this->brand->id));
     $this->hn = I::location(['code' => 'WH-HN', 'priority' => 10]);
     $this->hcm = I::location(['code' => 'WH-HCM', 'priority' => 5]);
     app(CurrentContext::class)->set(ContextScope::system('transfer invariants'));
-    $this->service = app(StockTransferService::class);
+    $this->service = app(TransferService::class);
 
     $this->baseline = null;
     $this->snapshot = function () {
@@ -56,7 +65,7 @@ it('vòng đời chuyển kho đầy đủ (pending → shipped → received) gi
     I::stock($this->hn, $this->m->id, 5);
     ($this->snapshot)();
 
-    $transfer = $this->service->create($this->hn, $this->hcm, [$this->s->id => 3, $this->m->id => 2]);
+    $transfer = $this->service->create(($this->data)($this->hn), ($this->data)($this->hcm), [$this->s->id => 3, $this->m->id => 2]);
     ($this->assertInvariants)();
 
     $this->service->ship($transfer->fresh());
@@ -72,14 +81,14 @@ it('huỷ sau khi gửi và nhận thiếu giữ bất biến tồn', function (
     I::stock($this->hn, $this->s->id, 10);
     ($this->snapshot)();
 
-    $cancelled = $this->service->create($this->hn, $this->hcm, [$this->s->id => 5]);
+    $cancelled = $this->service->create(($this->data)($this->hn), ($this->data)($this->hcm), [$this->s->id => 5]);
     $this->service->ship($cancelled->fresh());
     ($this->assertInvariants)();
     $this->service->cancel($cancelled->fresh(), 'hết xe');
     ($this->assertInvariants)();
     expect((int) DB::table('stock_levels')->where('location_id', $this->hn->id)->where('variant_id', $this->s->id)->value('on_hand'))->toBe(10);
 
-    $partial = $this->service->create($this->hn, $this->hcm, [$this->s->id => 4]);
+    $partial = $this->service->create(($this->data)($this->hn), ($this->data)($this->hcm), [$this->s->id => 4]);
     $this->service->ship($partial->fresh());
     $this->service->receive($partial->fresh(), [$this->s->id => 1]);
     ($this->assertInvariants)();

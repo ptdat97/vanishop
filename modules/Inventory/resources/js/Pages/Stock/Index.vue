@@ -24,7 +24,8 @@ type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; color
  */
 const props = defineProps<{
     labels: InventoryLabels;
-    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; transfers: string; locations: string | null; default_location: string | null };
+    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; transfers: string | null; locations: string | null; default_location: string | null; main_location: string | null };
+    mainLocation: { id: number; name: string; address: string | null; province_code: string | null; lock_version: number } | null;
     query: Criteria;
     options: { colors: string[]; sizes: string[] };
     pagination: { page: number; per_page: number; total: number; variants: number };
@@ -210,6 +211,16 @@ function submitAdvanced(): void {
     form.post(props.urls.change, { preserveScroll: true, onSuccess: () => (advanced.value = null) });
 }
 
+/* ---------- Kho chính (cửa hàng một kho) ---------- */
+const editingLocation = ref(false);
+const locationForm = useForm({
+    name: props.mainLocation?.name ?? '', address: props.mainLocation?.address ?? '', province_code: props.mainLocation?.province_code ?? '', lock_version: props.mainLocation?.lock_version ?? 0,
+});
+
+function saveLocation(): void {
+    if (props.urls.main_location) locationForm.put(props.urls.main_location, { preserveScroll: true, onSuccess: () => (editingLocation.value = false) });
+}
+
 /* ---------- Nhập CSV, kho mặc định ---------- */
 const importForm = useForm<{ file: File | null; location_id: number | null }>({ file: null, location_id: null });
 const importLocations = computed(() => editableLocations.value.map((location) => ({ value: location.id, label: `${location.code} — ${location.name}` })));
@@ -229,21 +240,30 @@ function createDefault(): void {
     <PageHeader title="Tồn kho" subtitle="Gõ số tồn vào ô (Enter: xuống dòng) rồi Lưu, hoặc chọn nhiều SKU để sửa hàng loạt. Bán được = tồn − đang giữ − tồn an toàn.">
         <a :href="urls.export" :class="secondaryButton">Xuất CSV</a>
         <button v-if="canAdjust && locations.length" type="button" :class="secondaryButton" @click="showImport = !showImport">Nhập CSV</button>
-        <Link :href="urls.transfers" :class="secondaryButton">Chuyển kho</Link>
+        <Link v-if="urls.transfers" :href="urls.transfers" :class="secondaryButton">Chuyển kho</Link>
+        <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">Kho chính</button>
         <Link v-if="urls.locations" :href="urls.locations" :class="secondaryButton">Kho & cửa hàng</Link>
     </PageHeader>
     <FlashMessage />
+    <form v-if="editingLocation && urls.main_location && mainLocation" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm md:grid-cols-3" data-main-location @submit.prevent="saveLocation">
+        <p class="md:col-span-3">Kho chính của cửa hàng. Cần nhiều kho, cửa hàng nhận tại quầy hay chuyển kho: bật plugin <strong>Vận hành kho</strong>.</p>
+        <input v-model="locationForm.name" :class="inputClass" placeholder="Tên kho" aria-label="Tên kho" />
+        <input v-model="locationForm.address" :class="inputClass" placeholder="Địa chỉ" aria-label="Địa chỉ" />
+        <input v-model="locationForm.province_code" :class="inputClass" placeholder="Mã tỉnh/thành" aria-label="Mã tỉnh/thành" />
+        <p v-for="(error, key) in locationForm.errors" :key="key" class="text-red-600 md:col-span-3">{{ error }}</p>
+        <div><button type="submit" :class="primaryButton" :disabled="locationForm.processing">Lưu</button></div>
+    </form>
     <p v-if="page.props.errors?.changes" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ page.props.errors.changes }}</p>
 
     <div v-if="warnings.no_location" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm" data-no-location>
         <p class="font-medium">Cửa hàng chưa có kho nào — mọi sản phẩm đang hiện "hết hàng".</p>
         <p class="mt-1 text-slate-600">Tạo "Kho chính" (giao đơn online, quản lý tồn tại VaniShop) rồi nhập số tồn.</p>
         <button v-if="urls.default_location" type="button" :class="[primaryButton, 'mt-3']" @click="createDefault">Tạo Kho chính</button>
-        <p v-else class="mt-2 text-slate-600">Nhờ chủ cửa hàng tạo kho ở Kho & cửa hàng.</p>
+        <p v-else class="mt-2 text-slate-600">Nhờ chủ cửa hàng tạo Kho chính.</p>
     </div>
     <div v-else-if="warnings.no_online_location" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
         Chưa có kho nào đang bật "Giao đơn online" — khách không mua được. Sửa ở
-        <Link v-if="urls.locations" :href="urls.locations" class="underline">Kho & cửa hàng</Link><span v-else>Kho & cửa hàng</span>.
+        <Link v-if="urls.locations" :href="urls.locations" class="underline">Kho & cửa hàng</Link><span v-else>Kho & cửa hàng (plugin Vận hành kho)</span>.
     </div>
 
     <form v-if="showImport" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="submitImport">

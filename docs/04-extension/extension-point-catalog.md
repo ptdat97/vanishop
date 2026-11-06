@@ -57,6 +57,9 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
+| `LocationRegistry` | Đọc/tạo/sửa kho (`LocationData`), audit + optimistic lock, mã trùng → ValidationException. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Catalog/Inventory |
+| `StockMovements` | `transferOut`/`transferIn` tại một kho do VaniShop quản lý: khoá dòng tồn, sổ biến động, `AvailabilityChanged`; chạy trong transaction của bên gọi; từ chối → `StockMovementRejected`. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |
+| `InventoryReconciliation` | `reconcileExternal(source, rows, apply)` — đối soát snapshot nguồn ngoài vào bảng đối soát chung. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |
 | `StockImporter` | Đặt tồn tuyệt đối theo SKU tại kho do VaniShop quản lý (movement `sync` + audit; kho authority ngoài dùng `InventorySync`). **Implemented** (0.3.27) | Inventory |
 | `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) — hiện là service nội bộ `StockAdjustmentService`, chưa công bố contract (chờ Integration) | Inventory |
 | `AvailabilityReader` | ATS theo channel (**Implemented**; theo location: chưa) | Inventory |
