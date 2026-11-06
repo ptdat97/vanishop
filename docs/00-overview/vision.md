@@ -40,6 +40,27 @@ Với Owner, điều đó có nghĩa là:
 - Tồn kho **đa điểm** (kho tổng, cửa hàng) đồng bộ gần thời gian thực với ERP/ODO.
 - Sẵn sàng **omnichannel** bằng plugin: BOPIS, ship-from-store, POS qua API/connector — đơn từ các nguồn này vào cùng luồng, ghi `source` để báo cáo.
 
+## 2.1 Định hướng giai đoạn: bắt đầu từ SME, mở rộng khi doanh nghiệp lớn lên
+
+> **VaniShop bắt đầu từ mô hình SME. Ưu tiên số một là vận hành tối ưu, dễ thao tác. Các điểm mở rộng cần thiết được giữ sẵn để bật khi doanh nghiệp phát triển — không xây trước giao diện hay quy trình của doanh nghiệp lớn.** (Owner, 2026-11-06)
+
+Cửa hàng mục tiêu hiện tại là một shop thời trang SME: vài nhân viên kiêm nhiều việc (CSKH, đóng gói, đẩy đơn lên hãng vận chuyển), một kho, COD là chính, đơn từ kênh chat quản lý bằng Pancake, giao qua nhiều hãng nhập tay.
+
+**Ba nguyên tắc:**
+
+1. **Mặc định đơn giản cho SME.** Cài xong là chạy được với cấu hình mặc định. Tính năng của doanh nghiệp lớn không hiện ra khi chưa bật — vd. nhiều kho, chuyển kho, đối soát nguồn ngoài nằm trong plugin `vani.warehouse` ([ADR-042](../19-adr/ADR-042-inventory-warehouse-plugins.md)); Admin Core chỉ có "Kho chính".
+2. **Vận hành trước tiên.** Màn hình Admin thiết kế theo công việc hằng ngày của nhân viên, không theo cấu trúc dữ liệu: hàng đợi việc có số đếm, thao tác ngay tại chỗ, thao tác hàng loạt, nút "bước tiếp theo", nhãn tiếng Việt thay cho mã kỹ thuật. Một việc lặp lại mỗi ngày phải làm được trên ít trang, ít bước nhất có thể.
+3. **Giữ điểm mở rộng, không làm trước.** Chỉ giữ những điểm mở rộng mà doanh nghiệp sẽ cần khi lớn lên (contract, slot, plugin, schema chừa chỗ). Khi phải chọn giữa "đủ cho SME, dễ dùng" và "đầy đủ cho doanh nghiệp lớn": chọn dễ dùng, để sẵn điểm mở rộng, ghi phần còn thiếu vào backlog ([§6b](../20-roadmap/reference-parity-refactor.md)).
+
+| Mảng | Giai đoạn SME (hiện tại) | Khi doanh nghiệp lớn lên — mở bằng |
+|---|---|---|
+| Kho | Một "Kho chính", sửa tồn trên lưới, nhập CSV | Plugin `vani.warehouse`: nhiều kho, chuyển kho, đối soát; ERP qua Integration API |
+| Đơn hàng | Nhân viên xử lý trên Admin theo hàng đợi việc; đơn kênh chat ở Pancake | Integration API v1 (đồng bộ đơn, ERP/ODO) |
+| Xác nhận COD | Cấu hình: tự xác nhận mọi đơn / chỉ khách quen / gọi xác nhận (`vani.cod`) | Rule riêng bằng plugin nghe `OrderPlaced` |
+| Giao hàng | Nhân viên đẩy đơn lên nhiều hãng, web ghi mã vận đơn và trạng thái | Plugin hãng (`ShippingCarrier`): tự đặt vận đơn, webhook trạng thái |
+| Ngôn ngữ, tiền tệ | Tiếng Việt, VND | Bật `VANI_LOCALES`, cột `currency` đã có ([§4](#4-không-nằm-trong-phạm-vi-non-goals)) |
+| Báo cáo | Báo cáo cơ bản trong Admin | Plugin báo cáo, dữ liệu sang ERP |
+
 ## 3. Mục tiêu (Goals)
 
 | # | Mục tiêu | Đo lường |
@@ -51,6 +72,7 @@ Với Owner, điều đó có nghĩa là:
 | G5 | Phù hợp thị trường VN | Hỗ trợ COD, VietQR, ví điện tử, hoá đơn điện tử, địa chỉ 2 cấp mới |
 | G6 | Hiệu năng | TTFB storefront P95 < 300 ms (cache nóng), LCP mobile < 2,5 s |
 | G7 | Pháp lý | Tuân thủ quy định TMĐT, bảo vệ dữ liệu cá nhân, hoá đơn điện tử |
+| G8 | Vận hành dễ thao tác cho SME ([§2.1](#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên)) | Một đơn COD thường đi từ "Cần xác nhận" tới "Đang giao" chỉ trên danh sách đơn + trang đơn, không mở trang khác; việc lặp lại hằng ngày (xác nhận, tạo vận đơn, bàn giao) có thao tác hàng loạt; nhân viên mới tự xử lý đơn trong ngày đầu |
 
 ## 4. Không nằm trong phạm vi (Non-goals)
 
@@ -120,12 +142,13 @@ mindmap
 
 ## 7. Nguyên tắc định hướng
 
-1. **Clean-room tuyệt đối**: không copy mã, schema, asset, file ngôn ngữ từ BeikeShop. Chỉ học ý tưởng ở mức khái niệm.
-2. **Một cửa hàng, không phân mảnh**: dữ liệu nghiệp vụ ở cấp cửa hàng; brand là thuộc tính catalog để duyệt/lọc/báo cáo, không phải ranh giới dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
-3. **Authority dữ liệu rõ ràng** cho từng loại dữ liệu, xem ma trận trong [erp-integration](../11-integration/erp-integration.md).
-4. **Tích hợp bất đồng bộ, idempotent**: không để lỗi ERP/ODO làm hỏng checkout.
-5. **Core tối giản, nghiệp vụ bằng plugin** ([commerce-kernel](../02-architecture/commerce-kernel.md)): Core chỉ gồm primitives, invariants và extension points.
-6. **Modular monolith**: ranh giới module rõ ràng trong một ứng dụng, không tách service chạy riêng ([ADR-033](../19-adr/ADR-033-out-of-scope.md)).
-7. **Mobile-first, Việt Nam-first**: VNĐ, tiếng Việt có dấu, COD, địa chỉ mới.
-8. **Test là một phần của tính năng**: không merge nếu thiếu test cho nghiệp vụ lõi.
-9. **Tài liệu phản ánh implementation**: trạng thái thật nằm ở [status](status.md). Các quy tắc bắt buộc nằm ở [architecture-rules](../01-principles/architecture-rules.md).
+1. **SME trước, vận hành trước** ([§2.1](#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên)): mặc định đơn giản cho cửa hàng nhỏ, Admin theo công việc hằng ngày, điểm mở rộng giữ sẵn cho lúc doanh nghiệp lớn — không làm trước.
+2. **Clean-room tuyệt đối**: không copy mã, schema, asset, file ngôn ngữ từ BeikeShop. Chỉ học ý tưởng ở mức khái niệm.
+3. **Một cửa hàng, không phân mảnh**: dữ liệu nghiệp vụ ở cấp cửa hàng; brand là thuộc tính catalog để duyệt/lọc/báo cáo, không phải ranh giới dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
+4. **Authority dữ liệu rõ ràng** cho từng loại dữ liệu, xem ma trận trong [erp-integration](../11-integration/erp-integration.md).
+5. **Tích hợp bất đồng bộ, idempotent**: không để lỗi ERP/ODO làm hỏng checkout.
+6. **Core tối giản, nghiệp vụ bằng plugin** ([commerce-kernel](../02-architecture/commerce-kernel.md)): Core chỉ gồm primitives, invariants và extension points.
+7. **Modular monolith**: ranh giới module rõ ràng trong một ứng dụng, không tách service chạy riêng ([ADR-033](../19-adr/ADR-033-out-of-scope.md)).
+8. **Mobile-first, Việt Nam-first**: VNĐ, tiếng Việt có dấu, COD, địa chỉ mới.
+9. **Test là một phần của tính năng**: không merge nếu thiếu test cho nghiệp vụ lõi.
+10. **Tài liệu phản ánh implementation**: trạng thái thật nằm ở [status](status.md). Các quy tắc bắt buộc nằm ở [architecture-rules](../01-principles/architecture-rules.md).

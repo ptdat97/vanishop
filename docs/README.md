@@ -2,6 +2,8 @@
 
 > **VaniShop** là một **microkernel thương mại** trên Laravel (Modular Monolith + DDD + API-first): lõi nhỏ giữ primitive, bất biến và extension point; **nghiệp vụ thêm bằng plugin** ([ADR-029](19-adr/ADR-029-commerce-microkernel.md)). Một bản cài đặt là **một cửa hàng thời trang**: một website, một giao diện, nhiều thương hiệu được xếp như nhóm sản phẩm trong catalog ([ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md)). Hỗ trợ storefront SSR và headless, ERP integration, và thêm nghiệp vụ mới (loyalty, hoá đơn điện tử, báo cáo…) **bằng plugin, không fork Core**. Những gì dự án không làm: [ADR-033](19-adr/ADR-033-out-of-scope.md).
 >
+> **Định hướng hiện tại** ([vision §2.1](00-overview/vision.md#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên)): **bắt đầu từ mô hình SME** — ưu tiên số một là vận hành tối ưu, dễ thao tác; giữ sẵn các điểm mở rộng cần thiết để bật khi doanh nghiệp phát triển, không xây trước giao diện/quy trình của doanh nghiệp lớn.
+>
 > Chủ sở hữu: 1 Owner vận hành 1 website bán hàng tại Việt Nam; các thương hiệu thời trang của Owner là thuộc tính sản phẩm (trang brand, bộ lọc brand), không phải storefront riêng. Mã nguồn viết mới 100% theo quy trình clean-room ([01-principles/clean-room-license.md](01-principles/clean-room-license.md)).
 >
 > **Vì sao có VaniShop**: VaniCommerce (nền tảng Owner đang dùng) dẫn xuất từ BeikeShop nên vướng bản quyền; để phát triển độc lập, VaniShop là **bản thay thế** viết mới, giữ cách làm plugin gần gũi để chuyển các plugin hiện có trong `VaniCommerce/plugins/` sang ([ADR-034](19-adr/ADR-034-vanicommerce-plugin-migration.md), [kế hoạch chuyển plugin](05-plugin/vanicommerce-plugin-migration.md)).
