@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'tracking_imported' => 'Đã ghi :booked mã vận đơn; :unchanged dòng đã có mã; :errors dòng lỗi.',
     'bulk_created' => 'Đã tạo vận đơn cho :count đơn; bỏ qua :skipped đơn chưa xác nhận hoặc đã có vận đơn.',
     'bulk_handed_over' => 'Đã ghi nhận bàn giao :count vận đơn cho hãng.',
     'manual' => 'Vận đơn thủ công',

@@ -10,7 +10,7 @@ import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import { paymentStatusTone, stageTone } from '../../statusTones';
 
@@ -54,7 +54,34 @@ const props = defineProps<{
     }>;
     pagination: { current: number; last: number; total: number };
     extensions: ExtensionList;
+    /** Công cụ tải file (slot vani.admin.order.list_tools, 0.3.97) — vd. nhập mã vận đơn từ file của hãng. */
+    tools: Array<{ key: string; label: string; url: string; accept?: string; help?: string; fields?: Array<{ key: string; label: string; placeholder?: string }> }>;
 }>();
+
+const openTool = ref<string | null>(null);
+const toolForm = useForm<{ file: File | null; [key: string]: string | File | null }>({ file: null });
+const importErrors = computed(() => {
+    const errors = usePage().props.errors as Record<string, string | string[]>;
+    return Object.entries(errors)
+        .filter(([key]) => key === 'file' || key === 'import' || key.startsWith('import.'))
+        .flatMap(([, message]) => (Array.isArray(message) ? message : [message]));
+});
+
+function toggleTool(key: string): void {
+    openTool.value = openTool.value === key ? null : key;
+    toolForm.reset();
+}
+
+function submitTool(tool: { url: string }): void {
+    toolForm.post(tool.url, {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            openTool.value = null;
+            toolForm.reset();
+        },
+    });
+}
 
 const form = reactive<Filters>({ ...props.filters });
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
@@ -96,7 +123,30 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
 <template>
     <Head title="Đơn hàng" />
     <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
-    <PageHeader title="Đơn hàng" :subtitle="`${pagination.total} đơn`" />
+    <PageHeader title="Đơn hàng" :subtitle="`${pagination.total} đơn`">
+        <button v-for="tool in tools" :key="tool.key" type="button" :class="secondaryButton" :aria-expanded="openTool === tool.key" @click="toggleTool(tool.key)">
+            {{ tool.label }}
+        </button>
+    </PageHeader>
+    <template v-for="tool in tools" :key="`panel-${tool.key}`">
+        <form v-if="openTool === tool.key" class="mb-4 space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm" :data-tool="tool.key" @submit.prevent="submitTool(tool)">
+            <p v-if="tool.help" class="text-slate-500">{{ tool.help }}</p>
+            <div class="flex flex-wrap items-end gap-3">
+                <label class="flex flex-col gap-1">
+                    <span>File</span>
+                    <input type="file" :accept="tool.accept" required @change="toolForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                </label>
+                <label v-for="field in tool.fields ?? []" :key="field.key" class="flex flex-col gap-1">
+                    <span>{{ field.label }}</span>
+                    <input v-model="toolForm[field.key] as string" :class="inputClass" :placeholder="field.placeholder" />
+                </label>
+                <button type="submit" :class="primaryButton" :disabled="toolForm.processing || !toolForm.file">{{ tool.label }}</button>
+            </div>
+        </form>
+    </template>
+    <ul v-if="importErrors.length" class="mb-4 space-y-1 rounded bg-red-50 p-3 text-sm text-red-700" role="alert">
+        <li v-for="message in importErrors" :key="message">{{ message }}</li>
+    </ul>
 
     <nav class="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200 text-sm" aria-label="Hàng đợi đơn">
         <button

@@ -49,6 +49,26 @@ final class OrderListShipments
         return [
             ['key' => 'create_shipments', 'label' => 'Tạo vận đơn', 'url' => route('admin.fulfillment.shipments.bulk-create'), 'confirm' => true],
             ['key' => 'hand_over', 'label' => 'Đã bàn giao cho hãng', 'url' => route('admin.fulfillment.shipments.bulk-hand-over'), 'confirm' => true],
+            ['key' => 'export', 'label' => 'Xuất file cho hãng', 'url' => route('admin.fulfillment.shipments.export'), 'confirm' => false, 'method' => 'get'],
         ];
+    }
+
+    /**
+     * Công cụ ở đầu danh sách đơn (slot vani.admin.order.list_tools): nhập mã vận đơn từ file của hãng.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function tools(): array
+    {
+        if (! Gate::allows('fulfillment.manage')) {
+            return [];
+        }
+
+        return [[
+            'key' => 'import_tracking', 'label' => 'Nhập mã vận đơn từ file', 'url' => route('admin.fulfillment.shipments.import-tracking'),
+            'accept' => '.xlsx,.csv',
+            'help' => 'File Excel hãng xuất (hoặc file "Xuất file cho hãng" đã điền mã): cần cột số đơn của shop và cột mã vận đơn; cột hãng nếu có.',
+            'fields' => [['key' => 'carrier', 'label' => 'Hãng (khi file không có cột hãng)', 'placeholder' => 'vd. GHN']],
+        ]];
     }
 }

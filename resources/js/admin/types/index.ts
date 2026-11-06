@@ -80,6 +80,10 @@ export interface ExtensionAction {
     label: string;
     confirm: boolean;
     url: string;
+    /** 0.3.97: `get` = mở trang / tải file với `ids[]` trên URL (in phiếu, xuất file) thay vì POST. */
+    method?: 'post' | 'get';
+    /** `_blank`: mở tab mới (trang in). */
+    target?: '_blank';
 }
 
 export interface ExtensionFilter {

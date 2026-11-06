@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.97 — 2026-11-06
+
+Vận hành đơn (đợt 2): trao đổi file với hãng vận chuyển, in phiếu giao, thẻ Khách.
+
+### Thêm
+- Xuất file cho hãng: thao tác hàng loạt "Xuất file cho hãng" (`GET {admin}/fulfillment/shipments/export?ids[]=`) → .xlsx mỗi vận đơn chưa rời kho một dòng (người nhận, SĐT giữ số 0 đầu, địa chỉ, sản phẩm, số lượng, khối lượng, giá trị hàng, COD, Hãng, Mã vận đơn). Khối lượng biến thể chưa khai báo: `vanishop.fulfillment.default_item_weight_gram` (`VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`, 300).
+- Nhập mã vận đơn từ file (`POST {admin}/fulfillment/shipments/import-tracking`, .xlsx/.csv): cột số đơn của shop tìm theo dữ liệu (file hãng xuất), cột mã vận đơn/hãng theo tiêu đề; ô hãng trống → hãng nhập ở form; dòng đã có mã bỏ qua; lỗi báo theo dòng (`import.N`).
+- `Shared\Support\SimpleXlsx` — đọc/ghi .xlsx tối giản (một sheet, chữ/số) không thêm phụ thuộc.
+- In phiếu giao/đóng gói (`GET {admin}/orders/orders/print?ids[]=`, A5 mỗi đơn một trang; thao tác hàng loạt + nút trên trang đơn).
+- Thẻ Khách trên trang đơn: lịch sử nhận hàng theo SĐT (`OrderReader::deliveryHistory`) — Khách mới / Khách quen / Từng hoàn hàng.
+- Slot `vani.admin.order.list_tools` (công cụ tải file ở đầu danh sách đơn). Thao tác hàng loạt (`ExtensionAction`) nhận `method: 'get'` + `target: '_blank'` để mở trang/tải file.
+
 ## 0.3.96 — 2026-11-06
 
 Vận hành đơn (đợt 1): tự xác nhận COD theo cấu hình, hàng đợi việc ở danh sách đơn, thao tác ngay trên trang đơn.

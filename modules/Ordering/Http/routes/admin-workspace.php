@@ -6,6 +6,7 @@ use Modules\Ordering\Http\Controllers\Admin\OrderController;
 // Prefix: /{admin}/orders — tên route: admin.orders.*
 Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
 Route::post('orders/bulk-confirm', [OrderController::class, 'bulkConfirm'])->name('orders.bulk-confirm');
+Route::get('orders/print', [OrderController::class, 'print'])->name('orders.print');
 Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 Route::post('orders/{order}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');
 Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');

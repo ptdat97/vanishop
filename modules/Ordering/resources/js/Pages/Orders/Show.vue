@@ -106,6 +106,8 @@ const props = defineProps<{
         actions?: PanelAction[];
     }>;
     stage: string;
+    customerHistory: { orders: number; delivered: number; returned_to_sender: number; cancelled: number; orders_url: string };
+    printUrl: string;
     timeline: Array<{ ts: number; at: string; title: string; detail: string | null; source: string | null }>;
     can: {
         confirm: boolean;
@@ -154,6 +156,14 @@ async function runAction(action: PanelAction): Promise<void> {
     }
     router.post(action.url, { ...(action.data ?? {}), ...values }, { preserveScroll: true });
 }
+/** Nhãn rủi ro khách theo lịch sử nhận hàng (SĐT): từng hoàn hàng / khách mới / khách quen. */
+const customerFlag = computed((): { label: string; tone: 'danger' | 'warning' | 'success' } | null => {
+    const history = props.customerHistory;
+    if (history.returned_to_sender > 0) return { label: `Từng hoàn hàng ${history.returned_to_sender} lần`, tone: 'danger' };
+    if (history.orders === 0) return { label: 'Khách mới', tone: 'warning' };
+    if (history.delivered > 0) return { label: 'Khách quen', tone: 'success' };
+    return null;
+});
 const actionClass = (action: PanelAction): string => (action.tone === 'primary' ? primaryButton : action.tone === 'danger' ? dangerButton : secondaryButton);
 const url = computed(() => `${props.baseUrl}/${props.order.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
@@ -261,6 +271,7 @@ function addNote(): void {
     </div>
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
+        <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">In phiếu giao</a>
         <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>
         <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
         <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
@@ -404,12 +415,22 @@ function addNote(): void {
 
         <aside class="space-y-4">
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-                <h2 class="mb-2 font-semibold">Khách hàng</h2>
+                <div class="mb-2 flex items-center justify-between gap-2">
+                    <h2 class="font-semibold">Khách hàng</h2>
+                    <StatusBadge v-if="customerFlag" :label="customerFlag.label" :tone="customerFlag.tone" />
+                </div>
                 <p>{{ order.customer.full_name }}</p>
                 <p class="text-slate-600">{{ order.customer.phone }}</p>
                 <p v-if="order.customer.email" class="text-slate-600">
                     {{ order.customer.email }}
                 </p>
+                <dl class="mt-2 grid grid-cols-4 gap-1 rounded bg-slate-50 p-2 text-center text-xs" aria-label="Lịch sử nhận hàng theo số điện thoại">
+                    <div><dt class="text-slate-500">Đơn trước</dt><dd class="font-semibold">{{ customerHistory.orders }}</dd></div>
+                    <div><dt class="text-slate-500">Đã nhận</dt><dd class="font-semibold text-emerald-700">{{ customerHistory.delivered }}</dd></div>
+                    <div><dt class="text-slate-500">Hoàn về</dt><dd class="font-semibold" :class="customerHistory.returned_to_sender ? 'text-red-600' : ''">{{ customerHistory.returned_to_sender }}</dd></div>
+                    <div><dt class="text-slate-500">Đã huỷ</dt><dd class="font-semibold">{{ customerHistory.cancelled }}</dd></div>
+                </dl>
+                <Link v-if="customerHistory.orders" :href="customerHistory.orders_url" class="mt-1 inline-block text-xs text-indigo-600 hover:underline">Xem các đơn của SĐT này</Link>
                 <p v-if="order.note" class="mt-2 rounded bg-amber-50 p-2">Ghi chú của khách: {{ order.note }}</p>
             </section>
 

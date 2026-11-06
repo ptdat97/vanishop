@@ -53,10 +53,9 @@ it('thẻ hàng đợi: số đếm và lọc theo giai đoạn vận hành; c�
         ->where('orders.0.items.0.quantity', 2)
         ->where('orders.0.province', 'Thành phố Hồ Chí Minh')
         ->where('orders.0.age_hours', 0)
-        ->where('extensions.actions.0.key', 'confirm')
-        ->where('extensions.actions.1.key', 'create_shipments')
-        ->where('extensions.actions.2.key', 'hand_over')
-        ->where('extensions.columns.0.label', 'Vận đơn'));
+        ->where('extensions.actions', fn ($actions) => collect($actions)->pluck('key')->all() === ['confirm', 'print', 'create_shipments', 'hand_over', 'export'])
+        ->where('extensions.columns.0.label', 'Vận đơn')
+        ->where('tools.0.key', 'import_tracking'));
 
     $this->get("{$this->url}?stage=to_confirm")->assertInertia(fn (Assert $page) => $page->has('orders', 2)
         ->where('orders.0.stage', 'to_confirm')->where('filters.stage', 'to_confirm')
@@ -91,9 +90,10 @@ it('Fulfillment hàng loạt: tạo vận đơn cho đơn đã xác nhận chưa
     $this->get("{$this->url}?stage=shipping")->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.id', $a->id)
         ->where("extensions.values.{$a->id}.shipments", 'GHN · GHN123 — Đã bàn giao hãng'));
 
-    // Chỉ xem đơn: vẫn thấy cột Vận đơn, không có thao tác hàng loạt.
+    // Chỉ xem đơn: vẫn thấy cột Vận đơn, chỉ in phiếu được; không có thao tác ghi, không có công cụ nhập file.
     $this->actingAs(T::staff(['admin.access', 'orders.view']), 'staff');
-    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->where('extensions.actions', [])->where('extensions.columns.0.label', 'Vận đơn'));
+    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->where('extensions.actions', fn ($actions) => collect($actions)->pluck('key')->all() === ['print'])
+        ->where('extensions.columns.0.label', 'Vận đơn')->where('tools', []));
     $this->post('/admin/fulfillment/shipments/bulk-create', ['ids' => [$b->id]])->assertForbidden();
 });
 

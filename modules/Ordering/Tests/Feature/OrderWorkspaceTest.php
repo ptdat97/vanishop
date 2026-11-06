@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -91,4 +92,30 @@ it('phân quyền: chỉ xem đơn vẫn thấy thẻ và lịch sử giao hàng
     $props = ($this->page)($order);
     expect(collect($props['panels'])->firstWhere('title', 'Giao hàng')['actions'])->toBe([])
         ->and(collect($props['timeline'])->pluck('title'))->toContain('Vận đơn: Chờ đặt vận đơn');
+});
+
+it('in phiếu giao nhiều đơn (0.3.97): mỗi đơn một trang theo thứ tự chọn, số lượng đã trừ phần huỷ, COD thu hộ hoặc "đã thanh toán"', function () {
+    $cod = ($this->place)();
+    $transfer = ($this->place)('manual_bank_transfer');
+    ($this->staff)([]);
+
+    $html = $this->get('/admin/orders/orders/print?'.http_build_query(['ids' => [$transfer->id, $cod->id]]))->assertOk()->getContent();
+    expect($html)->toContain('data-order="'.$transfer->number.'"')
+        ->toContain('THU HỘ (COD)')->toContain('330.000')
+        ->toContain('Đã thanh toán — không thu tiền')
+        ->toContain('Nguyễn Thị Lan')->toContain('12 Lê Lợi, Phường Bến Thành, Thành phố Hồ Chí Minh')
+        ->and(strpos($html, 'data-order="'.$transfer->number.'"'))->toBeLessThan(strpos($html, 'data-order="'.$cod->number.'"'));
+
+    $this->actingAs(T::staff(['admin.access']), 'staff');
+    $this->get('/admin/orders/orders/print?ids[]='.$cod->id)->assertForbidden();
+});
+
+it('thẻ Khách (0.3.97): lịch sử nhận hàng theo SĐT để đánh giá rủi ro COD', function () {
+    $first = ($this->place)();
+    DB::table('orders')->where('id', $first->id)->update(['fulfillment_status' => 'returned_to_sender']);
+    $second = ($this->place)();
+    ($this->staff)([]);
+
+    expect(($this->page)($second)['customerHistory'])->toMatchArray(['orders' => 1, 'delivered' => 0, 'returned_to_sender' => 1, 'cancelled' => 0])
+        ->and(($this->page)($second)['customerHistory']['orders_url'])->toContain('q=');
 });

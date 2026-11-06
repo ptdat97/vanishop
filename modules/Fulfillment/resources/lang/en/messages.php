@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'tracking_imported' => 'Recorded :booked tracking numbers; :unchanged already recorded; :errors rows failed.',
     'bulk_created' => 'Created shipments for :count orders; skipped :skipped not confirmed or already shipped.',
     'bulk_handed_over' => 'Marked :count shipments as handed to the carrier.',
     'manual' => 'Manual shipment',

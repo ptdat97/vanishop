@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.3.96',
+    'version' => '0.3.97',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -299,6 +299,8 @@ return [
         // Carrier mặc định cho vận đơn mới (plugin hãng: ghn, ghtk…).
         'default_carrier' => env('VANI_FULFILLMENT_CARRIER', 'manual'),
         'sourcing' => env('VANI_FULFILLMENT_SOURCING', 'reserved_locations'),
+        // Khối lượng mỗi sản phẩm khi biến thể chưa khai báo (file gửi hãng, 0.3.97).
+        'default_item_weight_gram' => (int) env('VANI_FULFILLMENT_DEFAULT_ITEM_GRAM', 300),
         // Số ngày sau khi giao để đơn chuyển "completed" (hết hạn đổi trả).
         'return_window_days' => (int) env('VANI_RETURN_WINDOW_DAYS', 7),
         // Khách bấm "Đã nhận hàng" được khi đơn đang giao quá số ngày này (đã giao hết thì bấm được ngay).

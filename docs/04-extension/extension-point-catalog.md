@@ -128,6 +128,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.admin.order.list_columns` | slot | 0.3.96 | Cột thêm ở danh sách đơn Admin (module Core); tham số `list<int>` id đơn, trả `{key, label, values{id: string}}` hoặc null. **Implemented** (Fulfillment: Vận đơn) |
 | `vani.admin.order.bulk_actions` | slot | 0.3.96 | Thao tác hàng loạt ở danh sách đơn Admin (module Core); trả `list<{key, label, url, confirm}>`, nút POST `{ids}`. **Implemented** (Fulfillment: Tạo vận đơn, Đã bàn giao) |
 | `vani.admin.order.timeline` | slot | 0.3.96 | Sự kiện gộp vào lịch sử trang đơn Admin; tham số `OrderDetail`, trả `list<{ts, at, title, detail?, source?}>`. **Implemented** (Fulfillment, Payment) |
+| `vani.admin.order.list_tools` | slot | 0.3.97 | Công cụ tải file ở đầu danh sách đơn Admin; trả `list<{key, label, url, accept?, help?, fields?}>` — POST multipart `file` + fields. **Implemented** (Fulfillment: nhập mã vận đơn) |
 | `vani.admin.order.payment_methods` | slot | 0.3.96 | Nhãn cách thanh toán cho danh sách đơn; trả `array<mã, nhãn>`. **Implemented** (Payment) |
 
 ### 4.1 Slot storefront (Implemented 2026-10-02 cùng theme `vani-base`, khai báo ở `modules/Storefront/hooks.php`)

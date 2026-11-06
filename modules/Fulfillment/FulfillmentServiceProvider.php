@@ -72,6 +72,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         Hook::onSlot('vani.admin.order.timeline', fn ($order) => $this->app->make(OrderShipmentPanel::class)->timeline($order));
         Hook::onSlot('vani.admin.order.list_columns', fn (array $orderIds) => $this->app->make(OrderListShipments::class)->column($orderIds));
         Hook::onSlot('vani.admin.order.bulk_actions', fn () => $this->app->make(OrderListShipments::class)->bulkActions());
+        Hook::onSlot('vani.admin.order.list_tools', fn () => $this->app->make(OrderListShipments::class)->tools());
 
         // Tắt hãng còn vận đơn chưa kết thúc → webhook 404, trạng thái giao/COD/hàng hoàn không được cập nhật.
         $this->app->make(Extensions::class)->guardDisable(ShippingCarrier::CARRIERS_TAG, function (object $carrier): ?string {

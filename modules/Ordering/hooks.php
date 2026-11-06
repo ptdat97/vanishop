@@ -33,6 +33,13 @@ return [
         'args' => [],
         'description' => 'Thao tác hàng loạt ở danh sách đơn Admin (module Core). Listener trả list<array{key: string, label: string, url: string, confirm: bool}> — nút POST {ids: list<int>} tới url; tự kiểm tra quyền.',
     ],
+    'vani.admin.order.list_tools' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.97',
+        'args' => [],
+        'description' => 'Công cụ tải file lên ở đầu danh sách đơn Admin (vd. Fulfillment: nhập mã vận đơn). Listener trả list<array{key: string, label: string, url: string, accept?: string, help?: string, fields?: list<array{key: string, label: string, placeholder?: string}>}> — form POST multipart `file` + fields; tự kiểm tra quyền.',
+    ],
     'vani.admin.order.payment_methods' => [
         'type' => 'slot',
         'visibility' => 'public',

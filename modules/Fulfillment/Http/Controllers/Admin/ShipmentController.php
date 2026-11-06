@@ -8,8 +8,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Fulfillment\Application\CarrierHandoff;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
@@ -17,6 +19,9 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Support\SimpleXlsx;
+use Modules\Shared\Support\StoreClock;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class ShipmentController
 {
@@ -131,6 +136,79 @@ final class ShipmentController
         }
 
         return back()->with('success', __('fulfillment::messages.bulk_handed_over', ['count' => $moved]));
+    }
+
+    /**
+     * File .xlsx gửi hãng vận chuyển (0.3.97): vận đơn chưa rời kho của các đơn đã chọn — nhân viên dán vào mẫu của hãng.
+     */
+    public function export(Request $request, CarrierHandoff $handoff): BinaryFileResponse
+    {
+        Gate::authorize('fulfillment.view');
+        $path = tempnam(sys_get_temp_dir(), 'vani-handoff-').'.xlsx';
+        SimpleXlsx::write($path, $handoff->rows($this->orderIds($request)), 'Giao hang');
+
+        return response()->download($path, 'don-giao-hang-'.now(StoreClock::timezone())->format('Ymd-Hi').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
+    }
+
+    /**
+     * Nhập mã vận đơn từ file (.xlsx hãng xuất, hoặc file xuất ở trên đã điền; .csv) — 0.3.97.
+     */
+    public function importTracking(Request $request, CarrierHandoff $handoff): RedirectResponse
+    {
+        Gate::authorize('fulfillment.manage');
+        $data = $request->validate([
+            'file' => ['required', 'file', 'max:5120', 'extensions:xlsx,csv,txt'],
+            'carrier' => ['nullable', 'string', 'max:64'],
+        ]);
+        $file = $request->file('file');
+        try {
+            $rows = strtolower((string) $file->getClientOriginalExtension()) === 'xlsx'
+                ? SimpleXlsx::read((string) $file->getRealPath())
+                : self::csvRows((string) $file->getRealPath());
+        } catch (\RuntimeException $exception) {
+            throw ValidationException::withMessages(['file' => $exception->getMessage()]);
+        }
+        $result = $handoff->import($rows, $data['carrier'] ?? null);
+
+        $redirect = back()->with('success', __('fulfillment::messages.tracking_imported', ['booked' => $result['booked'], 'unchanged' => $result['unchanged'], 'errors' => count($result['errors'])]));
+
+        // Mỗi dòng lỗi một khoá (Inertia chỉ chuyển câu đầu tiên của mỗi khoá).
+        $errors = [];
+        foreach (array_slice($result['errors'], 0, 30) as $index => $message) {
+            $errors["import.{$index}"] = $message;
+        }
+
+        return $errors === [] ? $redirect : $redirect->withErrors($errors);
+    }
+
+    /**
+     * CSV (UTF-8, có/không BOM; phân cách `,` `;` hoặc tab — Excel VN hay dùng `;`).
+     *
+     * @return list<list<string>>
+     */
+    private static function csvRows(string $path): array
+    {
+        $content = (string) file_get_contents($path);
+        $content = str_starts_with($content, "\xEF\xBB\xBF") ? substr($content, 3) : $content;
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            throw new \RuntimeException('File CSV phải lưu dạng UTF-8.');
+        }
+        $first = strtok($content, "\n") ?: '';
+        $delimiter = collect([',', ';', "\t"])->sortByDesc(fn (string $candidate): int => substr_count($first, $candidate))->first();
+        $rows = [];
+        foreach (preg_split('/\r\n|\n|\r/', $content) ?: [] as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            $rows[] = array_map('strval', str_getcsv($line, $delimiter, '"', ''));
+            if (count($rows) > SimpleXlsx::MAX_ROWS) {
+                throw new \RuntimeException('File có quá '.SimpleXlsx::MAX_ROWS.' dòng.');
+            }
+        }
+
+        return $rows;
     }
 
     /**

@@ -4,11 +4,22 @@ import { secondaryButton } from '@admin/styles';
 import type { ExtensionAction } from '@admin/types';
 import { router } from '@inertiajs/vue3';
 
-/** Nút thao tác do plugin khai báo; Core kiểm tra quyền + ghi audit ở server. */
+/** Nút thao tác hàng loạt (plugin hoặc module Core); server kiểm tra quyền. `method: 'get'` mở trang/tải file. */
 const props = defineProps<{ actions: ExtensionAction[]; ids: number[] }>();
 
 async function run(action: ExtensionAction): Promise<void> {
     if (props.ids.length === 0 || (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} mục đã chọn.` })) === false)) {
+        return;
+    }
+    if (action.method === 'get') {
+        // In phiếu / xuất file: trình duyệt mở hoặc tải trực tiếp (không qua Inertia).
+        const query = new URLSearchParams(props.ids.map((id) => ['ids[]', String(id)]));
+        const url = `${action.url}${action.url.includes('?') ? '&' : '?'}${query}`;
+        if (action.target === '_blank') {
+            window.open(url, '_blank', 'noopener');
+        } else {
+            window.location.href = url;
+        }
         return;
     }
     router.post(action.url, { ids: props.ids }, { preserveScroll: true });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Http\Controllers\Admin;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,6 +20,7 @@ use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\Data\OrderStatus;
+use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Domain\OrderStateMachine;
@@ -26,6 +28,7 @@ use Modules\Ordering\Domain\PaymentStatus;
 use Modules\Ordering\Http\Requests\ShippingAddressRequest;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
 
 final class OrderController
@@ -55,7 +58,10 @@ final class OrderController
                 $extensionColumns['values'][$orderId][$column['key']] = $text;
             }
         }
-        $actions = Gate::allows('orders.manage') ? [['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : [];
+        $actions = [
+            ...(Gate::allows('orders.manage') ? [['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : []),
+            ['key' => 'print', 'label' => 'In phiếu giao', 'url' => route('admin.orders.orders.print'), 'confirm' => false, 'method' => 'get', 'target' => '_blank'],
+        ];
         foreach (array_filter(Hook::slot('vani.admin.order.bulk_actions'), 'is_array') as $contributed) {
             array_push($actions, ...$contributed);
         }
@@ -94,10 +100,11 @@ final class OrderController
                 'filterValues' => $extensionFilters,
                 'actions' => $actions,
             ],
+            'tools' => array_merge([], ...array_values(array_filter(Hook::slot('vani.admin.order.list_tools'), 'is_array'))),
         ]);
     }
 
-    public function show(Order $order, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses): Response
+    public function show(Order $order, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses, OrderReader $reader): Response
     {
         Gate::authorize('orders.view');
         $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
@@ -111,6 +118,9 @@ final class OrderController
             // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
             'stage' => (string) Order::query()->whereKey($order->id)->selectRaw(OrderStage::sql().' as stage')->value('stage'),
             'timeline' => $this->timeline($detail),
+            // Thẻ Khách (0.3.97): lịch sử nhận hàng theo SĐT — đánh giá rủi ro trước khi xác nhận đơn COD.
+            'customerHistory' => [...$reader->deliveryHistory($detail->customer['phone'], $order->id), 'orders_url' => route('admin.orders.orders.index', ['q' => $detail->customer['phone']])],
+            'printUrl' => route('admin.orders.orders.print', ['ids' => [$order->id]]),
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
                 'cancel' => Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status),
@@ -163,6 +173,44 @@ final class OrderController
         }
 
         return $labels;
+    }
+
+    /**
+     * Phiếu giao / đóng gói in từ trình duyệt (0.3.97): `ids[]` theo thứ tự chọn, tối đa 200 đơn.
+     */
+    public function print(Request $request, MoneyFormatter $money): View
+    {
+        Gate::authorize('orders.view');
+        $ids = array_values(array_unique(array_map('intval', (array) $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+        ])['ids'])));
+        $orders = Order::query()->with('lines')->whereIn('id', $ids)->get()->sortBy(fn (Order $order): int => (int) array_search($order->id, $ids, true));
+
+        return view('ordering::admin.print', [
+            'shopName' => (string) config('app.name'),
+            'orders' => $orders->map(function (Order $order) use ($money): array {
+                $address = (array) $order->shipping_address;
+                $lines = $order->lines->map(fn ($line): array => [
+                    'name' => $line->product_name, 'sku' => $line->sku, 'variant' => trim(implode(' / ', array_filter([$line->color_name, $line->size_code]))),
+                    'quantity' => $line->quantity - $line->cancelled_quantity,
+                ])->filter(fn (array $line): bool => $line['quantity'] > 0)->values();
+
+                return [
+                    'number' => $order->number,
+                    'placed_at' => StoreClock::format($order->placed_at),
+                    'recipient' => (string) ($order->customer_snapshot['full_name'] ?? ''),
+                    'phone' => (string) ($order->customer_snapshot['phone'] ?? $order->customer_phone),
+                    'address' => implode(', ', array_filter([$address['street_line'] ?? '', $address['ward_name'] ?? '', $address['province_name'] ?? ''])),
+                    'shipping_method' => (string) ($order->shipping_method['label'] ?? ''),
+                    'lines' => $lines->all(),
+                    'item_count' => $lines->sum('quantity'),
+                    // Thu hộ khi đơn trả khi nhận hàng và chưa thu.
+                    'collect_on_delivery' => $order->payment_status === 'cod_pending' ? $money->formatAmount($order->total_amount, $order->currency_code) : null,
+                    'total' => $money->formatAmount($order->total_amount, $order->currency_code),
+                    'note' => $order->note,
+                ];
+            })->values()->all(),
+        ]);
     }
 
     /**
