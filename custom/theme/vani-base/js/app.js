@@ -1,6 +1,6 @@
 /*
  * Đảo tương tác của vani-base (ADR-025): JS chỉ tăng cường, trang dùng được khi JS tắt.
- * Thư viện ngoài duy nhất: Swiper + PhotoSwipe đặt sẵn ở public/vendor, chỉ tải khi trang cần (loadVendor bên dưới).
+ * Thư viện ngoài duy nhất: Swiper + PhotoSwipe (npm), chỉ tải khi trang cần (loadVendor bên dưới).
  * Dữ liệu đọc từ data-* đã render sẵn ở server.
  */
 document.documentElement.classList.add('js');
@@ -16,39 +16,18 @@ const i18n = (() => {
 const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, value]) => text.replace(`:${name}`, value), i18n[key] ?? key);
 
 /**
- * Thư viện giao diện đặt sẵn ở public/vendor (không qua npm/Vite), tải theo nhu cầu: chỉ trang có carousel/ảnh phóng to
- * mới tải. Theme con và plugin dùng chung: `window.vaniLoadVendor('swiper' | 'photoswipe')` → Promise<class>.
- *   - Swiper 11 (MIT) — carousel. - PhotoSwipe 5 (MIT) — xem ảnh phóng to.
- * Gốc URL do layout in (`<html data-vani-vendor>`, theo ASSET_URL/CDN).
+ * Thư viện giao diện cài qua npm (Swiper 14, PhotoSwipe 5 — MIT), tách chunk riêng bằng import() động: chỉ trang có
+ * carousel/ảnh phóng to mới tải JS + CSS. Theme con và plugin dùng chung: `window.vaniLoadVendor('swiper' | 'photoswipe')`
+ * → Promise<class> (`Swiper` bản bundle đủ module / `PhotoSwipeLightbox`).
  */
 const VENDORS = {
-    swiper: { css: ['swiper/swiper-bundle.min.css'], js: ['swiper/swiper-bundle.min.js'], global: 'Swiper' },
-    photoswipe: { css: ['photoswipe/photoswipe.css'], js: ['photoswipe/photoswipe.umd.min.js', 'photoswipe/photoswipe-lightbox.umd.min.js'], global: 'PhotoSwipeLightbox' },
+    swiper: () => Promise.all([import('swiper/bundle'), import('swiper/css/bundle')]).then(([module]) => module.default),
+    photoswipe: () => Promise.all([import('photoswipe/lightbox'), import('photoswipe/style.css')]).then(([module]) => module.default),
 };
 const vendorPromises = {};
-const vendorBase = (document.documentElement.dataset.vaniVendor || '/vendor').replace(/\/$/, '');
-const loadScript = (src) =>
-    new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = resolve;
-        script.onerror = () => reject(new Error(`Không tải được ${src}`));
-        document.head.append(script);
-    });
 function loadVendor(name) {
-    const vendor = VENDORS[name];
-    if (!vendor) return Promise.reject(new Error(`Thư viện không có: ${name}`));
-    vendorPromises[name] ??= (async () => {
-        vendor.css.forEach((path) => {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = `${vendorBase}/${path}`;
-            document.head.append(link);
-        });
-        // Theo thứ tự: bản lightbox của PhotoSwipe cần lõi đã có.
-        for (const path of vendor.js) await loadScript(`${vendorBase}/${path}`);
-        return window[vendor.global];
-    })();
+    if (!VENDORS[name]) return Promise.reject(new Error(`Thư viện không có: ${name}`));
+    vendorPromises[name] ??= VENDORS[name]();
     return vendorPromises[name];
 }
 window.vaniLoadVendor = loadVendor;
@@ -91,7 +70,7 @@ function mountLightbox(PhotoSwipeLightbox, gallery, onChange) {
     const lightbox = new PhotoSwipeLightbox({
         gallery,
         children: 'a[data-pswp-width]',
-        pswpModule: window.PhotoSwipe,
+        pswpModule: () => import('photoswipe'),
         bgOpacity: 0.95,
         showHideAnimationType: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : 'zoom',
         closeTitle: t('lightbox_close'),

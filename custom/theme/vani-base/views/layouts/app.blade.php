@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 @php($pageCache = (bool) request()->attributes->get('vani.page_cache'))
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-vani-vendor="{{ asset('vendor') }}" @if ($pageCache) data-vani-session="{{ vani_route('storefront.session', ['locale' => app()->getLocale()]) }}" @endif>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($pageCache) data-vani-session="{{ vani_route('storefront.session', ['locale' => app()->getLocale()]) }}" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

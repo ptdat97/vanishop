@@ -19,7 +19,7 @@
         @php($mainUrl = $images[0]['url'] ?? $product['image_url'])
         @php([$ratioW, $ratioH] = vani_product_ratio())
         {{--
-            Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — tải theo nhu cầu từ public/vendor (app.js). Không JS:
+            Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — cài qua npm, tải theo nhu cầu (app.js). Không JS:
             dải ảnh cuộn ngang (scroll-snap), bấm ảnh mở bản lớn nhất. Ảnh phóng to = bản lớn nhất trong srcset (đúng tỉ lệ ảnh sản phẩm).
         --}}
         @php($slides = $images !== [] ? $images : ($mainUrl !== null ? [['url' => $mainUrl, 'srcset' => null, 'alt' => $product['name']]] : []))

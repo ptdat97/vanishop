@@ -24,7 +24,7 @@
 }
 
 /*
- * Carousel (Swiper, public/vendor/swiper — app.js tải khi trang có `.vani-carousel`). Chưa khởi tạo (không JS, hoặc đang tải):
+ * Carousel (Swiper từ npm — app.js tải khi trang có `.vani-carousel`). Chưa khởi tạo (không JS, hoặc đang tải):
  * dải cuộn ngang scroll-snap — nội dung vẫn xem/vuốt được (ADR-025 quyết định 4). Khởi tạo xong: CSS của Swiper.
  */
 .vani-carousel {

@@ -212,7 +212,6 @@ it('PDP có ảnh: gallery (Swiper/PhotoSwipe) — ảnh chính + ảnh sau tả
         ->and($html)->toContain('data-images=\'[{"url":')
         ->toContain('data-gallery-image src="'.e($urls[1]).'"')
         ->toContain('data-pswp-width=')
-        ->toContain('data-vani-vendor="'.asset('vendor').'"')
         // Chỉ ảnh đầu ưu tiên cao; không JS vẫn xem được (dải cuộn, liên kết mở ảnh lớn).
         ->and(substr_count($html, 'fetchpriority="high"'))->toBe(1);
 });
