@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.92 — 2026-11-06
+
+Theme `vani-base`: carousel (Swiper 11) và xem ảnh phóng to (PhotoSwipe 5), đặt sẵn ở `public/vendor/{swiper,photoswipe}` (MIT), tải theo nhu cầu.
+
+### Thêm
+- `window.vaniLoadVendor('swiper' | 'photoswipe')` → Promise lớp `Swiper` / `PhotoSwipeLightbox` (tải CSS + JS một lần) cho theme con và plugin.
+- Carousel khai báo bằng HTML: `.vani-carousel.swiper > .swiper-wrapper > .swiper-slide`, tuỳ chọn Swiper ở `data-carousel` (JSON), nút `[data-carousel-prev]`/`[data-carousel-next]`, chấm `[data-carousel-pagination]`. Không JS: dải cuộn ngang scroll-snap.
+- Ảnh phóng to: vùng `[data-vani-lightbox]` chứa `<a href="ảnh lớn" data-pswp-width data-pswp-height>`. Không JS: liên kết mở ảnh.
+- Layout in `<html data-vani-vendor>` (gốc URL `public/vendor` theo `ASSET_URL`).
+
+### Đổi
+- Trang sản phẩm: gallery thành carousel (vuốt, mũi tên, ảnh nhỏ cuộn ngang đồng bộ) + bấm ảnh phóng to (bản lớn nhất trong `srcset`); chọn màu → tới ảnh đầu của màu. Ảnh sau ảnh đầu tải lười. `data-gallery-thumb` có `data-index`; ảnh không phải ảnh đầu mang `data-gallery-image`.
+
 ## 0.3.91 — 2026-11-06
 
 Thư viện ảnh chứa cả video (MP4/WebM).

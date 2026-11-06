@@ -1,6 +1,7 @@
 /*
  * Đảo tương tác của vani-base (ADR-025): JS chỉ tăng cường, trang dùng được khi JS tắt.
- * Không phụ thuộc thư viện ngoài; dữ liệu đọc từ data-* đã render sẵn ở server.
+ * Thư viện ngoài duy nhất: Swiper + PhotoSwipe đặt sẵn ở public/vendor, chỉ tải khi trang cần (loadVendor bên dưới).
+ * Dữ liệu đọc từ data-* đã render sẵn ở server.
  */
 document.documentElement.classList.add('js');
 
@@ -14,37 +15,152 @@ const i18n = (() => {
 })();
 const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, value]) => text.replace(`:${name}`, value), i18n[key] ?? key);
 
-// PDP: chọn màu → đổi ảnh chính theo bộ ảnh của màu (data-images trên fieldset màu).
+/**
+ * Thư viện giao diện đặt sẵn ở public/vendor (không qua npm/Vite), tải theo nhu cầu: chỉ trang có carousel/ảnh phóng to
+ * mới tải. Theme con và plugin dùng chung: `window.vaniLoadVendor('swiper' | 'photoswipe')` → Promise<class>.
+ *   - Swiper 11 (MIT) — carousel. - PhotoSwipe 5 (MIT) — xem ảnh phóng to.
+ * Gốc URL do layout in (`<html data-vani-vendor>`, theo ASSET_URL/CDN).
+ */
+const VENDORS = {
+    swiper: { css: ['swiper/swiper-bundle.min.css'], js: ['swiper/swiper-bundle.min.js'], global: 'Swiper' },
+    photoswipe: { css: ['photoswipe/photoswipe.css'], js: ['photoswipe/photoswipe.umd.min.js', 'photoswipe/photoswipe-lightbox.umd.min.js'], global: 'PhotoSwipeLightbox' },
+};
+const vendorPromises = {};
+const vendorBase = (document.documentElement.dataset.vaniVendor || '/vendor').replace(/\/$/, '');
+const loadScript = (src) =>
+    new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Không tải được ${src}`));
+        document.head.append(script);
+    });
+function loadVendor(name) {
+    const vendor = VENDORS[name];
+    if (!vendor) return Promise.reject(new Error(`Thư viện không có: ${name}`));
+    vendorPromises[name] ??= (async () => {
+        vendor.css.forEach((path) => {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = `${vendorBase}/${path}`;
+            document.head.append(link);
+        });
+        // Theo thứ tự: bản lightbox của PhotoSwipe cần lõi đã có.
+        for (const path of vendor.js) await loadScript(`${vendorBase}/${path}`);
+        return window[vendor.global];
+    })();
+    return vendorPromises[name];
+}
+window.vaniLoadVendor = loadVendor;
+
+/**
+ * Carousel chung: phần tử `.vani-carousel.swiper > .swiper-wrapper > .swiper-slide`, tuỳ chọn Swiper ở `data-carousel`
+ * (JSON), nút `[data-carousel-prev]`/`[data-carousel-next]`, chấm `[data-carousel-pagination]`. Trả Swiper instance.
+ */
+function mountCarousel(Swiper, element, extra = {}) {
+    let options = {};
+    try {
+        options = JSON.parse(element.dataset.carousel || '{}');
+    } catch {
+        options = {};
+    }
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return new Swiper(element, {
+        speed: reduceMotion ? 0 : 300,
+        watchOverflow: true,
+        a11y: { prevSlideMessage: t('carousel_prev'), nextSlideMessage: t('carousel_next') },
+        navigation: { prevEl: element.querySelector('[data-carousel-prev]'), nextEl: element.querySelector('[data-carousel-next]') },
+        pagination: element.querySelector('[data-carousel-pagination]') ? { el: element.querySelector('[data-carousel-pagination]'), clickable: true } : false,
+        ...options,
+        ...extra,
+    });
+}
+
+const carousels = [...document.querySelectorAll('.vani-carousel:not([data-gallery-slider])')];
+if (carousels.length) {
+    loadVendor('swiper')
+        .then((Swiper) => carousels.forEach((element) => mountCarousel(Swiper, element)))
+        .catch(() => {}); // không tải được: vẫn là dải cuộn ngang
+}
+
+/**
+ * Ảnh phóng to chung: vùng `[data-vani-lightbox]` chứa các `<a href=ảnh-lớn data-pswp-width data-pswp-height>`.
+ * Không JS: liên kết mở ảnh lớn.
+ */
+function mountLightbox(PhotoSwipeLightbox, gallery, onChange) {
+    const lightbox = new PhotoSwipeLightbox({
+        gallery,
+        children: 'a[data-pswp-width]',
+        pswpModule: window.PhotoSwipe,
+        bgOpacity: 0.95,
+        showHideAnimationType: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'none' : 'zoom',
+        closeTitle: t('lightbox_close'),
+        zoomTitle: t('lightbox_zoom'),
+        arrowPrevTitle: t('lightbox_prev'),
+        arrowNextTitle: t('lightbox_next'),
+        errorMsg: t('lightbox_error'),
+    });
+    if (onChange) lightbox.on('change', () => onChange(lightbox.pswp.currIndex));
+    lightbox.init();
+    return lightbox;
+}
+
+const lightboxes = [...document.querySelectorAll('[data-vani-lightbox]')];
+if (lightboxes.length) {
+    loadVendor('photoswipe')
+        .then((PhotoSwipeLightbox) => lightboxes.forEach((gallery) => mountLightbox(PhotoSwipeLightbox, gallery)))
+        .catch(() => {});
+}
+
+// PDP: gallery Swiper + phóng to PhotoSwipe; bấm ảnh nhỏ / chọn màu → tới ảnh đầu của màu (data-images trên fieldset màu).
 document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
-    const main = gallery.querySelector('[data-gallery-main]');
+    const slider = gallery.querySelector('[data-gallery-slider]');
     const form = document.querySelector('[data-variant-form]');
-    if (!main) {
+    const thumbs = [...gallery.querySelectorAll('[data-gallery-thumb]')];
+    if (!slider) {
         return;
     }
+    let swiper = null;
 
-    // Ảnh là {url, srcset, alt} (cùng hình dạng Storefront API); srcset theo ảnh mới, không thì bỏ (tránh trình duyệt giữ ảnh cũ).
-    const show = (url, srcset = '') => {
-        if (srcset) {
-            main.srcset = srcset;
-        } else {
-            main.removeAttribute('srcset');
-        }
-        main.src = url;
-        gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => {
-            thumb.classList.toggle('border-primary', thumb.dataset.src === url);
-            thumb.classList.toggle('border-slate-200', thumb.dataset.src !== url);
+    const highlight = (index) => {
+        thumbs.forEach((thumb) => {
+            const active = Number(thumb.dataset.index) === index;
+            thumb.classList.toggle('border-primary', active);
+            thumb.classList.toggle('border-slate-200', !active);
+            thumb.setAttribute('aria-current', active ? 'true' : 'false');
+            if (active) thumb.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         });
     };
+    // Chưa có Swiper (đang tải/lỗi): cuộn dải ảnh scroll-snap tới ảnh.
+    const go = (index) => {
+        if (index < 0) return;
+        if (swiper) {
+            swiper.slideTo(index);
+        } else {
+            const slide = slider.querySelectorAll('[data-gallery-slide]')[index];
+            slide?.parentElement.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
+            highlight(index);
+        }
+    };
 
-    gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => thumb.addEventListener('click', () => show(thumb.dataset.src, thumb.dataset.srcset)));
-
+    thumbs.forEach((thumb) => thumb.addEventListener('click', () => go(Number(thumb.dataset.index))));
     form?.addEventListener('change', (event) => {
         const group = event.target.closest('[data-color-group]');
         const images = group ? JSON.parse(group.dataset.images || '[]') : [];
-        if (images.length > 0) {
-            show(images[0].url ?? images[0], images[0].srcset ?? '');
-        }
+        const first = images[0]?.url ?? images[0];
+        if (first) go(thumbs.findIndex((thumb) => thumb.dataset.src === first));
     });
+
+    if (slider.querySelectorAll('[data-gallery-slide]').length > 1) {
+        loadVendor('swiper')
+            .then((Swiper) => {
+                swiper = mountCarousel(Swiper, slider, { on: { slideChange: (instance) => highlight(instance.activeIndex) } });
+            })
+            .catch(() => {});
+    }
+    loadVendor('photoswipe')
+        .then((PhotoSwipeLightbox) => mountLightbox(PhotoSwipeLightbox, slider, (index) => go(index)))
+        .catch(() => {});
 });
 
 // Giỏ: đổi số lượng thì gửi form luôn (nút "Cập nhật" vẫn có cho trường hợp JS tắt).

@@ -23,6 +23,51 @@
     display: revert;
 }
 
+/*
+ * Carousel (Swiper, public/vendor/swiper — app.js tải khi trang có `.vani-carousel`). Chưa khởi tạo (không JS, hoặc đang tải):
+ * dải cuộn ngang scroll-snap — nội dung vẫn xem/vuốt được (ADR-025 quyết định 4). Khởi tạo xong: CSS của Swiper.
+ */
+.vani-carousel {
+    position: relative;
+    overflow: hidden;
+}
+.vani-carousel:not(.swiper-initialized) > .swiper-wrapper {
+    display: flex;
+    height: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+.vani-carousel:not(.swiper-initialized) > .swiper-wrapper > .swiper-slide {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+}
+.vani-carousel-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 10;
+    display: flex;
+    height: 2.5rem;
+    width: 2.5rem;
+    transform: translateY(-50%);
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.85);
+    font-size: 1.5rem;
+    line-height: 1;
+    color: rgb(15 23 42);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+.vani-carousel-nav:disabled,
+.vani-carousel-nav.swiper-button-disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.vani-carousel:not(.swiper-initialized) > .vani-carousel-nav {
+    display: none;
+}
+
 /* Nội dung soạn thảo (Markdown của plugin nội dung, mô tả dài…). */
 .vani-prose {
     line-height: 1.75;

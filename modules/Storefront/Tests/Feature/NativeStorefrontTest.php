@@ -194,7 +194,7 @@ it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitem
         ->and(simplexml_load_string($xml))->not->toBeFalse();
 });
 
-it('PDP có ảnh: ảnh chính + thumbnail từ {url, alt}, data-images cho JS đổi theo màu (hồi quy htmlspecialchars array)', function () {
+it('PDP có ảnh: gallery (Swiper/PhotoSwipe) — ảnh chính + ảnh sau tải lười, liên kết phóng to, thumbnail, data-images cho JS đổi theo màu (hồi quy htmlspecialchars array)', function () {
     Storage::fake('public');
     $styleColor = $this->s->styleColor;
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($this->product, $styleColor, [
@@ -208,7 +208,13 @@ it('PDP có ảnh: ảnh chính + thumbnail từ {url, alt}, data-images cho JS 
         ->assertSee('data-gallery-thumb data-src="'.e($urls[1]).'"', false)
         ->getContent();
     expect(substr_count($html, 'data-gallery-thumb '))->toBe(2)
-        ->and($html)->toContain('data-images=\'[{"url":');
+        ->and(substr_count($html, 'data-gallery-slide>'))->toBe(2)
+        ->and($html)->toContain('data-images=\'[{"url":')
+        ->toContain('data-gallery-image src="'.e($urls[1]).'"')
+        ->toContain('data-pswp-width=')
+        ->toContain('data-vani-vendor="'.asset('vendor').'"')
+        // Chỉ ảnh đầu ưu tiên cao; không JS vẫn xem được (dải cuộn, liên kết mở ảnh lớn).
+        ->and(substr_count($html, 'fetchpriority="high"'))->toBe(1);
 });
 
 it('slot đầu trang và đầu danh sách (0.3.43): body_start trước header, before_listing nhận ngữ cảnh danh mục/thương hiệu/tìm kiếm', function () {

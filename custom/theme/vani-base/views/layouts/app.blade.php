@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 @php($pageCache = (bool) request()->attributes->get('vani.page_cache'))
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @if ($pageCache) data-vani-session="{{ vani_route('storefront.session', ['locale' => app()->getLocale()]) }}" @endif>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-vani-vendor="{{ asset('vendor') }}" @if ($pageCache) data-vani-session="{{ vani_route('storefront.session', ['locale' => app()->getLocale()]) }}" @endif>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -146,7 +146,7 @@
         <script type="application/json" data-vani-cart-change>@json(session(\Modules\Storefront\Http\Controllers\Web\CartController::CHANGE_FLASH))</script>
     @endif
     {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
-    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên'), 'suggest_products' => __('Sản phẩm'), 'suggest_categories' => __('Danh mục'), 'suggest_brands' => __('Thương hiệu'), 'suggest_all' => __('Xem tất cả kết quả')])
+    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên'), 'suggest_products' => __('Sản phẩm'), 'suggest_categories' => __('Danh mục'), 'suggest_brands' => __('Thương hiệu'), 'suggest_all' => __('Xem tất cả kết quả'), 'carousel_prev' => __('Mục trước'), 'carousel_next' => __('Mục sau'), 'lightbox_prev' => __('Ảnh trước'), 'lightbox_next' => __('Ảnh sau'), 'lightbox_close' => __('Đóng'), 'lightbox_zoom' => __('Phóng to'), 'lightbox_error' => __('Không tải được ảnh.')])
     <script type="application/json" data-vani-i18n>@json($jsStrings)</script>
     @if ($customerState !== null)
         {{-- Cùng dữ liệu với /_vani/phien (trừ flash — đã render ở trên) để JS dựng giỏ mini, giá thành viên như trang cache CDN. --}}

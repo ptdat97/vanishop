@@ -18,20 +18,49 @@
         @php($images = collect($product['colors'])->flatMap(fn ($color) => $color['images'])->values()->all())
         @php($mainUrl = $images[0]['url'] ?? $product['image_url'])
         @php([$ratioW, $ratioH] = vani_product_ratio())
+        {{--
+            Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — tải theo nhu cầu từ public/vendor (app.js). Không JS:
+            dải ảnh cuộn ngang (scroll-snap), bấm ảnh mở bản lớn nhất. Ảnh phóng to = bản lớn nhất trong srcset (đúng tỉ lệ ảnh sản phẩm).
+        --}}
+        @php($slides = $images !== [] ? $images : ($mainUrl !== null ? [['url' => $mainUrl, 'srcset' => null, 'alt' => $product['name']]] : []))
+        @php($zoom = function (array $image) use ($ratioW, $ratioH): array {
+            $best = [$image['url'], 800];
+            foreach (explode(',', (string) ($image['srcset'] ?? '')) as $entry) {
+                [$source, $width] = array_pad(preg_split('/\s+/', trim($entry)) ?: [], 2, '');
+                if ($source !== '' && (int) $width > $best[1]) {
+                    $best = [$source, (int) $width];
+                }
+            }
+
+            return [$best[0], $best[1], (int) round($best[1] * $ratioH / $ratioW)];
+        })
         <div data-product-gallery>
-            <div class="overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}">
-                @if ($mainUrl !== null)
-                    {{-- Ảnh chính là LCP của trang sản phẩm: tải ngay, ưu tiên cao. --}}
-                    <img data-gallery-main src="{{ $mainUrl }}" alt="{{ $images[0]['alt'] ?? $product['name'] }}" width="{{ 600 }}" height="{{ (int) round(600 * $ratioH / $ratioW) }}"
-                         @if ($images[0]['srcset'] ?? null) srcset="{{ $images[0]['srcset'] }}" sizes="(min-width: 1152px) 560px, (min-width: 768px) 50vw, 100vw" @endif
-                         fetchpriority="high" decoding="async" class="h-full w-full object-cover">
+            <div class="vani-carousel swiper rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}" data-gallery-slider
+                 aria-roledescription="carousel" aria-label="{{ __('Ảnh sản phẩm :name', ['name' => $product['name']]) }}">
+                <div class="swiper-wrapper">
+                    @foreach ($slides as $index => $image)
+                        @php([$zoomUrl, $zoomWidth, $zoomHeight] = $zoom($image))
+                        <div class="swiper-slide w-full" data-gallery-slide>
+                            <a href="{{ $zoomUrl }}" data-pswp-width="{{ $zoomWidth }}" data-pswp-height="{{ $zoomHeight }}" target="_blank" rel="noopener" class="block h-full cursor-zoom-in"
+                               aria-label="{{ __('Phóng to ảnh :index của :name', ['index' => $index + 1, 'name' => $product['name']]) }}">
+                                {{-- Ảnh đầu là LCP của trang sản phẩm: tải ngay, ưu tiên cao; ảnh sau tải lười. --}}
+                                <img {{ $index === 0 ? 'data-gallery-main' : 'data-gallery-image' }} src="{{ $image['url'] }}" alt="{{ $image['alt'] ?? $product['name'] }}" width="600" height="{{ (int) round(600 * $ratioH / $ratioW) }}"
+                                     @if ($image['srcset'] ?? null) srcset="{{ $image['srcset'] }}" sizes="(min-width: 1152px) 560px, (min-width: 768px) 50vw, 100vw" @endif
+                                     @if ($index === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async" class="h-full w-full object-cover">
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+                @if (count($slides) > 1)
+                    <button type="button" class="vani-carousel-nav left-2" data-carousel-prev data-js-only aria-label="{{ __('Ảnh trước') }}">‹</button>
+                    <button type="button" class="vani-carousel-nav right-2" data-carousel-next data-js-only aria-label="{{ __('Ảnh sau') }}">›</button>
                 @endif
             </div>
             @if (count($images) > 1)
-                <div class="mt-3 grid grid-cols-4 gap-2" data-gallery-thumbs>
+                <div class="mt-3 flex gap-2 overflow-x-auto pb-1" data-gallery-thumbs>
                     @foreach ($images as $index => $image)
-                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" data-srcset="{{ $image['srcset'] ?? '' }}" @class(['overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}" aria-label="{{ __('Ảnh :index của :name', ['index' => $index + 1, 'name' => $product['name']]) }}">
-                            {{-- Ảnh nhỏ: bản 160px (trước: bản 800px của ảnh chính). --}}
+                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" data-index="{{ $index }}" @class(['w-1/5 shrink-0 overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}" aria-label="{{ __('Ảnh :index của :name', ['index' => $index + 1, 'name' => $product['name']]) }}">
+                            {{-- Ảnh nhỏ: bản 160px. --}}
                             <img src="{{ $image['thumb_url'] ?? $image['url'] }}" alt="" loading="lazy" decoding="async" width="150" height="{{ (int) round(150 * $ratioH / $ratioW) }}" class="h-full w-full object-cover">
                         </button>
                     @endforeach
