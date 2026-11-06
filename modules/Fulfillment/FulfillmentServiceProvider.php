@@ -19,6 +19,7 @@ use Modules\Fulfillment\Application\Carriers\ManualCarrier;
 use Modules\Fulfillment\Application\EloquentShipmentReader;
 use Modules\Fulfillment\Application\Listeners\CancelShipmentsOnOrderCancel;
 use Modules\Fulfillment\Application\Listeners\CreateShipmentsOnConfirm;
+use Modules\Fulfillment\Application\Listeners\OrderListShipments;
 use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
 use Modules\Fulfillment\Application\Listeners\RebuildShipmentsOnLinesCancelled;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
@@ -68,6 +69,8 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
         Event::listen(OrderLinesCancelled::class, RebuildShipmentsOnLinesCancelled::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 95);
+        Hook::onSlot('vani.admin.order.list_columns', fn (array $orderIds) => $this->app->make(OrderListShipments::class)->column($orderIds));
+        Hook::onSlot('vani.admin.order.bulk_actions', fn () => $this->app->make(OrderListShipments::class)->bulkActions());
 
         // Tắt hãng còn vận đơn chưa kết thúc → webhook 404, trạng thái giao/COD/hàng hoàn không được cập nhật.
         $this->app->make(Extensions::class)->guardDisable(ShippingCarrier::CARRIERS_TAG, function (object $carrier): ?string {

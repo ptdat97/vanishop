@@ -12,6 +12,27 @@ return [
         'args' => ['order' => 'Modules\\Ordering\\Contracts\\Data\\OrderDetail'],
         'description' => 'Panel bên phải trang đơn Admin. Listener trả về array{title: string, rows: list<array{label: string, value: string}>, link?: array{label: string, url: string}}.',
     ],
+    'vani.admin.order.list_columns' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.96',
+        'args' => ['orderIds' => 'list<int>'],
+        'description' => 'Cột thêm ở danh sách đơn Admin (module Core, vd. Fulfillment: vận đơn). Listener trả array{key: string, label: string, values: array<int, string>} (id đơn => chữ) hoặc null khi nhân viên không có quyền.',
+    ],
+    'vani.admin.order.bulk_actions' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.96',
+        'args' => [],
+        'description' => 'Thao tác hàng loạt ở danh sách đơn Admin (module Core). Listener trả list<array{key: string, label: string, url: string, confirm: bool}> — nút POST {ids: list<int>} tới url; tự kiểm tra quyền.',
+    ],
+    'vani.admin.order.payment_methods' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.96',
+        'args' => [],
+        'description' => 'Nhãn cách thanh toán cho bộ lọc/cột danh sách đơn Admin (Ordering không biết cổng nào được cài). Listener trả array<string, string> mã ⇒ nhãn.',
+    ],
     'vani.service.ordering.order_detail' => [
         'type' => 'filter',
         'visibility' => 'public',

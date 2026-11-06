@@ -16,6 +16,7 @@ use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Shared\Domain\BusinessRuleViolation;
 
 final class ShipmentController
 {
@@ -78,6 +79,62 @@ final class ShipmentController
         $fulfillment->createForOrder((int) $data['order_id']);
 
         return back()->with('success', __('fulfillment::messages.created'));
+    }
+
+    /**
+     * Tạo vận đơn cho các đơn đã chọn ở danh sách đơn (0.3.96): đơn chưa xác nhận hoặc đã có vận đơn được bỏ qua.
+     */
+    public function bulkCreate(Request $request, OrderReader $orders, FulfillmentService $fulfillment): RedirectResponse
+    {
+        Gate::authorize('fulfillment.manage');
+        $ids = $this->orderIds($request);
+        $created = 0;
+        foreach ($ids as $orderId) {
+            $order = $orders->find($orderId);
+            if ($order === null || ! in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)
+                || Shipment::query()->where('order_id', $orderId)->where('status', '!=', ShipmentStatus::Cancelled)->exists()) {
+                continue;
+            }
+            try {
+                $fulfillment->createForOrder($orderId);
+                $created++;
+            } catch (BusinessRuleViolation) {
+                // Đơn đổi trạng thái giữa chừng: bỏ qua.
+            }
+        }
+
+        return back()->with('success', __('fulfillment::messages.bulk_created', ['count' => $created, 'skipped' => count($ids) - $created]));
+    }
+
+    /**
+     * Đánh dấu đã bàn giao cho hãng (đã lấy hàng) các vận đơn đã có mã của đơn đã chọn — hàng rời kho, trừ tồn.
+     * Vận đơn chưa có mã được bỏ qua (nhập mã trước).
+     */
+    public function bulkHandOver(Request $request, FulfillmentService $fulfillment): RedirectResponse
+    {
+        Gate::authorize('fulfillment.manage');
+        $shipments = Shipment::query()->whereIn('order_id', $this->orderIds($request))->where('status', ShipmentStatus::Created)->get();
+        $moved = 0;
+        foreach ($shipments as $shipment) {
+            try {
+                $fulfillment->updateStatus($shipment->id, ShipmentStatus::PickedUp, 'staff:'.now()->format('Uu').':handover:'.$shipment->id, 'staff', null, strict: true);
+                $moved++;
+            } catch (BusinessRuleViolation) {
+                // Vận đơn vừa đổi trạng thái: bỏ qua.
+            }
+        }
+
+        return back()->with('success', __('fulfillment::messages.bulk_handed_over', ['count' => $moved]));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function orderIds(Request $request): array
+    {
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
+
+        return array_values(array_unique(array_map('intval', $data['ids'])));
     }
 
     public function book(Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse

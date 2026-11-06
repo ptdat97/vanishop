@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Application;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Domain\OrderPolicy;
+use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderAdjustment;
 use Modules\Ordering\Persistence\Models\OrderLine;
@@ -17,24 +20,71 @@ use Modules\Shared\Support\StoreClock;
 final class OrderQueries
 {
     /**
-     * @param  array{status?: ?string, payment_status?: ?string, q?: ?string, ids?: list<int>|null}  $filters  ids: giới hạn theo bộ lọc của plugin
+     * Danh sách đơn Admin. Lọc: `status`, `payment_status`, `stage` (OrderStage), `payment_method`, `source`, `from`/`to`
+     * (ngày đặt Y-m-d theo giờ cửa hàng), `q` (số đơn hoặc SĐT), `ids`. Mỗi đơn có thêm thuộc tính `stage`.
+     *
+     * @param  array<string, mixed>  $filters  ids: giới hạn theo bộ lọc của plugin
      * @return LengthAwarePaginator<int, Order>
      */
     public function search(array $filters, int $perPage = 30): LengthAwarePaginator
     {
-        $q = trim((string) ($filters['q'] ?? ''));
-        $phone = $q === '' ? null : Phones::parse($q);
-
-        return Order::query()
-            ->when(($filters['status'] ?? null) !== null && $filters['status'] !== '', fn ($query) => $query->where('order_status', $filters['status']))
-            ->when(($filters['payment_status'] ?? null) !== null && $filters['payment_status'] !== '', fn ($query) => $query->where('payment_status', $filters['payment_status']))
-            ->when($q !== '', fn ($query) => $phone !== null
-                ? $query->where('customer_phone', $phone->e164)
-                : $query->where('number', strtoupper($q)))
-            ->when(isset($filters['ids']), fn ($query) => $query->whereIn('id', $filters['ids']))
+        return $this->filtered($filters)
+            ->select('orders.*')->selectRaw(OrderStage::sql().' as stage')
+            ->with('lines')
             ->orderByDesc('placed_at')->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    /**
+     * Số đơn theo giai đoạn với cùng bộ lọc (trừ `stage`) — số trên các thẻ hàng đợi.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, int>
+     */
+    public function stageCounts(array $filters): array
+    {
+        $counts = $this->filtered([...$filters, 'stage' => null])
+            ->toBase()
+            ->selectRaw(OrderStage::sql().' as stage, count(*) as total')
+            ->groupBy('stage')
+            ->pluck('total', 'stage');
+
+        return array_map('intval', array_replace(array_fill_keys(OrderStage::STAGES, 0), $counts->all()));
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Order>
+     */
+    private function filtered(array $filters): Builder
+    {
+        $q = trim((string) ($filters['q'] ?? ''));
+        $phone = $q === '' ? null : Phones::parse($q);
+        $value = fn (string $key): string => trim((string) ($filters[$key] ?? ''));
+        $stage = $value('stage');
+        // Ngày theo giờ cửa hàng → mốc UTC; `to` gồm cả ngày đó.
+        $date = function (string $key, bool $end) use ($value): ?CarbonImmutable {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value($key)) !== 1) {
+                return null;
+            }
+            $day = CarbonImmutable::createFromFormat('!Y-m-d', $value($key), StoreClock::zone());
+
+            return $day === false ? null : ($end ? $day->addDay() : $day);
+        };
+
+        return Order::query()
+            ->when($value('status') !== '', fn ($query) => $query->where('order_status', $value('status')))
+            ->when($value('payment_status') !== '', fn ($query) => $query->where('payment_status', $value('payment_status')))
+            ->when($value('payment_method') !== '', fn ($query) => $query->where('payment_method', $value('payment_method')))
+            ->when($value('source') !== '', fn ($query) => $query->where('source', $value('source')))
+            ->when(in_array($stage, OrderStage::STAGES, true), fn ($query) => $query->whereRaw('('.OrderStage::sql().') = ?', [$stage]))
+            ->when($date('from', false) !== null, fn ($query) => $query->where('placed_at', '>=', $date('from', false)->utc()))
+            ->when($date('to', true) !== null, fn ($query) => $query->where('placed_at', '<', $date('to', true)->utc()))
+            ->when($q !== '', fn ($query) => $phone !== null
+                ? $query->where('customer_phone', $phone->e164)
+                : $query->where('number', strtoupper($q)))
+            ->when(isset($filters['ids']), fn ($query) => $query->whereIn('id', $filters['ids']));
     }
 
     public function detail(Order $order, bool $masked = false): OrderDetail

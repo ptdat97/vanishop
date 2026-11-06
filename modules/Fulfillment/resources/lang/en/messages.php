@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'bulk_created' => 'Created shipments for :count orders; skipped :skipped not confirmed or already shipped.',
+    'bulk_handed_over' => 'Marked :count shipments as handed to the carrier.',
     'manual' => 'Manual shipment',
     'transition_invalid' => 'The shipment cannot move from :from to :to.',
     'order_not_ready' => 'The order is :status; shipments cannot be created yet.',

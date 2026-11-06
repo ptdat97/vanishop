@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'bulk_confirmed' => 'Confirmed :count orders; skipped :skipped no longer awaiting confirmation.',
     'transition_invalid' => 'The order cannot move from :from to :to.',
     'cannot_cancel' => 'The order is already being processed or shipped and cannot be cancelled.',
     'cannot_change_address' => 'The order is already shipping or closed; the address cannot be changed.',

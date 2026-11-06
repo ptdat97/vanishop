@@ -18,6 +18,7 @@ use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderLinesCancelled;
+use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\Listeners\CaptureAuthorizedOnShipment;
 use Modules\Payment\Application\Listeners\CollectCodOnDelivery;
 use Modules\Payment\Application\Listeners\OrderPaymentPanel;
@@ -65,6 +66,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
         Event::listen(ShipmentStatusChanged::class, CaptureAuthorizedOnShipment::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));
+        Hook::onSlot('vani.admin.order.payment_methods', fn (): array => array_map(fn (PaymentGateway $gateway): string => $gateway->label(), $this->app->make(GatewayRegistry::class)->all()));
 
         // Tắt cổng còn khoản chờ/giữ tiền → IPN 404, tiền khách đã trả không được ghi nhận.
         $this->app->make(Extensions::class)->guardDisable(PaymentGateway::TAG, function (object $gateway): ?string {

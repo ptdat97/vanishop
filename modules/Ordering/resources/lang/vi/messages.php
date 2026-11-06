@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'bulk_confirmed' => 'Đã xác nhận :count đơn; bỏ qua :skipped đơn không còn chờ xác nhận.',
     'transition_invalid' => 'Không thể chuyển đơn từ trạng thái :from sang :to.',
     'cannot_cancel' => 'Đơn đã được xử lý hoặc giao, không thể huỷ.',
     'cannot_change_address' => 'Đơn đã bắt đầu giao hoặc đã đóng, không thể đổi địa chỉ.',
