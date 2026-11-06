@@ -444,6 +444,8 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L19 | Banner danh mục nhập ở trang riêng (Nội dung → Banner danh mục), chưa ở form danh mục — chờ kiểu trường chọn ảnh (L6); Admin chọn danh mục từ 200 danh mục đầu | `vani.cms`, Extension | Chuyển vào form danh mục khi có trường media |
 | L20 | Tồn kho đợt 1: lưới lọc hết hàng/sắp hết và "chọn mọi kết quả lọc" tính trong PHP trên tối đa 5000 variant (sửa hàng loạt chạy đồng bộ trong request); nhập CSV ≤ 5000 dòng; form sản phẩm chỉ có nút sang lưới tồn (Catalog không được phụ thuộc Inventory, form section chỉ dành cho plugin) | Inventory, Catalog | Truy vấn lọc theo tồn ở DB khi catalog lớn; phần form Core↔Core nếu cần nhập tồn trong form sản phẩm |
 | L21 | Tồn kho đợt 2 chưa làm: form kho còn ô gõ tự do cho "Quản lý tồn" và Priority, mã tỉnh gõ tay; ngưỡng sắp hết và thời gian giữ hàng chỉ ở `.env`; tồn an toàn chỉ theo từng ô | Inventory | Đợt 2 theo đánh giá 2026-11-05 |
+| L22 | Ảnh chọn ở cấu hình kiểu `media` (vd. "Ảnh thay thế") chưa khai báo "đang dùng" — vẫn xoá được trong Thư viện ảnh (`SettingsAdmin` ở vòng 0 không gọi được Catalog); trường `media` trong phần form của plugin do plugin tự `syncUsages` | Tenancy/Extension, Catalog | Event `SettingChanged` để Catalog khai báo ảnh của cấu hình `media` |
+| L23 | Ảnh bìa bài viết, ảnh trong nội dung Markdown, banner danh mục (bản desktop), logo thương hiệu chưa có `srcset`/kích thước có tên; ảnh sản phẩm cắt giữa ảnh (chưa chọn điểm lấy nét) | `vani.cms`, theme, Catalog | Khai báo kích thước có tên cho bìa bài viết/banner; điểm lấy nét theo ảnh trong Thư viện ảnh |
 
 ## 7. Quyết định của Owner (2026-11-03)
 
