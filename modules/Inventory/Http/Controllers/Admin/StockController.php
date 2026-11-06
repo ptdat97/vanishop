@@ -7,12 +7,12 @@ namespace Modules\Inventory\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\StockAdjustmentService;
@@ -20,6 +20,7 @@ use Modules\Inventory\Application\StockBulkEditor;
 use Modules\Inventory\Application\StockCsv;
 use Modules\Inventory\Application\StockGrid;
 use Modules\Inventory\Application\StockQueries;
+use Modules\Inventory\Contracts\StockPageLink;
 use Modules\Inventory\Http\Requests\StockChangeRequest;
 use Modules\Inventory\Persistence\Models\Location;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -40,7 +41,7 @@ final class StockController
      * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc màu, size, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
      * hàng loạt. `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
-    public function index(Request $request, StockGrid $grid): Response
+    public function index(Request $request, StockGrid $grid, Extensions $extensions): Response
     {
         Gate::authorize('inventory.view');
 
@@ -48,6 +49,9 @@ final class StockController
         $page = max(1, (int) $request->query('page', 1));
         $result = $grid->page($criteria, $page, self::PER_PAGE);
         $canManageLocations = Gate::allows('inventory.locations.manage', [ScopeRef::owner()]);
+        // Nút của plugin (vd. vận hành kho — ADR-042): chỉ implementation của plugin đang bật.
+        $links = $extensions->implementations(StockPageLink::TAG, StockPageLink::class, fn (StockPageLink $link): string => $link::class);
+        $managed = array_filter($links, fn (StockPageLink $link): bool => $link->managesLocations());
         $online = array_filter($result['locations'], fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders);
 
         return Inertia::render('Inventory::Stock/Index', [
@@ -60,10 +64,8 @@ final class StockController
                 'export' => route('admin.inventory.stock.export'),
                 'import' => route('admin.inventory.stock.import'),
                 'movements' => route('admin.inventory.movements.index'),
-                // Vận hành kho (nhiều kho, chuyển kho) thuộc plugin vani.warehouse (ADR-042): chỉ hiện khi plugin bật.
-                'transfers' => Route::has('admin.plugins.vani-warehouse.transfers.index') ? route('admin.plugins.vani-warehouse.transfers.index') : null,
-                'locations' => Route::has('admin.plugins.vani-warehouse.locations.index') && Gate::allows('warehouse.locations.manage', [ScopeRef::owner()]) ? route('admin.plugins.vani-warehouse.locations.index') : null,
-                'main_location' => ! Route::has('admin.plugins.vani-warehouse.locations.index') && $canManageLocations && count($result['locations']) === 1 ? route('admin.inventory.stock.location', $result['locations'][0]->id) : null,
+                'locations' => array_values(array_filter(array_map(fn (StockPageLink $link): ?string => $link->url(), $managed)))[0] ?? null,
+                'main_location' => $managed === [] && $canManageLocations && count($result['locations']) === 1 ? route('admin.inventory.stock.location', $result['locations'][0]->id) : null,
                 'default_location' => $canManageLocations && $result['locations'] === [] ? route('admin.inventory.stock.default-location') : null,
             ],
             'query' => $criteria,
@@ -71,6 +73,7 @@ final class StockController
             'pagination' => ['page' => $page, 'per_page' => self::PER_PAGE, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
             'threshold' => (int) config('vanishop.inventory.low_stock_threshold', 3),
             'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
+            'links' => array_values(array_filter(array_map(fn (StockPageLink $link): ?array => ($url = $link->url()) === null ? null : ['label' => $link->label(), 'url' => $url], $links))),
             'mainLocation' => count($result['locations']) === 1 ? $result['locations'][0]->only(['id', 'name', 'address', 'province_code', 'lock_version']) : null,
             'locations' => array_map(fn (Location $location): array => [
                 'id' => $location->id, 'code' => $location->code, 'name' => $location->name,

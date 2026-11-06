@@ -62,3 +62,24 @@ it('thiếu quyền quản lý kho thì không vào được màn hình location
     $this->get('/admin/plugins/vani-warehouse/locations')->assertForbidden();
     $this->post('/admin/plugins/vani-warehouse/locations', locationPayload())->assertForbidden();
 });
+
+it('tắt plugin: trang Tồn kho ẩn nút Chuyển kho, Kho & cửa hàng và mục menu; hiện "Kho chính" khi chỉ một kho', function () {
+    T::seed(fn () => Location::query()->where('code', '!=', 'WH-HN')->delete());
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'inventory.view', 'inventory.locations.manage', 'warehouse.locations.manage', 'warehouse.transfer'])->create(), 'staff');
+    $page = fn () => $this->get('/admin/inventory/stock')->assertOk()->viewData('page')['props'];
+    $menu = fn (array $props): array => collect($props['navigation'])->pluck('url')->filter(fn ($url) => str_contains((string) $url, 'vani-warehouse'))->values()->all();
+
+    $on = $page();
+    expect(array_column($on['links'], 'label'))->toBe(['Chuyển kho', 'Kho & cửa hàng'])
+        ->and($on['urls']['locations'])->toEndWith('/admin/plugins/vani-warehouse/locations')
+        ->and($on['urls']['main_location'])->toBeNull()
+        ->and($menu($on))->not->toBeEmpty();
+
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable(WarehouseServiceProvider::ID));
+    $off = $page();
+    expect($off['links'])->toBe([])
+        ->and($off['urls']['locations'])->toBeNull()
+        ->and($off['urls']['main_location'])->not->toBeNull()
+        ->and($menu($off))->toBe([]);
+    $this->get('/admin/plugins/vani-warehouse/transfers')->assertNotFound();
+});

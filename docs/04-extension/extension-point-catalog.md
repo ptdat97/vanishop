@@ -57,6 +57,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
+| `StockPageLink` | `vani.inventory.stock_links` | Inventory | Không có mặc định; `vani.warehouse` đóng góp "Chuyển kho", "Kho & cửa hàng" (0.3.89) — nút chỉ hiện khi plugin bật | [inventory](../08-inventory/inventory.md) |
 | `LocationRegistry` | Đọc/tạo/sửa kho (`LocationData`), audit + optimistic lock, mã trùng → ValidationException. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Catalog/Inventory |
 | `StockMovements` | `transferOut`/`transferIn` tại một kho do VaniShop quản lý: khoá dòng tồn, sổ biến động, `AvailabilityChanged`; chạy trong transaction của bên gọi; từ chối → `StockMovementRejected`. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |
 | `InventoryReconciliation` | `reconcileExternal(source, rows, apply)` — đối soát snapshot nguồn ngoài vào bảng đối soát chung. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |

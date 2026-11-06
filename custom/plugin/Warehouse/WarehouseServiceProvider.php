@@ -6,8 +6,11 @@ namespace Plugin\Warehouse;
 
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Inventory\Contracts\StockPageLink;
 use Plugin\Warehouse\Application\TransferGuard;
 use Plugin\Warehouse\Console\ReconcileCommand;
+use Plugin\Warehouse\Infrastructure\LocationsLink;
+use Plugin\Warehouse\Infrastructure\TransfersLink;
 
 /**
  * Vận hành kho (ADR-042): nhiều kho/cửa hàng, chuyển kho, đối soát tồn với nguồn ngoài (ERP/POS). Tồn kho, giữ hàng và
@@ -35,6 +38,9 @@ final class WarehouseServiceProvider extends PluginServiceProvider
         $this->adminMenu('transfers', 'Chuyển kho', 'admin.plugins.vani-warehouse.transfers.index', 'inventory.view', 310, 'catalog');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
         $this->adminPages('Warehouse', $this->pluginPath('Resources/js/Pages'));
+        // Nút trên trang Tồn kho của Core — tự ẩn khi plugin tắt.
+        $this->contribute(StockPageLink::TAG, TransfersLink::class);
+        $this->contribute(StockPageLink::TAG, LocationsLink::class);
 
         // Còn phiếu đang đi đường → không cho tắt plugin (hàng đã trừ kho đi, chưa nhận được ở kho đến).
         $this->contribute(TransferGuard::TAG, TransferGuard::class);

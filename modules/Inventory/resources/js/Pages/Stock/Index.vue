@@ -24,7 +24,8 @@ type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; color
  */
 const props = defineProps<{
     labels: InventoryLabels;
-    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; transfers: string | null; locations: string | null; default_location: string | null; main_location: string | null };
+    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; locations: string | null; default_location: string | null; main_location: string | null };
+    links: Array<{ label: string; url: string }>;
     mainLocation: { id: number; name: string; address: string | null; province_code: string | null; lock_version: number } | null;
     query: Criteria;
     options: { colors: string[]; sizes: string[] };
@@ -240,9 +241,8 @@ function createDefault(): void {
     <PageHeader title="Tồn kho" subtitle="Gõ số tồn vào ô (Enter: xuống dòng) rồi Lưu, hoặc chọn nhiều SKU để sửa hàng loạt. Bán được = tồn − đang giữ − tồn an toàn.">
         <a :href="urls.export" :class="secondaryButton">Xuất CSV</a>
         <button v-if="canAdjust && locations.length" type="button" :class="secondaryButton" @click="showImport = !showImport">Nhập CSV</button>
-        <Link v-if="urls.transfers" :href="urls.transfers" :class="secondaryButton">Chuyển kho</Link>
+        <Link v-for="link in links" :key="link.url" :href="link.url" :class="secondaryButton">{{ link.label }}</Link>
         <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">Kho chính</button>
-        <Link v-if="urls.locations" :href="urls.locations" :class="secondaryButton">Kho & cửa hàng</Link>
     </PageHeader>
     <FlashMessage />
     <form v-if="editingLocation && urls.main_location && mainLocation" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm md:grid-cols-3" data-main-location @submit.prevent="saveLocation">

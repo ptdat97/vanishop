@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.89 — 2026-11-06
+
+Chỉ thêm.
+
+### Thêm
+- Extension point `Inventory\Contracts\StockPageLink` (tag `vani.inventory.stock_links`): nút trên trang Admin → Tồn kho do plugin đóng góp (`label`, `url` — null = ẩn, `managesLocations` — true thì Core ẩn form "Kho chính"). `vani.warehouse` đóng góp "Chuyển kho", "Kho & cửa hàng" → **tắt plugin là nút biến mất** (trước: Core tra route của plugin, route vẫn đăng ký khi plugin tắt nên nút còn hiện). Inertia prop `links` thay `urls.transfers`.
+
 ## 0.3.88 — 2026-11-06
 
 Tách vận hành kho thành plugin `vani.warehouse` (ADR-042); Inventory (engine, dữ liệu tồn) ở lại Core.
