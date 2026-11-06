@@ -60,6 +60,7 @@ Core không ghi cứng các giá trị dưới đây — tất cả nằm trong 
 | Rate limit (request/phút/IP) | `rate_limits.storefront_api` (`VANI_RATE_STOREFRONT_API`), `cart_create`, `checkout`, `order_track`, `customer_auth`, `payment_callbacks`, `shipping_webhooks`, `integration_anonymous` | 240, 30, 20, 10, 20, 600, 600, 60 |
 | Bảo mật | `admin.login_max_attempts` (`VANI_ADMIN_LOGIN_MAX_ATTEMPTS`), `customer.otp.ttl`/`max_attempts` (`VANI_OTP_TTL`, `VANI_OTP_MAX_ATTEMPTS`), `integration.signature_tolerance` | 5; 300 giây/5 lần; 300 giây |
 | Plugin | `plugins.breaker.threshold`/`cooldown` (`VANI_PLUGIN_BREAKER_*`) | 5 lỗi/phút → bỏ qua 300 giây |
+| Giao hàng (menu) | `fulfillment.admin_menu` (`VANI_FULFILLMENT_MENU`): `auto` — menu "Giao hàng" chỉ hiện khi có hãng API hoặc ≥ 2 kho giao online (ADR-043); `always` / `never` | `auto` |
 | Giao hàng | `fulfillment.default_item_weight_gram` (`VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`) — khối lượng mỗi sản phẩm chưa khai báo trong file gửi hãng | 300 g |
 | Ảnh, thanh toán | `media.max_upload_kb` (`VANI_MEDIA_MAX_UPLOAD_KB`), `media.max_video_kb` (`VANI_MEDIA_MAX_VIDEO_KB`, video MP4/WebM), `media.max_files_per_upload`, `payment.reconcile_after_minutes` | 10240 KB, 102400 KB, 20 tệp; 5 phút |
 

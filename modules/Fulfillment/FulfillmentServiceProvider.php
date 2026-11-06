@@ -31,6 +31,8 @@ use Modules\Fulfillment\Contracts\SourcingStrategy;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Inventory\Contracts\Data\LocationData;
+use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Ordering\Events\OrderLinesCancelled;
@@ -56,6 +58,20 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->requires(SourcingStrategy::TAG, Requirement::ExactlyOne, 'Chọn kho xuất hàng');
     }
 
+    /**
+     * Menu "Giao hàng": `vanishop.fulfillment.admin_menu` = always | never | auto (có hãng tự đặt vận đơn qua API, hoặc từ
+     * 2 kho đang giao đơn online).
+     */
+    private function showsShipmentsMenu(): bool
+    {
+        return match ((string) config('vanishop.fulfillment.admin_menu', 'auto')) {
+            'always' => true,
+            'never' => false,
+            default => array_filter($this->app->make(CarrierRegistry::class)->carriers(), fn (ShippingCarrier $carrier): bool => $carrier->capabilities()->autoBooking) !== []
+                || count(array_filter($this->app->make(LocationRegistry::class)->all(), fn (LocationData $location): bool => $location->status === 'active' && $location->shipsOnlineOrders)) >= 2,
+        };
+    }
+
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         $this->app->make(Settings::class)->define(new SettingDefinition(
@@ -65,7 +81,9 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $permissions->register('fulfillment.view', 'Xem vận đơn');
         $permissions->register('fulfillment.manage', 'Tạo/cập nhật/huỷ vận đơn');
 
-        $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60, group: 'sales');
+        // SME trước (vision §2.1, ADR-043): việc giao hàng hằng ngày làm trên danh sách đơn + trang đơn; trang vận đơn riêng
+        // chỉ lên menu khi cửa hàng có hãng kết nối API hoặc nhiều kho — vẫn mở được từ link trên trang đơn.
+        $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60, group: 'sales', when: fn (): bool => $this->showsShipmentsMenu());
 
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);

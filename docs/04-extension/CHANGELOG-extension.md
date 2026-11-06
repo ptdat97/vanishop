@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.100 — 2026-11-07
+
+Fulfillment ở lại Core, làm gọn cho SME bằng giao diện ([ADR-043](../19-adr/ADR-043-fulfillment-stays-in-core.md)).
+
+### Đổi
+- Menu Admin "Giao hàng" chỉ hiện khi có hãng tự đặt vận đơn qua API (`ShippingCarrier` có `autoBooking`) hoặc từ 2 kho đang giao đơn online; cấu hình `vanishop.fulfillment.admin_menu` (`VANI_FULFILLMENT_MENU` = `auto` | `always` | `never`). Trang vận đơn vẫn mở được từ trang đơn (link trên thẻ Giao hàng).
+
 ## 0.3.99 — 2026-11-06
 
 Đổi trạng thái đơn bằng ô chọn (kể cả ngoài trình tự) và hàng loạt — luôn bắt buộc lý do.
