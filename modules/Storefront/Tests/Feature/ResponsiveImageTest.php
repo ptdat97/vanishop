@@ -30,11 +30,15 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
     $media = $variant->styleColor->gallery()->with('media')->first()->media;
 
     $html = $this->get('/thuong-hieu/'.$brand->slug)->assertOk()->getContent();
-    expect($media->srcset())->toBe($media->url(160).' 160w, '.$media->url(400).' 400w, '.$media->url(800).' 800w, '.$media->url().' 1000w')
-        ->and($html)->toContain('srcset="'.e($media->srcset()).'"')
+    // Ảnh sản phẩm cắt theo tỉ lệ cấu hình (mặc định 2:3): mọi bản cùng khung, không kèm ảnh gốc (khác tỉ lệ).
+    $srcset = $media->srcset('product');
+    expect($srcset)->toBe($media->url(160, 'product').' 160w, '.$media->url(400, 'product').' 400w, '.$media->url(800, 'product').' 800w')
+        ->and($media->url(400, 'product'))->toEndWith('-w400h600c.jpg')
+        ->and($media->srcset())->toEndWith($media->url().' 1000w') // ảnh thường giữ tỉ lệ, có ảnh gốc
+        ->and($html)->toContain('srcset="'.e($srcset).'"')
         ->and($html)->toContain('sizes="(min-width: 896px) 299px, (min-width: 768px) 34vw, 50vw"');
 
-    $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('data.0.image_srcset', $media->srcset());
+    $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('data.0.image_srcset', $srcset);
 });
 
 it('ảnh nhỏ hơn mọi bề rộng cấu hình: không có srcset', function () {

@@ -22,8 +22,13 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
         return;
     }
 
-    // Ảnh là {url, alt} (cùng hình dạng Storefront API).
-    const show = (url) => {
+    // Ảnh là {url, srcset, alt} (cùng hình dạng Storefront API); srcset theo ảnh mới, không thì bỏ (tránh trình duyệt giữ ảnh cũ).
+    const show = (url, srcset = '') => {
+        if (srcset) {
+            main.srcset = srcset;
+        } else {
+            main.removeAttribute('srcset');
+        }
         main.src = url;
         gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => {
             thumb.classList.toggle('border-primary', thumb.dataset.src === url);
@@ -31,13 +36,13 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
         });
     };
 
-    gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => thumb.addEventListener('click', () => show(thumb.dataset.src)));
+    gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => thumb.addEventListener('click', () => show(thumb.dataset.src, thumb.dataset.srcset)));
 
     form?.addEventListener('change', (event) => {
         const group = event.target.closest('[data-color-group]');
         const images = group ? JSON.parse(group.dataset.images || '[]') : [];
         if (images.length > 0) {
-            show(images[0].url ?? images[0]);
+            show(images[0].url ?? images[0], images[0].srcset ?? '');
         }
     });
 });

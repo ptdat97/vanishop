@@ -137,7 +137,7 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 
 > **Implemented** (Core 0.3.67, [reference-parity §3.16-5](../20-roadmap/reference-parity-refactor.md)).
 
-- Thẻ sản phẩm (danh sách, Storefront API, khối, sản phẩm liên kết) có `image_srcset`: các bản thu nhỏ Core tạo (`vanishop.media.cache.widths`, chỉ bề rộng nhỏ hơn ảnh gốc, định dạng theo `ImageFormat`) + ảnh gốc, tính từ kích thước đã lưu trong DB — không đọc file lúc render. `null` khi ảnh không có bản thu nhỏ.
+- Thẻ sản phẩm (danh sách, Storefront API, khối, sản phẩm liên kết) có `image_srcset`: các bản thu nhỏ Core tạo (bề rộng ở Admin → Thư viện ảnh → Kích thước ảnh, định dạng theo `ImageFormat`), tính từ kích thước đã lưu trong DB — không đọc file lúc render. `null` khi ảnh không có bản thu nhỏ. Từ 0.3.87 ảnh sản phẩm **cắt theo tỉ lệ cấu hình (mặc định 2:3)** và `srcset` không kèm ảnh gốc khác tỉ lệ; theme dựng khung bằng `vani_product_ratio()`. PDP: `images[].srcset`, `images[].thumb_url` (160px), ảnh chính `fetchpriority="high"`. Ảnh khác (logo, banner, bài viết) giữ tỉ lệ gốc; khối trang chủ chọn ảnh Thư viện ảnh qua trường `media` (srcset). Plugin cần kích thước riêng khai báo `ImageSizeProvider` rồi dùng `vani_image($id, 'tên')`.
 - `Storefront\View\ResponsiveImage::sizes(vùng chứa px|null, cột desktop, cột mobile, breakpoint = 768)` sinh `sizes`; partial `theme::partials.image` (`src`, `srcset`, `layout = [vùng chứa, cột, cột mobile]`, `width`/`height`). `vani-base`: lưới 4/2 trong khung 1152px (trang chủ, khối sản phẩm, sản phẩm liên kết), 3/2 cạnh cột lọc (≈ 896px).
 - Khối "Banner chính" vẫn nhận ảnh theo URL nên chưa có `srcset` (cần kiểu trường chọn ảnh từ thư viện cho `FieldDefinition`).
 

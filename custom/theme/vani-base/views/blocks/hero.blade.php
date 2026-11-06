@@ -8,7 +8,9 @@
             @endif
         </div>
         @if ($imageUrl !== '')
-            <img src="{{ $imageUrl }}" alt="" class="h-full max-h-96 w-full object-cover" width="800" height="600">
+            {{-- Banner đầu trang thường là ảnh lớn nhất (LCP): tải ngay, ưu tiên cao; srcset khi ảnh từ Thư viện ảnh. --}}
+            <img src="{{ $imageUrl }}" alt="" class="h-full max-h-96 w-full object-cover" width="800" height="600" fetchpriority="high" decoding="async"
+                 @if (($imageSrcset ?? '') !== '') srcset="{{ $imageSrcset }}" sizes="(min-width: 768px) 50vw, 100vw" @endif>
         @endif
     </div>
 </section>

@@ -29,6 +29,7 @@ final class BannerGridBlock implements StorefrontBlock
     {
         $fields = [FieldDefinition::select('layout', 'Bố cục', ['1' => '1 ô', '2' => '2 ô ngang', '3' => '3 ô (1 lớn + 2 nhỏ)', '4' => '4 ô'], required: true)];
         foreach (range(1, self::CELLS) as $i) {
+            $fields[] = FieldDefinition::media("cell_{$i}_media", "Ô {$i}: ảnh", help: 'Từ Thư viện ảnh; trống thì dùng ảnh (URL).');
             $fields[] = FieldDefinition::string("cell_{$i}_image", "Ô {$i}: ảnh (URL)", max: 500);
             $fields[] = FieldDefinition::string("cell_{$i}_title", "Ô {$i}: tiêu đề", max: 120);
             $fields[] = FieldDefinition::string("cell_{$i}_link", "Ô {$i}: đường dẫn", max: 300);
@@ -42,9 +43,9 @@ final class BannerGridBlock implements StorefrontBlock
         $layout = in_array((string) ($config['layout'] ?? '2'), ['1', '2', '3', '4'], true) ? (int) $config['layout'] : 2;
         $cells = [];
         foreach (range(1, $layout) as $i) {
-            $image = Products::safeUrl($config["cell_{$i}_image"] ?? '');
+            [$image, $srcset] = Products::image($config["cell_{$i}_media"] ?? null, $config["cell_{$i}_image"] ?? '', 1200);
             if ($image !== '') {
-                $cells[] = ['image' => $image, 'title' => (string) ($config["cell_{$i}_title"] ?? ''), 'link' => Products::safeUrl($config["cell_{$i}_link"] ?? '')];
+                $cells[] = ['image' => $image, 'srcset' => $srcset, 'title' => (string) ($config["cell_{$i}_title"] ?? ''), 'link' => Products::safeUrl($config["cell_{$i}_link"] ?? '')];
             }
         }
 

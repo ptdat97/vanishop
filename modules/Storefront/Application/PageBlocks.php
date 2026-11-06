@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Storefront\Contracts\StorefrontBlock;
@@ -25,9 +26,13 @@ final class PageBlocks
 
     private const SETTING = 'storefront.home_blocks';
 
+    /** Chủ sở hữu khai báo ảnh đang dùng của các trường `media` trong khối trang chủ (Thư viện ảnh không cho xoá). */
+    public const MEDIA_OWNER = 'storefront.home';
+
     public function __construct(
         private readonly Extensions $extensions,
         private readonly Settings $settings,
+        private readonly MediaDirectory $media,
     ) {}
 
     /**
@@ -59,6 +64,7 @@ final class PageBlocks
 
         $types = $this->types();
         $clean = [];
+        $mediaIds = [];
         foreach (array_values($blocks) as $index => $block) {
             $type = $types[(string) ($block['type'] ?? '')] ?? throw ValidationException::withMessages(["blocks.{$index}.type" => 'Loại khối không có hoặc plugin đã tắt.']);
             $fields = $type->fields();
@@ -73,14 +79,21 @@ final class PageBlocks
             }
             $known = array_map(fn (FieldDefinition $field): string => $field->key, $fields);
             $clean[] = ['type' => $type->type(), 'config' => array_intersect_key($config, array_flip($known))];
+            foreach ($fields as $field) {
+                if ($field->type === 'media' && is_numeric($config[$field->key] ?? null)) {
+                    $mediaIds[] = (int) $config[$field->key];
+                }
+            }
         }
 
         $this->settings->set('core', self::SETTING, $clean);
+        $this->media->syncUsages(self::MEDIA_OWNER, 1, 'blocks', array_values(array_unique($mediaIds)));
     }
 
     public function resetHome(): void
     {
         $this->settings->forget('core', self::SETTING);
+        $this->media->releaseUsages(self::MEDIA_OWNER, 1);
     }
 
     /**

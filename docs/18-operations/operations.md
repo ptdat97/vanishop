@@ -68,9 +68,9 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 
 ### Ảnh thu nhỏ (`public/cache`, 0.3.28)
 
-- `Media::url($width)` trỏ tới `/cache/media/{ab}/{checksum}-w{width}.{ext}`. File có sẵn → web server trả tĩnh; chưa có → request rơi vào `index.php`, Laravel resize một lần (khoá file, ghi atomic) rồi lưu lại. Chỉ chiều rộng trong `vanishop.media.cache.widths` và nhỏ hơn ảnh gốc mới được tạo (URL tuỳ ý → 404).
+- `Media::url($size, $group)` trỏ tới `/cache/media/{ab}/{checksum}-{kích thước}.{ext}`, kích thước `w400` (thu nhỏ giữ tỉ lệ), `w400h600c` (cắt khung — ảnh sản phẩm, tỉ lệ mặc định 2:3), `w600h900` (vừa khung). File có sẵn → web server trả tĩnh; chưa có → request rơi vào `index.php`, Laravel resize một lần (khoá file, ghi atomic; disk local đọc thẳng file gốc) rồi lưu lại. Chỉ kích thước trong cấu hình (0.3.87: **Admin → Thư viện ảnh → Kích thước ảnh** — bề rộng, tỉ lệ ảnh sản phẩm, chất lượng, kích thước có tên của plugin; mặc định theo `vanishop.media.cache.*`) và không phóng to mới được tạo (URL tuỳ ý → 404). Đổi kích thước = đổi URL, không cần xoá cache; nút "Xoá cache ảnh" dọn file cũ.
 - Nginx: location ảnh tĩnh phải fallback về Laravel, ví dụ `location /cache/ { try_files $uri /index.php?$query_string; expires 1y; }` — KHÔNG dùng `try_files $uri =404` cho `/cache/`.
-- Định dạng: giữ như gốc; bật plugin `vani.media-webp` để xuất WebP. Đổi định dạng/chất lượng → `php artisan vani:media:cache --clear` (dọn file cũ; bản mới tự tạo dần) hoặc `--warm` để tạo trước sau deploy.
+- Định dạng: giữ như gốc; bật plugin `vani.media-webp` để xuất WebP. Đổi định dạng/chất lượng → `php artisan vani:media:cache --clear` (dọn file cũ; bản mới tự tạo dần) hoặc `--warm` để tạo trước sau deploy (bản cắt tỉ lệ sản phẩm chỉ tạo cho ảnh trong gallery sản phẩm).
 - Nhiều app server: mỗi server có cache riêng (an toàn vì tên file theo checksum, nội dung không đổi); đặt CDN phía trước để giảm số lần resize.
 
 ## 6. Giám sát & cảnh báo

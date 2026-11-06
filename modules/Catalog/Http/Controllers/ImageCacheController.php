@@ -12,18 +12,18 @@ use Throwable;
 
 /**
  * Chỉ chạy khi file cache chưa có (có rồi thì web server trả file tĩnh): tạo bản thu nhỏ rồi trả về.
- * Chiều rộng/đuôi file không đúng cấu hình hiện tại hoặc ảnh không tồn tại → 404; lỗi xử lý ảnh → chuyển hướng về ảnh gốc.
+ * Kích thước/đuôi file không đúng cấu hình hiện tại hoặc ảnh không tồn tại → 404; lỗi xử lý ảnh → chuyển hướng về ảnh gốc.
  */
 final class ImageCacheController
 {
-    public function __invoke(string $shard, string $checksum, int $width, string $extension, ImageCache $cache): BinaryFileResponse|RedirectResponse
+    public function __invoke(string $shard, string $checksum, string $size, string $extension, ImageCache $cache): BinaryFileResponse|RedirectResponse
     {
         abort_unless(str_starts_with($checksum, $shard), 404);
         $media = Media::query()->where('checksum', $checksum)->first();
         abort_if($media === null, 404);
 
         try {
-            $path = $cache->render($media, $width, $extension);
+            $path = $cache->render($media, $size, $extension);
         } catch (Throwable $exception) {
             report($exception);
 

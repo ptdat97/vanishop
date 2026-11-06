@@ -31,6 +31,7 @@ final class MediaLibraryController
 
         return Inertia::render('Catalog::Media/Index', [
             'libraryUrl' => route('admin.media.index'),
+            'sizesUrl' => route('admin.media.sizes.index'),
             'canManage' => Gate::allows('media.manage'),
         ]);
     }
@@ -53,6 +54,18 @@ final class MediaLibraryController
             'meta' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
             'can_manage' => Gate::allows('media.manage'),
         ]);
+    }
+
+    /**
+     * Ảnh theo id (0.3.87) cho ô chọn ảnh dùng chung (`MediaField`): xem trước giá trị đã lưu. Giữ thứ tự id; id không còn bị bỏ.
+     */
+    public function items(Request $request): JsonResponse
+    {
+        Gate::authorize('media.view');
+        $ids = array_values(array_unique(array_map('intval', (array) $request->validate(['ids' => ['required', 'array', 'max:100'], 'ids.*' => ['integer']])['ids'])));
+        $items = Media::query()->whereKey($ids)->get()->keyBy('id');
+
+        return response()->json(['items' => array_values(array_filter(array_map(fn (int $id): ?array => isset($items[$id]) ? $this->present($items[$id]) : null, $ids)))]);
     }
 
     public function createFolder(Request $request, MediaManager $manager): JsonResponse

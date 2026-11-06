@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -34,8 +35,8 @@ const props = defineProps<{
 
 const { locales, defaultLocale } = useStoreLocales();
 const images = ref<Image[]>((props.lookbook?.images ?? []).map((image) => ({ ...image, alt: { ...image.alt } })));
-const cover = ref(props.lookbook?.cover ?? null);
-const picking = ref<'cover' | 'images' | null>(null);
+const coverId = ref<number | null>(props.lookbook?.cover?.id ?? null);
+const picking = ref(false);
 const form = useForm({
     slug: props.lookbook?.slug ?? '',
     translations: Object.fromEntries(locales.map((locale) => [locale.code, { name: '', description: '', meta_title: '', meta_description: '', ...(props.lookbook?.translations[locale.code] ?? {}) }])) as Record<string, Texts>,
@@ -46,14 +47,10 @@ const form = useForm({
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function pick(items: MediaItem[]): void {
-    if (picking.value === 'cover') {
-        cover.value = items[0] ? { id: items[0].id, url: items[0].thumb_url } : cover.value;
-    } else {
-        for (const item of items) {
-            if (!images.value.some((image) => image.media_id === item.id)) images.value.push({ media_id: item.id, alt: {}, thumb_url: item.thumb_url });
-        }
+    for (const item of items) {
+        if (!images.value.some((image) => image.media_id === item.id)) images.value.push({ media_id: item.id, alt: {}, thumb_url: item.thumb_url });
     }
-    picking.value = null;
+    picking.value = false;
 }
 
 function move(index: number, delta: number): void {
@@ -64,7 +61,7 @@ function move(index: number, delta: number): void {
 function save(): void {
     form.transform((data) => ({
         ...data,
-        cover_media_id: cover.value?.id ?? null,
+        cover_media_id: coverId.value,
         images: images.value.map((image) => ({ media_id: image.media_id, alt: image.alt })),
     }));
     if (props.lookbook) {
@@ -108,7 +105,7 @@ async function destroy(): Promise<void> {
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" data-lookbook-images>
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-medium">Ảnh ({{ images.length }})</h2>
-                    <button v-if="can.manage" type="button" :class="secondaryButton" @click="picking = 'images'">Thêm ảnh</button>
+                    <button v-if="can.manage" type="button" :class="secondaryButton" @click="picking = true">Thêm ảnh</button>
                 </div>
                 <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
                 <ol class="space-y-2">
@@ -142,14 +139,10 @@ async function destroy(): Promise<void> {
             </section>
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="text-sm font-medium">Ảnh bìa</h2>
-                <img v-if="cover?.url" :src="cover.url" alt="" class="w-full rounded" />
-                <p v-else class="text-xs text-slate-500">Không chọn: dùng ảnh đầu tiên.</p>
-                <div v-if="can.manage" class="flex gap-2">
-                    <button type="button" :class="secondaryButton" @click="picking = 'cover'">{{ cover ? 'Đổi ảnh' : 'Chọn ảnh' }}</button>
-                    <button v-if="cover" type="button" :class="secondaryButton" @click="cover = null">Bỏ</button>
-                </div>
+                <MediaField v-model="coverId" label="ảnh bìa" :disabled="!can.manage" />
+                <p v-if="!coverId" class="text-xs text-slate-500">Không chọn: dùng ảnh đầu tiên.</p>
             </section>
         </aside>
     </form>
-    <MediaPicker :open="picking !== null" :title="picking === 'cover' ? 'Chọn ảnh bìa' : 'Thêm ảnh vào lookbook'" :multiple="picking === 'images'" @update:open="(value) => !value && (picking = null)" @select="pick" />
+    <MediaPicker v-model:open="picking" title="Thêm ảnh vào lookbook" multiple @select="pick" />
 </template>

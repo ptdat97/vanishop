@@ -4,8 +4,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Media\ImageCache;
+use Modules\Catalog\Application\Media\ImageSizes;
+use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Testing\ImageSizeProviderContract;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -13,10 +17,12 @@ use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\Testing\StorefrontBlockContract;
 use Plugin\Lookbook\Infrastructure\LatestLookbooksBlock;
+use Plugin\Lookbook\Infrastructure\LookbookImageSizes;
 use Plugin\Lookbook\Infrastructure\Lookbooks;
 use Plugin\Lookbook\LookbookServiceProvider;
 use Plugin\Lookbook\Persistence\Lookbook;
 
+ImageSizeProviderContract::define('vani.lookbook', fn () => app(LookbookImageSizes::class));
 StorefrontBlockContract::define('vani.lookbook latest', fn () => app(LatestLookbooksBlock::class), config: ['title' => 'Lookbook', 'limit' => 3]);
 
 function lookbookMedia(string $name = 'anh.jpg'): Media
@@ -95,4 +101,19 @@ it('không có lookbook đang bật → không có link header, sitemap không c
 
     $this->get('/')->assertOk()->assertDontSee('data-lookbook-nav', false);
     $this->get('/sitemap.xml')->assertDontSee('/lookbook', false);
+});
+
+it('ảnh bìa ở lưới dùng kích thước riêng của plugin (lookbook.cover 600×900 cắt khung), nhân viên ghi đè được', function () {
+    $cover = lookbookMedia('cover.jpg');
+    ($this->save)(['cover_media_id' => $cover->id]);
+    $sizes = app(ImageSizes::class);
+
+    expect(collect($sizes->catalog())->firstWhere('name', LookbookImageSizes::COVER))->toMatchArray(['plugin' => 'vani.lookbook', 'overridden' => false])
+        ->and($this->get('/lookbook')->assertOk()->getContent())->toContain($cover->checksum.'-w600h900c.jpg');
+
+    $sizes->save(['widths' => [400, 800], 'product_ratio' => '2:3', 'quality' => 80, 'overrides' => [LookbookImageSizes::COVER => ['width' => 500, 'height' => 500, 'crop' => true]]]);
+    app()->forgetInstance(ImageCache::class);
+    app()->forgetInstance(MediaUrls::class);
+    expect($this->get('/lookbook')->getContent())->toContain($cover->checksum.'-w500h500c.jpg')
+        ->and(collect($sizes->catalog())->firstWhere('name', LookbookImageSizes::COVER)['overridden'])->toBeTrue();
 });

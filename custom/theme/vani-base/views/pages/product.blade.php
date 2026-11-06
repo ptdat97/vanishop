@@ -14,20 +14,25 @@
     ]])
 
     <div class="grid gap-8 md:grid-cols-2">
-        {{-- Mỗi ảnh là {url, alt} (cùng hình dạng Storefront API). --}}
+        {{-- Mỗi ảnh là {url, srcset, thumb_url, alt} (cùng hình dạng Storefront API); khung theo tỉ lệ ảnh sản phẩm (Admin → Kích thước ảnh). --}}
         @php($images = collect($product['colors'])->flatMap(fn ($color) => $color['images'])->values()->all())
         @php($mainUrl = $images[0]['url'] ?? $product['image_url'])
+        @php([$ratioW, $ratioH] = vani_product_ratio())
         <div data-product-gallery>
-            <div class="aspect-[3/4] overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
+            <div class="overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}">
                 @if ($mainUrl !== null)
-                    <img data-gallery-main src="{{ $mainUrl }}" alt="{{ $images[0]['alt'] ?? $product['name'] }}" width="600" height="800" class="h-full w-full object-cover">
+                    {{-- Ảnh chính là LCP của trang sản phẩm: tải ngay, ưu tiên cao. --}}
+                    <img data-gallery-main src="{{ $mainUrl }}" alt="{{ $images[0]['alt'] ?? $product['name'] }}" width="{{ 600 }}" height="{{ (int) round(600 * $ratioH / $ratioW) }}"
+                         @if ($images[0]['srcset'] ?? null) srcset="{{ $images[0]['srcset'] }}" sizes="(min-width: 1152px) 560px, (min-width: 768px) 50vw, 100vw" @endif
+                         fetchpriority="high" decoding="async" class="h-full w-full object-cover">
                 @endif
             </div>
             @if (count($images) > 1)
                 <div class="mt-3 grid grid-cols-4 gap-2" data-gallery-thumbs>
                     @foreach ($images as $index => $image)
-                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" @class(['aspect-[3/4] overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) aria-label="{{ __('Ảnh :index của :name', ['index' => $index + 1, 'name' => $product['name']]) }}">
-                            <img src="{{ $image['url'] }}" alt="" loading="lazy" width="150" height="200" class="h-full w-full object-cover">
+                        <button type="button" data-gallery-thumb data-src="{{ $image['url'] }}" data-srcset="{{ $image['srcset'] ?? '' }}" @class(['overflow-hidden rounded border', 'border-primary' => $index === 0, 'border-slate-200' => $index !== 0]) style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}" aria-label="{{ __('Ảnh :index của :name', ['index' => $index + 1, 'name' => $product['name']]) }}">
+                            {{-- Ảnh nhỏ: bản 160px (trước: bản 800px của ảnh chính). --}}
+                            <img src="{{ $image['thumb_url'] ?? $image['url'] }}" alt="" loading="lazy" decoding="async" width="150" height="{{ (int) round(150 * $ratioH / $ratioW) }}" class="h-full w-full object-cover">
                         </button>
                     @endforeach
                 </div>

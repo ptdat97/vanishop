@@ -30,19 +30,20 @@ final class Media extends Model
     protected $fillable = ['disk', 'path', 'folder', 'original_name', 'mime_type', 'size_bytes', 'width', 'height', 'checksum'];
 
     /**
-     * URL ảnh; có `$width` → bản thu nhỏ rộng ≥ $width trong public/cache (ImageCache), không có thì ảnh gốc.
+     * URL ảnh; `$size` số → bản thu nhỏ rộng ≥ số đó trong public/cache (ImageCache), chuỗi → kích thước có tên (plugin);
+     * `$group` = `product` → cắt theo tỉ lệ ảnh sản phẩm (Admin, mặc định 2:3). Không có bản phù hợp → ảnh gốc.
      */
-    public function url(?int $width = null): string
+    public function url(int|string|null $size = null, ?string $group = null): string
     {
-        return app(ImageCache::class)->url($this, $width);
+        return app(ImageCache::class)->url($this, $size, $group);
     }
 
     /**
-     * `srcset` cho ảnh responsive (0.3.67); rỗng khi ảnh không có bản thu nhỏ.
+     * `srcset` cho ảnh responsive (0.3.67); rỗng khi ảnh không có bản thu nhỏ. `$group` như url().
      */
-    public function srcset(): string
+    public function srcset(?string $group = null): string
     {
-        return app(ImageCache::class)->srcset($this);
+        return app(ImageCache::class)->srcset($this, $group);
     }
 
     /**

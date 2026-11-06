@@ -30,6 +30,7 @@ final class SlideshowBlock implements StorefrontBlock
     {
         $fields = [FieldDefinition::int('interval', 'Tự chuyển sau (giây)', help: '0 = không tự chuyển. Mặc định 6.')];
         foreach (range(1, self::SLIDES) as $i) {
+            $fields[] = FieldDefinition::media("slide_{$i}_media", "Slide {$i}: ảnh", help: 'Từ Thư viện ảnh (tự có bản vừa màn hình); trống thì dùng ảnh (URL).');
             $fields[] = FieldDefinition::string("slide_{$i}_image", "Slide {$i}: ảnh (URL)", max: 500);
             $fields[] = FieldDefinition::string("slide_{$i}_title", "Slide {$i}: tiêu đề", max: 120);
             $fields[] = FieldDefinition::string("slide_{$i}_text", "Slide {$i}: mô tả", max: 200);
@@ -44,10 +45,10 @@ final class SlideshowBlock implements StorefrontBlock
     {
         $slides = [];
         foreach (range(1, self::SLIDES) as $i) {
-            $image = Products::safeUrl($config["slide_{$i}_image"] ?? '');
+            [$image, $srcset] = Products::image($config["slide_{$i}_media"] ?? null, $config["slide_{$i}_image"] ?? '', 1600);
             if ($image !== '') {
                 $slides[] = [
-                    'image' => $image, 'title' => (string) ($config["slide_{$i}_title"] ?? ''), 'text' => (string) ($config["slide_{$i}_text"] ?? ''),
+                    'image' => $image, 'srcset' => $srcset, 'title' => (string) ($config["slide_{$i}_title"] ?? ''), 'text' => (string) ($config["slide_{$i}_text"] ?? ''),
                     'link' => Products::safeUrl($config["slide_{$i}_link"] ?? ''), 'label' => (string) ($config["slide_{$i}_label"] ?? ''),
                 ];
             }

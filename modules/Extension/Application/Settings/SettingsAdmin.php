@@ -102,6 +102,7 @@ final class SettingsAdmin
 
         return match ($definition->type) {
             'int' => filter_var($value, FILTER_VALIDATE_INT) !== false ? (int) $value : throw $error('Phải là số nguyên.'),
+            'media' => filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false ? (int) $value : throw $error('Chọn ảnh từ Thư viện ảnh.'),
             'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? throw $error('Phải là đúng/sai.'),
             'select' => array_key_exists((string) $value, $this->options($definition)) ? (string) $value : throw $error('Giá trị không nằm trong danh sách.'),
             default => is_scalar($value) && mb_strlen((string) $value) <= 2000 ? (string) $value : throw $error('Tối đa 2000 ký tự.'),

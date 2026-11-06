@@ -15,6 +15,7 @@ use Modules\Catalog\Application\EloquentCatalogLookup;
 use Modules\Catalog\Application\Media\EloquentMediaDirectory;
 use Modules\Catalog\Application\Media\EloquentMediaUrls;
 use Modules\Catalog\Application\Media\ImageCache;
+use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Application\Products\EloquentVariantDirectory;
 use Modules\Catalog\Application\Products\ProductImporter;
@@ -60,12 +61,12 @@ final class CatalogServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(MediaLibrary::class, fn ($app): MediaLibrary => new MediaLibrary((string) config('vanishop.media.disk', 'public'), $app->make(ImageCache::class)));
+        $this->app->singleton(ImageSizes::class);
         $this->app->singleton(ImageCache::class, fn ($app): ImageCache => new ImageCache(
             ImageManager::usingDriver(extension_loaded('imagick') ? ImagickDriver::class : GdDriver::class),
             $app->make(Extensions::class),
+            $app->make(ImageSizes::class),
             rtrim((string) config('vanishop.media.cache.path'), '/'),
-            array_map('intval', (array) config('vanishop.media.cache.widths')),
-            max(1, min(100, (int) config('vanishop.media.cache.quality', 80))),
         ));
 
         $this->app->bind(CatalogReader::class, StorefrontCatalog::class);
@@ -74,7 +75,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->make(AdminScreen::class)->declareResource('category');
         $this->app->make(AdminScreen::class)->declareResource('brand');
         $this->app->bind(MediaDirectory::class, EloquentMediaDirectory::class);
-        $this->app->bind(MediaUrls::class, EloquentMediaUrls::class);
+        // Scoped: ghi nhớ ảnh đã tra trong một request (theme gọi vani_image() nhiều lần).
+        $this->app->scoped(MediaUrls::class, EloquentMediaUrls::class);
         $this->app->bind(ProductViewStatistics::class, ProductViewCounter::class);
         $this->app->bind(CatalogImporter::class, ProductImporter::class);
         $this->app->bind(VariantDirectory::class, EloquentVariantDirectory::class);
@@ -113,8 +115,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 110, group: 'catalog');
 
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'Ảnh thay thế (ID trong Thư viện ảnh)', 'int',
-            help: 'Hiện thay cho sản phẩm chưa có ảnh (thẻ sản phẩm, Storefront API) và cho vani_image() khi thiếu ảnh. Số ID xem ở Thư viện ảnh. Để trống: khung trống của theme.',
+            'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'Ảnh thay thế', 'media',
+            help: 'Hiện thay cho sản phẩm chưa có ảnh (thẻ sản phẩm, Storefront API) và cho vani_image() khi thiếu ảnh. Để trống: khung trống của theme.',
             rules: ['min:1', 'exists:media,id'],
         ));
 

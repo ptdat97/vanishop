@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -72,6 +73,7 @@ async function reset(): Promise<void> {
                     <Select v-else-if="field.type === 'select'" v-model="block.config[field.key] as string | null" :options="labelOptions(field.options)" empty-label="—" :empty-value="null" />
                     <DateInput v-else-if="field.type === 'date'" v-model="block.config[field.key] as string | null" />
                     <input v-else-if="field.type === 'bool'" v-model="block.config[field.key] as boolean" type="checkbox" />
+                    <MediaField v-else-if="field.type === 'media'" v-model="block.config[field.key] as number | null" :label="field.label.toLowerCase()" />
                     <input v-else v-model="block.config[field.key] as string | null" :class="inputClass" :type="field.type === 'int' ? 'number' : 'text'" />
                 </FormField>
             </div>

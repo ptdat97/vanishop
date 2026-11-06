@@ -1,9 +1,10 @@
 <article class="group">
     <a href="{{ vani_route('storefront.product', $product['slug']) }}" class="block">
-        <div class="aspect-[3/4] overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
+        @php([$ratioW, $ratioH] = vani_product_ratio())
+        <div class="overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}">
             @if ($product['image_url'])
-                {{-- $layout: [vùng chứa px, cột desktop, cột mobile] của lưới đang dùng; mặc định lưới 4/2 trong khung 72rem. --}}
-                @include('theme::partials.image', ['src' => $product['image_url'], 'srcset' => $product['image_srcset'] ?? null, 'alt' => $product['name'], 'layout' => $layout ?? [1152, 4, 2], 'width' => 300, 'height' => 400, 'class' => 'h-full w-full object-cover'])
+                {{-- $layout: [vùng chứa px, cột desktop, cột mobile] của lưới đang dùng; mặc định lưới 4/2 trong khung 72rem. Khung theo tỉ lệ ảnh sản phẩm. --}}
+                @include('theme::partials.image', ['src' => $product['image_url'], 'srcset' => $product['image_srcset'] ?? null, 'alt' => $product['name'], 'layout' => $layout ?? [1152, 4, 2], 'width' => 300, 'height' => (int) round(300 * $ratioH / $ratioW), 'class' => 'h-full w-full object-cover'])
             @endif
         </div>
         <x-vani::hook-slot name="vani.storefront.plp.card_badges" :args="[$product]" />

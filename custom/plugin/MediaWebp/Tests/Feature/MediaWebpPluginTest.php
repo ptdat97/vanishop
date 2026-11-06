@@ -41,7 +41,7 @@ it('plugin bật: ảnh JPEG/PNG thu nhỏ ra WebP; ảnh gốc giữ nguyên', 
         ->and($jpeg->url())->toEndWith('.jpg');
 
     $this->get(parse_url($jpeg->url(400), PHP_URL_PATH))->assertOk()->assertHeader('Content-Type', 'image/webp');
-    expect(getimagesize(app(ImageCache::class)->path($jpeg->checksum, 400, 'webp')))->toMatchArray([0 => 400, 'mime' => 'image/webp'])
+    expect(getimagesize(app(ImageCache::class)->path($jpeg->checksum, 'w400', 'webp')))->toMatchArray([0 => 400, 'mime' => 'image/webp'])
         // Đuôi định dạng gốc không còn là bản hợp lệ khi plugin đang bật.
         ->and($this->get(parse_url(str_replace('.webp', '.jpg', $jpeg->url(400)), PHP_URL_PATH))->status())->toBe(404);
 });

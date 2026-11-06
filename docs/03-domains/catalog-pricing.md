@@ -18,7 +18,7 @@
 > | Giá thành viên theo nhóm khách (0.3.35): bảng giá gắn `customer_group_id` (loại `member` bắt buộc), `PricingContext.customerId` → `PriceResolver` tự tra nhóm qua `Pricing\Contracts\CustomerGroupDirectory` (module Customer cung cấp); giỏ/checkout của khách đăng nhập tính giá nhóm; trang công khai (cache) hiện giá chung, giá thành viên qua `/_vani/gia` và `GET /api/storefront/v1/me/prices` | Implemented |
 > | Giá theo số lượng, import Excel giá | Designed |
 > | Bộ sưu tập theo luật, merchandising ghim vị trí trong Admin | Designed |
-> | Resize ảnh: bản thu nhỏ tạo khi có request đầu tiên, cache tại `public/cache` (`ImageCache`, 0.3.28); WebP qua plugin `vani.media-webp` | Implemented |
+> | Resize ảnh: bản thu nhỏ tạo khi có request đầu tiên, cache tại `public/cache` (`ImageCache`, 0.3.28); WebP qua plugin `vani.media-webp`; kích thước cấu hình ở Admin (tỉ lệ ảnh sản phẩm mặc định 2:3, kích thước có tên của plugin qua `ImageSizeProvider` — 0.3.87); ô chọn ảnh dùng chung `MediaField` | Implemented |
 
 ## 1. Mô hình sản phẩm thời trang
 

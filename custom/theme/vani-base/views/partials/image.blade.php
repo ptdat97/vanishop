@@ -6,4 +6,4 @@
 <img src="{{ $src }}" alt="{{ $alt ?? '' }}"
      @if ($srcset ?? null) srcset="{{ $srcset }}" sizes="{{ \Modules\Storefront\View\ResponsiveImage::sizes($container, $columns, $mobileColumns) }}" @endif
      @if ($width ?? null) width="{{ $width }}" @endif @if ($height ?? null) height="{{ $height }}" @endif
-     loading="{{ $loading ?? 'lazy' }}" class="{{ $class ?? '' }}">
+     loading="{{ $loading ?? 'lazy' }}" decoding="async" @if (($loading ?? 'lazy') === 'eager') fetchpriority="high" @endif class="{{ $class ?? '' }}">

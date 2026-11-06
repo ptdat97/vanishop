@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application\Products;
 
 use Illuminate\Support\Collection;
+use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Search\SearchManager;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\SellableVariant;
@@ -113,7 +114,11 @@ final class StorefrontProductQuery
             'attributes' => $this->attributes($style->attributeValues, $locale),
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => [
                 ...$this->color($styleColor, $locale),
-                'images' => $styleColor->gallery->map(fn ($image): array => ['url' => $image->media->url(800), 'alt' => $image->alt])->all(),
+                // Ảnh sản phẩm cắt theo tỉ lệ cấu hình (mặc định 2:3): khung PDP/lưới không nhảy.
+                'images' => $styleColor->gallery->map(fn ($image): array => [
+                    'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
+                    'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
+                ])->all(),
             ])->all(),
             'variants' => $style->variants
                 ->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $variant->styleColor->position, $variant->size->sort_order))
@@ -172,7 +177,7 @@ final class StorefrontProductQuery
                 colorCode: $variant->styleColor->color->code,
                 colorName: $variant->styleColor->color->translate('name', $locale),
                 sizeCode: $variant->size->code,
-                imageUrl: $variant->styleColor->gallery->first()?->media->url(400),
+                imageUrl: $variant->styleColor->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
                 brandName: $variant->style->brand?->name,
                 weightGram: $variant->weight_gram,
             )])
@@ -202,9 +207,9 @@ final class StorefrontProductQuery
             'style_code' => $style->style_code,
             'name' => $style->translate('name', $locale),
             'brand' => $style->brand === null ? null : ['id' => $style->brand->id, 'slug' => $style->brand->slug, 'name' => $style->brand->name],
-            'image_url' => $firstImage?->media->url(400),
+            'image_url' => $firstImage?->media->url(400, ImageSizes::PRODUCT),
             // Ảnh responsive (0.3.67): theme ghép `sizes` theo bố cục lưới; null khi ảnh không có bản thu nhỏ.
-            'image_srcset' => ($firstImage?->media->srcset() ?? '') ?: null,
+            'image_srcset' => ($firstImage?->media->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
             'colors' => $style->colors->map(fn (StyleColor $styleColor): array => $this->color($styleColor, $locale))->all(),
             'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
         ];
@@ -220,7 +225,7 @@ final class StorefrontProductQuery
             'name' => $styleColor->color->translate('name', $locale),
             'hex' => $styleColor->color->hex,
             'family' => $styleColor->color->color_family->value,
-            'image_url' => $styleColor->gallery->first()?->media->url(400),
+            'image_url' => $styleColor->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
         ];
     }
 

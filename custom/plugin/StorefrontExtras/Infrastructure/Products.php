@@ -60,4 +60,18 @@ final class Products
 
         return preg_match('#^(/(?!/)|https?://)#i', $url) === 1 ? $url : '';
     }
+
+    /**
+     * Ảnh của ô/slide: ưu tiên ảnh Thư viện ảnh (id, có srcset — Core 0.3.87), không có thì URL nhập tay.
+     *
+     * @return array{string, string} [src, srcset]
+     */
+    public static function image(mixed $mediaId, mixed $url, int $width): array
+    {
+        if (is_numeric($mediaId) && (int) $mediaId > 0 && ($src = vani_image((int) $mediaId, $width)) !== '') {
+            return [$src, vani_srcset((int) $mediaId)];
+        }
+
+        return [self::safeUrl($url), ''];
+    }
 }

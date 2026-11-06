@@ -7,6 +7,7 @@ namespace Modules\Catalog\Console;
 use Illuminate\Console\Command;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\StyleColor;
 use Throwable;
 
 /**
@@ -35,17 +36,19 @@ final class MediaCacheCommand extends Command
 
         if ($this->option('warm')) {
             [$files, $failed] = [0, 0];
-            Media::query()->orderBy('id')->chunkById(100, function ($items) use ($cache, &$files, &$failed): void {
-                foreach ($items as $media) {
-                    try {
-                        $files += count($cache->warm($media));
-                    } catch (Throwable $exception) {
-                        report($exception);
-                        $failed++;
-                        $this->warn("Không xử lý được ảnh #{$media->id} ({$media->original_name}).");
+            $galleryType = (new StyleColor)->getMorphClass();
+            Media::query()->withExists(['usages as in_product_gallery' => fn ($query) => $query->where('mediable_type', $galleryType)])
+                ->orderBy('id')->chunkById(100, function ($items) use ($cache, &$files, &$failed): void {
+                    foreach ($items as $media) {
+                        try {
+                            $files += count($cache->warm($media, (bool) $media->in_product_gallery));
+                        } catch (Throwable $exception) {
+                            report($exception);
+                            $failed++;
+                            $this->warn("Không xử lý được ảnh #{$media->id} ({$media->original_name}).");
+                        }
                     }
-                }
-            });
+                });
             $this->info("Đã có {$files} bản thu nhỏ trong cache".($failed > 0 ? ", {$failed} ảnh lỗi" : '').'.');
         }
 

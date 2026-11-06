@@ -30,7 +30,8 @@ final class LookbookPresenter
 
         return array_map(fn (Lookbook $lookbook): array => [
             'slug' => $lookbook->slug, 'name' => (string) $lookbook->text('name', $locale),
-            'cover_url' => ($covers[$this->coverId($lookbook) ?? 0] ?? null)?->urlFor(800),
+            // Kích thước có tên (Core 0.3.87): bìa cắt khung 2:3, chỉnh được ở Admin → Kích thước ảnh.
+            'cover_url' => ($id = $this->coverId($lookbook)) !== null && isset($covers[$id]) ? vani_image($id, LookbookImageSizes::COVER) : null,
             'url' => vani_route('storefront.p.vani-lookbook.show', $lookbook->slug, $locale),
             'images_count' => $lookbook->images->count(),
         ], $lookbooks);

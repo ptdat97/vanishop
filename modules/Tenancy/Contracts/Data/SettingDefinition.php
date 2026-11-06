@@ -9,7 +9,8 @@ namespace Modules\Tenancy\Contracts\Data;
  */
 final readonly class SettingDefinition
 {
-    public const TYPES = ['string', 'secret', 'text', 'int', 'bool', 'select'];
+    /** `media` (0.3.87): id ảnh của Thư viện ảnh (ô chọn ảnh trong Admin). */
+    public const TYPES = ['string', 'secret', 'text', 'int', 'bool', 'select', 'media'];
 
     /**
      * @param  array<string, string>  $options  (select) giá trị => nhãn

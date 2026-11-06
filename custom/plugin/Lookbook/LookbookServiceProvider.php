@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Plugin\Lookbook;
 
+use Modules\Catalog\Contracts\ImageSizeProvider;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\SitemapProvider;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\Lookbook\Infrastructure\LatestLookbooksBlock;
+use Plugin\Lookbook\Infrastructure\LookbookImageSizes;
 use Plugin\Lookbook\Infrastructure\LookbookSitemap;
 use Plugin\Lookbook\Persistence\Lookbook;
 
@@ -39,6 +41,7 @@ final class LookbookServiceProvider extends PluginServiceProvider
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
         $this->contribute(StorefrontBlock::TAG, LatestLookbooksBlock::class);
         $this->contribute(SitemapProvider::TAG, LookbookSitemap::class);
+        $this->contribute(ImageSizeProvider::TAG, LookbookImageSizes::class);
         $this->onSlot('vani.storefront.header.nav', fn (): ?SlotView => (bool) vani_setting(self::ID, 'show_in_header', true) && Lookbook::query()->visible()->exists()
             ? new SlotView('vani-lookbook::header-link')
             : null);

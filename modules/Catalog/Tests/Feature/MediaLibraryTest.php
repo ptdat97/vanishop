@@ -4,11 +4,14 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Media\EloquentMediaUrls;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Extension\Contracts\Data\FieldDefinition;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
 
@@ -99,7 +102,7 @@ it('đổi tên, chuyển thư mục; xoá chỉ ảnh không còn dùng (kèm f
 
     $unusedMedia = Media::query()->find($unused['id']);
     $this->get(parse_url($unusedMedia->url(400), PHP_URL_PATH))->assertOk();
-    $cached = app(ImageCache::class)->path($unusedMedia->checksum, 400, 'jpg');
+    $cached = app(ImageCache::class)->path($unusedMedia->checksum, 'w400', 'jpg');
     expect(File::exists($cached))->toBeTrue();
 
     $this->postJson("{$this->base}/items/delete", ['ids' => [$used['id'], $unused['id']]])->assertOk()->assertJsonPath('deleted', 1)->assertJsonPath('in_use', 1);
@@ -131,4 +134,20 @@ it('chọn từ thư viện: gắn ảnh có sẵn vào màu sản phẩm (bỏ 
 
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
     $this->post($url, ['media_ids' => $ids])->assertForbidden();
+});
+
+it('ô chọn ảnh dùng chung: /admin/media/items trả ảnh theo id (giữ thứ tự, bỏ id không còn), cần media.view', function () {
+    [$a, $b] = uploadTo('', [UploadedFile::fake()->image('a.jpg', 800, 1200), UploadedFile::fake()->image('b.jpg', 640, 960)]);
+
+    $this->getJson("{$this->base}/items?ids[]={$b['id']}&ids[]=999999&ids[]={$a['id']}")->assertOk()
+        ->assertJsonPath('items.0.id', $b['id'])->assertJsonPath('items.1.id', $a['id'])->assertJsonCount(2, 'items');
+
+    $this->actingAs(T::staff(['admin.access']), 'staff');
+    $this->getJson("{$this->base}/items?ids[]={$a['id']}")->assertForbidden();
+});
+
+it('kiểu trường media: FieldDefinition nhận id ảnh; cấu hình "Ảnh thay thế" là ô chọn ảnh', function () {
+    $field = FieldDefinition::media('cover', 'Ảnh bìa', required: true);
+    expect($field->rules())->toBe(['required', 'integer', 'min:1'])
+        ->and(collect(app(Settings::class)->definitions('core'))->firstWhere('key', EloquentMediaUrls::PLACEHOLDER_SETTING)?->type)->toBe('media');
 });

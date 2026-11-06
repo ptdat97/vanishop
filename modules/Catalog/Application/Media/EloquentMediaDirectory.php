@@ -22,8 +22,8 @@ final class EloquentMediaDirectory implements MediaDirectory
         $result = [];
         foreach (Media::query()->whereKey(array_values(array_unique($ids)))->get() as $media) {
             $variants = [];
-            foreach ($this->cache->widthsFor($media) as $width) {
-                $variants[$width] = $media->url($width);
+            foreach ($this->cache->variantsFor($media) as $size) {
+                $variants[$size->width] = $media->url($size->width);
             }
             $result[$media->id] = new MediaData($media->id, $media->original_name, $media->width, $media->height, $media->url(), $variants);
         }

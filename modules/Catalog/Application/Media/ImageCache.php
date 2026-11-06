@@ -10,20 +10,24 @@ use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\Encoders\PngEncoder;
 use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\Interfaces\EncoderInterface;
+use Intervention\Image\Interfaces\ImageInterface;
 use Intervention\Image\Interfaces\ImageManagerInterface;
+use Modules\Catalog\Contracts\Data\ImageSize;
 use Modules\Catalog\Contracts\ImageFormat;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Extension\Contracts\Extensions;
 
 /**
- * Ảnh thu nhỏ theo chiều rộng, tạo khi có request đầu tiên và lưu tại public/cache:
+ * Ảnh thu nhỏ tạo khi có request đầu tiên và lưu tại public/cache:
  *
- * - URL `/cache/media/{ab}/{checksum}-w{width}.{ext}`: file có sẵn → web server trả tĩnh; chưa có → route Laravel
- *   gọi render() rồi trả file (ImageCacheController).
- * - Chỉ chiều rộng trong cấu hình và nhỏ hơn ảnh gốc (không phóng to); không có bản phù hợp → URL ảnh gốc.
+ * - URL `/cache/media/{ab}/{checksum}-{kích thước}.{ext}` (kích thước `w400`, `w400h600`, `w400h600c` — ImageSize::key):
+ *   file có sẵn → web server trả tĩnh; chưa có → route Laravel gọi render() rồi trả file (ImageCacheController).
+ * - Chỉ các kích thước của ImageSizes (cấu hình Admin + plugin); không phóng to; không có bản phù hợp → ảnh gốc.
+ * - Ảnh sản phẩm (`group: product`) cắt theo tỉ lệ cấu hình (mặc định 2:3) để lưới đều nhau; ảnh khác giữ tỉ lệ gốc.
  * - Định dạng giữ như gốc; plugin đóng góp ImageFormat (vd. vani.media-webp) thì dùng định dạng của plugin.
- * - Ảnh gốc định danh theo checksum (không đổi nội dung) nên bản cache không bao giờ cũ — không cần so mtime.
- * - Khoá file khi tạo để nhiều request cùng lúc chỉ resize một lần; ghi file tạm rồi rename (không lộ file dở).
+ * - Ảnh gốc định danh theo checksum, kích thước nằm trong tên file → bản cache không bao giờ cũ, không cần so mtime.
+ * - Khoá file khi tạo để nhiều request cùng lúc chỉ resize một lần; ghi file tạm rồi rename (không lộ file dở). Disk local
+ *   đọc thẳng từ đường dẫn file (không nạp cả ảnh gốc vào bộ nhớ PHP hai lần).
  */
 final class ImageCache
 {
@@ -33,53 +37,56 @@ final class ImageCache
     /** Đuôi file đầu ra hợp lệ (khớp route). */
     public const EXTENSIONS = ['jpg', 'png', 'webp', 'avif'];
 
-    /**
-     * @param  list<int>  $widths
-     * @param  int<1, 100>  $quality
-     */
+    /** Mẫu khoá kích thước trong tên file (khớp route). */
+    public const KEY_PATTERN = 'w[0-9]{1,4}(?:h[0-9]{1,4}c?)?';
+
     public function __construct(
         private readonly ImageManagerInterface $images,
         private readonly Extensions $extensions,
+        private readonly ImageSizes $sizes,
         private readonly string $directory,
-        private readonly array $widths,
-        private readonly int $quality = 80,
     ) {}
 
     /**
-     * URL bản nhỏ nhất rộng ≥ $width; không có $width hoặc không có bản phù hợp → ảnh gốc.
+     * URL ảnh: `$size` số = bản nhỏ nhất rộng ≥ số đó (theo `$group`: null giữ tỉ lệ, `product` cắt theo tỉ lệ sản phẩm);
+     * chuỗi = kích thước có tên (plugin). Không có `$size` hoặc không có bản phù hợp → ảnh gốc.
      */
-    public function url(Media $media, ?int $width = null): string
+    public function url(Media $media, int|string|null $size = null, ?string $group = null): string
     {
-        $variant = $width === null ? null : $this->variantFor($media, $width);
+        $variant = match (true) {
+            $size === null => null,
+            is_string($size) => ($named = $this->sizes->named($size)) !== null && $this->allows($media, $named) ? $named : null,
+            default => $this->variantFor($media, $size, $group),
+        };
 
-        return $variant === null
-            ? Storage::disk($media->disk)->url($media->path)
-            : asset('cache/'.self::relativePath($media->checksum, $variant, $this->extensionFor($media)));
+        return $variant === null ? $this->original($media) : $this->cachedUrl($media, $variant);
     }
 
     /**
-     * Giá trị `srcset` (bản thu nhỏ + ảnh gốc) theo kích thước đã lưu trong DB — không đọc file; rỗng khi không có bản thu nhỏ.
+     * Giá trị `srcset` theo kích thước đã lưu trong DB — không đọc file; rỗng khi không có bản thu nhỏ. Ảnh giữ tỉ lệ có
+     * thêm ảnh gốc; ảnh cắt theo tỉ lệ sản phẩm thì không (gốc khác tỉ lệ làm khung nhảy).
      */
-    public function srcset(Media $media): string
+    public function srcset(Media $media, ?string $group = null): string
     {
-        $sources = array_map(fn (int $width): string => $this->url($media, $width)." {$width}w", $this->widthsFor($media));
-        if ($sources === []) {
+        $variants = $this->variantsFor($media, $group);
+        if ($variants === []) {
             return '';
         }
-        if ($media->width !== null) {
-            $sources[] = $this->url($media)." {$media->width}w";
+        $sources = array_map(fn (ImageSize $size): string => $this->cachedUrl($media, $size)." {$size->width}w", $variants);
+        if ($media->width !== null && ($group !== ImageSizes::PRODUCT || $this->sizes->productRatio() === null)) {
+            $sources[] = $this->original($media)." {$media->width}w";
         }
 
         return implode(', ', $sources);
     }
 
     /**
-     * Chiều rộng bản cache dùng cho yêu cầu rộng $width (null = dùng ảnh gốc).
+     * Bản cache dùng cho yêu cầu rộng $width (null = dùng ảnh gốc).
      */
-    public function variantFor(Media $media, int $width): ?int
+    public function variantFor(Media $media, int $width, ?string $group = null): ?ImageSize
     {
-        foreach ($this->widthsFor($media) as $variant) {
-            if ($variant >= $width) {
+        foreach ($this->variantsFor($media, $group) as $variant) {
+            if ($variant->width >= $width) {
                 return $variant;
             }
         }
@@ -88,20 +95,29 @@ final class ImageCache
     }
 
     /**
-     * Các chiều rộng được phép cho ảnh này (chỉ thu nhỏ, chỉ định dạng xử lý được).
+     * Kích thước theo bề rộng tạo được cho ảnh này (chỉ thu nhỏ, chỉ định dạng xử lý được), tăng dần.
      *
-     * @return list<int>
+     * @return list<ImageSize>
      */
-    public function widthsFor(Media $media): array
+    public function variantsFor(Media $media, ?string $group = null): array
     {
-        if ($media->width === null || ! isset(self::SOURCES[$media->mime_type])) {
-            return [];
+        return array_values(array_filter($this->sizes->responsive($group), fn (ImageSize $size): bool => $this->allows($media, $size)));
+    }
+
+    /**
+     * Ảnh này có bản cache kích thước $size không: định dạng xử lý được và không phải phóng to. Cắt khung: phần ảnh
+     * đúng tỉ lệ phải rộng ít nhất bằng bản thu nhỏ; giữ tỉ lệ: ảnh gốc phải rộng hơn (bằng thì dùng luôn ảnh gốc).
+     */
+    public function allows(Media $media, ImageSize $size): bool
+    {
+        if ($media->width === null || $media->height === null || ! isset(self::SOURCES[$media->mime_type])) {
+            return false;
+        }
+        if ($size->crop && $size->height !== null) {
+            return $size->width <= min($media->width, (int) floor($media->height * $size->width / $size->height));
         }
 
-        $widths = array_filter($this->widths, fn (int $variant): bool => $variant < $media->width);
-        sort($widths);
-
-        return $widths;
+        return $size->width < $media->width || ($size->height !== null && $size->height < $media->height);
     }
 
     /**
@@ -113,31 +129,29 @@ final class ImageCache
     }
 
     /**
-     * Tạo (nếu chưa có) bản cache rồi trả đường dẫn tuyệt đối; null nếu chiều rộng/đuôi file không đúng với cấu hình
-     * hiện tại cho ảnh này. Lỗi đọc/giải mã ảnh được ném ra để nơi gọi quay về ảnh gốc.
+     * Tạo (nếu chưa có) bản cache rồi trả đường dẫn tuyệt đối; null nếu kích thước/đuôi file không đúng cấu hình hiện tại
+     * cho ảnh này. Lỗi đọc/giải mã ảnh được ném ra để nơi gọi quay về ảnh gốc.
      */
-    public function render(Media $media, int $width, string $extension): ?string
+    public function render(Media $media, string $key, string $extension): ?string
     {
-        if (! in_array($width, $this->widthsFor($media), true) || $extension !== $this->extensionFor($media)) {
+        $size = $this->sizes->find($key);
+        if ($size === null || ! $this->allows($media, $size) || $extension !== $this->extensionFor($media)) {
             return null;
         }
 
-        $target = $this->path($media->checksum, $width, $extension);
+        $target = $this->path($media->checksum, $key, $extension);
         if (is_file($target)) {
             return $target;
         }
 
         File::ensureDirectoryExists(dirname($target));
-        $this->withLock($target, function () use ($media, $width, $target): void {
+        $this->withLock($target, function () use ($media, $size, $target): void {
             clearstatcache(true, $target);
             if (is_file($target)) {
                 return;
             }
 
-            $encoded = $this->images->decodeBinary((string) Storage::disk($media->disk)->get($media->path))
-                ->scaleDown(width: $width)
-                ->encode($this->encoder($media));
-
+            $encoded = $this->resize($this->decode($media), $size)->encode($this->encoder($media));
             $temporary = $target.'.'.bin2hex(random_bytes(4)).'.tmp';
             File::put($temporary, (string) $encoded);
             File::move($temporary, $target);
@@ -147,15 +161,18 @@ final class ImageCache
     }
 
     /**
-     * Tạo trước mọi bản cache của ảnh (vani:media:cache --warm).
+     * Tạo trước bản cache của ảnh (vani:media:cache --warm): bề rộng chung + kích thước có tên; bản cắt theo tỉ lệ sản
+     * phẩm chỉ khi `$product` (ảnh nằm trong gallery màu sản phẩm) — không tạo thừa cho logo, banner, bài viết.
      *
-     * @return list<int> chiều rộng đã có trong cache
+     * @return list<string> khoá kích thước đã có trong cache
      */
-    public function warm(Media $media): array
+    public function warm(Media $media, bool $product = false): array
     {
         $extension = $this->extensionFor($media);
+        $sizes = [...$this->sizes->responsive(), ...($product ? $this->sizes->responsive(ImageSizes::PRODUCT) : []), ...$this->sizes->namedSizes()];
+        $keys = array_values(array_unique(array_map(fn (ImageSize $size): string => $size->key(), array_filter($sizes, fn (ImageSize $size): bool => $this->allows($media, $size)))));
 
-        return array_values(array_filter($this->widthsFor($media), fn (int $width): bool => $this->render($media, $width, $extension) !== null));
+        return array_values(array_filter($keys, fn (string $key): bool => $this->render($media, $key, $extension) !== null));
     }
 
     /**
@@ -168,21 +185,53 @@ final class ImageCache
     }
 
     /**
-     * Xoá toàn bộ cache ảnh; các bản sẽ được tạo lại khi có request (sau khi đổi định dạng/chất lượng).
+     * Xoá toàn bộ cache ảnh; các bản sẽ được tạo lại khi có request (sau khi đổi kích thước/định dạng/chất lượng).
      */
     public function flush(): void
     {
         File::deleteDirectory($this->directory.'/media');
     }
 
-    public function path(string $checksum, int $width, string $extension): string
+    public function path(string $checksum, string $key, string $extension): string
     {
-        return $this->directory.'/'.self::relativePath($checksum, $width, $extension);
+        return $this->directory.'/'.self::relativePath($checksum, $key, $extension);
     }
 
-    public static function relativePath(string $checksum, int $width, string $extension): string
+    public static function relativePath(string $checksum, string $key, string $extension): string
     {
-        return 'media/'.substr($checksum, 0, 2)."/{$checksum}-w{$width}.{$extension}";
+        return 'media/'.substr($checksum, 0, 2)."/{$checksum}-{$key}.{$extension}";
+    }
+
+    private function cachedUrl(Media $media, ImageSize $size): string
+    {
+        return asset('cache/'.self::relativePath($media->checksum, $size->key(), $this->extensionFor($media)));
+    }
+
+    private function original(Media $media): string
+    {
+        return Storage::disk($media->disk)->url($media->path);
+    }
+
+    private function decode(Media $media): ImageInterface
+    {
+        // Disk local: giải mã thẳng từ file (Imagick/GD đọc trực tiếp) — không nạp chuỗi nhị phân vào PHP.
+        if (config("filesystems.disks.{$media->disk}.driver") === 'local') {
+            $path = Storage::disk($media->disk)->path($media->path);
+            if (is_file($path)) {
+                return $this->images->decodePath($path);
+            }
+        }
+
+        return $this->images->decodeBinary((string) Storage::disk($media->disk)->get($media->path));
+    }
+
+    private function resize(ImageInterface $image, ImageSize $size): ImageInterface
+    {
+        if ($size->crop && $size->height !== null) {
+            return $image->coverDown($size->width, $size->height);
+        }
+
+        return $image->scaleDown(width: $size->width, height: $size->height);
     }
 
     private function format(Media $media): ?ImageFormat
@@ -198,10 +247,12 @@ final class ImageCache
 
     private function encoder(Media $media): EncoderInterface
     {
-        return $this->format($media)?->encoder($this->quality) ?? match (self::SOURCES[$media->mime_type]) {
+        $quality = $this->sizes->quality();
+
+        return $this->format($media)?->encoder($quality) ?? match (self::SOURCES[$media->mime_type]) {
             'png' => new PngEncoder,
-            'webp' => new WebpEncoder(quality: $this->quality),
-            default => new JpegEncoder(quality: $this->quality),
+            'webp' => new WebpEncoder(quality: $quality),
+            default => new JpegEncoder(quality: $quality, progressive: true),
         };
     }
 

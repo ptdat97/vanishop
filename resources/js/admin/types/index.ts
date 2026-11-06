@@ -59,7 +59,7 @@ export interface SharedProps {
 export interface ExtensionField {
     key: string;
     label: string;
-    type: 'string' | 'text' | 'int' | 'bool' | 'select' | 'date';
+    type: 'string' | 'text' | 'int' | 'bool' | 'select' | 'date' | 'media';
     required: boolean;
     options: Record<string, string>;
     help: string | null;

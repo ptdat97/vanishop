@@ -1,6 +1,10 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Persistence\Models\AuditLog;
@@ -9,6 +13,7 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Testing\StorefrontBlockContract;
 
@@ -89,4 +94,19 @@ it('khối lỗi khi render bị bỏ, khối khác vẫn hiện; không có quy
 
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff');
     $this->get($this->url)->assertForbidden();
+});
+
+it('khối có trường ảnh (media): ảnh Thư viện ảnh có srcset, được khai báo đang dùng; xoá cấu hình thì bỏ khai báo', function () {
+    Storage::fake('public');
+    $media = app(MediaLibrary::class)->store(UploadedFile::fake()->image('hero.jpg', 2000, 1200));
+
+    $this->put($this->url, ['blocks' => [['type' => 'hero', 'config' => ['title' => 'Hè', 'image' => 'abc']]]])->assertSessionHasErrors('blocks.0.config.image');
+    $this->put($this->url, ['blocks' => [['type' => 'hero', 'config' => ['title' => 'Hè', 'image' => $media->id]]]])->assertSessionHasNoErrors();
+
+    expect(DB::table('mediables')->where(['media_id' => $media->id, 'mediable_type' => 'storefront.home'])->exists())->toBeTrue();
+    $html = $this->get('/')->assertOk()->getContent();
+    expect($html)->toContain('srcset="'.e($media->srcset()).'"')->toContain('fetchpriority="high"');
+
+    app(PageBlocks::class)->resetHome();
+    expect(DB::table('mediables')->where('media_id', $media->id)->exists())->toBeFalse();
 });

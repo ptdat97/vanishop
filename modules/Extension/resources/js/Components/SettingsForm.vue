@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import Select from '@admin/Components/Select.vue';
 import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton } from '@admin/styles';
@@ -7,7 +8,7 @@ import { useForm } from '@inertiajs/vue3';
 export type SettingField = {
     key: string;
     label: string;
-    type: 'string' | 'secret' | 'text' | 'int' | 'bool' | 'select';
+    type: 'string' | 'secret' | 'text' | 'int' | 'bool' | 'select' | 'media';
     help: string | null;
     options: Record<string, string>;
     is_set: boolean;
@@ -55,6 +56,11 @@ function submit(): void {
                     :aria-label="field.label"
                 />
                 <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" placeholder="(mặc định)" />
+                <MediaField
+                    v-else-if="field.type === 'media'"
+                    :model-value="form.values[field.key] ? Number(form.values[field.key]) : null"
+                    @update:model-value="(id) => (form.values[field.key] = id ? String(id) : '')"
+                />
                 <input
                     v-else
                     v-model="form.values[field.key]"

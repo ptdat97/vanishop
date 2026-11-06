@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.87 — 2026-11-06
+
+Ảnh thu nhỏ cấu hình trong Admin, kích thước riêng của plugin, ô chọn ảnh dùng chung.
+
+### Thêm
+- Extension point `Catalog\Contracts\ImageSizeProvider` (tag `vani.catalog.image_sizes`) + `Contracts\Data\ImageSize` (`name`, `label`, `width`, `height?`, `crop`): plugin khai báo kích thước ảnh có tên; nhân viên ghi đè rộng/cao/cắt khung ở Admin → Thư viện ảnh → **Kích thước ảnh**. Tham chiếu: `vani.lookbook` 1.1.0 (`lookbook.cover` 600×900 cắt khung). Contract test `Catalog\Testing\ImageSizeProviderContract`.
+- Admin → Thư viện ảnh → Kích thước ảnh: bề rộng chung (thu nhỏ giữ tỉ lệ), **tỉ lệ ảnh sản phẩm** (mặc định **2:3**, cắt giữa ảnh; `original` = giữ tỉ lệ gốc), chất lượng, nút xoá cache ảnh. Lưu ở Settings `core`/`media.*` (mặc định theo `vanishop.media.cache.*`).
+- `MediaUrls::url/urls/image` nhận `int|string|null $size` (số = bề rộng, chuỗi = tên kích thước) + `?string $group` (`product`); thêm `MediaUrls::srcset()`, `MediaUrls::productRatio()`. Helper `vani_image($id, int|string $size, ?string $group)`, `vani_srcset($id, ?$group)`, `vani_product_ratio()`.
+- `FieldDefinition::media()` / kiểu `media` (id ảnh) cho phần form plugin, khối trang chủ; `SettingDefinition` kiểu `media`. Admin render bằng component dùng chung `@admin/Components/Media/MediaField.vue` (v-model id hoặc danh sách id; xem trước qua `GET /{admin}/media/items?ids[]=`). Khối trang chủ có trường `media` được khai báo "đang dùng" (`storefront.home`).
+- Khối `hero` có trường `image` (ảnh Thư viện ảnh, srcset); `vani.storefront-extras` trình chiếu/lưới banner có `slide_N_media`/`cell_N_media` (giữ trường URL cũ).
+
+### Đổi
+- URL ảnh thu nhỏ `…/{checksum}-{kích thước}.{ext}` với kích thước `w400` | `w400h600` | `w400h600c` (trước chỉ `-w{width}`); bản `-w{width}` cũ vẫn hợp lệ khi bề rộng còn trong cấu hình. `ImageCache::render/path` nhận khoá kích thước (chuỗi).
+- Ảnh sản phẩm (thẻ, PDP, giỏ, màu) dùng nhóm `product`: cắt theo tỉ lệ cấu hình, `srcset` không kèm ảnh gốc khác tỉ lệ. PDP: ảnh chính có `srcset` + `fetchpriority="high"`, ảnh nhỏ dùng bản 160px (`images[].srcset`, `images[].thumb_url` trong Storefront API). Theme dựng khung theo `vani_product_ratio()` thay `aspect-[3/4]` cố định.
+- `ImageCache`: đọc ảnh gốc thẳng từ file khi disk local; JPEG progressive; `--warm` chỉ tạo bản cắt sản phẩm cho ảnh trong gallery sản phẩm. `MediaUrls` scoped theo request (ghi nhớ ảnh đã tra). Cấu hình "Ảnh thay thế" thành ô chọn ảnh.
+
 ## 0.3.86 — 2026-11-05
 
 Không đổi API plugin.

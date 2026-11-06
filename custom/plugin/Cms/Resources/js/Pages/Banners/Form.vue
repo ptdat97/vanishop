@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
-import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { useStoreLocales } from '@admin/locales';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import type { MediaItem } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 type Texts = { title: string; markdown: string; button_text: string };
 type Image = { id: number; url: string | null };
@@ -31,9 +30,9 @@ const props = defineProps<{
 }>();
 
 const { locales, defaultLocale } = useStoreLocales();
-const images = ref<{ desktop: Image | null; mobile: Image | null }>({ desktop: props.banner?.desktop ?? null, mobile: props.banner?.mobile ?? null });
-const picking = ref<'desktop' | 'mobile' | null>(null);
 const form = useForm({
+    desktop_media_id: props.banner?.desktop?.id ?? (null as number | null),
+    mobile_media_id: props.banner?.mobile?.id ?? (null as number | null),
     category_id: props.banner?.category_id ?? (null as number | null),
     content: Object.fromEntries(locales.map((locale) => [locale.code, { title: '', markdown: '', button_text: '', ...(props.banner?.content[locale.code] ?? {}) }])) as Record<string, Texts>,
     button_url: props.banner?.button_url ?? '',
@@ -41,13 +40,7 @@ const form = useForm({
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
-function pick(items: MediaItem[]): void {
-    if (picking.value && items[0]) images.value[picking.value] = { id: items[0].id, url: items[0].thumb_url };
-    picking.value = null;
-}
-
 function save(): void {
-    form.transform((data) => ({ ...data, desktop_media_id: images.value.desktop?.id ?? null, mobile_media_id: images.value.mobile?.id ?? null }));
     if (props.banner) {
         form.put(props.urls.save, { preserveScroll: true });
     } else {
@@ -99,17 +92,17 @@ async function destroy(): Promise<void> {
                     <button v-if="banner" type="button" :class="dangerButton" @click="destroy">Xoá</button>
                 </div>
             </section>
-            <section v-for="kind in (['desktop', 'mobile'] as const)" :key="kind" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="text-sm font-medium">{{ kind === 'desktop' ? 'Ảnh desktop' : 'Ảnh mobile (tuỳ chọn)' }}</h2>
-                <p v-if="kind === 'desktop' && errors.desktop_media_id" class="text-sm text-red-600">{{ errors.desktop_media_id }}</p>
-                <img v-if="images[kind]?.url" :src="images[kind]?.url ?? ''" alt="" class="w-full rounded" />
-                <p v-else class="text-xs text-slate-500">{{ kind === 'desktop' ? 'Gợi ý 1600×480.' : 'Không chọn: dùng ảnh desktop.' }}</p>
-                <div v-if="can.manage" class="flex gap-2">
-                    <button type="button" :class="secondaryButton" @click="picking = kind">{{ images[kind] ? 'Đổi ảnh' : 'Chọn ảnh' }}</button>
-                    <button v-if="images[kind]" type="button" :class="secondaryButton" @click="images[kind] = null">Bỏ</button>
-                </div>
+            <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                <h2 class="text-sm font-medium">Ảnh desktop</h2>
+                <p v-if="errors.desktop_media_id" class="text-sm text-red-600">{{ errors.desktop_media_id }}</p>
+                <MediaField v-model="form.desktop_media_id" label="ảnh desktop" :disabled="!can.manage" />
+                <p class="text-xs text-slate-500">Gợi ý 1600×480.</p>
+            </section>
+            <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                <h2 class="text-sm font-medium">Ảnh mobile (tuỳ chọn)</h2>
+                <MediaField v-model="form.mobile_media_id" label="ảnh mobile" :disabled="!can.manage" />
+                <p class="text-xs text-slate-500">Không chọn: dùng ảnh desktop.</p>
             </section>
         </aside>
     </form>
-    <MediaPicker :open="picking !== null" :title="picking === 'mobile' ? 'Chọn ảnh mobile' : 'Chọn ảnh desktop'" @update:open="(value) => !value && (picking = null)" @select="pick" />
 </template>
