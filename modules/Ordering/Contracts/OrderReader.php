@@ -44,6 +44,14 @@ interface OrderReader
     public function customerStats(int $customerId): array;
 
     /**
+     * Lịch sử nhận hàng theo số điện thoại (cả khách vãng lai, 0.3.96) — đánh giá rủi ro đơn COD: đơn đã giao hết, đơn bị
+     * hoàn về, đơn đã huỷ, tổng số đơn. `$exceptOrderId`: bỏ đơn đang xét. SĐT không hợp lệ → toàn 0.
+     *
+     * @return array{orders: int, delivered: int, returned_to_sender: int, cancelled: int}
+     */
+    public function deliveryHistory(string $phone, ?int $exceptOrderId = null): array;
+
+    /**
      * Các lần huỷ một phần của đơn (đọc, 0.3.21): theo thứ tự thời gian.
      *
      * `amount` = tổng đơn giảm ròng (đã trừ `promotion_clawback` — khuyến mãi thu hồi khi khách bớt hàng, 0.3.31).

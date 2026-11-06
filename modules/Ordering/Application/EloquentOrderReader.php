@@ -13,6 +13,7 @@ use Modules\Ordering\Contracts\Data\PriceBreakdown;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
+use Modules\Shared\Support\Phones;
 
 final class EloquentOrderReader implements OrderReader
 {
@@ -76,6 +77,25 @@ final class EloquentOrderReader implements OrderReader
             'orders_count' => (int) ($row->orders_count ?? 0), 'total_spent' => (int) ($row->total_spent ?? 0),
             'first_order_at' => ($row->first_order_at ?? null) === null ? null : (string) $row->first_order_at,
             'last_order_at' => ($row->last_order_at ?? null) === null ? null : (string) $row->last_order_at,
+        ];
+    }
+
+    public function deliveryHistory(string $phone, ?int $exceptOrderId = null): array
+    {
+        $parsed = Phones::parse($phone);
+        if ($parsed === null) {
+            return ['orders' => 0, 'delivered' => 0, 'returned_to_sender' => 0, 'cancelled' => 0];
+        }
+        $row = Order::query()
+            ->where('customer_phone', $parsed->e164)
+            ->when($exceptOrderId !== null, fn ($query) => $query->whereKeyNot($exceptOrderId))
+            ->selectRaw("count(*) as orders, sum(case when fulfillment_status = 'delivered' then 1 else 0 end) as delivered, sum(case when fulfillment_status = 'returned_to_sender' then 1 else 0 end) as returned, sum(case when order_status = 'cancelled' then 1 else 0 end) as cancelled")
+            ->toBase()
+            ->first();
+
+        return [
+            'orders' => (int) ($row->orders ?? 0), 'delivered' => (int) ($row->delivered ?? 0),
+            'returned_to_sender' => (int) ($row->returned ?? 0), 'cancelled' => (int) ($row->cancelled ?? 0),
         ];
     }
 

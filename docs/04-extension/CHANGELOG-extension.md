@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.96 — 2026-11-06
+
+Vận hành đơn (đợt 1): tự xác nhận COD theo cấu hình, hàng đợi việc ở danh sách đơn, thao tác ngay trên trang đơn.
+
+### Thêm
+- `OrderReader::deliveryHistory(string $phone, ?int $exceptOrderId = null)` → `{orders, delivered, returned_to_sender, cancelled}` theo số điện thoại (cả khách vãng lai) — đánh giá rủi ro đơn COD.
+- `vani.cod` 1.1.0 (cần Core `^0.3.96`): cấu hình `auto_confirm_mode` = `all` | `trusted` (SĐT đã có ≥ `trusted_min_delivered` đơn giao thành công, chưa từng bị hoàn về) | `off`; chưa chọn → theo công tắc cũ `auto_confirm` / `VANI_COD_AUTO_CONFIRM`. Lý do trong lịch sử đơn: `cod_auto_confirm`, `cod_auto_confirm_trusted`.
+
 ## 0.3.95 — 2026-11-06
 
 Giỏ còn hàng mà khách đã bỏ chọn hết vẫn thanh toán được (giỏ mini và trang giỏ).

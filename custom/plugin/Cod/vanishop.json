@@ -4,12 +4,12 @@
         "vi": "Thanh toán khi nhận hàng (COD)",
         "en": "Cash on delivery (COD)"
     },
-    "version": "1.0.0",
+    "version": "1.1.0",
     "kind": "payment_gateway",
     "provider": "Plugin\\Cod\\CodServiceProvider",
     "bundled": true,
     "requires": {
-        "vanishop": "^0.3",
+        "vanishop": "^0.3.96",
         "plugins": {}
     },
     "conflicts": [],
