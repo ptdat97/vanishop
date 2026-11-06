@@ -12,6 +12,7 @@ use Modules\Catalog\Application\Search\FacetSettings;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
+use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\AttributeValue;
@@ -272,7 +273,8 @@ final class StorefrontCatalog implements CatalogReader
             'slug' => $brand->slug,
             'name' => $brand->name,
             'description' => $brand->description,
-            'logo_url' => $brand->logo_path === null ? null : Storage::disk((string) config('vanishop.media.disk', 'public'))->url($brand->logo_path),
+            // Logo từ Thư viện ảnh (bản thu nhỏ 400px); `logo_path` là file cũ (trước 0.3.90).
+            'logo_url' => $brand->logo_media_id !== null ? app(MediaUrls::class)->url($brand->logo_media_id, 400) : ($brand->logo_path === null ? null : Storage::disk((string) config('vanishop.media.disk', 'public'))->url($brand->logo_path)),
         ];
     }
 

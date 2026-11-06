@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.90 — 2026-11-06
+
+Ảnh chỉ chọn từ Thư viện ảnh (không còn nhập URL ảnh).
+
+### Đổi
+- Khối trang chủ: `hero` bỏ `image_url` (chỉ `image`); `vani.storefront-extras` 1.1.0 bỏ `slide_N_image`, `cell_N_image`, `poster_url` → `slide_N_media`, `cell_N_media`, `poster` (ảnh Thư viện ảnh, srcset). Cấu hình cũ còn URL vẫn hiển thị (chỉ đọc).
+- Migration `home_block_images_to_media`: URL trỏ về ảnh của Thư viện ảnh (bản thu nhỏ `/cache/media/…/{checksum}-…` hoặc file gốc) → id ảnh + khai báo đang dùng (`storefront.home`); URL ngoài giữ nguyên.
+- Thương hiệu: cột `brands.logo_media_id`, Admin → Catalog → Thương hiệu có ô chọn logo (khai báo đang dùng `brand`/`logo`); `logo_url` của Storefront/Catalog dùng bản thu nhỏ 400px, `logo_path` cũ chỉ còn đọc.
+
 ## 0.3.89 — 2026-11-06
 
 Chỉ thêm.

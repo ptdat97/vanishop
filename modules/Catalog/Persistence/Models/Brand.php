@@ -18,6 +18,7 @@ use Modules\Catalog\Persistence\Database\Factories\BrandFactory;
  * @property string $name
  * @property string|null $description
  * @property string|null $logo_path
+ * @property int|null $logo_media_id
  * @property string|null $meta_title
  * @property string|null $meta_description
  * @property string $status
@@ -33,7 +34,7 @@ final class Brand extends Model
 
     public const HIDDEN = 'hidden';
 
-    protected $fillable = ['code', 'slug', 'name', 'description', 'logo_path', 'meta_title', 'meta_description', 'status', 'position', 'lock_version'];
+    protected $fillable = ['code', 'slug', 'name', 'description', 'logo_path', 'logo_media_id', 'meta_title', 'meta_description', 'status', 'position', 'lock_version'];
 
     protected function casts(): array
     {

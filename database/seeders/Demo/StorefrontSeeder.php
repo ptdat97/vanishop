@@ -46,24 +46,25 @@ final class StorefrontSeeder extends Seeder
     private function homeBlocks(PageBlocks $blocks): array
     {
         $available = $blocks->types();
-        $images = array_map(fn (int $id): string => vani_image($id, 1600), DemoMedia::covers(6));
-        $image = fn (int $index): string => $images[$index] ?? '';
+        // Ảnh từ Thư viện ảnh (id) — khối tự có bản vừa màn hình.
+        $images = DemoMedia::covers(6);
+        $image = fn (int $index): ?int => $images[$index] ?? null;
 
         $candidates = [
             ['extras_slideshow', ['interval' => 5,
-                'slide_1_image' => $image(0), 'slide_1_title' => 'Thu Đông 2026', 'slide_1_text' => 'Len, dạ và lụa cho mùa se lạnh', 'slide_1_link' => '/tim-kiem?collection=thu-dong-2026', 'slide_1_label' => 'Khám phá',
-                'slide_2_image' => $image(1), 'slide_2_title' => 'Đầm cho mọi dịp', 'slide_2_text' => 'Giảm đến 20% nhiều mẫu', 'slide_2_link' => '/danh-muc/dam', 'slide_2_label' => 'Mua ngay',
-                'slide_3_image' => $image(2), 'slide_3_title' => 'Công sở thanh lịch', 'slide_3_text' => 'Chỉn chu mà vẫn thoải mái', 'slide_3_link' => '/tim-kiem?collection=cong-so-thanh-lich', 'slide_3_label' => 'Xem bộ sưu tập']],
-            ['hero', ['title' => 'Thu Đông 2026', 'subtitle' => 'Len, dạ và lụa cho mùa se lạnh.', 'image_url' => $image(0), 'link_label' => 'Khám phá', 'link_url' => '/danh-muc/hang-moi-ve']],
+                'slide_1_media' => $image(0), 'slide_1_title' => 'Thu Đông 2026', 'slide_1_text' => 'Len, dạ và lụa cho mùa se lạnh', 'slide_1_link' => '/tim-kiem?collection=thu-dong-2026', 'slide_1_label' => 'Khám phá',
+                'slide_2_media' => $image(1), 'slide_2_title' => 'Đầm cho mọi dịp', 'slide_2_text' => 'Giảm đến 20% nhiều mẫu', 'slide_2_link' => '/danh-muc/dam', 'slide_2_label' => 'Mua ngay',
+                'slide_3_media' => $image(2), 'slide_3_title' => 'Công sở thanh lịch', 'slide_3_text' => 'Chỉn chu mà vẫn thoải mái', 'slide_3_link' => '/tim-kiem?collection=cong-so-thanh-lich', 'slide_3_label' => 'Xem bộ sưu tập']],
+            ['hero', ['title' => 'Thu Đông 2026', 'subtitle' => 'Len, dạ và lụa cho mùa se lạnh.', 'image' => $image(0), 'link_label' => 'Khám phá', 'link_url' => '/danh-muc/hang-moi-ve']],
             ['extras_features', ['item_1_icon' => 'truck', 'item_1_title' => 'Giao nhanh 2h', 'item_1_text' => 'Nội thành TP. HCM',
                 'item_2_icon' => 'return', 'item_2_title' => 'Đổi trả 7 ngày', 'item_2_text' => 'Đổi size miễn phí',
                 'item_3_icon' => 'shield', 'item_3_title' => 'Thanh toán an toàn', 'item_3_text' => 'COD, chuyển khoản, VNPay',
                 'item_4_icon' => 'support', 'item_4_title' => 'Tư vấn chọn size', 'item_4_text' => 'Hotline 1900 6868']],
             ['product_grid', ['title' => 'Hàng mới về', 'source' => 'category', 'slug' => CatalogSeeder::NEW_ARRIVALS, 'limit' => 8]],
             ['extras_banner_grid', ['layout' => '3',
-                'cell_1_image' => $image(3), 'cell_1_title' => 'Đầm', 'cell_1_link' => '/danh-muc/dam',
-                'cell_2_image' => $image(4), 'cell_2_title' => 'Áo', 'cell_2_link' => '/danh-muc/ao',
-                'cell_3_image' => $image(5), 'cell_3_title' => 'Chân váy', 'cell_3_link' => '/danh-muc/chan-vay']],
+                'cell_1_media' => $image(3), 'cell_1_title' => 'Đầm', 'cell_1_link' => '/danh-muc/dam',
+                'cell_2_media' => $image(4), 'cell_2_title' => 'Áo', 'cell_2_link' => '/danh-muc/ao',
+                'cell_3_media' => $image(5), 'cell_3_title' => 'Chân váy', 'cell_3_link' => '/danh-muc/chan-vay']],
             ['extras_product_tabs', ['title' => 'Gợi ý cho bạn', 'limit' => 8,
                 'tab_1_label' => 'Đầm', 'tab_1_source' => 'category', 'tab_1_value' => 'dam',
                 'tab_2_label' => 'Áo', 'tab_2_source' => 'category', 'tab_2_value' => 'ao',

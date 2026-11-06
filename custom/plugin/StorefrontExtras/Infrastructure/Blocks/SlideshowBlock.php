@@ -30,8 +30,7 @@ final class SlideshowBlock implements StorefrontBlock
     {
         $fields = [FieldDefinition::int('interval', 'Tự chuyển sau (giây)', help: '0 = không tự chuyển. Mặc định 6.')];
         foreach (range(1, self::SLIDES) as $i) {
-            $fields[] = FieldDefinition::media("slide_{$i}_media", "Slide {$i}: ảnh", help: 'Từ Thư viện ảnh (tự có bản vừa màn hình); trống thì dùng ảnh (URL).');
-            $fields[] = FieldDefinition::string("slide_{$i}_image", "Slide {$i}: ảnh (URL)", max: 500);
+            $fields[] = FieldDefinition::media("slide_{$i}_media", "Slide {$i}: ảnh", help: 'Từ Thư viện ảnh (tự có bản vừa màn hình).');
             $fields[] = FieldDefinition::string("slide_{$i}_title", "Slide {$i}: tiêu đề", max: 120);
             $fields[] = FieldDefinition::string("slide_{$i}_text", "Slide {$i}: mô tả", max: 200);
             $fields[] = FieldDefinition::string("slide_{$i}_link", "Slide {$i}: đường dẫn", max: 300);

@@ -2,6 +2,7 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
@@ -20,6 +21,7 @@ interface BrandRow {
     slug: string;
     name: string;
     description: string | null;
+    logo_media_id: number | null;
     status: 'active' | 'hidden';
     position: number;
     styles_count: number;
@@ -40,13 +42,13 @@ const columns = [
 
 const sectionsFor = (id: number | null): ExtensionSection[] => props.extensionSections[id === null ? 'new' : String(id)] ?? [];
 const sections = computed(() => sectionsFor(editingId.value));
-const empty = () => ({ code: '', slug: '', name: '', description: '' as string | null, status: 'active' as 'active' | 'hidden', position: 0, extensions: initialExtensionValues(sectionsFor(null)) });
+const empty = () => ({ code: '', slug: '', name: '', description: '' as string | null, logo_media_id: null as number | null, status: 'active' as 'active' | 'hidden', position: 0, extensions: initialExtensionValues(sectionsFor(null)) });
 const form = useForm(empty());
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function edit(brand: BrandRow): void {
     editingId.value = brand.id;
-    form.defaults({ code: brand.code, slug: brand.slug, name: brand.name, description: brand.description, status: brand.status, position: brand.position, extensions: initialExtensionValues(sectionsFor(brand.id)) });
+    form.defaults({ code: brand.code, slug: brand.slug, name: brand.name, description: brand.description, logo_media_id: brand.logo_media_id, status: brand.status, position: brand.position, extensions: initialExtensionValues(sectionsFor(brand.id)) });
     form.reset();
 }
 
@@ -98,6 +100,7 @@ async function destroy(brand: BrandRow): Promise<void> {
             <FormField label="Mã" hint="Chữ in hoa, ví dụ LM" :error="errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
             <FormField label="Slug" hint="Dùng cho URL /thuong-hieu/{slug}" :error="errors.slug"><input v-model="form.slug" :class="inputClass" /></FormField>
             <FormField label="Mô tả" :error="errors.description"><textarea v-model="form.description" rows="3" :class="inputClass" /></FormField>
+            <FormField label="Logo" hint="Chọn từ Thư viện ảnh; hiện ở trang thương hiệu và khối Thương hiệu." :error="errors.logo_media_id"><MediaField v-model="form.logo_media_id" label="logo" /></FormField>
             <FormField label="Trạng thái" hint="Ẩn: ẩn trang thương hiệu, sản phẩm vẫn bán." :error="errors.status">
                 <Select v-model="form.status" :options="labelOptions(labels.visibility) as Array<{ value: 'active' | 'hidden'; label: string }>" />
             </FormField>

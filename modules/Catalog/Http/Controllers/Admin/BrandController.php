@@ -34,6 +34,7 @@ final class BrandController
                 'slug' => $brand->slug,
                 'name' => $brand->name,
                 'description' => $brand->description,
+                'logo_media_id' => $brand->logo_media_id,
                 'status' => $brand->status,
                 'position' => $brand->position,
                 'styles_count' => (int) $brand->getAttribute('styles_count'),

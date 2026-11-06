@@ -1,11 +1,13 @@
 <?php
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Application\Media\EloquentMediaUrls;
 use Modules\Catalog\Application\Media\ImageCache;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Media;
@@ -150,4 +152,19 @@ it('kiểu trường media: FieldDefinition nhận id ảnh; cấu hình "Ảnh 
     $field = FieldDefinition::media('cover', 'Ảnh bìa', required: true);
     expect($field->rules())->toBe(['required', 'integer', 'min:1'])
         ->and(collect(app(Settings::class)->definitions('core'))->firstWhere('key', EloquentMediaUrls::PLACEHOLDER_SETTING)?->type)->toBe('media');
+});
+
+it('logo thương hiệu chọn từ Thư viện ảnh: khai báo đang dùng, storefront dùng bản thu nhỏ; xoá thương hiệu bỏ khai báo', function () {
+    [$logo] = uploadTo('', [UploadedFile::fake()->image('logo.png', 900, 300)]);
+    $brand = T::seed(fn () => Brand::factory()->create(['slug' => 'lumiere', 'code' => 'LM', 'status' => 'active']));
+    $payload = ['code' => 'LM', 'slug' => 'lumiere', 'name' => 'Lumière', 'description' => null, 'status' => 'active', 'position' => 0];
+
+    $this->put("/admin/catalog/brands/{$brand->id}", [...$payload, 'logo_media_id' => 999999])->assertSessionHasErrors('logo_media_id');
+    $this->put("/admin/catalog/brands/{$brand->id}", [...$payload, 'logo_media_id' => $logo['id']])->assertSessionHasNoErrors();
+
+    expect(DB::table('mediables')->where(['media_id' => $logo['id'], 'mediable_type' => 'brand', 'role' => 'logo'])->exists())->toBeTrue()
+        ->and($this->getJson('/api/storefront/v1/brands/lumiere')->assertOk()->json('data.logo_url'))->toContain('-w400.');
+
+    $this->delete("/admin/catalog/brands/{$brand->id}")->assertRedirect();
+    expect(DB::table('mediables')->where('media_id', $logo['id'])->exists())->toBeFalse();
 });

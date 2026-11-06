@@ -62,7 +62,8 @@ final class Products
     }
 
     /**
-     * Ảnh của ô/slide: ưu tiên ảnh Thư viện ảnh (id, có srcset — Core 0.3.87), không có thì URL nhập tay.
+     * Ảnh của ô/slide: ảnh Thư viện ảnh (id, có srcset — Core 0.3.87). `$url` = URL nhập tay của cấu hình cũ (trước
+     * 1.1.0, chưa chuyển được sang Thư viện ảnh) — chỉ còn đọc.
      *
      * @return array{string, string} [src, srcset]
      */

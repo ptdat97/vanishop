@@ -7,6 +7,7 @@ namespace Modules\Catalog\Application\Taxonomy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Application\StaleRecord;
+use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -97,6 +98,10 @@ final class TaxonomyService
         $brand ??= new Brand;
         $isNew = ! $brand->exists;
         $brand->fill($data)->save();
+        // Logo từ Thư viện ảnh: khai báo đang dùng để thư viện không cho xoá.
+        if (array_key_exists('logo_media_id', $data)) {
+            app(MediaDirectory::class)->syncUsages('brand', $brand->id, 'logo', $brand->logo_media_id === null ? [] : [$brand->logo_media_id]);
+        }
         $this->audit->record($isNew ? 'catalog.brand.created' : 'catalog.brand.updated', 'brand', $brand->id, ['code' => $brand->code]);
 
         return $brand;
@@ -112,6 +117,7 @@ final class TaxonomyService
         }
 
         $brand->delete();
+        app(MediaDirectory::class)->releaseUsages('brand', $brand->id);
         $this->audit->record('catalog.brand.deleted', 'brand', $brand->id, ['code' => $brand->code]);
     }
 

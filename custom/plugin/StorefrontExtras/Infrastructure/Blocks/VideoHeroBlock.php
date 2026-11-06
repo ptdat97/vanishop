@@ -29,7 +29,7 @@ final class VideoHeroBlock implements StorefrontBlock
         return [
             FieldDefinition::string('video_url', 'URL video (máy tính)', required: true, help: 'https, đuôi .mp4 hoặc .webm (lưu trên S3/CDN của cửa hàng).', max: 500),
             FieldDefinition::string('video_mobile_url', 'URL video (di động)', help: 'Để trống: dùng video máy tính.', max: 500),
-            FieldDefinition::string('poster_url', 'Ảnh poster (URL)', help: 'Hiện khi video chưa phát; nên có để trang tải nhanh.', max: 500),
+            FieldDefinition::media('poster', 'Ảnh poster', help: 'Từ Thư viện ảnh — hiện khi video chưa phát; nên có để trang tải nhanh.'),
             FieldDefinition::string('title', 'Tiêu đề phủ', max: 120),
             FieldDefinition::text('text', 'Nội dung phủ', max: 300),
             FieldDefinition::string('cta_label', 'Chữ trên nút', max: 40),
@@ -46,7 +46,7 @@ final class VideoHeroBlock implements StorefrontBlock
         return [
             'video' => $video,
             'videoMobile' => self::videoUrl($config['video_mobile_url'] ?? null),
-            'poster' => Products::safeUrl($config['poster_url'] ?? ''),
+            'poster' => Products::image($config['poster'] ?? null, $config['poster_url'] ?? '', 1600)[0],
             'title' => (string) ($config['title'] ?? ''),
             'text' => (string) ($config['text'] ?? ''),
             'ctaLabel' => (string) ($config['cta_label'] ?? ''),

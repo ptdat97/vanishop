@@ -29,8 +29,7 @@ final class BannerGridBlock implements StorefrontBlock
     {
         $fields = [FieldDefinition::select('layout', 'Bố cục', ['1' => '1 ô', '2' => '2 ô ngang', '3' => '3 ô (1 lớn + 2 nhỏ)', '4' => '4 ô'], required: true)];
         foreach (range(1, self::CELLS) as $i) {
-            $fields[] = FieldDefinition::media("cell_{$i}_media", "Ô {$i}: ảnh", help: 'Từ Thư viện ảnh; trống thì dùng ảnh (URL).');
-            $fields[] = FieldDefinition::string("cell_{$i}_image", "Ô {$i}: ảnh (URL)", max: 500);
+            $fields[] = FieldDefinition::media("cell_{$i}_media", "Ô {$i}: ảnh", help: 'Từ Thư viện ảnh (tự có bản vừa màn hình).');
             $fields[] = FieldDefinition::string("cell_{$i}_title", "Ô {$i}: tiêu đề", max: 120);
             $fields[] = FieldDefinition::string("cell_{$i}_link", "Ô {$i}: đường dẫn", max: 300);
         }
