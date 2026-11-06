@@ -11,6 +11,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|
 | `PaymentGateway` | `vani.payment.gateways` | Payment | `cod`, `manual_bank_transfer`. **Implemented** + bộ contract test `PaymentGatewayContract`. Interface tuỳ chọn: `CapturesLater` (0.3.5), `CallbackResponder` (0.3.15: phản hồi IPN theo `CallbackOutcome`, tham chiếu `vani.vnpay`) | [payment](../10-payment/payment.md) |
+| `OrderStatusAction` | `vani.ordering.status_actions` | Ordering | — (plugin). **Implemented** (0.3.98): thao tác đổi trạng thái do plugin thanh toán/vận chuyển cắm vào thẻ "Trạng thái đơn" trên trang đơn Admin — `describe(OrderData)` → `OrderStatusActionView` (nhãn, quyền, ô nhập `FieldDefinition`, xác nhận, `primary`) hoặc null; `perform(OrderData, input)` đổi trạng thái qua contract Core (R30). Core hiện nút, kiểm quyền, validate, ghi audit `order.status_action`; lỗi nghiệp vụ hiện cho nhân viên, lỗi khác báo chung | [order](../09-order/order.md) |
 | `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `manual`. **Implemented** + bộ contract test `ShippingCarrierContract` (phí ở checkout: `ShippingRateProvider`) | [fulfillment](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `reserved_locations` (**Implemented**; đề xuất phải khớp hàng đang giữ) | [fulfillment](../09-order/fulfillment.md) |

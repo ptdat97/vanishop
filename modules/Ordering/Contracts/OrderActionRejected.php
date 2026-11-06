@@ -28,6 +28,21 @@ final class OrderActionRejected extends BusinessRuleViolation
         return new self('order.address_invalid', 422, __('ordering::messages.address_invalid'));
     }
 
+    public static function cannotComplete(): self
+    {
+        return new self('order.cannot_complete', 409, __('ordering::messages.cannot_complete'));
+    }
+
+    public static function statusActionUnavailable(): self
+    {
+        return new self('order.status_action_unavailable', 409, __('ordering::messages.status_action_unavailable'));
+    }
+
+    public static function statusActionFailed(): self
+    {
+        return new self('order.status_action_failed', 500, __('ordering::messages.status_action_failed'));
+    }
+
     public static function cannotCancelLines(): self
     {
         return new self('order.cannot_cancel_lines', 409, __('ordering::messages.cannot_cancel_lines'));

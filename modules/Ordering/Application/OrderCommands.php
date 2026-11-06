@@ -45,6 +45,21 @@ final class OrderCommands
         $this->audit->record('order.confirmed', 'order', $orderId, ['reason' => $reason]);
     }
 
+    /**
+     * Nhân viên hoàn tất đơn (0.3.98) — xem OrderPolicy::staffCanComplete.
+     */
+    public function complete(int $orderId, string $reason): void
+    {
+        DB::transaction(function () use ($orderId, $reason): void {
+            $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
+            if (! OrderPolicy::staffCanComplete($order->order_status, (string) $order->fulfillment_status, (string) $order->return_status)) {
+                throw OrderActionRejected::cannotComplete();
+            }
+            $this->transitions->transition($order->id, OrderStatus::Completed, 'staff_completed: '.$reason, 'staff');
+        });
+        $this->audit->record('order.completed', 'order', $orderId, ['reason' => $reason]);
+    }
+
     public function cancel(int $orderId, string $reason, string $source): void
     {
         DB::transaction(function () use ($orderId, $reason, $source): void {

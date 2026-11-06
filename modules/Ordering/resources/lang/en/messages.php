@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'cannot_complete' => 'Only fully delivered orders without open returns can be completed.',
+    'completed' => 'Order completed.',
+    'status_action_unavailable' => 'This action no longer applies to the order (its status just changed). Reload the page.',
+    'status_action_failed' => 'The plugin action failed. Try again or contact an administrator.',
+    'status_action_done' => 'Done: :label.',
     'bulk_confirmed' => 'Confirmed :count orders; skipped :skipped no longer awaiting confirmation.',
     'transition_invalid' => 'The order cannot move from :from to :to.',
     'cannot_cancel' => 'The order is already being processed or shipped and cannot be cancelled.',

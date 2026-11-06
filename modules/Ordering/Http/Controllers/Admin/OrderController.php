@@ -8,19 +8,26 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Extension\Contracts\Data\FieldDefinition;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
+use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\Data\OrderStatus;
+use Modules\Ordering\Contracts\Data\OrderStatusActionView;
+use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderStatusAction;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Domain\OrderStateMachine;
@@ -30,9 +37,12 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
+use Throwable;
 
 final class OrderController
 {
+    public function __construct(private readonly Extensions $extensions) {}
+
     public function home(): RedirectResponse
     {
         Gate::authorize('orders.view');
@@ -115,6 +125,8 @@ final class OrderController
             'order' => (array) $detail,
             'labels' => __('ordering::labels'),
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
+            // Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và của plugin (OrderStatusAction).
+            'statusCard' => $this->statusCard($order, $reader),
             // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
             'stage' => (string) Order::query()->whereKey($order->id)->selectRaw(OrderStage::sql().' as stage')->value('stage'),
             'timeline' => $this->timeline($detail),
@@ -136,6 +148,111 @@ final class OrderController
                 'wards_url' => url('/api/storefront/v1/address/provinces'),
             ],
         ]);
+    }
+
+    /**
+     * Thẻ "Trạng thái đơn": trạng thái đơn / thanh toán / giao hàng / đổi trả (mã + nhãn) và các nút đổi trạng thái — của Core
+     * (xác nhận, hoàn tất, huỷ) và của plugin qua extension point `OrderStatusAction` (thanh toán, vận chuyển…).
+     *
+     * @return array{rows: list<array{key: string, label: string, code: string, text: string}>, actions: list<array<string, mixed>>}
+     */
+    private function statusCard(Order $order, OrderReader $reader): array
+    {
+        $url = route('admin.orders.orders.show', $order->id);
+        $actions = [];
+        if (Gate::allows('orders.manage') && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
+            $actions[] = ['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => "{$url}/confirm", 'primary' => true, 'tone' => 'primary'];
+        }
+        if (Gate::allows('orders.manage') && OrderPolicy::staffCanComplete($order->order_status, (string) $order->fulfillment_status, (string) $order->return_status)) {
+            $actions[] = ['key' => 'complete', 'label' => 'Hoàn tất đơn', 'url' => "{$url}/complete", 'tone' => 'secondary',
+                'fields' => [['key' => 'reason', 'label' => 'Lý do hoàn tất sớm (không chờ hết hạn đổi trả)', 'required' => true]]];
+        }
+
+        $data = $reader->find($order->id);
+        foreach ($data === null ? [] : $this->statusActions() as $code => $implementation) {
+            $view = $this->extensions->call($implementation, fn (): ?OrderStatusActionView => $implementation->describe($data), null, 'order_status_action.describe');
+            if (! $view instanceof OrderStatusActionView || ! Gate::allows($view->permission)) {
+                continue;
+            }
+            $actions[] = [
+                'key' => "ext-{$code}", 'label' => $view->label, 'url' => route('admin.orders.orders.status-action', [$order->id, $code]),
+                'fields' => array_map(fn (FieldDefinition $field): array => ['key' => $field->key, 'label' => $field->label, 'required' => $field->required, 'placeholder' => $field->help ?? ''], $view->fields),
+                'confirm' => $view->confirm, 'tone' => $view->tone, 'primary' => $view->primary,
+            ];
+        }
+
+        if (Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status)) {
+            $actions[] = ['key' => 'cancel', 'label' => 'Huỷ đơn', 'url' => "{$url}/cancel", 'tone' => 'danger',
+                'fields' => [['key' => 'reason', 'label' => 'Lý do huỷ đơn (hàng đang giữ được trả lại kho; đơn đã thanh toán được hoàn tiền)', 'required' => true]]];
+        }
+
+        $row = function (string $key, string $label, string $code, string $labels): array {
+            $text = __("ordering::labels.{$labels}.{$code}");
+
+            return ['key' => $key, 'label' => $label, 'code' => $code, 'text' => $text === "ordering::labels.{$labels}.{$code}" ? $code : $text];
+        };
+
+        return [
+            'rows' => [
+                $row('order', 'Đơn hàng', $order->order_status->value, 'order_status'),
+                $row('payment', 'Thanh toán', (string) $order->payment_status, 'payment_status'),
+                $row('fulfillment', 'Giao hàng', (string) $order->fulfillment_status, 'fulfillment_status'),
+                $row('return', 'Đổi/trả', (string) $order->return_status, 'return_status'),
+            ],
+            'actions' => $actions,
+        ];
+    }
+
+    /**
+     * @return array<string, OrderStatusAction>
+     */
+    private function statusActions(): array
+    {
+        return $this->extensions->implementations(OrderStatusAction::TAG, OrderStatusAction::class);
+    }
+
+    /**
+     * Hoàn tất đơn sớm (đã giao hết, không có đổi/trả đang mở) — 0.3.98.
+     */
+    public function complete(Order $order, Request $request, OrderCommands $commands): RedirectResponse
+    {
+        Gate::authorize('orders.manage');
+        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        $commands->complete($order->id, $data['reason']);
+
+        return back()->with('success', __('ordering::messages.completed'));
+    }
+
+    /**
+     * Chạy thao tác đổi trạng thái của plugin (OrderStatusAction): còn áp dụng cho đơn → quyền → validate trường → perform
+     * → audit. Lỗi nghiệp vụ hiện cho nhân viên; lỗi khác ghi log, báo chung.
+     */
+    public function statusAction(Order $order, string $code, Request $request, OrderReader $reader, AuditLogger $audit): RedirectResponse
+    {
+        $implementation = $this->statusActions()[$code] ?? abort(404);
+        $data = $reader->find($order->id) ?? abort(404);
+        $view = $this->extensions->call($implementation, fn (): ?OrderStatusActionView => $implementation->describe($data), null, 'order_status_action.describe');
+        if (! $view instanceof OrderStatusActionView) {
+            throw OrderActionRejected::statusActionUnavailable();
+        }
+        Gate::authorize($view->permission);
+        $input = $request->validate(array_combine(
+            array_map(fn (FieldDefinition $field): string => $field->key, $view->fields),
+            array_map(fn (FieldDefinition $field): array => $field->rules(), $view->fields),
+        ) ?: []);
+
+        try {
+            $message = $implementation->perform($data, $input);
+        } catch (BusinessRuleViolation $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            Log::error('Thao tác trạng thái đơn của plugin lỗi.', ['code' => $code, 'order_id' => $order->id, 'exception' => $exception]);
+
+            throw OrderActionRejected::statusActionFailed();
+        }
+        $audit->record('order.status_action', 'order', $order->id, ['code' => $code, 'input' => $input]);
+
+        return back()->with('success', $message ?? __('ordering::messages.status_action_done', ['label' => $view->label]));
     }
 
     /**

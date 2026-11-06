@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'cannot_complete' => 'Chỉ hoàn tất được đơn đã giao hết và không có yêu cầu đổi/trả đang mở.',
+    'completed' => 'Đã hoàn tất đơn.',
+    'status_action_unavailable' => 'Thao tác này không còn áp dụng cho đơn (trạng thái vừa thay đổi). Tải lại trang.',
+    'status_action_failed' => 'Thao tác của plugin bị lỗi. Thử lại hoặc báo quản trị.',
+    'status_action_done' => 'Đã thực hiện: :label.',
     'bulk_confirmed' => 'Đã xác nhận :count đơn; bỏ qua :skipped đơn không còn chờ xác nhận.',
     'transition_invalid' => 'Không thể chuyển đơn từ trạng thái :from sang :to.',
     'cannot_cancel' => 'Đơn đã được xử lý hoặc giao, không thể huỷ.',

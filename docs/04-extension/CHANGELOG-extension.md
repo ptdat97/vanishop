@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.98 — 2026-11-06
+
+Thẻ "Trạng thái đơn" trên trang đơn Admin — nhân viên đổi trạng thái tại một chỗ; plugin thanh toán/vận chuyển cắm thao tác vào.
+
+### Thêm
+- Contract `Ordering\Contracts\OrderStatusAction` (tag `vani.ordering.status_actions`) + `Data\OrderStatusActionView`: plugin khai báo nút đổi trạng thái theo từng đơn (`describe` → null khi không áp dụng), Core chạy qua `POST {admin}/orders/orders/{order}/status-actions/{code}` (còn áp dụng → quyền `permission` → validate `fields` → `perform` → audit `order.status_action`).
+- Hoàn tất đơn sớm (`POST {admin}/orders/orders/{order}/complete`, lý do bắt buộc): đơn đang xử lý, đã giao hết, không có đổi/trả đang mở (`OrderPolicy::staffCanComplete`). Lỗi `order.cannot_complete`.
+- Thẻ hiển thị 4 chiều trạng thái (đơn, thanh toán, giao hàng, đổi/trả — nhãn `ordering::labels.fulfillment_status`, `return_status` mới) và nút Xác nhận / Hoàn tất / Huỷ đơn + nút của plugin; nút `primary` thành "bước tiếp theo" ở đầu trang.
+
+### Đổi
+- Nút "Xác nhận đơn", "Huỷ đơn" chuyển từ đầu trang vào thẻ "Trạng thái đơn" (Xác nhận vẫn là nút "bước tiếp theo" ở đầu trang).
+
 ## 0.3.97 — 2026-11-06
 
 Vận hành đơn (đợt 2): trao đổi file với hãng vận chuyển, in phiếu giao, thẻ Khách.

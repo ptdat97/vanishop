@@ -106,6 +106,8 @@ const props = defineProps<{
         actions?: PanelAction[];
     }>;
     stage: string;
+    /** Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và plugin (OrderStatusAction). */
+    statusCard: { rows: Array<{ key: 'order' | 'payment' | 'fulfillment' | 'return'; label: string; code: string; text: string }>; actions: PanelAction[] };
     customerHistory: { orders: number; delivered: number; returned_to_sender: number; cancelled: number; orders_url: string };
     printUrl: string;
     timeline: Array<{ ts: number; at: string; title: string; detail: string | null; source: string | null }>;
@@ -133,7 +135,13 @@ const currentStep = computed(
     () => ({ to_confirm: 1, awaiting_payment: 1, to_ship: 2, shipping: 3, issue: 3, delivered: 4, returns: 4, completed: 6 })[props.stage] ?? -1,
 );
 /** Bước tiếp theo do thẻ bên phải đề xuất (Tạo vận đơn, Nhập mã, Đã bàn giao, Đã giao, Xác nhận đã nhận tiền…). */
-const nextAction = computed(() => (props.can.confirm ? null : (props.panels.flatMap((panel) => panel.actions ?? []).find((action) => action.primary) ?? null)));
+const nextAction = computed(() => [...props.statusCard.actions, ...props.panels.flatMap((panel) => panel.actions ?? [])].find((action) => action.primary) ?? null);
+function statusRowTone(row: { key: string; code: string }): 'neutral' | 'info' | 'success' | 'warning' | 'danger' {
+    if (row.key === 'order') return orderStatusTone(row.code);
+    if (row.key === 'payment') return paymentStatusTone(row.code);
+    if (row.key === 'fulfillment') return ({ delivered: 'success', shipped: 'info', partially_shipped: 'info', allocated: 'warning', returned_to_sender: 'danger' } as const)[row.code as 'delivered'] ?? 'neutral';
+    return row.code === 'none' ? 'neutral' : ['returned', 'partially_returned'].includes(row.code) ? 'success' : 'warning';
+}
 /** Lịch sử gộp: sự kiện của đơn + vận đơn/thanh toán, theo thời gian. */
 const history = computed(() =>
     [
@@ -229,23 +237,6 @@ function statusLabel(status: string): string {
     return props.labels.order_status[status] ?? props.labels.payment_status[status] ?? status;
 }
 
-function confirmOrder(): void {
-    router.post(`${url.value}/confirm`, {}, { preserveScroll: true });
-}
-
-async function cancelOrder(): Promise<void> {
-    const reason = await confirmAction({
-        title: `Huỷ đơn ${props.order.number}?`,
-        message: 'Hàng đang giữ được trả lại kho; đơn đã thanh toán được hoàn tiền theo cổng.',
-        confirmLabel: 'Huỷ đơn',
-        tone: 'danger',
-        reason: { label: 'Lý do huỷ đơn', required: true },
-    });
-    if (reason !== false) {
-        router.post(`${url.value}/cancel`, { reason }, { preserveScroll: true });
-    }
-}
-
 function saveAddress(): void {
     addressForm.put(`${url.value}/shipping-address`, {
         preserveScroll: true,
@@ -272,10 +263,8 @@ function addNote(): void {
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">In phiếu giao</a>
-        <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>
         <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
         <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
-        <button v-if="can.cancel" type="button" :class="dangerButton" @click="cancelOrder">Huỷ đơn</button>
         <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />
     </PageHeader>
     <ol v-if="currentStep >= 0" class="mb-4 flex flex-wrap items-center gap-x-1 gap-y-2 text-xs" aria-label="Tiến trình đơn">
@@ -414,6 +403,28 @@ function addNote(): void {
         </div>
 
         <aside class="space-y-4">
+            <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm" data-status-card>
+                <h2 class="mb-2 font-semibold">Trạng thái đơn</h2>
+                <dl class="space-y-1.5">
+                    <div v-for="row in statusCard.rows" :key="row.key" class="flex items-center justify-between gap-3">
+                        <dt class="text-slate-500">{{ row.label }}</dt>
+                        <dd><StatusBadge :label="row.text" :tone="statusRowTone(row)" /></dd>
+                    </div>
+                </dl>
+                <div v-if="statusCard.actions.length" class="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                    <button
+                        v-for="action in statusCard.actions"
+                        :key="action.key"
+                        type="button"
+                        :class="[actionClass(action), '!px-2.5 !py-1 text-xs']"
+                        :data-status-action="action.key"
+                        @click="runAction(action)"
+                    >
+                        {{ action.label }}
+                    </button>
+                </div>
+                <p v-else class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">Không có thao tác đổi trạng thái ở bước này.</p>
+            </section>
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <div class="mb-2 flex items-center justify-between gap-2">
                     <h2 class="font-semibold">Khách hàng</h2>

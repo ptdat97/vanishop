@@ -18,6 +18,16 @@ final class OrderPolicy
             && in_array($fulfillmentStatus, ['unfulfilled', 'allocated'], true);
     }
 
+    /**
+     * Nhân viên hoàn tất đơn sớm (0.3.98) — không chờ hết hạn đổi trả: đơn đang xử lý, đã giao hết, không có yêu cầu đổi/trả
+     * đang mở. Đổi trả không phụ thuộc trạng thái này (tính theo ngày giao).
+     */
+    public static function staffCanComplete(OrderStatus $status, string $fulfillmentStatus, string $returnStatus): bool
+    {
+        return OrderStateMachine::can($status, OrderStatus::Completed) && $fulfillmentStatus === 'delivered'
+            && ! in_array($returnStatus, ['requested', 'in_progress'], true);
+    }
+
     /** Nhân viên huỷ: theo state machine, khi hàng chưa rời kho hoặc đã bị hoàn về. */
     public static function staffCanCancel(OrderStatus $status, string $fulfillmentStatus): bool
     {
