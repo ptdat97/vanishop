@@ -14,24 +14,13 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
-                // Storefront (theme vani-base, token `font-sans`): `@fonts('anivele')` trong layout theme.
+                // Storefront (theme vani-base, token `font-sans`) và Admin: `@fonts('anivele')` trong layout theme và resources/views/admin.blade.php.
                 local('Anivele', {
                     alias: 'anivele',
                     optimizedFallbacks: false,
                     variants: [
                         { src: ['public/fonts/anivele/fe7027e3d2f79c7174b0-Regular.woff2', 'public/fonts/anivele/fe7027e3d2f79c7174b0-Regular.woff'], weight: 400 },
                         { src: ['public/fonts/anivele/fe7027e3d2f79c7174b0-SemiBold.woff2', 'public/fonts/anivele/fe7027e3d2f79c7174b0-SemiBold.woff'], weight: 600 },
-                    ],
-                }),
-                // Admin: `@fonts('lexend')` trong resources/views/admin.blade.php. Chỉ độ đậm Admin dùng (thường, medium, semibold, bold).
-                local('Lexend', {
-                    alias: 'lexend',
-                    optimizedFallbacks: false,
-                    variants: [
-                        { src: 'public/fonts/lexend/Lexend-Regular.ttf', weight: 400 },
-                        { src: 'public/fonts/lexend/Lexend-Medium.ttf', weight: 500 },
-                        { src: 'public/fonts/lexend/Lexend-SemiBold.ttf', weight: 600 },
-                        { src: 'public/fonts/lexend/Lexend-Bold.ttf', weight: 700 },
                     ],
                 }),
             ],

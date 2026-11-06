@@ -5,6 +5,6 @@
 @source '../../custom/plugin/*/Resources/js';
 
 @theme {
-    /* Lexend: @font-face + preload do `@fonts('lexend')` (vite.config.js, provider local). */
-    --font-sans: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+    /* Anivele (cùng font storefront): @font-face + preload do `@fonts('anivele')` (vite.config.js, provider local). */
+    --font-sans: 'Anivele', ui-sans-serif, system-ui, sans-serif;
 }
