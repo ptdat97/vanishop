@@ -148,6 +148,8 @@ final class OrderQueries
                 'actor' => $internal && $event->actor_type !== null ? $event->actor_type.($event->actor_id !== null ? '#'.$event->actor_id : '') : null,
                 'data' => $internal && $event->data !== null ? json_decode((string) $event->data, true) : null,
                 'at' => StoreClock::format((string) $event->created_at),
+                // Mốc thời gian (giây, UTC) để Admin gộp với sự kiện vận đơn/thanh toán (0.3.96).
+                'ts' => strtotime((string) $event->created_at.' UTC') ?: 0,
             ])->all();
     }
 

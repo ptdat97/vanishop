@@ -19,13 +19,10 @@ final class OrderListShipments
 
     /**
      * @param  list<int>  $orderIds
-     * @return array{key: string, label: string, values: array<int, string>}|null
+     * @return array{key: string, label: string, values: array<int, string>}
      */
-    public function column(array $orderIds): ?array
+    public function column(array $orderIds): array
     {
-        if (! Gate::allows('fulfillment.view')) {
-            return null;
-        }
         $labels = (array) __('fulfillment::labels.shipment_status');
         $values = [];
         $shipments = Shipment::query()->whereIn('order_id', $orderIds)->where('status', '!=', ShipmentStatus::Cancelled)->orderBy('id')->get();

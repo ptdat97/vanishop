@@ -17,6 +17,7 @@ use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
+use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
@@ -107,6 +108,9 @@ final class OrderController
             'order' => (array) $detail,
             'labels' => __('ordering::labels'),
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
+            // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
+            'stage' => (string) Order::query()->whereKey($order->id)->selectRaw(OrderStage::sql().' as stage')->value('stage'),
+            'timeline' => $this->timeline($detail),
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
                 'cancel' => Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status),
@@ -122,6 +126,24 @@ final class OrderController
                 'wards_url' => url('/api/storefront/v1/address/provinces'),
             ],
         ]);
+    }
+
+    /**
+     * Sự kiện do module khác góp (slot vani.admin.order.timeline), sắp theo thời gian; Vue gộp với lịch sử của đơn.
+     *
+     * @return list<array{ts: int, at: string, title: string, detail: string|null, source: string|null}>
+     */
+    private function timeline(OrderDetail $detail): array
+    {
+        $entries = [];
+        foreach (array_filter(Hook::slot('vani.admin.order.timeline', $detail), 'is_array') as $contributed) {
+            foreach ($contributed as $entry) {
+                $entries[] = ['ts' => (int) $entry['ts'], 'at' => (string) $entry['at'], 'title' => (string) $entry['title'], 'detail' => $entry['detail'] ?? null, 'source' => $entry['source'] ?? null];
+            }
+        }
+        usort($entries, fn (array $a, array $b): int => $a['ts'] <=> $b['ts']);
+
+        return $entries;
     }
 
     /**

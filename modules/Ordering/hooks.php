@@ -10,7 +10,14 @@ return [
         'visibility' => 'public',
         'since' => '0.1',
         'args' => ['order' => 'Modules\\Ordering\\Contracts\\Data\\OrderDetail'],
-        'description' => 'Panel bên phải trang đơn Admin. Listener trả về array{title: string, rows: list<array{label: string, value: string}>, link?: array{label: string, url: string}}.',
+        'description' => 'Panel bên phải trang đơn Admin. Listener trả về array{title: string, rows: list<array{label: string, value: string}>, link?: array{label: string, url: string}, actions?: list<array{key: string, label: string, url: string, data?: array<string, scalar>, fields?: list<array{key: string, label: string, required?: bool, placeholder?: string, value?: string}>, confirm?: string, tone?: \'primary\'|\'secondary\'|\'danger\', primary?: bool}>} — actions (0.3.96): nút POST ngay trên trang đơn (fields → hộp nhập; primary → nút "bước tiếp theo" ở đầu trang); module tự kiểm tra quyền.',
+    ],
+    'vani.admin.order.timeline' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.96',
+        'args' => ['order' => 'Modules\\Ordering\\Contracts\\Data\\OrderDetail'],
+        'description' => 'Sự kiện gộp vào lịch sử trang đơn Admin (vận đơn, thanh toán…). Listener trả list<array{ts: int, at: string, title: string, detail?: string|null, source?: string|null}> (ts: giây UTC) hoặc [] khi không có quyền.',
     ],
     'vani.admin.order.list_columns' => [
         'type' => 'slot',

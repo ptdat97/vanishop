@@ -66,6 +66,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         Event::listen(ShipmentStatusChanged::class, CollectCodOnDelivery::class);
         Event::listen(ShipmentStatusChanged::class, CaptureAuthorizedOnShipment::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderPaymentPanel::class)($order));
+        Hook::onSlot('vani.admin.order.timeline', fn ($order) => $this->app->make(OrderPaymentPanel::class)->timeline($order));
         Hook::onSlot('vani.admin.order.payment_methods', fn (): array => array_map(fn (PaymentGateway $gateway): string => $gateway->label(), $this->app->make(GatewayRegistry::class)->all()));
 
         // Tắt cổng còn khoản chờ/giữ tiền → IPN 404, tiền khách đã trả không được ghi nhận.

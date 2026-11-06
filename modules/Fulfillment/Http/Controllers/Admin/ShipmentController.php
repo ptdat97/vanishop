@@ -21,7 +21,13 @@ use Modules\Shared\Domain\BusinessRuleViolation;
 final class ShipmentController
 {
     /** Trạng thái nhân viên cập nhật tay (các trạng thái đặt vận đơn đi qua thao tác "nhập mã"). */
-    private const MANUAL_STATUSES = [ShipmentStatus::PickedUp, ShipmentStatus::InTransit, ShipmentStatus::OutForDelivery, ShipmentStatus::FailedAttempt, ShipmentStatus::Delivered, ShipmentStatus::Returning, ShipmentStatus::Returned];
+    /**
+     * Trạng thái nhân viên ghi tay (0.3.96: rút gọn — đã bàn giao, giao không thành công, đã giao, đang hoàn, đã hoàn về).
+     * "Đang vận chuyển"/"Đang giao" chỉ đến từ hãng có kết nối (webhook); route vẫn nhận để không vỡ thao tác cũ.
+     */
+    private const MANUAL_STATUSES = [ShipmentStatus::PickedUp, ShipmentStatus::FailedAttempt, ShipmentStatus::Delivered, ShipmentStatus::Returning, ShipmentStatus::Returned];
+
+    private const ACCEPTED_STATUSES = [...self::MANUAL_STATUSES, ShipmentStatus::InTransit, ShipmentStatus::OutForDelivery];
 
     public function home(): RedirectResponse
     {
@@ -150,7 +156,7 @@ final class ShipmentController
     {
         Gate::authorize('fulfillment.manage');
         $data = $request->validate([
-            'status' => ['required', Rule::in(array_map(fn (ShipmentStatus $status): string => $status->value, self::MANUAL_STATUSES))],
+            'status' => ['required', Rule::in(array_map(fn (ShipmentStatus $status): string => $status->value, self::ACCEPTED_STATUSES))],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
         $fulfillment->updateStatus($shipment->id, ShipmentStatus::from($data['status']), 'staff:'.now()->format('Uu').':'.$data['status'], 'staff', $data['note'] ?? null, strict: true);

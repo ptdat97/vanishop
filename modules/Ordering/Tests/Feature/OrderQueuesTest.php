@@ -89,11 +89,11 @@ it('Fulfillment hàng loạt: tạo vận đơn cho đơn đã xác nhận chưa
 
     expect($shipment->fresh()->status->value)->toBe('picked_up');
     $this->get("{$this->url}?stage=shipping")->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.id', $a->id)
-        ->where("extensions.values.{$a->id}.shipments", 'GHN · GHN123 — Đã lấy hàng'));
+        ->where("extensions.values.{$a->id}.shipments", 'GHN · GHN123 — Đã bàn giao hãng'));
 
-    // Không có quyền vận đơn: không thấy cột và thao tác của Fulfillment.
+    // Chỉ xem đơn: vẫn thấy cột Vận đơn, không có thao tác hàng loạt.
     $this->actingAs(T::staff(['admin.access', 'orders.view']), 'staff');
-    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->where('extensions.actions', [])->where('extensions.columns', []));
+    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->where('extensions.actions', [])->where('extensions.columns.0.label', 'Vận đơn'));
     $this->post('/admin/fulfillment/shipments/bulk-create', ['ids' => [$b->id]])->assertForbidden();
 });
 

@@ -8,15 +8,26 @@ import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
-import { confirmAction } from '@admin/confirm';
+import { confirmAction, promptFields, type ConfirmField } from '@admin/confirm';
 import { useMoney } from '@admin/money';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { orderStatusTone, paymentStatusTone } from '../../statusTones';
+import { orderStatusTone, paymentStatusTone, stageTone } from '../../statusTones';
 
 type Division = { code: string; name: string };
+/** Thao tác trên thẻ bên phải (0.3.96) — module sở hữu thẻ (Fulfillment, Payment…) kiểm tra quyền và xử lý POST. */
+type PanelAction = {
+    key: string;
+    label: string;
+    url: string;
+    data?: Record<string, string | number | boolean>;
+    fields?: ConfirmField[];
+    confirm?: string;
+    tone?: 'primary' | 'secondary' | 'danger';
+    primary?: boolean;
+};
 type OrderLine = {
     id: number;
     cancelled_quantity: number;
@@ -84,6 +95,7 @@ const props = defineProps<{
             actor: string | null;
             data: Record<string, unknown> | null;
             at: string;
+            ts?: number;
         }>;
         lockVersion: number;
     };
@@ -91,7 +103,10 @@ const props = defineProps<{
         title: string;
         rows: Array<{ label: string; value: string }>;
         link?: { label: string; url: string };
+        actions?: PanelAction[];
     }>;
+    stage: string;
+    timeline: Array<{ ts: number; at: string; title: string; detail: string | null; source: string | null }>;
     can: {
         confirm: boolean;
         cancel: boolean;
@@ -100,7 +115,7 @@ const props = defineProps<{
         note: boolean;
     };
     extensions: ExtensionDetail;
-    labels: { order_status: Record<string, string>; payment_status: Record<string, string>; event_type: Record<string, string> };
+    labels: { order_status: Record<string, string>; payment_status: Record<string, string>; event_type: Record<string, string>; stage: Record<string, string> };
     addressDirectory: {
         provinces: Division[];
         wards: Division[];
@@ -109,6 +124,37 @@ const props = defineProps<{
 }>();
 
 const money = useMoney();
+
+/** Thanh tiến trình: bước hiện tại theo giai đoạn vận hành (đơn huỷ không hiện). */
+const steps = ['Đặt hàng', 'Xác nhận', 'Giao hãng', 'Đang giao', 'Đã giao', 'Hoàn tất'];
+const currentStep = computed(
+    () => ({ to_confirm: 1, awaiting_payment: 1, to_ship: 2, shipping: 3, issue: 3, delivered: 4, returns: 4, completed: 6 })[props.stage] ?? -1,
+);
+/** Bước tiếp theo do thẻ bên phải đề xuất (Tạo vận đơn, Nhập mã, Đã bàn giao, Đã giao, Xác nhận đã nhận tiền…). */
+const nextAction = computed(() => (props.can.confirm ? null : (props.panels.flatMap((panel) => panel.actions ?? []).find((action) => action.primary) ?? null)));
+/** Lịch sử gộp: sự kiện của đơn + vận đơn/thanh toán, theo thời gian. */
+const history = computed(() =>
+    [
+        ...props.order.events.map((event, index) => ({ kind: 'order' as const, ts: event.ts ?? 0, order: index, event })),
+        ...props.timeline.map((entry, index) => ({ kind: 'module' as const, ts: entry.ts, order: index, entry })),
+    ].sort((a, b) => a.ts - b.ts),
+);
+const actionErrors = computed(() =>
+    ['tracking_number', 'service_code', 'amount', 'idempotency_key', 'status', 'order_id'].map((key) => errors.value[key]).filter((message): message is string => Boolean(message)),
+);
+
+async function runAction(action: PanelAction): Promise<void> {
+    let values: Record<string, string> = {};
+    if (action.fields?.length) {
+        const result = await promptFields({ title: action.label, confirmLabel: action.label, tone: action.tone === 'danger' ? 'danger' : 'primary', fields: action.fields });
+        if (result === false) return;
+        values = result;
+    } else if (action.confirm && (await confirmAction({ title: action.confirm, confirmLabel: action.label, tone: action.tone === 'danger' ? 'danger' : 'primary' })) === false) {
+        return;
+    }
+    router.post(action.url, { ...(action.data ?? {}), ...values }, { preserveScroll: true });
+}
+const actionClass = (action: PanelAction): string => (action.tone === 'primary' ? primaryButton : action.tone === 'danger' ? dangerButton : secondaryButton);
 const url = computed(() => `${props.baseUrl}/${props.order.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const editingAddress = ref(false);
@@ -209,19 +255,33 @@ function addNote(): void {
     <Head :title="`Đơn ${order.number}`" />
     <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
     <div class="mb-2 flex flex-wrap gap-2">
+        <StatusBadge :label="labels.stage[stage] ?? stage" :tone="stageTone(stage)" />
         <StatusBadge :label="labels.order_status[order.orderStatus] ?? order.orderStatus" :tone="orderStatusTone(order.orderStatus)" />
         <StatusBadge :label="labels.payment_status[order.paymentStatus] ?? order.paymentStatus" :tone="paymentStatusTone(order.paymentStatus)" />
     </div>
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
         <button v-if="can.confirm" type="button" :class="primaryButton" @click="confirmOrder">Xác nhận đơn</button>
+        <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
         <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
         <button v-if="can.cancel" type="button" :class="dangerButton" @click="cancelOrder">Huỷ đơn</button>
         <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />
     </PageHeader>
+    <ol v-if="currentStep >= 0" class="mb-4 flex flex-wrap items-center gap-x-1 gap-y-2 text-xs" aria-label="Tiến trình đơn">
+        <li v-for="(step, index) in steps" :key="step" class="flex items-center gap-1">
+            <span
+                class="rounded-full px-2.5 py-1"
+                :class="index < currentStep ? 'bg-emerald-100 text-emerald-800' : index === currentStep ? (stage === 'issue' ? 'bg-red-100 font-medium text-red-700' : 'bg-indigo-600 font-medium text-white') : 'bg-slate-100 text-slate-500'"
+                :aria-current="index === currentStep ? 'step' : undefined"
+                >{{ index === currentStep && stage === 'issue' ? 'Hoàn về' : step }}</span
+            >
+            <span v-if="index < steps.length - 1" class="text-slate-300">›</span>
+        </li>
+    </ol>
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
         {{ errors.business }}
     </p>
+    <p v-for="message in actionErrors" :key="message" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ message }}</p>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
@@ -314,16 +374,25 @@ function addNote(): void {
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Lịch sử</h2>
                 <ol class="space-y-2 text-sm">
-                    <li v-for="(event, index) in order.events" :key="index" class="border-l-2 border-slate-200 pl-3">
-                        <span class="text-xs text-slate-400">{{ event.at }}</span>
-                        ·
-                        <span class="font-medium">{{ labels.event_type[event.type] ?? event.type }}</span>
-                        <span v-if="event.to"> → {{ statusLabel(event.to) }}</span>
-                        <span v-if="event.reason" class="text-slate-500"> ({{ event.reason }})</span>
-                        <span v-if="event.actor || event.source" class="text-xs text-slate-400"> · {{ event.actor ?? event.source }}</span>
-                        <p v-if="event.type === 'note' && event.data" class="text-slate-700">
-                            {{ event.data.note }}
-                        </p>
+                    <li v-for="item in history" :key="`${item.kind}-${item.order}`" class="border-l-2 pl-3" :class="item.kind === 'order' ? 'border-slate-200' : 'border-indigo-200'">
+                        <template v-if="item.kind === 'order'">
+                            <span class="text-xs text-slate-400">{{ item.event.at }}</span>
+                            ·
+                            <span class="font-medium">{{ labels.event_type[item.event.type] ?? item.event.type }}</span>
+                            <span v-if="item.event.to"> → {{ statusLabel(item.event.to) }}</span>
+                            <span v-if="item.event.reason" class="text-slate-500"> ({{ item.event.reason }})</span>
+                            <span v-if="item.event.actor || item.event.source" class="text-xs text-slate-400"> · {{ item.event.actor ?? item.event.source }}</span>
+                            <p v-if="item.event.type === 'note' && item.event.data" class="text-slate-700">
+                                {{ item.event.data.note }}
+                            </p>
+                        </template>
+                        <template v-else>
+                            <span class="text-xs text-slate-400">{{ item.entry.at }}</span>
+                            ·
+                            <span class="font-medium">{{ item.entry.title }}</span>
+                            <span v-if="item.entry.detail" class="text-slate-500"> ({{ item.entry.detail }})</span>
+                            <span v-if="item.entry.source" class="text-xs text-slate-400"> · {{ item.entry.source }}</span>
+                        </template>
                     </li>
                 </ol>
                 <form v-if="can.note" class="mt-3 flex gap-2" @submit.prevent="addNote">
@@ -405,6 +474,18 @@ function addNote(): void {
                         <dd class="text-right">{{ row.value }}</dd>
                     </div>
                 </dl>
+                <div v-if="panel.actions?.length" class="mt-3 flex flex-wrap gap-2">
+                    <button
+                        v-for="action in panel.actions"
+                        :key="action.key"
+                        type="button"
+                        :class="[actionClass(action), '!px-2.5 !py-1 text-xs']"
+                        :data-panel-action="action.key"
+                        @click="runAction(action)"
+                    >
+                        {{ action.label }}
+                    </button>
+                </div>
                 <Link v-if="panel.link" :href="panel.link.url" class="mt-2 inline-block text-xs text-indigo-600 hover:underline">{{ panel.link.label }}</Link>
             </section>
         </aside>

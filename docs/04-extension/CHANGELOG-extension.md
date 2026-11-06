@@ -9,10 +9,12 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 Vận hành đơn (đợt 1): tự xác nhận COD theo cấu hình, hàng đợi việc ở danh sách đơn, thao tác ngay trên trang đơn.
 
 ### Thêm
+- Giao hàng nhập tay rút gọn: nhân viên ghi Đã bàn giao hãng (`picked_up`, nhãn mới) / Giao không thành công / Đã giao / Đang hoàn / Đã hoàn về; "Đang vận chuyển", "Đang giao" chỉ đến từ hãng có kết nối (route vẫn nhận).
 - `OrderReader::deliveryHistory(string $phone, ?int $exceptOrderId = null)` → `{orders, delivered, returned_to_sender, cancelled}` theo số điện thoại (cả khách vãng lai) — đánh giá rủi ro đơn COD.
 - Slot `vani.admin.order.list_columns` (cột thêm ở danh sách đơn Admin, `values` id đơn ⇒ chữ), `vani.admin.order.bulk_actions` (thao tác hàng loạt POST `{ids}`) và `vani.admin.order.payment_methods` (nhãn cách thanh toán — Payment cung cấp) — cho module Core; plugin vẫn dùng AdminScreen. Fulfillment góp cột "Vận đơn" và thao tác "Tạo vận đơn", "Đã bàn giao cho hãng" (`POST {admin}/fulfillment/shipments/bulk-create`, `bulk-hand-over`).
 - Danh sách đơn Admin theo hàng đợi việc: giai đoạn vận hành `Ordering\Domain\OrderStage` (tính từ 4 chiều trạng thái — Cần xác nhận, Chờ thanh toán, Chờ giao hãng, Đang giao, Hoàn về, Đổi/trả, Đã giao, Hoàn tất, Đã huỷ) với số đếm; lọc ngày đặt, nguồn, cách thanh toán; cột sản phẩm, tuổi đơn, tỉnh; "Xác nhận đơn" hàng loạt (`POST {admin}/orders/orders/bulk-confirm`).
-- `vani.cod` 1.1.0 (cần Core `^0.3.96`): cấu hình `auto_confirm_mode` = `all` | `trusted` (SĐT đã có ≥ `trusted_min_delivered` đơn giao thành công, chưa từng bị hoàn về) | `off`; chưa chọn → theo công tắc cũ `auto_confirm` / `VANI_COD_AUTO_CONFIRM`. Lý do trong lịch sử đơn: `cod_auto_confirm`, `cod_auto_confirm_trusted`.
+- Trang đơn Admin là chỗ làm việc: panel `vani.admin.order.sidebar` nhận thêm `actions` (nút POST ngay trên trang đơn; `fields` → hộp nhập; `primary` → nút "bước tiếp theo" ở đầu trang); thanh tiến trình theo giai đoạn; slot `vani.admin.order.timeline` gộp sự kiện vào lịch sử đơn (sự kiện đơn có thêm `ts`). Fulfillment: Tạo vận đơn → Nhập mã + hãng → Đã bàn giao cho hãng → Đã giao / Giao không thành công / Đang hoàn về → Đã nhận hàng hoàn về. Payment: Xác nhận đã nhận tiền, Hoàn tiền, Đã chuyển trả; nhãn trạng thái thay cho mã thô.
+: cấu hình `auto_confirm_mode` = `all` | `trusted` (SĐT đã có ≥ `trusted_min_delivered` đơn giao thành công, chưa từng bị hoàn về) | `off`; chưa chọn → theo công tắc cũ `auto_confirm` / `VANI_COD_AUTO_CONFIRM`. Lý do trong lịch sử đơn: `cod_auto_confirm`, `cod_auto_confirm_trusted`.
 
 ## 0.3.95 — 2026-11-06
 
