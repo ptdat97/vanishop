@@ -21,6 +21,7 @@ use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
+use Modules\Ordering\Application\OrderStatusChanger;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -72,6 +73,13 @@ final class OrderController
             ...(Gate::allows('orders.manage') ? [['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : []),
             ['key' => 'print', 'label' => 'In phiếu giao', 'url' => route('admin.orders.orders.print'), 'confirm' => false, 'method' => 'get', 'target' => '_blank'],
         ];
+        if (Gate::allows('orders.manage')) {
+            // Đổi trạng thái hàng loạt (0.3.99): mỗi đơn đi đúng đường (theo trình tự / ngoài trình tự nếu có quyền), đơn bị chặn được bỏ qua.
+            $actions[] = ['key' => 'status', 'label' => 'Đổi trạng thái', 'url' => route('admin.orders.orders.bulk-status'), 'confirm' => true, 'fields' => [
+                ['key' => 'status', 'label' => 'Trạng thái mới', 'required' => true, 'options' => array_map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => (string) __("ordering::labels.order_status.{$status->value}")], OrderStatus::cases())],
+                ['key' => 'reason', 'label' => 'Lý do (ghi vào lịch sử từng đơn)', 'required' => true],
+            ]];
+        }
         foreach (array_filter(Hook::slot('vani.admin.order.bulk_actions'), 'is_array') as $contributed) {
             array_push($actions, ...$contributed);
         }
@@ -114,7 +122,7 @@ final class OrderController
         ]);
     }
 
-    public function show(Order $order, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses, OrderReader $reader): Response
+    public function show(Order $order, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses, OrderReader $reader, OrderStatusChanger $changer): Response
     {
         Gate::authorize('orders.view');
         $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
@@ -126,7 +134,11 @@ final class OrderController
             'labels' => __('ordering::labels'),
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
             // Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và của plugin (OrderStatusAction).
-            'statusCard' => $this->statusCard($order, $reader),
+            'statusCard' => [...$this->statusCard($order, $reader), 'change' => [
+                'url' => route('admin.orders.orders.status', $order->id),
+                // Ô chọn trạng thái (0.3.99): mọi trạng thái, kèm chế độ (theo trình tự / ngoài trình tự), lý do bị chặn, quyền.
+                'options' => array_map(fn (array $option): array => [...$option, 'allowed' => $option['mode'] !== null && Gate::allows((string) $option['permission'])], $changer->options($order)),
+            ]],
             // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
             'stage' => (string) Order::query()->whereKey($order->id)->selectRaw(OrderStage::sql().' as stage')->value('stage'),
             'timeline' => $this->timeline($detail),
@@ -209,6 +221,56 @@ final class OrderController
     private function statusActions(): array
     {
         return $this->extensions->implementations(OrderStatusAction::TAG, OrderStatusAction::class);
+    }
+
+    /**
+     * Đổi trạng thái từ ô chọn (0.3.99) — lý do bắt buộc; theo trình tự cần quyền của lệnh thường, ngoài trình tự cần
+     * `orders.override_status`.
+     */
+    public function changeStatus(Order $order, Request $request, OrderStatusChanger $changer): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::enum(OrderStatus::class)],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+        $to = OrderStatus::from($data['status']);
+        $plan = $changer->plan($order, $to);
+        if ($plan['mode'] === null) {
+            throw OrderActionRejected::statusChangeBlocked((string) $plan['blocked']);
+        }
+        Gate::authorize((string) $plan['permission']);
+        $mode = $changer->change($order, $to, $data['reason']);
+
+        return back()->with('success', __($mode === 'forced' ? 'ordering::messages.status_changed_forced' : 'ordering::messages.status_changed'));
+    }
+
+    /**
+     * Đổi trạng thái hàng loạt: đơn bị chặn, thiếu quyền hoặc lỗi nghiệp vụ được bỏ qua — không hỏng cả lô.
+     */
+    public function bulkStatus(Request $request, OrderStatusChanger $changer): RedirectResponse
+    {
+        Gate::authorize('orders.manage');
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'status' => ['required', Rule::enum(OrderStatus::class)],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+        $to = OrderStatus::from($data['status']);
+        $changed = 0;
+        foreach (Order::query()->whereIn('id', $data['ids'])->get() as $order) {
+            $plan = $changer->plan($order, $to);
+            if ($plan['mode'] === null || ! Gate::allows((string) $plan['permission'])) {
+                continue;
+            }
+            try {
+                $changer->change($order, $to, $data['reason']);
+                $changed++;
+            } catch (BusinessRuleViolation) {
+                // Đơn đổi trạng thái giữa chừng: bỏ qua.
+            }
+        }
+
+        return back()->with('success', __('ordering::messages.bulk_status_changed', ['count' => $changed, 'skipped' => count(array_unique($data['ids'])) - $changed]));
     }
 
     /**

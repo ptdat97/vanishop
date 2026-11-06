@@ -99,7 +99,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Inventory | `StockReserved`, `StockReleased`, `StockCommitted`, `StockAdjusted`, `AvailabilityChanged` (**Implemented**) |
 | Customer | `CustomerRegistered`, `CustomerMerged`, `ConsentChanged` |
 | Cart | `CartUpdated`, `CartAbandoned` (**Implemented**; `CartAbandoned` từ 0.3.3, giỏ của khách không hoạt động quá ngưỡng) |
-| Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled`, `OrderCompleted` (**Implemented**; `OrderCompleted` từ 0.3.1, khi hết hạn đổi trả sau giao) |
+| Ordering | `OrderPlaced`, `OrderConfirmed`, `OrderCancelled`, `OrderCompleted` (**Implemented**; `OrderCompleted` từ 0.3.1, khi hết hạn đổi trả sau giao), `OrderStatusOverridden` (0.3.99: đổi trạng thái ngoài trình tự) |
 | Payment | `PaymentCaptured`, `PaymentFailed`, `RefundCreated`, `RefundCompleted`, `PaymentAuthorized` (**Implemented**; `PaymentAuthorized` từ 0.3.5 — cổng `CapturesLater`) |
 | Fulfillment | `ShipmentCreated`, `ShipmentStatusChanged` (**Implemented**; giao thành công = `ShipmentStatusChanged` với `to = delivered`) |
 | Returns | `ReturnRequested`, `ReturnResolved` (**Implemented**) |

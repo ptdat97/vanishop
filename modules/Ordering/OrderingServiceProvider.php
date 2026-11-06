@@ -51,6 +51,7 @@ final class OrderingServiceProvider extends ModuleServiceProvider
         $permissions->register('orders.view', 'Xem đơn hàng');
         $permissions->register('orders.manage', 'Xác nhận đơn, đổi địa chỉ, ghi chú');
         $permissions->register('orders.cancel', 'Huỷ đơn');
+        $permissions->register('orders.override_status', 'Đổi trạng thái đơn ngoài trình tự (bắt buộc ghi lý do)');
 
         $navigation->add('orders', 'Đơn hàng', 'admin.orders.home', 'orders.view', 50, group: 'sales');
 

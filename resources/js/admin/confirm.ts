@@ -8,6 +8,8 @@ export interface ConfirmField {
     placeholder?: string;
     /** Giá trị ban đầu (vd. tên hiện tại khi đổi tên). */
     value?: string;
+    /** 0.3.99: có lựa chọn → ô chọn (Select) thay cho ô gõ. */
+    options?: Array<{ value: string; label: string; disabled?: boolean }>;
 }
 
 export interface ConfirmOptions {

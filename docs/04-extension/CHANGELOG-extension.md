@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.99 — 2026-11-06
+
+Đổi trạng thái đơn bằng ô chọn (kể cả ngoài trình tự) và hàng loạt — luôn bắt buộc lý do.
+
+### Thêm
+- Thẻ "Trạng thái đơn": ô chọn trạng thái + lý do (`POST {admin}/orders/orders/{order}/status`). Mỗi lựa chọn: theo trình tự (lệnh thường, quyền `orders.manage` / huỷ `orders.cancel`), **ngoài trình tự** (chỉ nhảy tới trước, quyền mới `orders.override_status`) hoặc bị chặn kèm lý do (lùi trạng thái, mở lại đơn đã kết thúc, huỷ khi hàng đã rời kho).
+- Đổi trạng thái hàng loạt ở danh sách đơn (`POST {admin}/orders/orders/bulk-status` `{ids, status, reason}`): mỗi đơn đi đúng đường, đơn bị chặn/thiếu quyền được bỏ qua.
+- Event `Ordering\Events\OrderStatusOverridden` (sau commit); `order_events.type = status_overridden`; audit `order.status_overridden`. Fulfillment nghe: tới hoàn tất → huỷ vận đơn chưa rời kho + chốt hàng đang giữ (giao ngoài hệ thống, tồn khớp).
+- Hộp nhập dùng chung (`promptFields`): trường có `options` thành ô chọn; thao tác hàng loạt (`ExtensionAction`) nhận `fields` (hỏi giá trị rồi gửi kèm `ids`).
+
 ## 0.3.98 — 2026-11-06
 
 Thẻ "Trạng thái đơn" trên trang đơn Admin — nhân viên đổi trạng thái tại một chỗ; plugin thanh toán/vận chuyển cắm thao tác vào.

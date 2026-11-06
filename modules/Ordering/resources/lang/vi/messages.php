@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'status_same' => 'Đơn đang ở trạng thái này.',
+    'status_cancel_blocked' => 'Không huỷ được: hàng đã rời kho hoặc đơn đã kết thúc — dùng Đổi/trả.',
+    'status_terminal' => 'Đơn đã hoàn tất hoặc đã huỷ — không mở lại được.',
+    'status_backward' => 'Không lùi trạng thái đơn (tồn kho, thanh toán đã xử lý theo bước sau).',
+    'status_changed' => 'Đã đổi trạng thái đơn.',
+    'status_changed_forced' => 'Đã đổi trạng thái đơn ngoài trình tự (ghi vào lịch sử).',
+    'bulk_status_changed' => 'Đã đổi trạng thái :count đơn; bỏ qua :skipped đơn.',
     'cannot_complete' => 'Chỉ hoàn tất được đơn đã giao hết và không có yêu cầu đổi/trả đang mở.',
     'completed' => 'Đã hoàn tất đơn.',
     'status_action_unavailable' => 'Thao tác này không còn áp dụng cho đơn (trạng thái vừa thay đổi). Tải lại trang.',

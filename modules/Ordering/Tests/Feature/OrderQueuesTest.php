@@ -53,7 +53,7 @@ it('thẻ hàng đợi: số đếm và lọc theo giai đoạn vận hành; c�
         ->where('orders.0.items.0.quantity', 2)
         ->where('orders.0.province', 'Thành phố Hồ Chí Minh')
         ->where('orders.0.age_hours', 0)
-        ->where('extensions.actions', fn ($actions) => collect($actions)->pluck('key')->all() === ['confirm', 'print', 'create_shipments', 'hand_over', 'export'])
+        ->where('extensions.actions', fn ($actions) => collect($actions)->pluck('key')->all() === ['confirm', 'print', 'status', 'create_shipments', 'hand_over', 'export'])
         ->where('extensions.columns.0.label', 'Vận đơn')
         ->where('tools.0.key', 'import_tracking'));
 

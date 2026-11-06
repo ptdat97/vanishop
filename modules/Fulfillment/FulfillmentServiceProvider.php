@@ -22,6 +22,7 @@ use Modules\Fulfillment\Application\Listeners\CreateShipmentsOnConfirm;
 use Modules\Fulfillment\Application\Listeners\OrderListShipments;
 use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
 use Modules\Fulfillment\Application\Listeners\RebuildShipmentsOnLinesCancelled;
+use Modules\Fulfillment\Application\Listeners\SettleOrderOnStatusOverride;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
 use Modules\Fulfillment\Contracts\ShipmentReader;
@@ -33,6 +34,7 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Ordering\Events\OrderLinesCancelled;
+use Modules\Ordering\Events\OrderStatusOverridden;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -67,6 +69,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
 
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
+        Event::listen(OrderStatusOverridden::class, SettleOrderOnStatusOverride::class);
         Event::listen(OrderLinesCancelled::class, RebuildShipmentsOnLinesCancelled::class);
         Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 95);
         Hook::onSlot('vani.admin.order.timeline', fn ($order) => $this->app->make(OrderShipmentPanel::class)->timeline($order));

@@ -9,7 +9,7 @@ return [
     'payment_status' => ['unpaid' => 'Chưa thanh toán', 'authorized' => 'Đã cấp phép', 'paid' => 'Đã thanh toán', 'partially_refunded' => 'Hoàn một phần', 'refunded' => 'Đã hoàn tiền', 'cod_pending' => 'COD chờ thu', 'cod_collected' => 'COD đã thu', 'failed' => 'Thất bại'],
     'fulfillment_status' => ['unfulfilled' => 'Chưa giao', 'allocated' => 'Chờ giao hãng', 'partially_shipped' => 'Giao một phần', 'shipped' => 'Đang giao', 'delivered' => 'Đã giao', 'returned_to_sender' => 'Hoàn về'],
     'return_status' => ['none' => 'Không', 'requested' => 'Chờ duyệt', 'in_progress' => 'Đang xử lý', 'partially_returned' => 'Trả một phần', 'returned' => 'Đã trả hàng'],
-    'event_type' => ['placed' => 'Đặt hàng', 'status_changed' => 'Đổi trạng thái', 'payment_status_changed' => 'Thanh toán', 'address_changed' => 'Đổi địa chỉ', 'note' => 'Ghi chú'],
+    'event_type' => ['status_overridden' => 'Đổi trạng thái ngoài trình tự', 'placed' => 'Đặt hàng', 'status_changed' => 'Đổi trạng thái', 'payment_status_changed' => 'Thanh toán', 'address_changed' => 'Đổi địa chỉ', 'note' => 'Ghi chú'],
     // Giai đoạn vận hành (hàng đợi việc ở danh sách đơn — OrderStage).
     'stage' => ['to_confirm' => 'Cần xác nhận', 'awaiting_payment' => 'Chờ thanh toán', 'to_ship' => 'Chờ giao hãng', 'shipping' => 'Đang giao', 'issue' => 'Hoàn về', 'returns' => 'Đổi/trả', 'delivered' => 'Đã giao', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã huỷ'],
     'source' => ['web' => 'Website', 'app' => 'App', 'zalo' => 'Zalo', 'admin' => 'Admin', 'pos' => 'Cửa hàng', 'exchange' => 'Đổi hàng'],

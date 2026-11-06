@@ -107,7 +107,15 @@ const props = defineProps<{
     }>;
     stage: string;
     /** Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và plugin (OrderStatusAction). */
-    statusCard: { rows: Array<{ key: 'order' | 'payment' | 'fulfillment' | 'return'; label: string; code: string; text: string }>; actions: PanelAction[] };
+    statusCard: {
+        rows: Array<{ key: 'order' | 'payment' | 'fulfillment' | 'return'; label: string; code: string; text: string }>;
+        actions: PanelAction[];
+        /** Ô chọn trạng thái (0.3.99): theo trình tự (`normal`), ngoài trình tự (`forced`) hoặc bị chặn (`blocked`). */
+        change: {
+            url: string;
+            options: Array<{ value: string; label: string; mode: 'normal' | 'forced' | null; permission: string | null; blocked: string | null; allowed: boolean }>;
+        };
+    };
     customerHistory: { orders: number; delivered: number; returned_to_sender: number; cancelled: number; orders_url: string };
     printUrl: string;
     timeline: Array<{ ts: number; at: string; title: string; detail: string | null; source: string | null }>;
@@ -172,6 +180,17 @@ const customerFlag = computed((): { label: string; tone: 'danger' | 'warning' | 
     if (history.delivered > 0) return { label: 'Khách quen', tone: 'success' };
     return null;
 });
+const statusForm = useForm({ status: '', reason: '' });
+const statusOptions = computed(() =>
+    props.statusCard.change.options
+        .filter((option) => option.value !== props.order.orderStatus)
+        .map((option) => ({ value: option.value, label: option.mode === 'forced' ? `${option.label} (ngoài trình tự)` : option.label, disabled: !option.allowed })),
+);
+const chosenStatus = computed(() => props.statusCard.change.options.find((option) => option.value === statusForm.status) ?? null);
+const canChangeStatus = computed(() => statusOptions.value.some((option) => !option.disabled));
+function changeStatus(): void {
+    statusForm.post(props.statusCard.change.url, { preserveScroll: true, onSuccess: () => statusForm.reset() });
+}
 const actionClass = (action: PanelAction): string => (action.tone === 'primary' ? primaryButton : action.tone === 'danger' ? dangerButton : secondaryButton);
 const url = computed(() => `${props.baseUrl}/${props.order.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
@@ -423,7 +442,24 @@ function addNote(): void {
                         {{ action.label }}
                     </button>
                 </div>
-                <p v-else class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">Không có thao tác đổi trạng thái ở bước này.</p>
+                <form v-if="canChangeStatus" class="mt-3 space-y-2 border-t border-slate-100 pt-3" data-status-change @submit.prevent="changeStatus">
+                    <FormField label="Đổi trạng thái đơn" :error="statusForm.errors.status">
+                        <Select v-model="statusForm.status" :options="statusOptions" empty-label="— Chọn trạng thái —" aria-label="Trạng thái mới" />
+                    </FormField>
+                    <p v-if="chosenStatus?.mode === 'forced'" class="rounded bg-amber-50 p-2 text-xs text-amber-800">
+                        Ngoài trình tự: bỏ qua các bước giữa, ghi vào lịch sử đơn.
+                        <template v-if="chosenStatus.value === 'completed'">Hàng coi như đã giao ngoài hệ thống — vận đơn còn mở bị huỷ, hàng đang giữ được trừ khỏi tồn kho.</template>
+                    </p>
+                    <FormField label="Lý do (bắt buộc)" :error="statusForm.errors.reason">
+                        <input v-model="statusForm.reason" :class="inputClass" maxlength="255" required placeholder="vd. Khách đã nhận hàng tại cửa hàng" />
+                    </FormField>
+                    <button type="submit" :class="primaryButton" :disabled="statusForm.processing || !statusForm.status || !statusForm.reason.trim()">Đổi trạng thái</button>
+                </form>
+                <ul v-if="statusCard.change.options.some((option) => option.blocked && option.value !== order.orderStatus)" class="mt-2 space-y-0.5 text-xs text-slate-400">
+                    <template v-for="option in statusCard.change.options" :key="`blocked-${option.value}`">
+                        <li v-if="option.blocked && option.value !== order.orderStatus">{{ option.label }}: {{ option.blocked }}</li>
+                    </template>
+                </ul>
             </section>
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <div class="mb-2 flex items-center justify-between gap-2">

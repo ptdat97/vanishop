@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'status_same' => 'The order already has this status.',
+    'status_cancel_blocked' => 'Cannot cancel: goods have left the warehouse or the order is closed — use Returns.',
+    'status_terminal' => 'The order is completed or cancelled and cannot be reopened.',
+    'status_backward' => 'Order status cannot move backwards (stock and payment were handled by later steps).',
+    'status_changed' => 'Order status changed.',
+    'status_changed_forced' => 'Order status changed out of sequence (recorded in history).',
+    'bulk_status_changed' => 'Changed status of :count orders; skipped :skipped.',
     'cannot_complete' => 'Only fully delivered orders without open returns can be completed.',
     'completed' => 'Order completed.',
     'status_action_unavailable' => 'This action no longer applies to the order (its status just changed). Reload the page.',

@@ -1,3 +1,4 @@
+import type { ConfirmField } from '@admin/confirm';
 export interface StaffUser {
     id: number;
     name: string;
@@ -84,6 +85,8 @@ export interface ExtensionAction {
     method?: 'post' | 'get';
     /** `_blank`: mở tab mới (trang in). */
     target?: '_blank';
+    /** 0.3.99: hỏi thêm giá trị trước khi gửi (vd. trạng thái mới + lý do) — gửi kèm `ids`. */
+    fields?: ConfirmField[];
 }
 
 export interface ExtensionFilter {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { confirmAction } from '@admin/confirm';
+import { confirmAction, promptFields } from '@admin/confirm';
 import { secondaryButton } from '@admin/styles';
 import type { ExtensionAction } from '@admin/types';
 import { router } from '@inertiajs/vue3';
@@ -8,7 +8,15 @@ import { router } from '@inertiajs/vue3';
 const props = defineProps<{ actions: ExtensionAction[]; ids: number[] }>();
 
 async function run(action: ExtensionAction): Promise<void> {
-    if (props.ids.length === 0 || (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} mục đã chọn.` })) === false)) {
+    if (props.ids.length === 0) {
+        return;
+    }
+    let values: Record<string, string> = {};
+    if (action.fields?.length) {
+        const result = await promptFields({ title: action.label, message: `Áp dụng cho ${props.ids.length} mục đã chọn.`, confirmLabel: action.label, fields: action.fields });
+        if (result === false) return;
+        values = result;
+    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} mục đã chọn.` })) === false) {
         return;
     }
     if (action.method === 'get') {
@@ -22,7 +30,7 @@ async function run(action: ExtensionAction): Promise<void> {
         }
         return;
     }
-    router.post(action.url, { ids: props.ids }, { preserveScroll: true });
+    router.post(action.url, { ...values, ids: props.ids }, { preserveScroll: true });
 }
 </script>
 

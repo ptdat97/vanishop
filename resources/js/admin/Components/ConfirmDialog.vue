@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Select from '@admin/Components/Select.vue';
 import { confirmState, settleConfirm } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogOverlay, AlertDialogPortal, AlertDialogRoot, AlertDialogTitle } from 'reka-ui';
@@ -46,7 +47,9 @@ function accept(): void {
                     <AlertDialogDescription v-if="options.message" class="mt-2 text-sm text-slate-600">{{ options.message }}</AlertDialogDescription>
                     <label v-for="(field, index) in options.fields" :key="field.key" class="mt-4 block text-sm">
                         <span class="mb-1 block font-medium text-slate-700">{{ field.label }}</span>
+                        <Select v-if="field.options" v-model="values[field.key]" :options="field.options" empty-label="— Chọn —" :aria-label="field.label" />
                         <input
+                            v-else
                             v-model="values[field.key]"
                             :class="inputClass"
                             :maxlength="field.maxlength ?? 255"

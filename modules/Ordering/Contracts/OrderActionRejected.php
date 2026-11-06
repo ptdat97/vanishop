@@ -33,6 +33,11 @@ final class OrderActionRejected extends BusinessRuleViolation
         return new self('order.cannot_complete', 409, __('ordering::messages.cannot_complete'));
     }
 
+    public static function statusChangeBlocked(string $message): self
+    {
+        return new self('order.status_change_blocked', 409, $message);
+    }
+
     public static function statusActionUnavailable(): self
     {
         return new self('order.status_action_unavailable', 409, __('ordering::messages.status_action_unavailable'));

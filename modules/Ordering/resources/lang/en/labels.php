@@ -9,7 +9,7 @@ return [
     'payment_status' => ['unpaid' => 'Unpaid', 'authorized' => 'Authorized', 'paid' => 'Paid', 'partially_refunded' => 'Partially refunded', 'refunded' => 'Refunded', 'cod_pending' => 'COD pending', 'cod_collected' => 'COD collected', 'failed' => 'Failed'],
     'fulfillment_status' => ['unfulfilled' => 'Unfulfilled', 'allocated' => 'Awaiting carrier', 'partially_shipped' => 'Partially shipped', 'shipped' => 'Shipping', 'delivered' => 'Delivered', 'returned_to_sender' => 'Returned to sender'],
     'return_status' => ['none' => 'None', 'requested' => 'Requested', 'in_progress' => 'In progress', 'partially_returned' => 'Partially returned', 'returned' => 'Returned'],
-    'event_type' => ['placed' => 'Placed', 'status_changed' => 'Status changed', 'payment_status_changed' => 'Payment', 'address_changed' => 'Address changed', 'note' => 'Note'],
+    'event_type' => ['status_overridden' => 'Status changed out of sequence', 'placed' => 'Placed', 'status_changed' => 'Status changed', 'payment_status_changed' => 'Payment', 'address_changed' => 'Address changed', 'note' => 'Note'],
     'stage' => ['to_confirm' => 'To confirm', 'awaiting_payment' => 'Awaiting payment', 'to_ship' => 'To hand to carrier', 'shipping' => 'Shipping', 'issue' => 'Returned to sender', 'returns' => 'Returns', 'delivered' => 'Delivered', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     'source' => ['web' => 'Website', 'app' => 'App', 'zalo' => 'Zalo', 'admin' => 'Admin', 'pos' => 'Store', 'exchange' => 'Exchange'],
     // Trạng thái hiển thị cho khách (tính từ 4 chiều của đơn — CustomerStatus).

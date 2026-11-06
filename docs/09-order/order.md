@@ -103,6 +103,7 @@ interface OrderTransitions   // public contract — cổng duy nhất để đ�
 ```
 
 - Bảng chuyển hợp lệ khai báo trong `Domain\OrderStateMachine` (enum + map), **không** mở rộng được (xem [extension-model §2](../04-extension/extension-model.md)).
+- **Đổi trạng thái ngoài trình tự** (0.3.99, `Application\OrderStatusChanger`): nhân viên có quyền `orders.override_status` chọn trạng thái trong ô chọn (thẻ "Trạng thái đơn" hoặc hàng loạt), **bắt buộc lý do**. Chỉ **nhảy tới trước** (`OrderStateMachine::canForce`: vd. chờ xác nhận → hoàn tất); không lùi, không mở lại đơn đã hoàn tất/huỷ; huỷ vẫn theo `OrderPolicy::staffCanCancel`. Ghi `order_events.type = status_overridden` + audit `order.status_overridden`, phát `OrderStatusOverridden` và event của trạng thái đích (tới đang xử lý → `OrderConfirmed` để tạo vận đơn như thường; tới hoàn tất → `OrderCompleted`). Tới hoàn tất: hàng coi như đã giao ngoài hệ thống — Fulfillment huỷ vận đơn chưa rời kho và chốt hàng đang giữ (trừ tồn).
 - Mỗi lần chuyển: khoá dòng `orders` (`FOR UPDATE`), kiểm tra hợp lệ, cập nhật, ghi `order_events` (append-only: from, to, reason, actor, source `customer|staff|system|integration:<client>|carrier|gateway`, correlation id), ghi outbox, phát event sau commit.
 - Side effect gắn vào **listener của event**, không đặt trong state machine.
 - Chuyển trạng thái trùng (đã ở trạng thái đích) → no-op idempotent.
@@ -128,6 +129,7 @@ Một giỏ chứa sản phẩm của nhiều brand tạo **một đơn** (một
 | `OrderConfirmed` | Thanh toán xong / COD xác nhận | Fulfillment (sourcing), Integration, tracking |
 | `OrderCancelled` | Huỷ | Inventory release, Payment refund, Promotion hoàn lượt |
 | `OrderCompleted` | Hết hạn đổi trả | Plugin loyalty, plugin e-invoice |
+| `OrderStatusOverridden` | Nhân viên đổi trạng thái ngoài trình tự (0.3.99) | Fulfillment (tới hoàn tất: huỷ vận đơn mở, chốt hàng đang giữ) |
 | `ReturnResolved` | Hoàn tất đổi trả | Payment refund, Inventory, Integration |
 
 ## 7. Returns (RMA)
