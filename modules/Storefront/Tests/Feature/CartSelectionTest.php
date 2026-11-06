@@ -97,7 +97,8 @@ it('web: nút "Mua ngay" chuyển tới checkout, form chọn dòng hoạt độ
     $this->post('/gio-hang/chon', ['lines' => $lineIds])->assertRedirect('/gio-hang');
     $this->get('/gio-hang')->assertSee('700.000');
     $this->post('/gio-hang/chon', [])->assertRedirect('/gio-hang');
-    $this->get('/gio-hang')->assertSee(__('Chọn ít nhất một sản phẩm để thanh toán.'));
+    // 0.3.95: bỏ chọn hết vẫn thanh toán được — nút chọn lại các dòng mua được rồi sang checkout.
+    $this->get('/gio-hang')->assertSee('data-cart-checkout-form', false)->assertSee(__('Bấm Thanh toán để mua tất cả sản phẩm còn hàng trong giỏ.'));
 });
 
 it('khối lượng giỏ (chỉ dòng đã chọn, gram) đi tới phí giao: phụ phí theo kg của phí cố định', function () {

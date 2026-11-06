@@ -131,3 +131,23 @@ it('trang giỏ đầy đủ (0.3.94): vùng thay được; JSON kèm X-Vani-Car
     C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => null]);
     expect($this->postJson('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'], $page)->assertOk()->json('page_html'))->toContain('Mã GIAM10')->toContain('810.000 ₫');
 });
+
+it('bỏ chọn hết ở trang giỏ: nút Thanh toán (giỏ mini, trang giỏ) vẫn bấm được — chọn lại dòng mua được rồi sang checkout (0.3.95)', function () {
+    $first = $this->postJson('/gio-hang', ['variant_id' => $this->s->id])->json('cart.lines.0.id');
+    $second = collect($this->postJson('/gio-hang', ['variant_id' => $this->m->id])->json('cart.lines'))->firstWhere('variant_id', $this->m->id)['id'];
+
+    $state = $this->postJson('/gio-hang/chon', ['lines' => []], ['X-Vani-Cart-View' => 'page'])->assertOk()
+        ->assertJsonPath('cart.checkout_ready', false)
+        ->json();
+    expect($state['cart']['payable_line_ids'])->toEqualCanonicalizing([$first, $second]);
+    foreach ([$state['html'], $state['page_html']] as $html) {
+        expect($html)->toContain('data-cart-checkout-form')->toContain('name="checkout" value="1"')
+            ->toContain('name="lines[]" value="'.$first.'"')->not->toContain('aria-disabled="true">Thanh toán');
+    }
+
+    $this->post('/gio-hang/chon', ['lines' => [$first, $second], 'checkout' => 1])->assertRedirect('/thanh-toan');
+    $this->getJson('/gio-hang')->assertJsonPath('cart.checkout_ready', true)->assertJsonPath('cart.selected_count', 2);
+    // Giỏ đã sẵn sàng: link thường, giữ lựa chọn của khách.
+    $this->postJson('/gio-hang/chon', ['lines' => [$first]])->assertOk()->assertJsonPath('cart.checkout_ready', true);
+    expect($this->getJson('/gio-hang')->json('html'))->toContain('href="'.url('/thanh-toan').'"')->not->toContain('data-cart-checkout-form');
+});

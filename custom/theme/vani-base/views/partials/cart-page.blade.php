@@ -58,11 +58,11 @@
         @if (($voucher ?? null) && $voucher['rejection'] === null && $voucher['discount']['amount'] > 0)
             <p class="text-emerald-700">{{ __('Giảm giá') }}: −{{ $voucher['discount']['formatted'] }} · {{ __('Tổng tạm tính') }}: <strong>{{ $voucher['total']['formatted'] }}</strong></p>
         @endif
-        @if ($cart['checkout_ready'])
-            <a href="{{ vani_route('storefront.checkout') }}" class="rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white">{{ __('Thanh toán') }}</a>
-        @elseif ($cart['selected_count'] === 0)
-            <p class="text-sm text-slate-600">{{ __('Chọn ít nhất một sản phẩm để thanh toán.') }}</p>
-        @else
+        @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white'])
+        {{-- Chưa sẵn sàng: nút trên chọn lại mọi sản phẩm còn mua được; câu dưới giải thích cho khách. --}}
+        @if (! $cart['checkout_ready'] && ($cart['payable_line_ids'] ?? []) !== [])
+            <p class="text-sm text-slate-600">{{ __('Bấm Thanh toán để mua tất cả sản phẩm còn hàng trong giỏ.') }}</p>
+        @elseif (! $cart['checkout_ready'])
             <p class="text-sm text-red-600">{{ __('Cập nhật các dòng có vấn đề trước khi thanh toán.') }}</p>
         @endif
     </div>

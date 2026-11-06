@@ -57,16 +57,12 @@
             @endif
         </dl>
         <p class="text-xs text-slate-500">{{ __('Phí giao hàng tính ở bước thanh toán.') }}</p>
-        @if ($cart['selected_count'] < $cart['item_count'])
+        @if ($cart['checkout_ready'] && $cart['selected_count'] < $cart['item_count'])
             <p class="text-xs text-slate-500">{{ __('Chỉ sản phẩm đã chọn được thanh toán — đổi lựa chọn ở trang giỏ hàng.') }}</p>
         @endif
         <div class="grid grid-cols-2 gap-2">
             <a href="{{ vani_route('storefront.cart') }}" class="rounded-[var(--radius-theme)] border border-primary px-4 py-2.5 text-center font-medium text-primary">{{ __('Xem giỏ hàng') }}</a>
-            @if ($cart['checkout_ready'])
-                <a href="{{ vani_route('storefront.checkout') }}" class="rounded-[var(--radius-theme)] bg-primary px-4 py-2.5 text-center font-medium text-white">{{ __('Thanh toán') }}</a>
-            @else
-                <span class="rounded-[var(--radius-theme)] bg-slate-200 px-4 py-2.5 text-center font-medium text-slate-500" aria-disabled="true">{{ __('Thanh toán') }}</span>
-            @endif
+            @include('theme::partials.checkout-button', ['cart' => $cart, 'class' => 'rounded-[var(--radius-theme)] bg-primary px-4 py-2.5 text-center font-medium text-white'])
         </div>
     </div>
 @endif

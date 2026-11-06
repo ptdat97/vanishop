@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.95 — 2026-11-06
+
+Giỏ còn hàng mà khách đã bỏ chọn hết vẫn thanh toán được (giỏ mini và trang giỏ).
+
+### Thêm
+- Giỏ (Storefront API + native): `payable_line_ids` — id các dòng mua được (không hết hàng/ngừng bán).
+- `POST gio-hang/chon` nhận `checkout=1`: chọn các dòng gửi lên rồi chuyển sang checkout (JSON: `redirect`).
+- Partial theme `partials.checkout-button`: giỏ sẵn sàng → link checkout; chưa sẵn sàng nhưng còn dòng mua được → form chọn các dòng đó + sang checkout; không còn dòng nào → khoá.
+
+### Đổi
+- Giỏ mini và trang giỏ `vani-base` dùng `partials.checkout-button` (trước: nút khoá khi chưa chọn dòng nào).
+
 ## 0.3.94 — 2026-11-06
 
 Trang giỏ đầy đủ dùng cùng API giỏ (không tải lại trang).

@@ -84,13 +84,19 @@ final class CartController
      */
     public function select(Request $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validate(['lines' => ['nullable', 'array', 'max:100'], 'lines.*' => ['integer', 'min:1']]);
+        $data = $request->validate(['lines' => ['nullable', 'array', 'max:100'], 'lines.*' => ['integer', 'min:1'], 'checkout' => ['nullable', 'boolean']]);
         $key = $this->cart->key();
         abort_if($key === null, 404);
 
         $this->carts->selectOnly($key, array_values(array_map('intval', $data['lines'] ?? [])));
+        // `checkout=1` (0.3.95): nút "Thanh toán" khi giỏ chưa sẵn sàng — chọn các dòng mua được rồi sang checkout ngay.
+        $next = $request->boolean('checkout') && $this->cart->current()?->isCheckoutReady() ? LocalizedUrls::route('storefront.checkout') : null;
 
-        return $request->expectsJson() ? $this->payload() : redirect()->to(LocalizedUrls::route('storefront.cart'));
+        if ($request->expectsJson()) {
+            return $this->payload(null, null, $next);
+        }
+
+        return redirect()->to($next ?? LocalizedUrls::route('storefront.cart'));
     }
 
     public function update(Request $request, int $line): RedirectResponse|JsonResponse

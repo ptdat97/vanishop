@@ -34,6 +34,9 @@ final class CartPresenter
             'selected_subtotal' => $this->money->toArray($cart->selectedSubtotal()),
             'selected_count' => array_sum(array_map(fn (CartLineView $line): int => $line->quantity, $cart->selectedLines())),
             'checkout_ready' => $cart->isCheckoutReady(),
+            // Dòng mua được (không hết hàng/ngừng bán, 0.3.95): nút "Thanh toán" chọn lại các dòng này khi giỏ chưa sẵn sàng
+            // chỉ vì khách bỏ chọn — không để giỏ còn hàng mà không bấm thanh toán được.
+            'payable_line_ids' => array_values(array_map(fn (CartLineView $line): int => $line->id, array_filter($cart->lines, fn (CartLineView $line): bool => $line->variant !== null && ! $line->blocksCheckout()))),
             'lines' => array_map(fn (CartLineView $line): array => [
                 'id' => $line->id,
                 'variant_id' => $line->variantId,
