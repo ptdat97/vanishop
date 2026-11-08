@@ -15,7 +15,7 @@ const props = defineProps<{
     labels: { shipment_status: Record<string, string> };
     filters: { status: string; order: string };
     statuses: string[];
-    order: null | { id: number; number: string; status: string; can_create: boolean };
+    order: null | { id: number; number: string; status: string; status_label: string; can_create: boolean };
     shipments: Array<{
         id: number;
         order_number: string | null;
@@ -100,7 +100,7 @@ async function cancel(id: number): Promise<void> {
     </form>
 
     <div v-if="order" class="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-sm">
-        <span>Đơn <span class="font-mono">{{ order.number }}</span> · {{ order.status }}</span>
+        <span>Đơn <span class="font-mono">{{ order.number }}</span> · {{ order.status_label }}</span>
         <button v-if="order.can_create && canManage" type="button" :class="primaryButton" @click="create">Tạo vận đơn</button>
     </div>
 

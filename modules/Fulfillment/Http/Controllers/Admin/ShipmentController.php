@@ -60,6 +60,7 @@ final class ShipmentController
             'statuses' => array_column(ShipmentStatus::cases(), 'value'),
             'order' => $order === null ? null : [
                 'id' => $order->id, 'number' => $order->number, 'status' => $order->status->value,
+                'status_label' => (string) __("ordering::labels.order_status.{$order->status->value}"),
                 'can_create' => in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)
                     && ! Shipment::query()->where('order_id', $order->id)->where('status', '!=', ShipmentStatus::Cancelled)->exists(),
             ],

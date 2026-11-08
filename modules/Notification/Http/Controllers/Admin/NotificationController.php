@@ -63,7 +63,7 @@ final class NotificationController
         return back()->with('success', __('notification::messages.deleted'));
     }
 
-    public function logs(Request $request): Response
+    public function logs(Request $request, NotificationCatalog $catalog): Response
     {
         Gate::authorize('notifications.view', [ScopeRef::owner()]);
         $status = is_string($request->query('status')) ? $request->query('status') : null;
@@ -76,6 +76,8 @@ final class NotificationController
         return Inertia::render('Notification::Logs/Index', [
             'baseUrl' => route('admin.notifications.logs'),
             'labels' => __('notification::labels'),
+            // Tên loại thông báo (NotificationCatalog) thay cho mã thô — 0.3.101.
+            'typeLabels' => array_map(fn (NotificationType $type): string => $type->label, $catalog->types()),
             'filters' => ['status' => $status, 'q' => $q],
             'statuses' => [NotificationLog::QUEUED, NotificationLog::SENT, NotificationLog::FAILED, NotificationLog::SKIPPED],
             'logs' => collect($page->items())->map(fn (NotificationLog $log): array => [

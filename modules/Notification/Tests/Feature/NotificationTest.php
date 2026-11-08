@@ -129,7 +129,9 @@ it('Admin: xem/sửa mẫu tin (khoá lạc quan, chống trùng), xem nhật k�
     $this->post('/admin/notifications/templates', ['type' => 'order_placed', 'channel' => 'mail', 'subject' => 'x', 'body' => 'y'])->assertSessionHasErrors('type');
 
     $this->get('/admin/notifications/logs')->assertInertia(fn (Assert $page) => $page->component('Notification::Logs/Index')
-        ->where('logs.0.recipient', 'la***@example.com'));
+        ->where('logs.0.recipient', 'la***@example.com')
+        // Tên loại thông báo thay cho mã thô (0.3.101).
+        ->where('typeLabels.order_placed', fn (string $label): bool => $label !== '' && $label !== 'order_placed'));
 });
 
 it('đơn lưu ngôn ngữ lúc đặt; email theo mẫu ngôn ngữ của đơn, thiếu mẫu thì dùng ngôn ngữ mặc định (ADR-038 §8)', function () {

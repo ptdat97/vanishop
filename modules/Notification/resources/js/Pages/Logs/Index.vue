@@ -12,6 +12,7 @@ import { ref } from 'vue';
 const props = defineProps<{
     baseUrl: string;
     labels: { log_status: Record<string, string> };
+    typeLabels: Record<string, string>;
     filters: { status: string | null; q: string };
     statuses: string[];
     logs: Array<{
@@ -69,7 +70,10 @@ function search(changes: { status?: string | null; page?: number } = {}): void {
             {{ row.created_at }}
             <div v-if="row.sent_at" class="text-slate-400">gửi {{ row.sent_at }}</div>
         </template>
-        <template #cell-type="{ row }">{{ row.type }} · {{ row.channel }}</template>
+        <template #cell-type="{ row }">
+            {{ typeLabels[row.type] ?? row.type }}
+            <div class="text-xs text-slate-400">{{ row.channel }}</div>
+        </template>
         <template #cell-status="{ row }">
             <StatusBadge :label="labels.log_status[row.status] ?? row.status" :tone="tone(row.status)" />
             <span class="ml-1 text-xs text-slate-500">{{ row.attempts }} lần</span>
