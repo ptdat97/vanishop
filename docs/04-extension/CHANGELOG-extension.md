@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.102 — 2026-11-08
+
+Đổi trả ít bước: thao tác ngay trên trang đơn và hàng loạt.
+
+### Thêm
+- Thẻ "Đổi/trả" trên trang đơn có thao tác theo từng yêu cầu: Duyệt / Từ chối (lý do) → Khách đã gửi hàng → Đã nhận hàng (còn bán được, nhập lại kho; hàng hỏng khai ở trang yêu cầu) → Hoàn tất & hoàn tiền (số tiền điền sẵn) hoặc Hoàn tất & tạo đơn đổi; bước tiếp theo là nút ở đầu trang đơn. Nhãn trạng thái tiếng Việt thay mã thô.
+- Danh sách đổi/trả: thao tác hàng loạt "Duyệt" (`POST {admin}/returns/returns/bulk-approve`), "Đã nhận hàng (còn bán được)" (`bulk-receive`); yêu cầu không đúng trạng thái được bỏ qua.
+
 ## 0.3.101 — 2026-11-08
 
 "Việc cần làm" đầu trang tổng quan Admin (SME: một màn hình biết hôm nay cần làm gì).

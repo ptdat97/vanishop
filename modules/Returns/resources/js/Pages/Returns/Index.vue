@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionAction } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { type ReturnLabels, returnStatusTone } from '../../labels';
 
 const props = defineProps<{
@@ -14,9 +17,13 @@ const props = defineProps<{
     status: string;
     statuses: string[];
     counts: Record<string, number>;
+    /** Thao tác hàng loạt (0.3.102): Duyệt, Đã nhận hàng. */
+    actions: ExtensionAction[];
     returns: Array<{ id: number; number: string; status: string; reason_code: string; refund_amount: number; source: string; created_at: string | null }>;
 }>();
 
+const selected = ref<number[]>([]);
+const bulk = { columns: [], values: {}, actions: props.actions };
 const columns = [
     { key: 'number', label: 'Yêu cầu' },
     { key: 'reason_code', label: 'Lý do' },
@@ -44,7 +51,11 @@ function filter(status: string): void {
         </button>
     </div>
 
-    <DataTable :columns="columns" :rows="returns" :row-label="(item) => item.number" empty-text="Chưa có yêu cầu nào.">
+    <div v-if="actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
+        <ExtensionActions :actions="actions" :ids="selected" />
+    </div>
+    <DataTable v-model:selected="selected" :columns="columns" :rows="returns" :extensions="bulk" :row-label="(item) => item.number" empty-text="Chưa có yêu cầu nào.">
         <template #cell-number="{ row }">
             <Link :href="`${baseUrl}/${row.id}`" class="font-mono text-indigo-600 hover:underline">{{ row.number }}</Link>
             <div class="text-xs text-slate-400">{{ row.created_at }} · {{ row.source === 'customer' ? 'khách gửi' : 'nhân viên tạo' }}</div>

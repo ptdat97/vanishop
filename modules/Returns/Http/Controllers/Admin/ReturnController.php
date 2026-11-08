@@ -18,6 +18,7 @@ use Modules\Returns\Application\ReturnReasons;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnRequest;
+use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\StoreClock;
 
 final class ReturnController
@@ -43,6 +44,11 @@ final class ReturnController
             'status' => $status,
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
             // Số yêu cầu theo trạng thái trên các thẻ lọc (0.3.101).
+            // Thao tác hàng loạt (0.3.102): duyệt; nhận hàng còn bán được — yêu cầu không đúng trạng thái được bỏ qua.
+            'actions' => Gate::allows('returns.manage') ? [
+                ['key' => 'approve', 'label' => 'Duyệt', 'url' => route('admin.returns.returns.bulk-approve'), 'confirm' => true],
+                ['key' => 'receive', 'label' => 'Đã nhận hàng (còn bán được)', 'url' => route('admin.returns.returns.bulk-receive'), 'confirm' => true],
+            ] : [],
             'counts' => ReturnRequest::query()->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total)->all(),
             'returns' => ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
                 ->orderByDesc('id')->limit(100)->get()->map(fn (ReturnRequest $return): array => [
@@ -132,6 +138,62 @@ final class ReturnController
                 'resolve' => Gate::allows('returns.refund') && $return->status->canMoveTo(ReturnStatus::Resolved),
             ],
         ]);
+    }
+
+    /**
+     * Duyệt hàng loạt các yêu cầu đang chờ duyệt (0.3.102).
+     */
+    public function bulkApprove(Request $request, ReturnService $returns): RedirectResponse
+    {
+        Gate::authorize('returns.manage');
+        $done = 0;
+        $ids = $this->bulkIds($request);
+        foreach (ReturnRequest::query()->whereIn('id', $ids)->get() as $return) {
+            if (! $return->status->canMoveTo(ReturnStatus::Approved)) {
+                continue;
+            }
+            try {
+                $returns->transition($return->id, ReturnStatus::Approved, null, 'staff', $return->lock_version);
+                $done++;
+            } catch (BusinessRuleViolation) {
+                // Yêu cầu vừa đổi ở nơi khác: bỏ qua.
+            }
+        }
+
+        return back()->with('success', __('returns::messages.bulk_approved', ['count' => $done, 'skipped' => count($ids) - $done]));
+    }
+
+    /**
+     * Nhận hàng hàng loạt — mọi dòng còn bán được, nhập lại kho (0.3.102). Hàng hỏng: nhận từng yêu cầu ở trang chi tiết.
+     */
+    public function bulkReceive(Request $request, ReturnService $returns): RedirectResponse
+    {
+        Gate::authorize('returns.manage');
+        $done = 0;
+        $ids = $this->bulkIds($request);
+        foreach (ReturnRequest::query()->whereIn('id', $ids)->get() as $return) {
+            if (! $return->status->canMoveTo(ReturnStatus::Received)) {
+                continue;
+            }
+            try {
+                $returns->receive($return->id, [], null);
+                $done++;
+            } catch (BusinessRuleViolation) {
+                // bỏ qua
+            }
+        }
+
+        return back()->with('success', __('returns::messages.bulk_received', ['count' => $done, 'skipped' => count($ids) - $done]));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function bulkIds(Request $request): array
+    {
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
+
+        return array_values(array_unique(array_map('intval', $data['ids'])));
     }
 
     public function transition(ReturnRequest $return, Request $request, ReturnService $returns): RedirectResponse

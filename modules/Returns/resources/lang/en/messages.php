@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'bulk_approved' => 'Approved :count requests; skipped :skipped no longer awaiting approval.',
+    'bulk_received' => 'Received :count returns (restocked); skipped :skipped not approved or already received.',
     'policy' => [
         'waived' => 'The customer confirmed receipt and waived returns for this order.',
         'not_delivered' => 'The order has not been delivered yet.',

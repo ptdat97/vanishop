@@ -54,7 +54,7 @@ it('nhân viên tạo yêu cầu đổi/trả hộ khách: nguồn staff, theo s
 
     // Hết hàng trả được → panel chuyển sang mở yêu cầu đang có.
     $this->get("/admin/orders/orders/{$this->order->id}")->assertInertia(fn (Assert $page) => $page
-        ->where('panels', fn ($panels) => collect($panels)->contains(fn ($panel) => $panel['title'] === 'Đổi/trả' && $panel['link']['label'] === 'Xử lý đổi/trả')));
+        ->where('panels', fn ($panels) => collect($panels)->contains(fn ($panel) => $panel['title'] === 'Đổi/trả' && $panel['link']['label'] === 'Mở yêu cầu đổi/trả')));
 });
 
 it('cần quyền returns.manage', function () {

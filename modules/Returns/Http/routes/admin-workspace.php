@@ -12,6 +12,8 @@ Route::put('reasons/{reason}', [ReasonController::class, 'update'])->whereNumber
 Route::delete('reasons/{reason}', [ReasonController::class, 'destroy'])->whereNumber('reason')->name('reasons.destroy');
 Route::get('returns/create/{order}', [ReturnController::class, 'create'])->whereNumber('order')->name('returns.create');
 Route::post('returns', [ReturnController::class, 'store'])->name('returns.store');
+Route::post('returns/bulk-approve', [ReturnController::class, 'bulkApprove'])->name('returns.bulk-approve');
+Route::post('returns/bulk-receive', [ReturnController::class, 'bulkReceive'])->name('returns.bulk-receive');
 Route::get('returns/{return}', [ReturnController::class, 'show'])->name('returns.show');
 Route::post('returns/{return}/transition', [ReturnController::class, 'transition'])->name('returns.transition');
 Route::post('returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
