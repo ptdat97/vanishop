@@ -1,10 +1,10 @@
 # Promotion
 
-> Trạng thái: **Partially Implemented (slice 6)**. Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md): khuyến mãi **cấp cửa hàng**; giới hạn theo brand bằng rule điều kiện. Code hiện còn phạm vi brand, gỡ ở slice 12.
+> Trạng thái: **Partially Implemented**. Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), khuyến mãi thuộc phạm vi toàn cửa hàng; giới hạn theo brand (nếu có) là rule điều kiện, không phải data scope.
 >
-> **Đã có:** module `modules/Promotion`: `promotions` (phạm vi **brand**, priority, `exclusive`/`combinable`, cần voucher hay tự động, giới hạn lượt, ngân sách, khung giờ, `lock_version`), `promotion_rules` (rule của plugin), `vouchers` (mã chữ hoa duy nhất, giới hạn lượt, hết hạn, bật/tắt), `promotion_usages`; `PromotionEngine` (đánh giá chỉ đọc; `recordUsage` bằng UPDATE có điều kiện; `revertUsage` idempotent), action `percent_off` / `amount_off`, extension point `PromotionRule` / `PromotionAction`, giá sàn `VANI_PROMOTION_MAX_DISCOUNT_BP` (mặc định 50%), Admin brand workspace (khuyến mãi, voucher cụ thể + sinh hàng loạt), concurrency test voucher.
+> **Đã có:** module `modules/Promotion`: `promotions` (phạm vi cửa hàng, priority, `exclusive`/`combinable`, cần voucher hay tự động, giới hạn lượt, ngân sách, khung giờ, `lock_version`), `promotion_rules` (rule của plugin), `vouchers` (mã chữ hoa duy nhất, giới hạn lượt, hết hạn, bật/tắt), `promotion_usages`; `PromotionEngine` (đánh giá chỉ đọc; `recordUsage` bằng UPDATE có điều kiện; `revertUsage` idempotent), action `percent_off` / `amount_off`, extension point `PromotionRule` / `PromotionAction`, giá sàn `VANI_PROMOTION_MAX_DISCOUNT_BP` (mặc định 50%), Admin khuyến mãi/voucher cấp cửa hàng, concurrency test voucher.
 >
-> **Khác thiết kế:** mỗi khuyến mãi **một action** (cột `action_type` + `action_config` thay bảng `promotion_actions`); chỉ phạm vi brand (sẽ thành cấp cửa hàng, slice 12). **Chưa có:** action trên phí giao hàng, giới hạn lượt theo khách (`usage_per_customer`, chờ Customer), giá sàn tính theo giá niêm yết (hiện tính theo giá bán của dòng — khi có giá sale, tổng mức giảm so với giá niêm yết có thể vượt 50%; pháp chế cần xác nhận cách áp), cache danh sách khuyến mãi, Admin cấu hình rule của plugin. Core cung cấp **framework**, rule cụ thể do plugin cung cấp ([commerce-kernel](../02-architecture/commerce-kernel.md)).
+> **Khác thiết kế:** mỗi khuyến mãi **một action** (cột `action_type` + `action_config`). **Giới hạn hiện tại:** framework không có Admin tổng quát để cấu hình rule của từng plugin; rule cụ thể do plugin cung cấp ([commerce-kernel](../02-architecture/commerce-kernel.md)).
 
 ## 1. Trách nhiệm
 
@@ -57,12 +57,11 @@ final readonly class PromotionContext
 ## 3. Dữ liệu (Core)
 
 ```
-promotions(id, name, status, starts_at, ends_at,
-           priority, stacking[exclusive|combinable], budget_amount NULL, budget_used_amount,
-           usage_limit NULL, usage_per_customer NULL, requires_voucher, lock_version)
+promotions(id, name, status, starts_at, ends_at, priority, stacking[exclusive|combinable],
+           requires_voucher, action_type, action_config, usage_limit NULL, usage_count,
+           budget_amount NULL, budget_used_amount, lock_version)
 promotion_rules(promotion_id, rule_type, config json)          -- rule_type do plugin đăng ký
-promotion_actions(promotion_id, action_type, config json)
-vouchers(id, promotion_id, code UNIQUE, usage_limit, used_count, customer_id NULL, expires_at)
+vouchers(id, promotion_id, code UNIQUE, usage_limit, used_count, expires_at, status)
 promotion_usages(promotion_id, voucher_id NULL, order_id, customer_id NULL, discount_amount, status[applied|reverted])
 ```
 
@@ -135,7 +134,7 @@ final class FirstOrderRule implements PromotionRule
 
 ### 6.1 Rule "thuộc brand"
 
-Rule `in_brands` (plugin `vani.promotion-rules`, Designed) nhận `{brand_ids: [...]}`, trả `Eligibility` gồm các dòng có `brandId` trong danh sách. Ví dụ "giảm 20% toàn bộ Urbanx" = promotion tự động + rule `in_brands` + action `percent_off`. Không cần phạm vi brand trong Core.
+Rule `in_brands` (plugin `vani.promotion-rules`, Implemented) nhận danh sách slug thương hiệu, trả `Eligibility` gồm các dòng thuộc thương hiệu được chọn. Ví dụ "giảm 20% toàn bộ Urbanx" = promotion tự động + rule `in_brands` + action `percent_off`. Không cần phạm vi brand trong Core.
 
 ## 7. Kiểm thử
 

@@ -4,17 +4,17 @@
 >
 > **Cart đã có:** module `modules/Cart` (`carts`, `cart_lines`), contract `Carts` (create, view, addLine cộng dồn, updateLine, removeLine, merge), lỗi công khai `CartRejected` (mã `cart.*`), giới hạn số lượng/dòng (`vanishop.cart.*`), giá chụp khi thêm + cờ `price_changed`, cờ `insufficient_stock`/`unavailable` trên dòng, `subtotal` theo giá hiện tại, hook `vani.cart.validate_line`, event `CartUpdated`, lệnh `vani:cart:prune` (hằng ngày), Storefront API `/carts`. Định danh giỏ: [ADR-022](../19-adr/ADR-022-guest-cart-token.md).
 >
-> **Chưa có (Cart):** gắn khách hàng + gộp giỏ khi đăng nhập (chờ module Customer; logic gộp đã có), `CartAbandoned`, native storefront.
+> **Đã có (Cart):** gắn với khách hàng và gộp giỏ khi đăng nhập, `CartAbandoned`, trang giỏ native cùng giỏ mini. Chi tiết hành vi ở §1.
 >
-> **Checkout đã có (slice 6):** module `modules/Checkout`, contract `Checkout` (`quote`, `placeOrder`), totals pipeline (subtotal 100 → promotion 200 → shipping 500 → tax 800 → guard 900), `VnVatInclusiveTax` (VAT gồm trong giá, `VANI_VAT_RATE_BP`), `FlatRateShipping` (phí cố định + miễn phí trên ngưỡng), `CoreCheckoutValidator` (giỏ, một brand, liên hệ, SĐT, địa chỉ, giao hàng, thanh toán), hook `vani.checkout.before_validate` / `after_validate` / `payment_methods` / `shipping_options` / `vani.order.after_create`, `PlaceOrder` một transaction + `Idempotency-Key` + `expected_total` ([ADR-023](../19-adr/ADR-023-stateless-checkout.md)). Thanh toán: COD (`cod_pending`).
+> **Checkout đã có:** module `modules/Checkout`, contract `Checkout` (`quote`, `placeOrder`), totals pipeline, `CoreCheckoutValidator`, hook checkout, `PlaceOrder` một transaction + `Idempotency-Key` + `expected_total` ([ADR-023](../19-adr/ADR-023-stateless-checkout.md)). Thuế, phí giao hàng và phương thức thanh toán được cung cấp qua extension points/plugin hệ thống; giỏ nhiều brand vẫn tạo một đơn.
 >
-> **Chưa có (Checkout):** `PaymentGateway`/thanh toán online (slice 7), kiểm tra mã địa giới với bảng `administrative_units`, thuế trên phí giao hàng, carrier thật (slice 9).
+> **Giới hạn hiện tại:** các carrier/cổng ngoài cần kiểm thử tài khoản sandbox thật; một số adapter (như GHN) hiện vẫn mô phỏng API nhà cung cấp. Các giới hạn go-live được theo dõi trong [roadmap](../20-roadmap/roadmap.md).
 
 ## 1. Cart
 
 | Mục | Thiết kế |
 |---|---|
-| Phạm vi | Một giỏ cho cửa hàng, chứa sản phẩm **mọi brand**, đặt thành **một đơn** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Code hiện gắn giỏ với kênh và chặn đơn nhiều brand — gỡ ở slice 12 |
+| Phạm vi | Một giỏ cho cửa hàng, chứa sản phẩm **mọi brand**, đặt thành **một đơn** ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); không gắn giỏ với channel |
 | Định danh | `public_id` (ULID) + token bí mật (header `X-Vani-Cart-Token`; native: cookie HttpOnly), server chỉ lưu `sha256` ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)) |
 | Dòng giỏ | `variant_id`, `quantity`, `selected`, `unit_price_snapshot` (giá lúc thêm, để cảnh báo "giá đã đổi"), `meta` |
 | Chọn dòng (0.3.64) | `selected` mặc định true; `select`/`deselect`/`selectOnly` dưới cùng khoá giỏ. Checkout chỉ lấy dòng đã chọn (khuyến mãi, phí, thuế tính trên phần đó); dòng `unavailable` không tính là đã chọn; dòng chưa chọn không chặn thanh toán. Sau khi đặt, `markOrdered` xoá dòng đã vào đơn — giỏ chỉ `converted` khi hết dòng. Thêm lại dòng đã bỏ chọn → chọn lại |

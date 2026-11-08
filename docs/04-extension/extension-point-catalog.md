@@ -1,12 +1,12 @@
 # Danh mục Extension Points (public API v1)
 
-> Trạng thái: **Designed**. Bảng này là **nguồn duy nhất** liệt kê extension point public. Thêm/đổi phải theo [compatibility policy](extension-model.md).
+> Trạng thái: **Partially Implemented**. Đây là danh mục extension point public hiện tại; mục nào chưa triển khai được ghi rõ. Thêm/đổi phải theo [compatibility policy](extension-model.md).
 >
-> **Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)** (một cửa hàng): plugin bật/tắt toàn cửa hàng; tham số kênh/brand-phạm vi trên contract (`PriceResolver`, `AvailabilityReader`, `ChannelDirectory`, `CurrentContext`) và `brandId` trên event sẽ bị gỡ/deprecated ở slice 12 (Core `0.3.0`, ghi [CHANGELOG-extension](CHANGELOG-extension.md)). Các dòng dưới đây mô tả API hiện tại.
+> Plugin được bật/tắt ở phạm vi toàn cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Brand là dữ liệu Catalog, không phải scope plugin; các thay đổi contract của slice 12 được ghi trong [CHANGELOG-extension](CHANGELOG-extension.md).
 
 ## 1. Contract: capability thay thế được
 
-Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` — **mọi tag là hằng `TAG` trên interface trong `Contracts`** (arch test chặn định nghĩa tag ở tầng khác; hằng cũ trong `Application` còn làm alias `@deprecated`). Registry của Core lọc theo trạng thái bật của plugin (hiện theo scope owner/brand/channel; sau slice 12: bật/tắt toàn cửa hàng).
+Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` — **mọi tag là hằng `TAG` trên interface trong `Contracts`** (arch test chặn định nghĩa tag ở tầng khác; hằng cũ trong `Application` còn làm alias `@deprecated`). Registry của Core chỉ đưa implementation của plugin đang bật vào hiệu lực.
 
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|
@@ -16,6 +16,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `reserved_locations` (**Implemented**; đề xuất phải khớp hàng đang giữ) | [fulfillment](../09-order/fulfillment.md) |
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
+| `StockPageLink` | `vani.inventory.stock_links` | Inventory | — (plugin); `vani.warehouse` thêm liên kết chuyển kho và quản lý kho (0.3.88) | [inventory](../08-inventory/inventory.md) |
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
 | `TaxCalculator` | `vani.tax.calculators` | Checkout | Core: `none`; `vn_vat_inclusive` là plugin hệ thống `vani.tax-vn-vat` (**Implemented**, chọn bằng `core.tax.calculator`/`VANI_TAX_CALCULATOR`). Bắt buộc đúng 1 | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PhoneNumberPolicy` | `vani.phone.policies` | Shared (gắn ở composition root) | Core: `international`; `vn` là plugin hệ thống `vani.phone-vn` (**Implemented 0.3.42**, chọn bằng `vanishop.locale.phone_policy`/`VANI_PHONE_POLICY`). Bắt buộc đúng 1; gọi qua `Shared\Support\Phones` | [commerce-kernel §3.2](../02-architecture/commerce-kernel.md) |
@@ -51,27 +52,25 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 
 | Contract | Chức năng | Context |
 |---|---|---|
-| `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant) (hiện lọc theo brand của kênh; sau slice 12: toàn cửa hàng, thêm danh sách/chi tiết brand). **Implemented** | Catalog |
+| `CatalogReader` | Đọc catalog đang hiển thị (cây danh mục, tìm sản phẩm, PDP kèm variant, danh sách/chi tiết brand). **Implemented** | Catalog |
 | `VariantDirectory` | Tra variant (theo mã style, theo id) cho module khác. **Implemented** | Catalog |
 | `CatalogImporter` | Nhập sản phẩm (`upsertProduct(ProductImport)`): idempotent theo mã style, tạo thương hiệu/danh mục/màu/size còn thiếu, ảnh từ file local qua thư viện media, sinh variant; không ghi đè nội dung đã sửa. **Implemented** (0.3.27), dùng bởi `database/seeders/Demo/CatalogSeeder` (trước: plugin `vani.demo-catalog`, đã gỡ 2026-11-05) | Catalog |
-| `ChannelDirectory` | Kênh bán của một brand. **Implemented**, sẽ gỡ cùng module Channel (slice 12) | Channel |
-| `PriceResolver` | Giá hiệu lực của variant theo channel (nhóm khách: Designed). **Implemented** | Pricing |
+| `PriceResolver` | Giải giá hiệu lực theo variant và `PricingContext` (nhóm khách/khách hàng nếu có). **Implemented** | Pricing |
 | `PriceImporter` | Đặt giá niêm yết (bảng `base`) theo SKU. **Implemented** (0.3.27) | Pricing |
 | `InventoryReservation` | `reserve`, `release`, `commit` (**Implemented**) | Inventory |
-| `StockPageLink` | `vani.inventory.stock_links` | Inventory | Không có mặc định; `vani.warehouse` đóng góp "Chuyển kho", "Kho & cửa hàng" (0.3.89) — nút chỉ hiện khi plugin bật | [inventory](../08-inventory/inventory.md) |
 | `LocationRegistry` | Đọc/tạo/sửa kho (`LocationData`), audit + optimistic lock, mã trùng → ValidationException. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Catalog/Inventory |
 | `StockMovements` | `transferOut`/`transferIn` tại một kho do VaniShop quản lý: khoá dòng tồn, sổ biến động, `AvailabilityChanged`; chạy trong transaction của bên gọi; từ chối → `StockMovementRejected`. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |
 | `InventoryReconciliation` | `reconcileExternal(source, rows, apply)` — đối soát snapshot nguồn ngoài vào bảng đối soát chung. **Implemented** (0.3.88), dùng bởi `vani.warehouse` | Inventory |
 | `StockImporter` | Đặt tồn tuyệt đối theo SKU tại kho do VaniShop quản lý (movement `sync` + audit; kho authority ngoài dùng `InventorySync`). **Implemented** (0.3.27) | Inventory |
 | `InventoryAdjuster` | Điều chỉnh on-hand có lý do (movement) — hiện là service nội bộ `StockAdjustmentService`, chưa công bố contract (chờ Integration) | Inventory |
-| `AvailabilityReader` | ATS theo channel (**Implemented**; theo location: chưa) | Inventory |
+| `AvailabilityReader` | Đọc ATS theo variant; không nhận channel hoặc location (**Implemented**) | Inventory |
 | `Carts` | Giỏ: tạo, xem, thêm/sửa/xoá dòng, gộp, khoá cho checkout. **Implemented** | Cart |
 | `PromotionEngine` | Đánh giá khuyến mãi, ghi nhận/hoàn lượt. **Implemented** | Promotion |
 | `Checkout` | `quote`, `placeOrder` (idempotent). **Implemented** | Checkout |
 | `ShippingAddresses` | Địa chỉ giao hàng theo danh mục địa giới đang dùng (`directory()`, `normalize()`): cùng quy tắc cho checkout, sổ địa chỉ khách, Admin sửa địa chỉ đơn. **Implemented** (0.3.13) | Checkout |
 | `OrderWriter` | Tạo đơn từ bản nháp đã tính (trong transaction PlaceOrder). **Implemented** | Ordering |
 | `OrderReader` | Đọc đơn (DTO snapshot). **Implemented** | Ordering |
-| `OrderStatistics` | Số liệu bán hàng tổng hợp: tổng, theo ngày (múi giờ), theo thanh toán/kênh/sản phẩm/thương hiệu, đếm theo trạng thái. **Implemented** (0.3.12) | Ordering |
+| `OrderStatistics` | Số liệu bán hàng tổng hợp: tổng, theo ngày (múi giờ), theo phương thức thanh toán/nguồn đơn/sản phẩm/thương hiệu, đếm theo trạng thái. **Implemented** (0.3.12) | Ordering |
 | `CustomerOrders` | Tra cứu/xem/huỷ đơn cho khách vãng lai. **Implemented** | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
@@ -83,14 +82,14 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `LinkResolver` | Phân giải `LinkTarget` → `ResolvedLink {url, label, exists}` theo ngôn ngữ, theo lô; loại đang có, tìm đối tượng. **Implemented** (0.3.58) | Storefront |
 | `CatalogLookup` | Đối tượng catalog đang hiển thị theo id (`category`, `collection`, `brand`, `product`), một truy vấn mỗi loại; tìm cho Admin. **Implemented** (0.3.58) | Catalog |
 | `CustomerAccounts` | Khách tự quản lý hồ sơ, mật khẩu, sổ địa chỉ, xoá tài khoản (`deletionBlockers`, `requestDeletionOtp`, `deleteAccount` — 0.3.57) (bề mặt ngoài Storefront API, vd. native storefront). **Implemented** (0.3.13) | Customer |
-| `Settings` | Đọc/ghi cấu hình, khai báo định nghĩa. **Implemented** (hiện kế thừa kênh → brand → pháp nhân → owner; sau slice 12: một cấp cửa hàng) | Tenancy |
+| `Settings` | Đọc/ghi cấu hình và khai báo định nghĩa; cấu hình ở một cấp cửa hàng. **Implemented** | Tenancy |
 | `IntegrationOutbox` | Đưa message ra ngoài có đảm bảo | Integration |
-| `CurrentContext` | Locale/actor hiện tại; `runAs()` (brand/channel: bỏ ở slice 12) | Shared |
-| `Authorizer` | Kiểm tra quyền theo scope | Identity |
+| `CurrentContext` | Actor/locale hiện tại; `runAs()` tạm thời đổi context | Shared |
+| `Authorizer` | Kiểm tra quyền ở phạm vi `owner` hoặc `location` | Identity |
 
 ## 3. Domain Events
 
-Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Events`. Plugin nghe qua `PluginServiceProvider::onEvent()`. Hiện event gắn với đơn mang `brandId` để lọc theo phạm vi bật plugin; sau slice 12 plugin bật toàn cửa hàng nên `brandId` thành `@deprecated` (không còn dùng để lọc).
+Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Events`. Plugin nghe qua `PluginServiceProvider::onEvent()`; listener chỉ chạy khi plugin tương ứng đang bật. Việc bật plugin không lọc event theo brand hay channel.
 
 | Context | Events |
 |---|---|
@@ -114,7 +113,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.catalog.product.view_data` | filter | không | Bổ sung dữ liệu hiển thị PDP |
 | `vani.customer.before_delete` | validate | không (trước khi kiểm OTP; chỉ đọc) | Việc còn dở chặn khách tự xoá tài khoản; trả `list<{type, reference, label}>`, có mục → `customer.deletion_blocked`. Core: Ordering báo đơn chưa hoàn tất / đổi trả đang mở. Nhân viên ẩn danh hoá trong Admin không qua hook. **Implemented** (0.3.57) |
 | `vani.product.before_save` | validate | không (chạy trước transaction) | Chặn khi lưu sản phẩm (quy tắc riêng của cửa hàng); tham số `ProductDraft`. **Implemented** |
-| `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `(styleId, brandId)`. **Implemented** |
+| `vani.product.after_save` | action | có (chỉ ghi DB) | Plugin lưu dữ liệu mở rộng của sản phẩm; tham số `styleId`. **Implemented** |
 | `vani.cart.validate_line` | validate | có (khoá giỏ; không I/O mạng) | Chặn thêm/tăng dòng giỏ (giới hạn mua mỗi khách, hàng chỉ bán tại cửa hàng…); tham số `CartLineDraft` (số lượng sau thay đổi). **Implemented** |
 | `vani.checkout.payment_methods` | filter | có (khi đặt hàng) | Ẩn/hiện phương thức thanh toán; tham số `(methods, Totals)`. **Implemented** |
 | `vani.checkout.shipping_options` | filter | có (khi đặt hàng) | Sửa danh sách phương thức giao; tham số `(options, TotalsContext)`. **Implemented** |
@@ -135,9 +134,9 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.admin.order.list_tools` | slot | 0.3.97 | Công cụ tải file ở đầu danh sách đơn Admin; trả `list<{key, label, url, accept?, help?, fields?}>` — POST multipart `file` + fields. **Implemented** (Fulfillment: nhập mã vận đơn) |
 | `vani.admin.order.payment_methods` | slot | 0.3.96 | Nhãn cách thanh toán cho danh sách đơn; trả `array<mã, nhãn>`. **Implemented** (Payment) |
 
-### 4.1 Slot storefront (Implemented 2026-10-02 cùng theme `vani-base`, khai báo ở `modules/Storefront/hooks.php`)
+### 4.1 Slot storefront (Implemented, khai báo ở `modules/Storefront/hooks.php`)
 
-Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả `Modules\Storefront\Contracts\Data\SlotView` (view của plugin + dữ liệu) hoặc `Htmlable`; theme render tại vị trí slot bằng `<x-vani::hook-slot>`, chỉ nối thêm, lỗi một listener (hoặc lỗi lúc render) bị bỏ qua, chuỗi thô bị bỏ. Các slot dưới đây là public API (`since 0.3`), trừ `account.menu` (chờ trang tài khoản native).
+Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả `Modules\Storefront\Contracts\Data\SlotView` (view của plugin + dữ liệu) hoặc `Htmlable`; theme render tại vị trí slot bằng `<x-vani::hook-slot>`, chỉ nối thêm, lỗi một listener (hoặc lỗi lúc render) bị bỏ qua, chuỗi thô bị bỏ. Các slot dưới đây là public API (`since 0.3`); `account.menu` là mục bổ sung cho menu tài khoản native, ngoài các mục do `accountPage()` đăng ký.
 
 | Slot | Vị trí | Ví dụ plugin |
 |---|---|---|

@@ -1,8 +1,8 @@
 # Roadmap
 
-> Trạng thái: **Đang thực hiện**. Slice 0–12d đã xong phần lõi (Core 0.3.19). Từ 2026-10-04, thứ tự ưu tiên là **hardening Commerce Kernel trước, mở rộng tính năng sau** (§4).
+> Trạng thái: **Đang thực hiện** (Core 0.3.104, 2026-11-08). Các phase hardening 1–8 và slice chuyển sang một cửa hàng đã hoàn tất; trọng tâm hiện tại là làm vận hành hàng ngày cho SME đơn giản hơn. Backlog chi tiết hiện hành ở [reference-parity-refactor §6](reference-parity-refactor.md).
 >
-> **Mục tiêu hiện tại (2026-10-08): một cửa hàng, một người bán.** Phase 9 (ERP connector) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho nó. Chỉ mở lại khi Owner quyết định. Hạng mục **ngoài phạm vi** dự án (không phải đóng băng): [ADR-033](../19-adr/ADR-033-out-of-scope.md). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
+> **Mục tiêu hiện tại (2026-11-08): một cửa hàng, một người bán.** Phase 9 (ERP connector) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho nó. Chỉ mở lại khi Owner quyết định. Hạng mục **ngoài phạm vi** dự án (không phải đóng băng): [ADR-033](../19-adr/ADR-033-out-of-scope.md). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
 
 ## 1. Nguyên tắc
 
@@ -78,7 +78,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 - [x] Webhook subscription: envelope + chữ ký HMAC + `Idempotency-Key`, tự tạm dừng sau 24h lỗi, bật lại trong Admin
 - [x] Inbox (unique `(system, external_event_id)`) + processor + extension point `InboundHandler`; extension point `Connector` cho plugin
 - [x] Replay (Admin + CLI), giữ message id, có audit; Admin "Tích hợp" (payload đã che PII)
-- [x] Integration Client: 2 key HMAC song song, scope, data scope brand, IP allowlist, rate limit; CLI cấp client/key/webhook
+- [x] Integration Client: 2 key HMAC song song, scope, IP allowlist, rate limit; không có data scope brand, quyền theo location ở endpoint hỗ trợ
 - [x] Integration API v1: `GET /events`, `GET /orders` (+ keyset cursor), `GET /orders/{number}`, `POST /orders/{number}/acknowledgements`, `PUT /inventory/levels` (`not_data_owner`, `stale_update`)
 - [x] PR Core tổng quát: `VariantDirectory::findBySkus`, `OrderReader::changedSince` (+ `OrderData` thêm `fulfillmentStatus`/`placedAt`/`updatedAt`), `InventorySync`
 - [x] Circuit breaker theo connector (5 lỗi retryable liên tiếp → hoãn 60s, không tốn lượt thử; lỗi dữ liệu không tính)
@@ -92,7 +92,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 - [x] `vani.vietqr`: cổng QR động, IPN HMAC qua route chung `/api/payments/vietqr/callback`
 - [x] `vani.ghn`: `ShippingCarrier` (đặt đơn idempotent, webhook trạng thái) + `ShippingRateProvider` (báo cước checkout)
 - [x] Cả 3 plugin: manifest, `Config/`, `README.md`, unit/feature/contract test
-- [x] Bật theo scope `owner`/`brand` — implementation của plugin chỉ hiện trong phạm vi được bật
+- [x] Bật/tắt toàn cửa hàng — implementation của plugin không bị giới hạn theo brand
 - [x] Arch test R5 pass: plugin chỉ dùng `Contracts/`, `Events/`, `PluginServiceProvider` và `Shared\Domain\Money`
 
 ### Tiến độ slice 0 (2026-09-28)
@@ -107,7 +107,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 - [x] MySQL + `.env`
 - [x] CI (chưa chạy trên GitHub vì repo chưa có remote CI)
 - [x] Larastan (level 5 + baseline, ADR-032)
-- [x] Settings kế thừa theo scope (Tenancy) — làm trong đợt P0 của kernel-review (2026-10-14)
+- [x] Settings cấu hình cấp cửa hàng trong Tenancy — làm trong đợt P0 của kernel-review (2026-10-14)
 
 ## 3. Sau khi chứng minh kiến trúc
 
@@ -115,7 +115,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 |---|---|---|
 | 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation). **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên. ERP connector: đóng băng (Phase 9) | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
 | 12 ✅ | **Chuyển sang một cửa hàng** (xong 2026-10-02) ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): brand thành thực thể Catalog (trang brand, facet, rule khuyến mãi, snapshot dòng đơn); gỡ `BelongsToBrand`, module Brand tenant + Channel, brand workspace, plugin scope theo brand, `X-Vani-Channel`; giỏ nhiều brand → một đơn; số đơn một dãy; Core `0.3.0` | [store-and-brand §6](../12-store/store-and-brand.md) |
-| 12b 🟡 | **Native storefront** (xong phần lõi 2026-10-02: theme + theme con, trang SSR đến đặt hàng, slot, tài khoản native, tra cứu đơn, robots/sitemap; còn page builder, cache CDN, sửa hồ sơ native): theme `vani-base` SSR-first, controller Storefront dùng chung Presenter với API, một theme đang hoạt động + theme con, trang `/thuong-hieu/{slug}`, component slot + khai báo slot storefront trong `hooks.php`, test JS tắt/slot lỗi | [storefront](../14-storefront/storefront.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) |
+| 12b 🟡 | **Native storefront** (SSR mua hàng, slot, trang tài khoản/đơn, robots/sitemap, menu theo vị trí, URL đa ngôn ngữ, page cache CDN và giỏ tăng cường bằng JS đã có; còn page builder cho trang ngoài trang chủ và purge CDN theo event): theme `vani-base`, controller dùng chung Presenter với API, trang `/thuong-hieu/{slug}`, component slot và test JS tắt/slot lỗi | [storefront](../14-storefront/storefront.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) |
 | 12c 🟡 | (Phần Core xong 2026-10-02; GHN thật hoãn) PR Core: vận đơn chọn carrier theo `shippingMethod.source` của đơn (rơi về mặc định khi carrier không bật); `vani.ghn` gọi API GHN thật (báo cước có cache, đặt đơn idempotent) | [shipping-carrier](../05-plugin/contracts/shipping-carrier.md) |
 | 12d ✅ | **Microkernel** (xong 2026-10-02, trừ `vani.reports` — chưa có báo cáo để tách) ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): extension point bắt buộc + manifest `bundled` + `vani:install`; tách `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` khỏi module; Reporting thành `vani.reports`; arch test R28/R29; sau đó làm extension point còn thiếu theo đợt plugin ([catalog §7](../04-extension/extension-point-catalog.md)) | [commerce-kernel §6](../02-architecture/commerce-kernel.md) |
 | 13 | Plugin go-live P1 còn lại: `vani.tracking-pixels` (`vani.vnpay`: đã có 2026-10-03, chờ chạy thử sandbox; `vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
@@ -138,7 +138,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Invariant `reserved = Σ hàng giữ active`, tồn = trạng thái sau của movement cuối, không âm | ✅ | `vani:inventory:verify` hằng ngày; bộ bất biến chạy lệnh này sau mọi vòng đời |
 | Không nhả hai lần / commit hai lần, không hàng giữ treo | ✅ | release/commit idempotent theo key; bất biến I3; `releaseQuantities` cho huỷ một phần |
 | Mọi điều chỉnh tạo movement, không `UPDATE` ngoài service | ✅ | R30; `reconcile` khi sửa reserved |
-| Chuyển kho (`pending → shipped → received`, `cancelled`) | ✅ | 2026-10-15. `stock_transfers` + dòng; `pending` không đổi tồn, `shipped` trừ `on_hand` kho đi (movement `transfer_out`), `received` cộng kho đến (`transfer_in`); hàng đang đi đường không bán được; huỷ sau `shipped` = nhập lại kho đi. Chỉ giữa hai location do VaniShop quản lý tồn; quyền `inventory.transfer`; event `StockTransfer*` |
+| Chuyển kho (`pending → shipped → received`, `cancelled`) | ✅ | Ban đầu triển khai trong Core (2026-10-15); từ Core 0.3.88 (2026-11-06, ADR-042), luồng chuyển kho và quản trị nhiều location thuộc plugin `vani.warehouse` |
 | Báo cáo đối soát nội bộ lưu lại (không chỉ log) | ✅ | `vani:inventory:verify` ghi phiên + dòng vào `inventory_reconciliations`/`inventory_reconciliation_lines` (source `internal_verify`); dòng đã sửa có `resolution = repaired` |
 
 ### Phase 2. Order / Payment / Return invariants
@@ -216,19 +216,11 @@ Không làm trong mục tiêu hiện tại (một cửa hàng, một người b�
 
 Phase 10 cũ đã bỏ: hạng mục ngoài phạm vi ([ADR-033](../19-adr/ADR-033-out-of-scope.md), 2026-10-10).
 
-### Việc kế tiếp đề xuất
+### Việc kế tiếp
 
-1. Phase 1: chuyển kho có vòng đời. ✅ 2026-10-15
-2. Phase 3: bảng đối soát tồn với nguồn ngoài, dùng chung cho kết quả `vani:inventory:verify`. ✅ 2026-10-15
-3. Phase 4: đối soát event `payment.*`/`return.*`/`shipment.*`. ✅ 2026-10-07 (Core 0.3.21)
-4. Phase 3 còn: đối soát thanh toán với cổng — phát hiện cổng `refunded`/`captured` ≠ VaniShop với khoản đã thu (chỉ ghi chênh lệch để xử lý tay). ✅ 2026-10-07 (Core 0.3.22)
-5. Phase 5: trạng thái `draining` + xác nhận `--force`. ✅ 2026-10-07 (Core 0.3.23)
-6. Phase 5 còn: khai báo dữ liệu plugin (owned/referenced/retained) + chặn gỡ khi còn tham chiếu. ✅ 2026-10-07 (Core 0.3.24)
-7. Phase 6: metric tối thiểu + health check ✅ 2026-10-07 (Core 0.3.25); OpenAPI + error contract `/api/integration/v1` ✅ 2026-10-07 (Core 0.3.26); cảnh báo tự động ✅ 2026-10-08 (Core 0.3.30).
-8. Phase 2: tính lại khuyến mãi theo ngưỡng sau huỷ một phần ✅ 2026-10-08 (Core 0.3.31); đổi hàng ✅ 2026-10-08 (Core 0.3.32). Phase 2 xong.
-9. Phase 7: đổi/trả trên storefront native ✅ 2026-10-08. Phase 5: capability theo tag ✅ 2026-10-08 (Core 0.3.33) — Phase 5 xong. Phase 7: cache CDN ✅ 2026-10-08 (Core 0.3.34) — Phase 7 xong. Phase 8: phân khúc khách + giá thành viên ✅ (0.3.35), campaign ✅ (0.3.36), tầng giá trên đơn ✅ (0.3.37) — Phase 8 xong. Hardening Phase 1–8 hoàn tất (Phase 9 đóng băng); việc tiếp theo là go-live gate (§5).
+Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5).
 
-Phase 9 đóng băng, không nằm trong danh sách này.
+Phase 9 đóng băng, không nằm trong backlog.
 
 ## 5. Go-live gate
 

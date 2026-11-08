@@ -7,7 +7,7 @@
 | Legal Entity | Pháp nhân vận hành | Công ty có MST đứng tên bán hàng trên website; xuất hoá đơn, nhận tiền. Một bản ghi |
 | Brand | Thương hiệu | Nhóm sản phẩm trong Catalog (trang brand, bộ lọc, điều kiện khuyến mãi, báo cáo). **Không** phải phạm vi dữ liệu |
 | Order source | Nguồn đơn | `web`, `app`, `zalo`, `admin`, `pos` — thuộc tính của đơn để báo cáo |
-| Channel | Kênh (cũ) | Khái niệm của mô hình đa brand (ADR-008), sẽ gỡ khỏi code ở slice 12. Không nhầm với **kênh gửi tin** (email/SMS/ZNS) của Notification |
+| Channel | Kênh bán (khái niệm cũ) | Khái niệm của mô hình đa brand (ADR-008), đã gỡ khỏi code ở slice 12 theo ADR-028. Không nhầm với **kênh gửi tin** (email/SMS/ZNS) của Notification |
 | Location | Địa điểm tồn kho | Kho hoặc cửa hàng giữ hàng |
 | Style | Mẫu sản phẩm | Sản phẩm hiển thị trên 1 trang chi tiết |
 | Style Color | Màu của mẫu | Biến thể màu, có ảnh riêng |

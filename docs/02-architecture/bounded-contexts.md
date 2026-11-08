@@ -1,6 +1,8 @@
 # Bounded Contexts
 
-> Trạng thái: **Designed**. Định hướng một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): context **Brand** và **Channel** bị gỡ, brand chuyển vào **Catalog**. Code hiện vẫn có hai module này cho tới slice 12 ([store-and-brand §6](../12-store/store-and-brand.md)).
+> Trạng thái: **Partially Implemented**. Bảng này mô tả các bounded context hiện có trong code. Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), không còn context/module **Brand** hay **Channel**; brand là thực thể của **Catalog**.
+>
+> Bảng gồm cả module Core và capability do plugin sở hữu; các dòng ghi rõ plugin không thuộc danh sách 18 module Core.
 
 ## 1. Danh sách context
 
@@ -8,7 +10,7 @@
 |---|---|---|---|
 | **Shared** | `Money`, `Currency`, `Phone`, `Address` VO, `CurrentContext`, địa giới hành chính VN, `CorrelationId` | Nghiệp vụ | — (kernel dùng chung) |
 | **Tenancy** (cửa hàng) | Thông tin cửa hàng + pháp nhân vận hành, theme tokens cấp cửa hàng, settings một cấp | Catalog | `Settings`, `LegalEntityDirectory` |
-| **Identity & Access** | Nhân viên, vai trò, permission (toàn cửa hàng; scope `location` Designed), audit log | Khách hàng | `Authorizer`, `AuditLogger` |
+| **Identity & Access** | Nhân viên, vai trò, permission (`owner`/`location`), audit log | Khách hàng | `Authorizer`, `AuditLogger` |
 | **Extension** | Hook registry, plugin loader, manifest, trạng thái plugin, settings schema | Nghiệp vụ plugin | `Hook`, `PluginRegistry` |
 | **Catalog** | **Brand**, style, style color, variant/SKU, thuộc tính, danh mục, bộ sưu tập, media, nội dung | Giá, tồn | `CatalogReader`, `VariantDirectory` |
 | **Pricing** | Bảng giá, giá theo variant, lịch giá, lịch sử giá, `PricingStrategy` | Khuyến mãi | `PriceResolver` |
@@ -21,7 +23,7 @@
 | **Payment** | Payment, transaction, refund, khung gateway, COD, chuyển khoản thủ công | Đối soát COD chi tiết (plugin) | `PaymentGateway` (extension), `PaymentRecorder` |
 | **Fulfillment** | Shipment, sourcing, fulfillment method, carrier abstraction, vận đơn thủ công | Tồn | `ShippingCarrier`, `SourcingStrategy`, `FulfillmentMethod`, `ShipmentRecorder` |
 | **Returns** | Yêu cầu đổi/trả, kiểm hàng, quyết định hoàn | Hoàn tiền (gọi Payment) | `ReturnPolicy` |
-| **Content** | Trang, menu, banner, page builder, redirect | Theme | `StorefrontBlock` |
+| **Content** (plugin `vani.cms`) | Trang, bài viết, chuyên mục, banner và nội dung thêm | Core commerce data | `StorefrontBlock`, `LinkType`, `SitemapProvider` |
 | **Notification** | Template theo loại tin × kênh gửi × locale, gửi tin, nhật ký gửi | Nội dung marketing | `NotificationChannel` |
 | **Reporting** → plugin `vani.reports` ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)) | Read model báo cáo, dashboard | Dữ liệu gốc | Core chỉ cung cấp `DashboardWidget` + slot dashboard |
 | **Integration** | Integration Client, API, webhook, outbox/inbox, mapping, ownership, connector framework | Nghiệp vụ domain | `Connector`, `IntegrationOutbox`, `ErpConnector` |
@@ -122,7 +124,7 @@ Http ──► Application ──► Domain
 ```php
 // config/modules.php
 return [
-    'Shared', 'Tenancy', 'Identity', 'Extension', 'Integration',     // Brand, Channel: gỡ ở slice 12
+    'Shared', 'Tenancy', 'Identity', 'Extension', 'Integration',
     'Catalog', 'Pricing', 'Inventory', 'Customer', 'Cart', 'Promotion', 'Checkout',
     'Ordering', 'Payment', 'Fulfillment', 'Returns', 'Content', 'Notification', 'Reporting',
 ];

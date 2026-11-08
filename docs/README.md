@@ -37,7 +37,7 @@
 
 ## Đọc gì trước
 
-1. [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md) + [12-store/store-and-brand.md](12-store/store-and-brand.md): **định hướng hiện hành** — một cửa hàng, một website, một giao diện, brand là thuộc tính catalog (code còn theo mô hình đa brand cũ cho tới slice 12).
+1. [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md) + [12-store/store-and-brand.md](12-store/store-and-brand.md): **định hướng hiện hành và đã phản ánh trong code** — một cửa hàng, một website, một giao diện; brand là thuộc tính của catalog, không phải tenant hay phạm vi dữ liệu.
 2. [00-overview/status.md](00-overview/status.md): cái gì **đã có code**, cái gì mới chỉ là thiết kế.
 3. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): **bốn vòng** microkernel — cái gì vào Core, cái gì là plugin.
 4. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.

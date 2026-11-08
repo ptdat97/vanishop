@@ -1,6 +1,6 @@
 # Vòng đời request, middleware, tác vụ nền
 
-> Trạng thái: **Partially Implemented**, mô tả code đang có. Kiểm chứng từ `bootstrap/app.php`, `bootstrap/providers.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/Extension/ExtensionServiceProvider.php`, `PluginServiceProvider`, provider của Payment/Fulfillment/Integration/Storefront/Channel/Customer. Bản đồ thành phần: [system-map](system-map.md).
+> Trạng thái: **Partially Implemented**, mô tả code đang có. Kiểm chứng từ `bootstrap/app.php`, `bootstrap/providers.php`, `config/modules.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/Extension/ExtensionServiceProvider.php`, `PluginServiceProvider` và các module đang được nạp. Bản đồ thành phần: [system-map](system-map.md).
 
 > **Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: từ slice 12 (2026-10-02) code không còn module Brand/Channel, brand workspace hay header `X-Vani-Channel`; brand là thực thể Catalog.
 
@@ -25,7 +25,7 @@ bootstrap/providers.php
 |---|---|---|
 | Plugin nạp trong `register()` của Extension | Provider plugin có mặt trước vòng `boot()` | Plugin dùng được binding của mọi module, route plugin đăng ký cùng lúc với route Core |
 | Danh sách plugin đọc từ file cache | Không truy vấn DB lúc boot | Cache được dựng lại mỗi khi install/enable/disable/failed |
-| Plugin `installed`/`disabled` vẫn được `register()` | Route webhook/Admin cấu hình chạy được | Listener và implementation chỉ **có hiệu lực** khi plugin bật trong scope hiện tại |
+| Plugin `installed`/`disabled` vẫn được `register()` | Route webhook/Admin cấu hình chạy được | Listener và implementation chỉ **có hiệu lực** khi plugin được bật toàn cửa hàng |
 | Lỗi trong `register()`/`boot()` của plugin | Ghi log, plugin → `failed`, Core tiếp tục boot | [plugin-system §8](../05-plugin/plugin-system.md) |
 | `VANI_PLUGINS_SAFE_MODE=true` | Không nạp plugin nào | Cứu hộ khi plugin làm hỏng hệ thống |
 
@@ -39,7 +39,7 @@ bootstrap/providers.php
 |---|---|---|
 | `AssignCorrelationId` | Prepend toàn cục | Mỗi request có correlation id (header + log context), R22 |
 | `ConfigureAdminSession` | Đầu nhóm `web` | Request vào đường dẫn Admin dùng cookie phiên riêng (ADR-020); phải chạy trước `StartSession` |
-| `ResolveStaffContext`, `ResolveAdminBrand`, `ResolveChannel`, `ResolveApiChannel` | Chèn **trước** `SubstituteBindings` trong danh sách ưu tiên | Scope (nhân viên → brand workspace; kênh storefront) có trước route model binding, nên model có phạm vi brand tự lọc: id của brand khác → 404 |
+| `ResolveStaffContext`, `ResolveStorefrontContext` | Chèn **trước** `SubstituteBindings` trong danh sách ưu tiên | Đặt actor/locale vào `CurrentContext` trước route model binding; không thiết lập scope brand/channel |
 
 ### 2.2 Nhóm route theo bề mặt
 
@@ -48,12 +48,12 @@ bootstrap/providers.php
 | Admin (`loadAdminRoutes`) | `web` → `vani.admin` (`AdminGate`: IP allowlist, noindex… + Inertia) → `auth:staff` → `vani.staff-context` | Đăng nhập Admin: giới hạn số lần sai (`StaffLoginRequest`) | Có (phiên Admin, CSRF) |
 | Admin theo mục (`loadAdminSectionRoutes`) | như Admin; prefix `/{admin}/{section}` | — | Có |
 | Admin của plugin (`adminRoutes`) | như Admin + `vani.plugin-active:{id}` (404 khi plugin không active); prefix `/{admin}/plugins/{slug}` | — | Có |
-| Storefront API (`loadStorefrontApiRoutes`) | `api` → `throttle:storefront-api` → `vani.storefront-context` (locale `X-Vani-Locale`, nguồn đơn `X-Vani-Source`) | 240/phút/IP; tạo giỏ 30, checkout 20, tra đơn 10, đăng nhập khách 20 | Không (token) |
+| Storefront API (`loadStorefrontApiRoutes`) | `api` → `throttle:storefront-api` → `vani.storefront-context` (locale `X-Vani-Locale`, nguồn đơn `X-Vani-Source`) → maintenance/response hooks | 240/phút/IP; tạo giỏ 30, checkout 20, tra đơn 10, đăng nhập khách 20 | Không (Bearer token khi cần xác thực) |
 | Integration API | `api` → `vani.integration-client` (HMAC, scope, IP) → `throttle:integration-api` | Theo client | Không |
 | Callback thanh toán | `api` → `throttle:payment-callbacks`; `/api/payments/{gateway}/callback` | 600/phút/IP | Không |
 | Webhook vận chuyển | `api` → `throttle:shipping-webhooks`; `/api/shipping/{carrier}/webhook` | 600/phút/IP | Không |
 | Webhook của plugin (`webhookRoutes`) | `api`; `/api/integrations/{slug}/…` | Plugin tự đặt | Không |
-| Storefront native | Designed: `web` → phiên khách (một website, không xác định kênh/brand theo URL) | Designed | Có |
+| Storefront native | `web` → `vani.storefront-context:<locale>` → customer session → theme → maintenance; page cache chỉ trên route công khai được chọn | Theo route | Có (phiên khách) |
 
 Nhóm `api` không có phiên và CSRF, nên callback/webhook không cần "loại trừ CSRF"; bù lại **bắt buộc xác minh chữ ký** ở plugin ([payment-gateway](../05-plugin/contracts/payment-gateway.md), [shipping-carrier](../05-plugin/contracts/shipping-carrier.md)).
 

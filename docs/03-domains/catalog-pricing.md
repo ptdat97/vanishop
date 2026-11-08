@@ -10,11 +10,11 @@
 > | Danh mục (một cây cho cả cửa hàng): `parent_id` + materialized `path` (`/12/57/`), tối đa **5 cấp**, di chuyển kéo theo cả cây con, chặn chuyển vào cây con của chính nó, không xoá danh mục còn con, `lock_version`, bản dịch vi/en + SEO, ảnh | Implemented |
 > | Thuộc tính spec/internal, kiểu `select`/`multiselect`/`text`/`boolean`, giá trị có bản dịch; sửa giá trị giữ nguyên id theo `code` | Implemented |
 > | Màu (tên + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
-> | Media: `media` (theo brand, khử trùng lặp theo SHA-256) + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
+> | Media: thư viện dùng chung, khử trùng lặp theo SHA-256 + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
 > | Thư viện ảnh dùng chung `/{admin}/media` (2026-10-08): thư mục ảo `media_folders` + `media.folder` (slug, lồng tối đa 4 cấp, đổi tên kéo theo con, chỉ xoá thư mục rỗng), tải lên/kéo thả (jpg/png/webp ≤ 10 MB, 20 ảnh/lần), tìm theo tên mọi thư mục, sắp xếp, đổi tên hiển thị, chuyển thư mục, xoá chỉ ảnh không còn dùng (kèm file gốc + bản thu nhỏ). Modal chọn ảnh `MediaPicker` (`resources/js/admin/Components/Media`) ở ảnh màu sản phẩm và ảnh danh mục. Quyền `media.view` (xem/chọn), `media.manage` (ghi) | Implemented |
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
 > | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK — **plugin `vani.search-meilisearch`** từ 2026-10-14); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
-> | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá gán kênh, `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
+> | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá cấp cửa hàng (có thể gắn nhóm khách), `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
 > | Giá thành viên theo nhóm khách (0.3.35): bảng giá gắn `customer_group_id` (loại `member` bắt buộc), `PricingContext.customerId` → `PriceResolver` tự tra nhóm qua `Pricing\Contracts\CustomerGroupDirectory` (module Customer cung cấp); giỏ/checkout của khách đăng nhập tính giá nhóm; trang công khai (cache) hiện giá chung, giá thành viên qua `/_vani/gia` và `GET /api/storefront/v1/me/prices` | Implemented |
 > | Giá theo số lượng, import Excel giá | Designed |
 > | Bộ sưu tập theo luật, merchandising ghim vị trí trong Admin | Designed |
@@ -101,7 +101,7 @@ prices(price_list_id, variant_id, amount, compare_at_amount, min_qty)
 
 - **Giá niêm yết** (`compare_at_amount`) và **giá bán** (`amount`). Hiển thị "giảm x%" chỉ khi giá bán < giá niêm yết.
 - Giá tính theo **variant**; có thể nhập nhanh theo style/màu (áp cho mọi size).
-- Chọn giá (**Implemented**, `Modules\Pricing\Domain\PriceSelection`): lọc bảng giá đang bật, trong khung giờ (code hiện còn lọc theo kênh được gán — bỏ ở slice 12) → bảng giá `priority` cao nhất thắng → cùng priority lấy **giá thấp nhất** → vẫn trùng lấy id nhỏ hơn. Giá gốc: `compare_at` của mức thắng nếu lớn hơn giá bán; nếu mức thắng không phải bảng `base` thì dùng giá `base` cao nhất lớn hơn giá bán. `% giảm` làm tròn **xuống** (không phóng đại mức giảm).
+- Chọn giá (**Implemented**, `Modules\Pricing\Domain\PriceSelection`): lọc bảng giá đang bật và trong khung giờ, áp dụng điều kiện nhóm khách nếu có → bảng giá `priority` cao nhất thắng → cùng priority lấy **giá thấp nhất** → vẫn trùng lấy id nhỏ hơn. Giá gốc: `compare_at` của mức thắng nếu lớn hơn giá bán; nếu mức thắng không phải bảng `base` thì dùng giá `base` cao nhất lớn hơn giá bán. `% giảm` làm tròn **xuống** (không phóng đại mức giảm).
 - Tiền theo [money](../02-architecture/money.md).
 - Cách chọn giá là extension point:
 

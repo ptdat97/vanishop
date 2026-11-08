@@ -47,7 +47,7 @@ flowchart LR
 | `code`, `name`, `status` | `erp-main`, `odo`, `pos-kiotviet`; `active`/`suspended` |
 | Keys | `integration_client_keys(client_id, key_id, secret_hash, created_at, expires_at, revoked_at)`; cho phép **2 key song song** để xoay vòng |
 | `scopes` | `orders:read`, `orders.fulfillment:write`, `inventory:write`, `catalog.items:write`, `customers:read`… |
-| Data scope | Location được thấy (khi đối tác chỉ quản một kho/cửa hàng). Code hiện có data scope brand — gỡ ở slice 12 |
+| Data scope | Location được thấy khi endpoint và quyền client yêu cầu giới hạn theo kho; không có data scope theo brand |
 | `ip_allowlist`, `rate_limit` | Tuỳ chọn; mặc định 600 req/phút |
 
 ## 4. Integration API (mô hình A)

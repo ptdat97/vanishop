@@ -47,7 +47,7 @@ custom/plugin/VietQr/
   "kind": "payment_gateway",
   "provider": "Plugin\\VietQr\\VietQrServiceProvider",
   "requires": {
-    "vanishop": "^1.0",
+    "vanishop": "^0.3",
     "plugins": {}
   },
   "conflicts": [],
@@ -66,7 +66,7 @@ custom/plugin/VietQr/
 | `id` | ✔ | `vendor.name`, duy nhất, không đổi |
 | `version` | ✔ | SemVer |
 | `provider` | ✔ | ServiceProvider |
-| `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver) |
+| `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver; phiên bản Core hiện tại thuộc nhánh `0.3.x`) |
 | `requires.plugins` | | `{ "vani.einvoice": "^1.0" }` |
 | `requires.capabilities` | | `["vani.payment.gateways"]` (0.3.33): tag extension point cần **ít nhất một** implementation đang bật — của Core hoặc plugin bất kỳ. Thiếu → không bật được (`missing_capability`); plugin là nguồn cuối cùng → không tắt được; doctor `capability_missing`. Dùng khi cần "có cổng thanh toán nào đó" thay vì phụ thuộc đúng một plugin |
 | `conflicts` | | Danh sách plugin id không được bật cùng lúc |
@@ -87,7 +87,7 @@ custom/plugin/VietQr/
 stateDiagram-v2
     [*] --> discovered: quét custom/plugin/*/vanishop.json
     discovered --> installed: vani:plugin:install
-    installed --> enabled: vani:plugin:enable [--scope]
+    installed --> enabled: vani:plugin:enable
     enabled --> disabled: vani:plugin:disable
     enabled --> draining: vani:plugin:disable --drain (còn việc dở dang)
     draining --> disabled: hết việc dở dang (vani:plugin:finish-draining, 5 phút)
@@ -104,16 +104,16 @@ stateDiagram-v2
 |---|---|---|
 | discovered | Không | Không |
 | installed | Có (để route webhook/Admin cấu hình chạy được) | Không |
-| enabled (theo scope) | Có | Có, trong scope được bật |
+| enabled | Có | Có trên toàn cửa hàng |
 | draining (0.3.23) | Có | Có cho giao dịch đang dở (IPN, webhook, tra cứu, hoàn tiền, hook, slot); **không** được chọn cho giao dịch mới (`Extensions::acceptsNewTransactions` = false: phương thức thanh toán ở checkout, phương thức giao, hãng cho vận đơn mới) |
 | disabled | Có | Không |
 | failed | **Không** | Không |
 
-Lưu trữ: `plugins(id, version, status, installed_at, last_error)`, `plugin_scopes(plugin_id, scope_type, scope_id, enabled)`. Danh sách provider cần nạp (theo thứ tự phụ thuộc) được cache vào `bootstrap/cache/vanishop-plugins.php` (cấu hình `VANI_PLUGINS_CACHE`) mỗi khi trạng thái plugin thay đổi, để lúc boot không phải truy vấn DB.
+Lưu trữ trạng thái: `plugins(id, version, status, installed_at, last_error)`. Danh sách provider cần nạp (theo thứ tự phụ thuộc) được cache vào `bootstrap/cache/vanishop-plugins.php` (cấu hình `VANI_PLUGINS_CACHE`) mỗi khi trạng thái plugin thay đổi.
 
-Scope trong code hiện tại: `owner`, `brand`, `channel`. Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), plugin chỉ còn **bật/tắt toàn cửa hàng**; `plugin_scopes` và tham số `--scope` gỡ ở slice 12.
+Plugin hiện được **bật/tắt ở phạm vi toàn cửa hàng**. Không có scope `brand`/`channel`, bảng `plugin_scopes` hay tham số `--scope` ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
 
-Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:plugins:enabled-scopes`, xoá mỗi khi install/enable/disable/failed) nên request/job không truy vấn `plugins`/`plugin_scopes`. Production nhiều server phải dùng store dùng chung (`database`/`redis`), không dùng `file`/`array`. Trong một request/job, danh sách implementation có hiệu lực của mỗi tag được ghi nhớ theo phạm vi.
+Danh sách plugin đang bật được cache trong **cache store dùng chung** (`vani:plugins:enabled`, xoá mỗi khi install/enable/disable/failed), nên request/job không truy vấn bảng `plugins`. Production nhiều server phải dùng store dùng chung (`database`/`redis`), không dùng `file`/`array`. Trong một request/job, danh sách implementation của mỗi tag được ghi nhớ.
 
 ## 5. CLI
 
@@ -131,9 +131,9 @@ Phạm vi đang bật được cache trong **cache store dùng chung** (`vani:pl
 `--force` tắt ngay dù còn việc dở dang (khẩn cấp: plugin lỗi). Lệnh liệt kê việc dở dang và **hỏi xác nhận**; chạy không tương tác phải kèm `--yes`. Audit ghi `forced` + lý do; việc dở dang phải xử lý tay.
 
 ```bash
-php artisan vani:plugin:list                      # id, version, trạng thái, scope, tương thích
+php artisan vani:plugin:list                      # id, version, trạng thái, tương thích
 php artisan vani:plugin:install vani.vietqr       # kiểm tra deps → chạy migration → installed
-php artisan vani:plugin:enable vani.vietqr        # (--scope chỉ còn trong code cũ, bỏ ở slice 12)
+php artisan vani:plugin:enable vani.vietqr
 php artisan vani:plugin:disable vani.vietqr [--drain | --force [--yes]]   # còn thanh toán chờ / vận đơn đang giao: --drain ngừng an toàn, --force tắt ngay (xác nhận)
 php artisan vani:plugin:finish-draining           # (lịch 5 phút) tắt plugin draining đã hết việc dở dang
 php artisan vani:plugin:uninstall vani.vietqr [--purge [--drop-retained [--yes]]]   # --purge: rollback migration, xoá bảng owned (chặn khi còn tham chiếu/khoá ngoại/dữ liệu lưu giữ)
@@ -161,7 +161,7 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 1. Đọc mọi manifest, kiểm tra `requires.vanishop` với phiên bản Core (`config('vanishop.version')`), dùng `composer/semver`.
 2. Dựng đồ thị `requires.plugins`; **topological sort** để xác định thứ tự install/boot; phát hiện vòng thì báo lỗi, không cài.
 3. Kiểm tra `conflicts` hai chiều.
-4. `enable` plugin A khi dependency B chưa enable trong cùng scope → từ chối (hoặc `--with-deps`).
+4. `enable` plugin A khi dependency B chưa enable → từ chối (hoặc `--with-deps`).
 5. `disable`/`uninstall` B khi còn plugin phụ thuộc đang enable → từ chối.
 6. Nâng Core làm plugin không còn tương thích → plugin chuyển `failed` với lý do `incompatible_core`, Core vẫn chạy.
 7. `disable`/`--drain` plugin cung cấp implementation **cuối cùng** của extension point bắt buộc (thanh toán, phí giao, thuế, carrier, kênh thông báo) → từ chối (**Implemented**). Plugin phụ thuộc đang `draining` vẫn tính là đang chạy.
@@ -189,14 +189,14 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 
 ## 9. `PluginServiceProvider`
 
-API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). Mọi listener/menu đăng ký qua các helper này gắn với plugin id, nên **chỉ có hiệu lực trong phạm vi plugin được bật**. Plugin không nên gọi thẳng `Hook::onFilter()`, vì khi đó listener chạy ở mọi phạm vi.
+API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). Mọi listener/menu đăng ký qua các helper này gắn với plugin id, nên **chỉ có hiệu lực khi plugin được bật**. Plugin không nên gọi thẳng `Hook::onFilter()`, vì khi đó listener không còn được quản lý theo vòng đời bật/tắt của plugin.
 
 | Helper | Trạng thái | Tác dụng |
 |---|---|---|
 | `pluginId()` (abstract) | Implemented | Trùng `id` trong manifest |
 | `pluginPath($path)` | Implemented | Đường dẫn trong thư mục plugin |
 | `onFilter` / `onAction` / `onValidate` / `onSlot` | Implemented | Nghe hook public, chỉ chạy khi plugin active |
-| `onEvent($event, $handler)` | Implemented (2026-10-13) | Nghe domain event: chỉ chạy khi plugin đang bật (code hiện còn lọc theo `brandId` của event — bỏ ở slice 12); lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
+| `onEvent($event, $handler)` | Implemented | Nghe domain event; chỉ chạy khi plugin đang bật. Lỗi được log, không làm hỏng flow. **Không** dùng `Event::listen()` trực tiếp |
 | `adminMenu($key, $label, $route, $permission, $order, $group)` | Implemented | Menu Admin, ẩn khi thiếu quyền hoặc plugin không active. `$group` (0.3.38): nhóm accordion trên sidebar — `sales`, `catalog`, `marketing`, `content`, `system`, mặc định `extensions` ("Mở rộng") |
 | `permissions([...])` | Implemented | Khai báo permission vào `PermissionRegistry` |
 | `adminRoutes($file)` | Implemented | `/{VANI_ADMIN_PATH}/plugins/{slug}/…`, route name `admin.plugins.{slug}.…`, middleware Admin + `vani.plugin-active` (404 khi plugin không active) |

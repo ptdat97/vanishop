@@ -1,6 +1,6 @@
 # Mở rộng Extension Points của Commerce Kernel (EP v2)
 
-> Trạng thái: **Designed**, ADR Accepted 2026-10-02. Quyết định: [ADR-030](../19-adr/ADR-030-extension-surface-v2.md). Nền: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (microkernel), [extension-model](extension-model.md) (bốn cơ chế, compatibility policy), [extension-point-catalog](extension-point-catalog.md) (danh mục hiện có).
+> **Tài liệu thiết kế lịch sử**, được ADR chấp thuận ngày 2026-10-02. Các bảng dưới đây ghi lại đề xuất tại thời điểm đó, không phải trạng thái triển khai hiện tại; nhiều capability đã được thực hiện sau đó. Xem [extension-point-catalog](extension-point-catalog.md) và [status](../00-overview/status.md) để biết trạng thái hiện hành. Quyết định: [ADR-030](../19-adr/ADR-030-extension-surface-v2.md). Nền: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (microkernel), [extension-model](extension-model.md) (bốn cơ chế, compatibility policy).
 >
 > Clean-room: phần "hệ tham chiếu" dưới đây là đầu ra của vai trò nghiên cứu trên BeikeShop v3.0.0.11, chỉ ghi **khái niệm** bằng lời của VaniShop; không chép tên hook, class, bảng hay cấu trúc file ([clean-room](../01-principles/clean-room-license.md)).
 

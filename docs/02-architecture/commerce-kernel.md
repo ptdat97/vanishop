@@ -43,7 +43,7 @@
 
 ### 1.1 Bản đồ chức năng
 
-Cùng hệ thống, nhìn theo **nhóm nghiệp vụ** thay vì theo vòng — dùng để định hướng người mới, nhóm menu Admin và mục lục tài liệu. Bản đồ này **không** thay mô hình bốn vòng: phụ thuộc và ranh giới Core/plugin vẫn theo §1, và mỗi ô vẫn là một module (bounded context) riêng trong `modules/`, không gom thư mục theo nhóm.
+Cùng hệ thống, nhìn theo **nhóm nghiệp vụ** thay vì theo vòng — dùng để định hướng người mới, nhóm menu Admin và mục lục tài liệu. Bản đồ này **không** thay mô hình bốn vòng: phụ thuộc và ranh giới Core/plugin vẫn theo §1; các module Core vẫn riêng trong `modules/`, còn capability như CMS và Reporting do plugin sở hữu.
 
 ```text
                           VaniShop
@@ -58,7 +58,7 @@ Cùng hệ thống, nhìn theo **nhóm nghiệp vụ** thay vì theo vòng — d
    │  Brand            Pricing · Promotion    Notification  │
    │  Style/Variant    Customer · Cart        Integration   │
    │  Category         Checkout · Order       Storefront    │
-   │  Collection       Payment · Inventory    Content       │
+   │  Collection       Payment · Inventory                  │
    │  Attribute/Media  Fulfillment · Returns                │
    └───────────────────────────┬───────────────────────────┘
    ┌──────────────── Microkernel (vòng 0) ─────────────────┐
@@ -67,11 +67,12 @@ Cùng hệ thống, nhìn theo **nhóm nghiệp vụ** thay vì theo vòng — d
    └────────────────────────────────────────────────────────┘
 ```
 
-| Nhóm | Module | Ghi chú |
+| Nhóm | Module/capability | Ghi chú |
 |---|---|---|
 | Catalog | `Catalog` | Brand ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)), Style → Style Color → Variant, danh mục, bộ sưu tập, thuộc tính, media |
 | Commerce | `Pricing`, `Promotion`, `Customer`, `Cart`, `Checkout`, `Ordering`, `Payment`, `Inventory`, `Fulfillment`, `Returns` | Primitive + bất biến của luồng bán |
-| Khung dùng chung | `Notification`, `Integration`, `Storefront`, `Content` | Thuộc Core (vòng 1), **không** thuộc nền tảng: Notification/Integration biết về đơn hàng (mẫu `order_placed`, payload `vanishop.order.v1`), đặt ở vòng 0 sẽ vi phạm R29 |
+| Khung dùng chung | `Notification`, `Integration`, `Storefront` | Thuộc Core (vòng 1), **không** thuộc nền tảng: Notification/Integration biết về đơn hàng (mẫu `order_placed`, payload `vanishop.order.v1`), đặt ở vòng 0 sẽ vi phạm R29 |
+| CMS / nội dung | Plugin `vani.cms` (**Implemented**) | Sở hữu trang, bài viết, chuyên mục, banner và nội dung thêm; dùng extension points của Storefront |
 | Microkernel | `Extension`, `Identity`, `Tenancy`, `Shared` | Không biết thương mại |
 
 ## 2. Tiêu chí: vào Core hay làm plugin
@@ -104,12 +105,12 @@ flowchart TD
 | Module | Vòng | Ghi chú |
 |---|---|---|
 | Shared, Tenancy, Identity, Extension | 0 | Tenancy = cửa hàng + settings ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
-| Brand, Channel (code cũ) | — | Gỡ ở slice 12; brand vào Catalog |
+| Brand, Channel module | — | Không còn module riêng; brand thuộc Catalog ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 | Catalog (gồm brand), Pricing, Inventory, Customer, Cart, Promotion, Checkout, Ordering, Payment, Fulfillment, Returns | 1 | Primitive + bất biến + extension point |
 | Notification, Integration | 1 (khung) | Kênh gửi, connector là plugin |
 | Storefront | 1 (tầng ghép) | Không có bảng ([ADR-021](../19-adr/ADR-021-storefront-composition-module.md)) |
-| Content (trang, menu, banner, redirect) | 1 (Designed) | Page builder block do plugin thêm qua `StorefrontBlock` |
-| Reporting | **3** (plugin `vani.reports`, Implemented 0.3.12) | Đọc qua `OrderReader`/event; Core chỉ có slot dashboard |
+| CMS / nội dung | **3** (plugin `vani.cms`, Implemented) | Core Storefront cung cấp menu, block và điểm nối; dữ liệu CMS do plugin sở hữu |
+| Reporting | **3** (plugin `vani.reports`, Implemented 0.3.12) | Đọc qua contract/event; Core chỉ cung cấp extension points |
 
 ### 3.2 Implementation mặc định
 

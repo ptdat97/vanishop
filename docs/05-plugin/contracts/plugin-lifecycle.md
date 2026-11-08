@@ -11,7 +11,7 @@
   "version": "0.1.0",
   "kind": "payment_gateway",
   "provider": "Plugin\\VietQr\\VietQrServiceProvider",
-  "requires": { "vanishop": "^0.2", "plugins": {} },
+  "requires": { "vanishop": "^0.3", "plugins": {} },
   "conflicts": [],
   "permissions": ["payments.view"],
   "author": "VaniShop Team"
@@ -25,11 +25,11 @@
 | `version` | ✔ | SemVer `x.y.z[-pre]` |
 | `kind` | ✔ | Phân loại hiển thị (`payment_gateway`, `shipping_carrier`, `promotion`, `connector`, `notification_channel`, `storefront`, `business`, `theme_extension`) |
 | `provider` | ✔ | FQCN của provider, extends `Modules\Extension\PluginServiceProvider` |
-| `requires.vanishop` | ✔ | Ràng buộc Composer semver với `config('vanishop.version')` (hiện `0.2.0`) |
+| `requires.vanishop` | ✔ | Ràng buộc Composer semver với `config('vanishop.version')` (Core hiện ở nhánh `0.3.x`) |
 | `requires.plugins` | | `{ "plugin.id": "^x.y" }` → sắp thứ tự nạp, chặn bật khi thiếu |
 | `requires.capabilities` | | `["tag.extension-point"]` (0.3.33) → cần ≥1 implementation đang bật (Core hoặc plugin bất kỳ); chặn bật khi thiếu, chặn tắt nguồn cuối cùng; nguồn `draining` không tính là thay thế |
 | `conflicts` | | Kiểm tra hai chiều |
-| `scopes` | | **Deprecated** ([ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md)): plugin bật/tắt toàn cửa hàng. Code hiện vẫn đọc (`owner`, `brand`, `channel`) cho tới slice 12 |
+| `scopes` | | Trường legacy; không dùng để giới hạn hiệu lực. Plugin bật/tắt toàn cửa hàng ([ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 | `permissions` | | Hiển thị khi cài |
 
 ## 2. Cấu trúc thư mục
@@ -54,13 +54,13 @@ custom/plugin/<Name>/                 # namespace Plugin\<Name>\
 | Lệnh | Điều kiện | Việc Core làm |
 |---|---|---|
 | `vani:plugin:install <id>` | Chưa cài; deps/conflict/`requires.vanishop` đạt | Chạy migration trong `Database/migrations` → `installed`. Migration lỗi → `failed` + `last_error` |
-| `vani:plugin:enable <id>` | Không `failed`; deps đã bật | → `enabled`, audit. (Code hiện còn `--scope` + `plugin_scopes`, bỏ ở slice 12) |
+| `vani:plugin:enable <id>` | Không `failed`; deps đã bật | → `enabled` toàn cửa hàng, audit |
 | `vani:plugin:disable <id>` | Không còn plugin phụ thuộc đang bật | → `disabled`. **Không đụng dữ liệu** |
 | `vani:plugin:upgrade <id>` | Version manifest > version đã cài; tương thích Core/deps | Chạy migration mới, cập nhật version; `failed` → `installed` nếu thành công; audit |
 | `vani:plugin:doctor [--json]` | — | Báo version chờ nâng, migration chờ, plugin lỗi, thiếu manifest/provider, không tương thích; exit 1 khi có lỗi |
 | `vani:plugin:uninstall <id> [--purge]` | Đã tắt; không còn plugin phụ thuộc đã cài | Mặc định **giữ bảng**. `--purge`: chạy `down()` theo thứ tự ngược |
 
-Sau mỗi thay đổi trạng thái: dựng lại `bootstrap/cache/vanishop-plugins.php`, xoá cache trạng thái bật (`vani:plugins:enabled-scopes`). Plugin `installed`/`disabled` vẫn được `register()` (để route Admin cấu hình, webhook chạy được) nhưng listener/implementation **không có hiệu lực**. Plugin `failed` không được nạp.
+Sau mỗi thay đổi trạng thái: dựng lại `bootstrap/cache/vanishop-plugins.php`, xoá cache trạng thái bật (`vani:plugins:enabled`). Plugin `installed`/`disabled` vẫn được `register()` (để route Admin cấu hình, webhook chạy được) nhưng listener/implementation **không có hiệu lực**. Plugin `failed` không được nạp.
 
 Plugin chỉ vào hệ thống qua **mã nguồn + CI**, không upload qua Admin ([ADR-026](../../19-adr/ADR-026-plugin-deploy-via-code.md)).
 

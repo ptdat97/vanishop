@@ -1,13 +1,13 @@
 # Security
 
-> Trạng thái: **Partially Implemented**. Đã có: guard `staff`, đăng nhập Admin + rate limit, RBAC theo phạm vi, audit log append-only. Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md): một cửa hàng → bỏ phạm vi brand/pháp nhân khỏi RBAC và bỏ `BelongsToBrand` (code hiện còn, gỡ ở slice 12). Đã có thêm các kiểm soát của ADR-020 (đường dẫn Admin cấu hình được, cookie phiên riêng, IP allowlist, noindex, chính sách mật khẩu, cảnh báo IP mới). Chưa có: SSO, maker-checker, integration credentials, secret scan trong CI. **Không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
+> Trạng thái: **Partially Implemented**. Đã có: guard `staff`, đăng nhập Admin + rate limit, RBAC theo `owner`/`location`, audit log append-only và các kiểm soát ADR-020 (đường dẫn Admin cấu hình được, cookie phiên riêng, IP allowlist, noindex, chính sách mật khẩu, audit IP mới). Brand không phải phạm vi quyền và không có global scope `BelongsToBrand` ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Chưa có: SSO, maker-checker, secret scan trong CI. **Không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
 
 ## 1. Tách biệt người dùng
 
 | Loại | Guard | Bảng | Ghi chú |
 |---|---|---|---|
-| Khách hàng | `customer` (session + Sanctum) | `customers` | OTP/mật khẩu/social |
-| Nhân viên | `staff` (session + Sanctum) | `staff_users` | Mật khẩu + rate limit; **không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)); SSO Google Workspace/Microsoft (tuỳ chọn) |
+| Khách hàng | Web session hoặc Customer Bearer token | `customers` | OTP/mật khẩu; social login qua `AuthProvider` |
+| Nhân viên | `staff` web session | `staff_users` | Mật khẩu + rate limit; **không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)); SSO chưa triển khai |
 | Hệ thống tích hợp | `integration` | `integration_clients` | API key + secret, HMAC, IP allowlist |
 
 ### Admin trên domain chung
@@ -39,14 +39,14 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 | Merchandiser | cửa hàng | Catalog, danh mục, nội dung (không giá) |
 | CSKH | cửa hàng | Xem/sửa đơn, đổi trả, khách hàng (không export) |
 | Kế toán | cửa hàng | Thanh toán, đối soát, hoá đơn, báo cáo doanh thu |
-| Nhân viên cửa hàng/kho | location (Designed) | BOPIS, nhận trả hàng, tra tồn tại location |
+| Nhân viên cửa hàng/kho | Có loại phạm vi `location`; áp dụng theo từng thao tác còn một phần | BOPIS, nhận trả hàng, tra tồn tại location |
 | Integration Operator | cửa hàng | Theo dõi & replay message |
 
 - **Gán role**: `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)` với scope `owner` (toàn cửa hàng) hoặc `location`. Permission là mã chuỗi do module/plugin khai báo (`PermissionRegistry`), vai trò lưu trong `role_permissions`; `'*'` = mọi quyền. Brand **không** là phạm vi quyền: muốn giới hạn ai sửa sản phẩm brand nào thì dùng quy trình duyệt, không dùng RBAC.
 - Kiểm tra (**Implemented**, `Authorizer` + `Gate::before`):
   - `Gate::allows('orders.cancel')`: có permission ở phạm vi cửa hàng.
-  - Thao tác tại một location (Designed): `Gate::allows('stock.adjust', [ScopeRef::location($id)])`.
-  - Code hiện còn scope `legal_entity`/`brand` và global scope `BelongsToBrand` (mô hình cũ ADR-008) — gỡ ở slice 12.
+  - `Authorizer` hỗ trợ kiểm tra quyền với `ScopeRef::location($id)`. Tuy nhiên, màn hình điều chỉnh tồn hiện kiểm tra `inventory.adjust` không kèm location; không nên coi thao tác đó đã được giới hạn theo kho.
+  - RBAC dùng scope `owner` hoặc `location`; không có scope `legal_entity`/`brand` hay global scope `BelongsToBrand`.
 - **Quản trị nhân viên/vai trò (Implemented, R1-4, Core 0.3.51 — [reference-parity §3.3](../20-roadmap/reference-parity-refactor.md))**: Admin → Hệ thống → Nhân viên / Vai trò, quyền `staff.manage`.
   - Tạo nhân viên = **mời qua email** (link đặt mật khẩu một lần, 24 giờ, bảng `staff_invite_tokens`); Admin không đặt mật khẩu hộ. Trạng thái `invited` → `active` khi đặt mật khẩu; `locked` khi bị khoá (đăng xuất ngay, xoay `remember_token`, huỷ link còn hạn). Không xoá cứng nhân viên.
   - Chặn: tự khoá/tự đổi vai trò của mình; khoá hoặc hạ quyền **Owner cuối cùng** (nhân viên `active` có vai trò `*` ở phạm vi owner — kiểm tra trong transaction có khoá dòng); **cấp quyền mình không có** (gán vai trò hoặc thêm quyền vào vai trò; vai trò `*` chỉ Owner cấp được). Không cấp `*` qua giao diện — chỉ vai trò hệ thống `owner_admin` (tạo bởi `vani:staff:create-owner`). Vai trò hệ thống không sửa/xoá; vai trò đang gán không xoá.
@@ -144,4 +144,3 @@ Test: `tests/Feature/Security/SafeHostAndClientIpTest.php`, `tests/Feature/Trust
 - Không để secret trong source code, fixture hay log (rule R21). CI chạy secret scan (gitleaks).
 - Secret hạ tầng nằm trong `.env`/secret manager của môi trường; credential của plugin nằm trong settings đã mã hoá, key mã hoá tách khỏi DB.
 - Xoay vòng `APP_KEY` theo quy trình có `APP_PREVIOUS_KEYS` (Laravel hỗ trợ), không làm mất dữ liệu đã mã hoá.
-

@@ -1,8 +1,8 @@
 # Database
 
-> Cột, kiểu, index, khoá ngoại thực tế của từng bảng: [schema.generated.md](schema.generated.md) (sinh bởi `php artisan vani:docs:schema`, CI kiểm khớp).
+> Cột, kiểu, index, khoá ngoại thực tế của từng bảng: [schema.generated.md](schema.generated.md) (sinh bởi `php artisan vani:docs:schema`). Lệnh `php artisan vani:docs:schema --check` hiện báo lệch trong môi trường đang mở; chỉ cập nhật snapshot từ một MySQL tạm đã migrate theo migrations hiện tại, không dùng DB có dữ liệu cần giữ.
 
-> Trạng thái: **Partially Implemented**. Đã có migration của Tenancy, Brand, Channel, Identity, Extension, Catalog, Pricing, Inventory (trừ transfer/reconciliation), Cart, Promotion, Ordering (orders, order_lines, order_adjustments, order_events), Shared (`idempotency_keys`, `number_sequences`) ([status](../00-overview/status.md)); phần còn lại Designed. Quyết định: [ADR-016](../19-adr/ADR-016-mysql.md). Schema dưới đây theo định hướng một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); migration hiện có vẫn mang `brand_id`/`channel_id` phạm vi và các bảng Brand/Channel cũ — gỡ theo [store-and-brand §6](../12-store/store-and-brand.md).
+> Trạng thái: **Partially Implemented**. Migrations nằm trong 18 module Core và trong plugin sở hữu dữ liệu; không còn module/bảng tenant Brand hay Channel. Brand là thuộc tính Catalog (`styles.brand_id`) và snapshot trên dòng đơn (`order_lines.brand_id`), không phải phạm vi dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Quyết định DB: [ADR-016](../19-adr/ADR-016-mysql.md); tình trạng capability: [status](../00-overview/status.md).
 
 ## 1. Quy ước
 
@@ -17,7 +17,7 @@
 | Thời gian | `DATETIME(6)` lưu **UTC** cho bảng sự kiện/ledger; `DATETIME` cho còn lại; không dùng `TIMESTAMP` |
 | Enum | `VARCHAR` + PHP backed enum (không dùng ENUM của MySQL) |
 | JSON | Cột `json` cho snapshot, payload, cấu hình, `meta`; cần lọc thì tạo generated column + index |
-| Soft delete | Chỉ cho Catalog (style), Content, cấu hình. **Không** cho order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
+| Soft delete | Core dùng cho Catalog (`styles`); plugin tự quy định cho dữ liệu mình sở hữu. **Không** cho order, payment, ledger. Customer dùng **ẩn danh hoá** thay cho xoá |
 | Optimistic lock | Cột `lock_version INT` trên aggregate được sửa qua Admin: `styles`, `price_lists`, `promotions`, `orders`, `shipments`, `payments`, `locations` |
 | Pessimistic lock | `SELECT … FOR UPDATE` cho `stock_levels`, `vouchers`, `number_sequences`, `carts` (khi checkout), `payments` (khi IPN/refund) |
 | Phạm vi | Không có cột phạm vi brand/kênh: mọi dữ liệu thuộc một cửa hàng. `brand_id` chỉ xuất hiện như **thuộc tính catalog** (`styles.brand_id`) và snapshot (`order_lines.brand_id`) |
@@ -82,22 +82,21 @@ erDiagram
 | Shared | `currencies`, `administrative_units`, `administrative_unit_mappings`, `idempotency_keys`, `number_sequences` |
 | Tenancy (cửa hàng) | `legal_entities` (một bản ghi: pháp nhân vận hành), `settings(key, value json, is_encrypted)` (một cấp; theme tokens là một setting) |
 | Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id, scope_type[owner|location], scope_id)`, `audit_logs` |
-| Extension | `plugins(id VARCHAR PK = plugin id, status)` (bật/tắt toàn cửa hàng; `plugin_scopes` bỏ ở slice 12) |
+| Extension | `plugins(id VARCHAR PK = plugin id, version, status, installed_at, last_error)` (bật/tắt toàn cửa hàng) |
 | Catalog | `brands`, `styles(brand_id NULL, meta json)`, `style_translations`, `style_colors`, `variants(meta json)`, `attributes`, `attribute_values`, `style_attribute_values`, `colors`, `sizes`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |
-| Inventory | `locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `stock_transfers`, `stock_transfer_lines`, `inventory_reconciliations`, `inventory_reconciliation_lines` |
-| Customer | `customers(meta json)`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_group_customer` |
+| Inventory | `locations`, `stock_levels`, `stock_reservations`, `stock_movements`, `inventory_reconciliations`, `inventory_reconciliation_lines`; chuyển kho thuộc plugin `vani.warehouse` (`plg_warehouse_*`) |
+| Customer | `customers(customer_group_id, meta json)`, `customer_consents`, `customer_consent_events`, `customer_addresses`, `customer_otps`, `customer_tokens`, `customer_groups`, `customer_tags` |
 | Cart | `carts(meta json)`, `cart_lines` |
-| Promotion | `promotions`, `promotion_rules`, `promotion_actions`, `vouchers`, `promotion_usages` |
+| Promotion | `promotions` (gồm `action_type`, `action_config`), `promotion_rules`, `vouchers`, `promotion_usages` |
 | Ordering | `orders(source, meta json)`, `order_lines(brand_id, brand_name, meta json)`, `order_adjustments`, `order_events`, `order_notes` |
 | Payment | `payments`, `payment_transactions`, `refunds` |
 | Fulfillment | `shipments`, `shipment_lines`, `shipment_events`, `shipping_rate_tables` |
 | Returns | `returns`, `return_lines`, `return_events` |
-| Content | `pages`, `page_translations`, `page_blocks`, `menus`, `menu_items`, `banners`, `redirects` |
 | Notification | `notification_templates`, `notification_logs` (unique `idempotency_key`) |
 | Integration | `integration_clients`, `integration_client_keys`, `integration_webhook_subscriptions`, `integration_events` (event feed, append-only), `integration_ownerships`, `integration_outbox`, `integration_inbox`, `integration_logs`, `integration_mappings`, `external_references`, `integration_reconciliations` |
 
-Bảng của plugin: xem README của từng plugin; ví dụ trong [loyalty spec](../05-plugin/specs/loyalty.md).
+Bảng CMS do plugin `vani.cms` sở hữu: `plg_cms_pages`, `plg_cms_posts`, `plg_cms_categories`, `plg_cms_product_extras`, `plg_cms_category_banners`. Bảng của plugin khác: xem README của từng plugin; ví dụ trong [loyalty spec](../05-plugin/specs/loyalty.md).
 
 ## 5. Index quan trọng
 

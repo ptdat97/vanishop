@@ -1,6 +1,6 @@
 # Kiến trúc tổng thể
 
-> Trạng thái: **Partially Implemented**: khung Foundation đã có (slice 0), nghiệp vụ chưa có ([status](../00-overview/status.md)).
+> Trạng thái: **Partially Implemented**: Foundation, Commerce Core, plugin và các bề mặt vận hành đã có code; xem [status](../00-overview/status.md) để biết capability và giới hạn hiện tại.
 
 ## 1. Phong cách kiến trúc
 
@@ -58,7 +58,7 @@ flowchart LR
     SCH[Scheduler] --> R
 ```
 
-Tất cả đặt tại trung tâm dữ liệu ở Việt Nam ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Chi tiết vận hành: [operations](../18-operations/operations.md).
+Sơ đồ thể hiện hạ tầng mục tiêu, không phải các mặc định đang chạy: ứng dụng hiện mặc định dùng database cho cache/queue và local/public disk cho file; Redis, Horizon, Meilisearch, S3-compatible storage và CDN cần cấu hình theo môi trường. Tất cả đặt tại trung tâm dữ liệu ở Việt Nam theo định hướng ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Chi tiết: [operations](../18-operations/operations.md).
 
 ## 4. Cấu trúc thư mục dự án
 
@@ -67,12 +67,12 @@ vanishop/
 ├── app/                    # Khung ứng dụng: Providers, middleware chung, Console
 │   └── Providers/ModuleServiceProvider.php
 ├── modules/                # Commerce Kernel — namespace Modules\<Context>\
-│   ├── Shared/  Tenancy/  Identity/  Extension/      (Brand/, Channel/: gỡ ở slice 12, ADR-028)
+│   ├── Shared/  Tenancy/  Identity/  Extension/
 │   ├── Catalog/ Pricing/  Inventory/ Customer/ Cart/ Checkout/
 │   ├── Ordering/ Payment/ Fulfillment/ Returns/ Promotion/
-│   └── Content/ Notification/ Reporting/ Integration/
+│   └── Notification/ Integration/ Storefront/
 ├── custom/
-│   ├── plugin/             # Business plugins — namespace Plugin\<Name>\
+│   ├── plugin/             # Plugins — namespace Plugin\<Name>\ (includes vani.cms, vani.reports)
 │   └── theme/              # Theme storefront của cửa hàng (một theme hoạt động)
 ├── resources/js/           # Entry Admin Inertia, component Vue dùng chung
 ├── routes/                 # Chỉ route khung; route nghiệp vụ nằm trong module/plugin
@@ -101,12 +101,12 @@ Cấu trúc bên trong module: [bounded-contexts §4](bounded-contexts.md). Cấ
 | Ngôn ngữ / Framework | PHP 8.4, Laravel 13 | Implemented |
 | Hook | `tormjens/eventy`, bọc bởi facade `Modules\Extension\Facades\Hook` | Implemented |
 | CSDL | MySQL 8.4 LTS, InnoDB, `utf8mb4` ([ADR-016](../19-adr/ADR-016-mysql.md)) | Implemented (dev: MySQL 9.7; CI: 8.4) |
-| Cache / Queue / Lock | Redis 7 + Laravel Horizon | Designed |
-| Tìm kiếm | Laravel Scout; `SearchProvider` contract; Meilisearch là provider mặc định | Designed |
-| File | Object storage S3-compatible tại VN + CDN | Designed |
-| Admin | Inertia v3 + Vue 3 + TypeScript 5.9 + Tailwind 4 ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Implemented (khung) |
-| Storefront | Blade SSR + Alpine.js + Tailwind 4, theme `custom/theme/*` | Designed |
-| API auth | Sanctum (storefront/admin), API key + HMAC (integration) | Designed |
+| Cache / Queue / Lock | Database mặc định; Horizon có trong dependencies và dùng Redis khi được cấu hình | Partially Implemented |
+| Tìm kiếm | `SearchProvider`; database là mặc định, Meilisearch là plugin tuỳ chọn `vani.search-meilisearch` | Partially Implemented |
+| File | Local/public disk mặc định; có cấu hình S3-compatible cho production, CDN tuỳ deployment | Partially Implemented |
+| Admin | Inertia v3 + Vue 3 + TypeScript 5.9 + Tailwind 4 ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Implemented; độ phủ capability xem [status](../00-overview/status.md) |
+| Storefront | Blade SSR + JavaScript thuần + Tailwind 4, theme `custom/theme/vani-base` | Partially Implemented |
+| API auth | Customer Bearer token/session (storefront), web session + `staff` guard (Admin), API key + HMAC (integration) | Partially Implemented |
 | Test | Pest 5 (unit, feature, arch), Pest Browser (E2E, chưa cài) | Implemented (unit/feature/arch) |
 | Chất lượng | Pint, Larastan level ≥ 6 | Pint Implemented |
 

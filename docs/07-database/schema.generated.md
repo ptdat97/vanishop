@@ -11,7 +11,7 @@
 | [`attributes`](#attributes) | 9 |
 | [`audit_logs`](#audit_logs) | 11 |
 | [`backup_drills`](#backup_drills) | 8 |
-| [`brands`](#brands) | 13 |
+| [`brands`](#brands) | 14 |
 | [`cache`](#cache) | 3 |
 | [`cache_locks`](#cache_locks) | 3 |
 | [`campaign_price_lists`](#campaign_price_lists) | 5 |
@@ -82,6 +82,7 @@
 | [`pulse_entries`](#pulse_entries) | 6 |
 | [`pulse_values`](#pulse_values) | 6 |
 | [`refunds`](#refunds) | 12 |
+| [`return_attachments`](#return_attachments) | 8 |
 | [`return_events`](#return_events) | 9 |
 | [`return_lines`](#return_lines) | 11 |
 | [`return_reasons`](#return_reasons) | 8 |
@@ -101,8 +102,6 @@
 | [`stock_levels`](#stock_levels) | 9 |
 | [`stock_movements`](#stock_movements) | 14 |
 | [`stock_reservations`](#stock_reservations) | 10 |
-| [`stock_transfer_lines`](#stock_transfer_lines) | 7 |
-| [`stock_transfers`](#stock_transfers) | 14 |
 | [`style_attribute_values`](#style_attribute_values) | 6 |
 | [`style_colors`](#style_colors) | 6 |
 | [`style_link_group_items`](#style_link_group_items) | 4 |
@@ -235,6 +234,7 @@ Index: index (status, created_at); PK (id)
 | `name` | varchar(255) |  |  |
 | `description` | text | có |  |
 | `logo_path` | varchar(512) | có |  |
+| `logo_media_id` | bigint unsigned | có |  |
 | `meta_title` | varchar(255) | có |  |
 | `meta_description` | varchar(512) | có |  |
 | `status` | varchar(16) |  | `active` |
@@ -1450,6 +1450,23 @@ Index: PK (id); unique (idempotency_key); index (payment_id); unique (public_id)
 
 Khoá ngoại: payment_id → payments(id)
 
+## return_attachments
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `return_request_id` | bigint unsigned |  |  |
+| `disk` | varchar(32) |  |  |
+| `path` | varchar(255) |  |  |
+| `mime_type` | varchar(64) |  |  |
+| `size_bytes` | int unsigned |  |  |
+| `source` | varchar(16) |  |  |
+| `created_at` | timestamp |  |  |
+
+Index: PK (id); index (return_request_id)
+
+Khoá ngoại: return_request_id → return_requests(id) on delete cascade
+
 ## return_events
 
 | Cột | Kiểu | Null | Mặc định |
@@ -1765,45 +1782,6 @@ Index: PK (id); index (location_id, created_at); index (reference); index (varia
 Index: PK (id); index (location_id); index (reservation_key, status); index (status, expires_at); index (variant_id)
 
 Khoá ngoại: location_id → locations(id); variant_id → variants(id)
-
-## stock_transfer_lines
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `stock_transfer_id` | bigint unsigned |  |  |
-| `variant_id` | bigint unsigned |  |  |
-| `quantity` | int unsigned |  |  |
-| `received_quantity` | int unsigned | có |  |
-| `created_at` | timestamp | có |  |
-| `updated_at` | timestamp | có |  |
-
-Index: PK (id); unique (stock_transfer_id, variant_id); index (variant_id)
-
-Khoá ngoại: stock_transfer_id → stock_transfers(id) on delete cascade; variant_id → variants(id)
-
-## stock_transfers
-
-| Cột | Kiểu | Null | Mặc định |
-|---|---|---|---|
-| `id` | bigint unsigned |  |  |
-| `public_id` | char(26) |  |  |
-| `from_location_id` | bigint unsigned |  |  |
-| `to_location_id` | bigint unsigned |  |  |
-| `status` | varchar(16) |  | `pending` |
-| `note` | varchar(255) | có |  |
-| `reference` | varchar(128) | có |  |
-| `cancel_reason` | varchar(255) | có |  |
-| `shipped_at` | timestamp | có |  |
-| `received_at` | timestamp | có |  |
-| `cancelled_at` | timestamp | có |  |
-| `lock_version` | int unsigned |  | `0` |
-| `created_at` | timestamp | có |  |
-| `updated_at` | timestamp | có |  |
-
-Index: PK (id); index (from_location_id, status); unique (public_id); index (status); index (to_location_id, status)
-
-Khoá ngoại: from_location_id → locations(id); to_location_id → locations(id)
 
 ## style_attribute_values
 

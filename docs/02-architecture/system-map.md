@@ -2,7 +2,7 @@
 
 > Trạng thái: **Partially Implemented**, mô tả **code đang có**; bề mặt nào chưa có code ghi rõ `Designed`. Kiểm chứng từ `bootstrap/app.php`, `config/modules.php`, `modules/Shared/Support/ModuleServiceProvider.php`, `modules/*/*ServiceProvider.php`. Bổ sung cho [overview](overview.md) (vì sao chọn kiến trúc này) và [bounded-contexts](bounded-contexts.md) (ranh giới nghiệp vụ).
 
-> **Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: từ slice 12 (2026-10-02) code không còn module Brand/Channel, brand workspace hay header `X-Vani-Channel`; brand là thực thể Catalog.
+> **Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md))**: code hiện có một cửa hàng và không có module Brand/Channel, brand workspace hay header `X-Vani-Channel`; brand là thực thể Catalog.
 
 ## 1. Năm bề mặt, một lõi
 
@@ -10,11 +10,11 @@ Mọi bề mặt gọi **cùng Application layer / Contracts** của module. Kh�
 
 | Bề mặt | Đối tượng | Prefix | Auth | Nạp bởi | Trạng thái |
 |---|---|---|---|---|---|
-| **Storefront native** (Blade SSR) | Khách trên web | `/…` (một website, [store-and-brand §4](../12-store/store-and-brand.md)) | Phiên web (khách) | Theme `custom/theme/*` + controller trong `modules/Storefront` | Designed ([ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md)) |
+| **Storefront native** (Blade SSR) | Khách trên web | `/…` (một website, [store-and-brand §4](../12-store/store-and-brand.md)) | Phiên web (khách) | `StorefrontServiceProvider`, `storefront-web.php`, theme `custom/theme/vani-base` | Partially Implemented ([storefront](../14-storefront/storefront.md)) |
 | **Storefront API** (JSON) | Headless, mobile, Zalo Mini App | `/api/storefront/v1` | Khách vãng lai: token giỏ/đơn ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)); đã đăng nhập: Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)) | `loadStorefrontApiRoutes()` (Storefront, Customer) | Implemented |
-| **Admin** (Inertia + Vue) | Nhân viên | `/{VANI_ADMIN_PATH}` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)) | Guard `staff`, phiên Admin riêng | `loadAdminRoutes()`, `loadBrandWorkspaceRoutes()` | Implemented |
+| **Admin** (Inertia + Vue) | Nhân viên | `/{VANI_ADMIN_PATH}` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)) | Guard `staff`, phiên Admin riêng | Module providers đăng ký `loadAdminRoutes()` / `loadAdminSectionRoutes()` | Implemented |
 | **Admin API** (JSON) | App quản trị, công cụ nội bộ | `/api/admin/v1` | Designed | — | Designed |
-| **Integration API** (JSON) | ERP, POS, đối tác | `/api/integration/v1` | Key id + chữ ký HMAC, scope (data scope brand: gỡ ở slice 12) | `IntegrationServiceProvider` | Implemented |
+| **Integration API** (JSON) | ERP, POS, đối tác | `/api/integration/v1` | Client key + chữ ký HMAC, scope và allowlist IP | `IntegrationServiceProvider` | Partially Implemented; ERP connector đang đóng băng |
 
 Ngoài ra có hai cửa vào **từ hệ thống ngoài** (không phải bề mặt cho người dùng): callback cổng thanh toán `/api/payments/{gateway}/callback` và webhook hãng vận chuyển `/api/shipping/{carrier}/webhook`. Cả hai là route **chung**; plugin chỉ cung cấp phần xác minh + chuẩn hoá (`verifyCallback`, `parseWebhook`), Core ghi nhận. Webhook riêng của plugin nằm dưới `/api/integrations/{slug}/…`.
 
@@ -25,26 +25,26 @@ Ngoài ra có hai cửa vào **từ hệ thống ngoài** (không phải bề m�
 | Namespace | Thư mục | Vai trò | Được sửa khi thêm capability? |
 |---|---|---|---|
 | `App\` | `app/` | Khung Laravel: provider nạp module, middleware Inertia, dashboard tối thiểu, logging | Hạn chế, không chứa nghiệp vụ |
-| `Modules\` | `modules/` | **Commerce Kernel**: 20 module | Chỉ khi thêm **extension point tổng quát** (R1) |
+| `Modules\` | `modules/` | **Commerce Kernel**: 18 module | Chỉ khi thêm **extension point tổng quát** (R1) |
 | `Plugin\` | `custom/plugin/` | Capability nghiệp vụ | Có |
 
-Theme storefront nằm ở `custom/theme/` (hiện trống).
+Theme storefront hiện tại là `custom/theme/vani-base`.
 
 ## 3. Module và thứ tự nạp
 
 `App\Providers\ModuleServiceProvider` đăng ký provider của từng module theo **đúng thứ tự** trong `config/modules.php` (upstream trước):
 
 ```text
-Shared → Tenancy → Brand → Channel → Identity → Extension
+Shared → Tenancy → Identity → Extension
 → Catalog → Pricing → Inventory → Cart → Promotion → Ordering → Customer
 → Payment → Checkout → Fulfillment → Returns → Notification → Integration → Storefront
 ```
 
-Vòng theo [commerce-kernel §1](commerce-kernel.md): Shared, Tenancy, Identity, Extension = **vòng 0** (microkernel); module thương mại = **vòng 1**; plugin = vòng 2–3. Hiện Identity và Extension còn dùng contract của Brand/Channel (phạm vi brand) — hết khi xong slice 12 (R29).
+Vòng theo [commerce-kernel §1](commerce-kernel.md): Shared, Tenancy, Identity, Extension = **vòng 0** (microkernel); module thương mại = **vòng 1**; plugin = vòng 2–3. Brand là model của Catalog, không phải module tenancy.
 
 | Nhóm | Module | Vai trò |
 |---|---|---|
-| Vòng 0 — nền tảng | Shared, Tenancy, Identity (+ Brand, Channel của mô hình cũ) | Money, context, settings, nhân viên + RBAC + audit |
+| Vòng 0 — nền tảng | Shared, Tenancy, Identity | Money, context, settings, nhân viên + RBAC + audit |
 | Vòng 0 — microkernel | **Extension** | Hook registry, plugin loader, lifecycle, kích hoạt theo scope, registry implementation (`Extensions`) |
 | Vòng 1 — thương mại | Catalog, Pricing, Inventory, Cart, Promotion, Ordering, Customer, Payment, Checkout, Fulfillment, Returns | Primitives + invariants |
 | Vòng 1 — khung dùng chung | Notification, Integration | Extension point + primitive cho nhiều plugin |
@@ -92,15 +92,10 @@ Route (nhóm theo bề mặt) → Middleware (correlation id, scope, auth)
 
 ## 6. Số liệu (đếm từ source)
 
-| Hạng mục | Số lượng | Lệnh đếm |
+| Hạng mục | Hiện tại | Nguồn xác thực |
 |---|---|---|
-| Module Core | 20 | `config/modules.php` |
-| Interface trong `Contracts/` | 50 | `grep -rl "^interface " modules/*/Contracts/*.php \| wc -l` |
-| Domain event | 26 | `ls modules/*/Events/*.php \| wc -l` |
-| Hook public đã khai báo | 13 | `grep -h "'vani\." modules/*/hooks.php \| grep -c "=> \["` |
-| PHP Core (không tính test) | ~33,6k dòng | `find modules -name '*.php' -not -path '*/Tests/*' \| xargs cat \| wc -l` |
-| Plugin | 6 (~1,4k dòng) | `ls custom/plugin` |
-| Tác vụ định kỳ của Core | 9 | `grep -rh "schedule->command('vani" modules --include='*ServiceProvider.php' \| grep -v einvoice` |
-| Queue riêng | `search`, `fulfillment`, `notifications` (còn lại: `default`) | `grep -rn onQueue modules` |
+| Module Core | 18 | `config/modules.php` |
+| Plugin và tác vụ định kỳ | Thay đổi theo manifest và code | `custom/plugin/*/vanishop.json`, module service providers |
+| Queue | `search`, `fulfillment`, `notifications` và queue mặc định | Job declarations trong `modules/` và `custom/plugin/` |
 
-> Số liệu **sẽ trôi**. Khi cập nhật tài liệu, chạy lại lệnh thay vì chép số cũ. Chỗ tài liệu khác mâu thuẫn với code: sửa tài liệu theo code (R24) và ghi vào [status](../00-overview/status.md).
+> Số liệu chi tiết dễ trôi; hãy đếm lại từ source trước khi ghi vào tài liệu. Chỗ tài liệu khác mâu thuẫn với code: sửa tài liệu theo code (R24) và ghi vào [status](../00-overview/status.md).

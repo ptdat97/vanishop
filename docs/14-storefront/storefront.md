@@ -6,13 +6,13 @@
 > |---|---|
 > | Theme `vani-base` (`custom/theme/vani-base`), theme đang hoạt động `core.theme` + theme con (`parent`), token `theme.tokens` → CSS variables | Implemented |
 > | Trang SSR: `/`, `/danh-muc/{slug}`, `/thuong-hieu`, `/thuong-hieu/{slug}`, `/tim-kiem`, `/san-pham/{slug}` (JSON-LD `Product`; breadcrumb + JSON-LD `BreadcrumbList` ở PDP, danh mục, thương hiệu — 0.3.66), `/gio-hang`, `/thanh-toan`, `/don-hang/{id}` — mua được hoàn toàn bằng form khi JS tắt | Implemented |
-> | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented (trừ `vani.storefront.account.menu` — chưa có trang tài khoản native) |
+> | Slot storefront (`modules/Storefront/hooks.php`) + `<x-vani::hook-slot>` | Implemented; `vani.storefront.account.menu` bổ sung mục menu ngoài các trang tài khoản do plugin đăng ký qua `accountPage()` |
 > | Đảo tương tác | JS thuần, không thư viện (đổi ảnh theo màu, tự gửi form số lượng). Alpine chờ duyệt dependency |
 > | Tài khoản `/tai-khoan` (đăng nhập OTP, tổng quan, đơn hàng + huỷ, địa chỉ; giỏ vãng lai gộp khi đăng nhập), tra cứu đơn `/tra-cuu-don`, `robots.txt`, `sitemap.xml` | Implemented (2026-10-02) |
 > | Đổi/trả trên native (2026-10-08): partial `order-returns` trên `/tai-khoan/don-hang/{id}` và `/don-hang/{id}` (token đơn trong phiên) — danh sách yêu cầu + huỷ khi chờ duyệt, form chọn số lượng, trả hoàn tiền hoặc đổi size/màu cùng mẫu (size hết hàng bị khoá), lý do, ghi chú; `POST /don-hang/{id}/doi-tra`, `POST /don-hang/{id}/doi-tra/{return}/huy`; không cần JS. Đổi mẫu khác: qua CSKH | Implemented |
 > | Cache CDN trang công khai — **tuỳ chọn nâng cao**, mặc định tắt (0.3.34, 0.3.68, §5): không CDN thì trang có phiên, render sẵn theo khách; bật thì không phiên, `Cache-Control: public, s-maxage`, phần riêng của khách qua `/_vani/phien` — hiển thị như nhau | Implemented |
 > | Chọn dòng giỏ (ô chọn + "Chọn tất cả", `POST /gio-hang/chon` — chạy khi tắt JS), nút "Mua ngay" ở PDP (`buy_now` → `/thanh-toan`), giỏ mini ở header (0.3.64) | Implemented |
-> | Page builder cho trang khác ngoài trang chủ; hreflang; giỏ/giá thành viên tải qua API; purge CDN theo event | Designed |
+> | Page builder cho trang khác ngoài trang chủ; purge CDN theo event | Designed |
 > | Địa chỉ checkout | Có `vani.provinces-vn`: chọn tỉnh/phường (JS tải phường theo tỉnh; không JS: nút tải lại). Không có danh mục: nhập tự do | Quyết định: [ADR-009](../19-adr/ADR-009-storefront-architecture.md), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md), [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) (một website, một giao diện).
 
 ## 1. Nguyên tắc
@@ -25,7 +25,7 @@ Commerce Core (modules/*)
       ↓
 Storefront Application (Queries/Commands + DTO) ──► /api/storefront/v1 (HTTP, JSON)  ──► Headless / Mobile / Zalo Mini App
       ↓ (gọi in-process, cùng DTO)
-Native Storefront (Blade SSR + Alpine, theme custom/theme/*)
+Native Storefront (Blade SSR + JavaScript thuần, theme `custom/theme/vani-base`)
 ```
 
 | Client | Cách dùng |
@@ -46,8 +46,9 @@ Cửa hàng có **một theme đang hoạt động** (cấu hình `theme`, mặc
 | **Thông tin cửa hàng** (logo, hotline, chính sách, footer pháp lý của pháp nhân vận hành) | Settings cửa hàng | Quản trị |
 | **Brand** (logo, mô tả, banner trang brand, thứ tự hiển thị) | Catalog `brands` | Merchandiser |
 | **Collection config** (bộ sưu tập, sắp xếp, ghim) | Catalog | Merchandiser |
-| **Content** (trang, banner, menu — menu có thể có mục "Thương hiệu") | Content | Merchandiser |
-| **Layout / Blocks** (page builder, gồm block "lưới thương hiệu") | `page_blocks` JSON | Merchandiser |
+| **Content** (trang, bài viết, banner danh mục, nội dung thêm) | Plugin `vani.cms` | Merchandiser |
+| **Menu** (vị trí theo theme, có thể thêm link "Thương hiệu") | Setting `core.storefront.menu.<vị trí>` | Quản trị |
+| **Layout / Blocks** (page builder trang chủ, gồm block "lưới thương hiệu") | Setting `core.storefront.home_blocks` | Merchandiser |
 | **Components** (override view có chọn lọc) | Theme con `custom/theme/<store-theme>/` (`parent: vani-base`) | Dev |
 
 View fallback: theme đang hoạt động → `custom/theme/vani-base` → view mặc định của module. Theme con chỉ override **ít file**.

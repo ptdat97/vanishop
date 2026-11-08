@@ -1,16 +1,16 @@
 # API
 
-> Trạng thái: **Designed**. Chưa có route nào. Quyết định: [ADR-010](../19-adr/ADR-010-api-versioning.md), [ADR-014](../19-adr/ADR-014-idempotency.md).
+> Trạng thái: **Partially Implemented**. Storefront API và Integration API có route đang hoạt động; Admin API vẫn là thiết kế. Các bảng dưới đây mô tả hợp đồng hiện có, không phải toàn bộ API surface. Quyết định: [ADR-010](../19-adr/ADR-010-api-versioning.md), [ADR-014](../19-adr/ADR-014-idempotency.md).
 
 ## 1. Ba nhóm API
 
 | Nhóm | Prefix | Người dùng | Xác thực |
 |---|---|---|---|
-| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Một cửa hàng: **không** cần header kênh ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); header tuỳ chọn `X-Vani-Source` (`web`/`app`/`zalo`) ghi nguồn đơn; ngôn ngữ mặc định `vi`, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách: Sanctum token / session cookie |
-| **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Sanctum token của nhân viên + RBAC (permission) |
-| **Integration API** | `/api/integration/v1` và `/api/integrations/{system}/webhooks` | Integration Client (ERP, POS, ODO khi có), hãng VC, cổng TT | Client credentials (API key + secret, HMAC chữ ký), IP allowlist tuỳ hệ thống |
+| **Storefront API** | `/api/storefront/v1` | Web storefront (phần động), mobile app, Zalo Mini App | Một cửa hàng: **không** cần header kênh ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)); header tuỳ chọn `X-Vani-Source` (`web`/`app`/`zalo`) ghi nguồn đơn; ngôn ngữ mặc định `vi`, đổi bằng header `X-Vani-Locale` (`vi`/`en`), **không** theo `Accept-Language` của trình duyệt; khách đăng nhập dùng Customer Bearer token hoặc session cookie |
+| **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Chưa triển khai; Admin hiện xác thực qua guard `staff` và web session |
+| **Integration API** | `/api/integration/v1` và `/api/integrations/{system}/webhooks` | Integration Client (ERP/POS khi được cấu hình), đối tác | Client credentials (API key + secret, HMAC chữ ký), IP allowlist tuỳ hệ thống |
 
-Đặc tả mỗi nhóm viết bằng **OpenAPI 3.1** trong `docs/06-api/openapi/*.yaml`, tạo **cùng lúc** với code của endpoint (không viết trước, để tránh lệch với implementation).
+Hợp đồng **OpenAPI 3.1 hiện có** cho Integration API nằm ở [`docs/api/openapi/integration-v1.json`](../api/openapi/integration-v1.json). Storefront endpoints được đối chiếu trong bảng dưới đây và route files; Admin API chưa triển khai.
 
 ## 2. Quy ước chung
 
@@ -45,9 +45,9 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 
 | Method | Path | Mô tả |
 |---|---|---|
-| GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng; `/categories/{slug}` có `breadcrumb[{id, slug, name}]` từ gốc (0.3.66) (**Implemented**, code hiện lọc theo brand của kênh) |
-| GET | `/brands`, `/brands/{slug}` | Danh sách brand đang hiện, chi tiết brand (logo, mô tả, SEO). Designed (slice 12) |
-| GET | `/products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`; `brand` + `meta.facets.brands`: Designed). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
+| GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng; `/categories/{slug}` có `breadcrumb[{id, slug, name}]` từ gốc (0.3.66). **Implemented** |
+| GET | `/brands`, `/brands/{slug}` | Danh sách brand đang hiện, chi tiết brand (logo, mô tả, SEO). **Implemented**; brand là thuộc tính Catalog, không phải data scope |
+| GET | `/products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk&sort=newest|code&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`, `meta.facets.brands`). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |
 | GET | `/products?ids=12,7,30` | Thẻ sản phẩm theo id style (tối đa 30, giữ thứ tự, chỉ sản phẩm đang hiển thị; bỏ qua bộ lọc khác, `meta.facets = null`). **Implemented** 0.3.43 |
 | GET | `/products/{slug}` | Chi tiết style: tên, mô tả, hướng dẫn bảo quản, SEO, breadcrumb (`id`, `slug`, `name`; 0.3.43 thêm `id`), thương hiệu (`id`, `slug`, `name`), thuộc tính spec, màu + ảnh. **Implemented**, gồm `variants[].price`, `variants[].available`, `variants[].low_stock`, `price` (khoảng giá), `in_stock`. Danh sách `/products` có `price` và `in_stock`. Không trả số tồn chính xác. 0.3.50: `price_hidden` (bool) — cửa hàng ẩn giá với khách chưa đăng nhập (`storefront.price_visibility = members`) thì khách không gửi Bearer nhận `price: null`, `variants[].price: null`, `price_hidden: true`; giỏ/checkout trả 403 `storefront.sign_in_to_view_prices`. Gửi Bearer token sai trên `/products` → 401 |
 | GET | `/catalog/products/{slug}/store-availability?province=` | Tồn theo cửa hàng (mức độ, không số chính xác) |
@@ -67,7 +67,7 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 
 Webhook hãng vận chuyển: `POST /api/shipping/{carrier}/webhook` (hãng xác minh chữ ký; trùng/cũ không làm lùi trạng thái; rate limit 600/phút/IP). **Implemented**.
 | POST | `/auth/otp/request` (`phone`, `purpose` ∈ `login`/`delete_account` → `202 {channel, expires_in}`), `/auth/otp/verify` (`phone`, `code`, `device?`, `cart_id?` + `X-Vani-Cart-Token` để gộp giỏ), `/auth/login` (`phone`, `password`), `/auth/logout` | Đăng nhập; trả `data` (khách) + `meta.token` (Bearer, một lần — [ADR-024](../19-adr/ADR-024-customer-api-token.md)). Lỗi `customer.otp_invalid` 422, `customer.otp_rate_limited` 429, `customer.otp_unavailable` 422, `customer.invalid_credentials` 401, `customer.unauthenticated` 401. Rate limit 20/phút/IP. **Implemented** |
-| GET/PATCH | `/me` (+ `PUT /me/password`, `GET /me/export`, `GET /me/delete` → `{deletable, blockers[{type, reference, label}]}`, `POST /me/delete` với OTP `delete_account` — còn đơn chưa hoàn tất/đổi trả đang mở → `409 customer.deletion_blocked` kèm `details.blockers`, OTP không bị tiêu), `/me/addresses` (CRUD, tối đa 20), `/me/consents` (`PUT {channel, purpose, granted}`; code hiện còn `brand_id`), `/me/orders` (+ `/{id}`, `/{id}/cancel`), `/me/cart` | Tài khoản, header `Authorization: Bearer`. **Implemented**. Giỏ/checkout nhận Bearer tuỳ chọn: giỏ của khách không cần `X-Vani-Cart-Token` |
+| GET/PATCH | `/me` (+ `PUT /me/password`, `GET /me/export`, `POST /me/delete` với OTP `delete_account` và chặn khi còn đơn/đổi trả đang mở), `/me/addresses` (CRUD, tối đa 20), `/me/consents` (`PUT {channel, purpose, granted}`), `/me/orders` (+ `/{id}`, `/{id}/cancel`), `/me/cart` | Tài khoản, Customer Bearer token hoặc session cookie. **Implemented**. Giỏ/checkout nhận diện khách đăng nhập, không cần `X-Vani-Cart-Token` |
 | GET | `/me/loyalty` (plugin `vani.loyalty`), `/me/wishlist` (plugin `vani.wishlist`) | Tài khoản (plugin) |
 | POST | `/orders/{id}/returns` | Khách gửi yêu cầu đổi/trả (`lines[{order_line_id, quantity, exchange_variant_id?}]`, `reason_code` ∈ `vanishop.returns.reasons`, `note`), header `X-Vani-Order-Token`. Có `exchange_variant_id` cho mọi dòng = **đổi hàng** (0.3.32, [order §7.1](../09-order/order.md)). Lỗi `return.not_eligible` (chưa giao / quá hạn / đơn thay thế chỉ đổi cùng mẫu), `return.quantity_exceeded`, `return.exchange_invalid`. Đơn trả về có `returns[]` (thêm `resolution` refund/exchange) và `returnable{lines{order_line_id: số còn trả được}, deadline}`; `lines[].variant_id` (2026-10-08). **Implemented** |
 | — | `/orders/{id}/returns` + `photos[]` | (0.3.81) Gửi yêu cầu đổi trả dạng `multipart/form-data` kèm tối đa 5 ảnh JPEG/PNG/WebP ≤ 5 MB; `returns[].attachments[{id, url}]` (link có chữ ký 30 phút). **Implemented** |

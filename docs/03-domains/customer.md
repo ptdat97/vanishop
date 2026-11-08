@@ -1,10 +1,10 @@
 # Customer
 
-> Trạng thái: **Partially Implemented** (slice Customer, 2026-10-12). Đã có: tài khoản hợp nhất theo SĐT (`customers`, unique `phone_active`/`email_normalized` qua cột generated), profile ẩn cho khách vãng lai (Checkout gắn `customer_id`), đăng nhập OTP (`OtpSender`: `email` của Core, `log` chỉ dev; `vani.zalo-zns` rồi `vani.sms-brandname` — kênh lỗi thì tự chuyển kênh kế tiếp) + mật khẩu tuỳ chọn, token Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)), sổ địa chỉ (`customer_addresses`, tối đa 20), consent + ledger, `customer_brand_profiles` (tính lại từ đơn), merge có audit + `CustomerMerged`, ẩn danh hoá (`CustomerAnonymized`), xuất dữ liệu, gộp giỏ khi đăng nhập, Admin khách hàng (cấp Owner). **Chưa có:** nhóm khách/tag, tab hồ sơ do plugin (`customerProfileTabs()`), đăng nhập mạng xã hội, `/me/returns`, native storefront `/tai-khoan`, lệnh dọn token/OTP hết hạn, ngày sinh/giới tính dùng cho phân khúc.
+> Trạng thái: **Partially Implemented**. Đã có: tài khoản hợp nhất theo SĐT, profile ẩn cho khách vãng lai, OTP + mật khẩu, Customer Bearer token, sổ địa chỉ, consent + ledger, thống kê mua trên hồ sơ khách, merge, ẩn danh hoá, xuất dữ liệu, gộp giỏ, nhóm khách + tag, Admin khách hàng và trang tài khoản native `/tai-khoan`. Có luồng đăng nhập mạng xã hội qua contract `AuthProvider`; hiện chưa có provider sản xuất được đóng gói. **Còn thiếu:** tab hồ sơ do plugin, `/me/returns`, lệnh dọn token/OTP hết hạn và ngày sinh/giới tính dùng cho phân khúc.
 >
-> Ghi chú triển khai: khách đăng nhập đặt hàng → đơn gắn khách (SĐT người nhận khác không tạo hồ sơ mới). Khách vãng lai → đơn gắn hồ sơ theo SĐT liên hệ, **kể cả khi SĐT đó đã là tài khoản** (đơn hiện trong lịch sử của chủ SĐT; người đặt không đọc được gì của tài khoản). Merge chuyển đơn (`OrderWriter::reassignCustomer`, mỗi đơn một dòng `order_events`), địa chỉ, consent; nguồn thành `merged` và giải phóng SĐT/email. Ẩn danh hoá cần OTP `delete_account`; đơn giữ snapshot. Khách tự xoá (API `POST /me/delete`, native `/tai-khoan/xoa`, 0.3.57) bị từ chối khi còn việc dở do hook `vani.customer.before_delete` báo — Core: đơn chưa hoàn tất/huỷ hoặc đổi trả đang mở (`customer.deletion_blocked`, liệt kê số đơn); kiểm tra trước khi tiêu OTP. Nhân viên ẩn danh hoá trong Admin không bị chặn. `/me/orders` giới hạn trong brand của kênh đang gọi. Khuyến mãi xem [promotion](promotion.md); loyalty là plugin ([spec](../05-plugin/specs/loyalty.md)).
+> Ghi chú triển khai: khách đăng nhập đặt hàng → đơn gắn khách (SĐT người nhận khác không tạo hồ sơ mới). Khách vãng lai → đơn gắn hồ sơ theo SĐT liên hệ, **kể cả khi SĐT đó đã là tài khoản** (đơn hiện trong lịch sử của chủ SĐT; người đặt không đọc được gì của tài khoản). Merge chuyển đơn (`OrderWriter::reassignCustomer`, mỗi đơn một dòng `order_events`), địa chỉ, consent; nguồn thành `merged` và giải phóng SĐT/email. Ẩn danh hoá cần OTP `delete_account`; đơn giữ snapshot. Khách tự xoá (API `POST /me/delete`, native `/tai-khoan/xoa`) bị từ chối khi còn việc dở do hook `vani.customer.before_delete` báo — Core: đơn chưa hoàn tất/huỷ hoặc đổi trả đang mở (`customer.deletion_blocked`, liệt kê số đơn); kiểm tra trước khi tiêu OTP. Nhân viên ẩn danh hoá trong Admin không bị chặn. `/me/orders` dùng phạm vi toàn cửa hàng, không lọc theo brand/kênh. Khuyến mãi xem [promotion](promotion.md); loyalty là plugin ([spec](../05-plugin/specs/loyalty.md)).
 >
-> Định hướng [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md): một cửa hàng → bỏ `customer_brand_profiles` (thống kê lên hồ sơ khách), consent theo **kênh gửi × mục đích** (không theo brand). Code hiện còn hai phần này, gỡ ở slice 12.
+> Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), khách hàng và consent thuộc phạm vi toàn cửa hàng; brand chỉ dùng để phân tích sản phẩm trong đơn, không phải phạm vi hồ sơ khách.
 
 ## 1. Trách nhiệm
 
@@ -53,7 +53,7 @@ interface OtpSender
 ```
 
 - OTP 6 số, TTL 5 phút, tối đa 5 lần thử (cấu hình `vanishop.customer.otp.ttl|max_attempts`); giới hạn tần suất theo SĐT + IP (chống SMS pumping, [security](../15-security/security.md)).
-- Storefront dùng session cookie; mobile/headless dùng Sanctum token.
+- Web storefront dùng session cookie; Storefront API dùng Customer Bearer token (`customer_tokens`, [ADR-024](../19-adr/ADR-024-customer-api-token.md)).
 
 ## 5. Giao tiếp khách hàng
 

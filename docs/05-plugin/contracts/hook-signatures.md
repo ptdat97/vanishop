@@ -66,7 +66,7 @@ $this->onFilter('vani.order.before_create', fn (array $meta, CheckoutRequest $re
 ## 5. Slot UI
 
 - Slot Admin (`vani.admin.dashboard.cards`, `vani.admin.order.sidebar`) trả **dữ liệu có cấu trúc** (mảng mô tả card/panel), Admin Vue tự render. Plugin không trả HTML cho Admin.
-- Slot storefront (Designed, [ADR-025](../../19-adr/ADR-025-native-storefront-ssr-slots.md)) trả **view component** (tên Blade view của plugin + dữ liệu), theme render tại vị trí slot. Slot chỉ **nối thêm**; muốn thay khối thì override view trong theme brand.
+- Slot storefront (Implemented, [ADR-025](../../19-adr/ADR-025-native-storefront-ssr-slots.md)) trả **view component** (tên Blade view của plugin + dữ liệu), theme render tại vị trí slot. Slot chỉ **nối thêm**; muốn thay khối thì override view trong theme `vani-base`.
 
 ## 6. Domain event
 
@@ -75,7 +75,7 @@ $this->onEvent(OrderPlaced::class, AwardPendingPoints::class);   // class-string
 ```
 
 - Dispatch **sau commit**; payload là DTO bất biến trong `Modules\<Ctx>\Events`.
-- Chạy khi plugin đang bật. (Code hiện còn lọc theo `brandId` của event; bỏ ở slice 12, [ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md).)
+- Chạy khi plugin đang bật; không lọc theo brand ([ADR-028](../../19-adr/ADR-028-single-store-brand-as-catalog.md)).
 - Lỗi được log, **không** làm hỏng flow gốc. Việc phải đảm bảo tới nơi (gửi ERP, webhook) đi qua Integration outbox, không gọi HTTP trực tiếp trong listener.
 - Handler phải idempotent (R18): event có thể tới lại qua replay/đối soát.
 
