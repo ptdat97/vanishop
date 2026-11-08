@@ -54,7 +54,7 @@ final class OrderController
     public function index(Request $request, OrderQueries $queries, AdminScreen $screen): Response
     {
         Gate::authorize('orders.view');
-        $keys = ['stage', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q'];
+        $keys = ['stage', 'aged', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q'];
         $filters = array_map(fn (mixed $value): string => is_scalar($value) ? (string) $value : '', array_replace(array_fill_keys($keys, ''), $request->only($keys)));
         $extensionFilters = (array) $request->query('ext', []);
         $scoped = [...$filters, 'ids' => $screen->filterIds('order', $extensionFilters)];

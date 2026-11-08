@@ -20,7 +20,7 @@ use Modules\Shared\Support\StoreClock;
 final class OrderQueries
 {
     /**
-     * Danh sách đơn Admin. Lọc: `status`, `payment_status`, `stage` (OrderStage), `payment_method`, `source`, `from`/`to`
+     * Danh sách đơn Admin. Lọc: `status`, `payment_status`, `stage` (OrderStage), `aged` (giờ), `payment_method`, `source`, `from`/`to`
      * (ngày đặt Y-m-d theo giờ cửa hàng), `q` (số đơn hoặc SĐT), `ids`. Mỗi đơn có thêm thuộc tính `stage`.
      *
      * @param  array<string, mixed>  $filters  ids: giới hạn theo bộ lọc của plugin
@@ -54,6 +54,14 @@ final class OrderQueries
     }
 
     /**
+     * Đơn chưa xác nhận hoặc chưa giao hãng mà đã đặt quá `$hours` giờ (ô "Việc cần làm", bộ lọc `aged`).
+     */
+    public function agedCount(int $hours): int
+    {
+        return $this->filtered(['aged' => $hours])->count();
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return Builder<Order>
      */
@@ -79,6 +87,8 @@ final class OrderQueries
             ->when($value('payment_method') !== '', fn ($query) => $query->where('payment_method', $value('payment_method')))
             ->when($value('source') !== '', fn ($query) => $query->where('source', $value('source')))
             ->when(in_array($stage, OrderStage::STAGES, true), fn ($query) => $query->whereRaw('('.OrderStage::sql().') = ?', [$stage]))
+            // `aged` (giờ): đơn đang chờ xác nhận / chờ giao hãng đặt quá N giờ — chưa được xử lý kịp.
+            ->when((int) $value('aged') > 0, fn ($query) => $query->whereRaw('('.OrderStage::sql().") in ('to_confirm', 'to_ship')")->where('placed_at', '<', now()->subHours((int) $value('aged'))))
             ->when($date('from', false) !== null, fn ($query) => $query->where('placed_at', '>=', $date('from', false)->utc()))
             ->when($date('to', true) !== null, fn ($query) => $query->where('placed_at', '<', $date('to', true)->utc()))
             ->when($q !== '', fn ($query) => $phone !== null

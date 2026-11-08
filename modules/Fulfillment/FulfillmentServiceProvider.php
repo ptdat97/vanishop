@@ -23,6 +23,7 @@ use Modules\Fulfillment\Application\Listeners\OrderListShipments;
 use Modules\Fulfillment\Application\Listeners\OrderShipmentPanel;
 use Modules\Fulfillment\Application\Listeners\RebuildShipmentsOnLinesCancelled;
 use Modules\Fulfillment\Application\Listeners\SettleOrderOnStatusOverride;
+use Modules\Fulfillment\Application\Listeners\ShipmentDashboardTasks;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
 use Modules\Fulfillment\Contracts\ShipmentReader;
@@ -74,6 +75,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(ShipmentDashboardTasks::class)());
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'fulfillment.sourcing', 'Chọn kho giao hàng (sourcing)', 'select', (string) config('vanishop.fulfillment.sourcing', 'reserved_locations'),
             optionsFromTag: SourcingStrategy::TAG, help: 'SourcingStrategy khi tạo vận đơn.',

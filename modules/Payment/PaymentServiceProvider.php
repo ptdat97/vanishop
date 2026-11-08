@@ -22,6 +22,7 @@ use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\Listeners\CaptureAuthorizedOnShipment;
 use Modules\Payment\Application\Listeners\CollectCodOnDelivery;
 use Modules\Payment\Application\Listeners\OrderPaymentPanel;
+use Modules\Payment\Application\Listeners\PaymentDashboardTasks;
 use Modules\Payment\Application\Listeners\SettleCancelledOrderPayments;
 use Modules\Payment\Application\Listeners\SettlePartialCancellation;
 use Modules\Payment\Application\PaymentService;
@@ -55,6 +56,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(PaymentDashboardTasks::class)());
         $permissions->register('payments.view', 'Xem thanh toán');
         $permissions->register('payments.confirm', 'Xác nhận đã nhận tiền (chuyển khoản thủ công)');
         $permissions->register('payments.refund', 'Hoàn tiền');

@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.101 — 2026-11-08
+
+"Việc cần làm" đầu trang tổng quan Admin (SME: một màn hình biết hôm nay cần làm gì).
+
+### Thêm
+- Slot `vani.admin.dashboard.tasks` (vòng 0): ô hàng đợi `{key, label, count, url, tone?, hint?, order?}` — bấm vào tới danh sách đã lọc; listener tự kiểm quyền.
+- Core góp ô: Ordering (cần xác nhận, để quá 24 giờ, chờ thanh toán, chờ giao hãng, hoàn về), Returns (chờ duyệt, đã nhận hàng chờ hoàn tất), Fulfillment (giao không thành công; đặt vận đơn lỗi khi có), Payment (hoàn tiền chờ chuyển trả), Inventory (hết hàng, sắp hết — biến thể đang bán, nhớ 5 phút; `StockGrid::attentionCounts()`).
+- Danh sách đơn: bộ lọc `aged` (giờ) — đơn chờ xác nhận / chờ giao hãng đặt quá N giờ.
+
 ## 0.3.100 — 2026-11-07
 
 Fulfillment ở lại Core, làm gọn cho SME bằng giao diện ([ADR-043](../19-adr/ADR-043-fulfillment-stays-in-core.md)).

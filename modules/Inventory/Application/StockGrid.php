@@ -58,6 +58,22 @@ final class StockGrid
     }
 
     /**
+     * Số biến thể đang bán (status active) hết hàng / sắp hết ở kho giao online — ô "Việc cần làm" (0.3.101).
+     *
+     * @return array{out: int, low: int}
+     */
+    public function attentionCounts(): array
+    {
+        $threshold = (int) config('vanishop.inventory.low_stock_threshold', 3);
+        $active = array_filter($this->matching([])['rows'], fn (array $row): bool => $row['status'] === 'active');
+
+        return [
+            'out' => count(array_filter($active, fn (array $row): bool => $row['sellable'] === 0)),
+            'low' => count(array_filter($active, fn (array $row): bool => $row['sellable'] > 0 && $row['sellable'] <= $threshold)),
+        ];
+    }
+
+    /**
      * @param  array{q?: string, style?: string, filter?: string, color?: string, size?: string}  $criteria
      * @return array{rows: list<array<string, mixed>>, locations: list<Location>, colors: list<string>, sizes: list<string>}
      */

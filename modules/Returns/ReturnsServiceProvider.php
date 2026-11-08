@@ -11,6 +11,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Returns\Application\DaysWindowPolicy;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
+use Modules\Returns\Application\Listeners\ReturnDashboardTasks;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Contracts\Returns;
@@ -35,6 +36,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(ReturnDashboardTasks::class)());
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'returns.policy', 'Chính sách đổi trả', 'select', (string) config('vanishop.returns.policy', 'days_window'),
             optionsFromTag: ReturnPolicy::TAG, help: 'ReturnPolicy áp cho đơn của cửa hàng.',

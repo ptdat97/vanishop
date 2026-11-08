@@ -18,7 +18,7 @@ import { paymentStatusTone, stageTone } from '../../statusTones';
  * Danh sách đơn theo hàng đợi việc (0.3.96): thẻ giai đoạn vận hành (OrderStage) có số đếm, bộ lọc ngày/nguồn/thanh toán,
  * cột tuổi đơn, sản phẩm, tỉnh; cột "Vận đơn" và thao tác hàng loạt (Tạo vận đơn, Đã bàn giao) do Fulfillment đóng góp.
  */
-type Filters = { stage: string; status: string; payment_status: string; payment_method: string; source: string; from: string; to: string; q: string };
+type Filters = { stage: string; aged: string; status: string; payment_status: string; payment_method: string; source: string; from: string; to: string; q: string };
 
 const props = defineProps<{
     baseUrl: string;
@@ -106,6 +106,12 @@ function search(page = 1): void {
 
 function openStage(stage: string): void {
     form.stage = stage;
+    form.aged = '';
+    search();
+}
+
+function clearAged(): void {
+    form.aged = '';
     search();
 }
 
@@ -178,6 +184,10 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         </button>
     </nav>
 
+    <p v-if="form.aged" class="mb-3 flex items-center justify-between rounded bg-red-50 px-3 py-2 text-sm text-red-800" data-aged-filter>
+        Đang xem đơn chưa xác nhận hoặc chưa giao hãng, đặt quá {{ form.aged }} giờ.
+        <button type="button" class="underline" @click="clearAged">Bỏ lọc</button>
+    </p>
     <form class="mb-4 space-y-2" @submit.prevent="search()">
         <div class="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <input v-model="form.q" :class="inputClass" placeholder="Số đơn hoặc SĐT" aria-label="Tìm đơn" />

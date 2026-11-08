@@ -12,6 +12,7 @@ use Modules\Ordering\Application\CustomerDeletionGuard;
 use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
 use Modules\Ordering\Application\EloquentOrderStatistics;
+use Modules\Ordering\Application\Listeners\OrderDashboardTasks;
 use Modules\Ordering\Application\OrderFactory;
 use Modules\Ordering\Application\OrderReceipt;
 use Modules\Ordering\Application\OrderTransitionService;
@@ -48,6 +49,7 @@ final class OrderingServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(OrderDashboardTasks::class)());
         $permissions->register('orders.view', 'Xem đơn hàng');
         $permissions->register('orders.manage', 'Xác nhận đơn, đổi địa chỉ, ghi chú');
         $permissions->register('orders.cancel', 'Huỷ đơn');

@@ -12,6 +12,13 @@ return [
         'args' => [],
         'description' => 'Thêm card vào trang tổng quan Admin. Listener trả về array{title: string, body: string}.',
     ],
+    'vani.admin.dashboard.tasks' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.101',
+        'args' => [],
+        'description' => 'Ô "Việc cần làm" đầu trang tổng quan Admin (hàng đợi có số đếm, bấm vào tới danh sách đã lọc — SME, vision §2.1). Listener trả list<array{key: string, label: string, count: int, url: string, tone?: \'warning\'|\'danger\'|\'info\', hint?: string, order?: int}>; tự kiểm tra quyền (không có quyền → []).',
+    ],
     'vani.event.*' => [
         'type' => 'action',
         'visibility' => 'public',
