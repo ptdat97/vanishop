@@ -21,20 +21,27 @@ final class ProductListStock
 
     /**
      * @param  list<int>  $styleIds
-     * @return array{key: string, label: string, values: array<int, string>}|null
+     * @return array{key: string, label: string, values: array<int, string>, urls: array<int, string>}|null
      */
     public function column(array $styleIds): ?array
     {
         if (! Gate::allows('inventory.view')) {
             return null;
         }
-        $byStyle = array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), $this->variants->ofStyles($styleIds));
+        $variantsByStyle = $this->variants->ofStyles($styleIds);
+        $byStyle = array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), $variantsByStyle);
         $threshold = (int) config('vanishop.inventory.low_stock_threshold', 3);
+        $urls = [];
+        foreach ($variantsByStyle as $styleId => $variants) {
+            if ($variants !== []) {
+                $urls[$styleId] = route('admin.inventory.stock.index', ['style' => $variants[0]->styleCode]);
+            }
+        }
 
         return ['key' => 'stock', 'label' => 'Tồn bán được', 'values' => array_map(fn (int $sellable): string => match (true) {
             $sellable === 0 => 'Hết hàng',
             $sellable <= $threshold => "{$sellable} · sắp hết",
             default => (string) $sellable,
-        }, $this->grid->sellableByStyle($byStyle))];
+        }, $this->grid->sellableByStyle($byStyle)), 'urls' => $urls];
     }
 }

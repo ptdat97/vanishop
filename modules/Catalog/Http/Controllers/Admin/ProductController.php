@@ -80,6 +80,7 @@ final class ProductController
                 'total' => $styles->total(),
             ],
             'canManage' => Gate::allows('catalog.manage'),
+            'canManagePrices' => Gate::allows('pricing.manage'),
             'extensions' => [
                 ...$this->columns($screen, $styles->getCollection()->pluck('id')->all()),
                 'filters' => $screen->filters('product'),
@@ -93,19 +94,37 @@ final class ProductController
      * Cột của plugin (AdminScreen) + của module Core (slot vani.admin.product.list_columns — giá, tồn).
      *
      * @param  list<int>  $ids
-     * @return array{columns: list<array{key: string, label: string}>, values: array<int, array<string, scalar|null>>}
+     * @return array{
+     *     columns: list<array{key: string, label: string}>,
+     *     values: array<int, array<string, scalar|null>>,
+     *     editValues: array<int, array<string, int|null>>,
+     *     urls: array<int, array<string, string>>
+     * }
      */
     private function columns(AdminScreen $screen, array $ids): array
     {
         $result = $screen->columns('product', $ids);
+        $editValues = [];
+        $urls = [];
         foreach (array_filter(Hook::slot('vani.admin.product.list_columns', $ids)) as $column) {
             $result['columns'][] = ['key' => $column['key'], 'label' => $column['label']];
             foreach ($column['values'] as $styleId => $text) {
                 $result['values'][$styleId][$column['key']] = $text;
             }
+            foreach ($column['edit_values'] ?? [] as $styleId => $value) {
+                $editValues[$styleId][$column['key']] = $value;
+            }
+            foreach ($column['urls'] ?? [] as $styleId => $url) {
+                $urls[$styleId][$column['key']] = $url;
+            }
         }
 
-        return $result;
+        return [
+            'columns' => $result['columns'],
+            'values' => $result['values'],
+            'editValues' => $editValues,
+            'urls' => $urls,
+        ];
     }
 
     /**

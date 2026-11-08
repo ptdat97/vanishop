@@ -100,6 +100,8 @@ export interface ExtensionFilter {
 export interface ExtensionList {
     columns: Array<{ key: string; label: string }>;
     values: Record<number, Record<string, string | number | boolean | null>>;
+    editValues?: Record<number, Record<string, number | null>>;
+    urls?: Record<number, Record<string, string>>;
     filters: ExtensionFilter[];
     filterValues: Record<string, string>;
     actions: ExtensionAction[];

@@ -23,7 +23,7 @@ final class ProductListPrices
 
     /**
      * @param  list<int>  $styleIds
-     * @return array{key: string, label: string, values: array<int, string>}|null
+     * @return array{key: string, label: string, values: array<int, string>, edit_values: array<int, int|null>, urls: array<int, string>}|null
      */
     public function column(array $styleIds): ?array
     {
@@ -37,10 +37,12 @@ final class ProductListPrices
         $currency = (string) ($list->currency_code ?? config('vanishop.currency'));
 
         $values = [];
+        $editValues = [];
         foreach ($byStyle as $styleId => $variants) {
             $found = array_values(array_filter(array_map(fn ($variant) => $prices->get($variant->id), $variants)));
             if ($found === []) {
                 $values[$styleId] = 'Chưa có giá';
+                $editValues[$styleId] = null;
 
                 continue;
             }
@@ -56,9 +58,19 @@ final class ProductListPrices
                 $text .= "\n".(count($variants) - count($found)).' biến thể chưa có giá';
             }
             $values[$styleId] = $text;
+            $editValues[$styleId] = count($found) === count($variants) && min($amounts) === max($amounts)
+                ? min($amounts)
+                : null;
         }
 
-        return ['key' => 'price', 'label' => 'Giá bán', 'values' => $values];
+        $urls = [];
+        if (Gate::allows('pricing.manage')) {
+            foreach (array_keys($byStyle) as $styleId) {
+                $urls[$styleId] = route('admin.pricing.base-prices.style', ['styleId' => $styleId]);
+            }
+        }
+
+        return ['key' => 'price', 'label' => 'Giá bán', 'values' => $values, 'edit_values' => $editValues, 'urls' => $urls];
     }
 
     /**

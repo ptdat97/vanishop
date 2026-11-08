@@ -169,4 +169,21 @@ final class PriceListController
 
         return back()->with('success', __('pricing::messages.bulk_prices_changed', $result));
     }
+
+    /**
+     * Đặt nhanh giá niêm yết của mọi size cho một sản phẩm từ danh sách sản phẩm.
+     */
+    public function setProductBasePrice(int $styleId, Request $request, BulkBasePrice $prices, VariantDirectory $variants): RedirectResponse
+    {
+        Gate::authorize('pricing.manage');
+        $data = $request->validate([
+            'amount' => ['required', 'integer', 'min:1', 'max:1000000000'],
+        ]);
+
+        abort_unless(array_key_exists($styleId, $variants->ofStyles([$styleId])), 404);
+
+        $result = $prices->apply([$styleId], 'set', (int) $data['amount'], false);
+
+        return back()->with('success', __('pricing::messages.bulk_prices_changed', $result));
+    }
 }

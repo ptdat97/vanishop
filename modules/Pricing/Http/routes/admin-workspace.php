@@ -8,3 +8,4 @@ Route::resource('price-lists', PriceListController::class)->except('show')->para
 Route::get('price-lists/{priceList}/prices', [PriceListController::class, 'prices'])->name('price-lists.prices');
 Route::put('price-lists/{priceList}/prices', [PriceListController::class, 'updatePrices'])->name('price-lists.prices.update');
 Route::post('base-prices/bulk', [PriceListController::class, 'bulkBasePrice'])->name('base-prices.bulk');
+Route::put('base-prices/{styleId}', [PriceListController::class, 'setProductBasePrice'])->whereNumber('styleId')->name('base-prices.style');

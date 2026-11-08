@@ -103,3 +103,66 @@ it('quyền chỉ xem không sửa được giá', function () {
     $this->actingAs($viewer, 'staff')->get($this->base)->assertOk();
     $this->put("{$this->base}/{$list->id}/prices", ['prices' => []])->assertForbidden();
 });
+
+it('sửa nhanh giá niêm yết cho mọi size mà không đổi bảng giá khác', function () {
+    Event::fake([PriceChanged::class]);
+    $base = P::priceList(['code' => 'base'], [
+        $this->s->id => [590_000, 690_000],
+        $this->m->id => [590_000, 690_000],
+    ]);
+    $sale = P::priceList(['code' => 'sale', 'type' => 'sale'], [$this->s->id => [500_000]]);
+
+    $this->put(route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]), ['amount' => 550_000])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('success');
+
+    expect(Price::query()->where('price_list_id', $base->id)->orderBy('variant_id')->get(['variant_id', 'amount', 'compare_at_amount'])->toArray())
+        ->toBe([
+            ['variant_id' => $this->s->id, 'amount' => 550_000, 'compare_at_amount' => 690_000],
+            ['variant_id' => $this->m->id, 'amount' => 550_000, 'compare_at_amount' => 690_000],
+        ])
+        ->and(Price::query()->where('price_list_id', $sale->id)->value('amount'))->toBe(500_000)
+        ->and(PriceHistory::query()->where('price_list_id', $base->id)->count())->toBe(2)
+        ->and(AuditLog::query()->where('action', 'pricing.prices.updated')->count())->toBe(1);
+    Event::assertDispatchedTimes(PriceChanged::class, 1);
+});
+
+it('hiển thị giá hiện tại và URL sửa nhanh trên danh sách sản phẩm', function () {
+    P::priceList(['code' => 'base'], [
+        $this->s->id => [590_000],
+        $this->m->id => [590_000],
+    ]);
+    $staff = T::staff(['admin.access', 'catalog.view', 'pricing.view', 'pricing.manage', 'inventory.view']);
+
+    $this->actingAs($staff, 'staff')->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page
+        ->component('Catalog::Products/Index')
+        ->where('canManagePrices', true)
+        ->where("extensions.editValues.{$this->style->id}.price", 590_000)
+        ->where("extensions.urls.{$this->style->id}.price", route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]))
+        ->where("extensions.urls.{$this->style->id}.stock", route('admin.inventory.stock.index', ['style' => $this->style->style_code])));
+});
+
+it('từ chối giá nhanh không hợp lệ mà không thay đổi giá đã lưu', function () {
+    P::priceList(['code' => 'base'], [$this->s->id => [590_000]]);
+    $url = route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]);
+
+    $this->put($url, ['amount' => 0])->assertSessionHasErrors('amount');
+    expect(Price::query()->where('variant_id', $this->s->id)->value('amount'))->toBe(590_000);
+});
+
+it('ngăn người chỉ có quyền xem sửa giá nhanh', function () {
+    P::priceList(['code' => 'base'], [$this->s->id => [590_000]]);
+    $url = route('admin.pricing.base-prices.style', ['styleId' => $this->style->id]);
+    $viewer = T::staff(['admin.access', 'pricing.view']);
+    $this->actingAs($viewer, 'staff')->put($url, ['amount' => 550_000])->assertForbidden();
+
+    expect(Price::query()->where('variant_id', $this->s->id)->value('amount'))->toBe(590_000);
+});
+
+it('trả về 404 khi sửa giá cho sản phẩm không tồn tại', function () {
+    $this->actingAs(T::staff(['admin.access', 'pricing.manage']), 'staff')
+        ->put(route('admin.pricing.base-prices.style', ['styleId' => 999_999]), ['amount' => 550_000])
+        ->assertNotFound();
+
+    expect(PriceList::query()->where('code', 'base')->exists())->toBeFalse();
+});

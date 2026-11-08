@@ -19,7 +19,7 @@ const props = withDefaults(
     defineProps<{
         columns: DataTableColumn[];
         rows: Row[];
-        extensions?: Pick<ExtensionList, 'columns' | 'values' | 'actions'>;
+        extensions?: Pick<ExtensionList, 'columns' | 'values' | 'actions' | 'editValues' | 'urls'>;
         emptyText?: string;
         rowKey?: (row: Row, index: number) => string | number;
         rowLabel?: (row: Row) => string;
@@ -79,7 +79,17 @@ function cell(row: Row, key: string): unknown {
                     <td v-for="column in columns" :key="column.key" class="px-4 py-2" :class="[column.align === 'right' ? 'text-right' : '', column.class]">
                         <slot :name="`cell-${column.key}`" :row="row" :index="index">{{ cell(row, column.key) }}</slot>
                     </td>
-                    <td v-for="column in extensionColumns" :key="`ext-${column.key}`" class="px-4 py-2 whitespace-pre-line">{{ extensions?.values[idOf(row)]?.[column.key] ?? '—' }}</td>
+                    <td v-for="column in extensionColumns" :key="`ext-${column.key}`" class="px-4 py-2 whitespace-pre-line">
+                        <slot
+                            :name="`cell-${column.key}`"
+                            :row="row"
+                            :value="extensions?.values[idOf(row)]?.[column.key] ?? '—'"
+                            :edit-value="extensions?.editValues?.[idOf(row)]?.[column.key] ?? null"
+                            :url="extensions?.urls?.[idOf(row)]?.[column.key]"
+                        >
+                            {{ extensions?.values[idOf(row)]?.[column.key] ?? '—' }}
+                        </slot>
+                    </td>
                 </tr>
                 <tr v-if="expanded?.(row)" class="border-t border-slate-100 bg-slate-50">
                     <td :colspan="span" class="px-4 py-2"><slot name="expanded" :row="row" /></td>

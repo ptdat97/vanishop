@@ -80,7 +80,7 @@ it('variant/location không tồn tại trả 404', function () {
     $this->get('/admin/inventory/movements?variant=999999')->assertNotFound();
 });
 
-it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, phân trang; form sản phẩm có link Tồn kho', function () {
+it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, phân trang; sản phẩm mở lưới tồn theo mã', function () {
     config(['vanishop.inventory.low_stock_threshold' => 3]);
     I::stock($this->hn, $this->s->id, 2);
     $other = T::product($this->brand->id, ['style_code' => 'LM-TS02', 'name' => 'Áo thun']);
@@ -98,6 +98,10 @@ it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, ph
         ->and($skus('?q=LM-DR01&size='.T::seed(fn () => $this->m->size->code)))->toBe([$this->m->sku]);
 
     $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('stockUrl', fn (string $url) => str_ends_with($url, '/admin/inventory/stock?style=LM-DR01')));
+    $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->where(
+        "extensions.urls.{$this->style->id}.stock",
+        route('admin.inventory.stock.index', ['style' => $this->style->style_code]),
+    ));
 });
 
 it('lưu nhiều ô một lần như kiểm kê; ô có tồn đã đổi sau khi mở trang không bị ghi đè; kho đồng bộ bị chặn', function () {
