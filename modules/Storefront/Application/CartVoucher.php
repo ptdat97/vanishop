@@ -53,16 +53,37 @@ final class CartVoucher
     }
 
     /**
-     * Mã đang giữ và mức giảm hiện tại; null khi chưa nhập mã. Giỏ đổi làm mã hết hợp lệ (vd. dưới mức tối thiểu): vẫn
-     * giữ mã, báo lý do để khách biết.
+     * Mã đang giữ và mức giảm hiện tại; null khi chưa nhập mã. Mã không còn áp dụng được (giỏ đổi dưới mức tối thiểu, mã
+     * hết hạn/hết lượt…) thì tự bỏ khỏi phiên, không báo lỗi — không mang mã hỏng sang checkout (0.3.104).
      *
-     * @return array{code: string, discount: array<string, mixed>, total: array<string, mixed>, rejection: string|null}|null
+     * @return array{code: string, discount: array<string, mixed>, total: array<string, mixed>, rejection: null}|null
      */
     public function preview(CartKey $cart): ?array
     {
         $code = $this->code();
+        if ($code === null) {
+            return null;
+        }
+        $quote = $this->quote($cart, $code);
+        if ($quote['rejection'] !== null) {
+            $this->forget();
 
-        return $code === null ? null : ['code' => $code, ...$this->quote($cart, $code)];
+            return null;
+        }
+
+        return ['code' => $code, ...$quote];
+    }
+
+    /**
+     * Lý do từ chối mã trong một báo giá checkout (null = áp dụng được / không có mã đó).
+     *
+     * @param  list<VoucherRejection>  $rejections
+     */
+    public static function rejectionFor(array $rejections, string $code): ?string
+    {
+        $rejection = collect($rejections)->first(fn (VoucherRejection $rejection): bool => strcasecmp($rejection->code, $code) === 0);
+
+        return $rejection === null ? null : self::message($rejection->reason, $code);
     }
 
     /**

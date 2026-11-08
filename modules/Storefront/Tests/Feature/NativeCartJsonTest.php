@@ -1,8 +1,10 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
+use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Support\Phones;
 use Modules\Storefront\Application\CartVoucher;
 
@@ -150,4 +152,33 @@ it('bỏ chọn hết ở trang giỏ: nút Thanh toán (giỏ mini, trang giỏ
     // Giỏ đã sẵn sàng: link thường, giữ lựa chọn của khách.
     $this->postJson('/gio-hang/chon', ['lines' => [$first]])->assertOk()->assertJsonPath('cart.checkout_ready', true);
     expect($this->getJson('/gio-hang')->json('html'))->toContain('href="'.url('/thanh-toan').'"')->not->toContain('data-cart-checkout-form');
+});
+
+it('mã giảm giá không áp dụng được không bị giữ (0.3.104): giỏ tự bỏ mã hết hợp lệ; checkout không điền lại, không chặn đặt hàng', function () {
+    C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => null]);
+    $this->postJson('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2])->assertOk();
+    $this->postJson('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'])->assertOk();
+
+    // Mã hết hiệu lực sau khi đã lưu ở giỏ → giỏ mini và checkout bỏ lặng lẽ, không báo lỗi.
+    DB::table('vouchers')->where('code', 'GIAM10')->update(['status' => 'disabled']);
+    $this->getJson('/gio-hang')->assertOk()->assertJsonPath('voucher', null);
+    $this->postJson('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'])->assertUnprocessable();
+    session([CartVoucher::SESSION_KEY => 'GIAM10']);
+    $this->get('/thanh-toan')->assertOk()->assertDontSee('value="GIAM10"', false)->assertDontSee('data-voucher-notice', false)->assertDontSee('không áp dụng được');
+    expect(session(CartVoucher::SESSION_KEY))->toBeNull();
+
+    // Khách tự gõ mã sai rồi "Áp dụng": nhắc nhẹ kèm lý do, ô để trống.
+    $form = [
+        'contact' => ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678', 'email' => 'lan@example.com'],
+        'shipping_address' => ['province_code' => '29', 'ward_code' => '70101065', 'street_line' => '12 Lê Lợi'],
+        'shipping_method' => 'standard', 'payment_method' => 'cod', 'expected_total' => 600_000, 'idempotency_key' => 'voucher-dropped-01',
+    ];
+    $this->post('/thanh-toan', [...$form, 'voucher_code' => 'MM', 'action' => 'quote'])->assertRedirect('/thanh-toan');
+    $this->get('/thanh-toan')->assertOk()->assertSee('data-voucher-notice', false)->assertSee('Mã MM không tồn tại. Đơn vẫn đặt được, không kèm mã.')
+        ->assertDontSee('value="MM"', false);
+
+    // Gõ mã sai rồi bấm Đặt hàng luôn: đơn vẫn đặt, không kèm mã.
+    $this->post('/thanh-toan', [...$form, 'voucher_code' => 'MM'])->assertSessionHasNoErrors();
+    $order = Order::query()->withoutGlobalScopes()->sole();
+    expect((int) $order->total_amount)->toBe(600_000)->and($order->pricing['vouchers'] ?? [])->toBe([]);
 });

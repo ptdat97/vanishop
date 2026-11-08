@@ -49,17 +49,34 @@ final class CheckoutController
 
         $old = (array) $request->old();
         // Mã nhập ở giỏ (giữ trong phiên) điền sẵn khi khách chưa gửi form checkout.
-        if (! array_key_exists('voucher_code', $old) && $this->voucher->code() !== null) {
+        $fromCart = ! array_key_exists('voucher_code', $old) && $this->voucher->code() !== null;
+        if ($fromCart) {
             $old['voucher_code'] = $this->voucher->code();
         }
-        $quote = $this->presenter->quote($this->checkout->quote($this->toRequest($old, $request)));
+        $checkoutQuote = $this->checkout->quote($this->toRequest($old, $request));
+        $quote = $this->presenter->quote($checkoutQuote);
+
+        // Mã không áp dụng được (0.3.104): không giữ trong ô (đặt hàng không mang theo), bỏ khỏi phiên. Mã điền sẵn từ giỏ →
+        // bỏ lặng lẽ; mã khách vừa gõ → một dòng nhắc nhẹ kèm lý do, không phải lỗi.
+        $voucherCode = trim((string) ($old['voucher_code'] ?? ''));
+        $voucherNotice = null;
+        $rejection = $voucherCode === '' ? null : CartVoucher::rejectionFor($checkoutQuote->totals->rejectedVouchers, $voucherCode);
+        if ($rejection !== null) {
+            if (strcasecmp((string) $this->voucher->code(), $voucherCode) === 0) {
+                $this->voucher->forget();
+            }
+            $voucherNotice = $fromCart ? null : $rejection;
+            $voucherCode = '';
+        }
+        $quote['rejected_vouchers'] = [];
 
         $directory = $this->addresses->directory();
         $province = (string) ($old['shipping_address']['province_code'] ?? '');
 
         return view('theme::pages.checkout', [
             'quote' => $quote,
-            'voucherCode' => (string) ($old['voucher_code'] ?? ''),
+            'voucherCode' => $voucherCode,
+            'voucherNotice' => $voucherNotice,
             'idempotencyKey' => (string) Str::ulid(),
             // Có danh mục địa giới (plugin): chọn tỉnh/phường; không có: nhập tự do.
             'provinces' => $directory?->provinces(),
@@ -94,6 +111,16 @@ final class CheckoutController
         }
         if ($request->input('action') === 'quote' || $this->cart->current() === null) {
             return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput();
+        }
+
+        // Mã còn trong form nhưng không áp dụng được (khách gõ rồi bấm Đặt hàng luôn): bỏ mã, vẫn đặt đơn — tổng khách thấy
+        // vốn không gồm phần giảm của mã đó (0.3.104). Mã hợp lệ thì giữ, tổng đổi → quay lại để khách xác nhận như cũ.
+        if (trim((string) ($data['voucher_code'] ?? '')) !== '') {
+            $rejected = $this->checkout->quote($this->toRequest($data, $request))->totals->rejectedVouchers;
+            if (CartVoucher::rejectionFor($rejected, trim((string) $data['voucher_code'])) !== null) {
+                $data['voucher_code'] = '';
+                $this->voucher->forget();
+            }
         }
 
         try {

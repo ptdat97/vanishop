@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.104 — 2026-11-08
+
+Mã giảm giá không áp dụng được không còn bị giữ lại (native storefront).
+
+### Đổi
+- `CartVoucher::preview()` tự bỏ mã khỏi phiên khi không còn áp dụng được (giỏ đổi, mã hết hạn/hết lượt/tắt) — trả null, không còn `rejection`; thêm `CartVoucher::rejectionFor()`.
+- Checkout `vani-base`: mã điền sẵn từ giỏ mà không hợp lệ → bỏ lặng lẽ; mã khách vừa nhập rồi "Áp dụng" mà không dùng được → không giữ trong ô, một dòng nhắc nhẹ kèm lý do (`$voucherNotice`) thay cho lỗi đỏ "Mã … không áp dụng được."; đặt hàng với mã không hợp lệ còn trong form → bỏ mã, vẫn đặt đơn (tổng khách thấy vốn không gồm phần giảm). Storefront API giữ nguyên lỗi `checkout.voucher_invalid` cho headless.
+
 ## 0.3.103 — 2026-11-08
 
 Danh sách sản phẩm cho vận hành: giá + tồn ngay trên danh sách, mở/ngừng bán và đổi giá hàng loạt.

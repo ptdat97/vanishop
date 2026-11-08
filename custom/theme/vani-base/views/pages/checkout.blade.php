@@ -108,12 +108,13 @@
 
             <div class="flex gap-2">
                 <label for="voucher_code" class="sr-only">{{ __('Mã giảm giá') }}</label>
-                <input id="voucher_code" name="voucher_code" value="{{ old('voucher_code', $voucherCode ?? '') }}" placeholder="{{ __('Mã giảm giá') }}" class="flex-1 rounded border border-slate-300 px-2 py-1.5">
+                <input id="voucher_code" name="voucher_code" value="{{ $voucherCode ?? old('voucher_code') }}" placeholder="{{ __('Mã giảm giá') }}" class="flex-1 rounded border border-slate-300 px-2 py-1.5">
                 <button type="submit" name="action" value="quote" class="rounded border border-slate-300 px-3">{{ __('Áp dụng') }}</button>
             </div>
-            @foreach ($quote['rejected_vouchers'] as $rejected)
-                <p class="text-red-600">{{ __('Mã :code không áp dụng được.', ['code' => $rejected['code']]) }}</p>
-            @endforeach
+            {{-- 0.3.104: mã không dùng được không bị giữ lại (đặt hàng không bị chặn) — chỉ nhắc nhẹ khi khách vừa tự nhập. --}}
+            @if ($voucherNotice ?? null)
+                <p class="text-slate-500" data-voucher-notice>{{ $voucherNotice }} {{ __('Đơn vẫn đặt được, không kèm mã.') }}</p>
+            @endif
 
             <dl class="space-y-1 border-t border-slate-200 pt-3">
                 <div class="flex justify-between"><dt>{{ __('Tạm tính') }}</dt><dd>{{ $quote['subtotal']['formatted'] }}</dd></div>

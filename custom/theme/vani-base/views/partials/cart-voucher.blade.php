@@ -14,7 +14,6 @@
                 <button type="submit" class="text-slate-500 underline">{{ __('Bỏ mã') }}</button>
             </form>
         </div>
-        @if ($voucher['rejection'])<p class="text-sm text-red-600">{{ $voucher['rejection'] }}</p>@endif
     @else
         <form action="{{ vani_route('storefront.cart.voucher') }}" method="post" class="flex gap-2" data-cart-voucher-form>
             @csrf
