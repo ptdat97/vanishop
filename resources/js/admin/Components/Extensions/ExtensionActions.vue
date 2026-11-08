@@ -30,7 +30,7 @@ async function run(action: ExtensionAction): Promise<void> {
         }
         return;
     }
-    router.post(action.url, { ...values, ids: props.ids }, { preserveScroll: true });
+    router.post(action.url, { ...(action.data ?? {}), ...values, ids: props.ids }, { preserveScroll: true });
 }
 </script>
 

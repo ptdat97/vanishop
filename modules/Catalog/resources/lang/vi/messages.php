@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'bulk_status_changed' => 'Đã chuyển :count sản phẩm sang ":status".',
     'parent_not_found' => 'Danh mục cha không tồn tại.',
     'attribute_values_required' => 'Thuộc tính dạng chọn cần ít nhất một giá trị.',
     'category_has_children' => 'Không thể xoá danh mục còn danh mục con.',

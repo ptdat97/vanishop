@@ -7,3 +7,4 @@ use Modules\Pricing\Http\Controllers\Admin\PriceListController;
 Route::resource('price-lists', PriceListController::class)->except('show')->parameters(['price-lists' => 'priceList']);
 Route::get('price-lists/{priceList}/prices', [PriceListController::class, 'prices'])->name('price-lists.prices');
 Route::put('price-lists/{priceList}/prices', [PriceListController::class, 'updatePrices'])->name('price-lists.prices.update');
+Route::post('base-prices/bulk', [PriceListController::class, 'bulkBasePrice'])->name('base-prices.bulk');

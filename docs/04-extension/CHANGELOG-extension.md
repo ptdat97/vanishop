@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.103 — 2026-11-08
+
+Danh sách sản phẩm cho vận hành: giá + tồn ngay trên danh sách, mở/ngừng bán và đổi giá hàng loạt.
+
+### Thêm
+- Slot `vani.admin.product.list_columns` (cột thêm, `values` style id ⇒ chữ) và `vani.admin.product.bulk_actions` (POST `{ids}` style id) cho module Core. Pricing góp cột "Giá bán" (khoảng giá theo size, giá gạch) + "Đổi giá"; Inventory góp cột "Tồn bán được" (hết hàng / sắp hết).
+- Mở bán / Ngừng bán hàng loạt (`POST {admin}/catalog/products/bulk-status`): `ProductService::changeStatus()` — cùng hệ quả lưu form (lock_version, hook `vani.product.after_save`, audit `catalog.product.status_changed`, event ProductUpdated/ProductArchived).
+- Đổi giá niêm yết hàng loạt (`POST {admin}/pricing/base-prices/bulk`, `Pricing\Application\BulkBasePrice`): đặt giá mới, giảm/tăng %, giảm số tiền (làm tròn 1.000 ₫), bỏ giá gạch; tuỳ chọn hiện giá cũ gạch ngang khi giảm. Ghi qua PriceListService (lịch sử giá, audit, PriceChanged).
+- `VariantDirectory::ofStyles(list<int>)` → `style id ⇒ list<VariantData>`.
+- Thao tác hàng loạt (`ExtensionAction`) nhận `data` — giá trị cố định gửi kèm.
+
 ## 0.3.102 — 2026-11-08
 
 Đổi trả ít bước: thao tác ngay trên trang đơn và hàng loạt.

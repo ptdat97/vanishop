@@ -22,6 +22,22 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->all();
     }
 
+    public function ofStyles(array $styleIds): array
+    {
+        if ($styleIds === []) {
+            return [];
+        }
+
+        return Variant::query()
+            ->with(['style.translations', 'styleColor.color', 'size'])
+            ->whereIn('style_id', $styleIds)
+            ->get()
+            ->sortBy(fn (Variant $variant): string => sprintf('%010d-%05d-%05d', $variant->style_id, $variant->styleColor->position, $variant->size->sort_order))
+            ->groupBy('style_id')
+            ->map(fn ($variants): array => $variants->map(fn (Variant $variant): VariantData => $this->toData($variant))->values()->all())
+            ->all();
+    }
+
     public function find(array $variantIds): array
     {
         return Variant::query()

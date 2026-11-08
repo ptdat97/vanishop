@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -24,13 +25,14 @@ const props = defineProps<{
         total: number;
     };
     canManage: boolean;
-    extensions: Omit<ExtensionList, 'actions'>;
+    extensions: ExtensionList;
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
 const q = ref(props.filters.q);
 const status = ref(props.filters.status ?? '');
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
+const selected = ref<number[]>([]);
 const columns = [
     { key: 'image', label: '', class: 'w-16' },
     { key: 'name', label: 'Sản phẩm', class: 'font-medium' },
@@ -61,7 +63,11 @@ function search(page = 1): void {
         <button type="submit" :class="secondaryButton">Lọc</button>
     </form>
 
-    <DataTable :columns="columns" :rows="products.data" :extensions="{ ...extensions, actions: [] }" :row-label="(product) => product.style_code" empty-text="Không có sản phẩm nào.">
+    <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" />
+    </div>
+    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :row-label="(product) => product.style_code" empty-text="Không có sản phẩm nào.">
         <template #cell-image="{ row }">
             <img v-if="row.image_url" :src="row.image_url" alt="" class="h-12 w-10 rounded object-cover" />
             <div v-else class="h-12 w-10 rounded bg-slate-100" />

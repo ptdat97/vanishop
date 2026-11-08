@@ -87,6 +87,8 @@ export interface ExtensionAction {
     target?: '_blank';
     /** 0.3.99: hỏi thêm giá trị trước khi gửi (vd. trạng thái mới + lý do) — gửi kèm `ids`. */
     fields?: ConfirmField[];
+    /** 0.3.103: giá trị cố định gửi kèm (vd. `{status: 'active'}`). */
+    data?: Record<string, string | number | boolean>;
 }
 
 export interface ExtensionFilter {

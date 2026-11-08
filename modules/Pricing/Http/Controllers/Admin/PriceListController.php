@@ -7,9 +7,11 @@ namespace Modules\Pricing\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
@@ -149,5 +151,22 @@ final class PriceListController
             'types' => array_column(PriceListType::cases(), 'value'),
             'customerGroups' => app(CustomerGroupDirectory::class)->groups(),
         ]);
+    }
+
+    /**
+     * Đổi giá niêm yết nhiều sản phẩm (danh sách sản phẩm → "Đổi giá", 0.3.103). `ids` là style id.
+     */
+    public function bulkBasePrice(Request $request, BulkBasePrice $prices): RedirectResponse
+    {
+        Gate::authorize('pricing.manage');
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'mode' => ['required', Rule::in(BulkBasePrice::MODES)],
+            'value' => ['required', 'integer', 'min:0', 'max:1000000000'],
+            'strike' => ['nullable', 'boolean'],
+        ]);
+        $result = $prices->apply(array_values(array_unique(array_map('intval', $data['ids']))), $data['mode'], (int) $data['value'], (bool) ($data['strike'] ?? false));
+
+        return back()->with('success', __('pricing::messages.bulk_prices_changed', $result));
     }
 }

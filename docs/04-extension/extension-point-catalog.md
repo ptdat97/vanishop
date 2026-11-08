@@ -126,6 +126,8 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
 | `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.dashboard.tasks` | slot | 0.3.101 | Ô "Việc cần làm" đầu trang tổng quan; trả `list<{key, label, count, url, tone?, hint?, order?}>`. **Implemented** (Ordering, Returns, Fulfillment, Payment, Inventory) |
+| `vani.admin.product.list_columns` | slot | 0.3.103 | Cột thêm ở danh sách sản phẩm Admin; tham số `list<int>` style id, trả `{key, label, values}` hoặc null. **Implemented** (Pricing: Giá bán; Inventory: Tồn bán được) |
+| `vani.admin.product.bulk_actions` | slot | 0.3.103 | Thao tác hàng loạt ở danh sách sản phẩm; trả `list<{key, label, url, confirm, fields?, data?}>`. **Implemented** (Pricing: Đổi giá) |
 | `vani.admin.order.sidebar` | slot | — | Panel trên trang đơn Admin; tham số `OrderDetail`, trả `{title, rows[{label, value}], link?, actions?}` — `actions` (0.3.96): `{key, label, url, data?, fields?, confirm?, tone?, primary?}`. **Implemented** (Payment, Fulfillment, Returns) |
 | `vani.admin.order.list_columns` | slot | 0.3.96 | Cột thêm ở danh sách đơn Admin (module Core); tham số `list<int>` id đơn, trả `{key, label, values{id: string}}` hoặc null. **Implemented** (Fulfillment: Vận đơn) |
 | `vani.admin.order.bulk_actions` | slot | 0.3.96 | Thao tác hàng loạt ở danh sách đơn Admin (module Core); trả `list<{key, label, url, confirm}>`, nút POST `{ids}`. **Implemented** (Fulfillment: Tạo vận đơn, Đã bàn giao) |

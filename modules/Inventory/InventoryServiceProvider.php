@@ -15,6 +15,7 @@ use Modules\Identity\Domain\ScopeType;
 use Modules\Inventory\Application\AuthoritySyncService;
 use Modules\Inventory\Application\EloquentLocationRegistry;
 use Modules\Inventory\Application\InventoryReconciler;
+use Modules\Inventory\Application\Listeners\ProductListStock;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
 use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Application\ReturnService;
@@ -69,6 +70,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, ScopeOptions $scopes): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(StockDashboardTasks::class)());
+        Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListStock::class)->column($styleIds));
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'inventory.strategy', 'Cách tính số bán được (ATS)', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
             optionsFromTag: InventoryStrategy::TAG, help: 'Strategy chỉ giảm được ATS so với công thức chuẩn.',

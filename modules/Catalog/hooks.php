@@ -12,6 +12,20 @@ return [
         'args' => ['draft' => 'Modules\\Catalog\\Contracts\\Data\\ProductDraft'],
         'description' => 'Kiểm tra quy tắc riêng trước khi lưu sản phẩm. Listener trả về list<string> lỗi; có lỗi thì không lưu.',
     ],
+    'vani.admin.product.list_columns' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.103',
+        'args' => ['styleIds' => 'list<int>'],
+        'description' => 'Cột thêm ở danh sách sản phẩm Admin (module Core, vd. Pricing: giá; Inventory: tồn bán được). Listener trả array{key: string, label: string, values: array<int, string>} (style id => chữ) hoặc null khi không có quyền.',
+    ],
+    'vani.admin.product.bulk_actions' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.103',
+        'args' => [],
+        'description' => 'Thao tác hàng loạt ở danh sách sản phẩm Admin (module Core, vd. Pricing: đổi giá). Listener trả list<array{key, label, url, confirm, fields?}> — POST {ids: list<int> style id, ...fields}; tự kiểm tra quyền.',
+    ],
     'vani.product.after_save' => [
         'type' => 'action',
         'visibility' => 'public',

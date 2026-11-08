@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
@@ -28,6 +29,7 @@ use Modules\Catalog\Persistence\Models\StyleColor;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Extension\Facades\Hook;
 use Modules\Shared\Domain\Text\VietnameseText;
 
 final class ProductController
@@ -79,11 +81,69 @@ final class ProductController
             ],
             'canManage' => Gate::allows('catalog.manage'),
             'extensions' => [
-                ...$screen->columns('product', $styles->getCollection()->pluck('id')->all()),
+                ...$this->columns($screen, $styles->getCollection()->pluck('id')->all()),
                 'filters' => $screen->filters('product'),
                 'filterValues' => (array) $request->query('ext', []),
+                'actions' => $this->bulkActions($screen),
             ],
         ]);
+    }
+
+    /**
+     * Cột của plugin (AdminScreen) + của module Core (slot vani.admin.product.list_columns — giá, tồn).
+     *
+     * @param  list<int>  $ids
+     * @return array{columns: list<array{key: string, label: string}>, values: array<int, array<string, scalar|null>>}
+     */
+    private function columns(AdminScreen $screen, array $ids): array
+    {
+        $result = $screen->columns('product', $ids);
+        foreach (array_filter(Hook::slot('vani.admin.product.list_columns', $ids)) as $column) {
+            $result['columns'][] = ['key' => $column['key'], 'label' => $column['label']];
+            foreach ($column['values'] as $styleId => $text) {
+                $result['values'][$styleId][$column['key']] = $text;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Thao tác hàng loạt (0.3.103): Mở bán / Ngừng bán (Catalog) + module Core (đổi giá…) + plugin.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function bulkActions(AdminScreen $screen): array
+    {
+        $actions = Gate::allows('catalog.manage') ? [
+            ['key' => 'activate', 'label' => 'Mở bán', 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'active']],
+            ['key' => 'archive', 'label' => 'Ngừng bán (ẩn khỏi cửa hàng)', 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'archived']],
+        ] : [];
+        foreach (array_filter(Hook::slot('vani.admin.product.bulk_actions'), 'is_array') as $contributed) {
+            array_push($actions, ...$contributed);
+        }
+        array_push($actions, ...$screen->actions('product', 'bulk'));
+
+        return $actions;
+    }
+
+    /**
+     * Mở bán / ngừng bán / chuyển nháp nhiều sản phẩm (0.3.103).
+     */
+    public function bulkStatus(Request $request, ProductService $products): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'status' => ['required', Rule::enum(StyleStatus::class)],
+        ]);
+        $status = StyleStatus::from($data['status']);
+        $changed = 0;
+        foreach (array_unique(array_map('intval', $data['ids'])) as $id) {
+            $changed += Style::query()->whereKey($id)->exists() && $products->changeStatus($id, $status) ? 1 : 0;
+        }
+
+        return back()->with('success', __('catalog::messages.bulk_status_changed', ['count' => $changed, 'status' => __("catalog::labels.product_status.{$status->value}")]));
     }
 
     public function create(CategoryTreeQuery $tree): Response

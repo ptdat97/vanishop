@@ -7,8 +7,10 @@ namespace Modules\Pricing;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
+use Modules\Extension\Facades\Hook;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Pricing\Application\BasePriceImporter;
+use Modules\Pricing\Application\Listeners\ProductListPrices;
 use Modules\Pricing\Application\NoCustomerGroups;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
 use Modules\Pricing\Application\PriceListScheduler;
@@ -44,6 +46,8 @@ final class PricingServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
+        Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListPrices::class)->column($styleIds));
+        Hook::onSlot('vani.admin.product.bulk_actions', fn (): array => $this->app->make(ProductListPrices::class)->bulkActions());
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'pricing.strategy', 'Cách chọn giá bán', 'select', (string) config('vanishop.pricing.strategy', 'price_list_priority'),
             optionsFromTag: PricingStrategy::TAG, help: 'PricingStrategy dùng cho cửa hàng.',

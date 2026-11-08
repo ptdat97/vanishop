@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'bulk_status_changed' => 'Moved :count products to ":status".',
     'parent_not_found' => 'The parent category does not exist.',
     'attribute_values_required' => 'A select attribute needs at least one value.',
     'category_has_children' => 'A category with sub-categories cannot be deleted.',

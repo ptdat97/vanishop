@@ -29,6 +29,7 @@ Route::get('filters', [FacetController::class, 'index'])->name('filters.index');
 Route::put('filters', [FacetController::class, 'update'])->name('filters.update');
 Route::resource('link-types', LinkTypeController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['link-types' => 'linkType']);
 
+Route::post('products/bulk-status', [ProductController::class, 'bulkStatus'])->name('products.bulk-status');
 Route::resource('products', ProductController::class)->except('show');
 Route::post('products/{product}/colors', [ProductColorController::class, 'store'])->name('products.colors.store');
 Route::delete('products/{product}/colors/{styleColor}', [ProductColorController::class, 'destroy'])->name('products.colors.destroy');

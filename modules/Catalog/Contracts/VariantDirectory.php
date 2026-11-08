@@ -25,6 +25,14 @@ interface VariantDirectory
     public function find(array $variantIds): array;
 
     /**
+     * Variant (cả ngừng bán) theo style id (0.3.103 — thao tác hàng loạt trên danh sách sản phẩm: đổi giá, tồn).
+     *
+     * @param  list<int>  $styleIds
+     * @return array<int, list<VariantData>> style id => variant theo thứ tự màu → size (style không có variant thì không có mặt)
+     */
+    public function ofStyles(array $styleIds): array;
+
+    /**
      * Tra theo SKU (mã duy nhất toàn hệ thống) — dùng cho đồng bộ từ hệ thống ngoài.
      *
      * @param  list<string>  $skus

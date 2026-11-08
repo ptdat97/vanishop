@@ -58,6 +58,30 @@ final class StockGrid
     }
 
     /**
+     * Tồn bán được (tổng ở kho giao online) theo sản phẩm — cột danh sách sản phẩm Admin (0.3.103).
+     *
+     * @param  array<int, list<int>>  $variantIdsByStyle  style id => variant id
+     * @return array<int, int> style id => số bán được
+     */
+    public function sellableByStyle(array $variantIdsByStyle): array
+    {
+        $online = array_values(array_filter($this->queries->locations(), fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders));
+        $all = array_merge([], ...array_values($variantIdsByStyle));
+        $levels = $all === [] ? [] : $this->queries->levels($all);
+        $result = [];
+        foreach ($variantIdsByStyle as $styleId => $variantIds) {
+            $result[$styleId] = 0;
+            foreach ($variantIds as $variantId) {
+                foreach ($online as $location) {
+                    $result[$styleId] += max(0, $levels[$location->id.':'.$variantId]['available'] ?? 0);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Số biến thể đang bán (status active) hết hàng / sắp hết ở kho giao online — ô "Việc cần làm" (0.3.101).
      *
      * @return array{out: int, low: int}

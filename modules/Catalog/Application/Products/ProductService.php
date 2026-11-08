@@ -77,6 +77,34 @@ final class ProductService
     }
 
     /**
+     * Đổi trạng thái (mở bán / ngừng bán / nháp) không qua form — thao tác hàng loạt (0.3.103). Cùng hệ quả như lưu form:
+     * tăng lock_version, hook after_save, audit, event ProductUpdated / ProductArchived (cache, chỉ mục tìm kiếm).
+     *
+     * @return bool false khi đã ở trạng thái đó
+     */
+    public function changeStatus(int $styleId, StyleStatus $status): bool
+    {
+        return DB::transaction(function () use ($styleId, $status): bool {
+            $style = Style::query()->whereKey($styleId)->lockForUpdate()->firstOrFail();
+            if ($style->status === $status) {
+                return false;
+            }
+            $wasArchived = $style->status === StyleStatus::Archived;
+            $style->status = $status;
+            $style->lock_version++;
+            $style->save();
+
+            Hook::action('vani.product.after_save', $style->id);
+            $this->audit->record('catalog.product.status_changed', 'style', $style->id, ['style_code' => $style->style_code, 'status' => $status->value]);
+            event($status === StyleStatus::Archived && ! $wasArchived
+                ? new ProductArchived($style->id, $style->style_code)
+                : new ProductUpdated($style->id, $style->style_code));
+
+            return true;
+        });
+    }
+
+    /**
      * Chỉ xoá được bản nháp; sản phẩm đã bán dùng trạng thái archived để giữ lịch sử.
      */
     public function deleteDraft(Style $style): void
