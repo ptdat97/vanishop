@@ -7,9 +7,9 @@
         @endforeach
     @else
     @if ($categories !== [])
-        <nav aria-label="{{ __('Danh mục') }}" class="mb-8 flex flex-wrap gap-3 text-sm" data-vani-motion-stagger>
+        <nav aria-label="{{ __('Danh mục') }}" class="mb-8 flex flex-wrap gap-3 text-sm">
             @foreach ($categories as $category)
-                <a href="{{ vani_route('storefront.category', $category['slug']) }}" class="rounded-full border border-slate-300 px-4 py-1.5" data-vani-motion-item>{{ $category['name'] }}</a>
+                <a href="{{ vani_route('storefront.category', $category['slug']) }}" class="rounded-full border border-slate-300 px-4 py-1.5">{{ $category['name'] }}</a>
             @endforeach
         </nav>
     @endif
