@@ -48,6 +48,10 @@ it('nhân viên tạo yêu cầu đổi/trả hộ khách: nguồn staff, theo s
     $response->assertRedirect("/admin/returns/returns/{$return->id}");
     expect([$return->source, $return->reason_code, $return->customer_note, $return->lines()->value('quantity')])->toBe(['staff', 'defective', 'Khách gọi: đường may bung', 2]);
 
+    // Danh sách: số yêu cầu theo trạng thái trên thẻ lọc; ô "Việc cần làm" đếm yêu cầu chờ duyệt.
+    $this->get('/admin/returns/returns')->assertInertia(fn (Assert $page) => $page->component('Returns::Returns/Index')->where('counts', ['requested' => 1]));
+    expect(collect($this->get('/admin')->viewData('page')['props']['tasks'])->firstWhere('key', 'returns.requested')['count'])->toBe(1);
+
     // Hết hàng trả được → panel chuyển sang mở yêu cầu đang có.
     $this->get("/admin/orders/orders/{$this->order->id}")->assertInertia(fn (Assert $page) => $page
         ->where('panels', fn ($panels) => collect($panels)->contains(fn ($panel) => $panel['title'] === 'Đổi/trả' && $panel['link']['label'] === 'Xử lý đổi/trả')));

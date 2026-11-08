@@ -42,6 +42,8 @@ final class ReturnController
             'reasonsUrl' => route('admin.returns.reasons.index'),
             'status' => $status,
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
+            // Số yêu cầu theo trạng thái trên các thẻ lọc (0.3.101).
+            'counts' => ReturnRequest::query()->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total)->all(),
             'returns' => ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
                 ->orderByDesc('id')->limit(100)->get()->map(fn (ReturnRequest $return): array => [
                     'id' => $return->id, 'number' => $return->number, 'status' => $return->status->value, 'reason_code' => $return->reason_code,

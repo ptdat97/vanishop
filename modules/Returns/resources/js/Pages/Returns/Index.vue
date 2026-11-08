@@ -13,6 +13,7 @@ const props = defineProps<{
     labels: ReturnLabels;
     status: string;
     statuses: string[];
+    counts: Record<string, number>;
     returns: Array<{ id: number; number: string; status: string; reason_code: string; refund_amount: number; source: string; created_at: string | null }>;
 }>();
 
@@ -37,7 +38,10 @@ function filter(status: string): void {
 
     <div class="mb-4 flex flex-wrap gap-2">
         <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">Tất cả</button>
-        <button v-for="value in statuses" :key="value" type="button" :class="status === value ? primaryButton : secondaryButton" @click="filter(value)">{{ labels.return_status[value] ?? value }}</button>
+        <button v-for="value in statuses" :key="value" type="button" :class="status === value ? primaryButton : secondaryButton" @click="filter(value)">
+            {{ labels.return_status[value] ?? value }}
+            <span class="ml-1 text-xs opacity-70">{{ counts[value] ?? 0 }}</span>
+        </button>
     </div>
 
     <DataTable :columns="columns" :rows="returns" :row-label="(item) => item.number" empty-text="Chưa có yêu cầu nào.">
