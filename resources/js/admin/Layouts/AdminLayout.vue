@@ -131,6 +131,7 @@ function logout(): void {
         </aside>
         <div class="flex flex-1 flex-col">
             <header class="flex items-center justify-end gap-4 border-b border-slate-200 bg-white px-6 py-3 text-sm">
+                <a href="/" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-slate-900">Xem cửa hàng</a>
                 <Link v-if="page.props.urls.profile" :href="page.props.urls.profile" class="text-slate-600 hover:text-slate-900">{{ staff?.name }}</Link>
                 <span v-else class="text-slate-600">{{ staff?.name }}</span>
                 <button type="button" class="text-slate-500 hover:text-slate-900" @click="logout">Đăng xuất</button>

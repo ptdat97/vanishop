@@ -7,7 +7,7 @@
     @include('theme::partials.breadcrumb', ['crumbs' => [['label' => __('Thương hiệu'), 'url' => vani_route('storefront.brands')], ['label' => $brand['name']]]])
     <header class="mb-6 flex items-center gap-4">
         @if ($brand['logo_url'])
-            <img src="{{ $brand['logo_url'] }}" alt="{{ $brand['name'] }}" class="h-14">
+            <img src="{{ $brand['logo_url'] }}" alt="{{ $brand['name'] }}" class="h-14" data-vani-motion-hover>
         @endif
         <div>
             <h1 class="text-2xl font-semibold">{{ $brand['name'] }}</h1>

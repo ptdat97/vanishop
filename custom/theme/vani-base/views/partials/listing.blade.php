@@ -37,7 +37,7 @@
         @if ($listing['items'] === [])
             <p class="py-12 text-center text-slate-500">{{ __('Không có sản phẩm phù hợp.') }}</p>
         @else
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-3">
+            <div class="grid grid-cols-2 gap-6 md:grid-cols-3" data-vani-motion-stagger>
                 @foreach ($listing['items'] as $product)
                     {{-- Lưới 3 cột cạnh cột lọc 14rem: vùng chứa ≈ 1152 − 224 − 32 px. --}}
                     @include('theme::partials.product-card', ['product' => $product, 'layout' => [896, 3, 2]])

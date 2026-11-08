@@ -11,12 +11,12 @@
         @endforeach
     </nav>
     @foreach ($brandGroups as $letter => $group)
-        <section id="brands-{{ $loop->index }}" class="mb-8" data-brand-letter="{{ $letter }}">
+        <section id="brands-{{ $loop->index }}" class="mb-8" data-brand-letter="{{ $letter }}" data-vani-motion="rise">
             <h2 class="mb-3 text-lg font-semibold">{{ $letter }}</h2>
-            <ul class="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <ul class="grid grid-cols-2 gap-4 md:grid-cols-4" data-vani-motion-stagger>
                 @foreach ($group as $brand)
-                    <li>
-                        <a href="{{ vani_route('storefront.brand', $brand['slug']) }}" class="block rounded-[var(--radius-theme)] border border-slate-200 p-4 text-center">
+                    <li data-vani-motion-item>
+                        <a href="{{ vani_route('storefront.brand', $brand['slug']) }}" class="block rounded-[var(--radius-theme)] border border-slate-200 p-4 text-center" data-vani-motion-hover>
                             @if ($brand['logo_url'])
                                 <img src="{{ $brand['logo_url'] }}" alt="" class="mx-auto mb-2 max-h-12" loading="lazy">
                             @endif

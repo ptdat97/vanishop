@@ -1,6 +1,6 @@
 /*
  * Đảo tương tác của vani-base (ADR-025): JS chỉ tăng cường, trang dùng được khi JS tắt.
- * Thư viện ngoài duy nhất: Swiper + PhotoSwipe (npm), chỉ tải khi trang cần (loadVendor bên dưới).
+ * Thư viện giao diện (Motion, Swiper, PhotoSwipe) chỉ tải khi trang cần (loadVendor bên dưới).
  * Dữ liệu đọc từ data-* đã render sẵn ở server.
  */
 document.documentElement.classList.add('js');
@@ -195,13 +195,14 @@ const search = {
 window.vani = { request, cart, auth, search, urls };
 
 /**
- * Thư viện giao diện cài qua npm (Swiper 14, PhotoSwipe 5 — MIT), tách chunk riêng bằng import() động: chỉ trang có
- * carousel/ảnh phóng to mới tải JS + CSS. Theme con và plugin dùng chung: `window.vaniLoadVendor('swiper' | 'photoswipe')`
- * → Promise<class> (`Swiper` bản bundle đủ module / `PhotoSwipeLightbox`).
+ * Thư viện giao diện cài qua npm, tách chunk riêng bằng import() động để chỉ tải khi cần. Theme con và plugin dùng chung:
+ * `window.vaniLoadVendor('swiper' | 'photoswipe' | 'motion')` → Promise thư viện tương ứng.
+ * Motion cung cấp `animate`, `inView`, `scroll` cho animation DOM; ví dụ: `const { animate } = await vaniLoadVendor('motion')`.
  */
 const VENDORS = {
     swiper: () => Promise.all([import('swiper/bundle'), import('swiper/css/bundle')]).then(([module]) => module.default),
     photoswipe: () => Promise.all([import('photoswipe/lightbox'), import('photoswipe/style.css')]).then(([module]) => module.default),
+    motion: () => import('motion'),
 };
 const vendorPromises = {};
 function loadVendor(name) {
@@ -210,6 +211,81 @@ function loadVendor(name) {
     return vendorPromises[name];
 }
 window.vaniLoadVendor = loadVendor;
+
+const motionElementSelector = '[data-vani-motion]';
+const motionStaggerSelector = '[data-vani-motion-stagger]';
+const motionItemSelector = '[data-vani-motion-item]';
+if (
+    document.querySelector(`${motionElementSelector}, ${motionStaggerSelector}`) &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+) {
+    loadVendor('motion')
+        .then(({ animate, inView }) => {
+            const observed = new WeakSet();
+            document.documentElement.classList.add('vani-motion-ready');
+
+            const observeMotionTargets = (root) => {
+                const findTargets = (selector) => {
+                    const targets = [...root.querySelectorAll(selector)];
+                    if (root instanceof Element && root.matches(selector)) {
+                        targets.unshift(root);
+                    }
+                    return targets;
+                };
+                const staggerGroups = findTargets(motionStaggerSelector);
+                const staggeredItems = new WeakSet();
+
+                staggerGroups.forEach((group) => {
+                    if (observed.has(group)) return;
+                    const items = [...group.querySelectorAll(motionItemSelector)].filter((item) => item.closest(motionStaggerSelector) === group);
+                    if (items.length === 0) return;
+
+                    observed.add(group);
+                    items.forEach((item) => {
+                        staggeredItems.add(item);
+                        item.setAttribute('data-vani-motion-pending', '');
+                    });
+                    inView(group, () => {
+                        items.forEach((item, index) => {
+                            animate(item, { opacity: [0, 1], y: [12, 0] }, {
+                                duration: 0.65,
+                                delay: Math.min(index, 6) * 0.045,
+                                ease: [0.22, 1, 0.36, 1],
+                            }).then(() => item.removeAttribute('data-vani-motion-pending'));
+                        });
+                    });
+                });
+
+                const targets = findTargets(motionElementSelector);
+                targets.forEach((target) => {
+                    const motionParent = target.closest(motionElementSelector);
+                    if (observed.has(target) || staggeredItems.has(target) || (motionParent && motionParent !== target)) return;
+                    observed.add(target);
+                    const motion = target.dataset.vaniMotion ?? 'rise';
+                    target.setAttribute('data-vani-motion-pending', '');
+                    inView(target, () => {
+                        const keyframes = motion === 'fade' ? { opacity: [0, 1] } : { opacity: [0, 1], y: [12, 0] };
+                        animate(target, keyframes, {
+                            duration: 0.7,
+                            ease: [0.22, 1, 0.36, 1],
+                        }).then(() => target.removeAttribute('data-vani-motion-pending'));
+                    });
+                });
+            };
+
+            observeMotionTargets(document);
+            document.addEventListener('vani:content-updated', (event) => {
+                if (event.detail?.element instanceof Element) {
+                    observeMotionTargets(event.detail.element);
+                }
+            });
+        })
+        .catch((error) => {
+            document.documentElement.classList.remove('vani-motion-ready');
+            document.querySelectorAll('[data-vani-motion-pending]').forEach((target) => target.removeAttribute('data-vani-motion-pending'));
+            console.error('Không thể tải Motion cho hiệu ứng sản phẩm.', error);
+        });
+}
 
 /**
  * Carousel chung: phần tử `.vani-carousel.swiper > .swiper-wrapper > .swiper-slide`, tuỳ chọn Swiper ở `data-carousel`

@@ -145,10 +145,10 @@
     @if (($product['videos'] ?? []) !== [])
         <section class="mt-12">
             <h2 class="mb-4 text-lg font-medium">Video</h2>
-            <div class="grid gap-6 md:grid-cols-2">
+            <div class="grid gap-6 md:grid-cols-2" data-vani-motion-stagger>
                 @foreach ($product['videos'] as $video)
                     @if ($video['embed_url'] !== null)
-                        <div class="aspect-video overflow-hidden rounded-[var(--radius-theme)] bg-slate-100">
+                        <div class="aspect-video overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" data-vani-motion-item>
                             <iframe src="{{ $video['embed_url'] }}" title="{{ $video['title'] ?? $product['name'] }}" loading="lazy" class="h-full w-full" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                         </div>
                     @else
@@ -162,7 +162,7 @@
     @foreach ($product['links'] ?? [] as $link)
         <section class="mt-12">
             <h2 class="mb-4 text-lg font-medium">{{ $link['name'] ?? $link['code'] }}</h2>
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+            <div class="grid grid-cols-2 gap-6 md:grid-cols-4" data-vani-motion-stagger>
                 @foreach (array_slice($link['products'], 0, 8) as $linked)
                     @include('theme::partials.product-card', ['product' => $linked])
                 @endforeach

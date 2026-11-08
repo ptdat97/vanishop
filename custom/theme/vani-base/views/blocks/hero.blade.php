@@ -1,4 +1,4 @@
-<section class="mb-10 overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" data-block="hero">
+<section class="mb-10 overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" data-block="hero" data-vani-motion="rise">
     <div class="grid items-center gap-6 md:grid-cols-2">
         <div class="p-8">
             <h2 class="text-3xl font-semibold text-primary">{{ $title }}</h2>
@@ -9,7 +9,7 @@
         </div>
         @if ($imageUrl !== '')
             {{-- Banner đầu trang thường là ảnh lớn nhất (LCP): tải ngay, ưu tiên cao; srcset khi ảnh từ Thư viện ảnh. --}}
-            <img src="{{ $imageUrl }}" alt="" class="h-full max-h-96 w-full object-cover" width="800" height="600" fetchpriority="high" decoding="async"
+            <img src="{{ $imageUrl }}" alt="" class="h-full max-h-96 w-full object-cover" width="800" height="600" fetchpriority="high" decoding="async" data-vani-motion-hover
                  @if (($imageSrcset ?? '') !== '') srcset="{{ $imageSrcset }}" sizes="(min-width: 768px) 50vw, 100vw" @endif>
         @endif
     </div>
