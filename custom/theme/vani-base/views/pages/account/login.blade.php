@@ -22,5 +22,6 @@
             <p role="alert" class="text-sm text-red-600" data-vani-form-error @error('code') @else hidden @enderror>@error('code'){{ $message }}@enderror</p>
             <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('Đăng nhập') }}</button>
         </form>
+        <x-vani::hook-slot name="vani.storefront.account.login" />
     </div>
 @endsection

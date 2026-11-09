@@ -70,6 +70,7 @@
 
             <h2 class="mb-1 mt-10 text-lg font-semibold">{{ __('Xoá tài khoản') }}</h2>
             <p class="text-sm text-slate-500">{{ __('Gỡ thông tin cá nhân của bạn khỏi cửa hàng.') }} <a href="{{ vani_route('storefront.account.delete') }}" class="text-red-700 underline">{{ __('Xoá tài khoản') }}</a></p>
+            <x-vani::hook-slot name="vani.storefront.account.profile" :args="[$customer]" />
         </section>
     </div>
 @endsection

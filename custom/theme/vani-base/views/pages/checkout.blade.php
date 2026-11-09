@@ -105,6 +105,7 @@
                     <li class="flex justify-between gap-2"><span>{{ $line['name'] }} × {{ $line['quantity'] }}</span><span>{{ $line['total']['formatted'] }}</span></li>
                 @endforeach
             </ul>
+            <x-vani::hook-slot name="vani.storefront.checkout.order_summary" :args="[$quote]" />
 
             <div class="flex gap-2">
                 <label for="voucher_code" class="sr-only">{{ __('Mã giảm giá') }}</label>
@@ -128,6 +129,7 @@
                 @endif
             </dl>
 
+            <x-vani::hook-slot name="vani.storefront.checkout.after_summary" :args="[$quote]" />
             <x-vani::hook-slot name="vani.storefront.checkout.before_submit" :args="[$quote]" />
             <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white">{{ __('Đặt hàng') }}</button>
         </aside>

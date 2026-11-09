@@ -22,5 +22,6 @@
     @elseif ($order)
         <h2 class="mb-2 font-semibold">{{ __('Đơn :number', ['number' => $order['number']]) }} · {{ $order['status']['label'] ?? $order['order_status'] }}</h2>
         @include('theme::partials.order-summary')
+        <x-vani::hook-slot name="vani.storefront.track.after_order" :args="[$order]" />
     @endif
 @endsection

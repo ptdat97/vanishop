@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.3.105 — 2026-11-08
+
+Mở rộng các vị trí UI public của theme `vani-base`, giữ nguyên hook-slot hiện có.
+
+### Thêm
+- 19 slot storefront stable cho header/main/footer, trang chủ, thao tác thẻ sản phẩm và cuối danh sách, giỏ hàng, tóm tắt checkout, các trang tài khoản, danh sách thương hiệu và tra cứu đơn. Danh mục và tham số được mô tả ở [extension-point-catalog §4.1](extension-point-catalog.md).
+
+### Đổi
+- Slot `vani.storefront.layout.head` xuất trực tiếp `Htmlable`/`SlotView`, không bọc trong `<div>` không hợp lệ bên trong `<head>`.
+
 ## 0.3.104 — 2026-11-08
 
 Mã giảm giá không áp dụng được không còn bị giữ lại (native storefront).

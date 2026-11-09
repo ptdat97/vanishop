@@ -1,9 +1,12 @@
 <?php
 
+use Illuminate\Support\HtmlString;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
+use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Support\Phones;
 
@@ -34,6 +37,22 @@ it('trang tài khoản cần đăng nhập; đăng nhập OTP → gộp giỏ v�
     $this->get('/gio-hang')->assertSee('600.000 ₫');
     // Trang chủ cache được (giống nhau với mọi khách); nhãn header lấy qua /_vani/phien.
     $this->getJson('/_vani/phien')->assertJsonPath('signed_in', true)->assertJsonPath('account.label', 'Tài khoản')->assertJsonPath('cart.count', 2);
+});
+
+it('các trang đăng nhập và tài khoản có slot với dữ liệu phù hợp', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.account.login', fn () => new HtmlString('<p>PLUGIN-LOGIN</p>'));
+
+    $this->get(route('storefront.account.login'))->assertSee('PLUGIN-LOGIN');
+    ($this->signIn)();
+
+    $hooks->onSlot('vani.storefront.account.orders', fn (array $orders) => new HtmlString('<p>PLUGIN-ORDERS:'.count($orders).'</p>'));
+    $hooks->onSlot('vani.storefront.account.addresses', fn (array $addresses) => new HtmlString('<p>PLUGIN-ADDRESSES:'.count($addresses).'</p>'));
+    $hooks->onSlot('vani.storefront.account.profile', fn (CustomerData $customer) => new HtmlString('<p>PLUGIN-PROFILE:'.$customer->phone.'</p>'));
+
+    $this->get(route('storefront.account.orders'))->assertSee('PLUGIN-ORDERS:0');
+    $this->get(route('storefront.account.addresses'))->assertSee('PLUGIN-ADDRESSES:0');
+    $this->get(route('storefront.account.profile'))->assertSee('PLUGIN-PROFILE:+84912345678');
 });
 
 it('mã OTP sai → lỗi form, chưa đăng nhập', function () {
@@ -75,11 +94,13 @@ it('không xem được đơn của khách khác trong tài khoản', function (
 });
 
 it('tra cứu đơn bằng mã + SĐT; sai thì báo không tìm thấy', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.track.after_order', fn (array $order) => new HtmlString('<p>TRACK-ORDER:'.$order['number'].'</p>'));
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
     $this->post('/thanh-toan', $this->checkoutPayload);
     $order = Order::query()->withoutGlobalScopes()->sole();
     $this->flushSession();
 
-    $this->post('/tra-cuu-don', ['number' => strtolower($order->number), 'phone' => '0912 345 678'])->assertOk()->assertSee($order->number)->assertSee('330.000 ₫');
+    $this->post('/tra-cuu-don', ['number' => strtolower($order->number), 'phone' => '0912 345 678'])->assertOk()->assertSee($order->number)->assertSee('330.000 ₫')->assertSee('TRACK-ORDER:'.$order->number);
     $this->post('/tra-cuu-don', ['number' => $order->number, 'phone' => '0900000000'])->assertOk()->assertSee('Không tìm thấy đơn');
 });

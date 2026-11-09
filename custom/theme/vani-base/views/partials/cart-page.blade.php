@@ -7,6 +7,7 @@
 @if ($cart === null || $cart['lines'] === [])
     <p class="text-slate-500">{{ __('Giỏ hàng trống.') }} <a href="{{ vani_route('storefront.home') }}" class="underline">{{ __('Tiếp tục mua sắm') }}</a></p>
 @else
+    <x-vani::hook-slot name="vani.storefront.cart.before_lines" :args="[$cart]" />
     {{-- Chọn dòng để thanh toán (§3.8): ô chọn thuộc form này qua thuộc tính form=, JS tự gửi khi đổi; không JS: nút "Áp dụng lựa chọn". --}}
     <form id="cart-selection" action="{{ vani_route('storefront.cart.select') }}" method="post" class="mb-3 flex items-center gap-4 text-sm">
         @csrf
@@ -66,4 +67,5 @@
             <p class="text-sm text-red-600">{{ __('Cập nhật các dòng có vấn đề trước khi thanh toán.') }}</p>
         @endif
     </div>
+    <x-vani::hook-slot name="vani.storefront.cart.after_summary" :args="[$cart]" />
 @endif

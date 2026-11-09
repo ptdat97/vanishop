@@ -17,4 +17,5 @@
     @unless ($product['in_stock'])
         <p class="text-xs text-slate-500">{{ __('Hết hàng') }}</p>
     @endunless
+    <x-vani::hook-slot name="vani.storefront.plp.card.actions" :args="[$product]" />
 </article>

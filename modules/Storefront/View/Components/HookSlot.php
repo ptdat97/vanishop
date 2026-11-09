@@ -25,6 +25,7 @@ final class HookSlot extends Component
     public function __construct(
         public string $name,
         public array $args = [],
+        public bool $wrap = true,
     ) {}
 
     public function render(): Htmlable
@@ -43,6 +44,10 @@ final class HookSlot extends Component
             }
         }
 
-        return new HtmlString($html === '' ? '' : '<div class="vani-slot" data-slot="'.e($this->name).'">'.$html.'</div>');
+        if ($html === '') {
+            return new HtmlString('');
+        }
+
+        return new HtmlString($this->wrap ? '<div class="vani-slot" data-slot="'.e($this->name).'">'.$html.'</div>' : $html);
     }
 }

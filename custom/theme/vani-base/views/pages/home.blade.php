@@ -1,6 +1,7 @@
 @extends('theme::layouts.app')
 
 @section('content')
+    <x-vani::hook-slot name="vani.storefront.home.before_blocks" />
     @if ($blocks !== null)
         @foreach ($blocks as $block)
             {{ $block['html'] }}
@@ -40,4 +41,5 @@
         </div>
     </section>
     @endif
+    <x-vani::hook-slot name="vani.storefront.home.after_blocks" />
 @endsection

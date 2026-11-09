@@ -190,6 +190,51 @@ it('slot header/footer/checkout mới hiện ở đúng trang', function () {
     $this->get('/thanh-toan')->assertSee('name="extra[vani.gift][message]"', false);
 });
 
+it('theme slots mở rộng layout, trang chủ, trang thương hiệu và danh sách sản phẩm', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.layout.head', fn () => new HtmlString('<meta name="plugin-verification" content="verified">'));
+    $hooks->onSlot('vani.storefront.layout.header.before', fn () => new HtmlString('<p>PLUGIN-HEADER-BEFORE</p>'));
+    $hooks->onSlot('vani.storefront.layout.header.after', fn () => new HtmlString('<p>PLUGIN-HEADER-AFTER</p>'));
+    $hooks->onSlot('vani.storefront.layout.main.before', fn () => new HtmlString('<p>PLUGIN-MAIN-BEFORE</p>'));
+    $hooks->onSlot('vani.storefront.layout.main.after', fn () => new HtmlString('<p>PLUGIN-MAIN-AFTER</p>'));
+    $hooks->onSlot('vani.storefront.layout.footer.after', fn () => new HtmlString('<p>PLUGIN-FOOTER-AFTER</p>'));
+    $hooks->onSlot('vani.storefront.home.before_blocks', fn () => new HtmlString('<p>PLUGIN-HOME-BEFORE</p>'));
+    $hooks->onSlot('vani.storefront.home.after_blocks', fn () => new HtmlString('<p>PLUGIN-HOME-AFTER</p>'));
+    $hooks->onSlot('vani.storefront.brands.after_list', fn (array $groups) => new HtmlString('<p>BRAND-GROUPS:'.count($groups).'</p>'));
+    $hooks->onSlot('vani.storefront.plp.card.actions', fn (array $product) => new HtmlString('<button>WISHLIST:'.$product['slug'].'</button>'));
+    $hooks->onSlot('vani.storefront.plp.after_listing', fn (array $context, array $listing) => new HtmlString('<p>LISTING-END:'.$context['type'].':'.$listing['total'].'</p>'));
+
+    $home = $this->get('/')->assertOk()->getContent();
+    $head = substr($home, 0, strpos($home, '</head>'));
+
+    expect($head)->toContain('<meta name="plugin-verification" content="verified">')
+        ->not->toContain('data-slot="vani.storefront.layout.head"')
+        ->and(strpos($home, 'PLUGIN-HEADER-BEFORE'))->toBeLessThan(strpos($home, '<header'))
+        ->and(strpos($home, 'PLUGIN-HEADER-AFTER'))->toBeGreaterThan(strpos($home, '</header>'))
+        ->and(strpos($home, 'PLUGIN-MAIN-BEFORE'))->toBeLessThan(strpos($home, 'PLUGIN-HOME-BEFORE'))
+        ->and(strpos($home, 'PLUGIN-HOME-AFTER'))->toBeLessThan(strpos($home, 'PLUGIN-MAIN-AFTER'))
+        ->and(strpos($home, 'PLUGIN-FOOTER-AFTER'))->toBeGreaterThan(strpos($home, '</footer>'));
+
+    $this->get('/thuong-hieu')->assertSee('BRAND-GROUPS:', false);
+    $listing = $this->get('/tim-kiem?q=dam')->assertSee('WISHLIST:'.$this->product->slug, false)
+        ->assertSee('LISTING-END:search:', false)->getContent();
+    $card = substr($listing, strpos($listing, '<article'), strpos($listing, '</article>') - strpos($listing, '<article'));
+
+    expect(strpos($card, 'WISHLIST:'.$this->product->slug))->toBeGreaterThan(strpos($card, '</a>'));
+});
+
+it('giỏ và checkout cho phép plugin chèn nội dung quanh các tóm tắt', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.cart.before_lines', fn (array $cart) => new HtmlString('<p>CART-LINES:'.count($cart['lines']).'</p>'));
+    $hooks->onSlot('vani.storefront.cart.after_summary', fn () => new HtmlString('<p>CART-SUMMARY-END</p>'));
+    $hooks->onSlot('vani.storefront.checkout.order_summary', fn (array $quote) => new HtmlString('<p>CHECKOUT-LINES:'.count($quote['lines']).'</p>'));
+    $hooks->onSlot('vani.storefront.checkout.after_summary', fn (array $quote) => new HtmlString('<p>CHECKOUT-SUMMARY:'.$quote['total']['amount'].'</p>'));
+
+    $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
+    $this->get('/gio-hang')->assertSee('CART-LINES:1')->assertSee('CART-SUMMARY-END');
+    $this->get('/thanh-toan')->assertSee('CHECKOUT-LINES:1')->assertSee('CHECKOUT-SUMMARY:330000');
+});
+
 it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitemap gồm danh mục, thương hiệu, sản phẩm đang hiển thị', function () {
     $robots = $this->get('/robots.txt')->assertOk()->assertHeader('Content-Type', 'text/plain; charset=UTF-8')->getContent();
     expect($robots)->toContain('Disallow: /tai-khoan')->toContain('Sitemap: '.url('/sitemap.xml'))->not->toContain('/admin');

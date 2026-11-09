@@ -154,11 +154,25 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.order.after_summary` | Trang cảm ơn / chi tiết đơn | Hướng dẫn chuyển khoản, điểm đã cộng |
 | `vani.storefront.header.nav` / `header.actions` | Menu chính / cụm thao tác cạnh giỏ (0.3.1) | Trang plugin; wishlist, điểm |
 | `vani.storefront.footer.columns` | Cột footer (0.3.1) | Chính sách, đăng ký nhận tin |
+| `vani.storefront.layout.header.before` / `header.after` | Ngay trước / sau header (0.3.105); nằm trong HTML có cache CDN | Banner, thông báo công khai |
+| `vani.storefront.layout.main.before` / `main.after` | Đầu / cuối vùng nội dung mọi trang (0.3.105); HTML có thể được cache CDN | Khuyến mãi chung, ghi chú cửa hàng |
+| `vani.storefront.layout.footer.after` | Sau footer mọi trang (0.3.105); nằm trong HTML có cache CDN | Dấu chứng nhận, nội dung liên hệ |
+| `vani.storefront.home.before_blocks` / `home.after_blocks` | Trước / sau các block trang chủ, kể cả page builder (0.3.105) | Banner chiến dịch, nội dung plugin |
 | `vani.storefront.plp.before_listing` | Đầu trang danh sách, trên bộ lọc và lưới (0.3.43); args: ngữ cảnh `{type: category\|brand\|search, category, brand}`, listing | Banner danh mục |
 | `vani.storefront.plp.filters` | Bộ lọc bổ sung trang danh sách (0.3.1) | Lọc theo dữ liệu plugin |
+| `vani.storefront.plp.card.actions` | Khu vực thao tác dưới mỗi thẻ sản phẩm, bên ngoài link PDP (0.3.105); args: product | Yêu thích, so sánh |
+| `vani.storefront.plp.after_listing` | Sau bộ lọc, lưới và phân trang (0.3.105); args: context, listing | Banner cuối danh sách, điều khoản |
 | `vani.storefront.pdp.gallery_after` | Dưới ảnh sản phẩm (0.3.1) | Video, 360° |
+| `vani.storefront.brands.after_list` | Sau danh sách thương hiệu (0.3.105); args: brandGroups | Nội dung bổ sung cho trang thương hiệu |
+| `vani.storefront.cart.before_lines` / `cart.after_summary` | Trước danh sách dòng / sau tổng kết giỏ (0.3.105); args: cart | Thông báo, ưu đãi |
+| `vani.storefront.checkout.order_summary` / `checkout.after_summary` | Trong / sau tóm tắt đơn ở checkout (0.3.105); args: quote | Thông tin giao dịch, thông báo khuyến mãi |
 | `vani.storefront.checkout.contact_after` / `address_after` / `payment_after` | Sau từng bước checkout (0.3.1); trường `extra[<plugin id>]` | Mã số thuế HĐĐT, ghi chú giao, ưu đãi theo cổng |
 | `vani.storefront.account.menu` / `account.dashboard` / `account.order_detail` | Menu, tổng quan, chi tiết đơn trong `/tai-khoan` (0.3.9); mục menu có trang riêng: `accountPage()` | Điểm thưởng, ví, hoá đơn |
+| `vani.storefront.account.orders` | Sau danh sách đơn ở trang tổng quan hoặc tất cả đơn (0.3.105); args: orders | Điểm thưởng, thông tin thành viên |
+| `vani.storefront.account.addresses` / `account.profile` / `account.login` | Sau nội dung tương ứng trong tài khoản (0.3.105); profile nhận customer | Hướng dẫn, nội dung plugin |
+| `vani.storefront.track.after_order` | Sau thông tin đơn tìm thấy ở trang tra cứu (0.3.105); args: order | Trạng thái vận đơn, hỗ trợ |
+
+Các slot `layout.*` chạy trên HTML storefront có thể được cache CDN; không render dữ liệu riêng của khách. `<x-vani::hook-slot>` vẫn chỉ nối thêm view `SlotView` hoặc `Htmlable`; riêng slot `layout.head` không bọc nội dung trong phần tử HTML.
 
 ### 4.2 Hook tại kết quả service (0.3.47, [ADR-036](../19-adr/ADR-036-service-result-hooks.md))
 

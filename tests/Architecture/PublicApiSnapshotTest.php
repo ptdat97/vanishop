@@ -46,24 +46,26 @@ function publicApiLines(ReflectionClass $class): array
 it('public API cho plugin khớp snapshot (đổi API phải ghi CHANGELOG-extension + cập nhật snapshot)', function () {
     $files = [];
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('modules'))) as $file) {
-        $path = (string) $file;
+        $path = str_replace('\\', '/', (string) $file);
         if (str_ends_with($path, '.php') && preg_match('#/modules/[^/]+/(Contracts|Events)/#', $path) === 1) {
             $files[] = $path;
         }
     }
-    $files[] = base_path('modules/Extension/PluginServiceProvider.php');
+    $files[] = str_replace('\\', '/', base_path('modules/Extension/PluginServiceProvider.php'));
     sort($files);
 
     $lines = [];
+    $modulesPath = rtrim(str_replace('\\', '/', base_path('modules')), '/').'/';
     foreach ($files as $path) {
-        $class = 'Modules\\'.str_replace(['/', '.php'], ['\\', ''], substr($path, strlen(base_path('modules/'))));
+        $class = 'Modules\\'.str_replace(['/', '.php'], ['\\', ''], substr($path, strlen($modulesPath)));
         if (class_exists($class) || interface_exists($class) || enum_exists($class)) {
             array_push($lines, ...publicApiLines(new ReflectionClass($class)));
         }
     }
 
     // Helper toàn cục cho plugin/theme (ADR-036, ADR-037) cũng là public API.
-    $helpers = array_filter(get_defined_functions()['user'], fn (string $function): bool => (new ReflectionFunction($function))->getFileName() === base_path('modules/Extension/helpers.php'));
+    $helperFile = str_replace('\\', '/', base_path('modules/Extension/helpers.php'));
+    $helpers = array_filter(get_defined_functions()['user'], fn (string $function): bool => str_replace('\\', '/', (new ReflectionFunction($function))->getFileName()) === $helperFile);
     sort($helpers);
     foreach ($helpers as $function) {
         $reflection = new ReflectionFunction($function);

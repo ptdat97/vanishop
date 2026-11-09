@@ -35,6 +35,7 @@
             @empty
                 <p class="text-sm text-slate-500">{{ __('Chưa có địa chỉ. Thêm địa chỉ để đặt hàng nhanh hơn.') }}</p>
             @endforelse
+            <x-vani::hook-slot name="vani.storefront.account.addresses" :args="[$addresses]" />
         </section>
     </div>
 @endsection

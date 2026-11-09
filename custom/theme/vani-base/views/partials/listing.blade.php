@@ -58,4 +58,5 @@
         @endif
     </section>
 </div>
-</div>
+    <x-vani::hook-slot name="vani.storefront.plp.after_listing" :args="[$listingContext ?? ['type' => 'search', 'category' => null, 'brand' => null], $listing]" />
+    </div>

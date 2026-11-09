@@ -27,4 +27,5 @@
             </ul>
         </section>
     @endforeach
+    <x-vani::hook-slot name="vani.storefront.brands.after_list" :args="[$brandGroups]" />
 @endsection

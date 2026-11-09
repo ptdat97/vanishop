@@ -12,3 +12,4 @@
         @endforeach
     </ul>
 @endif
+<x-vani::hook-slot name="vani.storefront.account.orders" :args="[$orders]" />
