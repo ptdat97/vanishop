@@ -218,7 +218,7 @@ function logout(): void {
             </nav>
         </aside>
         <div class="flex flex-1 flex-col">
-            <header class="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 text-sm sm:px-6">
+            <header class="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 text-sm sm:px-6 justify-end">
                 <button
                     ref="mobileNavigationButton"
                     type="button"
