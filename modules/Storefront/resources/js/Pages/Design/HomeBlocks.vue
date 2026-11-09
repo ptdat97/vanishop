@@ -11,6 +11,7 @@ import type { ExtensionField, ExtensionFieldValue } from '@admin/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import DesignTabs from '../../Components/DesignTabs.vue';
+import RichTextEditor from '../../Components/RichTextEditor.vue';
 
 type BlockType = { type: string; label: string; fields: ExtensionField[] };
 type Block = { type: string; config: Record<string, ExtensionFieldValue> };
@@ -69,7 +70,8 @@ async function reset(): Promise<void> {
             <p v-if="errors[`blocks.${index}.type`]" class="mb-2 text-sm text-red-600">{{ errors[`blocks.${index}.type`] }}</p>
             <div class="grid gap-3 md:grid-cols-2">
                 <FormField v-for="field in typeOf(block.type)?.fields ?? []" :key="field.key" :label="field.label + (field.required ? ' *' : '')" :hint="field.help ?? undefined" :error="errors[`blocks.${index}.config.${field.key}`]">
-                    <textarea v-if="field.type === 'text'" v-model="block.config[field.key] as string | null" :class="inputClass" rows="3" />
+                    <RichTextEditor v-if="block.type === 'rich_text' && field.key === 'body'" v-model="block.config[field.key] as string | null" />
+                    <textarea v-else-if="field.type === 'text'" v-model="block.config[field.key] as string | null" :class="inputClass" rows="3" />
                     <Select v-else-if="field.type === 'select'" v-model="block.config[field.key] as string | null" :options="labelOptions(field.options)" empty-label="—" :empty-value="null" />
                     <DateInput v-else-if="field.type === 'date'" v-model="block.config[field.key] as string | null" />
                     <input v-else-if="field.type === 'bool'" v-model="block.config[field.key] as boolean" type="checkbox" />

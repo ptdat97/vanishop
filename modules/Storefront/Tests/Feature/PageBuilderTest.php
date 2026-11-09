@@ -47,6 +47,35 @@ it('chưa cấu hình → trang chủ mặc định; cấu hình khối → tran
         ->and(AuditLog::query()->where('action', 'storefront.home_blocks_updated')->exists())->toBeTrue();
 });
 
+it('renders formatted rich text safely and rejects documents over the character limit', function () {
+    $body = json_encode([
+        'type' => 'doc',
+        'content' => [[
+            'type' => 'paragraph',
+            'content' => [
+                ['type' => 'text', 'text' => 'Nội dung đậm', 'marks' => [['type' => 'bold']]],
+                ['type' => 'text', 'text' => '<script>alert(1)</script>', 'marks' => [['type' => 'link', 'attrs' => ['href' => 'javascript:alert(1)']]]],
+            ],
+        ]],
+    ], JSON_THROW_ON_ERROR);
+
+    $this->put($this->url, ['blocks' => [['type' => 'rich_text', 'config' => ['body' => $body]]]])->assertSessionHasNoErrors();
+    $html = $this->get('/')->getContent();
+
+    expect($html)->toContain('<strong>Nội dung đậm</strong>')
+        ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+        ->not->toContain('<script>alert(1)</script>')
+        ->not->toContain('href="javascript:alert(1)"');
+
+    $tooLong = json_encode([
+        'type' => 'doc',
+        'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => str_repeat('a', RichTextBlock::MAX_TEXT_LENGTH + 1)]]]],
+    ], JSON_THROW_ON_ERROR);
+
+    $this->put($this->url, ['blocks' => [['type' => 'rich_text', 'config' => ['body' => $tooLong]]]])
+        ->assertSessionHasErrors(['blocks.0.config.body' => 'Nội dung không được vượt quá 5000 ký tự.']);
+});
+
 it('validate theo fields của từng loại; loại không có bị từ chối; dùng lại mặc định', function () {
     $this->put($this->url, ['blocks' => [['type' => 'hero', 'config' => []]]])->assertSessionHasErrors('blocks.0.config.title');
     $this->put($this->url, ['blocks' => [['type' => 'khong_co', 'config' => []]]])->assertSessionHasErrors('blocks.0.type');

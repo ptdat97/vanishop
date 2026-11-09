@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application\Blocks;
 
+use Illuminate\Support\HtmlString;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Storefront\Contracts\StorefrontBlock;
 
@@ -12,6 +13,8 @@ use Modules\Storefront\Contracts\StorefrontBlock;
  */
 final class RichTextBlock implements StorefrontBlock
 {
+    public const MAX_TEXT_LENGTH = 5000;
+
     public function type(): string
     {
         return 'rich_text';
@@ -24,12 +27,17 @@ final class RichTextBlock implements StorefrontBlock
 
     public function fields(): array
     {
-        return [FieldDefinition::string('title', 'Tiêu đề', max: 120), FieldDefinition::text('body', 'Nội dung', required: true, max: 5000)];
+        return [FieldDefinition::string('title', 'Tiêu đề', max: 120), FieldDefinition::text('body', 'Nội dung', required: true, max: 50_000)];
     }
 
     public function resolve(array $config, string $locale): array
     {
-        return ['title' => (string) ($config['title'] ?? ''), 'body' => (string) ($config['body'] ?? '')];
+        $body = (string) ($config['body'] ?? '');
+
+        return [
+            'title' => (string) ($config['title'] ?? ''),
+            'bodyHtml' => new HtmlString(RichTextRenderer::render($body)),
+        ];
     }
 
     public function view(): string

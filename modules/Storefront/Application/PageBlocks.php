@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Storefront\Application\Blocks\RichTextBlock;
+use Modules\Storefront\Application\Blocks\RichTextRenderer;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Tenancy\Contracts\Settings;
 use Throwable;
@@ -76,6 +78,11 @@ final class PageBlocks
             $validator = Validator::make($config, $rules);
             if ($validator->fails()) {
                 throw ValidationException::withMessages(collect($validator->errors()->messages())->mapWithKeys(fn ($messages, $key): array => ["blocks.{$index}.config.{$key}" => $messages])->all());
+            }
+            if ($type instanceof RichTextBlock && RichTextRenderer::textLength((string) ($config['body'] ?? '')) > RichTextBlock::MAX_TEXT_LENGTH) {
+                throw ValidationException::withMessages([
+                    "blocks.{$index}.config.body" => 'Nội dung không được vượt quá '.RichTextBlock::MAX_TEXT_LENGTH.' ký tự.',
+                ]);
             }
             $known = array_map(fn (FieldDefinition $field): string => $field->key, $fields);
             $clean[] = ['type' => $type->type(), 'config' => array_intersect_key($config, array_flip($known))];

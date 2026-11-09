@@ -49,8 +49,13 @@ it('các trang đăng nhập và tài khoản có slot với dữ liệu phù h�
     $hooks->onSlot('vani.storefront.account.orders', fn (array $orders) => new HtmlString('<p>PLUGIN-ORDERS:'.count($orders).'</p>'));
     $hooks->onSlot('vani.storefront.account.addresses', fn (array $addresses) => new HtmlString('<p>PLUGIN-ADDRESSES:'.count($addresses).'</p>'));
     $hooks->onSlot('vani.storefront.account.profile', fn (CustomerData $customer) => new HtmlString('<p>PLUGIN-PROFILE:'.$customer->phone.'</p>'));
+    $hooks->onSlot('vani.storefront.account.menu', fn () => new HtmlString('<p>PLUGIN-MENU</p>'));
 
-    $this->get(route('storefront.account.orders'))->assertSee('PLUGIN-ORDERS:0');
+    $html = $this->get(route('storefront.account.orders'))
+        ->assertSee('data-vani-account-menu-root', false)
+        ->assertSee('PLUGIN-ORDERS:0')
+        ->getContent();
+    expect(substr_count($html, 'PLUGIN-MENU'))->toBe(1);
     $this->get(route('storefront.account.addresses'))->assertSee('PLUGIN-ADDRESSES:0');
     $this->get(route('storefront.account.profile'))->assertSee('PLUGIN-PROFILE:+84912345678');
 });

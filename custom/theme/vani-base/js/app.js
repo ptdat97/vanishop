@@ -1,5 +1,20 @@
 import { createIcons, Heart, Menu, Search, ShoppingBag, UserRound } from 'lucide';
 
+const accountMenuRoot = document.querySelector('[data-vani-account-menu-root]');
+if (accountMenuRoot) {
+    Promise.all([import('vue'), import('./AccountMenuDropdown.vue')])
+        .then(([{ createApp }, { default: AccountMenuDropdown }]) => {
+            const links = accountMenuRoot.querySelector('[data-vani-account-menu-links]');
+            if (!links) return;
+
+            createApp(AccountMenuDropdown, {
+                label: accountMenuRoot.dataset.label ?? '',
+                linksHtml: links.outerHTML,
+            }).mount(accountMenuRoot);
+        })
+        .catch((error) => console.error('Không thể tải menu tài khoản.', error));
+}
+
 /*
  * Đảo tương tác của vani-base (ADR-025): JS chỉ tăng cường, trang dùng được khi JS tắt.
  * Thư viện giao diện (Motion, Swiper, PhotoSwipe) chỉ tải khi trang cần (loadVendor bên dưới).
