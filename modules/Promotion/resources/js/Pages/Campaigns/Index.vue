@@ -3,10 +3,10 @@ import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { campaignStateTone, type PromotionLabels } from '../../labels';
 
-defineProps<{
+const props = defineProps<{
     baseUrl: string;
     labels: PromotionLabels;
     promotionsUrl: string;
@@ -28,9 +28,9 @@ const columns = [
         <Link :href="promotionsUrl" :class="secondaryButton">Khuyến mãi</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm campaign</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="campaigns" :row-label="(campaign) => campaign.code" empty-text="Chưa có campaign.">
+    <DataTable :columns="columns" :rows="campaigns" :row-label="(campaign) => campaign.code" :row-click="(campaign) => router.visit(`${props.baseUrl}/${campaign.id}/edit`)" empty-text="Chưa có campaign.">
         <template #cell-name="{ row }">
-            <Link :href="`${baseUrl}/${row.id}/edit`" class="font-medium text-indigo-600 hover:underline">{{ row.name }}</Link>
+            <span class="font-medium">{{ row.name }}</span>
             <div class="font-mono text-xs text-slate-400">{{ row.code }}</div>
         </template>
         <template #cell-state="{ row }"><StatusBadge :label="labels.campaign_state[row.state] ?? row.state" :tone="campaignStateTone(row.state)" /></template>

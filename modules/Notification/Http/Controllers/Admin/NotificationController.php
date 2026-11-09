@@ -66,19 +66,23 @@ final class NotificationController
     public function logs(Request $request, NotificationCatalog $catalog): Response
     {
         Gate::authorize('notifications.view', [ScopeRef::owner()]);
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([25, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 50);
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $q = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $page = NotificationLog::query()
             ->when($status !== null && $status !== '', fn ($query) => $query->where('status', $status))
             ->when($q !== '', fn ($query) => $query->where(fn ($query) => $query->where('recipient', 'like', "%{$q}%")->orWhere('idempotency_key', 'like', "%{$q}%")))
-            ->orderByDesc('id')->paginate(50)->withQueryString();
+            ->orderByDesc('id')->paginate($perPage)->withQueryString();
 
         return Inertia::render('Notification::Logs/Index', [
             'baseUrl' => route('admin.notifications.logs'),
             'labels' => __('notification::labels'),
             // Tên loại thông báo (NotificationCatalog) thay cho mã thô — 0.3.101.
             'typeLabels' => array_map(fn (NotificationType $type): string => $type->label, $catalog->types()),
-            'filters' => ['status' => $status, 'q' => $q],
+            'filters' => ['status' => $status, 'q' => $q, 'per_page' => $page->perPage()],
             'statuses' => [NotificationLog::QUEUED, NotificationLog::SENT, NotificationLog::FAILED, NotificationLog::SKIPPED],
             'logs' => collect($page->items())->map(fn (NotificationLog $log): array => [
                 'id' => $log->id, 'type' => $log->type, 'channel' => $log->channel, 'recipient' => $this->mask($log->recipient),
@@ -86,7 +90,7 @@ final class NotificationController
                 'created_at' => StoreClock::format($log->created_at),
                 'sent_at' => StoreClock::format($log->sent_at),
             ])->all(),
-            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
+            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
         ]);
     }
 

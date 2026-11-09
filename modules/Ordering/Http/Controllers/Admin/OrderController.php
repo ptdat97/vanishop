@@ -54,11 +54,16 @@ final class OrderController
     public function index(Request $request, OrderQueries $queries, AdminScreen $screen): Response
     {
         Gate::authorize('orders.view');
-        $keys = ['stage', 'aged', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q'];
+        $validated = $request->validate([
+            'actionable' => ['sometimes', 'boolean'],
+            'per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 30);
+        $keys = ['stage', 'aged', 'actionable', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q'];
         $filters = array_map(fn (mixed $value): string => is_scalar($value) ? (string) $value : '', array_replace(array_fill_keys($keys, ''), $request->only($keys)));
         $extensionFilters = (array) $request->query('ext', []);
         $scoped = [...$filters, 'ids' => $screen->filterIds('order', $extensionFilters)];
-        $page = $queries->search($scoped);
+        $page = $queries->search($scoped, $perPage);
         $ids = collect($page->items())->pluck('id')->all();
 
         // Cột và thao tác hàng loạt: plugin (AdminScreen) + module Core (slot vani.admin.order.list_columns / bulk_actions).
@@ -91,6 +96,7 @@ final class OrderController
             'stages' => OrderStage::STAGES,
             'actionableStages' => OrderStage::ACTIONABLE,
             'stageCounts' => $queries->stageCounts($scoped),
+            'agedCount' => $queries->agedCount(24),
             'statuses' => array_column(OrderStatus::cases(), 'value'),
             'paymentStatuses' => PaymentStatus::VALUES,
             'labels' => [...__('ordering::labels'), 'payment_method' => $this->paymentMethodLabels()],
@@ -111,7 +117,7 @@ final class OrderController
                 'source' => $order->source,
                 'label' => CustomerStatusLabel::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
             ])->all(),
-            'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'total' => $page->total()],
+            'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'extensions' => [
                 ...$extensionColumns,
                 'filters' => $screen->filters('order'),
@@ -122,7 +128,7 @@ final class OrderController
         ]);
     }
 
-    public function show(Order $order, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses, OrderReader $reader, OrderStatusChanger $changer): Response
+    public function show(Order $order, Request $request, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses, OrderReader $reader, OrderStatusChanger $changer): Response
     {
         Gate::authorize('orders.view');
         $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
@@ -130,6 +136,7 @@ final class OrderController
 
         return Inertia::render('Ordering::Orders/Show', [
             'baseUrl' => route('admin.orders.orders.index'),
+            'listUrl' => $this->ordersListUrl($request),
             'order' => (array) $detail,
             'labels' => __('ordering::labels'),
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
@@ -341,6 +348,27 @@ final class OrderController
      *
      * @return array<string, string>
      */
+    private function ordersListUrl(Request $request): string
+    {
+        $query = [];
+        foreach (['stage', 'aged', 'actionable', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q', 'page', 'per_page'] as $key) {
+            $value = $request->query($key);
+            if (is_scalar($value) && (string) $value !== '') {
+                $query[$key] = $value;
+            }
+        }
+
+        $extensionFilters = $request->query('ext');
+        if (is_array($extensionFilters)) {
+            $extensionFilters = array_filter($extensionFilters, static fn (mixed $value): bool => is_scalar($value) && (string) $value !== '');
+            if ($extensionFilters !== []) {
+                $query['ext'] = $extensionFilters;
+            }
+        }
+
+        return route('admin.orders.orders.index', $query);
+    }
+
     private function paymentMethodLabels(): array
     {
         $labels = [];

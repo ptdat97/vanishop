@@ -7,6 +7,7 @@ namespace Modules\Customer\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,12 +33,16 @@ final class CustomerController
     public function index(Request $request, CustomerQueries $queries, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 30);
         $q = is_string($request->query('q')) ? $request->query('q') : null;
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $extensionFilters = (array) $request->query('ext', []);
         $group = is_numeric($request->query('group')) ? (int) $request->query('group') : null;
         $tag = is_string($request->query('tag')) && $request->query('tag') !== '' ? (string) $request->query('tag') : null;
-        $page = $queries->search($q, $status, ids: $screen->filterIds('customer', $extensionFilters), groupId: $group, tag: $tag);
+        $page = $queries->search($q, $status, $perPage, ids: $screen->filterIds('customer', $extensionFilters), groupId: $group, tag: $tag);
         $groupNames = collect($segments->groups())->pluck('name', 'id');
 
         return Inertia::render('Customer::Customers/Index', [
@@ -48,7 +53,7 @@ final class CustomerController
             'groups' => $segments->groups(),
             'groupsUrl' => route('admin.customer-groups.index'),
             'customers' => collect($page->items())->map(fn (Customer $customer): array => [...$this->row($customer), 'group' => $groupNames[$customer->customer_group_id] ?? null])->all(),
-            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
+            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'extensions' => [
                 ...$screen->columns('customer', collect($page->items())->pluck('id')->all()),
                 'filters' => $screen->filters('customer'),
@@ -57,13 +62,14 @@ final class CustomerController
         ]);
     }
 
-    public function show(string $customer, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen, CustomerSegmentService $segments): Response
+    public function show(string $customer, Request $request, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
         $model = $queries->byPublicId($customer) ?? abort(404);
 
         return Inertia::render('Customer::Customers/Show', [
             'baseUrl' => route('admin.customers.index'),
+            'listUrl' => $this->customerListUrl($request),
             'labels' => __('customer::labels'),
             'customer' => [
                 ...$this->row($model),
@@ -137,5 +143,26 @@ final class CustomerController
             'status' => $customer->status->value, 'registered' => $customer->isRegistered(),
             'created_at' => StoreClock::format($customer->created_at),
         ];
+    }
+
+    private function customerListUrl(Request $request): string
+    {
+        $query = [];
+        foreach (['q', 'status', 'group', 'tag', 'page', 'per_page'] as $key) {
+            $value = $request->query($key);
+            if (is_scalar($value) && (string) $value !== '') {
+                $query[$key] = $value;
+            }
+        }
+
+        $extensionFilters = $request->query('ext');
+        if (is_array($extensionFilters)) {
+            $extensionFilters = array_filter($extensionFilters, static fn (mixed $value): bool => is_scalar($value) && (string) $value !== '');
+            if ($extensionFilters !== []) {
+                $query['ext'] = $extensionFilters;
+            }
+        }
+
+        return route('admin.customers.index', $query);
     }
 }

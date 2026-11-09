@@ -22,7 +22,10 @@ const props = defineProps<{
         data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; colors: number; image_url: string | null; views: number }>;
         current: number;
         last: number;
+        from: number | null;
+        to: number | null;
         total: number;
+        per_page: number;
     };
     canManage: boolean;
     canManagePrices: boolean;
@@ -32,6 +35,7 @@ const props = defineProps<{
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
 const q = ref(props.filters.q);
 const status = ref(props.filters.status ?? '');
+const perPageOptions = [30, 50, 100];
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
 const editingPriceId = ref<number | null>(null);
@@ -46,11 +50,18 @@ const columns = [
     { key: 'colors', label: 'Màu' },
     { key: 'views', label: 'Lượt xem 30 ngày', align: 'right' as const, class: 'tabular-nums' },
     { key: 'status', label: 'Trạng thái' },
-    { key: 'actions', label: '', align: 'right' as const },
 ];
 
-function search(page = 1): void {
-    router.get(baseUrl.value, { q: q.value || undefined, status: status.value || undefined, ext, page: page > 1 ? page : undefined }, { preserveState: true, replace: true });
+function search(page = 1, pageSize = props.products.per_page): void {
+    router.get(baseUrl.value, { q: q.value || undefined, status: status.value || undefined, ext, page: page > 1 ? page : undefined, per_page: pageSize }, { preserveState: true, replace: true });
+}
+
+function changePageSize(pageSize: number): void {
+    search(1, pageSize);
+}
+
+function editProduct(product: { id: number }): void {
+    router.visit(`${baseUrl.value}/${product.id}/edit`);
 }
 
 function openPriceEditor(productId: number, amount: number | null): void {
@@ -104,7 +115,7 @@ function savePrice(url: string): void {
         <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
         <ExtensionActions :actions="extensions.actions" :ids="selected" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :row-label="(product) => product.style_code" empty-text="Không có sản phẩm nào.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" empty-text="Không có sản phẩm nào.">
         <template #cell-image="{ row }">
             <img v-if="row.image_url" :src="row.image_url" alt="" class="h-12 w-10 rounded object-cover" />
             <div v-else class="h-12 w-10 rounded bg-slate-100" />
@@ -145,10 +156,7 @@ function savePrice(url: string): void {
         <template #cell-status="{ row }">
             <StatusBadge :label="labels.product_status[row.status] ?? row.status" :tone="row.status === 'active' ? 'success' : row.status === 'draft' ? 'warning' : 'neutral'" />
         </template>
-        <template #cell-actions="{ row }">
-            <Link v-if="canManage" :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link>
-        </template>
     </DataTable>
 
-    <Pagination :current="products.current" :last="products.last" @change="search" />
+    <Pagination :current="products.current" :last="products.last" :from="products.from" :to="products.to" :total="products.total" :per-page="products.per_page" :per-page-options="perPageOptions" @change="search" @per-page-change="changePageSize" />
 </template>

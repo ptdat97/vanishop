@@ -45,11 +45,15 @@ final class ContentController
     public function index(Request $request, string $kind): Response
     {
         Gate::authorize('cms.view');
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([20, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 20);
         $search = trim((string) $request->query('q', ''));
         $items = $this->model($kind)->newQuery()
             ->when($search !== '', fn ($query) => $query->where('title', 'like', '%'.$search.'%'))
             ->orderByDesc($kind === 'posts' ? 'published_at' : 'updated_at')->orderByDesc('id')
-            ->paginate(20)->withQueryString();
+            ->paginate($perPage)->withQueryString();
 
         return Inertia::render('Cms::Content/Index', [
             'kind' => $kind,

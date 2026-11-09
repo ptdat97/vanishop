@@ -47,8 +47,9 @@ describe('nhân viên', function () {
     it('danh sách: tìm theo tên/email, lọc vai trò và trạng thái; cần quyền staff.manage', function () {
         StaffUser::factory()->create(['name' => 'Lan Bán Hàng', 'status' => 'locked'])->roleAssignments()->create(['role_id' => $this->clerk->id, 'scope_type' => ScopeType::Owner]);
 
-        $this->actingAs($this->owner, 'staff')->get('/admin/staff?q=lan&status=locked&role='.$this->clerk->id)->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Identity::Staff/Index')->where('staff.total', 1)->where('staff.data.0.roles', ['Bán hàng']));
+        $this->actingAs($this->owner, 'staff')->get('/admin/staff?q=lan&status=locked&role='.$this->clerk->id.'&per_page=50')->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Identity::Staff/Index')->where('staff.total', 1)->where('staff.data.0.roles', ['Bán hàng'])->where('staff.per_page', 50));
+        $this->get('/admin/staff?per_page=101')->assertSessionHasErrors('per_page');
 
         $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff')->get('/admin/staff')->assertForbidden();
     });

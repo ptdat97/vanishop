@@ -8,8 +8,9 @@ import { codeOptions, recordOptions } from '@admin/options';
 import { inputClass, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { reactive, ref } from 'vue';
+import { computed, reactive } from 'vue';
 
+type CustomerFilters = { q: string; status: string; group: number | null; tag: string };
 const props = defineProps<{
     baseUrl: string;
     labels: { customer_status: Record<string, string> };
@@ -28,7 +29,7 @@ const props = defineProps<{
         created_at: string | null;
         group: string | null;
     }>;
-    pagination: { page: number; last_page: number; total: number };
+    pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     extensions: Omit<ExtensionList, 'actions'>;
 }>();
 
@@ -40,19 +41,38 @@ const columns = [
     { key: 'group', label: 'Nhóm', class: 'text-xs' },
     { key: 'created_at', label: 'Tạo lúc', class: 'text-xs' },
 ];
-const q = ref(props.filters.q ?? '');
-const tag = ref(props.filters.tag ?? '');
+const filters = reactive<CustomerFilters>({
+    q: props.filters.q ?? '',
+    status: props.filters.status ?? '',
+    group: props.filters.group,
+    tag: props.filters.tag ?? '',
+});
+const perPageOptions = [30, 50, 100];
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
+const hasActiveFilters = computed(() =>
+    Object.values(filters).some((value) => value !== '' && value !== null) || Object.values(ext).some((value) => value !== ''),
+);
 
-function search(changes: { q?: string | null; status?: string | null; group?: number | null; page?: number } = {}): void {
-    const next = {
-        q: q.value || null,
-        status: props.filters.status,
-        group: props.filters.group,
-        tag: tag.value || null,
-        ...changes,
-    };
-    router.get(props.baseUrl, { ...Object.fromEntries(Object.entries(next).filter(([, value]) => value)), ext }, { preserveState: true });
+function search(page?: number, pageSize = props.pagination.per_page): void {
+    const query = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value !== null));
+    const extensionFilters = Object.fromEntries(Object.entries(ext).filter(([, value]) => value !== ''));
+    router.get(props.baseUrl, { ...query, ext: extensionFilters, page, per_page: pageSize }, { preserveState: true });
+}
+
+function clearFilters(): void {
+    Object.assign(filters, { q: '', status: '', group: null, tag: '' });
+    for (const key of Object.keys(ext)) {
+        ext[key] = '';
+    }
+    search();
+}
+
+function openCustomer(customer: { id: string }): void {
+    router.visit(`${props.baseUrl}/${customer.id}${window.location.search}`);
+}
+
+function changePageSize(pageSize: number): void {
+    search(1, pageSize);
 }
 </script>
 
@@ -62,22 +82,24 @@ function search(changes: { q?: string | null; status?: string | null; group?: nu
         <Link :href="groupsUrl" :class="secondaryButton">Nhóm khách</Link>
     </PageHeader>
 
-    <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
-        <input v-model="q" :class="[inputClass, 'w-72']" placeholder="SĐT, email, tên hoặc mã khách" />
+    <form class="mb-3 flex flex-wrap items-center gap-2" @submit.prevent="search()">
+        <input v-model="filters.q" :class="[inputClass, 'w-72']" placeholder="SĐT, email, tên hoặc mã khách" aria-label="Tìm khách hàng" />
         <div class="w-48">
-            <Select :model-value="filters.status ?? ''" :options="codeOptions(statuses, labels.customer_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" @change="search({ status: $event || null })" />
+            <Select v-model="filters.status" :options="codeOptions(statuses, labels.customer_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
         </div>
         <div class="w-44">
-            <Select :model-value="filters.group" :options="recordOptions(groups, (group) => group.name)" empty-label="Mọi nhóm" :empty-value="null" aria-label="Nhóm khách" @change="search({ group: $event })" />
+            <Select v-model="filters.group" :options="recordOptions(groups, (group) => group.name)" empty-label="Mọi nhóm" :empty-value="null" aria-label="Nhóm khách" />
         </div>
-        <input v-model="tag" :class="[inputClass, 'w-36']" placeholder="Tag" />
+        <input v-model="filters.tag" :class="[inputClass, 'w-36']" placeholder="Tag" aria-label="Tag khách hàng" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="secondaryButton">Tìm</button>
+        <button type="submit" :class="secondaryButton">Áp dụng</button>
+        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ tất cả bộ lọc</button>
+        <span v-if="hasActiveFilters" class="text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
     </form>
 
-    <DataTable :columns="columns" :rows="customers" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" empty-text="Không có khách nào.">
+    <DataTable :columns="columns" :rows="customers" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" :row-click="openCustomer" empty-text="Không có khách nào.">
         <template #cell-full_name="{ row }">
-            <Link :href="`${baseUrl}/${row.id}`" class="font-medium text-indigo-600 hover:underline">{{ row.full_name ?? '(chưa có tên)' }}</Link>
+            <span class="font-medium">{{ row.full_name ?? '(chưa có tên)' }}</span>
             <div class="font-mono text-xs text-slate-400">
                 {{ row.id }}<span v-if="row.status !== 'active'"> · {{ labels.customer_status[row.status] ?? row.status }}</span>
             </div>
@@ -88,5 +110,5 @@ function search(changes: { q?: string | null; status?: string | null; group?: nu
         <template #cell-group="{ row }">{{ row.group ?? '—' }}</template>
     </DataTable>
 
-    <Pagination :current="pagination.page" :last="pagination.last_page" @change="search({ page: $event })" />
+    <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="search($event)" @per-page-change="changePageSize" />
 </template>

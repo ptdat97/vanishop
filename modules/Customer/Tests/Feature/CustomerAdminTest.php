@@ -26,10 +26,14 @@ it('Owner tìm, xem, hợp nhất khách trùng (chuyển đơn, phát CustomerM
     Event::fake([CustomerMerged::class]);
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'customers.view', 'customers.merge', 'customers.anonymize'])->create(), 'staff');
 
-    $this->get('/admin/customers?q=0987654321')->assertInertia(fn (Assert $page) => $page->component('Customer::Customers/Index')
-        ->has('customers', 1)->where('customers.0.id', $this->dupe->public_id));
-    $this->get("/admin/customers/{$this->main->public_id}")->assertInertia(fn (Assert $page) => $page->component('Customer::Customers/Show')
-        ->has('orders', 1)->where('stats.orders_count', 1)->where('can.merge', true));
+    $this->get('/admin/customers?q=0987654321&per_page=50')->assertInertia(fn (Assert $page) => $page->component('Customer::Customers/Index')
+        ->has('customers', 1)->where('customers.0.id', $this->dupe->public_id)->where('pagination.per_page', 50));
+    $this->get("/admin/customers/{$this->main->public_id}?q=0987654321&status=active&group=4&tag=vip&page=2&per_page=50&return_to=https%3A%2F%2Fevil.test")
+        ->assertInertia(fn (Assert $page) => $page->component('Customer::Customers/Show')
+            ->where('listUrl', route('admin.customers.index', ['q' => '0987654321', 'status' => 'active', 'group' => 4, 'tag' => 'vip', 'page' => 2, 'per_page' => 50]))
+            ->has('orders', 1)->where('stats.orders_count', 1)->where('can.merge', true));
+    $this->get("/admin/customers/{$this->main->public_id}")->assertInertia(fn (Assert $page) => $page->where('listUrl', route('admin.customers.index')));
+    $this->get('/admin/customers?per_page=500')->assertSessionHasErrors('per_page');
 
     $this->post("/admin/customers/{$this->dupe->public_id}/merge", ['target' => $this->main->public_id])
         ->assertRedirect("/admin/customers/{$this->main->public_id}");

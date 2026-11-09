@@ -4,10 +4,10 @@ import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { useMoney } from '@admin/money';
 import { primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import type { PromotionLabels } from '../../labels';
 
-defineProps<{
+const props = defineProps<{
     baseUrl: string;
     labels: PromotionLabels;
     promotions: Array<{
@@ -37,7 +37,6 @@ const columns = [
     { key: 'period', label: 'Hiệu lực', class: 'text-xs' },
     { key: 'usage', label: 'Đã dùng' },
     { key: 'vouchers', label: 'Voucher' },
-    { key: 'actions', label: '', align: 'right' as const },
 ];
 
 function describe(type: string, config: Record<string, number>): string {
@@ -54,7 +53,7 @@ function describe(type: string, config: Record<string, number>): string {
         <Link :href="campaignsUrl" :class="secondaryButton">Campaign</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm khuyến mãi</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" empty-text="Chưa có khuyến mãi nào.">
+    <DataTable :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="canManage ? (promotion) => router.visit(`${props.baseUrl}/${promotion.id}/edit`) : undefined" empty-text="Chưa có khuyến mãi nào.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-400">
@@ -66,6 +65,5 @@ function describe(type: string, config: Record<string, number>): string {
         <template #cell-period="{ row }">{{ row.starts_at ?? '—' }} → {{ row.ends_at ?? '—' }}</template>
         <template #cell-usage="{ row }">{{ row.usage_count }}<span v-if="row.usage_limit"> / {{ row.usage_limit }}</span></template>
         <template #cell-vouchers="{ row }">{{ row.requires_voucher ? row.vouchers_count : 'Tự động' }}</template>
-        <template #cell-actions="{ row }"><Link v-if="canManage" :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link></template>
     </DataTable>
 </template>

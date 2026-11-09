@@ -51,6 +51,8 @@ it('thẻ hàng đợi: số đếm và lọc theo giai đoạn vận hành; c�
         // Nhãn cách thanh toán do Payment cung cấp (cổng đang cài), Ordering không ghi cứng mã cổng.
         ->where('labels.payment_method.cod', fn (string $label): bool => $label !== 'cod' && $label !== '')
         ->where('orders.0.items.0.quantity', 2)
+        ->where('pagination.from', 1)
+        ->where('pagination.to', 5)
         ->where('orders.0.province', 'Thành phố Hồ Chí Minh')
         ->where('orders.0.age_hours', 0)
         ->where('extensions.actions', fn ($actions) => collect($actions)->pluck('key')->all() === ['confirm', 'print', 'status', 'create_shipments', 'hand_over', 'export'])
@@ -106,4 +108,23 @@ it('lọc theo ngày đặt (giờ cửa hàng), nguồn và cách thanh toán',
     $this->get("{$this->url}?from={$day}&to={$day}")->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.id', $today->id)->where('stageCounts.to_confirm', 0));
     $this->get("{$this->url}?payment_method=cod")->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.id', $old->id));
     $this->get("{$this->url}?source=admin")->assertInertia(fn (Assert $page) => $page->has('orders', 0));
+});
+
+it('ưu tiên đơn quá hạn lâu nhất trước mà không đổi thứ tự danh sách thông thường', function () {
+    $oldest = ($this->place)();
+    $newest = ($this->place)();
+    DB::table('orders')->where('id', $oldest->id)->update(['placed_at' => now()->subDays(4)]);
+    DB::table('orders')->where('id', $newest->id)->update(['placed_at' => now()->subDays(2)]);
+
+    $this->get("{$this->url}?aged=24")->assertInertia(fn (Assert $page) => $page
+        ->where('agedCount', 2)
+        ->where('orders.0.id', $oldest->id)
+        ->where('orders.1.id', $newest->id));
+    $this->get($this->url)->assertInertia(fn (Assert $page) => $page
+        ->where('orders.0.id', $newest->id)
+        ->where('orders.1.id', $oldest->id));
+    $this->get("{$this->url}?actionable=1")->assertInertia(fn (Assert $page) => $page
+        ->where('filters.actionable', '1')
+        ->where('orders.0.id', $oldest->id)
+        ->where('orders.1.id', $newest->id));
 });

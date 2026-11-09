@@ -31,7 +31,9 @@ final class OrderQueries
         return $this->filtered($filters)
             ->select('orders.*')->selectRaw(OrderStage::sql().' as stage')
             ->with('lines')
-            ->orderByDesc('placed_at')->orderByDesc('id')
+            ->when((int) ($filters['aged'] ?? 0) > 0 || (string) ($filters['actionable'] ?? '') === '1',
+                fn ($query) => $query->orderBy('placed_at')->orderBy('id'),
+                fn ($query) => $query->orderByDesc('placed_at')->orderByDesc('id'))
             ->paginate($perPage)
             ->withQueryString();
     }
@@ -87,6 +89,7 @@ final class OrderQueries
             ->when($value('payment_method') !== '', fn ($query) => $query->where('payment_method', $value('payment_method')))
             ->when($value('source') !== '', fn ($query) => $query->where('source', $value('source')))
             ->when(in_array($stage, OrderStage::STAGES, true), fn ($query) => $query->whereRaw('('.OrderStage::sql().') = ?', [$stage]))
+            ->when($value('actionable') === '1', fn ($query) => $query->whereIn(DB::raw('('.OrderStage::sql().')'), OrderStage::ACTIONABLE))
             // `aged` (giờ): đơn đang chờ xác nhận / chờ giao hãng đặt quá N giờ — chưa được xử lý kịp.
             ->when((int) $value('aged') > 0, fn ($query) => $query->whereRaw('('.OrderStage::sql().") in ('to_confirm', 'to_ship')")->where('placed_at', '<', now()->subHours((int) $value('aged'))))
             ->when($date('from', false) !== null, fn ($query) => $query->where('placed_at', '>=', $date('from', false)->utc()))

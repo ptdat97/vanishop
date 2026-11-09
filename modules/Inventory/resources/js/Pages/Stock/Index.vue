@@ -58,6 +58,8 @@ const columns = computed(() => [
     { key: 'actions', label: '', align: 'right' as const },
 ]);
 const lastPage = computed(() => Math.max(1, Math.ceil(props.pagination.total / props.pagination.per_page)));
+const firstResult = computed(() => (props.pagination.total === 0 ? null : (props.pagination.page - 1) * props.pagination.per_page + 1));
+const lastResult = computed(() => Math.min(props.pagination.page * props.pagination.per_page, props.pagination.total));
 const editableLocations = computed(() => props.locations.filter((location) => !location.external));
 
 /* ---------- Sửa từng ô ---------- */
@@ -104,11 +106,14 @@ function save(): void {
 }
 
 /* ---------- Lọc, phân trang ---------- */
-function params(overrides: Partial<Criteria> & { page?: number } = {}): Record<string, string | number | undefined> {
+const perPageOptions = [20, 50, 100];
+
+function params(overrides: Partial<Criteria> & { page?: number; per_page?: number } = {}): Record<string, string | number | undefined> {
     const merged = { ...criteria, ...overrides };
     return {
         q: merged.q.trim() || undefined, style: merged.style || undefined, filter: merged.filter === 'all' ? undefined : merged.filter,
         color: merged.color || undefined, size: merged.size || undefined, page: overrides.page && overrides.page > 1 ? overrides.page : undefined,
+        per_page: overrides.per_page ?? props.pagination.per_page,
     };
 }
 
@@ -123,6 +128,10 @@ function find(): void {
     void visit(params({ style: '' }));
 }
 
+function changePageSize(perPage: number): void {
+    void visit(params({ page: 1, per_page: perPage }));
+}
+
 function clearFilters(): void {
     Object.assign(criteria, { q: '', style: '', filter: 'all', color: '', size: '' });
     void visit({});
@@ -135,6 +144,7 @@ const allMatching = ref(false);
 const pageIds = computed(() => rows.value.map((row) => row.id));
 const pageAllSelected = computed(() => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)));
 const selectedCount = computed(() => (allMatching.value ? props.pagination.variants : selected.value.length));
+const selectionScope = computed(() => (allMatching.value ? 'khớp bộ lọc trên mọi trang' : 'trên trang hiện tại'));
 watch(selected, () => {
     if (!pageAllSelected.value) allMatching.value = false;
 });
@@ -178,8 +188,8 @@ async function applyBulk(): Promise<void> {
         safety: `đặt tồn an toàn = ${quantity}`,
     };
     const confirmed = await confirmAction({
-        title: `${what[action]} cho ${selectedCount.value} SKU tại ${location.code}?`,
-        message: action === 'adjust' ? 'SKU nào không đủ tồn để trừ sẽ được bỏ qua.' : 'Mỗi SKU được ghi một dòng trong lịch sử biến động.',
+        title: `${what[action]} cho ${selectedCount.value} SKU ${selectionScope.value} tại ${location.code}?`,
+        message: `${action === 'adjust' ? 'SKU nào không đủ tồn để trừ sẽ được bỏ qua. ' : ''}Mỗi SKU được ghi một dòng trong lịch sử biến động.`,
         confirmLabel: 'Áp dụng',
     });
     if (confirmed === false) return;
@@ -285,7 +295,9 @@ function createDefault(): void {
     </form>
 
     <div v-if="canAdjust && (selected.length || allMatching)" class="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm shadow" data-stock-bulkbar>
-        <span class="font-medium">Đã chọn {{ selectedCount }} SKU</span>
+        <span class="font-medium" aria-live="polite">
+            {{ allMatching ? `Đã chọn toàn bộ ${selectedCount} SKU khớp bộ lọc trên mọi trang` : `Đã chọn ${selectedCount} SKU trên trang hiện tại` }}
+        </span>
         <button v-if="pageAllSelected && !allMatching && pagination.variants > pageIds.length" type="button" class="text-indigo-700 underline" @click="allMatching = true">
             Chọn cả {{ pagination.variants }} SKU khớp bộ lọc
         </button>
@@ -349,7 +361,7 @@ function createDefault(): void {
         </DataTable>
     </div>
     <p class="mt-2 text-xs text-slate-500">{{ pagination.total }} sản phẩm · {{ pagination.variants }} SKU</p>
-    <Pagination :current="pagination.page" :last="lastPage" @change="(target) => visit(params({ page: target }))" />
+    <Pagination :current="pagination.page" :last="lastPage" :from="firstResult" :to="lastResult" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="(target) => visit(params({ page: target }))" @per-page-change="changePageSize" />
 
     <div v-if="dirty" class="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-white p-3 shadow-lg" data-stock-savebar>
         <span class="text-sm font-medium">{{ dirty }} ô đã sửa</span>

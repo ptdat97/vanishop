@@ -40,6 +40,10 @@ final class ProductController
     {
         Gate::authorize('catalog.view');
 
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 30);
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status');
 
@@ -54,7 +58,7 @@ final class ProductController
             ->when(($pluginIds = $screen->filterIds('product', (array) $request->query('ext', []))) !== null, fn ($query) => $query->whereIn('id', $pluginIds))
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->paginate(30)
+            ->paginate($perPage)
             ->withQueryString();
 
         // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang.
@@ -77,7 +81,10 @@ final class ProductController
                 ])->all(),
                 'current' => $styles->currentPage(),
                 'last' => $styles->lastPage(),
+                'from' => $styles->firstItem(),
+                'to' => $styles->lastItem(),
                 'total' => $styles->total(),
+                'per_page' => $styles->perPage(),
             ],
             'canManage' => Gate::allows('catalog.manage'),
             'canManagePrices' => Gate::allows('pricing.manage'),

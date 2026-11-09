@@ -120,7 +120,8 @@ it('Admin: tạo trang (slug từ tiêu đề có dấu), slug trùng → lỗi,
     Carbon::setTestNow('2026-10-03T03:00:00Z');
     $this->actingAs($this->editor, 'staff');
 
-    $this->get("{$this->admin}/pages")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Cms::Content/Index')->where('kind', 'pages'));
+    $this->get("{$this->admin}/pages?per_page=50")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Cms::Content/Index')->where('kind', 'pages')->where('items.per_page', 50));
+    $this->get("{$this->admin}/pages?per_page=101")->assertSessionHasErrors('per_page');
     $this->post("{$this->admin}/pages", ['title' => 'Chính sách bảo mật', 'body' => 'Nội dung', 'status' => 'published', 'show_in_footer' => '1'])
         ->assertRedirect()->assertSessionHasNoErrors();
     $page = Page::query()->sole();

@@ -45,9 +45,13 @@ final class StockController
     {
         Gate::authorize('inventory.view');
 
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([20, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? self::PER_PAGE);
         $criteria = $this->criteria($request->query());
         $page = max(1, (int) $request->query('page', 1));
-        $result = $grid->page($criteria, $page, self::PER_PAGE);
+        $result = $grid->page($criteria, $page, $perPage);
         $canManageLocations = Gate::allows('inventory.locations.manage', [ScopeRef::owner()]);
         // Nút của plugin (vd. vận hành kho — ADR-042): chỉ implementation của plugin đang bật.
         $links = $extensions->implementations(StockPageLink::TAG, StockPageLink::class, fn (StockPageLink $link): string => $link::class);
@@ -70,7 +74,7 @@ final class StockController
             ],
             'query' => $criteria,
             'options' => ['colors' => $result['colors'], 'sizes' => $result['sizes']],
-            'pagination' => ['page' => $page, 'per_page' => self::PER_PAGE, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
+            'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
             'threshold' => (int) config('vanishop.inventory.low_stock_threshold', 3),
             'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
             'links' => array_values(array_filter(array_map(fn (StockPageLink $link): ?array => ($url = $link->url()) === null ? null : ['label' => $link->label(), 'url' => $url], $links))),

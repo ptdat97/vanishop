@@ -14,6 +14,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps<{
     baseUrl: string;
+    listUrl: string;
     labels: { customer_status: Record<string, string> };
     customer: {
         id: string;
@@ -107,7 +108,7 @@ async function anonymize(): Promise<void> {
         :title="customer.full_name ?? '(chưa có tên)'"
         :subtitle="`${customer.id} · ${labels.customer_status[customer.status] ?? customer.status} · ${customer.registered ? 'Tài khoản' : 'Khách vãng lai'}`"
     >
-        <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
+        <Link :href="listUrl" :class="secondaryButton">Danh sách</Link>
         <ExtensionActions :actions="extensions.actions" :ids="[extensions.id]" />
     </PageHeader>
 

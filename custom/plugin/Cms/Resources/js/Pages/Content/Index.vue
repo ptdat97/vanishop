@@ -24,12 +24,17 @@ const props = defineProps<{
         }>;
         current_page: number;
         last_page: number;
+        from: number | null;
+        to: number | null;
+        total: number;
+        per_page: number;
     };
     can: { manage: boolean };
     urls: { pages: string; posts: string; index: string; create: string; categories?: string; banners?: string };
 }>();
 
 const q = ref(props.search);
+const perPageOptions = [20, 50, 100];
 const columns = [
     { key: 'title', label: 'Tiêu đề' },
     { key: 'status', label: 'Trạng thái' },
@@ -37,8 +42,12 @@ const columns = [
     { key: 'actions', label: '', align: 'right' as const },
 ];
 
-function submitSearch(page = 1): void {
-    router.get(props.urls.index, { q: q.value || undefined, page: page > 1 ? page : undefined }, { preserveState: true });
+function submitSearch(page = 1, pageSize = props.items.per_page): void {
+    router.get(props.urls.index, { q: q.value || undefined, page: page > 1 ? page : undefined, per_page: pageSize }, { preserveState: true });
+}
+
+function changePageSize(pageSize: number): void {
+    submitSearch(1, pageSize);
 }
 </script>
 
@@ -75,5 +84,5 @@ function submitSearch(page = 1): void {
         </template>
     </DataTable>
 
-    <Pagination :current="items.current_page" :last="items.last_page" @change="submitSearch" />
+    <Pagination :current="items.current_page" :last="items.last_page" :from="items.from" :to="items.to" :total="items.total" :per-page="items.per_page" :per-page-options="perPageOptions" @change="submitSearch" @per-page-change="changePageSize" />
 </template>

@@ -20,7 +20,10 @@ const props = defineProps<{
         data: Array<{ id: number; name: string; email: string; status: string; roles: string[]; last_login_at: string | null }>;
         current_page: number;
         last_page: number;
+        from: number | null;
+        to: number | null;
         total: number;
+        per_page: number;
     };
 }>();
 
@@ -30,12 +33,13 @@ const columns = [
     { key: 'roles', label: 'Vai trò' },
     { key: 'status', label: 'Trạng thái' },
     { key: 'last_login_at', label: 'Đăng nhập gần nhất', class: 'text-slate-500' },
-    { key: 'actions', label: '', align: 'right' as const },
 ];
 const q = ref(props.filters.q);
 
-function search(changes: { role?: number | null; status?: string | null; page?: number } = {}): void {
-    const next = { q: q.value || null, role: props.filters.role, status: props.filters.status, ...changes };
+const perPageOptions = [25, 50, 100];
+
+function search(changes: { role?: number | null; status?: string | null; page?: number; per_page?: number } = {}): void {
+    const next = { q: q.value || null, role: props.filters.role, status: props.filters.status, per_page: props.staff.per_page, ...changes };
     router.get(props.baseUrl, Object.fromEntries(Object.entries(next).filter(([, value]) => value)), { preserveState: true });
 }
 </script>
@@ -58,7 +62,7 @@ function search(changes: { role?: number | null; status?: string | null; page?: 
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
-    <DataTable :columns="columns" :rows="staff.data" :row-label="(member) => member.email" empty-text="Không có nhân viên phù hợp.">
+    <DataTable :columns="columns" :rows="staff.data" :row-label="(member) => member.email" :row-click="(member) => router.visit(`${props.baseUrl}/${member.id}/edit`)" empty-text="Không có nhân viên phù hợp.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="text-xs text-slate-400">{{ row.email }}</div>
@@ -68,7 +72,6 @@ function search(changes: { role?: number | null; status?: string | null; page?: 
             <StatusBadge :label="labels.staff_status[row.status] ?? row.status" :tone="row.status === 'locked' ? 'danger' : row.status === 'invited' ? 'warning' : 'success'" />
         </template>
         <template #cell-last_login_at="{ row }">{{ formatDate(row.last_login_at) }}</template>
-        <template #cell-actions="{ row }"><Link :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link></template>
     </DataTable>
-    <Pagination :current="staff.current_page" :last="staff.last_page" @change="search({ page: $event })" />
+    <Pagination :current="staff.current_page" :last="staff.last_page" :from="staff.from" :to="staff.to" :total="staff.total" :per-page="staff.per_page" :per-page-options="perPageOptions" @change="search({ page: $event })" @per-page-change="search({ page: 1, per_page: $event })" />
 </template>

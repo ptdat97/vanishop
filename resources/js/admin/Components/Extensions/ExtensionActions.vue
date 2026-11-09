@@ -5,7 +5,9 @@ import type { ExtensionAction } from '@admin/types';
 import { router } from '@inertiajs/vue3';
 
 /** Nút thao tác hàng loạt (plugin hoặc module Core); server kiểm tra quyền. `method: 'get'` mở trang/tải file. */
-const props = defineProps<{ actions: ExtensionAction[]; ids: number[] }>();
+const props = withDefaults(defineProps<{ actions: ExtensionAction[]; ids: number[]; selectionDescription?: string }>(), {
+    selectionDescription: 'mục đã chọn',
+});
 
 async function run(action: ExtensionAction): Promise<void> {
     if (props.ids.length === 0) {
@@ -13,10 +15,10 @@ async function run(action: ExtensionAction): Promise<void> {
     }
     let values: Record<string, string> = {};
     if (action.fields?.length) {
-        const result = await promptFields({ title: action.label, message: `Áp dụng cho ${props.ids.length} mục đã chọn.`, confirmLabel: action.label, fields: action.fields });
+        const result = await promptFields({ title: action.label, message: `Áp dụng cho ${props.ids.length} ${props.selectionDescription}.`, confirmLabel: action.label, fields: action.fields });
         if (result === false) return;
         values = result;
-    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} mục đã chọn.` })) === false) {
+    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} ${props.selectionDescription}.` })) === false) {
         return;
     }
     if (action.method === 'get') {

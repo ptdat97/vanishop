@@ -2,9 +2,9 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton } from '@admin/styles';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
-defineProps<{
+const props = defineProps<{
     baseUrl: string;
     labels: { price_list_type: Record<string, string>; price_list_status: Record<string, string> };
     priceLists: Array<{
@@ -38,7 +38,7 @@ const columns = [
     <PageHeader title="Bảng giá" subtitle="Bảng giá priority cao hơn thắng; giá niêm yết (base) được dùng làm giá gốc khi đang khuyến mãi.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bảng giá</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="priceLists" :row-label="(list) => list.code" empty-text="Chưa có bảng giá nào.">
+    <DataTable :columns="columns" :rows="priceLists" :row-label="(list) => list.code" :row-click="canManage ? (list) => router.visit(`${props.baseUrl}/${list.id}/edit`) : undefined" empty-text="Chưa có bảng giá nào.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="font-mono text-xs text-slate-400">{{ row.code }}<span v-if="row.status !== 'active'"> · {{ labels.price_list_status[row.status] ?? row.status }}</span></div>
@@ -50,7 +50,6 @@ const columns = [
         <template #cell-period="{ row }">{{ row.starts_at ?? '—' }} → {{ row.ends_at ?? '—' }}</template>
         <template #cell-actions="{ row }">
             <Link :href="`${baseUrl}/${row.id}/prices`" class="text-indigo-600 hover:underline">Giá</Link>
-            <Link v-if="canManage" :href="`${baseUrl}/${row.id}/edit`" class="ml-3 text-indigo-600 hover:underline">Sửa</Link>
         </template>
     </DataTable>
 </template>

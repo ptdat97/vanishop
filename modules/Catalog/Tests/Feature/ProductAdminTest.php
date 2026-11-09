@@ -134,5 +134,7 @@ it('danh sách sản phẩm tìm được theo tên không dấu', function () {
     T::product($this->other->id, ['name' => 'Áo thun brand khác']);
 
     $this->get("{$this->base}?q=dam")->assertInertia(fn (Assert $page) => $page
-        ->component('Catalog::Products/Index')->where('products.total', 1)->where('products.data.0.name', 'Đầm lụa đen'));
+        ->component('Catalog::Products/Index')->where('products.total', 1)->where('products.data.0.name', 'Đầm lụa đen')->where('products.per_page', 30));
+    $this->get("{$this->base}?per_page=50")->assertInertia(fn (Assert $page) => $page->where('products.per_page', 50));
+    $this->get("{$this->base}?per_page=101")->assertSessionHasErrors('per_page');
 });

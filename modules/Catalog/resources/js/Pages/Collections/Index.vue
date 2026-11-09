@@ -3,7 +3,7 @@ import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton } from '@admin/styles';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem } from '../../types';
@@ -20,7 +20,6 @@ const columns = [
     { key: 'slug', label: 'Slug', class: 'text-slate-500' },
     { key: 'styles_count', label: 'Sản phẩm' },
     { key: 'status', label: 'Trạng thái' },
-    { key: 'actions', label: '', align: 'right' as const },
 ];
 </script>
 
@@ -30,11 +29,8 @@ const columns = [
     <PageHeader title="Bộ sưu tập" subtitle="Tập hợp sản phẩm cho landing page, campaign.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bộ sưu tập</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="collections" :row-label="(collection) => collection.slug" empty-text="Chưa có bộ sưu tập nào.">
+    <DataTable :columns="columns" :rows="collections" :row-label="(collection) => collection.slug" :row-click="canManage ? (collection) => router.visit(`${baseUrl}/${collection.id}/edit`) : undefined" empty-text="Chưa có bộ sưu tập nào.">
         <template #cell-slug="{ row }">/{{ row.slug }}</template>
         <template #cell-status="{ row }"><StatusBadge :label="labels.visibility[row.status] ?? row.status" :tone="row.status === 'active' ? 'success' : 'neutral'" /></template>
-        <template #cell-actions="{ row }">
-            <Link v-if="canManage" :href="`${baseUrl}/${row.id}/edit`" class="text-indigo-600 hover:underline">Sửa</Link>
-        </template>
     </DataTable>
 </template>

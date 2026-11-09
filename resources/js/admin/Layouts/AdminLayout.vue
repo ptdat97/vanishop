@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import ConfirmDialog from '../Components/ConfirmDialog.vue';
 import FlashMessage from '../Components/FlashMessage.vue';
 import Toaster from '../Components/Toaster.vue';
@@ -12,6 +12,11 @@ const OPEN_GROUPS_KEY = 'vani.admin.navigation.open';
 
 const page = usePage<SharedProps>();
 const staff = computed(() => page.props.auth.staff);
+const mobileNavigationOpen = ref(false);
+const isMobileViewport = ref(false);
+const mobileNavigationButton = ref<HTMLButtonElement | null>(null);
+const navigationAside = ref<HTMLElement | null>(null);
+let mobileViewportQuery: MediaQueryList | null = null;
 
 /**
  * Sidebar dạng accordion: mỗi nhóm đứng ở vị trí mục đầu tiên của nó (server đã xếp mục theo thứ tự); nhóm chỉ có
@@ -60,10 +65,67 @@ function toggleGroup(key: string): void {
     }
 }
 
+async function openMobileNavigation(): Promise<void> {
+    mobileNavigationOpen.value = true;
+    await nextTick();
+    navigationAside.value?.querySelector<HTMLElement>('a, button')?.focus();
+}
+
+function closeMobileNavigation(): void {
+    if (!mobileNavigationOpen.value) {
+        return;
+    }
+
+    mobileNavigationOpen.value = false;
+    void nextTick(() => mobileNavigationButton.value?.focus());
+}
+
+function handleViewportChange(event: MediaQueryListEvent): void {
+    isMobileViewport.value = event.matches;
+    if (!event.matches) {
+        mobileNavigationOpen.value = false;
+    }
+}
+
+function trapMobileNavigationFocus(event: KeyboardEvent): void {
+    if (!mobileNavigationOpen.value || event.key !== 'Tab') {
+        return;
+    }
+
+    const focusable = navigationAside.value?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    const visibleFocusable = [...(focusable ?? [])].filter((element) => element.offsetParent !== null);
+    const first = visibleFocusable[0];
+    const last = visibleFocusable[visibleFocusable.length - 1];
+
+    if (!first || !last) {
+        event.preventDefault();
+        return;
+    }
+
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
+}
+
+onMounted(() => {
+    mobileViewportQuery = window.matchMedia('(max-width: 767px)');
+    isMobileViewport.value = mobileViewportQuery.matches;
+    mobileViewportQuery.addEventListener('change', handleViewportChange);
+});
+
+onBeforeUnmount(() => {
+    mobileViewportQuery?.removeEventListener('change', handleViewportChange);
+});
+
 // Nhóm chứa trang đang xem luôn mở khi điều hướng tới.
 watch(
     () => page.url,
     () => {
+        closeMobileNavigation();
         for (const entry of entries.value) {
             if (entry.type === 'group' && !isGroupOpen(entry.key) && entry.items.some((item) => isCurrent(item.key, item.url))) {
                 openGroups.value = [...openGroups.value, entry.key];
@@ -88,8 +150,32 @@ function logout(): void {
 
 <template>
     <div class="flex min-h-screen">
-        <aside class="w-60 shrink-0 border-r border-slate-200 bg-white">
-            <div class="px-5 py-4 text-lg font-semibold">{{ page.props.app.name }}</div>
+        <button
+            v-if="mobileNavigationOpen"
+            type="button"
+            class="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
+            aria-label="Đóng điều hướng"
+            @click="closeMobileNavigation"
+        />
+        <aside
+            id="admin-navigation"
+            ref="navigationAside"
+            class="fixed inset-y-0 left-0 z-50 h-dvh w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-white transition-transform md:sticky md:top-0 md:translate-x-0"
+            :class="mobileNavigationOpen ? 'translate-x-0' : '-translate-x-full'"
+            :role="isMobileViewport && mobileNavigationOpen ? 'dialog' : undefined"
+            :aria-modal="isMobileViewport && mobileNavigationOpen ? 'true' : undefined"
+            :aria-hidden="isMobileViewport && !mobileNavigationOpen ? 'true' : undefined"
+            :inert="isMobileViewport && !mobileNavigationOpen"
+            aria-label="Điều hướng quản trị"
+            @keydown.esc.stop.prevent="closeMobileNavigation"
+            @keydown.tab="trapMobileNavigationFocus"
+        >
+            <div class="flex items-center justify-between px-5 py-4">
+                <div class="text-lg font-semibold">{{ page.props.app.name }}</div>
+                <button v-if="mobileNavigationOpen" type="button" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Đóng menu" @click="closeMobileNavigation">
+                    Đóng
+                </button>
+            </div>
             <nav class="flex flex-col gap-1 px-3 pb-6">
                 <template v-for="entry in entries" :key="entry.type === 'link' ? entry.item.key : `group-${entry.key}`">
                     <Link
@@ -97,6 +183,7 @@ function logout(): void {
                         :href="entry.item.url"
                         class="rounded-md px-3 py-2 text-sm"
                         :class="isCurrent(entry.item.key, entry.item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
+                        @click="closeMobileNavigation"
                     >
                         {{ entry.item.label }}
                     </Link>
@@ -121,6 +208,7 @@ function logout(): void {
                                 :href="item.url"
                                 class="rounded-md px-3 py-1.5 text-sm"
                                 :class="isCurrent(item.key, item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
+                                @click="closeMobileNavigation"
                             >
                                 {{ item.label }}
                             </Link>
@@ -130,13 +218,25 @@ function logout(): void {
             </nav>
         </aside>
         <div class="flex flex-1 flex-col">
-            <header class="flex items-center justify-end gap-4 border-b border-slate-200 bg-white px-6 py-3 text-sm">
-                <a href="/" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-slate-900">Xem cửa hàng</a>
-                <Link v-if="page.props.urls.profile" :href="page.props.urls.profile" class="text-slate-600 hover:text-slate-900">{{ staff?.name }}</Link>
-                <span v-else class="text-slate-600">{{ staff?.name }}</span>
-                <button type="button" class="text-slate-500 hover:text-slate-900" @click="logout">Đăng xuất</button>
+            <header class="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 text-sm sm:px-6">
+                <button
+                    ref="mobileNavigationButton"
+                    type="button"
+                    class="rounded-md border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50 md:hidden"
+                    aria-controls="admin-navigation"
+                    :aria-expanded="mobileNavigationOpen"
+                    @click="openMobileNavigation"
+                >
+                    Mở menu
+                </button>
+                <div class="flex items-center justify-end gap-4">
+                    <a href="/" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-slate-900">Xem cửa hàng</a>
+                    <Link v-if="page.props.urls.profile" :href="page.props.urls.profile" class="text-slate-600 hover:text-slate-900">{{ staff?.name }}</Link>
+                    <span v-else class="text-slate-600">{{ staff?.name }}</span>
+                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="logout">Đăng xuất</button>
+                </div>
             </header>
-            <main class="flex-1 p-6">
+            <main class="flex-1 p-4 sm:p-6">
                 <FlashMessage />
                 <slot />
             </main>

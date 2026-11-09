@@ -7,6 +7,7 @@ namespace Plugin\Lookbook\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\CatalogLookup;
@@ -29,10 +30,14 @@ final class LookbookController
     public function index(Request $request): Response
     {
         Gate::authorize('lookbook.view');
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([20, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 20);
         $search = trim((string) $request->query('q', ''));
         $paginator = Lookbook::query()->withCount('images')
             ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner->where('slug', 'like', '%'.addcslashes($search, '%_\\').'%')->orWhere('translations', 'like', '%'.addcslashes($search, '%_\\').'%')))
-            ->orderBy('position')->orderByDesc('id')->paginate(20)->withQueryString();
+            ->orderBy('position')->orderByDesc('id')->paginate($perPage)->withQueryString();
         $covers = $this->media->find(array_values(array_filter($paginator->getCollection()->pluck('cover_media_id')->all())));
 
         return Inertia::render('Lookbook::Index', [

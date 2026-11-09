@@ -7,6 +7,7 @@ namespace Modules\Identity\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Identity\Application\ScopeOptions;
@@ -23,6 +24,10 @@ final class StaffController
     public function index(Request $request): Response
     {
         Gate::authorize('staff.manage');
+        $validated = $request->validate([
+            'per_page' => ['sometimes', 'integer', Rule::in([25, 50, 100])],
+        ]);
+        $perPage = (int) ($validated['per_page'] ?? 25);
         $search = trim((string) $request->query('q', ''));
         $role = (int) $request->query('role', 0);
         $status = (string) $request->query('status', '');
@@ -33,7 +38,7 @@ final class StaffController
             ->when($role > 0, fn ($query) => $query->whereHas('roleAssignments', fn ($query) => $query->where('role_id', $role)))
             ->when(in_array($status, [StaffUser::STATUS_ACTIVE, StaffUser::STATUS_INVITED, StaffUser::STATUS_LOCKED], true), fn ($query) => $query->where('status', $status))
             ->orderBy('name')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Identity::Staff/Index', [
@@ -53,7 +58,10 @@ final class StaffController
                 ])->all(),
                 'current_page' => $staff->currentPage(),
                 'last_page' => $staff->lastPage(),
+                'from' => $staff->firstItem(),
+                'to' => $staff->lastItem(),
                 'total' => $staff->total(),
+                'per_page' => $staff->perPage(),
             ],
         ]);
     }

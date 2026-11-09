@@ -35,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const filters = reactive({ ...props.filters });
+const hasActiveFilters = computed(() => Boolean(filters.order || filters.status));
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const columns = [
     { key: 'order_number', label: 'Đơn', class: 'font-mono' },
@@ -55,6 +56,12 @@ function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' 
 
 function search(): void {
     router.get(props.baseUrl, filters, { preserveState: true });
+}
+
+function clearFilters(): void {
+    filters.order = '';
+    filters.status = '';
+    search();
 }
 
 function create(): void {
@@ -96,7 +103,9 @@ async function cancel(id: number): Promise<void> {
     <form class="mb-4 grid gap-2 sm:grid-cols-3" @submit.prevent="search">
         <input v-model="filters.order" :class="inputClass" placeholder="Số đơn" aria-label="Số đơn" />
         <Select v-model="filters.status" :options="codeOptions(statuses, labels.shipment_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
-        <button type="submit" :class="primaryButton">Lọc</button>
+        <button type="submit" :class="primaryButton">Áp dụng</button>
+        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ bộ lọc</button>
+        <span v-if="hasActiveFilters" class="self-center text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
     </form>
 
     <div v-if="order" class="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-sm">

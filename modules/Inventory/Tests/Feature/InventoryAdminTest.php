@@ -32,7 +32,8 @@ it('lưới tồn: variant × location, ATS = tồn − giữ − an toàn', fun
     I::stock($this->hn, $this->s->id, 10, 2);
     $this->actingAs(T::staff(['admin.access', 'inventory.view']), 'staff');
 
-    $this->get("{$this->stockUrl}?style=LM-DR01")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Inventory::Stock/Index')
+    $this->get("{$this->stockUrl}?style=LM-DR01&per_page=50")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Inventory::Stock/Index')
+        ->where('pagination.per_page', 50)
         ->has('locations', 2)
         ->where('locations.0.code', 'WH-HN')
         ->where('locations.1.external', true)
@@ -44,6 +45,7 @@ it('lưới tồn: variant × location, ATS = tồn − giữ − an toàn', fun
         ->where('products.0.sellable', 8)
         ->where('canAdjust', false)
         ->where('urls.locations', null));
+    $this->get("{$this->stockUrl}?per_page=101")->assertSessionHasErrors('per_page');
 
     $this->post($this->stockUrl, ['location_id' => $this->hn->id, 'variant_id' => $this->s->id, 'action' => 'adjust', 'quantity' => 1, 'reason' => 'x'])->assertForbidden();
 });

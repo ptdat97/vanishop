@@ -65,7 +65,9 @@ it('Admin: tạo lookbook (slug tự sinh từ tên, trùng thì báo lỗi), da
         ->and(DB::table('mediables')->where('media_id', $media->id)->exists())->toBeTrue();
 
     $this->post($this->admin, ['translations' => ['vi' => ['name' => 'Hè rực rỡ']]])->assertSessionHasErrors('slug');
-    $this->get($this->admin)->assertOk()->assertInertia(fn (Assert $page) => $page->component('Lookbook::Index')->where('lookbooks.data.0.images_count', 1));
+    $this->get("{$this->admin}?per_page=50")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Lookbook::Index')
+        ->where('lookbooks.data.0.images_count', 1)->where('lookbooks.per_page', 50));
+    $this->get("{$this->admin}?per_page=101")->assertSessionHasErrors('per_page');
     $this->get("{$this->admin}/{$lookbook->id}")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Lookbook::Form')->where('lookbook.images.0.media_id', $media->id));
 
     $this->delete("{$this->admin}/{$lookbook->id}")->assertRedirect();

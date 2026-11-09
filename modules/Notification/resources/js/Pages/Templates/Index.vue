@@ -151,14 +151,13 @@ async function remove(template: Template): Promise<void> {
         </div>
     </form>
 
-    <DataTable :columns="columns" :rows="templates" :row-class="() => 'align-top'" empty-text="Chưa có mẫu tin nào.">
+    <DataTable :columns="columns" :rows="templates" :row-class="() => 'align-top'" :row-click="can.manage ? open : undefined" empty-text="Chưa có mẫu tin nào.">
         <template #cell-type="{ row }">
             {{ types[row.type]?.label ?? row.type }}
             <div class="font-mono text-xs text-slate-400">{{ row.type }} · {{ row.locale }}<span v-if="!row.active"> · tắt</span></div>
         </template>
         <template #cell-body="{ row }">{{ row.subject ? `${row.subject}\n` : '' }}{{ row.body }}</template>
         <template #cell-actions="{ row }">
-            <button v-if="can.manage" class="mr-3 text-indigo-600 hover:underline" @click="open(row)">Sửa</button>
             <button v-if="can.manage" :class="dangerButton" @click="remove(row)">Xoá</button>
         </template>
     </DataTable>

@@ -21,12 +21,13 @@ interface Row {
 /** Admin → Nội dung → Lookbook (vani.lookbook): danh sách, tìm theo tên/đường dẫn. */
 const props = defineProps<{
     search: string;
-    lookbooks: { data: Row[]; current_page: number; last_page: number; total: number };
+    lookbooks: { data: Row[]; current_page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     urls: { index: string; create: string };
     can: { manage: boolean };
 }>();
 
 const q = ref(props.search);
+const perPageOptions = [20, 50, 100];
 const columns = [
     { key: 'cover', label: '', class: 'w-16' },
     { key: 'name', label: 'Lookbook', class: 'font-medium' },
@@ -35,8 +36,12 @@ const columns = [
     { key: 'active', label: 'Trạng thái' },
 ];
 
-function search(page = 1): void {
-    router.get(props.urls.index, { q: q.value || undefined, page: page > 1 ? page : undefined }, { preserveState: true, replace: true });
+function search(page = 1, pageSize = props.lookbooks.per_page): void {
+    router.get(props.urls.index, { q: q.value || undefined, page: page > 1 ? page : undefined, per_page: pageSize }, { preserveState: true, replace: true });
+}
+
+function changePageSize(pageSize: number): void {
+    search(1, pageSize);
 }
 </script>
 
@@ -57,5 +62,5 @@ function search(page = 1): void {
         </template>
         <template #cell-active="{ row }"><StatusBadge :label="row.active ? 'Đang bật' : 'Tắt'" :tone="row.active ? 'success' : 'neutral'" /></template>
     </DataTable>
-    <Pagination :current="lookbooks.current_page" :last="lookbooks.last_page" @change="search" />
+    <Pagination :current="lookbooks.current_page" :last="lookbooks.last_page" :from="lookbooks.from" :to="lookbooks.to" :total="lookbooks.total" :per-page="lookbooks.per_page" :per-page-options="perPageOptions" @change="search" @per-page-change="changePageSize" />
 </template>

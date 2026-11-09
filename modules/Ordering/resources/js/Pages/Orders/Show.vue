@@ -46,6 +46,7 @@ type OrderLine = {
 
 const props = defineProps<{
     baseUrl: string;
+    listUrl: string;
     order: {
         id: number;
         number: string;
@@ -280,7 +281,7 @@ function addNote(): void {
         <StatusBadge :label="labels.payment_status[order.paymentStatus] ?? order.paymentStatus" :tone="paymentStatusTone(order.paymentStatus)" />
     </div>
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
-        <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
+        <Link :href="listUrl" :class="secondaryButton">Danh sách</Link>
         <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">In phiếu giao</a>
         <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
         <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>

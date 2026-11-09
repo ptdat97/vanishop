@@ -54,7 +54,7 @@ it('Admin: danh sách, lọc theo trạng thái, tìm theo số đơn hoặc SĐ
     $first = Order::query()->withoutGlobalScopes()->orderBy('id')->first();
     ($this->staff)();
 
-    $this->get($this->admin)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Index')->has('orders', 2)->where('pagination.total', 2)
+    $this->get($this->admin)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Index')->has('orders', 2)->where('pagination.total', 2)->where('pagination.per_page', 30)
         ->where('labels.order_status.pending', 'Chờ xác nhận')
         ->where('labels.payment_status.cod_pending', 'COD chờ thu')
         ->where('app.money', ['currency' => 'VND', 'exponent' => 0, 'thousandsSeparator' => '.', 'decimalSeparator' => ',', 'symbol' => '₫', 'compactUnits' => ['N', 'Tr', 'Tỷ']])
@@ -65,17 +65,28 @@ it('Admin: danh sách, lọc theo trạng thái, tìm theo số đơn hoặc SĐ
     $this->get("{$this->admin}?status=cancelled")->assertInertia(fn (Assert $page) => $page->has('orders', 0));
 });
 
-it('Admin: chi tiết đơn có panel thanh toán do module Payment cung cấp', function () {
+it('Admin: applies allowed order page sizes and rejects unsupported values', function () {
     ($this->place)();
     ($this->staff)();
 
-    $this->get("{$this->admin}/".($this->order)()->id)->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Show')
-        ->where('order.number', ($this->order)()->number)
-        ->where('order.customerStatus.code', 'preparing')
-        ->where('panels', fn ($panels) => collect($panels)->pluck('title')->sort()->values()->all() === ['Giao hàng', 'Thanh toán'])
-        ->where('can.cancel', true)
-        ->where('can.confirm', false)
-        ->where('labels.event_type.placed', 'Đặt hàng'));
+    $this->get("{$this->admin}?per_page=50")->assertInertia(fn (Assert $page) => $page->where('pagination.per_page', 50));
+    $this->get("{$this->admin}?per_page=500")->assertSessionHasErrors('per_page');
+});
+
+it('Admin: chi tiết đơn có panel thanh toán do module Payment cung cấp', function () {
+    ($this->place)();
+    ($this->staff)();
+    $order = ($this->order)();
+
+    $this->get("{$this->admin}/{$order->id}?stage=to_ship&page=3&per_page=50&ext%5Bcarrier%5D=ready&return_to=https%3A%2F%2Fevil.test")
+        ->assertInertia(fn (Assert $page) => $page->component('Ordering::Orders/Show')
+            ->where('listUrl', route('admin.orders.orders.index', ['stage' => 'to_ship', 'page' => 3, 'per_page' => 50, 'ext' => ['carrier' => 'ready']]))
+            ->where('order.number', ($this->order)()->number)
+            ->where('order.customerStatus.code', 'preparing')
+            ->where('panels', fn ($panels) => collect($panels)->pluck('title')->sort()->values()->all() === ['Giao hàng', 'Thanh toán'])
+            ->where('can.cancel', true)
+            ->where('can.confirm', false)
+            ->where('labels.event_type.placed', 'Đặt hàng'));
 });
 
 it('Admin: xác nhận đơn COD khi tắt tự xác nhận', function () {

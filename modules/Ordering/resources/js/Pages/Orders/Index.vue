@@ -18,7 +18,7 @@ import { paymentStatusTone, stageTone } from '../../statusTones';
  * Danh sách đơn theo hàng đợi việc (0.3.96): thẻ giai đoạn vận hành (OrderStage) có số đếm, bộ lọc ngày/nguồn/thanh toán,
  * cột tuổi đơn, sản phẩm, tỉnh; cột "Vận đơn" và thao tác hàng loạt (Tạo vận đơn, Đã bàn giao) do Fulfillment đóng góp.
  */
-type Filters = { stage: string; aged: string; status: string; payment_status: string; payment_method: string; source: string; from: string; to: string; q: string };
+type Filters = { stage: string; aged: string; actionable: string; status: string; payment_status: string; payment_method: string; source: string; from: string; to: string; q: string };
 
 const props = defineProps<{
     baseUrl: string;
@@ -26,6 +26,7 @@ const props = defineProps<{
     stages: string[];
     actionableStages: string[];
     stageCounts: Record<string, number>;
+    agedCount: number;
     statuses: string[];
     paymentStatuses: string[];
     labels: {
@@ -52,7 +53,7 @@ const props = defineProps<{
         source: string;
         label: string;
     }>;
-    pagination: { current: number; last: number; total: number };
+    pagination: { current: number; last: number; from: number | null; to: number | null; total: number; per_page: number };
     extensions: ExtensionList;
     /** Công cụ tải file (slot vani.admin.order.list_tools, 0.3.97) — vd. nhập mã vận đơn từ file của hãng. */
     tools: Array<{ key: string; label: string; url: string; accept?: string; help?: string; fields?: Array<{ key: string; label: string; placeholder?: string }> }>;
@@ -90,6 +91,7 @@ const moreFilters = ref(['status', 'payment_status', 'payment_method', 'source',
 const options = (values: string[] | Record<string, string>, labels: Record<string, string>) =>
     (Array.isArray(values) ? values : Object.keys(values)).map((value) => ({ value, label: labels[value] ?? value }));
 const totalCount = computed(() => Object.values(props.stageCounts).reduce((sum, count) => sum + count, 0));
+const hasActiveFilters = computed(() => Object.values(form).some((value) => value !== '') || Object.values(ext).some((value) => value !== ''));
 const columns = [
     { key: 'number', label: 'Đơn' },
     { key: 'customer', label: 'Khách' },
@@ -99,19 +101,50 @@ const columns = [
     { key: 'payment_status', label: 'Thanh toán' },
 ];
 
-function search(page = 1): void {
+function search(page = 1, pageSize = props.pagination.per_page): void {
     selected.value = [];
-    router.get(props.baseUrl, { ...form, ext, page }, { preserveState: true, preserveScroll: true });
+    router.get(props.baseUrl, { ...form, ext, page, per_page: pageSize }, { preserveState: true, preserveScroll: true });
+}
+
+function openOrder(order: { id: number }): void {
+    router.visit(`${props.baseUrl}/${order.id}${window.location.search}`);
+}
+
+function changePageSize(pageSize: number): void {
+    search(1, pageSize);
 }
 
 function openStage(stage: string): void {
     form.stage = stage;
     form.aged = '';
+    form.actionable = '';
+    search();
+}
+
+function toggleActionable(): void {
+    form.stage = '';
+    form.aged = '';
+    form.actionable = form.actionable === '1' ? '' : '1';
+    search();
+}
+
+function toggleAgedQueue(): void {
+    form.stage = '';
+    form.actionable = '';
+    form.aged = form.aged === '24' ? '' : '24';
     search();
 }
 
 function clearAged(): void {
     form.aged = '';
+    search();
+}
+
+function clearFilters(): void {
+    Object.assign(form, { stage: '', aged: '', actionable: '', status: '', payment_status: '', payment_method: '', source: '', from: '', to: '', q: '' });
+    for (const key of Object.keys(ext)) {
+        ext[key] = '';
+    }
     search();
 }
 
@@ -165,6 +198,15 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             Tất cả <span class="text-xs text-slate-400">{{ totalCount }}</span>
         </button>
         <button
+            type="button"
+            class="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2"
+            :class="form.actionable === '1' ? 'border-indigo-600 font-medium text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+            :aria-pressed="form.actionable === '1'"
+            @click="toggleActionable"
+        >
+            Cần xử lý <span class="text-xs text-slate-400">{{ actionableStages.reduce((sum, stage) => sum + (stageCounts[stage] ?? 0), 0) }}</span>
+        </button>
+        <button
             v-for="stage in stages"
             :key="stage"
             type="button"
@@ -182,6 +224,15 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             >
             <span v-else class="text-xs text-slate-400">{{ stageCounts[stage] ?? 0 }}</span>
         </button>
+        <button
+            type="button"
+            class="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2"
+            :class="form.aged === '24' ? 'border-red-600 font-medium text-red-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+            :aria-pressed="form.aged === '24'"
+            @click="toggleAgedQueue"
+        >
+            Quá 24 giờ <span class="text-xs text-slate-400">{{ agedCount }}</span>
+        </button>
     </nav>
 
     <p v-if="form.aged" class="mb-3 flex items-center justify-between rounded bg-red-50 px-3 py-2 text-sm text-red-800" data-aged-filter>
@@ -193,6 +244,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             <input v-model="form.q" :class="inputClass" placeholder="Số đơn hoặc SĐT" aria-label="Tìm đơn" />
             <button type="button" :class="secondaryButton" :aria-expanded="moreFilters" @click="moreFilters = !moreFilters">Bộ lọc</button>
             <button type="submit" :class="primaryButton">Lọc</button>
+            <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ tất cả bộ lọc</button>
         </div>
         <div v-if="moreFilters" class="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <ExtensionFilters v-model="ext" :filters="extensions.filters" />
@@ -205,13 +257,13 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         </div>
     </form>
 
-    <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
-        <ExtensionActions :actions="extensions.actions" :ids="selected" />
+    <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
+        <span class="text-slate-500">Đã chọn {{ selected.length }} đơn trên trang hiện tại</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="đơn trên trang hiện tại" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :row-label="(order) => order.number" empty-text="Không có đơn nào.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :row-label="(order) => order.number" :row-click="openOrder" empty-text="Không có đơn nào.">
         <template #cell-number="{ row }">
-            <Link :href="`${baseUrl}/${row.id}`" class="font-mono text-indigo-600 hover:underline">{{ row.number }}</Link>
+            <span class="font-mono">{{ row.number }}</span>
             <div class="text-xs text-slate-400">{{ row.placed_at }}</div>
             <div class="text-xs" :class="ageClass(row)">{{ ageText(row.age_hours) }}<template v-if="row.source !== 'web'"> · {{ labels.source[row.source] ?? row.source }}</template></div>
         </template>
@@ -234,5 +286,5 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         </template>
     </DataTable>
 
-    <Pagination :current="pagination.current" :last="pagination.last" @change="search" />
+    <Pagination :current="pagination.current" :last="pagination.last" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="[30, 50, 100]" @change="search" @per-page-change="changePageSize" />
 </template>
