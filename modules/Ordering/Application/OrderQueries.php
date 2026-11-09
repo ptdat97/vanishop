@@ -109,7 +109,7 @@ final class OrderQueries
             $address = ['province_name' => $address['province_name'] ?? '', 'ward_name' => $address['ward_name'] ?? '', 'street_line' => '***'];
         }
 
-        return hook_filter('vani.service.ordering.order_detail', new OrderDetail(
+        return vani_filter('vani.service.ordering.order_detail', new OrderDetail(
             id: $order->id,
             publicId: $order->public_id,
             number: $order->number,

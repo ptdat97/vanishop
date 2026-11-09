@@ -36,7 +36,7 @@ final class PromotionEvaluator implements PromotionEngine
 
     public function evaluate(PromotionContext $context): PromotionResult
     {
-        return hook_filter('vani.service.promotion.result', $this->evaluateRules($context), $context);
+        return vani_filter('vani.service.promotion.result', $this->evaluateRules($context), $context);
     }
 
     private function evaluateRules(PromotionContext $context): PromotionResult

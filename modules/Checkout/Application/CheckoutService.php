@@ -75,7 +75,7 @@ final class CheckoutService implements Checkout
         $context = $this->context($cart, $request, $this->signedInCustomer());
         $totals = $this->pipeline->run($context);
 
-        return hook_filter('vani.service.checkout.quote', new CheckoutQuote($totals, $this->shipping->for($context), $this->payments->available($totals), $cart->isCheckoutReady()), $request);
+        return vani_filter('vani.service.checkout.quote', new CheckoutQuote($totals, $this->shipping->for($context), $this->payments->available($totals), $cart->isCheckoutReady()), $request);
     }
 
     public function placeOrder(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult

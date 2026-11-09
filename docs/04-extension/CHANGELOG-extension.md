@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.0 — 2026-11-09
+
+Thay đổi không tương thích của API hook.
+
+### Đổi
+- Xoá helper bí danh `add_hook_slot()`. Dùng `vani_add_slot()` để đăng ký listener slot.
+- Xoá các helper bí danh `hook_filter()`, `hook_action()`, `add_hook_filter()` và `add_hook_action()`. Dùng lần lượt `vani_filter()`, `vani_action()`, `vani_add_filter()` và `vani_add_action()`.
+
 ## 0.3.105 — 2026-11-08
 
 Mở rộng các vị trí UI public của theme `vani-base`, giữ nguyên hook-slot hiện có.

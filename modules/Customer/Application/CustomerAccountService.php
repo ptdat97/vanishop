@@ -18,7 +18,7 @@ final class CustomerAccountService implements CustomerAccounts
 
     public function updateProfile(int $customerId, array $attributes): CustomerData
     {
-        $attributes = hook_filter('vani.service.customer.profile_attributes', $attributes, $customerId);
+        $attributes = vani_filter('vani.service.customer.profile_attributes', $attributes, $customerId);
 
         return $this->customers->updateProfile($customerId, array_intersect_key($attributes, array_flip(['full_name', 'email', 'birth_date', 'gender'])));
     }

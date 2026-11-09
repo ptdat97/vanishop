@@ -130,7 +130,7 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 - Plugin tải ảnh thu nhỏ từ thư mục riêng của nó.
 - Kiểm tra cập nhật phiên bản plugin từ máy chủ của nhà phát hành.
 
-**VaniShop hiện có**: `Hook` (filter/action/collect/slot, registry, strict mode, đo thời gian), manifest `vanishop.json`, dependency resolver, lifecycle, `adminFormSection`/`adminColumn`/…, `storefrontRoutes`/`storefrontPages`, slot storefront, hook service `vani.service.*`, helper `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action`/`vani_*`.
+**VaniShop hiện có**: `Hook` (filter/action/collect/slot, registry, strict mode, đo thời gian), manifest `vanishop.json`, dependency resolver, lifecycle, `adminFormSection`/`adminColumn`/…, `storefrontRoutes`/`storefrontPages`, slot storefront, hook service `vani.service.*` và helper canonical `vani_*`.
 
 **Đặc tả cần làm**
 1. ✅ (R2, 2026-11-04, Core 0.3.69) **Helper ngắn cho plugin và theme** — §4, [ADR-037](../19-adr/ADR-037-vani-helpers.md).
@@ -367,7 +367,7 @@ Khoảng 60 hàm, chia nhóm (mô tả hành vi, không chép tên):
 | **Ảnh** | Ảnh thu nhỏ theo (rộng, cao), bỏ qua URL ngoài và gif/webp; ảnh gốc; `srcset`; `sizes` theo container/cột; `sizes` cho ảnh nền phủ; ảnh của plugin; chiều cao theo tỷ lệ ảnh gốc cấu hình | `ImageFormat`, `MediaDirectory`, `/cache/media/...` | `vani_image()`; component theme cho `srcset`/`sizes` (§3.16-5) |
 | **Định dạng** | Ngày giờ một mẫu; số rút gọn K/M/B/T; cắt chuỗi | `StoreClock`, `Formats` | §3.1-1; dùng `Str::limit` của Laravel |
 | **Phản hồi JSON** | Hai hàm trả JSON thành công/thất bại với trạng thái + thông điệp + dữ liệu | Định dạng lỗi API + `BusinessRuleViolation` | **Không** thêm: giữ một định dạng API duy nhất |
-| **Hook** | Gọi filter/action (log khi debug); đăng ký filter/action/khối HTML | `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action`, `vani_*` | Đã có (ADR-036) |
+| **Hook** | Gọi filter/action (log khi debug); đăng ký filter/action/khối HTML | Helper canonical `vani_*` | Đã có (ADR-036) |
 | **Plugin** | Đường dẫn thư mục plugin; lấy đối tượng plugin theo mã; có plugin dịch máy nào bật không | `Extensions` | `vani_plugin()` chỉ đọc manifest + trạng thái bật |
 | **Môi trường** | Đã cài chưa; HTTPS (đọc nhiều header); di động (user agent); IP client (header CDN); host an toàn (whitelist); so domain hiện tại với `APP_URL`; tách domain gốc; driver DB | Cấu hình Laravel | **Không** thêm helper; xem §3.1-3/4 |
 | **License/nhà phát hành** | Kiểm tra mã license theo domain; URL API/website nhà phát hành | — | **Không áp dụng** |

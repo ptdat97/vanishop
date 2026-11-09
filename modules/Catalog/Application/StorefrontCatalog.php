@@ -34,7 +34,7 @@ final class StorefrontCatalog implements CatalogReader
 
     public function categoryTree(string $locale): array
     {
-        return hook_filter('vani.service.catalog.category_tree', $this->present($this->categories->tree(activeOnly: true, locale: $locale)), $locale);
+        return vani_filter('vani.service.catalog.category_tree', $this->present($this->categories->tree(activeOnly: true, locale: $locale)), $locale);
     }
 
     public function category(string $slug, string $locale): ?array
@@ -52,7 +52,7 @@ final class StorefrontCatalog implements CatalogReader
             'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
         ];
 
-        return hook_filter('vani.service.catalog.search', [
+        return vani_filter('vani.service.catalog.search', [
             'items' => $result['items'],
             'total' => $result['total'],
             'page' => $query->page,
@@ -82,7 +82,7 @@ final class StorefrontCatalog implements CatalogReader
         $walk($this->categoryTree($locale));
         $brands = array_values(array_slice(array_filter($this->brands(), fn (array $brand): bool => str_contains(self::fold($brand['name']), $needle)), 0, 3));
 
-        return hook_filter('vani.service.catalog.suggestions', [
+        return vani_filter('vani.service.catalog.suggestions', [
             'products' => array_map(fn (array $item): array => ['id' => (int) $item['id'], 'slug' => (string) $item['slug'], 'name' => $item['name'], 'image_url' => $item['image_url']], $found['items']),
             'categories' => $categories,
             'brands' => array_map(fn (array $brand): array => ['slug' => $brand['slug'], 'name' => $brand['name'], 'logo_url' => $brand['logo_url']], $brands),
@@ -91,7 +91,7 @@ final class StorefrontCatalog implements CatalogReader
 
     public function brands(): array
     {
-        return hook_filter('vani.service.catalog.brands', Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
+        return vani_filter('vani.service.catalog.brands', Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->orderBy('name')->get()
             ->map(fn (Brand $brand): array => $this->brandView($brand))->all());
     }
 
@@ -99,19 +99,19 @@ final class StorefrontCatalog implements CatalogReader
     {
         $brand = Brand::query()->where('slug', $slug)->where('status', Brand::ACTIVE)->first();
 
-        return $brand === null ? null : hook_filter('vani.service.catalog.brand', [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description], $slug);
+        return $brand === null ? null : vani_filter('vani.service.catalog.brand', [...$this->brandView($brand), 'meta_title' => $brand->meta_title, 'meta_description' => $brand->meta_description], $slug);
     }
 
     public function productsByIds(array $styleIds, string $locale, int $now): array
     {
-        return hook_filter('vani.service.catalog.products_by_ids', $this->products->byIds($styleIds, $locale, $now), $locale);
+        return vani_filter('vani.service.catalog.products_by_ids', $this->products->byIds($styleIds, $locale, $now), $locale);
     }
 
     public function productDetail(string $slug, string $locale, int $now): ?array
     {
         $detail = $this->products->detail($slug, $locale, $now);
 
-        return $detail === null ? null : hook_filter('vani.service.catalog.product_detail', $detail, $slug, $locale);
+        return $detail === null ? null : vani_filter('vani.service.catalog.product_detail', $detail, $slug, $locale);
     }
 
     public function sellableVariants(array $variantIds, string $locale, int $now): array

@@ -32,7 +32,7 @@ final class StrategyPriceResolver implements PriceResolver
             $context = new PricingContext($context->now, $this->groups->groupOf($context->customerId), $context->customerId);
         }
 
-        return hook_filter('vani.service.pricing.prices', $this->strategy()->resolve(array_values(array_unique($variantIds)), $context), $context);
+        return vani_filter('vani.service.pricing.prices', $this->strategy()->resolve(array_values(array_unique($variantIds)), $context), $context);
     }
 
     private function strategy(): PricingStrategy

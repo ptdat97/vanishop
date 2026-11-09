@@ -87,7 +87,7 @@ Dán vào mô tả PR:
 
 - **So sánh độ tương đồng** chỉ thực hiện khi **audit** (trước phát hành thương mại, hoặc khi có nghi vấn): người được chỉ định (không thuộc nhóm phát triển) dùng bản BeikeShop lưu trữ ngoài máy dev để chạy công cụ phát hiện code trùng (`jscpd`, `PMD CPD`, `moss`) với `modules/`, `custom/plugin/`, `app/`, `resources/`. Ngưỡng cảnh báo: bất kỳ khối ≥ 10 dòng trùng.
 - **Kiểm tra license dependency**: `composer licenses` và `npx license-checker --onlyAllow "MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC"` trong CI.
-- **Grep chuỗi đặc trưng** trong CI: `beike`, `guangda` → fail build nếu xuất hiện trong `app/`, `modules/`, `custom/`, `resources/`, `lang/`, `database/`. (`hook_filter()`/`hook_action()` là helper của VaniShop từ 0.3.47 — [ADR-036](../19-adr/ADR-036-service-result-hooks.md).)
+- **Grep chuỗi đặc trưng** trong CI: `beike`, `guangda` → fail build nếu xuất hiện trong `app/`, `modules/`, `custom/`, `resources/`, `lang/`, `database/`. Hook service dùng helper canonical `vani_*` của VaniShop — [ADR-036](../19-adr/ADR-036-service-result-hooks.md).
 
 ## 7. Lưu trữ mã nguồn tham khảo
 

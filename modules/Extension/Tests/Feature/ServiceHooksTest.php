@@ -17,7 +17,7 @@ use Modules\Shared\Domain\Money\Money;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /*
-| Điểm hook tại kết quả service nghiệp vụ (ADR-036): hook_filter('vani.service.<module>.<kết quả>', ...).
+| Điểm hook tại kết quả service nghiệp vụ (ADR-036): vani_filter('vani.service.<module>.<kết quả>', ...).
 */
 
 beforeEach(function () {
@@ -41,11 +41,11 @@ function discountEveryLine(int $amount): void
     }, 10, 'vani.cod');
 }
 
-it('helper hook_filter/add_hook_filter đi qua HookManager: hook phải khai báo', function () {
-    add_hook_filter('vani.service.catalog.category_tree', fn (array $tree): array => [...$tree, ['slug' => 'them']]);
+it('vani_filter và vani_add_filter đi qua HookManager: hook phải khai báo', function () {
+    vani_add_filter('vani.service.catalog.category_tree', fn (array $tree): array => [...$tree, ['slug' => 'them']]);
 
-    expect(hook_filter('vani.service.catalog.category_tree', [], 'vi'))->toBe([['slug' => 'them']])
-        ->and(fn () => hook_filter('vani.service.khong.khai.bao', 1))->toThrow(HookNotDeclared::class)
+    expect(vani_filter('vani.service.catalog.category_tree', [], 'vi'))->toBe([['slug' => 'them']])
+        ->and(fn () => vani_filter('vani.service.khong.khai.bao', 1))->toThrow(HookNotDeclared::class)
         ->and(app(HookRegistry::class)->get('vani.service.checkout.totals')->onError)->toBe('fail')
         ->and(app(HookRegistry::class)->get('vani.service.catalog.search')->onError)->toBe('skip');
 });

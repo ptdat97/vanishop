@@ -31,13 +31,13 @@ final class TotalsPipeline
         foreach ($calculators as $calculator) {
             // Plugin sửa kết quả sau mọi calculator, trước chốt chặn (guard ≥ 900) — giảm giá sai vẫn bị cắt.
             if (! $filtered && $calculator->priority() >= self::GUARD_PRIORITY) {
-                $context = hook_filter('vani.service.checkout.totals', $context);
+                $context = vani_filter('vani.service.checkout.totals', $context);
                 $filtered = true;
             }
             $context = $calculator->calculate($context);
         }
         if (! $filtered) {
-            $context = hook_filter('vani.service.checkout.totals', $context);
+            $context = vani_filter('vani.service.checkout.totals', $context);
         }
 
         $sum = fn (callable $pick): Money => array_reduce($context->lines, fn (Money $carry, TotalsLine $line): Money => $carry->add($pick($line)), $context->money(0));

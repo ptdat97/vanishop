@@ -101,7 +101,7 @@ vani_add_action('vani.order.after_create', fn (PlacedOrder $order) => ...);
 vani_add_slot('vani.storefront.pdp.after_price', fn (array $product) => new HtmlString('…'));   // 0.3.54
 ```
 
-Bí danh (ADR-036): `hook_filter`, `hook_action`, `add_hook_filter`, `add_hook_action`, `add_hook_slot` (0.3.54) — cùng HookManager. Mọi helper đăng ký có priority mặc định `HookManager::DEFAULT_PRIORITY` = **100**.
+Các helper hook duy nhất là `vani_filter()`, `vani_action()`, `vani_add_filter()`, `vani_add_action()` và `vani_add_slot()`; tất cả đi qua HookManager. Helper đăng ký có priority mặc định `HookManager::DEFAULT_PRIORITY` = **100**.
 
 **Dò luồng hook** (0.3.54): `VANI_HOOKS_TRACE=true` (mặc định theo `APP_DEBUG`) ghi log debug mỗi lần gọi hook — `Hook <loại>: <tên>` kèm danh sách plugin đang nghe (`core` = Core). Rất nhiều dòng (mỗi view/trang Admin có điểm tự động); tắt khi không cần. Production (`APP_DEBUG=false`) mặc định tắt.
 

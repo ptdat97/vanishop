@@ -31,7 +31,7 @@ Cần cú pháp ngắn cho plugin và view, mà không tạo một đường th�
 3. **Contract mới** để helper không vi phạm R5/R7 (helper nằm ở Extension, không được gọi `Application` của Catalog):
    - `MediaUrls::url(int $mediaId, ?int $width = null): ?string` và `MediaUrls::urls(array $mediaIds, int $width): array` (batch cho danh sách) — implementation bọc bộ tạo URL ảnh thu nhỏ hiện có của Catalog.
    - `PluginDirectory::find(string $pluginId): ?PluginInfo` — đọc manifest + trạng thái bật, không thao tác lifecycle.
-4. **Phạm vi dùng**: helper dành cho `custom/plugin/*`, view theme, view plugin. Class trong `modules/` **không** dùng các helper của ADR này (inject contract) — arch test chặn. Helper hook của ADR-036 không bị quy tắc này ràng buộc (Core vẫn gọi `hook_filter` tại kết quả service).
+4. **Phạm vi dùng**: helper dành cho `custom/plugin/*`, view theme, view plugin. Class trong `modules/` **không** dùng các helper của ADR này (inject contract) — arch test chặn. Helper hook `vani_*` của ADR-036 không bị quy tắc này ràng buộc (Core gọi `vani_filter` tại kết quả service).
 5. **Public API**: các helper ghi vào `public-api.snapshot`, `CHANGELOG-extension`, extension-point-catalog; đổi chữ ký theo compatibility policy.
 6. **Không có helper cho**: phản hồi JSON (giữ một định dạng lỗi API), tiền tệ/tỷ giá, kiểm tra môi trường (HTTPS, di động, IP, domain), thao tác tệp, license, debug SQL, kiểm tra mảng. Không có điểm lọc khi đọc cấu hình.
 

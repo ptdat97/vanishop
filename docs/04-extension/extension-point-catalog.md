@@ -183,7 +183,7 @@ Các slot `layout.*` chạy trên HTML storefront có thể được cache CDN; 
 
 ### 4.2 Hook tại kết quả service (0.3.47, [ADR-036](../19-adr/ADR-036-service-result-hooks.md))
 
-Core gọi `hook_filter('vani.service.<module>.<kết quả>', $value, ...$args)` ngay tại kết quả của service nghiệp vụ; plugin nghe bằng `add_hook_filter()` trong `boot()`. Helper `hook_filter`/`hook_action`/`add_hook_filter`/`add_hook_action`/`add_hook_slot` là bí danh của `vani_*`, cùng HookManager (khai báo, kiểm kiểu, plugin sở hữu, đo thời gian). Filter phải trả **cùng kiểu** với đầu vào (DTO bất biến: tạo bản mới qua `with*()`/constructor).
+Core gọi `vani_filter('vani.service.<module>.<kết quả>', $value, ...$args)` ngay tại kết quả của service nghiệp vụ; plugin đăng ký listener bằng `vani_add_filter()` trong `boot()`. Các helper `vani_*` đi qua HookManager (khai báo, kiểm kiểu, plugin sở hữu, đo thời gian). Filter phải trả **cùng kiểu** với đầu vào (DTO bất biến: tạo bản mới qua `with*()`/constructor).
 
 | Hook | Giá trị | Args thêm | Lỗi listener | Mục đích |
 |---|---|---|---|---|
@@ -205,13 +205,13 @@ Core gọi `hook_filter('vani.service.<module>.<kết quả>', $value, ...$args)
 
 ```php
 // Plugin: giảm theo điểm thưởng (tương đương "thêm một dòng total" ở hệ tham chiếu)
-add_hook_filter('vani.service.checkout.totals', function (TotalsContext $context): TotalsContext {
+vani_add_filter('vani.service.checkout.totals', function (TotalsContext $context): TotalsContext {
     return $context->withAdjustment(new Adjustment('loyalty', 'vani.loyalty', null, 'Đổi điểm', $context->money(-50_000)))
         ->withLines(/* phân bổ 50.000đ vào giảm giá các dòng */);
 });
 ```
 
-**Domain event → hook action (0.3.48):** mọi event `Modules\<Module>\Events\<Event>` tự thành action `vani.event.<module>.<event>` (snake_case), tham số là đối tượng event — `add_hook_action('vani.event.ordering.order_placed', fn (OrderPlaced $e) => …)`. Event Core phát **sau commit**; listener chạy đồng bộ trong request nên việc chậm/gọi mạng đẩy vào queue; lỗi listener bị bỏ qua (`on_error: skip`). Danh sách event: §3.
+**Domain event → hook action (0.3.48):** mọi event `Modules\<Module>\Events\<Event>` tự thành action `vani.event.<module>.<event>` (snake_case), tham số là đối tượng event — plugin có thể đăng ký listener bằng `vani_add_action('vani.event.ordering.order_placed', fn (OrderPlaced $e) => …)`. Event Core phát **sau commit**; listener chạy đồng bộ trong request nên việc chậm/gọi mạng đẩy vào queue; lỗi listener bị bỏ qua (`on_error: skip`). Danh sách event: §3.
 
 Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân bổ giảm giá về dòng (`TotalsLine::withDiscount`) là bắt buộc: `grandTotal` = Σ dòng + phí giao; `Adjustment` là bản ghi truy vết (lưu `order_adjustments`), không tự trừ tiền.
 

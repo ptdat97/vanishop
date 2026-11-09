@@ -119,11 +119,11 @@ it('priority mặc định 100 cho mọi loại hook: < 100 chạy trước list
         ->and(Hook::slot('test.slot'))->toBe(['trước', 'mặc định']);
 });
 
-it('add_hook_slot / vani_add_slot chèn nội dung vào slot, cùng priority mặc định', function () {
-    add_hook_slot('test.slot', fn (string $name) => "chào {$name}");
+it('vani_add_slot chèn nội dung theo priority', function () {
+    vani_add_slot('test.slot', fn (string $name) => "chào {$name}");
     vani_add_slot('test.slot', fn () => 'đầu tiên', 50);
 
-    expect(hook_filter('test.filter', 'x'))->toBe('x')
+    expect(vani_filter('test.filter', 'x'))->toBe('x')
         ->and(Hook::slot('test.slot', 'Lan'))->toBe(['đầu tiên', 'chào Lan']);
 });
 

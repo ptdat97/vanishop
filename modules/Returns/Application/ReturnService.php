@@ -430,7 +430,7 @@ final class ReturnService implements Returns
         $orderLines = collect($this->orders->lines($return->order_id))->keyBy('id');
         $exchangeVariants = $return->resolution === 'exchange' ? $this->variants->find($return->lines()->pluck('exchange_variant_id')->filter()->unique()->values()->all()) : [];
 
-        return hook_filter('vani.service.returns.view', new ReturnView(
+        return vani_filter('vani.service.returns.view', new ReturnView(
             id: $return->id,
             publicId: $return->public_id,
             number: $return->number,

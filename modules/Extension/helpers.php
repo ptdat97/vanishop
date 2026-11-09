@@ -74,47 +74,6 @@ if (! function_exists('vani_add_slot')) {
 }
 
 /*
-| Bí danh quen thuộc cho người viết plugin (ADR-036): cùng HookManager, cùng bảo đảm như vani_*. Core đặt điểm
-| `hook_filter('vani.service.<module>.<kết quả>', $value, ...)` ngay tại kết quả của service nghiệp vụ;
-| plugin nghe bằng `add_hook_filter(...)` trong boot(). Danh mục: docs/04-extension/extension-point-catalog.md §3.10
-*/
-
-if (! function_exists('hook_filter')) {
-    function hook_filter(string $hook, mixed $value, mixed ...$args): mixed
-    {
-        return app(HookManager::class)->filter($hook, $value, ...$args);
-    }
-}
-
-if (! function_exists('hook_action')) {
-    function hook_action(string $hook, mixed ...$args): void
-    {
-        app(HookManager::class)->action($hook, ...$args);
-    }
-}
-
-if (! function_exists('add_hook_filter')) {
-    function add_hook_filter(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
-    {
-        app(HookManager::class)->onFilter($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
-    }
-}
-
-if (! function_exists('add_hook_action')) {
-    function add_hook_action(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
-    {
-        app(HookManager::class)->onAction($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
-    }
-}
-
-if (! function_exists('add_hook_slot')) {
-    function add_hook_slot(string $hook, callable $callback, int $priority = HookManager::DEFAULT_PRIORITY): void
-    {
-        app(HookManager::class)->onSlot($hook, $callback, $priority, app(CallerPlugin::class)->resolve());
-    }
-}
-
-/*
 | URL storefront theo ngôn ngữ (ADR-037/038) — cho view theme, view và code plugin. Class trong modules/ dùng
 | Modules\Shared\Support\LocalizedUrls trực tiếp.
 */

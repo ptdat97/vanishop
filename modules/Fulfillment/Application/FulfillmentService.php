@@ -235,7 +235,7 @@ final class FulfillmentService
         $order = $this->orders->find($shipment->order_id);
         $lines = collect($this->orders->lines($shipment->order_id))->keyBy('id');
 
-        return hook_filter('vani.service.fulfillment.shipment_data', new ShipmentData(
+        return vani_filter('vani.service.fulfillment.shipment_data', new ShipmentData(
             publicId: $shipment->public_id,
             orderNumber: $order->number ?? '',
             locationId: $shipment->location_id,
