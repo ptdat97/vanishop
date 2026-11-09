@@ -24,7 +24,7 @@ final class AdminNavigation
     private array $items = [];
 
     /** @var array<string, array{key: string, label: string, order: int}> */
-    private array $groups = [self::FALLBACK_GROUP => ['key' => self::FALLBACK_GROUP, 'label' => 'Mở rộng', 'order' => 850]];
+    private array $groups = [self::FALLBACK_GROUP => ['key' => self::FALLBACK_GROUP, 'label' => 'Mở rộng', 'order' => 900]];
 
     /**
      * @param  Closure(): PluginActivation  $activation

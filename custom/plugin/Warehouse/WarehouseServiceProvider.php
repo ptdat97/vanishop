@@ -34,8 +34,8 @@ final class WarehouseServiceProvider extends PluginServiceProvider
             'warehouse.transfer' => 'Tạo/điều phối chuyển kho',
         ]);
 
-        $this->adminMenu('locations', 'Kho & cửa hàng', 'admin.plugins.vani-warehouse.locations.index', 'warehouse.locations.manage', 305, 'catalog');
-        $this->adminMenu('transfers', 'Chuyển kho', 'admin.plugins.vani-warehouse.transfers.index', 'inventory.view', 310, 'catalog');
+        $this->adminMenu('locations', 'Kho & cửa hàng', 'admin.plugins.vani-warehouse.locations.index', 'warehouse.locations.manage', 160, 'catalog');
+        $this->adminMenu('transfers', 'Chuyển kho', 'admin.plugins.vani-warehouse.transfers.index', 'inventory.view', 170, 'catalog');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
         $this->adminPages('Warehouse', $this->pluginPath('Resources/js/Pages'));
         // Nút trên trang Tồn kho của Core — tự ẩn khi plugin tắt.

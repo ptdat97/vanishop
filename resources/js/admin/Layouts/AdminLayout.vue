@@ -138,7 +138,9 @@ watch(
 function isCurrent(key: string, url: string): boolean {
     const path = new URL(url, window.location.origin).pathname;
     const current = page.url.split('?')[0];
-    return current === path || (key !== 'dashboard' && current.startsWith(path + '/'));
+
+    return current === path
+        || (key !== 'dashboard' && key !== 'plugins' && current.startsWith(path + '/'));
 }
 
 function logout(): void {
@@ -183,6 +185,7 @@ function logout(): void {
                         :href="entry.item.url"
                         class="rounded-md px-3 py-2 text-sm"
                         :class="isCurrent(entry.item.key, entry.item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
+                        :aria-current="isCurrent(entry.item.key, entry.item.url) ? 'page' : undefined"
                         @click="closeMobileNavigation"
                     >
                         {{ entry.item.label }}
@@ -208,6 +211,7 @@ function logout(): void {
                                 :href="item.url"
                                 class="rounded-md px-3 py-1.5 text-sm"
                                 :class="isCurrent(item.key, item.url) ? 'bg-indigo-50 font-medium text-red-700' : 'text-slate-600 hover:bg-slate-100'"
+                                :aria-current="isCurrent(item.key, item.url) ? 'page' : undefined"
                                 @click="closeMobileNavigation"
                             >
                                 {{ item.label }}

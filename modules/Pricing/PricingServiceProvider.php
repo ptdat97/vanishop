@@ -55,7 +55,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         $permissions->register('pricing.view', 'Xem bảng giá');
         $permissions->register('pricing.manage', 'Sửa bảng giá và giá bán');
 
-        $navigation->add('pricing', 'Giá bán', 'admin.pricing.home', 'pricing.view', 200, group: 'catalog');
+        $navigation->add('pricing', 'Giá bán', 'admin.pricing.home', 'pricing.view', 120, group: 'catalog');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('pricing', $this->modulePath('Http/routes/admin-workspace.php'));

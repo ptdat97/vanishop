@@ -207,7 +207,7 @@ abstract class PluginServiceProvider extends ServiceProvider
     /**
      * @param  string  $group  nhóm menu: sales, catalog, marketing, content, system, extensions (mặc định "Mở rộng")
      */
-    protected function adminMenu(string $key, string $label, string $route, ?string $permission = null, int $order = 500, string $group = AdminNavigation::FALLBACK_GROUP): void
+    protected function adminMenu(string $key, string $label, string $route, ?string $permission = null, int $order = 900, string $group = AdminNavigation::FALLBACK_GROUP): void
     {
         $this->app->make(AdminNavigation::class)->add($key, $label, $route, $permission, $order, $this->pluginId(), group: $group);
     }

@@ -11,6 +11,7 @@ Thay đổi không tương thích của API hook.
 ### Đổi
 - Xoá helper bí danh `add_hook_slot()`. Dùng `vani_add_slot()` để đăng ký listener slot.
 - Xoá các helper bí danh `hook_filter()`, `hook_action()`, `add_hook_filter()` và `add_hook_action()`. Dùng lần lượt `vani_filter()`, `vani_action()`, `vani_add_filter()` và `vani_add_action()`.
+- Sắp xếp lại menu Admin theo luồng làm việc: Tổng quan, Bán hàng, Sản phẩm, Marketing, Báo cáo, Nội dung & giao diện, Hệ thống, Plugin và Mở rộng. Thư viện ảnh thuộc nhóm Nội dung & giao diện; Plugin là mục độc lập. Mục `adminMenu()` không chỉ định thứ tự mặc định chuyển xuống cuối menu.
 
 ## 0.3.105 — 2026-11-08
 

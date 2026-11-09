@@ -112,7 +112,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $permissions->register('media.manage', 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)');
 
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100, group: 'catalog');
-        $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 110, group: 'catalog');
+        $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 610, group: 'content');
 
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'Ảnh thay thế', 'media',

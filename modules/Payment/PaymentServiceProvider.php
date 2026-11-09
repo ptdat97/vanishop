@@ -61,7 +61,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         $permissions->register('payments.confirm', 'Xác nhận đã nhận tiền (chuyển khoản thủ công)');
         $permissions->register('payments.refund', 'Hoàn tiền');
 
-        $navigation->add('payment', 'Thanh toán', 'admin.payment.home', 'payments.view', 350, group: 'sales');
+        $navigation->add('payment', 'Thanh toán', 'admin.payment.home', 'payments.view', 90, group: 'sales');
 
         Event::listen(OrderCancelled::class, SettleCancelledOrderPayments::class);
         Event::listen(OrderLinesCancelled::class, SettlePartialCancellation::class);

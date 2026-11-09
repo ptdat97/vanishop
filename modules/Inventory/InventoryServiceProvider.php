@@ -79,7 +79,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $permissions->register('inventory.adjust', 'Điều chỉnh/kiểm kê tồn kho');
         $permissions->register('inventory.locations.manage', 'Sửa thông tin Kho chính, tạo Kho chính (cấp Owner)');
 
-        $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 300, group: 'catalog');
+        $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 140, group: 'catalog');
         // Admin → Nhân viên: gán vai trò theo phạm vi một location.
         $scopes->register(ScopeType::Location, fn (): array => Location::query()->orderBy('code')->get(['id', 'code', 'name'])
             ->mapWithKeys(fn (Location $location): array => [$location->id => "{$location->code} — {$location->name}"])->all());

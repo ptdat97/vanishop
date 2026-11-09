@@ -51,7 +51,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
 
         $permissions->register('admin.access', 'Truy cập trang quản trị');
         $permissions->register('staff.manage', 'Quản lý nhân viên và vai trò');
-        $navigation->add('staff', 'Nhân viên', 'admin.staff.index', 'staff.manage', 920, group: 'system');
+        $navigation->add('staff', 'Nhân viên', 'admin.staff.index', 'staff.manage', 810, group: 'system');
 
         // Permission đã khai báo trong registry được quyết định bởi RBAC theo phạm vi.
         // Tham số đầu tiên có thể là ScopeRef để kiểm tra theo location.
