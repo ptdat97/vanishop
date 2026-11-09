@@ -38,6 +38,7 @@
         </section>
     @endif
 
+    <x-vani::hook-slot name="vani.storefront.order.before_summary" :args="[$order]" />
     @include('theme::partials.order-summary')
     @include('theme::partials.order-receipt')
     @include('theme::partials.order-returns')

@@ -72,7 +72,7 @@ final class ShippingFlatRateServiceProvider extends PluginServiceProvider
 
             return $data !== null && $progress()->shownOn('cart') ? new SlotView('vani-shipping-flat-rate::progress', ['progress' => $data]) : null;
         });
-        $this->onSlot('vani.storefront.checkout.after_shipping', function (array $quote) use ($progress): ?SlotView {
+        $this->onSlot('vani.storefront.checkout.contact_before', function (array $quote) use ($progress): ?SlotView {
             if (! $progress()->shownOn('checkout') || $quote['lines'] === []) {
                 return null;
             }

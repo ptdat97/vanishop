@@ -36,6 +36,7 @@
         <p class="mb-4 text-sm text-slate-500">{{ trans_choice(':count sản phẩm', $listing['total'], ['count' => $listing['total']]) }}</p>
         @if ($listing['items'] === [])
             <p class="py-12 text-center text-slate-500">{{ __('Không có sản phẩm phù hợp.') }}</p>
+            <x-vani::hook-slot name="vani.storefront.plp.empty" :args="[$listingContext ?? ['type' => 'search', 'category' => null, 'brand' => null], $listing]" />
         @else
             <div class="grid grid-cols-2 gap-6 md:grid-cols-3" data-vani-motion-stagger>
                 @foreach ($listing['items'] as $product)

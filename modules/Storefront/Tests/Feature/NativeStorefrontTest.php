@@ -251,6 +251,51 @@ it('theme slots mở rộng layout, trang chủ, trang thương hiệu và danh 
     expect(strpos($card, 'WISHLIST:'.$this->product->slug))->toBeGreaterThan(strpos($card, '</a>'));
 });
 
+it('theme slots xuất hiện đúng vị trí trên PDP, danh sách rỗng, danh sách thương hiệu và giỏ rỗng', function () {
+    $hooks = app(HookManager::class);
+    $hooks->onSlot('vani.storefront.brands.before_list', fn (array $groups) => new HtmlString('<p>BRANDS-BEFORE:'.count($groups).'</p>'));
+    $hooks->onSlot('vani.storefront.plp.empty', fn (array $context, array $listing) => new HtmlString('<p>PLP-EMPTY:'.$context['type'].':'.$listing['total'].'</p>'));
+    $hooks->onSlot('vani.storefront.cart.empty', fn () => new HtmlString('<p>CART-EMPTY-RECOMMENDATIONS</p>'));
+    $hooks->onSlot('vani.storefront.pdp.before_gallery', fn (array $product) => new HtmlString('<p>PDP-BEFORE-GALLERY:'.$product['slug'].'</p>'));
+    $hooks->onSlot('vani.storefront.pdp.before_add_to_cart', fn (array $product) => new HtmlString('<p>PDP-BEFORE-PURCHASE:'.$product['slug'].'</p>'));
+    $hooks->onSlot('vani.storefront.pdp.after_videos', fn (array $product) => new HtmlString('<p>PDP-AFTER-VIDEOS:'.$product['slug'].'</p>'));
+    $hooks->onSlot('vani.storefront.pdp.after_related_products', fn (array $product) => new HtmlString('<p>PDP-AFTER-RELATED:'.$product['slug'].'</p>'));
+
+    $brands = $this->get('/thuong-hieu')->assertSee('BRANDS-BEFORE:')->getContent();
+    $listing = $this->get('/tim-kiem?q=no-such-vani-product')->assertSee('PLP-EMPTY:search:0', false)->getContent();
+    $cart = $this->get('/gio-hang')->assertSee('CART-EMPTY-RECOMMENDATIONS', false)->getContent();
+    $product = $this->get("/san-pham/{$this->product->slug}")
+        ->assertSee('PDP-BEFORE-GALLERY:'.$this->product->slug, false)
+        ->assertSee('PDP-BEFORE-PURCHASE:'.$this->product->slug, false)
+        ->assertSee('PDP-AFTER-VIDEOS:'.$this->product->slug, false)
+        ->assertSee('PDP-AFTER-RELATED:'.$this->product->slug, false)
+        ->getContent();
+
+    expect(strpos($brands, 'BRANDS-BEFORE:'))->toBeLessThan(strpos($brands, 'data-brand-letters'))
+        ->and($listing)->toContain('Không có sản phẩm phù hợp.')
+        ->and($cart)->toContain('Giỏ hàng trống.')
+        ->and(strpos($product, 'PDP-BEFORE-GALLERY'))->toBeLessThan(strpos($product, 'data-product-gallery'))
+        ->and(strpos($product, 'PDP-BEFORE-PURCHASE'))->toBeLessThan(strpos($product, 'data-variant-form'))
+        ->and(strpos($product, 'PDP-AFTER-VIDEOS'))->toBeLessThan(strpos($product, 'PDP-AFTER-RELATED'))
+        ->and(strpos($product, 'PDP-AFTER-RELATED'))->toBeLessThan(strpos($product, 'data-vani-recently-viewed'));
+});
+
+it('order.before_summary nhận đơn và xuất hiện trước tóm tắt ở trang cảm ơn', function () {
+    app(HookManager::class)->onSlot(
+        'vani.storefront.order.before_summary',
+        fn (array $order) => new HtmlString('<p>ORDER-BEFORE-SUMMARY:'.$order['number'].'</p>'),
+    );
+    $this->post('/gio-hang', ['variant_id' => $this->s->id]);
+    $this->post('/thanh-toan', ($this->checkout)())->assertRedirect();
+    $order = Order::query()->withoutGlobalScopes()->sole();
+
+    $html = $this->get("/don-hang/{$order->public_id}")
+        ->assertSee('ORDER-BEFORE-SUMMARY:'.$order->number, false)
+        ->getContent();
+
+    expect(strpos($html, 'ORDER-BEFORE-SUMMARY'))->toBeLessThan(strpos($html, '330.000 ₫'));
+});
+
 it('giỏ và checkout cho phép plugin chèn nội dung quanh các tóm tắt', function () {
     $hooks = app(HookManager::class);
     $hooks->onSlot('vani.storefront.cart.before_lines', fn (array $cart) => new HtmlString('<p>CART-LINES:'.count($cart['lines']).'</p>'));

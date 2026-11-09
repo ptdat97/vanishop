@@ -11,6 +11,7 @@
         <input type="hidden" name="expected_total" value="{{ $quote['total']['amount'] }}">
 
         <div class="space-y-8">
+            <x-vani::hook-slot name="vani.storefront.checkout.contact_before" :args="[$quote]" />
             <fieldset class="space-y-3">
                 <legend class="mb-2 font-semibold">{{ __('Người nhận') }}</legend>
                 @foreach ([['contact.full_name', 'contact[full_name]', __('Họ tên'), 'text', 'name'], ['contact.phone', 'contact[phone]', __('Số điện thoại'), 'tel', 'tel'], ['contact.email', 'contact[email]', __('Email (không bắt buộc)'), 'email', 'email']] as [$key, $name, $label, $type, $autocomplete])

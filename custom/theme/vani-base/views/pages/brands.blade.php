@@ -4,6 +4,7 @@
 
 @section('content')
     <h1 class="mb-6 text-2xl font-semibold">{{ __('Thương hiệu') }}</h1>
+    <x-vani::hook-slot name="vani.storefront.brands.before_list" :args="[$brandGroups]" />
     {{-- Nhóm theo chữ cái đầu (§3.5-3): thanh chữ cái nhảy tới nhóm, không cần JS. --}}
     <nav aria-label="{{ __('Theo chữ cái') }}" class="mb-6 flex flex-wrap gap-1 text-sm" data-brand-letters>
         @foreach (array_keys($brandGroups) as $letter)

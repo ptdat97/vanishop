@@ -144,10 +144,15 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.layout.body_start` | Đầu `<body>`, trước header (0.3.43); HTML có cache, không dùng dữ liệu riêng của khách | Thanh thông báo |
 | `vani.storefront.layout.body_end` | Cuối `<body>` | Chat, script đo lường |
 | `vani.storefront.plp.card_badges` | Nhãn trên thẻ sản phẩm ở danh sách | "Mới", "Bán chạy", "Freeship" |
+| `vani.storefront.plp.empty` | Trạng thái danh sách không có sản phẩm; nhận context và listing | Gợi ý tìm kiếm, sản phẩm thay thế |
+| `vani.storefront.brands.before_list` / `brands.after_list` | Trước điều hướng chữ cái / sau danh sách thương hiệu (0.3.105); args: brandGroups | Nội dung chiến dịch, liên kết bổ sung |
+| `vani.storefront.pdp.before_gallery` | Trước thư viện ảnh; args: product (0.3.105) | Thông báo chiến dịch |
 | `vani.storefront.pdp.after_title` | Dưới tên sản phẩm | Đánh giá sao |
 | `vani.storefront.pdp.after_price` | Dưới giá | Trả góp, điểm thưởng dự kiến |
+| `vani.storefront.pdp.before_add_to_cart` | Sau giá, trước form thêm giỏ; args: product (0.3.105) | Ưu đãi, thông tin giao hàng |
 | `vani.storefront.pdp.after_add_to_cart` | Dưới nút thêm giỏ | Bảng size, cam kết đổi trả |
 | `vani.storefront.pdp.after_details` | Sau mô tả | Lookbook, phối đồ, sản phẩm gợi ý |
+| `vani.storefront.pdp.after_videos` / `pdp.after_related_products` | Sau video / sau nhóm sản phẩm liên quan; args: product (0.3.105) | Nội dung bổ sung, chiến dịch |
 | `vani.storefront.cart.after_lines` | Sau danh sách dòng giỏ | Tiến độ freeship, upsell |
 | `vani.storefront.checkout.after_shipping` | Sau chọn phương thức giao | Ghi chú giao hàng, gói quà |
 | `vani.storefront.checkout.before_submit` | Trước nút đặt hàng | Xuất hoá đơn điện tử (trường `extra[<plugin id>]`) |
@@ -163,14 +168,16 @@ Theo [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md): listener trả
 | `vani.storefront.plp.card.actions` | Khu vực thao tác dưới mỗi thẻ sản phẩm, bên ngoài link PDP (0.3.105); args: product | Yêu thích, so sánh |
 | `vani.storefront.plp.after_listing` | Sau bộ lọc, lưới và phân trang (0.3.105); args: context, listing | Banner cuối danh sách, điều khoản |
 | `vani.storefront.pdp.gallery_after` | Dưới ảnh sản phẩm (0.3.1) | Video, 360° |
-| `vani.storefront.brands.after_list` | Sau danh sách thương hiệu (0.3.105); args: brandGroups | Nội dung bổ sung cho trang thương hiệu |
+| `vani.storefront.cart.empty` | Sau thông báo giỏ hàng trống (0.3.105) | Gợi ý sản phẩm, liên kết mua sắm |
 | `vani.storefront.cart.before_lines` / `cart.after_summary` | Trước danh sách dòng / sau tổng kết giỏ (0.3.105); args: cart | Thông báo, ưu đãi |
 | `vani.storefront.checkout.order_summary` / `checkout.after_summary` | Trong / sau tóm tắt đơn ở checkout (0.3.105); args: quote | Thông tin giao dịch, thông báo khuyến mãi |
+| `vani.storefront.checkout.contact_before` | Trước phần thông tin người nhận (0.3.105); args: quote | Thanh tiến độ, thông báo checkout |
 | `vani.storefront.checkout.contact_after` / `address_after` / `payment_after` | Sau từng bước checkout (0.3.1); trường `extra[<plugin id>]` | Mã số thuế HĐĐT, ghi chú giao, ưu đãi theo cổng |
 | `vani.storefront.account.menu` / `account.dashboard` / `account.order_detail` | Menu, tổng quan, chi tiết đơn trong `/tai-khoan` (0.3.9); mục menu có trang riêng: `accountPage()` | Điểm thưởng, ví, hoá đơn |
 | `vani.storefront.account.orders` | Sau danh sách đơn ở trang tổng quan hoặc tất cả đơn (0.3.105); args: orders | Điểm thưởng, thông tin thành viên |
 | `vani.storefront.account.addresses` / `account.profile` / `account.login` | Sau nội dung tương ứng trong tài khoản (0.3.105); profile nhận customer | Hướng dẫn, nội dung plugin |
 | `vani.storefront.track.after_order` | Sau thông tin đơn tìm thấy ở trang tra cứu (0.3.105); args: order | Trạng thái vận đơn, hỗ trợ |
+| `vani.storefront.order.before_summary` | Trước tóm tắt đơn ở trang cảm ơn hoặc chi tiết đơn tài khoản (0.3.105); args: order | Thông tin giao dịch, hướng dẫn |
 
 Các slot `layout.*` chạy trên HTML storefront có thể được cache CDN; không render dữ liệu riêng của khách. `<x-vani::hook-slot>` vẫn chỉ nối thêm view `SlotView` hoặc `Htmlable`; riêng slot `layout.head` không bọc nội dung trong phần tử HTML.
 

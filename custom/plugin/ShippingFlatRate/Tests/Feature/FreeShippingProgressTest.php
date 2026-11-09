@@ -37,7 +37,8 @@ it('tính còn thiếu / phần trăm / đã đạt theo ngưỡng free_over; kh
 it('trang giỏ và API giỏ có tiến độ; thanh toán tính theo tiền hàng sau giảm giá, khớp với phí giao', function () {
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
     $this->get('/gio-hang')->assertOk()->assertSee('Hãy thêm 200.000 ₫ để được miễn phí vận chuyển')->assertSee('aria-valuenow="60"', false);
-    $this->get('/thanh-toan')->assertOk()->assertSee('Hãy thêm 200.000 ₫ để được miễn phí vận chuyển');
+    $checkout = $this->get('/thanh-toan')->assertOk()->assertSee('Hãy thêm 200.000 ₫ để được miễn phí vận chuyển')->getContent();
+    expect(strpos($checkout, 'data-vani-free-shipping'))->toBeLessThan(strpos($checkout, __('Người nhận')));
 
     $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
     $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];

@@ -6,6 +6,7 @@
 <p role="alert" class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700" data-vani-cart-error hidden></p>
 @if ($cart === null || $cart['lines'] === [])
     <p class="text-slate-500">{{ __('Giỏ hàng trống.') }} <a href="{{ vani_route('storefront.home') }}" class="underline">{{ __('Tiếp tục mua sắm') }}</a></p>
+    <x-vani::hook-slot name="vani.storefront.cart.empty" />
 @else
     <x-vani::hook-slot name="vani.storefront.cart.before_lines" :args="[$cart]" />
     {{-- Chọn dòng để thanh toán (§3.8): ô chọn thuộc form này qua thuộc tính form=, JS tự gửi khi đổi; không JS: nút "Áp dụng lựa chọn". --}}

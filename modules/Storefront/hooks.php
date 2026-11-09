@@ -42,12 +42,26 @@ return [
         'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
         'description' => 'Dưới tên sản phẩm (đánh giá sao).',
     ],
+    'vani.storefront.pdp.before_gallery' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
+        'description' => 'Trước thư viện ảnh trên trang chi tiết sản phẩm (thông báo chiến dịch, nội dung mở đầu).',
+    ],
     'vani.storefront.pdp.after_price' => [
         'type' => 'slot',
         'visibility' => 'public',
         'since' => '0.3',
         'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
         'description' => 'Dưới giá (trả góp, điểm thưởng dự kiến).',
+    ],
+    'vani.storefront.pdp.before_add_to_cart' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
+        'description' => 'Sau giá và trước form thêm giỏ (ưu đãi, thông tin giao hàng).',
     ],
     'vani.storefront.pdp.after_add_to_cart' => [
         'type' => 'slot',
@@ -62,6 +76,30 @@ return [
         'since' => '0.3',
         'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
         'description' => 'Sau mô tả (lookbook, sản phẩm gợi ý).',
+    ],
+    'vani.storefront.pdp.after_videos' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
+        'description' => 'Sau khu vực video sản phẩm, trước sản phẩm liên quan.',
+    ],
+    'vani.storefront.pdp.after_related_products' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['product' => 'array<string, mixed> (ProductViews::detail)'],
+        'description' => 'Sau các nhóm sản phẩm liên quan trên trang chi tiết sản phẩm.',
+    ],
+    'vani.storefront.plp.empty' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => [
+            'context' => 'array{type: "category"|"brand"|"search", category: array<string, mixed>|null, brand: array<string, mixed>|null}',
+            'listing' => 'array<string, mixed> (ProductViews::listing)',
+        ],
+        'description' => 'Trong trạng thái không có sản phẩm phù hợp; có thể cung cấp gợi ý hoặc hướng dẫn thay thế.',
     ],
     'vani.storefront.cart.after_lines' => [
         'type' => 'slot',
@@ -90,6 +128,13 @@ return [
         'since' => '0.3',
         'args' => ['order' => 'array<string, mixed> (OrderPresenter::present)'],
         'description' => 'Trang cảm ơn / chi tiết đơn (hướng dẫn chuyển khoản, điểm đã cộng).',
+    ],
+    'vani.storefront.order.before_summary' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['order' => 'array<string, mixed> (OrderPresenter::present)'],
+        'description' => 'Trước tóm tắt đơn ở trang cảm ơn hoặc chi tiết đơn trong tài khoản.',
     ],
     'vani.storefront.header.nav' => [
         'type' => 'slot',
@@ -142,6 +187,13 @@ return [
         'since' => '0.3.1',
         'args' => ['quote' => 'array<string, mixed> (CheckoutPresenter::quote)'],
         'description' => 'Sau thông tin người nhận; trường của plugin đặt tên extra[<plugin id>][<field>].',
+    ],
+    'vani.storefront.checkout.contact_before' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['quote' => 'array<string, mixed> (CheckoutPresenter::quote)'],
+        'description' => 'Trước phần thông tin người nhận ở checkout (thanh tiến độ, thông báo hoặc nội dung bổ sung).',
     ],
     'vani.storefront.checkout.address_after' => [
         'type' => 'slot',
@@ -259,6 +311,13 @@ return [
         'args' => ['brandGroups' => 'array<string, list<array<string, mixed>>>'],
         'description' => 'Sau danh sách thương hiệu được nhóm theo chữ cái.',
     ],
+    'vani.storefront.brands.before_list' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => ['brandGroups' => 'array<string, list<array<string, mixed>>>'],
+        'description' => 'Trước điều hướng chữ cái và danh sách thương hiệu được nhóm.',
+    ],
     'vani.storefront.plp.card.actions' => [
         'type' => 'slot',
         'visibility' => 'public',
@@ -282,6 +341,13 @@ return [
         'since' => '0.3.105',
         'args' => ['cart' => 'array<string, mixed> (CartPresenter::present)'],
         'description' => 'Trước danh sách dòng giỏ khi giỏ có sản phẩm.',
+    ],
+    'vani.storefront.cart.empty' => [
+        'type' => 'slot',
+        'visibility' => 'public',
+        'since' => '0.3.105',
+        'args' => [],
+        'description' => 'Sau thông báo giỏ hàng trống (gợi ý sản phẩm, liên kết mua sắm).',
     ],
     'vani.storefront.cart.after_summary' => [
         'type' => 'slot',

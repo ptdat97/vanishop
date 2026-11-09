@@ -34,6 +34,7 @@
 
             return [$best[0], $best[1], (int) round($best[1] * $ratioH / $ratioW)];
         })
+        <x-vani::hook-slot name="vani.storefront.pdp.before_gallery" :args="[$product]" />
         <div data-product-gallery>
             <div class="vani-carousel swiper rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}" data-gallery-slider
                  aria-roledescription="carousel" aria-label="{{ __('Ảnh sản phẩm :name', ['name' => $product['name']]) }}">
@@ -80,6 +81,7 @@
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
             <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ vani_route('storefront.session.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
+            <x-vani::hook-slot name="vani.storefront.pdp.before_add_to_cart" :args="[$product]" />
 
             {{-- Không @csrf/old() để HTML như nhau ở cả chế độ cache CDN (không phiên); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
             <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
@@ -158,6 +160,7 @@
             </div>
         </section>
     @endif
+    <x-vani::hook-slot name="vani.storefront.pdp.after_videos" :args="[$product]" />
 
     @foreach ($product['links'] ?? [] as $link)
         <section class="mt-12">
@@ -169,6 +172,7 @@
             </div>
         </section>
     @endforeach
+    <x-vani::hook-slot name="vani.storefront.pdp.after_related_products" :args="[$product]" />
 
     {{-- Lượt xem + "Đã xem gần đây" (§3.5-2): JS gửi beacon sau khi trang tải, lưu tối đa 12 mẫu trong trình duyệt và hiện
          các mẫu đã xem khác (thẻ lấy từ Storefront API). HTML giống nhau với mọi khách; không JS → khung ẩn. --}}
