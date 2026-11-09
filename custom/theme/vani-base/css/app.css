@@ -77,6 +77,41 @@ html:has(.vani-offcanvas[open]) {
         transform: translateX(100%);
     }
 }
+.vani-modal {
+    width: min(42rem, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
+    max-height: 85dvh;
+    margin: auto;
+    border: 0;
+    border-radius: var(--radius-theme);
+    padding: 0;
+    background: var(--color-surface);
+    color: inherit;
+    box-shadow: 0 16px 48px rgb(15 23 42 / 0.2);
+    opacity: 0;
+    transform: scale(0.98);
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        display 0.18s allow-discrete,
+        overlay 0.18s allow-discrete;
+}
+.vani-modal::backdrop {
+    background: rgb(15 23 42 / 0.45);
+}
+.vani-modal[open] {
+    opacity: 1;
+    transform: scale(1);
+}
+html:has(.vani-modal[open]) {
+    overflow: hidden;
+}
+@starting-style {
+    .vani-modal[open] {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+}
 @media (max-width: 767px) {
     .vani-drawer,
     .vani-offcanvas {
@@ -111,6 +146,12 @@ html:has(.vani-offcanvas[open]) {
 }
 .js [data-vani-mobile-menu-fallback] {
     display: none;
+}
+.js [data-vani-search-fallback] {
+    display: none;
+}
+.js [data-vani-search-open] {
+    display: inline-flex;
 }
 .js [data-vani-mobile-menu-open] {
     display: inline-flex;
@@ -150,8 +191,14 @@ html:has(.vani-offcanvas[open]) {
 
     .vani-drawer,
     .vani-offcanvas,
+    .vani-modal,
     .vani-mobile-menu-track {
         transition: none;
+    }
+
+    .vani-modal[open] {
+        opacity: 1;
+        transform: none;
     }
 }
 
@@ -162,6 +209,9 @@ html:has(.vani-offcanvas[open]) {
 
 .js [data-js-only] {
     display: revert;
+}
+.js [data-vani-search-open] {
+    display: inline-flex;
 }
 
 /* Nút chỉ cần khi tắt JS (vd. "Cập nhật" số lượng — có JS thì đổi là lưu ngay). */

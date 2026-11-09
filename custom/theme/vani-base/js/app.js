@@ -1,8 +1,11 @@
+import { createIcons, Heart, Menu, Search, ShoppingBag, UserRound } from 'lucide';
+
 /*
  * Đảo tương tác của vani-base (ADR-025): JS chỉ tăng cường, trang dùng được khi JS tắt.
  * Thư viện giao diện (Motion, Swiper, PhotoSwipe) chỉ tải khi trang cần (loadVendor bên dưới).
  * Dữ liệu đọc từ data-* đã render sẵn ở server.
  */
+createIcons({ icons: { Heart, Menu, Search, ShoppingBag, UserRound } });
 document.documentElement.classList.add('js');
 
 // Chuỗi giao diện đã dịch theo ngôn ngữ trang (layout xuất JSON `data-vani-i18n`, khoá = id ổn định).
@@ -86,7 +89,7 @@ async function request(method, url, data = null, retried = false) {
 const lineUrl = (template, lineId) => String(template || '').replace('987654321', encodeURIComponent(lineId));
 const firstError = (error, field) => (error.errors?.[field] || [])[0] || error.message;
 
-const drawerOpeners = new WeakMap();
+const dialogOpeners = new WeakMap();
 function activateMobileMenuPanel(menu, panel, focusTarget = null) {
     const panels = [...menu.querySelectorAll('[data-vani-menu-panel]')];
     const panelIndex = panels.indexOf(panel);
@@ -103,18 +106,19 @@ function activateMobileMenuPanel(menu, panel, focusTarget = null) {
 }
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
-    const opener = event.target.closest('[data-vani-drawer-open]');
+    const opener = event.target.closest('[data-vani-drawer-open], [data-vani-modal-open]');
     if (opener) {
-        const drawer = document.getElementById(opener.dataset.vaniDrawerOpen);
-        if (drawer instanceof HTMLDialogElement && !drawer.open) {
+        const dialogId = opener.dataset.vaniDrawerOpen || opener.dataset.vaniModalOpen;
+        const dialog = document.getElementById(dialogId);
+        if (dialog instanceof HTMLDialogElement && !dialog.open) {
             event.preventDefault();
-            drawerOpeners.set(drawer, opener);
-            if (drawer.matches('[data-vani-mobile-menu-dialog]')) {
-                const menu = drawer.querySelector('[data-vani-mobile-menu]');
+            dialogOpeners.set(dialog, opener);
+            if (dialog.matches('[data-vani-mobile-menu-dialog]')) {
+                const menu = dialog.querySelector('[data-vani-mobile-menu]');
                 const rootPanel = menu?.querySelector('[data-vani-menu-panel-level="0"]');
                 if (menu && rootPanel) activateMobileMenuPanel(menu, rootPanel);
             }
-            drawer.showModal();
+            dialog.showModal();
         }
         return;
     }
@@ -147,14 +151,20 @@ document.addEventListener('click', (event) => {
         return;
     }
 
-    if (event.target instanceof HTMLDialogElement && event.target.matches('.vani-drawer')) {
+    const modalCloseButton = event.target.closest('[data-vani-modal-close]');
+    if (modalCloseButton) {
+        modalCloseButton.closest('dialog.vani-modal')?.close();
+        return;
+    }
+
+    if (event.target instanceof HTMLDialogElement && event.target.matches('.vani-drawer, .vani-modal')) {
         event.target.close();
     }
 });
 document.addEventListener('close', (event) => {
-    if (!(event.target instanceof HTMLDialogElement) || !event.target.matches('.vani-drawer')) return;
-    drawerOpeners.get(event.target)?.focus();
-    drawerOpeners.delete(event.target);
+    if (!(event.target instanceof HTMLDialogElement) || !event.target.matches('.vani-drawer, .vani-modal')) return;
+    dialogOpeners.get(event.target)?.focus();
+    dialogOpeners.delete(event.target);
 }, true);
 
 function updateCartCount(count) {
@@ -721,7 +731,8 @@ function applySession(session) {
     dispatchCartChange(session.cart_change);
     const account = document.querySelector('[data-vani-account]');
     if (account) {
-        account.textContent = session.account.label;
+        account.setAttribute('aria-label', session.account.label);
+        account.setAttribute('title', session.account.label);
         account.setAttribute('href', session.account.url);
     }
     const count = document.querySelector('[data-vani-cart-count]');

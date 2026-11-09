@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\View\Components;
 
+use Closure;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Component;
+use Illuminate\View\ComponentAttributeBag;
 use Modules\Extension\Facades\Hook;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Throwable;
@@ -30,6 +32,16 @@ final class HookSlot extends Component
 
     public function render(): Htmlable
     {
+        return $this->renderSlot();
+    }
+
+    public function resolveView(): Closure
+    {
+        return fn (array $data = []): Htmlable => $this->renderSlot();
+    }
+
+    private function renderSlot(): Htmlable
+    {
         $html = '';
         foreach (Hook::slot($this->name, ...$this->args) as $item) {
             try {
@@ -48,6 +60,9 @@ final class HookSlot extends Component
             return new HtmlString('');
         }
 
-        return new HtmlString($this->wrap ? '<div class="vani-slot" data-slot="'.e($this->name).'">'.$html.'</div>' : $html);
+        $attributes = ($this->attributes ?? new ComponentAttributeBag)
+            ->merge(['class' => 'vani-slot', 'data-slot' => $this->name]);
+
+        return new HtmlString($this->wrap ? '<div '.$attributes.'>'.$html.'</div>' : $html);
     }
 }

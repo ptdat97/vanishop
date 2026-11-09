@@ -51,8 +51,9 @@ it('khách đã đăng nhập + có giỏ: nhãn tài khoản, số món, giỏ 
     ($this->signIn)();
 
     $html = $this->get('/')->assertOk()
-        ->assertSee('data-vani-account>Tài khoản</a>', false)
-        ->assertSee('data-vani-cart-count  class="rounded-full bg-primary px-1.5 text-xs text-white">2</span>', false)
+        ->assertSee('data-vani-account aria-label="Tài khoản"', false)
+        ->assertSee('data-vani-cart-count', false)
+        ->assertSee('>2</span>', false)
         ->getContent();
     $state = inlineSessionState($html);
 

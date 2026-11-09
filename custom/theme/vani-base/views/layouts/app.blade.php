@@ -35,35 +35,68 @@
     @endif
     <x-vani::hook-slot name="vani.storefront.layout.header.before" />
     <header class="border-b border-slate-200">
-        <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-4">
-            <a href="{{ vani_route('storefront.home') }}" class="text-xl font-semibold text-primary">{{ config('app.name') }}</a>
-            <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="relative flex-1"
-                  data-vani-suggest="{{ route('api.storefront.v1.search.suggestions') }}" data-locale="{{ app()->getLocale() }}">
-                <label for="q" class="sr-only">{{ __('Tìm kiếm') }}</label>
-                <input id="q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}" placeholder="{{ __('Tìm sản phẩm…') }}" @if (($popularSearches ?? []) !== []) list="vani-popular-searches" @endif
-                       class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
-                {{-- Gợi ý khi gõ (§3.5-4, app.js): sản phẩm, danh mục, thương hiệu từ Storefront API. Không JS: tìm như thường. --}}
-                <div data-vani-suggest-box hidden class="absolute inset-x-0 top-full z-30 mt-1 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-2 text-sm shadow-lg"></div>
-                {{-- Từ khoá nổi bật (Admin → Cấu hình `storefront.popular_searches`): trình duyệt gợi ý khi ô còn trống. --}}
-                @if (($popularSearches ?? []) !== [])
-                    <datalist id="vani-popular-searches">@foreach ($popularSearches as $term)<option value="{{ $term }}"></option>@endforeach</datalist>
-                @endif
-            </form>
-            @php($headerMenu = ($menus ?? null)?->items('header', app()->getLocale()))
-            @php($mobileMenu = ($menus ?? null)?->items('mobile', app()->getLocale()) ?? $headerMenu)
-            <nav class="hidden gap-4 text-sm md:flex" aria-label="{{ __('Menu chính') }}">
+        @php($headerMenu = ($menus ?? null)?->items('header', app()->getLocale()))
+        @php($mobileMenu = ($menus ?? null)?->items('mobile', app()->getLocale()) ?? $headerMenu)
+        <div class="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-4 md:grid-cols-[1fr_auto_1fr]">
+            <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 justify-self-start text-xl font-semibold text-primary">{{ config('app.name') }}</a>
+            <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:justify-center" aria-label="{{ __('Menu chính') }}">
                 @if ($headerMenu !== null)
                     @include('theme::partials.menu', ['items' => $headerMenu])
                 @else
                     <a href="{{ vani_route('storefront.brands') }}">{{ __('Thương hiệu') }}</a>
                 @endif
-                <x-vani::hook-slot name="vani.storefront.header.nav" />
+                <x-vani::hook-slot name="vani.storefront.header.nav" class="flex flex-wrap items-center gap-4 ml-4" />
             </nav>
-            <button type="button" class="hidden cursor-pointer items-center gap-2 rounded border border-slate-300 px-3 py-2 text-sm md:hidden"
-                data-vani-mobile-menu-open data-vani-drawer-open="vani-mobile-menu" aria-haspopup="dialog" aria-controls="vani-mobile-menu">
-                <span aria-hidden="true">☰</span>{{ __('Danh mục') }}
-            </button>
-            <details class="w-full text-sm md:hidden" data-vani-mobile-menu-fallback>
+            <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="relative col-span-2 row-start-2 md:col-span-3"
+                data-vani-search-fallback data-vani-suggest="{{ route('api.storefront.v1.search.suggestions') }}" data-locale="{{ app()->getLocale() }}">
+                <label for="vani-search-fallback-q" class="sr-only">{{ __('Tìm kiếm') }}</label>
+                <input id="vani-search-fallback-q" name="q" type="search" value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}"
+                    placeholder="{{ __('Tìm sản phẩm…') }}" @if (($popularSearches ?? []) !== []) list="vani-search-fallback-popular-searches" @endif
+                    class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
+                <div data-vani-suggest-box hidden class="absolute inset-x-0 top-full z-30 mt-1 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-2 text-sm shadow-lg"></div>
+                @if (($popularSearches ?? []) !== [])
+                    <datalist id="vani-search-fallback-popular-searches">
+                        @foreach ($popularSearches as $term)
+                            <option value="{{ $term }}"></option>
+                        @endforeach
+                    </datalist>
+                @endif
+            </form>
+            <div class="col-start-2 row-start-1 flex items-center justify-self-end gap-1 md:col-start-3">
+                <button type="button" class="inline-flex size-10 cursor-pointer items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    data-js-only data-vani-search-open data-vani-modal-open="vani-search-modal" aria-label="{{ __('Tìm kiếm') }}" aria-haspopup="dialog" aria-controls="vani-search-modal">
+                    <i data-lucide="search" class="size-5" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="hidden cursor-pointer items-center justify-center rounded text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:hidden"
+                    data-vani-mobile-menu-open data-vani-drawer-open="vani-mobile-menu" aria-label="{{ __('Danh mục') }}" aria-haspopup="dialog" aria-controls="vani-mobile-menu">
+                    <span class="sr-only">{{ __('Danh mục') }}</span>
+                    <i data-lucide="menu" class="size-5" aria-hidden="true"></i>
+                </button>
+                <x-vani::hook-slot name="vani.storefront.header.actions" />
+                @if (count($seo['switcher'] ?? []) > 1)
+                    <nav aria-label="{{ __('Ngôn ngữ') }}" class="hidden gap-1 text-xs uppercase sm:flex">
+                        @foreach ($seo['switcher'] as $option)
+                            <a href="{{ $option['url'] }}" hreflang="{{ $option['locale'] }}" lang="{{ $option['locale'] }}" title="{{ $option['label'] }}" @if ($option['current']) aria-current="true" class="font-semibold" @else class="text-slate-500" @endif>{{ $option['locale'] }}</a>
+                        @endforeach
+                    </nav>
+                @endif
+                {{-- Không CDN: render sẵn theo khách. Trang cache CDN: render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
+                <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}"
+                    class="inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    data-vani-account aria-label="{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}"
+                    title="{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}">
+                    <i data-lucide="user-round" class="size-5" aria-hidden="true"></i>
+                </a>
+                {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); không JS vẫn là link tới trang giỏ. --}}
+                <a href="{{ vani_route('storefront.cart') }}" data-vani-cart-open aria-haspopup="dialog"
+                    class="relative inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    aria-label="{{ __('Giỏ hàng') }}" title="{{ __('Giỏ hàng') }}">
+                    <i data-lucide="shopping-bag" class="size-5" aria-hidden="true"></i>
+                    <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif
+                        class="absolute -right-1 -top-1 min-w-5 rounded-full bg-primary px-1.5 text-center text-xs leading-5 text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span>
+                </a>
+            </div>
+            <details class="col-span-2 row-start-3 w-full text-sm md:hidden" data-vani-mobile-menu-fallback>
                 <summary class="cursor-pointer select-none py-1">{{ __('Danh mục') }}</summary>
                 <nav aria-label="{{ __('Menu di động') }}" class="mt-2 space-y-1">
                     @if ($mobileMenu !== null)
@@ -74,22 +107,15 @@
                     <x-vani::hook-slot name="vani.storefront.header.nav" />
                 </nav>
             </details>
-            <div class="flex items-center gap-4 text-sm">
-                <x-vani::hook-slot name="vani.storefront.header.actions" />
-                @if (count($seo['switcher'] ?? []) > 1)
-                    <nav aria-label="{{ __('Ngôn ngữ') }}" class="flex gap-1 text-xs uppercase">
-                        @foreach ($seo['switcher'] as $option)
-                            <a href="{{ $option['url'] }}" hreflang="{{ $option['locale'] }}" lang="{{ $option['locale'] }}" title="{{ $option['label'] }}" @if ($option['current']) aria-current="true" class="font-semibold" @else class="text-slate-500" @endif>{{ $option['locale'] }}</a>
-                        @endforeach
-                    </nav>
-                @endif
-                {{-- Không CDN: render sẵn theo khách. Trang cache CDN: render như khách vãng lai; JS (/_vani/phien) cập nhật nhãn + số món. --}}
-                <a href="{{ request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login') }}" data-vani-account>{{ request()->attributes->has('customer') ? __('Tài khoản') : __('Đăng nhập') }}</a>
-                {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); không JS vẫn là link tới trang giỏ. --}}
-                <a href="{{ vani_route('storefront.cart') }}" data-vani-cart-open aria-haspopup="dialog">{{ __('Giỏ hàng') }} <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif class="rounded-full bg-primary px-1.5 text-xs text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span></a>
-            </div>
         </div>
     </header>
+    @include('theme::partials.modal', [
+        'id' => 'vani-search-modal',
+        'title' => __('Tìm kiếm sản phẩm'),
+        'contentView' => 'theme::partials.search-modal-content',
+        'dialogClass' => 'vani-search-modal',
+        'dataAttributes' => ['data-vani-search-modal' => true],
+    ])
     @include('theme::partials.drawer', [
         'id' => 'vani-mobile-menu',
         'title' => __('Danh mục'),

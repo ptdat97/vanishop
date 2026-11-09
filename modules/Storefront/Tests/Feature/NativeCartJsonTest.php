@@ -96,10 +96,12 @@ it('đăng nhập OTP bằng JSON: gửi mã, xác thực trả đường dẫn 
     $this->postJson('/tai-khoan/dang-xuat')->assertOk()->assertJsonPath('signed_in', false);
 });
 
-it('layout: nút "Giỏ hàng" mở offcanvas (không icon), khung dialog, URL cho window.vani theo ngôn ngữ; danh sách có vùng thay được', function () {
+it('layout: biểu tượng giỏ mở offcanvas, khung dialog, URL cho window.vani theo ngôn ngữ; danh sách có vùng thay được', function () {
     $html = $this->get('/tim-kiem')->assertOk()->getContent();
 
-    expect($html)->toContain('data-vani-cart-open aria-haspopup="dialog">Giỏ hàng')
+    expect($html)->toContain('data-vani-cart-open aria-haspopup="dialog"')
+        ->toContain('data-lucide="shopping-bag"')
+        ->toContain('aria-label="Giỏ hàng"')
         ->toContain('<dialog id="vani-cart-drawer" class="vani-drawer vani-offcanvas"')
         ->toContain('data-vani-offcanvas-cart')
         ->toContain('data-vani-listing')

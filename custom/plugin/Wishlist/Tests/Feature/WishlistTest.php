@@ -62,6 +62,13 @@ it('trang sản phẩm có nút tim + script của plugin; HTML trang cache gi�
     expect($this->get('/san-pham/'.$this->style->slug)->getContent())->toBe($guest);
 });
 
+it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ năng', function () {
+    $this->get('/')->assertOk()
+        ->assertSee('data-vani-wishlist-link aria-label="Yêu thích"', false)
+        ->assertSee('data-lucide="heart"', false)
+        ->assertSee('data-vani-wishlist-count', false);
+});
+
 it('khách đăng nhập: thêm/bỏ (JSON và form không JS), trạng thái qua /ids; vãng lai bị từ chối', function () {
     ($this->toggle)($this->style->id)->assertUnauthorized();
     $this->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect(url('/tai-khoan/dang-nhap'));

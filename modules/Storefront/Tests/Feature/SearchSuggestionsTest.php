@@ -40,5 +40,15 @@ it('dưới 2 ký tự → rỗng; thiếu q → 422', function () {
 });
 
 it('ô tìm kiếm của theme khai báo endpoint gợi ý', function () {
-    $this->get('/')->assertOk()->assertSee('data-vani-suggest="'.route('api.storefront.v1.search.suggestions').'"', false)->assertSee('data-vani-suggest-box', false);
+    $this->get('/')->assertOk()
+        ->assertSee('data-vani-search-open', false)
+        ->assertSee('data-vani-modal-open="vani-search-modal"', false)
+        ->assertSee('aria-label="'.__('Tìm kiếm').'"', false)
+        ->assertSee('data-lucide="search"', false)
+        ->assertSee('id="vani-search-modal" class="vani-modal vani-search-modal"', false)
+        ->assertSee('data-vani-search-fallback', false)
+        ->assertSee('id="vani-search-fallback-q"', false)
+        ->assertSee('action="'.route('storefront.search').'"', false)
+        ->assertSee('data-vani-suggest="'.route('api.storefront.v1.search.suggestions').'"', false)
+        ->assertSee('data-vani-suggest-box', false);
 });
