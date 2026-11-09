@@ -59,7 +59,11 @@
                 @endif
                 <x-vani::hook-slot name="vani.storefront.header.nav" />
             </nav>
-            <details class="w-full text-sm md:hidden">
+            <button type="button" class="hidden cursor-pointer items-center gap-2 rounded border border-slate-300 px-3 py-2 text-sm md:hidden"
+                data-vani-mobile-menu-open data-vani-drawer-open="vani-mobile-menu" aria-haspopup="dialog" aria-controls="vani-mobile-menu">
+                <span aria-hidden="true">☰</span>{{ __('Danh mục') }}
+            </button>
+            <details class="w-full text-sm md:hidden" data-vani-mobile-menu-fallback>
                 <summary class="cursor-pointer select-none py-1">{{ __('Danh mục') }}</summary>
                 <nav aria-label="{{ __('Menu di động') }}" class="mt-2 space-y-1">
                     @if ($mobileMenu !== null)
@@ -86,6 +90,17 @@
             </div>
         </div>
     </header>
+    @include('theme::partials.drawer', [
+        'id' => 'vani-mobile-menu',
+        'title' => __('Danh mục'),
+        'contentView' => 'theme::partials.mobile-menu-content',
+        'contentData' => [
+            'items' => $mobileMenu ?? [],
+            'fallbackUrl' => vani_route('storefront.brands'),
+        ],
+        'dialogClass' => 'vani-mobile-menu',
+        'dataAttributes' => ['data-vani-mobile-menu-dialog' => true],
+    ])
     <x-vani::hook-slot name="vani.storefront.layout.header.after" />
 
     <main class="mx-auto max-w-6xl px-4 py-6">
@@ -155,18 +170,14 @@
         Giỏ mini offcanvas (0.3.93): <dialog> mở bằng showModal() — khoá nền, giữ focus, Esc đóng. Nội dung = partial
         theme::partials.mini-cart do server render (CartController, JSON `html`).
     --}}
-    <dialog class="vani-offcanvas" data-vani-offcanvas-cart aria-labelledby="vani-cart-title">
-        <div class="flex h-full flex-col">
-            <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <h2 id="vani-cart-title" class="text-lg font-semibold">{{ __('Giỏ hàng') }}</h2>
-                <button type="button" class="px-2 text-2xl leading-none text-slate-500 hover:text-slate-900" data-cart-close aria-label="{{ __('Đóng') }}">×</button>
-            </div>
-            <p class="mx-4 mt-3 hidden rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800" data-vani-cart-message role="status"></p>
-            <div class="flex min-h-0 flex-1 flex-col" data-vani-mini-cart-body aria-busy="true">
-                <p class="p-4 text-sm text-slate-500">{{ __('Đang tải…') }}</p>
-            </div>
-        </div>
-    </dialog>
+    @include('theme::partials.drawer', [
+        'id' => 'vani-cart-drawer',
+        'title' => __('Giỏ hàng'),
+        'contentView' => 'theme::partials.cart-drawer-content',
+        'dialogClass' => 'vani-offcanvas',
+        'dataAttributes' => ['data-vani-offcanvas-cart' => true],
+        'closeAttributes' => ['data-cart-close' => true],
+    ])
     {{-- URL cho window.vani (app.js) theo ngôn ngữ trang; giống nhau với mọi khách nên trang vẫn cache được. --}}
     {{-- `987654321` = chỗ app.js thay bằng id dòng giỏ. --}}
     @php($vaniUrls = [

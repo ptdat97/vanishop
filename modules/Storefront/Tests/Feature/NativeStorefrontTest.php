@@ -36,7 +36,10 @@ beforeEach(function () {
 });
 
 it('render SSR: trang chủ, thương hiệu, tìm kiếm, PDP có giá và form thêm giỏ dùng được khi tắt JS', function () {
-    $this->get('/')->assertOk()->assertSee('Đầm lụa')->assertSee('Urbanx');
+    $this->get('/')->assertOk()->assertSee('Đầm lụa')->assertSee('Urbanx')
+        ->assertSee('id="vani-cart-drawer"', false)
+        ->assertSee('data-vani-drawer-close', false)
+        ->assertSee('data-vani-mini-cart-body', false);
     $this->get('/thuong-hieu')->assertOk()->assertSee('Urbanx');
     $this->get('/tim-kiem?q=dam')->assertOk()->assertSee('Đầm lụa')->assertDontSee('Áo thun Urbanx');
 
@@ -47,6 +50,26 @@ it('render SSR: trang chủ, thương hiệu, tìm kiếm, PDP có giá và form
         ->assertSee('name="variant_id" value="'.$this->s->id.'"', false)
         ->assertSee('"@type":"Product"', false)
         ->assertDontSee('display:none', false);
+});
+
+it('renders reusable drawer content with escaped title and caller-provided attributes', function () {
+    view()->addNamespace('theme', base_path('custom/theme/vani-base/views'));
+
+    $html = view('theme::partials.drawer', [
+        'id' => 'fixture-drawer',
+        'title' => 'Nội dung <an toàn>',
+        'contentView' => 'theme::partials.cart-drawer-content',
+        'dataAttributes' => ['data-fixture-drawer' => true],
+        'closeAttributes' => ['data-fixture-close' => true],
+    ])->render();
+
+    expect($html)->toContain('id="fixture-drawer"')
+        ->toContain('aria-labelledby="fixture-drawer-title"')
+        ->toContain('Nội dung &lt;an toàn&gt;')
+        ->toContain('data-vani-drawer-close')
+        ->toContain('data-fixture-close')
+        ->toContain('data-fixture-drawer')
+        ->toContain('data-vani-mini-cart-body');
 });
 
 it('trang thương hiệu chỉ có sản phẩm của brand; brand ẩn, danh mục/sản phẩm không có → 404', function () {

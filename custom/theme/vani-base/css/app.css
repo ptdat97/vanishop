@@ -39,8 +39,9 @@
 }
 
 /*
- * Offcanvas (giỏ mini, 0.3.93): <dialog> trượt từ phải, cao hết màn hình. Chỉ JS mở được (showModal) — không JS là link.
+ * Drawer storefront: desktop trượt từ phải, mobile trượt từ dưới. <dialog> cung cấp backdrop, focus trap và Esc.
  */
+.vani-drawer,
 .vani-offcanvas {
     margin: 0 0 0 auto;
     height: 100dvh;
@@ -58,19 +59,79 @@
         display 0.2s allow-discrete,
         overlay 0.2s allow-discrete;
 }
+.vani-drawer::backdrop,
 .vani-offcanvas::backdrop {
     background: rgb(15 23 42 / 0.45);
 }
+.vani-drawer[open],
 .vani-offcanvas[open] {
     transform: translateX(0);
 }
+html:has(.vani-drawer[open]),
 html:has(.vani-offcanvas[open]) {
     overflow: hidden;
 }
 @starting-style {
+    .vani-drawer[open],
     .vani-offcanvas[open] {
         transform: translateX(100%);
     }
+}
+@media (max-width: 767px) {
+    .vani-drawer,
+    .vani-offcanvas {
+        margin: auto 0 0;
+        height: min(85dvh, 48rem);
+        max-height: 85dvh;
+        width: 100vw;
+        max-width: 100vw;
+        border-radius: 1rem 1rem 0 0;
+        box-shadow: 0 -8px 24px rgb(15 23 42 / 0.12);
+        transform: translateY(100%);
+    }
+
+    .vani-mobile-menu {
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .vani-drawer[open],
+    .vani-offcanvas[open] {
+        transform: translateY(0);
+    }
+
+    @starting-style {
+        .vani-drawer[open],
+        .vani-offcanvas[open] {
+            transform: translateY(100%);
+        }
+    }
+}
+.js [data-vani-mobile-menu-fallback] {
+    display: none;
+}
+.js [data-vani-mobile-menu-open] {
+    display: inline-flex;
+}
+@media (min-width: 768px) {
+    .js [data-vani-mobile-menu-open] {
+        display: none;
+    }
+}
+.vani-mobile-menu-track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transform: translateX(calc(var(--vani-menu-index, 0) * -100%));
+    transition: transform 0.24s ease;
+}
+.vani-mobile-menu-panel {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
 }
 @media (prefers-reduced-motion: reduce) {
     .vani-product-card img {
@@ -87,7 +148,9 @@ html:has(.vani-offcanvas[open]) {
         transform: none;
     }
 
-    .vani-offcanvas {
+    .vani-drawer,
+    .vani-offcanvas,
+    .vani-mobile-menu-track {
         transition: none;
     }
 }

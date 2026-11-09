@@ -78,6 +78,28 @@ it('Admin: vị trí theo theme; lưu nháp không đổi cửa hàng; xuất b�
         ->and(AuditLog::query()->where('action', 'storefront.menu_published')->exists())->toBeTrue();
 });
 
+it('render menu mobile toàn màn hình với điều hướng trượt tới và lui giữa các tầng', function () {
+    $this->put("{$this->url}/mobile", ['items' => [
+        ($this->item)([
+            'link' => ['type' => 'route', 'value' => 'storefront.brands'],
+            'label' => ['vi' => 'Thương hiệu'],
+            'children' => [
+                ($this->item)(['link' => ['type' => 'route', 'value' => 'storefront.track'], 'label' => ['vi' => 'Tra cứu đơn']]),
+            ],
+        ]),
+    ]])->assertSessionHasNoErrors();
+    $this->post("{$this->url}/mobile/publish")->assertSessionHasNoErrors();
+
+    $html = $this->get('/')->assertOk()->getContent();
+    expect($html)->toContain('data-vani-mobile-menu-open')
+        ->toContain('data-vani-mobile-menu-fallback')
+        ->toContain('id="vani-mobile-menu"')
+        ->toContain('data-vani-menu-next')
+        ->toContain('data-vani-menu-back')
+        ->toContain('data-vani-menu-panel-id="vani-mobile-menu-root-0"')
+        ->toContain('Tra cứu đơn');
+});
+
 it('storefront bỏ mục tắt, ngoài khung giờ, hoặc trỏ tới đối tượng đã ẩn (kèm nhánh con)', function () {
     $hidden = T::seed(fn () => Category::factory()->hidden()->create(['slug' => 'an-di']));
     $this->put("{$this->url}/header", ['items' => [

@@ -100,7 +100,8 @@ it('layout: nút "Giỏ hàng" mở offcanvas (không icon), khung dialog, URL c
     $html = $this->get('/tim-kiem')->assertOk()->getContent();
 
     expect($html)->toContain('data-vani-cart-open aria-haspopup="dialog">Giỏ hàng')
-        ->toContain('<dialog class="vani-offcanvas" data-vani-offcanvas-cart')
+        ->toContain('<dialog id="vani-cart-drawer" class="vani-drawer vani-offcanvas"')
+        ->toContain('data-vani-offcanvas-cart')
         ->toContain('data-vani-listing')
         ->and(preg_match('#<script type="application/json" data-vani-urls>(.*?)</script>#s', $html, $match))->toBe(1);
     $urls = json_decode($match[1], true);

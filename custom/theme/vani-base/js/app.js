@@ -86,6 +86,77 @@ async function request(method, url, data = null, retried = false) {
 const lineUrl = (template, lineId) => String(template || '').replace('987654321', encodeURIComponent(lineId));
 const firstError = (error, field) => (error.errors?.[field] || [])[0] || error.message;
 
+const drawerOpeners = new WeakMap();
+function activateMobileMenuPanel(menu, panel, focusTarget = null) {
+    const panels = [...menu.querySelectorAll('[data-vani-menu-panel]')];
+    const panelIndex = panels.indexOf(panel);
+    if (panelIndex < 0) return;
+
+    menu.querySelector('[data-vani-menu-track]')?.style.setProperty('--vani-menu-index', String(panelIndex));
+    panels.forEach((currentPanel, index) => {
+        const isActive = index === panelIndex;
+        currentPanel.inert = !isActive;
+        currentPanel.setAttribute('aria-hidden', String(!isActive));
+    });
+    menu.dataset.vaniMenuActive = panel.dataset.vaniMenuPanelId;
+    focusTarget?.focus();
+}
+document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const opener = event.target.closest('[data-vani-drawer-open]');
+    if (opener) {
+        const drawer = document.getElementById(opener.dataset.vaniDrawerOpen);
+        if (drawer instanceof HTMLDialogElement && !drawer.open) {
+            event.preventDefault();
+            drawerOpeners.set(drawer, opener);
+            if (drawer.matches('[data-vani-mobile-menu-dialog]')) {
+                const menu = drawer.querySelector('[data-vani-mobile-menu]');
+                const rootPanel = menu?.querySelector('[data-vani-menu-panel-level="0"]');
+                if (menu && rootPanel) activateMobileMenuPanel(menu, rootPanel);
+            }
+            drawer.showModal();
+        }
+        return;
+    }
+
+    const nextMenuButton = event.target.closest('[data-vani-menu-next]');
+    if (nextMenuButton) {
+        const menu = nextMenuButton.closest('[data-vani-mobile-menu]');
+        const targetId = nextMenuButton.dataset.vaniMenuTarget;
+        const targetPanel = [...(menu?.querySelectorAll('[data-vani-menu-panel]') ?? [])]
+            .find((panel) => panel.dataset.vaniMenuPanelId === targetId);
+        const backButton = targetPanel?.querySelector('[data-vani-menu-back]');
+        if (menu && targetPanel) activateMobileMenuPanel(menu, targetPanel, backButton);
+        return;
+    }
+
+    const backMenuButton = event.target.closest('[data-vani-menu-back]');
+    if (backMenuButton) {
+        const menu = backMenuButton.closest('[data-vani-mobile-menu]');
+        const targetId = backMenuButton.dataset.vaniMenuTarget;
+        const targetPanel = [...(menu?.querySelectorAll('[data-vani-menu-panel]') ?? [])]
+            .find((panel) => panel.dataset.vaniMenuPanelId === targetId);
+        const openerButton = document.getElementById(backMenuButton.dataset.vaniMenuFocus);
+        if (menu && targetPanel) activateMobileMenuPanel(menu, targetPanel, openerButton);
+        return;
+    }
+
+    const closeButton = event.target.closest('[data-vani-drawer-close]');
+    if (closeButton) {
+        closeButton.closest('dialog.vani-drawer')?.close();
+        return;
+    }
+
+    if (event.target instanceof HTMLDialogElement && event.target.matches('.vani-drawer')) {
+        event.target.close();
+    }
+});
+document.addEventListener('close', (event) => {
+    if (!(event.target instanceof HTMLDialogElement) || !event.target.matches('.vani-drawer')) return;
+    drawerOpeners.get(event.target)?.focus();
+    drawerOpeners.delete(event.target);
+}, true);
+
 function updateCartCount(count) {
     const badge = document.querySelector('[data-vani-cart-count]');
     if (!badge) return;
