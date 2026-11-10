@@ -74,7 +74,12 @@ it('Admin → Cấu hình: form (lựa chọn lấy từ extension point), lưu/
     app(Extensions::class)->tag([ZeroTax::class], TaxCalculator::TAG);
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
 
-    $this->get('/admin/settings?namespace=core')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
+    $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
+        ->where('cards', fn ($cards) => collect($cards)->contains(fn (array $card): bool => $card['namespace'] === 'core'
+            && $card['url'] === route('admin.settings.show', 'core')
+            && ! array_key_exists('fields', $card))));
+
+    $this->get('/admin/settings/core')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Show')
         ->where('namespace', 'core')
         ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['none' => 'none', 'vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
 
@@ -86,8 +91,10 @@ it('Admin → Cấu hình: form (lựa chọn lấy từ extension point), lưu/
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['khong.co' => 'x']])->assertSessionHasErrors();
 
     $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['api_key' => 'bi-mat']])->assertSessionHasNoErrors();
-    $this->get('/admin/settings?namespace=test')->assertInertia(fn (Assert $page) => $page
-        ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'api_key')['value'] === null && collect($fields)->firstWhere('key', 'api_key')['is_set'] === true));
+    $this->get('/admin/settings/test')->assertInertia(fn (Assert $page) => $page
+        ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'api_key')['value'] === null
+            && collect($fields)->firstWhere('key', 'api_key')['is_set'] === true));
+    $this->get('/admin/settings/unknown')->assertNotFound();
     $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['api_key' => '']])->assertSessionHasNoErrors();
     expect(app(Settings::class)->get('test', 'api_key'))->toBe('bi-mat'); // secret rỗng = giữ nguyên
 

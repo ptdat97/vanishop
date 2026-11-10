@@ -17,7 +17,7 @@ export type SettingField = {
 };
 
 /** Form cấu hình theo SettingDefinition — dùng ở Admin → Cấu hình và trang cấu hình riêng của plugin. */
-const props = defineProps<{ action: string; namespace: string; fields: SettingField[] }>();
+const props = defineProps<{ action: string; namespace: string; fields: SettingField[]; title?: string; subtitle?: string }>();
 
 const toInput = (field: SettingField): string => {
     if (!field.is_set || field.value === null || field.value === undefined) return '';
@@ -40,7 +40,11 @@ function submit(): void {
 </script>
 
 <template>
-    <form class="space-y-4 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="submit">
+    <form class="min-w-0 space-y-4 rounded-xl border border-slate-200 bg-white p-5 text-sm shadow-sm" @submit.prevent="submit">
+        <div v-if="title" class="border-b border-slate-100 pb-4">
+            <h2 class="text-base font-semibold text-slate-900">{{ title }}</h2>
+            <p v-if="subtitle" class="mt-1 font-mono text-xs text-slate-500">{{ subtitle }}</p>
+        </div>
         <div v-for="field in fields" :key="field.key" class="grid gap-2 md:grid-cols-3">
             <div>
                 <div class="font-medium">{{ field.label }}</div>

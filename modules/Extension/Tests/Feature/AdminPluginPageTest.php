@@ -150,6 +150,13 @@ describe('quản lý plugin trên Admin', function () {
         app(Settings::class)->define(new SettingDefinition('fixture.greeting', 'greeting', 'Lời chào', default: 'xin chào'));
 
         $this->get('/admin/plugins')->assertInertia(fn (Assert $page) => $page->where('plugins.3.has_settings', true));
+        $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page
+            ->where('cards', fn ($cards) => collect($cards)->contains(fn (array $card): bool => $card['namespace'] === 'fixture.greeting'
+                && $card['title'] === 'fixture.greeting'
+                && $card['url'] === route('admin.settings.show', 'fixture.greeting')
+                && ! array_key_exists('fields', $card))));
+        $this->get('/admin/settings/fixture.greeting')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('Extension::Settings/Show')->where('fields.0.key', 'greeting')->where('fields.0.effective', 'xin chào'));
         $this->get('/admin/plugins/fixture.greeting/settings')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Extension::Plugins/Settings')->where('fields.0.key', 'greeting')->where('fields.0.effective', 'xin chào'));
         $this->put('/admin/plugins/fixture.greeting/settings', ['values' => ['greeting' => 'chào bạn']])->assertSessionHas('success');

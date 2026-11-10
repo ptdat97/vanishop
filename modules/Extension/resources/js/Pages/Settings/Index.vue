@@ -1,38 +1,40 @@
 <script setup lang="ts">
 import PageHeader from '@admin/Components/PageHeader.vue';
-import Select from '@admin/Components/Select.vue';
-import { Head, router } from '@inertiajs/vue3';
-import SettingsForm, { type SettingField } from '../../Components/SettingsForm.vue';
+import { secondaryButton } from '@admin/styles';
+import { Head, Link } from '@inertiajs/vue3';
 
-const props = defineProps<{
-    baseUrl: string;
-    namespaces: string[];
-    namespace: string;
-    fields: SettingField[];
+defineProps<{
+    cards: {
+        namespace: string;
+        title: string;
+        subtitle: string;
+        url: string;
+    }[];
 }>();
-
-function go(changes: { namespace?: string }): void {
-    router.get(props.baseUrl, { namespace: props.namespace, ...changes });
-}
 </script>
 
 <template>
     <Head title="Cấu hình" />
     <PageHeader
         title="Cấu hình"
-        subtitle="Cấu hình của cửa hàng. Để trống = dùng giá trị mặc định. Secret không hiển thị lại."
+        subtitle="Chọn một nhóm để xem và chỉnh sửa cấu hình."
     />
 
-    <div class="mb-4 flex flex-wrap gap-2">
-        <div class="w-64">
-            <Select
-                :model-value="namespace"
-                :options="namespaces.map((item) => ({ value: item, label: item === 'core' ? 'Core' : `Plugin ${item}` }))"
-                aria-label="Nhóm cấu hình"
-                @change="go({ namespace: $event })"
-            />
-        </div>
+    <div v-if="cards.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Link
+            v-for="card in cards"
+            :key="card.namespace"
+            :href="card.url"
+            :class="['group flex min-h-32 items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 text-sm shadow-xs transition hover:border-slate-300 hover:shadow-sm', secondaryButton]"
+        >
+            <span class="min-w-0">
+                <span class="block text-base font-semibold text-slate-900">{{ card.title }}</span>
+                <span class="mt-1 block truncate font-mono text-xs text-slate-500">{{ card.subtitle }}</span>
+            </span>
+            <span class="shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-slate-700" aria-hidden="true">→</span>
+        </Link>
     </div>
-
-    <SettingsForm :key="namespace" :action="baseUrl" :namespace="namespace" :fields="fields" />
+    <div v-else class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+        Chưa có cấu hình nào được đăng ký.
+    </div>
 </template>

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Settings\SettingsAdmin;
 use Modules\Identity\Contracts\Data\ScopeRef;
 
@@ -17,16 +18,37 @@ use Modules\Identity\Contracts\Data\ScopeRef;
  */
 final class SettingsController
 {
-    public function index(Request $request, SettingsAdmin $admin): Response
+    public function index(SettingsAdmin $admin, ManifestRepository $manifests): Response
     {
         Gate::authorize('settings.manage', [ScopeRef::owner()]);
-        $namespaces = $admin->namespaces();
-        $namespace = in_array($request->query('namespace'), $namespaces, true) ? (string) $request->query('namespace') : ($namespaces[0] ?? 'core');
+        $cards = array_map(function (string $namespace) use ($manifests): array {
+            $manifest = $manifests->find($namespace);
+
+            return [
+                'namespace' => $namespace,
+                'title' => $namespace === 'core' ? 'Cấu hình chung' : ($manifest?->displayName(app()->getLocale()) ?? "Plugin {$namespace}"),
+                'subtitle' => $namespace === 'core' ? 'Thiết lập nền tảng' : $namespace,
+                'url' => route('admin.settings.show', $namespace),
+            ];
+        }, $admin->namespaces());
 
         return Inertia::render('Extension::Settings/Index', [
+            'cards' => $cards,
+        ]);
+    }
+
+    public function show(string $namespace, SettingsAdmin $admin, ManifestRepository $manifests): Response
+    {
+        Gate::authorize('settings.manage', [ScopeRef::owner()]);
+        abort_unless(in_array($namespace, $admin->namespaces(), true), 404);
+        $manifest = $manifests->find($namespace);
+
+        return Inertia::render('Extension::Settings/Show', [
             'baseUrl' => route('admin.settings.index'),
-            'namespaces' => $namespaces,
+            'action' => route('admin.settings.update'),
             'namespace' => $namespace,
+            'title' => $namespace === 'core' ? 'Cấu hình chung' : ($manifest?->displayName(app()->getLocale()) ?? "Plugin {$namespace}"),
+            'subtitle' => $namespace === 'core' ? 'Thiết lập nền tảng' : $namespace,
             'fields' => $admin->form($namespace),
         ]);
     }
