@@ -34,10 +34,10 @@
         </div>
     @endif
     <x-vani::hook-slot name="vani.storefront.layout.header.before" />
-    <header class="border-b border-slate-200">
+    <header class="border-b border-slate-200 sticky top-0 z-50 bg-white">
         @php($headerMenu = ($menus ?? null)?->items('header', app()->getLocale()))
         @php($mobileMenu = ($menus ?? null)?->items('mobile', app()->getLocale()) ?? $headerMenu)
-        <div class="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-4 md:grid-cols-[1fr_auto_1fr]">
+        <div class="mx-auto grid container grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-4 md:grid-cols-[1fr_auto_1fr]">
             <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 justify-self-start text-xl font-semibold text-primary">{{ config('app.name') }}</a>
             <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:justify-center" aria-label="{{ __('Menu chính') }}">
                 @if ($headerMenu !== null)
@@ -129,7 +129,7 @@
     ])
     <x-vani::hook-slot name="vani.storefront.layout.header.after" />
 
-    <main class="mx-auto max-w-6xl px-4 py-6">
+    <main class="mx-auto container px-4 py-6">
         <x-vani::hook-slot name="vani.storefront.layout.main.before" />
         @if ($pageCache)
             <p role="status" class="mb-4 rounded-[var(--radius-theme)] bg-emerald-50 px-4 py-2 text-sm text-emerald-800" data-vani-flash="status" hidden></p>
@@ -148,7 +148,7 @@
     </main>
 
     <footer class="mt-12 border-t border-slate-200">
-        <div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 text-sm text-slate-500 md:grid-cols-4">
+        <div class="mx-auto grid container gap-6 px-4 py-6 text-sm text-slate-500 md:grid-cols-4">
             @php($footerMenus = collect(['footer_1', 'footer_2', 'footer_3', 'footer_4'])->mapWithKeys(fn ($location) => [$location => ($menus ?? null)?->items($location, app()->getLocale())])->filter(fn ($items) => $items !== null))
             @forelse ($footerMenus as $location => $items)
                 <nav class="space-y-1" aria-label="{{ $location }}" data-menu="{{ $location }}">
