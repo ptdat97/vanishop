@@ -12,7 +12,7 @@
     "kind": "feature",
     "provider": "Plugin\\ScarcitySignals\\ScarcitySignalsServiceProvider",
     "requires": {
-        "vanishop": "^0.3.85",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

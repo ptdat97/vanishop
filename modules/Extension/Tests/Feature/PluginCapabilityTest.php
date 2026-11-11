@@ -27,7 +27,7 @@ final class FixtureWidgetB {}
 
 beforeEach(function () {
     $this->root = FixturePlugins::install([
-        'Shop' => ['id' => 'fixture.shop', 'requires' => ['vanishop' => '^0.3', 'capabilities' => ['fixture.widgets']]],
+        'Shop' => ['id' => 'fixture.shop', 'requires' => ['vanishop' => '^0.4', 'capabilities' => ['fixture.widgets']]],
         'WidgetA' => ['id' => 'fixture.widgets-a'],
         'WidgetB' => ['id' => 'fixture.widgets-b'],
     ]);
@@ -52,11 +52,11 @@ beforeEach(function () {
 afterEach(fn () => File::deleteDirectory($this->root));
 
 it('manifest: requires.capabilities là danh sách tag hợp lệ', function () {
-    $base = ['id' => 'vendor.x', 'name' => 'X', 'version' => '1.0.0', 'kind' => 'feature', 'provider' => 'X', 'requires' => ['vanishop' => '^0.3']];
+    $base = ['id' => 'vendor.x', 'name' => 'X', 'version' => '1.0.0', 'kind' => 'feature', 'provider' => 'X', 'requires' => ['vanishop' => '^0.4']];
 
     expect(PluginManifest::fromArray($base, '/x')->requiresCapabilities)->toBe([])
-        ->and(PluginManifest::fromArray(['requires' => ['vanishop' => '^0.3', 'capabilities' => ['vani.payment.gateways', 'vani.payment.gateways']]] + $base, '/x')->requiresCapabilities)->toBe(['vani.payment.gateways']);
-    expect(fn () => PluginManifest::fromArray(['requires' => ['vanishop' => '^0.3', 'capabilities' => ['Payment Gateways']]] + $base, '/x'))->toThrow(InvalidManifest::class);
+        ->and(PluginManifest::fromArray(['requires' => ['vanishop' => '^0.4', 'capabilities' => ['vani.payment.gateways', 'vani.payment.gateways']]] + $base, '/x')->requiresCapabilities)->toBe(['vani.payment.gateways']);
+    expect(fn () => PluginManifest::fromArray(['requires' => ['vanishop' => '^0.4', 'capabilities' => ['Payment Gateways']]] + $base, '/x'))->toThrow(InvalidManifest::class);
 });
 
 it('không bật được khi chưa có nguồn capability; có một plugin cung cấp bất kỳ đang bật → bật được', function () {

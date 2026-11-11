@@ -38,7 +38,7 @@ afterEach(function () {
 });
 
 it('manifest: owned phải là plg_*, retained ⊆ owned, references bắt đầu từ bảng owned', function (array $data, string $message) {
-    expect(fn () => PluginManifest::fromArray(['id' => 'x.y', 'name' => 'x', 'version' => '1.0.0', 'kind' => 'feature', 'provider' => 'X', 'requires' => ['vanishop' => '^0.3'], 'data' => $data], '/tmp/x'))
+    expect(fn () => PluginManifest::fromArray(['id' => 'x.y', 'name' => 'x', 'version' => '1.0.0', 'kind' => 'feature', 'provider' => 'X', 'requires' => ['vanishop' => '^0.4'], 'data' => $data], '/tmp/x'))
         ->toThrow(InvalidManifest::class, $message);
 })->with([
     'owned sai tiền tố' => [['owned' => ['orders']], 'plg_*'],

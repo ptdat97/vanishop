@@ -9,7 +9,7 @@
     "provider": "Plugin\\PhoneVn\\PhoneVnServiceProvider",
     "bundled": true,
     "requires": {
-        "vanishop": "^0.3",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

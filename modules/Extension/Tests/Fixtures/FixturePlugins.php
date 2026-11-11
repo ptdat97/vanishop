@@ -32,7 +32,7 @@ final class FixturePlugins
                 'version' => '1.0.0',
                 'kind' => 'feature',
                 'provider' => GreetingPluginProvider::class,
-                'requires' => ['vanishop' => '^0.3'],
+                'requires' => ['vanishop' => '^0.4'],
             ], JSON_PRETTY_PRINT));
         }
 

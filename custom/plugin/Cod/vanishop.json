@@ -9,7 +9,7 @@
     "provider": "Plugin\\Cod\\CodServiceProvider",
     "bundled": true,
     "requires": {
-        "vanishop": "^0.3.96",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

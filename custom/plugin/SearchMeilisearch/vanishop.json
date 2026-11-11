@@ -8,7 +8,7 @@
     "kind": "search",
     "provider": "Plugin\\SearchMeilisearch\\SearchMeilisearchServiceProvider",
     "requires": {
-        "vanishop": "^0.3",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

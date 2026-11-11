@@ -8,7 +8,7 @@
     "kind": "image_format",
     "provider": "Plugin\\MediaWebp\\MediaWebpServiceProvider",
     "requires": {
-        "vanishop": "^0.3.28",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

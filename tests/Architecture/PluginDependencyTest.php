@@ -5,6 +5,8 @@
 | trong requires.plugins (resolver sắp thứ tự nạp, chặn tắt plugin đang được phụ thuộc).
 */
 
+use Composer\Semver\Semver;
+
 it('plugin chỉ dùng Contracts/Events/Testing của plugin đã khai báo trong requires.plugins', function () {
     $root = realpath(__DIR__.'/../../custom/plugin');
     $plugins = [];
@@ -33,4 +35,18 @@ it('plugin chỉ dùng Contracts/Events/Testing của plugin đã khai báo tron
     }
 
     expect(array_values(array_unique($offenders)))->toBe([]);
+});
+
+it('mọi plugin trong repo tương thích với phiên bản Core hiện tại (requires.vanishop)', function () {
+    $coreVersion = (string) config('vanishop.version');
+    $offenders = [];
+    foreach (glob(__DIR__.'/../../custom/plugin/*/vanishop.json') as $file) {
+        $manifest = json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR);
+        $constraint = (string) ($manifest['requires']['vanishop'] ?? '');
+        if ($constraint === '' || ! Semver::satisfies($coreVersion, $constraint)) {
+            $offenders[] = "{$manifest['id']} cần VaniShop [{$constraint}], Core là {$coreVersion}";
+        }
+    }
+
+    expect($offenders)->toBe([]);
 });

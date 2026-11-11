@@ -8,7 +8,7 @@
     "kind": "analytics",
     "provider": "Plugin\\Reports\\ReportsServiceProvider",
     "requires": {
-        "vanishop": "^0.3.73",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

@@ -8,7 +8,7 @@
     "kind": "feature",
     "provider": "Plugin\\SizeChart\\SizeChartServiceProvider",
     "requires": {
-        "vanishop": "^0.3.44",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

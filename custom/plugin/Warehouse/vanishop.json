@@ -12,7 +12,7 @@
     "kind": "feature",
     "provider": "Plugin\\Warehouse\\WarehouseServiceProvider",
     "requires": {
-        "vanishop": "^0.3.88",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

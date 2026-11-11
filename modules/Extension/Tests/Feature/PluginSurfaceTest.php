@@ -19,7 +19,7 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../Fixtures/FixturePlugins.php';
 
 it('manifest: kind phải thuộc danh sách chuẩn', function () {
-    PluginManifest::fromArray(['id' => 'acme.x', 'name' => 'X', 'version' => '1.0.0', 'kind' => 'business', 'provider' => 'X', 'requires' => ['vanishop' => '^0.3']], '/tmp/x');
+    PluginManifest::fromArray(['id' => 'acme.x', 'name' => 'X', 'version' => '1.0.0', 'kind' => 'business', 'provider' => 'X', 'requires' => ['vanishop' => '^0.4']], '/tmp/x');
 })->throws(InvalidManifest::class, 'kind [business] không hợp lệ');
 
 it('publishHooks: chỉ nhận hook bắt đầu bằng id plugin', function () {

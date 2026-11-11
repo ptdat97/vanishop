@@ -8,7 +8,7 @@
     "kind": "video",
     "provider": "Plugin\\VideoYoutube\\VideoYoutubeServiceProvider",
     "requires": {
-        "vanishop": "^0.3.46",
+        "vanishop": "^0.4",
         "plugins": {}
     },
     "conflicts": [],

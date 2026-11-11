@@ -55,7 +55,7 @@ it('upgrade: bản mới không tương thích Core bị từ chối; plugin fai
     expect(fn () => ($this->plugins)()->upgrade('fixture.greeting'))->toThrow(PluginOperationFailed::class, 'incompatible_core');
 
     ($this->plugins)()->markFailed('fixture.greeting', 'incompatible_core');
-    ($this->deploy)('Greeting', ['version' => '2.0.1', 'requires' => ['vanishop' => '^0.3']]);
+    ($this->deploy)('Greeting', ['version' => '2.0.1', 'requires' => ['vanishop' => '^0.4']]);
     expect(($this->plugins)()->upgrade('fixture.greeting')->status)->toBe(PluginStatus::Installed);
 });
 

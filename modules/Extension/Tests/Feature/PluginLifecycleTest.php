@@ -24,7 +24,7 @@ beforeEach(function () {
     $this->root = FixturePlugins::install([
         'Greeting' => ['id' => 'fixture.greeting'],
         'Base' => ['id' => 'fixture.base'],
-        'Child' => ['id' => 'fixture.child', 'requires' => ['vanishop' => '^0.3', 'plugins' => ['fixture.base' => '^1.0']]],
+        'Child' => ['id' => 'fixture.child', 'requires' => ['vanishop' => '^0.4', 'plugins' => ['fixture.base' => '^1.0']]],
         'Rival' => ['id' => 'fixture.rival', 'conflicts' => ['fixture.greeting']],
         'Future' => ['id' => 'fixture.future', 'requires' => ['vanishop' => '^9.0']],
     ]);

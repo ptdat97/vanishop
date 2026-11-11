@@ -43,7 +43,7 @@ describe('quản lý plugin trên Admin', function () {
         $this->root = FixturePlugins::install([
             'Greeting' => ['id' => 'fixture.greeting', 'description' => ['vi' => 'Lời chào cho khách', 'en' => 'Greets customers'], 'author' => 'Owner', 'icon' => 'icon.svg'],
             'Base' => ['id' => 'fixture.base'],
-            'Child' => ['id' => 'fixture.child', 'requires' => ['vanishop' => '^0.3', 'plugins' => ['fixture.base' => '^1.0']]],
+            'Child' => ['id' => 'fixture.child', 'requires' => ['vanishop' => '^0.4', 'plugins' => ['fixture.base' => '^1.0']]],
             'Future' => ['id' => 'fixture.future', 'requires' => ['vanishop' => '^9.0']],
             'BadIcon' => ['id' => 'fixture.bad-icon', 'icon' => '../../.env'],
         ]);
