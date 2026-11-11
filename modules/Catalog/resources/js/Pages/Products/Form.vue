@@ -6,6 +6,8 @@ import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import MultiSelect from '@admin/Components/MultiSelect.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
 import { codeOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -141,14 +143,9 @@ function attachFromLibrary(items: MediaItem[]): void {
     pickingFor.value = null;
 }
 
-function moveImage(color: ColorEntry, index: number, direction: -1 | 1): void {
-    const order = color.images.map((image) => image.id);
-    const target = index + direction;
-    if (target < 0 || target >= order.length) {
-        return;
-    }
-    [order[index], order[target]] = [order[target], order[index]];
-    router.put(`${productUrl.value}/colors/${color.id}/images/order`, { order }, { preserveScroll: true });
+/** Kéo-thả xong lưu ngay thứ tự ảnh của màu (ảnh đầu là ảnh đại diện); danh sách hiện theo thứ tự server trả về. */
+function reorderImages(color: ColorEntry, images: ColorEntry['images']): void {
+    router.put(`${productUrl.value}/colors/${color.id}/images/order`, { order: images.map((image) => image.id) }, { preserveScroll: true });
 }
 
 function removeImage(color: ColorEntry, imageId: number): void {
@@ -235,14 +232,22 @@ function removeImage(color: ColorEntry, imageId: number): void {
                         <button type="button" class="text-sm text-red-600" @click="removeColor(color)">Gỡ màu</button>
                     </div>
                     <div class="flex flex-wrap gap-3">
-                        <div v-for="(image, index) in color.images" :key="image.id" class="w-24">
-                            <img :src="image.url" alt="" class="h-32 w-24 rounded object-cover" />
-                            <div class="mt-1 flex justify-between text-xs">
-                                <button type="button" :disabled="index === 0" @click="moveImage(color, index, -1)">←</button>
+                        <Sortable
+                            v-slot="{ item: image, index, handle }"
+                            :model-value="color.images"
+                            layout="grid"
+                            list-class="flex flex-wrap gap-3"
+                            item-class="w-24"
+                            :item-key="(image) => image.id"
+                            :item-label="(image) => `ảnh ${color.images.indexOf(image) + 1} của màu ${color.name ?? color.code}`"
+                            @update:model-value="(images) => reorderImages(color, images)"
+                        >
+                            <img :src="image.url" :alt="index === 0 ? 'Ảnh đại diện' : ''" class="h-32 w-24 rounded object-cover" />
+                            <div class="mt-1 flex items-center justify-between text-xs">
+                                <SortHandle v-bind="handle" />
                                 <button type="button" class="text-red-600" @click="removeImage(color, image.id)">Xoá</button>
-                                <button type="button" :disabled="index === color.images.length - 1" @click="moveImage(color, index, 1)">→</button>
                             </div>
-                        </div>
+                        </Sortable>
                         <label class="flex h-32 w-24 cursor-pointer items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">
                             + Ảnh
                             <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="uploadImages(color, $event)" />

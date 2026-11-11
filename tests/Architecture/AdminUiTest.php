@@ -63,7 +63,9 @@ it('kéo-thả chỉ qua Sortable: chỉ component này import vuedraggable/sort
     ));
 
     expect($offenders)->toBe([])
-        ->and(adminUiOffenders('/\\bdraggable=|@drag(start|over|end)|aria-label="(Lên|Xuống)"/'))->toBe([], 'Dùng Sortable + SortHandle từ @admin/Components');
+        ->and(adminUiOffenders('/\\bdraggable=|@drag(start|over|end)|aria-label="(Lên|Xuống|Lên trước|Ra sau)"/'))->toBe([], 'Dùng Sortable + SortHandle từ @admin/Components')
+        // Nút chỉ có mũi tên để đổi chỗ (↑ ↓ ← →), kể cả khi không có aria-label — lỗi sót ở ảnh sản phẩm 2026-11-11.
+        ->and(adminUiOffenders('/<button[^>]*>\\s*[↑↓←→]\\s*<\\/button>/u'))->toBe([], 'Dùng Sortable + SortHandle từ @admin/Components');
 });
 
 it('giao diện Admin không ghi cứng ngôn ngữ hay ký hiệu tiền tệ', function () {
