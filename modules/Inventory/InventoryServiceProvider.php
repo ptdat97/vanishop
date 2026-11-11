@@ -17,6 +17,7 @@ use Modules\Inventory\Application\EloquentLocationRegistry;
 use Modules\Inventory\Application\InventoryReconciler;
 use Modules\Inventory\Application\Listeners\ProductListStock;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
+use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Application\ReturnService;
 use Modules\Inventory\Application\StandardInventoryStrategy;
@@ -74,6 +75,11 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'inventory.strategy', 'Cách tính số bán được (ATS)', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
             optionsFromTag: InventoryStrategy::TAG, help: 'Strategy chỉ giảm được ATS so với công thức chuẩn.',
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', LowStockThreshold::SETTING, 'Ngưỡng "sắp hết hàng"', 'int', (int) config('vanishop.inventory.low_stock_threshold', 3),
+            help: 'Số bán được từ mức này trở xuống: Admin tô cảnh báo, Tổng quan đếm vào "Sắp hết hàng", storefront báo "sắp hết hàng". 0 = chỉ báo khi hết.',
+            rules: ['min:0', 'max:1000'],
         ));
         $permissions->register('inventory.view', 'Xem tồn kho');
         $permissions->register('inventory.adjust', 'Điều chỉnh/kiểm kê tồn kho');

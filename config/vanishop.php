@@ -342,10 +342,9 @@ return [
     'inventory' => [
         // Extension point InventoryStrategy (ví dụ channel allocation). Chỉ được giảm ATS.
         'strategy' => env('VANI_INVENTORY_STRATEGY', 'standard'),
-        // Storefront hiển thị "sắp hết hàng" khi ATS <= ngưỡng này (không lộ số tồn chính xác).
+        // Mặc định của ngưỡng "sắp hết hàng" (ATS <= ngưỡng; không lộ số tồn chính xác). Cửa hàng đổi ở Admin → Cấu hình
+        // (`inventory.low_stock_threshold`).
         'low_stock_threshold' => (int) env('VANI_LOW_STOCK_THRESHOLD', 3),
-        // Thời gian giữ hàng cho đơn thanh toán online (giây).
-        'reservation_ttl' => (int) env('VANI_RESERVATION_TTL', 900),
     ],
 
     'customer' => [

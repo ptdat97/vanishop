@@ -13,6 +13,7 @@ use Modules\Pricing\Contracts\Data\ResolvedPrice;
 use Modules\Pricing\Contracts\PriceResolver;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Storefront\Contracts\ProductCards;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Ghép dữ liệu sản phẩm cho storefront từ các module Core qua contract (Catalog + Pricing + Inventory).
@@ -30,6 +31,7 @@ final class ProductViews implements ProductCards
         private readonly Enrichment $enrichment,
         private readonly PriceVisibility $visibility,
         private readonly MediaUrls $media,
+        private readonly Settings $settings,
     ) {}
 
     /**
@@ -95,7 +97,7 @@ final class ProductViews implements ProductCards
 
         $resolved = $this->resolve(array_column($product['variants'], 'id'), $now);
         $stock = $this->stock(array_keys($resolved));
-        $lowStock = (int) config('vanishop.inventory.low_stock_threshold', 3);
+        $lowStock = max(0, (int) $this->settings->get('core', 'inventory.low_stock_threshold', (int) config('vanishop.inventory.low_stock_threshold', 3)));
         $hidden = $this->visibility->hidden();
 
         $product['variants'] = array_map(fn (array $variant): array => [

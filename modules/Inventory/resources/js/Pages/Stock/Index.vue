@@ -5,6 +5,7 @@ import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
+import { getJson } from '@admin/http';
 import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
@@ -24,7 +25,7 @@ type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; color
  */
 const props = defineProps<{
     labels: InventoryLabels;
-    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; locations: string | null; default_location: string | null; main_location: string | null };
+    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; provinces: string; locations: string | null; default_location: string | null; main_location: string | null };
     links: Array<{ label: string; url: string }>;
     mainLocation: { id: number; name: string; address: string | null; province_code: string | null; lock_version: number } | null;
     query: Criteria;
@@ -228,6 +229,18 @@ const locationForm = useForm({
     name: props.mainLocation?.name ?? '', address: props.mainLocation?.address ?? '', province_code: props.mainLocation?.province_code ?? '', lock_version: props.mainLocation?.lock_version ?? 0,
 });
 
+// Tỉnh/thành chọn từ danh mục địa giới của cửa hàng (plugin, vd. vani.provinces-vn); không có danh mục → nhập mã tay.
+const provinces = ref<Array<{ value: string; label: string }>>([]);
+watch(editingLocation, async (open) => {
+    if (!open || provinces.value.length) return;
+    try {
+        const response = await getJson<{ data: Array<{ code: string; name: string }> }>(props.urls.provinces);
+        provinces.value = response.data.map((province) => ({ value: province.code, label: province.name }));
+    } catch {
+        provinces.value = [];
+    }
+});
+
 function saveLocation(): void {
     if (props.urls.main_location) locationForm.put(props.urls.main_location, { preserveScroll: true, onSuccess: () => (editingLocation.value = false) });
 }
@@ -259,7 +272,8 @@ function createDefault(): void {
         <p class="md:col-span-3">Kho chính của cửa hàng. Cần nhiều kho, cửa hàng nhận tại quầy hay chuyển kho: bật plugin <strong>Vận hành kho</strong>.</p>
         <input v-model="locationForm.name" :class="inputClass" placeholder="Tên kho" aria-label="Tên kho" />
         <input v-model="locationForm.address" :class="inputClass" placeholder="Địa chỉ" aria-label="Địa chỉ" />
-        <input v-model="locationForm.province_code" :class="inputClass" placeholder="Mã tỉnh/thành" aria-label="Mã tỉnh/thành" />
+        <Select v-if="provinces.length" v-model="locationForm.province_code" :options="provinces" empty-label="— Tỉnh/thành —" empty-value="" aria-label="Tỉnh/thành" data-province-select />
+        <input v-else v-model="locationForm.province_code" :class="inputClass" placeholder="Mã tỉnh/thành" aria-label="Mã tỉnh/thành" />
         <p v-for="(error, key) in locationForm.errors" :key="key" class="text-red-600 md:col-span-3">{{ error }}</p>
         <div><button type="submit" :class="primaryButton" :disabled="locationForm.processing">Lưu</button></div>
     </form>

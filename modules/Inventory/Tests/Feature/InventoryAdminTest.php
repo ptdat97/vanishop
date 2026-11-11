@@ -7,10 +7,13 @@ use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Inventory\Application\LowStockThreshold;
+use Modules\Inventory\Application\StockGrid;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockMovement;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/InventoryTestHelpers.php';
 
@@ -197,4 +200,20 @@ it('sửa hàng loạt tại một kho: SKU đã chọn, cả sản phẩm hoặ
 
     $this->actingAs(T::staff(['admin.access', 'inventory.view']), 'staff');
     $bulk(['action' => 'set', 'quantity' => 1, 'variant_ids' => [$this->s->id]])->assertForbidden();
+});
+
+it('ngưỡng "sắp hết hàng" đổi ở Admin → Cấu hình: lưới tồn và Tổng quan theo ngưỡng mới; chỉ nhận 0–1000', function () {
+    I::stock($this->hn, $this->s->id, 5);
+    I::stock($this->hn, $this->m->id, 9);
+    $this->actingAs(T::staff(['admin.access', 'inventory.view', 'settings.manage']), 'staff');
+    $low = fn () => collect($this->get("{$this->stockUrl}?filter=low")->assertOk()->viewData('page')['props']['products'])->flatMap(fn (array $product) => $product['variants'])->pluck('sku')->all();
+    expect($low())->toBe([]);
+
+    T::seed(fn () => app(Settings::class)->set('core', LowStockThreshold::SETTING, 5));
+    expect($low())->toBe([$this->s->sku])
+        ->and($this->get($this->stockUrl)->viewData('page')['props']['threshold'])->toBe(5)
+        ->and(app(StockGrid::class)->attentionCounts()['low'])->toBe(1);
+
+    $definition = collect(app(Settings::class)->definitions('core'))->firstWhere('key', LowStockThreshold::SETTING);
+    expect($definition->type)->toBe('int')->and($definition->rules)->toBe(['min:0', 'max:1000']);
 });

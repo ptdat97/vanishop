@@ -6,6 +6,7 @@ namespace Modules\Inventory\Application\Listeners;
 
 use Illuminate\Support\Facades\Gate;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockGrid;
 
 /**
@@ -17,6 +18,7 @@ final class ProductListStock
     public function __construct(
         private readonly VariantDirectory $variants,
         private readonly StockGrid $grid,
+        private readonly LowStockThreshold $lowStock,
     ) {}
 
     /**
@@ -30,7 +32,7 @@ final class ProductListStock
         }
         $variantsByStyle = $this->variants->ofStyles($styleIds);
         $byStyle = array_map(fn (array $variants): array => array_map(fn ($variant): int => $variant->id, $variants), $variantsByStyle);
-        $threshold = (int) config('vanishop.inventory.low_stock_threshold', 3);
+        $threshold = $this->lowStock->value();
         $urls = [];
         foreach ($variantsByStyle as $styleId => $variants) {
             if ($variants !== []) {

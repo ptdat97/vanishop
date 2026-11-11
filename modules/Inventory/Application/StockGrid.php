@@ -22,6 +22,7 @@ final class StockGrid
     public function __construct(
         private readonly VariantDirectory $variants,
         private readonly StockQueries $queries,
+        private readonly LowStockThreshold $lowStock,
     ) {}
 
     /**
@@ -88,7 +89,7 @@ final class StockGrid
      */
     public function attentionCounts(): array
     {
-        $threshold = (int) config('vanishop.inventory.low_stock_threshold', 3);
+        $threshold = $this->lowStock->value();
         $active = array_filter($this->matching([])['rows'], fn (array $row): bool => $row['status'] === 'active');
 
         return [
@@ -117,7 +118,7 @@ final class StockGrid
 
         $levels = $variants === [] ? [] : $this->queries->levels(array_map(fn (VariantData $variant): int => $variant->id, $variants));
         $online = array_values(array_filter($locations, fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders));
-        $threshold = (int) config('vanishop.inventory.low_stock_threshold', 3);
+        $threshold = $this->lowStock->value();
 
         $rows = [];
         foreach ($variants as $variant) {

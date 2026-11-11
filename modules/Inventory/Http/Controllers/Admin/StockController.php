@@ -15,6 +15,7 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Application\LocationService;
+use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockAdjustmentService;
 use Modules\Inventory\Application\StockBulkEditor;
 use Modules\Inventory\Application\StockCsv;
@@ -41,7 +42,7 @@ final class StockController
      * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc màu, size, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
      * hàng loạt. `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
-    public function index(Request $request, StockGrid $grid, Extensions $extensions): Response
+    public function index(Request $request, StockGrid $grid, Extensions $extensions, LowStockThreshold $lowStock): Response
     {
         Gate::authorize('inventory.view');
 
@@ -68,6 +69,8 @@ final class StockController
                 'export' => route('admin.inventory.stock.export'),
                 'import' => route('admin.inventory.stock.import'),
                 'movements' => route('admin.inventory.movements.index'),
+                // Danh mục tỉnh/thành cho form Kho chính (AddressDirectory của plugin, qua Storefront API); không có → nhập mã tay.
+                'provinces' => url('/api/storefront/v1/address/provinces'),
                 'locations' => array_values(array_filter(array_map(fn (StockPageLink $link): ?string => $link->url(), $managed)))[0] ?? null,
                 'main_location' => $managed === [] && $canManageLocations && count($result['locations']) === 1 ? route('admin.inventory.stock.location', $result['locations'][0]->id) : null,
                 'default_location' => $canManageLocations && $result['locations'] === [] ? route('admin.inventory.stock.default-location') : null,
@@ -75,7 +78,7 @@ final class StockController
             'query' => $criteria,
             'options' => ['colors' => $result['colors'], 'sizes' => $result['sizes']],
             'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
-            'threshold' => (int) config('vanishop.inventory.low_stock_threshold', 3),
+            'threshold' => $lowStock->value(),
             'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
             'links' => array_values(array_filter(array_map(fn (StockPageLink $link): ?array => ($url = $link->url()) === null ? null : ['label' => $link->label(), 'url' => $url], $links))),
             'mainLocation' => count($result['locations']) === 1 ? $result['locations'][0]->only(['id', 'name', 'address', 'province_code', 'lock_version']) : null,
