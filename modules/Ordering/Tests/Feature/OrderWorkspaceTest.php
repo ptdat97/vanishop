@@ -103,7 +103,9 @@ it('in phiếu giao nhiều đơn (0.3.97): mỗi đơn một trang theo thứ t
     expect($html)->toContain('data-order="'.$transfer->number.'"')
         ->toContain('THU HỘ (COD)')->toContain('330.000')
         ->toContain('Đã thanh toán — không thu tiền')
-        ->toContain('Nguyễn Thị Lan')->toContain('12 Lê Lợi, Phường Bến Thành, Thành phố Hồ Chí Minh')
+        // Mỗi phiếu có mã vạch của số đơn (SVG chỉ gồm các thanh).
+        ->and(substr_count($html, 'data-barcode'))->toBe(2)
+        ->and($html)->toContain('Nguyễn Thị Lan')->toContain('12 Lê Lợi, Phường Bến Thành, Thành phố Hồ Chí Minh')
         ->and(strpos($html, 'data-order="'.$transfer->number.'"'))->toBeLessThan(strpos($html, 'data-order="'.$cod->number.'"'));
 
     $this->actingAs(T::staff(['admin.access']), 'staff');

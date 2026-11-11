@@ -36,6 +36,7 @@ use Modules\Ordering\Domain\PaymentStatus;
 use Modules\Ordering\Http\Requests\ShippingAddressRequest;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Support\Code128;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
 use Throwable;
@@ -414,6 +415,8 @@ final class OrderController
 
                 return [
                     'number' => $order->number,
+                    // Mã vạch Code 128 của số đơn: quét ở ô tìm kiếm danh sách đơn để mở đúng đơn khi đóng gói/bàn giao.
+                    'barcode' => Code128::svg((string) $order->number),
                     'placed_at' => StoreClock::format($order->placed_at),
                     'recipient' => (string) ($order->customer_snapshot['full_name'] ?? ''),
                     'phone' => (string) ($order->customer_snapshot['phone'] ?? $order->customer_phone),

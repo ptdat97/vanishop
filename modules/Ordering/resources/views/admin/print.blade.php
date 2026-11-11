@@ -1,6 +1,7 @@
 {{--
     Phiếu giao / đóng gói (0.3.97) — in nhiều đơn một lần từ danh sách đơn hoặc trang đơn; mỗi đơn một trang A5. Trang HTML
     riêng (không qua giao diện Admin) để in trực tiếp từ trình duyệt; số lượng đã trừ phần huỷ; COD = số tiền thu hộ.
+    Dưới số đơn có mã vạch Code 128 của số đơn — SVG do Core sinh, chỉ gồm các thanh.
 --}}
 <!DOCTYPE html>
 <html lang="vi">
@@ -20,6 +21,8 @@
         .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 8px; }
         .shop { font-weight: 700; font-size: 15px; }
         .number { font: 700 22px/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.5px; text-align: right; }
+        .barcode { width: 52mm; height: 11mm; margin: 3px 0 2px auto; }
+        .barcode svg { display: block; width: 100%; height: 100%; }
         .muted { color: #64748b; font-size: 11px; }
         h2 { margin: 10px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #475569; }
         .to { font-size: 15px; }
@@ -48,6 +51,7 @@
                 </div>
                 <div>
                     <div class="number">{{ $order['number'] }}</div>
+                    @if ($order['barcode'])<div class="barcode" data-barcode>{!! $order['barcode'] !!}</div>@endif
                     @if ($order['shipping_method'])<div class="muted" style="text-align:right">{{ $order['shipping_method'] }}</div>@endif
                 </div>
             </div>
