@@ -56,6 +56,16 @@ it('chỉ bộ component @admin/Components được import reka-ui', function ()
     expect($offenders)->toBe([]);
 });
 
+it('kéo-thả chỉ qua Sortable: chỉ component này import vuedraggable/sortablejs; trang không tự viết cơ chế kéo-thả', function () {
+    $offenders = array_values(array_filter(
+        adminUiFiles(),
+        fn (string $file): bool => $file !== 'resources/js/admin/Components/Sortable.vue' && preg_match("/from '(vuedraggable|sortablejs)'/", (string) file_get_contents(base_path($file))) === 1,
+    ));
+
+    expect($offenders)->toBe([])
+        ->and(adminUiOffenders('/\\bdraggable=|@drag(start|over|end)|aria-label="(Lên|Xuống)"/'))->toBe([], 'Dùng Sortable + SortHandle từ @admin/Components');
+});
+
 it('giao diện Admin không ghi cứng ngôn ngữ hay ký hiệu tiền tệ', function () {
     $offenders = array_values(array_filter(adminUiFiles(), fn (string $file): bool => preg_match('/vi-VN|₫/u', (string) file_get_contents(base_path($file))) === 1));
 

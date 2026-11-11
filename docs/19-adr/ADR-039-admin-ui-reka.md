@@ -26,6 +26,12 @@ Chọn nền tảng component cho Admin: đủ widget phức tạp (dialog, sele
 ### Hoàn thành (Core 0.3.56)
 Mọi trang Admin của module và plugin đã dùng bộ component. `tests/Architecture/AdminUiTest.php` khoá: chỉ `@admin/Components` import `reka-ui`; không `vi-VN`/`₫`/`Intl.*`/`toLocale*()` ngoài helper; không `<select>`, `<table>`, `type="date|datetime-local"`, `confirm()`/`prompt()`/`alert()` trong trang và component của module/plugin; module Core không có bảng nhãn viết cứng.
 
+### Bổ sung 2026-11-11 — Drag & Drop Engine (`Sortable`)
+- Dependency được duyệt (R25, Owner chọn): **`vuedraggable` 4.1** (MIT, kéo theo `sortablejs` 1.14, MIT) — kéo-thả bằng chuột/cảm ứng, cuộn khi kéo sát mép, kéo giữa các danh sách lồng nhau.
+- `@admin/Components/Sortable.vue` + `SortHandle.vue` là cơ chế sắp xếp duy nhất của Admin: danh sách dọc, lưới, cây nhiều cấp (`children-key`, `max-depth`). Thư viện không có phần nào thì component bổ sung: sắp xếp bằng bàn phím trên tay nắm (↑ ↓, lưới ← →, cây → thụt vào / ← thụt ra) kèm thông báo `aria-live`, và chặn thả vượt số cấp tối đa — phép toán thuần ở `resources/js/admin/dnd/tree.ts` (`npm run test:dnd`).
+- Như `reka-ui`: **chỉ `Sortable.vue` được import `vuedraggable`/`sortablejs`**; trang module/plugin không tự viết `draggable=`, `@dragstart` hay nút Lên/Xuống. Kiểm tra: `tests/Architecture/AdminUiTest.php`.
+- Đã chuyển: page builder trang chủ, menu (cây), bộ lọc danh sách, video sản phẩm, `MediaField` nhiều ảnh, sản phẩm trong bài viết (`vani.cms`), ảnh lookbook (`vani.lookbook`), khối bảng size (`vani.size-chart`).
+
 ## Consequences
 - (+) Một hệ style; widget truy cập được bằng bàn phím; trang plugin độc lập với thư viện bên dưới.
 - (+) Bỏ dần `confirm()`/`prompt()`, nhãn trạng thái và định dạng tiền ghi cứng ở từng trang.

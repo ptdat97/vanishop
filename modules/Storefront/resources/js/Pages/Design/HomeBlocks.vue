@@ -4,6 +4,8 @@ import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
 import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -31,11 +33,6 @@ function add(): void {
     form.blocks.push({ type: type.type, config });
 }
 
-function move(index: number, delta: number): void {
-    const [block] = form.blocks.splice(index, 1);
-    form.blocks.splice(index + delta, 0, block);
-}
-
 function save(): void {
     form.put(window.location.pathname, { preserveScroll: true });
 }
@@ -58,12 +55,10 @@ async function reset(): Promise<void> {
     <DesignTabs active="home" />
 
     <div class="space-y-4">
-        <section v-for="(block, index) in form.blocks" :key="index" class="rounded-lg border border-slate-200 bg-white p-4" :data-block="block.type">
-            <div class="mb-3 flex items-center justify-between gap-2">
-                <h2 class="font-semibold">{{ index + 1 }}. {{ typeOf(block.type)?.label ?? `${block.type} (plugin đã tắt)` }}</h2>
+        <Sortable v-model="form.blocks" v-slot="{ item: block, index, handle }" list-class="space-y-4" item-tag="section" item-class="rounded-lg border border-slate-200 bg-white p-4" :item-label="(block) => typeOf(block.type)?.label ?? block.type">
+            <div class="mb-3 flex items-center justify-between gap-2" :data-block="block.type">
+                <h2 class="flex items-center gap-2 font-semibold"><SortHandle v-bind="handle" />{{ index + 1 }}. {{ typeOf(block.type)?.label ?? `${block.type} (plugin đã tắt)` }}</h2>
                 <div class="flex gap-1 text-sm">
-                    <button type="button" :class="secondaryButton" :disabled="index === 0" aria-label="Lên" @click="move(index, -1)">↑</button>
-                    <button type="button" :class="secondaryButton" :disabled="index === form.blocks.length - 1" aria-label="Xuống" @click="move(index, 1)">↓</button>
                     <button type="button" :class="dangerButton" @click="form.blocks.splice(index, 1)">Xoá</button>
                 </div>
             </div>
@@ -79,7 +74,7 @@ async function reset(): Promise<void> {
                     <input v-else v-model="block.config[field.key] as string | null" :class="inputClass" :type="field.type === 'int' ? 'number' : 'text'" />
                 </FormField>
             </div>
-        </section>
+        </Sortable>
 
         <p v-if="!form.blocks.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Chưa có khối nào. Thêm khối bên dưới.</p>
 

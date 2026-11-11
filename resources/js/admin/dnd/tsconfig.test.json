@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "skipLibCheck": true,
+        "types": [],
+        "outDir": "../../../../node_modules/.cache/vani-dnd",
+        "rootDir": "."
+    },
+    "files": ["tree.ts"]
+}

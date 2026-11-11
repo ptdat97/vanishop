@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:dnd": "tsc -p resources/js/admin/dnd/tsconfig.test.json && node --test resources/js/admin/dnd/"
     },
     "devDependencies": {
         "@floating-ui/vue": "^2.0.1",
@@ -26,7 +27,8 @@
         "typescript": "^5.9.3",
         "vite": "^8.0.0",
         "vue": "^3.5.43",
-        "vue-tsc": "^3.3.11"
+        "vue-tsc": "^3.3.11",
+        "vuedraggable": "^4.1.0"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"

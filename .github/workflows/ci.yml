@@ -42,6 +42,8 @@ jobs:
 
       - name: Type check (Vue/TS)
         run: npx vue-tsc --noEmit -p tsconfig.json
+      - name: Drag & Drop Engine (lõi thuần, node --test)
+        run: npm run test:dnd
 
       - name: Build assets
         run: npm run build

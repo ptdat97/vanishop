@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
@@ -74,13 +76,6 @@ function onPicked(items: MediaItem[]): void {
     }
 }
 
-function moveBlock(index: number, step: number): void {
-    const target = index + step;
-    if (target < 0 || target >= form.blocks.length) return;
-    const [block] = form.blocks.splice(index, 1);
-    form.blocks.splice(target, 0, block);
-}
-
 function addRow(rows: string[][]): void {
     rows.push(rows[0].map(() => ''));
 }
@@ -128,14 +123,10 @@ async function destroy(): Promise<void> {
                     </div>
                 </div>
                 <p v-if="errors.blocks" class="text-sm text-red-600">{{ errors.blocks }}</p>
-                <div v-for="(block, index) in form.blocks" :key="index" class="space-y-2 rounded border border-slate-200 p-3">
+                <Sortable v-model="form.blocks" v-slot="{ item: block, index, handle }" item-class="space-y-2 rounded border border-slate-200 p-3">
                     <div class="flex items-center justify-between text-xs text-slate-500">
-                        <span>{{ block.type === 'table' ? 'Bảng' : block.type === 'text' ? 'Văn bản (Markdown)' : 'Ảnh' }}</span>
-                        <span class="flex gap-2">
-                            <button type="button" @click="moveBlock(index, -1)">↑</button>
-                            <button type="button" @click="moveBlock(index, 1)">↓</button>
-                            <button type="button" class="text-red-600" @click="form.blocks.splice(index, 1)">Bỏ</button>
-                        </span>
+                        <span class="flex items-center gap-1"><SortHandle v-bind="handle" />{{ block.type === 'table' ? 'Bảng' : block.type === 'text' ? 'Văn bản (Markdown)' : 'Ảnh' }}</span>
+                        <button type="button" class="text-red-600" @click="form.blocks.splice(index, 1)">Bỏ</button>
                     </div>
                     <template v-if="block.type === 'table'">
                         <div class="overflow-x-auto">
@@ -165,7 +156,7 @@ async function destroy(): Promise<void> {
                         <img v-if="block.url" :src="block.url" alt="" class="h-20 rounded" />
                         <input v-model="block.alt" :class="inputClass" placeholder="Mô tả ảnh (alt)" />
                     </div>
-                </div>
+                </Sortable>
                 <MediaPicker v-model:open="picking" title="Chọn ảnh cho bảng size" :multiple="true" @select="onPicked" />
             </section>
 

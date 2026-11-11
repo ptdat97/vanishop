@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.6 — 2026-11-11
+
+Drag & Drop Engine dùng chung của Admin (bổ sung ADR-039).
+
+### Thêm
+- Component UI công khai cho trang plugin: `@admin/Components/Sortable.vue` (kéo-thả danh sách dọc, lưới, cây nhiều cấp; sắp xếp bằng bàn phím) và `@admin/Components/SortHandle.vue` (tay nắm). Cách dùng ở đầu file `Sortable.vue`.
+
+### Đổi
+- Trang plugin không tự viết kéo-thả hay nút Lên/Xuống nữa — arch test chặn; `vani.cms`, `vani.lookbook`, `vani.size-chart` đã chuyển sang `Sortable`.
+
 ## 0.4.5 — 2026-11-11
 
 Sửa tồn ngay trong ô ở danh sách sản phẩm Admin (backlog L26).

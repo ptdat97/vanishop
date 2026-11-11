@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import Select from '@admin/Components/Select.vue';
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
 import { inputClass, secondaryButton } from '@admin/styles';
 import { router, usePage } from '@inertiajs/vue3';
@@ -29,14 +31,9 @@ function add(): void {
     }
 }
 
-function move(index: number, direction: -1 | 1): void {
-    const order = props.videos.map((video) => video.id);
-    const target = index + direction;
-    if (target < 0 || target >= order.length) {
-        return;
-    }
-    [order[index], order[target]] = [order[target], order[index]];
-    router.put(`${props.productUrl}/videos/order`, { order }, { preserveScroll: true });
+/** Kéo-thả xong lưu ngay thứ tự mới (danh sách hiện theo thứ tự server trả về). */
+function reorder(videos: VideoRow[]): void {
+    router.put(`${props.productUrl}/videos/order`, { order: videos.map((video) => video.id) }, { preserveScroll: true });
 }
 
 async function remove(video: VideoRow): Promise<void> {
@@ -63,20 +60,17 @@ async function remove(video: VideoRow): Promise<void> {
             <p v-if="errors.url || errors.driver" class="text-sm text-red-600">{{ errors.url ?? errors.driver }}</p>
         </div>
 
-        <div class="flex flex-wrap gap-3">
-            <div v-for="(video, index) in videos" :key="video.id" class="w-40 text-xs">
+        <Sortable :model-value="videos" v-slot="{ item: video, handle }" layout="grid" list-class="flex flex-wrap gap-3" item-class="w-40 text-xs" :item-key="(video) => video.id" :item-label="(video) => video.title ?? video.reference" @update:model-value="reorder">
                 <a v-if="video.watch_url" :href="video.watch_url" target="_blank" rel="noopener" class="block">
                     <img v-if="video.thumbnail_url" :src="video.thumbnail_url" alt="" class="aspect-video w-40 rounded object-cover" />
                     <span v-else class="flex aspect-video w-40 items-center justify-center rounded bg-slate-100 text-slate-500">{{ video.driver }}</span>
                 </a>
                 <span v-else class="flex aspect-video w-40 items-center justify-center rounded bg-amber-50 px-2 text-center text-amber-700">Nền tảng "{{ video.driver }}" đang tắt</span>
                 <p class="mt-1 truncate" :title="video.title ?? video.reference">{{ video.title ?? video.reference }}</p>
-                <div class="mt-1 flex justify-between">
-                    <button type="button" :disabled="index === 0" @click="move(index, -1)">←</button>
+                <div class="mt-1 flex items-center justify-between">
+                    <SortHandle v-bind="handle" />
                     <button type="button" class="text-red-600" @click="remove(video)">Gỡ</button>
-                    <button type="button" :disabled="index === videos.length - 1" @click="move(index, 1)">→</button>
                 </div>
-            </div>
-        </div>
+        </Sortable>
     </div>
 </template>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
@@ -53,11 +55,6 @@ function pick(items: MediaItem[]): void {
     picking.value = false;
 }
 
-function move(index: number, delta: number): void {
-    const [image] = images.value.splice(index, 1);
-    images.value.splice(index + delta, 0, image);
-}
-
 function save(): void {
     form.transform((data) => ({
         ...data,
@@ -108,19 +105,14 @@ async function destroy(): Promise<void> {
                     <button v-if="can.manage" type="button" :class="secondaryButton" @click="picking = true">Thêm ảnh</button>
                 </div>
                 <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
-                <ol class="space-y-2">
-                    <li v-for="(image, index) in images" :key="image.media_id" class="flex items-start gap-3 rounded border border-slate-100 p-2">
+                <Sortable v-model="images" v-slot="{ item: image, index, handle }" tag="ol" item-tag="li" item-class="flex items-start gap-3 rounded border border-slate-100 p-2" :item-key="(image) => image.media_id" :disabled="!can.manage">
+                        <SortHandle v-if="can.manage" v-bind="handle" />
                         <img v-if="image.thumb_url" :src="image.thumb_url" alt="" class="h-16 w-16 rounded object-cover" />
                         <div class="flex-1 space-y-1">
                             <input v-for="locale in locales" :key="locale.code" v-model="image.alt[locale.code]" :class="inputClass" :placeholder="`Mô tả ảnh (${locale.label})`" maxlength="200" :disabled="!can.manage" />
                         </div>
-                        <div v-if="can.manage" class="flex gap-1">
-                            <button type="button" :class="secondaryButton" :disabled="index === 0" aria-label="Lên" @click="move(index, -1)">↑</button>
-                            <button type="button" :class="secondaryButton" :disabled="index === images.length - 1" aria-label="Xuống" @click="move(index, 1)">↓</button>
-                            <button type="button" :class="dangerButton" aria-label="Bỏ" @click="images.splice(index, 1)">×</button>
-                        </div>
-                    </li>
-                </ol>
+                        <button v-if="can.manage" type="button" :class="dangerButton" aria-label="Bỏ" @click="images.splice(index, 1)">×</button>
+                </Sortable>
             </section>
         </div>
 

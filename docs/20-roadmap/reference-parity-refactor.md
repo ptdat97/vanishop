@@ -425,7 +425,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 |---|---|---|---|
 | L1 | Nội dung `vani.cms` (trang, bài viết) chỉ một ngôn ngữ; bản `/en` là `noindex` | `vani.cms` | Bản dịch + slug theo ngôn ngữ như Catalog (ADR-038 mục 4) |
 | L2 | Mẫu email tiếng Anh cửa hàng phải tự tạo (Admin → Thông báo); thiếu thì gửi bản `vi` | Notification | Mẫu mặc định `en` cho các loại tin Core |
-| L3 | Sắp xếp menu bằng nút ↑ ↓ ← →, chưa kéo-thả | Storefront Admin | Kéo-thả khi có component được duyệt (ADR-039) |
+| L3 ✅ 0.4.6 | Menu sắp xếp bằng kéo-thả (cây), vẫn dùng được bằng bàn phím — Drag & Drop Engine dùng chung `Sortable` (vuedraggable, bổ sung ADR-039) | Storefront Admin | — |
 | L4 | Có CDN: thay đổi (giá, slug, menu, cấu hình) thấy sau tối đa `s-maxage`; chưa purge theo event | Storefront | `CdnPurger` (plugin theo nhà cung cấp CDN) nghe event |
 | L5 | Sau khi đặt đơn, dòng giỏ chưa chọn giữ trạng thái bỏ chọn (không tự chọn lại) | Cart | Tuỳ chọn cấu hình nếu Owner muốn |
 | L6 ✅ 0.3.87 | `FieldDefinition` / `SettingDefinition` chưa có kiểu chọn ảnh: khối "Banner chính" nhận URL (chưa `srcset`), ảnh phương thức thanh toán ở chân trang là nhãn chữ, `storefront.placeholder_image` nhập ID ảnh | Extension, Storefront, Catalog | Kiểu trường `media` (Admin dùng MediaPicker) — **Đã xử lý 2026-11-06**: kiểu `media` (FieldDefinition/SettingDefinition) + `MediaField` dùng chung; khối hero/trình chiếu/lưới banner nhận ảnh Thư viện ảnh có srcset; "Ảnh thay thế" là ô chọn ảnh. Banner danh mục vẫn ở trang riêng (L19) |

@@ -8,11 +8,11 @@
         "vi": "Bộ ảnh thời trang theo mùa/chủ đề: trang danh sách, trang chi tiết dạng thư viện ảnh, khối trang chủ, dẫn sang danh mục liên quan.",
         "en": "Seasonal fashion lookbooks: listing, gallery detail page, home page block, link to the related category."
     },
-    "version": "1.1.0",
+    "version": "1.1.1",
     "kind": "content",
     "provider": "Plugin\\Lookbook\\LookbookServiceProvider",
     "requires": {
-        "vanishop": "^0.4",
+        "vanishop": "^0.4.6",
         "plugins": {}
     },
     "conflicts": [],

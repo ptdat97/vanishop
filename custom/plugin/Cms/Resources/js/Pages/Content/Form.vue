@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -96,9 +98,8 @@ function addProduct(product: ProductOption): void {
     syncProducts();
 }
 
-function moveProduct(index: number, delta: number): void {
-    const [product] = chosen.value.splice(index, 1);
-    chosen.value.splice(index + delta, 0, product);
+function reorderProducts(products: typeof chosen.value): void {
+    chosen.value = products;
     syncProducts();
 }
 
@@ -267,16 +268,11 @@ function onPicked(items: MediaItem[]): void {
 
             <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4" data-post-products>
                 <h2 class="text-sm font-medium">Sản phẩm trong bài ({{ chosen.length }}/{{ MAX_PRODUCTS }})</h2>
-                <ol v-if="chosen.length" class="space-y-1 text-sm">
-                    <li v-for="(product, index) in chosen" :key="product.id" class="flex items-center gap-1">
+                <Sortable v-if="chosen.length" v-slot="{ item: product, index, handle }" :model-value="chosen" tag="ol" item-tag="li" list-class="space-y-1 text-sm" item-class="flex items-center gap-1" :item-key="(product) => product.id" :item-label="(product) => product.name" :disabled="!can.manage" @update:model-value="reorderProducts">
+                        <SortHandle v-if="can.manage" v-bind="handle" />
                         <span class="flex-1 truncate" :class="product.visible === false ? 'text-slate-400' : ''">{{ product.name }}<template v-if="product.visible === false"> (đang ẩn)</template></span>
-                        <template v-if="can.manage">
-                            <button type="button" class="px-1 text-slate-500" :disabled="index === 0" aria-label="Lên" @click="moveProduct(index, -1)">↑</button>
-                            <button type="button" class="px-1 text-slate-500" :disabled="index === chosen.length - 1" aria-label="Xuống" @click="moveProduct(index, 1)">↓</button>
-                            <button type="button" class="px-1 text-red-600" aria-label="Bỏ" @click="removeProduct(index)">×</button>
-                        </template>
-                    </li>
-                </ol>
+                        <button v-if="can.manage" type="button" class="px-1 text-red-600" aria-label="Bỏ" @click="removeProduct(index)">×</button>
+                </Sortable>
                 <template v-if="can.manage && chosen.length < MAX_PRODUCTS">
                     <input v-model="productQuery" :class="inputClass" placeholder="Tìm sản phẩm theo tên/mã…" @input="searchProducts" />
                     <ul v-if="productResults.length" class="max-h-48 overflow-auto rounded border border-slate-200 text-sm">
