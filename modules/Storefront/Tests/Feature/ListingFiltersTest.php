@@ -8,7 +8,10 @@ use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Pricing\Application\PriceListService;
+use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
+use Modules\Tenancy\Contracts\Settings;
 
 beforeEach(function () {
     $this->lumiere = Brand::factory()->create(['slug' => 'lumiere', 'name' => 'Lumière']);
@@ -45,7 +48,7 @@ it('mặc định: thương hiệu, màu, thuộc tính lọc được — đún
 it('Admin → Catalog → Bộ lọc: đổi thứ tự, tắt, ô màu → storefront theo cấu hình; khoá lạ bị từ chối', function () {
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'catalog.view', 'catalog.manage'])->create(), 'staff');
     $this->get('/admin/catalog/filters')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Catalog::Taxonomy/Filters')
-        ->where('facets.3.key', 'attr:material')->where('facets.1.displays', ['list', 'swatch']));
+        ->where('facets.4.key', 'attr:material')->where('facets.2', fn ($facet) => $facet['key'] === 'price' && $facet['displays'] === ['range'])->where('facets.1.displays', ['list', 'swatch']));
 
     $this->put('/admin/catalog/filters', ['facets' => [['key' => 'khong-co', 'enabled' => true, 'display' => 'list']]])->assertSessionHasErrors('facets.0.key');
     $this->put('/admin/catalog/filters', ['facets' => [['key' => 'brand', 'enabled' => true, 'display' => 'swatch']]])->assertSessionHasErrors('facets.0.display');
@@ -105,4 +108,47 @@ it('lọc theo size: sản phẩm có biến thể đang bán thuộc size đã 
         ->and(collect(collect($list('?size=S&brand=urbanx')->json('meta.filters'))->firstWhere('key', 'size')['options'])->pluck('value')->all())->toBe(['M', 'L']);
 
     $this->get('/tim-kiem?size=S')->assertOk()->assertSee('data-filter="size"', false)->assertSee('Đầm lụa đen')->assertDontSee('Áo thun Urbanx');
+});
+
+it('lọc và sắp xếp theo giá niêm yết: khoảng giá của kết quả, price_min/price_max, giá đổi thì thứ tự đổi theo', function () {
+    // Áo vào bảng giá `base` qua luồng thật (PriceChanged → đồng bộ sang Catalog); đầm đã có sẵn → lệnh đồng bộ điền nốt.
+    $base = PriceList::query()->where('code', 'base')->firstOrFail();
+    $shirt = Variant::query()->orderByDesc('id')->firstOrFail();
+    $dress = Variant::query()->orderBy('id')->firstOrFail();
+    T::seed(fn () => app(PriceListService::class)->setPrices($base, [['variant_id' => $shirt->id, 'amount' => 150_000, 'compare_at_amount' => null]]));
+    $this->artisan('vani:pricing:sync-list-prices')->assertSuccessful();
+    $list = fn (string $query = '') => $this->getJson('/api/storefront/v1/products'.$query)->assertOk();
+    $slugs = fn ($response) => collect($response->json('data'))->pluck('slug')->all();
+
+    $price = collect($list()->json('meta.filters'))->firstWhere('key', 'price');
+    expect($price)->toMatchArray(['param' => 'price', 'label' => 'Giá', 'display' => 'range', 'options' => [], 'range' => ['min' => 150_000, 'max' => 300_000]])
+        ->and($slugs($list('?price_max=200000')))->toBe(['ao-thun-urbanx'])
+        ->and($slugs($list('?price_min=200000')))->toBe(['dam-lua-den'])
+        ->and($slugs($list('?price_min=100000&price_max=400000&sort=price_asc')))->toBe(['ao-thun-urbanx', 'dam-lua-den'])
+        ->and($slugs($list('?sort=price_desc')))->toBe(['dam-lua-den', 'ao-thun-urbanx'])
+        // Khoảng giá gợi ý không co lại theo chính bộ lọc giá.
+        ->and(collect($list('?price_max=200000')->json('meta.filters'))->firstWhere('key', 'price')['range'])->toBe(['min' => 150_000, 'max' => 300_000]);
+    $this->getJson('/api/storefront/v1/products?sort=gia')->assertStatus(422);
+    $this->getJson('/api/storefront/v1/products?price_min=-1')->assertStatus(422);
+
+    // Nhân viên hạ giá đầm → rẻ nhất, không cần chạy lệnh.
+    T::seed(fn () => app(PriceListService::class)->setPrices($base, [['variant_id' => $dress->id, 'amount' => 90_000, 'compare_at_amount' => null]]));
+    expect($slugs($list('?sort=price_asc')))->toBe(['dam-lua-den', 'ao-thun-urbanx']);
+
+    $this->get('/tim-kiem?price_min=100000')->assertOk()->assertSee('data-filter="price"', false)->assertSee('name="price_min"', false)
+        ->assertSee('<option value="price_asc"', false)->assertSee('Áo thun Urbanx')->assertDontSee('Đầm lụa đen');
+});
+
+it('ẩn giá với khách chưa đăng nhập: không lọc, không sắp xếp, không trả khoảng giá', function () {
+    $base = PriceList::query()->where('code', 'base')->firstOrFail();
+    T::seed(fn () => app(PriceListService::class)->setPrices($base, [['variant_id' => Variant::query()->orderByDesc('id')->firstOrFail()->id, 'amount' => 150_000, 'compare_at_amount' => null]]));
+    $this->artisan('vani:pricing:sync-list-prices')->assertSuccessful();
+    T::seed(fn () => app(Settings::class)->set('core', 'storefront.price_visibility', 'members'));
+
+    $response = $this->getJson('/api/storefront/v1/products?price_max=200000&sort=price_asc')->assertOk();
+    expect($response->json('data'))->toHaveCount(2)
+        ->and(collect($response->json('data'))->pluck('slug')->all())->toBe(['ao-thun-urbanx', 'dam-lua-den'])
+        ->and(array_column($response->json('meta.filters'), 'key'))->not->toContain('price')
+        ->and($response->json('meta.facets'))->not->toHaveKey('price');
+    $this->get('/tim-kiem')->assertOk()->assertDontSee('data-filter="price"', false)->assertDontSee('<option value="price_asc"', false);
 });

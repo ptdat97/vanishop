@@ -109,7 +109,7 @@
 | [`style_translations`](#style_translations) | 9 |
 | [`style_video`](#style_video) | 3 |
 | [`style_view_stats`](#style_view_stats) | 3 |
-| [`styles`](#styles) | 13 |
+| [`styles`](#styles) | 14 |
 | [`users`](#users) | 8 |
 | [`variants`](#variants) | 12 |
 | [`videos`](#videos) | 7 |
@@ -1894,12 +1894,13 @@ Index: PK (style_id, hour); index (hour)
 | `published_to` | datetime | có |  |
 | `primary_category_id` | bigint unsigned | có |  |
 | `search_text` | text |  |  |
+| `list_price_min` | bigint | có |  |
 | `meta` | json | có |  |
 | `lock_version` | int unsigned |  | `0` |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); index (brand_id); index (primary_category_id); unique (slug); index (status, published_from); unique (style_code)
+Index: PK (id); index (brand_id); index (list_price_min); index (primary_category_id); unique (slug); index (status, published_from); unique (style_code)
 
 Khoá ngoại: brand_id → brands(id); primary_category_id → categories(id) on delete set null
 

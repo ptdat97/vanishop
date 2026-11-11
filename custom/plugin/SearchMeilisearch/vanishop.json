@@ -4,11 +4,11 @@
         "vi": "Tìm kiếm Meilisearch",
         "en": "Meilisearch search"
     },
-    "version": "0.2.0",
+    "version": "0.3.0",
     "kind": "search",
     "provider": "Plugin\\SearchMeilisearch\\SearchMeilisearchServiceProvider",
     "requires": {
-        "vanishop": "^0.4.3",
+        "vanishop": "^0.4.4",
         "plugins": {}
     },
     "conflicts": [],

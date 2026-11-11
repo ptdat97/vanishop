@@ -9,8 +9,8 @@ return [
     'variant_status' => ['active' => 'On sale', 'inactive' => 'Discontinued'],
     'visibility' => ['active' => 'Visible', 'hidden' => 'Hidden'],
     'attribute_kind' => ['spec' => 'Shown & filterable (spec)', 'internal' => 'Internal only'],
-    'facet' => ['brand' => 'Brand', 'color' => 'Colour', 'size' => 'Size'],
-    'facet_display' => ['list' => 'List', 'swatch' => 'Swatches'],
+    'facet' => ['brand' => 'Brand', 'color' => 'Colour', 'size' => 'Size', 'price' => 'Price'],
+    'facet_display' => ['list' => 'List', 'swatch' => 'Swatches', 'range' => 'Price range (from – to)'],
     'color_family' => [
         'white' => 'White', 'black' => 'Black', 'grey' => 'Grey', 'beige' => 'Beige', 'brown' => 'Brown', 'red' => 'Red', 'pink' => 'Pink',
         'orange' => 'Orange', 'yellow' => 'Yellow', 'green' => 'Green', 'blue' => 'Blue', 'purple' => 'Purple', 'multi' => 'Multicolour', 'metallic' => 'Metallic',

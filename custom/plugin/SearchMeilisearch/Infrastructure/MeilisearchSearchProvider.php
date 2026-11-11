@@ -19,9 +19,9 @@ use Modules\Shared\Domain\Text\VietnameseText;
  */
 final class MeilisearchSearchProvider implements ConfigurableSearchIndex, SearchProvider
 {
-    public const FILTERABLE = ['brand_id', 'status', 'published_from', 'published_to', 'category_ids', 'collection_ids', 'color_families', 'attribute_value_ids', 'size_codes'];
+    public const FILTERABLE = ['brand_id', 'status', 'published_from', 'published_to', 'category_ids', 'collection_ids', 'color_families', 'attribute_value_ids', 'size_codes', 'list_price_min'];
 
-    public const SORTABLE = ['created_at', 'style_code'];
+    public const SORTABLE = ['created_at', 'style_code', 'list_price_min'];
 
     public function __construct(
         private readonly string $host,
@@ -49,8 +49,13 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
         $response = $this->client()->post("indexes/{$this->index}/search", [
             'q' => VietnameseText::normalize($query->text),
             'filter' => $this->filters($query),
-            'facets' => ['color_families', 'attribute_value_ids', 'brand_id', 'size_codes'],
-            'sort' => $query->sort === ProductSearchQuery::SORT_CODE ? ['style_code:asc'] : ['created_at:desc'],
+            'facets' => ['color_families', 'attribute_value_ids', 'brand_id', 'size_codes', 'list_price_min'],
+            'sort' => match ($query->sort) {
+                ProductSearchQuery::SORT_CODE => ['style_code:asc'],
+                ProductSearchQuery::SORT_PRICE_ASC => ['list_price_min:asc'],
+                ProductSearchQuery::SORT_PRICE_DESC => ['list_price_min:desc'],
+                default => ['created_at:desc'],
+            },
             'offset' => $query->offset(),
             'limit' => $query->limit(),
             'attributesToRetrieve' => ['id'],
@@ -69,6 +74,8 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
                     ->mapWithKeys(fn ($total, $id): array => [(int) $id => (int) $total])->all(),
                 'sizes' => collect((array) ($distribution['size_codes'] ?? []))
                     ->mapWithKeys(fn ($total, $code): array => [(string) $code => (int) $total])->all(),
+                // Khoảng giá của kết quả đang lọc (Meilisearch tính facetStats sau khi áp mọi bộ lọc, kể cả lọc giá).
+                'price' => isset($response['facetStats']['list_price_min']) ? ['min' => (int) $response['facetStats']['list_price_min']['min'], 'max' => (int) $response['facetStats']['list_price_min']['max']] : null,
             ],
         );
     }
@@ -108,6 +115,12 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
         }
         if ($query->colorFamilies !== []) {
             $filters[] = array_map(fn (string $family): string => "color_families = '".addslashes($family)."'", $query->colorFamilies);
+        }
+        if ($query->priceMin !== null) {
+            $filters[] = "list_price_min >= {$query->priceMin}";
+        }
+        if ($query->priceMax !== null) {
+            $filters[] = "list_price_min <= {$query->priceMax}";
         }
         if ($query->sizeCodes !== []) {
             $filters[] = array_map(fn (string $code): string => "size_codes = '".addslashes($code)."'", $query->sizeCodes);

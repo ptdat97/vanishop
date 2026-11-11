@@ -8,6 +8,31 @@
         {{-- Bộ lọc theo cấu hình Admin → Catalog → Bộ lọc (thứ tự, bật/tắt, kiểu hiển thị); link thường, chạy khi tắt JS. --}}
         @foreach ($listing['filters'] ?? [] as $filter)
             @continue($filter['key'] === 'brand' && request()->routeIs('storefront.brand', 'storefront.*.brand'))
+            @if ($filter['display'] === 'range')
+                {{-- Khoảng giá niêm yết: form GET thường (chạy khi tắt JS), giữ các bộ lọc đang chọn. --}}
+                <section data-filter="{{ $filter['key'] }}">
+                    <h2 class="mb-2 font-semibold">{{ $filter['label'] }}</h2>
+                    <form method="get" action="{{ url()->current() }}" class="space-y-2">
+                        @foreach (\Modules\Storefront\View\ListingUrl::hiddenFields(request(), ['price_min', 'price_max']) as $name => $value)
+                            <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+                        @endforeach
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="price_min" min="0" step="1000" inputmode="numeric" value="{{ request('price_min') }}" placeholder="{{ vani_money($filter['range']['min']) }}"
+                                aria-label="{{ __('Giá từ') }}" class="w-full min-w-0 rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5">
+                            <span aria-hidden="true">–</span>
+                            <input type="number" name="price_max" min="0" step="1000" inputmode="numeric" value="{{ request('price_max') }}" placeholder="{{ vani_money($filter['range']['max']) }}"
+                                aria-label="{{ __('Giá đến') }}" class="w-full min-w-0 rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="submit" class="rounded-[var(--radius-theme)] border border-slate-900 px-3 py-1.5 font-medium">{{ __('Áp dụng') }}</button>
+                            @if (request()->filled('price_min') || request()->filled('price_max'))
+                                <a href="{{ url()->current() }}{{ ($rest = http_build_query(\Illuminate\Support\Arr::except(request()->query(), ['price_min', 'price_max', 'page']))) === '' ? '' : '?'.$rest }}" class="text-slate-500 underline">{{ __('Bỏ lọc giá') }}</a>
+                            @endif
+                        </div>
+                    </form>
+                </section>
+                @continue
+            @endif
             <section data-filter="{{ $filter['key'] }}">
                 <h2 class="mb-2 font-semibold">{{ $filter['label'] }}</h2>
                 <ul @class(['flex flex-wrap gap-2' => $filter['display'] === 'swatch', 'space-y-1' => $filter['display'] !== 'swatch'])>
@@ -33,7 +58,24 @@
     </aside>
 
     <section>
-        <p class="mb-4 text-sm text-slate-500">{{ trans_choice(':count sản phẩm', $listing['total'], ['count' => $listing['total']]) }}</p>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+            <p class="text-slate-500">{{ trans_choice(':count sản phẩm', $listing['total'], ['count' => $listing['total']]) }}</p>
+            {{-- Sắp xếp: form GET thường, giữ bộ lọc đang chọn; sắp theo giá ẩn khi cửa hàng ẩn giá với khách chưa đăng nhập. --}}
+            <form method="get" action="{{ url()->current() }}" class="flex items-center gap-2" data-vani-sort>
+                @foreach (\Modules\Storefront\View\ListingUrl::hiddenFields(request(), ['sort']) as $name => $value)
+                    <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+                @endforeach
+                <label for="vani-listing-sort" class="text-slate-500">{{ __('Sắp xếp') }}</label>
+                <select id="vani-listing-sort" name="sort" class="rounded-[var(--radius-theme)] border border-slate-300 px-2 py-1.5" onchange="this.form.submit()">
+                    <option value="newest" @selected(request('sort', 'newest') === 'newest')>{{ __('Mới nhất') }}</option>
+                    @if ($listing['sortable_by_price'] ?? false)
+                        <option value="price_asc" @selected(request('sort') === 'price_asc')>{{ __('Giá thấp đến cao') }}</option>
+                        <option value="price_desc" @selected(request('sort') === 'price_desc')>{{ __('Giá cao đến thấp') }}</option>
+                    @endif
+                </select>
+                <noscript><button type="submit" class="underline">{{ __('Áp dụng') }}</button></noscript>
+            </form>
+        </div>
         @if ($listing['items'] === [])
             <p class="py-12 text-center text-slate-500">{{ __('Không có sản phẩm phù hợp.') }}</p>
             <x-vani::hook-slot name="vani.storefront.plp.empty" :args="[$listingContext ?? ['type' => 'search', 'category' => null, 'brand' => null], $listing]" />

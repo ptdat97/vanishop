@@ -14,6 +14,13 @@ final readonly class ProductSearchQuery
 
     public const SORT_CODE = 'code';
 
+    /** Theo giá niêm yết thấp nhất của sản phẩm (0.4.4); sản phẩm chưa có giá xếp cuối. */
+    public const SORT_PRICE_ASC = 'price_asc';
+
+    public const SORT_PRICE_DESC = 'price_desc';
+
+    public const SORTS = [self::SORT_NEWEST, self::SORT_CODE, self::SORT_PRICE_ASC, self::SORT_PRICE_DESC];
+
     public const MAX_PER_PAGE = 60;
 
     /**
@@ -21,6 +28,8 @@ final readonly class ProductSearchQuery
      * @param  list<string>  $colorFamilies
      * @param  array<int, list<int>>  $attributeValueIds  attribute id => value ids
      * @param  list<string>  $sizeCodes  mã size (`sizes.code`): sản phẩm có biến thể đang bán thuộc một trong các size (0.4.3)
+     * @param  int|null  $priceMin  giá niêm yết thấp nhất của sản phẩm ≥ mức này (đơn vị nhỏ nhất, 0.4.4); sản phẩm chưa có giá bị loại khi lọc giá
+     * @param  int|null  $priceMax  giá niêm yết thấp nhất của sản phẩm ≤ mức này
      */
     public function __construct(
         public array $brandIds,
@@ -34,6 +43,8 @@ final readonly class ProductSearchQuery
         public int $page = 1,
         public int $perPage = 24,
         public array $sizeCodes = [],
+        public ?int $priceMin = null,
+        public ?int $priceMax = null,
     ) {}
 
     public function offset(): int

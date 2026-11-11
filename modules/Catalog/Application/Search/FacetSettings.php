@@ -13,7 +13,7 @@ use Modules\Tenancy\Contracts\Settings;
  * Bộ lọc của trang danh sách do Admin cấu hình (reference-parity §3.5-1, Admin → Catalog → Bộ lọc): bật/tắt, thứ tự,
  * kiểu hiển thị. Lưu ở `core`/`catalog.facets` = list<{key, enabled, display}>. Facet có sẵn: thương hiệu, nhóm màu,
  * size (0.4.3), từng thuộc tính spec đánh dấu "dùng để lọc". Facet mới (thuộc tính vừa bật lọc) tự thêm cuối danh sách,
- * đang bật. Lọc theo giá chưa có ở SearchProvider nên chưa là facet.
+ * đang bật. `price` (0.4.4) là khoảng giá niêm yết, kiểu hiển thị `range`.
  */
 final class FacetSettings
 {
@@ -24,13 +24,14 @@ final class FacetSettings
     public function __construct(private readonly Settings $settings) {}
 
     /**
-     * @return array<string, array{key: string, type: 'brand'|'color'|'size'|'attribute', code: string|null, label: string, displays: list<string>}>
+     * @return array<string, array{key: string, type: 'brand'|'color'|'size'|'price'|'attribute', code: string|null, label: string, displays: list<string>}>
      */
     public function available(string $locale): array
     {
         $facets = [
             'brand' => ['key' => 'brand', 'type' => 'brand', 'code' => null, 'label' => __('catalog::labels.facet.brand', [], $locale), 'displays' => ['list']],
             'color' => ['key' => 'color', 'type' => 'color', 'code' => null, 'label' => __('catalog::labels.facet.color', [], $locale), 'displays' => self::DISPLAYS],
+            'price' => ['key' => 'price', 'type' => 'price', 'code' => null, 'label' => __('catalog::labels.facet.price', [], $locale), 'displays' => ['range']],
             'size' => ['key' => 'size', 'type' => 'size', 'code' => null, 'label' => __('catalog::labels.facet.size', [], $locale), 'displays' => ['list']],
         ];
         $attributes = Attribute::query()->with('translations')->where('kind', AttributeKind::Spec)->where('is_filterable', true)->orderBy('position')->orderBy('code')->get();
@@ -56,11 +57,11 @@ final class FacetSettings
             if (! isset($available[$key]) || isset($result[$key])) {
                 continue;
             }
-            $display = (string) ($entry['display'] ?? 'list');
-            $result[$key] = [...$available[$key], 'enabled' => (bool) ($entry['enabled'] ?? true), 'display' => in_array($display, $available[$key]['displays'], true) ? $display : 'list'];
+            $display = (string) ($entry['display'] ?? $available[$key]['displays'][0]);
+            $result[$key] = [...$available[$key], 'enabled' => (bool) ($entry['enabled'] ?? true), 'display' => in_array($display, $available[$key]['displays'], true) ? $display : $available[$key]['displays'][0]];
         }
         foreach ($available as $key => $facet) {
-            $result[$key] ??= [...$facet, 'enabled' => true, 'display' => 'list'];
+            $result[$key] ??= [...$facet, 'enabled' => true, 'display' => $facet['displays'][0]];
         }
 
         return array_values($result);
@@ -77,7 +78,7 @@ final class FacetSettings
         $clean = [];
         foreach (array_values($facets) as $index => $facet) {
             $key = (string) ($facet['key'] ?? '');
-            $display = (string) ($facet['display'] ?? 'list');
+            $display = (string) ($facet['display'] ?? ($available[$key]['displays'][0] ?? 'list'));
             if (! isset($available[$key])) {
                 throw ValidationException::withMessages(["facets.{$index}.key" => __('catalog::messages.facet_unknown')]);
             }

@@ -16,6 +16,7 @@ final readonly class ProductDocument
      * @param  list<string>  $colorFamilies
      * @param  list<int>  $attributeValueIds  giá trị của thuộc tính spec + filterable
      * @param  list<string>  $sizeCodes  mã size của các biến thể đang bán (0.4.3)
+     * @param  int|null  $listPriceMin  giá niêm yết thấp nhất (đơn vị nhỏ nhất, 0.4.4); null = chưa có giá
      */
     public function __construct(
         public int $id,
@@ -33,6 +34,7 @@ final readonly class ProductDocument
         public array $attributeValueIds,
         public int $createdAt,
         public array $sizeCodes = [],
+        public ?int $listPriceMin = null,
     ) {}
 
     /**
@@ -56,6 +58,7 @@ final readonly class ProductDocument
             'attribute_value_ids' => $this->attributeValueIds,
             'created_at' => $this->createdAt,
             'size_codes' => $this->sizeCodes,
+            'list_price_min' => $this->listPriceMin,
         ];
     }
 }

@@ -10,8 +10,8 @@ return [
     'visibility' => ['active' => 'Hiển thị', 'hidden' => 'Ẩn'],
     'attribute_kind' => ['spec' => 'Hiển thị & lọc (spec)', 'internal' => 'Chỉ nội bộ (internal)'],
     // Bộ lọc storefront (§3.5-1): tên facet + nhóm màu, theo ngôn ngữ trang.
-    'facet' => ['brand' => 'Thương hiệu', 'color' => 'Màu', 'size' => 'Kích cỡ'],
-    'facet_display' => ['list' => 'Danh sách', 'swatch' => 'Ô màu'],
+    'facet' => ['brand' => 'Thương hiệu', 'color' => 'Màu', 'size' => 'Kích cỡ', 'price' => 'Giá'],
+    'facet_display' => ['list' => 'Danh sách', 'swatch' => 'Ô màu', 'range' => 'Khoảng giá (từ – đến)'],
     'color_family' => [
         'white' => 'Trắng', 'black' => 'Đen', 'grey' => 'Xám', 'beige' => 'Be', 'brown' => 'Nâu', 'red' => 'Đỏ', 'pink' => 'Hồng',
         'orange' => 'Cam', 'yellow' => 'Vàng', 'green' => 'Xanh lá', 'blue' => 'Xanh dương', 'purple' => 'Tím', 'multi' => 'Nhiều màu', 'metallic' => 'Ánh kim',

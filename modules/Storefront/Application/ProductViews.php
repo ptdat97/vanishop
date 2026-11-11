@@ -6,6 +6,7 @@ namespace Modules\Storefront\Application;
 
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
+use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
@@ -39,8 +40,22 @@ final class ProductViews implements ProductCards
      */
     public function listing(ProductFilters $filters, string $locale, int $now): array
     {
+        // Ẩn giá với khách chưa đăng nhập: không lọc/sắp xếp theo giá và không trả khoảng giá (lộ giá gián tiếp).
+        $hidden = $this->visibility->hidden();
+        if ($hidden && ($filters->priceMin !== null || $filters->priceMax !== null || in_array($filters->sort, [ProductSearchQuery::SORT_PRICE_ASC, ProductSearchQuery::SORT_PRICE_DESC], true))) {
+            $filters = new ProductFilters(
+                now: $filters->now, text: $filters->text, categorySlug: $filters->categorySlug, collectionSlug: $filters->collectionSlug, colorFamilies: $filters->colorFamilies,
+                attributes: $filters->attributes, sort: str_starts_with($filters->sort, 'price_') ? ProductSearchQuery::SORT_NEWEST : $filters->sort,
+                page: $filters->page, perPage: $filters->perPage, brandSlugs: $filters->brandSlugs, sizeCodes: $filters->sizeCodes,
+            );
+        }
         $listing = $this->catalog->searchProducts($filters, $locale);
         $listing['items'] = $this->cards($listing['items'], $now);
+        $listing['sortable_by_price'] = ! $hidden;
+        if ($hidden) {
+            unset($listing['facets']['price']);
+            $listing['filters'] = array_values(array_filter($listing['filters'] ?? [], fn (array $filter): bool => $filter['key'] !== 'price'));
+        }
 
         return $listing;
     }

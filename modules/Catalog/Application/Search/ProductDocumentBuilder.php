@@ -40,6 +40,7 @@ final class ProductDocumentBuilder
                 ->pluck('attribute_value_id')->unique()->sort()->values()->all(),
             createdAt: (int) $style->created_at?->getTimestamp(),
             sizeCodes: $style->variants->where('status', VariantStatus::Active)->map(fn ($variant): string => (string) $variant->size->code)->unique()->sort()->values()->all(),
+            listPriceMin: $style->list_price_min,
         );
     }
 }

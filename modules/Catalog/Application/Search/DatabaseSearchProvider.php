@@ -50,6 +50,9 @@ final class DatabaseSearchProvider implements SearchProvider
         }
         match ($query->sort) {
             ProductSearchQuery::SORT_CODE => $ordered->orderBy('styles.style_code'),
+            // Sản phẩm chưa có giá luôn xếp cuối.
+            ProductSearchQuery::SORT_PRICE_ASC => $ordered->orderByRaw('styles.list_price_min is null')->orderBy('styles.list_price_min'),
+            ProductSearchQuery::SORT_PRICE_DESC => $ordered->orderByRaw('styles.list_price_min is null')->orderByDesc('styles.list_price_min'),
             default => $ordered->orderByDesc('styles.created_at'),
         };
         $ids = $ordered->orderByDesc('styles.id')->offset($query->offset())->limit($query->limit())->pluck('styles.id')->all();
@@ -62,6 +65,7 @@ final class DatabaseSearchProvider implements SearchProvider
                 'attribute_values' => $this->attributeFacet($base, $query),
                 'brands' => $this->brandFacet($base, $query),
                 'sizes' => $this->sizeFacet($base, $query),
+                'price' => $this->priceFacet($base, $query),
             ],
         );
     }
@@ -105,7 +109,7 @@ final class DatabaseSearchProvider implements SearchProvider
      * các lựa chọn khác trong nhóm.
      *
      * @param  Builder<Style>  $base
-     * @param  'brand'|'color'|'attribute'|'size'|null  $except
+     * @param  'brand'|'color'|'attribute'|'size'|'price'|null  $except
      * @return Builder<Style>
      */
     private function scoped(Builder $base, ProductSearchQuery $query, ?string $except = null): Builder
@@ -123,8 +127,30 @@ final class DatabaseSearchProvider implements SearchProvider
         if ($except !== 'size') {
             $this->applySizeFilter($scope, $query->sizeCodes);
         }
+        if ($except !== 'price') {
+            if ($query->priceMin !== null) {
+                $scope->where('styles.list_price_min', '>=', $query->priceMin);
+            }
+            if ($query->priceMax !== null) {
+                $scope->where('styles.list_price_min', '<=', $query->priceMax);
+            }
+        }
 
         return $scope;
+    }
+
+    /**
+     * Khoảng giá niêm yết của kết quả (áp mọi bộ lọc trừ bộ lọc giá); null khi không sản phẩm nào có giá.
+     *
+     * @param  Builder<Style>  $base
+     * @return array{min: int, max: int}|null
+     */
+    private function priceFacet(Builder $base, ProductSearchQuery $query): ?array
+    {
+        $range = $this->scoped($base, $query, except: 'price')->whereNotNull('styles.list_price_min')
+            ->selectRaw('min(styles.list_price_min) as lowest, max(styles.list_price_min) as highest')->toBase()->first();
+
+        return $range === null || $range->lowest === null ? null : ['min' => (int) $range->lowest, 'max' => (int) $range->highest];
     }
 
     /**

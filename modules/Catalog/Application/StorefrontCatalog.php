@@ -52,6 +52,7 @@ final class StorefrontCatalog implements CatalogReader
             'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
             'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
             'sizes' => $this->sizeFacets($result['facets']['sizes'] ?? []),
+            'price' => $result['facets']['price'] ?? null,
         ];
 
         return vani_filter('vani.service.catalog.search', [
@@ -157,9 +158,11 @@ final class StorefrontCatalog implements CatalogReader
             collectionId: $collectionId,
             colorFamilies: array_values(array_filter($filters->colorFamilies, fn (string $family): bool => ColorFamily::tryFrom($family) !== null)),
             attributeValueIds: $attributeValueIds,
-            sort: $filters->sort,
+            sort: in_array($filters->sort, ProductSearchQuery::SORTS, true) ? $filters->sort : ProductSearchQuery::SORT_NEWEST,
             page: $filters->page,
             perPage: $filters->perPage,
+            priceMin: $filters->priceMin,
+            priceMax: $filters->priceMax,
             sizeCodes: array_values(array_unique(array_filter($filters->sizeCodes, fn (string $code): bool => $code !== '' && mb_strlen($code) <= 16))),
         );
     }
@@ -168,8 +171,8 @@ final class StorefrontCatalog implements CatalogReader
      * Bộ lọc để hiển thị theo cấu hình Admin (§3.5-1): đúng thứ tự, bỏ facet tắt hoặc không có giá trị trong kết quả.
      * `param` là khoá query của Storefront API / trang danh sách (`brand`, `color`, `attr.<mã>` = `attr[<mã>]`).
      *
-     * @param  array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>, sizes: list<array{code: string, count: int}>}  $facets
-     * @return list<array{key: string, param: string, label: string, display: string, options: list<array{value: string, label: string, count: int, swatch?: string}>}>
+     * @param  array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>, sizes: list<array{code: string, count: int}>, price: array{min: int, max: int}|null}  $facets
+     * @return list<array{key: string, param: string, label: string, display: string, options: list<array{value: string, label: string, count: int, swatch?: string}>, range?: array{min: int, max: int}}>
      */
     private function filters(array $facets, string $locale): array
     {
@@ -177,6 +180,14 @@ final class StorefrontCatalog implements CatalogReader
         $filters = [];
         foreach ($this->facetSettings->configured($locale) as $facet) {
             if (! $facet['enabled']) {
+                continue;
+            }
+            if ($facet['type'] === 'price') {
+                // Khoảng giá: không có lựa chọn rời, client hiện hai ô nhập (`price_min`, `price_max`) trong `range`.
+                if ($facets['price'] !== null && $facets['price']['min'] < $facets['price']['max']) {
+                    $filters[] = ['key' => 'price', 'param' => 'price', 'label' => $facet['label'], 'display' => 'range', 'options' => [], 'range' => $facets['price']];
+                }
+
                 continue;
             }
             [$param, $options] = match ($facet['type']) {

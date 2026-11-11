@@ -29,6 +29,7 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  * @property Carbon|null $published_to
  * @property int|null $primary_category_id
  * @property string $search_text
+ * @property int|null $list_price_min
  * @property array<string, mixed>|null $meta
  * @property int $lock_version
  */
@@ -49,6 +50,7 @@ final class Style extends Model
             'published_from' => 'datetime',
             'published_to' => 'datetime',
             'meta' => 'array',
+            'list_price_min' => 'integer',
             'lock_version' => 'integer',
         ];
     }

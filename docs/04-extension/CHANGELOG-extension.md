@@ -4,6 +4,23 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.4 — 2026-11-11
+
+Lọc và sắp xếp sản phẩm theo **giá niêm yết** ở trang danh sách (backlog L8, phần giá; Owner chọn giá niêm yết cho giai đoạn SME).
+
+### Thêm
+- `Modules\Catalog\Contracts\ListPrices::setMinimums(array $minimumByStyle)`: Pricing ghi giá niêm yết thấp nhất của sản phẩm (bảng giá `base`) sang Catalog — cột `styles.list_price_min`. Chỉ là bản sao cho tìm kiếm; giá hiển thị và giá tính tiền vẫn do `PriceResolver` quyết định.
+- `ProductSearchQuery::$priceMin`, `$priceMax`, hằng `SORT_PRICE_ASC`, `SORT_PRICE_DESC`, `SORTS`; `ProductFilters::$priceMin`, `$priceMax`; `ProductDocument::$listPriceMin` (`list_price_min`); `ProductSearchResult::$facets['price']` = `{min, max}` hoặc null.
+- Storefront API `GET /products?price_min=&price_max=&sort=price_asc|price_desc` (số tiền theo đơn vị nhỏ nhất); `meta.filters` có mục `price` kiểu `range` kèm `range: {min, max}`. Facet `price` trong Admin → Catalog → Bộ lọc.
+- Lệnh `vani:pricing:sync-list-prices` (chạy lại an toàn, theo lịch 03:10 hằng ngày). **Sau khi nâng cấp chạy một lần** để điền giá cho sản phẩm đang có; từ đó giá đổi được đồng bộ theo event `PriceChanged`.
+
+### Lưu ý
+- Cửa hàng ẩn giá với khách chưa đăng nhập (`storefront.price_visibility = members`): khách vãng lai không lọc/sắp xếp theo giá được và không nhận khoảng giá.
+- Sản phẩm chưa có giá niêm yết bị loại khi lọc giá và xếp cuối khi sắp theo giá.
+
+### Việc của plugin `SearchProvider`
+- Lọc theo `list_price_min`, sắp theo giá, trả `facets['price']`. `vani.search-meilisearch` 0.3.0 đã hỗ trợ: chạy `php artisan vani:search:reindex --setup` một lần.
+
 ## 0.4.3 — 2026-11-11
 
 Lọc sản phẩm theo size ở trang danh sách (backlog L8, phần size).

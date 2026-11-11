@@ -14,6 +14,7 @@ final readonly class ProductFilters
      * @param  list<string>  $colorFamilies
      * @param  array<string, list<string>>  $attributes  mã thuộc tính => mã giá trị
      * @param  list<string>  $sizeCodes  mã size (S, M, 38…)
+     * @param  int|null  $priceMin  khoảng giá niêm yết (đơn vị nhỏ nhất của tiền tệ cửa hàng)
      */
     public function __construct(
         public int $now,
@@ -27,5 +28,7 @@ final readonly class ProductFilters
         public int $perPage = 24,
         public array $brandSlugs = [],
         public array $sizeCodes = [],
+        public ?int $priceMin = null,
+        public ?int $priceMax = null,
     ) {}
 }

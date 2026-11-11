@@ -1,4 +1,11 @@
 {
+    "Giá từ": "Price from",
+    "Giá đến": "Price to",
+    "Bỏ lọc giá": "Clear price filter",
+    "Sắp xếp": "Sort by",
+    "Mới nhất": "Newest",
+    "Giá thấp đến cao": "Price: low to high",
+    "Giá cao đến thấp": "Price: high to low",
     " — hết hàng": " — out of stock",
     "(hết hàng)": "(out of stock)",
     "(mặc định)": "(default)",

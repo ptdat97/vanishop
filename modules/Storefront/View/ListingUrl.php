@@ -36,6 +36,30 @@ final class ListingUrl
     }
 
     /**
+     * Ô ẩn cho form GET của trang danh sách (khoảng giá, sắp xếp): giữ mọi tham số đang có trừ `$except` và `page`.
+     *
+     * @param  list<string>  $except
+     * @return array<string, string> tên ô (`attr[material]`) => giá trị
+     */
+    public static function hiddenFields(Request $request, array $except): array
+    {
+        $fields = [];
+        $flatten = function (array $values, string $prefix) use (&$flatten, &$fields): void {
+            foreach ($values as $key => $value) {
+                $name = $prefix === '' ? (string) $key : "{$prefix}[{$key}]";
+                if (is_array($value)) {
+                    $flatten($value, $name);
+                } elseif ($value !== null && $value !== '') {
+                    $fields[$name] = (string) $value;
+                }
+            }
+        };
+        $flatten(array_diff_key($request->query(), array_flip([...$except, 'page'])), '');
+
+        return $fields;
+    }
+
+    /**
      * @return list<string>
      */
     private static function values(Request $request, string $key): array
