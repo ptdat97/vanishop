@@ -11,7 +11,7 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
- * GET /products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&attr[material]=silk,linen&sort=&page=&per_page=
+ * GET /products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&size=S,M&attr[material]=silk,linen&sort=&page=&per_page=
  * GET /products?ids=12,7,30 — thẻ sản phẩm theo id (tối đa 30, giữ thứ tự, bỏ qua các bộ lọc khác; 0.3.43).
  */
 final class ProductListRequest extends FormRequest
@@ -27,6 +27,7 @@ final class ProductListRequest extends FormRequest
             'collection' => ['nullable', 'string', 'max:128'],
             'brand' => ['nullable', 'string', 'max:500'],
             'color' => ['nullable', 'string', 'max:200'],
+            'size' => ['nullable', 'string', 'max:200'],
             'attr' => ['nullable', 'array', 'max:20'],
             'attr.*' => ['string', 'max:500'],
             'sort' => ['nullable', Rule::in([ProductSearchQuery::SORT_NEWEST, ProductSearchQuery::SORT_CODE])],
@@ -65,6 +66,7 @@ final class ProductListRequest extends FormRequest
             // Không truyền per_page → cấu hình cửa hàng `storefront.per_page` (12–60).
             perPage: (int) $this->input('per_page', $this->container->make(Settings::class)->get('core', 'storefront.per_page', 24)),
             brandSlugs: $split((string) $this->input('brand', '')),
+            sizeCodes: $split((string) $this->input('size', '')),
         );
     }
 }

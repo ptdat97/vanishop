@@ -20,6 +20,7 @@ final readonly class ProductSearchQuery
      * @param  list<int>  $brandIds  lọc theo thương hiệu (rỗng = mọi brand)
      * @param  list<string>  $colorFamilies
      * @param  array<int, list<int>>  $attributeValueIds  attribute id => value ids
+     * @param  list<string>  $sizeCodes  mã size (`sizes.code`): sản phẩm có biến thể đang bán thuộc một trong các size (0.4.3)
      */
     public function __construct(
         public array $brandIds,
@@ -32,6 +33,7 @@ final readonly class ProductSearchQuery
         public string $sort = self::SORT_NEWEST,
         public int $page = 1,
         public int $perPage = 24,
+        public array $sizeCodes = [],
     ) {}
 
     public function offset(): int

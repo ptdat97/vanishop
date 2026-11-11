@@ -19,6 +19,7 @@ use Modules\Catalog\Persistence\Models\AttributeValue;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Catalog\Persistence\Models\Size;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -50,6 +51,7 @@ final class StorefrontCatalog implements CatalogReader
             'color_families' => $result['facets']['color_families'],
             'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
             'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
+            'sizes' => $this->sizeFacets($result['facets']['sizes'] ?? []),
         ];
 
         return vani_filter('vani.service.catalog.search', [
@@ -158,6 +160,7 @@ final class StorefrontCatalog implements CatalogReader
             sort: $filters->sort,
             page: $filters->page,
             perPage: $filters->perPage,
+            sizeCodes: array_values(array_unique(array_filter($filters->sizeCodes, fn (string $code): bool => $code !== '' && mb_strlen($code) <= 16))),
         );
     }
 
@@ -165,7 +168,7 @@ final class StorefrontCatalog implements CatalogReader
      * Bộ lọc để hiển thị theo cấu hình Admin (§3.5-1): đúng thứ tự, bỏ facet tắt hoặc không có giá trị trong kết quả.
      * `param` là khoá query của Storefront API / trang danh sách (`brand`, `color`, `attr.<mã>` = `attr[<mã>]`).
      *
-     * @param  array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>}  $facets
+     * @param  array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>, sizes: list<array{code: string, count: int}>}  $facets
      * @return list<array{key: string, param: string, label: string, display: string, options: list<array{value: string, label: string, count: int, swatch?: string}>}>
      */
     private function filters(array $facets, string $locale): array
@@ -181,6 +184,7 @@ final class StorefrontCatalog implements CatalogReader
                 'color' => ['color', array_map(fn (string $family, int $count): array => [
                     'value' => $family, 'label' => __("catalog::labels.color_family.{$family}", [], $locale), 'count' => $count, 'swatch' => ColorFamily::tryFrom($family)?->swatch() ?? '#e5e7eb',
                 ], array_keys($facets['color_families']), array_values($facets['color_families']))],
+                'size' => ['size', array_map(fn (array $size): array => ['value' => $size['code'], 'label' => $size['code'], 'count' => $size['count']], $facets['sizes'])],
                 default => ["attr.{$facet['code']}", array_map(fn (array $value): array => ['value' => (string) $value['code'], 'label' => (string) ($value['label'] ?? $value['code']), 'count' => (int) $value['count']], $attributes[$facet['code']]['values'] ?? [])],
             };
             if ($options !== []) {
@@ -189,6 +193,23 @@ final class StorefrontCatalog implements CatalogReader
         }
 
         return $filters;
+    }
+
+    /**
+     * Size có sản phẩm trong kết quả, theo thứ tự hiển thị của size (S → M → L, 36 → 37 → 38).
+     *
+     * @param  array<string, int>  $counts  mã size => số sản phẩm
+     * @return list<array{code: string, count: int}>
+     */
+    private function sizeFacets(array $counts): array
+    {
+        if ($counts === []) {
+            return [];
+        }
+
+        $order = Size::query()->whereIn('code', array_map('strval', array_keys($counts)))->orderBy('size_system')->orderBy('sort_order')->pluck('code')->unique()->values()->all();
+
+        return array_map(fn (string $code): array => ['code' => $code, 'count' => (int) $counts[$code]], array_map('strval', $order));
     }
 
     /**

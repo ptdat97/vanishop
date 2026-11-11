@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.3 — 2026-11-11
+
+Lọc sản phẩm theo size ở trang danh sách (backlog L8, phần size).
+
+### Thêm
+- `ProductSearchQuery::$sizeCodes`, `ProductFilters::$sizeCodes` (tham số cuối, mặc định rỗng): sản phẩm có biến thể **đang bán** thuộc một trong các mã size; nhiều size là OR, với nhóm lọc khác là AND.
+- `ProductDocument::$sizeCodes` (`size_codes` trong `toArray()`): mã size của các biến thể đang bán.
+- `ProductSearchResult::$facets['sizes']` (tuỳ chọn): mã size => số sản phẩm. Provider không trả khoá này thì storefront không hiện bộ lọc size.
+- Storefront API `GET /products?size=S,M`, `meta.facets.sizes`; facet `size` trong Admin → Catalog → Bộ lọc (mặc định bật, thêm cuối danh sách đã lưu).
+
+### Việc của plugin `SearchProvider`
+- Provider có chỉ mục ngoài cần lọc + trả facet theo `size_codes`. `vani.search-meilisearch` 0.2.0 đã hỗ trợ: chạy `php artisan vani:search:reindex --setup` một lần để cập nhật thuộc tính lọc và index lại.
+
 ## 0.4.2 — 2026-11-11
 
 Hàng đợi "Sự cố giao hàng" của Admin gồm cả vận đơn lỗi (trước chỉ có đơn đã hoàn về) — backlog L25.

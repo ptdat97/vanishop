@@ -69,7 +69,7 @@ final class CatalogController
 
         return [
             'listing' => $this->products->listing($request->toFilters($now), App::getLocale(), $now),
-            'filters' => $request->only(['q', 'color', 'brand', 'attr', 'sort']),
+            'filters' => $request->only(['q', 'color', 'brand', 'size', 'attr', 'sort']),
         ];
     }
 }

@@ -430,7 +430,7 @@ Tổng hợp giới hạn đã biết của các lát R1–R3. Không làm trong
 | L5 | Sau khi đặt đơn, dòng giỏ chưa chọn giữ trạng thái bỏ chọn (không tự chọn lại) | Cart | Tuỳ chọn cấu hình nếu Owner muốn |
 | L6 ✅ 0.3.87 | `FieldDefinition` / `SettingDefinition` chưa có kiểu chọn ảnh: khối "Banner chính" nhận URL (chưa `srcset`), ảnh phương thức thanh toán ở chân trang là nhãn chữ, `storefront.placeholder_image` nhập ID ảnh | Extension, Storefront, Catalog | Kiểu trường `media` (Admin dùng MediaPicker) — **Đã xử lý 2026-11-06**: kiểu `media` (FieldDefinition/SettingDefinition) + `MediaField` dùng chung; khối hero/trình chiếu/lưới banner nhận ảnh Thư viện ảnh có srcset; "Ảnh thay thế" là ô chọn ảnh. Banner danh mục vẫn ở trang riêng (L19) |
 | L7 | Ảnh gallery PDP chưa `srcset` (JS đổi ảnh theo màu) | Theme `vani-base` | JS đổi cả `srcset` |
-| L8 | Bộ lọc chưa có giá và size | Catalog `SearchProvider` | Mở rộng `ProductSearchQuery` + provider database/Meilisearch |
+| L8 | Bộ lọc chưa có giá (✅ size — 0.4.3) | Catalog `SearchProvider`, Pricing | Giá: Catalog không được phụ thuộc Pricing nên cần giá niêm yết thấp nhất của sản phẩm do Pricing ghi sang Catalog (cột trên `styles` + `ProductDocument`), rồi mở rộng `ProductSearchQuery` (khoảng giá, sắp theo giá) + provider database/Meilisearch |
 | L9 | Ngôn ngữ Admin riêng chỉ đổi chuỗi từ server; chữ trong giao diện Vue vẫn tiếng Việt | Admin | i18n cho Vue (cần duyệt dependency) |
 | L10 | Cờ "lỗi do cửa hàng" của lý do đổi trả chưa dùng cho phí ship trả hàng / báo cáo | Returns | Quy tắc phí trả hàng theo cờ |
 | L11 | `vani.ghn` chưa gửi khối lượng (Core đã có `weight()`); dòng thiếu khối lượng tính 0 g | `vani.ghn`, Catalog | Gửi `weight` khi đặt vận đơn; cảnh báo sản phẩm thiếu khối lượng |

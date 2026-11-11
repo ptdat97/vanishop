@@ -19,7 +19,7 @@ use Modules\Shared\Domain\Text\VietnameseText;
  */
 final class MeilisearchSearchProvider implements ConfigurableSearchIndex, SearchProvider
 {
-    public const FILTERABLE = ['brand_id', 'status', 'published_from', 'published_to', 'category_ids', 'collection_ids', 'color_families', 'attribute_value_ids'];
+    public const FILTERABLE = ['brand_id', 'status', 'published_from', 'published_to', 'category_ids', 'collection_ids', 'color_families', 'attribute_value_ids', 'size_codes'];
 
     public const SORTABLE = ['created_at', 'style_code'];
 
@@ -49,7 +49,7 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
         $response = $this->client()->post("indexes/{$this->index}/search", [
             'q' => VietnameseText::normalize($query->text),
             'filter' => $this->filters($query),
-            'facets' => ['color_families', 'attribute_value_ids', 'brand_id'],
+            'facets' => ['color_families', 'attribute_value_ids', 'brand_id', 'size_codes'],
             'sort' => $query->sort === ProductSearchQuery::SORT_CODE ? ['style_code:asc'] : ['created_at:desc'],
             'offset' => $query->offset(),
             'limit' => $query->limit(),
@@ -67,6 +67,8 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
                     ->mapWithKeys(fn ($total, $id): array => [(int) $id => (int) $total])->all(),
                 'brands' => collect((array) ($distribution['brand_id'] ?? []))
                     ->mapWithKeys(fn ($total, $id): array => [(int) $id => (int) $total])->all(),
+                'sizes' => collect((array) ($distribution['size_codes'] ?? []))
+                    ->mapWithKeys(fn ($total, $code): array => [(string) $code => (int) $total])->all(),
             ],
         );
     }
@@ -106,6 +108,9 @@ final class MeilisearchSearchProvider implements ConfigurableSearchIndex, Search
         }
         if ($query->colorFamilies !== []) {
             $filters[] = array_map(fn (string $family): string => "color_families = '".addslashes($family)."'", $query->colorFamilies);
+        }
+        if ($query->sizeCodes !== []) {
+            $filters[] = array_map(fn (string $code): string => "size_codes = '".addslashes($code)."'", $query->sizeCodes);
         }
         foreach ($query->attributeValueIds as $valueIds) {
             if ($valueIds !== []) {

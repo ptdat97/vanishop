@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application\Search;
 
 use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Domain\AttributeKind;
+use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleAttributeValue;
@@ -14,7 +15,7 @@ final class ProductDocumentBuilder
 {
     public function build(Style $style): ProductDocument
     {
-        $style->loadMissing(['translations', 'categories', 'collections:id', 'colors.color', 'attributeValues.attribute']);
+        $style->loadMissing(['translations', 'categories', 'collections:id', 'colors.color', 'attributeValues.attribute', 'variants.size']);
 
         $categoryIds = $style->categories
             ->flatMap(fn (Category $category): array => $category->categoryPath()->ids)
@@ -38,6 +39,7 @@ final class ProductDocumentBuilder
                     && $row->attribute->kind === AttributeKind::Spec && $row->attribute->is_filterable)
                 ->pluck('attribute_value_id')->unique()->sort()->values()->all(),
             createdAt: (int) $style->created_at?->getTimestamp(),
+            sizeCodes: $style->variants->where('status', VariantStatus::Active)->map(fn ($variant): string => (string) $variant->size->code)->unique()->sort()->values()->all(),
         );
     }
 }

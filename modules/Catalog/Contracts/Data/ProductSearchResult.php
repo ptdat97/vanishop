@@ -8,7 +8,7 @@ final readonly class ProductSearchResult
 {
     /**
      * @param  list<int>  $styleIds  theo thứ tự hiển thị
-     * @param  array{color_families: array<string, int>, attribute_values: array<int, int>, brands?: array<int, int>}  $facets  brands: brand id => số sản phẩm
+     * @param  array{color_families: array<string, int>, attribute_values: array<int, int>, brands?: array<int, int>, sizes?: array<string, int>}  $facets  brands: brand id => số sản phẩm; sizes: mã size => số sản phẩm (0.4.3)
      */
     public function __construct(
         public array $styleIds,

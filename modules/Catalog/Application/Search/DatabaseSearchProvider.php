@@ -12,6 +12,7 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\ProductSearchResult;
 use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Domain\Text\VietnameseText;
@@ -38,10 +39,7 @@ final class DatabaseSearchProvider implements SearchProvider
     {
         $base = $this->baseQuery($query);
 
-        $filtered = (clone $base);
-        $this->applyColorFilter($filtered, $query->colorFamilies);
-        $this->applyAttributeFilter($filtered, $query->attributeValueIds);
-        $this->applyBrandFilter($filtered, $query->brandIds);
+        $filtered = $this->scoped($base, $query);
 
         $total = (clone $filtered)->count();
 
@@ -63,6 +61,7 @@ final class DatabaseSearchProvider implements SearchProvider
                 'color_families' => $this->colorFacet($base, $query),
                 'attribute_values' => $this->attributeFacet($base, $query),
                 'brands' => $this->brandFacet($base, $query),
+                'sizes' => $this->sizeFacet($base, $query),
             ],
         );
     }
@@ -102,6 +101,71 @@ final class DatabaseSearchProvider implements SearchProvider
     }
 
     /**
+     * Áp các nhóm lọc lên bản sao của truy vấn gốc. Facet của một nhóm bỏ chính nhóm đó (`$except`) để khách vẫn thấy
+     * các lựa chọn khác trong nhóm.
+     *
+     * @param  Builder<Style>  $base
+     * @param  'brand'|'color'|'attribute'|'size'|null  $except
+     * @return Builder<Style>
+     */
+    private function scoped(Builder $base, ProductSearchQuery $query, ?string $except = null): Builder
+    {
+        $scope = clone $base;
+        if ($except !== 'color') {
+            $this->applyColorFilter($scope, $query->colorFamilies);
+        }
+        if ($except !== 'attribute') {
+            $this->applyAttributeFilter($scope, $query->attributeValueIds);
+        }
+        if ($except !== 'brand') {
+            $this->applyBrandFilter($scope, $query->brandIds);
+        }
+        if ($except !== 'size') {
+            $this->applySizeFilter($scope, $query->sizeCodes);
+        }
+
+        return $scope;
+    }
+
+    /**
+     * Sản phẩm có biến thể đang bán thuộc một trong các size.
+     *
+     * @param  Builder<Style>  $builder
+     * @param  list<string>  $sizeCodes
+     */
+    private function applySizeFilter(Builder $builder, array $sizeCodes): void
+    {
+        if ($sizeCodes === []) {
+            return;
+        }
+
+        $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('variants')
+            ->join('sizes', 'sizes.id', '=', 'variants.size_id')
+            ->whereColumn('variants.style_id', 'styles.id')
+            ->where('variants.status', VariantStatus::Active->value)
+            ->whereIn('sizes.code', $sizeCodes));
+    }
+
+    /**
+     * Số sản phẩm theo mã size của biến thể đang bán (áp mọi bộ lọc trừ bộ lọc size).
+     *
+     * @param  Builder<Style>  $base
+     * @return array<string, int>
+     */
+    private function sizeFacet(Builder $base, ProductSearchQuery $query): array
+    {
+        return DB::table('variants')
+            ->join('sizes', 'sizes.id', '=', 'variants.size_id')
+            ->where('variants.status', VariantStatus::Active->value)
+            ->whereIn('variants.style_id', $this->scoped($base, $query, except: 'size')->select('styles.id'))
+            ->groupBy('sizes.code')
+            ->selectRaw('sizes.code as code, count(distinct variants.style_id) as total')
+            ->pluck('total', 'code')
+            ->mapWithKeys(fn ($total, $code): array => [(string) $code => (int) $total])
+            ->all();
+    }
+
+    /**
      * @param  Builder<Style>  $builder
      * @param  list<int>  $brandIds
      */
@@ -113,16 +177,14 @@ final class DatabaseSearchProvider implements SearchProvider
     }
 
     /**
-     * Số sản phẩm theo thương hiệu (áp bộ lọc màu + thuộc tính, bỏ bộ lọc brand).
+     * Số sản phẩm theo thương hiệu (áp mọi bộ lọc trừ bộ lọc brand).
      *
      * @param  Builder<Style>  $base
      * @return array<int, int>
      */
     private function brandFacet(Builder $base, ProductSearchQuery $query): array
     {
-        $scope = (clone $base);
-        $this->applyColorFilter($scope, $query->colorFamilies);
-        $this->applyAttributeFilter($scope, $query->attributeValueIds);
+        $scope = $this->scoped($base, $query, except: 'brand');
 
         return $scope->whereNotNull('styles.brand_id')
             ->groupBy('styles.brand_id')
@@ -173,9 +235,7 @@ final class DatabaseSearchProvider implements SearchProvider
      */
     private function colorFacet(Builder $base, ProductSearchQuery $query): array
     {
-        $scope = (clone $base);
-        $this->applyAttributeFilter($scope, $query->attributeValueIds);
-        $this->applyBrandFilter($scope, $query->brandIds);
+        $scope = $this->scoped($base, $query, except: 'color');
 
         return DB::table('style_colors')
             ->join('colors', 'colors.id', '=', 'style_colors.color_id')
@@ -189,16 +249,14 @@ final class DatabaseSearchProvider implements SearchProvider
     }
 
     /**
-     * Số sản phẩm theo giá trị thuộc tính spec + filterable (áp bộ lọc màu, bỏ bộ lọc thuộc tính).
+     * Số sản phẩm theo giá trị thuộc tính spec + filterable (áp mọi bộ lọc trừ bộ lọc thuộc tính).
      *
      * @param  Builder<Style>  $base
      * @return array<int, int>
      */
     private function attributeFacet(Builder $base, ProductSearchQuery $query): array
     {
-        $scope = (clone $base);
-        $this->applyColorFilter($scope, $query->colorFamilies);
-        $this->applyBrandFilter($scope, $query->brandIds);
+        $scope = $this->scoped($base, $query, except: 'attribute');
 
         return DB::table('style_attribute_values')
             ->join('attributes', 'attributes.id', '=', 'style_attribute_values.attribute_id')

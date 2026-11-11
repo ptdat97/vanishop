@@ -15,6 +15,7 @@ final readonly class ProductDocument
      * @param  list<int>  $collectionIds
      * @param  list<string>  $colorFamilies
      * @param  list<int>  $attributeValueIds  giá trị của thuộc tính spec + filterable
+     * @param  list<string>  $sizeCodes  mã size của các biến thể đang bán (0.4.3)
      */
     public function __construct(
         public int $id,
@@ -31,6 +32,7 @@ final readonly class ProductDocument
         public array $colorFamilies,
         public array $attributeValueIds,
         public int $createdAt,
+        public array $sizeCodes = [],
     ) {}
 
     /**
@@ -53,6 +55,7 @@ final readonly class ProductDocument
             'color_families' => $this->colorFamilies,
             'attribute_value_ids' => $this->attributeValueIds,
             'created_at' => $this->createdAt,
+            'size_codes' => $this->sizeCodes,
         ];
     }
 }

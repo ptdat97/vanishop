@@ -13,6 +13,7 @@ final readonly class ProductFilters
      * @param  list<string>  $brandSlugs  thương hiệu (rỗng = mọi brand)
      * @param  list<string>  $colorFamilies
      * @param  array<string, list<string>>  $attributes  mã thuộc tính => mã giá trị
+     * @param  list<string>  $sizeCodes  mã size (S, M, 38…)
      */
     public function __construct(
         public int $now,
@@ -25,5 +26,6 @@ final readonly class ProductFilters
         public int $page = 1,
         public int $perPage = 24,
         public array $brandSlugs = [],
+        public array $sizeCodes = [],
     ) {}
 }

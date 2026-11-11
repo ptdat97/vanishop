@@ -12,8 +12,8 @@ use Modules\Tenancy\Contracts\Settings;
 /**
  * Bộ lọc của trang danh sách do Admin cấu hình (reference-parity §3.5-1, Admin → Catalog → Bộ lọc): bật/tắt, thứ tự,
  * kiểu hiển thị. Lưu ở `core`/`catalog.facets` = list<{key, enabled, display}>. Facet có sẵn: thương hiệu, nhóm màu,
- * từng thuộc tính spec đánh dấu "dùng để lọc". Facet mới (thuộc tính vừa bật lọc) tự thêm cuối danh sách, đang bật.
- * Lọc theo giá/size chưa có ở SearchProvider nên chưa là facet.
+ * size (0.4.3), từng thuộc tính spec đánh dấu "dùng để lọc". Facet mới (thuộc tính vừa bật lọc) tự thêm cuối danh sách,
+ * đang bật. Lọc theo giá chưa có ở SearchProvider nên chưa là facet.
  */
 final class FacetSettings
 {
@@ -24,13 +24,14 @@ final class FacetSettings
     public function __construct(private readonly Settings $settings) {}
 
     /**
-     * @return array<string, array{key: string, type: 'brand'|'color'|'attribute', code: string|null, label: string, displays: list<string>}>
+     * @return array<string, array{key: string, type: 'brand'|'color'|'size'|'attribute', code: string|null, label: string, displays: list<string>}>
      */
     public function available(string $locale): array
     {
         $facets = [
             'brand' => ['key' => 'brand', 'type' => 'brand', 'code' => null, 'label' => __('catalog::labels.facet.brand', [], $locale), 'displays' => ['list']],
             'color' => ['key' => 'color', 'type' => 'color', 'code' => null, 'label' => __('catalog::labels.facet.color', [], $locale), 'displays' => self::DISPLAYS],
+            'size' => ['key' => 'size', 'type' => 'size', 'code' => null, 'label' => __('catalog::labels.facet.size', [], $locale), 'displays' => ['list']],
         ];
         $attributes = Attribute::query()->with('translations')->where('kind', AttributeKind::Spec)->where('is_filterable', true)->orderBy('position')->orderBy('code')->get();
         foreach ($attributes as $attribute) {
