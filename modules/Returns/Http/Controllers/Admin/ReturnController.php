@@ -44,10 +44,11 @@ final class ReturnController
             'status' => $status,
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
             // Số yêu cầu theo trạng thái trên các thẻ lọc (0.3.101).
-            // Thao tác hàng loạt (0.3.102): duyệt; nhận hàng còn bán được — yêu cầu không đúng trạng thái được bỏ qua.
+            // Thao tác hàng loạt (0.3.102): duyệt; nhận hàng còn bán được hoặc hàng hỏng — yêu cầu không đúng trạng thái được bỏ qua.
             'actions' => Gate::allows('returns.manage') ? [
                 ['key' => 'approve', 'label' => 'Duyệt', 'url' => route('admin.returns.returns.bulk-approve'), 'confirm' => true],
                 ['key' => 'receive', 'label' => 'Đã nhận hàng (còn bán được)', 'url' => route('admin.returns.returns.bulk-receive'), 'confirm' => true],
+                ['key' => 'receive_damaged', 'label' => 'Đã nhận hàng (hỏng, không nhập kho)', 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'damaged']), 'confirm' => true],
             ] : [],
             'counts' => ReturnRequest::query()->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total)->all(),
             'returns' => ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
@@ -164,26 +165,29 @@ final class ReturnController
     }
 
     /**
-     * Nhận hàng hàng loạt — mọi dòng còn bán được, nhập lại kho (0.3.102). Hàng hỏng: nhận từng yêu cầu ở trang chi tiết.
+     * Nhận hàng hàng loạt (0.3.102): mọi dòng còn bán được → nhập lại kho; `?condition=damaged` → mọi dòng là hàng hỏng,
+     * không nhập kho. Yêu cầu vừa có dòng bán được vừa có dòng hỏng: nhận ở trang chi tiết.
      */
     public function bulkReceive(Request $request, ReturnService $returns): RedirectResponse
     {
         Gate::authorize('returns.manage');
+        $damaged = $request->validate(['condition' => ['nullable', Rule::in(['sellable', 'damaged'])]])['condition'] ?? 'sellable';
+        $damaged = $damaged === 'damaged';
         $done = 0;
         $ids = $this->bulkIds($request);
-        foreach (ReturnRequest::query()->whereIn('id', $ids)->get() as $return) {
+        foreach (ReturnRequest::query()->with('lines')->whereIn('id', $ids)->get() as $return) {
             if (! $return->status->canMoveTo(ReturnStatus::Received)) {
                 continue;
             }
             try {
-                $returns->receive($return->id, [], null);
+                $returns->receive($return->id, $damaged ? array_fill_keys($return->lines->pluck('id')->all(), 'damaged') : [], null);
                 $done++;
             } catch (BusinessRuleViolation) {
                 // bỏ qua
             }
         }
 
-        return back()->with('success', __('returns::messages.bulk_received', ['count' => $done, 'skipped' => count($ids) - $done]));
+        return back()->with('success', __($damaged ? 'returns::messages.bulk_received_damaged' : 'returns::messages.bulk_received', ['count' => $done, 'skipped' => count($ids) - $done]));
     }
 
     /**

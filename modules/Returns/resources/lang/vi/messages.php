@@ -2,6 +2,7 @@
 
 return [
     'bulk_approved' => 'Đã duyệt :count yêu cầu; bỏ qua :skipped yêu cầu không còn chờ duyệt.',
+    'bulk_received_damaged' => 'Đã nhận hàng :count yêu cầu (hàng hỏng, không nhập kho); bỏ qua :skipped yêu cầu chưa duyệt hoặc đã nhận.',
     'bulk_received' => 'Đã nhận hàng :count yêu cầu (nhập lại kho); bỏ qua :skipped yêu cầu chưa duyệt hoặc đã nhận.',
     'policy' => [
         'waived' => 'Khách đã xác nhận nhận hàng và không đổi trả đơn này.',

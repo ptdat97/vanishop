@@ -89,7 +89,7 @@ it('hàng loạt ở danh sách: Duyệt rồi Đã nhận hàng; yêu cầu kh�
     $stock = ($this->onHand)();
 
     $actions = collect($this->get('/admin/returns/returns')->viewData('page')['props']['actions'])->pluck('key')->all();
-    expect($actions)->toBe(['approve', 'receive']);
+    expect($actions)->toBe(['approve', 'receive', 'receive_damaged']);
 
     $this->post('/admin/returns/returns/bulk-receive', ['ids' => [$a->id, $b->id]])->assertSessionHas('success', 'Đã nhận hàng 0 yêu cầu (nhập lại kho); bỏ qua 2 yêu cầu chưa duyệt hoặc đã nhận.');
     $this->post('/admin/returns/returns/bulk-approve', ['ids' => [$a->id, $b->id]])->assertSessionHas('success', 'Đã duyệt 2 yêu cầu; bỏ qua 0 yêu cầu không còn chờ duyệt.');
@@ -100,4 +100,20 @@ it('hàng loạt ở danh sách: Duyệt rồi Đã nhận hàng; yêu cầu kh�
     $this->actingAs(T::staff(['admin.access', 'returns.view']), 'staff');
     expect($this->get('/admin/returns/returns')->viewData('page')['props']['actions'])->toBe([]);
     $this->post('/admin/returns/returns/bulk-approve', ['ids' => [$a->id]])->assertForbidden();
+});
+
+it('hàng loạt "Đã nhận hàng (hỏng)": ghi tình trạng hỏng cho mọi dòng, không nhập lại kho; giá trị lạ bị từ chối', function () {
+    $a = ($this->requestReturn)(($this->deliveredOrder)());
+    $b = ($this->requestReturn)(($this->deliveredOrder)());
+    $this->post('/admin/returns/returns/bulk-approve', ['ids' => [$a->id, $b->id]])->assertSessionHasNoErrors();
+    $stock = ($this->onHand)();
+    $action = collect($this->get('/admin/returns/returns')->viewData('page')['props']['actions'])->firstWhere('key', 'receive_damaged');
+
+    $this->post('/admin/returns/returns/bulk-receive?condition=khac', ['ids' => [$a->id]])->assertSessionHasErrors('condition');
+    $this->post($action['url'], ['ids' => [$a->id, $b->id]])->assertSessionHas('success', 'Đã nhận hàng 2 yêu cầu (hàng hỏng, không nhập kho); bỏ qua 0 yêu cầu chưa duyệt hoặc đã nhận.');
+
+    expect(ReturnRequest::query()->pluck('status')->map->value->unique()->all())->toBe(['received'])
+        ->and(DB::table('return_lines')->pluck('condition')->unique()->all())->toBe(['damaged'])
+        ->and(DB::table('return_lines')->whereNotNull('restock_location_id')->count())->toBe(0)
+        ->and(($this->onHand)())->toBe($stock);
 });
