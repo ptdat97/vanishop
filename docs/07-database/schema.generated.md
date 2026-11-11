@@ -64,7 +64,7 @@
 | [`order_adjustments`](#order_adjustments) | 10 |
 | [`order_events`](#order_events) | 12 |
 | [`order_lines`](#order_lines) | 23 |
-| [`orders`](#orders) | 31 |
+| [`orders`](#orders) | 32 |
 | [`password_reset_tokens`](#password_reset_tokens) | 3 |
 | [`payment_reconciliation_lines`](#payment_reconciliation_lines) | 10 |
 | [`payment_reconciliations`](#payment_reconciliations) | 7 |
@@ -1135,6 +1135,7 @@ Khoá ngoại: order_id → orders(id) on delete cascade
 | `order_status` | varchar(16) |  |  |
 | `payment_status` | varchar(24) |  |  |
 | `fulfillment_status` | varchar(24) |  |  |
+| `delivery_issue` | varchar(24) | có |  |
 | `return_status` | varchar(24) |  | `none` |
 | `payment_method` | varchar(64) |  |  |
 | `subtotal_amount` | bigint |  |  |

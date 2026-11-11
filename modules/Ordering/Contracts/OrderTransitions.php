@@ -32,6 +32,12 @@ interface OrderTransitions
     public function setFulfillmentStatus(int $orderId, string $fulfillmentStatus, string $reason, string $source): void;
 
     /**
+     * Ghi sự cố giao hàng đang mở của đơn (`booking_failed` | `failed_attempt` | `returning`), null = hết sự cố — gọi bởi
+     * Fulfillment khi vận đơn đổi trạng thái. Đơn có sự cố vào hàng đợi "Sự cố giao hàng" của Admin. Ghi order_events.
+     */
+    public function setDeliveryIssue(int $orderId, ?string $deliveryIssue, string $reason, string $source): void;
+
+    /**
      * Cập nhật chiều đổi/trả (return_status) — gọi bởi Returns. Ghi order_events.
      */
     public function setReturnStatus(int $orderId, string $returnStatus, string $reason, string $source): void;

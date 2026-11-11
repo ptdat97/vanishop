@@ -20,6 +20,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
  * @property OrderStatus $order_status
  * @property string $payment_status
  * @property string $fulfillment_status
+ * @property string|null $delivery_issue
  * @property string $return_status
  * @property string $payment_method
  * @property int $subtotal_amount

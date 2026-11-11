@@ -33,7 +33,7 @@ final class OrderDashboardTasks
             ['key' => 'orders.aged', 'label' => 'Đơn để quá '.self::AGED_HOURS.' giờ', 'count' => $this->queries->agedCount(self::AGED_HOURS), 'url' => $url(['aged' => self::AGED_HOURS]), 'tone' => 'danger', 'hint' => 'Chưa xác nhận hoặc chưa giao hãng', 'order' => 15],
             ['key' => 'orders.awaiting_payment', 'label' => 'Đơn chờ thanh toán', 'count' => $counts['awaiting_payment'], 'url' => $url(['stage' => 'awaiting_payment']), 'tone' => 'info', 'hint' => 'Chuyển khoản chưa về', 'order' => 20],
             ['key' => 'orders.to_ship', 'label' => 'Đơn chờ giao hãng', 'count' => $counts['to_ship'], 'url' => $url(['stage' => 'to_ship']), 'tone' => 'info', 'order' => 30],
-            ['key' => 'orders.issue', 'label' => 'Đơn hoàn về', 'count' => $counts['issue'], 'url' => $url(['stage' => 'issue']), 'tone' => 'danger', 'order' => 50],
+            ['key' => 'orders.issue', 'label' => 'Đơn có sự cố giao hàng', 'hint' => 'Đặt vận đơn lỗi, giao không thành công, hoàn về', 'count' => $counts['issue'], 'url' => $url(['stage' => 'issue']), 'tone' => 'danger', 'order' => 50],
         ];
     }
 }

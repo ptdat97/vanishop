@@ -291,6 +291,7 @@ final class FulfillmentService
     {
         $statuses = Shipment::query()->where('order_id', $orderId)->pluck('status')->all();
         $this->transitions->setFulfillmentStatus($orderId, FulfillmentProgress::orderStatus($statuses), 'shipments_changed', 'system');
+        $this->transitions->setDeliveryIssue($orderId, FulfillmentProgress::deliveryIssue($statuses), 'shipments_changed', 'system');
 
         $order = $this->orders->find($orderId);
         if ($order !== null && FulfillmentProgress::allLeftWarehouse($statuses)) {

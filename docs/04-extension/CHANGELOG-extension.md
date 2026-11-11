@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.2 — 2026-11-11
+
+Hàng đợi "Sự cố giao hàng" của Admin gồm cả vận đơn lỗi (trước chỉ có đơn đã hoàn về) — backlog L25.
+
+### Thêm
+- `OrderTransitions::setDeliveryIssue(int $orderId, ?string $deliveryIssue, string $reason, string $source)`: Fulfillment ghi sự cố giao hàng đang mở của đơn (`booking_failed`, `failed_attempt`, `returning`; null = hết). Cột `orders.delivery_issue`; mỗi lần đổi có dòng `order_events` loại `delivery_issue_changed`. Service contract do Core implement — plugin không phải sửa.
+
+### Đổi
+- Giai đoạn vận hành `issue` đổi nhãn "Hoàn về" → "Sự cố giao hàng" và gồm đơn có `delivery_issue`. Plugin hãng vận chuyển không phải làm gì: trạng thái vận đơn chuẩn hoá (`ShipmentStatus`) đã đủ để Core tính.
+
 ## 0.4.1 — 2026-11-11
 
 Chốt ranh giới vòng 0 theo [commerce-kernel §10](../02-architecture/commerce-kernel.md); không đổi hành vi với plugin.

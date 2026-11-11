@@ -107,6 +107,7 @@ const props = defineProps<{
         actions?: PanelAction[];
     }>;
     stage: string;
+    deliveryIssue: string | null;
     /** Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và plugin (OrderStatusAction). */
     statusCard: {
         rows: Array<{ key: 'order' | 'payment' | 'fulfillment' | 'return'; label: string; code: string; text: string }>;
@@ -128,7 +129,7 @@ const props = defineProps<{
         note: boolean;
     };
     extensions: ExtensionDetail;
-    labels: { order_status: Record<string, string>; payment_status: Record<string, string>; event_type: Record<string, string>; stage: Record<string, string> };
+    labels: { order_status: Record<string, string>; payment_status: Record<string, string>; event_type: Record<string, string>; stage: Record<string, string>; delivery_issue: Record<string, string> };
     addressDirectory: {
         provinces: Division[];
         wards: Division[];
@@ -293,7 +294,7 @@ function addNote(): void {
                 class="rounded-full px-2.5 py-1"
                 :class="index < currentStep ? 'bg-emerald-100 text-emerald-800' : index === currentStep ? (stage === 'issue' ? 'bg-red-100 font-medium text-red-700' : 'bg-indigo-600 font-medium text-white') : 'bg-slate-100 text-slate-500'"
                 :aria-current="index === currentStep ? 'step' : undefined"
-                >{{ index === currentStep && stage === 'issue' ? 'Hoàn về' : step }}</span
+                >{{ index === currentStep && stage === 'issue' ? (labels.delivery_issue[deliveryIssue ?? ''] ?? labels.stage.issue) : step }}</span
             >
             <span v-if="index < steps.length - 1" class="text-slate-300">›</span>
         </li>

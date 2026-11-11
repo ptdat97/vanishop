@@ -32,6 +32,23 @@ final class FulfillmentProgress
     }
 
     /**
+     * Sự cố giao hàng đang mở của đơn (orders.delivery_issue), null khi không có. Ưu tiên việc nhân viên phải làm sớm
+     * nhất: giao không thành công (gọi khách) → đặt vận đơn lỗi (đặt lại) → đang hoàn về (chờ nhận hàng).
+     *
+     * @param  list<ShipmentStatus>  $statuses
+     */
+    public static function deliveryIssue(array $statuses): ?string
+    {
+        foreach ([ShipmentStatus::FailedAttempt, ShipmentStatus::BookingFailed, ShipmentStatus::Returning] as $issue) {
+            if (in_array($issue, $statuses, true)) {
+                return $issue->value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Mọi shipment còn hiệu lực đã rời kho → commit giữ hàng (trừ on_hand).
      *
      * @param  list<ShipmentStatus>  $statuses

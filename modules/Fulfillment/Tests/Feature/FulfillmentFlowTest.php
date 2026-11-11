@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -219,4 +220,52 @@ it('vận đơn dùng carrier của phương thức giao khách chọn (dịch v
     DB::table('shipments')->where('order_id', ($this->order)()->id)->update(['status' => 'cancelled']);
     T::seed(fn () => app(FulfillmentService::class)->createForOrder(($this->order)()->id));
     expect(Shipment::query()->withoutGlobalScopes()->where('order_id', ($this->order)()->id)->where('status', '!=', 'cancelled')->sole()->carrier_code)->toBe('manual');
+});
+
+it('sự cố giao hàng: đặt vận đơn lỗi và giao không thành công đưa đơn vào hàng đợi "Sự cố giao hàng"; xử lý xong thì ra', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    FakeApiCarrier::$failBooking = true;
+    ($this->place)();
+    $shipment = Shipment::query()->withoutGlobalScopes()->sole();
+    app(FulfillmentService::class)->bookAutomatically($shipment->id, 1);
+    ($this->asStaff)();
+
+    $issueQueue = fn () => $this->get('/admin/orders/orders?stage=issue')->assertOk();
+    expect(($this->order)()->delivery_issue)->toBe('booking_failed');
+    $issueQueue()->assertInertia(fn (Assert $page) => $page->where('stageCounts.issue', 1)->has('orders', 1)->where('orders.0.delivery_issue', 'booking_failed'));
+
+    // Hãng hoạt động lại, nhân viên đặt lại vận đơn → hết sự cố, đơn về "Chờ giao hãng".
+    FakeApiCarrier::$failBooking = false;
+    $this->post("{$this->ship}/{$shipment->id}/book", ['tracking_number' => 'TAY1'])->assertSessionHasNoErrors();
+    expect(($this->order)()->delivery_issue)->toBeNull();
+    $issueQueue()->assertInertia(fn (Assert $page) => $page->where('stageCounts.issue', 0)->where('stageCounts.to_ship', 1));
+
+    foreach (['picked_up', 'out_for_delivery', 'failed_attempt'] as $status) {
+        $this->post("{$this->ship}/{$shipment->id}/status", ['status' => $status])->assertSessionHasNoErrors();
+    }
+    expect(($this->order)()->delivery_issue)->toBe('failed_attempt');
+    $issueQueue()->assertInertia(fn (Assert $page) => $page->where('stageCounts.issue', 1)->where('orders.0.delivery_issue', 'failed_attempt'));
+
+    // Hãng giao lại thành công → hết sự cố; lịch sử đơn có vết mở và đóng sự cố.
+    foreach (['out_for_delivery', 'delivered'] as $status) {
+        $this->post("{$this->ship}/{$shipment->id}/status", ['status' => $status])->assertSessionHasNoErrors();
+    }
+    expect(($this->order)()->delivery_issue)->toBeNull()
+        ->and(DB::table('order_events')->where('type', 'delivery_issue_changed')->orderBy('id')->pluck('to_status')->all())->toBe(['booking_failed', null, 'failed_attempt', null]);
+    $issueQueue()->assertInertia(fn (Assert $page) => $page->where('stageCounts.issue', 0));
+});
+
+it('hàng đang hoàn về và đã hoàn về đều nằm ở hàng đợi "Sự cố giao hàng" với nhãn riêng', function () {
+    ($this->place)();
+    $shipment = Shipment::query()->withoutGlobalScopes()->sole();
+    ($this->asStaff)();
+    $this->post("{$this->ship}/{$shipment->id}/book", ['tracking_number' => 'GHN2'])->assertSessionHasNoErrors();
+    foreach (['picked_up', 'returning'] as $status) {
+        $this->post("{$this->ship}/{$shipment->id}/status", ['status' => $status])->assertSessionHasNoErrors();
+    }
+    $this->get('/admin/orders/orders?stage=issue')->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.delivery_issue', 'returning'));
+
+    $this->post("{$this->ship}/{$shipment->id}/status", ['status' => 'returned'])->assertSessionHasNoErrors();
+    expect(($this->order)()->delivery_issue)->toBeNull();
+    $this->get('/admin/orders/orders?stage=issue')->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.delivery_issue', 'returned'));
 });

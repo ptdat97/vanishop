@@ -111,6 +111,7 @@ final class OrderController
                 'items' => $order->lines->map(fn ($line): array => ['sku' => $line->sku, 'quantity' => $line->quantity - $line->cancelled_quantity])->filter(fn (array $line): bool => $line['quantity'] > 0)->values()->all(),
                 'total' => $order->total_amount,
                 'stage' => (string) $order->getAttribute('stage'),
+                'delivery_issue' => $this->deliveryIssue($order),
                 'order_status' => $order->order_status->value,
                 'payment_status' => $order->payment_status,
                 'payment_method' => $order->payment_method,
@@ -148,6 +149,7 @@ final class OrderController
             ]],
             // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
             'stage' => (string) Order::query()->whereKey($order->id)->selectRaw(OrderStage::sql().' as stage')->value('stage'),
+            'deliveryIssue' => $this->deliveryIssue($order),
             'timeline' => $this->timeline($detail),
             // Thẻ Khách (0.3.97): lịch sử nhận hàng theo SĐT — đánh giá rủi ro trước khi xác nhận đơn COD.
             'customerHistory' => [...$reader->deliveryHistory($detail->customer['phone'], $order->id), 'orders_url' => route('admin.orders.orders.index', ['q' => $detail->customer['phone']])],
@@ -322,6 +324,14 @@ final class OrderController
         $audit->record('order.status_action', 'order', $order->id, ['code' => $code, 'input' => $input]);
 
         return back()->with('success', $message ?? __('ordering::messages.status_action_done', ['label' => $view->label]));
+    }
+
+    /**
+     * Sự cố giao hàng của đơn cho nhãn ở hàng đợi "Sự cố giao hàng": mã trong `ordering::labels.delivery_issue`, null khi không có.
+     */
+    private function deliveryIssue(Order $order): ?string
+    {
+        return $order->delivery_issue ?? ($order->fulfillment_status === 'returned_to_sender' ? 'returned' : null);
     }
 
     /**

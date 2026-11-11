@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderTransitionRejected;
 use Modules\Ordering\Contracts\OrderTransitions;
+use Modules\Ordering\Domain\DeliveryIssue;
 use Modules\Ordering\Domain\FulfillmentStatus;
 use Modules\Ordering\Domain\OrderStateMachine;
 use Modules\Ordering\Domain\PaymentStatus;
@@ -121,6 +122,24 @@ final class OrderTransitionService implements OrderTransitions
             $from = (string) $order->fulfillment_status;
             $order->update(['fulfillment_status' => $fulfillmentStatus, 'lock_version' => $order->lock_version + 1]);
             $this->record($order->id, 'fulfillment_status_changed', $from, $fulfillmentStatus, $reason, $source);
+        });
+    }
+
+    public function setDeliveryIssue(int $orderId, ?string $deliveryIssue, string $reason, string $source): void
+    {
+        if ($deliveryIssue !== null && ! in_array($deliveryIssue, DeliveryIssue::VALUES, true)) {
+            throw new InvalidArgumentException("delivery_issue [{$deliveryIssue}] không hợp lệ.");
+        }
+
+        DB::transaction(function () use ($orderId, $deliveryIssue, $reason, $source): void {
+            $order = Order::query()->whereKey($orderId)->lockForUpdate()->firstOrFail();
+            if ($order->delivery_issue === $deliveryIssue) {
+                return;
+            }
+
+            $from = $order->delivery_issue;
+            $order->update(['delivery_issue' => $deliveryIssue, 'lock_version' => $order->lock_version + 1]);
+            $this->record($order->id, 'delivery_issue_changed', $from, $deliveryIssue, $reason, $source);
         });
     }
 

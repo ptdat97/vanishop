@@ -33,6 +33,7 @@ const props = defineProps<{
         order_status: Record<string, string>;
         payment_status: Record<string, string>;
         stage: Record<string, string>;
+        delivery_issue: Record<string, string>;
         source: Record<string, string>;
         payment_method: Record<string, string>;
     };
@@ -47,6 +48,7 @@ const props = defineProps<{
         items: Array<{ sku: string; quantity: number }>;
         total: number;
         stage: string;
+        delivery_issue: string | null;
         order_status: string;
         payment_status: string;
         payment_method: string;
@@ -278,7 +280,8 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <template #cell-total="{ row }"><MoneyText :amount="row.total" /></template>
         <template #cell-stage="{ row }">
             <StatusBadge :label="labels.stage[row.stage] ?? row.stage" :tone="stageTone(row.stage)" />
-            <div class="mt-1 text-xs text-slate-400">{{ labels.order_status[row.order_status] ?? row.order_status }}</div>
+            <div v-if="row.delivery_issue" class="mt-1 text-xs font-medium text-red-600" data-delivery-issue>{{ labels.delivery_issue[row.delivery_issue] ?? row.delivery_issue }}</div>
+            <div v-else class="mt-1 text-xs text-slate-400">{{ labels.order_status[row.order_status] ?? row.order_status }}</div>
         </template>
         <template #cell-payment_status="{ row }">
             <StatusBadge :label="labels.payment_status[row.payment_status] ?? row.payment_status" :tone="paymentStatusTone(row.payment_status)" />
