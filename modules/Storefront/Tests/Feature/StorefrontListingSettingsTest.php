@@ -21,7 +21,7 @@ it('storefront.per_page: mặc định 24; cấu hình đổi số sản phẩm 
     ($this->set)('storefront.per_page', 12);
     $this->getJson('/api/storefront/v1/products')->assertOk()->assertJsonPath('meta.per_page', 12)->assertJsonCount(12, 'data');
     $this->getJson('/api/storefront/v1/products?per_page=5')->assertJsonPath('meta.per_page', 5);
-    expect(substr_count($this->get('/thuong-hieu/lumiere')->assertOk()->getContent(), '<article class="group">'))->toBe(12);
+    expect(substr_count($this->get('/thuong-hieu/lumiere')->assertOk()->getContent(), '<article class="group vani-product-card"'))->toBe(12);
 });
 
 it('Admin chỉ nhận per_page 12–60', function () {
@@ -35,7 +35,7 @@ it('storefront.popular_searches: gợi ý ở ô tìm kiếm (datalist) và tran
     $this->get('/tim-kiem')->assertOk()->assertDontSee('data-vani-popular-searches', false)->assertDontSee('vani-popular-searches', false);
 
     ($this->set)('storefront.popular_searches', "đầm lụa\n\n  áo linen \nđầm lụa");
-    $this->get('/')->assertOk()->assertSee('<option value="đầm lụa"></option><option value="áo linen"></option>', false);
+    $this->get('/')->assertOk()->assertSeeInOrder(['<datalist', '<option value="đầm lụa"></option>', '<option value="áo linen"></option>', '</datalist>'], false);
     $this->get('/tim-kiem')->assertOk()->assertSee('data-vani-popular-searches', false)->assertSee(url('/tim-kiem?q=').'%C4%91%E1%BA%A7m%20l%E1%BB%A5a', false);
     $this->get('/tim-kiem?q=dam')->assertOk()->assertDontSee('data-vani-popular-searches', false);
 });

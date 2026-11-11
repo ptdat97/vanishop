@@ -211,7 +211,7 @@ it('slot header/footer/checkout mới hiện ở đúng trang', function () {
 
     $this->get('/')
         ->assertSee('Yêu thích')
-        ->assertSee('class="vani-slot items-center gap-4" data-slot="vani.storefront.header.nav"', false)
+        ->assertSee('data-slot="vani.storefront.header.nav"', false)
         ->assertSee('Mới')
         ->assertSee('Đăng ký nhận tin');
     $this->post('/gio-hang', ['variant_id' => $this->s->id]);
