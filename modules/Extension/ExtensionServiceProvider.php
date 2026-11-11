@@ -157,10 +157,6 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $permissions->register('settings.manage', 'Sửa cấu hình theo phạm vi (Core và plugin)');
 
         $navigation = $this->app->make(AdminNavigation::class);
-        $navigation->group('sales', 'Bán hàng', 45);
-        $navigation->group('catalog', 'Sản phẩm', 95);
-        $navigation->group('marketing', 'Marketing', 205);
-        $navigation->group('content', 'Nội dung & giao diện', 590);
         $navigation->group('system', 'Hệ thống', 800);
         $navigation->add('dashboard', 'Tổng quan', 'admin.dashboard', 'admin.access', 0);
         $navigation->add('reports', 'Báo cáo', 'admin.reports.index', 'admin.access', 500, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);

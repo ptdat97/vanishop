@@ -64,8 +64,9 @@ it('public API cho plugin khớp snapshot (đổi API phải ghi CHANGELOG-exten
     }
 
     // Helper toàn cục cho plugin/theme (ADR-036, ADR-037) cũng là public API.
-    $helperFile = str_replace('\\', '/', base_path('modules/Extension/helpers.php'));
-    $helpers = array_filter(get_defined_functions()['user'], fn (string $function): bool => str_replace('\\', '/', (new ReflectionFunction($function))->getFileName()) === $helperFile);
+    // Helper nằm ở module sở hữu contract (vòng 0 không biết thương mại, R29): modules/<Module>/helpers.php.
+    $helperFiles = array_map(fn (string $file): string => str_replace('\\', '/', $file), glob(base_path('modules/*/helpers.php')) ?: []);
+    $helpers = array_filter(get_defined_functions()['user'], fn (string $function): bool => in_array(str_replace('\\', '/', (string) (new ReflectionFunction($function))->getFileName()), $helperFiles, true));
     sort($helpers);
     foreach ($helpers as $function) {
         $reflection = new ReflectionFunction($function);

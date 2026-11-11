@@ -10,19 +10,35 @@ use Modules\Shared\Support\StoreLocale;
 
 /**
  * Đoạn đầu URL storefront mà plugin xin dùng cho trang native (`storefrontPages(..., prefix: 'tin-tuc')`).
- * Không trùng route của Core (danh sách giữ chỗ dưới đây — arch test đối chiếu với route Core) hay plugin khác.
+ * Không trùng route của Core hay plugin khác. Đoạn đầu của route Core lấy từ `vanishop.locale.paths` của cửa hàng
+ * (mọi ngôn ngữ, ADR-038) — vòng 0 không ghi tên trang thương mại (R29); arch test đối chiếu với route Core.
  */
 final class StorefrontPrefixes
 {
-    /** Đoạn đầu của route Core (mọi ngôn ngữ, ADR-038) + đường dẫn hệ thống. Mã ngôn ngữ của cửa hàng cũng bị giữ chỗ. */
+    /** Đường dẫn hệ thống. Mã ngôn ngữ của cửa hàng và tiền tố Admin cũng bị giữ chỗ. */
     public const RESERVED = [
-        'danh-muc', 'thuong-hieu', 'tim-kiem', 'san-pham', 'gio-hang', 'thanh-toan', 'don-hang', 'tra-cuu-don', 'tai-khoan',
-        'category', 'brands', 'search', 'products', 'cart', 'checkout', 'orders', 'track-order', 'account',
         'p', 'api', 'storage', 'build', 'vendor', 'up', 'health', 'robots.txt', 'sitemap.xml', 'sitemap', 'favicon.ico', 'livewire', 'sanctum', 'cache', '_vani',
     ];
 
     /** @var array<string, string> "locale:prefix" => plugin id */
     private array $claimed = [];
+
+    /**
+     * Mọi đoạn đầu plugin không được dùng: đường dẫn hệ thống, mã ngôn ngữ, tiền tố Admin, đoạn đầu route Core.
+     *
+     * @return list<string>
+     */
+    public function reserved(): array
+    {
+        $reserved = [...self::RESERVED, ...StoreLocale::supported(), explode('/', AdminPath::prefix())[0]];
+        foreach ((array) config('vanishop.locale.paths') as $paths) {
+            foreach ((array) $paths as $path) {
+                $reserved[] = explode('/', trim((string) $path, '/'))[0];
+            }
+        }
+
+        return array_values(array_unique(array_filter($reserved, fn (string $segment): bool => $segment !== '')));
+    }
 
     public function claim(string $prefix, string $pluginId, ?string $locale = null): void
     {
@@ -30,7 +46,7 @@ final class StorefrontPrefixes
         if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $prefix) !== 1) {
             throw new InvalidArgumentException("Prefix storefront [{$prefix}] không hợp lệ (chữ thường, số, gạch nối).");
         }
-        if (in_array($prefix, self::RESERVED, true) || in_array($prefix, StoreLocale::supported(), true) || $prefix === explode('/', AdminPath::prefix())[0]) {
+        if (in_array($prefix, $this->reserved(), true)) {
             throw new InvalidArgumentException("Prefix storefront [{$prefix}] đã được Core dùng.");
         }
         $key = "{$locale}:{$prefix}";

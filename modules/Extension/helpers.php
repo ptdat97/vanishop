@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use Modules\Catalog\Contracts\MediaUrls;
-use Modules\Customer\Contracts\Customers;
-use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Extension\Application\Hooks\CallerPlugin;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Contracts\Data\PluginInfo;
@@ -14,8 +11,6 @@ use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Shared\Support\MoneyFormatter;
-use Modules\Storefront\Contracts\Data\LinkTarget;
-use Modules\Storefront\Contracts\LinkResolver;
 use Modules\Tenancy\Contracts\Settings;
 
 /*
@@ -89,24 +84,6 @@ if (! function_exists('vani_route')) {
     }
 }
 
-if (! function_exists('vani_link')) {
-    /**
-     * URL của link có kiểu theo ngôn ngữ hiện hành; null khi đối tượng đã ẩn/xoá. `vani_link(['type' => 'category', 'value' => '12'])`.
-     *
-     * @param  LinkTarget|array<string, mixed>  $target
-     */
-    function vani_link(LinkTarget|array $target): ?string
-    {
-        $target = is_array($target) ? LinkTarget::fromArray($target) : $target;
-        if ($target === null) {
-            return null;
-        }
-        $resolved = app(LinkResolver::class)->resolve($target, app()->getLocale());
-
-        return $resolved->exists ? $resolved->url : null;
-    }
-}
-
 /*
 | Helper ngắn cho plugin và theme (ADR-037, danh sách đóng — thêm helper phải sửa ADR). Mỗi helper chỉ lấy một contract
 | từ container rồi gọi một phương thức. Class trong modules/ KHÔNG dùng các helper này (inject contract) — arch test chặn.
@@ -144,19 +121,6 @@ if (! function_exists('vani_locale')) {
     }
 }
 
-if (! function_exists('vani_customer')) {
-    /**
-     * Khách đang đăng nhập (DTO), null với khách vãng lai và ngoài storefront.
-     */
-    function vani_customer(): ?CustomerData
-    {
-        $context = app(CurrentContext::class);
-        $actor = $context->has() ? $context->actor() : null;
-
-        return $actor?->type === ActorType::Customer && $actor->id !== null ? app(Customers::class)->find($actor->id) : null;
-    }
-}
-
 if (! function_exists('vani_staff')) {
     /**
      * Nhân viên đang thao tác (Admin), null ở nơi khác.
@@ -178,52 +142,6 @@ if (! function_exists('vani_admin_url')) {
     function vani_admin_url(string $routeName, mixed $parameters = []): string
     {
         return route(str_starts_with($routeName, 'admin.') ? $routeName : 'admin.'.$routeName, $parameters);
-    }
-}
-
-if (! function_exists('vani_image')) {
-    /**
-     * URL ảnh của Thư viện ảnh: `$size` số = bản thu nhỏ rộng ≥ số đó, chuỗi = kích thước có tên (plugin, vd.
-     * `lookbook.cover`, 0.3.87); `$group` `product` = cắt theo tỉ lệ ảnh sản phẩm. Id null/không có → ảnh thay thế của
-     * cửa hàng; chưa cấu hình ảnh thay thế → chuỗi rỗng (theme tự vẽ khung trống).
-     */
-    function vani_image(?int $mediaId, int|string $size, ?string $group = null): string
-    {
-        return app(MediaUrls::class)->image($mediaId, $size, $group) ?? '';
-    }
-}
-
-if (! function_exists('vani_product_ratio')) {
-    /**
-     * Tỉ lệ khung ảnh sản phẩm [rộng, cao] cho theme (0.3.87, Admin → Thư viện ảnh → Kích thước ảnh; mặc định [2, 3]).
-     * "Giữ tỉ lệ gốc" → [3, 4] làm khung mặc định của theme.
-     *
-     * @return array{int, int}
-     */
-    function vani_product_ratio(): array
-    {
-        return app(MediaUrls::class)->productRatio() ?? [3, 4];
-    }
-}
-
-if (! function_exists('vani_media')) {
-    /**
-     * URL file gốc của ảnh/video trong Thư viện ảnh (0.3.91 — video không có bản thu nhỏ). Chuỗi rỗng khi id không có.
-     */
-    function vani_media(?int $mediaId): string
-    {
-        return $mediaId === null ? '' : (app(MediaUrls::class)->url($mediaId) ?? '');
-    }
-}
-
-if (! function_exists('vani_srcset')) {
-    /**
-     * Giá trị `srcset` của ảnh (0.3.87): `<img src="{{ vani_image($id, 800) }}" srcset="{{ vani_srcset($id) }}" sizes="…">`.
-     * Chuỗi rỗng khi không có ảnh/bản thu nhỏ.
-     */
-    function vani_srcset(?int $mediaId, ?string $group = null): string
-    {
-        return app(MediaUrls::class)->srcset($mediaId, $group);
     }
 }
 

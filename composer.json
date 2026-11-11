@@ -46,7 +46,10 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "modules/Extension/helpers.php"
+            "modules/Extension/helpers.php",
+            "modules/Catalog/helpers.php",
+            "modules/Customer/helpers.php",
+            "modules/Storefront/helpers.php"
         ]
     },
     "autoload-dev": {

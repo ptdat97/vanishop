@@ -81,6 +81,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
         $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
         $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ, menu, đầu & chân trang)');
+        $navigation->group('content', 'Nội dung & giao diện', 590);
         $navigation->add('storefront', 'Giao diện', 'admin.storefront.home', 'storefront.manage', 600, group: 'content');
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);

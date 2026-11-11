@@ -111,6 +111,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $permissions->register('media.view', 'Xem và chọn ảnh từ Thư viện ảnh');
         $permissions->register('media.manage', 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)');
 
+        $navigation->group('catalog', 'Sản phẩm', 95);
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100, group: 'catalog');
         $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 610, group: 'content');
 

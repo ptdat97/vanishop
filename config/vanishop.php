@@ -59,6 +59,8 @@ return [
     'storefront' => [
         'themes_path' => $relativeToBase(env('VANI_THEMES_PATH', 'custom/theme')),
         'theme' => env('VANI_THEME', 'vani-base'),
+        // Nguồn đơn storefront nhận qua header X-Vani-Source (báo cáo theo kênh); giá trị lạ → mục đầu tiên.
+        'sources' => ['web', 'app', 'zalo'],
         // Cache CDN cho trang công khai — TUỲ CHỌN NÂNG CAO khi deploy có CDN (storefront §5). Mặc định tắt: mọi trang
         // chạy có phiên, render sẵn phần riêng của khách. Bật: trang công khai render không phiên, CDN cache theo
         // s-maxage, phần riêng của khách (giỏ, đăng nhập, thông báo) lấy bằng JS qua GET /_vani/phien.

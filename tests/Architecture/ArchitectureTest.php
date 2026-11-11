@@ -7,13 +7,7 @@
 $modules = require __DIR__.'/../../config/modules.php';
 
 /** Nợ đã biết của R29 (xử lý ở đợt refactor vòng 0): danh sách chỉ được ngắn lại. */
-const RING0_COMMERCE_DEBT = [
-    'modules/Extension/helpers.php:5 Modules\Catalog\Contracts\MediaUrls',
-    'modules/Extension/helpers.php:6 Modules\Customer\Contracts\Customers',
-    'modules/Extension/helpers.php:7 Modules\Customer\Contracts\Data\CustomerData',
-    'modules/Extension/helpers.php:17 Modules\Storefront\Contracts\Data\LinkTarget',
-    'modules/Extension/helpers.php:18 Modules\Storefront\Contracts\LinkResolver',
-];
+const RING0_COMMERCE_DEBT = [];
 
 arch('R4: Core không phụ thuộc Plugin')
     ->expect('Modules')
@@ -144,11 +138,11 @@ it('Tag extension point chỉ được định nghĩa trong Contracts (plugin th
 });
 
 it('ADR-037: class trong modules/ không gọi helper vani_* dành cho plugin/theme (inject contract)', function () {
-    $helpers = ['vani_setting', 'vani_money', 'vani_locale', 'vani_customer', 'vani_staff', 'vani_admin_url', 'vani_image', 'vani_asset', 'vani_plugin', 'vani_route', 'vani_link'];
+    $helpers = ['vani_setting', 'vani_money', 'vani_locale', 'vani_customer', 'vani_staff', 'vani_admin_url', 'vani_image', 'vani_media', 'vani_srcset', 'vani_product_ratio', 'vani_asset', 'vani_plugin', 'vani_route', 'vani_link'];
     $offenders = [];
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('modules'), FilesystemIterator::SKIP_DOTS)) as $file) {
         $path = (string) $file;
-        if (! str_ends_with($path, '.php') || str_ends_with($path, '.blade.php') || str_contains($path, '/Tests/') || $path === base_path('modules/Extension/helpers.php')) {
+        if (! str_ends_with($path, '.php') || str_ends_with($path, '.blade.php') || str_contains($path, '/Tests/') || preg_match('#/modules/\w+/helpers\.php$#', $path) === 1) {
             continue;
         }
         $tokens = token_get_all((string) file_get_contents($path));

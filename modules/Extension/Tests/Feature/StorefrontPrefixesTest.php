@@ -32,7 +32,7 @@ it('danh sách giữ chỗ bao phủ đoạn đầu mọi route storefront của
         ->reject(fn (string $segment): bool => $segment === '')
         ->unique()->values()->all();
 
-    expect(array_diff($segments, StorefrontPrefixes::RESERVED))->toBe([]);
+    expect(array_diff($segments, (new StorefrontPrefixes)->reserved()))->toBe([]);
 });
 
 it('sitemap gộp URL của SitemapProvider; provider lỗi chỉ bị bỏ phần của nó', function () {
