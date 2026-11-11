@@ -3,7 +3,6 @@
 return [
     'invalid' => 'The order details are not valid.',
     'totals_changed' => 'The order total has changed (price, promotion or shipping). Please review and confirm.',
-    'voucher_invalid' => 'Voucher :code cannot be applied.',
     'cart_not_ready' => 'Some items in the cart are out of stock or unavailable. Please update the cart.',
     'name_required' => 'Please enter the recipient name.',
     'phone_invalid' => 'The phone number is not valid.',

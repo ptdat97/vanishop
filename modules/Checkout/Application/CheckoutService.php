@@ -34,6 +34,7 @@ use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Payment\Contracts\Data\PaymentView;
 use Modules\Payment\Contracts\Payments;
 use Modules\Promotion\Contracts\Data\PromotionResult;
+use Modules\Promotion\Contracts\Data\VoucherRejection;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Application\IdempotencyStore;
 use Modules\Shared\Context\ActorType;
@@ -246,9 +247,9 @@ final class CheckoutService implements Checkout
         if ($issues !== []) {
             throw CheckoutRejected::invalid($issues);
         }
-        if ($totals->rejectedVouchers !== []) {
-            throw CheckoutRejected::vouchers($totals->rejectedVouchers);
-        }
+        // Mã giảm giá không dùng được không chặn đặt hàng (ADR-044 §6, mọi kênh): mã bị từ chối vốn không được tính vào tổng,
+        // nên đơn đặt theo tổng không có mã đó; mã bị bỏ trả về trong `dropped_vouchers`. Nếu khách đã thấy tổng CÓ giảm
+        // (mã hết lượt sau khi xem) thì `expected_total` lệch → `checkout.totals_changed`: không bao giờ tính hơn số khách thấy.
     }
 
     /**
@@ -351,6 +352,7 @@ final class CheckoutService implements Checkout
             'payment_status' => $order->paymentStatus,
             'total' => ['amount' => $order->totalAmount, 'currency' => $order->currencyCode],
             'item_count' => array_sum(array_map(fn (TotalsLine $line): int => $line->quantity, $totals->lines)),
+            'dropped_vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason], $totals->rejectedVouchers),
         ];
     }
 }

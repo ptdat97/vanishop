@@ -102,7 +102,7 @@ it('voucher còn 2 lượt, 6 khách cùng dùng → đúng 2 đơn có giảm g
     $counts = array_count_values($results);
 
     expect($counts['ok'] ?? 0)->toBe(2)
-        ->and(array_diff(array_keys($counts), ['ok', 'promotion.voucher_exhausted', 'checkout.voucher_invalid']))->toBe([])
+        ->and(array_diff(array_keys($counts), ['ok', 'promotion.voucher_exhausted', 'checkout.totals_changed']))->toBe([])
         ->and((int) DB::table('vouchers')->where('code', 'FLASH')->value('used_count'))->toBe(2)
         ->and((int) DB::table('orders')->where('discount_amount', 30_000)->count())->toBe(2)
         ->and((int) DB::table('stock_levels')->where('variant_id', $this->s->id)->value('reserved'))->toBe(2);

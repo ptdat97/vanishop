@@ -125,7 +125,7 @@ it('giỏ có dòng thiếu hàng → 422 cart_not_ready, không tạo đơn (tr
     expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
 });
 
-it('voucher hết lượt lúc đặt → 409 promotion.voucher_exhausted', function () {
+it('voucher hết lượt sau khi khách xem tổng → bỏ mã, tổng tăng nên 409 checkout.totals_changed, không tạo đơn; đặt lại theo tổng mới → có đơn, mã ở meta.dropped_vouchers', function () {
     C::promotion([], ['CUOI' => 1]);
     ($this->add)($this->s, 1);
     $quote = ($this->quote)(['voucher_codes' => ['CUOI']])->json('data.total.amount');
@@ -134,10 +134,19 @@ it('voucher hết lượt lúc đặt → 409 promotion.voucher_exhausted', func
     DB::table('vouchers')->where('code', 'CUOI')->update(['used_count' => 1]);
 
     ($this->place)(C::orderPayload(['voucher_codes' => ['CUOI'], 'expected_total' => $quote]))
-        ->assertStatus(422)
-        ->assertJsonPath('error.code', 'checkout.voucher_invalid')
-        ->assertJsonPath('error.details.vouchers.0.reason', 'exhausted');
+        ->assertStatus(409)
+        ->assertJsonPath('error.code', 'checkout.totals_changed');
     expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
+
+    // Khách xem lại: mã bị từ chối, tổng không giảm; đặt theo tổng đó → có đơn, mã bị bỏ báo ở meta (ADR-044 §6).
+    $quote = ($this->quote)(['voucher_codes' => ['CUOI']]);
+    expect($quote->json('data.rejected_vouchers.0.code'))->toBe('CUOI');
+    ($this->place)(C::orderPayload(['voucher_codes' => ['CUOI'], 'expected_total' => $quote->json('data.total.amount')]), 'k-retry-12345')
+        ->assertCreated()
+        ->assertJsonPath('meta.dropped_vouchers.0.code', 'CUOI')
+        ->assertJsonPath('meta.dropped_vouchers.0.reason', 'exhausted')
+        ->assertJsonMissingPath('data.dropped_vouchers');
+    expect(Order::query()->withoutGlobalScopes()->count())->toBe(1);
 });
 
 it('validate liên hệ, địa chỉ, thanh toán; plugin chặn qua hook', function () {

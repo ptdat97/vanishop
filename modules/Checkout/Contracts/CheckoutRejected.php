@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Checkout\Contracts;
 
 use Modules\Checkout\Contracts\Data\CheckoutIssue;
-use Modules\Promotion\Contracts\Data\VoucherRejection;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
 final class CheckoutRejected extends BusinessRuleViolation
@@ -42,16 +41,6 @@ final class CheckoutRejected extends BusinessRuleViolation
     public static function signInRequired(): self
     {
         return new self('checkout.sign_in_required', 403, __('checkout::messages.sign_in_required'));
-    }
-
-    /**
-     * @param  list<VoucherRejection>  $rejections
-     */
-    public static function vouchers(array $rejections): self
-    {
-        return new self('checkout.voucher_invalid', 422, __('checkout::messages.voucher_invalid', ['code' => $rejections[0]->code ?? '']), [
-            'vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason], $rejections),
-        ]);
     }
 
     public function errorCode(): string

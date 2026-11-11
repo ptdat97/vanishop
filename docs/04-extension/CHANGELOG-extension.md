@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.7 — 2026-11-11
+
+Mã giảm giá không dùng được không chặn đặt hàng ở mọi kênh (ADR-044 §6, đợt A1 của [api-first-refactor](../20-roadmap/api-first-refactor.md)).
+
+### Đổi (phá vỡ)
+- `Checkout::placeOrder()` không còn ném lỗi `checkout.voucher_invalid` khi có mã bị từ chối: mã bị bỏ, đơn đặt theo tổng không có mã đó; kết quả có `dropped_vouchers[{code, reason}]`. Khách đã thấy tổng có giảm mà mã hết lượt sau đó → `checkout.totals_changed` (409) như mọi lần tổng đổi.
+- Xoá `CheckoutRejected::vouchers()` và chuỗi `checkout::messages.voucher_invalid`.
+- Storefront API `POST /checkout/{cartId}/orders`: mã bị bỏ trả ở `meta.dropped_vouchers`.
+
 ## 0.4.6 — 2026-11-11
 
 Drag & Drop Engine dùng chung của Admin (bổ sung ADR-039).

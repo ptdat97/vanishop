@@ -113,16 +113,7 @@ final class CheckoutController
             return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput();
         }
 
-        // Mã còn trong form nhưng không áp dụng được (khách gõ rồi bấm Đặt hàng luôn): bỏ mã, vẫn đặt đơn — tổng khách thấy
-        // vốn không gồm phần giảm của mã đó (0.3.104). Mã hợp lệ thì giữ, tổng đổi → quay lại để khách xác nhận như cũ.
-        if (trim((string) ($data['voucher_code'] ?? '')) !== '') {
-            $rejected = $this->checkout->quote($this->toRequest($data, $request))->totals->rejectedVouchers;
-            if (CartVoucher::rejectionFor($rejected, trim((string) $data['voucher_code'])) !== null) {
-                $data['voucher_code'] = '';
-                $this->voucher->forget();
-            }
-        }
-
+        // Mã còn trong form nhưng không áp dụng được: Checkout bỏ mã và vẫn đặt đơn cho mọi kênh (ADR-044 §6).
         try {
             $result = $this->checkout->placeOrder($this->toRequest($data, $request, (int) $data['expected_total']), (string) $data['idempotency_key']);
         } catch (CheckoutRejected $exception) {

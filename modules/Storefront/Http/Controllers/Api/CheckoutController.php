@@ -31,7 +31,10 @@ final class CheckoutController
         $result = $checkout->placeOrder($request->toCheckoutRequest($cart), $key);
 
         $body = $result->payment === null ? $result->body : [...$result->body, 'payment' => $payments->present($result->payment)];
+        // Mã giảm giá không dùng được đã bị bỏ khi đặt (ADR-044 §6): báo ở meta, không phải lỗi.
+        $dropped = (array) ($body['dropped_vouchers'] ?? []);
+        unset($body['dropped_vouchers']);
 
-        return response()->json(['data' => $body], $result->status, $result->replayed ? ['Idempotent-Replayed' => 'true'] : []);
+        return response()->json(['data' => $body, 'meta' => ['dropped_vouchers' => $dropped]], $result->status, $result->replayed ? ['Idempotent-Replayed' => 'true'] : []);
     }
 }
