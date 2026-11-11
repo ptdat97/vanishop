@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.5 — 2026-11-11
+
+Sửa tồn ngay trong ô ở danh sách sản phẩm Admin (backlog L26).
+
+### Thêm
+- Slot `vani.admin.product.list_columns`: listener được trả thêm `urls` (style id => link của ô) và `edit_values` (style id => dữ liệu sửa trong ô, hình dạng do cột tự định nghĩa). Cột `stock` của Inventory trả `{url, location_id, rows: [{variant_id, label, on_hand}]}` khi cửa hàng có đúng một kho do VaniShop quản lý tồn và nhân viên có quyền `inventory.adjust`; Admin lưu qua endpoint lưu nhiều ô của lưới tồn (không ghi đè ô đã đổi sau khi mở trang).
+
 ## 0.4.4 — 2026-11-11
 
 Lọc và sắp xếp sản phẩm theo **giá niêm yết** ở trang danh sách (backlog L8, phần giá; Owner chọn giá niêm yết cho giai đoạn SME).

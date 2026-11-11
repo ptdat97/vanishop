@@ -42,6 +42,12 @@ const editingPriceId = ref<number | null>(null);
 const priceDraft = ref('');
 const priceError = ref('');
 const savingPrice = ref(false);
+// Sửa tồn trong ô (cửa hàng một kho): Inventory gửi sẵn URL lưu, kho và tồn từng màu/size; chỉ gửi ô đã đổi.
+type StockEdit = { url: string; location_id: number; rows: Array<{ variant_id: number; label: string; on_hand: number }> };
+const editingStockId = ref<number | null>(null);
+const stockDraft = ref<Record<number, string>>({});
+const stockError = ref('');
+const savingStock = ref(false);
 const columns = [
     { key: 'image', label: '', class: 'w-16' },
     { key: 'name', label: 'Sản phẩm', class: 'font-medium' },
@@ -73,6 +79,45 @@ function openPriceEditor(productId: number, amount: number | null): void {
 function closePriceEditor(): void {
     editingPriceId.value = null;
     priceError.value = '';
+}
+
+function openStockEditor(productId: number, edit: StockEdit): void {
+    editingStockId.value = productId;
+    stockDraft.value = Object.fromEntries(edit.rows.map((row) => [row.variant_id, String(row.on_hand)]));
+    stockError.value = '';
+}
+
+function closeStockEditor(): void {
+    editingStockId.value = null;
+    stockError.value = '';
+}
+
+function saveStock(edit: StockEdit): void {
+    if (savingStock.value) {
+        return;
+    }
+    const changes = edit.rows
+        .filter((row) => stockDraft.value[row.variant_id] !== '' && Number(stockDraft.value[row.variant_id]) !== row.on_hand)
+        .map((row) => ({ location_id: edit.location_id, variant_id: row.variant_id, on_hand: Number(stockDraft.value[row.variant_id]), expected: row.on_hand }));
+    if (!changes.length) {
+        closeStockEditor();
+        return;
+    }
+
+    stockError.value = '';
+    savingStock.value = true;
+    router.post(edit.url, { changes, reason: 'Sửa nhanh ở danh sách sản phẩm' }, {
+        preserveScroll: true,
+        onError: (errors) => {
+            stockError.value = Object.values(errors)[0] ?? 'Không thể cập nhật tồn.';
+        },
+        onSuccess: () => {
+            editingStockId.value = null;
+        },
+        onFinish: () => {
+            savingStock.value = false;
+        },
+    });
 }
 
 function savePrice(url: string): void {
@@ -144,14 +189,29 @@ function savePrice(url: string): void {
                 </form>
                 <div v-else class="flex items-start justify-between gap-2">
                     <span>{{ value }}</span>
-                    <button type="button" class="shrink-0 text-indigo-600 hover:underline" @click="openPriceEditor(row.id, editValue)">Sửa</button>
+                    <button type="button" class="shrink-0 text-indigo-600 hover:underline" @click="openPriceEditor(row.id, editValue as number | null)">Sửa</button>
                 </div>
             </div>
             <span v-else>{{ value }}</span>
         </template>
-        <template #cell-stock="{ row, value, url }">
-            <Link v-if="url" :href="url" class="text-indigo-600 hover:underline" :aria-label="`Mở lưới tồn kho của ${row.name ?? row.style_code}`">{{ value }}</Link>
-            <span v-else>{{ value }}</span>
+        <template #cell-stock="{ row, value, editValue, url }">
+            <form v-if="editValue && editingStockId === row.id" class="min-w-52 space-y-1" data-stock-editor @submit.prevent="saveStock(editValue as StockEdit)" @click.stop>
+                <label v-for="line in (editValue as StockEdit).rows" :key="line.variant_id" class="flex items-center justify-between gap-2 text-xs">
+                    <span class="text-slate-600">{{ line.label }}</span>
+                    <input v-model="stockDraft[line.variant_id]" :class="inputClass" class="w-20 text-right tabular-nums" type="number" min="0" max="1000000" step="1" required :aria-label="`Tồn ${line.label}`" />
+                </label>
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <button type="submit" :class="primaryButton" :disabled="savingStock">{{ savingStock ? 'Đang lưu…' : 'Lưu' }}</button>
+                    <button type="button" :class="secondaryButton" :disabled="savingStock" @click="closeStockEditor">Hủy</button>
+                </div>
+                <span v-if="stockError" class="block text-xs text-rose-700" role="alert">{{ stockError }}</span>
+                <span class="block text-xs text-slate-500">Số tồn thực tế trong kho (chưa trừ hàng đang giữ cho đơn).</span>
+            </form>
+            <div v-else class="flex items-start justify-between gap-2">
+                <Link v-if="url" :href="url" class="text-indigo-600 hover:underline" :aria-label="`Mở lưới tồn kho của ${row.name ?? row.style_code}`">{{ value }}</Link>
+                <span v-else>{{ value }}</span>
+                <button v-if="editValue" type="button" class="shrink-0 text-indigo-600 hover:underline" data-stock-edit @click.stop="openStockEditor(row.id, editValue as StockEdit)">Sửa</button>
+            </div>
         </template>
         <template #cell-status="{ row }">
             <StatusBadge :label="labels.product_status[row.status] ?? row.status" :tone="row.status === 'active' ? 'success' : row.status === 'draft' ? 'warning' : 'neutral'" />

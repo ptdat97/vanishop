@@ -104,7 +104,7 @@ final class ProductController
      * @return array{
      *     columns: list<array{key: string, label: string}>,
      *     values: array<int, array<string, scalar|null>>,
-     *     editValues: array<int, array<string, int|null>>,
+     *     editValues: array<int, array<string, mixed>>,
      *     urls: array<int, array<string, string>>
      * }
      */

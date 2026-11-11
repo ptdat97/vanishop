@@ -17,7 +17,7 @@ return [
         'visibility' => 'public',
         'since' => '0.3.103',
         'args' => ['styleIds' => 'list<int>'],
-        'description' => 'Cột thêm ở danh sách sản phẩm Admin (module Core, vd. Pricing: giá; Inventory: tồn bán được). Listener trả array{key: string, label: string, values: array<int, string>} (style id => chữ) hoặc null khi không có quyền.',
+        'description' => 'Cột thêm ở danh sách sản phẩm Admin (module Core, vd. Pricing: giá; Inventory: tồn bán được). Listener trả array{key: string, label: string, values: array<int, string>, urls?: array<int, string>, edit_values?: array<int, mixed>} (style id => chữ / link / dữ liệu sửa trong ô) hoặc null khi không có quyền.',
     ],
     'vani.admin.product.bulk_actions' => [
         'type' => 'slot',

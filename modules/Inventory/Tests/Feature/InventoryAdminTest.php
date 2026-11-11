@@ -217,3 +217,31 @@ it('ngưỡng "sắp hết hàng" đổi ở Admin → Cấu hình: lưới tồ
     $definition = collect(app(Settings::class)->definitions('core'))->firstWhere('key', LowStockThreshold::SETTING);
     expect($definition->type)->toBe('int')->and($definition->rules)->toBe(['min:0', 'max:1000']);
 });
+
+it('danh sách sản phẩm: cửa hàng một kho sửa tồn ngay trong ô (từng màu/size); nhiều kho hoặc thiếu quyền thì chỉ có link sang lưới tồn', function () {
+    // Cửa hàng SME: chỉ còn Kho chính.
+    T::seed(fn () => $this->erp->delete());
+    I::stock($this->hn, $this->s->id, 4);
+    $styleId = $this->s->style_id;
+    $stockEdit = fn (): mixed => $this->get('/admin/catalog/products')->assertOk()->viewData('page')['props']['extensions']['editValues'][$styleId]['stock'] ?? null;
+
+    // Chỉ xem tồn: không có dữ liệu sửa.
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'inventory.view']), 'staff');
+    expect($stockEdit())->toBeNull();
+
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'inventory.view', 'inventory.adjust']), 'staff');
+    $edit = $stockEdit();
+    expect($edit['location_id'])->toBe($this->hn->id)
+        ->and(collect($edit['rows'])->firstWhere('variant_id', $this->s->id)['on_hand'])->toBe(4)
+        ->and(array_column($edit['rows'], 'variant_id'))->toContain($this->m->id);
+
+    // Lưu đúng như giao diện gửi: chỉ ô đã đổi, kèm số tồn lúc mở trang.
+    $this->post($edit['url'], ['changes' => [['location_id' => $edit['location_id'], 'variant_id' => $this->s->id, 'on_hand' => 9, 'expected' => 4]], 'reason' => 'Sửa nhanh ở danh sách sản phẩm'])
+        ->assertSessionHasNoErrors();
+    expect(collect($stockEdit()['rows'])->firstWhere('variant_id', $this->s->id)['on_hand'])->toBe(9)
+        ->and(DB::table('stock_movements')->where('variant_id', $this->s->id)->latest('id')->value('reason'))->toBe('Sửa nhanh ở danh sách sản phẩm');
+
+    // Có kho thứ hai (vani.warehouse): sửa ở lưới tồn theo từng kho.
+    I::location(['code' => 'KHO-2']);
+    expect($stockEdit())->toBeNull();
+});
