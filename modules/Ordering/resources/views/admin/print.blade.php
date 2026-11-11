@@ -28,8 +28,8 @@
         th, td { padding: 4px 6px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
         th { font-size: 11px; color: #475569; }
         td.qty, th.qty { text-align: right; width: 40px; font-weight: 600; }
-        .cod { margin-top: 10px; padding: 8px; border: 2px solid #0f172a; display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; }
-        .cod.paid { border-style: dashed; font-weight: 600; font-size: 13px; }
+        .collect { margin-top: 10px; padding: 8px; border: 2px solid #0f172a; display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; }
+        .collect.paid { border-style: dashed; font-weight: 600; font-size: 13px; }
         .note { margin-top: 8px; padding: 6px 8px; background: #fef3c7; }
         @media print { body { background: #fff; } .toolbar { display: none; } .slip { margin: 0; width: auto; min-height: 0; padding: 0; } }
     </style>
@@ -72,9 +72,9 @@
             </table>
 
             @if ($order['collect_on_delivery'] !== null)
-                <div class="cod"><span>THU HỘ (COD)</span><span>{{ $order['collect_on_delivery'] }}</span></div>
+                <div class="collect"><span>THU HỘ (COD)</span><span>{{ $order['collect_on_delivery'] }}</span></div>
             @else
-                <div class="cod paid"><span>Đã thanh toán — không thu tiền</span><span>{{ $order['total'] }}</span></div>
+                <div class="collect paid"><span>Đã thanh toán — không thu tiền</span><span>{{ $order['total'] }}</span></div>
             @endif
             @if ($order['note'])
                 <div class="note">Ghi chú của khách: {{ $order['note'] }}</div>

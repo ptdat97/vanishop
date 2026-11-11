@@ -6,6 +6,15 @@
 
 $modules = require __DIR__.'/../../config/modules.php';
 
+/** Nợ đã biết của R29 (xử lý ở đợt refactor vòng 0): danh sách chỉ được ngắn lại. */
+const RING0_COMMERCE_DEBT = [
+    'modules/Extension/helpers.php:5 Modules\Catalog\Contracts\MediaUrls',
+    'modules/Extension/helpers.php:6 Modules\Customer\Contracts\Customers',
+    'modules/Extension/helpers.php:7 Modules\Customer\Contracts\Data\CustomerData',
+    'modules/Extension/helpers.php:17 Modules\Storefront\Contracts\Data\LinkTarget',
+    'modules/Extension/helpers.php:18 Modules\Storefront\Contracts\LinkResolver',
+];
+
 arch('R4: Core không phụ thuộc Plugin')
     ->expect('Modules')
     ->not->toUse('Plugin');
@@ -34,6 +43,32 @@ foreach ($ring0 as $module) {
         ->not->toUse($commerce)
         ->ignoring("Modules\\{$module}\\Tests");
 }
+
+// arch() của Pest chỉ xét class: file hàm (helpers.php), file route, file hook không được kiểm. Quét token tên class
+// trong mọi file .php của vòng 0 để ranh giới R29 không phụ thuộc loại file.
+it('R29: mọi file PHP của vòng 0 (kể cả file hàm, route, hook) không tham chiếu module thương mại', function () use ($ring0, $modules) {
+    $commerceModules = array_values(array_diff($modules, $ring0));
+    $offenders = [];
+    foreach ($ring0 as $module) {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path("modules/{$module}"), FilesystemIterator::SKIP_DOTS)) as $file) {
+            $path = (string) $file;
+            if (! str_ends_with($path, '.php') || str_ends_with($path, '.blade.php') || str_contains($path, '/Tests/')) {
+                continue;
+            }
+            foreach (token_get_all((string) file_get_contents($path)) as $token) {
+                if (! is_array($token) || ! in_array($token[0], [T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true)) {
+                    continue;
+                }
+                $segments = explode('\\', ltrim($token[1], '\\'));
+                if ($segments[0] === 'Modules' && in_array($segments[1] ?? '', $commerceModules, true)) {
+                    $offenders[] = substr($path, strlen(base_path()) + 1).":{$token[2]} {$token[1]}";
+                }
+            }
+        }
+    }
+
+    expect($offenders)->toBe(RING0_COMMERCE_DEBT);
+});
 
 // Plugin chỉ được dùng Contracts/, Events/ và PluginServiceProvider — không dùng tầng nội bộ của module.
 // Ngoại lệ có chủ đích: Modules\Shared\Domain\Money là value object của shared kernel, mọi contract

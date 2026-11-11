@@ -103,6 +103,52 @@ it('modules/ không gắn mã implementation hay id của plugin (Core không bi
     expect($offenders)->toBe([]);
 });
 
+it('giao diện Core (Vue, TS, Blade) không gắn mã implementation hay id của plugin', function () {
+    $contracts = [PaymentGateway::class, TaxCalculator::class, ShippingCarrier::class, PhoneNumberPolicy::class];
+    $pluginRoot = realpath(__DIR__.'/../../custom/plugin');
+    $codes = [];
+    foreach (glob($pluginRoot.'/*/vanishop.json') as $file) {
+        $codes[] = (string) json_decode((string) file_get_contents($file), true)['id'];
+    }
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS)) as $file) {
+        $path = $file->getRealPath();
+        if ($file->getExtension() !== 'php' || preg_match('#/(Tests|resources|database)/#', $path) === 1) {
+            continue;
+        }
+        $class = 'Plugin\\'.str_replace('/', '\\', substr($path, strlen($pluginRoot) + 1, -4));
+        if (! class_exists($class) || (new ReflectionClass($class))->isAbstract()) {
+            continue;
+        }
+        foreach ($contracts as $contract) {
+            if (is_subclass_of($class, $contract)) {
+                $codes[] = (new ReflectionClass($class))->newInstanceWithoutConstructor()->code();
+            }
+        }
+    }
+    $pattern = '/([\'"`])('.implode('|', array_map(fn (string $code): string => preg_quote($code, '/'), array_unique($codes))).')\1/';
+
+    $offenders = [];
+    $base = realpath(__DIR__.'/../..');
+    foreach (["{$base}/modules", "{$base}/resources/js", "{$base}/resources/views"] as $root) {
+        if (! is_dir($root)) {
+            continue;
+        }
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) as $file) {
+            $path = $file->getRealPath();
+            if (preg_match('/\.(vue|ts|js|blade\.php)$/', $path) !== 1 || preg_match('#/(Tests|Testing|node_modules)/#', $path) === 1) {
+                continue;
+            }
+            foreach (file($path) ?: [] as $number => $line) {
+                if (preg_match($pattern, $line, $match) === 1) {
+                    $offenders[] = substr($path, strlen($base) + 1).':'.($number + 1)." '{$match[2]}'";
+                }
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});
+
 it('modules/ không ghi cứng giá trị thị trường của cửa hàng — múi giờ, ngôn ngữ, tiền tệ, định dạng lấy từ config/vanishop.php', function () {
     $market = [];
     foreach (DateTimeZone::listIdentifiers() as $zone) {
