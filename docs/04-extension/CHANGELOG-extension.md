@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.1 — 2026-11-11
+
+Chốt ranh giới vòng 0 theo [commerce-kernel §10](../02-architecture/commerce-kernel.md); không đổi hành vi với plugin.
+
+### Thêm
+- Class hỗ trợ ngoài `Contracts`/`Events` mà plugin được dùng nay thuộc public API và có trong snapshot: `Modules\Shared\Support\{StoreLocale, StoreClock, MoneyFormatter, LocalizedUrls}` và `Modules\Extension\Facades\Hook`. Arch test R5 chuyển sang danh sách cho phép: plugin chỉ tham chiếu `Contracts`, `Events`, `Testing`, `Shared\Domain`, `PluginServiceProvider` và các class trên.
+- Cấu hình cửa hàng `vanishop.storefront.sources`: danh sách nguồn đơn nhận qua header `X-Vani-Source` (mặc định `web`, `app`, `zalo`; giá trị lạ → mục đầu tiên).
+
+### Đổi
+- Helper `vani_customer`, `vani_image`, `vani_media`, `vani_srcset`, `vani_product_ratio`, `vani_link` chuyển sang `helpers.php` của module sở hữu contract (Customer, Catalog, Storefront). Tên và chữ ký giữ nguyên.
+- Đoạn đầu URL storefront bị giữ chỗ cho Core lấy từ `vanishop.locale.paths` thay cho danh sách ghi cứng: đổi đường dẫn Core trong cấu hình thì plugin tự bị chặn dùng đường dẫn đó.
+- Nhóm menu Admin `sales`, `catalog`, `marketing`, `content` do module sở hữu khai báo; khoá nhóm và thứ tự không đổi.
+
 ## 0.4.0 — 2026-11-09
 
 Thay đổi không tương thích của API hook.

@@ -4,12 +4,22 @@ use Modules\Extension\PluginServiceProvider;
 
 /*
 | Public API cho plugin (docs/04-extension/extension-model.md §5): chữ ký của mọi thứ trong
-| Modules\*\Contracts, Modules\*\Events và PluginServiceProvider được chụp vào public-api.snapshot.
+| Modules\*\Contracts, Modules\*\Events, PluginServiceProvider và class hỗ trợ trong PLUGIN_PUBLIC_SUPPORT được chụp
+| vào public-api.snapshot.
 |
 | Đổi public API → test đỏ. Khi thay đổi là có chủ đích:
 |   1. xếp loại (thêm = minor, đổi/xoá = major — với 0.x: tăng số giữa) và ghi docs/04-extension/CHANGELOG-extension.md
 |   2. chạy lại với VANI_UPDATE_API_SNAPSHOT=1 để ghi snapshot mới
 */
+
+/** Class hỗ trợ ngoài Contracts/Events mà plugin được dùng: giờ/ngôn ngữ/tiền/URL của cửa hàng và facade hook. */
+const PLUGIN_PUBLIC_SUPPORT = [
+    'Modules\\Extension\\Facades\\Hook',
+    'Modules\\Shared\\Support\\LocalizedUrls',
+    'Modules\\Shared\\Support\\MoneyFormatter',
+    'Modules\\Shared\\Support\\StoreClock',
+    'Modules\\Shared\\Support\\StoreLocale',
+];
 
 function publicApiSignature(ReflectionParameter $parameter): string
 {
@@ -52,6 +62,10 @@ it('public API cho plugin khớp snapshot (đổi API phải ghi CHANGELOG-exten
         }
     }
     $files[] = str_replace('\\', '/', base_path('modules/Extension/PluginServiceProvider.php'));
+    // Class hỗ trợ ngoài Contracts/Events mà plugin được dùng (R5) — danh sách đóng, cùng kỷ luật version.
+    foreach (PLUGIN_PUBLIC_SUPPORT as $class) {
+        $files[] = str_replace('\\', '/', base_path('modules/'.str_replace('\\', '/', substr($class, strlen('Modules\\'))).'.php'));
+    }
     sort($files);
 
     $lines = [];
