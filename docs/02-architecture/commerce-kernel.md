@@ -1,6 +1,6 @@
 # Microkernel thương mại: Kernel, Core và Plugin
 
-> Trạng thái: **Implemented** (Core 0.3.39). Bốn vòng có code; plugin hệ thống (slice 12d), extension point bắt buộc, plugin công bố hook (`publishHooks`, 0.3.6); ranh giới vòng giữ bằng arch test R28/R29 (§10). Quyết định: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (mở rộng [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md)). Đánh giá đối chiếu code: [kernel-review](kernel-review.md).
+> Trạng thái: **Implemented** (Core 0.4.1). Bốn vòng có code; plugin hệ thống (slice 12d), extension point bắt buộc, plugin công bố hook (`publishHooks`, 0.3.6); ranh giới vòng giữ bằng arch test R5/R28/R29 (§10, rà soát và siết lại 2026-11-11). Quyết định: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (mở rộng [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md)). Đánh giá đối chiếu code: [kernel-review](kernel-review.md).
 
 > **Kernel không biết thương mại. Core giữ primitive, bất biến và extension point. Nghiệp vụ — kể cả mặc định mang chính sách kinh doanh — là plugin.**
 
@@ -120,6 +120,7 @@ flowchart TD
 | `ShippingRateProvider` | ≥ 1 | `standard` (phí cố định) | **Plugin hệ thống** `vani.shipping-flat-rate` | ✅ `custom/plugin/ShippingFlatRate` |
 | `TaxCalculator` | đúng 1 | `vn_vat_inclusive` (cấu hình cửa hàng `vanishop.tax.calculator`) | **Plugin hệ thống** `vani.tax-vn-vat`; Core giữ `none` (không thuế) làm dự phòng và không nhắc mã của plugin | ✅ `custom/plugin/TaxVnVat`; `NoTax` ở `modules/Checkout/Application/Tax` |
 | `PhoneNumberPolicy` (Shared) | đúng 1 | `vn` (cấu hình cửa hàng `vanishop.locale.phone_policy`) | **Plugin hệ thống** `vani.phone-vn`; Core giữ `international` (chỉ nhận `+…`) | ✅ `custom/plugin/PhoneVn` (0.3.42); `modules/Shared/Application/Phone` |
+| `AddressDirectory` (Checkout) | không | — (không có danh mục: nhận địa chỉ nhập tay, không chuẩn hoá) | **Plugin hệ thống** `vani.provinces-vn` (tỉnh/thành, phường/xã) | ✅ `custom/plugin/ProvincesVn` |
 | `ShippingCarrier` | ≥ 1 | `manual` (nhập mã vận đơn) | Core (trung lập) | `modules/Fulfillment/Application/Carriers` |
 | `NotificationChannel` | ≥ 1 | `mail` | Core (trung lập) | `modules/Notification/Application/Channels` |
 | `OtpSender` | ≥ 1 | `email` (`log` chỉ dev) | Core (trung lập) | `modules/Customer/Application/OtpSenders` |
@@ -166,7 +167,7 @@ Không đặt hằng trên interface: một class có thể implement nhiều co
 | 5 | Reporting làm plugin `vani.reports`; Admin dashboard chỉ còn slot | ✅ 0.3.12: Core có `DashboardWidget`/`ReportProvider` + `OrderStatistics` (đọc); báo cáo nằm trong plugin `vani.reports` |
 | 6 ✅ | Arch test: `modules/` không chứa class implement `PaymentGateway`/`ShippingRateProvider`/`TaxCalculator` ngoài danh sách trung lập | R28 |
 
-Done khi: cài mới → 4 plugin hệ thống tự bật, E2E COD chạy; tắt `vani.cod` khi còn `vani.bank-transfer` được, tắt cả hai bị từ chối; contract test của 4 plugin pass; arch test R28 pass.
+Done khi: cài mới → plugin hệ thống tự bật (hiện có 6: `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat`, `vani.provinces-vn`, `vani.phone-vn`), E2E COD chạy; tắt `vani.cod` khi còn `vani.bank-transfer` được, tắt cả hai bị từ chối; contract test của plugin hệ thống pass; arch test R28 pass. Mọi plugin trong repo phải khai `requires.vanishop` tương thích phiên bản Core hiện tại (`PluginDependencyTest`) — nâng số giữa của Core mà quên manifest thì `vani:install` từ chối cài.
 
 ## 7. Plugin công bố extension point
 
@@ -203,12 +204,18 @@ Ranh giới không chỉ dựa vào review — vi phạm làm đỏ arch test:
 
 | Ranh giới | Kiểm tra | Cách làm đúng khi cần |
 |---|---|---|
-| Vòng 0 không biết thương mại | R29 (`ArchitectureTest`): `Shared`/`Tenancy`/`Identity`/`Extension` không dùng module vòng 1 (trừ `Tests/`) | Registry của vòng 0 nhận khai báo từ module sở hữu. Ví dụ: tài nguyên Admin mở rộng được — Catalog/Ordering/Customer gọi `AdminScreen::declareResource()` trong `register()`, Extension không còn danh sách `product`/`order`/`customer` |
-| Vòng 1 không biết vòng 2–3 | R4 (không `use Plugin\`); R28 (`MicrokernelTest`): `modules/` không có implementation cổng/phí giao/thuế ngoài danh sách trung lập, và không có literal trùng mã `code()` của cổng/thuế/hãng do plugin cung cấp hay id plugin | Chọn theo **capability** hoặc **cấu hình**. Ví dụ: đơn đổi hàng thu chênh qua `Payments::collectOnDeliveryGateway()` (cổng có `collectsOnDelivery`), cảnh báo tỷ lệ lỗi bỏ qua `Payments::offlineGateways()`; thuế mặc định đặt ở `config/vanishop.php` của cửa hàng, Core chỉ biết `none` |
-| Plugin không dùng nội bộ Core | R5 | Thiếu thì thêm extension point (§9) |
+| Vòng 0 không biết thương mại | R29 (`ArchitectureTest`): `Shared`/`Tenancy`/`Identity`/`Extension` không dùng module vòng 1 (trừ `Tests/`). Kiểm cả class (`arch()`) lẫn mọi file `.php` theo token — file hàm, route, hook (0.4.1) | Registry của vòng 0 nhận khai báo từ module sở hữu. Ví dụ: tài nguyên Admin — Catalog/Ordering/Customer gọi `AdminScreen::declareResource()` trong `register()`; nhóm menu Admin `sales`/`catalog`/`marketing`/`content` do Ordering/Catalog/Promotion/Storefront khai báo; helper `vani_*` gọi contract thương mại nằm ở `helpers.php` của module sở hữu (Customer, Catalog, Storefront). Giá trị của cửa hàng đọc từ cấu hình: đoạn đầu URL bị giữ chỗ lấy từ `vanishop.locale.paths`, nguồn đơn từ `vanishop.storefront.sources` |
+| Vòng 1 không biết vòng 2–3 | R4 (không `use Plugin\`); R28 (`MicrokernelTest`): `modules/` không có implementation cổng/phí giao/thuế ngoài danh sách trung lập, và không có literal trùng mã `code()` của cổng/thuế/hãng do plugin cung cấp hay id plugin — trong `.php` và trong giao diện Core (`.vue`, `.ts`, `.js`, `.blade.php`, 0.4.1) | Chọn theo **capability** hoặc **cấu hình**. Ví dụ: đơn đổi hàng thu chênh qua `Payments::collectOnDeliveryGateway()` (cổng có `collectsOnDelivery`), cảnh báo tỷ lệ lỗi bỏ qua `Payments::offlineGateways()`; thuế mặc định đặt ở `config/vanishop.php` của cửa hàng, Core chỉ biết `none` |
+| Plugin không dùng nội bộ Core | R5 theo **danh sách cho phép** (0.4.1): plugin chỉ tham chiếu `Contracts`, `Events`, `Testing`, `Shared\Domain`, `PluginServiceProvider` và class hỗ trợ đã chốt (`Shared\Support\{StoreLocale, StoreClock, MoneyFormatter, LocalizedUrls}`, `Extension\Facades\Hook`) — tất cả nằm trong `public-api.snapshot` | Thiếu thì thêm extension point (§9); thêm class hỗ trợ = sửa danh sách + snapshot + CHANGELOG-extension |
 
 Tham số mang chính sách thị trường của một bất biến Core (vd. trần giảm giá của giá sàn — VN 50%, NĐ 81/2018) theo cùng cách: cơ chế ở Core với mặc định trung lập (`PromotionEvaluator::NO_CAP_BP`, không giới hạn), mức cụ thể ở cấu hình cửa hàng. Lý do đổi trả (`wrong_size`, `defective`…) là trung lập, ở lại Core.
 
 Giá trị **thị trường và vận hành** (múi giờ, ngôn ngữ, tiền tệ, định dạng ngày/tiền, rate limit, OTP, breaker, giới hạn upload…) nằm ở `config/vanishop.php`, Core đọc qua `StoreClock`/`StoreLocale`/`MoneyFormatter` hoặc `config()` — arch test chặn literal múi giờ/ngôn ngữ/tiền tệ/định dạng trong `modules/` (0.3.41). Plugin tích hợp một nhà cung cấp cụ thể vẫn được dùng giá trị của giao thức nhà cung cấp (vd. VNPay: giờ GMT+7, `VND`).
+
+Ngoại lệ có chủ đích (giai đoạn SME, [vision §2.1](../00-overview/vision.md#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên) — giữ đơn giản, không trừu tượng hoá trước nhu cầu; ghi ở backlog [§6b L27](../20-roadmap/reference-parity-refactor.md)):
+
+- **Địa chỉ hai cấp** (`province_*`, `ward_*`) là hình dạng địa chỉ trong schema và contract của Core; dữ liệu địa giới do plugin `vani.provinces-vn` cung cấp qua `AddressDirectory`.
+- **Alias middleware storefront** (`vani.customer-session`, `vani.theme`, `vani.page-cache`) được `PluginServiceProvider` và `Shared` nhắc bằng chuỗi khi dựng route trang plugin; thuộc tính request vẫn tên `order_source`.
+- **`Shared\Domain\Text\VietnameseText`** (bỏ dấu để tìm kiếm, SMS) ở vòng 0.
 
 Giới hạn: R28 chỉ so literal trong `modules/`; `config/vanishop.php` là cấu hình của cửa hàng (được nhắc mã plugin làm mặc định), và mã phương thức giao của `ShippingRateProvider` nằm trong option nên không kiểm được tĩnh.

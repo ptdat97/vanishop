@@ -27,7 +27,7 @@ Cần cú pháp ngắn cho plugin và view, mà không tạo một đường th�
    | `vani_asset` | `(string $pluginId, string $path): string` | Manifest tài nguyên tĩnh đã publish của plugin (§3.4-2 cùng tài liệu) |
    | `vani_plugin` | `(string $pluginId): ?PluginInfo` | **Contract mới** chỉ đọc `Extension\Contracts\PluginDirectory` (§3): id, tên, phiên bản, đã bật |
 
-2. **Quy tắc viết**: mỗi helper chỉ lấy contract từ container rồi gọi một phương thức; không logic nghiệp vụ, không truy vấn DB trực tiếp, không biến tĩnh. Đặt trong `modules/Extension/helpers.php`, bọc `function_exists`, `declare(strict_types=1)`, kiểu đầy đủ.
+2. **Quy tắc viết**: mỗi helper chỉ lấy contract từ container rồi gọi một phương thức; không logic nghiệp vụ, không truy vấn DB trực tiếp, không biến tĩnh. Đặt trong `modules/Extension/helpers.php`; helper gọi contract thương mại đặt ở `helpers.php` của module sở hữu contract (`modules/{Customer,Catalog,Storefront}/helpers.php`, 0.4.1 — vòng 0 không biết thương mại, R29), bọc `function_exists`, `declare(strict_types=1)`, kiểu đầy đủ.
 3. **Contract mới** để helper không vi phạm R5/R7 (helper nằm ở Extension, không được gọi `Application` của Catalog):
    - `MediaUrls::url(int $mediaId, ?int $width = null): ?string` và `MediaUrls::urls(array $mediaIds, int $width): array` (batch cho danh sách) — implementation bọc bộ tạo URL ảnh thu nhỏ hiện có của Catalog.
    - `PluginDirectory::find(string $pluginId): ?PluginInfo` — đọc manifest + trạng thái bật, không thao tác lifecycle.
