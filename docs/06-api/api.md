@@ -17,9 +17,10 @@ Hợp đồng **OpenAPI 3.1 hiện có** cho Integration API nằm ở [`docs/ap
 - JSON, `snake_case`, UTF-8. Thời gian ISO-8601 có offset (`2026-09-28T10:15:00+07:00`).
 - **Tiền** trả về dạng object: `{ "amount": 1250000, "currency": "VND", "formatted": "1.250.000 ₫" }`.
 - ID công khai dùng `public_id` (ULID), **không** lộ ID tự tăng.
-- Phân trang cursor: `?cursor=...&limit=20` → `{ data: [...], meta: { next_cursor } }`.
-- Lọc/sắp xếp: `?filter[status]=confirmed&sort=-placed_at`.
-- Response dùng **Eloquent API Resource** bọc DTO của Application layer; không trả model thô.
+- Phân trang: **Storefront API** dùng `?page=&per_page=` → `{ data: [...], meta: { page, per_page, total } }`; **Integration API** (feed) dùng cursor `?cursor=...&limit=` → `meta.next_cursor`.
+- Lọc/sắp xếp của Storefront API theo tham số riêng từng endpoint (vd. `/products?brand=…&sort=price_asc`), không dùng cú pháp `filter[…]`.
+- Response là mảng do Presenter/DTO của Application layer dựng (`Storefront\Application\*Presenter`, `ProductViews`), không trả model thô; không dùng Eloquent API Resource.
+- **Storefront API-first** ([ADR-044](../19-adr/ADR-044-storefront-api-first.md)): mọi tính năng storefront có endpoint ở đây; storefront Blade là một cách dùng cùng use-case (in-process).
 - Mọi response có header `X-Correlation-Id` ([observability](../16-observability/observability.md)).
 - Versioning theo URL (`v1`); thay đổi phá vỡ → `v2`, giữ `v1` tối thiểu 6 tháng.
 - **Idempotency**: request tạo tài nguyên (đặt hàng, hoàn tiền, tạo shipment) nhận header `Idempotency-Key`; lưu kết quả 24h.

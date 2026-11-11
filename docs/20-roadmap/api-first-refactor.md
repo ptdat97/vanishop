@@ -1,6 +1,6 @@
 # Củng cố kiến trúc API-first cho Storefront
 
-> Trạng thái: **Designed** (đánh giá và kế hoạch, 2026-11-11, Core 0.4.6). Chưa có code nào viết theo tài liệu này; mục cần Owner quyết ở [§4](#4-quyết-định-cần-owner-duyệt).
+> Trạng thái: **Approved** (đánh giá và kế hoạch 2026-11-11, Core 0.4.6; Owner duyệt cả bốn quyết định §4 cùng ngày). Trạng thái từng đợt ghi ở §5.
 >
 > Liên quan: [ADR-009](../19-adr/ADR-009-storefront-architecture.md) (native và headless dùng cùng Application layer), [ADR-021](../19-adr/ADR-021-storefront-composition-module.md) (module Storefront là tầng ghép), [ADR-022](../19-adr/ADR-022-guest-cart-token.md) / [ADR-024](../19-adr/ADR-024-customer-api-token.md) (token giỏ, token khách), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) (SSR + slot), [storefront](../14-storefront/storefront.md), [api](../06-api/api.md), [vision §2.1](../00-overview/vision.md#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên) và R36 (SME trước).
 
@@ -82,25 +82,27 @@ Bảng plugin có mặt trên storefront (đếm trong `ServiceProvider` và mã
 | `vani.tracking-pixels` | — | — | 6 | — | — (chỉ web, hợp lệ) |
 | `vani.vnpay` | trang trả về | — | — | — | — (chỉ web, hợp lệ) |
 
-## 4. Quyết định cần Owner duyệt
+## 4. Quyết định của Owner (2026-11-11)
 
-| # | Câu hỏi | Đề xuất | Lý do |
+Owner chọn đúng các đề xuất dưới đây. Bổ sung cho Q4: **VaniShop đang ở môi trường dev** — không cần giữ tương thích dữ liệu hay giao diện: gỡ route cũ ngay (không alias), được đổi HTML/URL của Blade, không chuyển dữ liệu phiên/giỏ cũ.
+
+| # | Câu hỏi | Quyết định | Lý do |
 |---|---|---|---|
 | Q1 | JS của theme gọi API bằng gì khi khách đã đăng nhập bằng phiên web? | **API nhận thêm phiên web cho request cùng nguồn** (cookie phiên + CSRF, kiểu "first-party"), bên cạnh Bearer/cart token. Ghi thành ADR-044 | Bỏ được toàn bộ `/_vani/*` và JSON phiên của wishlist (L-C1) mà không bắt theme giữ token trong JavaScript. Phương án khác — để theme tự giữ Bearer token — lộ token cho script trên trang và phải làm lại luồng đăng nhập Blade |
 | Q2 | Một hay nhiều mã giảm giá? | **Gom về `voucher_codes[]`** (API đã có); Blade hiện một ô nhập, lưu danh sách trong giỏ thay vì trong phiên | Một use-case, một mô hình; giữ được trải nghiệm một ô của SME |
 | Q3 | Quy tắc 0.3.104 (bỏ mã không dùng được, vẫn đặt đơn) áp cho API? | **Có** — chuyển vào use-case đặt hàng, API trả mã bị bỏ trong `meta.dropped_vouchers` | Cùng giỏ thì cùng kết quả ở mọi kênh |
-| Q4 | Phạm vi | **Chỉ Storefront API.** Admin API vẫn đóng băng; không làm app/headless mẫu trong đợt này | Theo quyết định đóng băng 2026-11-05 và R36 |
+| Q4 | Phạm vi | **Chỉ Storefront API, phá vỡ thoải mái trên dev.** Admin API vẫn đóng băng; không làm app/headless mẫu trong đợt này | Theo quyết định đóng băng 2026-11-05 và R36; dev chưa có dữ liệu thật cần giữ |
 
 ## 5. Kế hoạch theo đợt
 
-Thứ tự theo nguyên tắc roadmap: **Correctness → Consistency → Extensibility → Observability**. Mỗi đợt một hoặc vài commit, không đổi trải nghiệm của khách trên Blade; Definition of Done chung của [roadmap](roadmap.md).
+Thứ tự theo nguyên tắc roadmap: **Correctness → Consistency → Extensibility → Observability**. Mỗi đợt một hoặc vài commit; được đổi HTML/URL của Blade khi cần (dev, Q4); Definition of Done chung của [roadmap](roadmap.md).
 
 | Đợt | Việc | Module | Xong khi |
 |---|---|---|---|
-| **A0 — Chốt nguyên tắc** | ADR-044 "Storefront API-first" (năm nguyên tắc §2 + Q1–Q4); rule **R37** trong [architecture-rules](../01-principles/architecture-rules.md); sửa `api.md §2` cho đúng code (Presenter → mảng, `page`/`per_page`) (L-D2) | docs | Owner duyệt ADR-044 |
+| **A0 ✅ 2026-11-11 — Chốt nguyên tắc** | ADR-044 "Storefront API-first" (năm nguyên tắc §2 + Q1–Q4); rule **R37** trong [architecture-rules](../01-principles/architecture-rules.md); sửa `api.md §2` cho đúng code (Presenter → mảng, `page`/`per_page`) (L-D2) | docs | ADR-044 Accepted, R37 có trong architecture-rules, `api.md` khớp code |
 | **A1 — Một hành vi (đúng trước)** | Trích use-case cho các luồng ghi: đặt hàng (gồm quy tắc 0.3.104), giỏ (thêm/sửa/chọn/mã giảm giá), đổi trả, địa chỉ/hồ sơ. FormRequest dùng chung cho Web và API; controller Web chỉ map lỗi sang redirect. Gom mã giảm giá về `voucher_codes[]` lưu theo giỏ (Q2) | Storefront, Customer, Cart | **Test song kênh**: cùng kịch bản chạy qua Web và qua API cho ra cùng đơn/tổng tiền/lỗi (đặt hàng có mã hỏng, hết hàng giữa chừng, khách chưa đăng nhập khi cửa hàng bắt đăng nhập); không còn `validate(` inline trong `Http/Controllers/{Web,Api}` của Storefront |
-| **A2 — API cho "vỏ" trang** | `GET /store` (tên, liên hệ, ngôn ngữ, tiền tệ, ẩn giá, mua không đăng nhập, tìm kiếm phổ biến, cài đặt đầu/chân trang công khai của theme); `GET /menus/{location}`; `GET /pages/home` trả `[{type, data}]` từ `StorefrontBlock::resolve()` (khối plugin có ngay, kể cả 9 khối của `vani.storefront-extras`). `View::composer` của Blade gọi cùng use-case | Storefront | Dựng được header, footer, trang chủ chỉ từ API (test); trang Blade không đổi HTML (snapshot trang chủ trước/sau) |
-| **A3 — Một bề mặt JSON** | Theo Q1: API nhận phiên web cùng nguồn; chuyển `/_vani/phien` → `GET /session`, `/_vani/gia` → `GET /me/prices` (đã có), `/_vani/xem` → `POST /products/{slug}/views`; `vani.wishlist` bỏ `/p/vani-wishlist/*`, JS dùng `x/vani-wishlist/items`. Route `_vani` cũ giữ làm alias một phiên bản rồi gỡ | Storefront, Customer, `vani.wishlist`, theme | JS của theme chỉ gọi `/api/storefront/v1` (arch test quét `custom/theme/*/js`); bật cache CDN (storefront §5) vẫn chạy |
+| **A2 — API cho "vỏ" trang** | `GET /store` (tên, liên hệ, ngôn ngữ, tiền tệ, ẩn giá, mua không đăng nhập, tìm kiếm phổ biến, cài đặt đầu/chân trang công khai của theme); `GET /menus/{location}`; `GET /pages/home` trả `[{type, data}]` từ `StorefrontBlock::resolve()` (khối plugin có ngay, kể cả 9 khối của `vani.storefront-extras`). `View::composer` của Blade gọi cùng use-case | Storefront | Dựng được header, footer, trang chủ chỉ từ API (test); Blade dựng từ cùng use-case |
+| **A3 — Một bề mặt JSON** | Theo Q1: API nhận phiên web cùng nguồn; chuyển `/_vani/phien` → `GET /session`, `/_vani/gia` → `GET /me/prices` (đã có), `/_vani/xem` → `POST /products/{slug}/views`; `vani.wishlist` bỏ `/p/vani-wishlist/*`, JS dùng `x/vani-wishlist/items`. Gỡ route `_vani` cũ ngay, không alias (dev, Q4) | Storefront, Customer, `vani.wishlist`, theme | JS của theme chỉ gọi `/api/storefront/v1` (arch test quét `custom/theme/*/js`); bật cache CDN (storefront §5) vẫn chạy |
 | **A4 — Khoá hợp đồng** | `docs/api/openapi/storefront-v1.json`; test đối chiếu response của mọi endpoint với schema (dùng `tests/Support/JsonSchemaSubset` như Integration); snapshot danh sách route `api/storefront/v1` | Storefront, tests | Đổi/xoá trường JSON làm đỏ test; CHANGELOG-extension ghi thay đổi API HTTP như thay đổi contract PHP |
 | **A5 — Plugin theo API-first** | Quy ước trong [plugin-system](../05-plugin/plugin-system.md): plugin có `storefrontPages()` phải có `storefrontRoutes()` cho cùng dữ liệu; dữ liệu khách cần đi qua enricher/endpoint, slot HTML chỉ để trình bày. Danh sách ngoại lệ: `vani.tracking-pixels`, trang trả về của cổng thanh toán | Extension, plugin | Arch test: plugin khai báo trang Blade mà không có route API thì đỏ (trừ danh sách ngoại lệ) |
 
@@ -116,7 +118,6 @@ Kiểm soát ranh giới sau khi xong (thêm vào `tests/Architecture`):
 - **Không chuyển Blade sang gọi HTTP tới chính mình** — vẫn in-process theo ADR-009 (thêm độ trễ, là distributed monolith).
 - **Không làm app/headless mẫu (Next.js…), SDK client, GraphQL** — chỉ khoá hợp đồng để làm được khi cần. Ghi vào backlog [§6b](reference-parity-refactor.md).
 - **Không mở Admin API** — vẫn đóng băng (Q4).
-- **Không đổi URL hay HTML của trang Blade** trong đợt refactor — khách và SEO không thấy khác.
 - **Không đưa phần trình bày web vào API**: sitemap, robots, JSON-LD, mã theo dõi, trang trả về của cổng thanh toán.
 
 ## 7. Rủi ro
@@ -125,5 +126,5 @@ Kiểm soát ranh giới sau khi xong (thêm vào `tests/Architecture`):
 |---|---|
 | Trích use-case làm đổi hành vi checkout đang chạy | Viết test song kênh (A1) **trước** khi chuyển code; chạy bộ bất biến `tests/Feature/Invariants` và concurrency test checkout |
 | API nhận phiên web mở đường CSRF | Chỉ nhận phiên khi cùng nguồn + token CSRF; endpoint ghi vẫn yêu cầu `Idempotency-Key` như hiện tại; ghi trong ADR-044 và kiểm ở `tests/Feature/Security` |
-| Bỏ `/_vani/*` làm hỏng trang đang được CDN cache | Giữ alias một phiên bản; theme mới gọi endpoint mới; đo bằng log truy cập trước khi gỡ |
+| Bỏ `/_vani/*` làm hỏng chế độ cache CDN | Test chế độ cache CDN (storefront §5) chạy với endpoint mới trước khi gỡ route cũ |
 | OpenAPI viết tay lệch code | Test schema chạy trên response thật của mọi endpoint (A4), không chỉ đọc file |

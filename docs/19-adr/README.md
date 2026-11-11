@@ -44,6 +44,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [041](ADR-041-translation-provider.md) | Dịch máy trong form bản dịch Admin: extension point `TranslationProvider` (plugin), kết quả chỉ điền vào form, nhân viên duyệt rồi lưu | Proposed |
 | [042](ADR-042-inventory-warehouse-plugins.md) | Tách vận hành kho (nhiều kho, chuyển kho, đối soát nguồn ngoài, authority ERP/POS) thành plugin `vani.warehouse`; tồn kho (Inventory) ở lại Core | Accepted |
 | [043](ADR-043-fulfillment-stays-in-core.md) | Fulfillment ở lại Core (chốt tồn, COD, đổi trả dựa vào nó); làm gọn cho SME bằng giao diện — menu "Giao hàng" chỉ hiện khi có hãng API hoặc nhiều kho; hãng API, nhiều kho là plugin | Accepted |
+| [044](ADR-044-storefront-api-first.md) | Storefront API-first: API v1 là hợp đồng, Blade là một cách dùng (in-process); hành vi ở use-case; JS của theme chỉ gọi API (API nhận phiên web cùng nguồn); một mô hình mã giảm giá | Accepted |
 | [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) · bổ sung 2026-11-05: plugin chỉ phát triển nội bộ, chưa làm plugin SDK cho bên thứ ba | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 
