@@ -17,6 +17,8 @@
 
 ## 1. Nguyên tắc
 
+> Đánh giá 2026-11-11: luồng đọc đã dùng chung tầng ghép; luồng ghi, "vỏ" trang và JSON của theme còn lệch API — kế hoạch ở [api-first-refactor](../20-roadmap/api-first-refactor.md).
+
 - Storefront **độc lập với business domain**. Business logic **không** nằm trong Blade, Vue/React component, theme hay CSS (rule R10).
 - Storefront chỉ dùng **Storefront Application layer**: các query/command giống hệt những gì Storefront API công bố.
 

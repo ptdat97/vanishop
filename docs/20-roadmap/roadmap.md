@@ -218,7 +218,7 @@ Phase 10 cũ đã bỏ: hạng mục ngoài phạm vi ([ADR-033](../19-adr/ADR-0
 
 ### Việc kế tiếp
 
-Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5).
+Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5). Củng cố kiến trúc API-first cho storefront (Blade là một cách dùng Storefront API): [api-first-refactor](api-first-refactor.md) (Designed 2026-11-11, chờ Owner duyệt §4).
 
 Phase 9 đóng băng, không nằm trong backlog.
 
