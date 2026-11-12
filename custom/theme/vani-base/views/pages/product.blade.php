@@ -84,7 +84,7 @@
             <x-vani::hook-slot name="vani.storefront.pdp.before_add_to_cart" :args="[$product]" />
 
             {{-- Không @csrf/old() để HTML như nhau ở cả chế độ cache CDN (không phiên); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
-            <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
+            <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form data-choose-size-message="{{ __('storefront::messages.choose_size') }}">
                 {{-- Bộ chọn màu → size từ `options` + `variants` (SKU trỏ giá trị bằng id qua `option_values`; chỉ SKU đang bán được hiện).
                      Màu là radio `color` (swatch); mỗi màu một nhóm size, chỉ nhóm của màu đang chọn hiện ra — bằng CSS :has() nên không
                      cần JS. Màu chọn sẵn: màu của SKU `is_default`. Ảnh của màu: `variants[].media.image_ids` trỏ vào `media.gallery`. --}}

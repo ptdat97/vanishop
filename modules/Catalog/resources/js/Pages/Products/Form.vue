@@ -229,7 +229,7 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 </div>
                 <p v-if="errors.color_id" class="text-sm text-red-600">{{ errors.color_id }}</p>
                 <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
-                <div v-for="color in product.colors" :key="color.id" class="rounded-md border border-slate-200 p-3">
+                <div v-for="color in product.colors" :id="`color-images-${color.id}`" :key="color.id" class="scroll-mt-20 rounded-md border border-slate-200 p-3">
                     <div class="mb-3 flex items-center justify-between">
                         <div class="flex items-center gap-2 text-sm font-medium">
                             <span class="inline-block h-4 w-4 rounded-full border border-slate-300" :style="{ background: color.hex ?? 'transparent' }" />

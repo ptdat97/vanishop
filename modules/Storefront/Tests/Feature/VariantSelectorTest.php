@@ -41,6 +41,8 @@ it('swatch cho mỗi màu, màu còn hàng được chọn sẵn; mỗi màu m�
 it('thêm giỏ từ trang sản phẩm: biến thể phải thuộc màu đang chọn (không JS đổi màu sau khi chọn size); đúng màu thì vào giỏ', function () {
     $this->post('/gio-hang', ['variant_id' => $this->pinkS->id, 'color' => $this->navy])->assertSessionHasErrors('variant_id');
     $this->post('/gio-hang', ['variant_id' => $this->pinkS->id, 'color' => $this->pink])->assertSessionHasNoErrors();
+    // Chọn màu mà chưa chọn size: báo cụ thể "chọn size".
+    $this->post('/gio-hang', ['color' => $this->pink])->assertSessionHasErrors(['variant_id' => __('storefront::messages.choose_size')]);
 
     // API không gửi màu → không đổi hành vi.
     $cart = $this->postJson('/api/storefront/v1/carts')->assertCreated();

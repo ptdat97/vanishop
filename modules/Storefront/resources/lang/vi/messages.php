@@ -8,6 +8,7 @@ return [
     'maintenance' => 'Chúng tôi đang nâng cấp cửa hàng và sẽ quay lại sớm. Cảm ơn bạn đã kiên nhẫn.',
     'sign_in_to_checkout' => 'Vui lòng đăng nhập để đặt hàng.',
     'added_to_cart' => 'Đã thêm vào giỏ hàng.',
+    'choose_size' => 'Vui lòng chọn size.',
     'choose_variant' => 'Vui lòng chọn màu và size.',
     'issue_unavailable' => 'Sản phẩm đã ngừng bán.',
     'issue_insufficient_stock' => 'Không đủ hàng cho số lượng này.',

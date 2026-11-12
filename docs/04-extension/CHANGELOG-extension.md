@@ -4,7 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
-## 0.4.23 — 2026-11-12
+## 0.4.24 — 2026-11-12
+
+Hoàn thiện ma trận biến thể (đợt V5).
+
+### Thêm
+- `Modules\Catalog\Testing\VariantFieldProviderContract::define($label, $provider, $product)`: contract test cho plugin góp cột vào ma trận biến thể (khoá/nhãn/trường hợp lệ, lưu giá trị mẫu theo loại trường rồi đọc lại, `values()`/`storefront()` chỉ trả SKU được hỏi). Cột `pricing`, `inventory` của Core chạy cùng contract này.
+- Trang sản phẩm (theme `vani-base`): bấm thêm giỏ khi chưa chọn size → báo ngay tại nhóm size (viền, thông báo, focus). Form gửi kèm màu mà thiếu size → lỗi `variant_id` "Vui lòng chọn size." (`storefront::messages.choose_size`).
+- Admin: hàng màu trong ma trận hiện ảnh đầu và link "N ảnh"/"Chưa có ảnh" tới khối ảnh của màu.
+
 
 Ma trận biến thể màu × size trong Admin, mở rộng bằng plugin (đợt V3–V4, [variant-matrix](../03-domains/variant-matrix.md)).
 

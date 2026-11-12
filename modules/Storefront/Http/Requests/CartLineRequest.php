@@ -51,7 +51,8 @@ final class CartLineRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['variant_id.required' => __('storefront::messages.choose_variant')];
+        // Đã chọn màu ở bộ chọn của trang sản phẩm → chỉ còn thiếu size.
+        return ['variant_id.required' => __(is_string($this->input('color')) && $this->input('color') !== '' ? 'storefront::messages.choose_size' : 'storefront::messages.choose_variant')];
     }
 
     public function variantId(): int

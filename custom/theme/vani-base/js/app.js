@@ -496,6 +496,30 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
 // PDP bộ chọn màu → size: đổi màu thì bỏ chọn size của màu khác (nhóm đó đang ẩn) và trả giá về khoảng giá của sản phẩm;
 // chọn size thì hiện đúng giá của biến thể (data-price-html). Không JS: CSS :has() vẫn hiện đúng nhóm size.
 document.querySelectorAll('form[data-variant-form]').forEach((form) => {
+    // Chưa chọn size: báo ngay tại nhóm size đang hiện (viền + thông báo + focus), không gửi lên server.
+    form.addEventListener('submit', (event) => {
+        if (form.querySelector('input[name="variant_id"]:checked') || !form.querySelector('input[name="variant_id"]')) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const group = [...form.querySelectorAll('[data-sizes-for]')].find((fieldset) => fieldset.offsetParent !== null);
+        group?.setAttribute('aria-invalid', 'true');
+        group?.classList.add('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
+        const error = form.querySelector('[data-vani-error-for="variant_id"]');
+        if (error) {
+            error.textContent = form.dataset.chooseSizeMessage || error.textContent;
+            error.hidden = false;
+        }
+        group?.querySelector('input[name="variant_id"]:not(:disabled)')?.focus();
+    });
+    form.addEventListener('change', (event) => {
+        if (event.target.name !== 'variant_id') return;
+        form.querySelectorAll('[data-sizes-for][aria-invalid]').forEach((fieldset) => {
+            fieldset.removeAttribute('aria-invalid');
+            fieldset.classList.remove('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
+        });
+        const error = form.querySelector('[data-vani-error-for="variant_id"]');
+        if (error) error.hidden = true;
+    });
     const price = document.querySelector('[data-product-price]');
     const rangeHtml = price?.innerHTML;
     form.addEventListener('change', (event) => {

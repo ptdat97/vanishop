@@ -1,6 +1,6 @@
 # Ma trận biến thể (màu × size) — đặc tả
 
-> Trạng thái: **Implemented** (Owner duyệt 2026-11-12) · V1–V2 ✅ 0.4.21, V1b ✅ 0.4.22, V3–V4 ✅ 0.4.23. Khác đặc tả: ảnh vẫn quản lý ở khối "Màu và ảnh" ngay trên ma trận; chọn chưa đủ trục mà bấm thêm giỏ vẫn báo lỗi chung `variant_id` (chưa báo tại nhóm trục); chưa có `Modules\Catalog\Testing\VariantFieldProviderContract` cho plugin (§5).
+> Trạng thái: **Implemented** (Owner duyệt 2026-11-12) · V1–V2 ✅ 0.4.21, V1b ✅ 0.4.22, V3–V4 ✅ 0.4.23. V5 ✅ 0.4.24: contract test `Modules\Catalog\Testing\VariantFieldProviderContract` (cột Core chạy cùng), báo "chọn size" ngay tại nhóm size, số ảnh trong ma trận nối tới khối ảnh của màu. Khác đặc tả: ảnh vẫn tải lên/sắp xếp ở khối "Màu và ảnh" (ma trận hiện ảnh đầu, số ảnh và link tới khối đó).
 >
 > Nguồn: yêu cầu của Owner (ảnh bộ chọn hiện tại, mẫu JSON options/variants, quy tắc hợp đồng) và một lần nghiên cứu hành vi
 > sản phẩm tham khảo theo ngoại lệ clean-room có ghi nhận ([clean-room §7](../01-principles/clean-room-license.md)). Tài liệu

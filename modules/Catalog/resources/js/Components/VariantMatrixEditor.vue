@@ -252,9 +252,12 @@ const enabledCount = computed(() => rows.value.length);
                 <div class="grid items-center gap-1 border-t border-slate-100" :style="gridStyle">
                     <div class="flex items-center gap-2 p-2">
                         <SortHandle v-bind="handle" />
+                        <img v-if="color.images.length" :src="color.images[0].url" alt="" class="h-8 w-6 rounded object-cover" />
                         <span class="inline-block h-5 w-5 rounded-full border border-slate-300" :style="{ background: color.hex ?? 'transparent' }" />
                         <span>{{ color.name ?? color.code }}</span>
-                        <span class="text-xs text-slate-400">{{ color.images.length }} ảnh</span>
+                        <a :href="`#color-images-${color.id}`" class="text-xs underline" :class="color.images.length ? 'text-slate-500' : 'text-amber-700'">
+                            {{ color.images.length ? `${color.images.length} ảnh` : 'Chưa có ảnh' }}
+                        </a>
                     </div>
                     <div v-for="size in columns" :key="size.id" class="p-1 text-center">
                         <button

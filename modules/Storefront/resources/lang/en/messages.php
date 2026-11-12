@@ -8,6 +8,7 @@ return [
     'maintenance' => 'The store is undergoing maintenance and will be back shortly. Thank you for your patience.',
     'sign_in_to_checkout' => 'Please sign in to place your order.',
     'added_to_cart' => 'Added to cart.',
+    'choose_size' => 'Please choose a size.',
     'choose_variant' => 'Please choose a colour and size.',
     'issue_unavailable' => 'This product is no longer available.',
     'issue_insufficient_stock' => 'Not enough stock for this quantity.',
