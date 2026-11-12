@@ -6,6 +6,7 @@ namespace Modules\Returns\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Returns\Domain\ReturnStatus;
 
 /**
@@ -22,6 +23,11 @@ use Modules\Returns\Domain\ReturnStatus;
  * @property string $resolution refund | exchange (0.3.32)
  * @property int|null $replacement_order_id đơn thay thế khi đổi hàng
  * @property string|null $return_tracking_number mã vận đơn khách gửi hàng về (0.3.74)
+ * @property string $source customer | staff
+ * @property string|null $customer_note
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 final class ReturnRequest extends Model
 {

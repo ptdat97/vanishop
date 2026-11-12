@@ -23,6 +23,9 @@ use Modules\Shared\Support\StoreClock;
 
 final class PaymentController
 {
+    /** Số dòng mỗi trang (mặc định là giá trị đầu) — như danh sách đơn hàng. */
+    private const PER_PAGE_OPTIONS = [30, 50, 100];
+
     public function home(): RedirectResponse
     {
         Gate::authorize('payments.view');
@@ -34,7 +37,10 @@ final class PaymentController
     {
         Gate::authorize('payments.view');
         $status = $request->query('status');
-        $payments = Payment::query()->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))->orderByDesc('id')->limit(100)->get();
+        $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
+        $page = Payment::query()->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $payments = collect($page->items());
+        $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
         $refunds = Refund::query()->whereIn('payment_id', Payment::query()->select('id'))->where('status', 'requested')->orderBy('id')->get();
 
         return Inertia::render('Payment::Payments/Index', [
@@ -44,7 +50,7 @@ final class PaymentController
             'statuses' => array_column(PaymentStatus::cases(), 'value'),
             'payments' => $payments->map(fn (Payment $payment): array => [
                 'id' => $payment->id,
-                'order_number' => $orders->find($payment->order_id)?->number,
+                'order_number' => $numbers[$payment->order_id] ?? null,
                 'gateway' => $gateways->get($payment->gateway_code)?->label() ?? $payment->gateway_code,
                 'status' => $payment->status->value,
                 'amount' => $payment->amount,
@@ -56,6 +62,8 @@ final class PaymentController
                 'can_capture' => $payment->status === PaymentStatus::Authorized && $gateways->get($payment->gateway_code) instanceof CapturesLater,
                 'can_refund' => $payment->status->hasCollected() && $payment->refunded_amount < $payment->amount,
             ])->all(),
+            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
             'refunds' => $refunds->map(fn (Refund $refund): array => [
                 'id' => $refund->id, 'payment_id' => $refund->payment_id, 'amount' => $refund->amount, 'reason' => $refund->reason,
                 'created_at' => StoreClock::format($refund->created_at),

@@ -24,6 +24,12 @@ final class EloquentOrderReader implements OrderReader
         return $order === null ? null : $this->toData($order);
     }
 
+    public function numbers(array $orderIds): array
+    {
+        return $orderIds === [] ? [] : Order::query()->whereIn('id', array_values(array_unique($orderIds)))->pluck('number', 'id')
+            ->map(fn ($number): string => (string) $number)->all();
+    }
+
     public function priceBreakdown(int $orderId): ?PriceBreakdown
     {
         $order = Order::query()->with(['lines', 'adjustments'])->find($orderId);

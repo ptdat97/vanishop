@@ -23,6 +23,9 @@ use Modules\Shared\Support\StoreClock;
 
 final class ReturnController
 {
+    /** Số dòng mỗi trang (mặc định là giá trị đầu) — như danh sách đơn hàng. */
+    private const PER_PAGE_OPTIONS = [30, 50, 100];
+
     public function __construct(private readonly ReturnReasons $reasons) {}
 
     public function home(): RedirectResponse
@@ -36,6 +39,9 @@ final class ReturnController
     {
         Gate::authorize('returns.view');
         $status = (string) $request->query('status', '');
+        $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
+        $page = ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->orderByDesc('id')->paginate($perPage)->withQueryString();
 
         return Inertia::render('Returns::Returns/Index', [
             'labels' => $this->labels(),
@@ -51,12 +57,13 @@ final class ReturnController
                 ['key' => 'receive_damaged', 'label' => 'Đã nhận hàng (hỏng, không nhập kho)', 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'damaged']), 'confirm' => true],
             ] : [],
             'counts' => ReturnRequest::query()->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total)->all(),
-            'returns' => ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
-                ->orderByDesc('id')->limit(100)->get()->map(fn (ReturnRequest $return): array => [
-                    'id' => $return->id, 'number' => $return->number, 'status' => $return->status->value, 'reason_code' => $return->reason_code,
-                    'refund_amount' => $return->refund_amount, 'source' => $return->source,
-                    'created_at' => StoreClock::format($return->created_at),
-                ])->all(),
+            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'returns' => collect($page->items())->map(fn (ReturnRequest $return): array => [
+                'id' => $return->id, 'number' => $return->number, 'status' => $return->status->value, 'reason_code' => $return->reason_code,
+                'refund_amount' => $return->refund_amount, 'source' => $return->source,
+                'created_at' => StoreClock::format($return->created_at),
+            ])->all(),
         ]);
     }
 

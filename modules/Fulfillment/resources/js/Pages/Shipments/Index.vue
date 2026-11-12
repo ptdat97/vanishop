@@ -2,6 +2,7 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction, promptFields } from '@admin/confirm';
@@ -32,6 +33,8 @@ const props = defineProps<{
         can_cancel: boolean;
     }>;
     canManage: boolean;
+    pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    perPageOptions: number[];
 }>();
 
 const filters = reactive({ ...props.filters });
@@ -54,8 +57,16 @@ function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' 
     return 'info';
 }
 
-function search(): void {
-    router.get(props.baseUrl, filters, { preserveState: true });
+function search(page?: number, perPage = props.pagination.per_page): void {
+    router.get(props.baseUrl, { ...filters, page, per_page: perPage }, { preserveState: true });
+}
+
+function goToPage(page: number): void {
+    search(page);
+}
+
+function changePageSize(perPage: number): void {
+    search(undefined, perPage);
 }
 
 function clearFilters(): void {
@@ -100,7 +111,7 @@ async function cancel(id: number): Promise<void> {
     <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho." />
     <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
 
-    <form class="mb-4 grid gap-2 sm:grid-cols-3" @submit.prevent="search">
+    <form class="mb-4 grid gap-2 sm:grid-cols-3" @submit.prevent="search()">
         <input v-model="filters.order" :class="inputClass" placeholder="Số đơn" aria-label="Số đơn" />
         <Select v-model="filters.status" :options="codeOptions(statuses, labels.shipment_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
         <button type="submit" :class="primaryButton">Áp dụng</button>
@@ -135,4 +146,6 @@ async function cancel(id: number): Promise<void> {
             </template>
         </template>
     </DataTable>
+
+    <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />
 </template>

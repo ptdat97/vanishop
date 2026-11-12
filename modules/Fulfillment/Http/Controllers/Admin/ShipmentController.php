@@ -25,6 +25,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class ShipmentController
 {
+    /** Số dòng mỗi trang (mặc định là giá trị đầu) — như danh sách đơn hàng. */
+    private const PER_PAGE_OPTIONS = [30, 50, 100];
+
     /** Trạng thái nhân viên cập nhật tay (các trạng thái đặt vận đơn đi qua thao tác "nhập mã"). */
     /**
      * Trạng thái nhân viên ghi tay (0.3.96: rút gọn — đã bàn giao, giao không thành công, đã giao, đang hoàn, đã hoàn về).
@@ -48,10 +51,13 @@ final class ShipmentController
         $number = strtoupper(trim((string) $request->query('order', '')));
         $order = $number === '' ? null : $orders->findByNumber($number);
 
-        $shipments = Shipment::query()->with('lines')
+        $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
+        $page = Shipment::query()->with('lines')
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($number !== '', fn ($query) => $query->where('order_id', $order->id ?? 0))
-            ->orderByDesc('id')->limit(100)->get();
+            ->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $shipments = collect($page->items());
+        $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
 
         return Inertia::render('Fulfillment::Shipments/Index', [
             'baseUrl' => route('admin.fulfillment.shipments.index'),
@@ -66,7 +72,7 @@ final class ShipmentController
             ],
             'shipments' => $shipments->map(fn (Shipment $shipment): array => [
                 'id' => $shipment->id,
-                'order_number' => $orders->find($shipment->order_id)?->number,
+                'order_number' => $numbers[$shipment->order_id] ?? null,
                 'carrier' => $registry->carrier($shipment->carrier_code)?->label() ?? $shipment->carrier_code,
                 'manual' => ! ($registry->carrier($shipment->carrier_code)?->capabilities()->autoBooking ?? false),
                 'service_code' => $shipment->service_code,
@@ -79,6 +85,8 @@ final class ShipmentController
                 'can_book' => in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true),
                 'can_cancel' => $shipment->status->canMoveTo(ShipmentStatus::Cancelled),
             ])->all(),
+            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
             'canManage' => Gate::allows('fulfillment.manage'),
         ]);
     }

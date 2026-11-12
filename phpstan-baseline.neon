@@ -331,46 +331,10 @@ parameters:
 			path: modules/Promotion/Testing/PromotionRuleContract.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$customer_note\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$source\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
 			identifier: parameter.notFound
 			count: 1
 			path: modules/Returns/Contracts/ReturnRejected.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Http/Controllers/Admin/ReturnController.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$source\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Returns/Http/Controllers/Admin/ReturnController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Returns\\Persistence\\Models\\ReturnRequest\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: modules/Returns/Http/Controllers/Admin/ReturnController.php
 
 		-
 			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'

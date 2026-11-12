@@ -3,6 +3,7 @@ import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionAction } from '@admin/types';
@@ -20,6 +21,8 @@ const props = defineProps<{
     /** Thao tác hàng loạt (0.3.102): Duyệt, Đã nhận hàng. */
     actions: ExtensionAction[];
     returns: Array<{ id: number; number: string; status: string; reason_code: string; refund_amount: number; source: string; created_at: string | null }>;
+    pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    perPageOptions: number[];
 }>();
 
 const selected = ref<number[]>([]);
@@ -31,8 +34,16 @@ const columns = [
     { key: 'status', label: 'Trạng thái' },
 ];
 
-function filter(status: string): void {
-    router.get(props.baseUrl, status ? { status } : {}, { preserveState: true });
+function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
+    router.get(props.baseUrl, { ...(status ? { status } : {}), page, per_page: perPage }, { preserveState: true });
+}
+
+function goToPage(page: number): void {
+    filter(props.status, page);
+}
+
+function changePageSize(perPage: number): void {
+    filter(props.status, undefined, perPage);
 }
 </script>
 
@@ -64,4 +75,5 @@ function filter(status: string): void {
         <template #cell-refund_amount="{ row }"><MoneyText :amount="row.refund_amount" /></template>
         <template #cell-status="{ row }"><StatusBadge :label="labels.return_status[row.status] ?? row.status" :tone="returnStatusTone(row.status)" /></template>
     </DataTable>
+    <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />
 </template>

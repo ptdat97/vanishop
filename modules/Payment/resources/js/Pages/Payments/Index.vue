@@ -2,6 +2,7 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -28,6 +29,8 @@ const props = defineProps<{
     }>;
     refunds: Array<{ id: number; payment_id: number; amount: number; reason: string; created_at: string | null }>;
     can: { confirm: boolean; refund: boolean };
+    pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    perPageOptions: number[];
 }>();
 
 const label = (status: string): string => props.labels.payment_status[status] ?? status;
@@ -44,8 +47,16 @@ const columns = [
 const refunding = ref<null | { id: number; max: number }>(null);
 const refundForm = useForm({ amount: 0, reason: '', idempotency_key: '' });
 
-function filter(status: string): void {
-    router.get(props.baseUrl, status ? { status } : {}, { preserveState: true });
+function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
+    router.get(props.baseUrl, { ...(status ? { status } : {}), page, per_page: perPage }, { preserveState: true });
+}
+
+function goToPage(page: number): void {
+    filter(props.status ?? '', page);
+}
+
+function changePageSize(perPage: number): void {
+    filter(props.status ?? '', undefined, perPage);
 }
 
 async function capturePayment(id: number): Promise<void> {
@@ -113,6 +124,7 @@ async function completeRefund(id: number): Promise<void> {
             <button v-if="row.can_refund && can.refund" type="button" class="ml-3 text-indigo-600 hover:underline" @click="openRefund(row)">Hoàn tiền</button>
         </template>
     </DataTable>
+    <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />
 
     <form v-if="refunding" class="mt-4 grid max-w-md gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitRefund">
         <p class="font-medium">Hoàn tiền (tối đa <MoneyText :amount="refunding.max" />)</p>

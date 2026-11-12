@@ -4,7 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
-## 0.4.19 — 2026-11-12
+## 0.4.20 — 2026-11-12
+
+Admin: danh sách đầy đủ (stabilization-2026-11 P2 A2).
+
+### Thêm
+- `Ordering\Contracts\OrderReader::numbers(list<int> $orderIds): array<int, string>` — số đơn theo lô cho danh sách của module khác. Lớp tự implement `OrderReader` phải thêm method này.
+
+### Sửa
+- Admin → Vận đơn, Thanh toán, Đổi trả: phân trang server (30/50/100 dòng, giữ bộ lọc) thay vì chỉ 100 bản ghi mới nhất; số đơn tra theo lô (trước tra từng dòng).
+
 
 Admin cho cửa hàng lớn (stabilization-2026-11 P2 A1).
 

@@ -49,6 +49,7 @@ Khảo sát 2026-11-12: sửa nhanh giá/tồn ngay trong danh sách sản phẩ
 | Đợt | Việc | Kiểm chứng | Trạng thái |
 |---|---|---|---|
 | **A1 — Admin không cắt dữ liệu âm thầm** | Lưới tồn, Tổng quan "hết/sắp hết", "chọn mọi kết quả lọc", xuất CSV giới hạn 5.000 biến thể mà không báo (backlog L20/L26) — shop 300 mẫu × 16 màu/size đã chạm | Test 6.000 biến thể: mọi màn hình thấy đủ, số truy vấn không tăng theo số biến thể | ✅ 0.4.19 — `VariantDirectory::searchIndex()` + `StockQueries::sellableByVariant()`; sửa hàng loạt vượt mức → báo thu hẹp bộ lọc |
+| **A2 — Danh sách đầy đủ** | Vận đơn, Thanh toán, Đổi trả chỉ hiện 100 bản ghi mới nhất, không phân trang (shop 30 đơn/ngày: sau 4 ngày vận đơn cũ không mở được từ danh sách); tra số đơn từng dòng (N+1) | Test 31 bản ghi: 30 + 1, đổi số dòng, lọc giữ khi chuyển trang; số truy vấn không tăng theo số dòng | ✅ 0.4.20 — phân trang server 30/50/100 như danh sách đơn; `OrderReader::numbers()`. Còn: mã giảm giá của một khuyến mãi hiện tối đa 200 (backlog L32) |
 
 ## P2 — Trải nghiệm Admin và Storefront (ứng viên)
 

@@ -21,6 +21,14 @@ interface OrderReader
     public function findByNumber(string $number): ?OrderData;
 
     /**
+     * Số đơn theo lô (danh sách Admin của module khác: vận đơn, thanh toán, đổi trả — tránh tra từng dòng).
+     *
+     * @param  list<int>  $orderIds
+     * @return array<int, string> order id => số đơn (id không tồn tại thì không có mặt)
+     */
+    public function numbers(array $orderIds): array;
+
+    /**
      * @return list<OrderLineData>
      */
     public function lines(int $orderId): array;
