@@ -94,6 +94,7 @@ Dán vào mô tả PR:
 - ✅ Thư mục mã nguồn `beikeshop_v3.0.0.11/` **đã được xoá** khỏi máy phát triển (2026-09-28). Đặc tả trong `docs/` là nguồn thiết kế duy nhất.
 - File nén `BeikeShop-v3.0.0.zip` vẫn còn ở thư mục cha `~/Ecommerce/` → nên xoá hoặc chuyển cho pháp chế lưu trữ offline (chỉ phục vụ audit ở mục 6).
 - Mã BeikeShop **không** được nằm trong repo VaniShop, không commit, không deploy, không dùng làm dữ liệu test/seed.
+- **Ngoại lệ có ghi nhận (Owner, 2026-11-12):** Owner cho phép xem `~/Ecommerce/beikeshop_v3.0.0.13` (ngoài repo) một lần để thiết kế hệ thống biến thể. Thực hiện theo §3: AI agent ở vai trò nghiên cứu chỉ đọc mô hình dữ liệu, màn hình và hành vi bộ chọn, ghi kết quả **bằng lời** vào [variant-matrix](../03-domains/variant-matrix.md); không chép code, template, tên bảng/hook/class, chuỗi hiển thị; sau đó ngừng đọc và chỉ code từ đặc tả. Thiết kế khác có chủ đích: tham chiếu bằng id thay chỉ số mảng, ảnh theo màu, giá/tồn ở module riêng góp qua contract. Thư mục này nên được xoá/chuyển khỏi máy dev sau khi xong như bản 3.0.0.11.
 
 ## 8. License của VaniShop
 
