@@ -103,6 +103,19 @@ final class CartService implements Carts
         });
     }
 
+    public function setVoucherCodes(CartKey $key, array $codes): CartView
+    {
+        $normalized = [];
+        foreach ($codes as $code) {
+            $code = trim((string) $code);
+            if ($code !== '' && mb_strlen($code) <= 64 && ! in_array(mb_strtolower($code), array_map('mb_strtolower', $normalized), true)) {
+                $normalized[] = $code;
+            }
+        }
+
+        return $this->mutate($key, fn (Cart $cart) => $cart->update(['voucher_codes' => array_slice($normalized, 0, Carts::MAX_VOUCHER_CODES) ?: null]));
+    }
+
     public function updateLine(CartKey $key, int $lineId, int $quantity): CartView
     {
         if ($quantity === 0) {
@@ -213,7 +226,8 @@ final class CartService implements Carts
             return;
         }
 
-        $cart->update(['meta' => [...($cart->meta ?? []), 'last_order_id' => $orderPublicId]]);
+        // Mã giảm giá đã dùng cho đơn vừa đặt: không mang sang phần còn lại của giỏ.
+        $cart->update(['meta' => [...($cart->meta ?? []), 'last_order_id' => $orderPublicId], 'voucher_codes' => null]);
         $this->touch($cart);
     }
 
@@ -342,6 +356,10 @@ final class CartService implements Carts
             $lineCount += $current === null ? 1 : 0;
         }
 
+        // Mã giảm giá: giỏ đích chưa có mã thì nhận mã của giỏ nguồn (khách nhập mã khi chưa đăng nhập).
+        if (($into->voucher_codes ?? []) === [] && ($from->voucher_codes ?? []) !== []) {
+            $into->update(['voucher_codes' => $from->voucher_codes]);
+        }
         $from->update(['status' => CartStatus::Merged, 'lock_version' => $from->lock_version + 1, 'last_activity_at' => now()]);
         $this->touch($into);
 

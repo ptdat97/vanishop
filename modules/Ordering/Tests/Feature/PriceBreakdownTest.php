@@ -29,8 +29,9 @@ beforeEach(function () {
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
         $cart = $created->json('data.id');
         $this->postJson("/api/storefront/v1/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 2], $headers)->assertOk();
+        $this->putJson("/api/storefront/v1/carts/{$cart}/vouchers", ['voucher_codes' => ['GIAM20']], $headers)->assertOk();
         // 2 × 240k = 480k; −10% (48k) = 432k; −20k mã = 412k; + 30k phí giao = 442k.
-        $this->token = $this->postJson("/api/storefront/v1/checkout/{$cart}/orders", C::orderPayload(['expected_total' => 442_000, 'voucher_codes' => ['GIAM20']]), [...$headers, 'Idempotency-Key' => "k-{$cart}"])
+        $this->token = $this->postJson("/api/storefront/v1/checkout/{$cart}/orders", C::orderPayload(['expected_total' => 442_000]), [...$headers, 'Idempotency-Key' => "k-{$cart}"])
             ->assertCreated()->json('data.access_token');
 
         return Order::query()->latest('id')->first();

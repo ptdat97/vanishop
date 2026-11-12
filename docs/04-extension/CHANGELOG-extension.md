@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.8 — 2026-11-12
+
+Mã giảm giá lưu theo giỏ — một mô hình cho mọi kênh (ADR-044 §5, đợt A1 của [api-first-refactor](../20-roadmap/api-first-refactor.md)).
+
+### Thêm
+- `Carts::setVoucherCodes(CartKey $key, array $codes): CartView`, hằng `Carts::MAX_VOUCHER_CODES = 5`; `CartView::$voucherCodes` (tham số cuối, mặc định rỗng). Cột `carts.voucher_codes`. Đặt đơn từ giỏ thì xoá mã; gộp giỏ khi đăng nhập thì giỏ đích chưa có mã nhận mã của giỏ nguồn.
+- Storefront API `PUT /carts/{id}/vouchers`; giỏ trả `voucher_codes`.
+
+### Đổi (phá vỡ)
+- `CheckoutRequest::$voucherCodes` thành `?array`: `null` = dùng mã trên giỏ (mọi kênh storefront truyền `null`), danh sách = tính thử với đúng các mã đó.
+- Storefront API `POST /checkout/{cartId}/quote` và `/orders` không còn nhận `voucher_codes` — đặt mã bằng `PUT /carts/{id}/vouchers`.
+- Storefront Blade bỏ mã giảm giá trong phiên (`CartVoucher::SESSION_KEY`); ô mã ở giỏ và ở checkout ghi vào giỏ.
+
 ## 0.4.7 — 2026-11-11
 
 Mã giảm giá không dùng được không chặn đặt hàng ở mọi kênh (ADR-044 §6, đợt A1 của [api-first-refactor](../20-roadmap/api-first-refactor.md)).

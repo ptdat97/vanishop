@@ -32,8 +32,9 @@ beforeEach(function () {
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
         $cart = $created->json('data.id');
         $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
+        $this->putJson("{$this->api}/carts/{$cart}/vouchers", ['voucher_codes' => $vouchers], $headers)->assertOk();
 
-        return $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => $method, 'voucher_codes' => $vouchers, 'expected_total' => $expected]), [...$headers, 'Idempotency-Key' => $key]);
+        return $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => $method, 'expected_total' => $expected]), [...$headers, 'Idempotency-Key' => $key]);
     };
     $this->callback = fn (string $paymentId, string $txn, string $status = 'paid', int $amount = 330_000) => $this->postJson('/api/payments/fake_online/callback', FakeOnlineGateway::callbackPayload($paymentId, $txn, $status, $amount));
     $this->orderRow = fn () => Order::query()->withoutGlobalScopes()->sole();

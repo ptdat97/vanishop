@@ -209,7 +209,7 @@ final class CheckoutService implements Checkout
             currencyCode: $cart->currencyCode,
             lines: $lines,
             adjustments: [],
-            voucherCodes: array_values(array_unique(array_filter(array_map('trim', $request->voucherCodes)))),
+            voucherCodes: array_values(array_unique(array_filter(array_map('trim', $request->voucherCodes ?? $cart->voucherCodes)))),
             shippingMethod: $request->shippingMethod,
             shippingAddress: $request->shippingAddress,
             now: now()->getTimestamp(),

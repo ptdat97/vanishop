@@ -6,7 +6,6 @@ use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Support\Phones;
-use Modules\Storefront\Application\CartVoucher;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -47,14 +46,15 @@ it('Mua ngay bằng JSON trả đường dẫn checkout', function () {
     $this->postJson('/gio-hang', ['variant_id' => $this->s->id, 'buy_now' => 1])->assertOk()->assertJsonPath('redirect', url('/thanh-toan'));
 });
 
-it('mã giảm giá ở giỏ: mã sai báo lý do; mã đúng hiện mức giảm, giữ trong phiên, checkout điền sẵn; đặt hàng xong thì quên mã', function () {
+it('mã giảm giá ở giỏ: mã sai báo lý do; mã đúng hiện mức giảm, lưu trên giỏ (cùng mô hình với API), checkout điền sẵn; đặt hàng xong thì đơn có mã', function () {
     C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => null]);
     $this->postJson('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2])->assertOk();
 
     $this->postJson('/gio-hang/ma-giam-gia', ['code' => 'KHONGCO'])->assertUnprocessable()->assertJsonValidationErrors(['code' => 'Mã KHONGCO không tồn tại.']);
-    expect(session(CartVoucher::SESSION_KEY))->toBeNull();
+    expect(DB::table('carts')->value('voucher_codes'))->toBeNull();
 
     $applied = $this->postJson('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'])->assertOk()
+        ->assertJsonPath('cart.voucher_codes', ['GIAM10'])
         ->assertJsonPath('voucher.code', 'GIAM10')
         ->assertJsonPath('voucher.discount.amount', 60_000)
         ->assertJsonPath('voucher.total.amount', 540_000)
@@ -77,7 +77,8 @@ it('mã giảm giá ở giỏ: mã sai báo lý do; mã đúng hiện mức gi�
         'shipping_method' => 'standard', 'payment_method' => 'cod', 'voucher_code' => 'GIAM10',
         'expected_total' => 540_000, 'idempotency_key' => 'json-cart-voucher-01',
     ])->assertSessionHasNoErrors();
-    expect(session(CartVoucher::SESSION_KEY))->toBeNull();
+    $order = Order::query()->withoutGlobalScopes()->sole();
+    expect((int) $order->total_amount)->toBe(540_000)->and((int) $order->discount_amount)->toBe(60_000);
 });
 
 it('đăng nhập OTP bằng JSON: gửi mã, xác thực trả đường dẫn quay lại và token CSRF mới', function () {
@@ -166,9 +167,10 @@ it('mã giảm giá không áp dụng được không bị giữ (0.3.104): gi�
     DB::table('vouchers')->where('code', 'GIAM10')->update(['status' => 'disabled']);
     $this->getJson('/gio-hang')->assertOk()->assertJsonPath('voucher', null);
     $this->postJson('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'])->assertUnprocessable();
-    session([CartVoucher::SESSION_KEY => 'GIAM10']);
+    // Mã đã lưu trên giỏ rồi mới hết hiệu lực: checkout không điền lại, bỏ khỏi giỏ, không báo lỗi.
+    DB::table('carts')->update(['voucher_codes' => json_encode(['GIAM10'])]);
     $this->get('/thanh-toan')->assertOk()->assertDontSee('value="GIAM10"', false)->assertDontSee('data-voucher-notice', false)->assertDontSee('không áp dụng được');
-    expect(session(CartVoucher::SESSION_KEY))->toBeNull();
+    expect(DB::table('carts')->value('voucher_codes'))->toBeNull();
 
     // Khách tự gõ mã sai rồi "Áp dụng": nhắc nhẹ kèm lý do, ô để trống.
     $form = [
@@ -183,5 +185,5 @@ it('mã giảm giá không áp dụng được không bị giữ (0.3.104): gi�
     // Gõ mã sai rồi bấm Đặt hàng luôn: đơn vẫn đặt, không kèm mã.
     $this->post('/thanh-toan', [...$form, 'voucher_code' => 'MM'])->assertSessionHasNoErrors();
     $order = Order::query()->withoutGlobalScopes()->sole();
-    expect((int) $order->total_amount)->toBe(600_000)->and($order->pricing['vouchers'] ?? [])->toBe([]);
+    expect((int) $order->total_amount)->toBe(600_000)->and((int) $order->discount_amount)->toBe(0);
 });

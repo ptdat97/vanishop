@@ -15,6 +15,7 @@ final readonly class CartView
 {
     /**
      * @param  list<CartLineView>  $lines
+     * @param  list<string>  $voucherCodes  mã giảm giá đang gắn với giỏ (0.4.8, ADR-044) — Checkout tính trên các mã này
      */
     public function __construct(
         public string $id,
@@ -23,6 +24,7 @@ final readonly class CartView
         public array $lines,
         public Money $subtotal,
         public int $itemCount,
+        public array $voucherCodes = [],
     ) {}
 
     /**

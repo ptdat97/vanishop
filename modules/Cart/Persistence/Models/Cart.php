@@ -18,12 +18,13 @@ use Modules\Cart\Domain\CartStatus;
  * @property int|null $customer_id
  * @property string $currency_code
  * @property CartStatus $status
+ * @property list<string>|null $voucher_codes
  * @property int $lock_version
  * @property CarbonImmutable $last_activity_at
  */
 final class Cart extends Model
 {
-    protected $fillable = ['public_id', 'token_hash', 'customer_id', 'currency_code', 'status', 'meta', 'lock_version', 'last_activity_at'];
+    protected $fillable = ['public_id', 'token_hash', 'customer_id', 'currency_code', 'status', 'voucher_codes', 'meta', 'lock_version', 'last_activity_at'];
 
     protected function casts(): array
     {
@@ -31,6 +32,7 @@ final class Cart extends Model
             'status' => CartStatus::class,
             'customer_id' => 'integer',
             'meta' => 'array',
+            'voucher_codes' => 'array',
             'lock_version' => 'integer',
             'last_activity_at' => 'immutable_datetime',
             'abandoned_notified_at' => 'immutable_datetime',

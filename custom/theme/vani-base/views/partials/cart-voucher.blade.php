@@ -1,6 +1,6 @@
 {{--
     Mã giảm giá của giỏ (0.3.93) — trang giỏ và giỏ mini dùng chung. Form POST thường (không JS: về trang giỏ); app.js gửi JSON.
-    $voucher: null | {code, discount, total, rejection} (CartVoucher::preview). Checkout điền sẵn mã này.
+    $voucher: null | {code, discount, total, rejection} (CartVoucher::preview — mã lưu trên giỏ, ADR-044). Checkout điền sẵn mã này.
 --}}
 <div class="space-y-2" data-cart-voucher>
     @if ($voucher)

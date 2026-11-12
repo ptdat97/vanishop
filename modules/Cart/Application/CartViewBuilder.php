@@ -82,6 +82,6 @@ final class CartViewBuilder
             );
         }
 
-        return new CartView($cart->public_id, $cart->status->value, $cart->currency_code, $views, $subtotal, $itemCount);
+        return new CartView($cart->public_id, $cart->status->value, $cart->currency_code, $views, $subtotal, $itemCount, array_values((array) ($cart->voucher_codes ?? [])));
     }
 }

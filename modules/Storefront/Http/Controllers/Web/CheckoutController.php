@@ -48,26 +48,12 @@ final class CheckoutController
         }
 
         $old = (array) $request->old();
-        // Mã nhập ở giỏ (giữ trong phiên) điền sẵn khi khách chưa gửi form checkout.
-        $fromCart = ! array_key_exists('voucher_code', $old) && $this->voucher->code() !== null;
-        if ($fromCart) {
-            $old['voucher_code'] = $this->voucher->code();
-        }
+        // Mã của giỏ (ADR-044): mã hỏng tự bỏ khỏi giỏ, không phải lỗi. Mã khách vừa gõ ở đây đã được áp vào giỏ khi gửi form
+        // (store); bị từ chối thì một dòng nhắc nhẹ kèm lý do (flash `voucher_notice`).
+        $voucherCode = $this->voucher->preview($key)['code'] ?? '';
         $checkoutQuote = $this->checkout->quote($this->toRequest($old, $request));
         $quote = $this->presenter->quote($checkoutQuote);
-
-        // Mã không áp dụng được (0.3.104): không giữ trong ô (đặt hàng không mang theo), bỏ khỏi phiên. Mã điền sẵn từ giỏ →
-        // bỏ lặng lẽ; mã khách vừa gõ → một dòng nhắc nhẹ kèm lý do, không phải lỗi.
-        $voucherCode = trim((string) ($old['voucher_code'] ?? ''));
-        $voucherNotice = null;
-        $rejection = $voucherCode === '' ? null : CartVoucher::rejectionFor($checkoutQuote->totals->rejectedVouchers, $voucherCode);
-        if ($rejection !== null) {
-            if (strcasecmp((string) $this->voucher->code(), $voucherCode) === 0) {
-                $this->voucher->forget();
-            }
-            $voucherNotice = $fromCart ? null : $rejection;
-            $voucherCode = '';
-        }
+        $voucherNotice = $request->session()->get('voucher_notice');
         $quote['rejected_vouchers'] = [];
 
         $directory = $this->addresses->directory();
@@ -109,11 +95,23 @@ final class CheckoutController
         if ($this->signInRequired($request)) {
             return $this->toLogin();
         }
-        if ($request->input('action') === 'quote' || $this->cart->current() === null) {
+        if ($this->cart->current() === null) {
             return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput();
         }
 
-        // Mã còn trong form nhưng không áp dụng được: Checkout bỏ mã và vẫn đặt đơn cho mọi kênh (ADR-044 §6).
+        // Ô mã giảm giá ghi vào giỏ như ô mã ở trang giỏ (một mô hình, ADR-044). Mã không dùng được không lưu: "Áp dụng" →
+        // nhắc nhẹ; "Đặt hàng" → đơn đặt không kèm mã (Checkout bỏ mã hỏng cho mọi kênh, §6).
+        $typed = trim((string) ($data['voucher_code'] ?? ''));
+        $notice = null;
+        if ($typed === '') {
+            $this->voucher->forget($this->cart->key());
+        } elseif (strcasecmp($typed, (string) $this->voucher->code($this->cart->key())) !== 0) {
+            $notice = $this->voucher->apply($this->cart->key(), $typed);
+        }
+        if ($request->input('action') === 'quote') {
+            return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput($request->except('voucher_code'))->with('voucher_notice', $notice);
+        }
+
         try {
             $result = $this->checkout->placeOrder($this->toRequest($data, $request, (int) $data['expected_total']), (string) $data['idempotency_key']);
         } catch (CheckoutRejected $exception) {
@@ -121,7 +119,6 @@ final class CheckoutController
         }
 
         $order = $result->body;
-        $this->voucher->forget();
         $session->put("vani.orders.{$order['id']}", [
             'token' => $order['access_token'],
             'payment' => $result->payment === null ? null : $payments->present($result->payment),
@@ -158,7 +155,6 @@ final class CheckoutController
     private function toRequest(array $data, Request $request, ?int $expectedTotal = null): CheckoutRequest
     {
         $address = (array) ($data['shipping_address'] ?? []);
-        $voucher = trim((string) ($data['voucher_code'] ?? ''));
 
         return new CheckoutRequest(
             cart: $this->cart->key(),
@@ -183,7 +179,8 @@ final class CheckoutController
             ],
             shippingMethod: ($data['shipping_method'] ?? null) ?: null,
             paymentMethod: ($data['payment_method'] ?? null) ?: null,
-            voucherCodes: $voucher === '' ? [] : [$voucher],
+            // Mã giảm giá lấy từ giỏ (ADR-044).
+            voucherCodes: null,
             note: ($data['note'] ?? null) ?: null,
             expectedTotal: $expectedTotal,
             extra: array_filter((array) ($data['extra'] ?? []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),

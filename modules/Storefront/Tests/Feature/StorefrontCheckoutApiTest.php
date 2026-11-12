@@ -21,6 +21,7 @@ beforeEach(function () {
     $this->cartHeaders = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
     $this->add = fn ($variant, int $quantity) => $this->postJson("{$this->api}/carts/{$this->cart}/lines", ['variant_id' => $variant->id, 'quantity' => $quantity], $this->cartHeaders)->assertOk();
     $this->quote = fn (array $body = []) => $this->postJson("{$this->api}/checkout/{$this->cart}/quote", $body, $this->cartHeaders);
+    $this->vouchers = fn (array $codes) => $this->putJson("{$this->api}/carts/{$this->cart}/vouchers", ['voucher_codes' => $codes], $this->cartHeaders);
     $this->place = fn (array $body, string $key = 'order-key-0001') => $this->postJson("{$this->api}/checkout/{$this->cart}/orders", $body, [...$this->cartHeaders, 'Idempotency-Key' => $key]);
 });
 
@@ -39,17 +40,27 @@ it('quote: tạm tính, miễn phí giao trên ngưỡng, VAT gồm trong giá, 
         ->assertJsonPath('data.cart_ready', true);
 });
 
-it('quote: voucher giảm giá, báo voucher không hợp lệ, phí giao dưới ngưỡng', function () {
+it('mã giảm giá lưu theo giỏ: PUT /vouchers chỉ lưu mã dùng được, báo mã bị từ chối; quote tính trên mã của giỏ', function () {
     C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => 100]);
     ($this->add)($this->s, 1);
 
-    ($this->quote)(['voucher_codes' => ['giam10', 'KHONGCO']])
+    ($this->vouchers)(['giam10', 'KHONGCO', 'giam10'])->assertOk()
+        ->assertJsonPath('data.voucher_codes', ['giam10'])
+        ->assertJsonPath('meta.rejected_vouchers', [['code' => 'KHONGCO', 'reason' => 'not_found']]);
+    ($this->quote)()
         ->assertJsonPath('data.discount.amount', 30_000)
         ->assertJsonPath('data.adjustments.0.code', 'GIAM10')
         ->assertJsonPath('data.adjustments.0.amount.amount', -30_000)
         ->assertJsonPath('data.shipping_fee.amount', 30_000)
         ->assertJsonPath('data.total.amount', 300_000)
-        ->assertJsonPath('data.rejected_vouchers.0', ['code' => 'KHONGCO', 'reason' => 'not_found']);
+        ->assertJsonPath('data.rejected_vouchers', []);
+    $this->getJson("{$this->api}/carts/{$this->cart}", $this->cartHeaders)->assertJsonPath('data.voucher_codes', ['giam10']);
+
+    // Body quote không còn nhận mã (một mô hình): mã truyền thẳng bị bỏ qua.
+    ($this->quote)(['voucher_codes' => ['KHONGCO']])->assertJsonPath('data.rejected_vouchers', []);
+    ($this->vouchers)([])->assertOk()->assertJsonPath('data.voucher_codes', []);
+    ($this->quote)()->assertJsonPath('data.discount.amount', 0);
+    ($this->vouchers)(['A', 'B', 'C', 'D', 'E', 'F'])->assertUnprocessable();
 });
 
 it('đặt hàng COD thành công: snapshot, số đơn, giữ hàng không hết hạn, đóng giỏ, ghi lượt voucher', function () {
@@ -58,7 +69,8 @@ it('đặt hàng COD thành công: snapshot, số đơn, giữ hàng không hế
     ($this->add)($this->s, 1);
     ($this->add)($this->m, 2);
 
-    $response = ($this->place)(C::orderPayload(['voucher_codes' => ['GIAM10'], 'expected_total' => 630_000, 'note' => ' Giao giờ hành chính ']))
+    ($this->vouchers)(['GIAM10'])->assertOk();
+    $response = ($this->place)(C::orderPayload(['expected_total' => 630_000, 'note' => ' Giao giờ hành chính ']))
         ->assertCreated()
         ->assertJsonPath('data.order_status', 'pending')
         ->assertJsonPath('data.payment_status', 'cod_pending')
@@ -128,20 +140,21 @@ it('giỏ có dòng thiếu hàng → 422 cart_not_ready, không tạo đơn (tr
 it('voucher hết lượt sau khi khách xem tổng → bỏ mã, tổng tăng nên 409 checkout.totals_changed, không tạo đơn; đặt lại theo tổng mới → có đơn, mã ở meta.dropped_vouchers', function () {
     C::promotion([], ['CUOI' => 1]);
     ($this->add)($this->s, 1);
-    $quote = ($this->quote)(['voucher_codes' => ['CUOI']])->json('data.total.amount');
+    ($this->vouchers)(['CUOI'])->assertOk()->assertJsonPath('data.voucher_codes', ['CUOI']);
+    $quote = ($this->quote)()->json('data.total.amount');
 
     // Người khác vừa dùng lượt cuối sau khi khách xem tổng.
     DB::table('vouchers')->where('code', 'CUOI')->update(['used_count' => 1]);
 
-    ($this->place)(C::orderPayload(['voucher_codes' => ['CUOI'], 'expected_total' => $quote]))
+    ($this->place)(C::orderPayload(['expected_total' => $quote]))
         ->assertStatus(409)
         ->assertJsonPath('error.code', 'checkout.totals_changed');
     expect(Order::query()->withoutGlobalScopes()->count())->toBe(0);
 
     // Khách xem lại: mã bị từ chối, tổng không giảm; đặt theo tổng đó → có đơn, mã bị bỏ báo ở meta (ADR-044 §6).
-    $quote = ($this->quote)(['voucher_codes' => ['CUOI']]);
+    $quote = ($this->quote)();
     expect($quote->json('data.rejected_vouchers.0.code'))->toBe('CUOI');
-    ($this->place)(C::orderPayload(['voucher_codes' => ['CUOI'], 'expected_total' => $quote->json('data.total.amount')]), 'k-retry-12345')
+    ($this->place)(C::orderPayload(['expected_total' => $quote->json('data.total.amount')]), 'k-retry-12345')
         ->assertCreated()
         ->assertJsonPath('meta.dropped_vouchers.0.code', 'CUOI')
         ->assertJsonPath('meta.dropped_vouchers.0.reason', 'exhausted')

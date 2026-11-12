@@ -16,6 +16,8 @@ use Modules\Cart\Contracts\Data\NewCart;
  */
 interface Carts
 {
+    public const MAX_VOUCHER_CODES = 5;
+
     public function create(string $currencyCode): NewCart;
 
     public function view(CartKey $key): CartView;
@@ -61,6 +63,15 @@ interface Carts
      * @param  list<int>  $lineIds
      */
     public function selectOnly(CartKey $key, array $lineIds): CartView;
+
+    /**
+     * Đặt danh sách mã giảm giá của giỏ (0.4.8, ADR-044): thay toàn bộ danh sách cũ, rỗng = bỏ mọi mã. Mã được cắt khoảng
+     * trắng, bỏ trùng (không phân biệt hoa/thường), tối đa {@see self::MAX_VOUCHER_CODES}. Giỏ không kiểm mã có dùng được
+     * không — đó là việc của Checkout/Promotion; Storefront chỉ lưu mã đang dùng được.
+     *
+     * @param  list<string>  $codes
+     */
+    public function setVoucherCodes(CartKey $key, array $codes): CartView;
 
     /**
      * Gộp giỏ nguồn vào giỏ đích (khi khách đăng nhập): cộng dồn, kẹp theo giới hạn và số có thể bán,

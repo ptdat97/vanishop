@@ -14,7 +14,8 @@ final readonly class CheckoutRequest
     /**
      * @param  array{full_name: string, phone: string, email: ?string}|null  $contact
      * @param  array{province_code: string, province_name: string, ward_code: string, ward_name: string, street_line: string}|null  $shippingAddress
-     * @param  list<string>  $voucherCodes
+     * @param  list<string>|null  $voucherCodes  null = dùng mã giảm giá đang lưu trên giỏ (0.4.8, ADR-044 — kênh storefront luôn
+     *                                           truyền null); danh sách = tính thử với đúng các mã này (xem trước mã trước khi lưu)
      */
     public function __construct(
         public CartKey $cart,
@@ -22,7 +23,7 @@ final readonly class CheckoutRequest
         public ?array $shippingAddress,
         public ?string $shippingMethod,
         public ?string $paymentMethod,
-        public array $voucherCodes,
+        public ?array $voucherCodes,
         public ?string $note,
         public ?int $expectedTotal,
         /**

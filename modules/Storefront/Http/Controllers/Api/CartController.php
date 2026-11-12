@@ -9,7 +9,9 @@ use Illuminate\Http\Request;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Cart\Contracts\Data\CartView;
+use Modules\Promotion\Contracts\Data\VoucherRejection;
 use Modules\Storefront\Application\CartPresenter;
+use Modules\Storefront\Application\CartVoucher;
 use Modules\Storefront\Http\Requests\LineOptions;
 
 /**
@@ -74,6 +76,24 @@ final class CartController
             'deselect' => $this->carts->deselect($key, $lineIds),
             default => $this->carts->selectOnly($key, $lineIds),
         });
+    }
+
+    /**
+     * Đặt mã giảm giá của giỏ (ADR-044): thay toàn bộ danh sách, rỗng = bỏ mã. Chỉ lưu mã đang dùng được; mã bị từ chối
+     * trả ở `meta.rejected_vouchers[{code, reason}]` (không phải lỗi). Quote và đặt hàng tính trên mã của giỏ.
+     */
+    public function vouchers(Request $request, string $cart, CartVoucher $vouchers): JsonResponse
+    {
+        $data = $request->validate([
+            'voucher_codes' => ['present', 'array', 'max:'.Carts::MAX_VOUCHER_CODES],
+            'voucher_codes.*' => ['string', 'max:64'],
+        ]);
+        $result = $vouchers->applyCodes($this->key($request, $cart), array_values($data['voucher_codes']));
+
+        return response()->json([
+            'data' => $this->presenter->present($result['cart']),
+            'meta' => ['rejected_vouchers' => array_map(fn (VoucherRejection $rejection): array => ['code' => $rejection->code, 'reason' => $rejection->reason], $result['rejected'])],
+        ]);
     }
 
     public function updateLine(Request $request, string $cart, int $line): JsonResponse

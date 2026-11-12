@@ -34,8 +34,6 @@ final class CheckoutRequestForm extends FormRequest
             'shipping_address.street_line' => ['nullable', 'string', 'max:255'],
             'shipping_method' => ['nullable', 'string', 'max:64'],
             'payment_method' => [$placing ? 'required' : 'nullable', 'string', 'max:64'],
-            'voucher_codes' => ['array', 'max:5'],
-            'voucher_codes.*' => ['string', 'max:64'],
             'note' => ['nullable', 'string', 'max:500'],
             // Trường bổ sung của plugin: {"<plugin id>": {"<field>": scalar}} — tối đa 10 plugin × 20 trường.
             'extra' => ['nullable', 'array', 'max:10'],
@@ -60,7 +58,8 @@ final class CheckoutRequestForm extends FormRequest
             shippingAddress: $address === null ? null : array_map('strval', array_intersect_key($address, array_flip(['province_code', 'province_name', 'ward_code', 'ward_name', 'street_line']))),
             shippingMethod: $this->validated('shipping_method'),
             paymentMethod: $this->validated('payment_method'),
-            voucherCodes: array_values(array_map('strval', (array) $this->validated('voucher_codes', []))),
+            // Mã giảm giá lấy từ giỏ (PUT /carts/{id}/vouchers, ADR-044).
+            voucherCodes: null,
             note: $this->validated('note'),
             expectedTotal: $this->validated('expected_total') === null ? null : (int) $this->validated('expected_total'),
             extra: array_filter((array) $this->validated('extra', []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),

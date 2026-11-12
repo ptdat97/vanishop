@@ -4,74 +4,96 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application;
 
-use Illuminate\Contracts\Session\Session;
+use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
+use Modules\Cart\Contracts\Data\CartView;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
+use Modules\Checkout\Contracts\Data\Totals;
 use Modules\Promotion\Contracts\Data\VoucherRejection;
 use Modules\Shared\Support\MoneyFormatter;
 
 /**
- * Mã giảm giá nhập ở giỏ (giỏ mini / trang giỏ) của native storefront. Giỏ không lưu mã (checkout không trạng thái,
- * ADR-023): mã giữ trong phiên web, checkout điền sẵn, đặt hàng vẫn tính lại như mọi lần. Xem trước mức giảm bằng báo giá
- * checkout của các dòng đã chọn — chưa có địa chỉ nên chưa tính phí giao.
+ * Mã giảm giá của giỏ — một mô hình cho mọi kênh (ADR-044 §5): mã lưu trên giỏ (`Carts::setVoucherCodes`), Storefront API
+ * `PUT /carts/{id}/vouchers` và ô mã của Blade cùng đi qua đây. Chỉ lưu mã đang dùng được; mã bị từ chối trả lý do. Checkout
+ * tính trên mã của giỏ; mã hỏng sau đó bị bỏ khi đặt hàng. Xem trước mức giảm bằng báo giá checkout của các dòng đã chọn —
+ * chưa có địa chỉ nên chưa tính phí giao.
  */
 final class CartVoucher
 {
-    public const SESSION_KEY = 'vani.voucher_code';
-
     public function __construct(
-        private readonly Session $session,
+        private readonly Carts $carts,
         private readonly Checkout $checkout,
         private readonly MoneyFormatter $money,
     ) {}
 
-    public function code(): ?string
+    /**
+     * Mã đầu tiên của giỏ — Blade hiện một ô mã (SME).
+     */
+    public function code(CartKey $cart): ?string
     {
-        $code = $this->session->get(self::SESSION_KEY);
-
-        return is_string($code) && $code !== '' ? $code : null;
+        return $this->carts->view($cart)->voucherCodes[0] ?? null;
     }
 
-    public function forget(): void
+    public function forget(CartKey $cart): void
     {
-        $this->session->forget(self::SESSION_KEY);
+        $this->carts->setVoucherCodes($cart, []);
     }
 
     /**
-     * Kiểm tra mã trên giỏ; hợp lệ thì giữ trong phiên. Trả lý do từ chối (null = đã áp dụng).
+     * Đặt danh sách mã của giỏ: tính thử với đúng các mã này, chỉ lưu mã dùng được.
+     *
+     * @param  list<string>  $codes
+     * @return array{cart: CartView, rejected: list<VoucherRejection>}
+     */
+    public function applyCodes(CartKey $cart, array $codes): array
+    {
+        $codes = array_values(array_filter(array_map(fn (mixed $code): string => trim((string) $code), $codes), fn (string $code): bool => $code !== ''));
+        $rejected = $codes === [] ? [] : $this->totals($cart, $codes)->rejectedVouchers;
+        $accepted = array_values(array_filter($codes, fn (string $code): bool => self::find($rejected, $code) === null));
+
+        return ['cart' => $this->carts->setVoucherCodes($cart, $accepted), 'rejected' => $rejected];
+    }
+
+    /**
+     * Ô mã của Blade: thay mã của giỏ bằng một mã. Trả lý do từ chối (null = đã áp dụng).
      */
     public function apply(CartKey $cart, string $code): ?string
     {
         $code = trim($code);
-        $rejection = $this->quote($cart, $code)['rejection'];
-        if ($rejection === null) {
-            $this->session->put(self::SESSION_KEY, $code);
-        }
+        $rejection = self::find($this->applyCodes($cart, [$code])['rejected'], $code);
 
-        return $rejection;
+        return $rejection === null ? null : self::message($rejection->reason, $code);
     }
 
     /**
-     * Mã đang giữ và mức giảm hiện tại; null khi chưa nhập mã. Mã không còn áp dụng được (giỏ đổi dưới mức tối thiểu, mã
-     * hết hạn/hết lượt…) thì tự bỏ khỏi phiên, không báo lỗi — không mang mã hỏng sang checkout (0.3.104).
+     * Mã đầu tiên đang gắn với giỏ và mức giảm hiện tại; null khi chưa có mã. Mã không còn dùng được (giỏ đổi dưới mức tối
+     * thiểu, mã hết hạn/hết lượt…) thì tự bỏ khỏi giỏ, không báo lỗi.
      *
      * @return array{code: string, discount: array<string, mixed>, total: array<string, mixed>, rejection: null}|null
      */
     public function preview(CartKey $cart): ?array
     {
-        $code = $this->code();
-        if ($code === null) {
+        $codes = $this->carts->view($cart)->voucherCodes;
+        if ($codes === []) {
             return null;
         }
-        $quote = $this->quote($cart, $code);
-        if ($quote['rejection'] !== null) {
-            $this->forget();
-
-            return null;
+        $totals = $this->totals($cart, null);
+        if ($totals->rejectedVouchers !== []) {
+            $codes = array_values(array_filter($codes, fn (string $code): bool => self::find($totals->rejectedVouchers, $code) === null));
+            $this->carts->setVoucherCodes($cart, $codes);
+            if ($codes === []) {
+                return null;
+            }
         }
 
-        return ['code' => $code, ...$quote];
+        return [
+            'code' => $codes[0],
+            'discount' => $this->money->toArray($totals->discount),
+            // Tạm tính sau giảm, chưa gồm phí giao.
+            'total' => $this->money->toArray($totals->subtotal->subtract($totals->discount)),
+            'rejection' => null,
+        ];
     }
 
     /**
@@ -81,7 +103,7 @@ final class CartVoucher
      */
     public static function rejectionFor(array $rejections, string $code): ?string
     {
-        $rejection = collect($rejections)->first(fn (VoucherRejection $rejection): bool => strcasecmp($rejection->code, $code) === 0);
+        $rejection = self::find($rejections, $code);
 
         return $rejection === null ? null : self::message($rejection->reason, $code);
     }
@@ -97,21 +119,27 @@ final class CartVoucher
     }
 
     /**
-     * @return array{discount: array<string, mixed>, total: array<string, mixed>, rejection: string|null}
+     * @param  list<VoucherRejection>  $rejections
      */
-    private function quote(CartKey $cart, string $code): array
+    private static function find(array $rejections, string $code): ?VoucherRejection
     {
-        $totals = $this->checkout->quote(new CheckoutRequest(
-            cart: $cart, contact: null, shippingAddress: null, shippingMethod: null, paymentMethod: null,
-            voucherCodes: [$code], note: null, expectedTotal: null,
-        ))->totals;
-        $rejection = collect($totals->rejectedVouchers)->first(fn (VoucherRejection $rejection): bool => strcasecmp($rejection->code, $code) === 0);
+        foreach ($rejections as $rejection) {
+            if (strcasecmp($rejection->code, $code) === 0) {
+                return $rejection;
+            }
+        }
 
-        return [
-            'discount' => $this->money->toArray($totals->discount),
-            // Tạm tính sau giảm, chưa gồm phí giao.
-            'total' => $this->money->toArray($totals->subtotal->subtract($totals->discount)),
-            'rejection' => $rejection === null ? null : self::message($rejection->reason, $code),
-        ];
+        return null;
+    }
+
+    /**
+     * @param  list<string>|null  $codes  null = mã đang lưu trên giỏ
+     */
+    private function totals(CartKey $cart, ?array $codes): Totals
+    {
+        return $this->checkout->quote(new CheckoutRequest(
+            cart: $cart, contact: null, shippingAddress: null, shippingMethod: null, paymentMethod: null,
+            voucherCodes: $codes, note: null, expectedTotal: null,
+        ))->totals;
     }
 }

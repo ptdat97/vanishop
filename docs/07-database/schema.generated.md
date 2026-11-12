@@ -17,7 +17,7 @@
 | [`campaign_price_lists`](#campaign_price_lists) | 5 |
 | [`campaigns`](#campaigns) | 11 |
 | [`cart_lines`](#cart_lines) | 10 |
-| [`carts`](#carts) | 12 |
+| [`carts`](#carts) | 13 |
 | [`categories`](#categories) | 10 |
 | [`category_style`](#category_style) | 3 |
 | [`category_translations`](#category_translations) | 8 |
@@ -326,6 +326,7 @@ Khoá ngoại: cart_id → carts(id) on delete cascade; variant_id → variants(
 | `customer_id` | bigint unsigned | có |  |
 | `currency_code` | char(3) |  |  |
 | `status` | varchar(16) |  | `active` |
+| `voucher_codes` | json | có |  |
 | `meta` | json | có |  |
 | `lock_version` | int unsigned |  | `0` |
 | `last_activity_at` | timestamp |  |  |

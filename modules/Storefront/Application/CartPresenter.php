@@ -34,6 +34,8 @@ final class CartPresenter
             'selected_subtotal' => $this->money->toArray($cart->selectedSubtotal()),
             'selected_count' => array_sum(array_map(fn (CartLineView $line): int => $line->quantity, $cart->selectedLines())),
             'checkout_ready' => $cart->isCheckoutReady(),
+            // Mã giảm giá gắn với giỏ (ADR-044): đặt bằng PUT /carts/{id}/vouchers; quote/đặt hàng tính trên các mã này.
+            'voucher_codes' => $cart->voucherCodes,
             // Dòng mua được (không hết hàng/ngừng bán, 0.3.95): nút "Thanh toán" chọn lại các dòng này khi giỏ chưa sẵn sàng
             // chỉ vì khách bỏ chọn — không để giỏ còn hàng mà không bấm thanh toán được.
             'payable_line_ids' => array_values(array_map(fn (CartLineView $line): int => $line->id, array_filter($cart->lines, fn (CartLineView $line): bool => $line->variant !== null && ! $line->blocksCheckout()))),

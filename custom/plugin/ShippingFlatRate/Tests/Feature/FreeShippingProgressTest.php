@@ -47,7 +47,8 @@ it('trang giỏ và API giỏ có tiến độ; thanh toán tính theo tiền h�
 
     // Giảm 10% → tiền hàng 540.000 ₫ vẫn ≥ ngưỡng: thanh toán báo đã đạt và phí giao = 0.
     C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => null]);
-    $quote = $this->postJson("/api/storefront/v1/checkout/{$created->json('data.id')}/quote", ['voucher_codes' => ['GIAM10'], 'shipping_method' => 'standard'], $headers)->assertOk();
+    $this->putJson("/api/storefront/v1/carts/{$created->json('data.id')}/vouchers", ['voucher_codes' => ['GIAM10']], $headers)->assertOk();
+    $quote = $this->postJson("/api/storefront/v1/checkout/{$created->json('data.id')}/quote", ['shipping_method' => 'standard'], $headers)->assertOk();
     expect($quote->json('data.shipping_fee.amount'))->toBe(0);
 });
 

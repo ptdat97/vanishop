@@ -65,7 +65,6 @@ final class CheckoutTestHelpers
             'shipping_address' => ['province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh', 'ward_code' => '70101065', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi'],
             'shipping_method' => 'standard',
             'payment_method' => 'cod',
-            'voucher_codes' => [],
         ], $overrides);
     }
 }

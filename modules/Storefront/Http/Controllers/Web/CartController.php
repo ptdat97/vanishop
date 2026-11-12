@@ -130,7 +130,7 @@ final class CartController
     }
 
     /**
-     * Áp mã giảm giá cho giỏ (giữ trong phiên, checkout điền sẵn); `code` rỗng = bỏ mã.
+     * Áp mã giảm giá cho giỏ (lưu trên giỏ, dùng chung với Storefront API — ADR-044); `code` rỗng = bỏ mã.
      */
     public function voucher(Request $request): RedirectResponse|JsonResponse
     {
@@ -139,7 +139,9 @@ final class CartController
         $key = $this->cart->current() === null ? null : $this->cart->key();
 
         if ($code === '' || $key === null) {
-            $this->voucher->forget();
+            if ($key !== null) {
+                $this->voucher->forget($key);
+            }
             $message = __('storefront::messages.voucher_removed');
         } else {
             $rejection = $this->voucher->apply($key, $code);

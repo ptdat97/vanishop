@@ -48,10 +48,11 @@ it('đặt hàng chỉ lấy dòng đã chọn: khuyến mãi tính trên phần
     ($this->add)($this->m, 2);
     ($this->select)(['line_ids' => [$first]])->assertOk();
 
-    $this->postJson("{$this->api}/checkout/{$this->cart}/quote", ['voucher_codes' => ['GIAM10']], $this->cartHeaders)
+    $this->putJson("{$this->api}/carts/{$this->cart}/vouchers", ['voucher_codes' => ['GIAM10']], $this->cartHeaders)->assertOk();
+    $this->postJson("{$this->api}/checkout/{$this->cart}/quote", [], $this->cartHeaders)
         ->assertJsonPath('data.subtotal.amount', 300_000)
         ->assertJsonPath('data.discount.amount', 30_000);
-    ($this->place)(C::orderPayload(['voucher_codes' => ['GIAM10'], 'expected_total' => 300_000]), 'selection-0001')->assertCreated();
+    ($this->place)(C::orderPayload(['expected_total' => 300_000]), 'selection-0001')->assertCreated();
 
     $order = Order::query()->withoutGlobalScopes()->with('lines')->sole();
     expect($order->lines->pluck('variant_id')->all())->toBe([$this->s->id])

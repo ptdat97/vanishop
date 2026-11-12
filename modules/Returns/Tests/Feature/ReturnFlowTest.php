@@ -27,7 +27,8 @@ beforeEach(function () {
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
         $cart = $created->json('data.id');
         $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 2], $headers)->assertOk();
-        $placed = $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['expected_total' => $expected, 'voucher_codes' => $vouchers]), [...$headers, 'Idempotency-Key' => "k-{$cart}"])->assertCreated();
+        $this->putJson("{$this->api}/carts/{$cart}/vouchers", ['voucher_codes' => $vouchers], $headers)->assertOk();
+        $placed = $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['expected_total' => $expected]), [...$headers, 'Idempotency-Key' => "k-{$cart}"])->assertCreated();
 
         if ($deliver) {
             app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {

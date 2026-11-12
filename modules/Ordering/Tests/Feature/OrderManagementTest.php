@@ -22,6 +22,11 @@ beforeEach(function () {
         $headers = [...$this->headers, 'X-Vani-Cart-Token' => $created->json('meta.token')];
         $cart = $created->json('data.id');
         $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
+        // Mã giảm giá gắn với giỏ (ADR-044).
+        if (isset($overrides['voucher_codes'])) {
+            $this->putJson("{$this->api}/carts/{$cart}/vouchers", ['voucher_codes' => $overrides['voucher_codes']], $headers)->assertOk();
+            unset($overrides['voucher_codes']);
+        }
 
         return $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => $method, 'expected_total' => 330_000, ...$overrides]), [...$headers, 'Idempotency-Key' => 'k-'.$cart])->assertCreated();
     };
