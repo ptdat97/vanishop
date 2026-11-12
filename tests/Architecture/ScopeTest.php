@@ -3,7 +3,13 @@
 /*
 | ADR-033: hạng mục ngoài phạm vi dự án chỉ được nhắc trong chính ADR đó. Tài liệu, code, comment, test không thiết kế,
 | ví dụ hay chừa chỗ cho chúng.
+|
+| Ngoại lệ: README.md tóm tắt phạm vi dự án (cùng vai trò ADR-033) — được nhắc hạng mục ngoài phạm vi ở câu phủ định
+| ("không triển khai…", "chưa phải…", "… trước Microservices"), không được mô tả như việc sẽ làm.
 */
+
+/** File được nêu hạng mục ngoài phạm vi, nhưng chỉ ở câu phủ định. */
+const SCOPE_NEGATION_ONLY = ['README.md'];
 
 it('hạng mục ngoài phạm vi (ADR-033) không xuất hiện trong docs/ và code', function () {
     $root = realpath(__DIR__.'/../..');
@@ -22,7 +28,8 @@ it('hạng mục ngoài phạm vi (ADR-033) không xuất hiện trong docs/ và
                 continue;
             }
             foreach (file($file->getPathname()) ?: [] as $number => $line) {
-                if (preg_match($banned, $line, $match) === 1) {
+                $negated = in_array($relative, SCOPE_NEGATION_ONLY, true) && preg_match('/\b(không|chưa|trước)\b/iu', $line) === 1;
+                if (! $negated && preg_match($banned, $line, $match) === 1) {
                     $offenders[] = "{$relative}:".($number + 1)." '{$match[0]}'";
                 }
             }
