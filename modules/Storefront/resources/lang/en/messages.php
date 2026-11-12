@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'menu_location_unknown' => 'This menu location is not part of the theme.',
     'sign_in_to_view_prices' => 'Please sign in to see prices and order.',
     'sign_in_for_price' => 'Sign in to see prices',
     'maintenance_title' => 'We will be back soon',

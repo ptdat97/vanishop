@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'menu_location_unknown' => 'Vị trí menu không có trong giao diện.',
     'sign_in_to_view_prices' => 'Vui lòng đăng nhập để xem giá và đặt hàng.',
     'sign_in_for_price' => 'Đăng nhập để xem giá',
     'maintenance_title' => 'Cửa hàng đang bảo trì',

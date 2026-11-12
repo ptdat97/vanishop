@@ -36,8 +36,8 @@ use Modules\Storefront\Application\PopularSearches;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
+use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Themes;
-use Modules\Storefront\Application\Theme\ThemeSettings;
 use Modules\Storefront\Contracts\LinkResolver;
 use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\PageSeo;
@@ -102,12 +102,13 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'menus' => $this->app->make(MenuPresenter::class),
             'seo' => $this->app->make(PageAlternates::class)->tags(),
             // Đầu/chân trang theo schema theme (§3.16-3): $themeSettings['footer']['copyright']…
-            'themeSettings' => $this->app->make(ThemeSettings::class)->values(App::getLocale()),
-            'popularSearches' => PopularSearches::from($this->app->make(Settings::class)),
+            // Cùng nguồn với Storefront API `GET /store` (StoreProfile, ADR-044).
+            'themeSettings' => $this->app->make(StoreProfile::class)->themeSettings(App::getLocale()),
+            'popularSearches' => $this->app->make(StoreProfile::class)->popularSearches(),
             // Không CDN (mặc định): phần riêng của khách render sẵn; có CDN thì JS lấy qua /_vani/phien (storefront §5).
             'customerState' => request()->attributes->has(PublicPageCache::ATTRIBUTE) ? null : $this->app->make(CustomerSessionState::class)->for(request(), App::getLocale()),
         ]));
-        View::composer('theme::pages.search', fn ($view) => $view->with('popularSearches', PopularSearches::from($this->app->make(Settings::class))));
+        View::composer('theme::pages.search', fn ($view) => $view->with('popularSearches', $this->app->make(StoreProfile::class)->popularSearches()));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 

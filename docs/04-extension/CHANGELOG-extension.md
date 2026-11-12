@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.13 — 2026-11-12
+
+"Vỏ" trang qua Storefront API (ADR-044, api-first-refactor đợt A2).
+
+### Thêm
+- Storefront API `GET /store`, `GET /menus/{location}`, `GET /pages/home` ([api §3](../06-api/api.md)).
+- `Storefront\Application\StoreProfile` (use-case dùng chung cho `GET /store` và layout Blade); `PageBlocks::resolve()` trả dữ liệu khối, `render()` dựng HTML từ chính dữ liệu đó.
+
+### Việc của plugin `StorefrontBlock`
+- Không đổi contract. Dữ liệu trả từ `resolve()` nay cũng tới client qua `GET /pages/home`: chỉ trả dữ liệu công khai, HTML (`Htmlable`) đã làm sạch — được đổi thành chuỗi.
+
 ## 0.4.12 — 2026-11-12
 
 Giỏ hàng: một hợp đồng đầu vào cho Storefront API và Blade; arch test giữ "có trên Blade thì có trên API" (ADR-044, R37 — đợt A1 xong).

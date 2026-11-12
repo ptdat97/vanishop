@@ -10,6 +10,7 @@ use Modules\Storefront\Http\Controllers\Api\CheckoutController;
 use Modules\Storefront\Http\Controllers\Api\OrderController;
 use Modules\Storefront\Http\Controllers\Api\PaymentController;
 use Modules\Storefront\Http\Controllers\Api\ProductController;
+use Modules\Storefront\Http\Controllers\Api\StoreController;
 
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
@@ -20,6 +21,12 @@ Route::middleware('vani.customer:optional')->group(function () {
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
     Route::get('search/suggestions', [ProductController::class, 'suggestions'])->name('search.suggestions');
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+});
+// "Vỏ" trang (ADR-044 đợt A2): thông tin cửa hàng, menu theo vị trí, trang chủ dựng bằng khối.
+Route::middleware('vani.customer:optional')->group(function () {
+    Route::get('store', [StoreController::class, 'show'])->name('store.show');
+    Route::get('menus/{location}', [StoreController::class, 'menu'])->where('location', '[a-z0-9_]{1,32}')->name('menus.show');
+    Route::get('pages/home', [StoreController::class, 'home'])->name('pages.home');
 });
 Route::get('address/provinces', [AddressController::class, 'provinces'])->name('address.provinces');
 Route::get('address/provinces/{province}/wards', [AddressController::class, 'wards'])->where('province', '[0-9A-Za-z_-]{1,16}')->name('address.wards');

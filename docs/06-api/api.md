@@ -46,6 +46,9 @@ Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validat
 
 | Method | Path | Mô tả |
 |---|---|---|
+| GET | `/store` | "Vỏ" cửa hàng (0.4.13, [ADR-044](../19-adr/ADR-044-storefront-api-first.md)): `name`, `locale{current, default, supported[]}`, `currency` (quy tắc định dạng: `symbol`, `exponent`, dấu phân cách — định dạng giống server), `prices{visibility: public|members, hidden}` (giá có bị ẩn với người đang xem), `guest_checkout`, `popular_searches[]`, `menu_locations[{code, label, depth}]`, `theme.settings` (đầu/chân trang theo ngôn ngữ). **Implemented** |
+| GET | `/menus/{location}` | Menu đã xuất bản của vị trí theme khai báo: `[{label, url, badge, image_url, children[]}]` (link đã giải theo ngôn ngữ, mục hết hạn/ẩn bị bỏ). Chưa xuất bản → `data: []`, `meta.published: false`; vị trí lạ → 404. **Implemented** (0.4.13) |
+| GET | `/pages/home` | Trang chủ dựng bằng khối: `[{type, data}]` theo thứ tự Admin sắp — `data` giống dữ liệu view của khối trên Blade (HTML đã làm sạch dạng chuỗi, vd. `bodyHtml`; sản phẩm như thẻ của `/products`). Khối của plugin có luôn. Chưa cấu hình → `data: null`, `meta.configured: false`. **Implemented** (0.4.13) |
 | GET | `/categories`, `/categories/{slug}` | Cây danh mục của cửa hàng; `/categories/{slug}` có `breadcrumb[{id, slug, name}]` từ gốc (0.3.66). **Implemented** |
 | GET | `/brands`, `/brands/{slug}` | Danh sách brand đang hiện, chi tiết brand (logo, mô tả, SEO). **Implemented**; brand là thuộc tính Catalog, không phải data scope |
 | GET | `/products?q=&category=&collection=&brand=urbanx,lumiere&color=white,black&size=S,M&price_min=&price_max=&attr[material]=silk&sort=newest|code|price_asc|price_desc&page=&per_page=` | Danh sách/tìm kiếm + facet (`meta.facets.color_families`, `meta.facets.attributes`, `meta.facets.brands`, `meta.facets.sizes`, `meta.facets.price`; giá là giá niêm yết, đơn vị nhỏ nhất). Trong một nhóm lọc là OR, giữa các nhóm là AND. **Implemented** |

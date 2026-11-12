@@ -104,15 +104,16 @@ final class PageBlocks
     }
 
     /**
-     * Render các khối đã cấu hình: khối lỗi (loại không còn, resolve/render lỗi) bị bỏ, ghi log.
+     * Dữ liệu các khối đã cấu hình — một nguồn cho mọi kênh (ADR-044 đợt A2): Storefront API `GET /pages/home` trả dữ liệu
+     * này, Blade render nó bằng view của khối. Khối lỗi (loại không còn, resolve lỗi) bị bỏ, ghi log.
      *
      * @param  list<array{type: string, config: array<string, mixed>}>  $blocks
-     * @return list<array{type: string, html: HtmlString}>
+     * @return list<array{type: string, data: array<string, mixed>}>
      */
-    public function render(array $blocks): array
+    public function resolve(array $blocks): array
     {
         $types = $this->types();
-        $rendered = [];
+        $resolved = [];
         foreach ($blocks as $block) {
             $type = $types[$block['type'] ?? ''] ?? null;
             if ($type === null) {
@@ -121,8 +122,30 @@ final class PageBlocks
             try {
                 $data = $this->extensions->call($type, fn (): array => $type->resolve((array) ($block['config'] ?? []), App::getLocale()), null, 'storefront.block');
                 if ($data !== null) {
-                    $rendered[] = ['type' => $type->type(), 'html' => new HtmlString(view($type->view(), $data)->render())];
+                    $resolved[] = ['type' => $type->type(), 'data' => $data];
                 }
+            } catch (Throwable $exception) {
+                report($exception);
+                Log::warning('Dựng khối trang chủ lỗi, bỏ qua.', ['type' => $block['type']]);
+            }
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Render các khối đã cấu hình cho Blade: cùng dữ liệu với {@see self::resolve()}; khối render lỗi bị bỏ, ghi log.
+     *
+     * @param  list<array{type: string, config: array<string, mixed>}>  $blocks
+     * @return list<array{type: string, html: HtmlString}>
+     */
+    public function render(array $blocks): array
+    {
+        $types = $this->types();
+        $rendered = [];
+        foreach ($this->resolve($blocks) as $block) {
+            try {
+                $rendered[] = ['type' => $block['type'], 'html' => new HtmlString(view($types[$block['type']]->view(), $block['data'])->render())];
             } catch (Throwable $exception) {
                 report($exception);
                 Log::warning('Render khối trang chủ lỗi, bỏ qua.', ['type' => $block['type']]);
