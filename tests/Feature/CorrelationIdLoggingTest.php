@@ -101,3 +101,17 @@ it('channel single/daily cấu hình trong config/logging.php ghi được log k
         ->and(file_get_contents($files[0]))->toContain('ghi thật')->toContain('trace-channel-456');
     array_map('unlink', $files);
 })->with(['single', 'daily']);
+
+it('kênh json (production): mỗi dòng là JSON có correlation_id', function () {
+    $path = storage_path('logs/test-json-'.uniqid().'.log');
+    config(['logging.channels.json-test' => [...config('logging.channels.json'), 'driver' => 'single', 'path' => $path]]);
+    Context::add('correlation_id', 'trace-json-1');
+
+    Log::channel('json-test')->warning('Đặt hàng lỗi', ['order' => 'VN1']);
+
+    $line = json_decode(trim((string) file_get_contents($path)), true, flags: JSON_THROW_ON_ERROR);
+    @unlink($path);
+    expect($line['message'])->toBe('Đặt hàng lỗi')
+        ->and($line['context']['order'])->toBe('VN1')
+        ->and($line['extra']['correlation_id'])->toBe('trace-json-1');
+});

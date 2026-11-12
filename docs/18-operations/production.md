@@ -35,6 +35,7 @@ Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `c
 | `APP_KEY` | `php artisan key:generate --show` một lần, lưu trong kho bí mật | Đổi key = mất session, dữ liệu mã hoá (secret plugin trong Cấu hình) không giải mã được |
 | `APP_URL` | `https://ten-mien` | URL ảnh, email, sitemap, callback cổng thanh toán. Ngoài `local`, **mọi** URL tuyệt đối sinh theo giá trị này, không theo header `Host` ([security §5.2](../15-security/security.md)) — đặt đúng domain công khai |
 | `LOG_LEVEL` | `info` (hoặc `warning`) | |
+| `LOG_STACK` | `json` | Mỗi dòng log một JSON có `extra.correlation_id` — đẩy vào hệ thu log, lọc theo một luồng đặt hàng |
 | `DB_*` | User riêng, chỉ quyền trên DB của app | |
 | `CACHE_STORE` / `SESSION_DRIVER` / `QUEUE_CONNECTION` | `redis` / `redis` / `redis` | Nhiều web node dùng chung; Horizon cần queue Redis |
 | `SESSION_SECURE_COOKIE` | `true` | Cookie chỉ gửi qua HTTPS |

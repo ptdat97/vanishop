@@ -2,6 +2,7 @@
 
 use App\Logging\AttachContextProcessor;
 use App\Logging\ContextProcessor;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -73,6 +74,18 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
+            'tap' => [AttachContextProcessor::class],
+            'replace_placeholders' => true,
+        ],
+
+        // Production (stabilization R4): mỗi dòng một JSON, có correlation_id — đẩy thẳng vào Loki/ELK/CloudWatch, lọc theo
+        // một luồng đặt hàng. Dùng: LOG_STACK=json (hoặc json,daily).
+        'json' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/laravel.json.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'max_files' => env('LOG_DAILY_DAYS', 14),
+            'formatter' => JsonFormatter::class,
             'tap' => [AttachContextProcessor::class],
             'replace_placeholders' => true,
         ],

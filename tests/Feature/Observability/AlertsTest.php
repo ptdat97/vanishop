@@ -3,6 +3,7 @@
 use App\Observability\AlertManager;
 use App\Observability\AlertRules;
 use App\Observability\OpenAlertsWidget;
+use App\Observability\RecentCounters;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -138,6 +139,28 @@ it('tỷ lệ thanh toán online thất bại: bỏ COD/chuyển khoản tay, c�
 
     $payments('vnpay', 'paid', 4); // 4/14 ≈ 29% ≤ 30%
     expect($rule())->toBeNull();
+});
+
+it('checkout lỗi hệ thống > 2% trong 5 phút → khẩn; từ chối nghiệp vụ (hết hàng…) không tính; cần đủ mẫu', function () {
+    ['s' => $variant] = C::store(stock: 1);
+    $rule = fn () => app(AlertRules::class)->evaluate()['checkout.error_rate'];
+    $counters = app(RecentCounters::class);
+
+    $counters->record('checkout.attempts', 19);
+    $counters->record('checkout.errors', 5);
+    expect($rule())->toBeNull(); // 19 < 20 lượt: chưa đủ mẫu
+
+    // Từ chối nghiệp vụ qua checkout thật: tính lượt, không tính lỗi.
+    $cart = $this->postJson('/api/storefront/v1/carts')->assertCreated();
+    $headers = ['X-Vani-Cart-Token' => $cart->json('meta.token'), 'Idempotency-Key' => 'alert-checkout-1'];
+    $this->postJson("/api/storefront/v1/checkout/{$cart->json('data.id')}/orders", C::orderPayload(['expected_total' => 1]), $headers)->assertStatus(422);
+    expect($counters->sum('checkout.attempts', 5))->toBe(20)
+        ->and($counters->sum('checkout.errors', 5))->toBe(5)
+        ->and($rule())->toMatchArray(['severity' => Alert::CRITICAL])
+        ->and($rule()['detail'])->toContain('5/20');
+
+    $counters->record('checkout.attempts', 230);
+    expect($rule())->toBeNull(); // 5/250 = 2% — không vượt ngưỡng
 });
 
 it('ô "Cảnh báo vận hành" liệt kê cảnh báo đang mở, mức nặng trước', function () {

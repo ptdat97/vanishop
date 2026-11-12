@@ -17,11 +17,14 @@ final class PulseMetrics implements Metrics
 {
     public const PREFIX = 'vani.';
 
+    public function __construct(private readonly RecentCounters $recent) {}
+
     public function increment(string $name, int $by = 1, string $key = 'all'): void
     {
         if ($by === 0) {
             return;
         }
+        $this->recent->record($name, $by);
 
         $this->safely(fn () => Pulse::record(self::PREFIX.$name, $key, $by)->sum()->count());
     }

@@ -32,6 +32,7 @@ final class AlertRules
         private readonly RequiredExtensions $required,
         private readonly PluginHealth $pluginHealth,
         private readonly Payments $payments,
+        private readonly RecentCounters $recent,
     ) {}
 
     /**
@@ -83,6 +84,16 @@ final class AlertRules
                 }
 
                 return $this->incident(Alert::CRITICAL, 'Tỷ lệ thanh toán online thất bại cao', sprintf('%d/%d khoản thất bại trong 60 phút (%.0f%%). Kiểm tra cổng thanh toán; cân nhắc tạm ẩn cổng, ưu tiên COD.', $failed, $total, 100 * $failed / $total));
+            },
+            'checkout.error_rate' => function () use ($config): ?array {
+                $minutes = (int) $config['checkout_window_minutes'];
+                $attempts = $this->recent->sum('checkout.attempts', $minutes);
+                $errors = $this->recent->sum('checkout.errors', $minutes);
+                if ($attempts < (int) $config['checkout_min_sample'] || $errors / $attempts <= (float) $config['checkout_error_rate']) {
+                    return null;
+                }
+
+                return $this->incident(Alert::CRITICAL, 'Checkout lỗi hệ thống', sprintf('%d/%d lượt đặt hàng lỗi hệ thống trong %d phút (%.1f%%). Xem log theo correlation id; kiểm tra DB, plugin thanh toán/vận chuyển vừa đổi.', $errors, $attempts, $minutes, 100 * $errors / $attempts));
             },
             'queue.wait' => function () use ($config): ?array {
                 if (config('queue.default') !== 'redis' || ! class_exists(WaitTimeCalculator::class)) {

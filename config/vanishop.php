@@ -100,6 +100,10 @@ return [
         // Tỷ lệ thanh toán online thất bại trong 60 phút (khi có ít nhất `payment_min_sample` khoản đã có kết quả).
         'payment_failure_rate' => 0.3,
         'payment_min_sample' => 10,
+        // Lượt đặt hàng lỗi hệ thống (không tính từ chối nghiệp vụ) trong N phút gần nhất, khi có ít nhất `checkout_min_sample` lượt.
+        'checkout_error_rate' => 0.02,
+        'checkout_window_minutes' => 5,
+        'checkout_min_sample' => 20,
         // Cổng thu tiền ngoài hệ thống (thu khi giao, xác nhận thủ công) không tính vào tỷ lệ: lấy theo capability của cổng.
         // Diễn tập khôi phục backup thành công gần nhất không quá N ngày (production; operations §8 — mỗi quý).
         'backup_drill_days' => (int) env('VANI_ALERT_BACKUP_DRILL_DAYS', 100),

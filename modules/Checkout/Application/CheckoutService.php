@@ -6,6 +6,7 @@ namespace Modules\Checkout\Application;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartLineView;
 use Modules\Cart\Contracts\Data\CartView;
@@ -40,6 +41,7 @@ use Modules\Shared\Application\IdempotencyStore;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Contracts\Metrics;
+use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\Phones;
 use Modules\Tenancy\Contracts\Settings;
 use Throwable;
@@ -81,12 +83,21 @@ final class CheckoutService implements Checkout
 
     public function placeOrder(CheckoutRequest $request, string $idempotencyKey): PlaceOrderResult
     {
+        // Cảnh báo "checkout lỗi" (observability §7.2) chỉ tính lỗi hệ thống — khách bị từ chối hợp lệ (hết hàng, tổng đổi,
+        // dữ liệu sai) không phải sự cố.
+        $this->metrics->increment('checkout.attempts');
         try {
             return $this->place($request, $idempotencyKey);
         } catch (CheckoutRejected $rejected) {
             $this->metrics->increment('orders.failed', 1, $rejected->errorCode());
 
             throw $rejected;
+        } catch (BusinessRuleViolation|ValidationException $rejected) {
+            throw $rejected;
+        } catch (Throwable $error) {
+            $this->metrics->increment('checkout.errors', 1, class_basename($error));
+
+            throw $error;
         }
     }
 

@@ -25,6 +25,7 @@ Request → Command → Domain Event → Outbox → Worker → Connector → Ext
 ## 3. Logs
 
 - JSON có cấu trúc, mỗi dòng có `timestamp`, `level`, `correlation_id`, `source` (nguồn đơn khi có), `actor`, `module`, `plugin` (nếu có), `message`, `context`.
+- **Đã có (0.4.18):** kênh `json` (`LOG_STACK=json` ở production) ghi `storage/logs/laravel.json.log`, mỗi dòng một JSON gồm `message`, `context`, `level_name`, `datetime` và `extra.correlation_id` (cùng id với header `X-Correlation-Id` và job từ request đó). Các trường `actor`/`module`/`plugin` ở trên vẫn là mục tiêu.
 - **Không log PII thô và secret**: SĐT, email, địa chỉ bị che (`09*****123`); token và chữ ký bị loại bỏ.
 - Kênh log: `app`, `security` (đăng nhập, sai chữ ký, từ chối quyền), `integration`, `audit` (lưu DB, không phải file), `vani.deprecation`.
 - Log tập trung lưu tại VN ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)), giữ 30 ngày nóng + 180 ngày lạnh.
@@ -100,6 +101,7 @@ Trạng thái lưu ở `alert_states`: sự cố mới → báo ngay; còn → n
 | `extensions.required_missing` | Khẩn | Thiếu extension bắt buộc (thanh toán, giao hàng, thuế…) |
 | `integration.order_event_dead` | Khẩn | Có message `order.*` ở trạng thái `dead` |
 | `payments.failure_rate` | Khẩn | > 30% khoản thanh toán online thất bại trong 60 phút (tối thiểu 10 khoản; bỏ `cod`, `manual_bank_transfer`) |
+| `checkout.error_rate` | Khẩn | > 2% lượt đặt hàng lỗi **hệ thống** trong 5 phút (tối thiểu 20 lượt; từ chối nghiệp vụ như hết hàng, tổng đổi, dữ liệu sai không tính). Đếm `checkout.attempts`/`checkout.errors` theo phút trên cache (`App\Observability\RecentCounters`) — Redis ở production nên dùng chung giữa server (0.4.18) |
 | `queue.wait` | Khẩn | Queue Redis chờ > 120s (Horizon) |
 | `integration.outbox_backlog` | Cao | Outbox tồn > 500 hoặc message chờ gửi quá 5 phút |
 | `integration.dead` | Cao | Message outbox (không phải `order.*`) hoặc inbox ở `dead` |
