@@ -28,6 +28,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\ExternalCalls;
 use Throwable;
 
 /**
@@ -140,6 +141,8 @@ final class FulfillmentService
                 throw FulfillmentRejected::invalidTransition($shipment->status->value, ShipmentStatus::Created->value);
             }
 
+            // Ngoại lệ có chủ đích của ExternalCalls: gọi hãng khi đang khoá vận đơn để hai worker không đặt trùng một đơn
+            // ở hãng (backlog L31: tách thành giữ chỗ → gọi hãng → ghi kết quả).
             $carrier = $this->registry->carrier($shipment->carrier_code);
             $booked = $carrier?->createShipment($this->data($shipment, $trackingNumber, $serviceCode));
 
@@ -206,6 +209,7 @@ final class FulfillmentService
 
         $carrier = $this->registry->carrier($shipment->carrier_code);
         if ($shipment->tracking_number !== null && $carrier?->capabilities()->cancel) {
+            ExternalCalls::guard("carrier.cancel:{$shipment->carrier_code}");
             $carrier->cancel($this->data($shipment, $shipment->tracking_number, $shipment->service_code));
         }
 

@@ -37,6 +37,7 @@ use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\ExternalCalls;
 use Modules\Shared\Support\StoreClock;
 use Throwable;
 
@@ -125,6 +126,7 @@ final class PaymentService implements Payments
             return $this->toView($payment);
         }
 
+        ExternalCalls::guard("payment.initiate:{$payment->gateway_code}");
         try {
             $initiation = $gateway->initiate($this->toData($payment));
         } catch (Throwable $exception) {
@@ -259,6 +261,7 @@ final class PaymentService implements Payments
         }
 
         $amount = Money::of($payment->amount, $payment->currency_code);
+        ExternalCalls::guard("payment.capture:{$payment->gateway_code}");
         $result = $gateway->capture($this->toData($payment), $amount, "capture:{$payment->public_id}");
         if (! $result->successful) {
             Log::warning('Cổng từ chối thu khoản đã giữ tiền.', ['payment' => $payment->public_id, 'message' => $result->message]);
@@ -505,6 +508,7 @@ final class PaymentService implements Payments
     private function voidAuthorization(Payment $payment, string $reason): void
     {
         $gateway = $this->gateways->get($payment->gateway_code);
+        ExternalCalls::guard("payment.void:{$payment->gateway_code}");
         $result = $gateway instanceof CapturesLater ? $gateway->void($this->toData($payment), "void:{$payment->public_id}") : null;
         if ($result === null || ! $result->successful) {
             Log::warning('Không huỷ được khoản giữ tiền của đơn đã huỷ — cần xử lý thủ công.', ['payment' => $payment->public_id, 'message' => $result?->message]);
@@ -613,6 +617,7 @@ final class PaymentService implements Payments
     private function executeGatewayRefund(Refund $refund, Payment $payment): void
     {
         $gateway = $this->gateways->get($payment->gateway_code);
+        ExternalCalls::guard("payment.refund:{$payment->gateway_code}");
 
         try {
             $result = $gateway?->refund($this->toData($payment), Money::of((int) $refund->amount, $payment->currency_code), $refund->idempotency_key);

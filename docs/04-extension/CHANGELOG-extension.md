@@ -4,7 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
-## 0.4.16 — 2026-11-12
+## 0.4.17 — 2026-11-12
+
+Ổn định Commerce Core (stabilization-2026-11 P1: C1–C3). Không đổi hợp đồng API.
+
+### Sửa
+- Khách huỷ đơn đúng lúc cổng báo đã thanh toán: IPN không còn trả lỗi (đơn đã huỷ → ghi nhận tiền rồi hoàn), huỷ đơn không còn lỗi khi tiền vừa được hoàn vì thanh toán muộn. `PaymentService::refundRemaining()` tính phần còn hoàn được trong khoá; `settleCancelledOrder()` quyết định theo trạng thái đọc dưới khoá.
+
+### Thêm
+- `Shared\Support\ExternalCalls::guard()`: gọi dịch vụ ngoài trong transaction chưa commit → lỗi ở dev/test, cảnh báo ở production. Plugin cổng thanh toán/vận chuyển không cần gọi — Core gọi trước khi gọi plugin.
+- Test concurrency: huỷ ↔ IPN, huỷ trùng, webhook đã giao trùng, nhận hàng trả/hoàn tiền trùng, kiểm kê ↔ đặt hàng. `Tests\Support\KeepsReferenceData` cho test dùng `DatabaseTruncation`.
+
 
 Hoàn thiện API-first (stabilization-2026-11 P0: S0.1–S0.4). **Phá vỡ** hợp đồng Storefront API v1 ở định dạng dữ liệu.
 

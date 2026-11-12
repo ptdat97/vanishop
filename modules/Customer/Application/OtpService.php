@@ -14,6 +14,7 @@ use Modules\Customer\Contracts\OtpDeliveryFailed;
 use Modules\Customer\Contracts\OtpSender;
 use Modules\Customer\Domain\OtpCode;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Shared\Support\ExternalCalls;
 
 /**
  * OTP qua kênh `OtpSender`. Chống SMS pumping/brute-force: giới hạn yêu cầu theo SĐT và IP, tối đa 5 lần
@@ -65,6 +66,7 @@ final class OtpService
         });
 
         // Thử kênh theo priority; kênh lỗi (vd. SĐT không dùng Zalo) → kênh kế tiếp.
+        ExternalCalls::guard('customer.otp.send');
         foreach ($senders as $sender) {
             try {
                 $sender->send($contact, $code, $purpose);
