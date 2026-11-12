@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts\Data;
 
 /**
- * Tài liệu tìm kiếm của một style (dùng cho SearchProvider cần index ngoài như Meilisearch).
+ * Tài liệu tìm kiếm của một style (dùng cho SearchProvider có chỉ mục ngoài; provider `database` đọc thẳng bảng).
  */
 final readonly class ProductDocument
 {
@@ -13,10 +13,9 @@ final readonly class ProductDocument
      * @param  array<string, string>  $names  locale => tên
      * @param  list<int>  $categoryIds  mọi danh mục chứa style kèm tổ tiên của chúng
      * @param  list<int>  $collectionIds
-     * @param  list<string>  $colorFamilies
      * @param  list<int>  $attributeValueIds  giá trị của thuộc tính spec + filterable
-     * @param  list<string>  $sizeCodes  mã size của các biến thể đang bán (0.4.3)
      * @param  int|null  $listPriceMin  giá niêm yết thấp nhất (đơn vị nhỏ nhất, 0.4.4); null = chưa có giá
+     * @param  list<string>  $options  `<mã loại>:<mã lọc>` của các SKU đang bán (ADR-045, 0.4.26), vd. `color:white`, `size:M`
      */
     public function __construct(
         public int $id,
@@ -30,11 +29,10 @@ final readonly class ProductDocument
         public string $searchText,
         public array $categoryIds,
         public array $collectionIds,
-        public array $colorFamilies,
         public array $attributeValueIds,
         public int $createdAt,
-        public array $sizeCodes = [],
         public ?int $listPriceMin = null,
+        public array $options = [],
     ) {}
 
     /**
@@ -54,11 +52,10 @@ final readonly class ProductDocument
             'search_text' => $this->searchText,
             'category_ids' => $this->categoryIds,
             'collection_ids' => $this->collectionIds,
-            'color_families' => $this->colorFamilies,
             'attribute_value_ids' => $this->attributeValueIds,
             'created_at' => $this->createdAt,
-            'size_codes' => $this->sizeCodes,
             'list_price_min' => $this->listPriceMin,
+            'options' => $this->options,
         ];
     }
 }

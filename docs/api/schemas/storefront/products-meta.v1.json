@@ -26,18 +26,65 @@
             ],
             "description": "null khi gọi `?ids=`.",
             "properties": {
-                "color_families": {
-                    "type": "object",
-                    "description": "Map theo khoá (id hoặc mã); rỗng là `{}`."
-                },
                 "attributes": {
                     "type": "array"
                 },
                 "brands": {
                     "type": "array"
                 },
-                "sizes": {
-                    "type": "array"
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "code",
+                            "name",
+                            "display_type",
+                            "values"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "display_type": {
+                                "type": "string",
+                                "enum": [
+                                    "swatch",
+                                    "button",
+                                    "dropdown"
+                                ]
+                            },
+                            "values": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "value",
+                                        "label",
+                                        "count"
+                                    ],
+                                    "properties": {
+                                        "value": {
+                                            "type": "string"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "count": {
+                                            "type": "integer"
+                                        },
+                                        "swatch": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "description": "Facet theo loại tuỳ chọn lọc được (ADR-045). Loại kiểu ô màu: `value` là nhóm màu, kèm `swatch`; loại khác: `value` là mã giá trị. Lọc bằng `opt[<code>]=<value>,…`."
                 },
                 "price": {
                     "type": [

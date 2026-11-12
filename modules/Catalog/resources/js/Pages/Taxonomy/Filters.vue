@@ -11,21 +11,24 @@ import type { NavItem } from '../../types';
 
 interface Facet {
     key: string;
-    type: 'brand' | 'color' | 'size' | 'price' | 'attribute';
+    type: 'brand' | 'price' | 'option' | 'attribute';
     label: string;
     displays: string[];
     enabled: boolean;
     display: string;
 }
 
-/** Bộ lọc của trang danh sách (§3.5-1): bật/tắt, thứ tự (kéo-thả), kiểu hiển thị. Thuộc tính lấy từ "dùng để lọc". */
+/**
+ * Bộ lọc của trang danh sách (§3.5-1): bật/tắt, thứ tự (kéo-thả), kiểu hiển thị. Tuỳ chọn biến thể lấy từ loại đánh dấu "lọc được"
+ * (ADR-045), thuộc tính lấy từ "dùng để lọc".
+ */
 const props = defineProps<{ nav: NavItem[]; facets: Facet[]; displayLabels: Record<string, string>; canManage: boolean }>();
 
 const form = useForm<{ facets: Facet[] }>({ facets: props.facets.map((facet) => ({ ...facet })) });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'filters')?.url ?? '');
 const displayOptions = (facet: Facet) => facet.displays.map((value) => ({ value, label: props.displayLabels[value] ?? value }));
-const kindLabel: Record<Facet['type'], string> = { brand: 'Thương hiệu', color: 'Nhóm màu', size: 'Size của biến thể', price: 'Giá niêm yết', attribute: 'Thuộc tính' };
+const kindLabel: Record<Facet['type'], string> = { brand: 'Thương hiệu', price: 'Giá niêm yết', option: 'Tuỳ chọn biến thể (SKU đang bán)', attribute: 'Thuộc tính' };
 
 function save(): void {
     form.transform((data) => ({ facets: data.facets.map(({ key, enabled, display }) => ({ key, enabled, display })) })).put(baseUrl.value, { preserveScroll: true });

@@ -20,7 +20,7 @@ Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặ
 | Đổi trả | `days_window` | |
 | Thông báo | Email (`mail`) | |
 | Đăng nhập | Mật khẩu, OTP email |
-| Tìm kiếm | Database (Meilisearch: plugin `vani.search-meilisearch`) |
+| Tìm kiếm | Database — truy vấn SQL (Owner, 2026-11-12: dự án dùng truy vấn SQL qua provider `database`, không cần Meilisearch — plugin `vani.search-meilisearch` đã gỡ) |
 | Tích hợp | Integration API, webhook, outbox/inbox, khung connector |
 
 ## 2. Ba plugin chứng minh kiến trúc (đã có trong repo)
@@ -92,7 +92,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 |---|---|---|
 | `vani.tracking-pixels` ✅ (GA4, Meta, GTM; server-side Meta CAPI + GA4 MP; đồng ý cookie) | Slot storefront, `OrderPlaced`, sự kiện `vani:cart-updated` | **Implemented** 2026-10-14 |
 | `vani.feed-export` (Google Merchant, Meta, TikTok catalog) | `CatalogReader`, scheduled task | P2 |
-| `vani.search-meilisearch` ✅ | `SearchProvider` + `ConfigurableSearchIndex` | P1 (tách từ Core 2026-10-14) |
+| ~~`vani.search-meilisearch`~~ ⛔ đã gỡ 2026-11-12 | `SearchProvider` + `ConfigurableSearchIndex` | Không cần: dự án tìm kiếm bằng SQL (provider `database`) |
 | `vani.search-algolia` / `vani.search-elastic` | `SearchProvider` | Later |
 | `vani.recommendation` | Hook listing, `StorefrontBlock` | Later |
 

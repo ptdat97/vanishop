@@ -47,9 +47,9 @@ final class ProductViews implements ProductCards
         $hidden = $this->visibility->hidden();
         if ($hidden && ($filters->priceMin !== null || $filters->priceMax !== null || in_array($filters->sort, [ProductSearchQuery::SORT_PRICE_ASC, ProductSearchQuery::SORT_PRICE_DESC], true))) {
             $filters = new ProductFilters(
-                now: $filters->now, text: $filters->text, categorySlug: $filters->categorySlug, collectionSlug: $filters->collectionSlug, colorFamilies: $filters->colorFamilies,
+                now: $filters->now, text: $filters->text, categorySlug: $filters->categorySlug, collectionSlug: $filters->collectionSlug,
                 attributes: $filters->attributes, sort: str_starts_with($filters->sort, 'price_') ? ProductSearchQuery::SORT_NEWEST : $filters->sort,
-                page: $filters->page, perPage: $filters->perPage, brandSlugs: $filters->brandSlugs, sizeCodes: $filters->sizeCodes,
+                page: $filters->page, perPage: $filters->perPage, brandSlugs: $filters->brandSlugs, options: $filters->options,
             );
         }
         $listing = $this->catalog->searchProducts($filters, $locale);

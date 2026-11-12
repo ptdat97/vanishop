@@ -11,7 +11,7 @@ use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Extension\Contracts\Extensions;
 
 /**
- * Chọn SearchProvider theo cấu hình (VANI_SEARCH_PROVIDER, mặc định `database`; `meilisearch` cần plugin vani.search-meilisearch) trong các provider có hiệu lực trong phạm vi hiện tại
+ * Chọn SearchProvider theo cấu hình (VANI_SEARCH_PROVIDER, mặc định `database` — truy vấn SQL, provider dự án đang dùng) trong các provider có hiệu lực trong phạm vi hiện tại
  * (SearchProvider do plugin cung cấp chỉ có mặt khi plugin được bật).
  */
 final class SearchManager
@@ -24,7 +24,7 @@ final class SearchManager
     ) {}
 
     /**
-     * Tìm kiếm cho storefront. Provider cấu hình (vd. Meilisearch) lỗi → dùng provider `database` để trang danh
+     * Tìm kiếm cho storefront. Provider cấu hình (plugin chỉ mục ngoài) lỗi → dùng provider `database` để trang danh
      * sách vẫn hoạt động.
      */
     public function search(ProductSearchQuery $query): ProductSearchResult

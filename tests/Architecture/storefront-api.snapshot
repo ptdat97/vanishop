@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.4.25
+Storefront API v1 — VaniShop 0.4.26
 GET /address/provinces security[]
   200
     $: object
@@ -3311,11 +3311,20 @@ GET /products security[none,customerBearer,firstPartySession]
     $.meta.facets: object|null
     $.meta.facets.attributes: array optional
     $.meta.facets.brands: array optional
-    $.meta.facets.color_families: object optional
+    $.meta.facets.options: array optional
+    $.meta.facets.options[]: object
+    $.meta.facets.options[].code: string
+    $.meta.facets.options[].display_type: string enum[swatch,button,dropdown]
+    $.meta.facets.options[].name: string
+    $.meta.facets.options[].values: array
+    $.meta.facets.options[].values[]: object
+    $.meta.facets.options[].values[].count: integer
+    $.meta.facets.options[].values[].label: string
+    $.meta.facets.options[].values[].swatch: string optional
+    $.meta.facets.options[].values[].value: string
     $.meta.facets.price: object|null optional
     $.meta.facets.price.max: integer
     $.meta.facets.price.min: integer
-    $.meta.facets.sizes: array optional
     $.meta.filters: array
     $.meta.filters[]: object
     $.meta.filters[].display: string

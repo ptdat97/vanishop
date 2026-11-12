@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 
 /**
  * URL cho bộ lọc/phân trang của trang danh sách: link thường (không cần JS — ADR-025), giữ các tham số khác,
- * giá trị nhiều lựa chọn nối bằng dấu phẩy như Storefront API (`?brand=a,b&color=black`). Khoá lồng viết bằng dấu chấm:
- * `attr.material` = `?attr[material]=silk,linen`.
+ * giá trị nhiều lựa chọn nối bằng dấu phẩy như Storefront API (`?brand=a,b&opt[color]=black`). Khoá lồng viết bằng dấu chấm:
+ * `attr.material` = `?attr[material]=silk,linen`, `opt.size` = `?opt[size]=S,M`.
  */
 final class ListingUrl
 {

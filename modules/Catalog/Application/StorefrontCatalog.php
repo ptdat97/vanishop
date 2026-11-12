@@ -14,6 +14,7 @@ use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Domain\ColorFamily;
+use Modules\Catalog\Domain\OptionDisplayType;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\AttributeValue;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -49,10 +50,9 @@ final class StorefrontCatalog implements CatalogReader
         $query = $this->toSearchQuery($filters, $locale);
         $result = $this->products->list($query, $locale);
         $facets = [
-            'color_families' => $result['facets']['color_families'],
             'attributes' => $this->attributeFacets($result['facets']['attribute_values'], $locale),
             'brands' => $this->brandFacets($result['facets']['brands'] ?? []),
-            'sizes' => $this->sizeFacets($result['facets']['sizes'] ?? []),
+            'options' => $this->optionFacets($result['facets']['options'] ?? [], $locale),
             'price' => $result['facets']['price'] ?? null,
         ];
 
@@ -157,27 +157,27 @@ final class StorefrontCatalog implements CatalogReader
             text: $filters->text,
             categoryId: $categoryId,
             collectionId: $collectionId,
-            colorFamilies: array_values(array_filter($filters->colorFamilies, fn (string $family): bool => ColorFamily::tryFrom($family) !== null)),
             attributeValueIds: $attributeValueIds,
             sort: in_array($filters->sort, ProductSearchQuery::SORTS, true) ? $filters->sort : ProductSearchQuery::SORT_NEWEST,
             page: $filters->page,
             perPage: $filters->perPage,
             priceMin: $filters->priceMin,
             priceMax: $filters->priceMax,
-            sizeCodes: array_values(array_unique(array_filter($filters->sizeCodes, fn (string $code): bool => $code !== '' && mb_strlen($code) <= 16))),
+            options: $this->optionFilters($filters->options),
         );
     }
 
     /**
      * Bộ lọc để hiển thị theo cấu hình Admin (§3.5-1): đúng thứ tự, bỏ facet tắt hoặc không có giá trị trong kết quả.
-     * `param` là khoá query của Storefront API / trang danh sách (`brand`, `color`, `attr.<mã>` = `attr[<mã>]`).
+     * `param` là khoá query của Storefront API / trang danh sách (`brand`, `opt.<mã>` = `opt[<mã>]`, `attr.<mã>` = `attr[<mã>]`).
      *
-     * @param  array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>, sizes: list<array{code: string, count: int}>, price: array{min: int, max: int}|null}  $facets
+     * @param  array{attributes: list<array<string, mixed>>, brands: list<array<string, mixed>>, options: list<array{code: string, name: string, display_type: string, values: list<array{value: string, label: string, count: int, swatch?: string}>}>, price: array{min: int, max: int}|null}  $facets
      * @return list<array{key: string, param: string, label: string, display: string, options: list<array{value: string, label: string, count: int, swatch?: string}>, range?: array{min: int, max: int}}>
      */
     private function filters(array $facets, string $locale): array
     {
         $attributes = collect($facets['attributes'])->keyBy('code');
+        $optionTypes = collect($facets['options'])->keyBy('code');
         $filters = [];
         foreach ($this->facetSettings->configured($locale) as $facet) {
             if (! $facet['enabled']) {
@@ -193,10 +193,7 @@ final class StorefrontCatalog implements CatalogReader
             }
             [$param, $options] = match ($facet['type']) {
                 'brand' => ['brand', array_map(fn (array $brand): array => ['value' => (string) $brand['slug'], 'label' => (string) $brand['name'], 'count' => (int) $brand['count']], $facets['brands'])],
-                'color' => ['color', array_map(fn (string $family, int $count): array => [
-                    'value' => $family, 'label' => __("catalog::labels.color_family.{$family}", [], $locale), 'count' => $count, 'swatch' => ColorFamily::tryFrom($family)?->swatch() ?? '#e5e7eb',
-                ], array_keys($facets['color_families']), array_values($facets['color_families']))],
-                'size' => ['size', array_map(fn (array $size): array => ['value' => $size['code'], 'label' => $size['code'], 'count' => $size['count']], $facets['sizes'])],
+                'option' => ["opt.{$facet['code']}", $optionTypes[$facet['code']]['values'] ?? []],
                 default => ["attr.{$facet['code']}", array_map(fn (array $value): array => ['value' => (string) $value['code'], 'label' => (string) ($value['label'] ?? $value['code']), 'count' => (int) $value['count']], $attributes[$facet['code']]['values'] ?? [])],
             };
             if ($options !== []) {
@@ -208,21 +205,61 @@ final class StorefrontCatalog implements CatalogReader
     }
 
     /**
-     * Size có sản phẩm trong kết quả, theo thứ tự hiển thị của size (S → M → L, 36 → 37 → 38).
+     * Mã lọc theo loại tuỳ chọn từ query: bỏ mã rỗng/quá dài và trùng. Loại không tồn tại vẫn giữ → không sản phẩm nào khớp
+     * (không âm thầm bỏ bộ lọc).
      *
-     * @param  array<string, int>  $counts  mã size => số sản phẩm
-     * @return list<array{code: string, count: int}>
+     * @param  array<string, list<string>>  $options
+     * @return array<string, list<string>>
      */
-    private function sizeFacets(array $counts): array
+    private function optionFilters(array $options): array
+    {
+        $clean = [];
+        foreach ($options as $typeCode => $tokens) {
+            $tokens = array_values(array_unique(array_filter(array_map('strval', $tokens), fn (string $token): bool => $token !== '' && mb_strlen($token) <= 32)));
+            if ($tokens !== [] && mb_strlen((string) $typeCode) <= 32) {
+                $clean[(string) $typeCode] = $tokens;
+            }
+        }
+
+        return $clean;
+    }
+
+    /**
+     * Facet theo loại tuỳ chọn lọc được (ADR-045), theo thứ tự loại. Loại ô màu: lựa chọn là nhóm màu (nhãn theo ngôn ngữ,
+     * màu đại diện), theo thứ tự nhóm màu; loại khác: mã giá trị, nhãn là tên giá trị, theo thứ tự nhóm → vị trí giá trị.
+     *
+     * @param  array<string, array<string, int>>  $counts  mã loại => mã lọc => số sản phẩm
+     * @return list<array{code: string, name: string, display_type: string, values: list<array{value: string, label: string, count: int, swatch?: string}>}>
+     */
+    private function optionFacets(array $counts, string $locale): array
     {
         if ($counts === []) {
             return [];
         }
 
-        $order = OptionValue::query()->whereHas('type', fn ($query) => $query->where('code', OptionType::SIZE))
-            ->whereIn('code', array_map('strval', array_keys($counts)))->orderBy('group')->orderBy('position')->pluck('code')->unique()->values()->all();
+        $types = OptionType::query()->with(['translations', 'values' => fn ($query) => $query->orderBy('group')->orderBy('position'), 'values.translations'])
+            ->where('is_filterable', true)->whereIn('code', array_map('strval', array_keys($counts)))->orderBy('position')->orderBy('code')->get();
+        $facets = [];
+        foreach ($types as $type) {
+            $typeCounts = $counts[$type->code] ?? [];
+            if ($type->display_type === OptionDisplayType::Swatch) {
+                $values = [];
+                foreach (ColorFamily::cases() as $family) {
+                    if (isset($typeCounts[$family->value])) {
+                        $values[] = ['value' => $family->value, 'label' => __("catalog::labels.color_family.{$family->value}", [], $locale), 'count' => (int) $typeCounts[$family->value], 'swatch' => $family->swatch()];
+                    }
+                }
+            } else {
+                $values = $type->values->filter(fn (OptionValue $value): bool => isset($typeCounts[$value->code]))->unique('code')
+                    ->map(fn (OptionValue $value): array => ['value' => $value->code, 'label' => (string) ($value->label($locale) ?: $value->code), 'count' => (int) $typeCounts[$value->code]])
+                    ->values()->all();
+            }
+            if ($values !== []) {
+                $facets[] = ['code' => $type->code, 'name' => (string) ($type->translate('name', $locale) ?? $type->code), 'display_type' => $type->display_type->value, 'values' => $values];
+            }
+        }
 
-        return array_map(fn (string $code): array => ['code' => $code, 'count' => (int) $counts[$code]], array_map('strval', $order));
+        return $facets;
     }
 
     /**

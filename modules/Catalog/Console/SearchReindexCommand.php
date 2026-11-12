@@ -17,7 +17,7 @@ use Modules\Shared\Context\CurrentContext;
  */
 final class SearchReindexCommand extends Command
 {
-    protected $signature = 'vani:search:reindex {--setup : Cấu hình chỉ mục trước (provider có chỉ mục ngoài, vd. plugin Meilisearch)}';
+    protected $signature = 'vani:search:reindex {--setup : Cấu hình chỉ mục trước (provider có chỉ mục ngoài do plugin cung cấp)}';
 
     protected $description = 'Index lại toàn bộ sản phẩm vào search provider đang cấu hình';
 

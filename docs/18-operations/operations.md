@@ -23,14 +23,13 @@ flowchart TB
     LB --> W2[Web node N]
     W1 & W2 --> PG[(MySQL 8.4<br/>primary + replica)]
     W1 & W2 --> RD[(Redis<br/>cache, session, queue, lock)]
-    W1 & W2 --> MS[(Meilisearch)]
     W1 & W2 --> S3[(Object Storage)]
-    Q1[Queue workers<br/>Horizon] --> PG & RD & MS & S3
+    Q1[Queue workers<br/>Horizon] --> PG & RD & S3
     SCH[Scheduler<br/>1 instance] --> RD
     Q1 --> EXT[[ERP / Cổng TT / Hãng VC / đối tác webhook]]
 ```
 
-- **Toàn bộ hạ tầng và dữ liệu đặt tại Việt Nam** từ slice Foundation ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)): Viettel IDC, FPT Cloud, VNG Cloud, BizFly Cloud hoặc CMC Cloud (Owner chọn trực tiếp). Ưu tiên managed MySQL + object storage S3-compatible; Redis/Meilisearch tự vận hành nếu không có managed.
+- **Toàn bộ hạ tầng và dữ liệu đặt tại Việt Nam** từ slice Foundation ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)): Viettel IDC, FPT Cloud, VNG Cloud, BizFly Cloud hoặc CMC Cloud (Owner chọn trực tiếp). Ưu tiên managed MySQL + object storage S3-compatible; Redis tự vận hành nếu không có managed. Không cần Meilisearch: tìm kiếm bằng truy vấn SQL (Owner, 2026-11-12).
 - Triển khai bằng container (Docker), hạ tầng mô tả bằng mã (Terraform/Ansible) để có thể đổi nhà cung cấp.
 - Backup khác vùng: 2 DC (Hà Nội ↔ TP.HCM).
 - Web node **stateless**; session/cache ở Redis; file ở object storage.

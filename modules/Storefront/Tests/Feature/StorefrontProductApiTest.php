@@ -1,5 +1,6 @@
 <?php
 
+use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
@@ -82,9 +83,22 @@ it('lọc theo danh mục cha gồm cả danh mục con', function () {
     $this->getJson('/api/storefront/v1/products?category=khong-co', $this->headers)->assertJsonPath('meta.total', 0);
 });
 
-it('lọc theo màu và thuộc tính, kèm facet', function () {
-    $response = $this->getJson('/api/storefront/v1/products?color=black', $this->headers)->assertJsonPath('meta.total', 1);
-    expect($response->json('meta.facets.color_families'))->toBe(['black' => 1, 'white' => 1]);
+it('lọc theo loại tuỳ chọn (màu theo nhóm màu của SKU đang bán) và thuộc tính, kèm facet', function () {
+    // Màu chưa có SKU không tính khi lọc.
+    $this->getJson('/api/storefront/v1/products?opt[color]=black', $this->headers)->assertJsonPath('meta.total', 0);
+    $size = T::seed(fn () => OptionValue::factory()->size()->create(['code' => 'F']));
+    foreach ([[$this->silkDress, $this->black], [$this->linenShirt, $this->white]] as [$style, $color]) {
+        T::optionValues($style, $size);
+        T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$color->id, $size->id]));
+    }
+
+    $response = $this->getJson('/api/storefront/v1/products?opt[color]=black', $this->headers)->assertJsonPath('meta.total', 1);
+    $facets = collect($response->json('meta.facets.options'))->keyBy('code');
+    expect(collect($facets['color']['values'])->pluck('count', 'value')->all())->toBe(['white' => 1, 'black' => 1])
+        ->and($facets['color']['display_type'])->toBe('swatch')
+        ->and($facets['size']['values'])->toBe([['value' => 'F', 'label' => 'F', 'count' => 1]]);
+    $this->getJson('/api/storefront/v1/products?opt[color]=black,white&opt[size]=F', $this->headers)->assertJsonPath('meta.total', 2);
+    $this->getJson('/api/storefront/v1/products?opt[chat-lieu]=x', $this->headers)->assertJsonPath('meta.total', 0);
 
     $this->getJson('/api/storefront/v1/products?attr[material]=silk,linen', $this->headers)->assertJsonPath('meta.total', 2);
     $this->getJson('/api/storefront/v1/products?attr[material]=silk', $this->headers)

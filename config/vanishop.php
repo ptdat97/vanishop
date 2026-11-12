@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.4.25',
+    'version' => '0.4.26',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -387,8 +387,8 @@ return [
     ],
 
     'search' => [
-        // database (mặc định, không cần hạ tầng) | mã provider do plugin đăng ký (vd. meilisearch — plugin
-        // vani.search-meilisearch, cấu hình MEILISEARCH_* nằm trong plugin). Provider chưa bật → dùng database.
+        // database (mặc định — truy vấn SQL, không cần hạ tầng; dự án hiện chỉ dùng provider này, đã gỡ plugin Meilisearch)
+        // | mã provider do plugin đăng ký qua extension point SearchProvider. Provider chưa bật → dùng database.
         'provider' => env('VANI_SEARCH_PROVIDER', 'database'),
     ],
 

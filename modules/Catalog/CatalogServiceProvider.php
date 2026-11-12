@@ -86,7 +86,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CollectionDirectory::class, EloquentCollectionDirectory::class);
         $this->app->bind(CatalogLookup::class, EloquentCatalogLookup::class);
         $this->app->singleton(DatabaseSearchProvider::class);
-        // Meilisearch/Algolia/Elasticsearch là plugin (vani.search-meilisearch…).
+        // Tìm kiếm bằng truy vấn SQL (provider `database`); chỉ mục ngoài (nếu cần sau này) là plugin qua SearchProvider.
         $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchProvider::TAG);
         $this->app->make(Extensions::class)->requires(SearchProvider::TAG, Requirement::ExactlyOne, 'Tìm kiếm sản phẩm');
         $this->app->make(Extensions::class)->kindContract('search', SearchProvider::TAG);

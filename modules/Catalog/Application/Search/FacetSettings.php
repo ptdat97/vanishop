@@ -6,34 +6,41 @@ namespace Modules\Catalog\Application\Search;
 
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Domain\AttributeKind;
+use Modules\Catalog\Domain\OptionDisplayType;
 use Modules\Catalog\Persistence\Models\Attribute;
+use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Bộ lọc của trang danh sách do Admin cấu hình (reference-parity §3.5-1, Admin → Catalog → Bộ lọc): bật/tắt, thứ tự,
- * kiểu hiển thị. Lưu ở `core`/`catalog.facets` = list<{key, enabled, display}>. Facet có sẵn: thương hiệu, nhóm màu,
- * size (0.4.3), từng thuộc tính spec đánh dấu "dùng để lọc". Facet mới (thuộc tính vừa bật lọc) tự thêm cuối danh sách,
- * đang bật. `price` (0.4.4) là khoảng giá niêm yết, kiểu hiển thị `range`.
+ * kiểu hiển thị. Lưu ở `core`/`catalog.facets` = list<{key, enabled, display}>. Facet có sẵn: thương hiệu, giá (`price`,
+ * kiểu `range`), từng loại tuỳ chọn biến thể đánh dấu "lọc được" (`opt:<mã>`, ADR-045 — loại ô màu lọc theo nhóm màu, hiển
+ * thị ô màu hoặc danh sách), từng thuộc tính spec đánh dấu "dùng để lọc" (`attr:<mã>`). Facet mới tự thêm cuối danh sách,
+ * đang bật.
  */
 final class FacetSettings
 {
     public const SETTING = 'catalog.facets';
 
-    public const DISPLAYS = ['list', 'swatch'];
-
     public function __construct(private readonly Settings $settings) {}
 
     /**
-     * @return array<string, array{key: string, type: 'brand'|'color'|'size'|'price'|'attribute', code: string|null, label: string, displays: list<string>}>
+     * @return array<string, array{key: string, type: 'brand'|'price'|'option'|'attribute', code: string|null, label: string, displays: list<string>}>
      */
     public function available(string $locale): array
     {
         $facets = [
             'brand' => ['key' => 'brand', 'type' => 'brand', 'code' => null, 'label' => __('catalog::labels.facet.brand', [], $locale), 'displays' => ['list']],
-            'color' => ['key' => 'color', 'type' => 'color', 'code' => null, 'label' => __('catalog::labels.facet.color', [], $locale), 'displays' => self::DISPLAYS],
             'price' => ['key' => 'price', 'type' => 'price', 'code' => null, 'label' => __('catalog::labels.facet.price', [], $locale), 'displays' => ['range']],
-            'size' => ['key' => 'size', 'type' => 'size', 'code' => null, 'label' => __('catalog::labels.facet.size', [], $locale), 'displays' => ['list']],
         ];
+        $optionTypes = OptionType::query()->with('translations')->where('is_filterable', true)->orderBy('position')->orderBy('code')->get();
+        foreach ($optionTypes as $type) {
+            $facets["opt:{$type->code}"] = [
+                'key' => "opt:{$type->code}", 'type' => 'option', 'code' => $type->code, 'label' => (string) ($type->translate('name', $locale) ?? $type->code),
+                // Ô màu: mặc định hiện ô màu theo nhóm màu.
+                'displays' => $type->display_type === OptionDisplayType::Swatch ? ['swatch', 'list'] : ['list'],
+            ];
+        }
         $attributes = Attribute::query()->with('translations')->where('kind', AttributeKind::Spec)->where('is_filterable', true)->orderBy('position')->orderBy('code')->get();
         foreach ($attributes as $attribute) {
             $facets["attr:{$attribute->code}"] = ['key' => "attr:{$attribute->code}", 'type' => 'attribute', 'code' => $attribute->code, 'label' => (string) ($attribute->translate('name', $locale) ?? $attribute->code), 'displays' => ['list']];

@@ -13,7 +13,7 @@
 > | Media: thư viện dùng chung, khử trùng lặp theo SHA-256 + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
 > | Thư viện ảnh dùng chung `/{admin}/media` (2026-10-08): thư mục ảo `media_folders` + `media.folder` (slug, lồng tối đa 4 cấp, đổi tên kéo theo con, chỉ xoá thư mục rỗng), tải lên/kéo thả (jpg/png/webp ≤ 10 MB, 20 ảnh/lần), tìm theo tên mọi thư mục, sắp xếp, đổi tên hiển thị, chuyển thư mục, xoá chỉ ảnh không còn dùng (kèm file gốc + bản thu nhỏ). Modal chọn ảnh `MediaPicker` (`resources/js/admin/Components/Media`) ở ảnh màu sản phẩm và ảnh danh mục. Quyền `media.view` (xem/chọn), `media.manage` (ghi) | Implemented |
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
-> | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, màu, thuộc tính; facet) và `meilisearch` (REST, không cần SDK — **plugin `vani.search-meilisearch`** từ 2026-10-14); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
+> | `SearchProvider`: `database` (tìm không dấu qua `styles.search_text`, lọc danh mục gồm danh mục con, loại tuỳ chọn biến thể, thuộc tính; facet) — **dự án chỉ dùng provider này (truy vấn SQL)**; plugin `vani.search-meilisearch` đã gỡ 2026-11-12 (Owner: không cần Meilisearch); chọn bằng `VANI_SEARCH_PROVIDER` (provider chưa bật → `database`); `vani:search:reindex [--setup]` (`--setup` cho provider implement `ConfigurableSearchIndex`) | Implemented |
 > | Variant/SKU (màu × size, SKU/barcode duy nhất, sinh ma trận), bảng giá cấp cửa hàng (có thể gắn nhóm khách), `PricingStrategy` `price_list_priority`, `price_history` | Implemented (slice 3) |
 > | Giá thành viên theo nhóm khách (0.3.35): bảng giá gắn `customer_group_id` (loại `member` bắt buộc), `PricingContext.customerId` → `PriceResolver` tự tra nhóm qua `Pricing\Contracts\CustomerGroupDirectory` (module Customer cung cấp); giỏ/checkout của khách đăng nhập tính giá nhóm; trang công khai (cache) hiện giá chung, giá thành viên qua `GET /api/storefront/v1/me/prices` (JS của theme gọi bằng phiên cùng nguồn, ADR-044) | Implemented |
 > | Giá theo số lượng, import Excel giá | Designed |
@@ -127,7 +127,7 @@ Core dùng strategy được cấu hình cho cửa hàng; giá trả về vẫn 
 - Trường tìm: tên (có dấu + không dấu), mã, **brand**, màu, chất liệu, danh mục.
 - Facet: danh mục, **brand**, color_family, size **còn hàng**, khoảng giá, chất liệu, bộ sưu tập.
 - Đồng bộ index qua event `ProductUpdated`, `PriceChanged`, `AvailabilityChanged` (debounce 5–30 giây).
-- Provider tìm kiếm là extension point `SearchProvider` (`index`, `remove`, `search(query, filters, facets)`); mặc định `database`; `meilisearch`, Algolia, Elasticsearch là plugin.
+- Provider tìm kiếm là extension point `SearchProvider` (`index`, `remove`, `search(query, filters, facets)`); mặc định `database` (truy vấn SQL) — provider dự án đang dùng, không cần Meilisearch (plugin đã gỡ 2026-11-12). Chỉ mục ngoài (Meilisearch, Algolia, Elasticsearch…) chỉ thêm lại dưới dạng plugin khi Owner quyết định.
 - Từ đồng nghĩa tiếng Việt: "đầm = váy liền", "sơ mi = shirt", "quần bò = jeans".
 
 ## 8. Import / Export

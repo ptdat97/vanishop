@@ -10,8 +10,8 @@ use Modules\Catalog\Contracts\Data\ProductSearchResult;
 
 /**
  * Extension point: nhà cung cấp tìm kiếm sản phẩm (tag vani.search.providers).
- * Core có "database"; chỉ mục ngoài là plugin: vani.search-meilisearch (Algolia, Elasticsearch… tương tự). Provider có chỉ mục
- * cần cấu hình implement thêm ConfigurableSearchIndex.
+ * Core có "database" (truy vấn SQL — provider dự án đang dùng; plugin Meilisearch đã gỡ 2026-11-12). Chỉ mục ngoài, nếu cần sau
+ * này, là plugin; provider có chỉ mục cần cấu hình implement thêm ConfigurableSearchIndex.
  *
  * @see docs/04-extension/extension-point-catalog.md
  */

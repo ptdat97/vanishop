@@ -51,14 +51,13 @@ flowchart LR
     CDN[CDN + WAF] --> WEB[Web nodes<br/>PHP-FPM / Octane]
     WEB --> DB[(MySQL 8.4)]
     WEB --> R[(Redis<br/>cache · session · lock · queue)]
-    WEB --> S[(Meilisearch)]
     WEB --> OBJ[(Object storage)]
     WK[Queue workers<br/>Horizon] --> DB & R & S & OBJ
     WK --> EXT[[External APIs]]
     SCH[Scheduler] --> R
 ```
 
-Sơ đồ thể hiện hạ tầng mục tiêu, không phải các mặc định đang chạy: ứng dụng hiện mặc định dùng database cho cache/queue và local/public disk cho file; Redis, Horizon, Meilisearch, S3-compatible storage và CDN cần cấu hình theo môi trường. Tất cả đặt tại trung tâm dữ liệu ở Việt Nam theo định hướng ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Chi tiết: [operations](../18-operations/operations.md).
+Sơ đồ thể hiện hạ tầng mục tiêu, không phải các mặc định đang chạy: ứng dụng hiện mặc định dùng database cho cache/queue và local/public disk cho file; Redis, Horizon, S3-compatible storage và CDN cần cấu hình theo môi trường. Tìm kiếm chạy bằng truy vấn SQL trên MySQL, không có máy chủ tìm kiếm riêng (Owner, 2026-11-12). Tất cả đặt tại trung tâm dữ liệu ở Việt Nam theo định hướng ([ADR-018](../19-adr/ADR-018-infrastructure-vietnam.md)). Chi tiết: [operations](../18-operations/operations.md).
 
 ## 4. Cấu trúc thư mục dự án
 
@@ -102,7 +101,7 @@ Cấu trúc bên trong module: [bounded-contexts §4](bounded-contexts.md). Cấ
 | Hook | `tormjens/eventy`, bọc bởi facade `Modules\Extension\Facades\Hook` | Implemented |
 | CSDL | MySQL 8.4 LTS, InnoDB, `utf8mb4` ([ADR-016](../19-adr/ADR-016-mysql.md)) | Implemented (dev: MySQL 9.7; CI: 8.4) |
 | Cache / Queue / Lock | Database mặc định; Horizon có trong dependencies và dùng Redis khi được cấu hình | Partially Implemented |
-| Tìm kiếm | `SearchProvider`; database là mặc định, Meilisearch là plugin tuỳ chọn `vani.search-meilisearch` | Partially Implemented |
+| Tìm kiếm | `SearchProvider`; dự án dùng `database` (truy vấn SQL), không cần Meilisearch — plugin `vani.search-meilisearch` đã gỡ 2026-11-12 | Implemented |
 | File | Local/public disk mặc định; có cấu hình S3-compatible cho production, CDN tuỳ deployment | Partially Implemented |
 | Admin | Inertia v3 + Vue 3 + TypeScript 5.9 + Tailwind 4 ([ADR-017](../19-adr/ADR-017-admin-ui-inertia.md)) | Implemented; độ phủ capability xem [status](../00-overview/status.md) |
 | Storefront | Blade SSR + JavaScript thuần + Tailwind 4, theme `custom/theme/vani-base` | Partially Implemented |

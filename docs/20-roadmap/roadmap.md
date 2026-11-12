@@ -203,7 +203,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | SSR-first, JS tuỳ chọn cho luồng mua | ✅ | ADR-025 |
 | Home/danh mục/thương hiệu/tìm kiếm/PDP/giỏ/checkout/tài khoản/đơn | ✅ | |
 | Gửi yêu cầu đổi/trả trên storefront native | ✅ | 2026-10-08: trang đơn (tài khoản + token phiên) có danh sách yêu cầu, huỷ khi chờ duyệt, form trả hoàn tiền / đổi size-màu cùng mẫu (size hết hàng bị khoá), chạy không cần JS ([storefront](../14-storefront/storefront.md)) |
-| Abstraction tìm kiếm | ✅ | `SearchProvider` (`database` trong Core, Meilisearch là plugin). Không thêm abstraction `SearchEngine` mới |
+| Abstraction tìm kiếm | ✅ | `SearchProvider` (`database` trong Core — truy vấn SQL, dự án chỉ dùng provider này; plugin Meilisearch đã gỡ 2026-11-12). Không thêm abstraction `SearchEngine` mới |
 | Cache CDN | ✅ | 0.3.34: trang công khai chạy không phiên (`vani.page-cache`), HTML dùng chung, `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`; phần riêng của khách qua `GET /_vani/phien` + JS; plugin `storefrontPages(cacheable: true)` (CMS dùng). Chưa có: purge CDN theo event ([storefront §5](../14-storefront/storefront.md)) |
 
 ### Phase 8. Promotion / Pricing

@@ -8,7 +8,7 @@ import { codeOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { NavItem, Translations } from '../../types';
 
@@ -70,6 +70,22 @@ function submitType(): void {
     else typeForm.post(baseUrl.value, options);
 }
 
+/** Nút "Thêm loại tuỳ chọn" / "Thêm giá trị": về chế độ tạo mới và đưa con trỏ tới ô tên. */
+const typeFormEl = ref<HTMLFormElement | null>(null);
+const valueFormEl = ref<HTMLFormElement | null>(null);
+function focusForm(el: HTMLFormElement | null): void {
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el?.querySelector<HTMLInputElement>('input')?.focus();
+}
+function startNewType(): void {
+    resetType();
+    nextTick(() => focusForm(typeFormEl.value));
+}
+function startNewValue(): void {
+    resetValue();
+    nextTick(() => focusForm(valueFormEl.value));
+}
+
 async function destroyType(type: TypeRow): Promise<void> {
     if ((await confirmAction({ title: `Xoá loại tuỳ chọn ${typeName(type)}?`, message: 'Xoá cả các giá trị của loại này.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${type.id}`, { preserveScroll: true });
@@ -127,7 +143,9 @@ const valueColumns = [
 <template>
     <Head title="Tuỳ chọn biến thể" />
     <CatalogTabs :nav="nav" active="option-types" />
-    <PageHeader title="Tuỳ chọn biến thể" subtitle="Loại tuỳ chọn dùng chung (Màu, Size, Chất liệu…). Mỗi sản phẩm chọn 1–3 loại làm trục biến thể." />
+    <PageHeader title="Tuỳ chọn biến thể" subtitle="Loại tuỳ chọn dùng chung (Màu, Size, Chất liệu, Dung tích…). Mỗi sản phẩm chọn 1–3 loại làm trục biến thể.">
+        <button v-if="canManage" type="button" :class="primaryButton" @click="startNewType">Thêm loại tuỳ chọn</button>
+    </PageHeader>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
@@ -148,7 +166,10 @@ const valueColumns = [
             </DataTable>
 
             <section v-if="selected" class="space-y-3">
-                <h2 class="text-sm font-medium">Giá trị của "{{ typeName(selected) }}"</h2>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-medium">Giá trị của "{{ typeName(selected) }}" <span class="font-normal text-slate-500">— bấm một loại ở bảng trên để xem giá trị của loại đó</span></h2>
+                    <button v-if="canManage" type="button" :class="secondaryButton" @click="startNewValue">Thêm giá trị</button>
+                </div>
                 <DataTable :columns="valueColumns" :rows="selected.values" :row-label="(value) => value.code" empty-text="Chưa có giá trị.">
                     <template #cell-name="{ row }">
                         <span class="flex items-center gap-2">
@@ -168,7 +189,7 @@ const valueColumns = [
         </div>
 
         <div v-if="canManage" class="space-y-6">
-            <form class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitType">
+            <form ref="typeFormEl" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitType">
                 <h2 class="text-sm font-medium">{{ editingTypeId ? 'Sửa loại tuỳ chọn' : 'Thêm loại tuỳ chọn' }}</h2>
                 <FormField v-for="option in locales" :key="option.code" :label="`Tên (${option.label})`" :error="typeErrors[`translations.${option.code}.name`]">
                     <input v-model="typeForm.translations[option.code].name" :class="inputClass" />
@@ -179,11 +200,11 @@ const valueColumns = [
                 <FormField label="Thứ tự" :error="typeErrors.position"><input v-model.number="typeForm.position" :class="inputClass" type="number" min="0" /></FormField>
                 <div class="flex gap-2">
                     <button type="submit" :class="primaryButton" :disabled="typeForm.processing">Lưu</button>
-                    <button v-if="editingTypeId" type="button" :class="secondaryButton" @click="resetType">Huỷ</button>
+                    <button v-if="editingTypeId" type="button" :class="secondaryButton" @click="resetType">Huỷ sửa</button>
                 </div>
             </form>
 
-            <form v-if="selected" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitValue">
+            <form v-if="selected" ref="valueFormEl" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitValue">
                 <h2 class="text-sm font-medium">{{ editingValueId ? 'Sửa giá trị' : `Thêm giá trị cho "${typeName(selected)}"` }}</h2>
                 <FormField v-for="option in locales" :key="option.code" :label="`Tên (${option.label})`" :error="valueErrors[`translations.${option.code}.name`]">
                     <input v-model="valueForm.translations[option.code].name" :class="inputClass" />

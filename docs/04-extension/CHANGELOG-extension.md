@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.26 — 2026-11-12
+
+Biến thể linh hoạt, đợt F2 — bộ lọc danh mục theo loại tuỳ chọn ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)). **Phá vỡ** tham số và facet lọc màu/size.
+
+### Đổi (phá vỡ)
+- Storefront API `GET /products` và trang danh sách: bỏ `?color=` (nhóm màu) và `?size=`; thay bằng `?opt[<mã loại>]=<mã>,…` cho mọi loại tuỳ chọn đánh dấu "lọc được". Loại kiểu ô màu lọc theo nhóm màu (`opt[color]=white,black`), loại khác theo mã giá trị (`opt[size]=S,M`, `opt[material]=COTTON`). Sản phẩm khớp khi có **SKU đang bán** mang giá trị đó (màu chưa có SKU không còn được tính). OR trong một loại, AND giữa các loại.
+- `meta.facets`: bỏ `color_families`, `sizes`; thêm `options[{code, name, display_type, values[{value, label, count, swatch?}]}]`. `meta.filters[]`: khoá `opt:<mã>`, `param` = `opt.<mã>`.
+- Admin → Catalog → Bộ lọc: facet `color`, `size` thay bằng `opt:<mã>` của từng loại lọc được (loại ô màu: hiển thị ô màu hoặc danh sách). Cấu hình đã lưu với khoá cũ bị bỏ, facet mới thêm cuối danh sách.
+- `Catalog\Contracts\Data\ProductSearchQuery`, `ProductFilters`: bỏ `$colorFamilies`, `$sizeCodes`; thêm `$options` (mã loại => mã lọc). `ProductDocument`: bỏ `$colorFamilies`, `$sizeCodes`; thêm `$options` (`"<mã loại>:<mã lọc>"` của SKU đang bán). `ProductSearchResult::$facets`: bỏ `color_families`, `sizes`; thêm `options` (mã loại => mã lọc => số sản phẩm).
+
+### Gỡ
+- Plugin `vani.search-meilisearch` (`custom/plugin/SearchMeilisearch`): dự án tìm kiếm bằng truy vấn SQL (provider `database`), không cần Meilisearch (Owner). Extension point `SearchProvider` giữ nguyên.
+
+### Thêm
+- Admin → Tuỳ chọn biến thể: nút "Thêm loại tuỳ chọn" ở đầu trang, "Thêm giá trị" ở bảng giá trị.
+
 ## 0.4.25 — 2026-11-12
 
 Biến thể linh hoạt, đợt F1 — dữ liệu Catalog ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md), [kế hoạch](../20-roadmap/flexible-variants.md)). **Phá vỡ** mô hình màu × size cố định.

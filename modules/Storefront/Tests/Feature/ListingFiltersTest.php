@@ -34,10 +34,11 @@ beforeEach(function () {
     T::seed(fn () => $shirt->valueOf('color')->update(['family' => 'white']));
 });
 
-it('mặc định: thương hiệu, màu, thuộc tính lọc được — đúng thứ tự, nhãn theo ngôn ngữ; facet không có giá trị thì ẩn', function () {
+it('mặc định: thương hiệu, loại tuỳ chọn lọc được (màu theo nhóm màu, size), thuộc tính lọc được — đúng thứ tự, nhãn theo ngôn ngữ; facet không có giá trị thì ẩn', function () {
     $filters = $this->getJson('/api/storefront/v1/products')->assertOk()->json('meta.filters');
 
-    expect(array_column($filters, 'key'))->toBe(['brand', 'color', 'size', 'attr:material'])
+    expect(array_column($filters, 'key'))->toBe(['brand', 'opt:color', 'opt:size', 'attr:material'])
+        ->and($filters[1])->toMatchArray(['param' => 'opt.color', 'label' => 'Màu', 'display' => 'swatch'])
         ->and(collect($filters[1]['options'])->firstWhere('value', 'black'))->toMatchArray(['label' => 'Đen', 'count' => 1, 'swatch' => '#111827'])
         ->and($filters[3])->toMatchArray(['param' => 'attr.material', 'label' => 'Chất liệu'])
         ->and($filters[3]['options'][0])->toMatchArray(['value' => 'silk', 'label' => 'Lụa']);
@@ -49,22 +50,24 @@ it('mặc định: thương hiệu, màu, thuộc tính lọc được — đún
 it('Admin → Catalog → Bộ lọc: đổi thứ tự, tắt, ô màu → storefront theo cấu hình; khoá lạ bị từ chối', function () {
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'catalog.view', 'catalog.manage'])->create(), 'staff');
     $this->get('/admin/catalog/filters')->assertOk()->assertInertia(fn (Assert $page) => $page->component('Catalog::Taxonomy/Filters')
-        ->where('facets.4.key', 'attr:material')->where('facets.2', fn ($facet) => $facet['key'] === 'price' && $facet['displays'] === ['range'])->where('facets.1.displays', ['list', 'swatch']));
+        ->where('facets.4.key', 'attr:material')->where('facets.1', fn ($facet) => $facet['key'] === 'price' && $facet['displays'] === ['range'])
+        ->where('facets.2', fn ($facet) => $facet['key'] === 'opt:color' && $facet['type'] === 'option' && $facet['displays'] === ['swatch', 'list'])->where('facets.3.displays', ['list']));
 
     $this->put('/admin/catalog/filters', ['facets' => [['key' => 'khong-co', 'enabled' => true, 'display' => 'list']]])->assertSessionHasErrors('facets.0.key');
     $this->put('/admin/catalog/filters', ['facets' => [['key' => 'brand', 'enabled' => true, 'display' => 'swatch']]])->assertSessionHasErrors('facets.0.display');
     $this->put('/admin/catalog/filters', ['facets' => [
         ['key' => 'attr:material', 'enabled' => true, 'display' => 'list'],
-        ['key' => 'color', 'enabled' => true, 'display' => 'swatch'],
+        ['key' => 'opt:color', 'enabled' => true, 'display' => 'list'],
         ['key' => 'brand', 'enabled' => false, 'display' => 'list'],
     ]])->assertSessionHasNoErrors();
 
     $filters = $this->getJson('/api/storefront/v1/products')->json('meta.filters');
-    expect(array_column($filters, 'key'))->toBe(['attr:material', 'color', 'size'])
-        ->and($filters[1]['display'])->toBe('swatch');
+    expect(array_column($filters, 'key'))->toBe(['attr:material', 'opt:color', 'opt:size'])
+        ->and($filters[1]['display'])->toBe('list');
 
-    $html = $this->get('/tim-kiem')->assertOk()->assertSee('data-filter="color"', false)->assertDontSee('data-filter="brand"', false)->getContent();
-    expect($html)->toContain('style="background: #111827"')
+    $html = $this->get('/tim-kiem')->assertOk()->assertSee('data-filter="opt:color"', false)->assertDontSee('data-filter="brand"', false)->getContent();
+    expect($html)->not->toContain('style="background: #111827"')
+        ->and($html)->toContain(e(url('/tim-kiem?opt%5Bcolor%5D=black')))
         ->and($html)->toContain(e(url('/tim-kiem?attr%5Bmaterial%5D=silk')));
 });
 
@@ -99,20 +102,20 @@ it('lọc theo size: sản phẩm có biến thể đang bán thuộc size đã 
     $list = fn (string $query = '') => $this->getJson('/api/storefront/v1/products'.$query)->assertOk();
     $slugs = fn ($response) => collect($response->json('data'))->pluck('slug')->sort()->values()->all();
 
-    $sizes = collect($list()->json('meta.filters'))->firstWhere('key', 'size');
-    expect($sizes)->toMatchArray(['param' => 'size', 'label' => 'Kích cỡ', 'display' => 'list'])
+    $sizes = collect($list()->json('meta.filters'))->firstWhere('key', 'opt:size');
+    expect($sizes)->toMatchArray(['param' => 'opt.size', 'label' => 'Size', 'display' => 'list'])
         ->and($sizes['options'])->toBe([
             ['value' => 'S', 'label' => 'S', 'count' => 1], ['value' => 'M', 'label' => 'M', 'count' => 2], ['value' => 'L', 'label' => 'L', 'count' => 1],
         ]);
 
-    expect($slugs($list('?size=S')))->toBe(['dam-lua-den'])
-        ->and($slugs($list('?size=S,L')))->toBe(['ao-thun-urbanx', 'dam-lua-den'])
-        ->and($slugs($list('?size=XL')))->toBe([])
+    expect($slugs($list('?opt[size]=S')))->toBe(['dam-lua-den'])
+        ->and($slugs($list('?opt[size]=S,L')))->toBe(['ao-thun-urbanx', 'dam-lua-den'])
+        ->and($slugs($list('?opt[size]=XL')))->toBe([])
         // AND với nhóm khác; facet size vẫn hiện mọi size của kết quả theo các nhóm còn lại.
-        ->and($slugs($list('?size=M&brand=urbanx')))->toBe(['ao-thun-urbanx'])
-        ->and(collect(collect($list('?size=S&brand=urbanx')->json('meta.filters'))->firstWhere('key', 'size')['options'])->pluck('value')->all())->toBe(['M', 'L']);
+        ->and($slugs($list('?opt[size]=M&brand=urbanx')))->toBe(['ao-thun-urbanx'])
+        ->and(collect(collect($list('?opt[size]=S&brand=urbanx')->json('meta.filters'))->firstWhere('key', 'opt:size')['options'])->pluck('value')->all())->toBe(['M', 'L']);
 
-    $this->get('/tim-kiem?size=S')->assertOk()->assertSee('data-filter="size"', false)->assertSee('Đầm lụa đen')->assertDontSee('Áo thun Urbanx');
+    $this->get('/tim-kiem?opt%5Bsize%5D=S')->assertOk()->assertSee('data-filter="opt:size"', false)->assertSee('Đầm lụa đen')->assertDontSee('Áo thun Urbanx');
 });
 
 it('lọc và sắp xếp theo giá niêm yết: khoảng giá của kết quả, price_min/price_max, giá đổi thì thứ tự đổi theo', function () {

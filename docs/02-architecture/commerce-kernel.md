@@ -124,7 +124,7 @@ flowchart TD
 | `ShippingCarrier` | ≥ 1 | `manual` (nhập mã vận đơn) | Core (trung lập) | `modules/Fulfillment/Application/Carriers` |
 | `NotificationChannel` | ≥ 1 | `mail` | Core (trung lập) | `modules/Notification/Application/Channels` |
 | `OtpSender` | ≥ 1 | `email` (`log` chỉ dev) | Core (trung lập) | `modules/Customer/Application/OtpSenders` |
-| `SearchProvider` | đúng 1 | `database` | Core (trung lập); `meilisearch` đã là plugin | `modules/Catalog/Application/Search` |
+| `SearchProvider` | đúng 1 | `database` | Core (trung lập, truy vấn SQL); plugin `meilisearch` đã gỡ 2026-11-12 — dự án không cần | `modules/Catalog/Application/Search` |
 | `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy` | đúng 1 | `price_list_priority`, `standard`, `reserved_locations` | Core (định nghĩa bất biến; plugin chỉ được thu hẹp) | `modules/*/Application` |
 | `ReturnPolicy` | đúng 1 | `days_window` | Core (trung lập) | `modules/Returns/Application` |
 | `PromotionAction` | — | `percent_off`, `amount_off` | Core (primitive) | `modules/Promotion/Application/Actions` |
