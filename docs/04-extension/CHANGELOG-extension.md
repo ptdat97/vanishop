@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.10 — 2026-11-12
+
+Yêu cầu đổi/trả của Storefront API và form Blade dùng một hợp đồng đầu vào (ADR-044 §2, đợt A1).
+
+### Đổi (phá vỡ)
+- Storefront API `POST /orders/{id}/returns`: nhận thêm `resolution` (`refund`/`exchange`, tuỳ chọn); yêu cầu có dòng đổi hàng thì mọi dòng phải có `exchange_variant_id` — trước đây API cho trộn dòng đổi với dòng hoàn tiền, form Blade thì không. Lỗi `validation.failed` ở `lines`.
+- Form đổi trả của Blade validate bằng cùng `ReturnRequestForm` (form được đổi sang dạng của API trước khi validate).
+
 ## 0.4.9 — 2026-11-12
 
 Checkout của Storefront API và form Blade dùng một hợp đồng đầu vào (ADR-044 §2, đợt A1).

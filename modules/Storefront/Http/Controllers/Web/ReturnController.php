@@ -7,12 +7,10 @@ namespace Modules\Storefront\Http\Controllers\Web;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Returns\Contracts\Returns;
+use Modules\Storefront\Http\Requests\ReturnRequestForm;
 
 /**
  * Khách gửi / huỷ yêu cầu đổi-trả trên storefront native (order §7, §7.1). Quyền xem đơn như trang đơn: token đơn trong
@@ -25,40 +23,15 @@ final class ReturnController
         private readonly Returns $returns,
     ) {}
 
-    public function store(Request $request, string $order, Session $session): RedirectResponse
+    public function store(ReturnRequestForm $request, string $order, Session $session): RedirectResponse
     {
+        // Cùng hợp đồng đầu vào với Storefront API (ADR-044): form Blade được đổi sang dạng chuẩn trong ReturnRequestForm.
         $detail = $this->detail($request, $order, $session);
-        $data = $request->validate([
-            'resolution' => ['required', Rule::in(['refund', 'exchange'])],
-            'lines' => ['required', 'array', 'max:50'],
-            'lines.*.quantity' => ['nullable', 'integer', 'min:0', 'max:1000'],
-            'lines.*.exchange_variant_id' => ['nullable', 'integer'],
-            'reason_code' => ['required', 'string', Rule::in(array_column($this->returns->reasons(App::getLocale()), 'code'))],
-            'note' => ['nullable', 'string', 'max:500'],
-            // Ảnh đính kèm (§3.13-3), kiểm trước khi tạo yêu cầu để không tạo yêu cầu rồi mới báo ảnh lỗi.
-            'photos' => ['nullable', 'array', 'max:'.Returns::MAX_ATTACHMENTS],
-            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-        ]);
+        $input = $request->toReturnInput();
 
-        $lines = [];
-        $exchanges = [];
-        foreach ($data['lines'] as $lineId => $line) {
-            $quantity = (int) ($line['quantity'] ?? 0);
-            if ($quantity <= 0) {
-                continue;
-            }
-            $lines[(int) $lineId] = $quantity;
-            if ($data['resolution'] === 'exchange') {
-                $exchanges[(int) $lineId] = (int) ($line['exchange_variant_id'] ?? 0) ?: throw ValidationException::withMessages(['lines' => __('storefront::messages.return_exchange_missing')]);
-            }
-        }
-        if ($lines === []) {
-            throw ValidationException::withMessages(['lines' => __('storefront::messages.return_nothing_selected')]);
-        }
-
-        $return = $this->returns->request($detail->id, $lines, $data['reason_code'], $data['note'] ?? null, 'customer', $exchanges);
-        if (($data['photos'] ?? []) !== []) {
-            $this->returns->attachPhotos($detail->id, $return->publicId, array_values($data['photos']), 'customer');
+        $return = $this->returns->request($detail->id, $input['lines'], $input['reason_code'], $input['note'], 'customer', $input['exchanges']);
+        if ($input['photos'] !== []) {
+            $this->returns->attachPhotos($detail->id, $return->publicId, $input['photos'], 'customer');
         }
 
         return back()->with('status', __('storefront::messages.return_requested', ['number' => $return->number]));
