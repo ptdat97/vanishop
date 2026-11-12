@@ -61,13 +61,19 @@ jobs:
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1"
           --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7.4
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
       - uses: actions/checkout@v4
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: mbstring, pdo_mysql, pdo_sqlite, intl
+          extensions: mbstring, pdo_mysql, pdo_sqlite, intl, redis
           coverage: none
 
       - uses: actions/setup-node@v4
@@ -94,6 +100,14 @@ jobs:
           DB_DATABASE: vanishop_testing
           DB_USERNAME: root
           DB_PASSWORD: ''
+
+      - name: Tests với cache + session trên Redis (khoá, rate limit, cache dùng chung — như production)
+        run: vendor/bin/pest --compact
+        env:
+          CACHE_STORE: redis
+          SESSION_DRIVER: redis
+          REDIS_HOST: 127.0.0.1
+          REDIS_CLIENT: phpredis
 
       - name: Concurrency tests — không oversell, không deadlock (MySQL 8.4, nhiều tiến trình)
         run: vendor/bin/pest --compact --group=concurrency

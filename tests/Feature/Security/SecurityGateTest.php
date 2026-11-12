@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Redis;
+
 /*
 | Go-live gate (bảo mật): header bảo mật trên mọi response; vani:security:check chặn cấu hình production sai.
 */
@@ -57,3 +59,24 @@ it('IP máy load test bỏ qua rate limit storefront ngoài production; ở prod
     }
     expect($track('10.0.0.9')->status())->toBe(429);
 });
+
+it('vani:security:check: Redis giữ queue/session phải noeviction; không kết nối được → lỗi', function (string|Throwable $info, ?string $message) {
+    app()->detectEnvironment(fn () => 'production');
+    config([
+        'app.debug' => false, 'app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.url' => 'https://shop.vn', 'session.secure' => true,
+        'vanishop.admin.path' => 'quan-tri-x9', 'mail.default' => 'smtp', 'vanishop.plugins.safe_mode' => false, 'vanishop.customer.otp.log_sender' => false,
+        'queue.default' => 'redis', 'session.driver' => 'redis', 'session.connection' => null,
+    ]);
+    $connection = Mockery::mock();
+    $info instanceof Throwable
+        ? $connection->shouldReceive('command')->with('info', ['memory'])->andThrow($info)
+        : $connection->shouldReceive('command')->with('info', ['memory'])->andReturn(['maxmemory_policy' => $info]);
+    Redis::shouldReceive('connection')->with('default')->andReturn($connection);
+
+    $command = $this->artisan('vani:security:check');
+    $message === null ? $command->expectsOutputToContain('Không có lỗi cấu hình')->assertSuccessful() : $command->expectsOutputToContain($message)->assertFailed();
+})->with([
+    'noeviction' => ['noeviction', null],
+    'allkeys-lru' => ['allkeys-lru', 'maxmemory-policy allkeys-lru'],
+    'không kết nối' => [new RuntimeException('Connection refused'), 'không kết nối được'],
+]);

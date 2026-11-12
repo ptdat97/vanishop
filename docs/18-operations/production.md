@@ -16,6 +16,15 @@
 | Object storage S3-compatible | Khuyến nghị | Ảnh catalog (`VANI_MEDIA_DISK=s3`) + bucket backup riêng |
 | Node.js | Chỉ lúc build | `npm ci && npm run build` trên CI, không cần trên server |
 
+### Bố trí Redis
+
+| Dùng cho | `maxmemory-policy` | Vì sao |
+|---|---|---|
+| Queue (Horizon), session, khoá (`onOneServer`, `Cache::lock`) | **`noeviction`** | Chính sách xoá khi đầy bộ nhớ sẽ âm thầm xoá job (đơn không được xử lý tiếp) và phiên đăng nhập. `vani:security:check` báo **lỗi** nếu Redis của queue/session không phải `noeviction` hoặc không kết nối được |
+| Cache (`CACHE_STORE=redis`, kết nối `cache`, `REDIS_CACHE_DB`) | `allkeys-lru` | Cache được phép bị xoá; đặt ở instance riêng (`REDIS_CACHE_HOST`) khi có thể. Cùng một instance thì giữ `noeviction` và đặt `maxmemory` đủ lớn — cache hết chỗ sẽ báo lỗi ghi thay vì xoá job |
+
+Khoá của scheduler và `Cache::lock` đi theo store cache: cache trên Redis dùng chung thì khoá mới có hiệu lực giữa các server. CI chạy cả bộ test thêm một lượt với cache + session trên Redis.
+
 ## 2. Biến môi trường production
 
 Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `config:cache`, `env()` ngoài thư mục `config/` trả null** — mọi cấu hình phải đi qua file config.

@@ -18,6 +18,10 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         $this->withoutVite();
+        // CI chạy thêm một lượt với cache trên Redis (stabilization R2): Redis không tự reset giữa test như store `array`.
+        if (config('cache.default') === 'redis') {
+            $this->app['cache']->store()->flush();
+        }
 
         $traits = class_uses_recursive($this);
         if (in_array(RefreshDatabase::class, $traits, true)) {

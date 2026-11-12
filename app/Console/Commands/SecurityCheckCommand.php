@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Redis;
+use Throwable;
 
 /**
  * Cổng cấu hình trước go-live / mỗi lần deploy production (docs/18-operations/production.md §5): kiểm tra cấu hình theo
@@ -64,6 +66,42 @@ final class SecurityCheckCommand extends Command
             ['warning', 'Backup chỉ lưu trên disk local — đặt VANI_BACKUP_DISKS=s3_backup (bucket riêng, khác vùng)', array_diff((array) config('backup.backup.destination.disks'), ['local']) === []],
             ['warning', 'VANI_ALERT_EMAILS trống — cảnh báo tự động chỉ ghi log', (array) config('vanishop.alerts.mail_to') === []],
             ['warning', 'VANI_HOOKS_STRICT đang bật — lỗi kiểu dữ liệu của hook sẽ ném exception thay vì ghi log', (bool) config('vanishop.hooks.strict')],
+            ...$this->redisChecks(),
         ];
+    }
+
+    /**
+     * Redis giữ queue/session phải dùng `maxmemory-policy noeviction`: chính sách xoá khoá khi đầy bộ nhớ (allkeys-lru…)
+     * sẽ âm thầm xoá job (đơn không được xử lý tiếp) và phiên đăng nhập. Cache nên ở instance riêng với allkeys-lru.
+     *
+     * @return list<array{0: 'error'|'warning', 1: string, 2: bool}>
+     */
+    private function redisChecks(): array
+    {
+        $durable = array_filter([
+            'queue' => config('queue.default') === 'redis' ? (string) config('queue.connections.redis.connection', 'default') : null,
+            'session' => config('session.driver') === 'redis' ? (string) (config('session.connection') ?? 'default') : null,
+        ]);
+
+        $checks = [];
+        foreach (array_unique($durable) as $connection) {
+            $users = implode(', ', array_keys($durable, $connection, true));
+            $policy = $this->evictionPolicy($connection);
+            $checks[] = ['error', "Redis [{$connection}] ({$users}) không kết nối được", $policy === null];
+            $checks[] = ['error', "Redis [{$connection}] ({$users}) đang dùng maxmemory-policy {$policy} — đặt noeviction, nếu không job/phiên đăng nhập có thể bị xoá khi đầy bộ nhớ (cache để instance riêng)", $policy !== null && $policy !== 'noeviction'];
+        }
+
+        return $checks;
+    }
+
+    private function evictionPolicy(string $connection): ?string
+    {
+        try {
+            $info = Redis::connection($connection)->command('info', ['memory']);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_array($info) ? (string) ($info['maxmemory_policy'] ?? $info['Memory']['maxmemory_policy'] ?? '') : null;
     }
 }
