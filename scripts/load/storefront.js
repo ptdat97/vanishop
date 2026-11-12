@@ -37,6 +37,7 @@ export function setup() {
     const products = http.get(`${API}/products?per_page=50`, { headers: JSON_HEADERS }).json('data') || [];
     const categories = (http.get(`${API}/categories`, { headers: JSON_HEADERS }).json('data') || []).map((category) => category.slug);
     const slugs = products.map((product) => product.slug);
+    const styleIds = products.map((product) => product.id);
     const variants = [];
     for (const slug of slugs.slice(0, 20)) {
         const detail = http.get(`${API}/products/${slug}`, { headers: JSON_HEADERS }).json('data');
@@ -46,7 +47,7 @@ export function setup() {
         fail('Không có sản phẩm/biến thể còn hàng — seed dữ liệu staging trước.');
     }
 
-    return { slugs, categories, variants };
+    return { slugs, styleIds, categories, variants };
 }
 
 export function browse(data) {
@@ -59,10 +60,25 @@ export function browse(data) {
     http.get(`${BASE}/_vani/phien`, { tags: { kind: 'api', name: 'session' } });
 }
 
+// Ứng dụng/headless và JS của theme (ADR-044): danh sách, chi tiết, gợi ý tìm kiếm, "vỏ" trang, beacon lượt xem.
 export function api(data) {
-    const response = Math.random() < 0.5
-        ? http.get(`${API}/products?per_page=24`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'products' } })
-        : http.get(`${API}/products/${randomItem(data.slugs)}`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'product' } });
+    const roll = Math.random();
+    let response;
+    if (roll < 0.35) {
+        response = http.get(`${API}/products?per_page=24`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'products' } });
+    } else if (roll < 0.7) {
+        response = http.get(`${API}/products/${randomItem(data.slugs)}`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'product' } });
+    } else if (roll < 0.85) {
+        response = http.get(`${API}/search/suggestions?q=${encodeURIComponent(randomItem(['đầm', 'áo', 'quần', 'váy']))}`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'suggestions' } });
+    } else if (roll < 0.95) {
+        response = http.get(`${API}/store`, { headers: JSON_HEADERS, tags: { kind: 'api', name: 'store' } });
+    } else {
+        // Beacon lượt xem như trình duyệt (phiên cùng nguồn, miễn CSRF) → 204.
+        response = http.post(`${API}/products/views`, JSON.stringify({ style_id: randomItem(data.styleIds) }), { headers: { ...JSON_HEADERS, 'Sec-Fetch-Site': 'same-origin' }, tags: { kind: 'api', name: 'views' } });
+        check(response, { 'beacon 204': (r) => r.status === 204 });
+
+        return;
+    }
     check(response, { 'api 200': (r) => r.status === 200 });
 }
 
@@ -83,7 +99,6 @@ export function checkout(data) {
         shipping_address: { province_code: '29', province_name: 'Thành phố Hồ Chí Minh', ward_code: '70101065', ward_name: 'Phường Bến Thành', street_line: '12 Lê Lợi' },
         shipping_method: 'standard',
         payment_method: 'cod',
-        voucher_codes: [],
     };
     const quote = http.post(`${API}/checkout/${cart}/quote`, JSON.stringify(order), { headers, tags: { ...tags, name: 'quote' } });
     if (!check(quote, { 'báo giá 200': (r) => r.status === 200 })) {

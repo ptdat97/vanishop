@@ -95,7 +95,8 @@ Xem [observability](../16-observability/observability.md) (log, metric, tracing,
 
 ## 9. Chuẩn bị mùa cao điểm (11.11, 12.12, Tết)
 
-- Load test (k6, `scripts/load/storefront.js`, overview §7) kịch bản flash sale trước 2 tuần: 3× tải dự kiến; nhớ xoá `VANI_LOAD_TEST_IPS` khỏi staging sau khi chạy.
+- Load test (k6, `scripts/load/storefront.js`, overview §7) kịch bản flash sale trước 2 tuần: 3× tải dự kiến; nhớ xoá `VANI_LOAD_TEST_IPS` khỏi staging sau khi chạy. Kịch bản gồm: duyệt trang HTML + `/_vani/phien`; Storefront API (danh sách, chi tiết, gợi ý tìm kiếm, `/store`, beacon lượt xem cùng nguồn); đặt đơn COD (giỏ → thêm hàng → báo giá → đặt). Sau khi chạy: `vani:inventory:verify` (0 oversell, sổ tồn khớp).
+- Số đo tham chiếu (2026-11-12, máy dev Herd, `APP_ENV=local`, dữ liệu demo, ApacheBench 5 kết nối song song, chỉ GET): `GET /products?per_page=24` p95 98 ms; `GET /products/{slug}` p95 70 ms; `GET /store` p95 30 ms; `GET /search/suggestions` p95 58 ms; trang chủ HTML p95 239 ms; trang sản phẩm HTML p95 44 ms; 0 lỗi. Trong NFR (API p95 < 200 ms, trang p95 < 300 ms) nhưng **chưa phải số liệu production**: một máy, không có tải ghi đồng thời, chưa đo luồng đặt đơn — đo lại bằng k6 trên staging cấu hình như production (Redis, opcache, `APP_DEBUG=false`).
 - Pre-warm cache, tăng worker, tạm dừng job `bulk`.
 - Flash sale: hàng đợi phòng chờ (waiting room) ở CDN nếu cần; counter tồn Redis.
 - Đóng băng deploy (code freeze) 48h trước và trong sự kiện.
