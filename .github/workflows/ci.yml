@@ -40,6 +40,9 @@ jobs:
       - name: Security advisories (composer audit)
         run: composer audit --no-dev
 
+      - name: Security advisories (npm audit, gói chạy ở production)
+        run: npm audit --omit=dev
+
       - name: Type check (Vue/TS)
         run: npx vue-tsc --noEmit -p tsconfig.json
       - name: Drag & Drop Engine (lõi thuần, node --test)

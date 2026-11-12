@@ -100,6 +100,7 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 | Cấu hình production | **Đã thêm** `php artisan vani:security:check` — lỗi (mã thoát 1): `APP_ENV`, `APP_DEBUG`, `APP_KEY`, `APP_URL` https, `SESSION_SECURE_COOKIE`, đường dẫn Admin mặc định, mailer log/array, safe mode, OTP ghi log; cảnh báo: allowlist Admin, token health, trusted proxies, queue/cache/session driver, đích backup, email cảnh báo, hook strict |
 | CSP | **Chưa bật**: layout có `<style>` token theme và JSON-LD inline, Inertia/Vite. Bước tiếp: `Content-Security-Policy-Report-Only` với nonce cho script/style inline, theo dõi một thời gian rồi chuyển sang chặn |
 | Pentest bên thứ ba | Chưa — cần trước go-live (go-live gate) |
+| Rà lại 2026-11-12 (stabilization R5) | Storefront API nhận phiên web cùng nguồn (ADR-044): khác nguồn/`same-site` không mở phiên; có `Authorization` thì bỏ qua phiên; ghi qua kiểm CSRF của Laravel — `Sec-Fetch-Site: same-origin` là đủ, trình duyệt cũ (chỉ có `Origin`) phải kèm token. Trước đây chưa có test vì Laravel tắt CSRF khi chạy test — nay `FirstPartySessionTest` bật lại CSRF thật. **Thêm** giới hạn riêng `vani-voucher` (10/phút/IP, dùng chung API + form) chống dò mã giảm giá — trước chỉ có giới hạn chung 240/phút. `composer audit` sạch sau bản vá symfony/livewire; CI thêm `npm audit --omit=dev`. Gọi dịch vụ ngoài trong transaction bị chặn ở dev/test (`ExternalCalls`). CSP và pentest vẫn chưa |
 
 ### 5.2 IP client và host an toàn (R1-1, 2026-11-03)
 

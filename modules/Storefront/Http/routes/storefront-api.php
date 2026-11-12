@@ -44,7 +44,7 @@ Route::middleware('vani.customer:optional')->group(function () {
         Route::patch('carts/{cart}/lines/{line}', [CartController::class, 'updateLine'])->whereNumber('line')->name('carts.lines.update');
         Route::delete('carts/{cart}/lines/{line}', [CartController::class, 'removeLine'])->whereNumber('line')->name('carts.lines.destroy');
         Route::put('carts/{cart}/selection', [CartController::class, 'selection'])->name('carts.selection');
-        Route::put('carts/{cart}/vouchers', [CartController::class, 'vouchers'])->name('carts.vouchers');
+        Route::put('carts/{cart}/vouchers', [CartController::class, 'vouchers'])->middleware('throttle:vani-voucher')->name('carts.vouchers');
 
         Route::post('checkout/{cart}/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
         Route::post('checkout/{cart}/orders', [CheckoutController::class, 'placeOrder'])->middleware('throttle:vani-checkout')->name('checkout.orders.store');

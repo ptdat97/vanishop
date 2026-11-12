@@ -6,7 +6,7 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ## 0.4.18 — 2026-11-12
 
-Production readiness (stabilization-2026-11 P1: R1–R4). Không đổi hành vi storefront.
+Production readiness (stabilization-2026-11 P1: R1–R5). Không đổi hành vi storefront.
 
 ### Đổi
 - Docblock contract khớp code: `CatalogReader::searchProducts()` có `facets.sizes`, `facets.price`, `filters`; `ShipmentView::$lines` là `{order_line_id, variant_id, quantity}`; `LinkType::resolve()` trả `array<array-key, …>` (PHP đổi khoá chuỗi số thành int).
@@ -14,6 +14,7 @@ Production readiness (stabilization-2026-11 P1: R1–R4). Không đổi hành vi
 
 ### Thêm
 - `vani:security:check`: lỗi khi Redis của queue/session không dùng `maxmemory-policy noeviction` hoặc không kết nối được.
+- Rate limiter `vani-voucher` (`vanishop.rate_limits.voucher`, 10/phút/IP) cho `PUT /carts/{cart}/vouchers` và form áp mã.
 - Metric `checkout.attempts`, `checkout.errors` (lỗi hệ thống của `Checkout::placeOrder`, không gồm từ chối nghiệp vụ); cảnh báo `checkout.error_rate`. Kênh log `json` có `extra.correlation_id`.
 - `vani:backup:drill --with-files`: diễn tập khôi phục cả phần file `storage/app` (giải nén, kiểm CRC, đối chiếu số file).
 - Kết nối Redis `cache` tách được sang instance riêng: `REDIS_CACHE_HOST`, `REDIS_CACHE_PORT`, `REDIS_CACHE_PASSWORD`, `REDIS_CACHE_URL`.

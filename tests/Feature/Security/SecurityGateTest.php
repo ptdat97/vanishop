@@ -80,3 +80,14 @@ it('vani:security:check: Redis giữ queue/session phải noeviction; không k�
     'allkeys-lru' => ['allkeys-lru', 'maxmemory-policy allkeys-lru'],
     'không kết nối' => [new RuntimeException('Connection refused'), 'không kết nối được'],
 ]);
+
+it('áp mã giảm giá bị giới hạn riêng theo IP (chống dò mã): API và form Blade dùng chung lượt', function () {
+    config(['vanishop.rate_limits.voucher' => 3]);
+    $cart = $this->postJson('/api/storefront/v1/carts')->assertCreated();
+    $apply = fn (string $code) => $this->putJson("/api/storefront/v1/carts/{$cart->json('data.id')}/vouchers", ['voucher_codes' => [$code]], ['X-Vani-Cart-Token' => $cart->json('meta.token')]);
+
+    $apply('THU1')->assertOk();
+    $apply('THU2')->assertOk();
+    $this->post('/gio-hang/ma-giam-gia', ['voucher_code' => 'THU3'])->assertRedirect();
+    $apply('THU4')->assertStatus(429)->assertJsonPath('error.code', 'http.429');
+});

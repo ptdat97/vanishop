@@ -17,8 +17,9 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Storefront API nhận phiên web của chính website (ADR-044 §4): request CÙNG NGUỒN (trình duyệt báo
  * `Sec-Fetch-Site: same-origin`, hoặc `Origin` trùng host) và không mang `Authorization` thì chạy phiên web như trang Blade
- * — JS của theme gọi API mà không phải giữ token trong JavaScript. Request ghi (POST/PUT/PATCH/DELETE) phải kèm token CSRF
- * của phiên (`X-CSRF-TOKEN`/`_token`). Client khác (app, headless, đối tác) vẫn dùng Bearer/cart token như cũ; request khác
+ * — JS của theme gọi API mà không phải giữ token trong JavaScript. Request ghi (POST/PUT/PATCH/DELETE) qua kiểm CSRF của
+ * Laravel: `Sec-Fetch-Site: same-origin` (trình duyệt tự đặt, trang khác nguồn không giả được) là đủ; trình duyệt cũ chỉ có
+ * `Origin` thì phải kèm token của phiên (`X-CSRF-TOKEN`/`_token`). Client khác (app, headless, đối tác) vẫn dùng Bearer/cart token như cũ; request khác
  * nguồn không bao giờ mở phiên. Đặt ĐẦU nhóm route Storefront API, trước middleware nhận diện khách.
  */
 final class FirstPartySession

@@ -152,6 +152,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         // Tra cứu đơn bằng số đơn + SĐT: chặn dò số điện thoại.
         RateLimiter::for('vani-order-track', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.order_track', 10)));
         RateLimiter::for('vani-checkout', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.checkout', 20)));
+        RateLimiter::for('vani-voucher', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.voucher', 10), 'voucher:'));
         RateLimiter::for('vani-cart-create', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.cart_create', 30)));
 
         $this->loadStorefrontApiRoutes($this->modulePath('Http/routes/storefront-api.php'));

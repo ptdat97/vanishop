@@ -76,6 +76,8 @@ return [
         'storefront_api' => (int) env('VANI_RATE_STOREFRONT_API', 240),
         'cart_create' => 30,
         'checkout' => 20,
+        // Áp mã giảm giá (API + form): chặn dò mã (security §5).
+        'voucher' => 10,
         'order_track' => 10,
         'customer_auth' => 20,
         // Callback/webhook từ cổng, hãng: cao vì đối tác gửi dồn từ ít IP.
