@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.11 — 2026-11-12
+
+Sổ địa chỉ, hồ sơ, mật khẩu khách: một hợp đồng đầu vào cho Storefront API và Blade (ADR-044 §2, đợt A1) — `Customer\Http\Requests\{AddressRequest, ProfileRequest, PasswordRequest}`.
+
+### Đổi
+- Storefront API `POST/PATCH /me/addresses`: cửa hàng **không** có danh mục địa giới → nhận tên tỉnh/phường (mã để trống), như form Blade; trước đây API luôn bắt mã nên cửa hàng nhập tự do không lưu được địa chỉ qua API.
+- `PUT /me/password`: khách đã có mật khẩu mà không gửi `current_password` → `validation.failed` ở trường đó (trước: `customer.password_mismatch`); gửi sai vẫn là `customer.password_mismatch`.
+- Form địa chỉ Blade: SĐT sai báo ở trường `phone` (trước: lỗi chung).
+
 ## 0.4.10 — 2026-11-12
 
 Yêu cầu đổi/trả của Storefront API và form Blade dùng một hợp đồng đầu vào (ADR-044 §2, đợt A1).

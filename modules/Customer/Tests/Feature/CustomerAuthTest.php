@@ -84,7 +84,10 @@ it('khách vãng lai đặt đơn → profile ẩn; đăng ký cùng SĐT → nh
 it('mật khẩu: đặt sau khi đăng nhập OTP, đăng nhập bằng mật khẩu, sai quá 5 lần bị chặn', function () {
     $token = H::login($this);
     $this->putJson(H::API.'/me/password', ['password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'], H::auth($token))->assertNoContent();
+    // Đã có mật khẩu: thiếu mật khẩu hiện tại → lỗi ở trường đó; nhập sai → lỗi nghiệp vụ (cùng luật với form Blade, ADR-044).
     $this->putJson(H::API.'/me/password', ['password' => 'khac-12345', 'password_confirmation' => 'khac-12345'], H::auth($token))
+        ->assertStatus(422)->assertJsonPath('error.code', 'validation.failed')->assertJsonPath('error.details.0.field', 'current_password');
+    $this->putJson(H::API.'/me/password', ['current_password' => 'sai-mat-khau', 'password' => 'khac-12345', 'password_confirmation' => 'khac-12345'], H::auth($token))
         ->assertStatus(422)->assertJsonPath('error.code', 'customer.password_mismatch');
 
     $this->postJson(H::API.'/auth/login', ['phone' => '0912345678', 'password' => 'mat-khau-123'], H::CHANNEL)->assertOk()->assertJsonPath('data.has_password', true);

@@ -7,10 +7,12 @@ namespace Modules\Storefront\Http\Controllers\Web;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Customer\Http\Requests\AddressRequest;
+use Modules\Customer\Http\Requests\PasswordRequest;
+use Modules\Customer\Http\Requests\ProfileRequest;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
 
@@ -34,27 +36,18 @@ final class AccountSettingsController
         return view('theme::pages.account.profile', ['customer' => $this->required($request)]);
     }
 
-    public function updateProfile(Request $request): RedirectResponse
+    public function updateProfile(ProfileRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
-        $data = $request->validate([
-            'full_name' => ['required', 'string', 'max:120'],
-            'email' => ['nullable', 'email', 'max:190'],
-            'birth_date' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
-            'gender' => ['nullable', Rule::in(['female', 'male', 'other'])],
-        ]);
-        $this->accounts->updateProfile($customer->id, $data);
+        $this->accounts->updateProfile($customer->id, $request->validated());
 
         return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', __('storefront::messages.profile_saved'));
     }
 
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(PasswordRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
-        $data = $request->validate([
-            'current_password' => [$customer->hasPassword ? 'required' : 'nullable', 'string', 'max:200'],
-            'password' => ['required', 'string', 'min:8', 'max:200', 'confirmed'],
-        ]);
+        $data = $request->validated();
         $this->accounts->setPassword($customer->id, $data['current_password'] ?? null, $data['password']);
 
         return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', __('storefront::messages.password_saved'));
@@ -100,13 +93,13 @@ final class AccountSettingsController
         return $this->addressForm($request, null);
     }
 
-    public function storeAddress(Request $request): RedirectResponse
+    public function storeAddress(AddressRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
         if ($request->input('action') === 'reload') {
             return back()->withInput();
         }
-        $this->accounts->addAddress($customer->id, $this->validatedAddress($request));
+        $this->accounts->addAddress($customer->id, $request->toAddressData());
 
         return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));
     }
@@ -119,13 +112,13 @@ final class AccountSettingsController
         return $this->addressForm($request, $current);
     }
 
-    public function updateAddress(Request $request, int $address): RedirectResponse
+    public function updateAddress(AddressRequest $request, int $address): RedirectResponse
     {
         $customer = $this->required($request);
         if ($request->input('action') === 'reload') {
             return back()->withInput();
         }
-        $this->accounts->updateAddress($customer->id, $address, $this->validatedAddress($request));
+        $this->accounts->updateAddress($customer->id, $address, $request->toAddressData());
 
         return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));
     }
@@ -159,27 +152,6 @@ final class AccountSettingsController
             'provinces' => $directory?->provinces(),
             'wards' => $directory === null || $province === '' ? [] : $directory->wards($province),
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function validatedAddress(Request $request): array
-    {
-        $hasDirectory = $this->addressOptions->directory() !== null;
-        $data = $request->validate([
-            'label' => ['nullable', 'string', 'max:32'],
-            'full_name' => ['required', 'string', 'max:120'],
-            'phone' => ['required', 'string', 'max:20'], // định dạng: Customer kiểm tra (customer.phone_invalid)
-            'province_code' => [$hasDirectory ? 'required' : 'nullable', 'string', 'max:8'],
-            'province_name' => [$hasDirectory ? 'nullable' : 'required', 'string', 'max:64'],
-            'ward_code' => [$hasDirectory ? 'required' : 'nullable', 'string', 'max:8'],
-            'ward_name' => [$hasDirectory ? 'nullable' : 'required', 'string', 'max:64'],
-            'street_line' => ['required', 'string', 'max:255'],
-            'is_default' => ['sometimes', 'boolean'],
-        ]);
-
-        return [...$data, 'province_code' => $data['province_code'] ?? '', 'ward_code' => $data['ward_code'] ?? '', 'is_default' => $request->boolean('is_default')];
     }
 
     private function required(Request $request): CustomerData

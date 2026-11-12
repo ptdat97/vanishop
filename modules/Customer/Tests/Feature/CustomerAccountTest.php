@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Modules\Checkout\Contracts\AddressDirectory;
+use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
@@ -123,4 +125,26 @@ it('sổ địa chỉ theo danh mục địa giới: mã sai/không khớp → 4
     CustomerAddress::query()->whereKey($id)->update(['province_code' => '79', 'ward_code' => '26734']);
     $this->patchJson(H::API."/me/addresses/{$id}", ['label' => 'Nhà cũ', 'is_default' => true], H::auth($this->token))->assertOk()->assertJsonPath('data.label', 'Nhà cũ');
     $this->patchJson(H::API."/me/addresses/{$id}", ['ward_code' => '26735'], H::auth($this->token))->assertStatus(422);
+});
+
+it('cửa hàng không có danh mục địa giới: API lưu địa chỉ bằng tên tỉnh/phường (cùng luật với form Blade, ADR-044)', function () {
+    app()->instance(ShippingAddresses::class, new class implements ShippingAddresses
+    {
+        public function directory(): ?AddressDirectory
+        {
+            return null;
+        }
+
+        public function normalize(array $address): ?array
+        {
+            return $address;
+        }
+    });
+    $free = ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678', 'province_name' => 'Hà Nội', 'ward_name' => 'Phường Tràng Tiền', 'street_line' => '1 Tràng Tiền'];
+
+    $this->postJson(H::API.'/me/addresses', $free, H::auth($this->token))->assertCreated()
+        ->assertJsonPath('data.province_name', 'Hà Nội')->assertJsonPath('data.ward_name', 'Phường Tràng Tiền');
+    // Không danh mục thì tên là bắt buộc.
+    $this->postJson(H::API.'/me/addresses', [...$free, 'province_name' => ''], H::auth($this->token))
+        ->assertStatus(422)->assertJsonPath('error.details.0.field', 'province_name');
 });

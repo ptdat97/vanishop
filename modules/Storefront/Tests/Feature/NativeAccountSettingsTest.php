@@ -71,7 +71,8 @@ it('sổ địa chỉ: thêm theo danh mục (tên chuẩn), mã sai bị từ c
     expect(CustomerAddress::query()->count())->toBe(0);
 
     $this->from('/tai-khoan/dia-chi/them')->post('/tai-khoan/dia-chi', ($this->address)(['ward_code' => '70101065']))->assertSessionHasErrors('business');
-    $this->from('/tai-khoan/dia-chi/them')->post('/tai-khoan/dia-chi', ($this->address)(['phone' => '123']))->assertSessionHasErrors('business');
+    // SĐT sai: lỗi ở đúng trường, như Storefront API (một AddressRequest cho hai kênh, ADR-044).
+    $this->from('/tai-khoan/dia-chi/them')->post('/tai-khoan/dia-chi', ($this->address)(['phone' => '123']))->assertSessionHasErrors('phone');
     $this->post('/tai-khoan/dia-chi', ($this->address)())->assertRedirect('/tai-khoan/dia-chi');
     $this->post('/tai-khoan/dia-chi', ($this->address)(['label' => 'Công ty', 'province_code' => '29', 'ward_code' => '70101065', 'street_line' => '12 Lê Lợi']))->assertRedirect('/tai-khoan/dia-chi');
 
