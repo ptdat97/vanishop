@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Ordering;
 
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Application\CustomerDeletionGuard;
@@ -13,6 +15,7 @@ use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
 use Modules\Ordering\Application\EloquentOrderStatistics;
 use Modules\Ordering\Application\Listeners\OrderDashboardTasks;
+use Modules\Ordering\Application\OrderedVariants;
 use Modules\Ordering\Application\OrderFactory;
 use Modules\Ordering\Application\OrderReceipt;
 use Modules\Ordering\Application\OrderTransitionService;
@@ -38,6 +41,8 @@ final class OrderingServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        // Ma trận biến thể: SKU đã có ở Ordering chỉ ngừng bán, không xoá (variant-matrix §3.2).
+        $this->app->make(Extensions::class)->tag([OrderedVariants::class], VariantUsage::TAG);
         $this->app->bind(OrderWriter::class, OrderFactory::class);
         // Màn hình Admin của module mở cho plugin thêm form/cột/lọc/thao tác/tab (ADR-030).
         $this->app->make(AdminScreen::class)->declareResource('order');

@@ -19,7 +19,7 @@ import { computed, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import ProductLinks from '../../Components/ProductLinks.vue';
 import ProductVideos from '../../Components/ProductVideos.vue';
-import VariantMatrix from '../../Components/VariantMatrix.vue';
+import VariantMatrixEditor from '../../Components/VariantMatrixEditor.vue';
 import type { CatalogLabels, LinkGroupRow, NavItem, Translations, VideoRow } from '../../types';
 
 type Fields = 'name' | 'slug' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
@@ -51,7 +51,7 @@ const props = defineProps<{
         translations: Translations<Fields>;
         attributes: Record<number, AttributeValue>;
         colors: ColorEntry[];
-        variants: Array<{ id: number; sku: string; barcode: string | null; status: string; weight_gram: number | null; color_code: string; size_code: string }>;
+        variants: Array<{ id: number; sku: string; barcode: string | null; status: string; weight_gram: number | null; style_color_id: number; size_id: number; color_code: string; size_code: string }>;
         links: LinkGroupRow[];
         videos: VideoRow[];
     };
@@ -64,6 +64,12 @@ const props = defineProps<{
     linkTypes: Array<{ id: number; label: string; is_active: boolean }>;
     videoDrivers: Array<{ code: string; label: string; hint: string }>;
     extensionSections: ExtensionSection[];
+    variantMatrix: null | {
+        saveUrl: string;
+        sizes: Array<{ id: number; code: string; system: string }>;
+        columns: Array<{ code: string; label: string; editable: boolean; fields: Array<{ key: string; label: string; type: string; required: boolean; options: Record<string, string>; help: string | null }> }>;
+        values: Record<number, Record<string, Record<string, string | number | boolean | null>>>;
+    };
 }>();
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
@@ -260,7 +266,17 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 <p v-if="!product.colors.length" class="text-sm text-slate-500">Chưa có màu. Thêm màu rồi tải ảnh cho từng màu (khuyến nghị tỉ lệ 4:5).</p>
             </div>
             <MediaPicker :open="pickingFor !== null" :title="`Ảnh cho màu ${pickingFor?.name ?? pickingFor?.code ?? ''}`" @update:open="(value) => !value && (pickingFor = null)" @select="attachFromLibrary" />
-            <VariantMatrix v-if="product" :product-url="productUrl" :variants="product.variants" :sizes="availableSizes" :status-labels="labels.variant_status" />
+            <VariantMatrixEditor
+                v-if="product && variantMatrix"
+                :save-url="variantMatrix.saveUrl"
+                :style-code="product.style_code"
+                :colors="product.colors"
+                :variants="product.variants"
+                :sizes="variantMatrix.sizes"
+                :columns="variantMatrix.columns"
+                :values="variantMatrix.values"
+                :status-labels="labels.variant_status"
+            />
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
             <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh, biến thể, video và sản phẩm liên kết.</p>

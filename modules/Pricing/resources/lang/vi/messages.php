@@ -12,4 +12,5 @@ return [
     'saved' => 'Đã lưu.',
     'deleted' => 'Đã xoá.',
     'prices_saved' => 'Đã cập nhật :count giá.',
+    'amount_negative' => 'Giá không được âm.',
 ];

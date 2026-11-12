@@ -14,4 +14,5 @@ return [
     'transfer_status' => ['pending' => 'Pending', 'shipped' => 'In transit', 'received' => 'Received', 'cancelled' => 'Cancelled'],
     'discrepancy' => ['external_mismatch' => 'External ≠ VaniShop', 'reserved_mismatch' => 'Holds ≠ reserved', 'reserved_off_ledger' => 'Reserved off ledger', 'on_hand_off_ledger' => 'On hand off ledger', 'negative_on_hand' => 'Negative on hand'],
     'resolution' => ['repaired' => 'Reserved repaired', 'applied' => 'Source applied', 'rejected' => 'Rejected — see note'],
+    'matrix' => ['label' => 'Stock', 'on_hand' => 'On hand at :location', 'reason' => 'Stock edited in the variant matrix'],
 ];

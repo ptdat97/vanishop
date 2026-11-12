@@ -49,4 +49,7 @@ return [
     'facet_unknown' => 'Bộ lọc không tồn tại (thuộc tính đã xoá hoặc tắt lọc).',
     'facet_display_invalid' => 'Kiểu hiển thị không dùng được cho bộ lọc này.',
     'facets_saved' => 'Đã lưu bộ lọc.',
+    'variant_field_failed' => 'Không lưu được :label cho SKU này.',
+    'variant_cell_duplicate' => 'Mỗi cặp màu – size chỉ có một ô.',
+    'variants_matrix_saved' => 'Đã lưu biến thể: :created tạo mới, :updated sửa, :deleted xoá, :deactivated chuyển ngừng bán.',
 ];

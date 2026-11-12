@@ -38,12 +38,10 @@ Route::post('products/{product}/colors/{styleColor}/images/library', [ProductCol
 Route::put('products/{product}/colors/{styleColor}/images/order', [ProductColorController::class, 'reorderImages'])->name('products.colors.images.order');
 Route::delete('products/{product}/colors/{styleColor}/images/{image}', [ProductColorController::class, 'destroyImage'])->name('products.colors.images.destroy');
 
-Route::post('products/{product}/variants/generate', [ProductVariantController::class, 'generate'])->name('products.variants.generate');
-Route::put('products/{product}/variants/{variant}', [ProductVariantController::class, 'update'])->name('products.variants.update');
-
 Route::post('products/{product}/links', [ProductLinkController::class, 'store'])->name('products.links.store');
 Route::delete('products/{product}/links/{linkType}/{linked}', [ProductLinkController::class, 'destroy'])->name('products.links.destroy');
 
+Route::put('products/{product}/variants', [ProductVariantController::class, 'save'])->name('products.variants.save');
 Route::post('products/{product}/videos', [ProductVideoController::class, 'store'])->name('products.videos.store');
 Route::put('products/{product}/videos/order', [ProductVideoController::class, 'reorder'])->name('products.videos.order');
 Route::delete('products/{product}/videos/{video}', [ProductVideoController::class, 'destroy'])->name('products.videos.destroy');

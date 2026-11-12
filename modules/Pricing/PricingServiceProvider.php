@@ -6,6 +6,8 @@ namespace Modules\Pricing;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
+use Modules\Catalog\Contracts\VariantFieldProvider;
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
@@ -15,9 +17,11 @@ use Modules\Pricing\Application\BasePriceImporter;
 use Modules\Pricing\Application\Listeners\ProductListPrices;
 use Modules\Pricing\Application\Listeners\SyncListPrices;
 use Modules\Pricing\Application\NoCustomerGroups;
+use Modules\Pricing\Application\PricedVariants;
 use Modules\Pricing\Application\PriceListPriorityStrategy;
 use Modules\Pricing\Application\PriceListScheduler;
 use Modules\Pricing\Application\StrategyPriceResolver;
+use Modules\Pricing\Application\VariantPriceFields;
 use Modules\Pricing\Console\SyncListPricesCommand;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Contracts\PriceImporter;
@@ -40,6 +44,9 @@ final class PricingServiceProvider extends ModuleServiceProvider
     {
         $this->app->singleton(PriceListPriorityStrategy::class);
         $this->app->make(Extensions::class)->tag([PriceListPriorityStrategy::class], PricingStrategy::TAG);
+        // Ma trận biến thể (variant-matrix §3.3): cột giá + dọn giá khi SKU bị xoá.
+        $this->app->make(Extensions::class)->tag([VariantPriceFields::class], VariantFieldProvider::TAG);
+        $this->app->make(Extensions::class)->tag([PricedVariants::class], VariantUsage::TAG);
         $this->app->make(Extensions::class)->requires(PricingStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược chọn giá');
         $this->app->bind(PriceImporter::class, BasePriceImporter::class);
         $this->app->bind(PriceListSchedule::class, PriceListScheduler::class);

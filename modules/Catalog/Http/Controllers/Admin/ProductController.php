@@ -15,6 +15,7 @@ use Inertia\Response;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
+use Modules\Catalog\Application\Products\VariantMatrix;
 use Modules\Catalog\Application\Products\VideoDrivers;
 use Modules\Catalog\Contracts\ProductViewStatistics;
 use Modules\Catalog\Domain\StyleStatus;
@@ -220,6 +221,13 @@ final class ProductController
         return Inertia::render('Catalog::Products/Form', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
+            // Ma trận biến thể (variant-matrix §3): cột do module/plugin góp + giá trị theo SKU; size chọn được theo hệ size.
+            'variantMatrix' => $style === null ? null : [
+                ...app(VariantMatrix::class)->columns($style, fn (string $permission): bool => Gate::allows($permission)),
+                'sizes' => Size::query()->orderBy('size_system')->orderBy('sort_order')->get()
+                    ->map(fn (Size $size): array => ['id' => $size->id, 'code' => $size->code, 'system' => $size->size_system->value])->all(),
+                'saveUrl' => route('admin.catalog.products.variants.save', $style->id),
+            ],
             'product' => $style === null ? null : [
                 'id' => $style->id,
                 'style_code' => $style->style_code,
@@ -248,6 +256,8 @@ final class ProductController
                         'barcode' => $variant->barcode,
                         'status' => $variant->status->value,
                         'weight_gram' => $variant->weight_gram,
+                        'style_color_id' => $variant->style_color_id,
+                        'size_id' => $variant->size_id,
                         'color_code' => $variant->styleColor->color->code,
                         'size_code' => $variant->size->code,
                     ])->values()->all(),

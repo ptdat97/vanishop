@@ -1,6 +1,6 @@
 # Ma trận biến thể (màu × size) — đặc tả
 
-> Trạng thái: **Approved** (Owner, 2026-11-12) · Đợt: V1–V2 ✅ 0.4.21, V1b ✅ 0.4.22, V3 (Admin), V4 (storefront nâng cao).
+> Trạng thái: **Implemented** (Owner duyệt 2026-11-12) · V1–V2 ✅ 0.4.21, V1b ✅ 0.4.22, V3–V4 ✅ 0.4.23. Khác đặc tả: thứ tự màu đổi bằng nút ↑/↓ (chưa kéo-thả); ảnh vẫn quản lý ở khối "Màu và ảnh" ngay trên ma trận; chọn chưa đủ trục mà bấm thêm giỏ vẫn báo lỗi chung `variant_id` (chưa báo tại nhóm trục).
 >
 > Nguồn: yêu cầu của Owner (ảnh bộ chọn hiện tại, mẫu JSON options/variants, quy tắc hợp đồng) và một lần nghiên cứu hành vi
 > sản phẩm tham khảo theo ngoại lệ clean-room có ghi nhận ([clean-room §7](../01-principles/clean-room-license.md)). Tài liệu

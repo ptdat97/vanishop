@@ -13,11 +13,11 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
-    ['brand' => $brand, 's' => $this->pinkS, 'm' => $this->pinkM, 'location' => $location] = C::store();
+    ['brand' => $brand, 's' => $this->pinkS, 'm' => $this->pinkM, 'location' => $this->location] = C::store();
     $style = $this->pinkS->style;
     // Màu thứ hai hết hàng: không được chọn sẵn, size bị khoá.
     [$this->navyS] = P::variants($style, ['S']);
-    I::stock($location, $this->navyS->id, 0);
+    I::stock($this->location, $this->navyS->id, 0);
     P::priceList(['code' => 'navy'], [$this->navyS->id => [300_000]]); // có giá — bị khoá vì hết hàng
     $this->slug = T::seed(fn () => $style->slugFor('vi'));
     $this->pink = T::seed(fn () => $this->pinkS->styleColor->color->code);
@@ -45,4 +45,14 @@ it('thêm giỏ từ trang sản phẩm: biến thể phải thuộc màu đang 
     // API không gửi màu → không đổi hành vi.
     $cart = $this->postJson('/api/storefront/v1/carts')->assertCreated();
     $this->postJson("/api/storefront/v1/carts/{$cart->json('data.id')}/lines", ['variant_id' => $this->pinkM->id], ['X-Vani-Cart-Token' => $cart->json('meta.token')])->assertOk();
+});
+
+it('link ?sku=<mã SKU>: chọn sẵn màu và size của SKU đó; SKU hết hàng/lạ → giữ mặc định', function () {
+    I::stock($this->location, $this->navyS->id, 3); // navy còn hàng
+    $html = $this->get("/san-pham/{$this->slug}?sku=".strtolower($this->navyS->sku))->assertOk()->getContent();
+    expect($html)->toMatch('/name="color" value="'.preg_quote($this->navy, '/').'"[^>]*checked/')
+        ->and($html)->toMatch('/value="'.$this->navyS->id.'"[^>]*checked/');
+
+    $html = $this->get("/san-pham/{$this->slug}?sku=KHONG-CO")->assertOk()->getContent();
+    expect($html)->toMatch('/name="color" value="'.preg_quote($this->pink, '/').'"[^>]*checked/');
 });

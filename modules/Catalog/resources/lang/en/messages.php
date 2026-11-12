@@ -49,4 +49,7 @@ return [
     'facet_unknown' => 'Unknown filter (attribute deleted or no longer filterable).',
     'facet_display_invalid' => 'This display style is not available for this filter.',
     'facets_saved' => 'Filters saved.',
+    'variant_field_failed' => 'Could not save :label for this SKU.',
+    'variant_cell_duplicate' => 'Each colour–size pair can appear only once.',
+    'variants_matrix_saved' => 'Variants saved: :created created, :updated updated, :deleted deleted, :deactivated discontinued.',
 ];

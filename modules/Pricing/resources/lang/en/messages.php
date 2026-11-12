@@ -12,4 +12,5 @@ return [
     'saved' => 'Saved.',
     'deleted' => 'Deleted.',
     'prices_saved' => 'Updated :count prices.',
+    'amount_negative' => 'Price cannot be negative.',
 ];

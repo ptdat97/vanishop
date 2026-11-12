@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.23 — 2026-11-12
+
+Ma trận biến thể màu × size trong Admin, mở rộng bằng plugin (đợt V3–V4, [variant-matrix](../03-domains/variant-matrix.md)).
+
+### Thêm
+- `Catalog\Contracts\VariantFieldProvider` (tag `vani.catalog.variant_fields`): góp cột dữ liệu theo SKU vào ma trận biến thể — `fields()` (`FieldDefinition`), `permission()`, `values()`, `save()` (lỗi theo SKU), `storefront()` (công bố ở `variants[].extensions.<code>` của Storefront API). Core góp: `pricing` (giá niêm yết, giá so sánh của bảng `base`), `inventory` (tồn ở kho duy nhất).
+- `Catalog\Contracts\VariantUsage` (tag `vani.catalog.variant_usage`): `used()` SKU đã phát sinh (Ordering: dòng đơn; Cart: dòng giỏ; Inventory: biến động/tồn/đối soát; `vani.warehouse` 1.0.1: phiếu chuyển kho), `release()` dọn dữ liệu phụ thuộc trước khi xoá (Pricing: giá; Inventory: dòng tồn 0).
+- Admin: `PUT /admin/catalog/products/{product}/variants` lưu cả lưới (thứ tự màu, ô bật/tắt, SKU, barcode, khối lượng, trạng thái, cột góp vào). Tắt ô: chưa phát sinh → xoá, đã phát sinh → ngừng bán. Component `VariantMatrixEditor` (lưới + bảng chi tiết + áp hàng loạt).
+- Storefront: `variants[].extensions`; trang sản phẩm nhận `?sku=<mã SKU>` để chọn sẵn màu/size.
+
+### Gỡ (phá vỡ)
+- `POST /admin/catalog/products/{product}/variants/generate`, `PUT /admin/catalog/products/{product}/variants/{variant}` và component `VariantMatrix.vue` — thay bằng ma trận.
+
 ## 0.4.22 — 2026-11-12
 
 Chi tiết sản phẩm theo mô hình options/variants (đợt V1b — tối ưu theo mẫu JSON của Owner). **Phá vỡ** hợp đồng chi tiết sản phẩm (thay cấu trúc của 0.4.21).

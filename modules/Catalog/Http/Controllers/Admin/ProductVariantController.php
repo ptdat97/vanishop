@@ -7,43 +7,25 @@ namespace Modules\Catalog\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
-use Modules\Catalog\Application\Products\VariantService;
-use Modules\Catalog\Domain\VariantStatus;
+use Modules\Catalog\Application\Products\VariantMatrix;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
 
+/**
+ * Ma trận biến thể màu × size (variant-matrix §3): lưu cả lưới một lần — SKU của Catalog và cột do module/plugin góp vào.
+ */
 final class ProductVariantController
 {
-    public function generate(Style $product, Request $request, VariantService $variants): RedirectResponse
+    public function save(Style $product, Request $request, VariantMatrix $matrix): RedirectResponse
     {
         Gate::authorize('catalog.manage');
-        $data = $request->validate(['size_ids' => ['required', 'array', 'min:1', 'max:50'], 'size_ids.*' => ['integer', 'distinct']]);
+        $result = $matrix->save($product, $request->all(), fn (string $permission): bool => Gate::allows($permission));
 
-        $created = $variants->generate($product, array_map('intval', $data['size_ids']));
+        $response = back()->with('success', __('catalog::messages.variants_matrix_saved', array_diff_key($result, ['field_errors' => true])));
 
-        return back()->with('success', __('catalog::messages.variants_generated', ['count' => count($created)]));
-    }
-
-    public function update(Style $product, Variant $variant, Request $request, VariantService $variants): RedirectResponse
-    {
-        Gate::authorize('catalog.manage');
-        abort_unless($variant->style_id === $product->id, 404);
-
-        $data = $request->validate([
-            'sku' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('variants', 'sku')->ignore($variant->id)],
-            'barcode' => ['nullable', 'string', 'max:32', 'regex:/^[0-9A-Za-z-]+$/', Rule::unique('variants', 'barcode')->ignore($variant->id)],
-            'status' => ['required', Rule::enum(VariantStatus::class)],
-            'weight_gram' => ['nullable', 'integer', 'min:0', 'max:100000'],
-        ]);
-
-        $variants->update($product, $variant, [
-            'sku' => $data['sku'],
-            'barcode' => $data['barcode'] ?? null,
-            'status' => $data['status'],
-            'weight_gram' => $data['weight_gram'] ?? null,
-        ]);
-
-        return back()->with('success', __('catalog::messages.saved'));
+        return $result['field_errors'] === [] ? $response : $response->withErrors(array_combine(
+            array_map(fn (int $variantId): string => "variant.{$variantId}", array_keys($result['field_errors'])),
+            array_values($result['field_errors']),
+        ));
     }
 }

@@ -8,6 +8,8 @@ use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\MediaUrls;
+use Modules\Catalog\Contracts\VariantFieldProvider;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
@@ -33,6 +35,7 @@ final class ProductViews implements ProductCards
         private readonly PriceVisibility $visibility,
         private readonly MediaUrls $media,
         private readonly Settings $settings,
+        private readonly Extensions $extensions,
     ) {}
 
     /**
@@ -129,7 +132,12 @@ final class ProductViews implements ProductCards
         $buyable = fn (array $variant): bool => $variant['is_active'] && $variant['availability'] !== 'out_of_stock' && ($hidden || $variant['price'] !== null);
         // Đúng một SKU mặc định (SKU mua được đầu tiên theo thứ tự màu → size; không có thì SKU đang bán đầu tiên).
         $default = (array_values(array_filter($product['variants'], $buyable))[0] ?? array_values(array_filter($product['variants'], fn (array $variant): bool => $variant['is_active']))[0] ?? null)['id'] ?? null;
-        $product['variants'] = array_map(fn (array $variant): array => [...$variant, 'is_default' => $variant['id'] === $default], $product['variants']);
+        $published = $this->publishedVariantData(array_map('intval', array_column($product['variants'], 'id')));
+        $product['variants'] = array_map(fn (array $variant): array => [
+            ...$variant, 'is_default' => $variant['id'] === $default,
+            // Dữ liệu theo SKU do module/plugin công bố (VariantFieldProvider::storefront, variant-matrix §4).
+            'extensions' => (object) ($published[$variant['id']] ?? []),
+        ], $product['variants']);
 
         $buyableColors = [];
         foreach (array_filter($product['variants'], $buyable) as $variant) {
@@ -167,6 +175,25 @@ final class ProductViews implements ProductCards
      * @param  array<string, mixed>  $product
      * @return list<int>
      */
+    /**
+     * @param  list<int>  $variantIds
+     * @return array<int, array<string, array<string, mixed>>> variant id => provider code => dữ liệu
+     */
+    private function publishedVariantData(array $variantIds): array
+    {
+        $result = [];
+        foreach ($this->extensions->implementations(VariantFieldProvider::TAG, VariantFieldProvider::class) as $code => $provider) {
+            $data = $this->extensions->call($provider, fn (): array => $provider->storefront($variantIds), [], 'catalog.variant_fields.storefront');
+            foreach ((array) $data as $variantId => $row) {
+                if ($row !== [] && in_array((int) $variantId, $variantIds, true)) {
+                    $result[(int) $variantId][$code] = $row;
+                }
+            }
+        }
+
+        return $result;
+    }
+
     /**
      * Id giá trị của một trục chọn (`option_values` trỏ bằng id, không theo vị trí mảng).
      *

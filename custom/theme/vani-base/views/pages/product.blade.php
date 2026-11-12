@@ -95,7 +95,9 @@
                 @php($variantsByColor = $activeVariants->groupBy(fn ($variant) => $valueOf($variant, 'color')))
                 @php($gallery = collect($product['media']['gallery'])->keyBy('id'))
                 @php($colors = $option('color')->filter(fn ($color) => $variantsByColor->has($color['id']))->values()->all())
-                @php($defaultVariant = $activeVariants->firstWhere('is_default', true))
+                {{-- `?sku=<mã SKU>` (link chia sẻ, quảng cáo theo SKU): chọn sẵn màu và size của SKU đó nếu đang bán. --}}
+                @php($requestedVariant = is_string(request()->query('sku')) ? $activeVariants->first(fn ($variant) => strcasecmp($variant['sku'], request()->query('sku')) === 0) : null)
+                @php($defaultVariant = $requestedVariant ?? $activeVariants->firstWhere('is_default', true))
                 @php($selectedColor = $option('color')->get($defaultVariant === null ? null : $valueOf($defaultVariant, 'color'))['code'] ?? ($colors[0]['code'] ?? null))
                 @if ($colors !== [])
                     <style>
@@ -142,7 +144,7 @@
                                     @php($unpriced = $variant['price'] === null && empty($product['price_hidden']))
                                     @php($disabled = $variant['availability'] === 'out_of_stock' || $unpriced)
                                     <label @class(['relative flex min-w-12 cursor-pointer flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white has-[:focus-visible]:outline has-[:focus-visible]:outline-2', 'cursor-not-allowed border-dashed text-slate-400 line-through' => $disabled])>
-                                        <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-size="{{ $size }}" @disabled($disabled)
+                                        <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-size="{{ $size }}" @disabled($disabled) @checked($requestedVariant !== null && $requestedVariant['id'] === $variant['id'] && ! $disabled)
                                             @if ($variant['price']) data-price-html="{{ view('theme::partials.variant-price', ['price' => $variant['price']])->render() }}" @endif>
                                         <span class="font-medium">{{ $size }}</span>
                                         @if ($variant['availability'] === 'low_stock')<span class="text-[11px] leading-none text-accent no-underline">{{ __('sắp hết') }}</span>@endif

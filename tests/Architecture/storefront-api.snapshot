@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.4.22
+Storefront API v1 — VaniShop 0.4.23
 GET /address/provinces security[]
   200
     $: object
@@ -3433,6 +3433,7 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.variants: array
     $.data.variants[]: object
     $.data.variants[].availability: string|null enum[in_stock,low_stock,out_of_stock,]
+    $.data.variants[].extensions: object
     $.data.variants[].id: integer
     $.data.variants[].is_active: boolean
     $.data.variants[].is_default: boolean

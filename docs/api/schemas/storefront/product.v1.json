@@ -253,7 +253,8 @@
                     "option_values",
                     "price",
                     "availability",
-                    "media"
+                    "media",
+                    "extensions"
                 ],
                 "properties": {
                     "id": {
@@ -388,6 +389,10 @@
                                 }
                             }
                         }
+                    },
+                    "extensions": {
+                        "type": "object",
+                        "description": "Dữ liệu theo SKU do module/plugin công bố: `<khoá nhà cung cấp>` → dữ liệu (VariantFieldProvider::storefront). Rỗng là `{}`."
                     }
                 }
             },

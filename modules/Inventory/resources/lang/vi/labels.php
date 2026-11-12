@@ -14,4 +14,5 @@ return [
     'transfer_status' => ['pending' => 'Chờ gửi', 'shipped' => 'Đang đi đường', 'received' => 'Đã nhận', 'cancelled' => 'Đã huỷ'],
     'discrepancy' => ['external_mismatch' => 'Nguồn ngoài ≠ VaniShop', 'reserved_mismatch' => 'Hàng giữ ≠ reserved', 'reserved_off_ledger' => 'reserved lệch sổ biến động', 'on_hand_off_ledger' => 'Tồn lệch sổ biến động', 'negative_on_hand' => 'Tồn âm'],
     'resolution' => ['repaired' => 'Đã sửa reserved', 'applied' => 'Đã áp số nguồn', 'rejected' => 'Bị từ chối — xem ghi chú'],
+    'matrix' => ['label' => 'Tồn kho', 'on_hand' => 'Tồn ở :location', 'reason' => 'Sửa tồn trong ma trận biến thể'],
 ];

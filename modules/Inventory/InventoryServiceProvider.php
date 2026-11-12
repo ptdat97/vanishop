@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Inventory;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\Catalog\Contracts\VariantFieldProvider;
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
@@ -23,7 +25,9 @@ use Modules\Inventory\Application\ReturnService;
 use Modules\Inventory\Application\StandardInventoryStrategy;
 use Modules\Inventory\Application\StockAvailability;
 use Modules\Inventory\Application\StockCountImporter;
+use Modules\Inventory\Application\StockedVariants;
 use Modules\Inventory\Application\StockMovementService;
+use Modules\Inventory\Application\VariantStockFields;
 use Modules\Inventory\Console\EnsureDefaultLocationCommand;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
 use Modules\Inventory\Console\VerifyStockCommand;
@@ -60,6 +64,9 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->bind(InventoryReconciliation::class, InventoryReconciler::class);
         $this->app->singleton(StandardInventoryStrategy::class);
         $this->app->make(Extensions::class)->tag([StandardInventoryStrategy::class], InventoryStrategy::TAG);
+        // Ma trận biến thể (variant-matrix §3.3): cột tồn (cửa hàng một kho) + SKU đã có tồn/biến động là đã phát sinh.
+        $this->app->make(Extensions::class)->tag([VariantStockFields::class], VariantFieldProvider::TAG);
+        $this->app->make(Extensions::class)->tag([StockedVariants::class], VariantUsage::TAG);
         $this->app->make(Extensions::class)->requires(InventoryStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược tồn bán được');
         $this->app->bind(AvailabilityReader::class, fn ($app): StockAvailability => new StockAvailability(
             $app->make(Extensions::class),

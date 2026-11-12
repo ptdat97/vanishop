@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Plugin\Warehouse;
 
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Inventory\Contracts\StockPageLink;
 use Plugin\Warehouse\Application\TransferGuard;
 use Plugin\Warehouse\Console\ReconcileCommand;
 use Plugin\Warehouse\Infrastructure\LocationsLink;
+use Plugin\Warehouse\Infrastructure\TransferredVariants;
 use Plugin\Warehouse\Infrastructure\TransfersLink;
 
 /**
@@ -44,6 +46,7 @@ final class WarehouseServiceProvider extends PluginServiceProvider
 
         // Còn phiếu đang đi đường → không cho tắt plugin (hàng đã trừ kho đi, chưa nhận được ở kho đến).
         $this->contribute(TransferGuard::TAG, TransferGuard::class);
+        $this->contribute(VariantUsage::TAG, TransferredVariants::class);
         $this->app->make(Extensions::class)->guardDisable(TransferGuard::TAG, fn (object $guard): ?string => $guard instanceof TransferGuard ? $guard->blocker() : null);
 
         if ($this->app->runningInConsole()) {
