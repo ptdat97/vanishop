@@ -10,7 +10,6 @@ use Modules\Storefront\Http\Controllers\Web\CheckoutController;
 use Modules\Storefront\Http\Controllers\Web\HomeController;
 use Modules\Storefront\Http\Controllers\Web\OrderController;
 use Modules\Storefront\Http\Controllers\Web\ProductController;
-use Modules\Storefront\Http\Controllers\Web\ProductViewController;
 use Modules\Storefront\Http\Controllers\Web\ReturnController;
 use Modules\Storefront\Http\Controllers\Web\SeoController;
 use Modules\Storefront\Http\Controllers\Web\SessionController;
@@ -42,8 +41,6 @@ foreach (StoreLocale::supported() as $locale) {
             });
             if ($locale === StoreLocale::default()) {
                 Route::get('/_vani/phien', SessionController::class)->name('session');
-                Route::get('/_vani/gia', [SessionController::class, 'prices'])->name('session.prices');
-                Route::middleware('throttle:120,1')->post('/_vani/xem', ProductViewController::class)->name('session.viewed');
             }
 
             // Ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`): giỏ và checkout chuyển sang đăng nhập.

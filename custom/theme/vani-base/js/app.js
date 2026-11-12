@@ -763,10 +763,12 @@ function applySession(session) {
     // Cửa hàng ẩn giá với khách chưa đăng nhập: HTML cache luôn là bản "Đăng nhập để xem giá" → điền giá cho khách đã đăng nhập.
     const hiddenPrices = [...document.querySelectorAll('[data-vani-price-for]')];
     if (session.signed_in && hiddenPrices.length && session.prices_url) {
-        const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['p[]', id]));
+        const query = new URLSearchParams([...new Set(hiddenPrices.map((el) => el.dataset.vaniPriceFor))].map((id) => ['style_ids[]', id]));
+        // Storefront API bằng phiên cùng nguồn (ADR-044): trình duyệt gửi Sec-Fetch-Site: same-origin.
         fetch(`${session.prices_url}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
             .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
+            .then((json) => {
+                const data = json?.data;
                 hiddenPrices.forEach((el) => {
                     const price = data?.products?.[el.dataset.vaniPriceFor];
                     if (!price) return;
@@ -781,10 +783,11 @@ function applySession(session) {
     const memberPrice = document.querySelector('[data-vani-member-price]');
     const variantIds = [...document.querySelectorAll('input[name="variant_id"]')].map((input) => input.value);
     if (session.signed_in && memberPrice && variantIds.length) {
-        const query = new URLSearchParams(variantIds.map((id) => ['v[]', id]));
+        const query = new URLSearchParams(variantIds.map((id) => ['variant_ids[]', id]));
         fetch(`${memberPrice.dataset.route}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
             .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
+            .then((json) => {
+                const data = json?.data;
                 const prices = Object.values(data?.prices || {});
                 if (!prices.length) return;
                 const lowest = prices.reduce((min, price) => (price.amount < min.amount ? price : min));

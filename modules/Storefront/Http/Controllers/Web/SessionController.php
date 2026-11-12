@@ -11,9 +11,6 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\CustomerSessionState;
-use Modules\Storefront\Application\MemberPrices;
-use Modules\Storefront\Application\PriceVisibility;
-use Modules\Storefront\Application\ProductViews;
 
 /**
  * Phần riêng của khách cho trang công khai đã cache CDN (storefront §5, chế độ tuỳ chọn): đăng nhập, giỏ mini, thông báo
@@ -22,26 +19,6 @@ use Modules\Storefront\Application\ProductViews;
  */
 final class SessionController
 {
-    /**
-     * Giá riêng của khách đăng nhập cho trang đang xem: `?v[]=1&v[]=2` → giá thành viên theo variant (chỉ khi nhóm khách có giá
-     * thấp hơn); `?p[]=3` → khoảng giá chung theo sản phẩm khi cửa hàng ẩn giá với khách chưa đăng nhập (`products`).
-     */
-    public function prices(Request $request, MemberPrices $prices, PriceVisibility $visibility, ProductViews $products): JsonResponse
-    {
-        $customer = $request->attributes->get('customer');
-        if ($customer === null) {
-            return response()->json(['group' => null, 'prices' => [], 'products' => []])->header('Cache-Control', 'private, no-store');
-        }
-
-        $variantIds = array_map('intval', (array) $request->query('v', []));
-        $styleIds = array_values(array_filter(array_map('intval', (array) $request->query('p', [])), fn (int $id): bool => $id > 0));
-
-        return response()->json([
-            ...$prices->for((int) $customer->id, $variantIds),
-            'products' => $visibility->membersOnly() && $styleIds !== [] ? $products->priceRanges($styleIds, App::getLocale()) : [],
-        ])->header('Cache-Control', 'private, no-store');
-    }
-
     public function __invoke(Request $request, CustomerSessionState $state): JsonResponse
     {
         $locale = StoreLocale::isSupported((string) $request->query('locale')) ? (string) $request->query('locale') : StoreLocale::default();

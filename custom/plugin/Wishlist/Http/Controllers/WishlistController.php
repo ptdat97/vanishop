@@ -18,14 +18,6 @@ final class WishlistController
 {
     public function __construct(private readonly Wishlists $wishlists) {}
 
-    public function ids(Request $request): JsonResponse
-    {
-        $customerId = $this->customerId($request);
-
-        return response()->json(['signed_in' => $customerId !== null, 'ids' => $customerId === null ? [] : $this->wishlists->ids($customerId)])
-            ->header('Cache-Control', 'private, no-store');
-    }
-
     public function toggle(Request $request): JsonResponse|RedirectResponse
     {
         $styleId = (int) $request->validate(['style_id' => ['required', 'integer', 'min:1']])['style_id'];
@@ -46,17 +38,6 @@ final class WishlistController
         return $request->expectsJson()
             ? response()->json(['in_wishlist' => $added === true, 'count' => count($this->wishlists->ids($customerId)), 'message' => $message], $added === null ? 422 : 200)
             : back()->with('status', $message);
-    }
-
-    public function merge(Request $request): JsonResponse
-    {
-        $data = $request->validate(['style_ids' => ['present', 'array', 'max:'.Wishlists::MAX], 'style_ids.*' => ['integer', 'min:1']]);
-        $customerId = $this->customerId($request);
-        abort_if($customerId === null, 401);
-
-        $added = $this->wishlists->add($customerId, array_values(array_map('intval', $data['style_ids'])));
-
-        return response()->json(['added' => $added, 'ids' => $this->wishlists->ids($customerId)]);
     }
 
     public function index(Request $request): View

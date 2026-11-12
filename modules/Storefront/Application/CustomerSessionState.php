@@ -35,7 +35,8 @@ final class CustomerSessionState
                 'url' => LocalizedUrls::route($customer !== null ? 'storefront.account' : 'storefront.account.login', [], $locale),
             ],
             'cart' => $current === null ? ['count' => 0, 'subtotal' => null, 'lines' => []] : $this->carts->mini($current),
-            'prices_url' => LocalizedUrls::route('storefront.session.prices'),
+            // Giá riêng của khách: Storefront API (gọi bằng phiên cùng nguồn, ADR-044).
+            'prices_url' => route('api.storefront.v1.me.prices'),
             'csrf_token' => $request->hasSession() ? $request->session()->token() : null,
         ];
     }

@@ -23,6 +23,21 @@ final class WishlistApiController
         )]);
     }
 
+    /** Id mẫu trong danh sách — JS tô nút tim (nhẹ hơn `items`, không dựng thẻ sản phẩm). Không cache. */
+    public function ids(Request $request): JsonResponse
+    {
+        return response()->json(['data' => ['ids' => $this->wishlists->ids($this->customerId($request))]])->header('Cache-Control', 'private, no-store');
+    }
+
+    /** Gộp danh sách của trình duyệt (khách vãng lai lưu ở localStorage) khi đăng nhập: bỏ trùng, bỏ mẫu không bán, giữ giới hạn. */
+    public function merge(Request $request): JsonResponse
+    {
+        $data = $request->validate(['style_ids' => ['present', 'array', 'max:'.Wishlists::MAX], 'style_ids.*' => ['integer', 'min:1']]);
+        $added = $this->wishlists->add($this->customerId($request), array_values(array_map('intval', $data['style_ids'])));
+
+        return response()->json(['data' => ['added' => $added, 'ids' => $this->wishlists->ids($this->customerId($request))]]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate(['style_id' => ['required', 'integer', 'min:1']]);

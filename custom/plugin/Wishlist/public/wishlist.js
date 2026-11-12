@@ -25,13 +25,14 @@
             // trình duyệt chặn lưu trữ: bỏ qua
         }
     };
-    const post = (url, body) =>
+    // Storefront API bằng phiên cùng nguồn (ADR-044): cookie phiên + X-CSRF-TOKEN của trang, phản hồi `{data: {...}}`.
+    const call = (method, url, body = null) =>
         fetch(url, {
-            method: 'POST',
+            method,
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': session?.csrf_token || '' },
-            body: JSON.stringify(body),
-        }).then((response) => (response.ok ? response.json() : null));
+            body: body === null ? null : JSON.stringify(body),
+        }).then((response) => (response.ok ? response.json() : null)).then((json) => json?.data ?? null);
 
     const render = () => {
         document.querySelectorAll('form[data-vani-wishlist]').forEach((form) => {
@@ -58,11 +59,11 @@
         }
         const local = readLocal();
         const load = local.length
-            ? post(config.mergeUrl, { style_ids: local }).then((data) => {
+            ? call('POST', config.mergeUrl, { style_ids: local }).then((data) => {
                   if (data) writeLocal([]);
                   return data;
               })
-            : fetch(config.idsUrl, { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then((response) => (response.ok ? response.json() : null));
+            : call('GET', config.idsUrl);
         load.then((data) => {
             ids = new Set((data?.ids || []).map(Number));
             render();
@@ -80,10 +81,10 @@
             render();
             return;
         }
-        post(config.toggleUrl, { style_id: styleId })
+        (ids.has(styleId) ? call('DELETE', `${config.itemsUrl}/${styleId}`) : call('POST', config.itemsUrl, { style_id: styleId }))
             .then((data) => {
                 if (!data) return;
-                data.in_wishlist ? ids.add(styleId) : ids.delete(styleId);
+                ids = new Set((data.ids || []).map(Number));
                 render();
             })
             .catch(() => {});

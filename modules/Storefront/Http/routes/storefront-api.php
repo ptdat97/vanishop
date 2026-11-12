@@ -10,6 +10,7 @@ use Modules\Storefront\Http\Controllers\Api\CheckoutController;
 use Modules\Storefront\Http\Controllers\Api\OrderController;
 use Modules\Storefront\Http\Controllers\Api\PaymentController;
 use Modules\Storefront\Http\Controllers\Api\ProductController;
+use Modules\Storefront\Http\Controllers\Api\ProductViewController;
 use Modules\Storefront\Http\Controllers\Api\StoreController;
 
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -19,6 +20,8 @@ Route::get('brands/{slug}', [BrandController::class, 'show'])->name('brands.show
 // Khách đăng nhập (Bearer) thấy giá khi cửa hàng ẩn giá với khách chưa đăng nhập (`storefront.price_visibility`).
 Route::middleware('vani.customer:optional')->group(function () {
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    // Beacon lượt xem PDP (miễn CSRF — chỉ cộng lượt xem, đã lọc trùng; StorefrontServiceProvider).
+    Route::post('products/views', ProductViewController::class)->middleware('throttle:120,1')->name('products.views');
     Route::get('search/suggestions', [ProductController::class, 'suggestions'])->name('search.suggestions');
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 });

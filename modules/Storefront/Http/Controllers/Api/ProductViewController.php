@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Modules\Storefront\Http\Controllers\Web;
+namespace Modules\Storefront\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Catalog\Contracts\ProductViewStatistics;
 
 /**
- * Beacon lượt xem PDP (§3.5-2): JS gửi sau khi trang tải (trang cache CDN được, không ghi DB lúc render). Miễn CSRF —
+ * Storefront API `POST /products/views` (ADR-044, thay `/_vani/xem`): beacon lượt xem PDP (§3.5-2), JS gửi sau khi trang
+ * tải (trang cache CDN được, không ghi DB lúc render). Lọc trùng theo phiên web cùng nguồn (FirstPartySession) hoặc IP +
+ * trình duyệt; client khác gửi như khách vãng lai. Miễn CSRF —
  * chỉ cộng lượt xem, đã lọc trùng theo phiên. Luôn 204.
  */
 final class ProductViewController

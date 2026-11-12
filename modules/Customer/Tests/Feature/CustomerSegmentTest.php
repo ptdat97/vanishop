@@ -37,13 +37,13 @@ beforeEach(function () {
     $this->admin = fn (array $permissions = ['admin.access', 'customers.view', 'customers.segment']) => $this->actingAs(T::staff($permissions), 'staff');
 });
 
-it('khách thuộc nhóm có bảng giá thành viên: giỏ + đơn tính giá thành viên; trang công khai vẫn giá chung, /_vani/gia trả giá thành viên', function () {
+it('khách thuộc nhóm có bảng giá thành viên: giỏ + đơn tính giá thành viên; trang công khai vẫn giá chung, GET /me/prices (phiên cùng nguồn) trả giá thành viên', function () {
     $customer = ($this->signIn)();
     app(CustomerSegmentService::class)->assign($customer, $this->vip->id, []);
 
     $this->get('/san-pham/'.$this->s->style->slug)->assertOk()->assertSee('300.000')->assertDontSee('250.000');
-    $this->getJson('/_vani/gia?v[]='.$this->s->id)->assertOk()->assertHeader('Cache-Control', 'no-store, private')
-        ->assertJsonPath('group', 'VIP')->assertJsonPath('prices.'.$this->s->id.'.amount', 250_000);
+    $this->getJson('/api/storefront/v1/me/prices?variant_ids[]='.$this->s->id, ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('data.group', 'VIP')->assertJsonPath('data.prices.'.$this->s->id.'.amount', 250_000);
 
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
     $this->get('/gio-hang')->assertSee('250.000');
@@ -56,10 +56,10 @@ it('khách thuộc nhóm có bảng giá thành viên: giỏ + đơn tính giá 
     expect(Order::query()->sole())->subtotal_amount->toBe(250_000)->customer_id->toBe($customer->id);
 });
 
-it('khách không nhóm / vãng lai: giá chung; /_vani/gia rỗng', function () {
-    $this->getJson('/_vani/gia?v[]='.$this->s->id)->assertJsonPath('prices', []);
+it('khách không nhóm / vãng lai: giá chung; GET /me/prices — vãng lai 401, không nhóm thì rỗng', function () {
+    $this->getJson('/api/storefront/v1/me/prices?variant_ids[]='.$this->s->id, ['Sec-Fetch-Site' => 'same-origin'])->assertUnauthorized();
     ($this->signIn)();
-    $this->getJson('/_vani/gia?v[]='.$this->s->id)->assertJsonPath('group', null)->assertJsonPath('prices', []);
+    $this->getJson('/api/storefront/v1/me/prices?variant_ids[]='.$this->s->id, ['Sec-Fetch-Site' => 'same-origin'])->assertJsonPath('data.group', null)->assertJsonPath('data.prices', []);
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
     $this->get('/gio-hang')->assertSee('300.000');
 });

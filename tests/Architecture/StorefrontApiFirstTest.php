@@ -42,6 +42,8 @@ const STOREFRONT_API_PAIRS = [
     'storefront.account.delete.otp' => ['api.storefront.v1.auth.otp.request'],
     'storefront.account.delete.confirm' => ['api.storefront.v1.me.destroy'],
     'storefront.track.search' => ['api.storefront.v1.orders.track'],
+    // Plugin (route chỉ có khi plugin bật): nút tim là form thường khi tắt JS; có JS thì wishlist.js gọi API.
+    'storefront.p.vani-wishlist.toggle' => ['api.storefront.x.vani-wishlist.items.store', 'api.storefront.x.vani-wishlist.items.destroy'],
 ];
 
 /**
@@ -50,9 +52,6 @@ const STOREFRONT_API_PAIRS = [
  * @var array<string, string>
  */
 const STOREFRONT_API_PENDING = [
-    'storefront.session.viewed' => 'api-first-refactor A3: POST /products/{slug}/views',
-    'storefront.p.vani-wishlist.toggle' => 'api-first-refactor A3: JS dùng x/vani-wishlist/items',
-    'storefront.p.vani-wishlist.merge' => 'api-first-refactor A3: JS dùng x/vani-wishlist/items',
 ];
 
 /**
@@ -112,6 +111,10 @@ it('R37: bảng cặp Blade ↔ API trỏ tới route có thật; danh sách ch�
     $routes = app('router')->getRoutes();
     $broken = [];
     foreach (STOREFRONT_API_PAIRS as $blade => $apis) {
+        // Route của plugin chỉ đăng ký khi plugin bật.
+        if (str_starts_with($blade, 'storefront.p.') && $routes->getByName($blade) === null) {
+            continue;
+        }
         if ($routes->getByName($blade) === null) {
             $broken[] = "{$blade} (Blade)";
         }
@@ -141,4 +144,28 @@ it('R37: cặp đã gom dùng CÙNG một FormRequest ở Blade và API (luật 
     }
 
     expect($diverged)->toBe([]);
+});
+
+it('R37: JS và view của theme/plugin không gọi endpoint JSON riêng ngoài Storefront API', function () {
+    // Ngoại lệ duy nhất: /_vani/phien — "đường ống" của Blade khi trang được cache CDN (CSRF của form, flash, lỗi form lần
+    // gửi trước); không phải dữ liệu cửa hàng (ADR-044, api-first-refactor A3).
+    $allowed = ['/_vani/phien', "'storefront.session'"];
+    $pattern = '#/_vani/[a-z]+|storefront\.session\.[a-z]+|p/vani-wishlist/(ids|merge)|(?<!x\.)vani-wishlist\.(ids|merge)\b#';
+    $offenders = [];
+    $roots = [...glob(base_path('custom/theme/*'), GLOB_ONLYDIR), ...glob(base_path('custom/plugin/*'), GLOB_ONLYDIR)];
+    foreach ($roots as $root) {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) as $file) {
+            $path = (string) $file;
+            if (! preg_match('/\.(js|blade\.php)$/', $path) || str_contains($path, '/Tests/')) {
+                continue;
+            }
+            foreach (file($path) ?: [] as $number => $line) {
+                if (preg_match_all($pattern, $line, $matches) > 0 && array_diff($matches[0], $allowed) !== []) {
+                    $offenders[] = substr($path, strlen(base_path()) + 1).':'.($number + 1);
+                }
+            }
+        }
+    }
+
+    expect($offenders)->toBe([], 'Gọi Storefront API (phiên cùng nguồn, ADR-044) thay cho endpoint JSON riêng');
 });

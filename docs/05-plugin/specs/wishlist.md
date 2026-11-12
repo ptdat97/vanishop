@@ -33,10 +33,12 @@
 
 | Kênh | Đường dẫn | Ghi chú |
 |---|---|---|
-| Web (phiên) | `GET /p/vani-wishlist/ids` | `{signed_in, ids[]}`, `private, no-store` |
-| Web | `POST /p/vani-wishlist/toggle` (`style_id`) | JSON khi gọi bằng JS (header `X-CSRF-TOKEN` lấy từ dữ liệu phiên), không thì quay lại trang; vãng lai → 401 / trang đăng nhập |
-| Web | `POST /p/vani-wishlist/merge` (`style_ids[]`) | Gộp danh sách của trình duyệt sau khi đăng nhập |
-| Storefront API (Bearer) | `GET/POST /api/storefront/v1/x/vani-wishlist/items`, `DELETE …/items/{styleId}` | Cho app; `GET` trả thẻ sản phẩm |
+| Storefront API | `GET /api/storefront/v1/x/vani-wishlist/ids` | `{data: {ids[]}}`, `private, no-store` — wishlist.js tô nút tim |
+| Storefront API | `GET/POST /api/storefront/v1/x/vani-wishlist/items`, `DELETE …/items/{styleId}` | `GET` trả thẻ sản phẩm; `POST`/`DELETE` trả `{data: {ids}}` |
+| Storefront API | `POST /api/storefront/v1/x/vani-wishlist/items/merge` (`style_ids[]`) | Gộp danh sách của trình duyệt sau khi đăng nhập |
+| Web | `POST /p/vani-wishlist/toggle` (`style_id`) | Nút tim khi **tắt JS** (quay lại trang; vãng lai → trang đăng nhập) |
+
+Xác thực API: Bearer (app) hoặc phiên web cùng nguồn — wishlist.js gọi bằng cookie phiên + `X-CSRF-TOKEN` (ADR-044, 1.1.0).
 
 ## 5. Extension point dùng và phần Core bổ sung (bước 3)
 

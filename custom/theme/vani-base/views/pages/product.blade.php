@@ -79,7 +79,7 @@
 
             <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
-            <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ vani_route('storefront.session.prices') }}" hidden></p>
+            <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('api.storefront.v1.me.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
             <x-vani::hook-slot name="vani.storefront.pdp.before_add_to_cart" :args="[$product]" />
 
@@ -177,7 +177,7 @@
     {{-- Lượt xem + "Đã xem gần đây" (§3.5-2): JS gửi beacon sau khi trang tải, lưu tối đa 12 mẫu trong trình duyệt và hiện
          các mẫu đã xem khác (thẻ lấy từ Storefront API). HTML giống nhau với mọi khách; không JS → khung ẩn. --}}
     <section class="mt-12" hidden data-vani-recently-viewed data-style-id="{{ $product['id'] }}"
-             data-view-url="{{ route('storefront.session.viewed') }}" data-products-url="{{ route('api.storefront.v1.products.index') }}" data-locale="{{ app()->getLocale() }}"
+             data-view-url="{{ route('api.storefront.v1.products.views') }}" data-products-url="{{ route('api.storefront.v1.products.index') }}" data-locale="{{ app()->getLocale() }}"
              data-product-url="{{ vani_route('storefront.product', '__slug__') }}">
         <h2 class="mb-4 text-lg font-medium">{{ __('Đã xem gần đây') }}</h2>
         <div class="grid grid-cols-2 gap-6 md:grid-cols-6" data-vani-recently-viewed-list></div>

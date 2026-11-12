@@ -2,8 +2,8 @@
 @php($src = vani_asset('vani.wishlist', 'wishlist.js'))
 @if ($src !== '')
     <script src="{{ $src }}" defer data-vani-wishlist-script
-            data-ids-url="{{ vani_route('storefront.p.vani-wishlist.ids') }}"
-            data-toggle-url="{{ vani_route('storefront.p.vani-wishlist.toggle') }}"
-            data-merge-url="{{ vani_route('storefront.p.vani-wishlist.merge') }}"
+            data-ids-url="{{ route('api.storefront.x.vani-wishlist.ids') }}"
+            data-items-url="{{ route('api.storefront.x.vani-wishlist.items.store') }}"
+            data-merge-url="{{ route('api.storefront.x.vani-wishlist.items.merge') }}"
             data-label-add="{{ __('Yêu thích') }}" data-label-remove="{{ __('Bỏ yêu thích') }}"></script>
 @endif

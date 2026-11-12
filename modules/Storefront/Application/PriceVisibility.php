@@ -12,7 +12,7 @@ use Modules\Tenancy\Contracts\Settings;
  * Chỗ duy nhất quyết định có hiện giá không (`core` / `storefront.price_visibility`, reference-parity §3.2). `members`:
  * khách chưa đăng nhập không thấy giá (thẻ/PDP/Storefront API trả `price: null` + `price_hidden: true`, JSON-LD không có
  * `offers`), không thêm giỏ, không checkout. Trang cache được chạy không phiên nên luôn là bản ẩn giá; khách đã đăng
- * nhập nhận giá sau qua `GET /_vani/gia`.
+ * nhập nhận giá sau qua `GET /api/storefront/v1/me/prices`.
  */
 final class PriceVisibility
 {

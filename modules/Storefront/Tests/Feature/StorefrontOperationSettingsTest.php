@@ -160,18 +160,18 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
             ->assertDontSee('"offers"', false);
     })->with(['sản phẩm' => '{product}', 'thương hiệu' => '/thuong-hieu/lumiere', 'tìm kiếm' => '/tim-kiem?q=dam']);
 
-    it('HTML cache CDN vẫn là bản ẩn giá khi khách đã đăng nhập; giá điền sau qua /_vani/gia', function () {
+    it('HTML cache CDN vẫn là bản ẩn giá khi khách đã đăng nhập; giá điền sau qua GET /me/prices (phiên cùng nguồn)', function () {
         config(['vanishop.storefront.page_cache.enabled' => true]);
         $guest = $this->get($this->product)->getContent();
         $styleId = $this->s->style->id;
-        $this->getJson("/_vani/gia?p[]={$styleId}")->assertOk()->assertJsonPath('products', []);
+        $this->getJson("/api/storefront/v1/me/prices?style_ids[]={$styleId}", ['Sec-Fetch-Site' => 'same-origin'])->assertUnauthorized();
 
         ($this->signIn)();
         expect($this->get($this->product)->getContent())->toBe($guest);
-        $this->getJson('/_vani/phien')->assertJsonPath('prices_url', route('storefront.session.prices'));
-        $this->getJson("/_vani/gia?p[]={$styleId}")->assertOk()->assertHeader('Cache-Control', 'no-store, private')
-            ->assertJsonPath("products.{$styleId}.min.amount", 200_000)
-            ->assertJsonPath("products.{$styleId}.max.amount", 300_000);
+        $this->getJson('/_vani/phien')->assertJsonPath('prices_url', route('api.storefront.v1.me.prices'));
+        $this->getJson("/api/storefront/v1/me/prices?style_ids[]={$styleId}", ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertJsonPath("data.products.{$styleId}.min.amount", 200_000)
+            ->assertJsonPath("data.products.{$styleId}.max.amount", 300_000);
     });
 
     it('Storefront API: khách chưa đăng nhập nhận price null + price_hidden; khách có Bearer thấy giá', function () {

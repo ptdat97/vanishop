@@ -32,14 +32,13 @@ final class AuthenticateCustomer
     public function handle(Request $request, Closure $next, string $mode = 'required'): Response
     {
         $token = (string) $request->bearerToken();
-        if ($token === '') {
+        $customer = $token === '' ? $this->fromSession($request) : ($this->auth->authenticate($token) ?? throw CustomerRejected::unauthenticated());
+        if ($customer === null) {
             if ($mode === 'optional') {
                 return $next($request);
             }
             throw CustomerRejected::unauthenticated();
         }
-
-        $customer = $this->auth->authenticate($token) ?? throw CustomerRejected::unauthenticated();
         $request->attributes->set(self::ATTRIBUTE, $customer);
 
         $scope = $this->context->has() ? $this->context->scope() : null;
@@ -49,6 +48,17 @@ final class AuthenticateCustomer
         ));
 
         return $next($request);
+    }
+
+    /**
+     * Phiên web cùng nguồn (FirstPartySession, ADR-044): JS của theme gọi API bằng phiên đăng nhập của trang. Token trong
+     * phiên hết hạn/đã đăng xuất → coi như chưa đăng nhập (như CustomerSession của Blade), không 401.
+     */
+    private function fromSession(Request $request): ?Customer
+    {
+        $token = $request->hasSession() ? (string) $request->session()->get(CustomerSession::SESSION_KEY, '') : '';
+
+        return $token === '' ? null : $this->auth->authenticate($token);
     }
 
     public static function customer(Request $request): Customer

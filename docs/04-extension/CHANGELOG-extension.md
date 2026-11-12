@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.14 — 2026-11-12
+
+Một bề mặt JSON: JS của theme và plugin lấy dữ liệu từ Storefront API bằng phiên web cùng nguồn (ADR-044 §4, api-first-refactor đợt A3).
+
+### Thêm
+- Middleware `vani.first-party-session` (`Shared\Http\Middleware\FirstPartySession`) ở đầu nhóm route Storefront API (cả `x/<plugin>`): request cùng nguồn (`Sec-Fetch-Site: same-origin`, hoặc `Origin` trùng host) không mang `Authorization` → chạy phiên web; request ghi phải kèm CSRF. `vani.customer` nhận khách từ phiên khi không có Bearer (token phiên hết hạn = chưa đăng nhập, không 401).
+- `POST /api/storefront/v1/products/views` (`style_id`, miễn CSRF, 204) — thay `/_vani/xem`.
+- `GET /me/prices` nhận thêm `style_ids[]` → `data.products` (khoảng giá theo sản phẩm khi cửa hàng ẩn giá với khách chưa đăng nhập); `Cache-Control: private, no-store` — thay `/_vani/gia`.
+- `vani.wishlist` 1.1.0: `GET x/vani-wishlist/ids`, `POST x/vani-wishlist/items/merge`.
+
+### Gỡ (phá vỡ)
+- `GET /_vani/gia`, `POST /_vani/xem`, `GET /p/vani-wishlist/ids`, `POST /p/vani-wishlist/merge`. `/p/vani-wishlist/toggle` chỉ còn là form khi tắt JS. `/_vani/phien` giữ nguyên (CSRF, flash của Blade khi cache CDN); `prices_url` trong dữ liệu phiên trỏ `GET /me/prices`.
+
 ## 0.4.13 — 2026-11-12
 
 "Vỏ" trang qua Storefront API (ADR-044, api-first-refactor đợt A2).

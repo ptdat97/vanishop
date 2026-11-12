@@ -69,14 +69,14 @@ it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ n�
         ->assertSee('data-vani-wishlist-count', false);
 });
 
-it('khách đăng nhập: thêm/bỏ (JSON và form không JS), trạng thái qua /ids; vãng lai bị từ chối', function () {
+it('khách đăng nhập: thêm/bỏ (JSON và form không JS), trạng thái qua Storefront API ids (phiên cùng nguồn); vãng lai bị từ chối', function () {
     ($this->toggle)($this->style->id)->assertUnauthorized();
     $this->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect(url('/tai-khoan/dang-nhap'));
-    $this->getJson('/p/vani-wishlist/ids')->assertExactJson(['signed_in' => false, 'ids' => []])->assertHeader('Cache-Control', 'no-store, private');
+    $this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin'])->assertUnauthorized();
 
     ($this->signIn)();
     ($this->toggle)($this->style->id)->assertOk()->assertJson(['in_wishlist' => true, 'count' => 1]);
-    $this->getJson('/p/vani-wishlist/ids')->assertJson(['signed_in' => true, 'ids' => [$this->style->id]]);
+    $this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertExactJson(['data' => ['ids' => [$this->style->id]]])->assertHeader('Cache-Control', 'no-store, private');
     ($this->toggle)($this->style->id)->assertOk()->assertJson(['in_wishlist' => false, 'count' => 0]);
 
     $this->from('/san-pham/'.$this->style->slug)->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect('/san-pham/'.$this->style->slug);
@@ -92,8 +92,10 @@ it('gộp danh sách của trình duyệt khi đăng nhập: bỏ trùng, bỏ m
     $customerId = ($this->signIn)();
     app(Wishlists::class)->add($customerId, [$this->style->id]);
 
-    $this->postJson('/p/vani-wishlist/merge', ['style_ids' => [$this->style->id, $other->style_id, $draft->style_id]])->assertOk()
-        ->assertJson(['added' => 1, 'ids' => [$other->style_id, $this->style->id]]);
+    $this->postJson('/api/storefront/v1/x/vani-wishlist/items/merge', ['style_ids' => [$this->style->id, $other->style_id, $draft->style_id]], ['Sec-Fetch-Site' => 'same-origin'])->assertOk()
+        ->assertJson(['data' => ['added' => 1, 'ids' => [$other->style_id, $this->style->id]]]);
+    // Thêm/bỏ như wishlist.js: POST/DELETE items, phản hồi danh sách mới.
+    $this->deleteJson("/api/storefront/v1/x/vani-wishlist/items/{$other->style_id}", [], ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertJsonPath('data.ids', [$this->style->id]);
 });
 
 it('trang /tai-khoan/yeu-thich (cần đăng nhập) + mục menu tài khoản; bản /en/account/wishlist', function () {

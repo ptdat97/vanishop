@@ -90,7 +90,7 @@ Mỗi mục: **Tham chiếu** (hành vi đã quan sát, viết bằng lời) · 
 | `storefront.placeholder_image` | media id | ảnh của theme | Ảnh thay thế khi sản phẩm thiếu ảnh |
 
 Ghi chú cho `storefront.price_visibility` (Owner cần, 2026-11-03):
-- Trang cache CDN không được chứa giá khi bật `members`: giá trên thẻ sản phẩm/PDP được điền sau qua endpoint giá đã có (`/_vani/gia`) chỉ khi có phiên khách đã đăng nhập; HTML cache luôn là bản "Đăng nhập để xem giá".
+- Trang cache CDN không được chứa giá khi bật `members`: giá trên thẻ sản phẩm/PDP được điền sau qua `GET /api/storefront/v1/me/prices` (phiên cùng nguồn, ADR-044) chỉ khi có phiên khách đã đăng nhập; HTML cache luôn là bản "Đăng nhập để xem giá".
 - Giỏ, checkout, Storefront API (`/products`, `/products/{slug}`, giỏ) kiểm tra cùng một chính sách (`PriceVisibility` trong Storefront, một chỗ quyết định) — không chỉ ẩn ở view.
 - Sitemap, feed và JSON-LD không chứa giá khi bật `members`.
 - Đổi cấu hình phải xoá cache CDN của trang storefront (ghi trong [operations](../18-operations/operations.md)).

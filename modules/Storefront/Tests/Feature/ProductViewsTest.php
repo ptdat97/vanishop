@@ -15,20 +15,20 @@ beforeEach(function () {
     $this->style = $this->s->style;
 });
 
-it('beacon lượt xem: miễn CSRF, 204, gom theo giờ, lọc trùng cùng phiên 30 phút, phát ProductViewed; mẫu ẩn bị bỏ', function () {
+it('beacon lượt xem (Storefront API, ADR-044): miễn CSRF, 204, gom theo giờ, lọc trùng cùng phiên 30 phút, phát ProductViewed; mẫu ẩn bị bỏ', function () {
     Event::fake([ProductViewed::class]);
 
-    $this->post('/_vani/xem', ['style_id' => $this->style->id])->assertNoContent();
-    $this->post('/_vani/xem', ['style_id' => $this->style->id])->assertNoContent();
+    $this->post('/api/storefront/v1/products/views', ['style_id' => $this->style->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
+    $this->post('/api/storefront/v1/products/views', ['style_id' => $this->style->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
     expect(DB::table('style_view_stats')->where('style_id', $this->style->id)->sum('views'))->toEqual(1);
     Event::assertDispatchedTimes(ProductViewed::class, 1);
 
     $this->travel(31)->minutes();
-    $this->post('/_vani/xem', ['style_id' => $this->style->id]);
+    $this->post('/api/storefront/v1/products/views', ['style_id' => $this->style->id], ['Sec-Fetch-Site' => 'same-origin']);
     expect(app(ProductViewStatistics::class)->counts([$this->style->id]))->toBe([$this->style->id => 2]);
 
     $draft = T::product($this->brand->id, ['status' => 'draft']);
-    $this->post('/_vani/xem', ['style_id' => $draft->id])->assertNoContent();
+    $this->post('/api/storefront/v1/products/views', ['style_id' => $draft->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
     expect(DB::table('style_view_stats')->where('style_id', $draft->id)->exists())->toBeFalse();
 });
 
@@ -47,7 +47,7 @@ it('thống kê: tổng theo khoảng ngày, xem nhiều nhất', function () {
 it('PDP có khung "Đã xem gần đây" + beacon (HTML không phụ thuộc khách); Admin hiện lượt xem 30 ngày', function () {
     $this->get('/san-pham/'.$this->style->slug)->assertOk()
         ->assertSee('data-vani-recently-viewed', false)
-        ->assertSee('data-view-url="'.route('storefront.session.viewed').'"', false);
+        ->assertSee('data-view-url="'.route('api.storefront.v1.products.views').'"', false);
 
     DB::table('style_view_stats')->insert(['style_id' => $this->style->id, 'hour' => now()->utc()->startOfHour(), 'views' => 7]);
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff')

@@ -132,7 +132,7 @@ final class ProductViews implements ProductCards
 
     /**
      * Khoảng giá chung theo style (cùng dạng `price` của thẻ) cho trang cache khi ẩn giá — gọi sau khi đã kiểm tra khách
-     * được xem giá (`GET /_vani/gia`). Style không hiển thị hoặc chưa có giá bị bỏ.
+     * được xem giá (`GET /api/storefront/v1/me/prices`). Style không hiển thị hoặc chưa có giá bị bỏ.
      *
      * @param  list<int>  $styleIds
      * @return array<int, array<string, mixed>> style id => khoảng giá

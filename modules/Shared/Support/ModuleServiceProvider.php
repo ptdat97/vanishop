@@ -71,7 +71,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
     protected function loadStorefrontApiRoutes(string $file): void
     {
         if (! $this->app->routesAreCached()) {
-            Route::middleware(['api', 'throttle:storefront-api', 'vani.storefront-context', 'vani.maintenance', 'vani.response-hooks:vani.api.storefront,api.storefront.v1.'])
+            Route::middleware(['api', 'vani.first-party-session', 'throttle:storefront-api', 'vani.storefront-context', 'vani.maintenance', 'vani.response-hooks:vani.api.storefront,api.storefront.v1.'])
                 ->prefix('api/storefront/v1')
                 ->name('api.storefront.v1.')
                 ->group($file);
