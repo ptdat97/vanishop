@@ -6,6 +6,8 @@
 | 1. Mọi thao tác ghi của storefront Blade có endpoint `/api/storefront/v1` tương ứng (bảng STOREFRONT_API_PAIRS). Route ghi
 |    mới của Blade thiếu cặp → đỏ: thêm endpoint API trước, rồi khai báo cặp ở đây.
 | 2. Các cặp đã gom hợp đồng đầu vào dùng CÙNG một FormRequest ở cả hai phía (luật validate viết một lần).
+| 3. JS/view của theme và plugin lấy dữ liệu từ Storefront API, không từ endpoint JSON riêng (trừ `/_vani/phien`).
+| 4. Plugin có trang storefront phải có Storefront API cho cùng dữ liệu (trừ PLUGIN_PAGES_WITHOUT_API).
 */
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -168,4 +170,46 @@ it('R37: JS và view của theme/plugin không gọi endpoint JSON riêng ngoài
     }
 
     expect($offenders)->toBe([], 'Gọi Storefront API (phiên cùng nguồn, ADR-044) thay cho endpoint JSON riêng');
+});
+
+/**
+ * Plugin có trang Blade nhưng KHÔNG cần Storefront API (A5, ADR-044): trang chỉ là điểm quay về/trình bày, không mang
+ * dữ liệu cửa hàng mà client khác cần.
+ *
+ * @var array<string, string>
+ */
+const PLUGIN_PAGES_WITHOUT_API = [
+    'vani.vnpay' => 'trang khách quay về từ cổng thanh toán: xác minh chữ ký rồi chuyển tới trang đơn; app dùng GET /payments/{payment}',
+];
+
+/**
+ * @return array<string, string> plugin id → mã nguồn ServiceProvider
+ */
+function pluginProviders(): array
+{
+    $providers = [];
+    foreach (glob(base_path('custom/plugin/*/vanishop.json')) as $manifest) {
+        $id = json_decode((string) file_get_contents($manifest), true, flags: JSON_THROW_ON_ERROR)['id'];
+        $providers[$id] = implode("\n", array_map('file_get_contents', glob(dirname($manifest).'/*ServiceProvider.php')));
+    }
+
+    return $providers;
+}
+
+it('R37: plugin có trang storefront (storefrontPages/accountRoutes) phải có Storefront API cho cùng dữ liệu (storefrontRoutes)', function () {
+    $missing = [];
+    $stale = [];
+    foreach (pluginProviders() as $id => $source) {
+        $hasPages = preg_match('/\$this->(storefrontPages|accountRoutes)\(/', $source) === 1;
+        $hasApi = preg_match('/\$this->storefrontRoutes\(/', $source) === 1;
+        if ($hasPages && ! $hasApi && ! array_key_exists($id, PLUGIN_PAGES_WITHOUT_API)) {
+            $missing[] = $id;
+        }
+        if (array_key_exists($id, PLUGIN_PAGES_WITHOUT_API) && (! $hasPages || $hasApi)) {
+            $stale[] = $id;
+        }
+    }
+
+    expect($missing)->toBe([], 'Thêm storefrontRoutes() cho dữ liệu của trang (ADR-044), hoặc ghi lý do vào PLUGIN_PAGES_WITHOUT_API')
+        ->and($stale)->toBe([], 'Bỏ plugin này khỏi PLUGIN_PAGES_WITHOUT_API');
 });

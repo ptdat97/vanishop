@@ -204,7 +204,9 @@ API đã có (**Implemented**, `modules/Extension/PluginServiceProvider.php`). M
 | `adminPages($namespace, $path)` | Implemented | `Inertia::render('<Namespace>::<Trang>')`; giao diện dùng `@admin/Components`, không import `reka-ui` trực tiếp ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) |
 | `migrations($path)`, `translations($path, $namespace)` | Implemented | |
 | `settings([...])` | Implemented (2026-10-14) | Khai báo cấu hình (key, label, type `string/secret/text/int/bool/select`, default, options) → Admin → Cấu hình sinh form; đọc lúc chạy qua `Tenancy\Contracts\Settings::get($pluginId, $key, $default)`. Thay cho `settings_schema` JSON trong manifest |
-| `storefrontRoutes()`, `adminApiRoutes()`, `scheduledTasks()`… | Designed | Xem [extension-point-catalog §5](../04-extension/extension-point-catalog.md) |
+| `storefrontRoutes($file)` | Implemented | Storefront API của plugin: `/api/storefront/v1/x/{slug}/…`, route name `api.storefront.x.{slug}.…`; cùng middleware với API của Core (phiên web cùng nguồn, rate limit, ngữ cảnh storefront), plugin tắt → 404. Cần khách: thêm `vani.customer` / `vani.customer:optional` trong file route |
+| `storefrontPages($file, $prefix, $cacheable)`, `accountRoutes($file, $segment)` | Implemented | Trang Blade của plugin (`/p/{slug}/…` hoặc tiền tố riêng; `/tai-khoan/{segment}/…`). Phải đi kèm `storefrontRoutes()` cho cùng dữ liệu — [§10b](#10b-storefront-api-first-cho-plugin-adr-044) |
+| `adminApiRoutes()`, `scheduledTasks()`… | Designed | Xem [extension-point-catalog §5](../04-extension/extension-point-catalog.md) |
 
 `{slug}` là plugin id với dấu `.` đổi thành `-` (ví dụ `vani.hello-world` → `vani-hello-world`).
 
@@ -251,4 +253,17 @@ Designed ([commerce-kernel §7](../02-architecture/commerce-kernel.md)). Plugin 
 10. Không ghi đè binding, class, route hay middleware của Core (rule R35); thay capability bằng implementation của Contract.
 11. View storefront: chữ hiển thị bọc `__('câu tiếng Việt')`, bản dịch ở `Resources/lang/<locale>.json` nạp trong `boot()` bằng `$this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'))`; URL bằng `vani_route()` ([storefront §3a](../14-storefront/storefront.md)).
 
+12. Tính năng storefront đi qua Storefront API trước, trang Blade sau ([§10b](#10b-storefront-api-first-cho-plugin-adr-044)).
+
 Các rule trên là **ranh giới kiến trúc, không phải sandbox bảo mật**: plugin chạy cùng process PHP với Core nên về kỹ thuật vẫn đọc/ghi được mọi bảng và mọi binding trong container. Arch test chỉ chặn vi phạm viết rõ trong mã nguồn. An toàn dựa vào việc chỉ cài plugin có mã nguồn đã review và đi qua CI ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)); không cài plugin không rõ nguồn gốc.
+
+## 10b. Storefront API-first cho plugin (ADR-044)
+
+Storefront API là hợp đồng; trang Blade của theme chỉ là một cách dùng nó ([ADR-044](../19-adr/ADR-044-storefront-api-first.md), rule R37). Plugin làm tính năng cho khách theo cùng thứ tự:
+
+1. **Dữ liệu và thao tác ghi → `storefrontRoutes()`** (`/api/storefront/v1/x/{slug}/…`). App, Zalo Mini App, headless và JS của theme cùng dùng. Phản hồi theo phong bì `{data, meta}` và lỗi `error.v1` như API của Core; plugin tự mô tả OpenAPI của mình nếu công bố cho bên ngoài.
+2. **Trang Blade → `storefrontPages()` / `accountRoutes()`** dựng từ cùng service mà API dùng; form Blade dùng chung FormRequest với endpoint API (luật đầu vào viết một lần).
+3. **JS của plugin gọi API** bằng phiên web cùng nguồn (cookie + `X-CSRF-TOKEN`, `vani.first-party-session`), không tạo endpoint JSON riêng dưới `/p/{slug}`. Route web chỉ giữ cho form khi tắt JS (vd. nút tim của `vani.wishlist`).
+4. **Slot HTML** (`onSlot` vào `vani.storefront.*`) chỉ để trình bày. Dữ liệu cho khách mà client khác cũng cần (bảng size, tín hiệu khan hàng…) đi qua enricher của sản phẩm (`extensions.<plugin id>` trong JSON) hoặc endpoint API.
+
+Arch test `tests/Architecture/StorefrontApiFirstTest.php` đỏ khi plugin khai báo `storefrontPages()`/`accountRoutes()` mà không có `storefrontRoutes()`. Ngoại lệ ghi kèm lý do trong `PLUGIN_PAGES_WITHOUT_API`; hiện chỉ có `vani.vnpay` (trang khách quay về từ cổng thanh toán — app đọc trạng thái qua `GET /payments/{payment}`). Plugin không có trang (vd. `vani.tracking-pixels` chỉ chèn script) không thuộc diện này.
