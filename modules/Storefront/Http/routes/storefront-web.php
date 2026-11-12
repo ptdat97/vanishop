@@ -55,8 +55,8 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::post($p('cart.select'), [CartController::class, 'select'])->name('cart.select');
                 Route::middleware('throttle:vani-checkout')->post($p('cart.voucher'), [CartController::class, 'voucher'])->name('cart.voucher');
 
-                Route::get($p('checkout'), [CheckoutController::class, 'show'])->name('checkout');
-                Route::middleware('throttle:vani-checkout')->post($p('checkout'), [CheckoutController::class, 'store'])->name('checkout.store');
+                Route::get($p('checkout'), [CheckoutController::class, 'show'])->middleware('vani.checkout-sign-in')->name('checkout');
+                Route::middleware(['vani.checkout-sign-in', 'throttle:vani-checkout'])->post($p('checkout'), [CheckoutController::class, 'store'])->name('checkout.store');
             });
 
             Route::get($p('order'), [OrderController::class, 'show'])->name('order');

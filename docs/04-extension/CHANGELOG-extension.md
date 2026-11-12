@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.9 — 2026-11-12
+
+Checkout của Storefront API và form Blade dùng một hợp đồng đầu vào (ADR-044 §2, đợt A1).
+
+### Đổi
+- Storefront API `POST /checkout/{cartId}/quote|orders`: địa chỉ thiếu `province_code`/`ward_code` nhưng có tên → mã lấy từ tên đã chuẩn hoá (cửa hàng không có danh mục địa giới), như form Blade vẫn làm. Contact/địa chỉ được cắt khoảng trắng.
+- Form checkout Blade validate bằng cùng `CheckoutRequestForm` với API (trường plugin `extra.*.*` nhận chuỗi/số/đúng sai như API). Chuyển sang đăng nhập khi cửa hàng tắt mua không đăng nhập là middleware `vani.checkout-sign-in` của route Blade (chạy trước validate).
+
 ## 0.4.8 — 2026-11-12
 
 Mã giảm giá lưu theo giỏ — một mô hình cho mọi kênh (ADR-044 §5, đợt A1 của [api-first-refactor](../20-roadmap/api-first-refactor.md)).

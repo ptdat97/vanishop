@@ -11,8 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutRejected;
-use Modules\Checkout\Contracts\Data\CheckoutRequest;
-use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
@@ -20,7 +18,7 @@ use Modules\Storefront\Application\CartVoucher;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\PaymentPresenter;
-use Modules\Tenancy\Contracts\Settings;
+use Modules\Storefront\Http\Requests\CheckoutRequestForm;
 
 /**
  * Checkout của native storefront: một form, đặt hàng bằng POST thường (Idempotency-Key là trường ẩn sinh khi
@@ -33,7 +31,6 @@ final class CheckoutController
         private readonly NativeCart $cart,
         private readonly CheckoutPresenter $presenter,
         private readonly AddressOptions $addresses,
-        private readonly Settings $settings,
         private readonly CartVoucher $voucher,
     ) {}
 
@@ -43,15 +40,12 @@ final class CheckoutController
         if ($key === null) {
             return redirect()->to(LocalizedUrls::route('storefront.cart'));
         }
-        if ($this->signInRequired($request)) {
-            return $this->toLogin();
-        }
 
         $old = (array) $request->old();
         // Mã của giỏ (ADR-044): mã hỏng tự bỏ khỏi giỏ, không phải lỗi. Mã khách vừa gõ ở đây đã được áp vào giỏ khi gửi form
         // (store); bị từ chối thì một dòng nhắc nhẹ kèm lý do (flash `voucher_notice`).
         $voucherCode = $this->voucher->preview($key)['code'] ?? '';
-        $checkoutQuote = $this->checkout->quote($this->toRequest($old, $request));
+        $checkoutQuote = $this->checkout->quote(CheckoutRequestForm::build($old, $key, (string) $request->attributes->get('order_source', 'web')));
         $quote = $this->presenter->quote($checkoutQuote);
         $voucherNotice = $request->session()->get('voucher_notice');
         $quote['rejected_vouchers'] = [];
@@ -70,31 +64,11 @@ final class CheckoutController
         ]);
     }
 
-    public function store(Request $request, Session $session, PaymentPresenter $payments): RedirectResponse
+    public function store(CheckoutRequestForm $request, Session $session, PaymentPresenter $payments): RedirectResponse
     {
-        $data = $request->validate([
-            'contact.full_name' => ['nullable', 'string', 'max:120'],
-            'contact.phone' => ['nullable', 'string', 'max:20'],
-            'contact.email' => ['nullable', 'email', 'max:190'],
-            'shipping_address.province_code' => ['nullable', 'string', 'max:16'],
-            'shipping_address.ward_code' => ['nullable', 'string', 'max:16'],
-            'shipping_address.province_name' => ['nullable', 'string', 'max:120'],
-            'shipping_address.ward_name' => ['nullable', 'string', 'max:120'],
-            'shipping_address.street_line' => ['nullable', 'string', 'max:255'],
-            'shipping_method' => ['nullable', 'string', 'max:64'],
-            'payment_method' => ['nullable', 'string', 'max:64'],
-            'voucher_code' => ['nullable', 'string', 'max:64'],
-            'note' => ['nullable', 'string', 'max:500'],
-            'extra' => ['nullable', 'array', 'max:10'],
-            'extra.*' => ['array', 'max:20'],
-            'extra.*.*' => ['nullable', 'string', 'max:500'],
-            'expected_total' => ['required', 'integer', 'min:0'],
-            'idempotency_key' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{8,128}$/'],
-        ]);
+        // Cùng hợp đồng đầu vào với Storefront API (ADR-044): luật validate và cách dựng CheckoutRequest ở CheckoutRequestForm.
+        $data = $request->validated();
 
-        if ($this->signInRequired($request)) {
-            return $this->toLogin();
-        }
         if ($this->cart->current() === null) {
             return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput();
         }
@@ -113,7 +87,7 @@ final class CheckoutController
         }
 
         try {
-            $result = $this->checkout->placeOrder($this->toRequest($data, $request, (int) $data['expected_total']), (string) $data['idempotency_key']);
+            $result = $this->checkout->placeOrder($request->toCheckoutRequest($this->cart->key()), (string) $data['idempotency_key']);
         } catch (CheckoutRejected $exception) {
             return redirect()->to(LocalizedUrls::route('storefront.checkout'))->withInput()->withErrors($this->errors($exception));
         }
@@ -132,60 +106,6 @@ final class CheckoutController
         }
 
         return redirect()->to(LocalizedUrls::route('storefront.order', $order['id']));
-    }
-
-    /**
-     * Cửa hàng tắt khách vãng lai (`storefront.guest_checkout`) và khách chưa đăng nhập. Checkout vẫn tự chặn khi đặt
-     * hàng; ở đây chỉ để khách không phải điền form rồi mới bị từ chối.
-     */
-    private function signInRequired(Request $request): bool
-    {
-        return ! $request->attributes->has(AuthenticateCustomer::ATTRIBUTE)
-            && ! (bool) $this->settings->get('core', 'storefront.guest_checkout', true);
-    }
-
-    private function toLogin(): RedirectResponse
-    {
-        return redirect()->guest(LocalizedUrls::route('storefront.account.login'))->with('status', __('storefront::messages.sign_in_to_checkout'));
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function toRequest(array $data, Request $request, ?int $expectedTotal = null): CheckoutRequest
-    {
-        $address = (array) ($data['shipping_address'] ?? []);
-
-        return new CheckoutRequest(
-            cart: $this->cart->key(),
-            contact: [
-                'full_name' => (string) ($data['contact']['full_name'] ?? ''),
-                'phone' => (string) ($data['contact']['phone'] ?? ''),
-                'email' => ($data['contact']['email'] ?? '') === '' ? null : (string) $data['contact']['email'],
-            ],
-            // Có danh mục địa giới: form gửi mã, Core lấy tên chuẩn. Không có: nhập tên, mã lấy từ tên đã chuẩn hoá.
-            shippingAddress: $this->addresses->directory() !== null ? [
-                'province_code' => (string) ($address['province_code'] ?? ''),
-                'province_name' => '',
-                'ward_code' => (string) ($address['ward_code'] ?? ''),
-                'ward_name' => '',
-                'street_line' => (string) ($address['street_line'] ?? ''),
-            ] : [
-                'province_code' => Str::slug((string) ($address['province_name'] ?? '')),
-                'province_name' => (string) ($address['province_name'] ?? ''),
-                'ward_code' => Str::slug((string) ($address['ward_name'] ?? '')),
-                'ward_name' => (string) ($address['ward_name'] ?? ''),
-                'street_line' => (string) ($address['street_line'] ?? ''),
-            ],
-            shippingMethod: ($data['shipping_method'] ?? null) ?: null,
-            paymentMethod: ($data['payment_method'] ?? null) ?: null,
-            // Mã giảm giá lấy từ giỏ (ADR-044).
-            voucherCodes: null,
-            note: ($data['note'] ?? null) ?: null,
-            expectedTotal: $expectedTotal,
-            extra: array_filter((array) ($data['extra'] ?? []), fn (mixed $fields, mixed $plugin): bool => is_string($plugin) && is_array($fields), ARRAY_FILTER_USE_BOTH),
-            source: (string) $request->attributes->get('order_source', 'web'),
-        );
     }
 
     /**

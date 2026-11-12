@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Storefront\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
+use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\PaymentPresenter;
@@ -20,7 +21,7 @@ final class CheckoutController
 
     public function quote(CheckoutRequestForm $request, string $cart, Checkout $checkout, CheckoutPresenter $presenter): JsonResponse
     {
-        return response()->json(['data' => $presenter->quote($checkout->quote($request->toCheckoutRequest($cart)))]);
+        return response()->json(['data' => $presenter->quote($checkout->quote($request->toCheckoutRequest($this->key($request, $cart))))]);
     }
 
     public function placeOrder(CheckoutRequestForm $request, string $cart, Checkout $checkout, PaymentPresenter $payments): JsonResponse
@@ -28,7 +29,7 @@ final class CheckoutController
         $key = (string) $request->headers->get(self::IDEMPOTENCY_HEADER, '');
         abort_if(preg_match('/^[A-Za-z0-9_-]{8,128}$/', $key) !== 1, 400, __('checkout::messages.idempotency_key_required'));
 
-        $result = $checkout->placeOrder($request->toCheckoutRequest($cart), $key);
+        $result = $checkout->placeOrder($request->toCheckoutRequest($this->key($request, $cart)), $key);
 
         $body = $result->payment === null ? $result->body : [...$result->body, 'payment' => $payments->present($result->payment)];
         // Mã giảm giá không dùng được đã bị bỏ khi đặt (ADR-044 §6): báo ở meta, không phải lỗi.
@@ -36,5 +37,10 @@ final class CheckoutController
         unset($body['dropped_vouchers']);
 
         return response()->json(['data' => $body, 'meta' => ['dropped_vouchers' => $dropped]], $result->status, $result->replayed ? ['Idempotent-Replayed' => 'true'] : []);
+    }
+
+    private function key(CheckoutRequestForm $request, string $cart): CartKey
+    {
+        return new CartKey($cart, (string) $request->headers->get(CartController::TOKEN_HEADER, ''));
     }
 }

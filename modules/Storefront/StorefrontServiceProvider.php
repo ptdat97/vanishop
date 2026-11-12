@@ -45,6 +45,7 @@ use Modules\Storefront\Contracts\ProductCards;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Http\LocalizedPaths;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
+use Modules\Storefront\Http\Middleware\RequireCheckoutSignIn;
 use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
 use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
@@ -96,6 +97,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         ));
         $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
         $router->aliasMiddleware('vani.prices-visible', RequireVisiblePrices::class);
+        $router->aliasMiddleware('vani.checkout-sign-in', RequireCheckoutSignIn::class);
         View::composer('theme::layouts.app', fn ($view) => $view->with([
             'menus' => $this->app->make(MenuPresenter::class),
             'seo' => $this->app->make(PageAlternates::class)->tags(),
