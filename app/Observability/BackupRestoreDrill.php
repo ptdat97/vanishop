@@ -48,7 +48,7 @@ final class BackupRestoreDrill
                 throw new RuntimeException('Diễn tập khôi phục chỉ hỗ trợ MySQL/MariaDB.');
             }
             [$backup, $backupAt] = $this->latestBackup($disk);
-            $dump = $this->extractDump($disk, $backup, $workDir);
+            $dump = $this->extractDump($disk, $backup, $workDir, $details);
 
             config(['database.connections.backup_drill' => [...$base, 'database' => $drillDb], 'database.connections.backup_drill_admin' => $base]);
             // DDL trên connection riêng: CREATE/DROP DATABASE tự commit transaction đang mở của connection chính.
@@ -93,7 +93,10 @@ final class BackupRestoreDrill
         return [$latest, Carbon::createFromTimestamp($storage->lastModified($latest))];
     }
 
-    private function extractDump(string $disk, string $backup, string $workDir): string
+    /**
+     * @param  array<string, mixed>  $details
+     */
+    private function extractDump(string $disk, string $backup, string $workDir, array &$details): string
     {
         File::ensureDirectoryExists($workDir);
         $zipPath = "{$workDir}/backup.zip";
@@ -118,6 +121,7 @@ final class BackupRestoreDrill
             $zip->close();
             throw new RuntimeException('Backup không có bản dump DB (db-dumps/*.sql) hoặc không giải nén được (sai mật khẩu?).');
         }
+        $this->checkFiles($zip, $workDir, $details);
         $zip->close();
 
         $dump = "{$workDir}/{$entry}";
@@ -127,6 +131,42 @@ final class BackupRestoreDrill
         }
 
         return $dump;
+    }
+
+    /**
+     * Phần file (`storage/app`) của bản backup đầy đủ: giải nén hết (kiểm CRC — file hỏng hoặc sai mật khẩu thì không
+     * giải nén được) và đối chiếu số file với `storage/app` hiện tại. Bản chỉ có DB (`--only-db`) → cảnh báo, chưa diễn
+     * tập phần file.
+     *
+     * @param  array<string, mixed>  $details
+     */
+    private function checkFiles(ZipArchive $zip, string $workDir, array &$details): void
+    {
+        $entries = [];
+        for ($index = 0; $index < $zip->numFiles; $index++) {
+            $name = (string) $zip->getNameIndex($index);
+            if (! str_starts_with($name, 'db-dumps/') && ! str_ends_with($name, '/') && str_contains($name, 'storage/app/')) {
+                $entries[] = $name;
+            }
+        }
+        $live = count(array_filter(File::allFiles(storage_path('app'), true), fn ($file): bool => ! str_contains($file->getPathname(), 'backup-drill-')
+            && ! str_contains($file->getPathname(), '/'.config('backup.backup.name').'/')));
+        $details['files'] = ['archived' => count($entries), 'live' => $live];
+
+        if ($entries === []) {
+            $details['anomalies'][] = ['fatal' => false, 'message' => 'Bản backup không có file storage/app (backup chỉ DB?) — phần file chưa được diễn tập; chạy với --with-files.'];
+
+            return;
+        }
+        if (! $zip->extractTo("{$workDir}/files", $entries)) {
+            $details['anomalies'][] = ['fatal' => true, 'message' => 'Không giải nén được phần file storage/app của bản backup (file hỏng hoặc sai mật khẩu).'];
+
+            return;
+        }
+        $details['files']['restored'] = count(File::allFiles("{$workDir}/files", true));
+        if ($details['files']['restored'] !== count($entries)) {
+            $details['anomalies'][] = ['fatal' => true, 'message' => "Giải nén được {$details['files']['restored']}/".count($entries).' file storage/app.'];
+        }
     }
 
     /**

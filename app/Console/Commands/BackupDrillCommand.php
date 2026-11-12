@@ -15,6 +15,7 @@ final class BackupDrillCommand extends Command
 {
     protected $signature = 'vani:backup:drill
         {--fresh : Chạy backup:run --only-db trước để diễn tập với bản mới nhất}
+        {--with-files : Cùng --fresh: backup đầy đủ (DB + storage/app) để diễn tập cả phần file}
         {--disk= : Disk backup (mặc định: disk đầu tiên trong VANI_BACKUP_DISKS)}
         {--keep : Giữ lại DB tạm để kiểm tra thủ công (nhớ tự DROP)}';
 
@@ -22,7 +23,8 @@ final class BackupDrillCommand extends Command
 
     public function handle(BackupRestoreDrill $drill): int
     {
-        if ($this->option('fresh') && $this->call('backup:run', ['--only-db' => true, '--disable-notifications' => true]) !== self::SUCCESS) {
+        $backupOptions = $this->option('with-files') ? ['--disable-notifications' => true] : ['--only-db' => true, '--disable-notifications' => true];
+        if ($this->option('fresh') && $this->call('backup:run', $backupOptions) !== self::SUCCESS) {
             $this->error('backup:run lỗi — không diễn tập.');
 
             return self::FAILURE;
@@ -33,6 +35,9 @@ final class BackupDrillCommand extends Command
         $this->line("Bản backup: {$result['backup']}");
         if (($details['tables'] ?? []) !== []) {
             $this->table(['Bảng', 'Bản khôi phục', 'DB thật'], array_map(fn (string $table, array $count): array => [$table, $count['restored'], $count['live']], array_keys($details['tables']), $details['tables']));
+        }
+        if (isset($details['files'])) {
+            $this->line("File storage/app: {$details['files']['archived']} trong backup".(isset($details['files']['restored']) ? ", giải nén được {$details['files']['restored']}" : '').", hiện có {$details['files']['live']}.");
         }
         foreach ($details['anomalies'] as $anomaly) {
             $anomaly['fatal'] ? $this->error("✗ {$anomaly['message']}") : $this->warn("! {$anomaly['message']}");

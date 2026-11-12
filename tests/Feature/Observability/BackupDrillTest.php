@@ -29,6 +29,15 @@ it('backup mới → diễn tập đạt, có số dòng đối chiếu, DB tạ
         ->and($drillDatabases())->not->toContain($details['drill_database']);
 })->skip(fn () => DB::getDriverName() !== 'mysql', 'Cần MySQL');
 
+it('--with-files: backup đầy đủ → giải nén và đếm được phần file storage/app; bản chỉ DB → cảnh báo chưa diễn tập file', function () {
+    $this->artisan('vani:backup:drill', ['--fresh' => true])->expectsOutputToContain('chưa được diễn tập')->assertSuccessful();
+
+    $this->artisan('vani:backup:drill', ['--fresh' => true, '--with-files' => true])->expectsOutputToContain('Diễn tập khôi phục đạt.')->assertSuccessful();
+    $files = json_decode((string) DB::table('backup_drills')->orderByDesc('id')->value('details'), true)['files'];
+    expect($files['archived'])->toBeGreaterThan(0)
+        ->and($files['restored'])->toBe($files['archived']);
+})->skip(fn () => DB::getDriverName() !== 'mysql', 'Cần MySQL');
+
 it('backup hỏng hoặc không có backup → không đạt, mã thoát 1, vẫn ghi kết quả', function () {
     $this->artisan('vani:backup:drill')->expectsOutputToContain('Không có bản backup')->assertFailed();
 
