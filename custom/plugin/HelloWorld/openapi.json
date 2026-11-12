@@ -1,0 +1,38 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.hello-world — Storefront API",
+        "version": "0.2.0",
+        "description": "Plugin mẫu. Kiểm bằng Modules\\Extension\\Testing\\StorefrontApiContract trong test của plugin (plugin-system §10b)."
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-hello-world"
+        }
+    ],
+    "paths": {
+        "/greeting": {
+            "get": {
+                "summary": "Lời chào (?name=)",
+                "responses": {
+                    "200": {
+                        "description": "Lời chào.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/greeting.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Tên quá dài (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    },
+                    "404": {
+                        "description": "Plugin đang tắt (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        }
+    }
+}

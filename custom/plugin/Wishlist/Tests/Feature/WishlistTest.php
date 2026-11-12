@@ -11,6 +11,7 @@ use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Application\Plugins\PluginAssets;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Testing\StorefrontApiContract as Api;
 use Modules\Inventory\Events\AvailabilityChanged;
 use Modules\Notification\Contracts\Data\NotificationRequest;
 use Modules\Notification\Contracts\Notifier;
@@ -72,11 +73,12 @@ it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ n�
 it('khách đăng nhập: thêm/bỏ (JSON và form không JS), trạng thái qua Storefront API ids (phiên cùng nguồn); vãng lai bị từ chối', function () {
     ($this->toggle)($this->style->id)->assertUnauthorized();
     $this->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect(url('/tai-khoan/dang-nhap'));
-    $this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin'])->assertUnauthorized();
+    Api::assertRoutesDocumented(dirname(__DIR__, 2));
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin']), dirname(__DIR__, 2), '/ids', 'GET')->assertUnauthorized();
 
     ($this->signIn)();
     ($this->toggle)($this->style->id)->assertOk()->assertJson(['in_wishlist' => true, 'count' => 1]);
-    $this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertExactJson(['data' => ['ids' => [$this->style->id]]])->assertHeader('Cache-Control', 'no-store, private');
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin']), dirname(__DIR__, 2), '/ids', 'GET')->assertOk()->assertExactJson(['data' => ['ids' => [$this->style->id]]])->assertHeader('Cache-Control', 'no-store, private');
     ($this->toggle)($this->style->id)->assertOk()->assertJson(['in_wishlist' => false, 'count' => 0]);
 
     $this->from('/san-pham/'.$this->style->slug)->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect('/san-pham/'.$this->style->slug);
@@ -92,10 +94,10 @@ it('gộp danh sách của trình duyệt khi đăng nhập: bỏ trùng, bỏ m
     $customerId = ($this->signIn)();
     app(Wishlists::class)->add($customerId, [$this->style->id]);
 
-    $this->postJson('/api/storefront/v1/x/vani-wishlist/items/merge', ['style_ids' => [$this->style->id, $other->style_id, $draft->style_id]], ['Sec-Fetch-Site' => 'same-origin'])->assertOk()
+    Api::assertResponse($this->postJson('/api/storefront/v1/x/vani-wishlist/items/merge', ['style_ids' => [$this->style->id, $other->style_id, $draft->style_id]], ['Sec-Fetch-Site' => 'same-origin']), dirname(__DIR__, 2), '/items/merge', 'POST')->assertOk()
         ->assertJson(['data' => ['added' => 1, 'ids' => [$other->style_id, $this->style->id]]]);
     // Thêm/bỏ như wishlist.js: POST/DELETE items, phản hồi danh sách mới.
-    $this->deleteJson("/api/storefront/v1/x/vani-wishlist/items/{$other->style_id}", [], ['Sec-Fetch-Site' => 'same-origin'])->assertOk()->assertJsonPath('data.ids', [$this->style->id]);
+    Api::assertResponse($this->deleteJson("/api/storefront/v1/x/vani-wishlist/items/{$other->style_id}", [], ['Sec-Fetch-Site' => 'same-origin']), dirname(__DIR__, 2), '/items/{style}', 'DELETE')->assertOk()->assertJsonPath('data.ids', [$this->style->id]);
 });
 
 it('trang /tai-khoan/yeu-thich (cần đăng nhập) + mục menu tài khoản; bản /en/account/wishlist', function () {
@@ -110,8 +112,8 @@ it('trang /tai-khoan/yeu-thich (cần đăng nhập) + mục menu tài khoản; 
 
 it('Storefront API (Bearer): danh sách thẻ sản phẩm, thêm, bỏ', function () {
     $headers = H::auth(H::login($this));
-    $this->postJson('/api/storefront/v1/x/vani-wishlist/items', ['style_id' => $this->style->id], $headers)->assertCreated()->assertJsonPath('data.ids', [$this->style->id]);
-    $this->getJson('/api/storefront/v1/x/vani-wishlist/items', $headers)->assertOk()->assertJsonPath('data.0.product.slug', $this->style->slug);
+    Api::assertResponse($this->postJson('/api/storefront/v1/x/vani-wishlist/items', ['style_id' => $this->style->id], $headers), dirname(__DIR__, 2), '/items', 'POST')->assertCreated()->assertJsonPath('data.ids', [$this->style->id]);
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-wishlist/items', $headers), dirname(__DIR__, 2), '/items', 'GET')->assertOk()->assertJsonPath('data.0.product.slug', $this->style->slug);
     $this->deleteJson("/api/storefront/v1/x/vani-wishlist/items/{$this->style->id}", [], $headers)->assertOk()->assertJsonPath('data.ids', []);
     $this->getJson('/api/storefront/v1/x/vani-wishlist/items')->assertUnauthorized();
 });

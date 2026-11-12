@@ -1,0 +1,92 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.cms — Storefront API",
+        "version": "1.5.1",
+        "description": "Trang nội dung, bài viết, danh mục bài viết. Kiểm bằng Modules\\Extension\\Testing\\StorefrontApiContract trong test của plugin (plugin-system §10b)."
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-cms"
+        }
+    ],
+    "paths": {
+        "/pages/{slug}": {
+            "get": {
+                "summary": "Trang nội dung đã xuất bản",
+                "responses": {
+                    "200": {
+                        "description": "Trang (HTML đã làm sạch).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/page.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không có hoặc chưa xuất bản (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        },
+        "/categories": {
+            "get": {
+                "summary": "Danh mục bài viết",
+                "responses": {
+                    "200": {
+                        "description": "Danh mục.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/categories.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/posts": {
+            "get": {
+                "summary": "Bài viết đã xuất bản (lọc ?category=)",
+                "responses": {
+                    "200": {
+                        "description": "Trang bài viết.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/posts.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Tham số sai (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        },
+        "/posts/{slug}": {
+            "get": {
+                "summary": "Chi tiết bài viết",
+                "responses": {
+                    "200": {
+                        "description": "Bài viết kèm sản phẩm liên quan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/post.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không có hoặc chưa xuất bản (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        }
+    }
+}

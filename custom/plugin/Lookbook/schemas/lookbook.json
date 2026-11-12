@@ -1,0 +1,115 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /lookbooks/{slug}",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "required": [
+                "slug",
+                "name",
+                "images",
+                "category",
+                "url"
+            ],
+            "properties": {
+                "slug": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description_html": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "meta_title": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "meta_description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "cover_url": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "url",
+                            "full_url"
+                        ],
+                        "properties": {
+                            "url": {
+                                "type": "string"
+                            },
+                            "full_url": {
+                                "type": "string"
+                            },
+                            "srcset": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "alt": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "width": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "height": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "category": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "required": [
+                        "name",
+                        "url"
+                    ],
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "url": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

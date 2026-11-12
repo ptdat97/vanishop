@@ -4,11 +4,11 @@
         "vi": "Nội dung (CMS)",
         "en": "Content (CMS)"
     },
-    "version": "1.5.1",
+    "version": "1.5.2",
     "kind": "content",
     "provider": "Plugin\\Cms\\CmsServiceProvider",
     "requires": {
-        "vanishop": "^0.4.6",
+        "vanishop": "^0.4.16",
         "plugins": {}
     },
     "conflicts": [],

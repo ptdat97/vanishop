@@ -9,6 +9,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Testing\StorefrontApiContract as Api;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -109,11 +110,12 @@ it('Storefront API (headless): trang, danh sách và chi tiết bài viết', fu
     cmsPost();
     cmsPost(['slug' => 'nhap', 'status' => 'draft', 'published_at' => null]);
 
-    $this->getJson('/api/storefront/v1/x/vani-cms/pages/gioi-thieu')->assertOk()->assertJsonPath('data.title', 'Giới thiệu')
+    Api::assertRoutesDocumented(dirname(__DIR__, 2));
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-cms/pages/gioi-thieu'), dirname(__DIR__, 2), '/pages/{slug}', 'GET')->assertOk()->assertJsonPath('data.title', 'Giới thiệu')
         ->assertJsonPath('data.html', "<h2>Về chúng tôi</h2>\n<p>Cửa hàng <strong>thời trang</strong>.</p>\n");
-    $this->getJson('/api/storefront/v1/x/vani-cms/posts')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.total', 1);
-    $this->getJson('/api/storefront/v1/x/vani-cms/posts/nhap')->assertNotFound();
-    $this->getJson('/api/storefront/v1/x/vani-cms/posts/bo-suu-tap-thu')->assertOk()->assertJsonPath('data.excerpt', 'Nội dung bài viết mùa thu.');
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-cms/posts'), dirname(__DIR__, 2), '/posts', 'GET')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.total', 1);
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-cms/posts/nhap'), dirname(__DIR__, 2), '/posts/{slug}', 'GET')->assertNotFound();
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-cms/posts/bo-suu-tap-thu'), dirname(__DIR__, 2), '/posts/{slug}', 'GET')->assertOk()->assertJsonPath('data.excerpt', 'Nội dung bài viết mùa thu.');
 });
 
 it('Admin: tạo trang (slug từ tiêu đề có dấu), slug trùng → lỗi, sửa, hẹn giờ theo giờ VN, xoá', function () {

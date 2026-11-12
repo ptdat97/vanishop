@@ -12,6 +12,7 @@ use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Testing\ImageSizeProviderContract;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Testing\StorefrontApiContract as Api;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -86,8 +87,10 @@ it('storefront: danh sách + chi tiết (ảnh theo thứ tự, Markdown an toà
     $this->get('/lookbook/'.$hidden->slug)->assertNotFound();
 
     $this->get('/sitemap.xml')->assertSee(url('/lookbook/'.$lookbook->slug), false)->assertDontSee('/lookbook/nhap', false);
-    $this->getJson('/api/storefront/v1/x/vani-lookbook/lookbooks')->assertOk()->assertJsonCount(1, 'data');
-    $this->getJson('/api/storefront/v1/x/vani-lookbook/lookbooks/'.$lookbook->slug)->assertOk()->assertJsonCount(2, 'data.images');
+    Api::assertRoutesDocumented(dirname(__DIR__, 2));
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-lookbook/lookbooks'), dirname(__DIR__, 2), '/lookbooks', 'GET')->assertOk()->assertJsonCount(1, 'data');
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-lookbook/lookbooks/'.$lookbook->slug), dirname(__DIR__, 2), '/lookbooks/{slug}', 'GET')->assertOk()->assertJsonCount(2, 'data.images');
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-lookbook/lookbooks/'.$hidden->slug), dirname(__DIR__, 2), '/lookbooks/{slug}', 'GET')->assertNotFound();
 });
 
 it('bản tiếng Anh dùng tên đã dịch; thiếu bản dịch thì hiện tiếng Việt; danh mục bị ẩn → không có link', function () {

@@ -6,7 +6,7 @@ Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x
 
 ## 0.4.16 — 2026-11-12
 
-Hoàn thiện API-first (stabilization-2026-11 P0: S0.1–S0.3). **Phá vỡ** hợp đồng Storefront API v1 ở định dạng dữ liệu.
+Hoàn thiện API-first (stabilization-2026-11 P0: S0.1–S0.4). **Phá vỡ** hợp đồng Storefront API v1 ở định dạng dữ liệu.
 
 ### Đổi (phá vỡ)
 - Mọi thời điểm trong Storefront API là ISO-8601 theo múi giờ cửa hàng (vd. `2026-11-12T11:29:00+07:00`): `placed_at`, `timeline[].at`, `shipments[].events[].at`, `returns[].created_at` (trước là chuỗi hiển thị `dd/mm/yyyy HH:ii`); `receipt.confirmed_at`, `returnable.deadline`, `payment.expires_at`, `me/export` (trước là ISO theo UTC); `me/consents[].granted_at|revoked_at` (trước là `Y-m-d H:i:s`). Client tự định dạng hiển thị. Đóng backlog L29.
@@ -16,6 +16,7 @@ Hoàn thiện API-first (stabilization-2026-11 P0: S0.1–S0.3). **Phá vỡ** h
 ### Thêm
 - `StoreClock::iso()`: thời điểm cho hợp đồng dữ liệu (ISO-8601 theo múi giờ cửa hàng).
 - `tests/Architecture/storefront-api.snapshot`: bề mặt hợp đồng Storefront API (thao tác, mã trạng thái, từng trường response). Đổi hợp đồng phải tăng version và ghi mục ở đây (`StorefrontApiSnapshotTest`).
+- `Modules\Extension\Testing\StorefrontApiContract` (S0.4): plugin có `storefrontRoutes()` phải có `openapi.json` ở thư mục plugin và test đối chiếu route (`assertRoutesDocumented`) + response thật (`assertResponse`) — arch test đỏ nếu thiếu ([plugin-system §10b](../05-plugin/plugin-system.md#10b-storefront-api-first-cho-plugin-adr-044)). `vani.cms` 1.5.2: `published_at`, `updated_at` theo ISO-8601 giờ cửa hàng.
 - `StorefrontApiContractTest` gọi thật mọi thao tác trong OpenAPI (thêm đổi trả, đã nhận hàng, thanh toán lại, đăng nhập mật khẩu, huỷ đơn trong tài khoản, xoá tài khoản); thao tác chưa có response thật được kiểm → đỏ.
 
 ## 0.4.15 — 2026-11-12

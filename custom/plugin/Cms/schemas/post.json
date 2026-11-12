@@ -1,0 +1,120 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /posts/{slug}",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "required": [
+                "slug",
+                "title",
+                "url",
+                "html",
+                "published_at",
+                "products"
+            ],
+            "properties": {
+                "slug": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "excerpt": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "cover_url": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "url": {
+                    "type": "string"
+                },
+                "published_at": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "date-time",
+                    "description": "ISO-8601 theo múi giờ cửa hàng."
+                },
+                "published_date": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Ngày hiển thị theo định dạng cửa hàng (tiện cho client đơn giản)."
+                },
+                "category": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "required": [
+                        "slug",
+                        "name",
+                        "url"
+                    ],
+                    "properties": {
+                        "slug": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "description": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "url": {
+                            "type": "string"
+                        },
+                        "meta_title": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "meta_description": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "html": {
+                    "type": "string"
+                },
+                "meta_title": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "meta_description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "../../../../docs/api/schemas/storefront/product-card.v1.json"
+                    }
+                }
+            }
+        }
+    }
+}

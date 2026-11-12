@@ -10,6 +10,7 @@ use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Testing\StorefrontApiContract as Api;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\ContextScope;
@@ -121,7 +122,9 @@ it('Admin: phần form sản phẩm lưu vào bảng riêng, cột + bộ lọc 
 it('storefront: API và trang riêng của plugin; theme override được view plugin; plugin tắt → 404', function () {
     installHelloWorld();
 
-    $this->getJson('/api/storefront/v1/x/vani-hello-world/greeting?name=Lan')->assertOk()->assertJsonPath('data.message', 'Xin chào, Lan!');
+    Api::assertRoutesDocumented(dirname(__DIR__, 2));
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-hello-world/greeting?name=Lan'), dirname(__DIR__, 2), '/greeting', 'GET')->assertOk()->assertJsonPath('data.message', 'Xin chào, Lan!');
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-hello-world/greeting?name='.str_repeat('a', 61)), dirname(__DIR__, 2), '/greeting', 'GET')->assertStatus(422);
     $this->get('/p/vani-hello-world')->assertOk()->assertSee('Trang này do plugin vani.hello-world')->assertSee('<header', false);
 
     $themes = storage_path('framework/testing/themes-'.uniqid());

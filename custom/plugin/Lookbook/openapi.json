@@ -1,0 +1,52 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.lookbook — Storefront API",
+        "version": "1.1.1",
+        "description": "Bộ ảnh thời trang. Kiểm bằng Modules\\Extension\\Testing\\StorefrontApiContract trong test của plugin (plugin-system §10b)."
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-lookbook"
+        }
+    ],
+    "paths": {
+        "/lookbooks": {
+            "get": {
+                "summary": "Lookbook đang hiện",
+                "responses": {
+                    "200": {
+                        "description": "Trang lookbook.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/lookbooks.json"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lookbooks/{slug}": {
+            "get": {
+                "summary": "Chi tiết lookbook",
+                "responses": {
+                    "200": {
+                        "description": "Lookbook kèm ảnh.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/lookbook.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không có hoặc đang ẩn (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        }
+    }
+}

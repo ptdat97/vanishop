@@ -1,0 +1,56 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /pages/{slug}",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "required": [
+                "slug",
+                "title",
+                "html",
+                "meta_title",
+                "meta_description",
+                "url",
+                "updated_at"
+            ],
+            "properties": {
+                "slug": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "html": {
+                    "type": "string"
+                },
+                "meta_title": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "meta_description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "url": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "date-time",
+                    "description": "ISO-8601 theo múi giờ cửa hàng."
+                }
+            }
+        }
+    }
+}

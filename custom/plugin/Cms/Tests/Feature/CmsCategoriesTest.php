@@ -5,6 +5,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Testing\StorefrontApiContract as Api;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -58,7 +59,7 @@ it('storefront: /tin-tuc/{chuyên mục} liệt kê bài của chuyên mục; tr
     $this->get('/tin-tuc/xu-huong')->assertOk()->assertSee('Bộ sưu tập thu')->assertDontSee('Tin khác');
     $this->get('/tin-tuc/bo-suu-tap-thu')->assertOk()->assertSee('data-cms-post-category', false);
     $this->getJson('/api/storefront/v1/x/vani-cms/posts?category=xu-huong')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.category.slug', 'xu-huong');
-    $this->getJson('/api/storefront/v1/x/vani-cms/categories')->assertOk()->assertJsonPath('data.0.url', url('/tin-tuc/xu-huong'));
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-cms/categories'), dirname(__DIR__, 2), '/categories', 'GET')->assertOk()->assertJsonPath('data.0.url', url('/tin-tuc/xu-huong'));
     $this->get('/sitemap.xml')->assertSee(url('/tin-tuc/xu-huong'), false);
 });
 
@@ -77,5 +78,5 @@ it('gắn sản phẩm vào bài: tối đa 12, giữ thứ tự; mẫu ẩn b�
 
     $this->get("{$this->admin}/posts/{$post->id}")->assertInertia(fn (Assert $page) => $page->where('item.products.0.visible', false)->where('item.products.1.id', $product->id));
     $this->get('/tin-tuc/bo-suu-tap-thu')->assertOk()->assertSee('data-cms-post-products', false)->assertSee('Đầm lụa');
-    $this->getJson('/api/storefront/v1/x/vani-cms/posts/bo-suu-tap-thu')->assertJsonCount(1, 'data.products');
+    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-cms/posts/bo-suu-tap-thu'), dirname(__DIR__, 2), '/posts/{slug}', 'GET')->assertJsonCount(1, 'data.products');
 });

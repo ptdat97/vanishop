@@ -8,6 +8,7 @@
 | 2. Các cặp đã gom hợp đồng đầu vào dùng CÙNG một FormRequest ở cả hai phía (luật validate viết một lần).
 | 3. JS/view của theme và plugin lấy dữ liệu từ Storefront API, không từ endpoint JSON riêng (trừ `/_vani/phien`).
 | 4. Plugin có trang storefront phải có Storefront API cho cùng dữ liệu (trừ PLUGIN_PAGES_WITHOUT_API).
+| 5. API của plugin được mô tả trong openapi.json của plugin và test của plugin đối chiếu với nó.
 */
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -212,4 +213,27 @@ it('R37: plugin có trang storefront (storefrontPages/accountRoutes) phải có 
 
     expect($missing)->toBe([], 'Thêm storefrontRoutes() cho dữ liệu của trang (ADR-044), hoặc ghi lý do vào PLUGIN_PAGES_WITHOUT_API')
         ->and($stale)->toBe([], 'Bỏ plugin này khỏi PLUGIN_PAGES_WITHOUT_API');
+});
+
+it('R37: plugin có storefrontRoutes() mô tả API trong openapi.json và test của plugin đối chiếu route + response với nó', function () {
+    $missing = [];
+    foreach (glob(base_path('custom/plugin/*/vanishop.json')) as $manifest) {
+        $dir = dirname($manifest);
+        $source = implode("\n", array_map('file_get_contents', glob("{$dir}/*ServiceProvider.php")));
+        if (preg_match('/\$this->storefrontRoutes\(/', $source) !== 1) {
+            continue;
+        }
+        $tests = implode("\n", array_map('file_get_contents', glob("{$dir}/Tests/Feature/*.php") ?: []));
+        foreach ([
+            'openapi.json' => is_file("{$dir}/openapi.json"),
+            'assertRoutesDocumented' => str_contains($tests, 'assertRoutesDocumented('),
+            'assertResponse' => str_contains($tests, 'assertResponse('),
+        ] as $requirement => $met) {
+            if (! $met) {
+                $missing[] = basename($dir).": {$requirement}";
+            }
+        }
+    }
+
+    expect($missing)->toBe([], 'Xem plugin-system §10b: openapi.json + Modules\Extension\Testing\StorefrontApiContract trong test của plugin');
 });

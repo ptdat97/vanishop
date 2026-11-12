@@ -1,0 +1,28 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /items",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "style_id",
+                    "product"
+                ],
+                "properties": {
+                    "style_id": {
+                        "type": "integer"
+                    },
+                    "product": {
+                        "$ref": "../../../../docs/api/schemas/storefront/product-card.v1.json"
+                    }
+                }
+            }
+        }
+    }
+}

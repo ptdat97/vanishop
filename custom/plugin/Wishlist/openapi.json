@@ -1,0 +1,159 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.wishlist — Storefront API",
+        "version": "1.1.0",
+        "description": "Sản phẩm yêu thích của khách đăng nhập (Bearer hoặc phiên web cùng nguồn). Kiểm bằng Modules\\Extension\\Testing\\StorefrontApiContract trong test của plugin (plugin-system §10b)."
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-wishlist"
+        }
+    ],
+    "paths": {
+        "/ids": {
+            "get": {
+                "summary": "Style id trong danh sách (wishlist.js tô nút tim)",
+                "responses": {
+                    "200": {
+                        "description": "Id.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/ids.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa đăng nhập (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/items": {
+            "get": {
+                "summary": "Thẻ sản phẩm trong danh sách",
+                "responses": {
+                    "200": {
+                        "description": "Thẻ sản phẩm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/items.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa đăng nhập (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Thêm sản phẩm",
+                "responses": {
+                    "201": {
+                        "description": "Danh sách mới.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/ids.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa đăng nhập (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    },
+                    "422": {
+                        "description": "Sản phẩm không bán hoặc vượt giới hạn (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/items/merge": {
+            "post": {
+                "summary": "Gộp danh sách của trình duyệt sau khi đăng nhập",
+                "responses": {
+                    "200": {
+                        "description": "Số đã thêm và danh sách mới.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/merged.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa đăng nhập (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    },
+                    "422": {
+                        "description": "Dữ liệu sai (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/items/{style}": {
+            "delete": {
+                "summary": "Bỏ sản phẩm",
+                "responses": {
+                    "200": {
+                        "description": "Danh sách mới.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/ids.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa đăng nhập (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        }
+    }
+}
