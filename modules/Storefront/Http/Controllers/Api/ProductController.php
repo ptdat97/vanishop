@@ -28,7 +28,7 @@ final class ProductController
 
         return response()->json([
             'data' => $listing['items'],
-            'meta' => ['total' => $listing['total'], 'page' => $listing['page'], 'per_page' => $listing['per_page'], 'facets' => $listing['facets'], 'filters' => $listing['filters'] ?? []],
+            'meta' => ['total' => $listing['total'], 'page' => $listing['page'], 'per_page' => $listing['per_page'], 'facets' => [...$listing['facets'], 'color_families' => (object) $listing['facets']['color_families']], 'filters' => $listing['filters'] ?? []],
         ]);
     }
 

@@ -36,6 +36,7 @@ use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Support\StoreClock;
 use Throwable;
 
 /**
@@ -629,7 +630,7 @@ final class PaymentService implements Payments
         return vani_filter('vani.service.payment.view', new PaymentView(
             publicId: $payment->public_id, gatewayCode: $payment->gateway_code, status: $payment->status->value, amount: $payment->amount,
             currencyCode: $payment->currency_code, orderPublicId: $order->publicId ?? '', orderNumber: $order->number ?? '',
-            expiresAt: $payment->expires_at?->toIso8601String(),
+            expiresAt: StoreClock::iso($payment->expires_at),
             action: $payment->status === PaymentStatus::Pending && is_array($action)
                 ? new PaymentInitiation((string) $action['type'], $action['url'] ?? null, $action['qr'] ?? null, (array) ($action['instructions'] ?? []))
                 : null,

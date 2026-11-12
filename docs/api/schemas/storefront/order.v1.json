@@ -65,7 +65,8 @@
         },
         "placed_at": {
             "type": "string",
-            "description": "Chuỗi hiển thị theo giờ và định dạng của cửa hàng (vd. \"12/11/2026 11:29\") — chưa phải ISO-8601, xem backlog L29."
+            "format": "date-time",
+            "description": "ISO-8601 theo múi giờ cửa hàng (vd. \"2026-11-12T11:29:00+07:00\"); client tự định dạng hiển thị."
         },
         "can_cancel": {
             "type": "boolean"
@@ -519,7 +520,8 @@
                     },
                     "at": {
                         "type": "string",
-                        "description": "Chuỗi hiển thị theo giờ và định dạng của cửa hàng (vd. \"12/11/2026 11:29\") — chưa phải ISO-8601, xem backlog L29."
+                        "format": "date-time",
+                        "description": "ISO-8601 theo múi giờ cửa hàng (vd. \"2026-11-12T11:29:00+07:00\"); client tự định dạng hiển thị."
                     }
                 }
             }
@@ -621,7 +623,8 @@
                     },
                     "created_at": {
                         "type": "string",
-                        "description": "Chuỗi hiển thị theo giờ và định dạng của cửa hàng (vd. \"12/11/2026 11:29\") — chưa phải ISO-8601, xem backlog L29."
+                        "format": "date-time",
+                        "description": "ISO-8601 theo múi giờ cửa hàng (vd. \"2026-11-12T11:29:00+07:00\"); client tự định dạng hiển thị."
                     },
                     "lines": {
                         "type": "array",
@@ -656,18 +659,16 @@
             ],
             "properties": {
                 "lines": {
-                    "type": [
-                        "object",
-                        "array"
-                    ],
-                    "description": "order_line_id → số lượng còn đổi/trả được; rỗng là `[]` (backlog L30)."
+                    "type": "object",
+                    "description": "order_line_id → số lượng còn đổi/trả được; rỗng là `{}`."
                 },
                 "deadline": {
                     "type": [
                         "string",
                         "null"
                     ],
-                    "description": "ISO-8601 (hiện theo UTC, xem backlog L29)."
+                    "format": "date-time",
+                    "description": "ISO-8601 theo múi giờ cửa hàng; null khi chưa có."
                 }
             }
         },
@@ -684,7 +685,8 @@
                         "string",
                         "null"
                     ],
-                    "description": "ISO-8601 (hiện theo UTC, xem backlog L29)."
+                    "format": "date-time",
+                    "description": "ISO-8601 theo múi giờ cửa hàng; null khi chưa có."
                 },
                 "returns_waived": {
                     "type": "boolean"

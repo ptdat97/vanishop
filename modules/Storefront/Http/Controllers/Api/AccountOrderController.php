@@ -90,9 +90,13 @@ final class AccountOrderController
         $customer = $request->attributes->get('customer');
         $styleIds = array_values(array_map('intval', $data['style_ids'] ?? []));
 
+        $memberPrices = $prices->for((int) $customer->id, array_values(array_map('intval', $data['variant_ids'] ?? [])));
+
+        // Map theo id luôn là object JSON, kể cả khi rỗng (`{}`, không phải `[]`).
         return response()->json(['data' => [
-            ...$prices->for((int) $customer->id, array_values(array_map('intval', $data['variant_ids'] ?? []))),
-            'products' => $visibility->membersOnly() && $styleIds !== [] ? $products->priceRanges($styleIds, App::getLocale()) : [],
+            ...$memberPrices,
+            'prices' => (object) $memberPrices['prices'],
+            'products' => (object) ($visibility->membersOnly() && $styleIds !== [] ? $products->priceRanges($styleIds, App::getLocale()) : []),
         ]])->header('Cache-Control', 'private, no-store');
     }
 }

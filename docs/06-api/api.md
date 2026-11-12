@@ -14,7 +14,8 @@ Hợp đồng **OpenAPI 3.1**: Storefront API ở [`docs/api/openapi/storefront-
 
 ## 2. Quy ước chung
 
-- JSON, `snake_case`, UTF-8. Thời gian ISO-8601 có offset (`2026-09-28T10:15:00+07:00`).
+- JSON, `snake_case`, UTF-8. Thời gian ISO-8601 theo múi giờ cửa hàng, có offset (`2026-09-28T10:15:00+07:00`); client tự định dạng hiển thị. Map theo khoá (id → giá trị) luôn là object, rỗng là `{}`.
+- Hợp đồng Storefront API bị khoá bằng `tests/Architecture/storefront-api.snapshot`: đổi trường/thao tác phải tăng version Core và ghi [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md).
 - **Tiền** trả về dạng object: `{ "amount": 1250000, "currency": "VND", "formatted": "1.250.000 ₫" }`.
 - ID công khai dùng `public_id` (ULID), **không** lộ ID tự tăng.
 - Phân trang: **Storefront API** dùng `?page=&per_page=` → `{ data: [...], meta: { page, per_page, total } }`; **Integration API** (feed) dùng cursor `?cursor=...&limit=` → `meta.next_cursor`.

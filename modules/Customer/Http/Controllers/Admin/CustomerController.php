@@ -85,7 +85,7 @@ final class CustomerController
             'stats' => $stats->of($model),
             'orders' => array_map(fn (OrderDetail $order): array => [
                 'number' => $order->number, 'status' => $order->customerStatus['label'], 'total' => $order->amounts['total'],
-                'placed_at' => $order->placedAt,
+                'placed_at' => StoreClock::format($order->placedAt),
             ], $orders->ofCustomer($model->id, 1, 20)['data']),
             'can' => [
                 'merge' => Gate::allows('customers.merge', [ScopeRef::owner()]),

@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.16 — 2026-11-12
+
+Hoàn thiện API-first (stabilization-2026-11 P0: S0.1–S0.3). **Phá vỡ** hợp đồng Storefront API v1 ở định dạng dữ liệu.
+
+### Đổi (phá vỡ)
+- Mọi thời điểm trong Storefront API là ISO-8601 theo múi giờ cửa hàng (vd. `2026-11-12T11:29:00+07:00`): `placed_at`, `timeline[].at`, `shipments[].events[].at`, `returns[].created_at` (trước là chuỗi hiển thị `dd/mm/yyyy HH:ii`); `receipt.confirmed_at`, `returnable.deadline`, `payment.expires_at`, `me/export` (trước là ISO theo UTC); `me/consents[].granted_at|revoked_at` (trước là `Y-m-d H:i:s`). Client tự định dạng hiển thị. Đóng backlog L29.
+- Map theo khoá luôn là object JSON, kể cả khi rỗng (`{}` thay vì `[]`): `me/prices.data.prices|products`, `products.meta.facets.color_families`, `order.returnable.lines`. Đóng backlog L30.
+- DTO `Ordering\Contracts\Data\OrderDetail::$placedAt`, `$events[].at`, `$receipt['confirmed_at']`, `Returns\Contracts\Data\ReturnView::$createdAt`, `Returns::returnable()['deadline']`, sự kiện của `ShipmentReader`, `Payment` `PaymentView::$expiresAt` cùng theo ISO-8601 giờ cửa hàng; người hiển thị (Blade, Admin) định dạng bằng `StoreClock::format()`.
+
+### Thêm
+- `StoreClock::iso()`: thời điểm cho hợp đồng dữ liệu (ISO-8601 theo múi giờ cửa hàng).
+- `tests/Architecture/storefront-api.snapshot`: bề mặt hợp đồng Storefront API (thao tác, mã trạng thái, từng trường response). Đổi hợp đồng phải tăng version và ghi mục ở đây (`StorefrontApiSnapshotTest`).
+- `StorefrontApiContractTest` gọi thật mọi thao tác trong OpenAPI (thêm đổi trả, đã nhận hàng, thanh toán lại, đăng nhập mật khẩu, huỷ đơn trong tài khoản, xoá tài khoản); thao tác chưa có response thật được kiểm → đỏ.
+
 ## 0.4.15 — 2026-11-12
 
 Khoá hợp đồng HTTP của Storefront API và quy ước API-first cho plugin (ADR-044, api-first-refactor đợt A4–A5). Không đổi hành vi.

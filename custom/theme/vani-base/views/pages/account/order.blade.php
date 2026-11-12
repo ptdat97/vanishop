@@ -7,7 +7,7 @@
         @include('theme::partials.account-menu')
         <section>
             <h1 class="mb-2 text-2xl font-semibold">{{ __('Đơn :number', ['number' => $order['number']]) }}</h1>
-            <p class="mb-6 text-sm text-slate-500">{{ $order['placed_at'] }} · {{ $order['status']['label'] ?? $order['order_status'] }}</p>
+            <p class="mb-6 text-sm text-slate-500">{{ \Modules\Shared\Support\StoreClock::format($order['placed_at']) }} · {{ $order['status']['label'] ?? $order['order_status'] }}</p>
             <x-vani::hook-slot name="vani.storefront.order.before_summary" :args="[$order]" />
             @include('theme::partials.order-summary')
             <x-vani::hook-slot name="vani.storefront.account.order_detail" :args="[$order]" />

@@ -139,7 +139,8 @@ final class OrderController
         return Inertia::render('Ordering::Orders/Show', [
             'baseUrl' => route('admin.orders.orders.index'),
             'listUrl' => $this->ordersListUrl($request),
-            'order' => (array) $detail,
+            'order' => [...(array) $detail, 'placedAt' => StoreClock::format($detail->placedAt),
+                'events' => array_map(fn (array $event): array => [...$event, 'at' => StoreClock::format($event['at'])], $detail->events)],
             'labels' => __('ordering::labels'),
             'panels' => array_values(array_filter(Hook::slot('vani.admin.order.sidebar', $detail))),
             // Thẻ "Trạng thái đơn" (0.3.98): 4 chiều trạng thái + thao tác của Core và của plugin (OrderStatusAction).

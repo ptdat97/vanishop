@@ -7,6 +7,7 @@ namespace Modules\Customer\Application;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Modules\Customer\Events\ConsentChanged;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Consent theo kênh liên lạc × mục đích. Cấp phải có nguồn + thời điểm; rút có hiệu lực ngay. Mọi thay đổi
@@ -31,7 +32,7 @@ final class ConsentService
             ->map(fn (object $row): array => [
                 'channel' => (string) $row->channel, 'purpose' => (string) $row->purpose,
                 'granted' => $row->revoked_at === null && $row->granted_at !== null,
-                'granted_at' => $row->granted_at, 'revoked_at' => $row->revoked_at, 'source' => (string) $row->source,
+                'granted_at' => StoreClock::iso($row->granted_at), 'revoked_at' => StoreClock::iso($row->revoked_at), 'source' => (string) $row->source,
             ])->all();
     }
 

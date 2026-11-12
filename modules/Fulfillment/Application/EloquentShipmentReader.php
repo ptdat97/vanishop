@@ -30,7 +30,7 @@ final class EloquentShipmentReader implements ShipmentReader
                 lastError: $shipment->last_error,
                 lines: $shipment->lines->map(fn (ShipmentLine $line): array => ['order_line_id' => $line->order_line_id, 'variant_id' => $line->variant_id, 'quantity' => $line->quantity])->all(),
                 events: DB::table('shipment_events')->where('shipment_id', $shipment->id)->orderBy('occurred_at')->orderBy('id')->get()
-                    ->map(fn (object $event): array => ['status' => $event->status, 'description' => $event->description, 'at' => StoreClock::format((string) $event->occurred_at)])
+                    ->map(fn (object $event): array => ['status' => $event->status, 'description' => $event->description, 'at' => StoreClock::iso((string) $event->occurred_at)])
                     ->all(),
                 deliveredAt: $shipment->delivered_at?->toIso8601String(),
                 locationId: $shipment->location_id,

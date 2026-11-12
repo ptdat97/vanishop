@@ -19,6 +19,7 @@ use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Hợp nhất khách trùng, ẩn danh hoá (quyền xoá của chủ thể dữ liệu) và xuất dữ liệu cá nhân.
@@ -167,16 +168,16 @@ final class AccountLifecycle
         $orders = $this->context->runAs(ContextScope::system('customer data export'), fn (): array => $this->customerOrders->ofCustomer($customerId, 1, 1000)['data']);
 
         return [
-            'exported_at' => now()->toIso8601String(),
+            'exported_at' => StoreClock::iso(now()),
             'profile' => CustomerService::toData($customer)->toArray() + [
-                'registered_at' => $customer->registered_at?->toIso8601String(), 'created_at' => $customer->created_at?->toIso8601String(),
+                'registered_at' => StoreClock::iso($customer->registered_at), 'created_at' => StoreClock::iso($customer->created_at),
             ],
             'addresses' => app(AddressBook::class)->all($customerId),
             'consents' => $this->consents->all($customerId),
             'linked_accounts' => CustomerIdentity::query()->where('customer_id', $customerId)->orderBy('id')->get()
-                ->map(fn (CustomerIdentity $identity): array => ['provider' => $identity->provider, 'linked_at' => $identity->created_at?->toIso8601String()])->all(),
+                ->map(fn (CustomerIdentity $identity): array => ['provider' => $identity->provider, 'linked_at' => StoreClock::iso($identity->created_at)])->all(),
             'consent_history' => DB::table('customer_consent_events')->where('customer_id', $customerId)->orderBy('id')
-                ->get(['channel', 'purpose', 'action', 'source', 'created_at'])->map(fn (object $row): array => (array) $row)->all(),
+                ->get(['channel', 'purpose', 'action', 'source', 'created_at'])->map(fn (object $row): array => [...(array) $row, 'created_at' => StoreClock::iso($row->created_at)])->all(),
             'orders' => array_map(fn ($order): array => [
                 'number' => $order->number, 'placed_at' => $order->placedAt, 'status' => $order->customerStatus['label'],
                 'total' => $order->amounts['total'], 'currency' => $order->currencyCode,

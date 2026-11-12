@@ -7,6 +7,17 @@ use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as Cu;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
+use Modules\Extension\Contracts\Extensions;
+use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Domain\ShipmentStatus;
+use Modules\Fulfillment\Persistence\Models\Shipment;
+use Modules\Ordering\Persistence\Models\Order;
+use Modules\Payment\Application\GatewayRegistry;
+use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
+use Modules\Returns\Persistence\Models\ReturnRequest;
+use Modules\Shared\Context\ContextScope;
+use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Support\StoreClock;
 use Tests\Support\JsonSchemaSubset;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -40,8 +51,30 @@ function storefrontResponseSchema(string $path, string $method, int $status): ?s
     return $ref === null ? null : base_path('docs/api/openapi/'.$ref);
 }
 
+/**
+ * Thao tác đã được kiểm bằng response thật trong lần chạy này (để test cuối đếm thao tác bị bỏ sót).
+ *
+ * @return array<string, true>
+ */
+function storefrontContractSeen(?string $operation = null): array
+{
+    static $seen = [];
+    if ($operation !== null) {
+        $seen[$operation] = true;
+    }
+
+    return $seen;
+}
+
+/** Thao tác không gọi thành công được trong test, kèm lý do (vẫn được kiểm ở response lỗi). */
+const STOREFRONT_CONTRACT_UNREACHABLE = [
+    'POST /auth/social/{provider}/complete' => 'đăng nhập mạng xã hội đang đóng băng (không có nhà cung cấp) — chỉ kiểm response lỗi',
+    'POST /auth/social/{provider}/start' => 'đăng nhập mạng xã hội đang đóng băng (không có nhà cung cấp) — chỉ kiểm response lỗi',
+];
+
 function assertStorefrontContract(TestResponse $response, string $path, string $method): TestResponse
 {
+    storefrontContractSeen(strtoupper($method).' '.$path);
     $schema = storefrontResponseSchema($path, $method, $response->status());
     if ($schema === null) {
         expect($response->getContent())->toBe('', "{$method} {$path} {$response->status()}: OpenAPI khai báo không có nội dung");
@@ -169,8 +202,62 @@ it('khách đăng nhập: OTP, hồ sơ, mật khẩu, sổ địa chỉ, đồn
     $call('GET', '/me/cart', '/me/cart');
     $call('GET', "/me/prices?variant_ids[]={$this->s->id}", '/me/prices');
     $call('GET', '/me/export', '/me/export');
+    $call('POST', "/me/orders/{$order}/cancel", '/me/orders/{order}/cancel', ['reason' => 'Đổi ý']);
     $call('GET', '/me/delete', '/me/delete');
-    $call('POST', '/auth/logout', '/auth/logout');
+
+    $login = assertStorefrontContract($this->postJson("{$this->api}/auth/login", ['phone' => '0912345678', 'password' => 'mat-khau-moi-123'])->assertOk(), '/auth/login', 'POST');
+    assertStorefrontContract($this->postJson("{$this->api}/auth/logout", [], Cu::auth($login->json('meta.token')))->assertNoContent(), '/auth/logout', 'POST');
+
+    $this->postJson("{$this->api}/auth/otp/request", ['phone' => '0912345678', 'purpose' => 'delete_account'])->assertStatus(202);
+    $call('POST', '/me/delete', '/me/delete', ['code' => FakeOtpSender::$codes['+84912345678|delete_account']]);
+
+    assertStorefrontContract($this->getJson("{$this->api}/auth/social")->assertOk(), '/auth/social', 'GET');
+});
+
+it('sau khi giao: xác nhận đã nhận, đổi trả (gửi, huỷ, báo đã gửi về) khớp schema', function () {
+    $created = $this->postJson("{$this->api}/carts")->assertCreated();
+    $cart = $created->json('data.id');
+    $cartHeaders = ['X-Vani-Cart-Token' => $created->json('meta.token')];
+    $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 2], $cartHeaders)->assertOk();
+    $placed = $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['expected_total' => 600_000]), [...$cartHeaders, 'Idempotency-Key' => 'sf-contract-ship'])->assertCreated();
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
+        $shipment = Shipment::query()->latest('id')->first();
+        app(FulfillmentService::class)->book($shipment->id, 'T'.$shipment->id);
+        foreach ([ShipmentStatus::PickedUp, ShipmentStatus::Delivered] as $status) {
+            app(FulfillmentService::class)->updateStatus($shipment->id, $status, "test:{$status->value}", 'staff');
+        }
+    });
+    $order = Order::query()->withoutGlobalScopes()->latest('id')->first();
+    $headers = ['X-Vani-Order-Token' => $placed->json('data.access_token')];
+    $base = "{$this->api}/orders/{$order->public_id}";
+    $request = fn () => $this->postJson("{$base}/returns", ['lines' => [['order_line_id' => $order->lines()->value('id'), 'quantity' => 1]], 'reason_code' => 'wrong_size'], $headers);
+
+    $shown = assertStorefrontContract($this->getJson($base, $headers)->assertOk(), '/orders/{order}', 'GET');
+    expect($shown->json('data.placed_at'))->toEndWith(StoreClock::now()->format('P'))
+        ->and($shown->json('data.returnable.deadline'))->toEndWith(StoreClock::now()->format('P'));
+
+    $first = assertStorefrontContract($request()->assertCreated(), '/orders/{order}/returns', 'POST')->json('data.returns.0.id');
+    assertStorefrontContract($this->postJson("{$base}/returns/{$first}/cancel", [], $headers)->assertOk(), '/orders/{order}/returns/{return}/cancel', 'POST');
+    $request()->assertCreated();
+    $return = ReturnRequest::query()->latest('id')->first();
+    $this->actingAs(T::staff(['admin.access', 'returns.view', 'returns.manage']), 'staff')
+        ->post("/admin/returns/returns/{$return->id}/transition", ['to' => 'approved', 'lock_version' => $return->lock_version])->assertSessionHasNoErrors();
+    assertStorefrontContract($this->postJson("{$base}/returns/{$return->public_id}/shipped", ['tracking_number' => 'GHN123'], $headers)->assertOk(), '/orders/{order}/returns/{return}/shipped', 'POST');
+
+    assertStorefrontContract($this->postJson("{$base}/received", [], $headers)->assertOk(), '/orders/{order}/received', 'POST');
+});
+
+it('thanh toán online lỗi: thanh toán lại khớp schema', function () {
+    app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
+    $created = $this->postJson("{$this->api}/carts")->assertCreated();
+    $cart = $created->json('data.id');
+    $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
+    $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
+    $placed = $this->postJson("{$this->api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => 'fake_online', 'expected_total' => 330_000]), [...$headers, 'Idempotency-Key' => 'sf-contract-pay'])->assertCreated();
+    $this->postJson('/api/payments/fake_online/callback', FakeOnlineGateway::callbackPayload($placed->json('data.payment.id'), 'TXN-FAIL', 'failed', 330_000))->assertOk();
+
+    $retried = assertStorefrontContract($this->postJson("{$this->api}/orders/{$placed->json('data.id')}/payment/retry", [], ['X-Vani-Order-Token' => $placed->json('data.access_token')])->assertOk(), '/orders/{order}/payment/retry', 'POST');
+    expect($retried->json('data.expires_at'))->toEndWith(StoreClock::now()->format('P'));
 });
 
 it('phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400 idempotency', function () {
@@ -181,6 +268,8 @@ it('phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400
     $cases = [
         [$this->getJson("{$this->api}/me"), '/me', 'GET', 401, 'customer.unauthenticated'],
         [$this->getJson("{$this->api}/products/khong-co"), '/products/{slug}', 'GET', 404, null],
+        [$this->postJson("{$this->api}/auth/social/khong-co/start", ['redirect_uri' => 'https://shop.example/x']), '/auth/social/{provider}/start', 'POST', 404, null],
+        [$this->postJson("{$this->api}/auth/social/khong-co/complete"), '/auth/social/{provider}/complete', 'POST', 422, 'validation.failed'],
         [$this->postJson("{$this->api}/carts/{$cart}/lines", ['quantity' => 1], $headers), '/carts/{cart}/lines', 'POST', 422, 'validation.failed'],
     ];
     $this->postJson("{$this->api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
@@ -196,3 +285,17 @@ it('phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400
         assertStorefrontContract($response, $path, $method);
     }
 });
+
+it('mọi thao tác trong OpenAPI đều có response thành công thật được kiểm (trừ ngoại lệ có lý do)', function () {
+    $documented = collect(storefrontOpenApi()['paths'])->flatMap(fn (array $operations, string $path) => collect(array_keys($operations))
+        ->map(fn (string $method): string => strtoupper($method).' '.$path))->all();
+    $missing = array_values(array_diff($documented, array_keys(storefrontContractSeen()), array_keys(STOREFRONT_CONTRACT_UNREACHABLE)));
+
+    expect($missing)->toBe([], 'Thêm lời gọi thật cho thao tác này vào một luồng ở trên');
+})->depends(
+    'it khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn, thanh toán khớp schema',
+    'it khách đăng nhập: OTP, hồ sơ, mật khẩu, sổ địa chỉ, đồng ý nhận tin, đơn, giỏ, giá, xuất dữ liệu, xoá tài khoản',
+    'it sau khi giao: xác nhận đã nhận, đổi trả (gửi, huỷ, báo đã gửi về) khớp schema',
+    'it thanh toán online lỗi: thanh toán lại khớp schema',
+    'it phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400 idempotency',
+);

@@ -1,0 +1,3528 @@
+Storefront API v1 — VaniShop 0.4.16
+GET /address/provinces security[]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].code: string
+    $.data[].name: string
+    $.meta: object
+    $.meta.directory: string|null
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /address/provinces/{province}/wards security[]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].code: string
+    $.data[].name: string
+    $.meta: object
+    $.meta.directory: string|null
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/login security[]
+  200
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+    $.meta: object
+    $.meta.token: string
+    $.meta.token_type: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/logout security[customerBearer,firstPartySession]
+  204 (không nội dung)
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/otp/request security[]
+  202
+    $: object
+    $.data: object
+    $.data.channel: string
+    $.data.expires_in: integer
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/otp/verify security[]
+  200
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+    $.meta: object
+    $.meta.token: string
+    $.meta.token_type: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /auth/social security[]
+  200
+    $: object
+    $.data: object|array
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/social/{provider}/complete security[]
+  200
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+    $.meta: object
+    $.meta.token: string
+    $.meta.token_type: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /auth/social/{provider}/start security[]
+  200
+    $: object
+    $.data: object|array
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /brands security[]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].code: string optional
+    $.data[].description: string|null optional
+    $.data[].id: integer
+    $.data[].logo_url: string|null
+    $.data[].name: string
+    $.data[].slug: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /brands/{slug} security[]
+  200
+    $: object
+    $.data: object
+    $.data.code: string optional
+    $.data.description: string|null optional
+    $.data.id: integer
+    $.data.logo_url: string|null
+    $.data.name: string
+    $.data.slug: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /carts security[none,customerBearer,firstPartySession]
+  201
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+    $.meta: object
+    $.meta.token: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /carts/{cart} security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /carts/{cart}/lines security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+DELETE /carts/{cart}/lines/{line} security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PATCH /carts/{cart}/lines/{line} security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PUT /carts/{cart}/selection security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PUT /carts/{cart}/vouchers security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+    $.meta: object
+    $.meta.rejected_vouchers: array
+    $.meta.rejected_vouchers[]: object
+    $.meta.rejected_vouchers[].code: string
+    $.meta.rejected_vouchers[].reason: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /categories security[]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].children: array
+    $.data[].description: string|null optional
+    $.data[].id: integer
+    $.data[].image_url: string|null optional
+    $.data[].locales: array optional
+    $.data[].locales[]: string
+    $.data[].name: string|null
+    $.data[].slug: string
+    $.data[].slugs: object optional
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /categories/{slug} security[]
+  200
+    $: object
+    $.data: object
+    $.data.children: array
+    $.data.description: string|null optional
+    $.data.id: integer
+    $.data.image_url: string|null optional
+    $.data.locales: array optional
+    $.data.locales[]: string
+    $.data.name: string|null
+    $.data.slug: string
+    $.data.slugs: object optional
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /checkout/{cart}/orders security[cartToken,customerBearer,firstPartySession]
+  201
+    $: object
+    $.data: object
+    $.data.access_token: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment: object|null optional
+    $.data.payment.action: object
+    $.data.payment.action.instructions: string|object|array|null optional
+    $.data.payment.action.qr: string|null optional
+    $.data.payment.action.type: string
+    $.data.payment.action.url: string|null optional
+    $.data.payment.amount: object
+    $.data.payment.amount.amount: integer
+    $.data.payment.amount.currency: string
+    $.data.payment.error: string|object|null optional
+    $.data.payment.expires_at: string|null (date-time) optional
+    $.data.payment.id: string
+    $.data.payment.method: string
+    $.data.payment.order: object
+    $.data.payment.order.id: string
+    $.data.payment.order.number: string
+    $.data.payment.retryable: boolean
+    $.data.payment.status: string
+    $.data.payment_status: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.meta: object
+    $.meta.dropped_vouchers: array
+    $.meta.dropped_vouchers[]: object
+    $.meta.dropped_vouchers[].code: string
+    $.meta.dropped_vouchers[].reason: string
+  400
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /checkout/{cart}/quote security[cartToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.cart_ready: boolean
+    $.data.currency: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].name: string optional
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string optional
+    $.data.lines[].subtotal: object optional
+    $.data.lines[].subtotal.amount: integer
+    $.data.lines[].subtotal.currency: string
+    $.data.lines[].subtotal.formatted: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payment_methods: array
+    $.data.payment_methods[]: object
+    $.data.payment_methods[].code: string
+    $.data.payment_methods[].label: string
+    $.data.rejected_vouchers: array
+    $.data.rejected_vouchers[]: object
+    $.data.rejected_vouchers[].code: string
+    $.data.rejected_vouchers[].reason: string
+    $.data.shipping: object|null
+    $.data.shipping.code: string
+    $.data.shipping.fee: object
+    $.data.shipping.fee.amount: integer
+    $.data.shipping.fee.currency: string
+    $.data.shipping.fee.formatted: string
+    $.data.shipping.label: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_options: array
+    $.data.shipping_options[]: object
+    $.data.shipping_options[].code: string
+    $.data.shipping_options[].fee: object
+    $.data.shipping_options[].fee.amount: integer
+    $.data.shipping_options[].fee.currency: string
+    $.data.shipping_options[].fee.formatted: string
+    $.data.shipping_options[].label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  403
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PATCH /me security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.birth_date: string|null
+    $.data.email: string|null
+    $.data.full_name: string|null
+    $.data.gender: string|null
+    $.data.has_password: boolean
+    $.data.id: string
+    $.data.phone: string
+    $.data.preferred_locale: string|null
+    $.data.registered: boolean
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/addresses security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].full_name: string
+    $.data[].id: integer
+    $.data[].is_default: boolean
+    $.data[].label: string|null
+    $.data[].phone: string
+    $.data[].province_code: string
+    $.data[].province_name: string
+    $.data[].street_line: string
+    $.data[].ward_code: string
+    $.data[].ward_name: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /me/addresses security[customerBearer,firstPartySession]
+  201
+    $: object
+    $.data: object
+    $.data.full_name: string
+    $.data.id: integer
+    $.data.is_default: boolean
+    $.data.label: string|null
+    $.data.phone: string
+    $.data.province_code: string
+    $.data.province_name: string
+    $.data.street_line: string
+    $.data.ward_code: string
+    $.data.ward_name: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+DELETE /me/addresses/{address} security[customerBearer,firstPartySession]
+  204 (không nội dung)
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PATCH /me/addresses/{address} security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.full_name: string
+    $.data.id: integer
+    $.data.is_default: boolean
+    $.data.label: string|null
+    $.data.phone: string
+    $.data.province_code: string
+    $.data.province_name: string
+    $.data.street_line: string
+    $.data.ward_code: string
+    $.data.ward_name: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/cart security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.checkout_ready: boolean
+    $.data.currency: string
+    $.data.id: string
+    $.data.item_count: integer
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].compare_at: object|null optional
+    $.data.lines[].compare_at.amount: integer
+    $.data.lines[].compare_at.currency: string
+    $.data.lines[].compare_at.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].issues: array
+    $.data.lines[].issues[]: string enum[unavailable,insufficient_stock,price_changed]
+    $.data.lines[].line_total: object|null
+    $.data.lines[].line_total.amount: integer
+    $.data.lines[].line_total.currency: string
+    $.data.lines[].line_total.formatted: string
+    $.data.lines[].options: object|array optional
+    $.data.lines[].price_when_added: object|null optional
+    $.data.lines[].price_when_added.amount: integer
+    $.data.lines[].price_when_added.currency: string
+    $.data.lines[].price_when_added.formatted: string
+    $.data.lines[].product: object|null
+    $.data.lines[].product.color_code: string optional
+    $.data.lines[].product.color_name: string|null optional
+    $.data.lines[].product.image_url: string|null optional
+    $.data.lines[].product.name: string|null
+    $.data.lines[].product.size_code: string optional
+    $.data.lines[].product.slug: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].selected: boolean
+    $.data.lines[].sku: string|null optional
+    $.data.lines[].unit_price: object|null
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer
+    $.data.payable_line_ids: array
+    $.data.payable_line_ids[]: integer
+    $.data.selected_count: integer
+    $.data.selected_subtotal: object
+    $.data.selected_subtotal.amount: integer
+    $.data.selected_subtotal.currency: string
+    $.data.selected_subtotal.formatted: string
+    $.data.status: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.voucher_codes: array
+    $.data.voucher_codes[]: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/consents security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].channel: string
+    $.data[].granted: boolean
+    $.data[].granted_at: string|null (date-time) optional
+    $.data[].purpose: string
+    $.data[].revoked_at: string|null (date-time) optional
+    $.data[].source: string|null optional
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PUT /me/consents security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].channel: string
+    $.data[].granted: boolean
+    $.data[].granted_at: string|null (date-time) optional
+    $.data[].purpose: string
+    $.data[].revoked_at: string|null (date-time) optional
+    $.data[].source: string|null optional
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/delete security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.blockers: array
+    $.data.deletable: boolean
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /me/delete security[customerBearer,firstPartySession]
+  204 (không nội dung)
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/export security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.addresses: array
+    $.data.exported_at: string|null (date-time)
+    $.data.orders: array
+    $.data.profile: object
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/orders security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].adjustments: array
+    $.data[].adjustments[]: object
+    $.data[].adjustments[].amount: object
+    $.data[].adjustments[].amount.amount: integer
+    $.data[].adjustments[].amount.currency: string
+    $.data[].adjustments[].amount.formatted: string
+    $.data[].adjustments[].code: string|null optional
+    $.data[].adjustments[].label: string
+    $.data[].adjustments[].type: string
+    $.data[].can_cancel: boolean
+    $.data[].customer: object
+    $.data[].customer.email: string|null
+    $.data[].customer.full_name: string
+    $.data[].customer.phone: string
+    $.data[].discount: object
+    $.data[].discount.amount: integer
+    $.data[].discount.currency: string
+    $.data[].discount.formatted: string
+    $.data[].fulfillment_status: string
+    $.data[].id: string
+    $.data[].lines: array
+    $.data[].lines[]: object
+    $.data[].lines[].discount: object optional
+    $.data[].lines[].discount.amount: integer
+    $.data[].lines[].discount.currency: string
+    $.data[].lines[].discount.formatted: string
+    $.data[].lines[].id: integer
+    $.data[].lines[].name: string
+    $.data[].lines[].quantity: integer
+    $.data[].lines[].sku: string
+    $.data[].lines[].total: object
+    $.data[].lines[].total.amount: integer
+    $.data[].lines[].total.currency: string
+    $.data[].lines[].total.formatted: string
+    $.data[].lines[].unit_price: object optional
+    $.data[].lines[].unit_price.amount: integer
+    $.data[].lines[].unit_price.currency: string
+    $.data[].lines[].unit_price.formatted: string
+    $.data[].lines[].variant_id: integer optional
+    $.data[].number: string
+    $.data[].order_status: string
+    $.data[].payment_method: string
+    $.data[].payment_status: string
+    $.data[].placed_at: string (date-time)
+    $.data[].pricing: object
+    $.data[].pricing.list_amount: object
+    $.data[].pricing.list_amount.amount: integer
+    $.data[].pricing.list_amount.currency: string
+    $.data[].pricing.list_amount.formatted: string
+    $.data[].pricing.markdown: object
+    $.data[].pricing.markdown.amount: integer
+    $.data[].pricing.markdown.currency: string
+    $.data[].pricing.markdown.formatted: string
+    $.data[].pricing.other_discount: object
+    $.data[].pricing.other_discount.amount: integer
+    $.data[].pricing.other_discount.currency: string
+    $.data[].pricing.other_discount.formatted: string
+    $.data[].pricing.promotion_discount: object
+    $.data[].pricing.promotion_discount.amount: integer
+    $.data[].pricing.promotion_discount.currency: string
+    $.data[].pricing.promotion_discount.formatted: string
+    $.data[].pricing.voucher_discount: object
+    $.data[].pricing.voucher_discount.amount: integer
+    $.data[].pricing.voucher_discount.currency: string
+    $.data[].pricing.voucher_discount.formatted: string
+    $.data[].pricing.vouchers: array
+    $.data[].pricing.vouchers[]: string
+    $.data[].receipt: object
+    $.data[].receipt.can_confirm: boolean
+    $.data[].receipt.confirmed_at: string|null (date-time)
+    $.data[].receipt.returns_waived: boolean
+    $.data[].returnable: object
+    $.data[].returnable.deadline: string|null (date-time)
+    $.data[].returnable.lines: object
+    $.data[].returns: array
+    $.data[].returns[]: object
+    $.data[].returns[].attachments: array optional
+    $.data[].returns[].created_at: string (date-time) optional
+    $.data[].returns[].id: string
+    $.data[].returns[].lines: array
+    $.data[].returns[].lines[]: object
+    $.data[].returns[].lines[].name: string
+    $.data[].returns[].lines[].order_line_id: integer
+    $.data[].returns[].lines[].quantity: integer
+    $.data[].returns[].number: string
+    $.data[].returns[].reason_code: string|null optional
+    $.data[].returns[].refund: object|null optional
+    $.data[].returns[].refund.amount: integer
+    $.data[].returns[].refund.currency: string
+    $.data[].returns[].refund.formatted: string
+    $.data[].returns[].resolution: string
+    $.data[].returns[].return_tracking_number: string|null optional
+    $.data[].returns[].status: string
+    $.data[].shipments: array
+    $.data[].shipments[]: object
+    $.data[].shipments[].carrier: string
+    $.data[].shipments[].events: array optional
+    $.data[].shipments[].service: string|null optional
+    $.data[].shipments[].status: string
+    $.data[].shipments[].tracking_number: string|null optional
+    $.data[].shipping_address: object
+    $.data[].shipping_address.province_name: string
+    $.data[].shipping_address.street_line: string
+    $.data[].shipping_address.ward_name: string
+    $.data[].shipping_fee: object
+    $.data[].shipping_fee.amount: integer
+    $.data[].shipping_fee.currency: string
+    $.data[].shipping_fee.formatted: string
+    $.data[].shipping_method: object|null
+    $.data[].shipping_method.fee: object optional
+    $.data[].shipping_method.fee.amount: integer
+    $.data[].shipping_method.fee.currency: string
+    $.data[].shipping_method.fee.formatted: string
+    $.data[].shipping_method.label: string
+    $.data[].status: object
+    $.data[].status.code: string
+    $.data[].status.label: string
+    $.data[].subtotal: object
+    $.data[].subtotal.amount: integer
+    $.data[].subtotal.currency: string
+    $.data[].subtotal.formatted: string
+    $.data[].tax_included: object
+    $.data[].tax_included.amount: integer
+    $.data[].tax_included.currency: string
+    $.data[].tax_included.formatted: string
+    $.data[].timeline: array
+    $.data[].timeline[]: object
+    $.data[].timeline[].at: string (date-time)
+    $.data[].timeline[].to: string|null optional
+    $.data[].timeline[].type: string
+    $.data[].total: object
+    $.data[].total.amount: integer
+    $.data[].total.currency: string
+    $.data[].total.formatted: string
+    $.meta: object
+    $.meta.page: integer
+    $.meta.per_page: integer
+    $.meta.total: integer
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/orders/{order} security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /me/orders/{order}/cancel security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+PUT /me/password security[customerBearer,firstPartySession]
+  204 (không nội dung)
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /me/prices security[customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.group: string|null
+    $.data.prices: object
+    $.data.products: object
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /menus/{location} security[]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].badge: string|null
+    $.data[].children: array
+    $.data[].image_url: string|null
+    $.data[].label: string
+    $.data[].url: string|null
+    $.meta: object
+    $.meta.location: string
+    $.meta.published: boolean
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /orders/track security[]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /orders/{order} security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/cancel security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/payment/retry security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.action: object
+    $.data.action.instructions: string|object|array|null optional
+    $.data.action.qr: string|null optional
+    $.data.action.type: string
+    $.data.action.url: string|null optional
+    $.data.amount: object
+    $.data.amount.amount: integer
+    $.data.amount.currency: string
+    $.data.error: string|object|null optional
+    $.data.expires_at: string|null (date-time) optional
+    $.data.id: string
+    $.data.method: string
+    $.data.order: object
+    $.data.order.id: string
+    $.data.order.number: string
+    $.data.retryable: boolean
+    $.data.status: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/received security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/returns security[orderToken,customerBearer,firstPartySession]
+  201
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/returns/{return}/cancel security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/returns/{return}/shipped security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /pages/home security[none,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: array|null
+    $.data[]: object
+    $.data[].data: object
+    $.data[].type: string
+    $.meta: object
+    $.meta.configured: boolean
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /payments/{payment} security[]
+  200
+    $: object
+    $.data: object
+    $.data.action: object
+    $.data.action.instructions: string|object|array|null optional
+    $.data.action.qr: string|null optional
+    $.data.action.type: string
+    $.data.action.url: string|null optional
+    $.data.amount: object
+    $.data.amount.amount: integer
+    $.data.amount.currency: string
+    $.data.error: string|object|null optional
+    $.data.expires_at: string|null (date-time) optional
+    $.data.id: string
+    $.data.method: string
+    $.data.order: object
+    $.data.order.id: string
+    $.data.order.number: string
+    $.data.retryable: boolean
+    $.data.status: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /products security[none,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: array
+    $.data[]: object
+    $.data[].brand: object|null
+    $.data[].brand.id: integer
+    $.data[].brand.name: string
+    $.data[].brand.slug: string
+    $.data[].colors: array
+    $.data[].colors[]: object
+    $.data[].colors[].code: string
+    $.data[].colors[].family: string
+    $.data[].colors[].hex: string|null optional
+    $.data[].colors[].image_url: string|null optional
+    $.data[].colors[].name: string|null optional
+    $.data[].id: integer
+    $.data[].image_srcset: string|null optional
+    $.data[].image_url: string|null
+    $.data[].in_stock: boolean
+    $.data[].locales: array optional
+    $.data[].locales[]: string
+    $.data[].name: string|null
+    $.data[].price: object|null
+    $.data[].price.compare_at: object|null
+    $.data[].price.compare_at.amount: integer
+    $.data[].price.compare_at.currency: string
+    $.data[].price.compare_at.formatted: string
+    $.data[].price.discount_percent: integer|null
+    $.data[].price.max: object
+    $.data[].price.max.amount: integer
+    $.data[].price.max.currency: string
+    $.data[].price.max.formatted: string
+    $.data[].price.min: object
+    $.data[].price.min.amount: integer
+    $.data[].price.min.currency: string
+    $.data[].price.min.formatted: string
+    $.data[].price_hidden: boolean
+    $.data[].slug: string
+    $.data[].style_code: string
+    $.meta: object
+    $.meta.facets: object|null
+    $.meta.facets.attributes: array optional
+    $.meta.facets.brands: array optional
+    $.meta.facets.color_families: object optional
+    $.meta.facets.price: object|null optional
+    $.meta.facets.price.max: integer
+    $.meta.facets.price.min: integer
+    $.meta.facets.sizes: array optional
+    $.meta.filters: array
+    $.meta.filters[]: object
+    $.meta.filters[].display: string
+    $.meta.filters[].key: string
+    $.meta.filters[].label: string
+    $.meta.filters[].options: array
+    $.meta.filters[].param: string
+    $.meta.page: integer
+    $.meta.per_page: integer
+    $.meta.total: integer
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /products/views security[none,customerBearer,firstPartySession]
+  204 (không nội dung)
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /products/{slug} security[none,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.attributes: array optional
+    $.data.attributes[]: object
+    $.data.attributes[].code: string
+    $.data.attributes[].name: string|null optional
+    $.data.brand: object|null
+    $.data.brand.id: integer
+    $.data.brand.name: string
+    $.data.brand.slug: string
+    $.data.breadcrumb: array
+    $.data.breadcrumb[]: object
+    $.data.breadcrumb[].id: integer optional
+    $.data.breadcrumb[].name: string|null optional
+    $.data.breadcrumb[].slug: string
+    $.data.care_instructions: string|null optional
+    $.data.colors: array
+    $.data.colors[]: object
+    $.data.colors[].code: string
+    $.data.colors[].family: string
+    $.data.colors[].hex: string|null optional
+    $.data.colors[].image_url: string|null optional
+    $.data.colors[].images: array
+    $.data.colors[].images[]: object
+    $.data.colors[].images[].alt: string|null optional
+    $.data.colors[].images[].srcset: string|null optional
+    $.data.colors[].images[].thumb_url: string optional
+    $.data.colors[].images[].url: string
+    $.data.colors[].name: string|null optional
+    $.data.description: string|null optional
+    $.data.id: integer
+    $.data.image_srcset: string|null optional
+    $.data.image_url: string|null optional
+    $.data.in_stock: boolean
+    $.data.links: array optional
+    $.data.links[]: object
+    $.data.links[].code: string
+    $.data.links[].name: string|null optional
+    $.data.links[].style_ids: array
+    $.data.links[].style_ids[]: integer
+    $.data.locales: array optional
+    $.data.locales[]: string
+    $.data.meta_description: string|null optional
+    $.data.meta_title: string|null optional
+    $.data.name: string|null
+    $.data.price: object|null
+    $.data.price.compare_at: object|null
+    $.data.price.compare_at.amount: integer
+    $.data.price.compare_at.currency: string
+    $.data.price.compare_at.formatted: string
+    $.data.price.discount_percent: integer|null
+    $.data.price.max: object
+    $.data.price.max.amount: integer
+    $.data.price.max.currency: string
+    $.data.price.max.formatted: string
+    $.data.price.min: object
+    $.data.price.min.amount: integer
+    $.data.price.min.currency: string
+    $.data.price.min.formatted: string
+    $.data.price_hidden: boolean
+    $.data.slug: string
+    $.data.slugs: object
+    $.data.style_code: string optional
+    $.data.variants: array
+    $.data.variants[]: object
+    $.data.variants[].available: boolean
+    $.data.variants[].color_code: string
+    $.data.variants[].id: integer
+    $.data.variants[].low_stock: boolean optional
+    $.data.variants[].price: object|null
+    $.data.variants[].price.amount: object
+    $.data.variants[].price.amount.amount: integer
+    $.data.variants[].price.amount.currency: string
+    $.data.variants[].price.amount.formatted: string
+    $.data.variants[].price.compare_at: object|null
+    $.data.variants[].price.compare_at.amount: integer
+    $.data.variants[].price.compare_at.currency: string
+    $.data.variants[].price.compare_at.formatted: string
+    $.data.variants[].price.discount_percent: integer|null
+    $.data.variants[].size_code: string
+    $.data.variants[].size_system: string optional
+    $.data.variants[].sku: string
+    $.data.videos: array optional
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /search/suggestions security[none,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.brands: array
+    $.data.brands[]: object
+    $.data.brands[].logo_url: string|null optional
+    $.data.brands[].name: string optional
+    $.data.brands[].slug: string
+    $.data.brands[].url: string
+    $.data.categories: array
+    $.data.categories[]: object
+    $.data.categories[].id: integer optional
+    $.data.categories[].name: string|null optional
+    $.data.categories[].slug: string
+    $.data.categories[].url: string
+    $.data.products: array
+    $.data.products[]: object
+    $.data.products[].id: integer optional
+    $.data.products[].image_url: string|null optional
+    $.data.products[].name: string|null optional
+    $.data.products[].slug: string
+    $.data.products[].url: string
+    $.data.search_url: string
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+GET /store security[none,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.currency: object
+    $.data.currency.compactUnits: array
+    $.data.currency.compactUnits[]: string
+    $.data.currency.currency: string
+    $.data.currency.decimalSeparator: string
+    $.data.currency.exponent: integer
+    $.data.currency.symbol: string
+    $.data.currency.thousandsSeparator: string
+    $.data.guest_checkout: boolean
+    $.data.locale: object
+    $.data.locale.current: string
+    $.data.locale.default: string
+    $.data.locale.supported: array
+    $.data.locale.supported[]: object
+    $.data.locale.supported[].code: string
+    $.data.locale.supported[].label: string
+    $.data.menu_locations: array
+    $.data.menu_locations[]: object
+    $.data.menu_locations[].code: string
+    $.data.menu_locations[].depth: integer
+    $.data.menu_locations[].label: string
+    $.data.name: string
+    $.data.popular_searches: array
+    $.data.popular_searches[]: string
+    $.data.prices: object
+    $.data.prices.hidden: boolean
+    $.data.prices.visibility: string enum[public,members]
+    $.data.theme: object
+    $.data.theme.settings: object
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string

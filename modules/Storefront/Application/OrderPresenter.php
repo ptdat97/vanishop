@@ -77,9 +77,21 @@ final class OrderPresenter
                 'refund' => $money($return->refundedAmount ?? $return->refundAmount), 'created_at' => $return->createdAt,
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),
-            'returnable' => $this->returns->returnable($order->id),
+            'returnable' => $this->returnable($order->id),
             // Khách xác nhận đã nhận hàng (0.3.78): confirmed_at, returns_waived, can_confirm.
             'receipt' => $order->receipt,
         ]);
+    }
+
+    /**
+     * Phần còn đổi/trả được: `lines` là map order_line_id → số lượng, luôn là object JSON kể cả khi rỗng.
+     *
+     * @return array{lines: object, deadline: ?string}
+     */
+    private function returnable(int $orderId): array
+    {
+        $returnable = $this->returns->returnable($orderId);
+
+        return ['lines' => (object) $returnable['lines'], 'deadline' => $returnable['deadline']];
     }
 }

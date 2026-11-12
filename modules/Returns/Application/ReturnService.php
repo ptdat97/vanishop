@@ -163,7 +163,7 @@ final class ReturnService implements Returns
 
         $days = (int) config('vanishop.fulfillment.return_window_days', 7);
 
-        return ['lines' => $lines, 'deadline' => $deliveredAt?->modify("+{$days} days")->format(DATE_ATOM)];
+        return ['lines' => $lines, 'deadline' => StoreClock::iso($deliveredAt?->modify("+{$days} days"))];
     }
 
     public function reasons(string $locale): array
@@ -442,7 +442,7 @@ final class ReturnService implements Returns
             refundAmount: $return->refund_amount,
             refundedAmount: $return->refunded_amount,
             currencyCode: $return->currency_code,
-            createdAt: StoreClock::format($return->created_at) ?? '',
+            createdAt: (string) StoreClock::iso($return->created_at),
             lines: $return->lines()->get()->map(fn (ReturnLine $line): array => [
                 'id' => $line->id, 'order_line_id' => $line->order_line_id, 'sku' => $orderLines[$line->order_line_id]->sku ?? '',
                 'name' => $orderLines[$line->order_line_id]->productName ?? '', 'quantity' => $line->quantity,

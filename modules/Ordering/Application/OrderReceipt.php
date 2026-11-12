@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Khách xác nhận đã nhận hàng (reference-parity §3.11-1): khi đơn đã giao hết, hoặc đang giao quá
@@ -49,7 +50,7 @@ final class OrderReceipt
     public static function of(Order $order): array
     {
         return [
-            'confirmed_at' => isset($order->meta['received_confirmed_at']) ? (string) $order->meta['received_confirmed_at'] : null,
+            'confirmed_at' => isset($order->meta['received_confirmed_at']) ? StoreClock::iso((string) $order->meta['received_confirmed_at']) : null,
             'returns_waived' => (bool) ($order->meta['returns_waived'] ?? false),
             'can_confirm' => self::canConfirm($order),
         ];

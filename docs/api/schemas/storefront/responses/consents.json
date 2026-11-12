@@ -30,13 +30,16 @@
                             "string",
                             "null"
                         ],
-                        "description": "Hiện là \"Y-m-d H:i:s\" (UTC), xem backlog L29."
+                        "format": "date-time",
+                        "description": "ISO-8601 theo múi giờ cửa hàng; null khi chưa có."
                     },
                     "revoked_at": {
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "format": "date-time",
+                        "description": "ISO-8601 theo múi giờ cửa hàng; null khi chưa có."
                     },
                     "source": {
                         "type": [

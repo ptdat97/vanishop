@@ -125,7 +125,7 @@ final class OrderQueries
             shippingAddress: $address,
             shippingMethod: (array) $order->shipping_method,
             note: $masked ? null : $order->note,
-            placedAt: StoreClock::format($order->placed_at),
+            placedAt: (string) StoreClock::iso($order->placed_at),
             lines: $order->lines->map(fn (OrderLine $line): array => [
                 'id' => $line->id, 'variant_id' => $line->variant_id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
                 'image_url' => $line->image_url, 'quantity' => $line->quantity, 'cancelled_quantity' => $line->cancelled_quantity, 'unit_amount' => $line->unit_amount, 'compare_at_amount' => $line->compare_at_amount,
@@ -160,7 +160,7 @@ final class OrderQueries
                 'source' => $internal ? $event->source : null,
                 'actor' => $internal && $event->actor_type !== null ? $event->actor_type.($event->actor_id !== null ? '#'.$event->actor_id : '') : null,
                 'data' => $internal && $event->data !== null ? json_decode((string) $event->data, true) : null,
-                'at' => StoreClock::format((string) $event->created_at),
+                'at' => StoreClock::iso((string) $event->created_at),
                 // Mốc thời gian (giây, UTC) để Admin gộp với sự kiện vận đơn/thanh toán (0.3.96).
                 'ts' => strtotime((string) $event->created_at.' UTC') ?: 0,
             ])->all();

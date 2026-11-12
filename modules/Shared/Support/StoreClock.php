@@ -41,6 +41,15 @@ final class StoreClock
     }
 
     /**
+     * Thời điểm cho hợp đồng dữ liệu (API, DTO): ISO-8601 theo múi giờ cửa hàng (vd. `2026-11-12T11:29:00+07:00`).
+     * Người hiển thị tự định dạng bằng format(). Chuỗi không có múi giờ được hiểu là UTC (như cột DB). null → null.
+     */
+    public static function iso(DateTimeInterface|string|null $at): ?string
+    {
+        return self::local($at)?->toIso8601String();
+    }
+
+    /**
      * Giá trị cho ô nhập `datetime-local` theo giờ cửa hàng.
      */
     public static function toInput(DateTimeInterface|string|null $at): ?string
