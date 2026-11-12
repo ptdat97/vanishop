@@ -114,10 +114,10 @@ final class ProductService
         }
 
         DB::transaction(function () use ($style): void {
-            $style->variants()->delete();
-            foreach ($style->colors as $color) {
-                $color->gallery()->delete();
+            foreach ($style->variants as $variant) {
+                $variant->gallery()->delete();
             }
+            $style->variants()->delete(); // tổ hợp tuỳ chọn xoá theo khoá ngoại (cascade)
             $style->delete();
             $this->audit->record('catalog.product.deleted', 'style', $style->id, ['style_code' => $style->style_code]);
             event(new ProductArchived($style->id, $style->style_code));

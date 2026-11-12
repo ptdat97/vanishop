@@ -79,18 +79,6 @@ parameters:
 			path: modules/Catalog/Application/Taxonomy/TaxonomyService.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Mediable\:\:\$mediable_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Catalog/Http/Controllers/Admin/ProductColorController.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Mediable\:\:\$mediable_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Catalog/Http/Controllers/Admin/ProductColorController.php
-
-		-
 			message: '#^Method Modules\\Catalog\\Persistence\\Models\\ProductCollection\:\:translationForeignKey\(\) never returns null so it can be removed from the return type\.$#'
 			identifier: return.unusedType
 			count: 1

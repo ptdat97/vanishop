@@ -18,8 +18,9 @@ use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\AttributeValue;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\OptionType;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\ProductCollection;
-use Modules\Catalog\Persistence\Models\Size;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -218,7 +219,8 @@ final class StorefrontCatalog implements CatalogReader
             return [];
         }
 
-        $order = Size::query()->whereIn('code', array_map('strval', array_keys($counts)))->orderBy('size_system')->orderBy('sort_order')->pluck('code')->unique()->values()->all();
+        $order = OptionValue::query()->whereHas('type', fn ($query) => $query->where('code', OptionType::SIZE))
+            ->whereIn('code', array_map('strval', array_keys($counts)))->orderBy('group')->orderBy('position')->pluck('code')->unique()->values()->all();
 
         return array_map(fn (string $code): array => ['code' => $code, 'count' => (int) $counts[$code]], array_map('strval', $order));
     }

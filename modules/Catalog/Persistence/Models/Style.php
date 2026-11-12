@@ -18,7 +18,7 @@ use Modules\Catalog\Persistence\Database\Factories\StyleFactory;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
 /**
- * Style = sản phẩm khách nhìn thấy (một trang PDP). Biến thể màu × size ở StyleColor / Variant.
+ * Style = sản phẩm khách nhìn thấy (một trang PDP). Biến thể: 1–3 trục tuỳ chọn (StyleOption) và SKU theo tổ hợp (Variant, ADR-045).
  *
  * @property int $id
  * @property int|null $brand_id
@@ -82,11 +82,23 @@ final class Style extends Model
     }
 
     /**
-     * @return HasMany<StyleColor, $this>
+     * Trục biến thể của sản phẩm theo thứ tự (1–3, ADR-045).
+     *
+     * @return HasMany<StyleOption, $this>
      */
-    public function colors(): HasMany
+    public function options(): HasMany
     {
-        return $this->hasMany(StyleColor::class)->orderBy('position')->orderBy('id');
+        return $this->hasMany(StyleOption::class)->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * Giá trị tuỳ chọn sản phẩm dùng, theo thứ tự riêng của sản phẩm.
+     *
+     * @return HasMany<StyleOptionValue, $this>
+     */
+    public function optionValues(): HasMany
+    {
+        return $this->hasMany(StyleOptionValue::class)->orderBy('position')->orderBy('id');
     }
 
     /**

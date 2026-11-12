@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Catalog\Application\Categories\CategoryInput;
 use Modules\Catalog\Application\Categories\CategoryService;
+use Modules\Catalog\Application\Taxonomy\OptionTypeService;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\Data\ImportedProduct;
@@ -17,22 +18,23 @@ use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Color;
-use Modules\Catalog\Persistence\Models\Size;
+use Modules\Catalog\Persistence\Models\OptionType;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
-use Modules\Catalog\Persistence\Models\StyleColor;
+use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Shared\Support\StoreLocale;
 
 /**
- * Nhập sản phẩm qua các service Admin sẵn có (ProductService, StyleColorService, VariantService, TaxonomyService,
+ * Nhập sản phẩm qua các service Admin sẵn có (ProductService, ProductOptions, VariantImages, OptionTypeService, TaxonomyService,
  * CategoryService) — cùng kiểm tra, audit, event như thao tác của nhân viên.
  */
 final class ProductImporter implements CatalogImporter
 {
     public function __construct(
         private readonly ProductService $products,
-        private readonly StyleColorService $styleColors,
-        private readonly VariantService $variants,
+        private readonly ProductOptions $options,
+        private readonly VariantImages $images,
+        private readonly OptionTypeService $optionTypes,
         private readonly TaxonomyService $taxonomy,
         private readonly CategoryService $categories,
     ) {}
@@ -59,25 +61,47 @@ final class ProductImporter implements CatalogImporter
                 brandId: $brandId,
             ));
 
-            $imagesAdded = 0;
-            foreach ($import->colors as $position => $colorData) {
-                $color = $this->color($colorData, $position);
-                $styleColor = StyleColor::query()->where('style_id', $style->id)->where('color_id', $color->id)->first()
-                    ?? $this->styleColors->addColor($style, $color->id);
-                if ($colorData['images'] !== [] && $import->replaceImages) {
-                    foreach ($styleColor->gallery()->get() as $image) {
-                        $this->styleColors->removeImage($style, $styleColor, $image);
+            // ADR-045: hai trục Màu × Size (loại có sẵn); giá trị chưa có thì tạo; giữ giá trị/SKU sản phẩm đã có.
+            $colorType = OptionType::query()->where('code', OptionType::COLOR)->firstOrFail();
+            $sizeType = OptionType::query()->where('code', OptionType::SIZE)->firstOrFail();
+            $colorIds = array_map(fn (array $data, int $position): int => $this->value($colorType, $data['code'], $position, [StoreLocale::default() => $data['name']], $data['hex'], $data['family'] ?? 'multi')->id, $import->colors, array_keys($import->colors));
+            $sizeIds = array_map(fn (string $code, int $position): int => $this->value($sizeType, $code, $position, [], null, null, 'alpha')->id, $import->sizes, array_keys($import->sizes));
+            $current = $style->optionValues()->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
+            $existingOf = fn (OptionType $type): array => OptionValue::query()->whereIn('id', $current)->where('option_type_id', $type->id)->pluck('id')->map(fn ($id): int => (int) $id)->all();
+            $this->options->syncAxes($style, [
+                ['option_type_id' => $colorType->id, 'value_ids' => array_values(array_unique([...$existingOf($colorType), ...$colorIds]))],
+                ['option_type_id' => $sizeType->id, 'value_ids' => array_values(array_unique([...$existingOf($sizeType), ...$sizeIds]))],
+            ]);
+            $keys = Variant::query()->where('style_id', $style->id)->pluck('option_key')->all();
+            foreach ($colorIds as $colorId) {
+                foreach ($sizeIds as $sizeId) {
+                    if (! in_array(Variant::keyFor([$colorId, $sizeId]), $keys, true)) {
+                        $this->options->createVariant($style, [$colorId, $sizeId]);
                     }
-                }
-                if ($colorData['images'] !== [] && ! $styleColor->gallery()->exists()) {
-                    $files = array_map(fn (string $path): UploadedFile => new UploadedFile($path, basename($path), null, null, true), array_slice($colorData['images'], 0, StyleColorService::MAX_IMAGES_PER_COLOR));
-                    $this->styleColors->addImages($style, $styleColor, $files);
-                    $imagesAdded += count($files);
                 }
             }
 
-            $sizeIds = array_map(fn (string $code, int $index): int => $this->size($code, $index)->id, $import->sizes, array_keys($import->sizes));
-            $this->variants->generate($style->fresh() ?? $style, $sizeIds);
+            // Ảnh theo SKU: tải ảnh của màu cho SKU đầu tiên của màu rồi áp cho mọi SKU cùng màu.
+            $imagesAdded = 0;
+            foreach ($import->colors as $index => $colorData) {
+                if ($colorData['images'] === []) {
+                    continue;
+                }
+                $first = Variant::query()->where('style_id', $style->id)
+                    ->whereIn('id', DB::table('variant_option_values')->where('option_value_id', $colorIds[$index])->select('variant_id'))->orderBy('id')->first();
+                if ($first === null) {
+                    continue;
+                }
+                if ($import->replaceImages) {
+                    $first->gallery()->delete();
+                }
+                if (! $first->gallery()->exists()) {
+                    $files = array_map(fn (string $path): UploadedFile => new UploadedFile($path, basename($path), null, null, true), array_slice($colorData['images'], 0, VariantImages::MAX_IMAGES));
+                    $this->images->addFiles($style, $first, $files);
+                    $this->images->copyToSiblings($style, $first, $colorType->id);
+                    $imagesAdded += count($files);
+                }
+            }
 
             return new ImportedProduct(
                 $style->id, $style->slug, $created, $imagesAdded,
@@ -110,17 +134,16 @@ final class ProductImporter implements CatalogImporter
     }
 
     /**
-     * @param  array{code: string, name: string, hex: string, family?: string}  $data
+     * Giá trị tuỳ chọn theo mã (chưa có thì tạo).
+     *
+     * @param  array<string, string>  $names
      */
-    private function color(array $data, int $position): Color
+    private function value(OptionType $type, string $code, int $position, array $names, ?string $hex, ?string $family, ?string $group = null): OptionValue
     {
-        return Color::query()->where('code', $data['code'])->first()
-            ?? $this->taxonomy->saveColor(['code' => $data['code'], 'color_family' => $data['family'] ?? 'multi', 'hex' => $data['hex'], 'position' => $position, 'translations' => [StoreLocale::default() => ['name' => $data['name']]]]);
-    }
-
-    private function size(string $code, int $index): Size
-    {
-        return Size::query()->where('code', $code)->first()
-            ?? $this->taxonomy->saveSize(['size_system' => 'alpha', 'code' => $code, 'sort_order' => $index]);
+        return OptionValue::query()->where('option_type_id', $type->id)->where('code', $code)->first()
+            ?? $this->optionTypes->saveValue($type, [
+                'code' => $code, 'group' => $group, 'hex' => $hex, 'family' => $family, 'position' => $position,
+                'translations' => array_map(fn (string $name): array => ['name' => $name], array_filter($names)),
+            ]);
     }
 }

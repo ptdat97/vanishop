@@ -4,6 +4,24 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.25 — 2026-11-12
+
+Biến thể linh hoạt, đợt F1 — dữ liệu Catalog ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md), [kế hoạch](../20-roadmap/flexible-variants.md)). **Phá vỡ** mô hình màu × size cố định.
+
+### Thêm
+- Danh mục loại tuỳ chọn dùng chung: bảng `option_types` (mã, kiểu hiển thị `swatch` | `button` | `dropdown`, lọc được), `option_values` (mã, nhóm, hex, nhóm màu); Màu (`color`) và Size (`size`) là hai loại có sẵn. Admin: trang "Tuỳ chọn biến thể" (`/admin/catalog/option-types`, giá trị ở `/{optionType}/values`) thay trang Màu và Size.
+- Sản phẩm chọn 1–3 trục (`style_options`, `style_option_values`); SKU là một tổ hợp giá trị (`variant_option_values`, khoá `variants.option_key`). SKU tự sinh `<mã sản phẩm>-<mã giá trị>-…` theo thứ tự trục.
+- Ảnh theo SKU (morph `catalog.variant`): `POST|PUT|DELETE /admin/catalog/products/{product}/variants/{variant}/images[/library|/order|/copy|/{image}]`; `copy` áp bộ ảnh cho mọi SKU cùng giá trị ở một trục (vd. mọi size cùng màu).
+- `Catalog\Contracts\Data\VariantData::$options`, `SellableVariant::$options`: danh sách `{type, name, code, value}` theo thứ tự trục.
+
+### Đổi (phá vỡ)
+- `PUT /admin/catalog/products/{product}/variants`: payload `axes[{option_type_id, value_ids}]` + `cells[{values: [id theo thứ tự trục], enabled, status, sku, barcode, weight_gram, fields}]` (bỏ `color_order`, `style_color_id`, `size_id`). Component `VariantMatrixEditor`: chọn trục, lưới khi 2 trục, danh sách tổ hợp khi 1 hoặc 3 trục, ảnh theo SKU.
+- Storefront API chi tiết sản phẩm: `options[].code` là mã loại tuỳ chọn bất kỳ, `display_type` thêm `dropdown`; `values[]` có `family`, `group` (có thể `null`); `variants[].option_values[].option` là mã loại tuỳ chọn. `media.gallery`/`variants[].media` lấy từ ảnh của SKU.
+- `VariantData::$colorCode`, `$sizeCode`, `$colorName` (và `SellableVariant`) còn giữ tạm, suy ra từ loại `color`/`size` (rỗng khi sản phẩm không có trục đó) — gỡ ở đợt F3 khi giỏ/đơn chuyển sang `options`.
+
+### Gỡ (phá vỡ)
+- Bảng `colors`, `color_translations`, `sizes`, `style_colors`, cột `variants.style_color_id|size_id` (migration chuyển dữ liệu sang mô hình mới). Model `Color`, `Size`, `StyleColor`; route `/admin/catalog/colors`, `/admin/catalog/sizes`, `/admin/catalog/products/{product}/colors…`.
+
 ## 0.4.24 — 2026-11-12
 
 Hoàn thiện ma trận biến thể (đợt V5).

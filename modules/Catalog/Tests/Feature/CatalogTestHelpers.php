@@ -6,8 +6,10 @@ namespace Modules\Catalog\Tests\Feature;
 
 use Closure;
 use Modules\Catalog\Application\Products\ProductInput;
+use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Domain\StyleStatus;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Context\ContextScope;
@@ -49,6 +51,28 @@ final class CatalogTestHelpers
         );
 
         return self::seed(fn () => app(ProductService::class)->create($input));
+    }
+
+    /**
+     * Thêm giá trị tuỳ chọn vào trục của sản phẩm (ADR-045): giữ trục và giá trị đang có, loại mới thêm thành trục cuối.
+     */
+    public static function optionValues(Style $style, OptionValue ...$values): void
+    {
+        self::seed(function () use ($style, $values): void {
+            $axes = [];
+            foreach ($style->options()->get() as $axis) {
+                $axes[$axis->option_type_id] = $style->optionValues()->whereHas('value', fn ($query) => $query->where('option_type_id', $axis->option_type_id))
+                    ->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all();
+            }
+            foreach ($values as $value) {
+                $axes[$value->option_type_id][] = $value->id;
+            }
+            $payload = [];
+            foreach ($axes as $typeId => $valueIds) {
+                $payload[] = ['option_type_id' => (int) $typeId, 'value_ids' => array_values(array_unique($valueIds))];
+            }
+            app(ProductOptions::class)->syncAxes($style, $payload);
+        });
     }
 
     /**

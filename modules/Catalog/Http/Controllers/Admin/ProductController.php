@@ -16,17 +16,19 @@ use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VariantMatrix;
+use Modules\Catalog\Application\Products\VariantOptions;
 use Modules\Catalog\Application\Products\VideoDrivers;
 use Modules\Catalog\Contracts\ProductViewStatistics;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Http\Requests\Admin\ProductRequest;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
-use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\LinkType;
-use Modules\Catalog\Persistence\Models\Size;
+use Modules\Catalog\Persistence\Models\OptionType;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
-use Modules\Catalog\Persistence\Models\StyleColor;
+use Modules\Catalog\Persistence\Models\StyleOption;
+use Modules\Catalog\Persistence\Models\StyleOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
@@ -49,7 +51,7 @@ final class ProductController
         $status = $request->query('status');
 
         $styles = Style::query()
-            ->with(['translations', 'brand:id,name', 'colors.gallery.media'])
+            ->with(['translations', 'brand:id,name', 'variants.gallery.media'])
             ->when($search !== '', function ($query) use ($search): void {
                 foreach (VietnameseText::tokens($search) as $token) {
                     $query->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
@@ -77,8 +79,8 @@ final class ProductController
                     'name' => $style->translate('name'),
                     'status' => $style->status->value,
                     'brand' => $style->brand?->name,
-                    'colors' => $style->colors->count(),
-                    'image_url' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first()?->media->url(160),
+                    'skus' => $style->variants->count(),
+                    'image_url' => $style->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(160),
                 ])->all(),
                 'current' => $styles->currentPage(),
                 'last' => $styles->lastPage(),
@@ -192,7 +194,7 @@ final class ProductController
     {
         Gate::authorize('catalog.manage');
 
-        return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'colors.color.translations', 'colors.gallery.media', 'variants.size', 'variants.styleColor.color', 'videos']), $tree);
+        return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'options.type', 'optionValues', 'variants.gallery.media', ...VariantOptions::relations('variants.'), 'videos']), $tree);
     }
 
     public function update(Style $product, ProductRequest $request, ProductService $products, AdminScreen $screen): RedirectResponse
@@ -218,15 +220,26 @@ final class ProductController
         $linkTypes = LinkType::query()->with('translations')->orderBy('position')->orderBy('code')->get();
         $videoDrivers = app(VideoDrivers::class);
 
+        $optionTypes = OptionType::query()->with(['translations', 'values.translations'])->orderBy('position')->orderBy('code')->get();
+        $optionValueTypes = $optionTypes->flatMap(fn (OptionType $type) => $type->values)->mapWithKeys(fn (OptionValue $value): array => [$value->id => $value->option_type_id])->all();
+
         return Inertia::render('Catalog::Products/Form', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
-            // Ma trận biến thể (variant-matrix §3): cột do module/plugin góp + giá trị theo SKU; size chọn được theo hệ size.
+            // Ma trận biến thể (variant-matrix §3, ADR-045): trục của sản phẩm (1–3 loại tuỳ chọn + giá trị theo thứ tự), danh mục
+            // loại tuỳ chọn để chọn trục, cột do module/plugin góp + giá trị theo SKU.
             'variantMatrix' => $style === null ? null : [
                 ...app(VariantMatrix::class)->columns($style, fn (string $permission): bool => Gate::allows($permission)),
-                'sizes' => Size::query()->orderBy('size_system')->orderBy('sort_order')->get()
-                    ->map(fn (Size $size): array => ['id' => $size->id, 'code' => $size->code, 'system' => $size->size_system->value])->all(),
+                'axes' => $style->options->map(fn (StyleOption $axis): array => [
+                    'option_type_id' => $axis->option_type_id,
+                    'value_ids' => $style->optionValues->filter(fn (StyleOptionValue $row): bool => $optionValueTypes[$row->option_value_id] === $axis->option_type_id)->pluck('option_value_id')->values()->all(),
+                ])->values()->all(),
+                'optionTypes' => $optionTypes->map(fn (OptionType $type): array => [
+                    'id' => $type->id, 'code' => $type->code, 'name' => $type->translate('name') ?? $type->code, 'display_type' => $type->display_type->value,
+                    'values' => $type->values->map(fn (OptionValue $value): array => ['id' => $value->id, 'code' => $value->code, 'name' => $value->label(), 'hex' => $value->hex, 'group' => $value->group])->all(),
+                ])->all(),
                 'saveUrl' => route('admin.catalog.products.variants.save', $style->id),
+                'optionTypesUrl' => route('admin.catalog.option-types.index'),
             ],
             'product' => $style === null ? null : [
                 'id' => $style->id,
@@ -241,25 +254,18 @@ final class ProductController
                 'brand_id' => $style->brand_id,
                 'translations' => $style->translationsByLocale(),
                 'attributes' => $this->attributeFormValues($style, $attributes),
-                'colors' => $style->colors->map(fn (StyleColor $styleColor): array => [
-                    'id' => $styleColor->id,
-                    'code' => $styleColor->color->code,
-                    'name' => $styleColor->color->translate('name'),
-                    'hex' => $styleColor->color->hex,
-                    'images' => $styleColor->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->url(400)])->all(),
-                ])->all(),
+                // SKU: giá trị theo thứ tự trục (id), ảnh của chính SKU (ADR-045).
                 'variants' => $style->variants
-                    ->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $variant->styleColor->position, $variant->size->sort_order))
+                    ->sortBy(fn (Variant $variant): string => VariantOptions::sortKey($variant))
                     ->map(fn (Variant $variant): array => [
                         'id' => $variant->id,
                         'sku' => $variant->sku,
                         'barcode' => $variant->barcode,
                         'status' => $variant->status->value,
                         'weight_gram' => $variant->weight_gram,
-                        'style_color_id' => $variant->style_color_id,
-                        'size_id' => $variant->size_id,
-                        'color_code' => $variant->styleColor->color->code,
-                        'size_code' => $variant->size->code,
+                        'values' => array_map(fn (OptionValue $value): int => $value->id, VariantOptions::ordered($variant)),
+                        'label' => implode(' / ', array_map(fn (OptionValue $value): string => $value->label(), VariantOptions::ordered($variant))),
+                        'images' => $variant->gallery->map(fn ($image): array => ['id' => $image->id, 'url' => $image->media->url(400)])->all(),
                     ])->values()->all(),
                 'links' => $this->linkFormValues($style, $linkTypes),
                 // Driver đã tắt/gỡ: vẫn liệt kê để gỡ được, storefront không hiện.
@@ -287,11 +293,7 @@ final class ProductController
                 'input_type' => $attribute->input_type->value,
                 'values' => $attribute->values->map(fn ($value): array => ['id' => $value->id, 'label' => $value->translate('label')])->all(),
             ])->all(),
-            'availableColors' => Color::query()->with('translations')->orderBy('position')->get()
-                ->map(fn (Color $color): array => ['id' => $color->id, 'label' => $color->code.' — '.$color->translate('name')])->all(),
             'statuses' => array_column(StyleStatus::cases(), 'value'),
-            'availableSizes' => Size::query()->orderBy('size_system')->orderBy('sort_order')->get()
-                ->map(fn (Size $size): array => ['id' => $size->id, 'label' => $size->code, 'system' => $size->size_system->value])->all(),
         ]);
     }
 

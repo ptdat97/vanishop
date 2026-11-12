@@ -2,16 +2,13 @@
 import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
-import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import MultiSelect from '@admin/Components/MultiSelect.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
-import Sortable from '@admin/Components/Sortable.vue';
-import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
 import { codeOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { initialExtensionValues, type ExtensionSection, type MediaItem } from '@admin/types';
+import { initialExtensionValues, type ExtensionSection } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -24,14 +21,6 @@ import type { CatalogLabels, LinkGroupRow, NavItem, Translations, VideoRow } fro
 
 type Fields = 'name' | 'slug' | 'description' | 'care_instructions' | 'meta_title' | 'meta_description';
 type AttributeValue = number | number[] | string | boolean | null;
-
-interface ColorEntry {
-    id: number;
-    code: string;
-    name: string | null;
-    hex: string | null;
-    images: Array<{ id: number; url: string }>;
-}
 
 const props = defineProps<{
     nav: NavItem[];
@@ -50,23 +39,22 @@ const props = defineProps<{
         brand_id: number | null;
         translations: Translations<Fields>;
         attributes: Record<number, AttributeValue>;
-        colors: ColorEntry[];
-        variants: Array<{ id: number; sku: string; barcode: string | null; status: string; weight_gram: number | null; style_color_id: number; size_id: number; color_code: string; size_code: string }>;
+        variants: Array<{ id: number; sku: string; barcode: string | null; status: string; weight_gram: number | null; values: number[]; label: string; images: Array<{ id: number; url: string }> }>;
         links: LinkGroupRow[];
         videos: VideoRow[];
     };
     categories: Array<{ id: number; label: string }>;
     brands: Array<{ id: number; label: string }>;
     attributeDefinitions: Array<{ id: number; name: string | null; kind: string; input_type: string; values: Array<{ id: number; label: string | null }> }>;
-    availableColors: Array<{ id: number; label: string }>;
     statuses: string[];
-    availableSizes: Array<{ id: number; label: string; system: string }>;
     linkTypes: Array<{ id: number; label: string; is_active: boolean }>;
     videoDrivers: Array<{ code: string; label: string; hint: string }>;
     extensionSections: ExtensionSection[];
     variantMatrix: null | {
         saveUrl: string;
-        sizes: Array<{ id: number; code: string; system: string }>;
+        optionTypesUrl: string;
+        axes: Array<{ option_type_id: number; value_ids: number[] }>;
+        optionTypes: Array<{ id: number; code: string; name: string; display_type: string; values: Array<{ id: number; code: string; name: string | null; hex: string | null; group: string | null }> }>;
         columns: Array<{ code: string; label: string; editable: boolean; fields: Array<{ key: string; label: string; type: string; required: boolean; options: Record<string, string>; help: string | null }> }>;
         values: Record<number, Record<string, Record<string, string | number | boolean | null>>>;
     };
@@ -120,43 +108,6 @@ async function destroy(): Promise<void> {
     }
 }
 
-const newColorId = ref<number | null>(null);
-function addColor(): void {
-    if (newColorId.value) {
-        router.post(`${productUrl.value}/colors`, { color_id: newColorId.value }, { preserveScroll: true, onSuccess: () => (newColorId.value = null) });
-    }
-}
-
-async function removeColor(color: ColorEntry): Promise<void> {
-    if ((await confirmAction({ title: `Gỡ màu ${color.code}?`, message: 'Toàn bộ ảnh của màu này cũng bị gỡ.', confirmLabel: 'Gỡ màu', tone: 'danger' })) !== false) {
-        router.delete(`${productUrl.value}/colors/${color.id}`, { preserveScroll: true });
-    }
-}
-
-function uploadImages(color: ColorEntry, event: Event): void {
-    const files = Array.from((event.target as HTMLInputElement).files ?? []);
-    if (files.length) {
-        router.post(`${productUrl.value}/colors/${color.id}/images`, { images: files }, { forceFormData: true, preserveScroll: true });
-    }
-}
-
-const pickingFor = ref<ColorEntry | null>(null);
-
-function attachFromLibrary(items: MediaItem[]): void {
-    if (pickingFor.value && items.length) {
-        router.post(`${productUrl.value}/colors/${pickingFor.value.id}/images/library`, { media_ids: items.map((item) => item.id) }, { preserveScroll: true });
-    }
-    pickingFor.value = null;
-}
-
-/** Kéo-thả xong lưu ngay thứ tự ảnh của màu (ảnh đầu là ảnh đại diện); danh sách hiện theo thứ tự server trả về. */
-function reorderImages(color: ColorEntry, images: ColorEntry['images']): void {
-    router.put(`${productUrl.value}/colors/${color.id}/images/order`, { order: images.map((image) => image.id) }, { preserveScroll: true });
-}
-
-function removeImage(color: ColorEntry, imageId: number): void {
-    router.delete(`${productUrl.value}/colors/${color.id}/images/${imageId}`, { preserveScroll: true });
-}
 </script>
 
 <template>
@@ -219,67 +170,22 @@ function removeImage(color: ColorEntry, imageId: number): void {
                 </FormField>
             </div>
 
-            <div v-if="product" class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-                <div class="flex flex-wrap items-end justify-between gap-2">
-                    <h2 class="text-sm font-medium">Màu và ảnh</h2>
-                    <div class="flex gap-2">
-                        <div class="w-56"><Select v-model="newColorId" :options="recordOptions(availableColors)" placeholder="Chọn màu…" aria-label="Màu cần thêm" /></div>
-                        <button type="button" :class="secondaryButton" :disabled="!newColorId" @click="addColor">Thêm màu</button>
-                    </div>
-                </div>
-                <p v-if="errors.color_id" class="text-sm text-red-600">{{ errors.color_id }}</p>
-                <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
-                <div v-for="color in product.colors" :id="`color-images-${color.id}`" :key="color.id" class="scroll-mt-20 rounded-md border border-slate-200 p-3">
-                    <div class="mb-3 flex items-center justify-between">
-                        <div class="flex items-center gap-2 text-sm font-medium">
-                            <span class="inline-block h-4 w-4 rounded-full border border-slate-300" :style="{ background: color.hex ?? 'transparent' }" />
-                            {{ color.name }} <span class="font-mono text-xs text-slate-400">{{ color.code }}</span>
-                        </div>
-                        <button type="button" class="text-sm text-red-600" @click="removeColor(color)">Gỡ màu</button>
-                    </div>
-                    <div class="flex flex-wrap gap-3">
-                        <Sortable
-                            v-slot="{ item: image, index, handle }"
-                            :model-value="color.images"
-                            layout="grid"
-                            list-class="flex flex-wrap gap-3"
-                            item-class="w-24"
-                            :item-key="(image) => image.id"
-                            :item-label="(image) => `ảnh ${color.images.indexOf(image) + 1} của màu ${color.name ?? color.code}`"
-                            @update:model-value="(images) => reorderImages(color, images)"
-                        >
-                            <img :src="image.url" :alt="index === 0 ? 'Ảnh đại diện' : ''" class="h-32 w-24 rounded object-cover" />
-                            <div class="mt-1 flex items-center justify-between text-xs">
-                                <SortHandle v-bind="handle" />
-                                <button type="button" class="text-red-600" @click="removeImage(color, image.id)">Xoá</button>
-                            </div>
-                        </Sortable>
-                        <label class="flex h-32 w-24 cursor-pointer items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">
-                            + Ảnh
-                            <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="uploadImages(color, $event)" />
-                        </label>
-                        <button type="button" class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-indigo-300 text-center text-xs text-indigo-600" @click="pickingFor = color">
-                            Chọn từ<br />thư viện
-                        </button>
-                    </div>
-                </div>
-                <p v-if="!product.colors.length" class="text-sm text-slate-500">Chưa có màu. Thêm màu rồi tải ảnh cho từng màu (khuyến nghị tỉ lệ 4:5).</p>
-            </div>
-            <MediaPicker :open="pickingFor !== null" :title="`Ảnh cho màu ${pickingFor?.name ?? pickingFor?.code ?? ''}`" @update:open="(value) => !value && (pickingFor = null)" @select="attachFromLibrary" />
             <VariantMatrixEditor
                 v-if="product && variantMatrix"
                 :save-url="variantMatrix.saveUrl"
+                :product-url="productUrl"
+                :option-types-url="variantMatrix.optionTypesUrl"
                 :style-code="product.style_code"
-                :colors="product.colors"
+                :axes="variantMatrix.axes"
+                :option-types="variantMatrix.optionTypes"
                 :variants="product.variants"
-                :sizes="variantMatrix.sizes"
                 :columns="variantMatrix.columns"
                 :values="variantMatrix.values"
                 :status-labels="labels.variant_status"
             />
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
-            <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm màu, ảnh, biến thể, video và sản phẩm liên kết.</p>
+            <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm biến thể, ảnh, video và sản phẩm liên kết.</p>
             <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 

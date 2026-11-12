@@ -4,26 +4,31 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Persistence\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Modules\Catalog\Domain\VariantStatus;
 
 /**
+ * SKU: một tổ hợp giá trị tuỳ chọn của sản phẩm — đúng một giá trị cho mỗi trục (ADR-045). `option_key` = id giá trị theo
+ * thứ tự trục, duy nhất theo sản phẩm. Ảnh theo SKU (`gallery`).
+ *
  * @property int $id
  * @property int $style_id
- * @property int $style_color_id
- * @property int $size_id
+ * @property string|null $option_key
  * @property string $sku
  * @property string|null $barcode
  * @property VariantStatus $status
  * @property int|null $weight_gram
  * @property int $lock_version
- * @property StyleColor $styleColor
- * @property Size $size
+ * @property Collection<int, OptionValue> $optionValues
+ * @property Collection<int, Mediable> $gallery
  */
 final class Variant extends Model
 {
-    protected $fillable = ['style_id', 'style_color_id', 'size_id', 'sku', 'barcode', 'status', 'weight_gram', 'meta', 'lock_version'];
+    protected $fillable = ['style_id', 'option_key', 'sku', 'barcode', 'status', 'weight_gram', 'meta', 'lock_version'];
 
     protected function casts(): array
     {
@@ -39,18 +44,34 @@ final class Variant extends Model
     }
 
     /**
-     * @return BelongsTo<StyleColor, $this>
+     * @return BelongsToMany<OptionValue, $this>
      */
-    public function styleColor(): BelongsTo
+    public function optionValues(): BelongsToMany
     {
-        return $this->belongsTo(StyleColor::class);
+        return $this->belongsToMany(OptionValue::class, 'variant_option_values')->withPivot('option_type_id');
     }
 
     /**
-     * @return BelongsTo<Size, $this>
+     * @return MorphMany<Mediable, $this>
      */
-    public function size(): BelongsTo
+    public function gallery(): MorphMany
     {
-        return $this->belongsTo(Size::class);
+        return $this->morphMany(Mediable::class, 'mediable')->where('role', 'gallery')->orderBy('position')->orderBy('id');
+    }
+
+    /** Giá trị của SKU cho một loại tuỳ chọn (theo mã loại), null nếu sản phẩm không có trục đó. Cần nạp `optionValues.type`. */
+    public function valueOf(string $typeCode): ?OptionValue
+    {
+        return $this->optionValues->first(fn (OptionValue $value): bool => $value->type->code === $typeCode);
+    }
+
+    /**
+     * Khoá tổ hợp: id giá trị theo thứ tự trục của sản phẩm.
+     *
+     * @param  list<int>  $valueIds  theo thứ tự trục
+     */
+    public static function keyFor(array $valueIds): string
+    {
+        return implode('-', $valueIds);
     }
 }

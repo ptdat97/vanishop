@@ -20,7 +20,7 @@ Chuyển dữ liệu: `colors` → loại `color` (swatch, lọc được; hex, 
 
 | Đợt | Việc | Trạng thái |
 |---|---|---|
-| **F1 — Dữ liệu Catalog** | Bảng mới + migration chuyển dữ liệu; model; `VariantData`/chỉ mục/sinh SKU theo tổ hợp; Admin danh mục loại tuỳ chọn (thay trang Màu, Size) | |
+| **F1 — Dữ liệu Catalog** | Bảng mới + migration chuyển dữ liệu; model; `VariantData`/chỉ mục/sinh SKU theo tổ hợp; Admin danh mục loại tuỳ chọn (thay trang Màu, Size) | ✅ 0.4.25 — kèm sớm một phần F4: ma trận Admin 1–3 trục (lưới khi 2 trục, danh sách khi 1/3) và ảnh theo SKU. `VariantData` giữ tạm `colorCode`/`sizeCode` (suy ra) tới F3 |
 | **F2 — Đọc ở Catalog/Storefront** | Chi tiết sản phẩm (`options`, ảnh theo SKU), thẻ sản phẩm (swatch của loại swatch), bộ lọc/facet theo loại lọc được (thay nhóm màu, size), tìm kiếm (DB + Meilisearch) | |
 | **F3 — Snapshot `options`** | Dòng giỏ, `TotalsLine`, checkout, dòng đơn (bỏ `color_name`, `size_code`), payload tích hợp, phiếu in, file giao hãng, đổi trả, lưới tồn, báo cáo | |
 | **F4 — Admin ma trận N trục** | Chọn 1–3 trục + giá trị cho sản phẩm; lưới (2 trục) / danh sách (1, 3 trục); ảnh theo SKU + áp ảnh theo giá trị trục | |

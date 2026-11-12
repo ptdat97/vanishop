@@ -7,6 +7,7 @@
 return [
     'product_status' => ['draft' => 'Draft', 'active' => 'On sale', 'archived' => 'Archived'],
     'option' => ['color' => 'Colour', 'size' => 'Size'],
+    'option_display' => ['swatch' => 'Swatches', 'button' => 'Buttons', 'dropdown' => 'Dropdown'],
     'variant_status' => ['active' => 'On sale', 'inactive' => 'Discontinued'],
     'visibility' => ['active' => 'Visible', 'hidden' => 'Hidden'],
     'attribute_kind' => ['spec' => 'Shown & filterable (spec)', 'internal' => 'Internal only'],

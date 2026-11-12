@@ -9,13 +9,14 @@ use Modules\Catalog\Application\Media\EloquentMediaUrls;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Contracts\Data\FieldDefinition;
+use Modules\Pricing\Tests\Feature\PricingTestHelpers;
 use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
+require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
 
 beforeEach(function () {
     Storage::fake('public');
@@ -116,16 +117,16 @@ it('đổi tên, chuyển thư mục; xoá chỉ ảnh không còn dùng (kèm f
     $this->getJson("{$this->base}/browse")->assertJsonPath('items.0.usages_count', 1);
 });
 
-it('chọn từ thư viện: gắn ảnh có sẵn vào màu sản phẩm (bỏ qua ảnh đã có) và làm ảnh danh mục', function () {
+it('chọn từ thư viện: gắn ảnh có sẵn vào SKU (bỏ qua ảnh đã có) và làm ảnh danh mục', function () {
     $items = uploadTo('', [UploadedFile::fake()->image('a.jpg', 900, 1200), UploadedFile::fake()->image('b.jpg', 900, 1201)]);
     $ids = array_column($items, 'id');
     $style = T::product();
-    $styleColor = T::seed(fn () => $style->colors()->create(['color_id' => Color::factory()->create()->id]));
-    $url = "/admin/catalog/products/{$style->id}/colors/{$styleColor->id}/images/library";
+    [$variant] = PricingTestHelpers::variants($style, ['S']);
+    $url = "/admin/catalog/products/{$style->id}/variants/{$variant->id}/images/library";
 
     $this->post($url, ['media_ids' => [$ids[0]]])->assertSessionHasNoErrors();
     $this->post($url, ['media_ids' => $ids])->assertSessionHasNoErrors();
-    expect(T::seed(fn () => $styleColor->gallery()->pluck('media_id')->all()))->toBe($ids);
+    expect(T::seed(fn () => $variant->gallery()->pluck('media_id')->all()))->toBe($ids);
 
     $this->post($url, ['media_ids' => [999_999]])->assertSessionHasErrors('images');
 

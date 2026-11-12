@@ -6,11 +6,13 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Color;
+use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Pricing\Tests\Feature\PricingTestHelpers;
 
 require_once __DIR__.'/CatalogTestHelpers.php';
+require_once __DIR__.'/../../../Pricing/Tests/Feature/PricingTestHelpers.php';
 
 beforeEach(function () {
     $this->brand = Brand::factory()->create(['slug' => 'lumiere']);
@@ -94,38 +96,34 @@ it('cập nhật dùng lock_version, chỉ xoá được bản nháp', function 
     expect(T::seed(fn () => Style::query()->find($draft->id)))->toBeNull();
 });
 
-it('thêm màu, tải ảnh, đổi thứ tự và xoá ảnh', function () {
+it('ảnh theo SKU: tải lên, đổi thứ tự, áp cho mọi SKU cùng màu, xoá ảnh', function () {
     Storage::fake('public');
     $style = T::product($this->brand->id);
-    $color = T::seed(fn () => Color::factory()->create(['code' => 'IVR']));
+    [$small, $medium] = PricingTestHelpers::variants($style, ['S', 'M']);
+    $images = "{$this->base}/{$style->id}/variants/{$small->id}/images";
 
-    $this->post("{$this->base}/{$style->id}/colors", ['color_id' => $color->id])->assertSessionHasNoErrors();
-    $this->post("{$this->base}/{$style->id}/colors", ['color_id' => $color->id])->assertSessionHasErrors('color_id');
-    $styleColor = T::seed(fn () => $style->colors()->sole());
+    $this->post($images, ['images' => [UploadedFile::fake()->image('a.jpg', 1600, 2000), UploadedFile::fake()->image('b.jpg', 1600, 2001)]])->assertSessionHasNoErrors();
+    $ids = T::seed(fn () => $small->gallery()->pluck('id')->all());
+    $this->put("{$images}/order", ['order' => array_reverse($ids)])->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $small->gallery()->pluck('id')->all()))->toBe(array_reverse($ids));
 
-    $this->post("{$this->base}/{$style->id}/colors/{$styleColor->id}/images", [
-        'images' => [UploadedFile::fake()->image('a.jpg', 1600, 2000), UploadedFile::fake()->image('b.jpg', 1600, 2001)],
-    ])->assertSessionHasNoErrors();
+    $colorType = T::seed(fn () => OptionType::query()->where('code', OptionType::COLOR)->value('id'));
+    $this->post("{$images}/copy", ['option_type_id' => $colorType])->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $medium->gallery()->pluck('media_id')->all()))->toBe(T::seed(fn () => $small->gallery()->pluck('media_id')->all()));
 
-    $ids = T::seed(fn () => $styleColor->gallery()->pluck('id')->all());
-    $this->put("{$this->base}/{$style->id}/colors/{$styleColor->id}/images/order", ['order' => array_reverse($ids)])->assertSessionHasNoErrors();
-    expect(T::seed(fn () => $styleColor->gallery()->pluck('id')->all()))->toBe(array_reverse($ids));
-
-    $this->delete("{$this->base}/{$style->id}/colors/{$styleColor->id}/images/{$ids[0]}")->assertSessionHasNoErrors();
-    expect(T::seed(fn () => $styleColor->gallery()->count()))->toBe(1);
+    $this->delete("{$images}/{$ids[0]}")->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $small->gallery()->count()))->toBe(1);
 
     $this->get("{$this->base}/{$style->id}/edit")->assertInertia(fn (Assert $page) => $page
-        ->component('Catalog::Products/Form')->where('product.colors.0.code', 'IVR')->has('product.colors.0.images', 1));
+        ->component('Catalog::Products/Form')->where('product.variants.0.sku', $small->sku)->has('product.variants.0.images', 1)->has('product.variants.1.images', 2));
 });
 
-it('không thao tác được màu/ảnh của sản phẩm khác qua URL', function () {
+it('không thao tác được ảnh SKU của sản phẩm khác qua URL', function () {
     $mine = T::product($this->brand->id);
     $otherProduct = T::product($this->brand->id);
-    $color = T::seed(fn () => Color::factory()->create());
-    $foreignColor = T::seed(fn () => $otherProduct->colors()->create(['color_id' => $color->id]));
+    [$foreign] = PricingTestHelpers::variants($otherProduct, ['S']);
 
-    $this->delete("{$this->base}/{$mine->id}/colors/{$foreignColor->id}")->assertNotFound();
-    $this->post("{$this->base}/{$mine->id}/colors", ['color_id' => 999_999])->assertSessionHasErrors('color_id');
+    $this->post("{$this->base}/{$mine->id}/variants/{$foreign->id}/images/library", ['media_ids' => [1]])->assertNotFound();
 });
 
 it('danh sách sản phẩm tìm được theo tên không dấu', function () {

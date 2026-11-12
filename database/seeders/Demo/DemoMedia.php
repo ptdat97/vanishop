@@ -19,9 +19,9 @@ final class DemoMedia
     public static function byStyle(): array
     {
         $result = [];
-        $styles = Style::query()->where('style_code', 'like', 'VS-%')->where('status', 'active')->with('colors.gallery')->orderBy('id')->get();
+        $styles = Style::query()->where('style_code', 'like', 'VS-%')->where('status', 'active')->with('variants.gallery')->orderBy('id')->get();
         foreach ($styles as $style) {
-            $ids = $style->colors->flatMap(fn ($color) => $color->gallery->pluck('media_id'))->map(fn ($id): int => (int) $id)->values()->all();
+            $ids = $style->variants->flatMap(fn ($variant) => $variant->gallery->pluck('media_id'))->unique()->map(fn ($id): int => (int) $id)->values()->all();
             if ($ids !== []) {
                 $result[$style->style_code] = $ids;
             }

@@ -1,10 +1,11 @@
 <?php
 
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Size;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -26,11 +27,11 @@ beforeEach(function () {
     });
     $dress = T::product($this->lumiere->id, ['name' => 'Đầm lụa đen', 'slug' => 'dam-lua-den', 'category_ids' => [$this->dresses->id], 'attributes' => [$this->material->id => $this->silk->id]]);
     [$variant] = P::variants($dress, ['S']);
-    T::seed(fn () => $variant->styleColor->color->update(['color_family' => 'black']));
+    T::seed(fn () => $variant->valueOf('color')->update(['family' => 'black']));
     P::priceList(['code' => 'base'], [$variant->id => [300_000]]);
     [$shirt] = P::variants(T::product($this->urbanx->id, ['name' => 'Áo thun Urbanx', 'slug' => 'ao-thun-urbanx']), ['M']);
     P::priceList(['code' => 'base-2'], [$shirt->id => [150_000]]);
-    T::seed(fn () => $shirt->styleColor->color->update(['color_family' => 'white']));
+    T::seed(fn () => $shirt->valueOf('color')->update(['family' => 'white']));
 });
 
 it('mặc định: thương hiệu, màu, thuộc tính lọc được — đúng thứ tự, nhãn theo ngôn ngữ; facet không có giá trị thì ẩn', function () {
@@ -83,13 +84,17 @@ it('lọc theo size: sản phẩm có biến thể đang bán thuộc size đã 
     T::seed(function () {
         $dressS = Variant::query()->orderBy('id')->first();
         $shirtM = Variant::query()->orderByDesc('id')->first();
-        $dressS->size->update(['code' => 'S', 'sort_order' => 1]);
-        $shirtM->size->update(['code' => 'M', 'sort_order' => 2]);
-        $large = Size::factory()->create(['code' => 'L', 'sort_order' => 3]);
-        $extraLarge = Size::factory()->create(['code' => 'XL', 'sort_order' => 4]);
-        $dressS->replicate()->fill(['size_id' => $shirtM->size_id, 'sku' => 'DRESS-M', 'barcode' => null])->save();
-        $shirtM->replicate()->fill(['size_id' => $large->id, 'sku' => 'SHIRT-L', 'barcode' => null])->save();
-        $shirtM->replicate()->fill(['size_id' => $extraLarge->id, 'sku' => 'SHIRT-XL', 'barcode' => null, 'status' => 'inactive'])->save();
+        $dressS->valueOf('size')->update(['code' => 'S', 'position' => 1]);
+        $medium = $shirtM->valueOf('size');
+        $medium->update(['code' => 'M', 'position' => 2]);
+        $large = OptionValue::factory()->size()->create(['code' => 'L', 'position' => 3]);
+        $extraLarge = OptionValue::factory()->size()->create(['code' => 'XL', 'position' => 4]);
+        T::optionValues($dressS->style, $medium);
+        T::optionValues($shirtM->style, $large, $extraLarge);
+        $options = app(ProductOptions::class);
+        $options->createVariant($dressS->style, [$dressS->valueOf('color')->id, $medium->id], ['sku' => 'DRESS-M']);
+        $options->createVariant($shirtM->style, [$shirtM->valueOf('color')->id, $large->id], ['sku' => 'SHIRT-L']);
+        $options->createVariant($shirtM->style, [$shirtM->valueOf('color')->id, $extraLarge->id], ['sku' => 'SHIRT-XL', 'status' => 'inactive']);
     });
     $list = fn (string $query = '') => $this->getJson('/api/storefront/v1/products'.$query)->assertOk();
     $slugs = fn ($response) => collect($response->json('data'))->pluck('slug')->sort()->values()->all();

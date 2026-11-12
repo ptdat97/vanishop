@@ -11,7 +11,7 @@ use Modules\Catalog\Contracts\Data\SellableVariant;
  * Service contract: đọc catalog đang hiển thị cho storefront.
  * Dữ liệu trả về là mảng thuần (DTO dạng mảng), không có model.
  *
- * @phpstan-type VariantView array{id: int, sku: string, color_code: string, size_code: string, size_system: string}
+ * @phpstan-type VariantView array{id: int, sku: string, is_active: bool, option_values: list<array{option: string, value_id: int}>}
  */
 interface CatalogReader
 {

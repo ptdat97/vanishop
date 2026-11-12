@@ -176,11 +176,7 @@
                 ],
                 "properties": {
                     "code": {
-                        "type": "string",
-                        "enum": [
-                            "color",
-                            "size"
-                        ]
+                        "type": "string"
                     },
                     "name": {
                         "type": "string"
@@ -189,7 +185,8 @@
                         "type": "string",
                         "enum": [
                             "swatch",
-                            "button"
+                            "button",
+                            "dropdown"
                         ]
                     },
                     "values": {
@@ -198,7 +195,8 @@
                             "type": "object",
                             "required": [
                                 "id",
-                                "code"
+                                "code",
+                                "name"
                             ],
                             "properties": {
                                 "id": {
@@ -220,16 +218,22 @@
                                     ]
                                 },
                                 "family": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "group": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "image_url": {
                                     "type": [
                                         "string",
                                         "null"
                                     ]
-                                },
-                                "system": {
-                                    "type": "string"
                                 },
                                 "available": {
                                     "type": "boolean"
@@ -239,7 +243,7 @@
                     }
                 }
             },
-            "description": "Trục chọn biến thể theo thứ tự hiển thị; giá trị có id ổn định (id màu, id size)."
+            "description": "Trục biến thể của sản phẩm (1–3, ADR-045) theo thứ tự: mã loại tuỳ chọn (vd. color, size, material), tên, kiểu hiển thị; giá trị có id ổn định, theo thứ tự của sản phẩm."
         },
         "variants": {
             "type": "array",
@@ -280,18 +284,14 @@
                             ],
                             "properties": {
                                 "option": {
-                                    "type": "string",
-                                    "enum": [
-                                        "color",
-                                        "size"
-                                    ]
+                                    "type": "string"
                                 },
                                 "value_id": {
                                     "type": "integer"
                                 }
                             }
                         },
-                        "description": "Giá trị của từng trục chọn, trỏ bằng `options[].values[].id` (không theo vị trí mảng)."
+                        "description": "Giá trị của từng trục (`option` = `options[].code`), trỏ bằng `options[].values[].id` (không theo vị trí mảng)."
                     },
                     "price": {
                         "type": [
@@ -437,7 +437,8 @@
                         }
                     }
                 }
-            }
+            },
+            "description": "Hợp ảnh của mọi SKU, mỗi ảnh một lần (`id` = id media); `variants[].media` trỏ ảnh của chính SKU."
         },
         "inventory": {
             "type": "object",

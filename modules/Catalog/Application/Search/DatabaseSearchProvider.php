@@ -14,6 +14,7 @@ use Modules\Catalog\Contracts\SearchProvider;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Domain\Text\VietnameseText;
 
@@ -165,11 +166,14 @@ final class DatabaseSearchProvider implements SearchProvider
             return;
         }
 
+        // Giá trị của loại tuỳ chọn `size` (ADR-045) của SKU đang bán.
         $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('variants')
-            ->join('sizes', 'sizes.id', '=', 'variants.size_id')
+            ->join('variant_option_values as vov', 'vov.variant_id', '=', 'variants.id')
+            ->join('option_values as ov', 'ov.id', '=', 'vov.option_value_id')
+            ->join('option_types as ot', fn ($join) => $join->on('ot.id', '=', 'ov.option_type_id')->where('ot.code', '=', OptionType::SIZE))
             ->whereColumn('variants.style_id', 'styles.id')
             ->where('variants.status', VariantStatus::Active->value)
-            ->whereIn('sizes.code', $sizeCodes));
+            ->whereIn('ov.code', $sizeCodes));
     }
 
     /**
@@ -181,11 +185,13 @@ final class DatabaseSearchProvider implements SearchProvider
     private function sizeFacet(Builder $base, ProductSearchQuery $query): array
     {
         return DB::table('variants')
-            ->join('sizes', 'sizes.id', '=', 'variants.size_id')
+            ->join('variant_option_values as vov', 'vov.variant_id', '=', 'variants.id')
+            ->join('option_values as ov', 'ov.id', '=', 'vov.option_value_id')
+            ->join('option_types as ot', fn ($join) => $join->on('ot.id', '=', 'ov.option_type_id')->where('ot.code', '=', OptionType::SIZE))
             ->where('variants.status', VariantStatus::Active->value)
             ->whereIn('variants.style_id', $this->scoped($base, $query, except: 'size')->select('styles.id'))
-            ->groupBy('sizes.code')
-            ->selectRaw('sizes.code as code, count(distinct variants.style_id) as total')
+            ->groupBy('ov.code')
+            ->selectRaw('ov.code as code, count(distinct variants.style_id) as total')
             ->pluck('total', 'code')
             ->mapWithKeys(fn ($total, $code): array => [(string) $code => (int) $total])
             ->all();
@@ -231,10 +237,11 @@ final class DatabaseSearchProvider implements SearchProvider
             return;
         }
 
-        $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('style_colors')
-            ->join('colors', 'colors.id', '=', 'style_colors.color_id')
-            ->whereColumn('style_colors.style_id', 'styles.id')
-            ->whereIn('colors.color_family', $families));
+        // Nhóm màu của giá trị kiểu ô màu mà sản phẩm dùng (ADR-045).
+        $builder->whereExists(fn ($q) => $q->select(DB::raw(1))->from('style_option_values as sov')
+            ->join('option_values as ov', 'ov.id', '=', 'sov.option_value_id')
+            ->whereColumn('sov.style_id', 'styles.id')
+            ->whereIn('ov.family', $families));
     }
 
     /**
@@ -263,12 +270,13 @@ final class DatabaseSearchProvider implements SearchProvider
     {
         $scope = $this->scoped($base, $query, except: 'color');
 
-        return DB::table('style_colors')
-            ->join('colors', 'colors.id', '=', 'style_colors.color_id')
-            ->whereIn('style_colors.style_id', $scope->select('styles.id'))
-            ->groupBy('colors.color_family')
-            ->orderBy('colors.color_family')
-            ->selectRaw('colors.color_family as family, count(distinct style_colors.style_id) as total')
+        return DB::table('style_option_values as sov')
+            ->join('option_values as ov', 'ov.id', '=', 'sov.option_value_id')
+            ->whereNotNull('ov.family')
+            ->whereIn('sov.style_id', $scope->select('styles.id'))
+            ->groupBy('ov.family')
+            ->orderBy('ov.family')
+            ->selectRaw('ov.family as family, count(distinct sov.style_id) as total')
             ->pluck('total', 'family')
             ->map(fn ($total): int => (int) $total)
             ->all();

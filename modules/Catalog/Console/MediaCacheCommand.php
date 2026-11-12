@@ -7,7 +7,7 @@ namespace Modules\Catalog\Console;
 use Illuminate\Console\Command;
 use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Persistence\Models\Media;
-use Modules\Catalog\Persistence\Models\StyleColor;
+use Modules\Catalog\Persistence\Models\Variant;
 use Throwable;
 
 /**
@@ -36,7 +36,7 @@ final class MediaCacheCommand extends Command
 
         if ($this->option('warm')) {
             [$files, $failed] = [0, 0];
-            $galleryType = (new StyleColor)->getMorphClass();
+            $galleryType = (new Variant)->getMorphClass();
             Media::query()->withExists(['usages as in_product_gallery' => fn ($query) => $query->where('mediable_type', $galleryType)])
                 ->orderBy('id')->chunkById(100, function ($items) use ($cache, &$files, &$failed): void {
                     foreach ($items as $media) {

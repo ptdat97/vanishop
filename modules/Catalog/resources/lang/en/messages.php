@@ -52,4 +52,13 @@ return [
     'variant_field_failed' => 'Could not save :label for this SKU.',
     'variant_cell_duplicate' => 'Each colour–size pair can appear only once.',
     'variants_matrix_saved' => 'Variants saved: :created created, :updated updated, :deleted deleted, :deactivated discontinued.',
+    'axes_count' => 'A product needs 1–:max variant axes.',
+    'axes_duplicate' => 'Each option type can be used as one axis only.',
+    'axis_needs_values' => 'Each axis needs at least one value.',
+    'option_value_invalid' => 'The option value does not belong to this product axis.',
+    'axes_locked' => 'This product has SKUs: switch them all off before changing axis option types.',
+    'option_value_in_use' => 'Cannot remove :count values still used by SKUs — switch those SKUs off first.',
+    'option_type_in_use' => 'This option type is used as an axis by products.',
+    'option_value_in_use_by_products' => 'This value is used by products.',
+    'images_copied' => 'Images applied to :count SKUs with the same value.',
 ];

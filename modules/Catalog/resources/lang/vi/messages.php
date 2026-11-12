@@ -52,4 +52,13 @@ return [
     'variant_field_failed' => 'Không lưu được :label cho SKU này.',
     'variant_cell_duplicate' => 'Mỗi cặp màu – size chỉ có một ô.',
     'variants_matrix_saved' => 'Đã lưu biến thể: :created tạo mới, :updated sửa, :deleted xoá, :deactivated chuyển ngừng bán.',
+    'axes_count' => 'Sản phẩm cần 1–:max trục biến thể.',
+    'axes_duplicate' => 'Mỗi loại tuỳ chọn chỉ dùng làm một trục.',
+    'axis_needs_values' => 'Mỗi trục cần ít nhất một giá trị.',
+    'option_value_invalid' => 'Giá trị tuỳ chọn không thuộc trục của sản phẩm.',
+    'axes_locked' => 'Sản phẩm đã có SKU: tắt hết SKU trước khi đổi loại tuỳ chọn của trục.',
+    'option_value_in_use' => 'Không bỏ được :count giá trị đang có SKU — tắt các SKU đó trước.',
+    'option_type_in_use' => 'Loại tuỳ chọn đang được sản phẩm dùng làm trục.',
+    'option_value_in_use_by_products' => 'Giá trị đang được sản phẩm dùng.',
+    'images_copied' => 'Đã áp ảnh cho :count SKU cùng giá trị.',
 ];

@@ -20,8 +20,8 @@ beforeEach(function () {
     I::stock($this->location, $this->navyS->id, 0);
     P::priceList(['code' => 'navy'], [$this->navyS->id => [300_000]]); // có giá — bị khoá vì hết hàng
     $this->slug = T::seed(fn () => $style->slugFor('vi'));
-    $this->pink = T::seed(fn () => $this->pinkS->styleColor->color->code);
-    $this->navy = T::seed(fn () => $this->navyS->styleColor->color->code);
+    $this->pink = T::seed(fn () => $this->pinkS->valueOf('color')?->code);
+    $this->navy = T::seed(fn () => $this->navyS->valueOf('color')?->code);
 });
 
 it('swatch cho mỗi màu, màu còn hàng được chọn sẵn; mỗi màu một nhóm size; size hết hàng bị khoá; giá từng biến thể sẵn cho JS', function () {

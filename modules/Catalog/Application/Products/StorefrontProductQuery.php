@@ -11,15 +11,17 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\SellableVariant;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Domain\AttributeKind;
+use Modules\Catalog\Domain\OptionDisplayType;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\LinkType;
-use Modules\Catalog\Persistence\Models\Mediable;
-use Modules\Catalog\Persistence\Models\Size;
+use Modules\Catalog\Persistence\Models\OptionType;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleAttributeValue;
-use Modules\Catalog\Persistence\Models\StyleColor;
+use Modules\Catalog\Persistence\Models\StyleOption;
+use Modules\Catalog\Persistence\Models\StyleOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Facades\Hook;
@@ -95,9 +97,9 @@ final class StorefrontProductQuery
     public function detail(string $slug, string $locale, int $now): ?array
     {
         $style = Style::query()
-            ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
+            ->with(['translations', 'brand', 'options.type.translations', 'optionValues.value.translations', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
                 // Mọi SKU (cả ngừng bán) cho `variants`; thẻ và tổng hợp chỉ tính SKU đang bán.
-                'variants' => fn ($query) => $query->with(['size'])])
+                'variants' => fn ($query) => $query->with(['optionValues', 'gallery.media'])])
             ->whereLocalizedSlug($slug, $locale)
             ->first();
 
@@ -150,7 +152,7 @@ final class StorefrontProductQuery
         $at = new \DateTimeImmutable("@{$now}");
 
         return Variant::query()
-            ->with(['style.translations', 'style.brand', 'styleColor.color.translations', 'styleColor.gallery.media', 'size'])
+            ->with(['style.translations', 'style.brand', 'gallery.media', ...VariantOptions::relations()])
             ->whereIn('id', $variantIds)
             ->where('status', VariantStatus::Active)
             ->get()
@@ -162,12 +164,13 @@ final class StorefrontProductQuery
                 sku: $variant->sku,
                 slug: $variant->style->slugFor($locale),
                 name: (string) $variant->style->translate('name', $locale),
-                colorCode: $variant->styleColor->color->code,
-                colorName: $variant->styleColor->color->translate('name', $locale),
-                sizeCode: $variant->size->code,
-                imageUrl: $variant->styleColor->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
+                colorCode: VariantOptions::code($variant, OptionType::COLOR),
+                colorName: $variant->valueOf(OptionType::COLOR)?->label($locale),
+                sizeCode: VariantOptions::code($variant, OptionType::SIZE),
+                imageUrl: $variant->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
                 brandName: $variant->style->brand?->name,
                 weightGram: $variant->weight_gram,
+                options: VariantOptions::present($variant, $locale),
             )])
             ->all();
     }
@@ -180,12 +183,13 @@ final class StorefrontProductQuery
      */
     private static function summaryRelations(): array
     {
-        return ['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'variants' => fn ($query) => $query->where('status', 'active')];
+        return ['translations', 'brand', 'options.type', 'optionValues.value.translations',
+            'variants' => fn ($query) => $query->where('status', 'active')->with(['optionValues', 'gallery.media'])];
     }
 
     private function summary(Style $style, string $locale): array
     {
-        $firstImage = $style->colors->flatMap(fn (StyleColor $color) => $color->gallery)->first();
+        $firstImage = $style->variants->flatMap(fn (Variant $variant) => $variant->gallery)->first();
 
         return [
             'id' => $style->id,
@@ -198,68 +202,95 @@ final class StorefrontProductQuery
             'image_url' => $firstImage?->media->url(400, ImageSizes::PRODUCT),
             // Ảnh responsive (0.3.67): theme ghép `sizes` theo bố cục lưới; null khi ảnh không có bản thu nhỏ.
             'image_srcset' => ($firstImage?->media->srcset(ImageSizes::PRODUCT) ?? '') ?: null,
-            'colors' => $style->colors->map(fn (StyleColor $styleColor): array => $this->color($styleColor, $locale))->all(),
+            // Swatch của thẻ: giá trị của trục kiểu ô màu (nếu có) mà SKU đang bán dùng (ADR-045).
+            'colors' => $this->swatches($style, $locale),
             'variant_ids' => $style->variants->where('status', VariantStatus::Active)->pluck('id')->values()->all(),
         ];
     }
 
     /**
-     * @return array{code: string, name: string|null, hex: string|null, family: string, image_url: string|null}
+     * Swatch của thẻ sản phẩm: giá trị của trục đầu tiên kiểu ô màu mà SKU (đã nạp) dùng, theo thứ tự của sản phẩm; ảnh của
+     * swatch là ảnh đầu tiên của SKU đầu tiên mang giá trị đó.
+     *
+     * @return list<array{code: string, name: string|null, hex: string|null, family: string, image_url: string|null}>
      */
+    private function swatches(Style $style, string $locale): array
+    {
+        $axis = $style->options->first(fn (StyleOption $option): bool => $option->type->display_type === OptionDisplayType::Swatch);
+        if ($axis === null) {
+            return [];
+        }
+
+        return $this->axisValues($style, $axis, onlyUsed: false)->map(fn (OptionValue $value): array => [
+            'code' => $value->code, 'name' => $value->translate('name', $locale), 'hex' => $value->hex, 'family' => (string) ($value->family ?? 'multi'),
+            'image_url' => $this->variantsWith($style, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
+        ])->values()->all();
+    }
+
     /**
-     * Mô hình biến thể của trang chi tiết (options/variants của API thương mại):
-     * - `options`: các trục chọn — màu (swatch), size (nút) — với giá trị có `id` ổn định (id màu, id size), theo thứ tự hiển thị.
-     * - `variants`: **mọi SKU** của sản phẩm (cả ngừng bán: `is_active` = false); `option_values` trỏ giá trị bằng id, không
-     *   bằng vị trí mảng; `media` trỏ ảnh trong `media.gallery` để đổi ảnh khi chọn màu.
-     * - `media.gallery`: thư viện ảnh của sản phẩm, mỗi ảnh có `id`.
+     * Giá trị của một trục theo thứ tự riêng của sản phẩm; `onlyUsed` = chỉ giá trị có SKU (bộ chọn ở trang chi tiết), còn thẻ
+     * sản phẩm hiện mọi màu của sản phẩm.
+     *
+     * @return Collection<int, OptionValue>
+     */
+    private function axisValues(Style $style, StyleOption $axis, bool $onlyUsed = true): Collection
+    {
+        $used = $onlyUsed ? $style->variants->flatMap(fn (Variant $variant) => $variant->optionValues)->pluck('id')->unique()->all() : null;
+
+        return $style->optionValues->map(fn (StyleOptionValue $row): OptionValue => $row->value)
+            ->filter(fn (OptionValue $value): bool => $value->option_type_id === $axis->option_type_id && ($used === null || in_array($value->id, $used, true)))->values();
+    }
+
+    /**
+     * @return Collection<int, Variant>
+     */
+    private function variantsWith(Style $style, int $valueId): Collection
+    {
+        return $style->variants->filter(fn (Variant $variant): bool => $variant->optionValues->contains('id', $valueId))->values();
+    }
+
+    /**
+     * Mô hình biến thể của trang chi tiết (options/variants của API thương mại, ADR-045):
+     * - `options`: các trục của sản phẩm theo thứ tự (mã loại, tên, `display_type`), giá trị có `id` ổn định, theo thứ tự của sản phẩm.
+     * - `variants`: **mọi SKU** (cả ngừng bán: `is_active` = false); `option_values` trỏ giá trị bằng id, không bằng vị trí mảng;
+     *   `media` trỏ ảnh của chính SKU trong `media.gallery`.
+     * - `media.gallery`: hợp ảnh của mọi SKU, mỗi ảnh một lần (`id` = id media).
      *
      * @return array{options: list<array<string, mixed>>, variants: list<array<string, mixed>>, media: array{gallery: list<array<string, mixed>>}}
      */
     private function variantModel(Style $style, string $locale): array
     {
-        $colors = $style->colors->keyBy('id');
-        $variants = $style->variants->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $colors->get($variant->style_color_id)->position ?? 0, $variant->size->sort_order));
-        $usedColors = $variants->pluck('style_color_id')->unique()->all();
-        $sizes = $variants->map(fn (Variant $variant): Size => $variant->size)->unique('id')
-            ->sortBy(fn (Size $size): string => sprintf('%s-%05d', $size->size_system->value, $size->sort_order));
-        $imageIds = fn (?StyleColor $color): array => $color === null ? [] : $color->gallery->map(fn (Mediable $image): int => $image->id)->values()->all();
+        $axes = $style->options;
+        $types = $axes->mapWithKeys(fn (StyleOption $axis): array => [$axis->option_type_id => $axis->type->code]);
+        $positions = $style->optionValues->mapWithKeys(fn (StyleOptionValue $row): array => [$row->option_value_id => $row->position]);
+        $ordered = fn (Variant $variant): array => $axes->map(fn (StyleOption $axis): ?OptionValue => $variant->optionValues->first(fn (OptionValue $value): bool => $value->option_type_id === $axis->option_type_id))->filter()->values()->all();
+        $variants = $style->variants->sortBy(fn (Variant $variant): string => implode('-', array_map(fn (OptionValue $value): string => sprintf('%05d', $positions[$value->id] ?? 99999), $ordered($variant))))->values();
 
-        return [
-            'options' => [
-                ['code' => 'color', 'name' => __('catalog::labels.option.color'), 'display_type' => 'swatch',
-                    'values' => $style->colors->filter(fn (StyleColor $color): bool => in_array($color->id, $usedColors, true))
-                        ->map(fn (StyleColor $color): array => ['id' => $color->color_id, ...$this->color($color, $locale)])->values()->all()],
-                ['code' => 'size', 'name' => __('catalog::labels.option.size'), 'display_type' => 'button',
-                    'values' => $sizes->map(fn (Size $size): array => ['id' => $size->id, 'code' => $size->code, 'system' => $size->size_system->value])->values()->all()],
-            ],
-            'variants' => $variants->map(function (Variant $variant) use ($colors, $imageIds): array {
-                $images = $imageIds($colors->get($variant->style_color_id));
-
-                return [
-                    'id' => $variant->id, 'sku' => $variant->sku, 'is_active' => $variant->status === VariantStatus::Active,
-                    'option_values' => [
-                        ['option' => 'color', 'value_id' => (int) $colors->get($variant->style_color_id)?->color_id],
-                        ['option' => 'size', 'value_id' => $variant->size_id],
-                    ],
-                    'media' => ['primary_image_id' => $images[0] ?? null, 'image_ids' => $images],
+        $gallery = [];
+        foreach ($variants as $variant) {
+            foreach ($variant->gallery as $image) {
+                $gallery[$image->media_id] ??= [
+                    'id' => $image->media_id, 'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
+                    'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
                 ];
-            })->values()->all(),
-            // Ảnh sản phẩm cắt theo tỉ lệ cấu hình (mặc định 2:3): khung PDP/lưới không nhảy.
-            'media' => ['gallery' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery->map(fn (Mediable $image): array => [
-                'id' => $image->id, 'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
-                'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
-            ]))->values()->all()],
-        ];
-    }
+            }
+        }
 
-    private function color(StyleColor $styleColor, string $locale): array
-    {
         return [
-            'code' => $styleColor->color->code,
-            'name' => $styleColor->color->translate('name', $locale),
-            'hex' => $styleColor->color->hex,
-            'family' => $styleColor->color->color_family->value,
-            'image_url' => $styleColor->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
+            'options' => $axes->map(fn (StyleOption $axis): array => [
+                'code' => $axis->type->code, 'name' => $axis->type->translate('name', $locale) ?? $axis->type->code, 'display_type' => $axis->type->display_type->value,
+                'values' => $this->axisValues($style, $axis)->map(fn (OptionValue $value): array => [
+                    'id' => $value->id, 'code' => $value->code, 'name' => $value->translate('name', $locale) ?? $value->code,
+                    'hex' => $value->hex, 'family' => $value->family, 'group' => $value->group,
+                    'image_url' => $this->variantsWith($style, $value->id)->flatMap(fn (Variant $variant) => $variant->gallery)->first()?->media->url(400, ImageSizes::PRODUCT),
+                ])->all(),
+            ])->values()->all(),
+            'variants' => $variants->map(fn (Variant $variant): array => [
+                'id' => $variant->id, 'sku' => $variant->sku, 'is_active' => $variant->status === VariantStatus::Active,
+                'option_values' => array_map(fn (OptionValue $value): array => ['option' => $types[$value->option_type_id], 'value_id' => $value->id], $ordered($variant)),
+                'media' => ['primary_image_id' => $variant->gallery->first()?->media_id, 'image_ids' => $variant->gallery->pluck('media_id')->map(fn ($id): int => (int) $id)->values()->all()],
+            ])->all(),
+            'media' => ['gallery' => array_values($gallery)],
         ];
     }
 

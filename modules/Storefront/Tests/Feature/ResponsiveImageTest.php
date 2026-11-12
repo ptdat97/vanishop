@@ -2,7 +2,7 @@
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Modules\Catalog\Application\Products\StyleColorService;
+use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers;
@@ -24,10 +24,10 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
     $product = $variant->style;
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($product, $variant->styleColor, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($product, $variant, [
         UploadedFile::fake()->image('lon.jpg', 1000, 1333),
     ]));
-    $media = $variant->styleColor->gallery()->with('media')->first()->media;
+    $media = $variant->gallery()->with('media')->first()->media;
 
     $html = $this->get('/thuong-hieu/'.$brand->slug)->assertOk()->getContent();
     // Ảnh sản phẩm cắt theo tỉ lệ cấu hình (mặc định 2:3): mọi bản cùng khung, không kèm ảnh gốc (khác tỉ lệ).
@@ -44,7 +44,7 @@ it('thẻ sản phẩm có srcset từ bản thu nhỏ (theo kích thước đã
 it('ảnh nhỏ hơn mọi bề rộng cấu hình: không có srcset', function () {
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($variant->style, $variant->styleColor, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->style, $variant, [
         UploadedFile::fake()->image('nho.jpg', 120, 160),
     ]));
 
@@ -55,10 +55,10 @@ it('sản phẩm chưa có ảnh: thẻ sản phẩm dùng ảnh thay thế đã
     Storage::fake('public');
     ['brand' => $brand, 's' => $variant] = C::store();
     [$other] = PricingTestHelpers::variants(CatalogTestHelpers::product($brand->id, ['name' => 'Áo chưa ảnh']), ['M']);
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($variant->style, $variant->styleColor, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->style, $variant, [
         UploadedFile::fake()->image('mau.jpg', 600, 800),
     ]));
-    $media = $variant->styleColor->gallery()->with('media')->first()->media;
+    $media = $variant->gallery()->with('media')->first()->media;
 
     $this->getJson('/api/storefront/v1/products?ids='.$other->style_id)->assertJsonPath('data.0.image_url', null);
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Settings::class)->set('core', 'storefront.placeholder_image', $media->id));

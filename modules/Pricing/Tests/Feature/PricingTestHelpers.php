@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Pricing\Tests\Feature;
 
-use Modules\Catalog\Persistence\Models\Color;
-use Modules\Catalog\Persistence\Models\Size;
+use Modules\Catalog\Application\Products\ProductOptions;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -24,18 +24,15 @@ final class PricingTestHelpers
     public static function variants(Style $style, array $sizes = ['S', 'M']): array
     {
         return T::seed(function () use ($style, $sizes) {
-            $color = Color::factory()->create();
-            $styleColor = $style->colors()->create(['color_id' => $color->id]);
-            $variants = [];
+            // ADR-045: trục Màu × Size; mỗi lần gọi thêm một màu mới cho sản phẩm và các size (mã duy nhất).
+            $color = OptionValue::factory()->color()->create();
+            $sizeValues = [];
             foreach ($sizes as $index => $code) {
-                $size = Size::factory()->create(['code' => $code.fake()->unique()->numberBetween(1, 99999), 'sort_order' => $index]);
-                $variants[] = Variant::query()->create([
-                    'style_id' => $style->id, 'style_color_id' => $styleColor->id,
-                    'size_id' => $size->id, 'sku' => $style->style_code.'-'.$size->code, 'status' => 'active',
-                ]);
+                $sizeValues[] = OptionValue::factory()->size()->create(['code' => $code.fake()->unique()->numberBetween(1, 99999), 'position' => $index]);
             }
+            T::optionValues($style, $color, ...$sizeValues);
 
-            return $variants;
+            return array_map(fn (OptionValue $size): Variant => app(ProductOptions::class)->createVariant($style, [$color->id, $size->id], ['sku' => $style->style_code.'-'.$size->code]), $sizeValues);
         });
     }
 

@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int $id
  * @property int $media_id
+ * @property string $mediable_type
+ * @property int $mediable_id
  * @property string $role
  * @property int $position
  * @property string|null $alt

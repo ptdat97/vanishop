@@ -3,7 +3,7 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Modules\Catalog\Application\Products\StyleColorService;
+use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Contracts\Customers;
 use Modules\Extension\Application\Plugins\PluginAssets;
@@ -98,10 +98,10 @@ it('vani_customer chỉ trả khách đang đăng nhập (DTO); vani_staff chỉ
 it('vani_image: bản thu nhỏ theo bề rộng; id không có → ảnh thay thế đã cấu hình, chưa cấu hình → chuỗi rỗng', function () {
     Storage::fake('public');
     ['s' => $variant] = C::store();
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($variant->style, $variant->styleColor, [
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($variant->style, $variant, [
         UploadedFile::fake()->image('anh.jpg', 1000, 1000),
     ]));
-    $media = $variant->styleColor->gallery()->with('media')->first()->media;
+    $media = $variant->gallery()->with('media')->first()->media;
 
     expect(vani_image($media->id, 400))->toBe($media->url(400))
         ->and(vani_image(999_999, 400))->toBe('')

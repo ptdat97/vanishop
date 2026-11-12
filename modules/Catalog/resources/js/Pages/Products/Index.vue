@@ -19,7 +19,7 @@ const props = defineProps<{
     labels: CatalogLabels;
     filters: { q: string; status: string | null };
     products: {
-        data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; colors: number; image_url: string | null; views: number }>;
+        data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; skus: number; image_url: string | null; views: number }>;
         current: number;
         last: number;
         from: number | null;
@@ -53,7 +53,7 @@ const columns = [
     { key: 'name', label: 'Sản phẩm', class: 'font-medium' },
     { key: 'style_code', label: 'Mã', class: 'font-mono text-xs' },
     { key: 'brand', label: 'Thương hiệu' },
-    { key: 'colors', label: 'Màu' },
+    { key: 'skus', label: 'SKU' },
     { key: 'views', label: 'Lượt xem 30 ngày', align: 'right' as const, class: 'tabular-nums' },
     { key: 'status', label: 'Trạng thái' },
 ];

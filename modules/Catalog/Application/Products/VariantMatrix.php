@@ -13,8 +13,6 @@ use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Events\ProductUpdated;
-use Modules\Catalog\Events\VariantCreated;
-use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Contracts\Data\FieldDefinition;
@@ -35,6 +33,7 @@ final class VariantMatrix
     public function __construct(
         private readonly Extensions $extensions,
         private readonly AuditLogger $audit,
+        private readonly ProductOptions $options,
     ) {}
 
     /**
@@ -70,8 +69,8 @@ final class VariantMatrix
     }
 
     /**
-     * Lưu cả lưới. `$input`: color_order (style_color id theo thứ tự), cells (style_color_id, size_id, enabled, status, sku,
-     * barcode, weight_gram, fields: {"<provider>": {"<field>": giá trị}}).
+     * Lưu cả lưới (ADR-045). `$input`: axes (1–3: option_type_id, value_ids theo thứ tự), cells (values: id giá trị theo thứ
+     * tự trục, enabled, status, sku, barcode, weight_gram, fields: {"<provider>": {"<field>": giá trị}}).
      *
      * @param  array<string, mixed>  $input
      * @param  Closure(string): bool  $can
@@ -81,42 +80,41 @@ final class VariantMatrix
      */
     public function save(Style $style, array $input, Closure $can): array
     {
-        $style->load('colors.color', 'variants.size');
-        $colors = $style->colors->keyBy('id');
-        $existing = $style->variants->keyBy(fn (Variant $variant): string => "{$variant->style_color_id}:{$variant->size_id}");
+        $style->load('variants.optionValues');
+        $existing = $style->variants->keyBy(fn (Variant $variant): string => self::canonical($variant->optionValues->mapWithKeys(fn ($value): array => [$value->option_type_id => $value->id])->all()));
         $providers = array_filter($this->providers(), fn (VariantFieldProvider $provider): bool => $can($provider->permission() ?? 'catalog.manage'));
-        $cells = $this->validate($input, $colors->keys()->all(), $existing->all(), $providers);
+        [$axes, $cells] = $this->validate($input, $existing->all(), $providers);
+        $typeIds = array_column($axes, 'option_type_id');
 
-        $result = DB::transaction(function () use ($style, $input, $colors, $existing, $cells): array {
-            foreach (array_values(array_map('intval', (array) ($input['color_order'] ?? []))) as $position => $styleColorId) {
-                $colors->get($styleColorId)?->update(['position' => $position]);
+        $result = DB::transaction(function () use ($style, $axes, $cells, $existing, $typeIds): array {
+            // Tắt ô trước khi đổi trục: đổi tập loại tuỳ chọn chỉ được khi không còn SKU nào.
+            $toRemove = [];
+            foreach ($cells as $cell) {
+                $variant = $existing->get(self::canonical(array_combine($typeIds, $cell['values'])));
+                if (! $cell['enabled'] && $variant !== null) {
+                    $toRemove[] = $variant->id;
+                }
             }
+            [$deleted, $deactivated] = $this->remove($toRemove);
+            $this->options->syncAxes($style, $axes);
 
             $created = $updated = 0;
-            $toRemove = [];
             $variantIdsByCell = [];
             foreach ($cells as $index => $cell) {
-                $key = "{$cell['style_color_id']}:{$cell['size_id']}";
-                $variant = $existing->get($key);
                 if (! $cell['enabled']) {
-                    if ($variant !== null) {
-                        $toRemove[] = $variant->id;
-                    }
-
                     continue;
                 }
+                $variant = $existing->get(self::canonical(array_combine($typeIds, $cell['values'])));
                 $data = ['sku' => $cell['sku'], 'barcode' => $cell['barcode'], 'status' => $cell['status'], 'weight_gram' => $cell['weight_gram']];
-                if ($variant === null) {
-                    $variant = Variant::query()->create([...$data, 'style_id' => $style->id, 'style_color_id' => $cell['style_color_id'], 'size_id' => $cell['size_id']]);
+                if ($variant === null || in_array($variant->id, $toRemove, true)) {
+                    $variant = $this->options->createVariant($style, $cell['values'], $data);
                     $created++;
-                    event(new VariantCreated($variant->id, $style->id, $variant->sku));
                 } elseif ($variant->fill($data)->isDirty()) {
                     $variant->save();
                     $updated++;
                 }
                 $variantIdsByCell[$index] = $variant->id;
             }
-            [$deleted, $deactivated] = $this->remove($toRemove);
 
             $this->audit->record('catalog.variants.matrix_saved', 'style', $style->id, compact('created', 'updated', 'deleted', 'deactivated'));
             event(new ProductUpdated($style->id, $style->style_code));
@@ -147,6 +145,18 @@ final class VariantMatrix
     }
 
     /**
+     * Khoá tổ hợp không phụ thuộc thứ tự trục: "loại:giá trị|…" sắp theo id loại.
+     *
+     * @param  array<int, int>  $valueByType
+     */
+    private static function canonical(array $valueByType): string
+    {
+        ksort($valueByType);
+
+        return implode('|', array_map(fn (int $type, int $value): string => "{$type}:{$value}", array_keys($valueByType), $valueByType));
+    }
+
+    /**
      * @return array<string, VariantFieldProvider>
      */
     public function providers(): array
@@ -164,18 +174,20 @@ final class VariantMatrix
 
     /**
      * @param  array<string, mixed>  $input
-     * @param  list<int>  $styleColorIds
-     * @param  array<string, Variant>  $existing  "style_color_id:size_id" => variant
+     * @param  array<string, Variant>  $existing  khoá tổ hợp chuẩn => SKU
      * @param  array<string, VariantFieldProvider>  $providers  nhà cung cấp người lưu được sửa
-     * @return list<array{style_color_id: int, size_id: int, enabled: bool, status: string, sku: string, barcode: string|null, weight_gram: int|null, fields: array<string, array<string, scalar|null>>}>
+     * @return array{0: list<array{option_type_id: int, value_ids: list<int>}>, 1: list<array{values: list<int>, enabled: bool, status: string, sku: string, barcode: string|null, weight_gram: int|null, fields: array<string, array<string, scalar|null>>}>}
      */
-    private function validate(array $input, array $styleColorIds, array $existing, array $providers): array
+    private function validate(array $input, array $existing, array $providers): array
     {
         $rules = [
-            'color_order' => ['nullable', 'array'], 'color_order.*' => ['integer', Rule::in($styleColorIds)],
-            'cells' => ['present', 'array', 'max:500'],
-            'cells.*.style_color_id' => ['required', 'integer', Rule::in($styleColorIds)],
-            'cells.*.size_id' => ['required', 'integer', Rule::exists(Size::class, 'id')],
+            'axes' => ['required', 'array', 'min:1', 'max:'.ProductOptions::MAX_AXES],
+            'axes.*.option_type_id' => ['required', 'integer', Rule::exists('option_types', 'id')],
+            'axes.*.value_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'axes.*.value_ids.*' => ['integer', 'distinct'],
+            'cells' => ['present', 'array', 'max:1000'],
+            'cells.*.values' => ['required', 'array'],
+            'cells.*.values.*' => ['integer'],
             'cells.*.enabled' => ['required', 'boolean'],
             'cells.*.status' => ['required_if:cells.*.enabled,true', 'nullable', Rule::enum(VariantStatus::class)],
             'cells.*.sku' => ['required_if:cells.*.enabled,true', 'nullable', 'string', 'max:64', 'regex:'.self::SKU_PATTERN],
@@ -194,20 +206,30 @@ final class VariantMatrix
         $input['cells'] = array_map(fn ($cell) => is_array($cell) && is_string($cell['sku'] ?? null) ? [...$cell, 'sku' => strtoupper(trim($cell['sku']))] : $cell, (array) ($input['cells'] ?? []));
         $data = Validator::make($input, $rules, [], $labels)->validate();
 
+        $axes = array_map(fn (array $axis): array => ['option_type_id' => (int) $axis['option_type_id'], 'value_ids' => array_values(array_map('intval', $axis['value_ids']))], array_values($data['axes']));
+        $typeIds = array_column($axes, 'option_type_id');
         $cells = [];
         $seen = [];
         $errors = [];
         foreach ($data['cells'] as $index => $cell) {
-            $key = "{$cell['style_color_id']}:{$cell['size_id']}";
+            $values = array_values(array_map('intval', $cell['values']));
+            $valid = count($values) === count($axes);
+            foreach ($values as $position => $valueId) {
+                $valid = $valid && in_array($valueId, $axes[$position]['value_ids'] ?? [], true);
+            }
+            if (! $valid) {
+                $errors["cells.{$index}.values"] = __('catalog::messages.option_value_invalid');
+
+                continue;
+            }
+            $key = self::canonical(array_combine($typeIds, $values));
             if (isset($seen[$key])) {
-                $errors["cells.{$index}.size_id"] = __('catalog::messages.variant_cell_duplicate');
+                $errors["cells.{$index}.values"] = __('catalog::messages.variant_cell_duplicate');
             }
             $seen[$key] = true;
-            $enabled = (bool) $cell['enabled'];
-            $sku = strtoupper(trim((string) ($cell['sku'] ?? '')));
-            $cells[] = [
-                'style_color_id' => (int) $cell['style_color_id'], 'size_id' => (int) $cell['size_id'], 'enabled' => $enabled,
-                'status' => (string) ($cell['status'] ?? VariantStatus::Active->value), 'sku' => $sku,
+            $cells[$index] = [
+                'values' => $values, 'enabled' => (bool) $cell['enabled'],
+                'status' => (string) ($cell['status'] ?? VariantStatus::Active->value), 'sku' => strtoupper(trim((string) ($cell['sku'] ?? ''))),
                 'barcode' => ($barcode = trim((string) ($cell['barcode'] ?? ''))) === '' ? null : $barcode,
                 'weight_gram' => isset($cell['weight_gram']) ? (int) $cell['weight_gram'] : null,
                 // Chỉ giữ trường của nhà cung cấp người lưu được sửa: {"<provider>": {"<field>": giá trị}}.
@@ -224,7 +246,7 @@ final class VariantMatrix
             if (isset($skus[$cell['sku']])) {
                 $errors["cells.{$index}.sku"] = __('catalog::messages.sku_taken', ['sku' => $cell['sku']]);
             }
-            $skus[$cell['sku']] = $existing["{$cell['style_color_id']}:{$cell['size_id']}"]->id ?? 0;
+            $skus[$cell['sku']] = $existing[self::canonical(array_combine($typeIds, $cell['values']))]->id ?? 0;
         }
         $taken = $skus === [] ? collect() : Variant::query()->withoutGlobalScopes()->whereIn('sku', array_keys($skus))->pluck('id', 'sku');
         foreach ($cells as $index => $cell) {
@@ -236,7 +258,7 @@ final class VariantMatrix
             throw ValidationException::withMessages($errors);
         }
 
-        return $cells;
+        return [$axes, $cells];
     }
 
     /**

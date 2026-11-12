@@ -11,9 +11,7 @@ use Modules\Catalog\Contracts\MediaDirectory;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
-use Modules\Catalog\Persistence\Models\Color;
 use Modules\Catalog\Persistence\Models\LinkType;
-use Modules\Catalog\Persistence\Models\Size;
 use Modules\Identity\Contracts\AuditLogger;
 
 /**
@@ -70,27 +68,6 @@ final class TaxonomyService
     }
 
     /**
-     * @param  array{code: string, color_family: string, hex: string|null, position: int, translations: array<string, array{name: string}>}  $data
-     */
-    public function saveColor(array $data, ?Color $color = null): Color
-    {
-        return DB::transaction(function () use ($data, $color): Color {
-            $color ??= new Color;
-            $color->fill([
-                'code' => $data['code'],
-                'color_family' => $data['color_family'],
-                'hex' => $data['hex'] === null ? null : strtoupper($data['hex']),
-                'position' => $data['position'],
-            ])->save();
-            $color->syncTranslations($data['translations']);
-
-            $this->audit->record($color->wasRecentlyCreated ? 'catalog.color.created' : 'catalog.color.updated', 'color', $color->id, ['code' => $color->code]);
-
-            return $color->refresh();
-        });
-    }
-
-    /**
      * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int, logo_media_id?: int|null}  $data
      */
     public function saveBrand(array $data, ?Brand $brand = null): Brand
@@ -119,31 +96,6 @@ final class TaxonomyService
         $brand->delete();
         app(MediaDirectory::class)->releaseUsages('brand', $brand->id);
         $this->audit->record('catalog.brand.deleted', 'brand', $brand->id, ['code' => $brand->code]);
-    }
-
-    public function deleteColor(Color $color): void
-    {
-        $color->delete();
-        $this->audit->record('catalog.color.deleted', 'color', $color->id, ['code' => $color->code]);
-    }
-
-    /**
-     * @param  array{size_system: string, code: string, sort_order: int}  $data
-     */
-    public function saveSize(array $data, ?Size $size = null): Size
-    {
-        $size ??= new Size;
-        $size->fill($data)->save();
-
-        $this->audit->record($size->wasRecentlyCreated ? 'catalog.size.created' : 'catalog.size.updated', 'size', $size->id, ['code' => $size->code]);
-
-        return $size;
-    }
-
-    public function deleteSize(Size $size): void
-    {
-        $size->delete();
-        $this->audit->record('catalog.size.deleted', 'size', $size->id, ['code' => $size->code]);
     }
 
     /**

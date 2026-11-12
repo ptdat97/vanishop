@@ -4,7 +4,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
-use Modules\Catalog\Application\Products\StyleColorService;
+use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -322,8 +322,8 @@ it('robots.txt chặn trang riêng tư, không lộ đường dẫn Admin; sitem
 
 it('PDP có ảnh: gallery (Swiper/PhotoSwipe) — ảnh chính + ảnh sau tải lười, liên kết phóng to, thumbnail, data-images cho JS đổi theo màu (hồi quy htmlspecialchars array)', function () {
     Storage::fake('public');
-    $styleColor = $this->s->styleColor;
-    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(StyleColorService::class)->addImages($this->product, $styleColor, [
+    $styleColor = $this->s; // ảnh theo SKU (ADR-045)
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(VariantImages::class)->addFiles($this->product, $styleColor, [
         UploadedFile::fake()->image('truoc.jpg', 300, 400),
         UploadedFile::fake()->image('sau.jpg', 310, 410),
     ]));

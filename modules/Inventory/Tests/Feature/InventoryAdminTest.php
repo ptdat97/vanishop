@@ -100,7 +100,7 @@ it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, ph
         ->and($skus('?filter=out'))->toBe([$this->m->sku])
         ->and($skus('?filter=low'))->toBe([$this->s->sku])
         ->and($skus('?style=LM-DR01'))->toHaveCount(2)
-        ->and($skus('?q=LM-DR01&size='.T::seed(fn () => $this->m->size->code)))->toBe([$this->m->sku]);
+        ->and($skus('?q=LM-DR01&size='.T::seed(fn () => $this->m->valueOf('size')?->code)))->toBe([$this->m->sku]);
 
     $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('stockUrl', fn (string $url) => str_ends_with($url, '/admin/inventory/stock?style=LM-DR01')));
     $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->where(
@@ -249,21 +249,33 @@ it('danh sách sản phẩm: cửa hàng một kho sửa tồn ngay trong ô (t�
 it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn mọi kết quả" và file xuất thấy đủ — không cắt âm thầm; số truy vấn không tăng theo số biến thể', function () {
     // Dựng nhanh bằng insert thô: 300 mẫu × 4 màu × 5 size, mẫu đầu tiên còn hàng ở kho giao online.
     $now = now();
-    $colors = collect(range(1, 4))->map(fn (int $i): int => DB::table('colors')->insertGetId(['code' => "BIG-C{$i}", 'color_family' => 'black', 'position' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
-    $sizes = collect(range(1, 5))->map(fn (int $i): int => DB::table('sizes')->insertGetId(['size_system' => 'big', 'code' => "B{$i}", 'sort_order' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
+    $type = fn (string $code): int => (int) DB::table('option_types')->where('code', $code)->value('id');
+    [$colorType, $sizeType] = [$type('color'), $type('size')];
+    $colors = collect(range(1, 4))->map(fn (int $i): int => DB::table('option_values')->insertGetId(['option_type_id' => $colorType, 'code' => "BIG-C{$i}", 'family' => 'black', 'position' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
+    $sizes = collect(range(1, 5))->map(fn (int $i): int => DB::table('option_values')->insertGetId(['option_type_id' => $sizeType, 'group' => 'big', 'code' => "B{$i}", 'position' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
     $variants = [];
     for ($style = 1; $style <= 300; $style++) {
         $styleId = DB::table('styles')->insertGetId(['brand_id' => $this->brand->id, 'style_code' => sprintf('BIG-%04d', $style), 'slug' => "big-{$style}", 'status' => 'active', 'search_text' => "mau lon {$style}", 'created_at' => $now, 'updated_at' => $now]);
         DB::table('style_translations')->insert(['style_id' => $styleId, 'locale' => 'vi', 'name' => sprintf('Mẫu lớn %04d', $style)]);
-        foreach ($colors as $position => $colorId) {
-            $styleColorId = DB::table('style_colors')->insertGetId(['style_id' => $styleId, 'color_id' => $colorId, 'position' => $position, 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('style_options')->insert([['style_id' => $styleId, 'option_type_id' => $colorType, 'position' => 0], ['style_id' => $styleId, 'option_type_id' => $sizeType, 'position' => 1]]);
+        DB::table('style_option_values')->insert(array_map(fn (int $valueId): array => ['style_id' => $styleId, 'option_value_id' => $valueId, 'position' => $valueId], [...$colors, ...$sizes]));
+        foreach ($colors as $colorId) {
             foreach ($sizes as $sizeId) {
-                $variants[] = ['style_id' => $styleId, 'style_color_id' => $styleColorId, 'size_id' => $sizeId, 'sku' => "BIG-{$style}-{$colorId}-{$sizeId}", 'status' => 'active', 'created_at' => $now, 'updated_at' => $now];
+                $variants[] = ['style_id' => $styleId, 'option_key' => "{$colorId}-{$sizeId}", 'sku' => "BIG-{$style}-{$colorId}-{$sizeId}", 'status' => 'active', 'created_at' => $now, 'updated_at' => $now];
             }
         }
     }
     foreach (array_chunk($variants, 500) as $chunk) {
         DB::table('variants')->insert($chunk);
+    }
+    $links = [];
+    foreach (DB::table('variants')->where('sku', 'like', 'BIG-%')->get(['id', 'option_key']) as $row) {
+        [$colorId, $sizeId] = array_map('intval', explode('-', $row->option_key));
+        $links[] = ['variant_id' => $row->id, 'option_type_id' => $colorType, 'option_value_id' => $colorId];
+        $links[] = ['variant_id' => $row->id, 'option_type_id' => $sizeType, 'option_value_id' => $sizeId];
+    }
+    foreach (array_chunk($links, 500) as $chunk) {
+        DB::table('variant_option_values')->insert($chunk);
     }
     $firstBig = (int) DB::table('variants')->where('sku', 'like', 'BIG-1-%')->min('id');
     I::stock($this->hn, $firstBig, 50);

@@ -24,8 +24,7 @@ final class CatalogNavigation
             ['categories', 'Danh mục'],
             ['collections', 'Bộ sưu tập'],
             ['attributes', 'Thuộc tính'],
-            ['colors', 'Màu'],
-            ['sizes', 'Size'],
+            ['option-types', 'Tuỳ chọn biến thể'],
             ['link-types', 'Loại liên kết'],
             ['filters', 'Bộ lọc'],
         ]);

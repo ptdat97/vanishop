@@ -43,7 +43,7 @@ use Modules\Catalog\Events\ProductCreated;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Listeners\SyncProductSearchIndex;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\StyleColor;
+use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
@@ -106,7 +106,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         }
 
         // Không lưu tên class vào cột *_type (đổi namespace không làm hỏng dữ liệu).
-        Relation::morphMap(['catalog.category' => Category::class, 'catalog.style_color' => StyleColor::class]);
+        Relation::morphMap(['catalog.category' => Category::class, 'catalog.variant' => Variant::class]);
 
         $permissions->register('catalog.view', 'Xem catalog');
         $permissions->register('catalog.manage', 'Sửa catalog (sản phẩm, thương hiệu, danh mục, thuộc tính, màu, size)');

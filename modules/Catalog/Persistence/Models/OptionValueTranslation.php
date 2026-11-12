@@ -6,11 +6,9 @@ namespace Modules\Catalog\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-final class ColorTranslation extends Model
+final class OptionValueTranslation extends Model
 {
     public $timestamps = false;
 
-    protected $table = 'color_translations';
-
-    protected $fillable = ['color_id', 'locale', 'name'];
+    protected $fillable = ['option_value_id', 'locale', 'name'];
 }

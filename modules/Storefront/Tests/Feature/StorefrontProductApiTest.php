@@ -3,7 +3,7 @@
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Color;
+use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -27,8 +27,8 @@ beforeEach(function () {
         $this->silk->syncTranslations(['vi' => ['label' => 'Lụa']]);
         $this->linen = $this->material->values()->create(['code' => 'linen']);
         $this->supplier = Attribute::factory()->internal()->create(['code' => 'supplier', 'input_type' => 'text']);
-        $this->black = Color::factory()->create(['code' => 'BLK', 'color_family' => 'black']);
-        $this->white = Color::factory()->create(['code' => 'WHT', 'color_family' => 'white']);
+        $this->black = OptionValue::factory()->color()->create(['code' => 'BLK', 'family' => 'black']);
+        $this->white = OptionValue::factory()->color()->create(['code' => 'WHT', 'family' => 'white']);
     });
 
     $this->silkDress = T::product($this->lumiere->id, ['name' => 'Đầm lụa đen', 'slug' => 'dam-lua-den', 'category_ids' => [$this->dresses->id], 'primary_category_id' => $this->dresses->id,
@@ -38,10 +38,8 @@ beforeEach(function () {
     T::product($this->lumiere->id, ['name' => 'Đầm sắp bán', 'published_from' => new DateTimeImmutable('+1 day')]);
     T::product($this->urbanx->id, ['name' => 'Áo thun Urbanx', 'slug' => 'ao-thun-urbanx']);
 
-    T::seed(function () {
-        $this->silkDress->colors()->create(['color_id' => $this->black->id]);
-        $this->linenShirt->colors()->create(['color_id' => $this->white->id]);
-    });
+    T::optionValues($this->silkDress, $this->black);
+    T::optionValues($this->linenShirt, $this->white);
 });
 
 it('trả sản phẩm đang hiển thị của mọi thương hiệu', function () {
@@ -196,7 +194,7 @@ it('mô hình options/variants: mọi SKU (cả ngừng bán, giá/trạng thái
         ->and($options['color']['display_type'])->toBe('swatch')
         ->and($options['size']['display_type'])->toBe('button')
         ->and(collect($options['color']['values'])->firstWhere('id', $valueId($variants[$s->sku], 'color')))->not->toBeNull()
-        ->and(collect($options['size']['values'])->firstWhere('id', $valueId($variants[$s->sku], 'size'))['code'])->toBe(T::seed(fn () => $s->size->code))
+        ->and(collect($options['size']['values'])->firstWhere('id', $valueId($variants[$s->sku], 'size'))['code'])->toBe(T::seed(fn () => $s->valueOf('size')?->code))
         ->and($data)->not->toHaveKey('colors')->not->toHaveKey('default_quantity')
         ->and($data['purchase'])->toMatchArray(['min_quantity' => 1, 'is_purchasable' => true]);
     foreach ($variants as $variant) {
