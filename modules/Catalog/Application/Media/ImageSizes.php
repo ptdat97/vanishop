@@ -213,7 +213,7 @@ final class ImageSizes
         foreach ($this->extensions->implementations(ImageSizeProvider::TAG, ImageSizeProvider::class, fn (object $provider): string => $provider::class) as $provider) {
             $sizes = $this->extensions->call($provider, fn (): array => $provider->sizes(), [], 'catalog.image_sizes');
             foreach ($sizes as $size) {
-                if ($size instanceof ImageSize && ! isset($result[$size->name])) {
+                if (! isset($result[$size->name])) {
                     $result[$size->name] = [$size, $this->extensions->ownerOf($provider)];
                 }
             }

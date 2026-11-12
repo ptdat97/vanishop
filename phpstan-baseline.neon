@@ -13,12 +13,6 @@ parameters:
 			path: custom/plugin/Ghn/Infrastructure/GhnCarrier.php
 
 		-
-			message: '#^Expression on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.expr
-			count: 1
-			path: custom/plugin/HelloWorld/Http/routes/storefront-api.php
-
-		-
 			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -180,7 +174,6 @@ parameters:
 			count: 1
 			path: modules/Customer/Http/Controllers/Api/AuthController.php
 
-
 		-
 			message: '#^Using nullsafe property access "\?\-\>last_error" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
@@ -194,69 +187,9 @@ parameters:
 			path: modules/Extension/Contracts/Data/FieldDefinition.php
 
 		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$last_error\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Fulfillment/Application/EloquentShipmentReader.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$order_line_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Fulfillment/Application/EloquentShipmentReader.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Fulfillment/Application/EloquentShipmentReader.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$variant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Fulfillment/Application/EloquentShipmentReader.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: modules/Fulfillment/Application/EloquentShipmentReader.php
-
-		-
-			message: '#^Parameter \$lines of class Modules\\Fulfillment\\Contracts\\Data\\ShipmentView constructor expects list\<array\{sku\: string, quantity\: int\}\>, array\<int, array\{order_line_id\: mixed, variant_id\: mixed, quantity\: mixed\}\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: modules/Fulfillment/Application/EloquentShipmentReader.php
-
-		-
 			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$shipped_at\.$#'
 			identifier: property.notFound
 			count: 2
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$order_line_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 2
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\:\:\$variant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Fulfillment\\Persistence\\Models\\ShipmentLine\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
 			path: modules/Fulfillment/Application/FulfillmentService.php
 
 		-
@@ -282,18 +215,6 @@ parameters:
 			identifier: notIdentical.alwaysFalse
 			count: 1
 			path: modules/Fulfillment/Domain/FulfillmentProgress.php
-
-		-
-			message: '#^Access to an undefined property Modules\\Fulfillment\\Persistence\\Models\\Shipment\:\:\$last_error\.$#'
-			identifier: property.notFound
-			count: 1
-			path: modules/Fulfillment/Http/Controllers/Admin/ShipmentController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Fulfillment\\Persistence\\Models\\Shipment\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: modules/Fulfillment/Http/Controllers/Admin/ShipmentController.php
 
 		-
 			message: '#^Method Modules\\Integration\\Application\\ConnectorRegistry\:\:connectors\(\) invoked with 1 parameter, 0 required\.$#'
@@ -425,12 +346,6 @@ parameters:
 			message: '#^Access to an undefined property Modules\\Returns\\Persistence\\Models\\ReturnRequest\:\:\$source\.$#'
 			identifier: property.notFound
 			count: 1
-			path: modules/Returns/Application/ReturnService.php
-
-		-
-			message: '#^Offset ''order_line_id'' does not exist on array\{sku\: string, quantity\: int\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 3
 			path: modules/Returns/Application/ReturnService.php
 
 		-

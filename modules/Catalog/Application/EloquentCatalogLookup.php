@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application;
 
 use Illuminate\Database\Eloquent\Builder;
-use InvalidArgumentException;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Domain\PublishWindow;
@@ -33,7 +32,6 @@ final class EloquentCatalogLookup implements CatalogLookup
             'brand' => Brand::query()->whereIn('id', $ids)->where('status', Brand::ACTIVE)->get()
                 ->map(fn (Brand $brand): array => ['id' => $brand->id, 'slug' => $brand->slug, 'name' => $brand->name])->all(),
             'product' => $this->visibleProducts($ids, $locale),
-            default => throw new InvalidArgumentException("Loại catalog [{$kind}] không hỗ trợ."),
         };
 
         return array_column($found, null, 'id');
@@ -62,7 +60,6 @@ final class EloquentCatalogLookup implements CatalogLookup
                     'name' => trim(($style->translate('name', $locale) ?? '').' · '.$style->style_code, ' ·'),
                     'visible' => PublishWindow::isVisible($style->status, $style->publishWindow(), new \DateTimeImmutable),
                 ])->all(),
-            default => throw new InvalidArgumentException("Loại catalog [{$kind}] không hỗ trợ."),
         };
     }
 
@@ -106,7 +103,7 @@ final class EloquentCatalogLookup implements CatalogLookup
     /**
      * Tìm trên bản dịch `name` (danh mục, bộ sưu tập) — so khớp không dấu theo từng từ.
      *
-     * @param  Builder<covariant \Illuminate\Database\Eloquent\Model>  $builder
+     * @param  Builder<Category>|Builder<ProductCollection>  $builder
      * @param  list<string>  $tokens
      * @param  callable(mixed): bool  $visible
      * @return list<array{id: int, name: string, visible: bool}>
@@ -114,7 +111,7 @@ final class EloquentCatalogLookup implements CatalogLookup
     private function searchByTranslation(Builder $builder, array $tokens, string $locale, int $limit, callable $visible): array
     {
         $rows = $builder->with('translations')->orderBy('id')->get()
-            ->map(fn ($model): array => ['id' => (int) $model->id, 'name' => (string) ($model->translate('name', $locale) ?? $model->slug), 'visible' => $visible($model)])
+            ->map(fn (Category|ProductCollection $model): array => ['id' => (int) $model->id, 'name' => (string) ($model->translate('name', $locale) ?? $model->slug), 'visible' => $visible($model)])
             ->filter(function (array $row) use ($tokens): bool {
                 $haystack = implode(' ', VietnameseText::tokens($row['name']));
                 foreach ($tokens as $token) {

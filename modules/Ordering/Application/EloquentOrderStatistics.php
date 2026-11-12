@@ -160,7 +160,7 @@ final class EloquentOrderStatistics implements OrderStatistics
             ->where(fn (Builder $query) => $query
                 ->whereIn('orders.payment_status', self::CONFIRMED_PAYMENT)
                 ->orWhereIn('orders.fulfillment_status', self::CONFIRMED_FULFILLMENT))
-            ->when($styleIds !== null, fn (Builder $query) => $query->whereIn('order_lines.meta->style_id', array_values(array_map('intval', (array) $styleIds))))
+            ->when($styleIds !== null, fn (Builder $query) => $query->whereIn('order_lines.meta->style_id', array_map('intval', (array) $styleIds)))
             ->select(['order_lines.meta->style_id as style_id', DB::raw('sum(order_lines.quantity) as sold')])
             ->groupBy('order_lines.meta->style_id')
             ->havingRaw('sum(order_lines.quantity) > 0')

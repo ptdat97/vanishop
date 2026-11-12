@@ -83,7 +83,7 @@ final class StorefrontCatalog implements CatalogReader
             }
         };
         $walk($this->categoryTree($locale));
-        $brands = array_values(array_slice(array_filter($this->brands(), fn (array $brand): bool => str_contains(self::fold($brand['name']), $needle)), 0, 3));
+        $brands = array_slice(array_filter($this->brands(), fn (array $brand): bool => str_contains(self::fold($brand['name']), $needle)), 0, 3);
 
         return vani_filter('vani.service.catalog.suggestions', [
             'products' => array_map(fn (array $item): array => ['id' => (int) $item['id'], 'slug' => (string) $item['slug'], 'name' => $item['name'], 'image_url' => $item['image_url']], $found['items']),

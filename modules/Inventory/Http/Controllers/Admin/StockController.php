@@ -219,7 +219,7 @@ final class StockController
     /**
      * Tải file CSV → trang xem trước chênh lệch (chưa ghi gì).
      */
-    public function import(Request $request, StockCsv $csv, StockQueries $queries): Response|RedirectResponse
+    public function import(Request $request, StockCsv $csv, StockQueries $queries): Response
     {
         Gate::authorize('inventory.adjust');
         $data = $request->validate([

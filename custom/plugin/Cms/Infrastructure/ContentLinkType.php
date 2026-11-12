@@ -14,7 +14,7 @@ use Plugin\Cms\Persistence\Content;
  */
 abstract class ContentLinkType implements LinkType
 {
-    /** @return Builder<Content> */
+    /** @return Builder<covariant Content> */
     abstract protected function query(): Builder;
 
     abstract protected function url(string $slug, string $locale): string;

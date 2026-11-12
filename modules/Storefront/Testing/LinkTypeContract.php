@@ -38,7 +38,8 @@ final class LinkTypeContract
                 $resolved = $type()->resolve([$value, $missing], 'vi');
 
                 expect($type()->accepts($value))->toBeTrue()
-                    ->and($resolved)->toHaveKey($value)->not->toHaveKey($missing)
+                    ->and($resolved)->toHaveKey($value)
+                    ->and(array_key_exists($missing, $resolved))->toBeFalse()
                     ->and($resolved[$value]['url'])->toMatch('#^(https?://|/|mailto:|tel:)#')
                     ->and($resolved[$value]['label'])->not->toBe('');
             });
@@ -61,7 +62,8 @@ final class LinkTypeContract
                 }
                 $results = $instance->search('', 'vi');
 
-                expect($results)->toBeArray()->not->toBeEmpty()
+                expect($results)->toBeArray()
+                    ->and(count($results))->toBeGreaterThan(0)
                     ->and(array_column($results, 'value'))->toContain($value)
                     ->and($results[0])->toHaveKeys(['value', 'label']);
             });

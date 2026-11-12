@@ -6,7 +6,7 @@ use Modules\Extension\Facades\Hook;
 
 // GET /api/storefront/v1/x/vani-hello-world/greeting?name=Lan
 Route::get('greeting', function (Request $request) {
-    $name = trim((string) $request->validate(['name' => ['nullable', 'string', 'max:60']])['name'] ?? '');
+    $name = trim((string) ($request->validate(['name' => ['nullable', 'string', 'max:60']])['name'] ?? ''));
 
     $message = $name === '' ? 'Xin chào!' : "Xin chào, {$name}!";
 

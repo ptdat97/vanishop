@@ -57,6 +57,11 @@ it('gỡ giữ dữ liệu rồi cài lại: không seed lần hai; gỡ --purge
 });
 
 it('seeder lỗi: dữ liệu của seeder đó không ghi (transaction), plugin failed; sửa xong vani:plugin:seed → installed', function () {
+    if (DB::getDriverName() === 'mysql') {
+        // MySQL tự commit khi chạy DDL (migration của plugin) → transaction bọc test (RefreshDatabase) và savepoint của
+        // seeder mất. Production không có transaction bọc ngoài nên không gặp; SQLite (DDL trong transaction) kiểm ca này.
+        $this->markTestSkipped('MySQL: DDL tự commit transaction bọc test.');
+    }
     config(['testing.seed_fail' => true]);
 
     expect(fn () => $this->plugins->install('fixture.greeting'))->toThrow(PluginOperationFailed::class, 'dữ liệu hỏng');

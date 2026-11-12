@@ -125,7 +125,7 @@ final class ThemeSettings
      */
     private static function optional(array $rules): array
     {
-        return array_values(array_map(fn (mixed $rule): mixed => $rule === 'required' ? 'nullable' : $rule, $rules));
+        return array_map(fn (mixed $rule): mixed => $rule === 'required' ? 'nullable' : $rule, $rules);
     }
 
     private static function filled(mixed $value): bool

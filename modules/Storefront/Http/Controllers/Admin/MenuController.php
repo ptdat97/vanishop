@@ -54,7 +54,7 @@ final class MenuController
                 'items' => $state['draft'],
                 'published_at' => $state['published_at'],
                 'has_changes' => $state['published'] === null || $state['draft'] !== $state['published'],
-                'versions' => array_map(fn (array $version): array => ['published_at' => $version['published_at'] ?? null, 'count' => count((array) ($version['items'] ?? []))], $state['versions']),
+                'versions' => array_map(fn (array $version): array => ['published_at' => $version['published_at'] ?? null, 'count' => count($version['items'])], $state['versions']),
             ],
             'linkTypes' => $links->types(),
             // Nhãn hiện tại của link đã chọn (theo ngôn ngữ mặc định) và ảnh — để trình sửa hiển thị đúng đối tượng.

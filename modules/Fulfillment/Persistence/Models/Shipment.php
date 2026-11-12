@@ -21,6 +21,7 @@ use Modules\Fulfillment\Domain\ShipmentStatus;
  * @property string $currency_code
  * @property ShipmentStatus $status
  * @property int $booking_attempts
+ * @property string|null $last_error lỗi đặt vận đơn gần nhất
  * @property int $lock_version
  * @property CarbonImmutable|null $delivered_at
  */

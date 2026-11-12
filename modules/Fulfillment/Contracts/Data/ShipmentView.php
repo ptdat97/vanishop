@@ -7,7 +7,7 @@ namespace Modules\Fulfillment\Contracts\Data;
 final readonly class ShipmentView
 {
     /**
-     * @param  list<array{sku: string, quantity: int}>  $lines
+     * @param  list<array{order_line_id: int, variant_id: int, quantity: int}>  $lines
      * @param  list<array{status: string, description: ?string, at: string}>  $events
      */
     public function __construct(

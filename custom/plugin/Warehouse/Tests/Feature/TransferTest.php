@@ -5,6 +5,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Application\Plugins\PluginOperationFailed;
 use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
@@ -165,7 +166,7 @@ it('không tắt được plugin khi còn phiếu đang đi đường; nhận xo
     $transfer = $this->service->create(($this->data)($this->hn), ($this->data)($this->hcm), [$this->s->id => 2]);
     $this->service->ship($transfer);
 
-    expect(fn () => app(PluginManager::class)->disable(WarehouseServiceProvider::ID))->toThrow(Modules\Extension\Application\Plugins\PluginOperationFailed::class);
+    expect(fn () => app(PluginManager::class)->disable(WarehouseServiceProvider::ID))->toThrow(PluginOperationFailed::class);
 
     $this->service->receive($transfer->fresh());
     app(PluginManager::class)->disable(WarehouseServiceProvider::ID);

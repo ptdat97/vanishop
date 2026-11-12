@@ -115,7 +115,7 @@ final class ExtraContent
             $highlights = $extra === null ? [] : (($extra->highlights[$locale] ?? []) ?: ($extra->highlights[$default] ?? []));
             $box = $extra?->hide_promo_box ? null : $promoBox;
             if ($highlights !== [] || $box !== null) {
-                $result[$id] = ['highlights' => array_values($highlights), 'promo_box' => $box];
+                $result[$id] = ['highlights' => $highlights, 'promo_box' => $box];
             }
         }
 

@@ -40,6 +40,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
  * @property array<string, mixed>|null $meta
  * @property int $lock_version
  * @property CarbonImmutable $placed_at
+ * @property string|null $locale ngôn ngữ khách dùng khi đặt (0.3.59)
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */

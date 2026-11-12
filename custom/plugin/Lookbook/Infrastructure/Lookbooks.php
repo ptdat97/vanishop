@@ -44,11 +44,11 @@ final class Lookbooks
             throw ValidationException::withMessages(['slug' => 'Đường dẫn trống hoặc đã có lookbook khác dùng.']);
         }
 
-        $images = array_values(array_filter((array) ($data['images'] ?? []), fn (mixed $image): bool => is_array($image) && (int) ($image['media_id'] ?? 0) > 0));
+        $images = array_values(array_filter($data['images'] ?? [], fn (array $image): bool => $image['media_id'] > 0));
         if (count($images) > self::MAX_IMAGES) {
             throw ValidationException::withMessages(['images' => 'Tối đa '.self::MAX_IMAGES.' ảnh.']);
         }
-        $cover = isset($data['cover_media_id']) && $data['cover_media_id'] !== null ? (int) $data['cover_media_id'] : null;
+        $cover = isset($data['cover_media_id']) ? (int) $data['cover_media_id'] : null;
         $mediaIds = array_values(array_unique([...array_map(fn (array $image): int => (int) $image['media_id'], $images), ...($cover === null ? [] : [$cover])]));
         $found = $mediaIds === [] ? [] : $this->media->find($mediaIds);
         if (count($found) !== count($mediaIds)) {

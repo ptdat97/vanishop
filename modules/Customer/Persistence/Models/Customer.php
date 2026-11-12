@@ -19,6 +19,7 @@ use Modules\Customer\Domain\CustomerStatus;
  * @property string|null $full_name
  * @property Carbon|null $birth_date
  * @property string|null $gender
+ * @property string|null $preferred_locale ngôn ngữ nhận tin (0.3.59)
  * @property CustomerStatus $status
  * @property Carbon|null $registered_at
  * @property Carbon|null $phone_verified_at

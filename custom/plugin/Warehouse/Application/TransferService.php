@@ -193,7 +193,7 @@ final class TransferService
 
     private function code(int $locationId): string
     {
-        return $this->locations->find($locationId)?->code ?? (string) $locationId;
+        return $this->locations->find($locationId)->code ?? (string) $locationId;
     }
 
     /**

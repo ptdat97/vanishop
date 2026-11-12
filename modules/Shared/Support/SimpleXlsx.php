@@ -62,10 +62,10 @@ final class SimpleXlsx
             .'</styleSheet>');
 
         $sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
-        foreach (array_values($rows) as $index => $row) {
+        foreach ($rows as $index => $row) {
             $number = $index + 1;
             $sheet .= '<row r="'.$number.'">';
-            foreach (array_values($row) as $column => $value) {
+            foreach ($row as $column => $value) {
                 $reference = self::column($column).$number;
                 $style = $index === 0 ? ' s="1"' : '';
                 if ($value === null || $value === '') {

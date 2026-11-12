@@ -21,6 +21,6 @@ final class ProductExtrasEnricher implements StorefrontEnricher
 
     public function enrich(array $items, string $locale): array
     {
-        return $this->content->forProducts(array_values(array_map(fn (array $product): int => (int) $product['id'], $items)), $locale);
+        return $this->content->forProducts(array_map(fn (array $product): int => (int) $product['id'], $items), $locale);
     }
 }

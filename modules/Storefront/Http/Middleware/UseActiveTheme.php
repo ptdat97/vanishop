@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Translation\FileLoader;
 use Modules\Extension\Application\Storefront\PluginViews;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
@@ -47,7 +48,7 @@ final class UseActiveTheme
         $added = false;
         foreach (array_reverse($chain) as $theme) {
             $path = "{$theme->path}/lang";
-            if (is_dir($path) && ! in_array($path, $loader->jsonPaths(), true)) {
+            if (is_dir($path) && $loader instanceof FileLoader && ! in_array($path, $loader->jsonPaths(), true)) {
                 $loader->addJsonPath($path);
                 $added = true;
             }

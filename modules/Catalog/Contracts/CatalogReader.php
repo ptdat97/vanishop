@@ -52,7 +52,7 @@ interface CatalogReader
     /**
      * Danh sách sản phẩm đang hiển thị; mỗi item có "variant_ids" (các variant đang bán).
      *
-     * @return array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array{slug: string, name: string, count: int}>}}
+     * @return array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array{color_families: array<string, int>, attributes: list<array<string, mixed>>, brands: list<array{slug: string, name: string, count: int}>, sizes: list<array<string, mixed>>, price: array{min: int, max: int}|null}, filters: list<array<string, mixed>>}
      */
     public function searchProducts(ProductFilters $filters, string $locale): array;
 

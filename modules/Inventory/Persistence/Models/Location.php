@@ -13,6 +13,8 @@ use Modules\Inventory\Domain\LocationType;
  * @property int $id
  * @property string $code
  * @property string $name
+ * @property string|null $address
+ * @property string|null $province_code
  * @property LocationType $type
  * @property bool $ships_online_orders
  * @property bool $allows_pickup

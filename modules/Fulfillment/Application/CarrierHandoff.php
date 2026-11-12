@@ -65,18 +65,18 @@ final class CarrierHandoff
             foreach ($shipment->lines as $shipmentLine) {
                 $line = $lines->get($shipmentLine->order_line_id);
                 $variant = $line === null ? '' : trim(implode('/', array_filter([$line->colorName, $line->sizeCode])));
-                $items[] = ($line?->productName ?? "#{$shipmentLine->variant_id}").($variant !== '' ? " ({$variant})" : '').' x'.$shipmentLine->quantity;
+                $items[] = ($line === null ? "#{$shipmentLine->variant_id}" : $line->productName).($variant !== '' ? " ({$variant})" : '').' x'.$shipmentLine->quantity;
                 $quantity += $shipmentLine->quantity;
                 $weight += ($weights[$shipmentLine->variant_id] ?? $defaultWeight) * $shipmentLine->quantity;
                 // Giá trị hàng: phần thành tiền (sau giảm) của số lượng trong vận đơn.
                 $value += $line === null || $line->quantity === 0 ? 0 : intdiv($line->totalAmount * $shipmentLine->quantity, $line->quantity);
             }
             $address = $order->shippingAddress;
-            $phone = (string) ($order->recipient['phone'] ?? '');
+            $phone = $order->recipient['phone'];
 
             $rows[] = [
                 $order->number,
-                (string) ($order->recipient['full_name'] ?? ''),
+                $order->recipient['full_name'],
                 Phones::parse($phone)?->national() ?? $phone,
                 (string) ($address['street_line'] ?? ''),
                 (string) ($address['ward_name'] ?? ''),

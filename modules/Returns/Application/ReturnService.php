@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Returns\Application;
 
 use DateTimeImmutable;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -202,7 +201,7 @@ final class ReturnService implements Returns
             throw ReturnRejected::attachmentsInvalid('closed');
         }
         foreach ($photos as $photo) {
-            if (! $photo instanceof UploadedFile || ! $photo->isValid() || ! in_array($photo->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'], true) || $photo->getSize() > 5 * 1024 * 1024) {
+            if (! $photo->isValid() || ! in_array($photo->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'], true) || $photo->getSize() > 5 * 1024 * 1024) {
                 throw ReturnRejected::attachmentsInvalid('invalid_file');
             }
         }

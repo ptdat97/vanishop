@@ -35,6 +35,7 @@ use Modules\Ordering\Domain\OrderStateMachine;
 use Modules\Ordering\Domain\PaymentStatus;
 use Modules\Ordering\Http\Requests\ShippingAddressRequest;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\Code128;
 use Modules\Shared\Support\MoneyFormatter;
@@ -105,11 +106,11 @@ final class OrderController
                 'id' => $order->id,
                 'number' => $order->number,
                 'placed_at' => StoreClock::format($order->placed_at),
-                'age_hours' => $order->placed_at === null ? null : (int) floor($order->placed_at->diffInMinutes(now()) / 60),
+                'age_hours' => (int) floor($order->placed_at->diffInMinutes(now()) / 60),
                 'customer' => (string) ($order->customer_snapshot['full_name'] ?? ''),
                 'phone' => (string) $order->customer_phone,
                 'province' => (string) ($order->shipping_address['province_name'] ?? ''),
-                'items' => $order->lines->map(fn ($line): array => ['sku' => $line->sku, 'quantity' => $line->quantity - $line->cancelled_quantity])->filter(fn (array $line): bool => $line['quantity'] > 0)->values()->all(),
+                'items' => $order->lines->map(fn (OrderLine $line): array => ['sku' => $line->sku, 'quantity' => $line->quantity - $line->cancelled_quantity])->filter(fn (array $line): bool => $line['quantity'] > 0)->values()->all(),
                 'total' => $order->total_amount,
                 'stage' => (string) $order->getAttribute('stage'),
                 'delivery_issue' => $this->deliveryIssue($order),
@@ -355,10 +356,7 @@ final class OrderController
     }
 
     /**
-     * Cách thanh toán cho bộ lọc/cột: mã đã có trong đơn (kể cả cổng đã gỡ) + nhãn do Payment cung cấp qua slot
-     * `vani.admin.order.payment_methods` (Ordering không biết cổng nào được cài).
-     *
-     * @return array<string, string>
+     * URL danh sách đơn giữ nguyên bộ lọc đang xem (nút quay lại từ trang chi tiết).
      */
     private function ordersListUrl(Request $request): string
     {
@@ -381,6 +379,12 @@ final class OrderController
         return route('admin.orders.orders.index', $query);
     }
 
+    /**
+     * Cách thanh toán cho bộ lọc/cột: mã đã có trong đơn (kể cả cổng đã gỡ) + nhãn do Payment cung cấp qua slot
+     * `vani.admin.order.payment_methods` (Ordering không biết cổng nào được cài).
+     *
+     * @return array<string, string>
+     */
     private function paymentMethodLabels(): array
     {
         $labels = [];
@@ -409,7 +413,7 @@ final class OrderController
             'shopName' => (string) config('app.name'),
             'orders' => $orders->map(function (Order $order) use ($money): array {
                 $address = (array) $order->shipping_address;
-                $lines = $order->lines->map(fn ($line): array => [
+                $lines = $order->lines->map(fn (OrderLine $line): array => [
                     'name' => $line->product_name, 'sku' => $line->sku, 'variant' => trim(implode(' / ', array_filter([$line->color_name, $line->size_code]))),
                     'quantity' => $line->quantity - $line->cancelled_quantity,
                 ])->filter(fn (array $line): bool => $line['quantity'] > 0)->values();

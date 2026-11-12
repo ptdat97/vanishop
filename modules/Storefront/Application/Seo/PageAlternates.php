@@ -26,7 +26,7 @@ final class PageAlternates implements PageSeo
 
     public function alternates(array $urls, array $translated): void
     {
-        $this->request->attributes->set(self::ATTRIBUTE, [...$this->declared(), 'urls' => $urls, 'translated' => array_values($translated)]);
+        $this->request->attributes->set(self::ATTRIBUTE, [...$this->declared(), 'urls' => $urls, 'translated' => $translated]);
     }
 
     public function noindex(): void

@@ -91,7 +91,7 @@ final class TaxonomyService
     }
 
     /**
-     * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int}  $data
+     * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int, logo_media_id?: int|null}  $data
      */
     public function saveBrand(array $data, ?Brand $brand = null): Brand
     {

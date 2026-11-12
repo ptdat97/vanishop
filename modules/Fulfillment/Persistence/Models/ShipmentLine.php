@@ -6,6 +6,13 @@ namespace Modules\Fulfillment\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $shipment_id
+ * @property int $order_line_id
+ * @property int $variant_id
+ * @property int $quantity
+ */
 final class ShipmentLine extends Model
 {
     protected $guarded = ['id'];

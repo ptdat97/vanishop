@@ -43,7 +43,7 @@ interface LinkType
      * Phân giải theo lô; giá trị không có trong kết quả = đối tượng không tồn tại/không hiển thị.
      *
      * @param  list<string>  $values
-     * @return array<string, array{url: string, label: string}>
+     * @return array<array-key, array{url: string, label: string}> khoá = giá trị đã chọn (PHP đổi chuỗi số như "12" thành int 12; tra bằng chuỗi vẫn đúng)
      */
     public function resolve(array $values, string $locale): array;
 }

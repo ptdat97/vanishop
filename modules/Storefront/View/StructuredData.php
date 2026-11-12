@@ -47,7 +47,7 @@ final class StructuredData
                 'position' => $index + 1,
                 'name' => $crumb['label'],
                 'item' => $crumb['url'],
-            ], fn (mixed $value): bool => $value !== null), array_keys($crumbs), array_values($crumbs)),
+            ], fn (mixed $value): bool => $value !== null), array_keys($crumbs), $crumbs),
         ]);
     }
 

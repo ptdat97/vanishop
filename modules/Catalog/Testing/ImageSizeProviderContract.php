@@ -23,7 +23,7 @@ final class ImageSizeProviderContract
             it('trả kích thước hợp lệ, tên có tiền tố và không trùng, ổn định', function () use ($provider): void {
                 $sizes = $provider()->sizes();
 
-                expect($sizes)->not->toBeEmpty()->each->toBeInstanceOf(ImageSize::class);
+                expect($sizes)->not->toBeEmpty();
                 $names = array_map(fn (ImageSize $size): string => $size->name, $sizes);
                 expect(array_unique($names))->toHaveCount(count($names))
                     ->and(array_filter($names, fn (string $name): bool => ! str_contains($name, '.')))->toBe([])

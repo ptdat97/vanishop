@@ -76,7 +76,7 @@ final class FacetSettings
     {
         $available = $this->available($locale);
         $clean = [];
-        foreach (array_values($facets) as $index => $facet) {
+        foreach ($facets as $index => $facet) {
             $key = (string) ($facet['key'] ?? '');
             $display = (string) ($facet['display'] ?? ($available[$key]['displays'][0] ?? 'list'));
             if (! isset($available[$key])) {

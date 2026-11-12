@@ -9,7 +9,6 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Component;
-use Illuminate\View\ComponentAttributeBag;
 use Modules\Extension\Facades\Hook;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Throwable;
@@ -60,8 +59,8 @@ final class HookSlot extends Component
             return new HtmlString('');
         }
 
-        $attributes = ($this->attributes ?? new ComponentAttributeBag)
-            ->merge(['class' => 'vani-slot', 'data-slot' => $this->name]);
+        // Blade luôn gán attributes (withAttributes) trước khi render component.
+        $attributes = $this->attributes->merge(['class' => 'vani-slot', 'data-slot' => $this->name]);
 
         return new HtmlString($this->wrap ? '<div '.$attributes.'>'.$html.'</div>' : $html);
     }

@@ -39,7 +39,7 @@ final class AutoConfirmCodOrder
         if ($order === null || $order->paymentStatus !== 'cod_pending' || $order->status !== OrderStatus::Pending) {
             return;
         }
-        if ($mode === 'trusted' && ! $this->trusted((string) ($order->recipient['phone'] ?? ''), $order->id)) {
+        if ($mode === 'trusted' && ! $this->trusted($order->recipient['phone'], $order->id)) {
             return;
         }
 

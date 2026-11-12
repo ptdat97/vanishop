@@ -1,7 +1,7 @@
 {
     "id": "vani.hello-world",
     "name": { "vi": "Plugin mẫu Hello World", "en": "Hello World sample plugin" },
-    "version": "0.2.0",
+    "version": "0.2.1",
     "kind": "feature",
     "provider": "Plugin\\HelloWorld\\HelloWorldServiceProvider",
     "requires": {

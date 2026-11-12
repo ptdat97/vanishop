@@ -36,7 +36,7 @@ final class ProductViews implements ProductCards
     ) {}
 
     /**
-     * @return array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array<string, mixed>}
+     * @return array{items: list<array<string, mixed>>, total: int, page: int, per_page: int, facets: array<string, mixed>, filters: list<array<string, mixed>>, sortable_by_price: bool}
      */
     public function listing(ProductFilters $filters, string $locale, int $now): array
     {
@@ -54,7 +54,7 @@ final class ProductViews implements ProductCards
         $listing['sortable_by_price'] = ! $hidden;
         if ($hidden) {
             unset($listing['facets']['price']);
-            $listing['filters'] = array_values(array_filter($listing['filters'] ?? [], fn (array $filter): bool => $filter['key'] !== 'price'));
+            $listing['filters'] = array_values(array_filter($listing['filters'], fn (array $filter): bool => $filter['key'] !== 'price'));
         }
 
         return $listing;

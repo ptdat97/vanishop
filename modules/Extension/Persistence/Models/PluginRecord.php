@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Extension\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 
 /**
@@ -12,7 +13,7 @@ use Modules\Extension\Domain\Plugin\PluginStatus;
  * @property string $version
  * @property PluginStatus $status
  * @property string|null $last_error
- * @property \Illuminate\Support\Carbon|null $installed_at
+ * @property Carbon|null $installed_at
  */
 final class PluginRecord extends Model
 {

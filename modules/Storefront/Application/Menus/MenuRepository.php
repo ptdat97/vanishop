@@ -138,7 +138,7 @@ final class MenuRepository
     }
 
     /**
-     * @param  list<mixed>  $items
+     * @param  array<array-key, mixed>  $items  dữ liệu gửi lên (JSON object/mảng bất kỳ) — chuẩn hoá về danh sách
      * @return list<array<string, mixed>>
      */
     private function normalize(array $items, int $level, int $maxDepth, string $path, int &$count): array

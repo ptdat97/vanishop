@@ -80,7 +80,7 @@ final class OrderQueries
             }
             $day = CarbonImmutable::createFromFormat('!Y-m-d', $value($key), StoreClock::zone());
 
-            return $day === false ? null : ($end ? $day->addDay() : $day);
+            return $day === null ? null : ($end ? $day->addDay() : $day);
         };
 
         return Order::query()

@@ -24,6 +24,7 @@ use Modules\Catalog\Application\Media\ImageCache;
  * @property int|null $height
  * @property string $checksum
  * @property Carbon $created_at
+ * @property-read bool|null $in_product_gallery chỉ có khi query `withExists(['usages as in_product_gallery' => …])`
  */
 final class Media extends Model
 {
