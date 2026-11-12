@@ -67,12 +67,6 @@ parameters:
 			path: modules/Catalog/Application/Collections/EloquentCollectionDirectory.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Modules\\Catalog\\Persistence\\Models\\StyleColor\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: modules/Catalog/Application/Products/StorefrontProductQuery.php
-
-		-
 			message: '#^Access to an undefined property Modules\\Catalog\\Persistence\\Models\\Style\:\:\$created_at\.$#'
 			identifier: property.notFound
 			count: 1

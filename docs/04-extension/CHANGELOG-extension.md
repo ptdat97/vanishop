@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.22 — 2026-11-12
+
+Chi tiết sản phẩm theo mô hình options/variants (đợt V1b — tối ưu theo mẫu JSON của Owner). **Phá vỡ** hợp đồng chi tiết sản phẩm (thay cấu trúc của 0.4.21).
+
+### Đổi (phá vỡ)
+- `GET /products/{slug}` (và `CatalogReader::productDetail()`): bỏ `colors` (swatch của thẻ vẫn còn ở danh sách) và `sizes`. Thay bằng:
+  - `options[]`: `{code: color|size, name, display_type: swatch|button, values[{id, code, …}]}` — `id` ổn định (id màu, id size); màu có `available`.
+  - `variants[]`: **mọi SKU** (cả ngừng bán), `is_active`, `is_default` (đúng một SKU đang bán), `option_values[{option, value_id}]` trỏ giá trị bằng id, `price` chính xác của SKU, `availability` (`in_stock` | `low_stock` | `out_of_stock`), `media{primary_image_id, image_ids}`. SKU ngừng bán: `price`, `availability` = `null`.
+  - `media.gallery[]` (ảnh có `id`), `inventory.availability_status` (tổng hợp từ trạng thái SKU, không cộng tồn), `purchase{min_quantity, max_quantity, is_purchasable}`.
+  - `price` cấp sản phẩm là khoảng giá đại diện. Không trả số lượng tồn, không trả số lượng mặc định (thuộc frontend/Cart API).
+
 ## 0.4.21 — 2026-11-12
 
 Bộ chọn biến thể màu → size (thiết kế lại trình quản lý biến thể, đợt V1–V2). **Phá vỡ** hợp đồng chi tiết sản phẩm.

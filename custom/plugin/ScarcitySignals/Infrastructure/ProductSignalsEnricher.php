@@ -25,7 +25,7 @@ final class ProductSignalsEnricher implements StorefrontEnricher
         foreach ($items as $product) {
             $threshold = $this->signals->threshold(array_values(array_filter((array) ($product['breadcrumb'] ?? []), 'is_array')));
             $lowStock = (bool) $this->signals->setting('show_low_stock', true)
-                ? $this->signals->lowStock(array_merge([], ...array_map(fn (array $color): array => array_map('intval', array_column((array) ($color['variants'] ?? []), 'id')), (array) ($product['colors'] ?? []))), $threshold)
+                ? $this->signals->lowStock(array_map('intval', array_column((array) ($product['variants'] ?? []), 'id')), $threshold)
                 : [];
             $sold = $this->signals->sold((int) $product['id']);
             if ($lowStock !== [] || $sold !== null) {

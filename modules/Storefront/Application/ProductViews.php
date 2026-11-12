@@ -110,25 +110,51 @@ final class ProductViews implements ProductCards
             return null;
         }
 
-        $resolved = $this->resolve(self::variantIds($product), $now);
+        $activeIds = array_map('intval', array_column(array_filter($product['variants'], fn (array $variant): bool => $variant['is_active']), 'id'));
+        $resolved = $this->resolve($activeIds, $now);
         $stock = $this->stock(array_keys($resolved));
         $lowStock = max(0, (int) $this->settings->get('core', 'inventory.low_stock_threshold', (int) config('vanishop.inventory.low_stock_threshold', 3)));
         $hidden = $this->visibility->hidden();
 
-        $product['colors'] = array_map(function (array $color) use ($resolved, $stock, $lowStock, $hidden): array {
-            $color['variants'] = array_map(fn (array $variant): array => [
-                ...$variant,
-                'price' => ! $hidden && isset($resolved[$variant['id']]) ? $this->price($resolved[$variant['id']]) : null,
-                'available' => ($stock[$variant['id']] ?? 0) > 0,
-                'low_stock' => ($stock[$variant['id']] ?? 0) > 0 && $stock[$variant['id']] <= $lowStock,
-            ], $color['variants']);
-            $color['available'] = in_array(true, array_column($color['variants'], 'available'), true);
+        // SKU ngừng bán: giá và trạng thái hàng không áp dụng → null (không dùng 0). Trạng thái theo mức, không lộ số tồn.
+        $product['variants'] = array_map(fn (array $variant): array => [
+            ...$variant,
+            'price' => $variant['is_active'] && ! $hidden && isset($resolved[$variant['id']]) ? $this->price($resolved[$variant['id']]) : null,
+            'availability' => ! $variant['is_active'] ? null : match (true) {
+                ($stock[$variant['id']] ?? 0) <= 0 => 'out_of_stock',
+                $stock[$variant['id']] <= $lowStock => 'low_stock',
+                default => 'in_stock',
+            },
+        ], $product['variants']);
+        $buyable = fn (array $variant): bool => $variant['is_active'] && $variant['availability'] !== 'out_of_stock' && ($hidden || $variant['price'] !== null);
+        // Đúng một SKU mặc định (SKU mua được đầu tiên theo thứ tự màu → size; không có thì SKU đang bán đầu tiên).
+        $default = (array_values(array_filter($product['variants'], $buyable))[0] ?? array_values(array_filter($product['variants'], fn (array $variant): bool => $variant['is_active']))[0] ?? null)['id'] ?? null;
+        $product['variants'] = array_map(fn (array $variant): array => [...$variant, 'is_default' => $variant['id'] === $default], $product['variants']);
 
-            return $color;
-        }, $product['colors']);
+        $buyableColors = [];
+        foreach (array_filter($product['variants'], $buyable) as $variant) {
+            $buyableColors[self::optionValue($variant, 'color')] = true;
+        }
+        $product['options'] = array_map(fn (array $option): array => $option['code'] !== 'color' ? $option : [
+            ...$option, 'values' => array_map(fn (array $value): array => [...$value, 'available' => isset($buyableColors[$value['id']])], $option['values']),
+        ], $product['options']);
+
         $product['price'] = $hidden ? null : $this->range(array_values($resolved));
         $product['price_hidden'] = $hidden;
         $product['in_stock'] = array_sum($stock) > 0;
+        // Trạng thái tổng hợp từ trạng thái từng SKU đang bán (không cộng tồn các kho).
+        $statuses = array_column(array_filter($product['variants'], fn (array $variant): bool => $variant['is_active']), 'availability');
+        $product['inventory'] = ['availability_status' => match (true) {
+            $statuses === [] => null,
+            in_array('in_stock', $statuses, true) => 'in_stock',
+            in_array('low_stock', $statuses, true) => 'low_stock',
+            default => 'out_of_stock',
+        }];
+        $product['purchase'] = [
+            'min_quantity' => 1,
+            'max_quantity' => max(1, (int) config('vanishop.cart.max_line_quantity', 20)),
+            'is_purchasable' => array_filter($product['variants'], $buyable) !== [],
+        ];
         $product['links'] = $this->links($product['links'] ?? [], $locale, $now);
         unset($product['variant_ids']);
 
@@ -136,14 +162,30 @@ final class ProductViews implements ProductCards
     }
 
     /**
-     * Id mọi biến thể của trang chi tiết (lồng trong `colors[].variants`).
+     * Id mọi biến thể của trang chi tiết (`variants`).
      *
      * @param  array<string, mixed>  $product
      * @return list<int>
      */
+    /**
+     * Id giá trị của một trục chọn (`option_values` trỏ bằng id, không theo vị trí mảng).
+     *
+     * @param  array<string, mixed>  $variant
+     */
+    public static function optionValue(array $variant, string $option): ?int
+    {
+        foreach ((array) ($variant['option_values'] ?? []) as $value) {
+            if (($value['option'] ?? null) === $option) {
+                return (int) $value['value_id'];
+            }
+        }
+
+        return null;
+    }
+
     public static function variantIds(array $product): array
     {
-        return array_map('intval', array_merge([], ...array_map(fn (array $color): array => array_column($color['variants'] ?? [], 'id'), array_values((array) ($product['colors'] ?? [])))));
+        return array_map('intval', array_column((array) ($product['variants'] ?? []), 'id'));
     }
 
     /**

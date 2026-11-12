@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.4.21
+Storefront API v1 — VaniShop 0.4.22
 GET /address/provinces security[]
   200
     $: object
@@ -3367,43 +3367,13 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.breadcrumb[].name: string|null optional
     $.data.breadcrumb[].slug: string
     $.data.care_instructions: string|null optional
-    $.data.colors: array
-    $.data.colors[]: object
-    $.data.colors[].available: boolean
-    $.data.colors[].code: string
-    $.data.colors[].family: string
-    $.data.colors[].hex: string|null optional
-    $.data.colors[].image_url: string|null optional
-    $.data.colors[].images: array
-    $.data.colors[].images[]: object
-    $.data.colors[].images[].alt: string|null optional
-    $.data.colors[].images[].srcset: string|null optional
-    $.data.colors[].images[].thumb_url: string optional
-    $.data.colors[].images[].url: string
-    $.data.colors[].name: string|null
-    $.data.colors[].variants: array
-    $.data.colors[].variants[]: object
-    $.data.colors[].variants[].available: boolean
-    $.data.colors[].variants[].id: integer
-    $.data.colors[].variants[].low_stock: boolean
-    $.data.colors[].variants[].price: object|null
-    $.data.colors[].variants[].price.amount: object
-    $.data.colors[].variants[].price.amount.amount: integer
-    $.data.colors[].variants[].price.amount.currency: string
-    $.data.colors[].variants[].price.amount.formatted: string
-    $.data.colors[].variants[].price.compare_at: object|null
-    $.data.colors[].variants[].price.compare_at.amount: integer
-    $.data.colors[].variants[].price.compare_at.currency: string
-    $.data.colors[].variants[].price.compare_at.formatted: string
-    $.data.colors[].variants[].price.discount_percent: integer|null
-    $.data.colors[].variants[].size_code: string
-    $.data.colors[].variants[].size_system: string
-    $.data.colors[].variants[].sku: string
     $.data.description: string|null optional
     $.data.id: integer
     $.data.image_srcset: string|null optional
     $.data.image_url: string|null optional
     $.data.in_stock: boolean
+    $.data.inventory: object
+    $.data.inventory.availability_status: string|null enum[in_stock,low_stock,out_of_stock,]
     $.data.links: array optional
     $.data.links[]: object
     $.data.links[].code: string
@@ -3412,9 +3382,32 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.links[].style_ids[]: integer
     $.data.locales: array optional
     $.data.locales[]: string
+    $.data.media: object
+    $.data.media.gallery: array
+    $.data.media.gallery[]: object
+    $.data.media.gallery[].alt: string|null optional
+    $.data.media.gallery[].id: integer
+    $.data.media.gallery[].srcset: string|null optional
+    $.data.media.gallery[].thumb_url: string optional
+    $.data.media.gallery[].url: string
     $.data.meta_description: string|null optional
     $.data.meta_title: string|null optional
     $.data.name: string|null
+    $.data.options: array
+    $.data.options[]: object
+    $.data.options[].code: string enum[color,size]
+    $.data.options[].display_type: string enum[swatch,button]
+    $.data.options[].name: string
+    $.data.options[].values: array
+    $.data.options[].values[]: object
+    $.data.options[].values[].available: boolean optional
+    $.data.options[].values[].code: string
+    $.data.options[].values[].family: string optional
+    $.data.options[].values[].hex: string|null optional
+    $.data.options[].values[].id: integer
+    $.data.options[].values[].image_url: string|null optional
+    $.data.options[].values[].name: string|null optional
+    $.data.options[].values[].system: string optional
     $.data.price: object|null
     $.data.price.compare_at: object|null
     $.data.price.compare_at.amount: integer
@@ -3430,13 +3423,38 @@ GET /products/{slug} security[none,customerBearer,firstPartySession]
     $.data.price.min.currency: string
     $.data.price.min.formatted: string
     $.data.price_hidden: boolean
-    $.data.sizes: array
-    $.data.sizes[]: object
-    $.data.sizes[].code: string
-    $.data.sizes[].system: string
+    $.data.purchase: object
+    $.data.purchase.is_purchasable: boolean
+    $.data.purchase.max_quantity: integer
+    $.data.purchase.min_quantity: integer
     $.data.slug: string
     $.data.slugs: object
     $.data.style_code: string optional
+    $.data.variants: array
+    $.data.variants[]: object
+    $.data.variants[].availability: string|null enum[in_stock,low_stock,out_of_stock,]
+    $.data.variants[].id: integer
+    $.data.variants[].is_active: boolean
+    $.data.variants[].is_default: boolean
+    $.data.variants[].media: object
+    $.data.variants[].media.image_ids: array
+    $.data.variants[].media.image_ids[]: integer
+    $.data.variants[].media.primary_image_id: integer|null
+    $.data.variants[].option_values: array
+    $.data.variants[].option_values[]: object
+    $.data.variants[].option_values[].option: string enum[color,size]
+    $.data.variants[].option_values[].value_id: integer
+    $.data.variants[].price: object|null
+    $.data.variants[].price.amount: object
+    $.data.variants[].price.amount.amount: integer
+    $.data.variants[].price.amount.currency: string
+    $.data.variants[].price.amount.formatted: string
+    $.data.variants[].price.compare_at: object|null
+    $.data.variants[].price.compare_at.amount: integer
+    $.data.variants[].price.compare_at.currency: string
+    $.data.variants[].price.compare_at.formatted: string
+    $.data.variants[].price.discount_percent: integer|null
+    $.data.variants[].sku: string
     $.data.videos: array optional
   404
     $: object closed

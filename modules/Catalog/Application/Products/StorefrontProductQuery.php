@@ -15,6 +15,7 @@ use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\LinkType;
+use Modules\Catalog\Persistence\Models\Mediable;
 use Modules\Catalog\Persistence\Models\Size;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleAttributeValue;
@@ -95,7 +96,8 @@ final class StorefrontProductQuery
     {
         $style = Style::query()
             ->with(['translations', 'brand', 'colors.color.translations', 'colors.gallery.media', 'primaryCategory', 'attributeValues.attribute.translations', 'attributeValues.value.translations', 'videos',
-                'variants' => fn ($query) => $query->where('status', 'active')->with(['size'])])
+                // Mọi SKU (cả ngừng bán) cho `variants`; thẻ và tổng hợp chỉ tính SKU đang bán.
+                'variants' => fn ($query) => $query->with(['size'])])
             ->whereLocalizedSlug($slug, $locale)
             ->first();
 
@@ -104,7 +106,8 @@ final class StorefrontProductQuery
         }
 
         return [
-            ...$this->summary($style, $locale),
+            // Swatch của thẻ (`colors`) thay bằng trục chọn `options` ở trang chi tiết.
+            ...array_diff_key($this->summary($style, $locale), ['colors' => true]),
             'description' => $style->translate('description', $locale),
             'care_instructions' => $style->translate('care_instructions', $locale),
             'meta_title' => $style->translate('meta_title', $locale),
@@ -113,24 +116,7 @@ final class StorefrontProductQuery
             'slugs' => $style->slugs(),
             'breadcrumb' => $this->breadcrumb($style->primaryCategory, $locale),
             'attributes' => $this->attributes($style->attributeValues, $locale),
-            // Biến thể lồng trong màu (bộ chọn màu → size): client không phải tự ghép màu với size.
-            'colors' => $style->colors->map(fn (StyleColor $styleColor): array => [
-                ...$this->color($styleColor, $locale),
-                // Ảnh sản phẩm cắt theo tỉ lệ cấu hình (mặc định 2:3): khung PDP/lưới không nhảy.
-                'images' => $styleColor->gallery->map(fn ($image): array => [
-                    'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
-                    'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
-                ])->all(),
-                'variants' => $style->variants->where('style_color_id', $styleColor->id)
-                    ->sortBy(fn (Variant $variant): int => $variant->size->sort_order)
-                    ->map(fn (Variant $variant): array => [
-                        'id' => $variant->id, 'sku' => $variant->sku, 'size_code' => $variant->size->code, 'size_system' => $variant->size->size_system->value,
-                    ])->values()->all(),
-            ])->all(),
-            // Mọi size đang bán của sản phẩm theo thứ tự chuẩn — cột của bộ chọn size.
-            'sizes' => $style->variants->map(fn (Variant $variant): Size => $variant->size)->unique('id')
-                ->sortBy(fn (Size $size): string => sprintf('%s-%05d', $size->size_system->value, $size->sort_order))
-                ->map(fn (Size $size): array => ['code' => $size->code, 'system' => $size->size_system->value])->values()->all(),
+            ...$this->variantModel($style, $locale),
             'videos' => array_values(array_filter($style->videos->map(fn (Video $video): ?array => $this->videos->view($video))->all())),
             'links' => $this->links($style, $locale),
         ];
@@ -220,6 +206,52 @@ final class StorefrontProductQuery
     /**
      * @return array{code: string, name: string|null, hex: string|null, family: string, image_url: string|null}
      */
+    /**
+     * Mô hình biến thể của trang chi tiết (options/variants của API thương mại):
+     * - `options`: các trục chọn — màu (swatch), size (nút) — với giá trị có `id` ổn định (id màu, id size), theo thứ tự hiển thị.
+     * - `variants`: **mọi SKU** của sản phẩm (cả ngừng bán: `is_active` = false); `option_values` trỏ giá trị bằng id, không
+     *   bằng vị trí mảng; `media` trỏ ảnh trong `media.gallery` để đổi ảnh khi chọn màu.
+     * - `media.gallery`: thư viện ảnh của sản phẩm, mỗi ảnh có `id`.
+     *
+     * @return array{options: list<array<string, mixed>>, variants: list<array<string, mixed>>, media: array{gallery: list<array<string, mixed>>}}
+     */
+    private function variantModel(Style $style, string $locale): array
+    {
+        $colors = $style->colors->keyBy('id');
+        $variants = $style->variants->sortBy(fn (Variant $variant): string => sprintf('%05d-%05d', $colors->get($variant->style_color_id)->position ?? 0, $variant->size->sort_order));
+        $usedColors = $variants->pluck('style_color_id')->unique()->all();
+        $sizes = $variants->map(fn (Variant $variant): Size => $variant->size)->unique('id')
+            ->sortBy(fn (Size $size): string => sprintf('%s-%05d', $size->size_system->value, $size->sort_order));
+        $imageIds = fn (?StyleColor $color): array => $color === null ? [] : $color->gallery->map(fn (Mediable $image): int => $image->id)->values()->all();
+
+        return [
+            'options' => [
+                ['code' => 'color', 'name' => __('catalog::labels.option.color'), 'display_type' => 'swatch',
+                    'values' => $style->colors->filter(fn (StyleColor $color): bool => in_array($color->id, $usedColors, true))
+                        ->map(fn (StyleColor $color): array => ['id' => $color->color_id, ...$this->color($color, $locale)])->values()->all()],
+                ['code' => 'size', 'name' => __('catalog::labels.option.size'), 'display_type' => 'button',
+                    'values' => $sizes->map(fn (Size $size): array => ['id' => $size->id, 'code' => $size->code, 'system' => $size->size_system->value])->values()->all()],
+            ],
+            'variants' => $variants->map(function (Variant $variant) use ($colors, $imageIds): array {
+                $images = $imageIds($colors->get($variant->style_color_id));
+
+                return [
+                    'id' => $variant->id, 'sku' => $variant->sku, 'is_active' => $variant->status === VariantStatus::Active,
+                    'option_values' => [
+                        ['option' => 'color', 'value_id' => (int) $colors->get($variant->style_color_id)?->color_id],
+                        ['option' => 'size', 'value_id' => $variant->size_id],
+                    ],
+                    'media' => ['primary_image_id' => $images[0] ?? null, 'image_ids' => $images],
+                ];
+            })->values()->all(),
+            // Ảnh sản phẩm cắt theo tỉ lệ cấu hình (mặc định 2:3): khung PDP/lưới không nhảy.
+            'media' => ['gallery' => $style->colors->flatMap(fn (StyleColor $color) => $color->gallery->map(fn (Mediable $image): array => [
+                'id' => $image->id, 'url' => $image->media->url(800, ImageSizes::PRODUCT), 'srcset' => $image->media->srcset(ImageSizes::PRODUCT) ?: null,
+                'thumb_url' => $image->media->url(160, ImageSizes::PRODUCT), 'alt' => $image->alt,
+            ]))->values()->all()],
+        ];
+    }
+
     private function color(StyleColor $styleColor, string $locale): array
     {
         return [

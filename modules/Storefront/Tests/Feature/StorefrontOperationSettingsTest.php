@@ -178,7 +178,7 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
         $slug = $this->s->style->slug;
         $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()
             ->assertJsonPath('data.price', null)->assertJsonPath('data.price_hidden', true)
-            ->assertJsonPath('data.colors.0.variants.0.price', null);
+            ->assertJsonPath('data.variants.0.price', null);
         $this->getJson('/api/storefront/v1/products')->assertOk()
             ->assertJsonPath('data.0.price', null)->assertJsonPath('data.0.price_hidden', true);
 

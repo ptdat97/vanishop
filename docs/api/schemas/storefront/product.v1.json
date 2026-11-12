@@ -7,8 +7,11 @@
         "slug",
         "name",
         "brand",
-        "colors",
-        "sizes",
+        "options",
+        "variants",
+        "media",
+        "inventory",
+        "purchase",
         "price",
         "price_hidden",
         "in_stock",
@@ -70,177 +73,6 @@
                 "string",
                 "null"
             ]
-        },
-        "colors": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "required": [
-                    "code",
-                    "name",
-                    "family",
-                    "images",
-                    "variants",
-                    "available"
-                ],
-                "properties": {
-                    "code": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "hex": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "family": {
-                        "type": "string"
-                    },
-                    "image_url": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "images": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "url"
-                            ],
-                            "properties": {
-                                "url": {
-                                    "type": "string"
-                                },
-                                "srcset": {
-                                    "type": [
-                                        "string",
-                                        "null"
-                                    ]
-                                },
-                                "thumb_url": {
-                                    "type": "string"
-                                },
-                                "alt": {
-                                    "type": [
-                                        "string",
-                                        "null"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "variants": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "id",
-                                "sku",
-                                "size_code",
-                                "size_system",
-                                "price",
-                                "available",
-                                "low_stock"
-                            ],
-                            "properties": {
-                                "id": {
-                                    "type": "integer"
-                                },
-                                "sku": {
-                                    "type": "string"
-                                },
-                                "size_code": {
-                                    "type": "string"
-                                },
-                                "size_system": {
-                                    "type": "string"
-                                },
-                                "price": {
-                                    "type": [
-                                        "object",
-                                        "null"
-                                    ],
-                                    "required": [
-                                        "amount",
-                                        "compare_at",
-                                        "discount_percent"
-                                    ],
-                                    "properties": {
-                                        "amount": {
-                                            "type": "object",
-                                            "required": [
-                                                "amount",
-                                                "currency",
-                                                "formatted"
-                                            ],
-                                            "properties": {
-                                                "amount": {
-                                                    "type": "integer"
-                                                },
-                                                "currency": {
-                                                    "type": "string",
-                                                    "pattern": "^[A-Z]{3}$"
-                                                },
-                                                "formatted": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        },
-                                        "compare_at": {
-                                            "type": [
-                                                "object",
-                                                "null"
-                                            ],
-                                            "required": [
-                                                "amount",
-                                                "currency",
-                                                "formatted"
-                                            ],
-                                            "properties": {
-                                                "amount": {
-                                                    "type": "integer"
-                                                },
-                                                "currency": {
-                                                    "type": "string",
-                                                    "pattern": "^[A-Z]{3}$"
-                                                },
-                                                "formatted": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        },
-                                        "discount_percent": {
-                                            "type": [
-                                                "integer",
-                                                "null"
-                                            ]
-                                        }
-                                    }
-                                },
-                                "available": {
-                                    "type": "boolean"
-                                },
-                                "low_stock": {
-                                    "type": "boolean"
-                                }
-                            }
-                        },
-                        "description": "Biến thể đang bán của màu này, theo thứ tự size."
-                    },
-                    "available": {
-                        "type": "boolean"
-                    }
-                }
-            },
-            "description": "Màu theo thứ tự hiển thị; mỗi màu mang biến thể (size) của nó — bộ chọn màu → size."
         },
         "price": {
             "type": [
@@ -332,24 +164,315 @@
         "in_stock": {
             "type": "boolean"
         },
-        "sizes": {
+        "options": {
             "type": "array",
             "items": {
                 "type": "object",
                 "required": [
                     "code",
-                    "system"
+                    "name",
+                    "display_type",
+                    "values"
                 ],
                 "properties": {
                     "code": {
+                        "type": "string",
+                        "enum": [
+                            "color",
+                            "size"
+                        ]
+                    },
+                    "name": {
                         "type": "string"
                     },
-                    "system": {
-                        "type": "string"
+                    "display_type": {
+                        "type": "string",
+                        "enum": [
+                            "swatch",
+                            "button"
+                        ]
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "code"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "code": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "hex": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "family": {
+                                    "type": "string"
+                                },
+                                "image_url": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "system": {
+                                    "type": "string"
+                                },
+                                "available": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
                     }
                 }
             },
-            "description": "Mọi size đang bán của sản phẩm theo thứ tự chuẩn."
+            "description": "Trục chọn biến thể theo thứ tự hiển thị; giá trị có id ổn định (id màu, id size)."
+        },
+        "variants": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "sku",
+                    "is_active",
+                    "is_default",
+                    "option_values",
+                    "price",
+                    "availability",
+                    "media"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_default": {
+                        "type": "boolean",
+                        "description": "Đúng một SKU đang bán là mặc định (SKU mua được đầu tiên)."
+                    },
+                    "option_values": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "option",
+                                "value_id"
+                            ],
+                            "properties": {
+                                "option": {
+                                    "type": "string",
+                                    "enum": [
+                                        "color",
+                                        "size"
+                                    ]
+                                },
+                                "value_id": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "description": "Giá trị của từng trục chọn, trỏ bằng `options[].values[].id` (không theo vị trí mảng)."
+                    },
+                    "price": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "compare_at",
+                            "discount_percent"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "object",
+                                "required": [
+                                    "amount",
+                                    "currency",
+                                    "formatted"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "integer"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                    },
+                                    "formatted": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "compare_at": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "required": [
+                                    "amount",
+                                    "currency",
+                                    "formatted"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "integer"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                    },
+                                    "formatted": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "discount_percent": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "description": "Giá chính xác của SKU; null khi ngừng bán, chưa có giá hoặc giá bị ẩn."
+                    },
+                    "availability": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "in_stock",
+                            "low_stock",
+                            "out_of_stock",
+                            null
+                        ],
+                        "description": "Trạng thái theo mức, không lộ số tồn; null khi không áp dụng (SKU ngừng bán)."
+                    },
+                    "media": {
+                        "type": "object",
+                        "required": [
+                            "primary_image_id",
+                            "image_ids"
+                        ],
+                        "properties": {
+                            "primary_image_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "image_ids": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "description": "Mọi SKU của sản phẩm (cả ngừng bán), theo thứ tự màu → size."
+        },
+        "media": {
+            "type": "object",
+            "required": [
+                "gallery"
+            ],
+            "properties": {
+                "gallery": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "url"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "url": {
+                                "type": "string"
+                            },
+                            "srcset": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "thumb_url": {
+                                "type": "string"
+                            },
+                            "alt": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "inventory": {
+            "type": "object",
+            "required": [
+                "availability_status"
+            ],
+            "properties": {
+                "availability_status": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "enum": [
+                        "in_stock",
+                        "low_stock",
+                        "out_of_stock",
+                        null
+                    ],
+                    "description": "Trạng thái theo mức, không lộ số tồn; null khi không áp dụng (SKU ngừng bán)."
+                }
+            }
+        },
+        "purchase": {
+            "type": "object",
+            "required": [
+                "min_quantity",
+                "max_quantity",
+                "is_purchasable"
+            ],
+            "properties": {
+                "min_quantity": {
+                    "type": "integer"
+                },
+                "max_quantity": {
+                    "type": "integer"
+                },
+                "is_purchasable": {
+                    "type": "boolean"
+                }
+            }
         },
         "description": {
             "type": [
@@ -452,5 +575,6 @@
             }
         }
     },
-    "title": "Chi tiết sản phẩm"
+    "title": "Chi tiết sản phẩm",
+    "description": "Mô hình options/variants: `price` cấp sản phẩm là khoảng giá đại diện, giá chính xác ở `variants[].price`; `inventory` là trạng thái tổng hợp; số lượng khách đang chọn thuộc frontend/Cart API."
 }
