@@ -8,7 +8,7 @@
         "name",
         "brand",
         "colors",
-        "variants",
+        "sizes",
         "price",
         "price_hidden",
         "in_stock",
@@ -77,8 +77,11 @@
                 "type": "object",
                 "required": [
                     "code",
+                    "name",
                     "family",
-                    "images"
+                    "images",
+                    "variants",
+                    "available"
                 ],
                 "properties": {
                     "code": {
@@ -133,9 +136,111 @@
                                 }
                             }
                         }
+                    },
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "sku",
+                                "size_code",
+                                "size_system",
+                                "price",
+                                "available",
+                                "low_stock"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "sku": {
+                                    "type": "string"
+                                },
+                                "size_code": {
+                                    "type": "string"
+                                },
+                                "size_system": {
+                                    "type": "string"
+                                },
+                                "price": {
+                                    "type": [
+                                        "object",
+                                        "null"
+                                    ],
+                                    "required": [
+                                        "amount",
+                                        "compare_at",
+                                        "discount_percent"
+                                    ],
+                                    "properties": {
+                                        "amount": {
+                                            "type": "object",
+                                            "required": [
+                                                "amount",
+                                                "currency",
+                                                "formatted"
+                                            ],
+                                            "properties": {
+                                                "amount": {
+                                                    "type": "integer"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "pattern": "^[A-Z]{3}$"
+                                                },
+                                                "formatted": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "compare_at": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "required": [
+                                                "amount",
+                                                "currency",
+                                                "formatted"
+                                            ],
+                                            "properties": {
+                                                "amount": {
+                                                    "type": "integer"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "pattern": "^[A-Z]{3}$"
+                                                },
+                                                "formatted": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "discount_percent": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "available": {
+                                    "type": "boolean"
+                                },
+                                "low_stock": {
+                                    "type": "boolean"
+                                }
+                            }
+                        },
+                        "description": "Biến thể đang bán của màu này, theo thứ tự size."
+                    },
+                    "available": {
+                        "type": "boolean"
                     }
                 }
-            }
+            },
+            "description": "Màu theo thứ tự hiển thị; mỗi màu mang biến thể (size) của nó — bộ chọn màu → size."
         },
         "price": {
             "type": [
@@ -227,6 +332,25 @@
         "in_stock": {
             "type": "boolean"
         },
+        "sizes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "system"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "system": {
+                        "type": "string"
+                    }
+                }
+            },
+            "description": "Mọi size đang bán của sản phẩm theo thứ tự chuẩn."
+        },
         "description": {
             "type": [
                 "string",
@@ -293,105 +417,6 @@
                             "string",
                             "null"
                         ]
-                    }
-                }
-            }
-        },
-        "variants": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "required": [
-                    "id",
-                    "sku",
-                    "color_code",
-                    "size_code",
-                    "price",
-                    "available"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "sku": {
-                        "type": "string"
-                    },
-                    "color_code": {
-                        "type": "string"
-                    },
-                    "size_code": {
-                        "type": "string"
-                    },
-                    "size_system": {
-                        "type": "string"
-                    },
-                    "price": {
-                        "type": [
-                            "object",
-                            "null"
-                        ],
-                        "required": [
-                            "amount",
-                            "compare_at",
-                            "discount_percent"
-                        ],
-                        "properties": {
-                            "amount": {
-                                "type": "object",
-                                "required": [
-                                    "amount",
-                                    "currency",
-                                    "formatted"
-                                ],
-                                "properties": {
-                                    "amount": {
-                                        "type": "integer"
-                                    },
-                                    "currency": {
-                                        "type": "string",
-                                        "pattern": "^[A-Z]{3}$"
-                                    },
-                                    "formatted": {
-                                        "type": "string"
-                                    }
-                                }
-                            },
-                            "compare_at": {
-                                "type": [
-                                    "object",
-                                    "null"
-                                ],
-                                "required": [
-                                    "amount",
-                                    "currency",
-                                    "formatted"
-                                ],
-                                "properties": {
-                                    "amount": {
-                                        "type": "integer"
-                                    },
-                                    "currency": {
-                                        "type": "string",
-                                        "pattern": "^[A-Z]{3}$"
-                                    },
-                                    "formatted": {
-                                        "type": "string"
-                                    }
-                                }
-                            },
-                            "discount_percent": {
-                                "type": [
-                                    "integer",
-                                    "null"
-                                ]
-                            }
-                        }
-                    },
-                    "available": {
-                        "type": "boolean"
-                    },
-                    "low_stock": {
-                        "type": "boolean"
                     }
                 }
             }

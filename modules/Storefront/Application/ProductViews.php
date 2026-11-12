@@ -110,17 +110,22 @@ final class ProductViews implements ProductCards
             return null;
         }
 
-        $resolved = $this->resolve(array_column($product['variants'], 'id'), $now);
+        $resolved = $this->resolve(self::variantIds($product), $now);
         $stock = $this->stock(array_keys($resolved));
         $lowStock = max(0, (int) $this->settings->get('core', 'inventory.low_stock_threshold', (int) config('vanishop.inventory.low_stock_threshold', 3)));
         $hidden = $this->visibility->hidden();
 
-        $product['variants'] = array_map(fn (array $variant): array => [
-            ...$variant,
-            'price' => ! $hidden && isset($resolved[$variant['id']]) ? $this->price($resolved[$variant['id']]) : null,
-            'available' => ($stock[$variant['id']] ?? 0) > 0,
-            'low_stock' => ($stock[$variant['id']] ?? 0) > 0 && $stock[$variant['id']] <= $lowStock,
-        ], $product['variants']);
+        $product['colors'] = array_map(function (array $color) use ($resolved, $stock, $lowStock, $hidden): array {
+            $color['variants'] = array_map(fn (array $variant): array => [
+                ...$variant,
+                'price' => ! $hidden && isset($resolved[$variant['id']]) ? $this->price($resolved[$variant['id']]) : null,
+                'available' => ($stock[$variant['id']] ?? 0) > 0,
+                'low_stock' => ($stock[$variant['id']] ?? 0) > 0 && $stock[$variant['id']] <= $lowStock,
+            ], $color['variants']);
+            $color['available'] = in_array(true, array_column($color['variants'], 'available'), true);
+
+            return $color;
+        }, $product['colors']);
         $product['price'] = $hidden ? null : $this->range(array_values($resolved));
         $product['price_hidden'] = $hidden;
         $product['in_stock'] = array_sum($stock) > 0;
@@ -128,6 +133,17 @@ final class ProductViews implements ProductCards
         unset($product['variant_ids']);
 
         return $this->enrichment->applyOne('product', $product);
+    }
+
+    /**
+     * Id mọi biến thể của trang chi tiết (lồng trong `colors[].variants`).
+     *
+     * @param  array<string, mixed>  $product
+     * @return list<int>
+     */
+    public static function variantIds(array $product): array
+    {
+        return array_map('intval', array_merge([], ...array_map(fn (array $color): array => array_column($color['variants'] ?? [], 'id'), array_values((array) ($product['colors'] ?? [])))));
     }
 
     /**

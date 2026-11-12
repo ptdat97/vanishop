@@ -144,7 +144,7 @@ it('trả khoảng giá ở danh sách và giá từng biến thể ở PDP theo
     $this->getJson('/api/storefront/v1/products?q=linen', $this->headers)->assertJsonPath('data.0.price', null);
 
     $detail = $this->getJson('/api/storefront/v1/products/dam-lua-den', $this->headers)->assertOk();
-    $variants = collect($detail->json('data.variants'))->keyBy('sku');
+    $variants = collect($detail->json('data.colors'))->flatMap(fn (array $color) => $color['variants'])->keyBy('sku');
     expect($variants[$s->sku]['price']['amount']['amount'])->toBe(413000)
         ->and($variants[$s->sku]['price']['compare_at']['amount'])->toBe(590000)
         ->and($variants[$m->sku]['price']['amount']['amount'])->toBe(620000)
@@ -167,11 +167,16 @@ it('công bố còn hàng / sắp hết theo tồn giao online, không lộ số
     $this->getJson('/api/storefront/v1/products?q=linen', $this->headers)->assertJsonPath('data.0.in_stock', false);
 
     $detail = $this->getJson('/api/storefront/v1/products/dam-lua-den', $this->headers)->assertOk()->assertJsonPath('data.in_stock', true);
-    $variants = collect($detail->json('data.variants'))->keyBy('sku');
+    $variants = collect($detail->json('data.colors'))->flatMap(fn (array $color) => $color['variants'])->keyBy('sku');
     expect($variants[$s->sku])->toMatchArray(['available' => true, 'low_stock' => false])
         ->and($variants[$m->sku])->toMatchArray(['available' => true, 'low_stock' => true])
         ->and($variants[$l->sku])->toMatchArray(['available' => false, 'low_stock' => false])
-        ->and(json_encode($detail->json()))->not->toContain('on_hand');
+        ->and(json_encode($detail->json()))->not->toContain('on_hand')
+        // Cấu trúc lồng cho bộ chọn màu → size: biến thể nằm trong màu, theo thứ tự size; màu còn hàng; danh sách size chuẩn.
+        ->and(array_column(collect($detail->json('data.colors'))->firstWhere('variants', '!=', [])['variants'], 'sku'))->toBe([$s->sku, $m->sku, $l->sku])
+        ->and(collect($detail->json('data.colors'))->firstWhere('variants', '!=', [])['available'])->toBeTrue()
+        ->and($detail->json('data.sizes.*.code'))->toBe(T::seed(fn () => [$s->size->code, $m->size->code, $l->size->code]))
+        ->and($detail->json('data'))->not->toHaveKey('variants');
 });
 
 it('thẻ sản phẩm theo id: giữ thứ tự, bỏ sản phẩm không hiển thị/trùng, cùng dạng lưới; giới hạn 30 id', function () {

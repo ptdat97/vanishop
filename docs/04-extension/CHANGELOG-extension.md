@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.21 — 2026-11-12
+
+Bộ chọn biến thể màu → size (thiết kế lại trình quản lý biến thể, đợt V1–V2). **Phá vỡ** hợp đồng chi tiết sản phẩm.
+
+### Đổi (phá vỡ)
+- `GET /products/{slug}`: bỏ `variants` phẳng. Biến thể nằm trong màu: `colors[].variants[]` (`id`, `sku`, `size_code`, `size_system`, `price`, `available`, `low_stock`, theo thứ tự size) và `colors[].available`; thêm `sizes[]` (mọi size đang bán, thứ tự chuẩn). `CatalogReader::productDetail()` trả cùng cấu trúc (chưa có giá/tồn). Plugin đọc biến thể của trang sản phẩm (enricher `product`) đọc từ `colors[].variants`.
+
+### Thêm
+- Theme `vani-base`: swatch màu + một hàng size của màu đang chọn (không JS vẫn chạy nhờ CSS `:has()`); giá đổi theo biến thể đang chọn; size hết hàng bị gạch và khoá; partial `theme::partials.variant-price`.
+- Form thêm giỏ gửi kèm `color`: biến thể khác màu đang chọn → lỗi `variant_id` (`CartLineRequest`, dùng chung với API — API không gửi `color` thì không đổi).
+
 ## 0.4.20 — 2026-11-12
 
 Admin: danh sách đầy đủ (stabilization-2026-11 P2 A2).

@@ -475,8 +475,8 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
 
     thumbs.forEach((thumb) => thumb.addEventListener('click', () => go(Number(thumb.dataset.index))));
     form?.addEventListener('change', (event) => {
-        const group = event.target.closest('[data-color-group]');
-        const images = group ? JSON.parse(group.dataset.images || '[]') : [];
+        if (event.target.name !== 'color') return;
+        const images = JSON.parse(event.target.dataset.colorImages || '[]');
         const first = images[0]?.url ?? images[0];
         if (first) go(thumbs.findIndex((thumb) => thumb.dataset.src === first));
     });
@@ -491,6 +491,24 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
     loadVendor('photoswipe')
         .then((PhotoSwipeLightbox) => mountLightbox(PhotoSwipeLightbox, slider, (index) => go(index)))
         .catch(() => {});
+});
+
+// PDP bộ chọn màu → size: đổi màu thì bỏ chọn size của màu khác (nhóm đó đang ẩn) và trả giá về khoảng giá của sản phẩm;
+// chọn size thì hiện đúng giá của biến thể (data-price-html). Không JS: CSS :has() vẫn hiện đúng nhóm size.
+document.querySelectorAll('form[data-variant-form]').forEach((form) => {
+    const price = document.querySelector('[data-product-price]');
+    const rangeHtml = price?.innerHTML;
+    form.addEventListener('change', (event) => {
+        const input = event.target;
+        if (input.name === 'color') {
+            form.querySelectorAll('input[name="variant_id"]:checked').forEach((radio) => {
+                if (radio.closest('[data-sizes-for]')?.dataset.sizesFor !== input.value) radio.checked = false;
+            });
+            if (price && rangeHtml !== undefined) price.innerHTML = rangeHtml;
+        } else if (input.name === 'variant_id' && price && input.dataset.priceHtml) {
+            price.innerHTML = input.dataset.priceHtml;
+        }
+    });
 });
 
 // Giỏ: đổi số lượng thì gửi form luôn (nút "Cập nhật" vẫn có cho trường hợp JS tắt).

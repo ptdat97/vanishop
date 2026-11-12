@@ -77,7 +77,7 @@
             <h1 class="text-2xl font-semibold">{{ $product['name'] }}</h1>
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
-            <p class="mt-3 text-lg">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
+            <p class="mt-3 text-lg" data-product-price>@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
             <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('api.storefront.v1.me.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
@@ -85,25 +85,65 @@
 
             {{-- Không @csrf/old() để HTML như nhau ở cả chế độ cache CDN (không phiên); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
             <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form>
-                @foreach ($product['colors'] as $color)
-                    @php($variants = array_values(array_filter($product['variants'], fn ($variant) => $variant['color_code'] === $color['code'])))
-                    @continue($variants === [])
-                    <fieldset data-color-group data-images='@json(array_values($color['images']))'>
-                        <legend class="mb-2 text-sm font-medium">{{ __('Màu: :name', ['name' => $color['name']]) }}</legend>
+                {{-- Bộ chọn màu → size: dữ liệu lồng `colors[].variants`. Màu là radio `color` (swatch); mỗi màu một nhóm size, chỉ nhóm
+                     của màu đang chọn hiện ra — bằng CSS :has() nên không cần JS. Màu chọn sẵn: màu đầu tiên còn hàng. --}}
+                @php($colors = array_values(array_filter($product['colors'], fn ($color) => $color['variants'] !== [])))
+                @php($selectedColor = (collect($colors)->firstWhere('available', true) ?? $colors[0] ?? null)['code'] ?? null)
+                @if ($colors !== [])
+                    <style>
+                        [data-variant-form] [data-sizes-for] { display: none; }
+                        @foreach ($colors as $color)
+                            [data-variant-form]:has(input[name="color"][value="{{ addslashes($color['code']) }}"]:checked) [data-sizes-for="{{ addslashes($color['code']) }}"] { display: block; }
+                            [data-variant-form]:has(input[name="color"][value="{{ addslashes($color['code']) }}"]:checked) [data-color-label="{{ addslashes($color['code']) }}"] { display: inline; }
+                        @endforeach
+                    </style>
+                    <fieldset>
+                        <legend class="mb-2 text-sm">
+                            {{ __('Màu') }}:
+                            @foreach ($colors as $color)
+                                <span class="hidden font-medium" data-color-label="{{ $color['code'] }}">{{ $color['name'] }}</span>
+                            @endforeach
+                        </legend>
                         <div class="flex flex-wrap gap-2">
-                            @foreach ($variants as $variant)
-                                {{-- Giá bị ẩn (khách chưa đăng nhập): vẫn chọn được; thêm giỏ chuyển sang đăng nhập. --}}
-                                @php($unpriced = $variant['price'] === null && empty($product['price_hidden']))
-                                <label @class(['cursor-pointer rounded border px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:font-semibold', 'opacity-50' => ! $variant['available'] || $unpriced])>
-                                    <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" @disabled(! $variant['available'] || $unpriced)>
-                                    {{ $variant['size_code'] }}
-                                    @if ($variant['low_stock'])<span class="text-xs text-accent">{{ __('sắp hết') }}</span>@endif
-                                    @unless ($variant['available'])<span class="sr-only">{{ __('(hết hàng)') }}</span>@endunless
+                            @foreach ($colors as $color)
+                                <label class="relative cursor-pointer rounded-full p-0.5 ring-1 ring-slate-200 has-[:checked]:ring-2 has-[:checked]:ring-primary has-[:focus-visible]:outline has-[:focus-visible]:outline-2" title="{{ $color['name'] }}">
+                                    <input type="radio" name="color" value="{{ $color['code'] }}" class="sr-only" @checked($color['code'] === $selectedColor) data-color-images='@json(array_values($color['images']))'>
+                                    @if ($color['hex'])
+                                        <span class="block h-8 w-8 rounded-full border border-black/10" style="background: {{ $color['hex'] }}"></span>
+                                    @elseif ($color['image_url'])
+                                        <img src="{{ $color['image_url'] }}" alt="" class="block h-8 w-8 rounded-full object-cover" loading="lazy">
+                                    @else
+                                        <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs">{{ $color['name'] }}</span>
+                                    @endif
+                                    @unless ($color['available'])
+                                        <span aria-hidden="true" class="pointer-events-none absolute inset-0 m-auto h-px w-9 -rotate-45 bg-slate-500"></span>
+                                    @endunless
+                                    <span class="sr-only">{{ $color['name'] }}@unless ($color['available']) {{ __('(hết hàng)') }}@endunless</span>
                                 </label>
                             @endforeach
                         </div>
                     </fieldset>
-                @endforeach
+
+                    @foreach ($colors as $color)
+                        <fieldset data-sizes-for="{{ $color['code'] }}" data-color-group data-images='@json(array_values($color['images']))'>
+                            <legend class="mb-2 text-sm">{{ __('Size') }}</legend>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach ($color['variants'] as $variant)
+                                    {{-- Giá bị ẩn (khách chưa đăng nhập): vẫn chọn được; thêm giỏ chuyển sang đăng nhập. --}}
+                                    @php($unpriced = $variant['price'] === null && empty($product['price_hidden']))
+                                    @php($disabled = ! $variant['available'] || $unpriced)
+                                    <label @class(['relative flex min-w-12 cursor-pointer flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white has-[:focus-visible]:outline has-[:focus-visible]:outline-2', 'cursor-not-allowed border-dashed text-slate-400 line-through' => $disabled])>
+                                        <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-size="{{ $variant['size_code'] }}" @disabled($disabled)
+                                            @if ($variant['price']) data-price-html="{{ view('theme::partials.variant-price', ['price' => $variant['price']])->render() }}" @endif>
+                                        <span class="font-medium">{{ $variant['size_code'] }}</span>
+                                        @if ($variant['low_stock'])<span class="text-[11px] leading-none text-accent no-underline">{{ __('sắp hết') }}</span>@endif
+                                        @unless ($variant['available'])<span class="sr-only">{{ __('(hết hàng)') }}</span>@endunless
+                                    </label>
+                                @endforeach
+                            </div>
+                        </fieldset>
+                    @endforeach
+                @endif
                 {{-- Không CDN: lỗi của lần gửi trước render sẵn; trang cache CDN: JS điền từ /_vani/phien. --}}
                 <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" @unless ($errors->has('variant_id')) hidden @endunless>{{ $errors->first('variant_id') }}</p>
 

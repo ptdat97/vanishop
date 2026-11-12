@@ -21,7 +21,7 @@ final class Payloads
      */
     public static function viewItem(array $product): array
     {
-        $variant = $product['variants'][0] ?? null;
+        $variant = $product['colors'][0]['variants'][0] ?? null;
         $amount = $variant['price']['amount'] ?? $product['price']['min'] ?? null;
         $item = self::item((string) ($variant['sku'] ?? $product['style_code'] ?? $product['id']), (string) $product['name'], $product['brand']['name'] ?? null, $amount, 1);
 
