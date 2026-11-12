@@ -15,6 +15,7 @@ use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderTransitionRejected;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Contracts\Data\CallbackOutcome;
@@ -292,6 +293,23 @@ final class PaymentService implements Payments
 
     public function refund(int $paymentId, Money $amount, string $reason, string $idempotencyKey): void
     {
+        $this->createRefund($paymentId, $amount, $reason, $idempotencyKey);
+    }
+
+    /**
+     * Hoàn toàn bộ phần còn hoàn được, tính trong khoá payment: không còn gì (đã hoàn bởi luồng khác — vd. huỷ đơn và
+     * IPN đến muộn chạy cùng lúc) hoặc chưa thu tiền → không làm gì, không lỗi.
+     */
+    public function refundRemaining(int $paymentId, string $reason, string $idempotencyKey): void
+    {
+        $this->createRefund($paymentId, null, $reason, $idempotencyKey);
+    }
+
+    /**
+     * @param  Money|null  $amount  null = phần còn hoàn được (0 hoặc chưa thu → bỏ qua)
+     */
+    private function createRefund(int $paymentId, ?Money $amount, string $reason, string $idempotencyKey): void
+    {
         if (Refund::query()->where('idempotency_key', $idempotencyKey)->exists()) {
             return;
         }
@@ -301,11 +319,17 @@ final class PaymentService implements Payments
             if (Refund::query()->where('idempotency_key', $idempotencyKey)->exists()) {
                 return [null, $payment];
             }
+            $refundable = RefundRules::refundable($payment->amount, $payment->refunded_amount);
+            if ($amount === null) {
+                if (! $payment->status->hasCollected() || $refundable <= 0) {
+                    return [null, $payment];
+                }
+                $amount = Money::of($refundable, $payment->currency_code);
+            }
             if (! $payment->status->hasCollected()) {
                 throw PaymentRejected::invalidState($payment->status->value);
             }
 
-            $refundable = RefundRules::refundable($payment->amount, $payment->refunded_amount);
             if (! $amount->isPositive() || $amount->amount > $refundable) {
                 throw PaymentRejected::refundExceeds($refundable);
             }
@@ -457,14 +481,20 @@ final class PaymentService implements Payments
      */
     public function settleCancelledOrder(int $orderId, string $reason): void
     {
-        $payments = Payment::query()->where('order_id', $orderId)->get();
-        foreach ($payments as $payment) {
-            if ($payment->status === PaymentStatus::Pending || $payment->status === PaymentStatus::Failed) {
-                Payment::query()->whereKey($payment->id)->whereIn('status', [PaymentStatus::Pending, PaymentStatus::Failed])->update(['status' => PaymentStatus::Cancelled]);
-            } elseif ($payment->status === PaymentStatus::Authorized) {
+        foreach (Payment::query()->where('order_id', $orderId)->pluck('id') as $paymentId) {
+            // Quyết định theo trạng thái đọc trong khoá: IPN có thể vừa ghi nhận tiền giữa lúc đơn huỷ và lúc này.
+            $payment = DB::transaction(function () use ($paymentId): Payment {
+                $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
+                if ($payment->status === PaymentStatus::Pending || $payment->status === PaymentStatus::Failed) {
+                    $payment->update(['status' => PaymentStatus::Cancelled, 'lock_version' => $payment->lock_version + 1]);
+                }
+
+                return $payment;
+            });
+            if ($payment->status === PaymentStatus::Authorized) {
                 $this->voidAuthorization($payment, $reason);
-            } elseif ($payment->status->hasCollected() && RefundRules::refundable($payment->amount, $payment->refunded_amount) > 0) {
-                $this->refund($payment->id, Money::of(RefundRules::refundable($payment->amount, $payment->refunded_amount), $payment->currency_code), "order_cancelled:{$reason}", "order-cancel:{$orderId}:{$payment->id}");
+            } elseif ($payment->status->hasCollected()) {
+                $this->refundRemaining($payment->id, "order_cancelled:{$reason}", "order-cancel:{$orderId}:{$payment->id}");
             }
         }
     }
@@ -521,12 +551,19 @@ final class PaymentService implements Payments
         }
 
         $this->transitions->setPaymentStatus($order->id, $orderPaymentStatus, "payment:{$payment->public_id}", $source);
+        $cancelled = $order->status === OrderStatus::Cancelled;
         if ($order->status === OrderStatus::Pending) {
-            $this->transitions->transition($order->id, OrderStatus::Confirmed, 'payment_captured', $source);
-        } elseif ($order->status === OrderStatus::Cancelled) {
-            // IPN đến sau khi đơn đã huỷ (hết hạn): đã thu tiền → hoàn lại, CSKH theo dõi.
+            try {
+                $this->transitions->transition($order->id, OrderStatus::Confirmed, 'payment_captured', $source);
+            } catch (OrderTransitionRejected $exception) {
+                // Đơn vừa bị huỷ giữa lúc đọc và lúc khoá đơn (khách huỷ đúng lúc IPN đến): xử lý như thanh toán muộn.
+                $cancelled = $this->orders->find($payment->order_id)?->status === OrderStatus::Cancelled ? true : throw $exception;
+            }
+        }
+        if ($cancelled) {
+            // IPN đến sau khi đơn đã huỷ: đã thu tiền → hoàn phần còn lại (huỷ đơn có thể đã hoàn trước), CSKH theo dõi.
             Log::warning('Thanh toán về sau khi đơn đã huỷ — tạo yêu cầu hoàn tiền.', ['payment' => $payment->public_id, 'order' => $order->number]);
-            DB::afterCommit(fn () => $this->refund($payment->id, $amount, 'late_payment_after_cancel', "late-payment:{$payment->id}"));
+            DB::afterCommit(fn () => $this->refundRemaining($payment->id, 'late_payment_after_cancel', "late-payment:{$payment->id}"));
         }
 
         return true;

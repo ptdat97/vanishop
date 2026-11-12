@@ -12,6 +12,7 @@ use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Tests\Support\KeepsReferenceData;
 
 /*
 | PlaceOrder dưới tải thật (nhiều tiến trình, MySQL): không bán vượt tồn, không vượt lượt voucher,
@@ -20,7 +21,7 @@ use Modules\Shared\Domain\BusinessRuleViolation;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
-uses(DatabaseTruncation::class)->group('concurrency');
+uses(DatabaseTruncation::class, KeepsReferenceData::class)->group('concurrency');
 
 beforeEach(function () {
     if (DB::getDriverName() !== 'mysql') {

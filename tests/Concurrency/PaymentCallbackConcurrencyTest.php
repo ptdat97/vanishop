@@ -16,6 +16,7 @@ use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Tests\Support\KeepsReferenceData;
 
 /*
 | Cổng gửi cùng một IPN nhiều lần gần như đồng thời → chỉ ghi nhận một lần (unique transaction + khoá payment).
@@ -23,7 +24,7 @@ use Modules\Shared\Domain\Money\Money;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
-uses(DatabaseTruncation::class)->group('concurrency');
+uses(DatabaseTruncation::class, KeepsReferenceData::class)->group('concurrency');
 
 beforeEach(function () {
     if (DB::getDriverName() !== 'mysql') {

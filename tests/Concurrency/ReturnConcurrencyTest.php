@@ -15,6 +15,7 @@ use Modules\Returns\Contracts\Returns;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Tests\Support\KeepsReferenceData;
 
 /*
 | Khách bấm gửi yêu cầu trả nhiều lần/nhiều thiết bị cùng lúc → tổng trả không vượt số đã giao (khoá dòng đơn).
@@ -22,7 +23,7 @@ use Modules\Shared\Context\CurrentContext;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
-uses(DatabaseTruncation::class)->group('concurrency');
+uses(DatabaseTruncation::class, KeepsReferenceData::class)->group('concurrency');
 
 beforeEach(function () {
     if (DB::getDriverName() !== 'mysql') {

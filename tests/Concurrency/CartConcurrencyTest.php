@@ -13,6 +13,7 @@ use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Tests\Support\KeepsReferenceData;
 
 /*
 | Nhiều tab/thiết bị cùng sửa một giỏ: khoá dòng carts xếp hàng các thay đổi → không mất cập nhật,
@@ -21,7 +22,7 @@ use Modules\Shared\Context\CurrentContext;
 
 require_once __DIR__.'/../../modules/Inventory/Tests/Feature/InventoryTestHelpers.php';
 
-uses(DatabaseTruncation::class)->group('concurrency');
+uses(DatabaseTruncation::class, KeepsReferenceData::class)->group('concurrency');
 
 beforeEach(function () {
     if (DB::getDriverName() !== 'mysql') {

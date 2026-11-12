@@ -27,7 +27,7 @@ Giữ nguyên các ràng buộc đang có: kết nối ngoài đóng băng (GHTK
 
 | Đợt | Việc | Kiểm chứng | Trạng thái |
 |---|---|---|---|
-| **C1 — Nhóm concurrency xanh** | Sửa L28 (`ReturnConcurrencyTest` mất danh mục lý do khi truncate); chạy cả nhóm `--group=concurrency` trên MySQL | Nhóm concurrency xanh trên MySQL 8.x | |
+| **C1 — Nhóm concurrency xanh** | Sửa L28 (`ReturnConcurrencyTest` mất danh mục lý do khi truncate); chạy cả nhóm `--group=concurrency` trên MySQL | Nhóm concurrency xanh trên MySQL 8.x | ✅ — L28: `DatabaseTruncation` xoá bảng tham chiếu do migration chèn; trait `Tests\Support\KeepsReferenceData` giữ `return_reasons`, `notification_templates`. Lưu ý: nhóm `concurrency` bị loại khỏi lần chạy mặc định (`phpunit.xml`) — phải chạy `--group=concurrency` |
 | **C2 — Phủ các cuộc đua còn thiếu** | Rà từng luồng ghi của Cart, Checkout, Inventory, Ordering, Payment, Returns; viết test nhiều tiến trình cho cuộc đua chưa có (vd. lượt dùng mã giảm giá, huỷ đơn ↔ callback thanh toán, nhận hàng trả ↔ hoàn tiền, điều chỉnh tồn ↔ đặt hàng) | Mỗi cuộc đua có test; lỗi tìm ra được sửa trong cùng đợt | |
 | **C3 — Ranh giới transaction** | Rà: event/job/HTTP ra ngoài không chạy trong transaction chưa commit; khoá theo thứ tự cố định để tránh deadlock | Arch/feature test cho các quy tắc rà được | |
 

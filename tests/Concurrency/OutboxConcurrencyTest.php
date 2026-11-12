@@ -9,6 +9,7 @@ use Modules\Integration\Contracts\Connector;
 use Modules\Integration\Persistence\Models\OutboxRecord;
 use Modules\Integration\Tests\Feature\Fixtures\FakeErpConnector;
 use Modules\Integration\Tests\Feature\IntegrationTestHelpers as H;
+use Tests\Support\KeepsReferenceData;
 
 /*
 | Nhiều worker outbox chạy song song (FOR UPDATE SKIP LOCKED) → mỗi message gửi đúng một lần,
@@ -17,7 +18,7 @@ use Modules\Integration\Tests\Feature\IntegrationTestHelpers as H;
 
 require_once __DIR__.'/../../modules/Integration/Tests/Feature/IntegrationTestHelpers.php';
 
-uses(DatabaseTruncation::class)->group('concurrency');
+uses(DatabaseTruncation::class, KeepsReferenceData::class)->group('concurrency');
 
 beforeEach(function () {
     if (DB::getDriverName() !== 'mysql') {
