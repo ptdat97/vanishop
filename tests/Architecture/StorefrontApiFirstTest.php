@@ -1,0 +1,144 @@
+<?php
+
+/*
+| R37 / ADR-044 — Storefront API-first: Storefront API v1 là hợp đồng, Blade là một cách dùng.
+|
+| 1. Mọi thao tác ghi của storefront Blade có endpoint `/api/storefront/v1` tương ứng (bảng STOREFRONT_API_PAIRS). Route ghi
+|    mới của Blade thiếu cặp → đỏ: thêm endpoint API trước, rồi khai báo cặp ở đây.
+| 2. Các cặp đã gom hợp đồng đầu vào dùng CÙNG một FormRequest ở cả hai phía (luật validate viết một lần).
+*/
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Routing\Route;
+use Modules\Shared\Support\StoreLocale;
+
+/**
+ * Route ghi của Blade → endpoint Storefront API làm cùng việc.
+ *
+ * @var array<string, list<string>>
+ */
+const STOREFRONT_API_PAIRS = [
+    'storefront.cart.add' => ['api.storefront.v1.carts.lines.store'],
+    'storefront.cart.update' => ['api.storefront.v1.carts.lines.update'],
+    'storefront.cart.remove' => ['api.storefront.v1.carts.lines.destroy'],
+    'storefront.cart.select' => ['api.storefront.v1.carts.selection'],
+    'storefront.cart.voucher' => ['api.storefront.v1.carts.vouchers'],
+    'storefront.checkout.store' => ['api.storefront.v1.checkout.quote', 'api.storefront.v1.checkout.orders.store'],
+    'storefront.order.received' => ['api.storefront.v1.orders.received'],
+    'storefront.order.pay' => ['api.storefront.v1.orders.payment.retry'],
+    'storefront.order.returns.store' => ['api.storefront.v1.orders.returns.store'],
+    'storefront.order.returns.shipped' => ['api.storefront.v1.orders.returns.shipped'],
+    'storefront.order.returns.cancel' => ['api.storefront.v1.orders.returns.cancel'],
+    'storefront.account.otp' => ['api.storefront.v1.auth.otp.request'],
+    'storefront.account.verify' => ['api.storefront.v1.auth.otp.verify'],
+    'storefront.account.logout' => ['api.storefront.v1.auth.logout'],
+    'storefront.account.order.cancel' => ['api.storefront.v1.me.orders.cancel'],
+    'storefront.account.profile.update' => ['api.storefront.v1.me.update'],
+    'storefront.account.password.update' => ['api.storefront.v1.me.password'],
+    'storefront.account.addresses.store' => ['api.storefront.v1.me.addresses.store'],
+    'storefront.account.addresses.update' => ['api.storefront.v1.me.addresses.update'],
+    'storefront.account.addresses.default' => ['api.storefront.v1.me.addresses.update'],
+    'storefront.account.addresses.destroy' => ['api.storefront.v1.me.addresses.destroy'],
+    'storefront.account.delete.otp' => ['api.storefront.v1.auth.otp.request'],
+    'storefront.account.delete.confirm' => ['api.storefront.v1.me.destroy'],
+    'storefront.track.search' => ['api.storefront.v1.orders.track'],
+];
+
+/**
+ * Route ghi của Blade chưa có endpoint API — mỗi mục có lý do và đợt xử lý; danh sách chỉ được ngắn lại.
+ *
+ * @var array<string, string>
+ */
+const STOREFRONT_API_PENDING = [
+    'storefront.session.viewed' => 'api-first-refactor A3: POST /products/{slug}/views',
+    'storefront.p.vani-wishlist.toggle' => 'api-first-refactor A3: JS dùng x/vani-wishlist/items',
+    'storefront.p.vani-wishlist.merge' => 'api-first-refactor A3: JS dùng x/vani-wishlist/items',
+];
+
+/**
+ * Các cặp phải dùng chung một FormRequest (đã gom ở đợt A1).
+ *
+ * @var list<string>
+ */
+const STOREFRONT_SHARED_INPUT = [
+    'storefront.cart.add', 'storefront.cart.update', 'storefront.cart.select', 'storefront.cart.voucher',
+    'storefront.checkout.store', 'storefront.order.returns.store',
+    'storefront.account.profile.update', 'storefront.account.password.update',
+    'storefront.account.addresses.store', 'storefront.account.addresses.update',
+];
+
+/**
+ * @return array<string, Route> route ghi của storefront Blade (ngôn ngữ mặc định), theo tên
+ */
+function bladeWriteRoutes(): array
+{
+    $routes = [];
+    foreach (app('router')->getRoutes()->getRoutes() as $route) {
+        $name = (string) $route->getName();
+        $locale = '/^storefront\.('.implode('|', array_map('preg_quote', StoreLocale::supported())).')\./';
+        if (str_starts_with($name, 'storefront.') && preg_match($locale, $name) !== 1 && array_intersect($route->methods(), ['POST', 'PUT', 'PATCH', 'DELETE']) !== []) {
+            $routes[$name] = $route;
+        }
+    }
+
+    return $routes;
+}
+
+/** FormRequest mà action của route nhận (null khi không có). */
+function routeFormRequest(Route $route): ?string
+{
+    $action = $route->getAction('uses');
+    if (! is_string($action)) {
+        return null;
+    }
+    [$class, $method] = str_contains($action, '@') ? explode('@', $action) : [$action, '__invoke'];
+    foreach ((new ReflectionMethod($class, $method))->getParameters() as $parameter) {
+        $type = $parameter->getType();
+        if ($type instanceof ReflectionNamedType && ! $type->isBuiltin() && is_subclass_of($type->getName(), FormRequest::class)) {
+            return $type->getName();
+        }
+    }
+
+    return null;
+}
+
+it('R37: mọi thao tác ghi của storefront Blade có endpoint Storefront API tương ứng', function () {
+    $missing = array_values(array_diff(array_keys(bladeWriteRoutes()), array_keys(STOREFRONT_API_PAIRS), array_keys(STOREFRONT_API_PENDING)));
+
+    expect($missing)->toBe([], 'Thêm endpoint /api/storefront/v1 cho route này rồi khai báo trong STOREFRONT_API_PAIRS (ADR-044)');
+});
+
+it('R37: bảng cặp Blade ↔ API trỏ tới route có thật; danh sách chờ không giữ route đã có cặp', function () {
+    $routes = app('router')->getRoutes();
+    $broken = [];
+    foreach (STOREFRONT_API_PAIRS as $blade => $apis) {
+        if ($routes->getByName($blade) === null) {
+            $broken[] = "{$blade} (Blade)";
+        }
+        foreach ($apis as $api) {
+            if ($routes->getByName($api) === null) {
+                $broken[] = "{$api} (API)";
+            }
+        }
+    }
+    // Route của plugin chỉ có khi plugin bật, nên chỉ kiểm: mục chờ đã có cặp thì phải rời danh sách chờ.
+    $stale = array_values(array_filter(array_keys(STOREFRONT_API_PENDING), fn (string $name): bool => isset(STOREFRONT_API_PAIRS[$name])));
+
+    expect($broken)->toBe([])->and($stale)->toBe([]);
+});
+
+it('R37: cặp đã gom dùng CÙNG một FormRequest ở Blade và API (luật đầu vào viết một lần)', function () {
+    $routes = app('router')->getRoutes();
+    $diverged = [];
+    foreach (STOREFRONT_SHARED_INPUT as $blade) {
+        $expected = routeFormRequest($routes->getByName($blade));
+        foreach (STOREFRONT_API_PAIRS[$blade] as $api) {
+            $actual = routeFormRequest($routes->getByName($api));
+            if ($expected === null || $actual !== $expected) {
+                $diverged[] = "{$blade}: ".($expected ?? 'không có FormRequest')." ≠ {$api}: ".($actual ?? 'không có FormRequest');
+            }
+        }
+    }
+
+    expect($diverged)->toBe([]);
+});

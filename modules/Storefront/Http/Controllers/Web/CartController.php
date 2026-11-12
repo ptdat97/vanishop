@@ -15,7 +15,10 @@ use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\CartPresenter;
 use Modules\Storefront\Application\CartVoucher;
 use Modules\Storefront\Application\NativeCart;
-use Modules\Storefront\Http\Requests\LineOptions;
+use Modules\Storefront\Http\Requests\CartLineRequest;
+use Modules\Storefront\Http\Requests\CartQuantityRequest;
+use Modules\Storefront\Http\Requests\CartSelectionRequest;
+use Modules\Storefront\Http\Requests\CartVouchersRequest;
 
 /**
  * Giỏ của native storefront. Form POST — dùng được khi JS tắt (ADR-025); cùng route trả JSON khi request gửi
@@ -50,22 +53,15 @@ final class CartController
         ]);
     }
 
-    public function add(Request $request): RedirectResponse|JsonResponse
+    public function add(CartLineRequest $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validate([
-            'variant_id' => ['required', 'integer', 'min:1'],
-            'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
-            'buy_now' => ['nullable', 'boolean'],
-        ], ['variant_id.required' => __('storefront::messages.choose_variant')]);
-
-        $quantity = (int) ($data['quantity'] ?? 1);
+        $quantity = $request->quantity();
         $buyNow = $request->boolean('buy_now');
         $key = $this->cart->keyOrCreate();
-        $options = LineOptions::from($request->input('options'));
         $view = $buyNow
-            ? $this->carts->buyNow($key, (int) $data['variant_id'], $quantity, $options)
-            : $this->carts->addLine($key, (int) $data['variant_id'], $quantity, $options);
-        $line = collect($view->lines)->firstWhere('variantId', (int) $data['variant_id']);
+            ? $this->carts->buyNow($key, $request->variantId(), $quantity, $request->lineOptions())
+            : $this->carts->addLine($key, $request->variantId(), $quantity, $request->lineOptions());
+        $line = collect($view->lines)->firstWhere('variantId', $request->variantId());
         $change = $line === null ? null : $this->presenter->change('add', $line, $quantity);
 
         // Mua ngay (§3.8): chỉ dòng vừa thêm được chọn, đi thẳng tới checkout; các dòng khác ở lại giỏ.
@@ -82,13 +78,16 @@ final class CartController
     /**
      * Chọn dòng để thanh toán: `lines[]` là các dòng đã đánh dấu (form gửi cả khi JS tắt).
      */
-    public function select(Request $request): RedirectResponse|JsonResponse
+    public function select(CartSelectionRequest $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validate(['lines' => ['nullable', 'array', 'max:100'], 'lines.*' => ['integer', 'min:1'], 'checkout' => ['nullable', 'boolean']]);
         $key = $this->cart->key();
         abort_if($key === null, 404);
 
-        $this->carts->selectOnly($key, array_values(array_map('intval', $data['lines'] ?? [])));
+        match ($request->mode()) {
+            'select' => $this->carts->select($key, $request->lineIds()),
+            'deselect' => $this->carts->deselect($key, $request->lineIds()),
+            default => $this->carts->selectOnly($key, $request->lineIds()),
+        };
         // `checkout=1` (0.3.95): nút "Thanh toán" khi giỏ chưa sẵn sàng — chọn các dòng mua được rồi sang checkout ngay.
         $next = $request->boolean('checkout') && $this->cart->current()?->isCheckoutReady() ? LocalizedUrls::route('storefront.checkout') : null;
 
@@ -99,9 +98,9 @@ final class CartController
         return redirect()->to($next ?? LocalizedUrls::route('storefront.cart'));
     }
 
-    public function update(Request $request, int $line): RedirectResponse|JsonResponse
+    public function update(CartQuantityRequest $request, int $line): RedirectResponse|JsonResponse
     {
-        $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:1000']]);
+        $data = $request->validated();
         $key = $this->cart->key();
         abort_if($key === null, 404);
 
@@ -132,10 +131,9 @@ final class CartController
     /**
      * Áp mã giảm giá cho giỏ (lưu trên giỏ, dùng chung với Storefront API — ADR-044); `code` rỗng = bỏ mã.
      */
-    public function voucher(Request $request): RedirectResponse|JsonResponse
+    public function voucher(CartVouchersRequest $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validate(['code' => ['nullable', 'string', 'max:64']]);
-        $code = trim((string) ($data['code'] ?? ''));
+        $code = $request->codes()[0] ?? '';
         $key = $this->cart->current() === null ? null : $this->cart->key();
 
         if ($code === '' || $key === null) {

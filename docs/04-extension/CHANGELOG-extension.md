@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.12 — 2026-11-12
+
+Giỏ hàng: một hợp đồng đầu vào cho Storefront API và Blade; arch test giữ "có trên Blade thì có trên API" (ADR-044, R37 — đợt A1 xong).
+
+### Đổi
+- Storefront API `POST /carts/{id}/lines`: `quantity` tuỳ chọn, mặc định 1 (như Blade); thiếu `variant_id` báo "Vui lòng chọn màu và size.".
+- Blade `POST /gio-hang/chon` nhận thêm `mode` (`select`/`deselect`) như API; form cũ (`lines[]`) vẫn là `mode=only`.
+- `tests/Architecture/StorefrontApiFirstTest.php`: route ghi mới của storefront Blade phải có endpoint `/api/storefront/v1` tương ứng; các cặp đã gom phải dùng cùng FormRequest.
+
 ## 0.4.11 — 2026-11-12
 
 Sổ địa chỉ, hồ sơ, mật khẩu khách: một hợp đồng đầu vào cho Storefront API và Blade (ADR-044 §2, đợt A1) — `Customer\Http\Requests\{AddressRequest, ProfileRequest, PasswordRequest}`.

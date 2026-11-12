@@ -12,7 +12,10 @@ use Modules\Cart\Contracts\Data\CartView;
 use Modules\Promotion\Contracts\Data\VoucherRejection;
 use Modules\Storefront\Application\CartPresenter;
 use Modules\Storefront\Application\CartVoucher;
-use Modules\Storefront\Http\Requests\LineOptions;
+use Modules\Storefront\Http\Requests\CartLineRequest;
+use Modules\Storefront\Http\Requests\CartQuantityRequest;
+use Modules\Storefront\Http\Requests\CartSelectionRequest;
+use Modules\Storefront\Http\Requests\CartVouchersRequest;
 
 /**
  * Giỏ hàng khách vãng lai: định danh bằng id công khai + token bí mật trong header X-Vani-Cart-Token.
@@ -42,39 +45,27 @@ final class CartController
         return $this->respond($this->carts->view($this->key($request, $cart)));
     }
 
-    public function addLine(Request $request, string $cart): JsonResponse
+    public function addLine(CartLineRequest $request, string $cart): JsonResponse
     {
-        $data = $request->validate([
-            'variant_id' => ['required', 'integer', 'min:1'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
-            'buy_now' => ['sometimes', 'boolean'],
-        ]);
         $key = $this->key($request, $cart);
-        $options = LineOptions::from($request->input('options'));
 
         // Mua ngay: thêm rồi chỉ chọn riêng dòng này để thanh toán; các dòng khác ở lại giỏ.
         return $this->respond($request->boolean('buy_now')
-            ? $this->carts->buyNow($key, (int) $data['variant_id'], (int) $data['quantity'], $options)
-            : $this->carts->addLine($key, (int) $data['variant_id'], (int) $data['quantity'], $options));
+            ? $this->carts->buyNow($key, $request->variantId(), $request->quantity(), $request->lineOptions())
+            : $this->carts->addLine($key, $request->variantId(), $request->quantity(), $request->lineOptions()));
     }
 
     /**
      * Chọn dòng để thanh toán: `mode` = `only` (mặc định — đúng các dòng này), `select` (chọn thêm), `deselect` (bỏ chọn).
      */
-    public function selection(Request $request, string $cart): JsonResponse
+    public function selection(CartSelectionRequest $request, string $cart): JsonResponse
     {
-        $data = $request->validate([
-            'mode' => ['sometimes', 'string', 'in:only,select,deselect'],
-            'line_ids' => ['present', 'array', 'max:100'],
-            'line_ids.*' => ['integer', 'min:1'],
-        ]);
         $key = $this->key($request, $cart);
-        $lineIds = array_values(array_map('intval', $data['line_ids']));
 
-        return $this->respond(match ($data['mode'] ?? 'only') {
-            'select' => $this->carts->select($key, $lineIds),
-            'deselect' => $this->carts->deselect($key, $lineIds),
-            default => $this->carts->selectOnly($key, $lineIds),
+        return $this->respond(match ($request->mode()) {
+            'select' => $this->carts->select($key, $request->lineIds()),
+            'deselect' => $this->carts->deselect($key, $request->lineIds()),
+            default => $this->carts->selectOnly($key, $request->lineIds()),
         });
     }
 
@@ -82,13 +73,9 @@ final class CartController
      * Đặt mã giảm giá của giỏ (ADR-044): thay toàn bộ danh sách, rỗng = bỏ mã. Chỉ lưu mã đang dùng được; mã bị từ chối
      * trả ở `meta.rejected_vouchers[{code, reason}]` (không phải lỗi). Quote và đặt hàng tính trên mã của giỏ.
      */
-    public function vouchers(Request $request, string $cart, CartVoucher $vouchers): JsonResponse
+    public function vouchers(CartVouchersRequest $request, string $cart, CartVoucher $vouchers): JsonResponse
     {
-        $data = $request->validate([
-            'voucher_codes' => ['present', 'array', 'max:'.Carts::MAX_VOUCHER_CODES],
-            'voucher_codes.*' => ['string', 'max:64'],
-        ]);
-        $result = $vouchers->applyCodes($this->key($request, $cart), array_values($data['voucher_codes']));
+        $result = $vouchers->applyCodes($this->key($request, $cart), $request->codes());
 
         return response()->json([
             'data' => $this->presenter->present($result['cart']),
@@ -96,11 +83,9 @@ final class CartController
         ]);
     }
 
-    public function updateLine(Request $request, string $cart, int $line): JsonResponse
+    public function updateLine(CartQuantityRequest $request, string $cart, int $line): JsonResponse
     {
-        $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:1000']]);
-
-        return $this->respond($this->carts->updateLine($this->key($request, $cart), $line, (int) $data['quantity']));
+        return $this->respond($this->carts->updateLine($this->key($request, $cart), $line, (int) $request->validated('quantity')));
     }
 
     public function removeLine(Request $request, string $cart, int $line): JsonResponse
