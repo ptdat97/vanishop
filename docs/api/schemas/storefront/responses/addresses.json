@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /me/addresses",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "$ref": "../address.v1.json"
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/addresses.json"
+}

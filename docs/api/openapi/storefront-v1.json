@@ -1,0 +1,2024 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "VaniShop Storefront API",
+        "version": "1",
+        "description": "Hợp đồng của mọi tính năng storefront (ADR-044): storefront Blade, app, Zalo Mini App, headless dùng chung. Chi tiết tham số và quy tắc: docs/06-api/api.md §3. Response khớp các schema tham chiếu — kiểm bằng modules/Storefront/Tests/Feature/StorefrontApiContractTest.php trên response thật. Route API của plugin (`/x/<plugin>/…`) do plugin mô tả."
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Cửa hàng"
+        },
+        {
+            "name": "Catalog"
+        },
+        {
+            "name": "Địa chỉ"
+        },
+        {
+            "name": "Giỏ hàng"
+        },
+        {
+            "name": "Checkout"
+        },
+        {
+            "name": "Đơn hàng"
+        },
+        {
+            "name": "Đổi trả"
+        },
+        {
+            "name": "Tài khoản"
+        }
+    ],
+    "paths": {
+        "/store": {
+            "get": {
+                "tags": [
+                    "Cửa hàng"
+                ],
+                "summary": "Thông tin cửa hàng (\"vỏ\" trang)",
+                "responses": {
+                    "200": {
+                        "description": "Tên, ngôn ngữ, tiền tệ, ẩn giá, vị trí menu, đầu/chân trang.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/store.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/menus/{location}": {
+            "get": {
+                "tags": [
+                    "Cửa hàng"
+                ],
+                "summary": "Menu đã xuất bản của một vị trí",
+                "responses": {
+                    "200": {
+                        "description": "Mục menu; chưa xuất bản → data rỗng.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/menu.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/pages/home": {
+            "get": {
+                "tags": [
+                    "Cửa hàng"
+                ],
+                "summary": "Trang chủ dựng bằng khối",
+                "responses": {
+                    "200": {
+                        "description": "[{type, data}] hoặc null.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/home.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/categories": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Cây danh mục",
+                "responses": {
+                    "200": {
+                        "description": "Danh mục gốc kèm con.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/categories.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/categories/{slug}": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Một danh mục kèm breadcrumb",
+                "responses": {
+                    "200": {
+                        "description": "Danh mục.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/category.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/brands": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Thương hiệu đang hiện",
+                "responses": {
+                    "200": {
+                        "description": "Danh sách thương hiệu.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/brands.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/brands/{slug}": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Một thương hiệu",
+                "responses": {
+                    "200": {
+                        "description": "Thương hiệu.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/brand.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Danh sách/tìm kiếm sản phẩm + bộ lọc",
+                "responses": {
+                    "200": {
+                        "description": "Thẻ sản phẩm, facet, bộ lọc.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/products.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/products/{slug}": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Chi tiết sản phẩm",
+                "responses": {
+                    "200": {
+                        "description": "Sản phẩm với biến thể, giá, tồn (mức độ).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/product.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/products/views": {
+            "post": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Ghi lượt xem sản phẩm (beacon)",
+                "responses": {
+                    "204": {
+                        "description": "Không có nội dung."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "description": "Miễn CSRF; lọc trùng theo phiên cùng nguồn hoặc IP + trình duyệt.",
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/search/suggestions": {
+            "get": {
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Gợi ý khi gõ tìm kiếm",
+                "responses": {
+                    "200": {
+                        "description": "Sản phẩm, danh mục, thương hiệu.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/suggestions.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/address/provinces": {
+            "get": {
+                "tags": [
+                    "Địa chỉ"
+                ],
+                "summary": "Tỉnh/thành theo danh mục địa giới",
+                "responses": {
+                    "200": {
+                        "description": "Không có danh mục → data rỗng.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/divisions.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/address/provinces/{province}/wards": {
+            "get": {
+                "tags": [
+                    "Địa chỉ"
+                ],
+                "summary": "Phường/xã của một tỉnh",
+                "responses": {
+                    "200": {
+                        "description": "Phường/xã.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/divisions.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/carts": {
+            "post": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Tạo giỏ",
+                "responses": {
+                    "201": {
+                        "description": "Giỏ + token (chỉ trả một lần).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart-created.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {},
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/carts/{cart}": {
+            "get": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Xem giỏ",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/carts/{cart}/lines": {
+            "post": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Thêm dòng",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ sau khi thêm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/carts/{cart}/lines/{line}": {
+            "patch": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Đặt số lượng (0 = xoá)",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Xoá dòng",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/carts/{cart}/selection": {
+            "put": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Chọn dòng để thanh toán",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/carts/{cart}/vouchers": {
+            "put": {
+                "tags": [
+                    "Giỏ hàng"
+                ],
+                "summary": "Đặt mã giảm giá của giỏ",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ + mã bị từ chối.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart-vouchers.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/checkout/{cart}/quote": {
+            "post": {
+                "tags": [
+                    "Checkout"
+                ],
+                "summary": "Tính tổng",
+                "responses": {
+                    "200": {
+                        "description": "Báo giá.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/quote.json"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/checkout/{cart}/orders": {
+            "post": {
+                "tags": [
+                    "Checkout"
+                ],
+                "summary": "Đặt hàng",
+                "responses": {
+                    "201": {
+                        "description": "Đơn vừa đặt (+ header Idempotent-Replayed khi gửi lại).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order-placed.json"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "description": "Header `Idempotency-Key` bắt buộc.",
+                "security": [
+                    {
+                        "cartToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/track": {
+            "get": {
+                "tags": [
+                    "Đơn hàng"
+                ],
+                "summary": "Tra cứu đơn theo số đơn + SĐT",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/orders/{order}": {
+            "get": {
+                "tags": [
+                    "Đơn hàng"
+                ],
+                "summary": "Xem đơn",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/{order}/cancel": {
+            "post": {
+                "tags": [
+                    "Đơn hàng"
+                ],
+                "summary": "Khách huỷ đơn",
+                "responses": {
+                    "200": {
+                        "description": "Đơn sau khi huỷ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/{order}/received": {
+            "post": {
+                "tags": [
+                    "Đơn hàng"
+                ],
+                "summary": "Khách xác nhận đã nhận hàng",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/{order}/payment/retry": {
+            "post": {
+                "tags": [
+                    "Đơn hàng"
+                ],
+                "summary": "Thanh toán lại",
+                "responses": {
+                    "200": {
+                        "description": "Khoản thanh toán mới.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/payment.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/{order}/returns": {
+            "post": {
+                "tags": [
+                    "Đổi trả"
+                ],
+                "summary": "Gửi yêu cầu đổi/trả",
+                "responses": {
+                    "201": {
+                        "description": "Đơn kèm yêu cầu.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/{order}/returns/{return}/cancel": {
+            "post": {
+                "tags": [
+                    "Đổi trả"
+                ],
+                "summary": "Huỷ yêu cầu đang chờ duyệt",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/orders/{order}/returns/{return}/shipped": {
+            "post": {
+                "tags": [
+                    "Đổi trả"
+                ],
+                "summary": "Báo đã gửi hàng về",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/payments/{payment}": {
+            "get": {
+                "tags": [
+                    "Đơn hàng"
+                ],
+                "summary": "Trạng thái khoản thanh toán",
+                "responses": {
+                    "200": {
+                        "description": "Khoản thanh toán.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/payment.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/otp/request": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Gửi mã OTP",
+                "responses": {
+                    "202": {
+                        "description": "Kênh đã gửi và thời hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/otp-requested.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/otp/verify": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đăng nhập bằng OTP",
+                "responses": {
+                    "200": {
+                        "description": "Khách + token Bearer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer-session.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đăng nhập bằng mật khẩu",
+                "responses": {
+                    "200": {
+                        "description": "Khách + token Bearer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer-session.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đăng xuất",
+                "responses": {
+                    "204": {
+                        "description": "Không có nội dung."
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/auth/social": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Nhà cung cấp đăng nhập mạng xã hội đang bật",
+                "responses": {
+                    "200": {
+                        "description": "Danh sách.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/data.json"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "description": "Đăng nhập mạng xã hội đang đóng băng (không có nhà cung cấp)."
+            }
+        },
+        "/auth/social/{provider}/start": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Bắt đầu đăng nhập mạng xã hội",
+                "responses": {
+                    "200": {
+                        "description": "URL chuyển hướng.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/data.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/social/{provider}/complete": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Hoàn tất đăng nhập mạng xã hội",
+                "responses": {
+                    "200": {
+                        "description": "Khách + token Bearer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer-session.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/me": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Hồ sơ khách",
+                "responses": {
+                    "200": {
+                        "description": "Khách.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Sửa hồ sơ (một phần)",
+                "responses": {
+                    "200": {
+                        "description": "Khách.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/customer.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/password": {
+            "put": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đặt/đổi mật khẩu",
+                "responses": {
+                    "204": {
+                        "description": "Không có nội dung."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/addresses": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Sổ địa chỉ",
+                "responses": {
+                    "200": {
+                        "description": "Địa chỉ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/addresses.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Thêm địa chỉ",
+                "responses": {
+                    "201": {
+                        "description": "Địa chỉ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/address.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/addresses/{address}": {
+            "patch": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Sửa địa chỉ (một phần)",
+                "responses": {
+                    "200": {
+                        "description": "Địa chỉ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/address.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xoá địa chỉ",
+                "responses": {
+                    "204": {
+                        "description": "Không có nội dung."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/consents": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đồng ý nhận tin",
+                "responses": {
+                    "200": {
+                        "description": "Theo kênh × mục đích.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/consents.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đổi đồng ý nhận tin",
+                "responses": {
+                    "200": {
+                        "description": "Theo kênh × mục đích.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/consents.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/orders": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đơn của khách",
+                "responses": {
+                    "200": {
+                        "description": "Trang đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/orders-page.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/orders/{order}": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Một đơn của khách",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/orders/{order}/cancel": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Huỷ đơn của khách",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/cart": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Giỏ đang mở của khách",
+                "responses": {
+                    "200": {
+                        "description": "Giỏ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/cart.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/prices": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Giá riêng của khách (thành viên, ẩn giá)",
+                "responses": {
+                    "200": {
+                        "description": "Giá theo variant / khoảng giá theo sản phẩm.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/member-prices.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/export": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xuất dữ liệu cá nhân",
+                "responses": {
+                    "200": {
+                        "description": "Hồ sơ, địa chỉ, đồng ý, đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/export.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/delete": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Kiểm tra xoá tài khoản được không",
+                "responses": {
+                    "200": {
+                        "description": "Có xoá được và lý do chặn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/deletion.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xoá tài khoản (mã OTP)",
+                "responses": {
+                    "204": {
+                        "description": "Không có nội dung."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "customerBearer": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Token khách (ADR-024) từ /auth/otp/verify hoặc /auth/login."
+            },
+            "cartToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Vani-Cart-Token",
+                "description": "Token giỏ vãng lai (ADR-022), trả một lần ở POST /carts."
+            },
+            "orderToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-Vani-Order-Token",
+                "description": "Token xem/huỷ đơn không cần tài khoản, trả ở phản hồi đặt hàng."
+            },
+            "firstPartySession": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "vanishop_session",
+                "description": "Phiên web của chính website (ADR-044): chỉ request cùng nguồn (Sec-Fetch-Site: same-origin hoặc Origin trùng host), không kèm Authorization; request ghi kèm X-CSRF-TOKEN."
+            }
+        },
+        "responses": {
+            "BadRequest": {
+                "description": "Thiếu/sai header bắt buộc (vd. Idempotency-Key).",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "Unauthenticated": {
+                "description": "`customer.unauthenticated` — thiếu/sai token khách.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "Forbidden": {
+                "description": "`storefront.sign_in_to_view_prices` — cửa hàng chỉ hiện giá cho thành viên.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "NotFound": {
+                "description": "Không tìm thấy (mã `<module>.not_found` hoặc `http.404`).",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "Conflict": {
+                "description": "Xung đột trạng thái (vd. `checkout.totals_changed`, `cart.insufficient_stock`).",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "ValidationFailed": {
+                "description": "`validation.failed` — `details[{field, messages}]`, hoặc lỗi nghiệp vụ 422.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            },
+            "RateLimited": {
+                "description": "`http.429` — vượt giới hạn tần suất.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "../schemas/integration/error.v1.json"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

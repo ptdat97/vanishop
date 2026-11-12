@@ -1,0 +1,27 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "POST /carts",
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "$ref": "../cart.v1.json"
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "description": "Token giỏ — chỉ trả một lần; gửi qua header `X-Vani-Cart-Token`."
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/cart-created.json"
+}

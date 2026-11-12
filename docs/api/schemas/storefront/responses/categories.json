@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /categories",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "$ref": "../category.v1.json"
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/categories.json"
+}

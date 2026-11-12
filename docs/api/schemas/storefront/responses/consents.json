@@ -1,0 +1,52 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Đồng ý nhận tin",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "channel",
+                    "purpose",
+                    "granted"
+                ],
+                "properties": {
+                    "channel": {
+                        "type": "string"
+                    },
+                    "purpose": {
+                        "type": "string"
+                    },
+                    "granted": {
+                        "type": "boolean"
+                    },
+                    "granted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Hiện là \"Y-m-d H:i:s\" (UTC), xem backlog L29."
+                    },
+                    "revoked_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "source": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/consents.json"
+}

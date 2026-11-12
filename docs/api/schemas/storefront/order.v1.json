@@ -1,0 +1,699 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/order.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "number",
+        "status",
+        "order_status",
+        "payment_status",
+        "fulfillment_status",
+        "payment_method",
+        "placed_at",
+        "can_cancel",
+        "customer",
+        "shipping_address",
+        "shipping_method",
+        "lines",
+        "adjustments",
+        "subtotal",
+        "discount",
+        "shipping_fee",
+        "tax_included",
+        "total",
+        "pricing",
+        "timeline",
+        "shipments",
+        "returns",
+        "returnable",
+        "receipt"
+    ],
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "number": {
+            "type": "string"
+        },
+        "status": {
+            "type": "object",
+            "required": [
+                "code",
+                "label"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
+        "order_status": {
+            "type": "string"
+        },
+        "payment_status": {
+            "type": "string"
+        },
+        "fulfillment_status": {
+            "type": "string"
+        },
+        "payment_method": {
+            "type": "string"
+        },
+        "placed_at": {
+            "type": "string",
+            "description": "Chuỗi hiển thị theo giờ và định dạng của cửa hàng (vd. \"12/11/2026 11:29\") — chưa phải ISO-8601, xem backlog L29."
+        },
+        "can_cancel": {
+            "type": "boolean"
+        },
+        "customer": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "phone",
+                "email"
+            ],
+            "properties": {
+                "full_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "shipping_address": {
+            "type": "object",
+            "required": [
+                "province_name",
+                "ward_name",
+                "street_line"
+            ],
+            "properties": {
+                "province_name": {
+                    "type": "string"
+                },
+                "ward_name": {
+                    "type": "string"
+                },
+                "street_line": {
+                    "type": "string"
+                }
+            }
+        },
+        "shipping_method": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "required": [
+                "label"
+            ],
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "fee": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "sku",
+                    "name",
+                    "quantity",
+                    "total"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "variant_id": {
+                        "type": "integer"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "unit_price": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "discount": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "total": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "adjustments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "label",
+                    "amount"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "subtotal": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "discount": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "shipping_fee": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "tax_included": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "total": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "pricing": {
+            "type": "object",
+            "required": [
+                "list_amount",
+                "markdown",
+                "promotion_discount",
+                "voucher_discount",
+                "other_discount",
+                "vouchers"
+            ],
+            "properties": {
+                "list_amount": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "markdown": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "promotion_discount": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "voucher_discount": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "other_discount": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "vouchers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "timeline": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "at"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "to": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "at": {
+                        "type": "string",
+                        "description": "Chuỗi hiển thị theo giờ và định dạng của cửa hàng (vd. \"12/11/2026 11:29\") — chưa phải ISO-8601, xem backlog L29."
+                    }
+                }
+            }
+        },
+        "shipments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "carrier",
+                    "status"
+                ],
+                "properties": {
+                    "carrier": {
+                        "type": "string"
+                    },
+                    "service": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tracking_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "events": {
+                        "type": "array"
+                    }
+                }
+            }
+        },
+        "returns": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "number",
+                    "status",
+                    "resolution",
+                    "lines"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "number": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "reason_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "resolution": {
+                        "type": "string"
+                    },
+                    "return_tracking_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "attachments": {
+                        "type": "array"
+                    },
+                    "refund": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "description": "Chuỗi hiển thị theo giờ và định dạng của cửa hàng (vd. \"12/11/2026 11:29\") — chưa phải ISO-8601, xem backlog L29."
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "order_line_id",
+                                "name",
+                                "quantity"
+                            ],
+                            "properties": {
+                                "order_line_id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "returnable": {
+            "type": "object",
+            "required": [
+                "lines",
+                "deadline"
+            ],
+            "properties": {
+                "lines": {
+                    "type": [
+                        "object",
+                        "array"
+                    ],
+                    "description": "order_line_id → số lượng còn đổi/trả được; rỗng là `[]` (backlog L30)."
+                },
+                "deadline": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "ISO-8601 (hiện theo UTC, xem backlog L29)."
+                }
+            }
+        },
+        "receipt": {
+            "type": "object",
+            "required": [
+                "confirmed_at",
+                "returns_waived",
+                "can_confirm"
+            ],
+            "properties": {
+                "confirmed_at": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "ISO-8601 (hiện theo UTC, xem backlog L29)."
+                },
+                "returns_waived": {
+                    "type": "boolean"
+                },
+                "can_confirm": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "title": "Đơn hàng (xem đơn, theo dõi, đổi trả)"
+}

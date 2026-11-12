@@ -10,7 +10,7 @@
 | **Admin API** | `/api/admin/v1` | Công cụ nội bộ, POS, script vận hành (Admin UI dùng Inertia qua route web, **không** cần API này) | Chưa triển khai; Admin hiện xác thực qua guard `staff` và web session |
 | **Integration API** | `/api/integration/v1` và `/api/integrations/{system}/webhooks` | Integration Client (ERP/POS khi được cấu hình), đối tác | Client credentials (API key + secret, HMAC chữ ký), IP allowlist tuỳ hệ thống |
 
-Hợp đồng **OpenAPI 3.1 hiện có** cho Integration API nằm ở [`docs/api/openapi/integration-v1.json`](../api/openapi/integration-v1.json). Storefront endpoints được đối chiếu trong bảng dưới đây và route files; Admin API chưa triển khai.
+Hợp đồng **OpenAPI 3.1**: Storefront API ở [`docs/api/openapi/storefront-v1.json`](../api/openapi/storefront-v1.json) (schema `docs/api/schemas/storefront/*.json`, kiểm bằng `StorefrontApiContractTest` trên response thật — ADR-044), Integration API ở [`docs/api/openapi/integration-v1.json`](../api/openapi/integration-v1.json). Admin API chưa triển khai.
 
 ## 2. Quy ước chung
 

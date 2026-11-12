@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Phản hồi `{data}` chưa có schema chi tiết",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": [
+                "object",
+                "array"
+            ]
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/data.json"
+}

@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "POST /checkout/{cart}/orders",
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "$ref": "../order-placed.v1.json"
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "dropped_vouchers"
+            ],
+            "properties": {
+                "dropped_vouchers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "code",
+                            "reason"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "reason": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/order-placed.json"
+}

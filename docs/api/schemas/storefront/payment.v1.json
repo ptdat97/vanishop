@@ -1,0 +1,105 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/payment.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "method",
+        "status",
+        "amount",
+        "action",
+        "retryable",
+        "order"
+    ],
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "method": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string"
+        },
+        "amount": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                }
+            }
+        },
+        "expires_at": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "ISO-8601 (hiện theo UTC, xem backlog L29)."
+        },
+        "action": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "qr": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "instructions": {
+                    "type": [
+                        "string",
+                        "object",
+                        "array",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "error": {
+            "type": [
+                "string",
+                "object",
+                "null"
+            ]
+        },
+        "retryable": {
+            "type": "boolean"
+        },
+        "order": {
+            "type": "object",
+            "required": [
+                "id",
+                "number"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "title": "Khoản thanh toán"
+}

@@ -1,0 +1,51 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/category.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "slug",
+        "name",
+        "children"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "slug": {
+            "type": "string"
+        },
+        "slugs": {
+            "type": "object"
+        },
+        "locales": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "name": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "image_url": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "children": {
+            "type": "array",
+            "description": "Danh mục con, cùng hình dạng."
+        }
+    },
+    "title": "Danh mục"
+}

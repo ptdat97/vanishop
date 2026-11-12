@@ -1,0 +1,38 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/brand.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "slug",
+        "name",
+        "logo_url"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "code": {
+            "type": "string"
+        },
+        "slug": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "logo_url": {
+            "type": [
+                "string",
+                "null"
+            ]
+        }
+    },
+    "title": "Thương hiệu"
+}

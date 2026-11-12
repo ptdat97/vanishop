@@ -1,0 +1,431 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/product.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "slug",
+        "name",
+        "brand",
+        "colors",
+        "variants",
+        "price",
+        "price_hidden",
+        "in_stock",
+        "breadcrumb",
+        "slugs"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "slug": {
+            "type": "string"
+        },
+        "locales": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "style_code": {
+            "type": "string"
+        },
+        "name": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "brand": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "required": [
+                "id",
+                "slug",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "image_url": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "image_srcset": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "colors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "family",
+                    "images"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "hex": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "family": {
+                        "type": "string"
+                    },
+                    "image_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "url"
+                            ],
+                            "properties": {
+                                "url": {
+                                    "type": "string"
+                                },
+                                "srcset": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "thumb_url": {
+                                    "type": "string"
+                                },
+                                "alt": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "price": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "description": "Khoảng giá của sản phẩm; null khi chưa có giá hoặc giá bị ẩn với người xem (`price_hidden`).",
+            "required": [
+                "min",
+                "max",
+                "compare_at",
+                "discount_percent"
+            ],
+            "properties": {
+                "min": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "max": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "compare_at": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "discount_percent": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "price_hidden": {
+            "type": "boolean"
+        },
+        "in_stock": {
+            "type": "boolean"
+        },
+        "description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "care_instructions": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "meta_title": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "meta_description": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "slugs": {
+            "type": "object"
+        },
+        "breadcrumb": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "slug"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        },
+        "attributes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        },
+        "variants": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "sku",
+                    "color_code",
+                    "size_code",
+                    "price",
+                    "available"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "color_code": {
+                        "type": "string"
+                    },
+                    "size_code": {
+                        "type": "string"
+                    },
+                    "size_system": {
+                        "type": "string"
+                    },
+                    "price": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "compare_at",
+                            "discount_percent"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "object",
+                                "required": [
+                                    "amount",
+                                    "currency",
+                                    "formatted"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "integer"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                    },
+                                    "formatted": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "compare_at": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "required": [
+                                    "amount",
+                                    "currency",
+                                    "formatted"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "integer"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                    },
+                                    "formatted": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "discount_percent": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            }
+                        }
+                    },
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "low_stock": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        },
+        "videos": {
+            "type": "array"
+        },
+        "links": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "style_ids"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "style_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "title": "Chi tiết sản phẩm"
+}

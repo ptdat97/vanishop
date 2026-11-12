@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /me/prices",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "required": [
+                "group",
+                "prices",
+                "products"
+            ],
+            "properties": {
+                "group": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "prices": {
+                    "type": [
+                        "object",
+                        "array"
+                    ],
+                    "description": "Object theo khoá; khi rỗng là `[]` (giới hạn hiện tại của JSON từ PHP, xem backlog L30)."
+                },
+                "products": {
+                    "type": [
+                        "object",
+                        "array"
+                    ],
+                    "description": "Object theo khoá; khi rỗng là `[]` (giới hạn hiện tại của JSON từ PHP, xem backlog L30)."
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/member-prices.json"
+}

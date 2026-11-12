@@ -1,0 +1,150 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/store.v1.json",
+    "type": "object",
+    "required": [
+        "name",
+        "locale",
+        "currency",
+        "prices",
+        "guest_checkout",
+        "popular_searches",
+        "menu_locations",
+        "theme"
+    ],
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "locale": {
+            "type": "object",
+            "required": [
+                "current",
+                "default",
+                "supported"
+            ],
+            "properties": {
+                "current": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "string"
+                },
+                "supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "code",
+                            "label"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "label": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "currency": {
+            "type": "object",
+            "required": [
+                "currency",
+                "exponent",
+                "thousandsSeparator",
+                "decimalSeparator",
+                "symbol",
+                "compactUnits"
+            ],
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "exponent": {
+                    "type": "integer"
+                },
+                "thousandsSeparator": {
+                    "type": "string"
+                },
+                "decimalSeparator": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "compactUnits": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "prices": {
+            "type": "object",
+            "required": [
+                "visibility",
+                "hidden"
+            ],
+            "properties": {
+                "visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "members"
+                    ]
+                },
+                "hidden": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "guest_checkout": {
+            "type": "boolean"
+        },
+        "popular_searches": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "menu_locations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "label",
+                    "depth"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "depth": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "theme": {
+            "type": "object",
+            "required": [
+                "settings"
+            ],
+            "properties": {
+                "settings": {
+                    "type": "object"
+                }
+            }
+        }
+    },
+    "title": "Thông tin cửa hàng (\"vỏ\" trang)"
+}

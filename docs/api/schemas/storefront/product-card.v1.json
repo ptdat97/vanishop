@@ -1,0 +1,202 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/product-card.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "slug",
+        "style_code",
+        "name",
+        "brand",
+        "image_url",
+        "colors",
+        "price",
+        "price_hidden",
+        "in_stock"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "slug": {
+            "type": "string"
+        },
+        "locales": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "style_code": {
+            "type": "string"
+        },
+        "name": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "brand": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "required": [
+                "id",
+                "slug",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "image_url": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "image_srcset": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "colors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "family"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "hex": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "family": {
+                        "type": "string"
+                    },
+                    "image_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        },
+        "price": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "description": "Khoảng giá của sản phẩm; null khi chưa có giá hoặc giá bị ẩn với người xem (`price_hidden`).",
+            "required": [
+                "min",
+                "max",
+                "compare_at",
+                "discount_percent"
+            ],
+            "properties": {
+                "min": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "max": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "compare_at": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "discount_percent": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "price_hidden": {
+            "type": "boolean"
+        },
+        "in_stock": {
+            "type": "boolean"
+        }
+    },
+    "title": "Thẻ sản phẩm",
+    "description": "Một sản phẩm (style) trong danh sách. Plugin có thể thêm `extensions.<plugin id>`."
+}

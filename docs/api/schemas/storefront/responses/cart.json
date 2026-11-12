@@ -1,0 +1,14 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Giỏ hàng",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "$ref": "../cart.v1.json"
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/cart.json"
+}

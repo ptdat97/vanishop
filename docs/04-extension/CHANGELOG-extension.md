@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.15 — 2026-11-12
+
+Khoá hợp đồng HTTP của Storefront API (ADR-044, api-first-refactor đợt A4). Không đổi hành vi.
+
+### Thêm
+- OpenAPI 3.1 `docs/api/openapi/storefront-v1.json` cho 55 thao tác `/api/storefront/v1` của Core, kèm JSON Schema `docs/api/schemas/storefront/*.json`. Từ bản này, đổi/xoá trường JSON hoặc thêm endpoint mà không cập nhật OpenAPI làm đỏ `StorefrontApiContractTest`, và được ghi ở đây như thay đổi contract PHP.
+- Ghi nhận giới hạn hiện tại (backlog L29, L30): một số trường thời gian là chuỗi hiển thị chứ chưa phải ISO-8601; map rỗng trả `[]`. Client nên chấp nhận cả hai cho tới khi sửa.
+
 ## 0.4.14 — 2026-11-12
 
 Một bề mặt JSON: JS của theme và plugin lấy dữ liệu từ Storefront API bằng phiên web cùng nguồn (ADR-044 §4, api-first-refactor đợt A3).

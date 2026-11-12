@@ -1,0 +1,45 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /pages/home",
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "items": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "data"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "object"
+                    }
+                }
+            },
+            "description": "null khi chưa cấu hình trang chủ."
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "configured"
+            ],
+            "properties": {
+                "configured": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/home.json"
+}

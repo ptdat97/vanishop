@@ -1,0 +1,14 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /brands/{slug}",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "$ref": "../brand.v1.json"
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/brand.json"
+}

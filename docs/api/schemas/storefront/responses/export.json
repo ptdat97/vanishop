@@ -1,0 +1,38 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /me/export",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "type": "object",
+            "required": [
+                "exported_at",
+                "profile",
+                "addresses",
+                "orders"
+            ],
+            "properties": {
+                "exported_at": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "ISO-8601 (hiện theo UTC, xem backlog L29)."
+                },
+                "profile": {
+                    "type": "object"
+                },
+                "addresses": {
+                    "type": "array"
+                },
+                "orders": {
+                    "type": "array"
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/export.json"
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Địa chỉ",
+    "type": "object",
+    "required": [
+        "data"
+    ],
+    "properties": {
+        "data": {
+            "$ref": "../address.v1.json"
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/address.json"
+}

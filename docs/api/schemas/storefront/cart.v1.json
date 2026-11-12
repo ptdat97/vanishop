@@ -1,0 +1,276 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/cart.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "status",
+        "currency",
+        "item_count",
+        "subtotal",
+        "selected_subtotal",
+        "selected_count",
+        "checkout_ready",
+        "voucher_codes",
+        "payable_line_ids",
+        "lines"
+    ],
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string"
+        },
+        "currency": {
+            "type": "string"
+        },
+        "item_count": {
+            "type": "integer"
+        },
+        "subtotal": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "selected_subtotal": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "selected_count": {
+            "type": "integer"
+        },
+        "checkout_ready": {
+            "type": "boolean"
+        },
+        "voucher_codes": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "payable_line_ids": {
+            "type": "array",
+            "items": {
+                "type": "integer"
+            }
+        },
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "variant_id",
+                    "quantity",
+                    "selected",
+                    "product",
+                    "unit_price",
+                    "line_total",
+                    "issues"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "variant_id": {
+                        "type": "integer"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "selected": {
+                        "type": "boolean"
+                    },
+                    "sku": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "product": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "slug",
+                            "name"
+                        ],
+                        "properties": {
+                            "slug": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "color_code": {
+                                "type": "string"
+                            },
+                            "color_name": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "size_code": {
+                                "type": "string"
+                            },
+                            "image_url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    },
+                    "unit_price": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "compare_at": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "price_when_added": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "line_total": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "issues": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "unavailable",
+                                "insufficient_stock",
+                                "price_changed"
+                            ]
+                        }
+                    },
+                    "options": {
+                        "type": [
+                            "object",
+                            "array"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "title": "Giỏ hàng",
+    "description": "Plugin có thể thêm `extensions.<plugin id>`."
+}

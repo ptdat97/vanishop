@@ -1,0 +1,21 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /products",
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "$ref": "../product-card.v1.json"
+            }
+        },
+        "meta": {
+            "$ref": "../products-meta.v1.json"
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/products.json"
+}

@@ -1,0 +1,61 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/customer.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "phone",
+        "email",
+        "full_name",
+        "birth_date",
+        "gender",
+        "registered",
+        "has_password",
+        "preferred_locale"
+    ],
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "phone": {
+            "type": "string"
+        },
+        "email": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "full_name": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "birth_date": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "gender": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "registered": {
+            "type": "boolean"
+        },
+        "has_password": {
+            "type": "boolean"
+        },
+        "preferred_locale": {
+            "type": [
+                "string",
+                "null"
+            ]
+        }
+    },
+    "title": "Khách hàng"
+}

@@ -1,0 +1,67 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "GET /menus/{location}",
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "label",
+                    "url",
+                    "badge",
+                    "image_url",
+                    "children"
+                ],
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "badge": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "image_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "children": {
+                        "type": "array",
+                        "description": "Mục con, cùng hình dạng."
+                    }
+                }
+            }
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "location",
+                "published"
+            ],
+            "properties": {
+                "location": {
+                    "type": "string"
+                },
+                "published": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/menu.json"
+}

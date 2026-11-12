@@ -1,0 +1,393 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/quote.v1.json",
+    "type": "object",
+    "required": [
+        "currency",
+        "cart_ready",
+        "lines",
+        "adjustments",
+        "rejected_vouchers",
+        "shipping",
+        "shipping_options",
+        "payment_methods",
+        "subtotal",
+        "discount",
+        "shipping_fee",
+        "tax_included",
+        "total"
+    ],
+    "properties": {
+        "currency": {
+            "type": "string"
+        },
+        "cart_ready": {
+            "type": "boolean"
+        },
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "variant_id",
+                    "quantity",
+                    "total"
+                ],
+                "properties": {
+                    "variant_id": {
+                        "type": "integer"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "unit_price": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "subtotal": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "discount": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "total": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "adjustments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "label",
+                    "amount"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "amount": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "rejected_vouchers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "reason"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "shipping": {
+            "type": [
+                "object",
+                "null"
+            ],
+            "required": [
+                "code",
+                "label",
+                "fee"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "fee": {
+                    "type": "object",
+                    "required": [
+                        "amount",
+                        "currency",
+                        "formatted"
+                    ],
+                    "properties": {
+                        "amount": {
+                            "type": "integer"
+                        },
+                        "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                        },
+                        "formatted": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "shipping_options": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "label",
+                    "fee"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "fee": {
+                        "type": "object",
+                        "required": [
+                            "amount",
+                            "currency",
+                            "formatted"
+                        ],
+                        "properties": {
+                            "amount": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                            },
+                            "formatted": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "payment_methods": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "label"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "subtotal": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "discount": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "shipping_fee": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "tax_included": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        },
+        "total": {
+            "type": "object",
+            "required": [
+                "amount",
+                "currency",
+                "formatted"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                },
+                "formatted": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "title": "Báo giá checkout"
+}

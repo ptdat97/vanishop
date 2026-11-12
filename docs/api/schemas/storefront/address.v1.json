@@ -1,0 +1,53 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://vanishop.dev/schemas/storefront/address.v1.json",
+    "type": "object",
+    "required": [
+        "id",
+        "label",
+        "full_name",
+        "phone",
+        "province_code",
+        "province_name",
+        "ward_code",
+        "ward_name",
+        "street_line",
+        "is_default"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "label": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "full_name": {
+            "type": "string"
+        },
+        "phone": {
+            "type": "string"
+        },
+        "province_code": {
+            "type": "string"
+        },
+        "province_name": {
+            "type": "string"
+        },
+        "ward_code": {
+            "type": "string"
+        },
+        "ward_name": {
+            "type": "string"
+        },
+        "street_line": {
+            "type": "string"
+        },
+        "is_default": {
+            "type": "boolean"
+        }
+    },
+    "title": "Địa chỉ trong sổ địa chỉ"
+}

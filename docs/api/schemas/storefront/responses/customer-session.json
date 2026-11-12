@@ -1,0 +1,30 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Đăng nhập: khách + token Bearer",
+    "type": "object",
+    "required": [
+        "data",
+        "meta"
+    ],
+    "properties": {
+        "data": {
+            "$ref": "../customer.v1.json"
+        },
+        "meta": {
+            "type": "object",
+            "required": [
+                "token",
+                "token_type"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "$id": "https://vanishop.dev/schemas/storefront/responses/customer-session.json"
+}
