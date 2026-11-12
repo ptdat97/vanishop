@@ -4,7 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
-## 0.4.18 — 2026-11-12
+## 0.4.19 — 2026-11-12
+
+Admin cho cửa hàng lớn (stabilization-2026-11 P2 A1).
+
+### Thêm
+- `Catalog\Contracts\VariantDirectory::searchIndex(string $text = '', ?string $styleCode = null)`: chỉ mục nhẹ (id, style, mã màu/size, trạng thái) của mọi variant khớp, sắp xếp và lọc chữ trong SQL, không giới hạn số dòng. Lớp tự implement `VariantDirectory` (không có trong plugin đi kèm) phải thêm method này.
+
+### Sửa
+- Lưới tồn Admin, ô "Hết/sắp hết hàng" trên Tổng quan, "chọn mọi kết quả lọc" và file xuất CSV không còn cắt âm thầm ở 5.000 biến thể: lọc/đếm trên chỉ mục + một truy vấn gộp tồn (`StockQueries::sellableByVariant`), chỉ đọc đủ dữ liệu cho trang đang xem. Sửa hàng loạt (đồng bộ trong request) vượt 5.000 biến thể → báo thu hẹp bộ lọc thay vì sửa một phần.
+
 
 Production readiness (stabilization-2026-11 P1: R1–R5). Không đổi hành vi storefront.
 

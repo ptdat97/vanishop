@@ -38,10 +38,15 @@ final class StockCsv
         $locations = array_values(array_filter($this->queries->locations(), fn (Location $location): bool => $only === null || $location->id === $only->id));
         yield ['sku', 'location', 'on_hand', 'reserved', 'safety_stock', 'available', 'product', 'color', 'size'];
 
-        $variants = $this->variants->search('', StockGrid::MAX_VARIANTS);
-        foreach (array_chunk($variants, 500) as $chunk) {
-            $levels = $this->queries->levels(array_map(fn (VariantData $variant): int => $variant->id, $chunk));
-            foreach ($chunk as $variant) {
+        // Mọi variant, đọc theo lô 500 (không giới hạn số variant — P2 A1).
+        foreach (array_chunk(array_column($this->variants->searchIndex(), 'id'), 500) as $ids) {
+            $levels = $this->queries->levels($ids);
+            $chunk = $this->variants->find($ids);
+            foreach ($ids as $id) {
+                $variant = $chunk[$id] ?? null;
+                if ($variant === null) {
+                    continue;
+                }
                 foreach ($locations as $location) {
                     $level = $levels[$location->id.':'.$variant->id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0];
                     yield [$variant->sku, $location->code, $level['on_hand'], $level['reserved'], $level['safety_stock'], $level['available'], $variant->styleName, $variant->colorCode, $variant->sizeCode];

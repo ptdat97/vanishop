@@ -245,3 +245,48 @@ it('danh sách sản phẩm: cửa hàng một kho sửa tồn ngay trong ô (t�
     I::location(['code' => 'KHO-2']);
     expect($stockEdit())->toBeNull();
 });
+
+it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn mọi kết quả" và file xuất thấy đủ — không cắt âm thầm; số truy vấn không tăng theo số biến thể', function () {
+    // Dựng nhanh bằng insert thô: 300 mẫu × 4 màu × 5 size, mẫu đầu tiên còn hàng ở kho giao online.
+    $now = now();
+    $colors = collect(range(1, 4))->map(fn (int $i): int => DB::table('colors')->insertGetId(['code' => "BIG-C{$i}", 'color_family' => 'black', 'position' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
+    $sizes = collect(range(1, 5))->map(fn (int $i): int => DB::table('sizes')->insertGetId(['size_system' => 'big', 'code' => "B{$i}", 'sort_order' => $i, 'created_at' => $now, 'updated_at' => $now]))->all();
+    $variants = [];
+    for ($style = 1; $style <= 300; $style++) {
+        $styleId = DB::table('styles')->insertGetId(['brand_id' => $this->brand->id, 'style_code' => sprintf('BIG-%04d', $style), 'slug' => "big-{$style}", 'status' => 'active', 'search_text' => "mau lon {$style}", 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('style_translations')->insert(['style_id' => $styleId, 'locale' => 'vi', 'name' => sprintf('Mẫu lớn %04d', $style)]);
+        foreach ($colors as $position => $colorId) {
+            $styleColorId = DB::table('style_colors')->insertGetId(['style_id' => $styleId, 'color_id' => $colorId, 'position' => $position, 'created_at' => $now, 'updated_at' => $now]);
+            foreach ($sizes as $sizeId) {
+                $variants[] = ['style_id' => $styleId, 'style_color_id' => $styleColorId, 'size_id' => $sizeId, 'sku' => "BIG-{$style}-{$colorId}-{$sizeId}", 'status' => 'active', 'created_at' => $now, 'updated_at' => $now];
+            }
+        }
+    }
+    foreach (array_chunk($variants, 500) as $chunk) {
+        DB::table('variants')->insert($chunk);
+    }
+    $firstBig = (int) DB::table('variants')->where('sku', 'like', 'BIG-1-%')->min('id');
+    I::stock($this->hn, $firstBig, 50);
+    $total = 6000 + 2; // + 2 biến thể của LM-DR01 (hết hàng)
+    $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust', 'catalog.view']), 'staff');
+
+    DB::enableQueryLog();
+    $page = $this->get("{$this->stockUrl}?page=16")->assertOk()->viewData('page')['props'];
+    $queries = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($page['pagination'])->toMatchArray(['total' => 301, 'variants' => $total])
+        ->and(collect($page['products'])->pluck('style_code')->all())->toHaveCount(1) // trang cuối: 301 mẫu, 20 mẫu/trang
+        ->and($queries)->toBeLessThan(40)
+        ->and(app(StockGrid::class)->attentionCounts()['out'])->toBe($total - 1)
+        ->and(app(StockGrid::class)->variantIds(['filter' => 'out']))->toHaveCount($total - 1)
+        ->and(app(StockGrid::class)->page([], 151, 20)['total_variants'])->toBe($total);
+
+    $exported = $this->get("{$this->stockUrl}/export")->assertOk()->streamedContent();
+    expect(substr_count($exported, "\n"))->toBeGreaterThanOrEqual(1 + $total * 2); // tiêu đề + mỗi biến thể × 2 kho
+
+    // Sửa hàng loạt chạy đồng bộ: vượt mức → báo thu hẹp bộ lọc, không ghi gì.
+    $this->post("{$this->stockUrl}/bulk", ['location_id' => $this->hn->id, 'action' => 'safety', 'quantity' => 1, 'all' => true, 'criteria' => ['filter' => 'out']])
+        ->assertSessionHasErrors(['changes']);
+    expect(DB::table('stock_levels')->where('safety_stock', 1)->count())->toBe(0);
+});

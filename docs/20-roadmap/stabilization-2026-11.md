@@ -42,6 +42,14 @@ Giữ nguyên các ràng buộc đang có: kết nối ngoài đóng băng (GHTK
 | **R5 — Security** | Rà lại [security §5.1](../15-security/security.md) với code hiện tại (phiên cùng nguồn của API, CSRF, rate limit, upload) | `vani:security:check` + test | ✅ 0.4.18 — xem [security §5.1](../15-security/security.md) dòng 2026-11-12: CSRF phiên cùng nguồn có test thật, giới hạn dò mã giảm giá, `npm audit` trong CI, `security:check` bắt Redis eviction. Chưa: CSP (Report-Only trước), pentest bên thứ ba |
 | **R6 — Load test** | Kịch bản tải cho duyệt sản phẩm → giỏ → checkout (công cụ ngoài, không thêm dependency vào app) + số liệu mục tiêu | Báo cáo một lần chạy trên máy dev | 🟡 2026-11-12 — `scripts/load/storefront.js` (k6) cập nhật theo hợp đồng sau API-first (bỏ `voucher_codes` khi đặt đơn; thêm gợi ý tìm kiếm, `/store`, beacon lượt xem). Đo đọc trên dev bằng ApacheBench: mọi endpoint trong NFR, 0 lỗi ([operations §9](../18-operations/operations.md)). **Chưa**: chạy k6 đủ kịch bản (gồm đặt đơn) trên staging — máy dev chưa cài k6 và không chạy luồng ghi vào DB dev |
 
-## P2 — Trải nghiệm Admin và Storefront
+## P2 — Trải nghiệm Admin
+
+Khảo sát 2026-11-12: sửa nhanh giá/tồn ngay trong danh sách sản phẩm, thao tác hàng loạt cho đơn/vận đơn/đổi trả/tồn/giá và báo cáo doanh thu theo ngày/sản phẩm/thương hiệu/kênh/cổng **đã có**. Việc P2 Admin ưu tiên khoảng trống khi cửa hàng lớn lên và thao tác hằng ngày còn chậm.
+
+| Đợt | Việc | Kiểm chứng | Trạng thái |
+|---|---|---|---|
+| **A1 — Admin không cắt dữ liệu âm thầm** | Lưới tồn, Tổng quan "hết/sắp hết", "chọn mọi kết quả lọc", xuất CSV giới hạn 5.000 biến thể mà không báo (backlog L20/L26) — shop 300 mẫu × 16 màu/size đã chạm | Test 6.000 biến thể: mọi màn hình thấy đủ, số truy vấn không tăng theo số biến thể | ✅ 0.4.19 — `VariantDirectory::searchIndex()` + `StockQueries::sellableByVariant()`; sửa hàng loạt vượt mức → báo thu hẹp bộ lọc |
+
+## P2 — Trải nghiệm Admin và Storefront (ứng viên)
 
 Chi tiết hoá khi xong P1, theo nhận xét vận hành thật. Ứng viên: sửa nhanh giá/tồn trên lưới, báo cáo doanh thu theo ngày/sản phẩm, xử lý đơn hàng loạt; storefront mobile-first, Core Web Vitals của PLP/PDP, SEO (dữ liệu có cấu trúc, sitemap), checkout một trang.

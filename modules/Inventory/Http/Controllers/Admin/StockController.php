@@ -114,6 +114,9 @@ final class StockController
         abort_if($location === null, 404);
 
         $ids = ($data['all'] ?? false) ? $grid->variantIds($this->criteria((array) ($data['criteria'] ?? []))) : array_map('intval', $data['variant_ids']);
+        if (count($ids) > StockBulkEditor::MAX_VARIANTS) {
+            throw ValidationException::withMessages(['changes' => __('inventory::messages.bulk_too_many', ['count' => count($ids), 'max' => StockBulkEditor::MAX_VARIANTS])]);
+        }
         $reason = trim((string) ($data['reason'] ?? '')) ?: __('inventory::messages.bulk_reason');
         $result = $editor->apply($location, $ids, $data['action'], (int) $data['quantity'], $reason);
 

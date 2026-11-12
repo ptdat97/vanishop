@@ -21,6 +21,7 @@ return [
     'import_expired' => 'Phiên nhập đã hết hạn (30 phút). Vui lòng tải file lên lại.',
     'import_unreadable' => 'Không đọc được file.',
     'import_header' => 'Dòng đầu của file phải có cột sku và on_hand (location tuỳ chọn).',
+    'bulk_too_many' => 'Bộ lọc đang chọn :count biến thể — sửa hàng loạt tối đa :max mỗi lần. Thu hẹp bộ lọc (màu, size, tìm kiếm) rồi làm từng phần.',
     'import_too_many' => 'Tối đa :max dòng mỗi lần nhập.',
 
     'location_missing' => 'Kho không tồn tại.',

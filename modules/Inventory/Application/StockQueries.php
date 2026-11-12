@@ -27,6 +27,28 @@ final class StockQueries
     }
 
     /**
+     * Số bán được online của mọi variant có tồn: Σ max(0, tồn − giữ − an toàn) trên các kho đang giao online — một truy
+     * vấn gộp, không phụ thuộc số variant (lưới tồn, Tổng quan). Variant không có mặt = 0.
+     *
+     * @param  list<int>  $locationIds  kho đang giao online
+     * @return array<int, int> variant id => số bán được (> 0)
+     */
+    public function sellableByVariant(array $locationIds): array
+    {
+        if ($locationIds === []) {
+            return [];
+        }
+
+        return DB::table('stock_levels')->whereIn('location_id', $locationIds)
+            ->whereRaw('on_hand - reserved - safety_stock > 0')
+            ->groupBy('variant_id')
+            ->selectRaw('variant_id, sum(on_hand - reserved - safety_stock) as sellable')
+            ->pluck('sellable', 'variant_id')
+            ->map(fn ($sellable): int => (int) $sellable)
+            ->all();
+    }
+
+    /**
      * @param  list<int>  $variantIds
      * @return array<string, array{on_hand: int, reserved: int, safety_stock: int, available: int}> "loc:variant" => số liệu
      */

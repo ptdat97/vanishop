@@ -17,7 +17,7 @@ final class StockBulkEditor
 {
     public const ACTIONS = ['set', 'adjust', 'safety'];
 
-    public const MAX_VARIANTS = StockGrid::MAX_VARIANTS;
+    public const MAX_VARIANTS = StockGrid::MAX_BULK_VARIANTS;
 
     public function __construct(
         private readonly StockAdjustmentService $stock,

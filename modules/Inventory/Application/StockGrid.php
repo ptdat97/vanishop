@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Application;
 
-use Modules\Catalog\Contracts\Data\VariantData;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
 
@@ -17,7 +16,8 @@ final class StockGrid
 {
     public const FILTERS = ['all', 'out', 'low'];
 
-    public const MAX_VARIANTS = 5000;
+    /** Sửa hàng loạt chạy đồng bộ trong request: chọn "mọi kết quả lọc" vượt mức này → báo thu hẹp bộ lọc (không cắt âm thầm). */
+    public const MAX_BULK_VARIANTS = 5000;
 
     public function __construct(
         private readonly VariantDirectory $variants,
@@ -32,17 +32,34 @@ final class StockGrid
     public function page(array $criteria, int $page, int $perPage = 20): array
     {
         $matching = $this->matching($criteria);
-        $products = [];
+        $byStyle = [];
         foreach ($matching['rows'] as $row) {
-            $products[$row['style_code']] ??= ['style_code' => $row['style_code'], 'style_name' => $row['style_name'], 'sellable' => 0, 'variants' => []];
-            $products[$row['style_code']]['sellable'] += $row['sellable'];
-            $products[$row['style_code']]['variants'][] = $row;
+            $byStyle[$row['style_id']][] = $row;
         }
-        $products = array_values($products);
+        $pageRows = array_merge([], ...array_slice(array_values($byStyle), max(0, $page - 1) * $perPage, $perPage));
+
+        // Chỉ phần đang hiển thị mới đọc đủ dữ liệu (tên, SKU) và số liệu từng kho.
+        $ids = array_map(fn (array $row): int => $row['id'], $pageRows);
+        $variants = $ids === [] ? [] : $this->variants->find($ids);
+        $levels = $ids === [] ? [] : $this->queries->levels($ids);
+        $products = [];
+        foreach ($pageRows as $row) {
+            $variant = $variants[$row['id']] ?? null;
+            if ($variant === null) {
+                continue;
+            }
+            $products[$row['style_code']] ??= ['style_code' => $row['style_code'], 'style_name' => $variant->styleName, 'sellable' => 0, 'variants' => []];
+            $products[$row['style_code']]['sellable'] += $row['sellable'];
+            $products[$row['style_code']]['variants'][] = [
+                'id' => $row['id'], 'sku' => $variant->sku, 'style_code' => $row['style_code'], 'style_name' => $variant->styleName,
+                'color_code' => $row['color_code'], 'size_code' => $row['size_code'], 'status' => $row['status'], 'sellable' => $row['sellable'],
+                'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$row['id']] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $matching['locations']),
+            ];
+        }
 
         return [
-            'products' => array_slice($products, max(0, $page - 1) * $perPage, $perPage),
-            'total_products' => count($products), 'total_variants' => count($matching['rows']),
+            'products' => array_values($products),
+            'total_products' => count($byStyle), 'total_variants' => count($matching['rows']),
             'locations' => $matching['locations'], 'colors' => $matching['colors'], 'sizes' => $matching['sizes'],
         ];
     }
@@ -99,8 +116,10 @@ final class StockGrid
     }
 
     /**
+     * Mọi variant khớp (không giới hạn): khoá + số bán được, tính bằng chỉ mục của Catalog và một truy vấn gộp tồn.
+     *
      * @param  array{q?: string, style?: string, filter?: string, color?: string, size?: string}  $criteria
-     * @return array{rows: list<array<string, mixed>>, locations: list<Location>, colors: list<string>, sizes: list<string>}
+     * @return array{rows: list<array{id: int, style_id: int, style_code: string, color_code: string, size_code: string, status: string, sellable: int}>, locations: list<Location>, colors: list<string>, sizes: list<string>}
      */
     private function matching(array $criteria): array
     {
@@ -110,30 +129,25 @@ final class StockGrid
         $size = trim((string) ($criteria['size'] ?? ''));
 
         $locations = $this->queries->locations();
-        $variants = $style !== '' ? $this->variants->ofStyleCode($style) : $this->variants->search((string) ($criteria['q'] ?? ''), self::MAX_VARIANTS);
+        $index = $this->variants->searchIndex((string) ($criteria['q'] ?? ''), $style !== '' ? $style : null);
         // Lựa chọn màu/size lấy từ kết quả tìm (trước khi lọc màu/size) để chỉ hiện giá trị có thật.
-        $colors = array_values(array_unique(array_map(fn (VariantData $variant): string => $variant->colorCode, $variants)));
-        $sizes = array_values(array_unique(array_map(fn (VariantData $variant): string => $variant->sizeCode, $variants)));
-        $variants = array_values(array_filter($variants, fn (VariantData $variant): bool => ($color === '' || $variant->colorCode === $color) && ($size === '' || $variant->sizeCode === $size)));
+        $colors = array_values(array_unique(array_column($index, 'color_code')));
+        $sizes = array_values(array_unique(array_column($index, 'size_code')));
 
-        $levels = $variants === [] ? [] : $this->queries->levels(array_map(fn (VariantData $variant): int => $variant->id, $variants));
-        $online = array_values(array_filter($locations, fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders));
+        $online = array_values(array_map(fn (Location $location): int => $location->id, array_filter($locations, fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders)));
+        $sellable = $this->queries->sellableByVariant($online);
         $threshold = $this->lowStock->value();
 
         $rows = [];
-        foreach ($variants as $variant) {
-            $sellable = 0;
-            foreach ($online as $location) {
-                $sellable += max(0, $levels[$location->id.':'.$variant->id]['available'] ?? 0);
-            }
-            if (($filter === 'out' && $sellable > 0) || ($filter === 'low' && ($sellable === 0 || $sellable > $threshold))) {
+        foreach ($index as $row) {
+            if (($color !== '' && $row['color_code'] !== $color) || ($size !== '' && $row['size_code'] !== $size)) {
                 continue;
             }
-            $rows[] = [
-                'id' => $variant->id, 'sku' => $variant->sku, 'style_code' => $variant->styleCode, 'style_name' => $variant->styleName,
-                'color_code' => $variant->colorCode, 'size_code' => $variant->sizeCode, 'status' => $variant->status, 'sellable' => $sellable,
-                'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$variant->id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $locations),
-            ];
+            $row['sellable'] = $sellable[$row['id']] ?? 0;
+            if (($filter === 'out' && $row['sellable'] > 0) || ($filter === 'low' && ($row['sellable'] === 0 || $row['sellable'] > $threshold))) {
+                continue;
+            }
+            $rows[] = $row;
         }
 
         return ['rows' => $rows, 'locations' => $locations, 'colors' => $colors, 'sizes' => $sizes];

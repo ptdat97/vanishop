@@ -20,6 +20,7 @@ return [
     'import_expired' => 'The import session expired (30 minutes). Please upload the file again.',
     'import_unreadable' => 'Could not read the file.',
     'import_header' => 'The first row must have the sku and on_hand columns (location optional).',
+    'bulk_too_many' => 'The filter matches :count variants — bulk edits are limited to :max at a time. Narrow the filter and edit in parts.',
     'import_too_many' => 'At most :max rows per import.',
     'adjusted' => 'Stock updated.',
 

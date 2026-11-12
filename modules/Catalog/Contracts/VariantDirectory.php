@@ -47,4 +47,13 @@ interface VariantDirectory
      * @return list<VariantData>
      */
     public function search(string $text, int $limit = 2000): array;
+
+    /**
+     * Chỉ mục nhẹ cho màn hình làm việc trên mọi variant (lưới tồn Admin, P2 A1): tìm theo SKU/mã/tên sản phẩm (chuỗi rỗng =
+     * mọi variant, cả ngừng bán), hoặc đúng một mã sản phẩm. Không giới hạn số dòng — chỉ có khoá và mã, đọc thêm bằng find()
+     * cho phần đang hiển thị. Theo thứ tự tên sản phẩm → mã sản phẩm → màu → size.
+     *
+     * @return list<array{id: int, style_id: int, style_code: string, color_code: string, size_code: string, status: string}>
+     */
+    public function searchIndex(string $text = '', ?string $styleCode = null): array;
 }

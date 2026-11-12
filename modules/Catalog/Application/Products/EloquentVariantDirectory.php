@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application\Products;
 
+use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\VariantData;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Persistence\Models\Variant;
+use Modules\Shared\Support\StoreLocale;
 
 final class EloquentVariantDirectory implements VariantDirectory
 {
@@ -79,6 +81,31 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->map(fn (Variant $variant): VariantData => $this->toData($variant))
             ->values()
             ->all();
+    }
+
+    public function searchIndex(string $text = '', ?string $styleCode = null): array
+    {
+        $text = trim($text);
+        $like = '%'.addcslashes($text, '%_\\').'%';
+        $locale = StoreLocale::default();
+
+        return DB::table('variants as v')
+            ->join('styles as s', 's.id', '=', 'v.style_id')
+            ->join('style_colors as sc', 'sc.id', '=', 'v.style_color_id')
+            ->join('colors as c', 'c.id', '=', 'sc.color_id')
+            ->join('sizes as z', 'z.id', '=', 'v.size_id')
+            ->leftJoin('style_translations as t', fn ($join) => $join->on('t.style_id', '=', 's.id')->where('t.locale', $locale))
+            ->when($styleCode !== null, fn ($query) => $query->where('s.style_code', $styleCode))
+            ->when($styleCode === null && $text !== '', fn ($query) => $query->where(fn ($inner) => $inner
+                ->where('v.sku', 'like', $like)
+                ->orWhere('s.style_code', 'like', $like)
+                ->orWhereExists(fn ($names) => $names->selectRaw('1')->from('style_translations as tn')->whereColumn('tn.style_id', 's.id')->where('tn.name', 'like', $like))))
+            ->orderByRaw('lower(coalesce(t.name, s.style_code))')->orderBy('s.style_code')->orderBy('sc.position')->orderBy('z.sort_order')->orderBy('v.id')
+            ->get(['v.id', 'v.style_id', 's.style_code', 'c.code as color_code', 'z.code as size_code', 'v.status'])
+            ->map(fn (object $row): array => [
+                'id' => (int) $row->id, 'style_id' => (int) $row->style_id, 'style_code' => (string) $row->style_code,
+                'color_code' => (string) $row->color_code, 'size_code' => (string) $row->size_code, 'status' => (string) $row->status,
+            ])->all();
     }
 
     private function toData(Variant $variant): VariantData
