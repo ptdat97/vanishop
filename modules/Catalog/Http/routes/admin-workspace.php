@@ -38,6 +38,7 @@ Route::delete('products/{product}/links/{linkType}/{linked}', [ProductLinkContro
 
 // Ảnh theo SKU (ADR-045).
 Route::post('products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'store'])->name('products.variants.images.store');
+Route::post('products/{product}/images/assign', [ProductVariantImageController::class, 'assign'])->name('products.images.assign');
 Route::post('products/{product}/variants/{variant}/images/library', [ProductVariantImageController::class, 'attach'])->name('products.variants.images.library');
 Route::put('products/{product}/variants/{variant}/images/order', [ProductVariantImageController::class, 'reorder'])->name('products.variants.images.order');
 Route::post('products/{product}/variants/{variant}/images/copy', [ProductVariantImageController::class, 'copy'])->name('products.variants.images.copy');

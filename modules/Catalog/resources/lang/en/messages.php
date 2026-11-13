@@ -60,4 +60,6 @@ return [
     'option_type_in_use' => 'This option type is used as an axis by products.',
     'option_value_in_use_by_products' => 'This value is used by products.',
     'images_copied' => 'Images applied to :count SKUs with the same value.',
+    'images_assigned' => 'Images assigned to :count SKUs.',
+    'variant_not_in_product' => 'The SKU does not belong to this product.',
 ];

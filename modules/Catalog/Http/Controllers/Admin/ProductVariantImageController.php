@@ -36,6 +36,19 @@ final class ProductVariantImageController
         return back()->with('success', __('catalog::messages.saved'));
     }
 
+    /** Gán một bộ ảnh của Thư viện ảnh cho nhiều SKU cùng lúc (vd. mọi size của hai màu). */
+    public function assign(Style $product, Request $request, VariantImages $images): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $data = $request->validate([
+            'media_ids' => ['required', 'array', 'min:1', 'max:'.VariantImages::MAX_IMAGES], 'media_ids.*' => ['integer', 'distinct'],
+            'variant_ids' => ['required', 'array', 'min:1'], 'variant_ids.*' => ['integer', 'distinct'],
+        ]);
+        $count = $images->attachToVariants($product, array_map('intval', $data['variant_ids']), array_map('intval', $data['media_ids']));
+
+        return back()->with('success', __('catalog::messages.images_assigned', ['count' => $count]));
+    }
+
     public function reorder(Style $product, Variant $variant, Request $request, VariantImages $images): RedirectResponse
     {
         Gate::authorize('catalog.manage');

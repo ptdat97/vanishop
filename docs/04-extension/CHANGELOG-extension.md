@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.40 — 2026-11-13
+
+Admin: MediaPicker — khay ảnh đã chọn, xem trước, gán ảnh cho nhiều SKU.
+
+### Thêm
+- Thư viện ảnh (chế độ chọn nhiều): khay ảnh đã chọn **theo thứ tự**, kéo để sắp lại, bỏ từng ảnh; `select` phát theo thứ tự khay. Nút "Xem" (và bấm ảnh trong khay) mở ảnh/video lớn kèm kích thước, dung lượng.
+- Ma trận biến thể: "Gán ảnh cho nhiều SKU" — chọn ảnh → chọn SKU (nút nhanh "Mọi SKU <giá trị>" theo từng trục) → gán. Route `POST admin/catalog/products/{product}/images/assign` (`media_ids[]`, `variant_ids[]`, quyền `catalog.manage`): thêm vào cuối bộ ảnh của mỗi SKU, bỏ ảnh SKU đã có; SKU không thuộc sản phẩm hoặc SKU vượt giới hạn ảnh → không gán gì (một transaction). `VariantImages::attachToVariants()`.
+
 ## 0.4.39 — 2026-11-13
 
 Admin: Combobox/MultiSelect — tìm không dấu, tải lựa chọn từ server.

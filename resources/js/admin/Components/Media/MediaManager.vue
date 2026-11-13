@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { toast } from '@admin/toast';
+import Dialog from '@admin/Components/Dialog.vue';
 import Select from '@admin/Components/Select.vue';
+import Sortable from '@admin/Components/Sortable.vue';
+import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
 import { getJson, HttpError, postJson, uploadJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -10,7 +13,8 @@ import { computed, onMounted, ref } from 'vue';
 
 /**
  * Thư viện ảnh dùng chung: trang Admin → Thư viện ảnh và modal chọn ảnh (MediaPicker) ở các form.
- * `pick` bật chế độ chọn: nút "Chọn" phát `select` với các ảnh đã chọn; nhấp đúp một ảnh = chọn ngay.
+ * `pick` bật chế độ chọn: nút "Chọn" phát `select` với các ảnh đã chọn **theo thứ tự trong khay** (kéo để sắp lại; lựa chọn giữ
+ * qua thư mục/trang); nhấp đúp một ảnh = chọn ngay. "Xem" mở ảnh/video lớn kèm kích thước, dung lượng.
  * `kind` (0.3.91): `image` | `video` lọc loại tệp được duyệt/tải lên; `any` (mặc định, trang Thư viện) hiện cả hai.
  * Tải lên: kiểm loại/dung lượng theo giới hạn của server trước khi gửi; mỗi tệp một yêu cầu có thanh tiến độ, tệp lỗi giữ lại
  * trong hàng đợi với nút "Thử lại".
@@ -63,6 +67,7 @@ let draining = false;
 const uploading = computed(() => queue.value.some((item) => item.status !== 'error'));
 const dragging = ref(false);
 const moveTarget = ref('');
+const previewing = ref<MediaItem | null>(null);
 
 const searching = computed(() => keyword.value.trim() !== '');
 const selectedItems = computed(() => Array.from(selected.value.values()));
@@ -121,6 +126,17 @@ function toggle(item: MediaItem): void {
     } else {
         next.set(item.id, item);
     }
+    selected.value = next;
+}
+
+/** Khay đã chọn: kéo-thả đổi thứ tự (Map giữ thứ tự chèn). */
+function reorderSelected(items: MediaItem[]): void {
+    selected.value = new Map(items.map((item) => [item.id, item]));
+}
+
+function unselect(item: MediaItem): void {
+    const next = new Map(selected.value);
+    next.delete(item.id);
     selected.value = next;
 }
 
@@ -390,11 +406,36 @@ onMounted(load);
                 <p v-if="loading" class="absolute inset-x-0 top-2 text-center text-xs text-slate-400">Đang tải…</p>
             </div>
 
+            <div v-if="pick && multiple && selected.size" class="border-t border-slate-100 px-3 pt-2" data-selection-tray>
+                <p class="mb-1 text-xs text-slate-500">Đã chọn theo thứ tự — kéo để sắp lại, ảnh đầu được dùng trước.</p>
+                <Sortable
+                    v-slot="{ item, index, handle }"
+                    :model-value="selectedItems"
+                    layout="grid"
+                    list-class="flex gap-2 overflow-x-auto pb-2"
+                    item-class="relative w-16 shrink-0"
+                    :item-key="(item) => item.id"
+                    :item-label="(item) => item.name"
+                    @update:model-value="reorderSelected"
+                >
+                    <button type="button" class="block h-16 w-16 overflow-hidden rounded border border-slate-200" :title="`Xem ${item.name}`" @click="previewing = item">
+                        <video v-if="item.kind === 'video'" :src="`${item.url}#t=0.5`" muted preload="metadata" class="h-full w-full object-cover" />
+                        <img v-else :src="item.thumb_url ?? item.url" :alt="item.name" class="h-full w-full object-cover" />
+                    </button>
+                    <span class="absolute top-0.5 left-0.5 rounded bg-slate-900/70 px-1 text-[10px] text-white">{{ index + 1 }}</span>
+                    <div class="mt-0.5 flex items-center justify-between text-xs">
+                        <SortHandle v-bind="handle" />
+                        <button type="button" class="px-1 text-red-600" :aria-label="`Bỏ chọn ${item.name}`" @click="unselect(item)">×</button>
+                    </div>
+                </Sortable>
+            </div>
+
             <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 p-3 text-sm">
                 <button type="button" :class="secondaryButton" :disabled="meta.page <= 1" @click="goTo(meta.page - 1)">←</button>
                 <span class="text-slate-500">Trang {{ meta.page }}/{{ meta.last_page }}</span>
                 <button type="button" :class="secondaryButton" :disabled="meta.page >= meta.last_page" @click="goTo(meta.page + 1)">→</button>
 
+                <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="previewing = selectedItems[0]">Xem</button>
                 <template v-if="canManage && selected.size">
                     <span class="ml-2 text-slate-500">Đã chọn {{ selected.size }}</span>
                     <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="renameItem">Đổi tên</button>
@@ -412,5 +453,11 @@ onMounted(load);
                 </div>
             </div>
         </section>
+        <Dialog :open="previewing !== null" :title="previewing?.name ?? ''" :subtitle="previewing ? [previewing.width ? `${previewing.width}×${previewing.height}` : '', size(previewing.size_bytes)].filter(Boolean).join(' · ') : ''" size="large" @update:open="(value) => !value && (previewing = null)">
+            <div v-if="previewing" class="flex min-h-0 flex-1 items-center justify-center bg-slate-100">
+                <video v-if="previewing.kind === 'video'" :src="previewing.url" controls class="max-h-full max-w-full" />
+                <img v-else :src="previewing.url" :alt="previewing.name" class="max-h-full max-w-full object-contain" />
+            </div>
+        </Dialog>
     </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import Dialog from '@admin/Components/Dialog.vue';
 import FileInput from '@admin/Components/FileInput.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import Select from '@admin/Components/Select.vue';
@@ -10,7 +11,8 @@ import { useLeaveGuard } from '@admin/forms';
 import { labelOptions } from '@admin/options';
 import { useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
-import { inputClass, secondaryButton } from '@admin/styles';
+import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { toast } from '@admin/toast';
 import type { MediaItem } from '@admin/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
@@ -318,6 +320,39 @@ function attachFromLibrary(items: MediaItem[]): void {
     picking.value = false;
 }
 
+/* Gán một bộ ảnh cho nhiều SKU: chọn ảnh (thứ tự trong khay của Thư viện ảnh) → chọn SKU → gán (thêm vào cuối, bỏ ảnh đã có). */
+const assign = reactive<{ picking: boolean; open: boolean; media: MediaItem[]; variantIds: number[]; busy: boolean }>({ picking: false, open: false, media: [], variantIds: [], busy: false });
+
+function startAssign(items: MediaItem[]): void {
+    assign.picking = false;
+    if (!items.length) return;
+    assign.media = items;
+    assign.variantIds = imageVariantId.value ? [imageVariantId.value] : [];
+    assign.open = true;
+}
+
+/** SKU có giá trị `valueId` ở trục `axisIndex` (vd. mọi size của màu Đỏ). */
+const variantsWith = (axisIndex: number, valueId: number): number[] => props.variants.filter((variant) => variant.values[axisIndex] === valueId).map((variant) => variant.id);
+
+function toggleGroup(ids: number[]): void {
+    const all = ids.every((id) => assign.variantIds.includes(id));
+    assign.variantIds = all ? assign.variantIds.filter((id) => !ids.includes(id)) : [...new Set([...assign.variantIds, ...ids])];
+}
+
+function submitAssign(): void {
+    if (!assign.variantIds.length || assign.busy) return;
+    assign.busy = true;
+    router.post(`${props.productUrl}/images/assign`, { media_ids: assign.media.map((item) => item.id), variant_ids: assign.variantIds }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            assign.open = false;
+            assign.variantIds = [];
+        },
+        onError: (errors) => toast(Object.values(errors)[0] ?? 'Không gán được ảnh.', 'error'),
+        onFinish: () => (assign.busy = false),
+    });
+}
+
 /** Kéo-thả xong lưu ngay thứ tự ảnh (ảnh đầu là ảnh đại diện của SKU). */
 function reorderImages(variant: Variant, images: Image[]): void {
     router.put(`${imagesUrl(variant)}/order`, { order: images.map((image) => image.id) }, { preserveScroll: true });
@@ -572,6 +607,7 @@ const enabledCount = computed(() => rows.value.length);
             <section v-if="enabledCount" class="space-y-3" aria-label="Chi tiết SKU">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
                     <h3 class="text-sm font-semibold text-slate-900">3. Chi tiết SKU</h3>
+                    <button v-if="productUrl && variants.length" type="button" :class="secondaryButton" data-assign-images @click="assign.picking = true">Gán ảnh cho nhiều SKU</button>
                     <span class="text-xs text-slate-500">Sửa trực tiếp trong bảng: SKU, giá, tồn… <template v-if="summary.withoutImages"> · <span class="text-amber-700">{{ summary.withoutImages }} SKU chưa có ảnh</span></template></span>
                 </div>
                 <div class="flex flex-wrap items-end gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm">
@@ -694,6 +730,43 @@ const enabledCount = computed(() => rows.value.length);
                 </div>
             </section>
         </div>
+        <MediaPicker v-model:open="assign.picking" title="Chọn ảnh để gán cho nhiều SKU" @select="startAssign" />
+        <Dialog v-model:open="assign.open" title="Gán ảnh cho SKU" :subtitle="`${assign.media.length} ảnh — thêm vào cuối bộ ảnh của SKU đã chọn`" size="large" :dirty="assign.variantIds.length > 0 && !assign.busy">
+            <div class="space-y-4 overflow-y-auto">
+                <ol class="flex flex-wrap gap-2" aria-label="Ảnh sẽ gán (theo thứ tự)">
+                    <li v-for="(item, index) in assign.media" :key="item.id" class="relative">
+                        <img :src="item.thumb_url ?? item.url" :alt="item.name" class="h-24 w-20 rounded object-cover" />
+                        <span class="absolute top-1 left-1 rounded bg-slate-900/70 px-1 text-[10px] text-white">{{ index + 1 }}</span>
+                    </li>
+                </ol>
+                <div v-for="(axis, axisIndex) in props.axes" :key="axis.option_type_id" class="flex flex-wrap items-center gap-2 text-sm">
+                    <span class="w-24 text-slate-500">{{ typeName(axis.option_type_id) }}</span>
+                    <button
+                        v-for="valueId in axis.value_ids.filter((id) => variantsWith(axisIndex, id).length)"
+                        :key="valueId"
+                        type="button"
+                        class="rounded-full border px-3 py-1 text-xs"
+                        :class="variantsWith(axisIndex, valueId).every((id) => assign.variantIds.includes(id)) ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300'"
+                        :aria-pressed="variantsWith(axisIndex, valueId).every((id) => assign.variantIds.includes(id))"
+                        @click="toggleGroup(variantsWith(axisIndex, valueId))"
+                    >Mọi SKU {{ valueName(valueId) }}</button>
+                </div>
+                <fieldset class="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                    <legend class="mb-1 text-sm font-medium">SKU nhận ảnh ({{ assign.variantIds.length }}/{{ variants.length }})</legend>
+                    <label v-for="variant in variants" :key="variant.id" class="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-100">
+                        <input v-model="assign.variantIds" type="checkbox" :value="variant.id" />
+                        <span class="flex-1 truncate">{{ variant.label }} <span class="font-mono text-xs text-slate-400">{{ variant.sku }}</span></span>
+                        <span class="text-xs text-slate-400">{{ variant.images.length }} ảnh</span>
+                    </label>
+                </fieldset>
+            </div>
+            <template #footer="{ close }">
+                <button type="button" :class="secondaryButton" @click="close">Huỷ</button>
+                <button type="button" :class="primaryButton" class="ml-auto" :disabled="!assign.variantIds.length || assign.busy" @click="submitAssign">
+                    {{ assign.busy ? 'Đang gán…' : `Gán cho ${assign.variantIds.length} SKU` }}
+                </button>
+            </template>
+        </Dialog>
         <MediaPicker :open="picking" :title="`Ảnh cho ${imageVariant?.label ?? ''}`" @update:open="(value) => !value && (picking = false)" @select="attachFromLibrary" />
     </div>
 </template>

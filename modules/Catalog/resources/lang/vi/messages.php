@@ -60,4 +60,6 @@ return [
     'option_type_in_use' => 'Loại tuỳ chọn đang được sản phẩm dùng làm trục.',
     'option_value_in_use_by_products' => 'Giá trị đang được sản phẩm dùng.',
     'images_copied' => 'Đã áp ảnh cho :count SKU cùng giá trị.',
+    'images_assigned' => 'Đã gán ảnh cho :count SKU.',
+    'variant_not_in_product' => 'SKU không thuộc sản phẩm này.',
 ];

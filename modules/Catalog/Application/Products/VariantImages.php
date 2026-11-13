@@ -68,6 +68,29 @@ final class VariantImages
         });
     }
 
+    /**
+     * Gán cùng một bộ ảnh của Thư viện ảnh cho nhiều SKU của sản phẩm (thêm vào cuối, bỏ ảnh SKU đã có). Một SKU vượt giới hạn
+     * ảnh → không SKU nào được gán (một transaction).
+     *
+     * @param  list<int>  $variantIds
+     * @param  list<int>  $mediaIds  theo thứ tự đã chọn
+     * @return int số SKU
+     */
+    public function attachToVariants(Style $style, array $variantIds, array $mediaIds): int
+    {
+        $variants = $style->variants()->whereKey(array_values(array_unique($variantIds)))->get();
+        if ($variants->count() !== count(array_unique($variantIds))) {
+            throw ValidationException::withMessages(['variant_ids' => __('catalog::messages.variant_not_in_product')]);
+        }
+        DB::transaction(function () use ($style, $variants, $mediaIds): void {
+            foreach ($variants as $variant) {
+                $this->attachMedia($style, $variant, $mediaIds);
+            }
+        });
+
+        return $variants->count();
+    }
+
     public function remove(Style $style, Variant $variant, Mediable $image): void
     {
         $image->delete();

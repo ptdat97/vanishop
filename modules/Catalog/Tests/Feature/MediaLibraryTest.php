@@ -139,6 +139,33 @@ it('chọn từ thư viện: gắn ảnh có sẵn vào SKU (bỏ qua ảnh đã
     $this->post($url, ['media_ids' => $ids])->assertForbidden();
 });
 
+it('gán một bộ ảnh cho nhiều SKU cùng lúc: giữ thứ tự đã chọn, bỏ ảnh SKU đã có; vượt giới hạn hay SKU lạ thì không gán gì', function () {
+    $ids = array_column(uploadTo('', [UploadedFile::fake()->image('a.jpg', 900, 1200), UploadedFile::fake()->image('b.jpg', 900, 1201)]), 'id');
+    $style = T::product();
+    [$small, $medium, $large] = PricingTestHelpers::variants($style, ['S', 'M', 'L']);
+    $url = "/admin/catalog/products/{$style->id}/images/assign";
+    $gallery = fn ($variant): array => T::seed(fn () => $variant->gallery()->pluck('media_id')->all());
+
+    $this->post("/admin/catalog/products/{$style->id}/variants/{$small->id}/images/library", ['media_ids' => [$ids[1]]])->assertSessionHasNoErrors();
+    $this->post($url, ['media_ids' => [$ids[1], $ids[0]], 'variant_ids' => [$small->id, $medium->id]])->assertSessionHasNoErrors()->assertSessionHas('success');
+    expect($gallery($small))->toBe([$ids[1], $ids[0]])
+        ->and($gallery($medium))->toBe([$ids[1], $ids[0]])
+        ->and($gallery($large))->toBe([]);
+
+    $foreign = PricingTestHelpers::variants(T::product(), ['XL'])[0];
+    $this->post($url, ['media_ids' => [$ids[0]], 'variant_ids' => [$large->id, $foreign->id]])->assertSessionHasErrors('variant_ids');
+    expect($gallery($large))->toBe([]);
+
+    // SKU đầu (S) gán được, SKU sau (L) đã đủ 20 ảnh → huỷ cả lượt, S giữ nguyên.
+    T::seed(fn () => collect(range(1, 20))->each(fn (int $position) => $large->gallery()->create(['media_id' => $ids[1], 'role' => 'gallery', 'position' => $position])));
+    $other = array_column(uploadTo('', [UploadedFile::fake()->image('c.jpg', 900, 1202)]), 'id');
+    $this->post($url, ['media_ids' => $other, 'variant_ids' => [$small->id, $large->id]])->assertSessionHasErrors('images');
+    expect($gallery($small))->toBe([$ids[1], $ids[0]]);
+
+    $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
+    $this->post($url, ['media_ids' => [$ids[0]], 'variant_ids' => [$medium->id]])->assertForbidden();
+});
+
 it('ô chọn ảnh dùng chung: /admin/media/items trả ảnh theo id (giữ thứ tự, bỏ id không còn), cần media.view', function () {
     [$a, $b] = uploadTo('', [UploadedFile::fake()->image('a.jpg', 800, 1200), UploadedFile::fake()->image('b.jpg', 640, 960)]);
 
