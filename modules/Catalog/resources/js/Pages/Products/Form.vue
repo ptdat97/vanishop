@@ -97,6 +97,12 @@ const { form, save } = useAdminForm({
 }, { lockVersion: () => props.product?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
+/**
+ * Biến thể truyền cho ma trận: tham chiếu ổn định. `product?.variants ?? []` trong template tạo mảng mới mỗi lần render → ma trận
+ * tính lại `summary` → trang render lại → lặp vô hạn (trang "Thêm sản phẩm" treo).
+ */
+const variants = computed(() => props.product?.variants ?? []);
+
 /** Một nút Lưu cho cả sản phẩm và ma trận biến thể (ma trận chỉ gửi khi có thay đổi). */
 const matrix = ref<InstanceType<typeof VariantMatrixEditor> | null>(null);
 /** Popup toàn màn hình của ma trận biến thể; lỗi của ma trận khi lưu → mở lại popup để thấy ngay ô lỗi. */
@@ -288,7 +294,7 @@ async function destroy(): Promise<void> {
                     :style-code="form.style_code || 'SKU'"
                     :axes="variantMatrix.axes"
                     :option-types="variantMatrix.optionTypes"
-                    :variants="product?.variants ?? []"
+                    :variants="variants"
                     :columns="variantMatrix.columns"
                     :values="variantMatrix.values"
                     :status-labels="labels.variant_status"
