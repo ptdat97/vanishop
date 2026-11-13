@@ -1,3 +1,5 @@
+import { httpErrorMessage } from './toast';
+
 /**
  * Gọi JSON từ trang Admin ngoài Inertia (tải ảnh, xem trước…): gửi kèm X-XSRF-TOKEN từ cookie của Laravel.
  * Lỗi validate (422) → ném HttpError với `errors` theo field.
@@ -10,6 +12,15 @@ export class HttpError extends Error {
     ) {
         super(message);
     }
+}
+
+/** Lỗi HTTP chung (hết phiên, quyền, không tìm thấy, quá tải, máy chủ) → thông điệp dễ hiểu; lỗi nghiệp vụ/validate giữ `message` của server. */
+function errorMessage(status: number, data: Record<string, unknown>): string {
+    if ([403, 404, 413, 419, 429].includes(status) || status >= 500 || typeof data.message !== 'string' || data.message === '') {
+        return httpErrorMessage(status);
+    }
+
+    return data.message;
 }
 
 function xsrfToken(): string {
@@ -32,7 +43,7 @@ export async function postJson<T>(url: string, body: FormData | Record<string, u
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-        throw new HttpError(data.message ?? `HTTP ${response.status}`, response.status, data.errors ?? {});
+        throw new HttpError(errorMessage(response.status, data), response.status, data.errors ?? {});
     }
     return data as T;
 }
@@ -62,11 +73,10 @@ export function uploadJson<T>(url: string, body: FormData, onProgress?: (percent
             if (request.status >= 200 && request.status < 300) {
                 resolve(data as T);
             } else {
-                const message = request.status === 413 ? 'Tệp vượt giới hạn tải lên của máy chủ.' : typeof data.message === 'string' ? data.message : `HTTP ${request.status}`;
-                reject(new HttpError(message, request.status, (data.errors as Record<string, string[]>) ?? {}));
+                reject(new HttpError(errorMessage(request.status, data), request.status, (data.errors as Record<string, string[]>) ?? {}));
             }
         };
-        request.onerror = () => reject(new HttpError('Không kết nối được máy chủ.', 0));
+        request.onerror = () => reject(new HttpError(httpErrorMessage(0), 0));
         request.send(body);
     });
 }
@@ -84,7 +94,7 @@ export async function getJson<T>(url: string, query: Record<string, string | num
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-        throw new HttpError(data.message ?? `HTTP ${response.status}`, response.status, data.errors ?? {});
+        throw new HttpError(errorMessage(response.status, data), response.status, data.errors ?? {});
     }
     return data as T;
 }

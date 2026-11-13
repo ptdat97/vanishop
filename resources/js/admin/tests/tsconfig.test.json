@@ -10,5 +10,5 @@
         "outDir": "../../../../node_modules/.cache/vani-admin",
         "rootDir": ".."
     },
-    "files": ["../search.ts", "../upload.ts"]
+    "files": ["../search.ts", "../upload.ts", "../toast.ts"]
 }

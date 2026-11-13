@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GENERAL_ERROR_KEYS, firstTime, toast, toastState, type ToastTone } from '@admin/toast';
+import { firstTime, generalErrorMessages, httpErrorMessage, toast, toastState, type ToastTone } from '@admin/toast';
 import { router, usePage } from '@inertiajs/vue3';
 import { ToastClose, ToastDescription, ToastProvider, ToastRoot, ToastViewport } from 'reka-ui';
 import { onBeforeUnmount, onMounted } from 'vue';
@@ -9,7 +9,9 @@ import { onBeforeUnmount, onMounted } from 'vue';
  * - `toast()` (@admin/toast) từ trang/plugin;
  * - flash data `toasts` của Inertia (server: `->with('success'|'warning'|'error'|'info', …)`) qua sự kiện `flash` — phát ở mọi
  *   phản hồi mang flash nên **mỗi thao tác một toast**, kể cả cùng nội dung; không lưu vào lịch sử (quay lại không hiện lại);
- * - lỗi chung (`GENERAL_ERROR_KEYS`) qua sự kiện `error` của mỗi lần gửi.
+ * - lỗi chung (hợp đồng lỗi ở @admin/toast) qua sự kiện `error` của mỗi lần gửi;
+ * - lỗi HTTP ngoài luồng Inertia (`httpException`: 419, 403, 404, 413, 429, 5xx) và mất mạng (`networkError`) → toast thay cho
+ *   hộp lỗi mặc định của Inertia (khi chạy dev, lỗi 5xx vẫn mở hộp lỗi để xem chi tiết).
  * Thành công tự ẩn sau 4 giây; lỗi/cảnh báo giữ tới khi đóng (`role=alert`).
  */
 type FlashToast = { type: ToastTone; message: string };
@@ -22,14 +24,20 @@ function showFlash(flash: Record<string, unknown> | undefined): void {
 
 function showErrors(errors: Record<string, unknown> | undefined): void {
     if (!errors || !firstTime(errors)) return;
-    for (const key of GENERAL_ERROR_KEYS) {
-        const message = errors[key];
-        if (typeof message === 'string' && message !== '') toast(message, 'error');
-    }
+    for (const message of generalErrorMessages(errors)) toast(message, 'error');
 }
 
 const stopFlash = router.on('flash', (event) => showFlash(event.detail.flash as Record<string, unknown>));
 const stopError = router.on('error', (event) => showErrors(event.detail.errors as Record<string, unknown>));
+const stopHttp = router.on('httpException', (event) => {
+    const status = event.detail.response.status;
+    toast(httpErrorMessage(status), 'error');
+    if (!(import.meta.env.DEV && status >= 500)) return false;
+});
+const stopNetwork = router.on('networkError', () => {
+    toast(httpErrorMessage(0), 'error');
+    return false;
+});
 onMounted(() => {
     // Lần tải đầu (mở trang, tải lại sau redirect toàn trang).
     showFlash(page.flash as Record<string, unknown>);
@@ -38,6 +46,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
     stopFlash();
     stopError();
+    stopHttp();
+    stopNetwork();
 });
 
 const toneClass: Record<ToastTone, string> = {

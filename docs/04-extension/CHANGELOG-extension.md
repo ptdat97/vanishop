@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.41 — 2026-11-13
+
+Admin: Toaster — hợp đồng lỗi thống nhất, lỗi HTTP/mất mạng, giới hạn số toast.
+
+### Thêm
+- `@admin/toast`: `registerGeneralErrorKeys(...keys)` cho khoá lỗi chung của plugin; `generalErrorMessages(errors)` (chuỗi hoặc mảng → mỗi thông điệp một toast); `httpErrorMessage(status)`; `MAX_TOASTS` (5).
+- `Toaster` nghe `httpException` (419 hết phiên, 403, 404, 413, 429, 5xx) và `networkError` của Inertia v3 → toast dễ hiểu thay hộp lỗi mặc định (dev: lỗi 5xx vẫn mở hộp lỗi).
+- `npm run test:admin` thêm test cho hàng đợi toast, hợp đồng lỗi, thông điệp HTTP.
+
+### Đổi
+- Hợp đồng lỗi ghi ở `@admin/toast`: lỗi theo ô → tại ô; lỗi chung → khoá `business` (khuyến nghị cho code mới) hoặc khoá đã đăng ký → toast. Lỗi chung dạng mảng nay hiện đủ từng thông điệp (trước chỉ nhận chuỗi).
+- Quá 5 toast: bỏ toast thành công/thông tin cũ nhất trước, toast lỗi giữ lại.
+- `@admin/http` (`getJson`, `postJson`, `uploadJson`): lỗi 403/404/413/419/429/5xx và mất mạng dùng thông điệp tiếng Việt dễ hiểu thay cho câu mặc định của server.
+
 ## 0.4.40 — 2026-11-13
 
 Admin: MediaPicker — khay ảnh đã chọn, xem trước, gán ảnh cho nhiều SKU.
