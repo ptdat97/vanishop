@@ -5,10 +5,10 @@
         "en": "Scarcity signals"
     },
     "description": {
-        "vi": "Trang sản phẩm hiện \"Chỉ còn N\" của đúng size khách đang chọn và \"Đã bán N trong X ngày\"; nhãn \"Sắp hết\" ở danh sách. Mọi con số đọc từ tồn kho và đơn đã thu tiền/đã giao thật — không có chế độ bịa số.",
-        "en": "Product page shows \"Only N left\" for the selected size and \"N sold in the last X days\"; \"Low stock\" badge in listings. Every number comes from real stock and paid/shipped orders — no fake-number mode."
+        "vi": "Trang sản phẩm hiện \"Chỉ còn N\" của đúng phân loại (SKU) khách đang chọn và \"Đã bán N trong X ngày\"; nhãn \"Sắp hết\" ở danh sách. Mọi con số đọc từ tồn kho và đơn đã thu tiền/đã giao thật — không có chế độ bịa số.",
+        "en": "Product page shows \"Only N left\" for the selected variant and \"N sold in the last X days\"; \"Low stock\" badge in listings. Every number comes from real stock and paid/shipped orders — no fake-number mode."
     },
-    "version": "1.0.0",
+    "version": "1.0.1",
     "kind": "feature",
     "provider": "Plugin\\ScarcitySignals\\ScarcitySignalsServiceProvider",
     "requires": {

@@ -1,6 +1,6 @@
 # Biến thể linh hoạt — kế hoạch refactor
 
-> Trạng thái: **In progress** (Owner duyệt 2026-11-12, Core 0.4.24). Quyết định: [ADR-045](../19-adr/ADR-045-flexible-variant-options.md). Mỗi đợt một commit, cập nhật cột "Trạng thái".
+> Trạng thái: **Done** (Owner duyệt 2026-11-12, Core 0.4.24 → hoàn tất 0.4.29, 2026-11-13). Quyết định: [ADR-045](../19-adr/ADR-045-flexible-variant-options.md). Mỗi đợt một commit, cập nhật cột "Trạng thái".
 
 ## Mô hình đích (Catalog)
 
@@ -23,6 +23,6 @@ Chuyển dữ liệu: `colors` → loại `color` (swatch, lọc được; hex, 
 | **F1 — Dữ liệu Catalog** | Bảng mới + migration chuyển dữ liệu; model; `VariantData`/chỉ mục/sinh SKU theo tổ hợp; Admin danh mục loại tuỳ chọn (thay trang Màu, Size) | ✅ 0.4.25 — kèm sớm một phần F4: ma trận Admin 1–3 trục (lưới khi 2 trục, danh sách khi 1/3) và ảnh theo SKU. `VariantData` giữ tạm `colorCode`/`sizeCode` (suy ra) tới F3 |
 | **F2 — Đọc ở Catalog/Storefront** | Chi tiết sản phẩm (`options`, ảnh theo SKU), thẻ sản phẩm (swatch của loại swatch), bộ lọc/facet theo loại lọc được (thay nhóm màu, size), tìm kiếm (SQL — provider `database`; plugin Meilisearch đã gỡ) | ✅ 0.4.26 — `?opt[<mã>]=`, facet `meta.facets.options`, Admin Bộ lọc `opt:<mã>`; lọc theo SKU đang bán. Chi tiết sản phẩm/thẻ đã làm ở F1. Bộ chọn trang sản phẩm (Blade) vẫn theo màu/size → F5 |
 | **F3 — Snapshot `options`** | Dòng giỏ, `TotalsLine`, checkout, dòng đơn (bỏ `color_name`, `size_code`), payload tích hợp, phiếu in, file giao hãng, đổi trả, lưới tồn, báo cáo | ✅ 0.4.27 — tên `variantOptions` / `order_lines.variant_options` (vì `options` của dòng đã là tuỳ chọn dòng của plugin); hiển thị bằng `VariantOptionsText`; lưới tồn lọc `opt[<loại>]`. Còn: form thêm giỏ của trang sản phẩm vẫn gửi `color` → F5 |
-| **F4 — Admin ma trận N trục** | Chọn 1–3 trục + giá trị cho sản phẩm; lưới (2 trục) / danh sách (1, 3 trục); ảnh theo SKU + áp ảnh theo giá trị trục | |
+| **F4 — Admin ma trận N trục** | Chọn 1–3 trục + giá trị cho sản phẩm; lưới (2 trục) / danh sách (1, 3 trục); ảnh theo SKU + áp ảnh theo giá trị trục | ✅ 0.4.25 (làm cùng F1) |
 | **F5 — Storefront** | Bộ chọn N trục (swatch/nút/dropdown), khoá giá trị không còn tổ hợp mua được, ảnh theo SKU, không JS vẫn chạy | ✅ 0.4.28 — trục đầu theo `display_type`, các trục còn lại gộp thành nhóm SKU theo giá trị trục đầu (không JS); `available` cho mọi giá trị; form gửi `axis[<mã>]` |
-| **F6 — Plugin, tài liệu** | Bảng size, tín hiệu khan hàng, pixel, kho, Meilisearch; OpenAPI, từ điển dữ liệu, CHANGELOG | |
+| **F6 — Plugin, tài liệu** | Bảng size, tín hiệu khan hàng, pixel, kho, Meilisearch; OpenAPI, từ điển dữ liệu, CHANGELOG | ✅ 0.4.29 — `vani.size-chart` 1.0.2 (0.4.28), `vani.scarcity-signals` 1.0.1, `vani.tracking-pixels` 1.0.1; `vani.warehouse`, `vani.wishlist` chỉ dùng SKU/id — không đổi; Meilisearch đã gỡ (0.4.26). Tài liệu: variant-matrix, catalog-pricing, database, status; OpenAPI và từ điển dữ liệu cập nhật theo từng đợt |

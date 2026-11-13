@@ -9,7 +9,7 @@
 > | Brand là thực thể catalog (`brands`, `styles.brand_id` tuỳ chọn), Admin `/catalog/brands`, Storefront API `/brands` + lọc/facet `brand`, snapshot trên dòng đơn | Implemented (bản dịch brand: Planned; trang native `/thuong-hieu/{slug}`: slice 12b) |
 > | Danh mục (một cây cho cả cửa hàng): `parent_id` + materialized `path` (`/12/57/`), tối đa **5 cấp**, di chuyển kéo theo cả cây con, chặn chuyển vào cây con của chính nó, không xoá danh mục còn con, `lock_version`, bản dịch vi/en + SEO, ảnh | Implemented |
 > | Thuộc tính spec/internal, kiểu `select`/`multiselect`/`text`/`boolean`, giá trị có bản dịch; sửa giá trị giữ nguyên id theo `code` | Implemented |
-> | Màu (tên + `color_family` chuẩn) và size (`size_system` + `sort_order`) | Implemented |
+> | Loại tuỳ chọn biến thể dùng chung ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md), 0.4.25–0.4.28): Màu, Size là hai loại có sẵn, thêm được Chất liệu, Dung tích…; mỗi sản phẩm 1–3 trục; ảnh theo SKU; lọc danh mục `opt[<mã>]`; giỏ/đơn chụp `variant_options` | Implemented |
 > | Media: thư viện dùng chung, khử trùng lặp theo SHA-256 + `mediables` (gắn đa hình theo `role`); disk `VANI_MEDIA_DISK` | Implemented |
 > | Thư viện ảnh dùng chung `/{admin}/media` (2026-10-08): thư mục ảo `media_folders` + `media.folder` (slug, lồng tối đa 4 cấp, đổi tên kéo theo con, chỉ xoá thư mục rỗng), tải lên/kéo thả (jpg/png/webp ≤ 10 MB, 20 ảnh/lần), tìm theo tên mọi thư mục, sắp xếp, đổi tên hiển thị, chuyển thư mục, xoá chỉ ảnh không còn dùng (kèm file gốc + bản thu nhỏ). Modal chọn ảnh `MediaPicker` (`resources/js/admin/Components/Media`) ở ảnh màu sản phẩm và ảnh danh mục. Quyền `media.view` (xem/chọn), `media.manage` (ghi) | Implemented |
 > | Style (mã, slug, trạng thái, khung giờ hiển thị, bản dịch, danh mục + danh mục chính, thuộc tính), Style Color + bộ ảnh theo màu, bộ sưu tập thủ công | Implemented (slice 2) |
@@ -61,13 +61,14 @@ Brand là nhóm sản phẩm theo thương hiệu, **không** là phạm vi dữ
 
 | Loại | Dùng cho | Ví dụ |
 |---|---|---|
-| **Option axis** | Tạo variant | Màu, Size |
+| **Option axis** (loại tuỳ chọn, ADR-045) | Tạo variant — 1–3 trục mỗi sản phẩm | Màu, Size, Chất liệu, Dung tích |
 | **Spec attribute** | Hiển thị + lọc | Chất liệu, Form dáng, Cổ áo, Độ dày, Mùa |
 | **Internal attribute** | Vận hành, không hiển thị | Nhà cung cấp, Mã ERP, Nhóm thuế |
 
-- **Màu** có 2 tầng: `color` (tên hiển thị, "Trắng ngà") và `color_family` (nhóm lọc chuẩn: Trắng, Đen, Be, Xanh…).
-- **Size** có `size_system` (VN, US, EU, số, chữ) và `sort_order` chuẩn (XS < S < M < L < XL…).
-- Thuộc tính, màu, size khai báo **một lần cho cả cửa hàng**.
+- **Loại tuỳ chọn** (`option_types`): mã, tên theo ngôn ngữ, kiểu hiển thị (`swatch` ô màu | `button` nút | `dropdown` danh sách), "lọc được" ở danh mục, thứ tự. Giá trị (`option_values`): mã, tên theo ngôn ngữ, thứ tự, `group` (vd. hệ size VN/US/EU, chữ/số) và — với loại ô màu — `hex` + `family` (nhóm lọc chuẩn: Trắng, Đen, Be, Xanh…; "Trắng ngà" thuộc nhóm Trắng).
+- **Màu** (`color`, ô màu) và **Size** (`size`, nút) là hai loại có sẵn; sản phẩm không có màu/size (phụ kiện một cỡ, mỹ phẩm theo dung tích) chọn loại khác hoặc một trục.
+- Sản phẩm chọn 1–3 loại làm trục (`style_options`) và giá trị dùng, có thứ tự riêng (`style_option_values`); SKU là một tổ hợp giá trị (`variant_option_values`, khoá `variants.option_key`). Ảnh gắn theo SKU (áp một bộ ảnh cho mọi SKU cùng màu bằng một nút).
+- Thuộc tính và loại tuỳ chọn khai báo **một lần cho cả cửa hàng** (Admin → Catalog → Tuỳ chọn biến thể).
 
 ## 3. Danh mục, bộ sưu tập, merchandising
 

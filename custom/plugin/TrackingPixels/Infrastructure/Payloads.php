@@ -21,9 +21,10 @@ final class Payloads
      */
     public static function viewItem(array $product): array
     {
-        $variant = collect((array) ($product['variants'] ?? []))->firstWhere('id', $product['default_variant_id'] ?? null) ?? ($product['variants'][0] ?? null);
+        // SKU mặc định (`variants[].is_default`) — giá và tổ hợp tuỳ chọn ("Trắng ngà / M") của SKU đó.
+        $variant = collect((array) ($product['variants'] ?? []))->firstWhere('is_default', true) ?? ($product['variants'][0] ?? null);
         $amount = $variant['price']['amount'] ?? $product['price']['min'] ?? null;
-        $item = self::item((string) ($variant['sku'] ?? $product['style_code'] ?? $product['id']), (string) $product['name'], $product['brand']['name'] ?? null, $amount, 1);
+        $item = self::item((string) ($variant['sku'] ?? $product['style_code'] ?? $product['id']), (string) $product['name'], $product['brand']['name'] ?? null, $amount, 1, $variant === null ? null : self::variantLabel($product, $variant));
 
         return ['currency' => $amount['currency'] ?? null, 'value' => $item['price'], 'items' => [$item]];
     }
@@ -61,7 +62,7 @@ final class Payloads
      */
     public static function purchase(array $order): array
     {
-        $items = array_map(fn (array $line): array => self::item((string) $line['sku'], (string) $line['name'], null, $line['unit_price'], (int) $line['quantity']), $order['lines']);
+        $items = array_map(fn (array $line): array => self::item((string) $line['sku'], (string) $line['name'], null, $line['unit_price'], (int) $line['quantity'], $line['variant_label'] ?? null), $order['lines']);
 
         return [
             'transaction_id' => (string) $order['number'],
@@ -86,11 +87,33 @@ final class Payloads
 
     /**
      * @param  array{amount: int, currency: string}|null  $price
-     * @return array{item_id: string, item_name: string, item_brand?: string, price: float|int, quantity: int}
+     * @return array{item_id: string, item_name: string, item_brand?: string, item_variant?: string, price: float|int, quantity: int}
      */
-    public static function item(string $id, string $name, ?string $brand, ?array $price, int $quantity): array
+    public static function item(string $id, string $name, ?string $brand, ?array $price, int $quantity, ?string $variant = null): array
     {
-        return array_filter(['item_id' => $id, 'item_name' => $name, 'item_brand' => $brand, 'price' => self::major($price), 'quantity' => $quantity], fn ($value): bool => $value !== null);
+        return array_filter([
+            'item_id' => $id, 'item_name' => $name, 'item_brand' => $brand, 'item_variant' => $variant === '' ? null : $variant, 'price' => self::major($price), 'quantity' => $quantity,
+        ], fn ($value): bool => $value !== null);
+    }
+
+    /**
+     * Tổ hợp tuỳ chọn của SKU theo thứ tự trục, vd. "Trắng ngà / M" (`option_values` trỏ `options[].values[].id`).
+     *
+     * @param  array<string, mixed>  $product
+     * @param  array<string, mixed>  $variant
+     */
+    private static function variantLabel(array $product, array $variant): string
+    {
+        $names = [];
+        foreach ((array) ($product['options'] ?? []) as $option) {
+            $valueId = collect((array) ($variant['option_values'] ?? []))->firstWhere('option', $option['code'])['value_id'] ?? null;
+            $value = collect((array) $option['values'])->firstWhere('id', $valueId);
+            if ($value !== null) {
+                $names[] = (string) ($value['name'] ?? $value['code']);
+            }
+        }
+
+        return implode(' / ', $names);
     }
 
     /**

@@ -58,7 +58,9 @@ it('có mã: trang sản phẩm có cấu hình + view_item đúng giá; danh s�
     $html = ($this->product)();
     expect($html)->toContain('id="vani-tracking-config"')->toContain('"meta":"123456789012345"')->toContain('"consent":"banner"')->toContain('data-vani-consent')
         ->and(trackedEvents($html)['view_item'])->toMatchArray(['currency' => 'VND', 'value' => 300000])
-        ->and(trackedEvents($html)['view_item']['items'][0])->toMatchArray(['item_id' => $this->s->sku, 'price' => 300000, 'quantity' => 1]);
+        ->and(trackedEvents($html)['view_item']['items'][0])->toMatchArray(['item_id' => $this->s->sku, 'price' => 300000, 'quantity' => 1])
+        // GA4 item_variant: tổ hợp tuỳ chọn của SKU mặc định.
+        ->and(trackedEvents($html)['view_item']['items'][0]['item_variant'])->toEndWith(' / '.$this->s->valueOf('size')->label());
 
     $search = trackedEvents($this->get('/tim-kiem?q=lua')->assertOk()->getContent());
     expect($search['search'])->toBe(['search_term' => 'lua'])->and($search)->toHaveKey('view_item_list');
@@ -75,6 +77,7 @@ it('trang thanh toán có begin_checkout; trang đơn có purchase với mã s�
     $purchase = trackedEvents($html)['purchase'];
 
     expect($purchase)->toMatchArray(['transaction_id' => $order->number, 'event_id' => "purchase-{$order->public_id}", 'currency' => 'VND', 'value' => 330000, 'payment_type' => 'cod'])
+        ->and($purchase['items'][0]['item_variant'])->toEndWith(' / '.$this->s->valueOf('size')->label())
         ->and(json_encode($purchase))->not->toContain('Lan@Example.com')->not->toContain('0912');
 });
 

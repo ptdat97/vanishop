@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.29 — 2026-11-13
+
+Biến thể linh hoạt, đợt F6 — plugin và tài liệu ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)); hoàn tất [kế hoạch](../20-roadmap/flexible-variants.md).
+
+### Đổi
+- `vani.scarcity-signals` 1.0.1: "Chỉ còn N" theo SKU đang chọn ở mọi bộ chọn (nút hoặc danh sách thả xuống của sản phẩm một trục), không chỉ theo size.
+- `vani.tracking-pixels` 1.0.1: `view_item` lấy SKU mặc định theo `variants[].is_default` (trước đọc `default_variant_id` đã bỏ từ 0.4.22 nên luôn lấy SKU đầu); `view_item`, `purchase` thêm `items[].item_variant` (GA4) = tổ hợp tuỳ chọn của SKU ("Trắng ngà / M").
+- Tài liệu: [variant-matrix](../03-domains/variant-matrix.md) (mô hình N trục, ảnh theo SKU, payload lưu ma trận), [catalog-pricing](../03-domains/catalog-pricing.md) §2, [database](../07-database/database.md), [status](../00-overview/status.md).
+
 ## 0.4.28 — 2026-11-13
 
 Biến thể linh hoạt, đợt F5 — bộ chọn trang sản phẩm 1–3 trục ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)).
