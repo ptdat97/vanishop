@@ -181,3 +181,36 @@ it('bắt buộc Idempotency-Key và expected_total', function () {
         ->assertStatus(400)->assertJsonPath('error.code', 'http.400');
     ($this->place)(C::orderPayload())->assertStatus(422)->assertJsonPath('error.code', 'validation.failed');
 });
+
+it('lỗi sau khi đã giữ hàng (listener vani.order.after_create hỏng) → huỷ cả lượt: không đơn, không thanh toán, tồn/giữ hàng như cũ, giỏ còn mở; thử lại cùng key thì thành công', function () {
+    ($this->add)($this->s, 2);
+    ($this->add)($this->m, 1);
+    $total = ($this->quote)()->assertOk()->json('data.total.amount');
+    $state = fn (): array => [
+        'levels' => DB::table('stock_levels')->orderBy('id')->get(['variant_id', 'on_hand', 'reserved'])->map(fn ($row): array => (array) $row)->all(),
+        'reservations' => DB::table('stock_reservations')->count(),
+        'movements' => DB::table('stock_movements')->count(),
+        'orders' => Order::query()->withoutGlobalScopes()->count(),
+        'payments' => DB::table('payments')->count(),
+        'idempotency' => DB::table('idempotency_keys')->count(),
+    ];
+    $before = $state();
+    $failing = true;
+    Hook::onAction('vani.order.after_create', function () use (&$failing): void {
+        if ($failing) {
+            throw new RuntimeException('plugin hỏng sau khi giữ hàng');
+        }
+    });
+
+    ($this->place)(C::orderPayload(['expected_total' => $total]))->assertServerError();
+    expect($state())->toBe($before);
+    $this->getJson("{$this->api}/carts/{$this->cart}", $this->cartHeaders)->assertOk()->assertJsonCount(2, 'data.lines');
+
+    $failing = false;
+    ($this->place)(C::orderPayload(['expected_total' => $total]))->assertCreated();
+    $reserved = fn ($variant): int => (int) DB::table('stock_levels')->where('variant_id', $variant->id)->value('reserved');
+    expect(Order::query()->withoutGlobalScopes()->count())->toBe(1)
+        ->and($reserved($this->s))->toBe(2)
+        ->and($reserved($this->m))->toBe(1);
+    ($this->place)(C::orderPayload(['expected_total' => $total]), 'order-key-0002')->assertStatus(409)->assertJsonPath('error.code', 'cart.closed');
+});
