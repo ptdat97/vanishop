@@ -2,6 +2,7 @@
 import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
+import FullscreenDialog from '@admin/Components/FullscreenDialog.vue';
 import MultiSelect from '@admin/Components/MultiSelect.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -97,15 +98,28 @@ const errors = computed(() => form.errors as Record<string, string | undefined>)
 
 /** Một nút Lưu cho cả sản phẩm và ma trận biến thể (ma trận chỉ gửi khi có thay đổi). */
 const matrix = ref<InstanceType<typeof VariantMatrixEditor> | null>(null);
+/** Popup toàn màn hình của ma trận biến thể; lỗi của ma trận khi lưu → mở lại popup để thấy ngay ô lỗi. */
+const variantsOpen = ref(false);
+const variantSummary = computed(() => matrix.value?.summary ?? null);
+const isVariantError = (field: string): boolean => field === 'axes' || /^(axes|cells|variant)\./.test(field);
 function submit(): void {
     const withVariants = form.transform((data) => {
         const variants = matrix.value?.payload() ?? null;
         return variants === null ? data : { ...data, variants };
     });
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (!Object.keys(page.props.errors ?? {}).some(isVariantError)) variantsOpen.value = false;
+        },
+        onError: (errors: Record<string, string>) => {
+            if (Object.keys(errors).some(isVariantError)) variantsOpen.value = true;
+        },
+    };
     if (props.product) {
-        withVariants.put(productUrl.value, { preserveScroll: true });
+        withVariants.put(productUrl.value, options);
     } else {
-        withVariants.post(baseUrl.value);
+        withVariants.post(baseUrl.value, options);
     }
 }
 
@@ -229,18 +243,64 @@ async function destroy(): Promise<void> {
                 </FormField>
             </div>
 
-            <VariantMatrixEditor
-                ref="matrix"
-                :product-url="productUrl"
-                :urls="variantMatrix.urls"
-                :style-code="form.style_code || 'SKU'"
-                :axes="variantMatrix.axes"
-                :option-types="variantMatrix.optionTypes"
-                :variants="product?.variants ?? []"
-                :columns="variantMatrix.columns"
-                :values="variantMatrix.values"
-                :status-labels="labels.variant_status"
-            />
+            <!-- Biến thể: thẻ tóm tắt trên form; quản lý trong popup toàn màn hình (một nút Lưu chung). -->
+            <section class="rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="variants-card-title">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 id="variants-card-title" class="text-sm font-medium">
+                            Biến thể
+                            <span v-if="variantSummary?.dirty" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">Chưa lưu</span>
+                        </h2>
+                        <p class="mt-1 text-sm text-slate-600">
+                            <template v-if="variantSummary && variantSummary.active + variantSummary.inactive > 0">
+                                <span class="font-medium text-slate-900">{{ variantSummary.active }}</span> SKU đang bán<template v-if="variantSummary.inactive"> · {{ variantSummary.inactive }} ngừng bán</template>
+                                <template v-if="product && variantSummary.withoutImages"> · <span class="text-amber-700">{{ variantSummary.withoutImages }} chưa có ảnh</span></template>
+                            </template>
+                            <template v-else>Chưa có biến thể — chọn màu, size… để tạo SKU.</template>
+                        </p>
+                    </div>
+                    <button type="button" :class="primaryButton" data-open-variants @click="variantsOpen = true">
+                        {{ variantSummary && variantSummary.active + variantSummary.inactive > 0 ? 'Quản lý biến thể' : 'Thiết lập biến thể' }}
+                    </button>
+                </div>
+                <div v-if="variantSummary?.axes.length" class="mt-3 space-y-1.5">
+                    <div v-for="axis in variantSummary.axes" :key="axis.name" class="flex flex-wrap items-center gap-1.5 text-xs">
+                        <span class="w-16 shrink-0 font-medium text-slate-500">{{ axis.name }}</span>
+                        <span v-for="value in axis.values" :key="value.name" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5">
+                            <span v-if="axis.swatch" class="inline-block h-3 w-3 rounded-full border border-slate-300" :style="{ background: value.hex ?? 'transparent' }" />
+                            {{ value.name }}
+                        </span>
+                    </div>
+                </div>
+                <div v-if="variantSummary?.images.length" class="mt-3 flex gap-2">
+                    <img v-for="image in variantSummary.images" :key="image.id" :src="image.url" alt="" class="h-14 w-11 rounded object-cover" loading="lazy" />
+                </div>
+            </section>
+            <FullscreenDialog
+                v-model:open="variantsOpen"
+                :title="`Biến thể — ${form.translations[defaultLocale]?.name || form.style_code || 'sản phẩm mới'}`"
+                subtitle="Chọn tuỳ chọn, bật tổ hợp bán, sửa SKU/giá/tồn trong bảng. Tắt SKU đã có: chưa phát sinh → xoá, đã bán/có tồn → ngừng bán."
+            >
+                <VariantMatrixEditor
+                    ref="matrix"
+                    :product-url="productUrl"
+                    :urls="variantMatrix.urls"
+                    :style-code="form.style_code || 'SKU'"
+                    :axes="variantMatrix.axes"
+                    :option-types="variantMatrix.optionTypes"
+                    :variants="product?.variants ?? []"
+                    :columns="variantMatrix.columns"
+                    :values="variantMatrix.values"
+                    :status-labels="labels.variant_status"
+                />
+                <template #footer>
+                    <span v-if="variantSummary?.dirty" class="text-sm text-amber-700">Có thay đổi chưa lưu</span>
+                    <span v-else class="text-sm text-slate-500">Không có thay đổi</span>
+                    <span class="ml-auto" />
+                    <button type="button" :class="secondaryButton" @click="variantsOpen = false">Đóng (giữ bản nháp)</button>
+                    <button type="button" :class="primaryButton" :disabled="form.processing" data-save-variants @click="submit">{{ product ? 'Lưu' : 'Lưu sản phẩm' }}</button>
+                </template>
+            </FullscreenDialog>
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
             <p v-else class="text-sm text-slate-500">Ảnh theo SKU, video và sản phẩm liên kết thêm được sau lần Lưu đầu tiên.</p>

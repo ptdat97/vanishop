@@ -44,6 +44,10 @@ chung (không trục tự do theo từng sản phẩm); giá và tồn thuộc m
 - **Ảnh theo SKU** (SKU đã lưu): cột "Ảnh" của bảng chi tiết mở khối ảnh của SKU — tải lên, chọn từ thư viện, kéo đổi thứ tự, áp bộ ảnh cho mọi SKU cùng giá trị ở một trục.
 - Mọi thay đổi là **bản nháp** trên màn hình; **một nút Lưu chung của form sản phẩm** (0.4.30) lưu cả thông tin sản phẩm và ma trận;
   rời trang khi còn thay đổi chưa lưu → hỏi lại.
+- **Popup toàn màn hình** (0.4.31): form sản phẩm chỉ hiện thẻ tóm tắt (giá trị từng trục, số SKU đang bán/ngừng bán, SKU chưa có
+  ảnh, "Chưa lưu"); nút "Quản lý biến thể" mở popup hai cột — trái: tuỳ chọn (trục, giá trị, tạo nhanh); phải: (2) chọn tổ hợp bán
+  (lưới; bấm tên hàng/cột để bật/tắt cả hàng/cột), (3) chi tiết SKU (áp hàng loạt, bảng sửa trực tiếp, ảnh theo SKU). Đóng popup giữ
+  bản nháp; nút Lưu trong popup lưu cả sản phẩm; lưu lỗi ở ma trận → popup tự mở lại.
 - **Thêm sản phẩm mới**: khối Biến thể có ngay (sẵn trục Màu + Size, chỉ cần chọn giá trị; trục để trống được bỏ qua — vd. sản phẩm
   chỉ có màu); nhập thông tin + bật SKU rồi Lưu một lần. Ảnh theo SKU, video, liên kết thêm sau lần Lưu đầu.
 - **Ít thao tác**: chọn giá trị có sẵn là thêm ngay vào trục và bật sẵn mọi tổ hợp mới; giá trị chưa có thì gõ tên (màu kèm ô chọn

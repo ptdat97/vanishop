@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.31 — 2026-11-13
+
+Admin: biến thể trong popup toàn màn hình ([variant-matrix §3.1](../03-domains/variant-matrix.md)).
+
+### Thêm
+- Component Admin `FullscreenDialog` (`@admin/Components/FullscreenDialog.vue`): popup toàn màn hình cho màn hình làm việc lớn — `v-model:open`, `title`, `subtitle`, slot `actions`, `footer`; nội dung giữ trong DOM khi đóng (không mất bản nháp), Esc đóng, khoá cuộn nền. Plugin dùng được cho trang Admin của mình.
+- Form sản phẩm: thẻ tóm tắt Biến thể + popup hai cột (tuỳ chọn | tổ hợp bán, chi tiết SKU). Lưới: bấm tên hàng/cột bật/tắt cả hàng/cột, đếm SKU đang bật theo hàng, chú giải trạng thái ô.
+
+### Đổi
+- `VariantMatrixEditor`: bố cục hai cột cho popup; `defineExpose` thêm `summary` (trục + giá trị, số SKU đang bán/ngừng bán, SKU chưa có ảnh, ảnh đại diện, còn thay đổi chưa lưu).
+
 ## 0.4.30 — 2026-11-13
 
 Admin biến thể đơn giản, ít thao tác ([variant-matrix §3](../03-domains/variant-matrix.md)).

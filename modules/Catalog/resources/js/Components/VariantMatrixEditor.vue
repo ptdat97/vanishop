@@ -256,7 +256,28 @@ function payload(): { axes: Axis[]; cells: Cell[] } | null {
     }
     return { axes: sent, cells };
 }
-defineExpose({ payload });
+/** Bật/tắt cả hàng/cột của lưới (trục `position` = giá trị `valueId`): còn ô tắt → bật hết, đã bật hết → tắt hết. */
+function toggleLine(position: number, valueId: number): void {
+    const targets = combos.value.filter((values) => values[position] === valueId);
+    const allOn = targets.every((values) => draftOf(values)?.enabled);
+    targets.forEach((values) => toggle(values, !allOn));
+}
+const lineCount = (position: number, valueId: number): string => {
+    const targets = combos.value.filter((values) => values[position] === valueId);
+    return `${targets.filter((values) => draftOf(values)?.enabled).length}/${targets.length}`;
+};
+
+/** Tóm tắt cho thẻ "Biến thể" trên form sản phẩm (ngoài popup). */
+const summary = computed(() => ({
+    axes: activeAxes.value.map((axis) => ({ name: typeName(axis.option_type_id), swatch: isSwatch(axis.option_type_id), values: axis.value_ids.map((id) => ({ name: valueName(id), hex: valueById.value.get(id)?.hex ?? null })) })),
+    active: rows.value.filter((row) => row.draft.status === 'active').length,
+    inactive: rows.value.filter((row) => row.draft.status !== 'active').length,
+    withoutImages: props.variants.filter((variant) => variant.images.length === 0).length,
+    images: props.variants.flatMap((variant) => variant.images.slice(0, 1)).slice(0, 8),
+    dirty: dirty.value,
+}));
+
+defineExpose({ payload, summary });
 
 /** Lỗi của ô: `cells.<n>.<trường>` theo thứ tự đã gửi; lỗi của cột góp vào: `variant.<id>`. */
 function rowError(rowKey: string, variantId: number | null): string | null {
@@ -405,24 +426,23 @@ const enabledCount = computed(() => rows.value.length);
 </script>
 
 <template>
-    <section class="space-y-4 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="variant-matrix-title">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-                <h2 id="variant-matrix-title" class="text-sm font-medium">Biến thể</h2>
-                <p class="text-xs text-slate-500">Chọn 1–3 loại tuỳ chọn làm trục, bấm tổ hợp để bật/tắt SKU. Tắt SKU đã có: chưa bán/chưa có tồn → xoá, đã phát sinh → ngừng bán.</p>
+    <div class="grid gap-6 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
+        <aside class="space-y-3" aria-label="Tuỳ chọn biến thể">
+            <div class="flex items-baseline justify-between gap-2">
+                <h3 class="text-sm font-semibold text-slate-900">1. Tuỳ chọn</h3>
+                <a :href="urls.option_types" target="_blank" class="text-xs text-indigo-600 underline">Danh mục tuỳ chọn ↗</a>
             </div>
-            <div class="flex items-center gap-2">
-                <span v-if="dirty" class="text-xs text-amber-700">Chưa lưu</span>
-                <a :href="urls.option_types" target="_blank" class="text-xs text-indigo-600 underline">Quản lý tuỳ chọn biến thể ↗</a>
-            </div>
-        </div>
-
-        <!-- Trục: loại tuỳ chọn (kéo để đổi thứ tự) và giá trị sản phẩm dùng (kéo để đổi thứ tự hiển thị) -->
+            <p class="text-xs text-slate-500">Tối đa 3 trục (vd. Màu, Size). Chọn giá trị có sẵn hoặc gõ tên để tạo mới.</p>
+        <!-- Bước 1 — Tuỳ chọn: trục (kéo để đổi thứ tự) và giá trị (kéo để đổi thứ tự hiển thị) -->
         <div class="space-y-2">
             <Sortable v-slot="{ item: axis, handle }" v-model="axes" :item-key="(axis) => axis.option_type_id" :item-label="(axis) => `trục ${typeName(axis.option_type_id)}`">
-                <div class="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 p-2 text-sm">
-                    <SortHandle v-bind="handle" />
-                    <span class="w-24 font-medium">{{ typeName(axis.option_type_id) }}</span>
+                <div class="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+                    <div class="flex items-center gap-2">
+                        <SortHandle v-bind="handle" />
+                        <span class="font-medium">{{ typeName(axis.option_type_id) }}</span>
+                        <span class="rounded-full bg-slate-100 px-2 text-xs text-slate-600">{{ axis.value_ids.length }}</span>
+                        <button v-if="!locked" type="button" class="ml-auto text-xs text-red-600 hover:underline" @click="removeAxis(axis)">Bỏ trục</button>
+                    </div>
                     <Sortable
                         v-slot="{ item: valueId, handle: valueHandle }"
                         :model-value="axis.value_ids"
@@ -446,9 +466,10 @@ const enabledCount = computed(() => rows.value.length);
                             >✕</button>
                         </span>
                     </Sortable>
-                    <span class="ml-auto flex flex-wrap items-center gap-1">
+                    <p v-if="!axis.value_ids.length" class="text-xs text-amber-700">Chưa chọn giá trị — trục trống được bỏ qua.</p>
+                    <div class="space-y-1.5">
                         <!-- Chọn là thêm ngay (một thao tác). -->
-                        <span v-if="addableValues(axis).length" class="w-40">
+                        <div v-if="addableValues(axis).length">
                             <Select
                                 :model-value="null"
                                 :options="addableValues(axis)"
@@ -456,8 +477,9 @@ const enabledCount = computed(() => rows.value.length);
                                 :aria-label="`Thêm giá trị ${typeName(axis.option_type_id)}`"
                                 @update:model-value="(id) => { newValue[axis.option_type_id] = Number(id); addValue(axis); }"
                             />
-                        </span>
+                        </div>
                         <!-- Chưa có thì tạo mới tại chỗ: gõ tên (màu kèm ô chọn màu) rồi Enter. -->
+                        <div class="flex items-center gap-1">
                         <input
                             v-if="isSwatch(axis.option_type_id)"
                             v-model="newValueDraft(axis).hex"
@@ -467,181 +489,217 @@ const enabledCount = computed(() => rows.value.length);
                         />
                         <input
                             v-model="newValueDraft(axis).name"
-                            :class="[inputClass, 'w-36']"
+                            :class="[inputClass, 'min-w-0 flex-1']"
                             :placeholder="`${typeName(axis.option_type_id)} mới…`"
                             :aria-label="`Tạo ${typeName(axis.option_type_id)} mới`"
                             @keydown.enter.prevent="createValue(axis)"
                         />
                         <button type="button" :class="secondaryButton" :disabled="quickBusy || !newValueDraft(axis).name.trim()" @click="createValue(axis)">Tạo</button>
-                        <button v-if="!locked" type="button" class="text-xs text-red-600" @click="removeAxis(axis)">Bỏ trục</button>
-                    </span>
+                        </div>
+                    </div>
                 </div>
             </Sortable>
-            <div v-if="!locked && axes.length < MAX_AXES" class="flex flex-wrap items-center gap-2 text-sm">
-                <span v-if="addableTypes.length" class="w-56">
+            <div v-if="!locked && axes.length < MAX_AXES" class="space-y-1.5 rounded-lg border border-dashed border-slate-300 p-3 text-sm">
+                <span class="text-xs font-medium text-slate-600">Thêm trục ({{ axes.length }}/{{ MAX_AXES }})</span>
+                <span v-if="addableTypes.length" class="block">
                     <Select :model-value="null" :options="addableTypes" placeholder="+ Thêm trục có sẵn…" aria-label="Thêm trục" @update:model-value="(id) => { newTypeId = Number(id); addAxis(); }" />
                 </span>
-                <span class="text-xs text-slate-400">hoặc tạo loại mới</span>
-                <input v-model="quickType.name" :class="[inputClass, 'w-40']" placeholder="vd. Chất liệu" aria-label="Tên loại tuỳ chọn mới" @keydown.enter.prevent="createType" />
-                <span class="w-32"><Select v-model="quickType.display_type" :options="displayTypeOptions" aria-label="Kiểu hiển thị" /></span>
-                <button type="button" :class="secondaryButton" :disabled="quickBusy || !quickType.name.trim()" @click="createType">Tạo trục</button>
+                <span class="block text-xs text-slate-400">hoặc tạo loại mới</span>
+                <div class="flex items-center gap-1">
+                    <input v-model="quickType.name" :class="[inputClass, 'min-w-0 flex-1']" placeholder="vd. Chất liệu" aria-label="Tên loại tuỳ chọn mới" @keydown.enter.prevent="createType" />
+                    <span class="w-28"><Select v-model="quickType.display_type" :options="displayTypeOptions" aria-label="Kiểu hiển thị" /></span>
+                    <button type="button" :class="secondaryButton" :disabled="quickBusy || !quickType.name.trim()" @click="createType">Tạo</button>
+                </div>
             </div>
             <p v-else-if="locked" class="text-xs text-slate-500">Đã có SKU: không đổi được loại tuỳ chọn (tắt hết SKU rồi lưu trước). Vẫn thêm/bớt giá trị và kéo đổi thứ tự trục được.</p>
             <p v-for="message in axisErrors" :key="message" class="text-sm text-red-600">{{ message }}</p>
             <p v-for="(message, field) in quickErrors" :key="field" class="text-sm text-red-600">{{ message }}</p>
         </div>
 
+        </aside>
+
+        <div class="min-w-0 space-y-6">
+            <section class="space-y-3" aria-label="Tổ hợp đang bán">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="text-sm font-semibold text-slate-900">2. Chọn tổ hợp bán</h3>
+                    <span class="text-xs text-slate-500">{{ summary.active }} đang bán · {{ summary.inactive }} ngừng bán<template v-if="combos.length"> / {{ combos.length }} tổ hợp</template></span>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-white p-3">
         <p v-if="!axes.length" class="text-sm text-slate-500">Chưa có trục. Thêm ít nhất một loại tuỳ chọn (vd. Màu, Size).</p>
-        <p v-else-if="!combos.length" class="text-sm text-slate-500">Chọn hoặc tạo giá trị cho trục (vd. các màu, các size) — mọi tổ hợp được bật sẵn, tắt ô không bán.</p>
-        <template v-else-if="combos.length">
-            <!-- 2 trục: lưới hàng × cột -->
-            <div v-if="activeAxes.length === 2" class="overflow-x-auto text-sm">
-                <div class="grid items-center gap-1" :style="gridStyle">
-                    <span class="p-2 text-xs font-medium text-slate-500">{{ typeName(activeAxes[0].option_type_id) }} \ {{ typeName(activeAxes[1].option_type_id) }}</span>
-                    <span v-for="columnId in activeAxes[1].value_ids" :key="columnId" class="p-2 text-center font-medium">{{ valueName(columnId) }}</span>
+                    <p v-else-if="!combos.length" class="text-sm text-slate-500">Chọn hoặc tạo giá trị cho trục (vd. các màu, các size) — mọi tổ hợp được bật sẵn, tắt ô không bán.</p>
+                    <template v-else-if="combos.length">
+                        <!-- 2 trục: lưới hàng × cột -->
+                        <div v-if="activeAxes.length === 2" class="overflow-x-auto text-sm">
+                            <div class="grid items-center gap-1" :style="gridStyle">
+                                <span class="p-2 text-xs font-medium text-slate-500">{{ typeName(activeAxes[0].option_type_id) }} \ {{ typeName(activeAxes[1].option_type_id) }}</span>
+                                <button
+                                    v-for="columnId in activeAxes[1].value_ids"
+                                    :key="columnId"
+                                    type="button"
+                                    class="rounded p-2 text-center font-medium hover:bg-indigo-50"
+                                    :title="`Bật/tắt cả cột ${valueName(columnId)}`"
+                                    @click="toggleLine(1, columnId)"
+                                >{{ valueName(columnId) }}</button>
+                            </div>
+                            <div v-for="rowId in activeAxes[0].value_ids" :key="rowId" class="grid items-center gap-1 border-t border-slate-100" :style="gridStyle">
+                                <button type="button" class="flex items-center gap-2 rounded p-2 text-left hover:bg-indigo-50" :title="`Bật/tắt cả hàng ${valueName(rowId)}`" @click="toggleLine(0, rowId)">
+                                    <span v-if="isSwatch(activeAxes[0].option_type_id)" class="inline-block h-5 w-5 shrink-0 rounded-full border border-slate-300" :style="{ background: valueById.get(rowId)?.hex ?? 'transparent' }" />
+                                    <span class="truncate font-medium">{{ valueName(rowId) }}</span>
+                                    <span class="ml-auto text-xs text-slate-400">{{ lineCount(0, rowId) }}</span>
+                                </button>
+                                <div v-for="columnId in activeAxes[1].value_ids" :key="columnId" class="p-1 text-center">
+                                    <button
+                                        type="button"
+                                        class="h-11 w-full rounded-md border text-xs font-medium transition"
+                                        :class="cellClass(draftOf([rowId, columnId]))"
+                                        :aria-pressed="Boolean(draftOf([rowId, columnId])?.enabled)"
+                                        :aria-label="comboLabel([rowId, columnId])"
+                                        @click="toggle([rowId, columnId])"
+                                    >{{ cellText(draftOf([rowId, columnId])) }}</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 1 hoặc 3 trục: danh sách tổ hợp -->
+                        <div v-else class="flex flex-wrap gap-1 text-sm">
+                            <button
+                                v-for="values in combos"
+                                :key="comboKey(values)"
+                                type="button"
+                                class="rounded-md border px-3 py-2 text-xs font-medium"
+                                :class="cellClass(draftOf(values))"
+                                :aria-pressed="Boolean(draftOf(values)?.enabled)"
+                                @click="toggle(values)"
+                            >{{ comboLabel(values) }} · {{ cellText(draftOf(values)) }}</button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <span><span class="inline-block h-3 w-3 rounded border border-indigo-500 bg-indigo-50 align-middle" /> Đang bán</span>
+                            <span><span class="inline-block h-3 w-3 rounded border border-slate-400 bg-slate-100 align-middle" /> Ngừng bán</span>
+                            <span><span class="inline-block h-3 w-3 rounded border border-dashed border-slate-300 align-middle" /> Chưa có</span>
+                            <span v-if="activeAxes.length === 2">· Bấm tên hàng/cột để bật/tắt cả hàng/cột</span>
+                            <button v-if="enabledCount < combos.length" type="button" class="ml-auto text-indigo-600 underline" @click="enableAll">Bật mọi tổ hợp ({{ combos.length }})</button>
+                        </div>
+                    </template>
+
                 </div>
-                <div v-for="rowId in activeAxes[0].value_ids" :key="rowId" class="grid items-center gap-1 border-t border-slate-100" :style="gridStyle">
-                    <div class="flex items-center gap-2 p-2">
-                        <span v-if="isSwatch(activeAxes[0].option_type_id)" class="inline-block h-5 w-5 rounded-full border border-slate-300" :style="{ background: valueById.get(rowId)?.hex ?? 'transparent' }" />
-                        <span>{{ valueName(rowId) }}</span>
+            </section>
+
+            <section v-if="enabledCount" class="space-y-3" aria-label="Chi tiết SKU">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="text-sm font-semibold text-slate-900">3. Chi tiết SKU</h3>
+                    <span class="text-xs text-slate-500">Sửa trực tiếp trong bảng: SKU, giá, tồn… <template v-if="summary.withoutImages"> · <span class="text-amber-700">{{ summary.withoutImages }} SKU chưa có ảnh</span></template></span>
+                </div>
+                <div class="flex flex-wrap items-end gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm">
+                    <span class="w-full text-xs text-slate-500">Áp hàng loạt cho các SKU khớp (lưu khi bấm "Lưu")</span>
+                    <div v-for="axis in activeAxes" :key="axis.option_type_id" class="w-36">
+                        <Select :model-value="batch.filter[axis.option_type_id] ?? 0" :options="batchOptions(axis)" :aria-label="`${typeName(axis.option_type_id)} áp dụng`" @update:model-value="(value) => (batch.filter[axis.option_type_id] = Number(value))" />
                     </div>
-                    <div v-for="columnId in activeAxes[1].value_ids" :key="columnId" class="p-1 text-center">
-                        <button
-                            type="button"
-                            class="h-9 w-16 rounded border text-xs"
-                            :class="cellClass(draftOf([rowId, columnId]))"
-                            :aria-pressed="Boolean(draftOf([rowId, columnId])?.enabled)"
-                            :aria-label="comboLabel([rowId, columnId])"
-                            @click="toggle([rowId, columnId])"
-                        >{{ cellText(draftOf([rowId, columnId])) }}</button>
+                    <div class="w-56"><Select v-model="batch.target" :options="batchTargets" placeholder="Trường…" aria-label="Trường cần áp" /></div>
+                    <div class="w-40">
+                        <Select v-if="batch.target === 'status'" v-model="batch.value" :options="labelOptions(statusLabels)" aria-label="Giá trị" />
+                        <input v-else v-model="batch.value" :class="inputClass" aria-label="Giá trị" />
                     </div>
+                    <button type="button" :class="secondaryButton" :disabled="!batch.target" @click="applyBatch">Áp dụng</button>
                 </div>
-            </div>
-            <!-- 1 hoặc 3 trục: danh sách tổ hợp -->
-            <div v-else class="flex flex-wrap gap-1 text-sm">
-                <button
-                    v-for="values in combos"
-                    :key="comboKey(values)"
-                    type="button"
-                    class="rounded border px-2 py-1 text-xs"
-                    :class="cellClass(draftOf(values))"
-                    :aria-pressed="Boolean(draftOf(values)?.enabled)"
-                    @click="toggle(values)"
-                >{{ comboLabel(values) }} · {{ cellText(draftOf(values)) }}</button>
-            </div>
-            <button v-if="enabledCount < combos.length" type="button" class="text-xs text-indigo-600 underline" @click="enableAll">Bật mọi tổ hợp ({{ combos.length }})</button>
-        </template>
 
-        <div v-if="enabledCount" class="flex flex-wrap items-end gap-2 rounded-md bg-slate-50 p-3 text-sm">
-            <span class="w-full text-xs text-slate-500">Áp hàng loạt cho các SKU khớp (chưa lưu cho tới khi bấm "Lưu biến thể")</span>
-            <div v-for="axis in activeAxes" :key="axis.option_type_id" class="w-36">
-                <Select :model-value="batch.filter[axis.option_type_id] ?? 0" :options="batchOptions(axis)" :aria-label="`${typeName(axis.option_type_id)} áp dụng`" @update:model-value="(value) => (batch.filter[axis.option_type_id] = Number(value))" />
-            </div>
-            <div class="w-56"><Select v-model="batch.target" :options="batchTargets" placeholder="Trường…" aria-label="Trường cần áp" /></div>
-            <div class="w-40">
-                <Select v-if="batch.target === 'status'" v-model="batch.value" :options="labelOptions(statusLabels)" aria-label="Giá trị" />
-                <input v-else v-model="batch.value" :class="inputClass" aria-label="Giá trị" />
-            </div>
-            <button type="button" :class="secondaryButton" :disabled="!batch.target" @click="applyBatch">Áp dụng</button>
-        </div>
-
-        <DataTable
-            v-if="enabledCount"
-            :columns="tableColumns"
-            :rows="rows"
-            :row-key="(row) => row.key"
-            :row-label="(row) => row.draft.sku"
-            :row-class="() => 'align-top'"
-            :expanded="(row) => rowError(row.key, row.draft.variantId) !== null"
-            bare
-        >
-            <template #cell-label="{ row }">{{ row.label }}</template>
-            <template #cell-images="{ row }">
-                <button
-                    v-if="row.draft.variantId && variantById.get(row.draft.variantId)"
-                    type="button"
-                    class="flex items-center gap-1 text-xs underline"
-                    :class="variantById.get(row.draft.variantId)!.images.length ? 'text-slate-600' : 'text-amber-700'"
-                    @click="imageVariantId = row.draft.variantId"
-                >
-                    <img v-if="variantById.get(row.draft.variantId)!.images.length" :src="variantById.get(row.draft.variantId)!.images[0].url" alt="" class="h-8 w-6 rounded object-cover" />
-                    {{ variantById.get(row.draft.variantId)!.images.length ? `${variantById.get(row.draft.variantId)!.images.length} ảnh` : 'Thêm ảnh' }}
-                </button>
-                <span v-else class="text-xs text-slate-400" title="Lưu biến thể trước rồi thêm ảnh">—</span>
-            </template>
-            <template #cell-sku="{ row }"><input v-model="row.draft.sku" :class="[inputClass, 'w-44 font-mono text-xs']" :aria-label="`SKU ${row.label}`" /></template>
-            <template #cell-barcode="{ row }"><input v-model="row.draft.barcode" :class="[inputClass, 'w-32 font-mono text-xs']" aria-label="Barcode" /></template>
-            <template #cell-weight_gram="{ row }"><input v-model.number="row.draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" aria-label="Khối lượng (g)" /></template>
-            <template #cell-status="{ row }"><div class="w-32"><Select v-model="row.draft.status" :options="labelOptions(statusLabels)" aria-label="Trạng thái" /></div></template>
-            <template v-for="{ key: columnKey, column, field } in fieldColumns" :key="columnKey" #[`cell-${columnKey}`]="{ row }">
-                <input
-                    v-if="field.type === 'bool'"
-                    type="checkbox"
-                    :checked="Boolean(fieldValue(row.draft, column, field))"
-                    :disabled="!column.editable"
-                    :aria-label="field.label"
-                    @change="setField(row.draft, column, field, ($event.target as HTMLInputElement).checked)"
-                />
-                <div v-else-if="field.type === 'select'" class="w-32">
-                    <Select :model-value="fieldValue(row.draft, column, field) as string | null" :options="labelOptions(field.options)" :disabled="!column.editable" :aria-label="field.label" @change="setField(row.draft, column, field, $event)" />
+                <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                    <DataTable
+                        :columns="tableColumns"
+                        :rows="rows"
+                        :row-key="(row) => row.key"
+                        :row-label="(row) => row.draft.sku"
+                        :row-class="() => 'align-top'"
+                        :expanded="(row) => rowError(row.key, row.draft.variantId) !== null"
+                        bare
+                    >
+                        <template #cell-label="{ row }">{{ row.label }}</template>
+                        <template #cell-images="{ row }">
+                            <button
+                                v-if="row.draft.variantId && variantById.get(row.draft.variantId)"
+                                type="button"
+                                class="flex items-center gap-1 text-xs underline"
+                                :class="variantById.get(row.draft.variantId)!.images.length ? 'text-slate-600' : 'text-amber-700'"
+                                @click="imageVariantId = row.draft.variantId"
+                            >
+                                <img v-if="variantById.get(row.draft.variantId)!.images.length" :src="variantById.get(row.draft.variantId)!.images[0].url" alt="" class="h-8 w-6 rounded object-cover" />
+                                {{ variantById.get(row.draft.variantId)!.images.length ? `${variantById.get(row.draft.variantId)!.images.length} ảnh` : 'Thêm ảnh' }}
+                            </button>
+                            <span v-else class="text-xs text-slate-400" title="Lưu biến thể trước rồi thêm ảnh">—</span>
+                        </template>
+                        <template #cell-sku="{ row }"><input v-model="row.draft.sku" :class="[inputClass, 'w-44 font-mono text-xs']" :aria-label="`SKU ${row.label}`" /></template>
+                        <template #cell-barcode="{ row }"><input v-model="row.draft.barcode" :class="[inputClass, 'w-32 font-mono text-xs']" aria-label="Barcode" /></template>
+                        <template #cell-weight_gram="{ row }"><input v-model.number="row.draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" aria-label="Khối lượng (g)" /></template>
+                        <template #cell-status="{ row }"><div class="w-32"><Select v-model="row.draft.status" :options="labelOptions(statusLabels)" aria-label="Trạng thái" /></div></template>
+                        <template v-for="{ key: columnKey, column, field } in fieldColumns" :key="columnKey" #[`cell-${columnKey}`]="{ row }">
+                            <input
+                                v-if="field.type === 'bool'"
+                                type="checkbox"
+                                :checked="Boolean(fieldValue(row.draft, column, field))"
+                                :disabled="!column.editable"
+                                :aria-label="field.label"
+                                @change="setField(row.draft, column, field, ($event.target as HTMLInputElement).checked)"
+                            />
+                            <div v-else-if="field.type === 'select'" class="w-32">
+                                <Select :model-value="fieldValue(row.draft, column, field) as string | null" :options="labelOptions(field.options)" :disabled="!column.editable" :aria-label="field.label" @change="setField(row.draft, column, field, $event)" />
+                            </div>
+                            <input
+                                v-else
+                                :value="fieldValue(row.draft, column, field) ?? ''"
+                                :type="field.type === 'int' ? 'number' : 'text'"
+                                :class="[inputClass, field.type === 'int' ? 'w-28' : 'w-40']"
+                                :disabled="!column.editable"
+                                :aria-label="field.label"
+                                :title="field.help ?? undefined"
+                                @input="setField(row.draft, column, field, field.type === 'int' && ($event.target as HTMLInputElement).value !== '' ? Number(($event.target as HTMLInputElement).value) : ($event.target as HTMLInputElement).value)"
+                            />
+                        </template>
+                        <template #expanded="{ row }"><p class="text-xs text-red-600">{{ rowError(row.key, row.draft.variantId) }}</p></template>
+                    </DataTable>
                 </div>
-                <input
-                    v-else
-                    :value="fieldValue(row.draft, column, field) ?? ''"
-                    :type="field.type === 'int' ? 'number' : 'text'"
-                    :class="[inputClass, field.type === 'int' ? 'w-28' : 'w-40']"
-                    :disabled="!column.editable"
-                    :aria-label="field.label"
-                    :title="field.help ?? undefined"
-                    @input="setField(row.draft, column, field, field.type === 'int' && ($event.target as HTMLInputElement).value !== '' ? Number(($event.target as HTMLInputElement).value) : ($event.target as HTMLInputElement).value)"
-                />
-            </template>
-            <template #expanded="{ row }"><p class="text-xs text-red-600">{{ rowError(row.key, row.draft.variantId) }}</p></template>
-        </DataTable>
-
         <!-- Ảnh của một SKU -->
-        <div v-if="imageVariant" class="space-y-3 rounded-md border border-slate-200 p-3" aria-live="polite">
-            <div class="flex items-center justify-between text-sm">
-                <span class="font-medium">Ảnh của {{ imageVariant.label }} <span class="font-mono text-xs text-slate-400">{{ imageVariant.sku }}</span></span>
-                <button type="button" class="text-xs text-slate-500 underline" @click="imageVariantId = null">Đóng</button>
-            </div>
-            <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
-            <div class="flex flex-wrap gap-3">
-                <Sortable
-                    v-slot="{ item: image, index, handle }"
-                    :model-value="imageVariant.images"
-                    layout="grid"
-                    list-class="flex flex-wrap gap-3"
-                    item-class="w-24"
-                    :item-key="(image) => image.id"
-                    :item-label="(image) => `ảnh ${imageVariant!.images.indexOf(image) + 1} của ${imageVariant!.label}`"
-                    @update:model-value="(images) => reorderImages(imageVariant!, images)"
-                >
-                    <img :src="image.url" :alt="index === 0 ? 'Ảnh đại diện' : ''" class="h-32 w-24 rounded object-cover" />
-                    <div class="mt-1 flex items-center justify-between text-xs">
-                        <SortHandle v-bind="handle" />
-                        <button type="button" class="text-red-600" @click="removeImage(imageVariant!, image.id)">Xoá</button>
+                <div v-if="imageVariant" class="space-y-3 rounded-md border border-slate-200 p-3" aria-live="polite">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="font-medium">Ảnh của {{ imageVariant.label }} <span class="font-mono text-xs text-slate-400">{{ imageVariant.sku }}</span></span>
+                        <button type="button" class="text-xs text-slate-500 underline" @click="imageVariantId = null">Đóng</button>
                     </div>
-                </Sortable>
-                <label class="flex h-32 w-24 cursor-pointer items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">
-                    + Ảnh
-                    <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="uploadImages(imageVariant, $event)" />
-                </label>
-                <button type="button" class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-indigo-300 text-center text-xs text-indigo-600" @click="picking = true">
-                    Chọn từ<br />thư viện
-                </button>
-            </div>
-            <div v-if="imageVariant.images.length && props.axes.length > 1" class="flex flex-wrap gap-2 text-xs">
-                <button
-                    v-for="(axis, index) in props.axes"
-                    :key="axis.option_type_id"
-                    type="button"
-                    :class="secondaryButton"
-                    @click="copyImages(imageVariant, axis.option_type_id, imageVariant.values[index])"
-                >Áp cho mọi SKU cùng {{ typeName(axis.option_type_id).toLowerCase() }} {{ valueName(imageVariant.values[index]) }}</button>
-            </div>
-            <p class="text-xs text-slate-500">Ảnh đầu là ảnh đại diện của SKU (khuyến nghị tỉ lệ 4:5). Thời trang thường dùng chung ảnh cho mọi size cùng màu.</p>
+                    <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
+                    <div class="flex flex-wrap gap-3">
+                        <Sortable
+                            v-slot="{ item: image, index, handle }"
+                            :model-value="imageVariant.images"
+                            layout="grid"
+                            list-class="flex flex-wrap gap-3"
+                            item-class="w-24"
+                            :item-key="(image) => image.id"
+                            :item-label="(image) => `ảnh ${imageVariant!.images.indexOf(image) + 1} của ${imageVariant!.label}`"
+                            @update:model-value="(images) => reorderImages(imageVariant!, images)"
+                        >
+                            <img :src="image.url" :alt="index === 0 ? 'Ảnh đại diện' : ''" class="h-32 w-24 rounded object-cover" />
+                            <div class="mt-1 flex items-center justify-between text-xs">
+                                <SortHandle v-bind="handle" />
+                                <button type="button" class="text-red-600" @click="removeImage(imageVariant!, image.id)">Xoá</button>
+                            </div>
+                        </Sortable>
+                        <label class="flex h-32 w-24 cursor-pointer items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">
+                            + Ảnh
+                            <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="uploadImages(imageVariant, $event)" />
+                        </label>
+                        <button type="button" class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-indigo-300 text-center text-xs text-indigo-600" @click="picking = true">
+                            Chọn từ<br />thư viện
+                        </button>
+                    </div>
+                    <div v-if="imageVariant.images.length && props.axes.length > 1" class="flex flex-wrap gap-2 text-xs">
+                        <button
+                            v-for="(axis, index) in props.axes"
+                            :key="axis.option_type_id"
+                            type="button"
+                            :class="secondaryButton"
+                            @click="copyImages(imageVariant, axis.option_type_id, imageVariant.values[index])"
+                        >Áp cho mọi SKU cùng {{ typeName(axis.option_type_id).toLowerCase() }} {{ valueName(imageVariant.values[index]) }}</button>
+                    </div>
+                    <p class="text-xs text-slate-500">Ảnh đầu là ảnh đại diện của SKU (khuyến nghị tỉ lệ 4:5). Thời trang thường dùng chung ảnh cho mọi size cùng màu.</p>
+                </div>
+            </section>
         </div>
         <MediaPicker :open="picking" :title="`Ảnh cho ${imageVariant?.label ?? ''}`" @update:open="(value) => !value && (picking = false)" @select="attachFromLibrary" />
-    </section>
+    </div>
 </template>
