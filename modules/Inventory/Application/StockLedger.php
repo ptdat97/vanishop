@@ -33,10 +33,7 @@ final class StockLedger
         }
 
         if ($createMissing) {
-            DB::table('stock_levels')->insertOrIgnore(array_map(fn (array $pair): array => [
-                'location_id' => $pair[0], 'variant_id' => $pair[1], 'on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0,
-                'created_at' => now(), 'updated_at' => now(),
-            ], $pairs));
+            $this->ensure($pairs);
         }
 
         $locationIds = array_values(array_unique(array_column($pairs, 0)));
@@ -51,6 +48,22 @@ final class StockLedger
             ->get()
             ->keyBy(fn (StockLevelRecord $record): string => $record->location_id.':'.$record->variant_id)
             ->all();
+    }
+
+    /**
+     * Tạo dòng tồn 0 cho cặp [location, variant] chưa có (không khoá, không ghi biến động).
+     *
+     * @param  list<array{0: int, 1: int}>  $pairs
+     */
+    public function ensure(array $pairs): void
+    {
+        if ($pairs === []) {
+            return;
+        }
+        DB::table('stock_levels')->insertOrIgnore(array_map(fn (array $pair): array => [
+            'location_id' => $pair[0], 'variant_id' => $pair[1], 'on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0,
+            'created_at' => now(), 'updated_at' => now(),
+        ], $pairs));
     }
 
     public function save(StockLevelRecord $record, StockLevel $after, MovementType $type, ?string $reason = null, ?string $reference = null): void

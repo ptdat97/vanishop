@@ -6,6 +6,7 @@ namespace Modules\Inventory\Application;
 
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Inventory\Contracts\InventoryStrategy;
@@ -13,7 +14,7 @@ use Modules\Tenancy\Contracts\Settings;
 
 /**
  * ATS = Σ ATS(location) của các location đang hoạt động và giao đơn online, sau đó áp InventoryStrategy
- * nhưng không bao giờ vượt con số chuẩn.
+ * nhưng không bao giờ vượt con số chuẩn. SKU của sản phẩm không theo dõi tồn → `UNLIMITED`.
  */
 final class StockAvailability implements AvailabilityReader
 {
@@ -21,6 +22,7 @@ final class StockAvailability implements AvailabilityReader
         private readonly Extensions $extensions,
         private readonly Settings $settings,
         private readonly string $defaultCode,
+        private readonly VariantDirectory $variants,
     ) {}
 
     public function forVariants(array $variantIds): array
@@ -45,6 +47,9 @@ final class StockAvailability implements AvailabilityReader
         $adjusted = $this->strategy()->adjust($standard);
         foreach ($standard as $variantId => $ats) {
             $standard[$variantId] = max(0, min($ats, (int) ($adjusted[$variantId] ?? $ats)));
+        }
+        foreach ($this->variants->untrackedInventory($variantIds) as $variantId) {
+            $standard[$variantId] = self::UNLIMITED;
         }
 
         return $standard;

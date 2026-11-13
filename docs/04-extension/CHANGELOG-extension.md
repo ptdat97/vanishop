@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.48 — 2026-11-13
+
+Sản phẩm không theo dõi tồn kho: bán được khi chưa nhập tồn.
+
+### Thêm
+- Form sản phẩm có ô **Theo dõi tồn kho** (mặc định bật). Bỏ chọn → mọi SKU của sản phẩm luôn bán được, không cần nhập tồn (hàng đặt may, dropship, dịch vụ). Cột `styles.track_inventory`; `ProductInput::$trackInventory` (`null` = giữ nguyên).
+- `VariantData::$tracksInventory` (Catalog contract, tham số cuối, mặc định `true`).
+- `VariantDirectory::untrackedInventory(array $variantIds): list<int>` — truy vấn nhẹ cho ATS (class tự cài `VariantDirectory` phải thêm phương thức).
+- `AvailabilityReader::UNLIMITED`: ATS của SKU không theo dõi tồn (so sánh số lượng ở giỏ/checkout, không hiển thị ra ngoài).
+- Giữ hàng cho SKU không theo dõi tồn: Inventory **bù đúng phần thiếu** vào location giao online đầu tiên (biến động `adjust`, lý do `untracked_top_up`, tham chiếu khoá giữ hàng) rồi giữ hàng như thường — vận đơn, trừ tồn khi rời kho, sổ biến động và `vani:inventory:verify` vẫn khớp; phần bù của đơn huỷ được dùng lại. `StockLedger::ensure()`.
+
 ## 0.4.47 — 2026-11-13
 
 Admin: ảnh theo màu chọn ngay khi thêm sản phẩm, lưu cùng một nút Lưu.

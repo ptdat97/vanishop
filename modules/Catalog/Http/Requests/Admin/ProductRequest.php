@@ -44,6 +44,7 @@ final class ProductRequest extends FormRequest
             'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
             'translations.*.meta_description' => ['nullable', 'string', 'max:512'],
             'attributes' => ['array'],
+            'track_inventory' => ['sometimes', 'boolean'],
             // Ảnh chọn khi thêm mới (Thư viện ảnh, theo thứ tự): gắn cho mọi SKU khi lưu lần đầu.
             'media_ids' => ['sometimes', 'array', 'max:'.VariantImages::MAX_IMAGES],
             'media_ids.*' => ['integer', 'distinct'],
@@ -74,6 +75,7 @@ final class ProductRequest extends FormRequest
             primaryCategoryId: $this->validated('primary_category_id') === null ? null : (int) $this->validated('primary_category_id'),
             attributes: $this->attributeValues(),
             brandId: $this->validated('brand_id') === null ? null : (int) $this->validated('brand_id'),
+            trackInventory: $this->has('track_inventory') ? $this->boolean('track_inventory') : null,
         );
     }
 

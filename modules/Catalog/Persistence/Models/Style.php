@@ -32,6 +32,7 @@ use Modules\Shared\Persistence\Concerns\HasTranslations;
  * @property int|null $list_price_min
  * @property array<string, mixed>|null $meta
  * @property int $lock_version
+ * @property bool $track_inventory
  */
 final class Style extends Model
 {
@@ -41,12 +42,13 @@ final class Style extends Model
     use HasLocalizedSlug;
     use HasTranslations;
 
-    protected $fillable = ['brand_id', 'style_code', 'slug', 'status', 'published_from', 'published_to', 'primary_category_id', 'search_text', 'meta', 'lock_version'];
+    protected $fillable = ['brand_id', 'style_code', 'slug', 'status', 'published_from', 'published_to', 'primary_category_id', 'search_text', 'meta', 'lock_version', 'track_inventory'];
 
     protected function casts(): array
     {
         return [
             'status' => StyleStatus::class,
+            'track_inventory' => 'boolean',
             'published_from' => 'datetime',
             'published_to' => 'datetime',
             'meta' => 'array',

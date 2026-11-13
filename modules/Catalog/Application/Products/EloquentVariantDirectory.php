@@ -131,6 +131,17 @@ final class EloquentVariantDirectory implements VariantDirectory
         return array_column($index, 'row');
     }
 
+    public function untrackedInventory(array $variantIds): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+
+        return Variant::query()->join('styles', 'styles.id', '=', 'variants.style_id')
+            ->whereIn('variants.id', $variantIds)->where('styles.track_inventory', false)
+            ->pluck('variants.id')->map(fn (mixed $id): int => (int) $id)->all();
+    }
+
     public function optionTypes(): array
     {
         return OptionType::query()->with('translations')->orderBy('position')->orderBy('code')->get()
@@ -148,6 +159,7 @@ final class EloquentVariantDirectory implements VariantDirectory
             sku: $variant->sku,
             status: $variant->status->value,
             options: VariantOptions::present($variant),
+            tracksInventory: (bool) ($variant->style->track_inventory ?? true),
         );
     }
 }

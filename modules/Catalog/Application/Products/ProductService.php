@@ -209,6 +209,9 @@ final class ProductService
             'primary_category_id' => $input->primaryCategoryId,
             'search_text' => $this->searchText($input),
         ]);
+        if ($input->trackInventory !== null) {
+            $style->track_inventory = $input->trackInventory;
+        }
     }
 
     private function searchText(ProductInput $input): string

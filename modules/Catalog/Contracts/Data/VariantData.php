@@ -22,5 +22,7 @@ final readonly class VariantData
         public string $sku,
         public string $status,
         public array $options = [],
+        /** false = sản phẩm không theo dõi tồn: luôn bán được, Inventory tự bù tồn khi giữ hàng (0.4.48). */
+        public bool $tracksInventory = true,
     ) {}
 }

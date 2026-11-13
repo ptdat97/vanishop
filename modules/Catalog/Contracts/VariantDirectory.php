@@ -59,6 +59,14 @@ interface VariantDirectory
     public function searchIndex(string $text = '', ?string $styleCode = null): array;
 
     /**
+     * Variant thuộc sản phẩm không theo dõi tồn (0.4.48) — một truy vấn nhẹ cho tính ATS trên danh sách/giỏ.
+     *
+     * @param  list<int>  $variantIds
+     * @return list<int>
+     */
+    public function untrackedInventory(array $variantIds): array;
+
+    /**
      * Loại tuỳ chọn biến thể (ADR-045) theo thứ tự: mã => tên theo ngôn ngữ mặc định — nhãn cho bộ lọc theo tuỳ chọn.
      *
      * @return array<string, string>

@@ -37,6 +37,7 @@ const props = defineProps<{
         published_from: string | null;
         published_to: string | null;
         lock_version: number;
+        track_inventory: boolean;
         category_ids: number[];
         primary_category_id: number | null;
         brand_id: number | null;
@@ -89,6 +90,7 @@ const { form, save } = useAdminForm({
     published_from: props.product?.published_from ?? null,
     published_to: props.product?.published_to ?? null,
     lock_version: props.product?.lock_version ?? null,
+    track_inventory: props.product?.track_inventory ?? true,
     category_ids: props.product?.category_ids ?? ([] as number[]),
     primary_category_id: props.product?.primary_category_id ?? null,
     brand_id: props.product?.brand_id ?? null,
@@ -337,6 +339,16 @@ async function destroy(): Promise<void> {
             <FormField label="Trạng thái" :error="errors.status">
                 <Select v-model="form.status" :options="codeOptions(statuses, labels.product_status)" />
             </FormField>
+            <div>
+                <label class="flex items-start gap-2 text-sm">
+                    <input v-model="form.track_inventory" type="checkbox" class="mt-0.5" data-track-inventory />
+                    <span>
+                        <span class="font-medium text-slate-700">Theo dõi tồn kho</span>
+                        <span class="block text-xs text-slate-500">Bỏ chọn nếu hàng đặt may, dropship hoặc dịch vụ: mọi SKU luôn bán được, không cần nhập tồn.</span>
+                    </span>
+                </label>
+                <p v-if="errors.track_inventory" class="mt-1 text-sm text-red-600">{{ errors.track_inventory }}</p>
+            </div>
             <FormField label="Hiển thị từ" :error="errors.published_from">
                 <DateInput v-model="form.published_from" with-time />
             </FormField>

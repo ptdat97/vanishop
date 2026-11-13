@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
@@ -72,6 +73,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
             $app->make(Extensions::class),
             $app->make(Settings::class),
             (string) config('vanishop.inventory.strategy', 'standard'),
+            $app->make(VariantDirectory::class),
         ));
     }
 

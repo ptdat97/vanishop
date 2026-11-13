@@ -25,5 +25,7 @@ final readonly class ProductInput
         public ?int $primaryCategoryId = null,
         public array $attributes = [],
         public ?int $brandId = null,
+        /** Theo dõi tồn kho (false = luôn bán được, không cần nhập tồn); null = giữ nguyên (thêm mới: true). */
+        public ?bool $trackInventory = null,
     ) {}
 }

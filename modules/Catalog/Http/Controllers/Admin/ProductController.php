@@ -343,6 +343,7 @@ final class ProductController
                 'status' => $style->status->value,
                 'published_from' => $style->published_from?->format('Y-m-d\TH:i'),
                 'published_to' => $style->published_to?->format('Y-m-d\TH:i'),
+                'track_inventory' => $style->track_inventory,
                 'lock_version' => $style->lock_version,
                 'category_ids' => $style->categories->pluck('id')->all(),
                 'primary_category_id' => $style->primary_category_id,

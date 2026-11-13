@@ -157,3 +157,15 @@ it('danh sách sản phẩm sắp theo cột được phép; khoá lạ giữ th
     $this->get("{$this->base}?sort=style_code&direction=sideways")->assertInertia(fn (Assert $page) => $page->where('sort', ['key' => 'style_code', 'direction' => 'desc']));
     $this->get("{$this->base}?sort=search_text")->assertInertia(fn (Assert $page) => $page->where('sort', null));
 });
+
+it('cờ theo dõi tồn kho: mặc định bật; tắt khi tạo, bật lại khi sửa; lưu không gửi cờ thì giữ nguyên', function () {
+    $this->post($this->base, productPayload(['track_inventory' => false]))->assertSessionHasNoErrors();
+    $style = T::seed(fn () => Style::query()->sole());
+    expect($style->track_inventory)->toBeFalse();
+    $this->get("{$this->base}/{$style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('product.track_inventory', false));
+
+    $this->put("{$this->base}/{$style->id}", productPayload(['lock_version' => 0]))->assertSessionHasNoErrors();
+    expect($style->fresh()->track_inventory)->toBeFalse();
+    $this->put("{$this->base}/{$style->id}", productPayload(['lock_version' => 1, 'track_inventory' => true]))->assertSessionHasNoErrors();
+    expect($style->fresh()->track_inventory)->toBeTrue();
+});

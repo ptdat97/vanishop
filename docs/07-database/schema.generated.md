@@ -1926,6 +1926,7 @@ Index: PK (style_id, hour); index (hour)
 | `style_code` | varchar(64) |  |  |
 | `slug` | varchar(160) |  |  |
 | `status` | varchar(16) |  | `draft` |
+| `track_inventory` | tinyint(1) |  | `1` |
 | `published_from` | datetime | có |  |
 | `published_to` | datetime | có |  |
 | `primary_category_id` | bigint unsigned | có |  |

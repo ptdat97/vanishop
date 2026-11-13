@@ -31,6 +31,9 @@ use Modules\Shared\Contracts\Metrics;
  */
 final class ReservationService implements InventoryReservation
 {
+    /** Lý do của biến động bù tồn cho sản phẩm không theo dõi tồn. */
+    public const UNTRACKED_TOP_UP = 'untracked_top_up';
+
     public function __construct(
         private readonly StockLedger $ledger,
         private readonly OnlineLocations $locations,
@@ -64,8 +67,16 @@ final class ReservationService implements InventoryReservation
                 }
             }
 
+            // Sản phẩm không theo dõi tồn: cần dòng tồn ở location giao online đầu tiên để bù tồn (tạo nếu chưa có).
+            $untracked = array_keys(array_filter($variants, fn ($variant): bool => ! $variant->tracksInventory));
+            $untracked = array_values(array_intersect($untracked, array_keys($quantities)));
+            if ($untracked !== [] && $online === []) {
+                throw new StockUnavailable($untracked[0], $quantities[$untracked[0]], 0);
+            }
+
             // Dòng tồn là điểm tuần tự hoá: khoá xong mới kiểm tra idempotency (đọc thường, không khoá —
             // khoá dòng chưa tồn tại sẽ lấy gap lock và gây deadlock khi nhiều đơn cùng chèn reservation).
+            $this->ledger->ensure(array_map(fn (int $variantId): array => [$online[0], $variantId], $untracked));
             $records = $this->ledger->lock($pairs);
 
             $existing = StockReservation::query()->where('reservation_key', $request->key)->where('status', ReservationStatus::Active)->get();
@@ -75,6 +86,20 @@ final class ReservationService implements InventoryReservation
 
             $expiresAt = $request->ttlSeconds === null ? null : now()->addSeconds($request->ttlSeconds);
             $reserved = [];
+
+            // Không theo dõi tồn → bù đúng phần thiếu vào location đầu tiên (biến động `adjust` có lý do) rồi giữ hàng như thường:
+            // vận đơn, trừ tồn khi rời kho, sổ biến động vẫn khớp; phần bù chưa dùng (đơn huỷ) được dùng lại cho đơn sau.
+            foreach ($untracked as $variantId) {
+                $available = 0;
+                foreach ($candidates[$variantId] as $locationId) {
+                    $available += ($records["{$locationId}:{$variantId}"] ?? null)?->toDomain()->available() ?? 0;
+                }
+                $shortfall = $quantities[$variantId] - $available;
+                $record = $records["{$online[0]}:{$variantId}"] ?? null;
+                if ($shortfall > 0 && $record !== null) {
+                    $this->ledger->save($record, $record->toDomain()->adjust($shortfall), MovementType::Adjust, self::UNTRACKED_TOP_UP, $request->key);
+                }
+            }
 
             foreach ($quantities as $variantId => $quantity) {
                 $levels = array_values(array_filter(array_map(

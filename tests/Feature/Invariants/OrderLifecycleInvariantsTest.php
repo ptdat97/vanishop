@@ -7,6 +7,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
+use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
@@ -298,5 +299,30 @@ it('đổi hàng cùng mẫu: hàng trả nhập kho, đơn thay thế 0đ giữ
         ->and($mOnHand)->toBe(9)
         ->and(DB::table('refunds')->count())->toBe(0)
         ->and($replacement->fresh()->total_amount)->toBe(0);
+    ($this->assertInvariants)();
+});
+
+it('sản phẩm không theo dõi tồn: chưa nhập tồn vẫn đặt được; bù đúng phần thiếu, rời kho thì trừ, đơn huỷ thì phần bù được dùng lại', function () {
+    DB::table('stock_levels')->where('variant_id', $this->s->id)->delete();
+    DB::table('styles')->where('id', $this->s->style_id)->update(['track_inventory' => false]);
+    ($this->snapshot)();
+    $level = fn (): array => [
+        'on_hand' => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->sum('on_hand'),
+        'reserved' => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->sum('reserved'),
+    ];
+    $topUps = fn (): array => DB::table('stock_movements')->where('variant_id', $this->s->id)->where('reason', ReservationService::UNTRACKED_TOP_UP)->pluck('on_hand_delta')->map(fn ($delta): int => (int) $delta)->all();
+
+    [$first] = ($this->place)(2);
+    expect($level())->toBe(['on_hand' => 2, 'reserved' => 2])->and($topUps())->toBe([2]);
+    ($this->ship)(Shipment::query()->where('order_id', $first->id)->sole(), ShipmentStatus::PickedUp);
+    expect($level())->toBe(['on_hand' => 0, 'reserved' => 0]);
+
+    [$second] = ($this->place)();
+    ($this->system)(fn () => app(OrderCommands::class)->cancel($second->id, 'khách đổi ý', 'staff'));
+    expect($level())->toBe(['on_hand' => 1, 'reserved' => 0]);
+
+    // Phần bù của đơn huỷ được dùng lại — không bù thêm.
+    ($this->place)();
+    expect($level())->toBe(['on_hand' => 1, 'reserved' => 1])->and($topUps())->toBe([2, 1]);
     ($this->assertInvariants)();
 });
