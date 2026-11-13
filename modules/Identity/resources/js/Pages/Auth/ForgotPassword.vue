@@ -6,8 +6,8 @@ import { computed } from 'vue';
 defineOptions({ layout: GuestLayout });
 
 const props = defineProps<{ action: string; loginUrl: string }>();
-const page = usePage<{ flash?: { success?: string | null } }>();
-const sent = computed(() => page.props.flash?.success);
+const page = usePage();
+const sent = computed(() => (page.flash.toasts as Array<{ type: string; message: string }> | undefined)?.find((item) => item.type === 'success')?.message ?? null);
 const form = useForm({ email: '' });
 </script>
 

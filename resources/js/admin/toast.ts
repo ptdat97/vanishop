@@ -1,4 +1,4 @@
-import { reactive } from 'vue';
+import { reactive, toRaw } from 'vue';
 
 /**
  * Thông báo dạng toast của Admin (một chỗ cho mọi trang và plugin; `Toaster` gắn một lần trong AdminLayout):
@@ -33,3 +33,16 @@ export function toast(message: string, tone: ToastTone = 'success'): void {
     toastState.items = toastState.items.filter((item) => item.open && !(item.message === message && item.tone === tone));
     toastState.items.push({ id: ++nextId, message, tone, open: true });
 }
+
+// Phản hồi đã hiện thông báo (object flash/errors của từng phản hồi). Ở cấp module: lần tải đầu đọc trực tiếp và sự kiện của
+// Inertia cùng trỏ một object → chỉ hiện một lần, kể cả khi layout gắn lại.
+const handled = new WeakSet<object>();
+
+/** true nếu lần đầu gặp object này (đánh dấu luôn). */
+export function firstTime(value: object): boolean {
+    const raw = toRaw(value);
+    if (handled.has(raw)) return false;
+    handled.add(raw);
+    return true;
+}
+

@@ -1,33 +1,44 @@
 <script setup lang="ts">
-import { GENERAL_ERROR_KEYS, toast, toastState, type ToastTone } from '@admin/toast';
-import { usePage } from '@inertiajs/vue3';
+import { GENERAL_ERROR_KEYS, firstTime, toast, toastState, type ToastTone } from '@admin/toast';
+import { router, usePage } from '@inertiajs/vue3';
 import { ToastClose, ToastDescription, ToastProvider, ToastRoot, ToastViewport } from 'reka-ui';
-import { watch } from 'vue';
+import { onBeforeUnmount, onMounted } from 'vue';
 
 /**
- * Mọi thông báo của Admin dạng toast; gắn một lần trong AdminLayout. Nguồn: `toast()` (@admin/toast), `flash.success` của server,
- * lỗi chung (`GENERAL_ERROR_KEYS`) trong `errors`. Thành công tự ẩn sau 4 giây; lỗi/cảnh báo giữ tới khi đóng (đọc kịp, `role=alert`).
+ * Mọi thông báo của Admin dạng toast; gắn một lần trong AdminLayout. Nguồn:
+ * - `toast()` (@admin/toast) từ trang/plugin;
+ * - flash data `toasts` của Inertia (server: `->with('success'|'warning'|'error'|'info', …)`) qua sự kiện `flash` — phát ở mọi
+ *   phản hồi mang flash nên **mỗi thao tác một toast**, kể cả cùng nội dung; không lưu vào lịch sử (quay lại không hiện lại);
+ * - lỗi chung (`GENERAL_ERROR_KEYS`) qua sự kiện `error` của mỗi lần gửi.
+ * Thành công tự ẩn sau 4 giây; lỗi/cảnh báo giữ tới khi đóng (`role=alert`).
  */
-const page = usePage<{ flash?: { success?: string | null }; errors?: Record<string, unknown> }>();
+type FlashToast = { type: ToastTone; message: string };
+const page = usePage<{ errors?: Record<string, unknown> }>();
 
-// Mỗi phản hồi tạo object mới → cùng một thông báo lặp lại (vd. thêm hai ghi chú, lưu lỗi hai lần) vẫn hiện lại.
-watch(
-    () => page.props.flash,
-    (flash) => {
-        if (flash?.success) toast(flash.success, 'success');
-    },
-    { immediate: true },
-);
-watch(
-    () => page.props.errors,
-    (errors) => {
-        for (const key of GENERAL_ERROR_KEYS) {
-            const message = errors?.[key];
-            if (typeof message === 'string' && message !== '') toast(message, 'error');
-        }
-    },
-    { immediate: true },
-);
+function showFlash(flash: Record<string, unknown> | undefined): void {
+    if (!flash || !firstTime(flash)) return;
+    for (const item of (flash.toasts as FlashToast[] | undefined) ?? []) toast(item.message, item.type);
+}
+
+function showErrors(errors: Record<string, unknown> | undefined): void {
+    if (!errors || !firstTime(errors)) return;
+    for (const key of GENERAL_ERROR_KEYS) {
+        const message = errors[key];
+        if (typeof message === 'string' && message !== '') toast(message, 'error');
+    }
+}
+
+const stopFlash = router.on('flash', (event) => showFlash(event.detail.flash as Record<string, unknown>));
+const stopError = router.on('error', (event) => showErrors(event.detail.errors as Record<string, unknown>));
+onMounted(() => {
+    // Lần tải đầu (mở trang, tải lại sau redirect toàn trang).
+    showFlash(page.flash as Record<string, unknown>);
+    showErrors(page.props.errors);
+});
+onBeforeUnmount(() => {
+    stopFlash();
+    stopError();
+});
 
 const toneClass: Record<ToastTone, string> = {
     success: 'border-emerald-200 bg-emerald-50 text-emerald-800',

@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.34 — 2026-11-13
+
+Admin: toast hiện đúng theo từng thao tác.
+
+### Sửa
+- Thông báo thành công đi qua prop chia sẻ `flash` (theo dõi theo object, lưu cả vào lịch sử trình duyệt) nên có lúc không hiện ở thao tác lặp lại hoặc hiện lại khi quay lại trang. Nay dùng flash data của Inertia v3: middleware Admin chuyển `session('success'|'warning'|'error'|'info')` thành `Inertia::flash('toasts', [{type, message}])`; `Toaster` nghe sự kiện `flash` (mỗi phản hồi mang flash) và `error` (lỗi chung của mỗi lần gửi). Không lưu vào lịch sử — quay lại trang không hiện thông báo cũ.
+
+### Đổi (phá vỡ)
+- Bỏ prop chia sẻ `flash` (`page.props.flash.success`); đọc `page.flash.toasts` nếu trang cần. Controller giữ nguyên `->with('success', …)`; thêm được `->with('warning'|'error'|'info', …)`.
+
 ## 0.4.33 — 2026-11-13
 
 Admin: sửa báo nhầm "Dữ liệu đã được người khác cập nhật" khi một người lưu form nhiều lần.
