@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "skipLibCheck": true,
+        "types": [],
+        "lib": ["ES2022", "DOM"],
+        "outDir": "../../../../node_modules/.cache/vani-admin",
+        "rootDir": ".."
+    },
+    "files": ["../search.ts", "../upload.ts"]
+}

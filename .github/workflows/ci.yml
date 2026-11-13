@@ -47,6 +47,8 @@ jobs:
         run: npx vue-tsc --noEmit -p tsconfig.json
       - name: Drag & Drop Engine (lõi thuần, node --test)
         run: npm run test:dnd
+      - name: Helper Admin thuần (tìm không dấu, kiểm tệp tải lên)
+        run: npm run test:admin
 
       - name: Build assets
         run: npm run build

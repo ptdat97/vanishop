@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.39 — 2026-11-13
+
+Admin: Combobox/MultiSelect — tìm không dấu, tải lựa chọn từ server.
+
+### Thêm
+- `Combobox` và `MultiSelect` nhận `search(term) => Promise<Option[]>`: chờ 250 ms sau khi gõ, bỏ kết quả của lần gõ cũ, hiện "Đang tìm…"/lỗi; `selectedLabel` (Combobox) / `selectedOptions` (MultiSelect) cho nhãn của giá trị chưa có trong kết quả. Combobox phát `select` (giá trị + nhãn); thêm `ariaLabel`. MultiSelect: Backspace ở ô trống bỏ thẻ cuối.
+- `@admin/search`: `normalizeSearch`, `matchesSearch` (không phân biệt dấu, kể cả đ → d), `useAsyncOptions`.
+- `npm run test:admin` (node --test, chạy trong CI) cho helper thuần `@admin/search`, `@admin/upload`.
+
+### Đổi
+- Lọc tại chỗ không phân biệt dấu ("ha noi" → "Hà Nội"), các từ theo thứ tự bất kỳ; hiện tối đa 200 dòng (gõ thêm để thu hẹp). Điều hướng bàn phím ↑/↓/Enter/Esc như trước (Reka).
+- Chọn link có kiểu trong trình sửa menu và chọn sản phẩm của bài viết `vani.cms` dùng Combobox tìm ở server.
+
 ## 0.4.38 — 2026-11-13
 
 Admin: DataTable — sắp xếp theo cột, trạng thái tải, thao tác hàng loạt của trang, trạng thái trống.

@@ -3,6 +3,7 @@ import { useAdminForm } from '@admin/forms';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import DateInput from '@admin/Components/DateInput.vue';
+import Combobox from '@admin/Components/Combobox.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -74,27 +75,28 @@ const coverUrl = ref<string | null>(props.item?.cover_url ?? null);
 // Sản phẩm gắn cuối bài (1.4.0): tối đa 12, giữ thứ tự.
 const MAX_PRODUCTS = 12;
 const chosen = ref<ProductOption[]>([...(props.item?.products ?? [])]);
-const productQuery = ref('');
-const productResults = ref<ProductOption[]>([]);
-let productTimer: ReturnType<typeof setTimeout> | undefined;
+/** Kết quả tìm gần nhất (để lấy lại sản phẩm khi chọn trong Combobox). */
+const productResults = new Map<string, ProductOption>();
 
 function syncProducts(): void {
     form.product_ids = chosen.value.map((product) => product.id);
 }
 
-function searchProducts(): void {
-    clearTimeout(productTimer);
-    productTimer = setTimeout(async () => {
-        if (!props.urls.products) return;
-        const response = await getJson<{ data: ProductOption[] }>(props.urls.products, { q: productQuery.value });
-        productResults.value = response.data.filter((product) => !chosen.value.some((item) => item.id === product.id));
-    }, 250);
+async function searchProducts(term: string): Promise<Array<{ value: string; label: string }>> {
+    if (!props.urls.products) return [];
+    const response = await getJson<{ data: ProductOption[] }>(props.urls.products, { q: term });
+    return response.data
+        .filter((product) => !chosen.value.some((item) => item.id === product.id))
+        .map((product) => {
+            productResults.set(String(product.id), product);
+            return { value: String(product.id), label: product.code ? `${product.name} · ${product.code}` : product.name };
+        });
 }
 
-function addProduct(product: ProductOption): void {
-    if (chosen.value.length >= MAX_PRODUCTS) return;
+function addProduct(option: { value: string }): void {
+    const product = productResults.get(option.value);
+    if (!product || chosen.value.length >= MAX_PRODUCTS || chosen.value.some((item) => item.id === product.id)) return;
     chosen.value.push({ ...product, visible: true });
-    productResults.value = productResults.value.filter((item) => item.id !== product.id);
     syncProducts();
 }
 
@@ -272,12 +274,7 @@ function onPicked(items: MediaItem[]): void {
                         <button v-if="can.manage" type="button" class="px-1 text-red-600" aria-label="Bỏ" @click="removeProduct(index)">×</button>
                 </Sortable>
                 <template v-if="can.manage && chosen.length < MAX_PRODUCTS">
-                    <input v-model="productQuery" :class="inputClass" placeholder="Tìm sản phẩm theo tên/mã…" @input="searchProducts" />
-                    <ul v-if="productResults.length" class="max-h-48 overflow-auto rounded border border-slate-200 text-sm">
-                        <li v-for="product in productResults" :key="product.id">
-                            <button type="button" class="w-full px-2 py-1 text-left hover:bg-slate-50" @click="addProduct(product)">{{ product.name }} <span class="text-xs text-slate-400">{{ product.code }}</span></button>
-                        </li>
-                    </ul>
+                    <Combobox :key="chosen.length" model-value="" :search="searchProducts" placeholder="Tìm sản phẩm theo tên/mã…" aria-label="Thêm sản phẩm" @select="addProduct" />
                 </template>
                 <p v-if="form.errors.product_ids" class="text-sm text-red-600">{{ form.errors.product_ids }}</p>
             </section>

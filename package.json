@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:dnd": "tsc -p resources/js/admin/dnd/tsconfig.test.json && node --test resources/js/admin/dnd/"
+        "test:dnd": "tsc -p resources/js/admin/dnd/tsconfig.test.json && node --test resources/js/admin/dnd/",
+        "test:admin": "tsc -p resources/js/admin/tests/tsconfig.test.json && node --test resources/js/admin/tests/"
     },
     "devDependencies": {
         "@floating-ui/vue": "^2.0.1",
