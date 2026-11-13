@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.44 — 2026-11-13
+
+Test trình duyệt thật cho Admin (Pest Browser).
+
+### Thêm
+- Dev dependency `pestphp/pest-plugin-browser` (Composer) và `playwright` (npm). Test ở `tests/Browser`, group `browser` (không chạy mặc định): `vendor/bin/pest --group=browser`; CI cài Chromium và chạy bước riêng, lưu ảnh chụp khi lỗi.
+- Test: lưu liên tiếp không báo nhầm xung đột, xung đột thật hiện toast, lỗi validation tại ô + toast nhắc, cảnh báo rời trang ("Thôi"/"Rời trang", đã lưu thì không hỏi); Dialog giữ Tab/Shift+Tab, khoá cuộn nền, Esc đóng và trả focus.
+
 ## 0.4.43 — 2026-11-13
 
 API: hợp đồng lỗi của /api/* chuẩn hoá thông điệp và header.

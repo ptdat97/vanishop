@@ -124,6 +124,21 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: ''
 
+      - name: Cài Chromium cho test trình duyệt (Playwright)
+        run: npx playwright install --with-deps chromium
+
+      - name: Test trình duyệt — form, toast, dialog của Admin (Pest Browser)
+        run: vendor/bin/pest --compact --group=browser
+
+      - name: Lưu ảnh chụp khi test trình duyệt lỗi
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-tests
+          path: |
+            tests/Browser/Screenshots
+            tests/Browser/Traces
+
       - name: Từ điển dữ liệu khớp schema (MySQL 8.4, reference-parity §3.20)
         run: php artisan migrate:fresh --force --no-interaction && php artisan vani:docs:schema --check
         env:

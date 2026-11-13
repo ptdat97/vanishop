@@ -1,9 +1,11 @@
 # Testing Strategy
 
-> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Contract test `PaymentGateway`: `Modules\Payment\Testing\PaymentGatewayContract` (áp cho `cod`, `manual_bank_transfer` và cổng mẫu); `ShippingCarrier`: `Modules\Fulfillment\Testing\ShippingCarrierContract` (áp cho `manual` và hãng mẫu). E2E (mức API, chưa có trình duyệt): `modules/Fulfillment/Tests/Feature/FulfillmentFlowTest.php`. Concurrency test: `tests/Concurrency` (reservation, giỏ, PlaceOrder: không vượt tồn, không vượt lượt voucher, một giỏ một đơn; IPN trùng; group `concurrency`, bị loại khỏi lần chạy mặc định, tự skip nếu không phải MySQL; CI chạy bước riêng trên MySQL 8.4). Chưa có: contract test suite, E2E (Pest Browser chưa cài).
+> Trạng thái: **Partially Implemented**. Đã có: testsuite `Modules` (`modules/*/Tests`), `Plugins` (`custom/plugin/*/Tests`), `Architecture` (`tests/Architecture`); Pest áp dụng `TestCase` + `RefreshDatabase` cho mọi thư mục `Tests/Feature`; unit test của module không boot framework; CI chạy SQLite và MySQL 8.4. Contract test `PaymentGateway`: `Modules\Payment\Testing\PaymentGatewayContract` (áp cho `cod`, `manual_bank_transfer` và cổng mẫu); `ShippingCarrier`: `Modules\Fulfillment\Testing\ShippingCarrierContract` (áp cho `manual` và hãng mẫu). E2E (mức API, chưa có trình duyệt): `modules/Fulfillment/Tests/Feature/FulfillmentFlowTest.php`. Concurrency test: `tests/Concurrency` (reservation, giỏ, PlaceOrder: không vượt tồn, không vượt lượt voucher, một giỏ một đơn; IPN trùng; group `concurrency`, bị loại khỏi lần chạy mặc định, tự skip nếu không phải MySQL; CI chạy bước riêng trên MySQL 8.4). Test trình duyệt (0.4.44): `tests/Browser` — Pest Browser + Playwright (Chromium), group `browser`, bị loại khỏi lần chạy mặc định; CI cài Chromium và chạy bước riêng. Chưa có: contract test suite, E2E storefront trên trình duyệt.
 >
 > Chạy test trên MySQL local: `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing vendor/bin/pest`.
 >
+> Trình duyệt thật (form, toast, dialog của Admin): `npm run build && npx playwright install chromium && vendor/bin/pest --group=browser`. `tests/Pest.php` bật lại Vite cho thư mục `Browser` (TestCase tắt Vite cho test HTTP). Lưu ý: `visit()` chỉ mở trang ở thao tác đầu tiên — kiểm một điều trên trang trước khi đổi dữ liệu phía server. Lỗi thì ảnh chụp ở `tests/Browser/Screenshots`.
+
 > Concurrency (nhiều tiến trình, MySQL thật): `DB_CONNECTION=mysql DB_DATABASE=vanishop_testing vendor/bin/pest --group=concurrency`. Test dùng `DatabaseTruncation` (không dùng transaction bọc test vì các tiến trình con phải thấy dữ liệu).
 >
 > Nếu `pest` thoát mà không in gì (Laravel PAO của Boost nuốt output khi có fatal error), chạy lại với `PAO_DISABLE=1` để thấy lỗi.
@@ -18,7 +20,8 @@
 | **Contract** | Plugin ↔ Core (contract test suite), Connector ↔ External (JSON Schema, fake server), API (OpenAPI) | Tuỳ | `modules/<M>/Tests/Contract` (bộ trừu tượng), plugin kế thừa |
 | **Architecture** | Ranh giới module, hướng phụ thuộc | Không | `tests/Architecture` |
 | **Concurrency** | Reservation, voucher, IPN, outbox worker | MySQL | `tests/Concurrency` |
-| **End-to-End** | Browse → Cart → Checkout → Payment → Order → Fulfillment | MySQL | `tests/Browser` (Pest Browser) |
+| **Trình duyệt (Admin)** | Admin Form Standard (lưu liên tiếp, xung đột, lỗi tại ô, cảnh báo rời trang), Toaster, Dialog (focus trap, trả focus, khoá cuộn) | SQLite in-memory | `tests/Browser` (Pest Browser, group `browser`) |
+| **End-to-End** | Browse → Cart → Checkout → Payment → Order → Fulfillment | MySQL | `tests/Browser` (Pest Browser — chưa có) |
 
 `phpunit.xml`/`Pest.php` khai báo testsuite bao gồm `modules/*/Tests` và `custom/plugin/*/Tests`.
 

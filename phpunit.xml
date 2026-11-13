@@ -23,10 +23,14 @@
         <testsuite name="Concurrency">
             <directory>tests/Concurrency</directory>
         </testsuite>
+        <testsuite name="Browser">
+            <directory>tests/Browser</directory>
+        </testsuite>
     </testsuites>
     <groups>
         <exclude>
             <group>concurrency</group>
+            <group>browser</group>
         </exclude>
     </groups>
     <source>

@@ -18,3 +18,10 @@ pest()->extend(TestCase::class)
     ->in('Feature', '../modules/*/Tests/Feature', '../custom/plugin/*/Tests/Feature');
 
 pest()->extend(TestCase::class)->in('Architecture', 'Concurrency');
+
+// Test trình duyệt thật (pestphp/pest-plugin-browser + Playwright): nhóm `browser`, không chạy mặc định — `vendor/bin/pest --group=browser`.
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->group('browser')
+    ->beforeEach(fn () => $this->withVite()) // TestCase tắt Vite cho test HTTP; trình duyệt cần JS đã build (npm run build).
+    ->in('Browser');
