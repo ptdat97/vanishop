@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
@@ -7,7 +7,7 @@ import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { campaignStateTone, type PromotionLabels } from '../../labels';
 
@@ -33,7 +33,7 @@ const props = defineProps<{
     can: { manage: boolean; price_lists: boolean };
 }>();
 
-const form = useForm({
+const { form, save } = useAdminForm({
     code: props.campaign?.code ?? '',
     name: props.campaign?.name ?? '',
     description: props.campaign?.description ?? '',
@@ -42,15 +42,15 @@ const form = useForm({
     promotion_ids: props.campaign?.promotion_ids ?? ([] as number[]),
     price_list_ids: props.campaign?.price_list_ids ?? ([] as number[]),
     lock_version: props.campaign?.lock_version ?? 0,
-});
+}, { lockVersion: () => props.campaign?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 const editable = computed(() => props.can.manage && props.campaign?.status !== 'stopped');
 
-function save(): void {
+function submit(): void {
     if (props.campaign) {
-        form.put(`${props.baseUrl}/${props.campaign.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.campaign?.lock_version) });
+        save('put', `${props.baseUrl}/${props.campaign.id}`);
     } else {
-        form.post(props.baseUrl);
+        save('post', props.baseUrl);
     }
 }
 
@@ -91,7 +91,7 @@ async function destroy(): Promise<void> {
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Khách / đơn huỷ</div><div class="text-xl font-semibold">{{ report.customers }} / {{ report.cancelled }}</div></div>
     </section>
 
-    <form class="grid gap-6 lg:grid-cols-2" @submit.prevent="save">
+    <form class="grid gap-6 lg:grid-cols-2" @submit.prevent="submit">
         <div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
             <FormField label="Tên" :error="errors.name"><input v-model="form.name" :class="inputClass" :disabled="!editable" placeholder="vd. Sale 11.11" /></FormField>
             <FormField label="Mã" hint="chữ thường, vd. sale-1111" :error="errors.code"><input v-model="form.code" :class="inputClass" :disabled="!editable" /></FormField>

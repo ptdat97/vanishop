@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -12,7 +13,7 @@ const props = defineProps<{
     groups: Array<{ key: string; permissions: Array<{ code: string; label: string }> }>;
 }>();
 
-const form = useForm({
+const { form, save } = useAdminForm({
     code: props.role ? undefined : '',
     name: props.role?.name ?? '',
     permissions: [...(props.role?.permissions ?? [])],
@@ -24,9 +25,9 @@ function toggleGroup(codes: string[], checked: boolean): void {
 
 function submit(): void {
     if (props.role) {
-        form.put(`${props.baseUrl}/${props.role.id}`, { preserveScroll: true });
+        save('put', `${props.baseUrl}/${props.role.id}`);
     } else {
-        form.post(props.baseUrl);
+        save('post', props.baseUrl);
     }
 }
 

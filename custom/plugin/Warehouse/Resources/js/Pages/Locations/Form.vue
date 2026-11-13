@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import { codeOptions, labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import type { WarehouseLabels } from '../../labels';
 
 const props = defineProps<{
@@ -29,7 +29,7 @@ const props = defineProps<{
     types: string[];
 }>();
 
-const form = useForm({
+const { form, save } = useAdminForm({
     code: props.location?.code ?? '',
     name: props.location?.name ?? '',
     type: props.location?.type ?? 'warehouse',
@@ -42,13 +42,13 @@ const form = useForm({
     priority: props.location?.priority ?? 0,
     status: props.location?.status ?? 'active',
     lock_version: props.location?.lock_version ?? null,
-});
+}, { lockVersion: () => props.location?.lock_version });
 
 function submit(): void {
     if (props.location) {
-        form.put(`${props.baseUrl}/${props.location.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.location?.lock_version) });
+        save('put', `${props.baseUrl}/${props.location.id}`);
     } else {
-        form.post(props.baseUrl);
+        save('post', props.baseUrl);
     }
 }
 </script>

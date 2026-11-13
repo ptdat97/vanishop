@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -227,13 +227,15 @@ function submitAdvanced(): void {
 
 /* ---------- Kho chính (cửa hàng một kho) ---------- */
 const editingLocation = ref(false);
-const locationForm = useForm({
+const { form: locationForm, save: saveLocationForm } = useAdminForm({
     name: props.mainLocation?.name ?? '', address: props.mainLocation?.address ?? '', province_code: props.mainLocation?.province_code ?? '', lock_version: props.mainLocation?.lock_version ?? 0,
-});
+}, { lockVersion: () => props.mainLocation?.lock_version });
 
 // Tỉnh/thành chọn từ danh mục địa giới của cửa hàng (plugin, vd. vani.provinces-vn); không có danh mục → nhập mã tay.
 const provinces = ref<Array<{ value: string; label: string }>>([]);
 watch(editingLocation, async (open) => {
+    // Đóng khung mà không lưu → bỏ thay đổi (không còn "dữ liệu chưa lưu" ẩn khi rời trang).
+    if (!open) locationForm.resetAndClearErrors();
     if (!open || provinces.value.length) return;
     try {
         const response = await getJson<{ data: Array<{ code: string; name: string }> }>(props.urls.provinces);
@@ -244,7 +246,7 @@ watch(editingLocation, async (open) => {
 });
 
 function saveLocation(): void {
-    if (props.urls.main_location) locationForm.put(props.urls.main_location, { preserveScroll: true, onSuccess: syncLockVersion(locationForm, () => props.mainLocation?.lock_version, () => (editingLocation.value = false)) });
+    if (props.urls.main_location) saveLocationForm('put', props.urls.main_location, { onSuccess: () => (editingLocation.value = false) });
 }
 
 /* ---------- Nhập CSV, kho mặc định ---------- */

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -10,7 +11,7 @@ import { confirmAction } from '@admin/confirm';
 import { useStoreLocales } from '@admin/locales';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 type Texts = { name: string; description: string; meta_title: string; meta_description: string };
@@ -38,7 +39,7 @@ const { locales, defaultLocale } = useStoreLocales();
 const images = ref<Image[]>((props.lookbook?.images ?? []).map((image) => ({ ...image, alt: { ...image.alt } })));
 const coverId = ref<number | null>(props.lookbook?.cover?.id ?? null);
 const picking = ref(false);
-const form = useForm({
+const { form, save } = useAdminForm({
     slug: props.lookbook?.slug ?? '',
     translations: Object.fromEntries(locales.map((locale) => [locale.code, { name: '', description: '', meta_title: '', meta_description: '', ...(props.lookbook?.translations[locale.code] ?? {}) }])) as Record<string, Texts>,
     category_id: props.lookbook?.category_id ?? (null as number | null),
@@ -54,16 +55,16 @@ function pick(items: MediaItem[]): void {
     picking.value = false;
 }
 
-function save(): void {
+function submit(): void {
     form.transform((data) => ({
         ...data,
         cover_media_id: coverId.value,
         images: images.value.map((image) => ({ media_id: image.media_id, alt: image.alt })),
     }));
     if (props.lookbook) {
-        form.put(props.urls.save, { preserveScroll: true });
+        save('put', props.urls.save);
     } else {
-        form.post(props.urls.save);
+        save('post', props.urls.save);
     }
 }
 
@@ -81,7 +82,7 @@ async function destroy(): Promise<void> {
         <a v-if="lookbook?.public_url" :href="lookbook.public_url" target="_blank" rel="noopener" :class="secondaryButton">Xem trang</a>
     </PageHeader>
 
-    <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
+    <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="submit">
         <div class="space-y-4">
             <section v-for="locale in locales" :key="locale.code" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
                 <h2 class="text-sm font-medium">{{ locale.label }}</h2>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -7,7 +7,7 @@ import { confirmAction } from '@admin/confirm';
 import { codeOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem, Translations } from '../../types';
@@ -38,7 +38,7 @@ const props = defineProps<{
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'attributes')?.url ?? '');
 const { locales, defaultLocale } = useStoreLocales();
 
-const form = useForm({
+const { form, save } = useAdminForm({
     code: props.attribute?.code ?? '',
     kind: props.attribute?.kind ?? 'spec',
     input_type: props.attribute?.input_type ?? 'select',
@@ -50,7 +50,7 @@ const form = useForm({
         code: value.code,
         translations: translationsFor(locales, { label: '' }, value.translations),
     })),
-});
+}, { lockVersion: () => props.attribute?.lock_version });
 
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 const hasOptions = computed(() => form.input_type === 'select' || form.input_type === 'multiselect');
@@ -65,9 +65,9 @@ function removeValue(index: number): void {
 
 function submit(): void {
     if (props.attribute) {
-        form.put(`${baseUrl.value}/${props.attribute.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.attribute?.lock_version) });
+        save('put', `${baseUrl.value}/${props.attribute.id}`);
     } else {
-        form.post(baseUrl.value);
+        save('post', baseUrl.value);
     }
 }
 

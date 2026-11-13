@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -10,7 +10,7 @@ import { confirmAction } from '@admin/confirm';
 import { useStoreLocales } from '@admin/locales';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 type Block =
@@ -46,7 +46,7 @@ const props = defineProps<{
 }>();
 
 const { locales, defaultLocale } = useStoreLocales();
-const form = useForm({
+const { form, save } = useAdminForm({
     names: Object.fromEntries(locales.map(({ code }) => [code, props.chart?.names[code] ?? ''])) as Record<string, string>,
     base_unit: props.chart?.base_unit ?? 'cm',
     display_unit: props.chart?.display_unit ?? (null as string | null),
@@ -56,7 +56,7 @@ const form = useForm({
     is_default: props.chart?.is_default ?? false,
     active: props.chart?.active ?? true,
     lock_version: props.chart?.lock_version ?? null,
-});
+}, { lockVersion: () => props.chart?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 const picking = ref(false);
 
@@ -90,9 +90,11 @@ function submit(): void {
         blocks: current.blocks.map((block) => (block.type === 'image' ? { type: 'image', media_id: block.media_id, alt: block.alt } : block)),
     });
     if (props.chart) {
-        form.transform(data).put(`${props.urls.base}/${props.chart.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.chart?.lock_version) });
+        form.transform(data);
+        save('put', `${props.urls.base}/${props.chart.id}`);
     } else {
-        form.transform(data).post(props.urls.base);
+        form.transform(data);
+        save('post', props.urls.base);
     }
 }
 

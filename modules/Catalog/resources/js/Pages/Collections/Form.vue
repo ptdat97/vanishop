@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -7,7 +8,7 @@ import { labelOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem, Translations } from '../../types';
@@ -20,7 +21,7 @@ const props = defineProps<{
 
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'collections')?.url ?? '');
 const { locales, defaultLocale } = useStoreLocales();
-const form = useForm({
+const { form, save } = useAdminForm({
     slug: props.collection?.slug ?? '',
     status: props.collection?.status ?? 'active',
     position: props.collection?.position ?? 0,
@@ -31,9 +32,9 @@ const errors = computed(() => form.errors as Record<string, string | undefined>)
 
 function submit(): void {
     if (props.collection) {
-        form.put(`${baseUrl.value}/${props.collection.id}`, { preserveScroll: true });
+        save('put', `${baseUrl.value}/${props.collection.id}`);
     } else {
-        form.post(baseUrl.value);
+        save('post', baseUrl.value);
     }
 }
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -6,7 +7,7 @@ import Select from '@admin/Components/Select.vue';
 import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton } from '@admin/styles';
 import type { ExtensionField, ExtensionFieldValue } from '@admin/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import DesignTabs from '../../Components/DesignTabs.vue';
 
@@ -31,13 +32,13 @@ for (const section of props.sections) {
     }
 }
 
-const form = useForm<{ settings: Record<string, Record<string, Value>> }>({ settings: initial });
+const { form, save } = useAdminForm<{ settings: Record<string, Record<string, Value>> }>({ settings: initial });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 const localized = (section: string, field: string): Record<string, ExtensionFieldValue> => form.settings[section][field] as Record<string, ExtensionFieldValue>;
 const inputType = (field: Field): string => (field.type === 'int' ? 'number' : field.format === 'email' ? 'email' : field.format === 'url' ? 'url' : 'text');
 
-function save(): void {
-    form.put(window.location.pathname, { preserveScroll: true });
+function submit(): void {
+    save('put', window.location.pathname);
 }
 </script>
 
@@ -45,7 +46,7 @@ function save(): void {
     <Head title="Đầu & chân trang" />
     <p class="mb-2 text-sm text-slate-500">Giao diện</p>
     <PageHeader title="Đầu & chân trang" subtitle="Các trường do giao diện đang dùng khai báo">
-        <button v-if="sections.length" type="button" :class="primaryButton" :disabled="form.processing" @click="save">Lưu</button>
+        <button v-if="sections.length" type="button" :class="primaryButton" :disabled="form.processing" @click="submit">Lưu</button>
     </PageHeader>
     <DesignTabs active="theme-settings" />
 

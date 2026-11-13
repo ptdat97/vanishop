@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -13,7 +13,7 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { initialExtensionValues, type ExtensionSection } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import ProductLinks from '../../Components/ProductLinks.vue';
@@ -81,7 +81,7 @@ for (const definition of props.attributeDefinitions) {
     initialAttributes[definition.id] = props.product?.attributes[definition.id] ?? (definition.input_type === 'multiselect' ? [] : null);
 }
 
-const form = useForm({
+const { form, save } = useAdminForm({
     style_code: props.product?.style_code ?? '',
     slug: props.product?.slug ?? '',
     status: props.product?.status ?? 'draft',
@@ -94,7 +94,7 @@ const form = useForm({
     translations: translationsFor(locales, emptyTranslation, props.product?.translations),
     attributes: initialAttributes,
     extensions: initialExtensionValues(props.extensionSections),
-});
+}, { lockVersion: () => props.product?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 /** Một nút Lưu cho cả sản phẩm và ma trận biến thể (ma trận chỉ gửi khi có thay đổi). */
@@ -104,23 +104,23 @@ const variantsOpen = ref(false);
 const variantSummary = computed(() => matrix.value?.summary ?? null);
 const isVariantError = (field: string): boolean => field === 'axes' || /^(axes|cells|variant)\./.test(field);
 function submit(): void {
-    const withVariants = form.transform((data) => {
+    form.transform((data) => {
         const variants = matrix.value?.payload() ?? null;
         return variants === null ? data : { ...data, variants };
     });
     const options = {
         preserveScroll: true,
-        onSuccess: syncLockVersion(form, () => props.product?.lock_version, () => {
+        onSuccess: () => {
             if (!Object.keys(page.props.errors ?? {}).some(isVariantError)) variantsOpen.value = false;
-        }),
+        },
         onError: (errors: Record<string, string>) => {
             if (Object.keys(errors).some(isVariantError)) variantsOpen.value = true;
         },
     };
     if (props.product) {
-        withVariants.put(productUrl.value, options);
+        save('put', productUrl.value, options);
     } else {
-        withVariants.post(baseUrl.value, options);
+        save('post', baseUrl.value, options);
     }
 }
 

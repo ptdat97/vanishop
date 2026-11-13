@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import Select from '@admin/Components/Select.vue';
 import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton } from '@admin/styles';
-import { useForm } from '@inertiajs/vue3';
 
 export type SettingField = {
     key: string;
@@ -24,7 +24,7 @@ const toInput = (field: SettingField): string => {
     if (field.type === 'bool') return field.value ? '1' : '0';
     return String(field.value);
 };
-const form = useForm({
+const { form, save } = useAdminForm({
     namespace: props.namespace,
     values: Object.fromEntries(props.fields.map((field) => [field.key, toInput(field)])) as Record<string, string>,
 });
@@ -35,7 +35,7 @@ const booleanOptions = [
 const display = (value: unknown): string => (value === null || value === undefined || value === '' ? '—' : String(value));
 
 function submit(): void {
-    form.put(props.action, { preserveScroll: true });
+    save('put', props.action);
 }
 </script>
 

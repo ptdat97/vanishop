@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 type Assignment = { role_id: number | null; scope_type: string; scope_id: number | null };
@@ -22,7 +23,7 @@ const props = defineProps<{
 
 const scopeTypeOptions = computed(() => ['owner', ...Object.keys(props.scopes)].map((type) => ({ value: type, label: props.labels.scope_type[type] ?? type })));
 const scopeOptions = (type: string): Array<{ value: number; label: string }> => Object.entries(props.scopes[type] ?? {}).map(([id, label]) => ({ value: Number(id), label }));
-const form = useForm({
+const { form, save } = useAdminForm({
     name: props.staff?.name ?? '',
     email: props.staff ? undefined : '',
     assignments: props.assignments.map((assignment) => ({ ...assignment })) as Assignment[],
@@ -34,9 +35,9 @@ function addAssignment(): void {
 
 function submit(): void {
     if (props.staff) {
-        form.put(`${props.baseUrl}/${props.staff.id}`, { preserveScroll: true });
+        save('put', `${props.baseUrl}/${props.staff.id}`);
     } else {
-        form.post(props.baseUrl);
+        save('post', props.baseUrl);
     }
 }
 

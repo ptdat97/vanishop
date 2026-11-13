@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import DateInput from '@admin/Components/DateInput.vue';
@@ -10,7 +11,7 @@ import { confirmAction } from '@admin/confirm';
 import { getJson, postJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { kindLabels, type Kind } from './labels';
 
@@ -52,7 +53,7 @@ const props = defineProps<{
 
 type ProductOption = { id: number; name: string; visible?: boolean; code?: string };
 
-const form = useForm({
+const { form, save } = useAdminForm({
     title: props.item?.title ?? '',
     slug: props.item?.slug ?? '',
     body: props.item?.body ?? '',
@@ -113,12 +114,11 @@ const bodyField = ref<HTMLTextAreaElement | null>(null);
 const label = computed(() => kindLabels[props.kind].singular);
 const prefix = computed(() => (props.kind === 'pages' ? '/trang/' : '/tin-tuc/'));
 
-function save(): void {
-    const options = { preserveScroll: true };
+function submit(): void {
     if (props.urls.item) {
-        form.put(props.urls.item, options);
+        save('put', props.urls.item);
     } else {
-        form.post(props.urls.store, options);
+        save('post', props.urls.store, { preserveScroll: true });
     }
 }
 
@@ -185,7 +185,7 @@ function onPicked(items: MediaItem[]): void {
         </a>
     </PageHeader>
 
-    <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
+    <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="submit">
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
             <FormField label="Tiêu đề" :error="form.errors.title">
                 <input v-model="form.title" :class="inputClass" maxlength="200" required :disabled="!can.manage" />

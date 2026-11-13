@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
@@ -40,7 +40,7 @@ const { locales, defaultLocale } = useStoreLocales();
 const locale = ref(defaultLocale);
 
 const emptyTranslation = { name: '', slug: '', description: '', meta_title: '', meta_description: '' };
-const form = useForm({
+const { form, save } = useAdminForm({
     slug: props.category?.slug ?? '',
     parent_id: props.category?.parent_id ?? null,
     status: props.category?.status ?? 'active',
@@ -48,16 +48,16 @@ const form = useForm({
     lock_version: props.category?.lock_version ?? null,
     translations: translationsFor(locales, emptyTranslation, props.category?.translations),
     extensions: initialExtensionValues(props.extensionSections),
-});
+}, { lockVersion: () => props.category?.lock_version });
 
 const imageForm = useForm<{ image: File | null; alt: string }>({ image: null, alt: '' });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function submit(): void {
     if (props.category) {
-        form.put(`${baseUrl.value}/${props.category.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.category?.lock_version) });
+        save('put', `${baseUrl.value}/${props.category.id}`);
     } else {
-        form.post(baseUrl.value);
+        save('post', baseUrl.value);
     }
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -62,7 +62,7 @@ const voucherColumns = [
 const percent = ref(props.promotion?.action_config.basis_points ? props.promotion.action_config.basis_points / 100 : 10);
 const amount = ref(props.promotion?.action_config.amount ?? 50000);
 
-const form = useForm({
+const { form, save } = useAdminForm({
     name: props.promotion?.name ?? '',
     status: props.promotion?.status ?? 'active',
     starts_at: props.promotion?.starts_at ?? null,
@@ -76,7 +76,7 @@ const form = useForm({
     usage_limit: props.promotion?.usage_limit ?? null,
     budget_amount: props.promotion?.budget_amount ?? null,
     lock_version: props.promotion?.lock_version ?? null,
-});
+}, { lockVersion: () => props.promotion?.lock_version });
 
 // Điều kiện do plugin cung cấp: config nhập dạng JSON, Core/plugin kiểm tra khi lưu.
 const rules = ref<Array<{ type: string; config: string }>>(
@@ -119,9 +119,9 @@ function submit(): void {
     }
 
     if (props.promotion) {
-        form.put(`${props.baseUrl}/${props.promotion.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.promotion?.lock_version) });
+        save('put', `${props.baseUrl}/${props.promotion.id}`);
     } else {
-        form.post(props.baseUrl);
+        save('post', props.baseUrl);
     }
 }
 

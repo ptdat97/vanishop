@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { syncLockVersion } from '@admin/forms';
+import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -7,7 +7,7 @@ import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { codeOptions, labelOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps<{
     baseUrl: string;
@@ -28,7 +28,7 @@ const props = defineProps<{
     customerGroups: Array<{ id: number; code: string; name: string }>;
 }>();
 
-const form = useForm({
+const { form, save } = useAdminForm({
     code: props.priceList?.code ?? '',
     name: props.priceList?.name ?? '',
     type: props.priceList?.type ?? 'base',
@@ -38,13 +38,13 @@ const form = useForm({
     ends_at: props.priceList?.ends_at ?? null,
     status: props.priceList?.status ?? 'active',
     lock_version: props.priceList?.lock_version ?? null,
-});
+}, { lockVersion: () => props.priceList?.lock_version });
 
 function submit(): void {
     if (props.priceList) {
-        form.put(`${props.baseUrl}/${props.priceList.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.priceList?.lock_version) });
+        save('put', `${props.baseUrl}/${props.priceList.id}`);
     } else {
-        form.post(props.baseUrl);
+        save('post', props.baseUrl);
     }
 }
 

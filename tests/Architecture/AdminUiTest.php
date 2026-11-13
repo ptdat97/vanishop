@@ -93,3 +93,12 @@ it('thông báo chung chỉ qua toast: trang không tự vẽ lỗi chung (error
     // Toaster (AdminLayout) hiện `flash.success` và lỗi chung trong `GENERAL_ERROR_KEYS` của @admin/toast; trang gọi `toast()`.
     expect(adminUiOffenders('/errors\??\.(business|product|lock_version|category|link_type|campaign|changes|option_type|option_value)\b|FlashMessage/'))->toBe([]);
 });
+
+it('form tạo/sửa theo Admin Form Standard (useAdminForm): chống gửi lặp, lock_version, trạng thái sau khi lưu, cảnh báo chưa lưu', function () {
+    $forms = array_values(array_filter(adminUiFiles(), fn (string $file): bool => preg_match('#/js/Pages/.*Form\.vue$#', $file) === 1));
+    $offenders = array_values(array_filter($forms, fn (string $file): bool => ! str_contains((string) file_get_contents(base_path($file)), 'useAdminForm(')));
+
+    expect($forms)->not->toBe([])
+        ->and($offenders)->toBe([], 'Dùng useAdminForm từ @admin/forms')
+        ->and(adminUiOffenders("/\\bsyncLockVersion\\b|addEventListener\\('beforeunload'/"))->toBe([], 'Dùng useAdminForm / useLeaveGuard từ @admin/forms');
+});

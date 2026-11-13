@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.35 — 2026-11-13
+
+Admin Form Standard: mọi form tạo/sửa của module và plugin dùng `useAdminForm` (`@admin/forms`).
+
+### Thêm
+- `useAdminForm(data, { lockVersion?, leaveGuard? })` → `{ form, save }`. `save('post'|'put'|'patch', url, options?)`: bỏ qua khi lần gửi trước chưa xong (chống gửi lặp); sau khi lưu thành công nhận `lock_version` mới (lưu liên tiếp không báo nhầm xung đột) và lấy dữ liệu vừa lưu làm giá trị gốc (`form.isDirty` về `false`); có lỗi theo ô → thêm một toast nhắc (lỗi chung vẫn qua Toaster). `post` mặc định không giữ vị trí cuộn, `put`/`patch` giữ.
+- `useLeaveGuard(isDirty)`: hỏi lại khi rời trang (link/router của Inertia, đóng/tải lại tab) còn thay đổi chưa lưu; nhiều nguồn trên một trang (form + ma trận biến thể) chỉ hiện một hộp hỏi. `useAdminForm` tự bật (tắt bằng `leaveGuard: false`).
+
+### Sửa
+- Sau lần lưu thành công, form vẫn bị coi là "có thay đổi" (`isDirty`): `syncLockVersion` gọi `form.defaults('lock_version', …)` trong `onSuccess` nên Inertia bỏ bước tự lấy dữ liệu vừa gửi làm gốc.
+
+### Đổi (phá vỡ)
+- Bỏ `syncLockVersion` khỏi `@admin/forms`: thay `form.put(url, { onSuccess: syncLockVersion(form, () => props.item?.lock_version) })` bằng `useAdminForm(data, { lockVersion: () => props.item?.lock_version })` + `save('put', url)`. Kiểm tra kiến trúc: trang `Pages/**/*Form.vue` phải dùng `useAdminForm`; không tự gắn `beforeunload`.
+
 ## 0.4.34 — 2026-11-13
 
 Admin: toast hiện đúng theo từng thao tác.

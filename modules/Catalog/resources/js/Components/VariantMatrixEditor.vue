@@ -5,13 +5,14 @@ import Select from '@admin/Components/Select.vue';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
+import { useLeaveGuard } from '@admin/forms';
 import { labelOptions } from '@admin/options';
 import { useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
 import { inputClass, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
 import { router, usePage } from '@inertiajs/vue3';
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 
 /**
  * Ma trận biến thể theo trục tuỳ chọn (ADR-045, docs/03-domains/variant-matrix.md §3): sản phẩm chọn 1–3 loại tuỳ chọn
@@ -397,30 +398,8 @@ function createType(): void {
     });
 }
 
-// Rời trang khi còn thay đổi chưa lưu → hỏi lại.
-const beforeUnload = (event: BeforeUnloadEvent): void => {
-    if (dirty.value) event.preventDefault();
-};
-let removeRouterGuard: (() => void) | null = null;
-let leaving = false;
-onMounted(() => {
-    window.addEventListener('beforeunload', beforeUnload);
-    removeRouterGuard = router.on('before', (event) => {
-        if (dirty.value && event.detail.visit.method === 'get' && !leaving) {
-            confirmAction({ title: 'Rời trang khi ma trận biến thể chưa lưu?', message: 'Các thay đổi chưa lưu sẽ mất.', confirmLabel: 'Rời trang', tone: 'danger' }).then((ok) => {
-                if (ok !== false) {
-                    leaving = true;
-                    router.visit(event.detail.visit.url);
-                }
-            });
-            return false;
-        }
-    });
-});
-onBeforeUnmount(() => {
-    window.removeEventListener('beforeunload', beforeUnload);
-    removeRouterGuard?.();
-});
+// Rời trang khi còn thay đổi chưa lưu → hỏi lại (một hộp hỏi chung với form sản phẩm).
+useLeaveGuard(() => dirty.value);
 
 const enabledCount = computed(() => rows.value.length);
 </script>

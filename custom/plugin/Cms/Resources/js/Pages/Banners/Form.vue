@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -6,7 +7,7 @@ import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { useStoreLocales } from '@admin/locales';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 type Texts = { title: string; markdown: string; button_text: string };
@@ -29,7 +30,7 @@ const props = defineProps<{
 }>();
 
 const { locales, defaultLocale } = useStoreLocales();
-const form = useForm({
+const { form, save } = useAdminForm({
     desktop_media_id: props.banner?.desktop?.id ?? (null as number | null),
     mobile_media_id: props.banner?.mobile?.id ?? (null as number | null),
     category_id: props.banner?.category_id ?? (null as number | null),
@@ -39,11 +40,11 @@ const form = useForm({
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
-function save(): void {
+function submit(): void {
     if (props.banner) {
-        form.put(props.urls.save, { preserveScroll: true });
+        save('put', props.urls.save);
     } else {
-        form.post(props.urls.save);
+        save('post', props.urls.save);
     }
 }
 
@@ -60,7 +61,7 @@ async function destroy(): Promise<void> {
         <Link :href="urls.index" :class="secondaryButton">Danh sách</Link>
     </PageHeader>
 
-    <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
+    <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="submit">
         <div class="space-y-4">
             <section v-for="locale in locales" :key="locale.code" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
                 <h2 class="text-sm font-medium">{{ locale.label }}</h2>
