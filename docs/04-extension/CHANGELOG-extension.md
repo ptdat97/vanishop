@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.43 — 2026-11-13
+
+API: hợp đồng lỗi của /api/* chuẩn hoá thông điệp và header.
+
+### Sửa
+- 404 do model không tìm thấy không còn lộ tên class (`No query results for model [Modules\…]`); 403/429/419/401/503 không còn câu mặc định tiếng Anh của framework — dùng câu chung theo locale (`shared::errors`). Thông điệp ứng dụng tự đặt (`abort(404, '…')`) giữ nguyên.
+- Giữ header của lỗi HTTP: `Retry-After` (429), `Allow` (405).
+- `server.error` khi `APP_DEBUG=false` dùng câu chung theo locale.
+
+### Không đổi
+- Mã lỗi (`http.<status>`, `validation.failed`, `auth.unauthenticated`, `server.error`, mã nghiệp vụ) và hình dạng `{error: {code, message, details?, correlation_id}}`.
+
 ## 0.4.42 — 2026-11-13
 
 Khoá lạc quan cho thương hiệu và lookbook.

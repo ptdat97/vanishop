@@ -41,7 +41,7 @@ Hợp đồng **OpenAPI 3.1**: Storefront API ở [`docs/api/openapi/storefront-
 }
 ```
 
-Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validation: `validation.failed` kèm `details[{field, messages}]`), ổn định để client xử lý; `message` theo locale của request. **Implemented** (`Modules\Shared\Http\ApiErrorRenderer`). Lỗi nghiệp vụ kế thừa `Modules\Shared\Domain\BusinessRuleViolation` (mã, HTTP status, `details` an toàn — không lộ số tồn chính xác).
+Mã lỗi dạng `<module>.<lý_do>` (lỗi HTTP chung: `http.<status>`, validation: `validation.failed` kèm `details[{field, messages}]`, chưa đăng nhập: `auth.unauthenticated`, lỗi máy chủ: `server.error`), ổn định để client xử lý; `message` theo locale của request. Lỗi HTTP do framework sinh (model không tìm thấy, không có quyền, quá tần suất, hết phiên, bảo trì) dùng câu chung `shared::errors` — không lộ tên class hay câu mặc định tiếng Anh; thông điệp ứng dụng tự đặt (`abort(404, '…')`) được giữ; `server.error` không lộ chi tiết khi `APP_DEBUG=false`. Header của lỗi HTTP được giữ (`Retry-After` khi 429, `Allow` khi 405). **Implemented** (`Modules\Shared\Http\ApiErrorRenderer`, test `tests/Feature/ApiErrorContractTest`). Lỗi nghiệp vụ kế thừa `Modules\Shared\Domain\BusinessRuleViolation` (mã, HTTP status, `details` an toàn — không lộ số tồn chính xác).
 
 ## 3. Storefront API: endpoint chính
 
