@@ -78,7 +78,8 @@ it('giao diện Admin không ghi cứng ngôn ngữ hay ký hiệu tiền tệ',
 it('trang module/plugin dùng component chung thay cho phần tử thô và hộp thoại của trình duyệt', function () {
     expect(adminUiOffenders('/<(select|table)[\s>]/'))->toBe([], 'Dùng Select/MultiSelect/Combobox/DataTable')
         ->and(adminUiOffenders('/type="(date|datetime-local)"/'))->toBe([], 'Dùng DateInput')
-        ->and(adminUiOffenders('/(?<![\w.`])(window\.)?(confirm|prompt|alert)\(/'))->toBe([], 'Dùng confirmAction() hoặc promptFields()');
+        ->and(adminUiOffenders('/(?<![\w.`])(window\.)?(confirm|prompt|alert)\(/'))->toBe([], 'Dùng confirmAction() hoặc promptFields()')
+        ->and(adminUiOffenders('/<Teleport\b|role="dialog"|aria-modal/'))->toBe([], 'Dùng Dialog/FullscreenDialog (focus trap, trả focus, hỏi lại khi đóng còn dữ liệu chưa lưu)');
 });
 
 it('không structuredClone dữ liệu trang (props của Inertia là Proxy phản ứng → DataCloneError, lỗi menu 2026-11-05)', function () {

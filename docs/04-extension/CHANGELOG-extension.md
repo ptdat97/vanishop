@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.36 — 2026-11-13
+
+Admin: popup dùng chung `Dialog`.
+
+### Thêm
+- `@admin/Components/Dialog.vue` (`v-model:open`, `title`, `subtitle`, `size`: `medium`|`large`|`fullscreen`, `dirty`, `keepMounted`; slot `actions`, `footer`, slot mặc định nhận `close`): Esc/×/bấm ra nền đóng; `dirty` → hỏi lại trước khi đóng; giữ Tab trong popup (focus trap); đóng → trả focus về nút đã mở; khoá cuộn trang nền, đếm đúng khi popup lồng nhau.
+
+### Đổi
+- `FullscreenDialog` và `MediaPicker` dựng trên `Dialog` (có thêm focus trap; `FullscreenDialog` nhận `dirty`). Kiểm tra kiến trúc: trang module/plugin không tự dựng popup (`<Teleport>`, `role="dialog"`, `aria-modal`) — dùng `Dialog`.
+
 ## 0.4.35 — 2026-11-13
 
 Admin Form Standard: mọi form tạo/sửa của module và plugin dùng `useAdminForm` (`@admin/forms`).

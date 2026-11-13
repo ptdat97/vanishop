@@ -2,6 +2,7 @@
 import type { MediaItem, SharedProps } from '@admin/types';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import Dialog from '../Dialog.vue';
 import MediaManager from './MediaManager.vue';
 
 /**
@@ -22,16 +23,8 @@ function choose(items: MediaItem[]): void {
 </script>
 
 <template>
-    <Teleport to="body">
-        <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-2 sm:p-6" @keydown.esc="open = false" @click.self="open = false">
-            <div class="flex h-[90vh] w-full max-w-6xl flex-col rounded-lg bg-slate-50 p-3 shadow-xl" role="dialog" aria-modal="true" :aria-label="title">
-                <div class="mb-2 flex items-center justify-between">
-                    <h2 class="font-medium">{{ title }}</h2>
-                    <button type="button" class="px-2 text-xl text-slate-500 hover:text-slate-800" aria-label="Đóng" @click="open = false">×</button>
-                </div>
-                <MediaManager v-if="libraryUrl" class="min-h-0 flex-1" :library-url="libraryUrl" pick :multiple="multiple" :kind="kind" @select="choose" @cancel="open = false" />
-                <p v-else class="p-6 text-sm text-slate-600">Bạn chưa có quyền xem Thư viện ảnh (media.view). Hãy nhờ quản trị cấp quyền.</p>
-            </div>
-        </div>
-    </Teleport>
+    <Dialog v-model:open="open" :title="title" size="large">
+        <MediaManager v-if="libraryUrl" class="min-h-0 flex-1" :library-url="libraryUrl" pick :multiple="multiple" :kind="kind" @select="choose" @cancel="open = false" />
+        <p v-else class="p-6 text-sm text-slate-600">Bạn chưa có quyền xem Thư viện ảnh (media.view). Hãy nhờ quản trị cấp quyền.</p>
+    </Dialog>
 </template>
