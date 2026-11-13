@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
@@ -58,7 +59,7 @@ const props = defineProps<{
     pagination: { current: number; last: number; from: number | null; to: number | null; total: number; per_page: number };
     extensions: ExtensionList;
     /** Công cụ tải file (slot vani.admin.order.list_tools, 0.3.97) — vd. nhập mã vận đơn từ file của hãng. */
-    tools: Array<{ key: string; label: string; url: string; accept?: string; help?: string; fields?: Array<{ key: string; label: string; placeholder?: string }> }>;
+    tools: Array<{ key: string; label: string; url: string; accept?: string; max_kb?: number; help?: string; fields?: Array<{ key: string; label: string; placeholder?: string }> }>;
 }>();
 
 const openTool = ref<string | null>(null);
@@ -173,10 +174,10 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <form v-if="openTool === tool.key" class="mb-4 space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm" :data-tool="tool.key" @submit.prevent="submitTool(tool)">
             <p v-if="tool.help" class="text-slate-500">{{ tool.help }}</p>
             <div class="flex flex-wrap items-end gap-3">
-                <label class="flex flex-col gap-1">
+                <div class="flex flex-col gap-1">
                     <span>File</span>
-                    <input type="file" :accept="tool.accept" required @change="toolForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
-                </label>
+                    <FileInput :model-value="toolForm.file" @update:model-value="toolForm.file = $event as File | null" :accept="tool.accept" :max-kb="tool.max_kb ?? null" :progress="toolForm.progress?.percentage ?? null" />
+                </div>
                 <label v-for="field in tool.fields ?? []" :key="field.key" class="flex flex-col gap-1">
                     <span>{{ field.label }}</span>
                     <input v-model="toolForm[field.key] as string" :class="inputClass" :placeholder="field.placeholder" />

@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.37 — 2026-11-13
+
+Admin: tải tệp lên — kiểm trước khi gửi, tiến độ, thử lại.
+
+### Thêm
+- `@admin/Components/FileInput.vue` (thay `<input type="file">` thô): `v-model` (`File | null`, hoặc `File[]` khi `multiple`), `accept`, `maxKb`, `progress` (0–100, vd. `form.progress?.percentage`), `error`, `compact`; sự kiện `pick` phát các tệp hợp lệ. Tệp sai loại/quá dung lượng bị bỏ và báo ngay tại ô (server vẫn kiểm lại).
+- `@admin/upload`: `checkFile`, `partitionFiles`, `matchesAccept`, `formatSize`. `@admin/http`: `uploadJson(url, formData, onProgress)` (XMLHttpRequest, báo tiến độ; 413 → thông báo dễ hiểu).
+- Slot `vani.admin.order.list_tools` nhận thêm `max_kb` (Fulfillment: 5120).
+
+### Đổi
+- Thư viện ảnh tải **từng tệp một** với thanh tiến độ; tệp lỗi ở lại hàng đợi với "Thử lại"/"Bỏ"; kiểm giới hạn ảnh/video của server trước khi gửi (tệp kéo thả sai loại nay được báo thay vì bị bỏ qua im lặng).
+- Ảnh danh mục, nhập CSV tồn kho, công cụ file của danh sách đơn, ảnh biến thể dùng `FileInput`. Kiểm tra kiến trúc: trang module/plugin không dùng `type="file"`.
+
 ## 0.4.36 — 2026-11-13
 
 Admin: popup dùng chung `Dialog`.

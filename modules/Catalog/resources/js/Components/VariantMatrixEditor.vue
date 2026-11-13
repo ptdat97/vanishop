@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import Select from '@admin/Components/Select.vue';
 import Sortable from '@admin/Components/Sortable.vue';
@@ -297,10 +298,16 @@ const imageVariant = computed(() => (imageVariantId.value ? variantById.value.ge
 const imagesUrl = (variant: Variant): string => `${props.productUrl}/variants/${variant.id}/images`;
 const picking = ref(false);
 
-function uploadImages(variant: Variant, event: Event): void {
-    const files = Array.from((event.target as HTMLInputElement).files ?? []);
+const imageUploadProgress = ref<number | null>(null);
+
+function uploadImages(variant: Variant, files: File[]): void {
     if (files.length) {
-        router.post(imagesUrl(variant), { images: files }, { forceFormData: true, preserveScroll: true });
+        router.post(imagesUrl(variant), { images: files }, {
+            forceFormData: true,
+            preserveScroll: true,
+            onProgress: (progress) => (imageUploadProgress.value = progress?.percentage ?? null),
+            onFinish: () => (imageUploadProgress.value = null),
+        });
     }
 }
 
@@ -658,10 +665,18 @@ const enabledCount = computed(() => rows.value.length);
                                 <button type="button" class="text-red-600" @click="removeImage(imageVariant!, image.id)">Xoá</button>
                             </div>
                         </Sortable>
-                        <label class="flex h-32 w-24 cursor-pointer items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">
-                            + Ảnh
-                            <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" multiple @change="uploadImages(imageVariant, $event)" />
-                        </label>
+                        <FileInput
+                            compact
+                            multiple
+                            accept="image/jpeg,image/png,image/webp"
+                            :max-kb="10240"
+                            :progress="imageUploadProgress"
+                            :disabled="imageUploadProgress !== null"
+                            class="w-24"
+                            @pick="uploadImages(imageVariant!, $event)"
+                        >
+                            <span class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">{{ imageUploadProgress === null ? '+ Ảnh' : `${imageUploadProgress}%` }}</span>
+                        </FileInput>
                         <button type="button" class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-indigo-300 text-center text-xs text-indigo-600" @click="picking = true">
                             Chọn từ<br />thư viện
                         </button>

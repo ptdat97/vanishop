@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAdminForm } from '@admin/forms';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -144,9 +145,8 @@ function removeImage(): void {
             <div v-if="category" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
                 <h2 class="text-sm font-medium">Ảnh danh mục</h2>
                 <img v-if="category.image_url" :src="category.image_url" alt="" class="w-full rounded" />
-                <input type="file" accept="image/jpeg,image/png,image/webp" class="text-sm" @input="imageForm.image = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                <FileInput v-model="imageForm.image" accept="image/jpeg,image/png,image/webp" :max-kb="10240" label="Chọn ảnh" :progress="imageForm.progress?.percentage ?? null" :error="imageForm.errors.image" />
                 <input v-model="imageForm.alt" :class="inputClass" type="text" placeholder="Mô tả ảnh (alt)" />
-                <p v-if="imageForm.errors.image" class="text-sm text-red-600">{{ imageForm.errors.image }}</p>
                 <div class="flex gap-2">
                     <button type="button" :class="secondaryButton" :disabled="!imageForm.image || imageForm.processing" @click="uploadImage">Tải lên</button>
                     <button type="button" :class="secondaryButton" @click="picking = true">Chọn từ thư viện</button>

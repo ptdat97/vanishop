@@ -79,6 +79,7 @@ it('trang module/plugin dùng component chung thay cho phần tử thô và hộ
     expect(adminUiOffenders('/<(select|table)[\s>]/'))->toBe([], 'Dùng Select/MultiSelect/Combobox/DataTable')
         ->and(adminUiOffenders('/type="(date|datetime-local)"/'))->toBe([], 'Dùng DateInput')
         ->and(adminUiOffenders('/(?<![\w.`])(window\.)?(confirm|prompt|alert)\(/'))->toBe([], 'Dùng confirmAction() hoặc promptFields()')
+        ->and(adminUiOffenders('/type="file"/'))->toBe([], 'Dùng FileInput (kiểm loại/dung lượng trước khi gửi, thanh tiến độ)')
         ->and(adminUiOffenders('/<Teleport\b|role="dialog"|aria-modal/'))->toBe([], 'Dùng Dialog/FullscreenDialog (focus trap, trả focus, hỏi lại khi đóng còn dữ liệu chưa lưu)');
 });
 

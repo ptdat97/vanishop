@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import Select from '@admin/Components/Select.vue';
@@ -294,7 +295,7 @@ function createDefault(): void {
 
     <form v-if="showImport" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="submitImport">
         <p>File CSV có cột <code>sku</code>, <code>on_hand</code> và (tuỳ chọn) <code>location</code> — mã kho. File "Xuất CSV" sửa xong nhập lại được. Bước sau là xem trước, chưa ghi gì.</p>
-        <input type="file" accept=".csv,text/csv" @change="importForm.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+        <FileInput v-model="importForm.file" accept=".csv,text/csv" :max-kb="2048" label="Chọn file CSV" :progress="importForm.progress?.percentage ?? null" />
         <Select v-model="importForm.location_id" :options="importLocations" empty-label="Kho cho dòng không có cột location: — kho giao online đầu tiên —" :empty-value="null" />
         <p v-for="(error, key) in importForm.errors" :key="key" class="text-red-600">{{ error }}</p>
         <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">Xem trước</button></div>

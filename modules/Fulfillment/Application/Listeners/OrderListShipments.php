@@ -66,7 +66,7 @@ final class OrderListShipments
 
         return [[
             'key' => 'import_tracking', 'label' => 'Nhập mã vận đơn từ file', 'url' => route('admin.fulfillment.shipments.import-tracking'),
-            'accept' => '.xlsx,.csv',
+            'accept' => '.xlsx,.csv', 'max_kb' => 5120,
             'help' => 'File Excel hãng xuất (hoặc file "Xuất file cho hãng" đã điền mã): cần cột số đơn của shop và cột mã vận đơn; cột hãng nếu có.',
             'fields' => [['key' => 'carrier', 'label' => 'Hãng (khi file không có cột hãng)', 'placeholder' => 'vd. GHN']],
         ]];

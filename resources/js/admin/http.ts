@@ -37,6 +37,40 @@ export async function postJson<T>(url: string, body: FormData | Record<string, u
     return data as T;
 }
 
+/**
+ * Gửi FormData có báo tiến độ tải lên (`onProgress` 0–100) — fetch không báo được tiến độ gửi nên dùng XMLHttpRequest.
+ * Lỗi giống `postJson` (HttpError, 422 kèm `errors`); mất mạng → HttpError status 0.
+ */
+export function uploadJson<T>(url: string, body: FormData, onProgress?: (percent: number) => void): Promise<T> {
+    return new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        request.open('POST', url);
+        request.withCredentials = true;
+        request.setRequestHeader('Accept', 'application/json');
+        request.setRequestHeader('X-XSRF-TOKEN', xsrfToken());
+        request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        request.upload.onprogress = (event) => {
+            if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+        };
+        request.onload = () => {
+            let data: Record<string, unknown> = {};
+            try {
+                data = JSON.parse(request.responseText || '{}');
+            } catch {
+                data = {};
+            }
+            if (request.status >= 200 && request.status < 300) {
+                resolve(data as T);
+            } else {
+                const message = request.status === 413 ? 'Tệp vượt giới hạn tải lên của máy chủ.' : typeof data.message === 'string' ? data.message : `HTTP ${request.status}`;
+                reject(new HttpError(message, request.status, (data.errors as Record<string, string[]>) ?? {}));
+            }
+        };
+        request.onerror = () => reject(new HttpError('Không kết nối được máy chủ.', 0));
+        request.send(body);
+    });
+}
+
 export async function getJson<T>(url: string, query: Record<string, string | number | null | undefined> = {}): Promise<T> {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) {

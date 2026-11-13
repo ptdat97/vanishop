@@ -2,15 +2,18 @@
 import { toast } from '@admin/toast';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
-import { getJson, HttpError, postJson } from '@admin/http';
+import { getJson, HttpError, postJson, uploadJson } from '@admin/http';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
+import { checkFile, formatSize } from '@admin/upload';
 import { computed, onMounted, ref } from 'vue';
 
 /**
  * Thư viện ảnh dùng chung: trang Admin → Thư viện ảnh và modal chọn ảnh (MediaPicker) ở các form.
  * `pick` bật chế độ chọn: nút "Chọn" phát `select` với các ảnh đã chọn; nhấp đúp một ảnh = chọn ngay.
  * `kind` (0.3.91): `image` | `video` lọc loại tệp được duyệt/tải lên; `any` (mặc định, trang Thư viện) hiện cả hai.
+ * Tải lên: kiểm loại/dung lượng theo giới hạn của server trước khi gửi; mỗi tệp một yêu cầu có thanh tiến độ, tệp lỗi giữ lại
+ * trong hàng đợi với nút "Thử lại".
  */
 const props = withDefaults(defineProps<{ libraryUrl: string; pick?: boolean; multiple?: boolean; kind?: 'image' | 'video' | 'any' }>(), { pick: false, multiple: true, kind: 'any' });
 const emit = defineEmits<{ select: [items: MediaItem[]]; cancel: [] }>();
@@ -46,7 +49,18 @@ const meta = ref({ page: 1, last_page: 1, total: 0 });
 const canManage = ref(false);
 const selected = ref<Map<number, MediaItem>>(new Map());
 const loading = ref(false);
-const uploading = ref(false);
+interface UploadItem {
+    key: number;
+    file: File;
+    folder: string;
+    progress: number;
+    status: 'waiting' | 'uploading' | 'error';
+    error: string | null;
+}
+const queue = ref<UploadItem[]>([]);
+let nextUploadKey = 0;
+let draining = false;
+const uploading = computed(() => queue.value.some((item) => item.status !== 'error'));
 const dragging = ref(false);
 const moveTarget = ref('');
 
@@ -60,8 +74,7 @@ function url(path: string): string {
 }
 
 function fail(error: unknown): void {
-    const errors = error instanceof HttpError ? Object.values(error.errors).flat() : [];
-    toast(errors[0] ?? (error instanceof Error ? error.message : 'Có lỗi xảy ra.'), 'error');
+    toast(errorMessage(error), 'error');
 }
 
 async function load(): Promise<void> {
@@ -131,28 +144,80 @@ async function run(action: () => Promise<{ message?: string } | unknown>, reload
     }
 }
 
-async function upload(files: File[]): Promise<void> {
+function errorMessage(error: unknown): string {
+    const errors = error instanceof HttpError ? Object.values(error.errors).flat() : [];
+    return errors[0] ?? (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
+}
+
+function upload(files: File[]): void {
     if (!files.length || !canManage.value) {
         return;
     }
-    const body = new FormData();
-    body.append('folder', folder.value);
-    files.forEach((file) => body.append('images[]', file));
-    uploading.value = true;
-    await run(async () => {
-        const result = await postJson<{ message: string; items: MediaItem[] }>(url('upload'), body);
-        if (props.pick) {
-            const next = new Map(props.multiple ? selected.value : []);
-            const matching = result.items.filter((item) => props.kind === 'any' || (item.kind ?? 'image') === props.kind);
-            (props.multiple ? matching : matching.slice(0, 1)).forEach((item) => next.set(item.id, item));
-            selected.value = next;
+    const rejected: string[] = [];
+    for (const file of files) {
+        const maxKb = limits.value ? (file.type.startsWith('video/') ? limits.value.video_kb : limits.value.image_kb) : null;
+        const error = checkFile(file, { accept: acceptedTypes.value, maxKb });
+        if (error) {
+            rejected.push(error);
+        } else {
+            queue.value.push({ key: ++nextUploadKey, file, folder: folder.value, progress: 0, status: 'waiting', error: null });
         }
-        if (searching.value) {
-            keyword.value = '';
+    }
+    if (rejected.length) {
+        toast(rejected.join('\n'), 'error');
+    }
+    drainQueue();
+}
+
+/** Gửi lần lượt từng tệp đang chờ; xong cả lượt thì chọn sẵn tệp vừa tải (chế độ chọn) và tải lại danh sách. */
+async function drainQueue(): Promise<void> {
+    if (draining) {
+        return;
+    }
+    draining = true;
+    const uploaded: MediaItem[] = [];
+    let item: UploadItem | undefined;
+    while ((item = queue.value.find((entry) => entry.status === 'waiting'))) {
+        const current = item;
+        current.status = 'uploading';
+        current.progress = 0;
+        const body = new FormData();
+        body.append('folder', current.folder);
+        body.append('images[]', current.file);
+        try {
+            const result = await uploadJson<{ items: MediaItem[] }>(url('upload'), body, (percent) => (current.progress = percent));
+            uploaded.push(...result.items);
+            queue.value = queue.value.filter((entry) => entry.key !== current.key);
+        } catch (error) {
+            current.status = 'error';
+            current.error = errorMessage(error);
         }
-        return result;
-    });
-    uploading.value = false;
+    }
+    draining = false;
+    if (!uploaded.length) {
+        return;
+    }
+    if (props.pick) {
+        const next = new Map(props.multiple ? selected.value : []);
+        const matching = uploaded.filter((media) => props.kind === 'any' || (media.kind ?? 'image') === props.kind);
+        (props.multiple ? matching : matching.slice(0, 1)).forEach((media) => next.set(media.id, media));
+        selected.value = next;
+    }
+    if (searching.value) {
+        keyword.value = '';
+    }
+    toast(`Đã tải lên ${uploaded.length} ${noun.value}.`);
+    await load();
+}
+
+function retryUpload(entry: UploadItem): void {
+    entry.status = 'waiting';
+    entry.error = null;
+    drainQueue();
+}
+
+function dismissUpload(entry: UploadItem): void {
+    queue.value = queue.value.filter((item) => item.key !== entry.key);
 }
 
 function onFileInput(event: Event): void {
@@ -163,7 +228,7 @@ function onFileInput(event: Event): void {
 
 function onDrop(event: DragEvent): void {
     dragging.value = false;
-    upload(Array.from(event.dataTransfer?.files ?? []).filter((file) => acceptedTypes.value.includes(file.type)));
+    upload(Array.from(event.dataTransfer?.files ?? []));
 }
 
 async function createFolder(): Promise<void> {
@@ -226,9 +291,7 @@ async function deleteItems(): Promise<void> {
     }
 }
 
-function size(bytes: number): string {
-    return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-}
+const size = formatSize;
 
 onMounted(load);
 </script>
@@ -264,15 +327,32 @@ onMounted(load);
                 </form>
                 <label v-if="canManage" :class="primaryButton" class="cursor-pointer">
                     {{ uploading ? 'Đang tải lên…' : `Tải ${noun} lên` }}
-                    <input type="file" class="hidden" :accept="acceptedTypes.join(',')" multiple :disabled="uploading" @change="onFileInput" />
+                    <input type="file" class="hidden" :accept="acceptedTypes.join(',')" multiple @change="onFileInput" />
                 </label>
             </div>
 
             <p class="px-3 pt-2 text-xs text-slate-500">
                 {{ searching ? `Kết quả tìm "${keyword.trim()}"` : folderName(folder) }} · {{ meta.total }} {{ noun }}
                 <template v-if="canManage"> · kéo thả {{ noun }} vào đây để tải lên thư mục này</template>
-                <template v-if="canManage && limits && kind !== 'image'"> · video MP4/WebM tối đa {{ Math.round(limits.video_kb / 1024) }} MB</template>
+                <template v-if="canManage && limits && kind !== 'video'"> · ảnh JPG/PNG/WebP tối đa {{ size(limits.image_kb * 1024) }}</template>
+                <template v-if="canManage && limits && kind !== 'image'"> · video MP4/WebM tối đa {{ size(limits.video_kb * 1024) }}</template>
             </p>
+            <ul v-if="queue.length" class="space-y-1 px-3 pt-2 text-xs" data-upload-queue>
+                <li v-for="entry in queue" :key="entry.key" class="flex items-center gap-2">
+                    <span class="w-48 shrink-0 truncate" :title="entry.file.name">{{ entry.file.name }}</span>
+                    <template v-if="entry.status === 'error'">
+                        <span class="min-w-0 flex-1 truncate text-red-600" :title="entry.error ?? ''">{{ entry.error }}</span>
+                        <button type="button" class="text-indigo-600 hover:underline" @click="retryUpload(entry)">Thử lại</button>
+                        <button type="button" class="text-slate-500 hover:underline" @click="dismissUpload(entry)">Bỏ</button>
+                    </template>
+                    <template v-else>
+                        <div class="h-1.5 flex-1 overflow-hidden rounded bg-slate-200" role="progressbar" :aria-valuenow="entry.progress" aria-valuemin="0" aria-valuemax="100" :aria-label="entry.file.name">
+                            <div class="h-full bg-indigo-600 transition-all" :style="{ width: `${entry.progress}%` }" />
+                        </div>
+                        <span class="w-10 text-right text-slate-500">{{ entry.status === 'waiting' ? 'Chờ' : `${entry.progress}%` }}</span>
+                    </template>
+                </li>
+            </ul>
 
             <div
                 class="relative min-h-48 flex-1 overflow-y-auto p-3"
