@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Contracts\VariantFieldProvider;
@@ -10,6 +11,7 @@ use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
+use Modules\Extension\Application\Admin\AdminExtensions;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
@@ -214,6 +216,48 @@ it('một nút Lưu: tạo sản phẩm kèm biến thể trong một lần; ma 
     // Lưu sản phẩm không kèm ma trận: biến thể giữ nguyên.
     $this->put("/admin/catalog/products/{$created->id}", [...$payload, 'lock_version' => $created->lock_version, 'translations' => ['vi' => ['name' => 'Đổi tên']]])->assertSessionHasNoErrors();
     expect(T::seed(fn () => $created->variants()->count()))->toBe(1);
+});
+
+it('lưu sản phẩm + ma trận là một transaction: ma trận lỗi, xung đột phiên bản hay phần form của plugin lỗi → không đổi gì (tên, phiên bản, SKU, giá, tồn)', function () {
+    $snapshot = fn (): array => T::seed(fn () => [
+        'name' => $this->style->fresh()->translate('name'),
+        'lock_version' => $this->style->fresh()->lock_version,
+        'variants' => Variant::query()->where('style_id', $this->style->id)->count(),
+        'prices' => DB::table('prices')->count(),
+        'stock' => DB::table('stock_levels')->count(),
+    ]);
+    $before = $snapshot();
+    $priced = fn (OptionValue $color, OptionValue $size, array $overrides = []): array => ($this->cell)($color, $size, ['fields' => ['pricing' => ['price' => 300_000], 'inventory' => ['on_hand' => 4]], ...$overrides]);
+    $put = fn (array $cells, array $payload = []) => $this->put($this->base, [...($this->productPayload)(), 'translations' => ['vi' => ['name' => 'Tên mới']], ...$payload,
+        'variants' => ['axes' => [['option_type_id' => $this->colorType, 'value_ids' => [$this->ivory->id]], ['option_type_id' => $this->sizeType, 'value_ids' => [$this->s->id, $this->m->id]]], 'cells' => $cells]]);
+
+    // Ô thứ hai lỗi (SKU trùng trong lưới) sau khi ô đầu hợp lệ.
+    $put([$priced($this->ivory, $this->s, ['sku' => 'DUP']), $priced($this->ivory, $this->m, ['sku' => 'DUP'])])->assertSessionHasErrors('cells.1.sku');
+    expect($snapshot())->toBe($before);
+
+    // Người khác vừa lưu (phiên bản tăng), form còn giữ phiên bản cũ → không lưu cả ma trận hợp lệ.
+    T::seed(fn () => DB::table('styles')->where('id', $this->style->id)->increment('lock_version'));
+    $before = $snapshot();
+    $put([$priced($this->ivory, $this->s)], ['lock_version' => $before['lock_version'] - 1])->assertSessionHasErrors('lock_version');
+    expect($snapshot())->toBe($before);
+
+    // Phần form của plugin chạy sau ma trận và báo lỗi → huỷ cả SKU, giá, tồn vừa ghi.
+    app(AdminExtensions::class)->section('product', 'vani.cod', 'seo', 'SEO', [FieldDefinition::string('keyword', 'Từ khoá')],
+        load: fn (int $id): array => [],
+        save: fn (int $id, array $values) => throw ValidationException::withMessages(['business' => 'Plugin từ chối']),
+    );
+    $put([$priced($this->ivory, $this->s)], ['extensions' => ['vani-cod' => ['seo' => ['keyword' => 'x']]]])->assertSessionHasErrors('business');
+    expect($snapshot())->toBe($before);
+});
+
+it('lưu liên tiếp kèm ma trận: mỗi lần tăng phiên bản đúng một, form gửi phiên bản mới thì không báo xung đột', function () {
+    $version = T::seed(fn () => $this->style->fresh()->lock_version);
+    ($this->save)([($this->cell)($this->ivory, $this->s)])->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $this->style->fresh()->lock_version))->toBe($version + 1);
+
+    ($this->save)([($this->cell)($this->ivory, $this->s), ($this->cell)($this->ivory, $this->m)])->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $this->style->fresh()->lock_version))->toBe($version + 2)
+        ->and(T::seed(fn () => Variant::query()->where('style_id', $this->style->id)->count()))->toBe(2);
 });
 
 it('form thêm mới có sẵn khối biến thể với trục Màu + Size và link tạo nhanh', function () {
