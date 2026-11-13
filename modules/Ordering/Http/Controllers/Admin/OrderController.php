@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Data\FieldDefinition;
@@ -414,7 +415,7 @@ final class OrderController
             'orders' => $orders->map(function (Order $order) use ($money): array {
                 $address = (array) $order->shipping_address;
                 $lines = $order->lines->map(fn (OrderLine $line): array => [
-                    'name' => $line->product_name, 'sku' => $line->sku, 'variant' => trim(implode(' / ', array_filter([$line->color_name, $line->size_code]))),
+                    'name' => $line->product_name, 'sku' => $line->sku, 'variant' => VariantOptionsText::label((array) ($line->variant_options ?? [])),
                     'quantity' => $line->quantity - $line->cancelled_quantity,
                 ])->filter(fn (array $line): bool => $line['quantity'] > 0)->values();
 

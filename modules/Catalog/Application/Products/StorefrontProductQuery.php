@@ -16,7 +16,6 @@ use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\VariantStatus;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\LinkType;
-use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleAttributeValue;
@@ -164,9 +163,6 @@ final class StorefrontProductQuery
                 sku: $variant->sku,
                 slug: $variant->style->slugFor($locale),
                 name: (string) $variant->style->translate('name', $locale),
-                colorCode: VariantOptions::code($variant, OptionType::COLOR),
-                colorName: $variant->valueOf(OptionType::COLOR)?->label($locale),
-                sizeCode: VariantOptions::code($variant, OptionType::SIZE),
                 imageUrl: $variant->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
                 brandName: $variant->style->brand?->name,
                 weightGram: $variant->weight_gram,

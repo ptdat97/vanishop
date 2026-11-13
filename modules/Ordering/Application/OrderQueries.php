@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
@@ -127,7 +128,8 @@ final class OrderQueries
             note: $masked ? null : $order->note,
             placedAt: (string) StoreClock::iso($order->placed_at),
             lines: $order->lines->map(fn (OrderLine $line): array => [
-                'id' => $line->id, 'variant_id' => $line->variant_id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name, 'color_name' => $line->color_name, 'size_code' => $line->size_code,
+                'id' => $line->id, 'variant_id' => $line->variant_id, 'sku' => $line->sku, 'name' => $line->product_name, 'brand_name' => $line->brand_name,
+                'variant_options' => (array) ($line->variant_options ?? []), 'variant_label' => VariantOptionsText::label((array) ($line->variant_options ?? [])),
                 'image_url' => $line->image_url, 'quantity' => $line->quantity, 'cancelled_quantity' => $line->cancelled_quantity, 'unit_amount' => $line->unit_amount, 'compare_at_amount' => $line->compare_at_amount,
                 'discount_amount' => $line->discount_amount, 'total_amount' => $line->total_amount, 'tax_rate_bp' => $line->tax_rate_bp, 'tax_amount' => $line->tax_amount,
                 'options' => (array) ($line->meta['options'] ?? []),

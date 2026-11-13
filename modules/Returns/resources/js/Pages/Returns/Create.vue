@@ -20,8 +20,7 @@ const props = defineProps<{
         id: number;
         sku: string;
         name: string;
-        color: string | null;
-        size: string;
+        variant: string;
         ordered: number;
         returnable: number;
     }>;
@@ -72,7 +71,7 @@ function submit(): void {
         <DataTable :columns="columns" :rows="lines" :row-label="(line) => line.sku">
             <template #cell-name="{ row }">
                 <div class="font-medium">{{ row.name }}</div>
-                <div class="text-xs text-slate-500">{{ row.sku }} · {{ [row.color, row.size].filter(Boolean).join(' / ') }}</div>
+                <div class="text-xs text-slate-500">{{ [row.sku, row.variant].filter(Boolean).join(' · ') }}</div>
             </template>
             <template #cell-quantity="{ row }">
                 <input

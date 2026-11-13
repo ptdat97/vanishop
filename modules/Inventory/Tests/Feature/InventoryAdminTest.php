@@ -100,7 +100,12 @@ it('lưới tồn mới: tìm theo tên/SKU, lọc hết hàng / sắp hết, ph
         ->and($skus('?filter=out'))->toBe([$this->m->sku])
         ->and($skus('?filter=low'))->toBe([$this->s->sku])
         ->and($skus('?style=LM-DR01'))->toHaveCount(2)
-        ->and($skus('?q=LM-DR01&size='.T::seed(fn () => $this->m->valueOf('size')?->code)))->toBe([$this->m->sku]);
+        ->and($skus('?q=LM-DR01&opt[size]='.T::seed(fn () => $this->m->valueOf('size')?->code)))->toBe([$this->m->sku]);
+    // Lọc theo loại tuỳ chọn (ADR-045): lựa chọn chỉ gồm giá trị có trong kết quả tìm; nhãn SKU là tổ hợp giá trị.
+    $props = $this->get("{$this->stockUrl}?q=LM-DR01")->viewData('page')['props'];
+    expect(collect($props['optionFilters'])->pluck('code')->all())->toBe(['color', 'size'])
+        ->and(collect($props['optionFilters'])->firstWhere('code', 'size')['values'])->toHaveCount(2)
+        ->and($props['products'][0]['variants'][0]['options_label'])->toContain(' / ');
 
     $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('stockUrl', fn (string $url) => str_ends_with($url, '/admin/inventory/stock?style=LM-DR01')));
     $this->get('/admin/catalog/products')->assertInertia(fn (Assert $page) => $page->where(

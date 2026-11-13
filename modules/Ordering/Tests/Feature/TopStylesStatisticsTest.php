@@ -19,7 +19,7 @@ function topStylesOrder(string $placedAt, array $lines, string $status = 'confir
     ]);
     foreach ($lines as [$styleId, $quantity, $cancelled]) {
         DB::table('order_lines')->insert([
-            'order_id' => $id, 'variant_id' => 1, 'sku' => 'SKU', 'product_name' => 'SP', 'size_code' => 'M',
+            'order_id' => $id, 'variant_id' => 1, 'sku' => 'SKU', 'product_name' => 'SP',
             'quantity' => $quantity, 'cancelled_quantity' => $cancelled, 'unit_amount' => 100, 'subtotal_amount' => 100, 'discount_amount' => 0, 'total_amount' => 100,
             'tax_rate_bp' => 0, 'tax_amount' => 0, 'meta' => $styleId === null ? null : json_encode(['style_id' => $styleId]), 'created_at' => $placedAt, 'updated_at' => $placedAt,
         ]);

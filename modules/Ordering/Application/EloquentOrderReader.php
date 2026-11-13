@@ -58,7 +58,7 @@ final class EloquentOrderReader implements OrderReader
         }
 
         return OrderLine::query()->where('order_id', $orderId)->orderBy('id')->get()
-            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, $line->color_name, (string) $line->size_code, $line->brand_name, (array) ($line->meta['options'] ?? []), $line->unit_amount))
+            ->map(fn (OrderLine $line): OrderLineData => new OrderLineData($line->id, $line->variant_id, $line->sku, $line->product_name, $line->quantity, $line->total_amount, (array) ($line->variant_options ?? []), $line->brand_name, (array) ($line->meta['options'] ?? []), $line->unit_amount))
             ->all();
     }
 

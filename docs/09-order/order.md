@@ -22,7 +22,7 @@ Sau khi tạo, đơn giữ **snapshot** và không phụ thuộc dữ liệu cat
 
 | Snapshot | Lưu ở |
 |---|---|
-| Tên sản phẩm, SKU, màu, size, ảnh chính | `order_lines` (`product_name`, `sku`, `color_name`, `size_code`, `image_path`) |
+| Tên sản phẩm, SKU, tổ hợp tuỳ chọn (màu, size…), ảnh chính | `order_lines` (`product_name`, `sku`, `variant_options` = [{type, name, code, value}] theo thứ tự trục — ADR-045, `image_url`) |
 | Giá niêm yết, giá bán, số lượng | `order_lines.compare_at_amount`, `unit_amount`, `quantity` |
 | Giảm giá (phân bổ) và khuyến mãi đã áp dụng | `order_lines.discount_amount` + `order_adjustments` (mã, tên, nguồn) |
 | Thuế | `order_lines.tax_rate_bp`, `tax_amount` |

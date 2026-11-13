@@ -39,7 +39,7 @@ final class StockController
     }
 
     /**
-     * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc màu, size, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
+     * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc theo giá trị tuỳ chọn `opt[<loại>]`, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
      * hàng loạt. `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
     public function index(Request $request, StockGrid $grid, Extensions $extensions, LowStockThreshold $lowStock): Response
@@ -76,7 +76,7 @@ final class StockController
                 'default_location' => $canManageLocations && $result['locations'] === [] ? route('admin.inventory.stock.default-location') : null,
             ],
             'query' => $criteria,
-            'options' => ['colors' => $result['colors'], 'sizes' => $result['sizes']],
+            'optionFilters' => $result['option_filters'],
             'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $result['total_products'], 'variants' => $result['total_variants']],
             'threshold' => $lowStock->value(),
             'warnings' => ['no_location' => $result['locations'] === [], 'no_online_location' => $result['locations'] !== [] && $online === []],
@@ -127,7 +127,7 @@ final class StockController
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{q: string, style: string, filter: string, color: string, size: string}
+     * @return array{q: string, style: string, filter: string, options: array<string, string>}
      */
     private function criteria(array $input): array
     {
@@ -136,7 +136,7 @@ final class StockController
         return [
             'q' => trim((string) ($input['q'] ?? '')), 'style' => trim((string) ($input['style'] ?? '')),
             'filter' => in_array($filter, StockGrid::FILTERS, true) ? $filter : 'all',
-            'color' => trim((string) ($input['color'] ?? '')), 'size' => trim((string) ($input['size'] ?? '')),
+            'options' => array_filter(array_map(fn ($code): string => trim(is_scalar($code) ? (string) $code : ''), array_slice((array) ($input['opt'] ?? $input['options'] ?? []), 0, 3, true)), fn (string $code): bool => $code !== '' && mb_strlen($code) <= 32),
         ];
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Fulfillment\Application;
 
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Contracts\OrderReader;
@@ -64,7 +65,7 @@ final class CarrierHandoff
             $value = 0;
             foreach ($shipment->lines as $shipmentLine) {
                 $line = $lines->get($shipmentLine->order_line_id);
-                $variant = $line === null ? '' : trim(implode('/', array_filter([$line->colorName, $line->sizeCode])));
+                $variant = $line === null ? '' : VariantOptionsText::label($line->variantOptions);
                 $items[] = ($line === null ? "#{$shipmentLine->variant_id}" : $line->productName).($variant !== '' ? " ({$variant})" : '').' x'.$shipmentLine->quantity;
                 $quantity += $shipmentLine->quantity;
                 $weight += ($weights[$shipmentLine->variant_id] ?? $defaultWeight) * $shipmentLine->quantity;

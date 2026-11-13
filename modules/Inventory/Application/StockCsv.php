@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\Data\VariantData;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
 
@@ -36,7 +37,7 @@ final class StockCsv
     public function export(?Location $only): \Generator
     {
         $locations = array_values(array_filter($this->queries->locations(), fn (Location $location): bool => $only === null || $location->id === $only->id));
-        yield ['sku', 'location', 'on_hand', 'reserved', 'safety_stock', 'available', 'product', 'color', 'size'];
+        yield ['sku', 'location', 'on_hand', 'reserved', 'safety_stock', 'available', 'product', 'options'];
 
         // Mọi variant, đọc theo lô 500 (không giới hạn số variant — P2 A1).
         foreach (array_chunk(array_column($this->variants->searchIndex(), 'id'), 500) as $ids) {
@@ -49,7 +50,7 @@ final class StockCsv
                 }
                 foreach ($locations as $location) {
                     $level = $levels[$location->id.':'.$variant->id] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0];
-                    yield [$variant->sku, $location->code, $level['on_hand'], $level['reserved'], $level['safety_stock'], $level['available'], $variant->styleName, $variant->colorCode, $variant->sizeCode];
+                    yield [$variant->sku, $location->code, $level['on_hand'], $level['reserved'], $level['safety_stock'], $level['available'], $variant->styleName, VariantOptionsText::describe($variant->options)];
                 }
             }
         }

@@ -63,15 +63,28 @@
             "items": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["line_id", "variant_id", "sku", "name", "brand", "color", "size", "quantity", "total_amount"],
+                "required": ["line_id", "variant_id", "sku", "name", "brand", "variant_options", "quantity", "total_amount"],
                 "properties": {
                     "line_id": { "type": "integer" },
                     "variant_id": { "type": "integer" },
                     "sku": { "type": "string" },
                     "name": { "type": "string" },
                     "brand": { "type": ["string", "null"] },
-                    "color": { "type": ["string", "null"] },
-                    "size": { "type": "string" },
+                    "variant_options": {
+                        "type": "array",
+                        "description": "Tổ hợp tuỳ chọn của SKU lúc đặt theo thứ tự trục (ADR-045): type = mã loại tuỳ chọn (color, size…), name = tên loại, code/value = mã/tên giá trị.",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["type", "name", "code", "value"],
+                            "properties": {
+                                "type": { "type": "string" },
+                                "name": { "type": "string" },
+                                "code": { "type": "string" },
+                                "value": { "type": "string" }
+                            }
+                        }
+                    },
                     "quantity": { "type": "integer", "minimum": 1 },
                     "total_amount": { "type": "integer", "minimum": 0 }
                 }

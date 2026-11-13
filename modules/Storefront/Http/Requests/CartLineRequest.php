@@ -6,6 +6,7 @@ namespace Modules\Storefront\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 
 /**
@@ -40,7 +41,7 @@ final class CartLineRequest extends FormRequest
                 return;
             }
             $variant = app(VariantDirectory::class)->find([(int) $this->input('variant_id')])[(int) $this->input('variant_id')] ?? null;
-            if ($variant !== null && $variant->colorCode !== $color) {
+            if ($variant !== null && VariantOptionsText::code($variant->options, 'color') !== $color) {
                 $validator->errors()->add('variant_id', __('storefront::messages.choose_variant'));
             }
         }];

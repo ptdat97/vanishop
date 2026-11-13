@@ -10,8 +10,7 @@ import { computed, ref } from 'vue';
 interface Row {
     variant_id: number;
     sku: string;
-    color_code: string;
-    size_code: string;
+    variant_label: string;
     status: string;
     amount: number | null;
     compare_at_amount: number | null;
@@ -35,8 +34,7 @@ const money = useMoney();
 const symbol = usePage<SharedProps>().props.app.money.symbol;
 const columns = [
     { key: 'sku', label: 'SKU', class: 'font-mono text-xs' },
-    { key: 'color_code', label: 'Màu' },
-    { key: 'size_code', label: 'Size' },
+    { key: 'variant_label', label: 'Tuỳ chọn' },
     { key: 'amount', label: `Giá bán (${symbol})` },
     { key: 'compare_at_amount', label: `Giá gốc (${symbol}, tuỳ chọn)` },
 ];

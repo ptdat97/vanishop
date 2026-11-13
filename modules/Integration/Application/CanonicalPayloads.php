@@ -60,8 +60,8 @@ final class CanonicalPayloads
                 'sku' => $line->sku,
                 'name' => $line->productName,
                 'brand' => $line->brandName,
-                'color' => $line->colorName,
-                'size' => $line->sizeCode,
+                // Tổ hợp tuỳ chọn của SKU lúc đặt (ADR-045): [{type, name, code, value}] theo thứ tự trục.
+                'variant_options' => $line->variantOptions,
                 'quantity' => $line->quantity,
                 'total_amount' => $line->totalAmount,
             ], array_values(array_filter($this->orders->lines($order->id), fn (OrderLineData $line): bool => $line->quantity > 0))), // dòng huỷ hết: chỉ có trong order.lines_cancelled

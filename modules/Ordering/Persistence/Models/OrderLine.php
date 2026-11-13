@@ -14,8 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $product_name
  * @property int|null $brand_id
  * @property string|null $brand_name
- * @property string|null $color_name
- * @property string $size_code
+ * @property list<array{type: string, name: string, code: string, value: string}>|null $variant_options tổ hợp tuỳ chọn của SKU lúc đặt (ADR-045)
  * @property string|null $image_url
  * @property int $quantity
  * @property int $cancelled_quantity
@@ -38,7 +37,7 @@ final class OrderLine extends Model
         return [
             'variant_id' => 'integer', 'quantity' => 'integer', 'cancelled_quantity' => 'integer', 'unit_amount' => 'integer', 'compare_at_amount' => 'integer', 'subtotal_amount' => 'integer',
             'discount_amount' => 'integer', 'total_amount' => 'integer', 'tax_rate_bp' => 'integer', 'tax_amount' => 'integer',
-            'meta' => 'array',
+            'meta' => 'array', 'variant_options' => 'array',
         ];
     }
 }

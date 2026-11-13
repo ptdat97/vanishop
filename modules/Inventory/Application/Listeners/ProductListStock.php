@@ -6,6 +6,7 @@ namespace Modules\Inventory\Application\Listeners;
 
 use Illuminate\Support\Facades\Gate;
 use Modules\Catalog\Contracts\Data\VariantData;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockGrid;
@@ -14,7 +15,7 @@ use Modules\Inventory\Application\StockQueries;
 /**
  * Cột "Tồn bán được" ở danh sách sản phẩm Admin (slot vani.admin.product.list_columns, 0.3.103): tổng số bán được ở kho
  * giao online; "Hết hàng" khi 0, "sắp hết" khi ≤ ngưỡng. Cửa hàng một kho do VaniShop quản lý tồn: sửa
- * tồn ngay trong ô (từng màu/size, lưu qua endpoint lưu nhiều ô của lưới tồn); còn lại sửa ở lưới tồn kho (lọc theo mã sản phẩm).
+ * tồn ngay trong ô (từng SKU, lưu qua endpoint lưu nhiều ô của lưới tồn); còn lại sửa ở lưới tồn kho (lọc theo mã sản phẩm).
  */
 final class ProductListStock
 {
@@ -76,7 +77,7 @@ final class ProductListStock
             $result[$styleId] = $variants === [] || count($variants) > self::MAX_INLINE_VARIANTS ? null : [
                 'url' => $url, 'location_id' => $location->id,
                 'rows' => array_map(fn (VariantData $variant): array => [
-                    'variant_id' => $variant->id, 'label' => trim("{$variant->colorCode} / {$variant->sizeCode}", ' /'),
+                    'variant_id' => $variant->id, 'label' => VariantOptionsText::label($variant->options),
                     'on_hand' => $levels[$location->id.':'.$variant->id]['on_hand'] ?? 0,
                 ], $variants),
             ];

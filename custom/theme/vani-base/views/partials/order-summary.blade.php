@@ -2,7 +2,7 @@
 <ul class="divide-y divide-slate-200 border-y border-slate-200 text-sm">
     @foreach ($order['lines'] as $line)
         <li class="flex justify-between gap-4 py-3">
-            <span>{{ $line['name'] }} ({{ $line['color_name'] }} / {{ $line['size_code'] }}) × {{ $line['quantity'] }}
+            <span>{{ $line['name'] }}@if (($line['variant_label'] ?? '') !== '') ({{ $line['variant_label'] }})@endif × {{ $line['quantity'] }}
                 @include('theme::partials.line-options', ['options' => $line['options']])
             </span>
             <span>{{ $line['total']['formatted'] ?? '' }}</span>

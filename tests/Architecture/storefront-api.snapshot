@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.4.26
+Storefront API v1 — VaniShop 0.4.27
 GET /address/provinces security[]
   200
     $: object
@@ -290,12 +290,16 @@ POST /carts security[none,customerBearer,firstPartySession]
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -354,12 +358,16 @@ GET /carts/{cart} security[cartToken,customerBearer,firstPartySession]
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -430,12 +438,16 @@ POST /carts/{cart}/lines security[cartToken,customerBearer,firstPartySession]
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -520,12 +532,16 @@ DELETE /carts/{cart}/lines/{line} security[cartToken,customerBearer,firstPartySe
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -596,12 +612,16 @@ PATCH /carts/{cart}/lines/{line} security[cartToken,customerBearer,firstPartySes
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -686,12 +706,16 @@ PUT /carts/{cart}/selection security[cartToken,customerBearer,firstPartySession]
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -769,12 +793,16 @@ PUT /carts/{cart}/vouchers security[cartToken,customerBearer,firstPartySession]
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -1288,12 +1316,16 @@ GET /me/cart security[customerBearer,firstPartySession]
     $.data.lines[].price_when_added.currency: string
     $.data.lines[].price_when_added.formatted: string
     $.data.lines[].product: object|null
-    $.data.lines[].product.color_code: string optional
-    $.data.lines[].product.color_name: string|null optional
     $.data.lines[].product.image_url: string|null optional
     $.data.lines[].product.name: string|null
-    $.data.lines[].product.size_code: string optional
     $.data.lines[].product.slug: string
+    $.data.lines[].product.variant_label: string
+    $.data.lines[].product.variant_options: array
+    $.data.lines[].product.variant_options[]: object
+    $.data.lines[].product.variant_options[].code: string
+    $.data.lines[].product.variant_options[].name: string
+    $.data.lines[].product.variant_options[].type: string
+    $.data.lines[].product.variant_options[].value: string
     $.data.lines[].quantity: integer
     $.data.lines[].selected: boolean
     $.data.lines[].sku: string|null optional
@@ -1503,6 +1535,13 @@ GET /me/orders security[customerBearer,firstPartySession]
     $.data[].lines[].unit_price.currency: string
     $.data[].lines[].unit_price.formatted: string
     $.data[].lines[].variant_id: integer optional
+    $.data[].lines[].variant_label: string
+    $.data[].lines[].variant_options: array
+    $.data[].lines[].variant_options[]: object
+    $.data[].lines[].variant_options[].code: string
+    $.data[].lines[].variant_options[].name: string
+    $.data[].lines[].variant_options[].type: string
+    $.data[].lines[].variant_options[].value: string
     $.data[].number: string
     $.data[].order_status: string
     $.data[].payment_method: string
@@ -1666,6 +1705,13 @@ GET /me/orders/{order} security[customerBearer,firstPartySession]
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -1825,6 +1871,13 @@ POST /me/orders/{order}/cancel security[customerBearer,firstPartySession]
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -2076,6 +2129,13 @@ GET /orders/track security[]
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -2235,6 +2295,13 @@ GET /orders/{order} security[orderToken,customerBearer,firstPartySession]
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -2387,6 +2454,13 @@ POST /orders/{order}/cancel security[orderToken,customerBearer,firstPartySession
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -2602,6 +2676,13 @@ POST /orders/{order}/received security[orderToken,customerBearer,firstPartySessi
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -2768,6 +2849,13 @@ POST /orders/{order}/returns security[orderToken,customerBearer,firstPartySessio
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -2934,6 +3022,13 @@ POST /orders/{order}/returns/{return}/cancel security[orderToken,customerBearer,
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string
@@ -3093,6 +3188,13 @@ POST /orders/{order}/returns/{return}/shipped security[orderToken,customerBearer
     $.data.lines[].unit_price.currency: string
     $.data.lines[].unit_price.formatted: string
     $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
     $.data.number: string
     $.data.order_status: string
     $.data.payment_method: string

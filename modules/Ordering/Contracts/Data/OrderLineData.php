@@ -14,8 +14,8 @@ final readonly class OrderLineData
         public int $quantity,
         /** Thành tiền dòng sau giảm giá phân bổ — cơ sở tính tiền hoàn khi trả hàng. */
         public int $totalAmount = 0,
-        public ?string $colorName = null,
-        public string $sizeCode = '',
+        /** @var list<array{type: string, name: string, code: string, value: string}> tổ hợp tuỳ chọn của SKU lúc đặt (ADR-045) */
+        public array $variantOptions = [],
         public ?string $brandName = null,
         /** @var array<string, array<string, scalar|null>> */
         public array $options = [],

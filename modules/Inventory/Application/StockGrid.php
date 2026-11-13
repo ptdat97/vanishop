@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Application;
 
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
 
 /**
- * Lưới tồn kho Admin: mọi variant (tìm theo tên/mã sản phẩm/SKU, lọc màu, size, hết hàng / sắp hết theo số bán được
+ * Lưới tồn kho Admin: mọi variant (tìm theo tên/mã sản phẩm/SKU, lọc theo giá trị tuỳ chọn — màu, size…, hết hàng / sắp hết theo số bán được
  * online — Σ max(0, tồn − giữ − an toàn) của kho đang giao online, như storefront) × kho. Phân trang theo **sản phẩm**
  * để các variant của một sản phẩm luôn cùng trang (chọn cả sản phẩm, sửa hàng loạt).
  */
@@ -26,8 +27,8 @@ final class StockGrid
     ) {}
 
     /**
-     * @param  array{q?: string, style?: string, filter?: string, color?: string, size?: string}  $criteria
-     * @return array{products: list<array<string, mixed>>, total_products: int, total_variants: int, locations: list<Location>, colors: list<string>, sizes: list<string>}
+     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
+     * @return array{products: list<array<string, mixed>>, total_products: int, total_variants: int, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     public function page(array $criteria, int $page, int $perPage = 20): array
     {
@@ -52,7 +53,7 @@ final class StockGrid
             $products[$row['style_code']]['sellable'] += $row['sellable'];
             $products[$row['style_code']]['variants'][] = [
                 'id' => $row['id'], 'sku' => $variant->sku, 'style_code' => $row['style_code'], 'style_name' => $variant->styleName,
-                'color_code' => $row['color_code'], 'size_code' => $row['size_code'], 'status' => $row['status'], 'sellable' => $row['sellable'],
+                'options' => $variant->options, 'options_label' => VariantOptionsText::label($variant->options), 'status' => $row['status'], 'sellable' => $row['sellable'],
                 'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$row['id']] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $matching['locations']),
             ];
         }
@@ -60,14 +61,14 @@ final class StockGrid
         return [
             'products' => array_values($products),
             'total_products' => count($byStyle), 'total_variants' => count($matching['rows']),
-            'locations' => $matching['locations'], 'colors' => $matching['colors'], 'sizes' => $matching['sizes'],
+            'locations' => $matching['locations'], 'option_filters' => $matching['option_filters'],
         ];
     }
 
     /**
      * Id mọi variant khớp bộ lọc (chọn "tất cả kết quả" để sửa hàng loạt).
      *
-     * @param  array{q?: string, style?: string, filter?: string, color?: string, size?: string}  $criteria
+     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
      * @return list<int>
      */
     public function variantIds(array $criteria): array
@@ -118,21 +119,30 @@ final class StockGrid
     /**
      * Mọi variant khớp (không giới hạn): khoá + số bán được, tính bằng chỉ mục của Catalog và một truy vấn gộp tồn.
      *
-     * @param  array{q?: string, style?: string, filter?: string, color?: string, size?: string}  $criteria
-     * @return array{rows: list<array{id: int, style_id: int, style_code: string, color_code: string, size_code: string, status: string, sellable: int}>, locations: list<Location>, colors: list<string>, sizes: list<string>}
+     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
+     * @return array{rows: list<array{id: int, style_id: int, style_code: string, options: array<string, string>, status: string, sellable: int}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     private function matching(array $criteria): array
     {
         $style = trim((string) ($criteria['style'] ?? ''));
         $filter = in_array($criteria['filter'] ?? 'all', self::FILTERS, true) ? (string) ($criteria['filter'] ?? 'all') : 'all';
-        $color = trim((string) ($criteria['color'] ?? ''));
-        $size = trim((string) ($criteria['size'] ?? ''));
+        $wanted = array_filter(array_map(fn ($code): string => trim((string) $code), (array) ($criteria['options'] ?? [])), fn (string $code): bool => $code !== '');
 
         $locations = $this->queries->locations();
         $index = $this->variants->searchIndex((string) ($criteria['q'] ?? ''), $style !== '' ? $style : null);
-        // Lựa chọn màu/size lấy từ kết quả tìm (trước khi lọc màu/size) để chỉ hiện giá trị có thật.
-        $colors = array_values(array_unique(array_column($index, 'color_code')));
-        $sizes = array_values(array_unique(array_column($index, 'size_code')));
+        // Lựa chọn theo từng loại tuỳ chọn lấy từ kết quả tìm (trước khi lọc tuỳ chọn) để chỉ hiện giá trị có thật.
+        $found = [];
+        foreach ($index as $row) {
+            foreach ($row['options'] as $type => $code) {
+                $found[$type][$code] = true;
+            }
+        }
+        $optionFilters = [];
+        foreach ($this->variants->optionTypes() as $type => $name) {
+            if (isset($found[$type])) {
+                $optionFilters[] = ['code' => (string) $type, 'name' => $name, 'values' => array_map('strval', array_keys($found[$type]))];
+            }
+        }
 
         $online = array_values(array_map(fn (Location $location): int => $location->id, array_filter($locations, fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders)));
         $sellable = $this->queries->sellableByVariant($online);
@@ -140,8 +150,10 @@ final class StockGrid
 
         $rows = [];
         foreach ($index as $row) {
-            if (($color !== '' && $row['color_code'] !== $color) || ($size !== '' && $row['size_code'] !== $size)) {
-                continue;
+            foreach ($wanted as $type => $code) {
+                if (($row['options'][$type] ?? null) !== $code) {
+                    continue 2;
+                }
             }
             $row['sellable'] = $sellable[$row['id']] ?? 0;
             if (($filter === 'out' && $row['sellable'] > 0) || ($filter === 'low' && ($row['sellable'] === 0 || $row['sellable'] > $threshold))) {
@@ -150,6 +162,6 @@ final class StockGrid
             $rows[] = $row;
         }
 
-        return ['rows' => $rows, 'locations' => $locations, 'colors' => $colors, 'sizes' => $sizes];
+        return ['rows' => $rows, 'locations' => $locations, 'option_filters' => $optionFilters];
     }
 }

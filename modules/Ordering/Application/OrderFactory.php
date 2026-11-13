@@ -49,8 +49,8 @@ final class OrderFactory implements OrderWriter
 
         foreach ($draft->lines as $line) {
             $order->lines()->create([
-                'variant_id' => $line->variantId, 'sku' => $line->sku, 'product_name' => $line->productName, 'brand_id' => $line->brandId, 'brand_name' => $line->brandName, 'color_name' => $line->colorName,
-                'size_code' => $line->sizeCode, 'image_url' => $line->imageUrl, 'quantity' => $line->quantity, 'unit_amount' => $line->unitAmount,
+                'variant_id' => $line->variantId, 'sku' => $line->sku, 'product_name' => $line->productName, 'brand_id' => $line->brandId, 'brand_name' => $line->brandName,
+                'variant_options' => $line->variantOptions === [] ? null : $line->variantOptions, 'image_url' => $line->imageUrl, 'quantity' => $line->quantity, 'unit_amount' => $line->unitAmount,
                 'compare_at_amount' => $line->compareAtAmount, 'subtotal_amount' => $line->subtotalAmount, 'discount_amount' => $line->discountAmount,
                 'total_amount' => $line->totalAmount, 'tax_rate_bp' => $line->taxRateBp, 'tax_amount' => $line->taxAmount,
                 'meta' => array_filter(['options' => $line->options, 'style_id' => $line->styleId, 'promotions' => $line->promotions]) ?: null,

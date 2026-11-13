@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.27 — 2026-11-13
+
+Biến thể linh hoạt, đợt F3 — giỏ/đơn/tích hợp chụp tổ hợp tuỳ chọn ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)). **Phá vỡ**: bỏ màu/size cố định ở mọi tầng sau Catalog.
+
+### Đổi (phá vỡ)
+- `Catalog\Contracts\Data\VariantData`: bỏ `$colorCode`, `$sizeCode`; `SellableVariant`: bỏ `$colorCode`, `$colorName`, `$sizeCode` — dùng `$options` (`list<{type, name, code, value}>` theo thứ tự trục).
+- `VariantDirectory::searchIndex()`: dòng có `options` (mã loại => mã giá trị) thay `color_code`, `size_code`. Thêm `VariantDirectory::optionTypes()` (mã => tên loại tuỳ chọn).
+- `Checkout\Contracts\Data\TotalsLine`, `Ordering\Contracts\Data\OrderLineDraft`, `OrderLineData`: `$colorName` + `$sizeCode` → `$variantOptions` (cùng dạng; `$options` vẫn là tuỳ chọn dòng của plugin — CartLineOption).
+- Bảng `order_lines`: cột `variant_options` (JSON) thay `color_name`, `size_code` (migration chuyển dòng cũ).
+- Storefront API: dòng giỏ `product.variant_options` + `product.variant_label` thay `color_code`, `color_name`, `size_code`; dòng đơn `variant_options` + `variant_label` thay `color_name`, `size_code`.
+- Payload tích hợp `vanishop.order.v1` (`lines[]`): `variant_options` thay `color`, `size`.
+- Admin: lưới tồn lọc theo `opt[<loại>]=<mã>` (một ô chọn cho mỗi loại tuỳ chọn có trong kết quả) thay `color`, `size`; file xuất tồn: cột `options` ("Màu: Trắng ngà, Size: M") thay `color`, `size`. Bảng giá theo sản phẩm, đơn, phiếu in, tạo đổi trả, file giao hãng hiện nhãn tổ hợp ("Trắng ngà / M").
+
+### Thêm
+- `Catalog\Contracts\Data\VariantOptionsText`: `label()` ("Trắng ngà / M"), `describe()` ("Màu: Trắng ngà, Size: M"), `code($options, $type)` — hiển thị tổ hợp tuỳ chọn ở mọi module và plugin.
+
 ## 0.4.26 — 2026-11-12
 
 Biến thể linh hoạt, đợt F2 — bộ lọc danh mục theo loại tuỳ chọn ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)). **Phá vỡ** tham số và facet lọc màu/size.

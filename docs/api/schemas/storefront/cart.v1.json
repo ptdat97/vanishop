@@ -126,7 +126,9 @@
                         ],
                         "required": [
                             "slug",
-                            "name"
+                            "name",
+                            "variant_options",
+                            "variant_label"
                         ],
                         "properties": {
                             "slug": {
@@ -138,16 +140,34 @@
                                     "null"
                                 ]
                             },
-                            "color_code": {
-                                "type": "string"
+                            "variant_options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": [
+                                        "type",
+                                        "name",
+                                        "code",
+                                        "value"
+                                    ],
+                                    "properties": {
+                                        "type": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "code": {
+                                            "type": "string"
+                                        },
+                                        "value": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "description": "Tổ hợp tuỳ chọn của SKU theo thứ tự trục (ADR-045): `type` = mã loại tuỳ chọn, `name` = tên loại, `code`/`value` = mã/tên giá trị. `variant_label` = các `value` nối \" / \"."
                             },
-                            "color_name": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            },
-                            "size_code": {
+                            "variant_label": {
                                 "type": "string"
                             },
                             "image_url": {

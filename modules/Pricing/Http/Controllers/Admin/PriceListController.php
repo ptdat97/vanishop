@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\PriceListService;
@@ -114,8 +115,7 @@ final class PriceListController
             'rows' => array_map(fn ($variant): array => [
                 'variant_id' => $variant->id,
                 'sku' => $variant->sku,
-                'color_code' => $variant->colorCode,
-                'size_code' => $variant->sizeCode,
+                'variant_label' => VariantOptionsText::label($variant->options),
                 'status' => $variant->status,
                 'amount' => $prices->get($variant->id)?->amount,
                 'compare_at_amount' => $prices->get($variant->id)?->compare_at_amount,

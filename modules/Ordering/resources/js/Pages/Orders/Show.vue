@@ -33,8 +33,7 @@ type OrderLine = {
     cancelled_quantity: number;
     sku: string;
     name: string;
-    color_name: string | null;
-    size_code: string;
+    variant_label: string;
     quantity: number;
     unit_amount: number;
     compare_at_amount: number | null;
@@ -310,7 +309,7 @@ function addNote(): void {
                 <DataTable :columns="lineColumns" :rows="order.lines" :row-key="(line) => line.sku" bare>
                     <template #cell-name="{ row }">
                         {{ row.name }}
-                        <div class="font-mono text-xs text-slate-400">{{ row.sku }} · {{ row.color_name }} / {{ row.size_code }}</div>
+                        <div class="font-mono text-xs text-slate-400">{{ row.sku }}<template v-if="row.variant_label"> · {{ row.variant_label }}</template></div>
                         <template v-for="(values, plugin) in row.options" :key="plugin">
                             <div v-for="(value, field) in values" :key="field" class="text-xs text-amber-700">{{ field }}: {{ value }}</div>
                         </template>

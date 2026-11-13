@@ -6,6 +6,7 @@ namespace Modules\Storefront\Application;
 
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Returns\Contracts\Returns;
@@ -56,13 +57,13 @@ final class ReturnFormPresenter
                 if ($variant !== null) {
                     $options[] = [
                         'variant_id' => $variantId,
-                        'label' => implode(' / ', array_filter([$variant->colorName, $variant->sizeCode])).($variantId === $own->id ? ' (như cũ)' : ''),
+                        'label' => VariantOptionsText::label($variant->options).($variantId === $own->id ? ' (như cũ)' : ''),
                         'available' => ($stock[$variantId] ?? 0) > 0,
                     ];
                 }
             }
             $lines[] = [
-                'id' => $lineId, 'name' => $line['name'], 'variant' => implode(' / ', array_filter([$line['color_name'], $line['size_code']])),
+                'id' => $lineId, 'name' => $line['name'], 'variant' => (string) $line['variant_label'],
                 'image_url' => $line['image_url'], 'returnable' => $returnable[$lineId], 'exchange_options' => $options,
             ];
         }

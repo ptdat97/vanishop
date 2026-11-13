@@ -89,32 +89,52 @@ final class EloquentVariantDirectory implements VariantDirectory
         $text = trim($text);
         $like = '%'.addcslashes($text, '%_\\').'%';
         $locale = StoreLocale::default();
-        $types = OptionType::query()->whereIn('code', [OptionType::COLOR, OptionType::SIZE])->pluck('id', 'code');
-        // Giá trị màu/size của SKU (nếu sản phẩm có trục đó) và vị trí của giá trị trong sản phẩm — thứ tự hiển thị.
-        $axis = function ($query, string $alias, ?int $typeId): void {
-            $query->leftJoin("variant_option_values as {$alias}v", fn ($join) => $join->on("{$alias}v.variant_id", '=', 'v.id')->where("{$alias}v.option_type_id", '=', $typeId ?? 0))
-                ->leftJoin("option_values as {$alias}", "{$alias}.id", '=', "{$alias}v.option_value_id")
-                ->leftJoin("style_option_values as {$alias}p", fn ($join) => $join->on("{$alias}p.style_id", '=', 'v.style_id')->on("{$alias}p.option_value_id", '=', "{$alias}v.option_value_id"));
-        };
-
-        $query = DB::table('variants as v')
-            ->join('styles as s', 's.id', '=', 'v.style_id')
-            ->leftJoin('style_translations as t', fn ($join) => $join->on('t.style_id', '=', 's.id')->where('t.locale', $locale));
-        $axis($query, 'c', $types[OptionType::COLOR] ?? null);
-        $axis($query, 'z', $types[OptionType::SIZE] ?? null);
-
-        return $query
+        $scope = fn ($query) => $query
             ->when($styleCode !== null, fn ($query) => $query->where('s.style_code', $styleCode))
             ->when($styleCode === null && $text !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('v.sku', 'like', $like)
                 ->orWhere('s.style_code', 'like', $like)
-                ->orWhereExists(fn ($names) => $names->selectRaw('1')->from('style_translations as tn')->whereColumn('tn.style_id', 's.id')->where('tn.name', 'like', $like))))
-            ->orderByRaw('lower(coalesce(t.name, s.style_code))')->orderBy('s.style_code')->orderBy('cp.position')->orderBy('zp.position')->orderBy('v.id')
-            ->get(['v.id', 'v.style_id', 's.style_code', 'c.code as color_code', 'z.code as size_code', 'v.status'])
-            ->map(fn (object $row): array => [
-                'id' => (int) $row->id, 'style_id' => (int) $row->style_id, 'style_code' => (string) $row->style_code,
-                'color_code' => (string) $row->color_code, 'size_code' => (string) $row->size_code, 'status' => (string) $row->status,
-            ])->all();
+                ->orWhereExists(fn ($names) => $names->selectRaw('1')->from('style_translations as tn')->whereColumn('tn.style_id', 's.id')->where('tn.name', 'like', $like))));
+
+        $rows = $scope(DB::table('variants as v')
+            ->join('styles as s', 's.id', '=', 'v.style_id')
+            ->leftJoin('style_translations as t', fn ($join) => $join->on('t.style_id', '=', 's.id')->where('t.locale', $locale)))
+            ->get(['v.id', 'v.style_id', 's.style_code', 'v.status', 't.name']);
+
+        // Giá trị của mọi trục (ADR-045) cùng vị trí trục và vị trí giá trị trong sản phẩm — thứ tự hiển thị.
+        $values = $scope(DB::table('variant_option_values as vov')
+            ->join('variants as v', 'v.id', '=', 'vov.variant_id')
+            ->join('styles as s', 's.id', '=', 'v.style_id')
+            ->join('option_types as ot', 'ot.id', '=', 'vov.option_type_id')
+            ->join('option_values as ov', 'ov.id', '=', 'vov.option_value_id')
+            ->leftJoin('style_options as so', fn ($join) => $join->on('so.style_id', '=', 'v.style_id')->on('so.option_type_id', '=', 'vov.option_type_id'))
+            ->leftJoin('style_option_values as sov', fn ($join) => $join->on('sov.style_id', '=', 'v.style_id')->on('sov.option_value_id', '=', 'vov.option_value_id')))
+            ->orderBy('so.position')
+            ->get(['vov.variant_id', 'ot.code as type_code', 'ov.code as value_code', 'sov.position as value_position'])
+            ->groupBy('variant_id');
+
+        $index = [];
+        foreach ($rows as $row) {
+            $options = [];
+            $sort = [];
+            foreach ($values->get($row->id, collect()) as $value) {
+                $options[(string) $value->type_code] = (string) $value->value_code;
+                $sort[] = str_pad((string) (int) $value->value_position, 6, '0', STR_PAD_LEFT);
+            }
+            $index[] = [
+                'row' => ['id' => (int) $row->id, 'style_id' => (int) $row->style_id, 'style_code' => (string) $row->style_code, 'options' => $options, 'status' => (string) $row->status],
+                'key' => [mb_strtolower((string) ($row->name ?? $row->style_code)), (string) $row->style_code, implode('|', $sort), (int) $row->id],
+            ];
+        }
+        usort($index, fn (array $a, array $b): int => $a['key'] <=> $b['key']);
+
+        return array_column($index, 'row');
+    }
+
+    public function optionTypes(): array
+    {
+        return OptionType::query()->with('translations')->orderBy('position')->orderBy('code')->get()
+            ->mapWithKeys(fn (OptionType $type): array => [$type->code => (string) ($type->translate('name') ?? $type->code)])->all();
     }
 
     private function toData(Variant $variant): VariantData
@@ -126,8 +146,6 @@ final class EloquentVariantDirectory implements VariantDirectory
             styleCode: $variant->style->style_code,
             styleName: (string) $variant->style->translate('name'),
             sku: $variant->sku,
-            colorCode: VariantOptions::code($variant, OptionType::COLOR),
-            sizeCode: VariantOptions::code($variant, OptionType::SIZE),
             status: $variant->status->value,
             options: VariantOptions::present($variant),
         );

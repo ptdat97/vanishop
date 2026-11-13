@@ -43,7 +43,7 @@ final class OrderPresenter
             'shipping_address' => $order->shippingAddress,
             'shipping_method' => ['label' => $order->shippingMethod['label'] ?? null, 'fee' => $money((int) ($order->shippingMethod['fee'] ?? 0))],
             'lines' => array_map(fn (array $line): array => [
-                'id' => $line['id'], 'variant_id' => $line['variant_id'] ?? null, 'sku' => $line['sku'], 'name' => $line['name'], 'color_name' => $line['color_name'], 'size_code' => $line['size_code'], 'image_url' => $line['image_url'],
+                'id' => $line['id'], 'variant_id' => $line['variant_id'] ?? null, 'sku' => $line['sku'], 'name' => $line['name'], 'variant_options' => $line['variant_options'], 'variant_label' => $line['variant_label'], 'image_url' => $line['image_url'],
                 'quantity' => $line['quantity'], 'unit_price' => $money($line['unit_amount']), 'compare_at' => $money($line['compare_at_amount']),
                 'discount' => $money($line['discount_amount']), 'total' => $money($line['total_amount']),
                 'options' => $line['options'] ?? [],

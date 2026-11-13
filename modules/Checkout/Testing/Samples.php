@@ -19,7 +19,7 @@ final class Samples
     public static function totalsContext(?int $brandId = 1): TotalsContext
     {
         $line = fn (int $key, int $quantity, int $unit, int $grams): TotalsLine => new TotalsLine(
-            key: $key, variantId: 100 + $key, brandId: $brandId, styleId: 10, sku: "SKU-{$key}", name: "Sản phẩm {$key}", colorName: 'Đen', sizeCode: 'M',
+            key: $key, variantId: 100 + $key, brandId: $brandId, styleId: 10, sku: "SKU-{$key}", name: "Sản phẩm {$key}", variantOptions: [['type' => 'color', 'name' => 'Màu', 'code' => 'BLK', 'value' => 'Đen'], ['type' => 'size', 'name' => 'Size', 'code' => 'M', 'value' => 'M']],
             imageUrl: null, quantity: $quantity, unitPrice: Money::vnd($unit), compareAt: null, subtotal: Money::vnd($unit * $quantity), discount: Money::vnd(0), weightGram: $grams,
         );
 

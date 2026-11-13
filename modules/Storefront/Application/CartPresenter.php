@@ -6,6 +6,7 @@ namespace Modules\Storefront\Application;
 
 use Modules\Cart\Contracts\Data\CartLineView;
 use Modules\Cart\Contracts\Data\CartView;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Support\MoneyFormatter;
 
@@ -48,9 +49,9 @@ final class CartPresenter
                 'product' => $line->variant === null ? null : [
                     'slug' => $line->variant->slug,
                     'name' => $line->variant->name,
-                    'color_code' => $line->variant->colorCode,
-                    'color_name' => $line->variant->colorName,
-                    'size_code' => $line->variant->sizeCode,
+                    // Tổ hợp tuỳ chọn của SKU (ADR-045): {type, name, code, value} theo thứ tự trục; `variant_label` = "Trắng ngà / M".
+                    'variant_options' => $line->variant->options,
+                    'variant_label' => VariantOptionsText::label($line->variant->options),
                     'image_url' => $line->variant->imageUrl,
                 ],
                 'unit_price' => $this->optional($line->unitPrice),
@@ -78,7 +79,7 @@ final class CartPresenter
             'lines' => array_map(fn (CartLineView $line): array => [
                 'id' => $line->id,
                 'name' => $line->variant?->name,
-                'variant' => $line->variant === null ? null : trim(implode(' / ', array_filter([$line->variant->colorName, $line->variant->sizeCode]))),
+                'variant' => $line->variant === null ? null : VariantOptionsText::label($line->variant->options),
                 'image_url' => $line->variant?->imageUrl,
                 'quantity' => $line->quantity,
                 'line_total' => $this->optional($line->lineTotal),

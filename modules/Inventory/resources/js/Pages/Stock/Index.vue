@@ -13,14 +13,15 @@ import { computed, reactive, ref, watch } from 'vue';
 import type { InventoryLabels } from '../../labels';
 
 type Level = { on_hand: number; reserved: number; safety_stock: number; available: number };
-type Variant = { id: number; sku: string; style_code: string; style_name: string; color_code: string; size_code: string; status: string; sellable: number; levels: Level[] };
+type Variant = { id: number; sku: string; style_code: string; style_name: string; options_label: string; status: string; sellable: number; levels: Level[] };
 type Product = { style_code: string; style_name: string; sellable: number; variants: Variant[] };
 type Row = Variant & { first: boolean; product: Product; index: number };
 type StockLocation = { id: number; code: string; name: string; external: boolean; online: boolean };
-type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; color: string; size: string };
+type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; options: Record<string, string> };
+type OptionFilter = { code: string; name: string; values: string[] };
 
 /**
- * Tồn kho: sản phẩm × kho. Tìm theo tên sản phẩm, mã hoặc SKU; lọc màu, size, hết hàng / sắp hết. Gõ số vào ô rồi Lưu,
+ * Tồn kho: sản phẩm × kho. Tìm theo tên sản phẩm, mã hoặc SKU; lọc theo giá trị tuỳ chọn (màu, size…), hết hàng / sắp hết. Gõ số vào ô rồi Lưu,
  * hoặc chọn nhiều SKU (cả sản phẩm, cả trang, mọi kết quả lọc) để sửa hàng loạt tại một kho. Enter = xuống ô dưới.
  */
 const props = defineProps<{
@@ -29,7 +30,7 @@ const props = defineProps<{
     links: Array<{ label: string; url: string }>;
     mainLocation: { id: number; name: string; address: string | null; province_code: string | null; lock_version: number } | null;
     query: Criteria;
-    options: { colors: string[]; sizes: string[] };
+    optionFilters: OptionFilter[];
     pagination: { page: number; per_page: number; total: number; variants: number };
     threshold: number;
     warnings: { no_location: boolean; no_online_location: boolean };
@@ -39,14 +40,15 @@ const props = defineProps<{
 }>();
 
 const page = usePage<{ errors: Record<string, string> }>();
-const criteria = reactive<Criteria>({ ...props.query });
+// PHP trả mảng rỗng `[]` khi không lọc tuỳ chọn → chuẩn hoá thành object.
+const criteria = reactive<Criteria>({ ...props.query, options: { ...(Array.isArray(props.query.options) ? {} : props.query.options) } });
 const filterOptions = computed(() => [
     { value: 'all', label: 'Tất cả' },
     { value: 'out', label: 'Hết hàng (online)' },
     { value: 'low', label: `Sắp hết (≤ ${props.threshold})` },
 ]);
-const colorOptions = computed(() => props.options.colors.map((code) => ({ value: code, label: code })));
-const sizeOptions = computed(() => props.options.sizes.map((code) => ({ value: code, label: code })));
+const valueOptions = (filter: OptionFilter) => filter.values.map((code) => ({ value: code, label: code }));
+const hasOptionFilter = computed(() => Object.values(props.query.options ?? {}).some((code) => code !== ''));
 const rows = computed<Row[]>(() => {
     let index = 0;
     return props.products.flatMap((product) => product.variants.map((variant, position) => ({ ...variant, first: position === 0, product, index: index++ })));
@@ -109,16 +111,16 @@ function save(): void {
 /* ---------- Lọc, phân trang ---------- */
 const perPageOptions = [20, 50, 100];
 
-function params(overrides: Partial<Criteria> & { page?: number; per_page?: number } = {}): Record<string, string | number | undefined> {
+function params(overrides: Partial<Criteria> & { page?: number; per_page?: number } = {}): Record<string, string | number | Record<string, string> | undefined> {
     const merged = { ...criteria, ...overrides };
     return {
         q: merged.q.trim() || undefined, style: merged.style || undefined, filter: merged.filter === 'all' ? undefined : merged.filter,
-        color: merged.color || undefined, size: merged.size || undefined, page: overrides.page && overrides.page > 1 ? overrides.page : undefined,
+        opt: Object.fromEntries(Object.entries(merged.options).filter(([, code]) => code !== '')), page: overrides.page && overrides.page > 1 ? overrides.page : undefined,
         per_page: overrides.per_page ?? props.pagination.per_page,
     };
 }
 
-async function visit(query: Record<string, string | number | undefined>): Promise<void> {
+async function visit(query: Record<string, string | number | Record<string, string> | undefined>): Promise<void> {
     if (dirty.value && (await confirmAction({ title: `Bỏ ${dirty.value} ô chưa lưu?`, confirmLabel: 'Bỏ thay đổi', tone: 'danger' })) === false) return;
     discard();
     clearSelection();
@@ -134,7 +136,7 @@ function changePageSize(perPage: number): void {
 }
 
 function clearFilters(): void {
-    Object.assign(criteria, { q: '', style: '', filter: 'all', color: '', size: '' });
+    Object.assign(criteria, { q: '', style: '', filter: 'all', options: {} });
     void visit({});
 }
 
@@ -301,10 +303,19 @@ function createDefault(): void {
     <form class="mb-4 flex flex-wrap items-center gap-2" @submit.prevent="find">
         <input v-model="criteria.q" :class="[inputClass, 'max-w-sm']" placeholder="Tên sản phẩm (vd. đầm lụa), mã hoặc SKU" aria-label="Tìm" />
         <Select v-model="criteria.filter" :options="filterOptions" class="w-44" aria-label="Tình trạng" />
-        <Select v-model="criteria.color" :options="colorOptions" empty-label="Mọi màu" empty-value="" class="w-32" aria-label="Màu" />
-        <Select v-model="criteria.size" :options="sizeOptions" empty-label="Mọi size" empty-value="" class="w-28" aria-label="Size" />
+        <Select
+            v-for="filter in optionFilters"
+            :key="filter.code"
+            :model-value="criteria.options[filter.code] ?? ''"
+            :options="valueOptions(filter)"
+            :empty-label="`Mọi ${filter.name.toLowerCase()}`"
+            empty-value=""
+            class="w-32"
+            :aria-label="filter.name"
+            @update:model-value="(code) => (criteria.options[filter.code] = String(code ?? ''))"
+        />
         <button type="submit" :class="primaryButton">Lọc</button>
-        <button v-if="query.q || query.style || query.filter !== 'all' || query.color || query.size" type="button" :class="secondaryButton" @click="clearFilters">Bỏ lọc</button>
+        <button v-if="query.q || query.style || query.filter !== 'all' || hasOptionFilter" type="button" :class="secondaryButton" @click="clearFilters">Bỏ lọc</button>
         <span v-if="query.style" class="text-sm text-slate-600">Đang xem mã {{ query.style }}</span>
     </form>
 
@@ -346,7 +357,7 @@ function createDefault(): void {
                     <span class="font-medium">{{ row.product.style_name }}</span>
                     <span class="text-xs text-slate-500">{{ row.product.style_code }} · {{ row.product.variants.length }} SKU · bán được {{ row.product.sellable }}</span>
                 </div>
-                <div class="font-mono text-xs text-slate-600">{{ row.sku }} · {{ row.color_code }} / {{ row.size_code }}<span v-if="row.status !== 'active'"> · ngừng bán</span></div>
+                <div class="font-mono text-xs text-slate-600">{{ row.sku }}<template v-if="row.options_label"> · {{ row.options_label }}</template><span v-if="row.status !== 'active'"> · ngừng bán</span></div>
             </template>
             <template #cell-sellable="{ row }">
                 <span class="font-semibold" :class="row.sellable === 0 ? 'text-red-600' : row.sellable <= threshold ? 'text-amber-600' : 'text-emerald-700'">{{ row.sellable }}</span>

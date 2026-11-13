@@ -30,7 +30,7 @@ function reportOrder(string $placedAt, int $total, array $lines = [], string $st
     ]);
     foreach ($lines as [$name, $brand, $quantity, $amount]) {
         DB::table('order_lines')->insert([
-            'order_id' => $id, 'variant_id' => 1, 'sku' => 'SKU-'.$name, 'product_name' => $name, 'brand_name' => $brand, 'size_code' => 'M',
+            'order_id' => $id, 'variant_id' => 1, 'sku' => 'SKU-'.$name, 'product_name' => $name, 'brand_name' => $brand,
             'quantity' => $quantity, 'unit_amount' => $amount, 'subtotal_amount' => $amount, 'discount_amount' => 0, 'total_amount' => $amount,
             'tax_rate_bp' => 0, 'tax_amount' => 0, 'created_at' => $placedAt, 'updated_at' => $placedAt,
         ]);

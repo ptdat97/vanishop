@@ -10,8 +10,8 @@ final readonly class OrderLineDraft
         public int $variantId,
         public string $sku,
         public string $productName,
-        public ?string $colorName,
-        public string $sizeCode,
+        /** @var list<array{type: string, name: string, code: string, value: string}> tổ hợp tuỳ chọn của SKU lúc đặt (ADR-045) */
+        public array $variantOptions,
         public ?string $imageUrl,
         public int $quantity,
         public int $unitAmount,

@@ -74,7 +74,7 @@ final class ReplacementOrderService implements ReplacementOrders
             $subtotal = Money::of($line->unitAmount * $line->quantity, $currency);
             $lines[] = new TotalsLine(
                 key: $index + 1, variantId: $variant->id, brandId: $variant->brandId, styleId: $variant->styleId, sku: $variant->sku, name: $variant->name,
-                colorName: $variant->colorName, sizeCode: $variant->sizeCode, imageUrl: $variant->imageUrl, quantity: $line->quantity,
+                variantOptions: $variant->options, imageUrl: $variant->imageUrl, quantity: $line->quantity,
                 unitPrice: Money::of($line->unitAmount, $currency), compareAt: null, subtotal: $subtotal,
                 discount: Money::of(min(max(0, $line->creditAmount), $subtotal->amount), $currency), brandName: $variant->brandName, weightGram: $variant->weightGram,
             );
@@ -111,7 +111,7 @@ final class ReplacementOrderService implements ReplacementOrders
             paymentMethod: $method,
             paymentStatus: $total > 0 ? $this->paymentMethods->initialPaymentStatus($method) : 'paid',
             lines: array_map(fn (TotalsLine $line): OrderLineDraft => new OrderLineDraft(
-                $line->variantId, $line->sku, $line->name, $line->colorName, $line->sizeCode, $line->imageUrl, $line->quantity,
+                $line->variantId, $line->sku, $line->name, $line->variantOptions, $line->imageUrl, $line->quantity,
                 $line->unitPrice->amount, null, $line->subtotal->amount, $line->discount->amount, $line->total()->amount,
                 $line->taxRateBp, $line->tax->amount ?? 0, $line->brandId, $line->brandName, [], $line->styleId,
             ), $lines),

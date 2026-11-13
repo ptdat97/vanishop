@@ -23,7 +23,7 @@
                 <div class="min-w-0 flex-1 text-sm">
                     @if ($line['product'])
                         <a href="{{ vani_route('storefront.product', $line['product']['slug']) }}" class="line-clamp-2 font-medium">{{ $line['product']['name'] }}</a>
-                        <p class="text-slate-500">{{ $line['product']['color_name'] }} / {{ $line['product']['size_code'] }}</p>
+                        @if ($line['product']['variant_label'] !== '')<p class="text-slate-500">{{ $line['product']['variant_label'] }}</p>@endif
                         @include('theme::partials.line-options', ['options' => $line['options']])
                     @else
                         <p class="font-medium text-slate-500">{{ __('Sản phẩm không còn bán') }}</p>

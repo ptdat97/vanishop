@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Returns\Application\ReturnReasons;
@@ -84,7 +85,7 @@ final class ReturnController
             'order' => ['id' => $data->id, 'number' => $data->number],
             'deadline' => $returnable['deadline'],
             'lines' => array_map(fn ($line): array => [
-                'id' => $line->id, 'sku' => $line->sku, 'name' => $line->productName, 'color' => $line->colorName, 'size' => $line->sizeCode,
+                'id' => $line->id, 'sku' => $line->sku, 'name' => $line->productName, 'variant' => VariantOptionsText::label($line->variantOptions),
                 'ordered' => $line->quantity, 'returnable' => (int) ($returnable['lines'][$line->id] ?? 0),
             ], $orders->lines($order)),
             'reasons' => array_column($this->reasons->active(App::getLocale()), 'code'),
