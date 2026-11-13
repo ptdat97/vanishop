@@ -237,20 +237,41 @@ final class ProductController
     }
 
     /**
-     * Ảnh chọn ngay khi thêm sản phẩm: gắn cho mọi SKU vừa tạo (cùng transaction — lỗi thì không tạo gì). Ảnh riêng theo màu
-     * chỉnh sau ở ma trận biến thể. Có ảnh mà chưa có SKU → báo lỗi thay vì bỏ ảnh im lặng.
+     * Ảnh chọn ngay khi thêm sản phẩm (cùng transaction — lỗi thì không tạo gì), không cần lưu rồi mới thêm ảnh:
+     * - ảnh theo giá trị tuỳ chọn (`variants.images`, thường là màu) → mọi SKU mang giá trị đó;
+     * - ảnh chung (`media_ids`) → SKU còn lại (màu chưa có ảnh riêng).
+     * Có ảnh mà không có SKU nhận → báo lỗi thay vì bỏ ảnh im lặng.
      */
     private function attachInitialImages(Style $style, ProductRequest $request, VariantImages $images): void
     {
-        $mediaIds = array_map('intval', (array) $request->validated('media_ids', []));
-        if ($mediaIds === []) {
+        /** @var list<array{value_id: int|string, media_ids: list<int|string>}> $groups */
+        $groups = (array) $request->validated('variants.images', []);
+        $general = array_map('intval', (array) $request->validated('media_ids', []));
+        if ($groups === [] && $general === []) {
             return;
         }
-        $variantIds = $style->variants()->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
-        if ($variantIds === []) {
+
+        $variants = $style->variants()->with('optionValues:id')->get();
+        $covered = [];
+        foreach ($groups as $index => $group) {
+            $variantIds = $variants->filter(fn (Variant $variant): bool => $variant->optionValues->contains('id', (int) $group['value_id']))->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+            if ($variantIds === []) {
+                throw ValidationException::withMessages(["variants.images.{$index}" => __('catalog::messages.images_need_variant')]);
+            }
+            $images->attachToVariants($style, $variantIds, array_map('intval', $group['media_ids']));
+            array_push($covered, ...$variantIds);
+        }
+
+        if ($general === []) {
+            return;
+        }
+        if ($variants->isEmpty()) {
             throw ValidationException::withMessages(['media_ids' => __('catalog::messages.images_need_variant')]);
         }
-        $images->attachToVariants($style, $variantIds, $mediaIds);
+        $rest = $variants->pluck('id')->map(fn (mixed $id): int => (int) $id)->reject(fn (int $id): bool => in_array($id, $covered, true))->values()->all();
+        if ($rest !== []) {
+            $images->attachToVariants($style, $rest, $general);
+        }
     }
 
     /**

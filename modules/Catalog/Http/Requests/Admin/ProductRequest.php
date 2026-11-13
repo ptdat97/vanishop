@@ -47,6 +47,11 @@ final class ProductRequest extends FormRequest
             // Ảnh chọn khi thêm mới (Thư viện ảnh, theo thứ tự): gắn cho mọi SKU khi lưu lần đầu.
             'media_ids' => ['sometimes', 'array', 'max:'.VariantImages::MAX_IMAGES],
             'media_ids.*' => ['integer', 'distinct'],
+            // Ảnh theo giá trị tuỳ chọn (thường là màu) chọn trong ma trận khi thêm mới: gắn cho mọi SKU mang giá trị đó.
+            'variants.images' => ['sometimes', 'array', 'max:50'],
+            'variants.images.*.value_id' => ['required', 'integer', 'distinct'],
+            'variants.images.*.media_ids' => ['required', 'array', 'min:1', 'max:'.VariantImages::MAX_IMAGES],
+            'variants.images.*.media_ids.*' => ['integer', 'distinct'],
             ...$this->localizedSlugRules('styles', 'style_translations', 'style_id', $ignore),
         ];
     }

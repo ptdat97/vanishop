@@ -36,3 +36,15 @@ it('trang Thêm sản phẩm có ô Ảnh sản phẩm: nút Thêm ảnh mở Th
         ->assertSee('Tải ảnh lên')
         ->assertNoJavaScriptErrors();
 });
+
+it('Thiết lập biến thể khi thêm mới: chọn màu → có ô Ảnh theo màu ngay trong popup (lưu cùng nút Lưu)', function () {
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'media.view', 'media.manage']), 'staff');
+    T::seed(fn () => Modules\Catalog\Persistence\Models\OptionValue::factory()->color()->create(['code' => 'IVR']));
+
+    $page = visit('/admin/catalog/products/create')->click('[data-open-variants]')->assertSee('Biến thể — sản phẩm mới');
+    $page->click('[aria-label="Thêm giá trị Màu"]')->click('[role="option"] >> nth=0');
+
+    $page->assertSee('Ảnh theo màu')
+        ->assertPresent('[data-value-images] [data-media-field]')
+        ->assertNoJavaScriptErrors();
+});

@@ -2,6 +2,7 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import FileInput from '@admin/Components/FileInput.vue';
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import Select from '@admin/Components/Select.vue';
 import Sortable from '@admin/Components/Sortable.vue';
@@ -104,6 +105,24 @@ watch(signature, init);
 watch([drafts, axes], () => {
     if (!initializing) dirty.value = true;
 }, { deep: true });
+
+/*
+ * Ảnh theo màu khi thêm sản phẩm (chưa lưu lần nào): chọn ngay trong ma trận, gửi cùng nút Lưu — không phải lưu rồi mới thêm ảnh.
+ * Trục ảnh: trục kiểu ô màu đầu tiên, không có thì trục đầu. Sản phẩm đã lưu dùng ảnh theo SKU (lưu ngay khi thao tác).
+ */
+const valueImages = reactive<Record<number, number[]>>({});
+watch(valueImages, () => {
+    if (!initializing) dirty.value = true;
+}, { deep: true });
+const imageAxis = computed<Axis | null>(() => activeAxes.value.find((axis) => isSwatch(axis.option_type_id)) ?? activeAxes.value[0] ?? null);
+const imageAxisIndex = computed(() => (imageAxis.value ? activeAxes.value.indexOf(imageAxis.value) : -1));
+/** Giá trị của trục ảnh đang có ít nhất một SKU bật. */
+const imageValues = computed<number[]>(() => (imageAxis.value
+    ? imageAxis.value.value_ids.filter((valueId) => combos.value.some((values) => values[imageAxisIndex.value] === valueId && draftOf(values)?.enabled))
+    : []));
+const imageGroups = (): Array<{ value_id: number; media_ids: number[] }> => imageValues.value
+    .filter((valueId) => (valueImages[valueId] ?? []).length > 0)
+    .map((valueId) => ({ value_id: valueId, media_ids: valueImages[valueId] }));
 
 // Mã sản phẩm đổi (thường khi thêm mới): SKU tự sinh chưa lưu đổi theo tiền tố mới; SKU đã sửa tay hoặc đã lưu giữ nguyên.
 watch(() => props.styleCode, (next, previous) => {
@@ -241,7 +260,7 @@ type Cell = { values: number[]; enabled: boolean; status: string; sku: string; b
  * Dữ liệu ma trận gửi kèm form sản phẩm; null = không đổi gì. Trục chưa chọn giá trị nào bị bỏ khi sản phẩm chưa có SKU (vd. sản
  * phẩm chỉ có màu thì để trống Size).
  */
-function payload(): { axes: Axis[]; cells: Cell[] } | null {
+function payload(): { axes: Axis[]; cells: Cell[]; images?: Array<{ value_id: number; media_ids: number[] }> } | null {
     if (!dirty.value) return null;
     const sent = activeAxes.value;
     if (sent.length === 0) return null;
@@ -258,7 +277,7 @@ function payload(): { axes: Axis[]; cells: Cell[] } | null {
             fields: Object.fromEntries(props.columns.filter((column) => column.editable).map((column) => [column.code, draft.fields[column.code] ?? {}])),
         });
     }
-    return { axes: sent, cells };
+    return props.productUrl ? { axes: sent, cells } : { axes: sent, cells, images: imageGroups() };
 }
 /** Bật/tắt cả hàng/cột của lưới (trục `position` = giá trị `valueId`): còn ô tắt → bật hết, đã bật hết → tắt hết. */
 function toggleLine(position: number, valueId: number): void {
@@ -291,6 +310,7 @@ function rowError(rowKey: string, variantId: number | null): string | null {
 
     return [...own, ...(provided ? [provided] : [])].join(' ') || null;
 }
+const valueImageErrors = computed(() => Object.fromEntries(Object.entries(errors.value).filter(([field]) => field.startsWith('variants.images'))));
 const axisErrors = computed(() => Object.entries(errors.value).filter(([field]) => field === 'axes' || field.startsWith('axes.')).map(([, message]) => message));
 
 // Ảnh theo SKU (chỉ SKU đã lưu).
@@ -609,6 +629,22 @@ const enabledCount = computed(() => rows.value.length);
                     <h3 class="text-sm font-semibold text-slate-900">3. Chi tiết SKU</h3>
                     <button v-if="productUrl && variants.length" type="button" :class="secondaryButton" data-assign-images @click="assign.picking = true">Gán ảnh cho nhiều SKU</button>
                     <span class="text-xs text-slate-500">Sửa trực tiếp trong bảng: SKU, giá, tồn… <template v-if="summary.withoutImages"> · <span class="text-amber-700">{{ summary.withoutImages }} SKU chưa có ảnh</span></template></span>
+                </div>
+                <div v-if="!productUrl && imageAxis && imageValues.length" class="space-y-3 rounded-md border border-slate-200 bg-white p-3 text-sm" data-value-images>
+                    <div>
+                        <h4 class="font-medium">Ảnh theo {{ typeName(imageAxis.option_type_id).toLowerCase() }}</h4>
+                        <p class="text-xs text-slate-500">Lưu cùng sản phẩm khi bấm "Lưu" — mọi SKU cùng {{ typeName(imageAxis.option_type_id).toLowerCase() }} dùng chung bộ ảnh; để trống thì dùng "Ảnh sản phẩm" chung.</p>
+                    </div>
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <div v-for="valueId in imageValues" :key="valueId" class="space-y-1">
+                            <p class="flex items-center gap-2 font-medium">
+                                <span v-if="isSwatch(imageAxis.option_type_id)" class="inline-block h-3 w-3 rounded-full border border-slate-300" :style="{ background: valueById.get(valueId)?.hex ?? 'transparent' }" />
+                                {{ valueName(valueId) }}
+                            </p>
+                            <MediaField v-model="valueImages[valueId]" multiple :max="20" :label="`ảnh ${valueName(valueId)}`" />
+                        </div>
+                    </div>
+                    <p v-for="(message, field) in valueImageErrors" :key="field" class="text-red-600">{{ message }}</p>
                 </div>
                 <div class="flex flex-wrap items-end gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm">
                     <span class="w-full text-xs text-slate-500">Áp hàng loạt cho các SKU khớp (lưu khi bấm "Lưu")</span>

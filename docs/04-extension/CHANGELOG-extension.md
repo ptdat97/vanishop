@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.47 — 2026-11-13
+
+Admin: ảnh theo màu chọn ngay khi thêm sản phẩm, lưu cùng một nút Lưu.
+
+### Thêm
+- "Thiết lập biến thể" khi thêm mới có khối **Ảnh theo màu** (trục kiểu ô màu đầu tiên, không có thì trục đầu): mỗi giá trị đang có SKU một ô chọn ảnh. Bấm "Lưu" một lần → tạo sản phẩm, SKU và gắn ảnh — không còn bước lưu rồi mới thêm ảnh.
+- `POST admin/catalog/products` nhận `variants.images[] = {value_id, media_ids[]}`: ảnh gắn cho mọi SKU mang giá trị đó; `media_ids` chung dùng cho SKU còn lại. Giá trị không có SKU → lỗi `variants.images.<n>`, không tạo gì (một transaction).
+
 ## 0.4.46 — 2026-11-13
 
 Admin: thêm ảnh ngay khi tạo sản phẩm.

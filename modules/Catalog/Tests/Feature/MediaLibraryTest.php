@@ -258,3 +258,34 @@ it('thêm sản phẩm kèm ảnh: ảnh gắn cho mọi SKU theo thứ tự đ�
     expect($variants)->toHaveCount(2)
         ->and($variants->map(fn ($variant): array => $variant->gallery->pluck('media_id')->all())->all())->toBe([[$ids[1], $ids[0]], [$ids[1], $ids[0]]]);
 });
+
+it('thêm sản phẩm kèm ảnh theo màu trong một lần Lưu: màu có ảnh riêng dùng ảnh riêng, màu còn lại dùng ảnh chung; màu không có SKU thì không tạo gì', function () {
+    [$a, $b, $c] = array_column(uploadTo('', [UploadedFile::fake()->image('a.jpg', 900, 1200), UploadedFile::fake()->image('b.jpg', 900, 1201), UploadedFile::fake()->image('c.jpg', 900, 1202)]), 'id');
+    [$ivory, $black, $red, $s, $m] = T::seed(fn () => [
+        OptionValue::factory()->color()->create(['code' => 'IVR']), OptionValue::factory()->color()->create(['code' => 'BLK']), OptionValue::factory()->color()->create(['code' => 'RED']),
+        OptionValue::factory()->size()->create(['code' => 'S']), OptionValue::factory()->size()->create(['code' => 'M']),
+    ]);
+    [$colorType, $sizeType] = T::seed(fn () => [(int) OptionType::query()->where('code', OptionType::COLOR)->value('id'), (int) OptionType::query()->where('code', OptionType::SIZE)->value('id')]);
+    $cell = fn (OptionValue $color, OptionValue $size): array => ['values' => [$color->id, $size->id], 'enabled' => true, 'status' => 'active', 'sku' => "NEW-{$color->code}-{$size->code}", 'fields' => []];
+    $payload = fn (string $code, array $images): array => [
+        'style_code' => $code, 'slug' => strtolower($code), 'status' => 'draft', 'translations' => ['vi' => ['name' => 'Áo mới']], 'media_ids' => [$c],
+        'variants' => [
+            'axes' => [['option_type_id' => $colorType, 'value_ids' => [$ivory->id, $black->id]], ['option_type_id' => $sizeType, 'value_ids' => [$s->id, $m->id]]],
+            'cells' => [$cell($ivory, $s), $cell($ivory, $m), $cell($black, $s)],
+            'images' => $images,
+        ],
+    ];
+
+    // Màu đỏ không có SKU nào → lỗi, không tạo sản phẩm.
+    $this->post('/admin/catalog/products', $payload('NEW-02', [['value_id' => $red->id, 'media_ids' => [$a]]]))->assertSessionHasErrors('variants.images.0');
+    expect(T::seed(fn () => Style::query()->where('style_code', 'NEW-02')->exists()))->toBeFalse();
+
+    $this->post('/admin/catalog/products', $payload('NEW-01', [['value_id' => $ivory->id, 'media_ids' => [$b, $a]]]))->assertSessionHasNoErrors()->assertRedirect();
+    $gallery = T::seed(fn () => Style::query()->where('style_code', 'NEW-01')->sole()->variants()->with('gallery')->get()
+        ->mapWithKeys(fn ($variant): array => [$variant->sku => $variant->gallery->pluck('media_id')->all()])->all());
+    expect($gallery)->toBe([
+        'NEW-IVR-S' => [$b, $a],
+        'NEW-IVR-M' => [$b, $a],
+        'NEW-BLK-S' => [$c],
+    ]);
+});

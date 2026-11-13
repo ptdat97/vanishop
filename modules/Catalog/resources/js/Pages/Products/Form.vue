@@ -111,7 +111,7 @@ const matrix = ref<InstanceType<typeof VariantMatrixEditor> | null>(null);
 /** Popup toàn màn hình của ma trận biến thể; lỗi của ma trận khi lưu → mở lại popup để thấy ngay ô lỗi. */
 const variantsOpen = ref(false);
 const variantSummary = computed(() => matrix.value?.summary ?? null);
-const isVariantError = (field: string): boolean => field === 'axes' || /^(axes|cells|variant)\./.test(field);
+const isVariantError = (field: string): boolean => field === 'axes' || /^(axes|cells|variant|variants\.images)\./.test(field);
 function submit(): void {
     form.transform((data) => {
         const variants = matrix.value?.payload() ?? null;
@@ -316,7 +316,7 @@ async function destroy(): Promise<void> {
                 <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="new-product-images-title" data-new-product-images>
                     <div>
                         <h2 id="new-product-images-title" class="text-sm font-medium">Ảnh sản phẩm</h2>
-                        <p class="mt-1 text-sm text-slate-600">Chọn hoặc tải ảnh lên, kéo để sắp thứ tự (ảnh đầu là ảnh đại diện). Khi lưu, ảnh được gắn cho mọi SKU; ảnh riêng theo màu chỉnh ở "Thiết lập biến thể" sau lần lưu đầu.</p>
+                        <p class="mt-1 text-sm text-slate-600">Chọn hoặc tải ảnh lên, kéo để sắp thứ tự (ảnh đầu là ảnh đại diện). Ảnh riêng từng màu chọn ngay trong "Thiết lập biến thể"; khi lưu, ảnh ở đây dùng cho các màu chưa có ảnh riêng.</p>
                     </div>
                     <FormField label="Ảnh" :error="errors.media_ids ?? errors.images">
                         <MediaField v-model="form.media_ids" multiple :max="20" />
