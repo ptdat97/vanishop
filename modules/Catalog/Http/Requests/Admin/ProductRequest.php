@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Catalog\Application\Products\ProductInput;
+use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Support\StoreLocale;
@@ -43,6 +44,9 @@ final class ProductRequest extends FormRequest
             'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
             'translations.*.meta_description' => ['nullable', 'string', 'max:512'],
             'attributes' => ['array'],
+            // Ảnh chọn khi thêm mới (Thư viện ảnh, theo thứ tự): gắn cho mọi SKU khi lưu lần đầu.
+            'media_ids' => ['sometimes', 'array', 'max:'.VariantImages::MAX_IMAGES],
+            'media_ids.*' => ['integer', 'distinct'],
             ...$this->localizedSlugRules('styles', 'style_translations', 'style_id', $ignore),
         ];
     }

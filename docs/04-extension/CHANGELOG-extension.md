@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.46 — 2026-11-13
+
+Admin: thêm ảnh ngay khi tạo sản phẩm.
+
+### Thêm
+- Form "Thêm sản phẩm" có ô **Ảnh sản phẩm** (chọn từ Thư viện ảnh hoặc tải lên trong popup, kéo để sắp thứ tự). Khi lưu, ảnh được gắn cho mọi SKU vừa tạo theo thứ tự đã chọn, cùng transaction với sản phẩm và ma trận biến thể. Ảnh riêng theo màu chỉnh sau ở ma trận biến thể.
+- `POST admin/catalog/products` nhận `media_ids[]` (tối đa 20). Có ảnh mà chưa có SKU → lỗi `media_ids`, không tạo gì.
+
 ## 0.4.45 — 2026-11-13
 
 Thông báo validation tiếng Việt.

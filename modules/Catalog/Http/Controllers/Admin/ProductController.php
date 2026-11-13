@@ -10,11 +10,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
+use Modules\Catalog\Application\Products\VariantImages;
 use Modules\Catalog\Application\Products\VariantMatrix;
 use Modules\Catalog\Application\Products\VariantOptions;
 use Modules\Catalog\Application\Products\VideoDrivers;
@@ -184,15 +186,16 @@ final class ProductController
         return $this->form(null, $tree);
     }
 
-    public function store(ProductRequest $request, ProductService $products, AdminScreen $screen, VariantMatrix $matrix): RedirectResponse
+    public function store(ProductRequest $request, ProductService $products, AdminScreen $screen, VariantMatrix $matrix, VariantImages $images): RedirectResponse
     {
         $request->validate($screen->validationRules('product'));
         $fieldErrors = [];
         // `function … use (&…)` cả hai tầng: arrow fn chụp biến theo giá trị nên lỗi cột không ra được ngoài.
-        $style = $this->orFormError(function () use ($screen, $products, $request, $matrix, &$fieldErrors): Style {
-            return $screen->saving('product', (array) $request->input('extensions', []), function () use ($products, $request, $matrix, &$fieldErrors): Style {
+        $style = $this->orFormError(function () use ($screen, $products, $request, $matrix, $images, &$fieldErrors): Style {
+            return $screen->saving('product', (array) $request->input('extensions', []), function () use ($products, $request, $matrix, $images, &$fieldErrors): Style {
                 $style = $products->create($request->toInput());
                 $fieldErrors = $this->saveVariants($style, $request, $matrix);
+                $this->attachInitialImages($style, $request, $images);
 
                 return $style;
             }, fn ($style): int => $style->id);
@@ -231,6 +234,23 @@ final class ProductController
         $products->deleteDraft($product);
 
         return redirect()->route('admin.catalog.products.index')->with('success', __('catalog::messages.deleted'));
+    }
+
+    /**
+     * Ảnh chọn ngay khi thêm sản phẩm: gắn cho mọi SKU vừa tạo (cùng transaction — lỗi thì không tạo gì). Ảnh riêng theo màu
+     * chỉnh sau ở ma trận biến thể. Có ảnh mà chưa có SKU → báo lỗi thay vì bỏ ảnh im lặng.
+     */
+    private function attachInitialImages(Style $style, ProductRequest $request, VariantImages $images): void
+    {
+        $mediaIds = array_map('intval', (array) $request->validated('media_ids', []));
+        if ($mediaIds === []) {
+            return;
+        }
+        $variantIds = $style->variants()->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+        if ($variantIds === []) {
+            throw ValidationException::withMessages(['media_ids' => __('catalog::messages.images_need_variant')]);
+        }
+        $images->attachToVariants($style, $variantIds, $mediaIds);
     }
 
     /**

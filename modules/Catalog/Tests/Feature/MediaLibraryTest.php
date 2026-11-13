@@ -10,6 +10,9 @@ use Modules\Catalog\Application\Media\ImageCache;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Media;
+use Modules\Catalog\Persistence\Models\OptionType;
+use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers;
@@ -232,4 +235,26 @@ it('video: tải lên MP4/WebM (giới hạn dung lượng riêng), đọc khung
 it('kiểu trường video: FieldDefinition nhận id video của Thư viện ảnh', function () {
     expect(FieldDefinition::video('clip', 'Video', required: true)->rules())->toBe(['required', 'integer', 'min:1'])
         ->and(FieldDefinition::video('clip', 'Video')->type)->toBe('video');
+});
+
+it('thêm sản phẩm kèm ảnh: ảnh gắn cho mọi SKU theo thứ tự đã chọn; có ảnh mà chưa có SKU thì báo lỗi, không tạo gì', function () {
+    $ids = array_column(uploadTo('', [UploadedFile::fake()->image('a.jpg', 900, 1200), UploadedFile::fake()->image('b.jpg', 900, 1201)]), 'id');
+    [$ivory, $black] = T::seed(fn () => [OptionValue::factory()->color()->create(['code' => 'IVR']), OptionValue::factory()->color()->create(['code' => 'BLK'])]);
+    $colorType = T::seed(fn () => (int) OptionType::query()->where('code', OptionType::COLOR)->value('id'));
+    $payload = fn (string $code, array $extra = []): array => [
+        'style_code' => $code, 'slug' => strtolower($code), 'status' => 'draft', 'translations' => ['vi' => ['name' => 'Áo mới']], 'media_ids' => [$ids[1], $ids[0]], ...$extra,
+    ];
+    $cell = fn (OptionValue $color, string $code): array => ['values' => [$color->id], 'enabled' => true, 'status' => 'active', 'sku' => "{$code}-{$color->code}", 'fields' => []];
+
+    $this->post('/admin/catalog/products', $payload('NEW-02'))->assertSessionHasErrors(['media_ids' => __('catalog::messages.images_need_variant')]);
+    expect(T::seed(fn () => Style::query()->where('style_code', 'NEW-02')->exists()))->toBeFalse();
+
+    $this->post('/admin/catalog/products', $payload('NEW-01', ['variants' => [
+        'axes' => [['option_type_id' => $colorType, 'value_ids' => [$ivory->id, $black->id]]],
+        'cells' => [$cell($ivory, 'NEW-01'), $cell($black, 'NEW-01')],
+    ]]))->assertSessionHasNoErrors()->assertRedirect();
+
+    $variants = T::seed(fn () => Style::query()->where('style_code', 'NEW-01')->sole()->variants()->with('gallery')->get());
+    expect($variants)->toHaveCount(2)
+        ->and($variants->map(fn ($variant): array => $variant->gallery->pluck('media_id')->all())->all())->toBe([[$ids[1], $ids[0]], [$ids[1], $ids[0]]]);
 });

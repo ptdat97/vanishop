@@ -4,6 +4,7 @@ import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import FullscreenDialog from '@admin/Components/FullscreenDialog.vue';
+import MediaField from '@admin/Components/Media/MediaField.vue';
 import MultiSelect from '@admin/Components/MultiSelect.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -94,6 +95,8 @@ const { form, save } = useAdminForm({
     translations: translationsFor(locales, emptyTranslation, props.product?.translations),
     attributes: initialAttributes,
     extensions: initialExtensionValues(props.extensionSections),
+    /** Ảnh chọn khi thêm mới — gắn cho mọi SKU khi lưu lần đầu (sau đó ảnh quản lý theo SKU trong ma trận biến thể). */
+    media_ids: [] as number[],
 }, { lockVersion: () => props.product?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
@@ -309,7 +312,18 @@ async function destroy(): Promise<void> {
             </FullscreenDialog>
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
-            <p v-else class="text-sm text-slate-500">Ảnh theo SKU, video và sản phẩm liên kết thêm được sau lần Lưu đầu tiên.</p>
+            <template v-else>
+                <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="new-product-images-title" data-new-product-images>
+                    <div>
+                        <h2 id="new-product-images-title" class="text-sm font-medium">Ảnh sản phẩm</h2>
+                        <p class="mt-1 text-sm text-slate-600">Chọn hoặc tải ảnh lên, kéo để sắp thứ tự (ảnh đầu là ảnh đại diện). Khi lưu, ảnh được gắn cho mọi SKU; ảnh riêng theo màu chỉnh ở "Thiết lập biến thể" sau lần lưu đầu.</p>
+                    </div>
+                    <FormField label="Ảnh" :error="errors.media_ids ?? errors.images">
+                        <MediaField v-model="form.media_ids" multiple :max="20" />
+                    </FormField>
+                </section>
+                <p class="text-sm text-slate-500">Video và sản phẩm liên kết thêm được sau lần Lưu đầu tiên.</p>
+            </template>
             <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 

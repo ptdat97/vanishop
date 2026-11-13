@@ -61,5 +61,6 @@ return [
     'option_value_in_use_by_products' => 'This value is used by products.',
     'images_copied' => 'Images applied to :count SKUs with the same value.',
     'images_assigned' => 'Images assigned to :count SKUs.',
+    'images_need_variant' => 'Add at least one variant (SKU) to attach images — use "Set up variants".',
     'variant_not_in_product' => 'The SKU does not belong to this product.',
 ];

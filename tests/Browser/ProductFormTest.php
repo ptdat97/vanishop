@@ -25,3 +25,14 @@ it('trang Thêm sản phẩm mở được, mở được popup biến thể, l�
 
     expect(T::seed(fn () => Style::query()->where('style_code', 'LM-NEW-01')->exists()))->toBeTrue();
 });
+
+it('trang Thêm sản phẩm có ô Ảnh sản phẩm: nút Thêm ảnh mở Thư viện ảnh', function () {
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'catalog.manage', 'media.view', 'media.manage']), 'staff');
+
+    visit('/admin/catalog/products/create')
+        ->assertSee('Ảnh sản phẩm')
+        ->click('Thêm ảnh')
+        ->assertSee('Chọn ảnh từ thư viện')
+        ->assertSee('Tải ảnh lên')
+        ->assertNoJavaScriptErrors();
+});
