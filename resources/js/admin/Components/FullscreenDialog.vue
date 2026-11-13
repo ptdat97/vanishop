@@ -31,7 +31,7 @@ onBeforeUnmount(() => (document.body.style.overflow = ''));
 
 <template>
     <Teleport to="body">
-        <div v-show="open" class="fixed inset-0 z-40 flex flex-col bg-slate-900/50 sm:p-4" @keydown.esc.stop="open = false">
+        <div v-show="open" class="fixed inset-0 z-50 flex flex-col bg-slate-900/50 sm:p-4" @keydown.esc.stop="open = false">
             <div
                 ref="panel"
                 tabindex="-1"
