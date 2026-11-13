@@ -326,3 +326,22 @@ it('sản phẩm không theo dõi tồn: chưa nhập tồn vẫn đặt đượ
     expect($level())->toBe(['on_hand' => 1, 'reserved' => 1])->and($topUps())->toBe([2, 1]);
     ($this->assertInvariants)();
 });
+
+it('không theo dõi tồn + kho do hệ thống ngoài quản lý: chỉ bù ở kho VaniShop quản lý; không có kho như vậy thì bán như sản phẩm thường', function () {
+    DB::table('stock_levels')->where('variant_id', $this->s->id)->delete();
+    DB::table('styles')->where('id', $this->s->style_id)->update(['track_inventory' => false]);
+    DB::table('locations')->where('id', $this->location->id)->update(['stock_authority' => 'erp', 'priority' => 10]);
+    ($this->snapshot)();
+
+    // Chỉ có kho của ERP: không được chỉnh tồn ở VaniShop → hết hàng như sản phẩm thường.
+    $created = $this->postJson("{$this->api}/carts")->assertCreated();
+    $this->postJson("{$this->api}/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], ['X-Vani-Cart-Token' => $created->json('meta.token')])
+        ->assertStatus(409)->assertJsonPath('error.code', 'cart.insufficient_stock');
+
+    // Thêm kho do VaniShop quản lý (ưu tiên thấp hơn): phần bù vào kho này, kho ERP không bị đụng.
+    $own = I::location(['code' => 'WH-OWN', 'priority' => 0]);
+    ($this->place)();
+    expect(DB::table('stock_levels')->where('variant_id', $this->s->id)->where('location_id', $own->id)->first())->on_hand->toBe(1)->reserved->toBe(1)
+        ->and(DB::table('stock_levels')->where('variant_id', $this->s->id)->where('location_id', $this->location->id)->exists())->toBeFalse();
+    ($this->assertInvariants)();
+});

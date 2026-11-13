@@ -23,6 +23,7 @@ final class StockAvailability implements AvailabilityReader
         private readonly Settings $settings,
         private readonly string $defaultCode,
         private readonly VariantDirectory $variants,
+        private readonly OnlineLocations $locations,
     ) {}
 
     public function forVariants(array $variantIds): array
@@ -48,8 +49,12 @@ final class StockAvailability implements AvailabilityReader
         foreach ($standard as $variantId => $ats) {
             $standard[$variantId] = max(0, min($ats, (int) ($adjusted[$variantId] ?? $ats)));
         }
-        foreach ($this->variants->untrackedInventory($variantIds) as $variantId) {
-            $standard[$variantId] = self::UNLIMITED;
+        // Không theo dõi tồn: luôn bán được khi có kho online do VaniShop quản lý tồn để bù (ReservationService); không có thì
+        // tính như sản phẩm thường để giỏ/checkout không hứa bán được rồi giữ hàng thất bại.
+        if ($this->locations->topUpLocation() !== null) {
+            foreach ($this->variants->untrackedInventory($variantIds) as $variantId) {
+                $standard[$variantId] = self::UNLIMITED;
+            }
         }
 
         return $standard;

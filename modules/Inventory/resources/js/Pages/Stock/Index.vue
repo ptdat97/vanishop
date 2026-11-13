@@ -14,8 +14,8 @@ import { computed, reactive, ref, watch } from 'vue';
 import type { InventoryLabels } from '../../labels';
 
 type Level = { on_hand: number; reserved: number; safety_stock: number; available: number };
-type Variant = { id: number; sku: string; style_code: string; style_name: string; options_label: string; status: string; sellable: number; levels: Level[] };
-type Product = { style_code: string; style_name: string; sellable: number; variants: Variant[] };
+type Variant = { id: number; sku: string; style_code: string; style_name: string; options_label: string; status: string; sellable: number; tracked: boolean; levels: Level[] };
+type Product = { style_code: string; style_name: string; tracked: boolean; sellable: number; variants: Variant[] };
 type Row = Variant & { first: boolean; product: Product; index: number };
 type StockLocation = { id: number; code: string; name: string; external: boolean; online: boolean };
 type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; options: Record<string, string> };
@@ -356,12 +356,14 @@ function createDefault(): void {
                         @change="toggle(productIds(row.product), ($event.target as HTMLInputElement).checked)"
                     />
                     <span class="font-medium">{{ row.product.style_name }}</span>
-                    <span class="text-xs text-slate-500">{{ row.product.style_code }} · {{ row.product.variants.length }} SKU · bán được {{ row.product.sellable }}</span>
+                    <span class="text-xs text-slate-500">{{ row.product.style_code }} · {{ row.product.variants.length }} SKU<template v-if="row.product.tracked"> · bán được {{ row.product.sellable }}</template></span>
+                    <span v-if="!row.product.tracked" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700" title="Sản phẩm luôn bán được; tồn tự bù khi có đơn" data-untracked>Không theo dõi tồn</span>
                 </div>
                 <div class="font-mono text-xs text-slate-600">{{ row.sku }}<template v-if="row.options_label"> · {{ row.options_label }}</template><span v-if="row.status !== 'active'"> · ngừng bán</span></div>
             </template>
             <template #cell-sellable="{ row }">
-                <span class="font-semibold" :class="row.sellable === 0 ? 'text-red-600' : row.sellable <= threshold ? 'text-amber-600' : 'text-emerald-700'">{{ row.sellable }}</span>
+                <span v-if="!row.tracked" class="text-sky-700" title="Không theo dõi tồn — luôn bán được">Không giới hạn</span>
+                <span v-else class="font-semibold" :class="row.sellable === 0 ? 'text-red-600' : row.sellable <= threshold ? 'text-amber-600' : 'text-emerald-700'">{{ row.sellable }}</span>
             </template>
             <template v-for="(location, index) in locations" :key="location.id" #[`cell-location-${index}`]="{ row }">
                 <div class="flex items-center gap-1">

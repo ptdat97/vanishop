@@ -21,6 +21,7 @@ use Modules\Inventory\Application\InventoryReconciler;
 use Modules\Inventory\Application\Listeners\ProductListStock;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
 use Modules\Inventory\Application\LowStockThreshold;
+use Modules\Inventory\Application\OnlineLocations;
 use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Application\ReturnService;
 use Modules\Inventory\Application\StandardInventoryStrategy;
@@ -74,6 +75,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
             $app->make(Settings::class),
             (string) config('vanishop.inventory.strategy', 'standard'),
             $app->make(VariantDirectory::class),
+            $app->make(OnlineLocations::class),
         ));
     }
 

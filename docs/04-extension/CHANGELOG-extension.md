@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.49 — 2026-11-13
+
+Sản phẩm không theo dõi tồn: lưới tồn, danh sách sản phẩm, kho do hệ thống ngoài quản lý.
+
+### Sửa
+- Bù tồn chỉ ở kho giao online đầu tiên **do VaniShop quản lý tồn** (`OnlineLocations::topUpLocation()`); kho đồng bộ từ ERP/POS không bị chỉnh. Không có kho như vậy → SKU không theo dõi tồn bán như sản phẩm thường (ATS theo tồn đồng bộ), giỏ và checkout nhất quán.
+- Lưới tồn: nhãn "Không theo dõi tồn" ở sản phẩm, cột "Bán được online" ghi "Không giới hạn"; không vào bộ lọc Hết hàng/Sắp hết và ô "Việc cần làm" (`StockGrid` thêm `tracked` cho sản phẩm và SKU).
+- Danh sách sản phẩm: cột "Tồn bán được" ghi "Không theo dõi tồn", không sửa tồn trong ô.
+
 ## 0.4.48 — 2026-11-13
 
 Sản phẩm không theo dõi tồn kho: bán được khi chưa nhập tồn.

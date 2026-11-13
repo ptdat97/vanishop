@@ -48,11 +48,20 @@ final class ProductListStock
             }
         }
 
-        return ['key' => 'stock', 'label' => 'Tồn bán được', 'values' => array_map(fn (int $sellable): string => match (true) {
+        // Sản phẩm không theo dõi tồn (luôn bán được): nhãn riêng, không sửa tồn trong ô.
+        $untracked = array_keys(array_filter($variantsByStyle, fn (array $variants): bool => $variants !== [] && ! $variants[0]->tracksInventory));
+        $values = array_map(fn (int $sellable): string => match (true) {
             $sellable === 0 => 'Hết hàng',
             $sellable <= $threshold => "{$sellable} · sắp hết",
             default => (string) $sellable,
-        }, $this->grid->sellableByStyle($byStyle)), 'urls' => $urls, 'edit_values' => $this->editValues($variantsByStyle)];
+        }, $this->grid->sellableByStyle($byStyle));
+        $editValues = $this->editValues($variantsByStyle);
+        foreach ($untracked as $styleId) {
+            $values[$styleId] = 'Không theo dõi tồn';
+            $editValues[$styleId] = null;
+        }
+
+        return ['key' => 'stock', 'label' => 'Tồn bán được', 'values' => $values, 'urls' => $urls, 'edit_values' => $editValues];
     }
 
     /**

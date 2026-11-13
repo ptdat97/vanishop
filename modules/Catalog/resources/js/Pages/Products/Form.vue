@@ -344,7 +344,7 @@ async function destroy(): Promise<void> {
                     <input v-model="form.track_inventory" type="checkbox" class="mt-0.5" data-track-inventory />
                     <span>
                         <span class="font-medium text-slate-700">Theo dõi tồn kho</span>
-                        <span class="block text-xs text-slate-500">Bỏ chọn nếu hàng đặt may, dropship hoặc dịch vụ: mọi SKU luôn bán được, không cần nhập tồn.</span>
+                        <span class="block text-xs text-slate-500">Bỏ chọn nếu hàng đặt may, dropship hoặc dịch vụ: mọi SKU luôn bán được, không cần nhập tồn (cần một kho giao online do VaniShop quản lý tồn — kho đồng bộ từ ERP/POS không tự bù).</span>
                     </span>
                 </label>
                 <p v-if="errors.track_inventory" class="mt-1 text-sm text-red-600">{{ errors.track_inventory }}</p>

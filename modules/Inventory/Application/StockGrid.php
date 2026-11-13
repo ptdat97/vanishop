@@ -49,11 +49,11 @@ final class StockGrid
             if ($variant === null) {
                 continue;
             }
-            $products[$row['style_code']] ??= ['style_code' => $row['style_code'], 'style_name' => $variant->styleName, 'sellable' => 0, 'variants' => []];
+            $products[$row['style_code']] ??= ['style_code' => $row['style_code'], 'style_name' => $variant->styleName, 'tracked' => $variant->tracksInventory, 'sellable' => 0, 'variants' => []];
             $products[$row['style_code']]['sellable'] += $row['sellable'];
             $products[$row['style_code']]['variants'][] = [
                 'id' => $row['id'], 'sku' => $variant->sku, 'style_code' => $row['style_code'], 'style_name' => $variant->styleName,
-                'options' => $variant->options, 'options_label' => VariantOptionsText::label($variant->options), 'status' => $row['status'], 'sellable' => $row['sellable'],
+                'options' => $variant->options, 'options_label' => VariantOptionsText::label($variant->options), 'status' => $row['status'], 'sellable' => $row['sellable'], 'tracked' => $row['tracked'],
                 'levels' => array_map(fn (Location $location): array => $levels[$location->id.':'.$row['id']] ?? ['on_hand' => 0, 'reserved' => 0, 'safety_stock' => 0, 'available' => 0], $matching['locations']),
             ];
         }
@@ -101,14 +101,15 @@ final class StockGrid
     }
 
     /**
-     * Số biến thể đang bán (status active) hết hàng / sắp hết ở kho giao online — ô "Việc cần làm" (0.3.101).
+     * Số biến thể đang bán (status active) hết hàng / sắp hết ở kho giao online — ô "Việc cần làm" (0.3.101). Sản phẩm không
+     * theo dõi tồn luôn bán được nên không tính.
      *
      * @return array{out: int, low: int}
      */
     public function attentionCounts(): array
     {
         $threshold = $this->lowStock->value();
-        $active = array_filter($this->matching([])['rows'], fn (array $row): bool => $row['status'] === 'active');
+        $active = array_filter($this->matching([])['rows'], fn (array $row): bool => $row['status'] === 'active' && $row['tracked']);
 
         return [
             'out' => count(array_filter($active, fn (array $row): bool => $row['sellable'] === 0)),
@@ -120,7 +121,7 @@ final class StockGrid
      * Mọi variant khớp (không giới hạn): khoá + số bán được, tính bằng chỉ mục của Catalog và một truy vấn gộp tồn.
      *
      * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
-     * @return array{rows: list<array{id: int, style_id: int, style_code: string, options: array<string, string>, status: string, sellable: int}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
+     * @return array{rows: list<array{id: int, style_id: int, style_code: string, options: array<string, string>, status: string, sellable: int, tracked: bool}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     private function matching(array $criteria): array
     {
@@ -147,6 +148,8 @@ final class StockGrid
         $online = array_values(array_map(fn (Location $location): int => $location->id, array_filter($locations, fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders)));
         $sellable = $this->queries->sellableByVariant($online);
         $threshold = $this->lowStock->value();
+        // Sản phẩm không theo dõi tồn: luôn bán được — không thuộc bộ lọc hết hàng/sắp hết.
+        $untracked = array_flip($this->variants->untrackedInventory(array_column($index, 'id')));
 
         $rows = [];
         foreach ($index as $row) {
@@ -156,6 +159,10 @@ final class StockGrid
                 }
             }
             $row['sellable'] = $sellable[$row['id']] ?? 0;
+            $row['tracked'] = ! isset($untracked[$row['id']]);
+            if ($filter !== 'all' && ! $row['tracked']) {
+                continue;
+            }
             if (($filter === 'out' && $row['sellable'] > 0) || ($filter === 'low' && ($row['sellable'] === 0 || $row['sellable'] > $threshold))) {
                 continue;
             }

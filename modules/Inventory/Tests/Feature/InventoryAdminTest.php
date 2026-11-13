@@ -307,3 +307,24 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
         ->assertSessionHasErrors(['changes']);
     expect(DB::table('stock_levels')->where('safety_stock', 1)->count())->toBe(0);
 });
+
+it('sản phẩm không theo dõi tồn: lưới tồn có nhãn riêng, không vào lọc hết hàng/sắp hết và "Việc cần làm"; danh sách sản phẩm ghi "Không theo dõi tồn", không sửa tồn trong ô', function () {
+    T::seed(fn () => $this->erp->delete());
+    $made = T::product($this->brand->id, ['style_code' => 'LM-MTO', 'name' => 'Đầm đặt may']);
+    [$madeS] = P::variants($made, ['S']);
+    DB::table('styles')->where('id', $made->id)->update(['track_inventory' => false]);
+    $this->actingAs(T::staff(['admin.access', 'inventory.view', 'inventory.adjust', 'catalog.view']), 'staff');
+    $products = fn (string $query): array => $this->get("{$this->stockUrl}{$query}")->assertOk()->viewData('page')['props']['products'];
+    $skus = fn (string $query): array => collect($products($query))->flatMap(fn (array $product) => $product['variants'])->pluck('sku')->all();
+
+    $row = collect($products('?style=LM-MTO'))->sole();
+    expect($row['tracked'])->toBeFalse()->and($row['variants'][0]['tracked'])->toBeFalse()
+        ->and($skus('?filter=out'))->toBe([$this->s->sku, $this->m->sku])
+        ->and(app(StockGrid::class)->attentionCounts()['out'])->toBe(2);
+
+    $extensions = $this->get('/admin/catalog/products')->assertOk()->viewData('page')['props']['extensions'];
+    expect($extensions['values'][$made->id]['stock'])->toBe('Không theo dõi tồn')
+        ->and($extensions['values'][$this->style->id]['stock'])->toBe('Hết hàng')
+        ->and($extensions['editValues'][$made->id]['stock'] ?? null)->toBeNull()
+        ->and($extensions['editValues'][$this->style->id]['stock'])->not->toBeNull();
+});

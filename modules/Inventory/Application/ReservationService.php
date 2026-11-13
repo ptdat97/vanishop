@@ -67,16 +67,15 @@ final class ReservationService implements InventoryReservation
                 }
             }
 
-            // Sản phẩm không theo dõi tồn: cần dòng tồn ở location giao online đầu tiên để bù tồn (tạo nếu chưa có).
-            $untracked = array_keys(array_filter($variants, fn ($variant): bool => ! $variant->tracksInventory));
+            // Sản phẩm không theo dõi tồn: bù tồn ở location giao online đầu tiên do VaniShop quản lý tồn (tạo dòng tồn nếu chưa có).
+            // Không có location như vậy (mọi kho online do hệ thống ngoài quản lý) → giữ hàng như sản phẩm thường.
+            $topUpLocation = $this->locations->topUpLocation();
+            $untracked = $topUpLocation === null ? [] : array_keys(array_filter($variants, fn ($variant): bool => ! $variant->tracksInventory));
             $untracked = array_values(array_intersect($untracked, array_keys($quantities)));
-            if ($untracked !== [] && $online === []) {
-                throw new StockUnavailable($untracked[0], $quantities[$untracked[0]], 0);
-            }
 
             // Dòng tồn là điểm tuần tự hoá: khoá xong mới kiểm tra idempotency (đọc thường, không khoá —
             // khoá dòng chưa tồn tại sẽ lấy gap lock và gây deadlock khi nhiều đơn cùng chèn reservation).
-            $this->ledger->ensure(array_map(fn (int $variantId): array => [$online[0], $variantId], $untracked));
+            $this->ledger->ensure(array_map(fn (int $variantId): array => [(int) $topUpLocation, $variantId], $untracked));
             $records = $this->ledger->lock($pairs);
 
             $existing = StockReservation::query()->where('reservation_key', $request->key)->where('status', ReservationStatus::Active)->get();
@@ -87,7 +86,7 @@ final class ReservationService implements InventoryReservation
             $expiresAt = $request->ttlSeconds === null ? null : now()->addSeconds($request->ttlSeconds);
             $reserved = [];
 
-            // Không theo dõi tồn → bù đúng phần thiếu vào location đầu tiên (biến động `adjust` có lý do) rồi giữ hàng như thường:
+            // Không theo dõi tồn → bù đúng phần thiếu vào location bù tồn (biến động `adjust` có lý do) rồi giữ hàng như thường:
             // vận đơn, trừ tồn khi rời kho, sổ biến động vẫn khớp; phần bù chưa dùng (đơn huỷ) được dùng lại cho đơn sau.
             foreach ($untracked as $variantId) {
                 $available = 0;
@@ -95,7 +94,7 @@ final class ReservationService implements InventoryReservation
                     $available += ($records["{$locationId}:{$variantId}"] ?? null)?->toDomain()->available() ?? 0;
                 }
                 $shortfall = $quantities[$variantId] - $available;
-                $record = $records["{$online[0]}:{$variantId}"] ?? null;
+                $record = $records["{$topUpLocation}:{$variantId}"] ?? null;
                 if ($shortfall > 0 && $record !== null) {
                     $this->ledger->save($record, $record->toDomain()->adjust($shortfall), MovementType::Adjust, self::UNTRACKED_TOP_UP, $request->key);
                 }
