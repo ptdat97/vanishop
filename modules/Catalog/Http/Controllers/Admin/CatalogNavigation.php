@@ -23,8 +23,8 @@ final class CatalogNavigation
             ['brands', 'Thương hiệu'],
             ['categories', 'Danh mục'],
             ['collections', 'Bộ sưu tập'],
-            ['attributes', 'Thuộc tính'],
             ['option-types', 'Tuỳ chọn biến thể'],
+            ['attributes', 'Thuộc tính'],
             ['link-types', 'Loại liên kết'],
             ['filters', 'Bộ lọc'],
         ]);
