@@ -8,7 +8,7 @@
         "vi": "Nhiều kho/cửa hàng (giao online, nhận tại quầy, nhận hàng trả, ưu tiên giữ hàng, kho do ERP/POS quản lý), chuyển kho, đối soát tồn với nguồn ngoài. Cửa hàng một kho không cần bật.",
         "en": "Multiple warehouses/stores (online fulfilment, pickup, returns, allocation priority, ERP/POS-managed stock), stock transfers, reconciliation against external sources. Single-location shops do not need it."
     },
-    "version": "1.0.2",
+    "version": "1.0.3",
     "kind": "feature",
     "provider": "Plugin\\Warehouse\\WarehouseServiceProvider",
     "requires": {

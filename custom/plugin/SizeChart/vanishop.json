@@ -4,7 +4,7 @@
         "vi": "Bảng size và gợi ý size",
         "en": "Size chart and size advisor"
     },
-    "version": "1.0.3",
+    "version": "1.0.4",
     "kind": "feature",
     "provider": "Plugin\\SizeChart\\SizeChartServiceProvider",
     "requires": {

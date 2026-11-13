@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.33 — 2026-11-13
+
+Admin: sửa báo nhầm "Dữ liệu đã được người khác cập nhật" khi một người lưu form nhiều lần.
+
+### Sửa
+- Form có khoá lạc quan (`lock_version`) giữ phiên bản lúc mở trang nên lần lưu thứ hai luôn bị coi là xung đột. Sau mỗi lần lưu thành công, form nhận phiên bản mới server trả: sản phẩm, danh mục, thuộc tính, bảng giá, khuyến mãi, chiến dịch, kho chính (lưới tồn), `vani.size-chart` 1.0.4, `vani.warehouse` 1.0.3. Đơn hàng: form sửa địa chỉ/huỷ một phần lấy phiên bản lúc bắt đầu sửa (sau các thao tác khác trên trang). Xung đột thật với người khác vẫn được báo.
+
+### Thêm
+- `@admin/forms`: `syncLockVersion(form, () => props.x?.lock_version, then?)` — gắn vào `onSuccess` của lần lưu; chỉ nhận phiên bản mới sau khi chính form lưu thành công. Trang plugin có form `lock_version` nên dùng.
+
 ## 0.4.32 — 2026-11-13
 
 Admin: mọi thông báo qua toast ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)).

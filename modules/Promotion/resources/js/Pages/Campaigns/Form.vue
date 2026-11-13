@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
@@ -47,7 +48,7 @@ const editable = computed(() => props.can.manage && props.campaign?.status !== '
 
 function save(): void {
     if (props.campaign) {
-        form.put(`${props.baseUrl}/${props.campaign.id}`, { preserveScroll: true });
+        form.put(`${props.baseUrl}/${props.campaign.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.campaign?.lock_version) });
     } else {
         form.post(props.baseUrl);
     }

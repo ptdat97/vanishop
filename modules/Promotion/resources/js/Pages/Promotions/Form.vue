@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -118,7 +119,7 @@ function submit(): void {
     }
 
     if (props.promotion) {
-        form.put(`${props.baseUrl}/${props.promotion.id}`, { preserveScroll: true });
+        form.put(`${props.baseUrl}/${props.promotion.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.promotion?.lock_version) });
     } else {
         form.post(props.baseUrl);
     }

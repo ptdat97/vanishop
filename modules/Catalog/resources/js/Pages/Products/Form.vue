@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -109,9 +110,9 @@ function submit(): void {
     });
     const options = {
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: syncLockVersion(form, () => props.product?.lock_version, () => {
             if (!Object.keys(page.props.errors ?? {}).some(isVariantError)) variantsOpen.value = false;
-        },
+        }),
         onError: (errors: Record<string, string>) => {
             if (Object.keys(errors).some(isVariantError)) variantsOpen.value = true;
         },

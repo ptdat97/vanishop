@@ -209,6 +209,11 @@ const addressForm = useForm({
     reason: '',
     lock_version: props.order.lockVersion,
 });
+// Khoá lạc quan: lấy phiên bản đơn **lúc bắt đầu sửa** (mở form) — các thao tác trước đó trên trang (đổi trạng thái, huỷ một phần…)
+// đã tăng phiên bản; chỉ thay đổi của người khác trong lúc đang sửa mới bị báo xung đột.
+watch(editingAddress, (open) => {
+    if (open) addressForm.lock_version = props.order.lockVersion;
+});
 const wards = ref<Division[]>(props.addressDirectory?.wards ?? []);
 const wardsError = ref(false);
 const noteForm = useForm({ note: '' });
@@ -218,6 +223,9 @@ const cancelLinesForm = useForm({
     reason: '',
     cause: 'shop',
     lock_version: props.order.lockVersion,
+});
+watch(cancellingLines, (open) => {
+    if (open) cancelLinesForm.lock_version = props.order.lockVersion;
 });
 const cancelTotal = computed(() => Object.values(cancelLinesForm.lines).reduce((sum, quantity) => sum + Number(quantity || 0), 0));
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -243,7 +244,7 @@ watch(editingLocation, async (open) => {
 });
 
 function saveLocation(): void {
-    if (props.urls.main_location) locationForm.put(props.urls.main_location, { preserveScroll: true, onSuccess: () => (editingLocation.value = false) });
+    if (props.urls.main_location) locationForm.put(props.urls.main_location, { preserveScroll: true, onSuccess: syncLockVersion(locationForm, () => props.mainLocation?.lock_version, () => (editingLocation.value = false)) });
 }
 
 /* ---------- Nhập CSV, kho mặc định ---------- */

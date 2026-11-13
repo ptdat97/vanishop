@@ -91,6 +91,11 @@ it('cập nhật dùng lock_version, chỉ xoá được bản nháp', function 
     $this->put("{$this->base}/{$style->id}", $payload)->assertSessionHasErrors('lock_version');
     $this->delete("{$this->base}/{$style->id}")->assertSessionHasErrors('status');
 
+    // Một người lưu nhiều lần liên tiếp: form lấy phiên bản mới server trả sau mỗi lần lưu (syncLockVersion) → không báo xung đột.
+    $this->get("{$this->base}/{$style->id}/edit")->assertInertia(fn (Assert $page) => $page->where('product.lock_version', 1));
+    $this->put("{$this->base}/{$style->id}", [...$payload, 'lock_version' => 1])->assertSessionHasNoErrors();
+    $this->put("{$this->base}/{$style->id}", [...$payload, 'lock_version' => 2])->assertSessionHasNoErrors();
+
     $draft = T::product($this->brand->id, ['status' => 'draft']);
     $this->delete("{$this->base}/{$draft->id}")->assertRedirect();
     expect(T::seed(fn () => Style::query()->find($draft->id)))->toBeNull();

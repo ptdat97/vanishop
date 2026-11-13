@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -64,7 +65,7 @@ function removeValue(index: number): void {
 
 function submit(): void {
     if (props.attribute) {
-        form.put(`${baseUrl.value}/${props.attribute.id}`, { preserveScroll: true });
+        form.put(`${baseUrl.value}/${props.attribute.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.attribute?.lock_version) });
     } else {
         form.post(baseUrl.value);
     }

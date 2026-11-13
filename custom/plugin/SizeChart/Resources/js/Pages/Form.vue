@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -89,7 +90,7 @@ function submit(): void {
         blocks: current.blocks.map((block) => (block.type === 'image' ? { type: 'image', media_id: block.media_id, alt: block.alt } : block)),
     });
     if (props.chart) {
-        form.transform(data).put(`${props.urls.base}/${props.chart.id}`, { preserveScroll: true });
+        form.transform(data).put(`${props.urls.base}/${props.chart.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.chart?.lock_version) });
     } else {
         form.transform(data).post(props.urls.base);
     }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
@@ -54,7 +55,7 @@ const errors = computed(() => form.errors as Record<string, string | undefined>)
 
 function submit(): void {
     if (props.category) {
-        form.put(`${baseUrl.value}/${props.category.id}`, { preserveScroll: true });
+        form.put(`${baseUrl.value}/${props.category.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.category?.lock_version) });
     } else {
         form.post(baseUrl.value);
     }

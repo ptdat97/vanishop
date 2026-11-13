@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { syncLockVersion } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -41,7 +42,7 @@ const form = useForm({
 
 function submit(): void {
     if (props.priceList) {
-        form.put(`${props.baseUrl}/${props.priceList.id}`, { preserveScroll: true });
+        form.put(`${props.baseUrl}/${props.priceList.id}`, { preserveScroll: true, onSuccess: syncLockVersion(form, () => props.priceList?.lock_version) });
     } else {
         form.post(props.baseUrl);
     }
