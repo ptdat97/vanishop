@@ -80,7 +80,7 @@
         suggested = match ? match.size : null;
         result.textContent = match ? @json(__('Size gợi ý:')) + ' ' + match.size + (match.note ? ' — ' + match.note : '') : @json(__('Chưa tìm thấy size phù hợp'));
         var radio = suggested && Array.prototype.find.call(document.querySelectorAll('[data-variant-form] input[name="variant_id"]:not(:disabled)'), function (input) {
-            return input.closest('label').textContent.trim().split(/\s+/)[0] === suggested && input.closest('[data-color-group]').offsetParent !== null;
+            return input.closest('label').textContent.trim().split(/\s+/)[0] === suggested && (input.closest('[data-option-group], [data-primary-option]') || input).offsetParent !== null;
         });
         pick.hidden = !radio;
         pick.onclick = function () { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); dialog.close(); };

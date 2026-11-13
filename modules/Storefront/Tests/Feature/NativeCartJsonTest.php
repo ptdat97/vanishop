@@ -37,7 +37,7 @@ it('thêm / sửa số lượng / xoá dòng bằng JSON: trả số món, HTML 
     $removed = $this->postJson("/gio-hang/{$line}/xoa")->assertOk()->assertJsonPath('count', 0)->json();
     expect($removed['html'])->toContain('Giỏ hàng trống.');
 
-    $this->postJson('/gio-hang', [])->assertUnprocessable()->assertJsonValidationErrors(['variant_id' => 'Vui lòng chọn màu và size.']);
+    $this->postJson('/gio-hang', [])->assertUnprocessable()->assertJsonValidationErrors(['variant_id' => __('storefront::messages.choose_variant')]);
     // Không JS: vẫn là form chuyển hướng.
     $this->post('/gio-hang', ['variant_id' => $this->s->id])->assertRedirect('/gio-hang');
 });

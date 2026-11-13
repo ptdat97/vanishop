@@ -442,7 +442,8 @@ if (lightboxes.length) {
         .catch(() => {});
 }
 
-// PDP: gallery Swiper + phóng to PhotoSwipe; bấm ảnh nhỏ / chọn màu → tới ảnh đầu của màu (data-images trên fieldset màu).
+// PDP: gallery Swiper + phóng to PhotoSwipe; bấm ảnh nhỏ / chọn giá trị hoặc SKU → tới ảnh đầu của lựa chọn (data-images:
+// ảnh của SKU đầu tiên mang giá trị trục đầu, hoặc ảnh của chính SKU — ADR-045 ảnh theo SKU).
 document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
     const slider = gallery.querySelector('[data-gallery-slider]');
     const form = document.querySelector('[data-variant-form]');
@@ -475,8 +476,9 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
 
     thumbs.forEach((thumb) => thumb.addEventListener('click', () => go(Number(thumb.dataset.index))));
     form?.addEventListener('change', (event) => {
-        if (event.target.name !== 'color') return;
-        const images = JSON.parse(event.target.dataset.colorImages || '[]');
+        const choice = event.target.tagName === 'SELECT' ? event.target.selectedOptions[0] : event.target;
+        if (!choice?.dataset.images) return;
+        const images = JSON.parse(choice.dataset.images || '[]');
         const first = images[0]?.url ?? images[0];
         if (first) go(thumbs.findIndex((thumb) => thumb.dataset.src === first));
     });
@@ -493,27 +495,29 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
         .catch(() => {});
 });
 
-// PDP bộ chọn màu → size: đổi màu thì bỏ chọn size của màu khác (nhóm đó đang ẩn) và trả giá về khoảng giá của sản phẩm;
-// chọn size thì hiện đúng giá của biến thể (data-price-html). Không JS: CSS :has() vẫn hiện đúng nhóm size.
+// PDP bộ chọn 1–3 trục (ADR-045): đổi giá trị trục đầu thì bỏ chọn SKU của nhóm khác (nhóm đó đang ẩn) và trả giá về khoảng giá
+// của sản phẩm; chọn SKU thì hiện đúng giá của SKU (data-price-html). Không JS: CSS :has() vẫn hiện đúng nhóm.
 document.querySelectorAll('form[data-variant-form]').forEach((form) => {
-    // Chưa chọn size: báo ngay tại nhóm size đang hiện (viền + thông báo + focus), không gửi lên server.
+    const chosen = (element) => (element.tagName === 'SELECT' ? element.selectedOptions[0] : element);
+    const selectedVariant = () => form.querySelector('input[name="variant_id"]:checked, select[name="variant_id"]');
+    // Chưa chọn đủ: báo ngay tại nhóm đang hiện (viền + thông báo + focus), không gửi lên server.
     form.addEventListener('submit', (event) => {
-        if (form.querySelector('input[name="variant_id"]:checked') || !form.querySelector('input[name="variant_id"]')) return;
+        if (selectedVariant() || !form.querySelector('[name="variant_id"]')) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        const group = [...form.querySelectorAll('[data-sizes-for]')].find((fieldset) => fieldset.offsetParent !== null);
+        const group = [...form.querySelectorAll('[data-option-group]')].find((fieldset) => fieldset.offsetParent !== null) ?? form.querySelector('[data-primary-option]');
         group?.setAttribute('aria-invalid', 'true');
         group?.classList.add('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
         const error = form.querySelector('[data-vani-error-for="variant_id"]');
         if (error) {
-            error.textContent = form.dataset.chooseSizeMessage || error.textContent;
+            error.textContent = form.dataset.chooseMessage || error.textContent;
             error.hidden = false;
         }
-        group?.querySelector('input[name="variant_id"]:not(:disabled)')?.focus();
+        group?.querySelector('[name="variant_id"]:not(:disabled)')?.focus();
     });
     form.addEventListener('change', (event) => {
         if (event.target.name !== 'variant_id') return;
-        form.querySelectorAll('[data-sizes-for][aria-invalid]').forEach((fieldset) => {
+        form.querySelectorAll('[aria-invalid]').forEach((fieldset) => {
             fieldset.removeAttribute('aria-invalid');
             fieldset.classList.remove('rounded', 'ring-2', 'ring-red-500', 'ring-offset-4');
         });
@@ -524,13 +528,15 @@ document.querySelectorAll('form[data-variant-form]').forEach((form) => {
     const rangeHtml = price?.innerHTML;
     form.addEventListener('change', (event) => {
         const input = event.target;
-        if (input.name === 'color') {
+        const choice = chosen(input);
+        if (input.name === 'variant_id') {
+            if (price) price.innerHTML = choice?.dataset.priceHtml || rangeHtml || '';
+        } else if (choice?.hasAttribute('data-primary')) {
+            const code = choice.dataset.optionValue;
             form.querySelectorAll('input[name="variant_id"]:checked').forEach((radio) => {
-                if (radio.closest('[data-sizes-for]')?.dataset.sizesFor !== input.value) radio.checked = false;
+                if (radio.closest('[data-option-group]')?.dataset.optionGroup !== code) radio.checked = false;
             });
             if (price && rangeHtml !== undefined) price.innerHTML = rangeHtml;
-        } else if (input.name === 'variant_id' && price && input.dataset.priceHtml) {
-            price.innerHTML = input.dataset.priceHtml;
         }
     });
 });
@@ -823,7 +829,7 @@ function applySession(session) {
             .catch(() => {});
     }
     const memberPrice = document.querySelector('[data-vani-member-price]');
-    const variantIds = [...document.querySelectorAll('input[name="variant_id"]')].map((input) => input.value);
+    const variantIds = [...document.querySelectorAll('input[name="variant_id"], select[name="variant_id"] option')].map((input) => input.value);
     if (session.signed_in && memberPrice && variantIds.length) {
         const query = new URLSearchParams(variantIds.map((id) => ['variant_ids[]', id]));
         fetch(`${memberPrice.dataset.route}?${query}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })

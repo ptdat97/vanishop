@@ -335,7 +335,7 @@ it('PDP có ảnh: gallery (Swiper/PhotoSwipe) — ảnh chính + ảnh sau tả
         ->getContent();
     expect(substr_count($html, 'data-gallery-thumb '))->toBe(2)
         ->and(substr_count($html, 'data-gallery-slide>'))->toBe(2)
-        ->and($html)->toContain('data-color-images=\'[{"id":')
+        ->and($html)->toContain('data-images=\'[{"id":')
         ->toContain('data-gallery-image src="'.e($urls[1]).'"')
         ->toContain('data-pswp-width=')
         // Chỉ ảnh đầu ưu tiên cao; không JS vẫn xem được (dải cuộn, liên kết mở ảnh lớn).

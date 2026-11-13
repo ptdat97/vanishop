@@ -8,6 +8,7 @@
     "Giá cao đến thấp": "Price: high to low",
     " — hết hàng": " — out of stock",
     "(hết hàng)": "(out of stock)",
+    "hết hàng": "out of stock",
     "(mặc định)": "(default)",
     ":count sản phẩm": "{0} No products|{1} :count product|[2,*] :count products",
     "Bạn muốn": "You would like to",

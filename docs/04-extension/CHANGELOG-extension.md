@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.28 — 2026-11-13
+
+Biến thể linh hoạt, đợt F5 — bộ chọn trang sản phẩm 1–3 trục ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)).
+
+### Đổi (phá vỡ)
+- Theme `vani-base`, trang sản phẩm: bộ chọn sinh từ `options` cho mọi loại tuỳ chọn. Trục đầu hiển thị theo `display_type` (ô màu, nút, danh sách thả xuống); mỗi giá trị của trục đầu có một nhóm SKU nhãn theo các trục còn lại ("M", "M / Cotton"), chỉ nhóm đang chọn hiện ra (CSS `:has()`, không cần JS). Một trục: chọn thẳng SKU, SKU mặc định chọn sẵn. Đánh dấu HTML: `[data-primary-option]`, `[data-primary][data-option-value]`, `[data-option-group]`, `data-images` (ảnh của SKU), `data-choose-message` — thay `name="color"`, `[data-sizes-for]`, `[data-color-group]`, `data-color-images`, `data-choose-size-message`. Theme con override `pages/product` cần cập nhật.
+- Form thêm giỏ (`POST /gio-hang`): gửi `axis[<mã loại>]=<mã giá trị>` của trục đầu thay `color`; SKU không mang giá trị đó → lỗi `variant_id`. Có trục đầu mà chưa chọn SKU → `storefront::messages.choose_remaining`; JS báo theo tên trục (`choose_option`). Bỏ `choose_size`; `choose_variant` thành câu chung.
+- Storefront API chi tiết sản phẩm: `options[].values[].available` có ở **mọi** loại tuỳ chọn (trước chỉ màu) — có ít nhất một SKU mua được mang giá trị đó.
+
+### Thêm
+- `Modules\Storefront\View\VariantSelector::for($product, $sku)`: dữ liệu bộ chọn (trục đầu, nhóm SKU, tên các trục còn lại) cho theme.
+- `vani.size-chart` 1.0.2: "Chọn size gợi ý" tìm SKU trong nhóm đang hiện của bộ chọn mới.
+
 ## 0.4.27 — 2026-11-13
 
 Biến thể linh hoạt, đợt F3 — giỏ/đơn/tích hợp chụp tổ hợp tuỳ chọn ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)). **Phá vỡ**: bỏ màu/size cố định ở mọi tầng sau Catalog.

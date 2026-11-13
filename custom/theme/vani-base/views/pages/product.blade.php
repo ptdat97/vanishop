@@ -84,69 +84,84 @@
             <x-vani::hook-slot name="vani.storefront.pdp.before_add_to_cart" :args="[$product]" />
 
             {{-- Không @csrf/old() để HTML như nhau ở cả chế độ cache CDN (không phiên); POST /gio-hang miễn CSRF (cookie phiên SameSite=Lax). --}}
-            <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form data-choose-size-message="{{ __('storefront::messages.choose_size') }}">
-                {{-- Bộ chọn màu → size từ `options` + `variants` (SKU trỏ giá trị bằng id qua `option_values`; chỉ SKU đang bán được hiện).
-                     Màu là radio `color` (swatch); mỗi màu một nhóm size, chỉ nhóm của màu đang chọn hiện ra — bằng CSS :has() nên không
-                     cần JS. Màu chọn sẵn: màu của SKU `is_default`. Ảnh của màu: `variants[].media.image_ids` trỏ vào `media.gallery`. --}}
-                @php($valueOf = fn (array $variant, string $option) => collect($variant['option_values'])->firstWhere('option', $option)['value_id'] ?? null)
-                @php($option = fn (string $code) => collect(collect($product['options'])->firstWhere('code', $code)['values'] ?? [])->keyBy('id'))
-                @php($sizeValues = $option('size'))
-                @php($activeVariants = collect($product['variants'])->where('is_active', true))
-                @php($variantsByColor = $activeVariants->groupBy(fn ($variant) => $valueOf($variant, 'color')))
-                @php($gallery = collect($product['media']['gallery'])->keyBy('id'))
-                @php($colors = $option('color')->filter(fn ($color) => $variantsByColor->has($color['id']))->values()->all())
-                {{-- `?sku=<mã SKU>` (link chia sẻ, quảng cáo theo SKU): chọn sẵn màu và size của SKU đó nếu đang bán. --}}
-                @php($requestedVariant = is_string(request()->query('sku')) ? $activeVariants->first(fn ($variant) => strcasecmp($variant['sku'], request()->query('sku')) === 0) : null)
-                @php($defaultVariant = $requestedVariant ?? $activeVariants->firstWhere('is_default', true))
-                @php($selectedColor = $option('color')->get($defaultVariant === null ? null : $valueOf($defaultVariant, 'color'))['code'] ?? ($colors[0]['code'] ?? null))
-                @if ($colors !== [])
+            @php($selector = \Modules\Storefront\View\VariantSelector::for($product, is_string(request()->query('sku')) ? request()->query('sku') : null))
+            @php($primary = $selector['primary'])
+            <form action="{{ vani_route('storefront.cart.add') }}" method="post" class="mt-6 space-y-4" data-variant-form
+                  data-choose-message="{{ $selector['rest_names'] !== [] ? __('storefront::messages.choose_option', ['name' => implode(', ', $selector['rest_names'])]) : __('storefront::messages.choose_variant') }}">
+                {{-- Bộ chọn 1–3 trục (ADR-045) từ `options` + `variants` (SKU trỏ giá trị bằng id; chỉ SKU đang bán). Trục đầu: radio
+                     `axis[<mã>]` (ô màu / nút / danh sách); mỗi giá trị một nhóm SKU theo các trục còn lại, chỉ nhóm của giá trị đang
+                     chọn hiện ra — CSS :has(), không cần JS. Một trục: chọn thẳng SKU. Ảnh: `variants[].media.image_ids` → `media.gallery`. --}}
+                @if ($selector['hidden_variant_id'] !== null)
+                    <input type="hidden" name="variant_id" value="{{ $selector['hidden_variant_id'] }}">
+                @endif
+                @if ($primary !== null && $primary['values'] !== [])
+                    @php($primaryName = $primary['single'] ? 'variant_id' : "axis[{$primary['code']}]")
+                    @php($primaryValue = fn (array $value) => $primary['single'] ? $value['variant']['id'] : $value['code'])
+                    @php($primaryDisabled = fn (array $value) => $primary['single'] ? $value['variant']['disabled'] : false)
                     <style>
-                        [data-variant-form] [data-sizes-for] { display: none; }
-                        @foreach ($colors as $color)
-                            [data-variant-form]:has(input[name="color"][value="{{ addslashes($color['code']) }}"]:checked) [data-sizes-for="{{ addslashes($color['code']) }}"] { display: block; }
-                            [data-variant-form]:has(input[name="color"][value="{{ addslashes($color['code']) }}"]:checked) [data-color-label="{{ addslashes($color['code']) }}"] { display: inline; }
+                        [data-variant-form] [data-option-group], [data-variant-form] [data-option-label] { display: none; }
+                        @foreach ($primary['values'] as $value)
+                            [data-variant-form]:has([data-primary][data-option-value="{{ addslashes($value['code']) }}"]:checked) [data-option-group="{{ addslashes($value['code']) }}"] { display: block; }
+                            [data-variant-form]:has([data-primary][data-option-value="{{ addslashes($value['code']) }}"]:checked) [data-option-label="{{ addslashes($value['code']) }}"] { display: inline; }
                         @endforeach
                     </style>
-                    <fieldset>
+                    <fieldset data-primary-option="{{ $primary['code'] }}">
                         <legend class="mb-2 text-sm">
-                            {{ __('Màu') }}:
-                            @foreach ($colors as $color)
-                                <span class="hidden font-medium" data-color-label="{{ $color['code'] }}">{{ $color['name'] }}</span>
+                            {{ $primary['name'] }}:
+                            @foreach ($primary['values'] as $value)
+                                <span class="font-medium" data-option-label="{{ $value['code'] }}">{{ $value['name'] }}</span>
                             @endforeach
                         </legend>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach ($colors as $color)
-                                <label class="relative cursor-pointer rounded-full p-0.5 ring-1 ring-slate-200 has-[:checked]:ring-2 has-[:checked]:ring-primary has-[:focus-visible]:outline has-[:focus-visible]:outline-2" title="{{ $color['name'] }}">
-                                    <input type="radio" name="color" value="{{ $color['code'] }}" class="sr-only" @checked($color['code'] === $selectedColor) data-color-images='@json(collect($variantsByColor->get($color['id'])->first()['media']['image_ids'] ?? [])->map(fn ($id) => $gallery->get($id))->filter()->values())'>
-                                    @if ($color['hex'])
-                                        <span class="block h-8 w-8 rounded-full border border-black/10" style="background: {{ $color['hex'] }}"></span>
-                                    @elseif ($color['image_url'])
-                                        <img src="{{ $color['image_url'] }}" alt="" class="block h-8 w-8 rounded-full object-cover" loading="lazy">
-                                    @else
-                                        <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs">{{ $color['name'] }}</span>
-                                    @endif
-                                    @unless ($color['available'])
-                                        <span aria-hidden="true" class="pointer-events-none absolute inset-0 m-auto h-px w-9 -rotate-45 bg-slate-500"></span>
-                                    @endunless
-                                    <span class="sr-only">{{ $color['name'] }}@unless ($color['available']) {{ __('(hết hàng)') }}@endunless</span>
-                                </label>
-                            @endforeach
-                        </div>
+                        @if ($primary['display_type'] === 'dropdown')
+                            <select name="{{ $primaryName }}" class="rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm" aria-label="{{ $primary['name'] }}">
+                                @foreach ($primary['values'] as $value)
+                                    <option value="{{ $primaryValue($value) }}" data-primary data-option-value="{{ $value['code'] }}" data-images='@json($primary['single'] ? $value['variant']['images'] : $value['images'])'
+                                        @if ($primary['single'] && $value['variant']['price']) data-price-html="{{ view('theme::partials.variant-price', ['price' => $value['variant']['price']])->render() }}" @endif
+                                        @selected($value['checked']) @disabled($primaryDisabled($value))>{{ $value['name'] }}@unless ($value['available']) ({{ __('hết hàng') }})@endunless</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <div class="flex flex-wrap gap-2">
+                                @foreach ($primary['values'] as $value)
+                                    @php($swatch = $primary['display_type'] === 'swatch')
+                                    <label @class([
+                                        'relative cursor-pointer has-[:focus-visible]:outline has-[:focus-visible]:outline-2',
+                                        'rounded-full p-0.5 ring-1 ring-slate-200 has-[:checked]:ring-2 has-[:checked]:ring-primary' => $swatch,
+                                        'flex min-w-12 flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white' => ! $swatch,
+                                        'cursor-not-allowed border-dashed text-slate-400 line-through' => ! $swatch && $primaryDisabled($value),
+                                    ]) title="{{ $value['name'] }}">
+                                        <input type="radio" name="{{ $primaryName }}" value="{{ $primaryValue($value) }}" class="sr-only" data-primary data-option-value="{{ $value['code'] }}"
+                                            data-images='@json($primary['single'] ? $value['variant']['images'] : $value['images'])' @checked($value['checked'] && ! $primaryDisabled($value)) @disabled($primaryDisabled($value))
+                                            @if ($primary['single'] && $value['variant']['price']) data-price-html="{{ view('theme::partials.variant-price', ['price' => $value['variant']['price']])->render() }}" @endif>
+                                        @if (! $swatch)
+                                            <span class="font-medium">{{ $value['name'] }}</span>
+                                            @if ($primary['single'] && $value['variant']['availability'] === 'low_stock')<span class="text-[11px] leading-none text-accent no-underline">{{ __('sắp hết') }}</span>@endif
+                                        @elseif ($value['hex'])
+                                            <span class="block h-8 w-8 rounded-full border border-black/10" style="background: {{ $value['hex'] }}"></span>
+                                        @elseif ($value['image_url'])
+                                            <img src="{{ $value['image_url'] }}" alt="" class="block h-8 w-8 rounded-full object-cover" loading="lazy">
+                                        @else
+                                            <span class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs">{{ $value['name'] }}</span>
+                                        @endif
+                                        @if ($swatch && ! $value['available'])
+                                            <span aria-hidden="true" class="pointer-events-none absolute inset-0 m-auto h-px w-9 -rotate-45 bg-slate-500"></span>
+                                        @endif
+                                        <span class="sr-only">{{ $value['name'] }}@unless ($value['available']) {{ __('(hết hàng)') }}@endunless</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
                     </fieldset>
 
-                    @foreach ($colors as $color)
-                        <fieldset data-sizes-for="{{ $color['code'] }}" data-color-group>
-                            <legend class="mb-2 text-sm">{{ __('Size') }}</legend>
+                    @foreach ($selector['groups'] as $code => $skus)
+                        <fieldset data-option-group="{{ $code }}">
+                            <legend class="mb-2 text-sm">{{ implode(' / ', $selector['rest_names']) }}</legend>
                             <div class="flex flex-wrap gap-2">
-                                @foreach ($variantsByColor->get($color['id'], []) as $variant)
-                                    @php($size = $sizeValues->get($valueOf($variant, 'size'))['code'] ?? $variant['sku'])
-                                    {{-- Giá bị ẩn (khách chưa đăng nhập): vẫn chọn được; thêm giỏ chuyển sang đăng nhập. --}}
-                                    @php($unpriced = $variant['price'] === null && empty($product['price_hidden']))
-                                    @php($disabled = $variant['availability'] === 'out_of_stock' || $unpriced)
-                                    <label @class(['relative flex min-w-12 cursor-pointer flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white has-[:focus-visible]:outline has-[:focus-visible]:outline-2', 'cursor-not-allowed border-dashed text-slate-400 line-through' => $disabled])>
-                                        <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-size="{{ $size }}" @disabled($disabled) @checked($requestedVariant !== null && $requestedVariant['id'] === $variant['id'] && ! $disabled)
+                                @foreach ($skus as $variant)
+                                    <label @class(['relative flex min-w-12 cursor-pointer flex-col items-center rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white has-[:focus-visible]:outline has-[:focus-visible]:outline-2', 'cursor-not-allowed border-dashed text-slate-400 line-through' => $variant['disabled']])>
+                                        <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-images='@json($variant['images'])' @disabled($variant['disabled']) @checked($variant['checked'] && ! $variant['disabled'])
                                             @if ($variant['price']) data-price-html="{{ view('theme::partials.variant-price', ['price' => $variant['price']])->render() }}" @endif>
-                                        <span class="font-medium">{{ $size }}</span>
+                                        <span class="font-medium">{{ $variant['label'] }}</span>
                                         @if ($variant['availability'] === 'low_stock')<span class="text-[11px] leading-none text-accent no-underline">{{ __('sắp hết') }}</span>@endif
                                         @if ($variant['availability'] === 'out_of_stock')<span class="sr-only">{{ __('(hết hàng)') }}</span>@endif
                                     </label>

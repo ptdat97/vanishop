@@ -139,12 +139,15 @@ final class ProductViews implements ProductCards
             'extensions' => (object) ($published[$variant['id']] ?? []),
         ], $product['variants']);
 
-        $buyableColors = [];
+        // Giá trị mua được (ADR-045, mọi trục): có ít nhất một SKU mua được mang giá trị đó — bộ chọn khoá giá trị còn lại.
+        $buyableValues = [];
         foreach (array_filter($product['variants'], $buyable) as $variant) {
-            $buyableColors[self::optionValue($variant, 'color')] = true;
+            foreach ($variant['option_values'] as $optionValue) {
+                $buyableValues[$optionValue['option'].':'.$optionValue['value_id']] = true;
+            }
         }
-        $product['options'] = array_map(fn (array $option): array => $option['code'] !== 'color' ? $option : [
-            ...$option, 'values' => array_map(fn (array $value): array => [...$value, 'available' => isset($buyableColors[$value['id']])], $option['values']),
+        $product['options'] = array_map(fn (array $option): array => [
+            ...$option, 'values' => array_map(fn (array $value): array => [...$value, 'available' => isset($buyableValues[$option['code'].':'.$value['id']])], $option['values']),
         ], $product['options']);
 
         $product['price'] = $hidden ? null : $this->range(array_values($resolved));
@@ -192,22 +195,6 @@ final class ProductViews implements ProductCards
         }
 
         return $result;
-    }
-
-    /**
-     * Id giá trị của một trục chọn (`option_values` trỏ bằng id, không theo vị trí mảng).
-     *
-     * @param  array<string, mixed>  $variant
-     */
-    public static function optionValue(array $variant, string $option): ?int
-    {
-        foreach ((array) ($variant['option_values'] ?? []) as $value) {
-            if (($value['option'] ?? null) === $option) {
-                return (int) $value['value_id'];
-            }
-        }
-
-        return null;
     }
 
     public static function variantIds(array $product): array

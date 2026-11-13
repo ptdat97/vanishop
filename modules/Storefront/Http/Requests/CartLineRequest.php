@@ -24,9 +24,10 @@ final class CartLineRequest extends FormRequest
             'variant_id' => ['required', 'integer', 'min:1'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'buy_now' => ['nullable', 'boolean'],
-            // Bộ chọn màu → size của trang sản phẩm gửi kèm màu đang chọn: biến thể phải thuộc màu đó (không JS, đổi màu sau
-            // khi đã chọn size thì size của màu cũ vẫn được chọn ngầm trong nhóm đang ẩn).
-            'color' => ['nullable', 'string', 'max:32'],
+            // Bộ chọn của trang sản phẩm (ADR-045) gửi kèm giá trị trục đầu đang chọn `axis[<mã loại>]=<mã giá trị>` (khác `options` — tuỳ chọn dòng của plugin): biến thể
+            // phải mang đúng giá trị đó (không JS, đổi giá trị trục đầu sau khi đã chọn SKU thì SKU của nhóm cũ vẫn được chọn ngầm).
+            'axis' => ['nullable', 'array', 'max:3'],
+            'axis.*' => ['string', 'max:32'],
         ];
     }
 
@@ -36,13 +37,17 @@ final class CartLineRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            $color = $this->input('color');
-            if (! is_string($color) || $color === '' || $validator->errors()->isNotEmpty()) {
+            $selected = array_filter((array) $this->input('axis', []), fn ($code): bool => is_string($code) && $code !== '');
+            if ($selected === [] || $validator->errors()->isNotEmpty()) {
                 return;
             }
             $variant = app(VariantDirectory::class)->find([(int) $this->input('variant_id')])[(int) $this->input('variant_id')] ?? null;
-            if ($variant !== null && VariantOptionsText::code($variant->options, 'color') !== $color) {
-                $validator->errors()->add('variant_id', __('storefront::messages.choose_variant'));
+            foreach ($selected as $type => $code) {
+                if ($variant !== null && VariantOptionsText::code($variant->options, (string) $type) !== $code) {
+                    $validator->errors()->add('variant_id', __('storefront::messages.choose_variant'));
+
+                    return;
+                }
             }
         }];
     }
@@ -52,8 +57,8 @@ final class CartLineRequest extends FormRequest
      */
     public function messages(): array
     {
-        // Đã chọn màu ở bộ chọn của trang sản phẩm → chỉ còn thiếu size.
-        return ['variant_id.required' => __(is_string($this->input('color')) && $this->input('color') !== '' ? 'storefront::messages.choose_size' : 'storefront::messages.choose_variant')];
+        // Đã chọn giá trị trục đầu ở bộ chọn của trang sản phẩm → chỉ còn thiếu các trục còn lại.
+        return ['variant_id.required' => __(array_filter((array) $this->input('axis', [])) !== [] ? 'storefront::messages.choose_remaining' : 'storefront::messages.choose_variant')];
     }
 
     public function variantId(): int
