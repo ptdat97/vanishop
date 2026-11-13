@@ -10,7 +10,6 @@ use Modules\Catalog\Http\Controllers\Admin\LinkTypeController;
 use Modules\Catalog\Http\Controllers\Admin\OptionTypeController;
 use Modules\Catalog\Http\Controllers\Admin\ProductController;
 use Modules\Catalog\Http\Controllers\Admin\ProductLinkController;
-use Modules\Catalog\Http\Controllers\Admin\ProductVariantController;
 use Modules\Catalog\Http\Controllers\Admin\ProductVariantImageController;
 use Modules\Catalog\Http\Controllers\Admin\ProductVideoController;
 
@@ -37,7 +36,6 @@ Route::resource('products', ProductController::class)->except('show');
 Route::post('products/{product}/links', [ProductLinkController::class, 'store'])->name('products.links.store');
 Route::delete('products/{product}/links/{linkType}/{linked}', [ProductLinkController::class, 'destroy'])->name('products.links.destroy');
 
-Route::put('products/{product}/variants', [ProductVariantController::class, 'save'])->name('products.variants.save');
 // Ảnh theo SKU (ADR-045).
 Route::post('products/{product}/variants/{variant}/images', [ProductVariantImageController::class, 'store'])->name('products.variants.images.store');
 Route::post('products/{product}/variants/{variant}/images/library', [ProductVariantImageController::class, 'attach'])->name('products.variants.images.library');

@@ -42,9 +42,10 @@ final class VariantMatrix
      * @param  Closure(string): bool  $can  quyền của người đang xem
      * @return array{columns: list<array{code: string, label: string, editable: bool, fields: list<array<string, mixed>>}>, values: array<int, array<string, array<string, scalar|null>>>}
      */
-    public function columns(Style $style, Closure $can): array
+    public function columns(?Style $style, Closure $can): array
     {
-        $variantIds = $style->variants()->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        // Sản phẩm mới (chưa lưu): chỉ có cột, chưa có giá trị.
+        $variantIds = $style === null ? [] : $style->variants()->pluck('id')->map(fn ($id): int => (int) $id)->all();
         $columns = [];
         $values = [];
         foreach ($this->providers() as $code => $provider) {
@@ -59,7 +60,7 @@ final class VariantMatrix
                     'options' => $field->options, 'help' => $field->help,
                 ], $fields),
             ];
-            $provided = $variantIds === [] ? [] : (array) $this->extensions->call($provider, fn (): array => $provider->values($style->id, $variantIds), [], 'catalog.variant_fields.values');
+            $provided = $style === null || $variantIds === [] ? [] : (array) $this->extensions->call($provider, fn (): array => $provider->values($style->id, $variantIds), [], 'catalog.variant_fields.values');
             foreach ($provided as $variantId => $row) {
                 $values[(int) $variantId][$code] = (array) $row;
             }

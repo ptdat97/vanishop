@@ -53,6 +53,11 @@ final class AttributeController
 
         $attribute = $taxonomy->saveAttribute($request->toData());
 
+        // Tạo nhanh từ form sản phẩm: ở lại form (giữ dữ liệu đang nhập), thuộc tính mới hiện ngay trong khối Thuộc tính.
+        if ($request->boolean('quick')) {
+            return back()->with('success', __('catalog::messages.saved'));
+        }
+
         return redirect()->route('admin.catalog.attributes.edit', ['attribute' => $attribute->id])->with('success', __('catalog::messages.saved'));
     }
 

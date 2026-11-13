@@ -42,9 +42,15 @@ chung (không trục tự do theo từng sản phẩm); giá và tồn thuộc m
   áp cho mọi SKU khớp trong bản nháp trên màn hình. Nút nhanh "áp cho cả hàng/cột" ở đầu hàng màu và đầu cột size.
 - **SKU tự sinh** khi bật ô: `<mã sản phẩm>-<mã giá trị trục 1>-<mã giá trị trục 2>…`; sửa được; trùng → báo lỗi ở dòng đó.
 - **Ảnh theo SKU** (SKU đã lưu): cột "Ảnh" của bảng chi tiết mở khối ảnh của SKU — tải lên, chọn từ thư viện, kéo đổi thứ tự, áp bộ ảnh cho mọi SKU cùng giá trị ở một trục.
-- Mọi thay đổi là **bản nháp** trên màn hình; nút **Lưu** gửi một lần; rời trang khi còn thay đổi chưa lưu → hỏi lại.
+- Mọi thay đổi là **bản nháp** trên màn hình; **một nút Lưu chung của form sản phẩm** (0.4.30) lưu cả thông tin sản phẩm và ma trận;
+  rời trang khi còn thay đổi chưa lưu → hỏi lại.
+- **Thêm sản phẩm mới**: khối Biến thể có ngay (sẵn trục Màu + Size, chỉ cần chọn giá trị; trục để trống được bỏ qua — vd. sản phẩm
+  chỉ có màu); nhập thông tin + bật SKU rồi Lưu một lần. Ảnh theo SKU, video, liên kết thêm sau lần Lưu đầu.
+- **Ít thao tác**: chọn giá trị có sẵn là thêm ngay vào trục và bật sẵn mọi tổ hợp mới; giá trị chưa có thì gõ tên (màu kèm ô chọn
+  màu) → tạo và thêm luôn; loại tuỳ chọn mới (vd. Chất liệu) tạo ngay thành trục. Màu tạo nhanh tự nhận nhóm màu từ mã hex để lọc.
+- Khối **Thuộc tính** luôn hiện; "+ Thuộc tính mới" tạo thuộc tính (tên, kiểu, các giá trị cách nhau dấu phẩy) ngay tại form.
 
-### 3.2 Lưu (một request, một transaction cho phần Catalog)
+### 3.2 Lưu (cùng request và transaction với form sản phẩm)
 
 - Gửi toàn bộ lưới: trục (`axes[{option_type_id, value_ids}]` theo thứ tự), danh sách ô (`values` = id giá trị theo thứ tự trục,
   bật/tắt, trạng thái, SKU, barcode, khối lượng) và giá trị các cột góp vào theo SKU (`<khoá nhà cung cấp>.<khoá trường>`).

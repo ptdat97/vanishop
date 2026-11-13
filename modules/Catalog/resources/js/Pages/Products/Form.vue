@@ -11,8 +11,8 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { initialExtensionValues, type ExtensionSection } from '@admin/types';
 import { translationsFor, useStoreLocales } from '@admin/locales';
 import { slugify } from '@admin/slug';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import ProductLinks from '../../Components/ProductLinks.vue';
 import ProductVideos from '../../Components/ProductVideos.vue';
@@ -45,14 +45,14 @@ const props = defineProps<{
     };
     categories: Array<{ id: number; label: string }>;
     brands: Array<{ id: number; label: string }>;
-    attributeDefinitions: Array<{ id: number; name: string | null; kind: string; input_type: string; values: Array<{ id: number; label: string | null }> }>;
+    attributeDefinitions: Array<{ id: number; code: string; name: string | null; kind: string; input_type: string; values: Array<{ id: number; label: string | null }> }>;
+    attributeUrls: { index: string; store: string };
     statuses: string[];
     linkTypes: Array<{ id: number; label: string; is_active: boolean }>;
     videoDrivers: Array<{ code: string; label: string; hint: string }>;
     extensionSections: ExtensionSection[];
-    variantMatrix: null | {
-        saveUrl: string;
-        optionTypesUrl: string;
+    variantMatrix: {
+        urls: { option_types: string; option_type_store: string; option_value_store: string };
         axes: Array<{ option_type_id: number; value_ids: number[] }>;
         optionTypes: Array<{ id: number; code: string; name: string; display_type: string; values: Array<{ id: number; code: string; name: string | null; hex: string | null; group: string | null }> }>;
         columns: Array<{ code: string; label: string; editable: boolean; fields: Array<{ key: string; label: string; type: string; required: boolean; options: Record<string, string>; help: string | null }> }>;
@@ -64,6 +64,7 @@ const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')
 const productUrl = computed(() => (props.product ? `${baseUrl.value}/${props.product.id}` : ''));
 const linkTypesUrl = computed(() => props.nav.find((item) => item.key === 'link-types')?.url ?? '');
 const { locales, defaultLocale } = useStoreLocales();
+const page = usePage();
 const locale = ref(defaultLocale);
 const categoryOptions = computed(() => recordOptions(props.categories));
 const primaryCategoryOptions = computed(() => recordOptions(props.categories.filter((category) => form.category_ids.includes(category.id))));
@@ -94,12 +95,52 @@ const form = useForm({
 });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
+/** Một nút Lưu cho cả sản phẩm và ma trận biến thể (ma trận chỉ gửi khi có thay đổi). */
+const matrix = ref<InstanceType<typeof VariantMatrixEditor> | null>(null);
 function submit(): void {
+    const withVariants = form.transform((data) => {
+        const variants = matrix.value?.payload() ?? null;
+        return variants === null ? data : { ...data, variants };
+    });
     if (props.product) {
-        form.put(productUrl.value, { preserveScroll: true });
+        withVariants.put(productUrl.value, { preserveScroll: true });
     } else {
-        form.post(baseUrl.value);
+        withVariants.post(baseUrl.value);
     }
+}
+
+/* Tạo nhanh thuộc tính tại form (không rời trang, giữ dữ liệu đang nhập); thuộc tính chọn nhiều giá trị nhập cách nhau dấu phẩy. */
+const attributeTypes = [
+    { value: 'select', label: 'Chọn một' },
+    { value: 'multiselect', label: 'Chọn nhiều' },
+    { value: 'text', label: 'Văn bản' },
+    { value: 'boolean', label: 'Có / Không' },
+];
+const quickAttribute = reactive({ open: false, name: '', input_type: 'select', values: '', busy: false });
+const quickAttributeErrors = computed(() => (page.props.errors as unknown as Record<string, Record<string, string> | undefined>).quickAttribute ?? {});
+
+function createAttribute(): void {
+    const name = quickAttribute.name.trim();
+    let code = slugify(name).replace(/-/g, '_').slice(0, 64);
+    if (!name || !code) return;
+    if (!/^[a-z]/.test(code)) code = `a_${code}`.slice(0, 64);
+    const choices = ['select', 'multiselect'].includes(quickAttribute.input_type)
+        ? [...new Set(quickAttribute.values.split(',').map((label) => label.trim()).filter(Boolean))]
+        : [];
+    quickAttribute.busy = true;
+    router.post(props.attributeUrls.store, {
+        quick: 1, code, kind: 'spec', input_type: quickAttribute.input_type, is_filterable: choices.length > 0, position: props.attributeDefinitions.length,
+        translations: { [defaultLocale]: { name } },
+        values: choices.map((label) => ({ code: slugify(label).slice(0, 64) || label.toLowerCase(), translations: { [defaultLocale]: { label } } })),
+    }, {
+        preserveState: true, preserveScroll: true, errorBag: 'quickAttribute',
+        onSuccess: () => {
+            const created = props.attributeDefinitions.find((definition) => definition.code === code);
+            if (created) form.attributes[created.id] = created.input_type === 'multiselect' ? [] : null;
+            Object.assign(quickAttribute, { open: false, name: '', values: '' });
+        },
+        onFinish: () => (quickAttribute.busy = false),
+    });
 }
 
 async function destroy(): Promise<void> {
@@ -150,8 +191,26 @@ async function destroy(): Promise<void> {
                 </div>
             </div>
 
-            <div v-if="attributeDefinitions.length" class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
-                <h2 class="text-sm font-medium sm:col-span-2">Thuộc tính</h2>
+            <div class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 sm:col-span-2">
+                    <h2 class="text-sm font-medium">Thuộc tính</h2>
+                    <div class="flex items-center gap-3 text-xs">
+                        <button type="button" class="text-indigo-600 underline" @click="quickAttribute.open = !quickAttribute.open">+ Thuộc tính mới</button>
+                        <a :href="attributeUrls.index" target="_blank" class="text-indigo-600 underline">Quản lý thuộc tính ↗</a>
+                    </div>
+                </div>
+                <p v-if="!attributeDefinitions.length && !quickAttribute.open" class="text-sm text-slate-500 sm:col-span-2">Chưa có thuộc tính (vd. Chất liệu, Form dáng). Bấm "+ Thuộc tính mới" để tạo ngay.</p>
+                <div v-if="quickAttribute.open" class="flex flex-wrap items-end gap-2 rounded-md bg-slate-50 p-3 sm:col-span-2">
+                    <FormField label="Tên thuộc tính" :error="quickAttributeErrors.code ?? quickAttributeErrors[`translations.${defaultLocale}.name`]">
+                        <input v-model="quickAttribute.name" :class="inputClass" placeholder="vd. Chất liệu" @keydown.enter.prevent="createAttribute" />
+                    </FormField>
+                    <FormField label="Kiểu"><Select v-model="quickAttribute.input_type" :options="attributeTypes" /></FormField>
+                    <FormField v-if="['select', 'multiselect'].includes(quickAttribute.input_type)" label="Giá trị (cách nhau dấu phẩy)" class="min-w-60 flex-1">
+                        <input v-model="quickAttribute.values" :class="inputClass" placeholder="vd. Cotton, Lụa, Linen" @keydown.enter.prevent="createAttribute" />
+                    </FormField>
+                    <button type="button" :class="secondaryButton" :disabled="quickAttribute.busy || !quickAttribute.name.trim()" @click="createAttribute">Tạo</button>
+                    <p v-for="(message, field) in quickAttributeErrors" :key="field" class="w-full text-xs text-red-600">{{ message }}</p>
+                </div>
                 <FormField v-for="definition in attributeDefinitions" :key="definition.id" :label="`${definition.name}${definition.kind === 'internal' ? ' (nội bộ)' : ''}`" :error="errors[`attributes.${definition.id}`]">
                     <Select
                         v-if="definition.input_type === 'select'"
@@ -171,21 +230,20 @@ async function destroy(): Promise<void> {
             </div>
 
             <VariantMatrixEditor
-                v-if="product && variantMatrix"
-                :save-url="variantMatrix.saveUrl"
+                ref="matrix"
                 :product-url="productUrl"
-                :option-types-url="variantMatrix.optionTypesUrl"
-                :style-code="product.style_code"
+                :urls="variantMatrix.urls"
+                :style-code="form.style_code || 'SKU'"
                 :axes="variantMatrix.axes"
                 :option-types="variantMatrix.optionTypes"
-                :variants="product.variants"
+                :variants="product?.variants ?? []"
                 :columns="variantMatrix.columns"
                 :values="variantMatrix.values"
                 :status-labels="labels.variant_status"
             />
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
-            <p v-else class="text-sm text-slate-500">Lưu sản phẩm trước, sau đó thêm biến thể, ảnh, video và sản phẩm liên kết.</p>
+            <p v-else class="text-sm text-slate-500">Ảnh theo SKU, video và sản phẩm liên kết thêm được sau lần Lưu đầu tiên.</p>
             <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 

@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.30 — 2026-11-13
+
+Admin biến thể đơn giản, ít thao tác ([variant-matrix §3](../03-domains/variant-matrix.md)).
+
+### Đổi (phá vỡ)
+- Một nút Lưu cho sản phẩm và ma trận biến thể: `POST /admin/catalog/products`, `PUT /admin/catalog/products/{product}` nhận thêm `variants` (`axes`, `cells` như trước) và lưu trong cùng transaction — ma trận lỗi thì không lưu gì. Gỡ `PUT /admin/catalog/products/{product}/variants` (`ProductVariantController`). Lỗi cột góp vào vẫn báo theo SKU (`variant.<id>`).
+- `VariantMatrixEditor`: bỏ nút "Lưu biến thể" và prop `saveUrl`; form gọi `payload()` (null khi không đổi). Prop `urls` (tạo nhanh loại/giá trị tuỳ chọn) thay `optionTypesUrl`.
+- `VariantMatrix::columns(?Style $style, …)`: nhận null cho sản phẩm chưa lưu.
+
+### Thêm
+- Form thêm sản phẩm có khối Biến thể (sẵn trục Màu + Size) và khối Thuộc tính luôn hiện. Tạo nhanh tại form: giá trị tuỳ chọn (màu kèm mã hex), loại tuỳ chọn (thành trục), thuộc tính (`POST /admin/catalog/attributes` với `quick=1` quay lại form). Túi lỗi riêng `quickOption`, `quickAttribute`.
+- `Catalog\Domain\ColorFamily::nearest($hex)`: nhóm màu theo HSL; giá trị kiểu ô màu lưu không kèm nhóm màu → tự nhận nhóm từ hex.
+
 ## 0.4.29 — 2026-11-13
 
 Biến thể linh hoạt, đợt F6 — plugin và tài liệu ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)); hoàn tất [kế hoạch](../20-roadmap/flexible-variants.md).

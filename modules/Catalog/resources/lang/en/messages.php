@@ -51,7 +51,6 @@ return [
     'facets_saved' => 'Filters saved.',
     'variant_field_failed' => 'Could not save :label for this SKU.',
     'variant_cell_duplicate' => 'Each colour–size pair can appear only once.',
-    'variants_matrix_saved' => 'Variants saved: :created created, :updated updated, :deleted deleted, :deactivated discontinued.',
     'axes_count' => 'A product needs 1–:max variant axes.',
     'axes_duplicate' => 'Each option type can be used as one axis only.',
     'axis_needs_values' => 'Each axis needs at least one value.',

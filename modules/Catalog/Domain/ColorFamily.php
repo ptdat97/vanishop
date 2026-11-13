@@ -25,6 +25,44 @@ enum ColorFamily: string
     case Metallic = 'metallic';
 
     /**
+     * Nhóm màu của một mã hex — tạo nhanh màu mới mà không phải chọn nhóm lọc. Theo HSL: rất sáng → trắng, rất tối → đen, ít bão
+     * hoà → xám (be nếu ấm và sáng), còn lại theo sắc độ (đỏ, cam/nâu, vàng/be, xanh lá, xanh dương, tím, hồng). Hex sai dạng → null.
+     */
+    public static function nearest(string $hex): ?self
+    {
+        if (preg_match('/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i', $hex, $match) !== 1) {
+            return null;
+        }
+        [$red, $green, $blue] = array_map(fn (string $part): float => hexdec($part) / 255, array_slice($match, 1));
+        $max = max($red, $green, $blue);
+        $min = min($red, $green, $blue);
+        $lightness = ($max + $min) / 2;
+        $delta = $max - $min;
+        $saturation = $delta == 0.0 ? 0.0 : $delta / (1 - abs(2 * $lightness - 1));
+        $hue = match (true) {
+            $delta == 0.0 => 0.0,
+            $max === $red => 60 * fmod(($green - $blue) / $delta + 6, 6),
+            $max === $green => 60 * (($blue - $red) / $delta + 2),
+            default => 60 * (($red - $green) / $delta + 4),
+        };
+
+        return match (true) {
+            $lightness >= 0.93 => self::White,
+            $lightness <= 0.12 => self::Black,
+            $saturation < 0.15 => $lightness >= 0.8 ? self::White : ($lightness <= 0.2 ? self::Black : self::Grey),
+            $hue >= 20 && $hue < 65 && $lightness >= 0.75 && $saturation < 0.7 => self::Beige,
+            $hue >= 15 && $hue < 45 && $lightness < 0.4 => self::Brown,
+            $hue < 15 || $hue >= 345 => $lightness >= 0.75 ? self::Pink : self::Red,
+            $hue < 40 => self::Orange,
+            $hue < 70 => self::Yellow,
+            $hue < 170 => self::Green,
+            $hue < 255 => self::Blue,
+            $hue < 315 => self::Purple,
+            default => self::Pink,
+        };
+    }
+
+    /**
      * Màu đại diện cho ô màu của bộ lọc storefront (`multi` dùng dải màu).
      */
     public function swatch(): string

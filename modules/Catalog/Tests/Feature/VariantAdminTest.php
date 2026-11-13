@@ -7,6 +7,7 @@ use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Contracts\Data\FieldDefinition;
@@ -86,10 +87,15 @@ beforeEach(function () {
         'values' => [$color->id, $size->id], 'enabled' => true, 'status' => 'active',
         'sku' => "LM24-SH012-{$color->code}-{$size->code}", 'barcode' => null, 'weight_gram' => 250, 'fields' => [], ...$overrides,
     ];
-    $this->save = fn (array $cells, ?array $colors = null) => $this->put("{$this->base}/variants", ['axes' => [
+    // Một nút Lưu chung (variant-matrix §3.2): ma trận gửi kèm form sản phẩm (`variants`).
+    $this->productPayload = fn (): array => T::seed(fn () => [
+        'style_code' => 'LM24-SH012', 'slug' => $this->style->fresh()->slug, 'status' => 'active', 'brand_id' => $this->brand->id,
+        'lock_version' => $this->style->fresh()->lock_version, 'translations' => ['vi' => ['name' => 'Áo sơ mi']],
+    ]);
+    $this->save = fn (array $cells, ?array $colors = null) => $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => [
         ['option_type_id' => $this->colorType, 'value_ids' => $colors ?? [$this->ivory->id, $this->black->id]],
         ['option_type_id' => $this->sizeType, 'value_ids' => [$this->s->id, $this->m->id]],
-    ], 'cells' => $cells]);
+    ], 'cells' => $cells]]);
     $this->colorOrder = fn (): array => T::seed(fn () => $this->style->optionValues()->whereIn('option_value_id', [$this->ivory->id, $this->black->id])->pluck('option_value_id')->map(fn ($id): int => (int) $id)->all());
 });
 
@@ -185,4 +191,35 @@ it('plugin góp cột theo SKU: hiện trong màn hình, lưu qua nhà cung cấ
     $slug = T::seed(fn () => $this->style->slugFor('vi'));
     $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()
         ->assertJsonPath('data.variants.0.extensions.demo-measure.chest', 88);
+});
+
+it('một nút Lưu: tạo sản phẩm kèm biến thể trong một lần; ma trận lỗi thì không tạo gì; không gửi ma trận thì giữ biến thể', function () {
+    $payload = ['style_code' => 'NEW-01', 'slug' => 'san-pham-moi', 'status' => 'draft', 'translations' => ['vi' => ['name' => 'Sản phẩm mới']]];
+    $variants = ['axes' => [['option_type_id' => $this->colorType, 'value_ids' => [$this->ivory->id]]], 'cells' => [
+        ['values' => [$this->ivory->id], 'enabled' => true, 'status' => 'active', 'sku' => 'NEW-01-IVR', 'fields' => ['pricing' => ['price' => 199_000]]],
+    ]];
+
+    // SKU trùng với sản phẩm khác → lỗi ở ô, sản phẩm cũng không được tạo (cùng transaction).
+    ($this->save)([($this->cell)($this->ivory, $this->s, ['sku' => 'TAKEN-9'])])->assertSessionHasNoErrors();
+    $this->post('/admin/catalog/products', [...$payload, 'variants' => ['axes' => $variants['axes'], 'cells' => [[...$variants['cells'][0], 'sku' => 'TAKEN-9']]]])
+        ->assertSessionHasErrors('cells.0.sku');
+    expect(T::seed(fn () => Style::query()->where('style_code', 'NEW-01')->exists()))->toBeFalse();
+
+    $this->post('/admin/catalog/products', [...$payload, 'variants' => $variants])->assertRedirect()->assertSessionHasNoErrors();
+    $created = T::seed(fn () => Style::query()->where('style_code', 'NEW-01')->sole());
+    $variant = T::seed(fn () => $created->variants()->sole());
+    expect($variant->sku)->toBe('NEW-01-IVR')
+        ->and(DB::table('prices')->where('variant_id', $variant->id)->value('amount'))->toBe(199_000);
+
+    // Lưu sản phẩm không kèm ma trận: biến thể giữ nguyên.
+    $this->put("/admin/catalog/products/{$created->id}", [...$payload, 'lock_version' => $created->lock_version, 'translations' => ['vi' => ['name' => 'Đổi tên']]])->assertSessionHasNoErrors();
+    expect(T::seed(fn () => $created->variants()->count()))->toBe(1);
+});
+
+it('form thêm mới có sẵn khối biến thể với trục Màu + Size và link tạo nhanh', function () {
+    $this->get('/admin/catalog/products/create')->assertInertia(fn (Assert $page) => $page
+        ->where('variantMatrix.axes', [['option_type_id' => $this->colorType, 'value_ids' => []], ['option_type_id' => $this->sizeType, 'value_ids' => []]])
+        ->has('variantMatrix.columns')
+        ->where('variantMatrix.urls.option_value_store', fn (string $url) => str_ends_with($url, '/option-types/{type}/values'))
+        ->where('attributeUrls.store', fn (string $url) => str_ends_with($url, '/admin/catalog/attributes')));
 });

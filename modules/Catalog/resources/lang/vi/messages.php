@@ -51,7 +51,6 @@ return [
     'facets_saved' => 'Đã lưu bộ lọc.',
     'variant_field_failed' => 'Không lưu được :label cho SKU này.',
     'variant_cell_duplicate' => 'Mỗi cặp màu – size chỉ có một ô.',
-    'variants_matrix_saved' => 'Đã lưu biến thể: :created tạo mới, :updated sửa, :deleted xoá, :deactivated chuyển ngừng bán.',
     'axes_count' => 'Sản phẩm cần 1–:max trục biến thể.',
     'axes_duplicate' => 'Mỗi loại tuỳ chọn chỉ dùng làm một trục.',
     'axis_needs_values' => 'Mỗi trục cần ít nhất một giá trị.',

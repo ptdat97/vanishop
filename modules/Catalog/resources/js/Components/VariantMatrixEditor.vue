@@ -6,7 +6,9 @@ import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import { confirmAction } from '@admin/confirm';
 import { labelOptions } from '@admin/options';
-import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import { useStoreLocales } from '@admin/locales';
+import { slugify } from '@admin/slug';
+import { inputClass, secondaryButton } from '@admin/styles';
 import type { MediaItem } from '@admin/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
@@ -16,6 +18,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
  * (Màu, Size, Chất liệu…) làm trục; mỗi SKU là một tổ hợp giá trị. 2 trục → lưới, 1 hoặc 3 trục → danh sách tổ hợp. Bấm để
  * bật/tắt SKU, sửa mọi SKU trong một bảng (kể cả cột do module/plugin góp: giá, tồn…), áp hàng loạt, lưu cả lưới một lần.
  * Ảnh theo từng SKU (đã lưu), áp bộ ảnh cho mọi SKU cùng giá trị ở một trục (vd. mọi size cùng màu).
+ *
+ * Nằm trong form sản phẩm (một nút Lưu chung): form gọi `payload()` khi lưu — null khi ma trận không đổi. Thiếu giá trị/loại
+ * tuỳ chọn thì tạo nhanh tại chỗ (không rời trang, không mất phần đang nhập).
  */
 type FieldValue = string | number | boolean | null;
 interface Field { key: string; label: string; type: string; required: boolean; options: Record<string, string>; help: string | null }
@@ -36,9 +41,9 @@ interface Draft {
 }
 
 const props = defineProps<{
-    saveUrl: string;
+    /** '' khi sản phẩm chưa lưu (chưa có ảnh theo SKU). */
     productUrl: string;
-    optionTypesUrl: string;
+    urls: { option_types: string; option_type_store: string; option_value_store: string };
     styleCode: string;
     axes: Axis[];
     optionTypes: OptionType[];
@@ -69,7 +74,7 @@ let submitted: string[] = [];
 let initializing = false;
 
 /** Khoá tổ hợp không phụ thuộc thứ tự trục: "loại:giá trị|…" theo id loại. */
-function comboKey(valueIds: number[], axisList: Axis[] = axes.value): string {
+function comboKey(valueIds: number[], axisList: Axis[] = activeAxes.value): string {
     return axisList.map((axis, index) => [axis.option_type_id, valueIds[index]] as const)
         .sort((a, b) => a[0] - b[0]).map(([type, value]) => `${type}:${value}`).join('|');
 }
@@ -96,10 +101,23 @@ watch([drafts, axes], () => {
     if (!initializing) dirty.value = true;
 }, { deep: true });
 
+// Mã sản phẩm đổi (thường khi thêm mới): SKU tự sinh chưa lưu đổi theo tiền tố mới; SKU đã sửa tay hoặc đã lưu giữ nguyên.
+watch(() => props.styleCode, (next, previous) => {
+    const from = `${previous}-`.toUpperCase();
+    Object.values(drafts).forEach((draft) => {
+        if (draft.variantId === null && draft.sku.startsWith(from)) draft.sku = `${next}-`.toUpperCase() + draft.sku.slice(from.length);
+    });
+});
+
 /** Mọi tổ hợp của các trục hiện tại (id giá trị theo thứ tự trục). */
-const combos = computed<number[][]>(() => axes.value.length === 0
+/**
+ * Trục đang dùng để dựng tổ hợp: sản phẩm chưa có SKU thì bỏ qua trục chưa chọn giá trị (vd. chỉ chọn màu, để trống Size → sản
+ * phẩm một trục); đã có SKU thì mọi trục.
+ */
+const activeAxes = computed<Axis[]>(() => (locked.value ? axes.value : axes.value.filter((axis) => axis.value_ids.length > 0)));
+const combos = computed<number[][]>(() => activeAxes.value.length === 0
     ? []
-    : axes.value.reduce<number[][]>((acc, axis) => acc.flatMap((prefix) => axis.value_ids.map((valueId) => [...prefix, valueId])), [[]]));
+    : activeAxes.value.reduce<number[][]>((acc, axis) => acc.flatMap((prefix) => axis.value_ids.map((valueId) => [...prefix, valueId])), [[]]));
 const comboLabel = (values: number[]): string => values.map(valueName).join(' / ');
 const draftOf = (values: number[]): Draft | undefined => drafts[comboKey(values)];
 
@@ -148,7 +166,7 @@ function addValue(axis: Axis): void {
     if (valueId && !axis.value_ids.includes(valueId)) {
         axis.value_ids.push(valueId);
         // Giá trị mới: bật sẵn mọi tổ hợp chứa nó (thường dùng nhất); tắt ô không cần.
-        const position = axes.value.indexOf(axis);
+        const position = activeAxes.value.indexOf(axis);
         combos.value.filter((values) => values[position] === valueId).forEach((values) => toggle(values, true));
     }
     newValue[axis.option_type_id] = null;
@@ -161,7 +179,7 @@ async function removeValue(axis: Axis, valueId: number): Promise<void> {
 }
 
 // Lưới (2 trục)
-const gridStyle = computed(() => ({ gridTemplateColumns: `minmax(10rem, auto) repeat(${axes.value[1]?.value_ids.length ?? 0}, 4.5rem)` }));
+const gridStyle = computed(() => ({ gridTemplateColumns: `minmax(10rem, auto) repeat(${activeAxes.value[1]?.value_ids.length ?? 0}, 4.5rem)` }));
 const cellClass = (draft: Draft | undefined): string => draft?.enabled
     ? (draft.status === 'active' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-400 bg-slate-100 text-slate-500')
     : 'border-dashed border-slate-300 text-slate-400';
@@ -174,7 +192,7 @@ const rows = computed(() => combos.value
     .filter((row): row is Row => row.draft !== undefined && row.draft.enabled));
 const fieldColumns = computed(() => props.columns.flatMap((column) => column.fields.map((field) => ({ key: `f:${column.code}.${field.key}`, column, field }))));
 const tableColumns = computed(() => [
-    { key: 'label', label: axes.value.map((axis) => typeName(axis.option_type_id)).join(' / '), class: 'whitespace-nowrap' },
+    { key: 'label', label: activeAxes.value.map((axis) => typeName(axis.option_type_id)).join(' / '), class: 'whitespace-nowrap' },
     { key: 'images', label: 'Ảnh' },
     { key: 'sku', label: 'SKU' },
     { key: 'barcode', label: 'Barcode' },
@@ -203,7 +221,7 @@ const batchOptions = (axis: Axis) => [{ value: 0, label: `Mọi ${typeName(axis.
 function applyBatch(): void {
     if (!batch.target) return;
     for (const row of rows.value) {
-        if (axes.value.some((axis, index) => (batch.filter[axis.option_type_id] ?? 0) !== 0 && row.values[index] !== batch.filter[axis.option_type_id])) continue;
+        if (activeAxes.value.some((axis, index) => (batch.filter[axis.option_type_id] ?? 0) !== 0 && row.values[index] !== batch.filter[axis.option_type_id])) continue;
         if (batch.target === 'status') row.draft.status = String(batch.value ?? 'active');
         else if (batch.target === 'weight_gram') row.draft.weight_gram = batch.value === null || batch.value === '' ? null : Number(batch.value);
         else {
@@ -213,22 +231,32 @@ function applyBatch(): void {
     }
 }
 
-const canSave = computed(() => dirty.value && axes.value.length > 0 && axes.value.every((axis) => axis.value_ids.length > 0));
+type Cell = { values: number[]; enabled: boolean; status: string; sku: string; barcode: string | null; weight_gram: number | null; fields: Record<string, Record<string, FieldValue>> };
 
-function save(): void {
+/**
+ * Dữ liệu ma trận gửi kèm form sản phẩm; null = không đổi gì. Trục chưa chọn giá trị nào bị bỏ khi sản phẩm chưa có SKU (vd. sản
+ * phẩm chỉ có màu thì để trống Size).
+ */
+function payload(): { axes: Axis[]; cells: Cell[] } | null {
+    if (!dirty.value) return null;
+    const sent = activeAxes.value;
+    if (sent.length === 0) return null;
     submitted = [];
-    const cells: Array<{ values: number[]; enabled: boolean; status: string; sku: string; barcode: string | null; weight_gram: number | null; fields: Record<string, Record<string, FieldValue>> }> = [];
-    for (const values of combos.value) {
-        const draft = draftOf(values);
+    const cells: Cell[] = [];
+    const combinations = sent.reduce<number[][]>((acc, axis) => acc.flatMap((prefix) => axis.value_ids.map((valueId) => [...prefix, valueId])), [[]]);
+    for (const values of combinations) {
+        const key = comboKey(values, sent);
+        const draft = drafts[key];
         if (!draft || (!draft.enabled && draft.variantId === null)) continue;
-        submitted.push(comboKey(values));
+        submitted.push(key);
         cells.push({
             values, enabled: draft.enabled, status: draft.status, sku: draft.sku, barcode: draft.barcode, weight_gram: draft.weight_gram,
             fields: Object.fromEntries(props.columns.filter((column) => column.editable).map((column) => [column.code, draft.fields[column.code] ?? {}])),
         });
     }
-    router.put(props.saveUrl, { axes: axes.value, cells }, { preserveScroll: true, onSuccess: () => (dirty.value = false) });
+    return { axes: sent, cells };
 }
+defineExpose({ payload });
 
 /** Lỗi của ô: `cells.<n>.<trường>` theo thứ tự đã gửi; lỗi của cột góp vào: `variant.<id>`. */
 function rowError(rowKey: string, variantId: number | null): string | null {
@@ -277,6 +305,77 @@ async function copyImages(variant: Variant, typeId: number, valueId: number): Pr
     }
 }
 
+// Tạo nhanh giá trị / loại tuỳ chọn ngay tại đây (túi lỗi riêng để không lẫn với lỗi của form sản phẩm).
+const { defaultLocale } = useStoreLocales();
+const quickErrors = computed(() => (page.props.errors as unknown as Record<string, Record<string, string> | undefined>).quickOption ?? {});
+const quickValue = reactive<Record<number, { name: string; hex: string }>>({});
+const quickBusy = ref(false);
+const newValueDraft = (axis: Axis) => (quickValue[axis.option_type_id] ??= { name: '', hex: '#000000' });
+
+function createValue(axis: Axis): void {
+    const draft = newValueDraft(axis);
+    const name = draft.name.trim();
+    const code = slugify(name).toUpperCase().slice(0, 32);
+    if (!name || !code) return;
+    const existing = typeById.value.get(axis.option_type_id)?.values.find((value) => value.code === code);
+    if (existing) {
+        if (!axis.value_ids.includes(existing.id)) {
+            newValue[axis.option_type_id] = existing.id;
+            addValue(axis);
+        }
+        draft.name = '';
+        return;
+    }
+    quickBusy.value = true;
+    router.post(props.urls.option_value_store.replace('{type}', String(axis.option_type_id)), {
+        code, position: typeById.value.get(axis.option_type_id)?.values.length ?? 0, group: null, family: null,
+        hex: isSwatch(axis.option_type_id) ? draft.hex.toUpperCase() : null, translations: { [defaultLocale]: { name } },
+    }, {
+        preserveState: true, preserveScroll: true, errorBag: 'quickOption',
+        onSuccess: () => {
+            const created = typeById.value.get(axis.option_type_id)?.values.find((value) => value.code === code);
+            if (created) {
+                newValue[axis.option_type_id] = created.id;
+                addValue(axis);
+            }
+            draft.name = '';
+        },
+        onFinish: () => (quickBusy.value = false),
+    });
+}
+
+const quickType = reactive({ name: '', display_type: 'button' });
+const displayTypeOptions = [{ value: 'button', label: 'Nút' }, { value: 'swatch', label: 'Ô màu' }, { value: 'dropdown', label: 'Danh sách' }];
+
+function createType(): void {
+    const name = quickType.name.trim();
+    let code = slugify(name).replace(/-/g, '_').slice(0, 32);
+    if (!name || !code) return;
+    if (!/^[a-z]/.test(code)) code = `t_${code}`.slice(0, 32);
+    const existing = props.optionTypes.find((type) => type.code === code);
+    if (existing) {
+        newTypeId.value = existing.id;
+        addAxis();
+        quickType.name = '';
+        return;
+    }
+    quickBusy.value = true;
+    router.post(props.urls.option_type_store, {
+        code, display_type: quickType.display_type, is_filterable: true, position: props.optionTypes.length, translations: { [defaultLocale]: { name } },
+    }, {
+        preserveState: true, preserveScroll: true, errorBag: 'quickOption',
+        onSuccess: () => {
+            const created = props.optionTypes.find((type) => type.code === code);
+            if (created) {
+                newTypeId.value = created.id;
+                addAxis();
+            }
+            quickType.name = '';
+        },
+        onFinish: () => (quickBusy.value = false),
+    });
+}
+
 // Rời trang khi còn thay đổi chưa lưu → hỏi lại.
 const beforeUnload = (event: BeforeUnloadEvent): void => {
     if (dirty.value) event.preventDefault();
@@ -314,7 +413,7 @@ const enabledCount = computed(() => rows.value.length);
             </div>
             <div class="flex items-center gap-2">
                 <span v-if="dirty" class="text-xs text-amber-700">Chưa lưu</span>
-                <button type="button" :class="primaryButton" :disabled="!canSave" @click="save">Lưu biến thể</button>
+                <a :href="urls.option_types" target="_blank" class="text-xs text-indigo-600 underline">Quản lý tuỳ chọn biến thể ↗</a>
             </div>
         </div>
 
@@ -347,36 +446,66 @@ const enabledCount = computed(() => rows.value.length);
                             >✕</button>
                         </span>
                     </Sortable>
-                    <span class="ml-auto flex items-center gap-1">
-                        <span class="w-40"><Select v-model="newValue[axis.option_type_id]" :options="addableValues(axis)" placeholder="+ Giá trị" :aria-label="`Thêm giá trị ${typeName(axis.option_type_id)}`" /></span>
-                        <button type="button" :class="secondaryButton" :disabled="!newValue[axis.option_type_id]" @click="addValue(axis)">Thêm</button>
+                    <span class="ml-auto flex flex-wrap items-center gap-1">
+                        <!-- Chọn là thêm ngay (một thao tác). -->
+                        <span v-if="addableValues(axis).length" class="w-40">
+                            <Select
+                                :model-value="null"
+                                :options="addableValues(axis)"
+                                :placeholder="`+ ${typeName(axis.option_type_id)} có sẵn`"
+                                :aria-label="`Thêm giá trị ${typeName(axis.option_type_id)}`"
+                                @update:model-value="(id) => { newValue[axis.option_type_id] = Number(id); addValue(axis); }"
+                            />
+                        </span>
+                        <!-- Chưa có thì tạo mới tại chỗ: gõ tên (màu kèm ô chọn màu) rồi Enter. -->
+                        <input
+                            v-if="isSwatch(axis.option_type_id)"
+                            v-model="newValueDraft(axis).hex"
+                            type="color"
+                            class="h-8 w-8 cursor-pointer rounded border border-slate-300"
+                            :aria-label="`Mã màu cho ${typeName(axis.option_type_id)} mới`"
+                        />
+                        <input
+                            v-model="newValueDraft(axis).name"
+                            :class="[inputClass, 'w-36']"
+                            :placeholder="`${typeName(axis.option_type_id)} mới…`"
+                            :aria-label="`Tạo ${typeName(axis.option_type_id)} mới`"
+                            @keydown.enter.prevent="createValue(axis)"
+                        />
+                        <button type="button" :class="secondaryButton" :disabled="quickBusy || !newValueDraft(axis).name.trim()" @click="createValue(axis)">Tạo</button>
                         <button v-if="!locked" type="button" class="text-xs text-red-600" @click="removeAxis(axis)">Bỏ trục</button>
                     </span>
                 </div>
             </Sortable>
-            <div v-if="!locked && axes.length < MAX_AXES" class="flex items-center gap-2 text-sm">
-                <span class="w-56"><Select v-model="newTypeId" :options="addableTypes" placeholder="+ Thêm trục (loại tuỳ chọn)…" aria-label="Thêm trục" /></span>
-                <button type="button" :class="secondaryButton" :disabled="!newTypeId" @click="addAxis">Thêm trục</button>
-                <a :href="optionTypesUrl" class="text-xs text-indigo-600 underline">Quản lý loại tuỳ chọn</a>
+            <div v-if="!locked && axes.length < MAX_AXES" class="flex flex-wrap items-center gap-2 text-sm">
+                <span v-if="addableTypes.length" class="w-56">
+                    <Select :model-value="null" :options="addableTypes" placeholder="+ Thêm trục có sẵn…" aria-label="Thêm trục" @update:model-value="(id) => { newTypeId = Number(id); addAxis(); }" />
+                </span>
+                <span class="text-xs text-slate-400">hoặc tạo loại mới</span>
+                <input v-model="quickType.name" :class="[inputClass, 'w-40']" placeholder="vd. Chất liệu" aria-label="Tên loại tuỳ chọn mới" @keydown.enter.prevent="createType" />
+                <span class="w-32"><Select v-model="quickType.display_type" :options="displayTypeOptions" aria-label="Kiểu hiển thị" /></span>
+                <button type="button" :class="secondaryButton" :disabled="quickBusy || !quickType.name.trim()" @click="createType">Tạo trục</button>
             </div>
             <p v-else-if="locked" class="text-xs text-slate-500">Đã có SKU: không đổi được loại tuỳ chọn (tắt hết SKU rồi lưu trước). Vẫn thêm/bớt giá trị và kéo đổi thứ tự trục được.</p>
             <p v-for="message in axisErrors" :key="message" class="text-sm text-red-600">{{ message }}</p>
+            <p v-for="(message, field) in quickErrors" :key="field" class="text-sm text-red-600">{{ message }}</p>
         </div>
 
         <p v-if="!axes.length" class="text-sm text-slate-500">Chưa có trục. Thêm ít nhất một loại tuỳ chọn (vd. Màu, Size).</p>
+        <p v-else-if="!combos.length" class="text-sm text-slate-500">Chọn hoặc tạo giá trị cho trục (vd. các màu, các size) — mọi tổ hợp được bật sẵn, tắt ô không bán.</p>
         <template v-else-if="combos.length">
             <!-- 2 trục: lưới hàng × cột -->
-            <div v-if="axes.length === 2" class="overflow-x-auto text-sm">
+            <div v-if="activeAxes.length === 2" class="overflow-x-auto text-sm">
                 <div class="grid items-center gap-1" :style="gridStyle">
-                    <span class="p-2 text-xs font-medium text-slate-500">{{ typeName(axes[0].option_type_id) }} \ {{ typeName(axes[1].option_type_id) }}</span>
-                    <span v-for="columnId in axes[1].value_ids" :key="columnId" class="p-2 text-center font-medium">{{ valueName(columnId) }}</span>
+                    <span class="p-2 text-xs font-medium text-slate-500">{{ typeName(activeAxes[0].option_type_id) }} \ {{ typeName(activeAxes[1].option_type_id) }}</span>
+                    <span v-for="columnId in activeAxes[1].value_ids" :key="columnId" class="p-2 text-center font-medium">{{ valueName(columnId) }}</span>
                 </div>
-                <div v-for="rowId in axes[0].value_ids" :key="rowId" class="grid items-center gap-1 border-t border-slate-100" :style="gridStyle">
+                <div v-for="rowId in activeAxes[0].value_ids" :key="rowId" class="grid items-center gap-1 border-t border-slate-100" :style="gridStyle">
                     <div class="flex items-center gap-2 p-2">
-                        <span v-if="isSwatch(axes[0].option_type_id)" class="inline-block h-5 w-5 rounded-full border border-slate-300" :style="{ background: valueById.get(rowId)?.hex ?? 'transparent' }" />
+                        <span v-if="isSwatch(activeAxes[0].option_type_id)" class="inline-block h-5 w-5 rounded-full border border-slate-300" :style="{ background: valueById.get(rowId)?.hex ?? 'transparent' }" />
                         <span>{{ valueName(rowId) }}</span>
                     </div>
-                    <div v-for="columnId in axes[1].value_ids" :key="columnId" class="p-1 text-center">
+                    <div v-for="columnId in activeAxes[1].value_ids" :key="columnId" class="p-1 text-center">
                         <button
                             type="button"
                             class="h-9 w-16 rounded border text-xs"
@@ -405,7 +534,7 @@ const enabledCount = computed(() => rows.value.length);
 
         <div v-if="enabledCount" class="flex flex-wrap items-end gap-2 rounded-md bg-slate-50 p-3 text-sm">
             <span class="w-full text-xs text-slate-500">Áp hàng loạt cho các SKU khớp (chưa lưu cho tới khi bấm "Lưu biến thể")</span>
-            <div v-for="axis in axes" :key="axis.option_type_id" class="w-36">
+            <div v-for="axis in activeAxes" :key="axis.option_type_id" class="w-36">
                 <Select :model-value="batch.filter[axis.option_type_id] ?? 0" :options="batchOptions(axis)" :aria-label="`${typeName(axis.option_type_id)} áp dụng`" @update:model-value="(value) => (batch.filter[axis.option_type_id] = Number(value))" />
             </div>
             <div class="w-56"><Select v-model="batch.target" :options="batchTargets" placeholder="Trường…" aria-label="Trường cần áp" /></div>

@@ -182,12 +182,21 @@ final class ProductController
         return $this->form(null, $tree);
     }
 
-    public function store(ProductRequest $request, ProductService $products, AdminScreen $screen): RedirectResponse
+    public function store(ProductRequest $request, ProductService $products, AdminScreen $screen, VariantMatrix $matrix): RedirectResponse
     {
         $request->validate($screen->validationRules('product'));
-        $style = $this->orFormError(fn () => $screen->saving('product', (array) $request->input('extensions', []), fn () => $products->create($request->toInput()), fn ($style): int => $style->id));
+        $fieldErrors = [];
+        // `function … use (&…)` cả hai tầng: arrow fn chụp biến theo giá trị nên lỗi cột không ra được ngoài.
+        $style = $this->orFormError(function () use ($screen, $products, $request, $matrix, &$fieldErrors): Style {
+            return $screen->saving('product', (array) $request->input('extensions', []), function () use ($products, $request, $matrix, &$fieldErrors): Style {
+                $style = $products->create($request->toInput());
+                $fieldErrors = $this->saveVariants($style, $request, $matrix);
 
-        return redirect()->route('admin.catalog.products.edit', ['product' => $style->id])->with('success', __('catalog::messages.saved'));
+                return $style;
+            }, fn ($style): int => $style->id);
+        });
+
+        return $this->withFieldErrors(redirect()->route('admin.catalog.products.edit', ['product' => $style->id])->with('success', __('catalog::messages.saved')), $fieldErrors);
     }
 
     public function edit(Style $product, CategoryTreeQuery $tree): Response
@@ -197,12 +206,20 @@ final class ProductController
         return $this->form($product->load(['translations', 'categories:id', 'attributeValues', 'options.type', 'optionValues', 'variants.gallery.media', ...VariantOptions::relations('variants.'), 'videos']), $tree);
     }
 
-    public function update(Style $product, ProductRequest $request, ProductService $products, AdminScreen $screen): RedirectResponse
+    public function update(Style $product, ProductRequest $request, ProductService $products, AdminScreen $screen, VariantMatrix $matrix): RedirectResponse
     {
         $request->validate($screen->validationRules('product'));
-        $this->orFormError(fn () => $screen->saving('product', (array) $request->input('extensions', []), fn () => $products->update($product, $request->toInput(), (int) $request->validated('lock_version')), fn (): int => $product->id));
+        $fieldErrors = [];
+        $this->orFormError(function () use ($screen, $product, $products, $request, $matrix, &$fieldErrors): void {
+            $screen->saving('product', (array) $request->input('extensions', []), function () use ($product, $products, $request, $matrix, &$fieldErrors): Style {
+                $style = $products->update($product, $request->toInput(), (int) $request->validated('lock_version'));
+                $fieldErrors = $this->saveVariants($product, $request, $matrix);
 
-        return back()->with('success', __('catalog::messages.saved'));
+                return $style;
+            }, fn (): int => $product->id);
+        });
+
+        return $this->withFieldErrors(back()->with('success', __('catalog::messages.saved')), $fieldErrors);
     }
 
     public function destroy(Style $product, ProductService $products): RedirectResponse
@@ -212,6 +229,33 @@ final class ProductController
         $products->deleteDraft($product);
 
         return redirect()->route('admin.catalog.products.index')->with('success', __('catalog::messages.deleted'));
+    }
+
+    /**
+     * Ma trận biến thể gửi kèm form sản phẩm (một nút Lưu, variant-matrix §3.2): lưu trong cùng transaction với sản phẩm — lỗi
+     * của ma trận (SKU trùng, giá trị không thuộc trục…) huỷ cả lần lưu. Không gửi `variants` → không đổi biến thể.
+     *
+     * @return array<int, string> lỗi của cột góp vào theo SKU (phần Catalog vẫn lưu)
+     */
+    private function saveVariants(Style $style, Request $request, VariantMatrix $matrix): array
+    {
+        $input = $request->input('variants');
+        if (! is_array($input)) {
+            return [];
+        }
+
+        return $matrix->save($style, $input, fn (string $permission): bool => Gate::allows($permission))['field_errors'];
+    }
+
+    /**
+     * @param  array<int, string>  $fieldErrors
+     */
+    private function withFieldErrors(RedirectResponse $response, array $fieldErrors): RedirectResponse
+    {
+        return $fieldErrors === [] ? $response : $response->withErrors(array_combine(
+            array_map(fn (int $variantId): string => "variant.{$variantId}", array_keys($fieldErrors)),
+            array_values($fieldErrors),
+        ));
     }
 
     private function form(?Style $style, CategoryTreeQuery $tree): Response
@@ -228,18 +272,26 @@ final class ProductController
             'labels' => __('catalog::labels'),
             // Ma trận biến thể (variant-matrix §3, ADR-045): trục của sản phẩm (1–3 loại tuỳ chọn + giá trị theo thứ tự), danh mục
             // loại tuỳ chọn để chọn trục, cột do module/plugin góp + giá trị theo SKU.
-            'variantMatrix' => $style === null ? null : [
+            'variantMatrix' => [
                 ...app(VariantMatrix::class)->columns($style, fn (string $permission): bool => Gate::allows($permission)),
-                'axes' => $style->options->map(fn (StyleOption $axis): array => [
-                    'option_type_id' => $axis->option_type_id,
-                    'value_ids' => $style->optionValues->filter(fn (StyleOptionValue $row): bool => $optionValueTypes[$row->option_value_id] === $axis->option_type_id)->pluck('option_value_id')->values()->all(),
-                ])->values()->all(),
+                // Sản phẩm mới: sẵn trục Màu + Size (chỉ cần chọn giá trị; bỏ trục nếu không cần).
+                'axes' => $style === null
+                    ? $optionTypes->whereIn('code', [OptionType::COLOR, OptionType::SIZE])->sortBy(fn (OptionType $type): int => $type->code === OptionType::COLOR ? 0 : 1)
+                        ->map(fn (OptionType $type): array => ['option_type_id' => $type->id, 'value_ids' => []])->values()->all()
+                    : $style->options->map(fn (StyleOption $axis): array => [
+                        'option_type_id' => $axis->option_type_id,
+                        'value_ids' => $style->optionValues->filter(fn (StyleOptionValue $row): bool => $optionValueTypes[$row->option_value_id] === $axis->option_type_id)->pluck('option_value_id')->values()->all(),
+                    ])->values()->all(),
                 'optionTypes' => $optionTypes->map(fn (OptionType $type): array => [
                     'id' => $type->id, 'code' => $type->code, 'name' => $type->translate('name') ?? $type->code, 'display_type' => $type->display_type->value,
                     'values' => $type->values->map(fn (OptionValue $value): array => ['id' => $value->id, 'code' => $value->code, 'name' => $value->label(), 'hex' => $value->hex, 'group' => $value->group])->all(),
-                ])->all(),
-                'saveUrl' => route('admin.catalog.products.variants.save', $style->id),
-                'optionTypesUrl' => route('admin.catalog.option-types.index'),
+                ])->values()->all(),
+                // Tạo nhanh ngay trong form (không rời trang): loại tuỳ chọn, giá trị (`{type}` thay bằng id loại), thuộc tính.
+                'urls' => [
+                    'option_types' => route('admin.catalog.option-types.index'),
+                    'option_type_store' => route('admin.catalog.option-types.store'),
+                    'option_value_store' => str_replace('__TYPE__', '{type}', route('admin.catalog.option-types.values.store', ['optionType' => '__TYPE__'])),
+                ],
             ],
             'product' => $style === null ? null : [
                 'id' => $style->id,
@@ -286,8 +338,11 @@ final class ProductController
             'stockUrl' => $style !== null && Route::has('admin.inventory.stock.index') && Gate::allows('inventory.view') ? route('admin.inventory.stock.index', ['style' => $style->style_code]) : null,
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => Brand::query()->orderBy('position')->orderBy('name')->get(['id', 'name'])->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
+            // Khối Thuộc tính luôn hiện (kể cả khi chưa có thuộc tính): tạo nhanh tại form, link tới trang quản lý.
+            'attributeUrls' => ['index' => route('admin.catalog.attributes.index'), 'store' => route('admin.catalog.attributes.store')],
             'attributeDefinitions' => $attributes->map(fn (Attribute $attribute): array => [
                 'id' => $attribute->id,
+                'code' => $attribute->code,
                 'name' => $attribute->translate('name'),
                 'kind' => $attribute->kind->value,
                 'input_type' => $attribute->input_type->value,

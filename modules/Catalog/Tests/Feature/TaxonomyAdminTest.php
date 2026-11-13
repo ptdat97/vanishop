@@ -101,3 +101,16 @@ it('không xoá loại/giá trị tuỳ chọn đang được sản phẩm dùng
     $this->delete("/admin/catalog/option-types/{$color->option_type_id}/values/{$color->id}")->assertSessionHasErrors('option_value');
     $this->delete("/admin/catalog/option-types/{$color->option_type_id}")->assertSessionHasErrors('option_type');
 });
+
+it('tạo nhanh từ form sản phẩm: thuộc tính (quick) quay lại form; màu mới chỉ có mã hex tự nhận nhóm màu để lọc', function () {
+    $this->from('/admin/catalog/products/create')->post('/admin/catalog/attributes', [
+        'quick' => 1, 'code' => 'chat_lieu', 'kind' => 'spec', 'input_type' => 'select', 'is_filterable' => true, 'position' => 0,
+        'translations' => ['vi' => ['name' => 'Chất liệu']], 'values' => [['code' => 'cotton', 'translations' => ['vi' => ['label' => 'Cotton']]]],
+    ])->assertRedirect('/admin/catalog/products/create')->assertSessionHasNoErrors();
+
+    $color = T::seed(fn () => OptionType::query()->where('code', OptionType::COLOR)->sole());
+    $this->post("/admin/catalog/option-types/{$color->id}/values", [
+        'code' => 'XANH-NAVY', 'position' => 9, 'hex' => '#000080', 'family' => null, 'group' => null, 'translations' => ['vi' => ['name' => 'Xanh navy']],
+    ])->assertSessionHasNoErrors();
+    expect(T::seed(fn () => OptionValue::query()->where('code', 'XANH-NAVY')->sole()->family))->toBe('blue');
+});

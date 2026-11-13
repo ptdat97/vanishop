@@ -6,6 +6,7 @@ namespace Modules\Catalog\Application\Taxonomy;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Identity\Contracts\AuditLogger;
@@ -66,7 +67,8 @@ final class OptionTypeService
             $value ??= new OptionValue(['option_type_id' => $type->id]);
             $value->fill([
                 'code' => $data['code'], 'group' => $data['group'], 'hex' => $data['hex'] === null ? null : strtoupper($data['hex']),
-                'family' => $data['family'], 'position' => $data['position'],
+                // Không chọn nhóm màu mà có mã hex → nhóm gần nhất (vẫn lọc được ở danh mục).
+                'family' => $data['family'] ?? ($data['hex'] === null ? null : ColorFamily::nearest($data['hex'])?->value), 'position' => $data['position'],
             ])->save();
             $value->syncTranslations($data['translations']);
             $this->audit->record($value->wasRecentlyCreated ? 'catalog.option_value.created' : 'catalog.option_value.updated', 'option_value', $value->id, ['type' => $type->code, 'code' => $value->code]);
