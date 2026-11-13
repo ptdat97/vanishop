@@ -9,8 +9,10 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Factory as ValidationFactory;
 use Modules\Shared\Console\PruneIdempotencyKeysCommand;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Http\LocalizedValidator;
 use Modules\Shared\Http\Middleware\FirstPartySession;
 use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
 use Modules\Shared\Http\RateLimits;
@@ -34,6 +36,10 @@ final class SharedServiceProvider extends ModuleServiceProvider
     {
         $router->aliasMiddleware('vani.storefront-context', ResolveStorefrontContext::class);
         $router->aliasMiddleware('vani.first-party-session', FirstPartySession::class);
+        // Tên trường dễ đọc cho khoá lồng nhau (translations.vi.name, cells.0.sku) trong thông báo validation.
+        $this->app->make(ValidationFactory::class)->resolver(
+            fn ($translator, array $data, array $rules, array $messages, array $attributes): LocalizedValidator => new LocalizedValidator($translator, $data, $rules, $messages, $attributes),
+        );
         RateLimiter::for('storefront-api', fn (Request $request): Limit => RateLimits::perMinuteByIp($request, (int) config('vanishop.rate_limits.storefront_api', 240)));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

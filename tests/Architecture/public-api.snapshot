@@ -1,4 +1,4 @@
-VaniShop 0.4.44
+VaniShop 0.4.45
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array

@@ -5,6 +5,7 @@
 */
 return [
     'validation' => 'Dữ liệu không hợp lệ.',
+    'validation_row' => 'dòng :number',
     'server' => 'Đã có lỗi xảy ra. Vui lòng thử lại sau.',
     'http' => [
         400 => 'Yêu cầu không hợp lệ.',

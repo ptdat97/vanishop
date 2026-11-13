@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.45 — 2026-11-13
+
+Thông báo validation tiếng Việt.
+
+### Sửa
+- Thông báo validation (Admin, storefront, `details` của API) trước đây là câu mặc định tiếng Anh của framework ("The slug field is required.") vì thiếu `lang/vi`. Nay có `lang/vi/validation.php` (đủ mọi rule) cùng `auth.php`, `passwords.php`, `pagination.php`; tên trường thường gặp trong `validation.attributes` ("Đường dẫn (slug) không được để trống.").
+- Khoá lồng nhau có tên dễ đọc: `translations.vi.name` → "Tên (Tiếng Việt)", `cells.2.sku` → "SKU (dòng 3)" (`Modules\Shared\Http\LocalizedValidator`, đăng ký qua `Validator::resolver`). Tên truyền riêng khi validate hoặc `attributes()` của FormRequest vẫn ưu tiên.
+
+### Plugin
+- Plugin thêm tên trường của mình bằng `attributes()` trong FormRequest hoặc tham số thứ tư của `Validator::make`.
+
 ## 0.4.44 — 2026-11-13
 
 Test trình duyệt thật cho Admin (Pest Browser).

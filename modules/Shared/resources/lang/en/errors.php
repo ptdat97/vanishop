@@ -2,6 +2,7 @@
 
 return [
     'validation' => 'The given data was invalid.',
+    'validation_row' => 'row :number',
     'server' => 'Something went wrong. Please try again later.',
     'http' => [
         400 => 'Bad request.',
