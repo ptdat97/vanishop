@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { confirmAction } from '@admin/confirm';
@@ -69,7 +68,6 @@ async function destroy(category: Category): Promise<void> {
         <Link :href="urls.posts" :class="secondaryButton">Bài viết</Link>
         <Link :href="urls.pages" :class="secondaryButton">Trang</Link>
     </PageHeader>
-    <FlashMessage />
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="lg:col-span-2">

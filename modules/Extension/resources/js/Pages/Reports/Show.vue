@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DateInput from '@admin/Components/DateInput.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import InsightView from '@admin/Components/Insights/InsightView.vue';
 import type { MetricData, SeriesData, TableData } from '@admin/Components/Insights/types';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -50,7 +49,6 @@ function choose(preset: string): void {
     <PageHeader :title="report.label" :subtitle="report.description">
         <a v-if="result" :class="secondaryButton" :href="`${baseUrl}/export?${query}`">Xuất CSV</a>
     </PageHeader>
-    <FlashMessage />
 
     <div class="mb-6 flex flex-wrap items-center gap-2">
         <button

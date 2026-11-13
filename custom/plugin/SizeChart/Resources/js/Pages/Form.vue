@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -109,7 +108,6 @@ async function destroy(): Promise<void> {
         <Link :href="urls.base" :class="secondaryButton">Quay lại</Link>
         <button v-if="chart && can.manage" type="button" :class="dangerButton" @click="destroy">Xoá</button>
     </PageHeader>
-    <FlashMessage />
 
     <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">
         <div class="space-y-6 lg:col-span-2">
@@ -196,7 +194,6 @@ async function destroy(): Promise<void> {
             </FormField>
             <label class="flex items-center gap-2 text-sm"><input v-model="form.is_default" type="checkbox" /> Bảng mặc định của cửa hàng</label>
             <label class="flex items-center gap-2 text-sm"><input v-model="form.active" type="checkbox" /> Đang bật</label>
-            <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
             <button v-if="can.manage" type="submit" :class="primaryButton" class="w-full" :disabled="form.processing">Lưu</button>
         </div>
     </form>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -60,7 +59,6 @@ async function destroy(): Promise<void> {
     <PageHeader :title="banner ? (banner.content[defaultLocale]?.title || 'Sửa banner danh mục') : 'Thêm banner danh mục'">
         <Link :href="urls.index" :class="secondaryButton">Danh sách</Link>
     </PageHeader>
-    <FlashMessage />
 
     <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
         <div class="space-y-4">

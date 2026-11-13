@@ -1,38 +1,59 @@
 <script setup lang="ts">
+import { GENERAL_ERROR_KEYS, toast, toastState, type ToastTone } from '@admin/toast';
 import { usePage } from '@inertiajs/vue3';
 import { ToastClose, ToastDescription, ToastProvider, ToastRoot, ToastViewport } from 'reka-ui';
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 
-/** Thông báo thành công (`flash.success`) dạng toast; gắn một lần trong AdminLayout. */
-type Toast = { id: number; message: string; open: boolean };
+/**
+ * Mọi thông báo của Admin dạng toast; gắn một lần trong AdminLayout. Nguồn: `toast()` (@admin/toast), `flash.success` của server,
+ * lỗi chung (`GENERAL_ERROR_KEYS`) trong `errors`. Thành công tự ẩn sau 4 giây; lỗi/cảnh báo giữ tới khi đóng (đọc kịp, `role=alert`).
+ */
+const page = usePage<{ flash?: { success?: string | null }; errors?: Record<string, unknown> }>();
 
-const page = usePage<{ flash?: { success?: string | null } }>();
-const toasts = ref<Toast[]>([]);
-let nextId = 0;
-
-// Mỗi phản hồi tạo object flash mới → cùng một thông báo lặp lại (vd. thêm hai ghi chú) vẫn hiện lại.
+// Mỗi phản hồi tạo object mới → cùng một thông báo lặp lại (vd. thêm hai ghi chú, lưu lỗi hai lần) vẫn hiện lại.
 watch(
     () => page.props.flash,
     (flash) => {
-        if (flash?.success) {
-            toasts.value = [...toasts.value.filter((toast) => toast.open), { id: ++nextId, message: flash.success, open: true }];
+        if (flash?.success) toast(flash.success, 'success');
+    },
+    { immediate: true },
+);
+watch(
+    () => page.props.errors,
+    (errors) => {
+        for (const key of GENERAL_ERROR_KEYS) {
+            const message = errors?.[key];
+            if (typeof message === 'string' && message !== '') toast(message, 'error');
         }
     },
     { immediate: true },
 );
+
+const toneClass: Record<ToastTone, string> = {
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    error: 'border-red-200 bg-red-50 text-red-800',
+    warning: 'border-amber-200 bg-amber-50 text-amber-900',
+    info: 'border-slate-200 bg-white text-slate-800',
+};
+const icon: Record<ToastTone, string> = { success: '✓', error: '!', warning: '!', info: 'i' };
 </script>
 
 <template>
     <ToastProvider :duration="4000" label="Thông báo">
         <ToastRoot
-            v-for="toast in toasts"
-            :key="toast.id"
-            v-model:open="toast.open"
-            class="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-lg"
+            v-for="item in toastState.items"
+            :key="item.id"
+            v-model:open="item.open"
+            :type="item.tone === 'error' || item.tone === 'warning' ? 'foreground' : 'background'"
+            :duration="item.tone === 'error' || item.tone === 'warning' ? Infinity : 4000"
+            class="flex items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-lg"
+            :class="toneClass[item.tone]"
+            :data-toast="item.tone"
         >
-            <ToastDescription class="flex-1">{{ toast.message }}</ToastDescription>
-            <ToastClose class="text-emerald-700 hover:text-emerald-900" aria-label="Đóng">✕</ToastClose>
+            <span aria-hidden="true" class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-xs font-semibold">{{ icon[item.tone] }}</span>
+            <ToastDescription class="flex-1 whitespace-pre-line">{{ item.message }}</ToastDescription>
+            <ToastClose class="opacity-70 hover:opacity-100" aria-label="Đóng">✕</ToastClose>
         </ToastRoot>
-        <ToastViewport class="fixed right-4 bottom-4 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2 outline-none" />
+        <ToastViewport class="fixed right-4 bottom-4 z-[60] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2 outline-none" />
     </ToastProvider>
 </template>

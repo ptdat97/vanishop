@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import Select from '@admin/Components/Select.vue';
@@ -269,7 +268,6 @@ function createDefault(): void {
         <Link v-for="link in links" :key="link.url" :href="link.url" :class="secondaryButton">{{ link.label }}</Link>
         <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">Kho chính</button>
     </PageHeader>
-    <FlashMessage />
     <form v-if="editingLocation && urls.main_location && mainLocation" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm md:grid-cols-3" data-main-location @submit.prevent="saveLocation">
         <p class="md:col-span-3">Kho chính của cửa hàng. Cần nhiều kho, cửa hàng nhận tại quầy hay chuyển kho: bật plugin <strong>Vận hành kho</strong>.</p>
         <input v-model="locationForm.name" :class="inputClass" placeholder="Tên kho" aria-label="Tên kho" />
@@ -279,7 +277,6 @@ function createDefault(): void {
         <p v-for="(error, key) in locationForm.errors" :key="key" class="text-red-600 md:col-span-3">{{ error }}</p>
         <div><button type="submit" :class="primaryButton" :disabled="locationForm.processing">Lưu</button></div>
     </form>
-    <p v-if="page.props.errors?.changes" class="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{{ page.props.errors.changes }}</p>
 
     <div v-if="warnings.no_location" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm" data-no-location>
         <p class="font-medium">Cửa hàng chưa có kho nào — mọi sản phẩm đang hiện "hết hàng".</p>

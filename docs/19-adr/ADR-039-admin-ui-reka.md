@@ -12,7 +12,7 @@ Chọn nền tảng component cho Admin: đủ widget phức tạp (dialog, sele
 ## Decision
 1. **Reka UI** (`reka-ui`, headless, MIT) làm nền cho widget có hành vi phức tạp; style bằng Tailwind theo token hiện có (indigo/slate). Dependency được duyệt (R25): `reka-ui`, `@internationalized/date` (cho `DateInput`).
 2. **Chỉ `resources/js/admin/Components` được import `reka-ui`.** Trang của module và plugin dùng bộ component `@admin/Components` — đây là API UI công khai cho plugin ([CHANGELOG-extension](../04-extension/CHANGELOG-extension.md)). Kiểm tra: `tests/Architecture/AdminUiTest.php`.
-3. Bộ component: `DataTable` (cột, slot `head-<key>`/`cell-<key>`/`expanded`/`footer`, cột + chọn dòng của extension, `rowKey`, `bare`), `Pagination` (số trang), `Select` (chuỗi/số/boolean, lựa chọn rỗng), `MultiSelect`, `Combobox`, `DateInput` (ngày hoặc ngày giờ, cùng định dạng `datetime-local`), `StatusBadge`, `MoneyText`, `ConfirmDialog` + `confirmAction()`/`promptFields()` (thay `confirm()`/`prompt()`), `Toaster` (thông báo thành công, gắn trong `AdminLayout`). Helper: `@admin/money` (`useMoney`), `@admin/datetime` (`useDateTime`), `@admin/options`.
+3. Bộ component: `DataTable` (cột, slot `head-<key>`/`cell-<key>`/`expanded`/`footer`, cột + chọn dòng của extension, `rowKey`, `bare`), `Pagination` (số trang), `Select` (chuỗi/số/boolean, lựa chọn rỗng), `MultiSelect`, `Combobox`, `DateInput` (ngày hoặc ngày giờ, cùng định dạng `datetime-local`), `StatusBadge`, `MoneyText`, `ConfirmDialog` + `confirmAction()`/`promptFields()` (thay `confirm()`/`prompt()`), `Toaster` + `toast(message, tone)` của `@admin/toast` (mọi thông báo — thành công, lỗi chung trong `GENERAL_ERROR_KEYS` như `errors.business`, cảnh báo — gắn trong `AdminLayout`; từ 0.4.32 trang không tự vẽ khung lỗi chung/flash, arch test chặn), `FullscreenDialog` (popup toàn màn hình, 0.4.31). Helper: `@admin/money` (`useMoney`), `@admin/datetime` (`useDateTime`), `@admin/options`.
 4. **Không ghi cứng thị trường ở client.** Nhãn trạng thái của module Core do server dịch: mỗi module có lang `labels.php` (`<module>::labels`), controller gửi prop `labels`. Tiền định dạng theo `app.money` (`MoneyFormatter::rules()`), ngày giờ theo `app.clock` (múi giờ + mẫu của `StoreClock`) — cùng kết quả với server. Plugin giữ nhãn riêng trong plugin.
 5. Lọc, sắp xếp, phân trang vẫn ở server (Inertia); `DataTable` không dùng thư viện bảng (TanStack Table) ở đợt này.
 
@@ -37,7 +37,7 @@ Mọi trang Admin của module và plugin đã dùng bộ component. `tests/Arch
 - (+) Bỏ dần `confirm()`/`prompt()`, nhãn trạng thái và định dạng tiền ghi cứng ở từng trang.
 - (−) Tự dựng và duy trì phần giao diện của component; Reka không có bảng dữ liệu, upload, cascader (dùng `MediaManager` sẵn có, hai `Combobox` nối nhau).
 - (−) JS tăng: tổng toàn bộ build 194,7 → 289,5 KB gzip khi hoàn thành (đo 2026-11-04); `DateInput` (26,6 KB gzip) chỉ tải ở trang có ô ngày.
-- (−) `FlashMessage` không còn hiện thông báo thành công (chuyển sang `Toaster`); trang plugin tự đặt `FlashMessage` chỉ còn hiện lỗi chung.
+- (−) `FlashMessage` đã gỡ (0.4.32): thông báo thành công và lỗi chung đều hiện bằng `Toaster`.
 
 ## Trade-offs
 Chi phí tự dựng phần giao diện của component để giữ một hệ style, bundle nhỏ và ranh giới API UI cho plugin.

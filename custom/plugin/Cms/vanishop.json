@@ -4,7 +4,7 @@
         "vi": "Nội dung (CMS)",
         "en": "Content (CMS)"
     },
-    "version": "1.5.2",
+    "version": "1.5.3",
     "kind": "content",
     "provider": "Plugin\\Cms\\CmsServiceProvider",
     "requires": {

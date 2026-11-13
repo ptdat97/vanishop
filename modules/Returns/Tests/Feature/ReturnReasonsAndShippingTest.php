@@ -57,7 +57,7 @@ it('Admin thêm/sửa/tắt lý do; lý do đã dùng không đổi mã, không 
 
     $reason = ReturnReason::query()->where('code', 'wrong_color')->first();
     $this->put("{$this->reasons}/{$reason->id}", ['code' => 'mau_khac', 'names' => ['vi' => 'Sai màu']])->assertSessionHasErrors('code');
-    $this->delete("{$this->reasons}/{$reason->id}")->assertSessionHasErrors('reason');
+    $this->delete("{$this->reasons}/{$reason->id}")->assertSessionHasErrors('business');
     $this->put("{$this->reasons}/{$reason->id}", ['code' => 'wrong_color', 'names' => ['vi' => 'Sai màu sắc'], 'is_active' => false])->assertSessionHasNoErrors();
 
     ($this->request)('wrong_color')->assertUnprocessable()->assertJsonPath('error.code', 'validation.failed');

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
@@ -81,7 +80,6 @@ async function destroy(): Promise<void> {
         <Link :href="urls.index" :class="secondaryButton">Danh sách</Link>
         <a v-if="lookbook?.public_url" :href="lookbook.public_url" target="_blank" rel="noopener" :class="secondaryButton">Xem trang</a>
     </PageHeader>
-    <FlashMessage />
 
     <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
         <div class="space-y-4">

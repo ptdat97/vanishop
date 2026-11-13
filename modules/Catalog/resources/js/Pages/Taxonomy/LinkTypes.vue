@@ -70,7 +70,6 @@ async function destroy(type: LinkTypeRow): Promise<void> {
     <CatalogTabs :nav="nav" active="link-types" />
     <PageHeader title="Loại liên kết" subtitle="Nhóm sản phẩm gợi ý trên trang sản phẩm: tương tự, mua kèm, nâng cấp…" />
 
-    <p v-if="errors.link_type" class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ errors.link_type }}</p>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="lg:col-span-2">

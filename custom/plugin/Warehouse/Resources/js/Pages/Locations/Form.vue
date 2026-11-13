@@ -82,7 +82,6 @@ function submit(): void {
         <FormField label="Trạng thái" :error="form.errors.status">
             <Select v-model="form.status" :options="labelOptions(labels.location_status)" />
         </FormField>
-        <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>
     </form>
 </template>

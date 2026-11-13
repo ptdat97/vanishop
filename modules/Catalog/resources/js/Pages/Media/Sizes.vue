@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -74,7 +73,6 @@ async function flush(): Promise<void> {
         <Link :href="urls.library" :class="secondaryButton">Thư viện ảnh</Link>
         <button v-if="canManage" type="button" :class="secondaryButton" @click="flush">Xoá cache ảnh</button>
     </PageHeader>
-    <FlashMessage />
 
     <form class="grid max-w-4xl gap-6" @submit.prevent="save">
         <section class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 md:grid-cols-2">

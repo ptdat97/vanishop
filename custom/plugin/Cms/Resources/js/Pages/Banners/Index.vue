@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
@@ -30,7 +29,6 @@ const columns = [
         <Link :href="urls.pages" :class="secondaryButton">Nội dung</Link>
         <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm banner</Link>
     </PageHeader>
-    <FlashMessage />
 
     <DataTable :columns="columns" :rows="banners" :row-label="(banner) => banner.category" empty-text="Chưa có banner nào.">
         <template #cell-thumb="{ row }">

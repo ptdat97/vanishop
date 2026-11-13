@@ -174,7 +174,6 @@ async function destroy(): Promise<void> {
         <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">Xoá</button>
     </PageHeader>
 
-    <p v-if="errors.product" class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ errors.product }}</p>
 
     <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">
         <div class="space-y-6 lg:col-span-2">
@@ -332,7 +331,6 @@ async function destroy(): Promise<void> {
             <FormField label="Danh mục chính (breadcrumb)" :error="errors.primary_category_id">
                 <Select v-model="form.primary_category_id" :options="primaryCategoryOptions" empty-label="—" :empty-value="null" />
             </FormField>
-            <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
             <button type="submit" :class="primaryButton" class="w-full" :disabled="form.processing">Lưu</button>
         </div>
     </form>

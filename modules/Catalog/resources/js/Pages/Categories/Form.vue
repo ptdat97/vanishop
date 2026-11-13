@@ -137,7 +137,6 @@ function removeImage(): void {
                 <FormField label="Thứ tự" :error="errors.position">
                     <input v-model.number="form.position" :class="inputClass" type="number" min="0" />
                 </FormField>
-                <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
                 <button type="submit" :class="primaryButton" :disabled="form.processing" class="w-full">Lưu</button>
             </div>
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
@@ -50,7 +49,6 @@ function changePageSize(pageSize: number): void {
     <PageHeader title="Lookbook" subtitle="Bộ ảnh theo mùa/chủ đề ở /lookbook.">
         <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm lookbook</Link>
     </PageHeader>
-    <FlashMessage />
     <form class="mb-4 max-w-sm" @submit.prevent="search()">
         <input v-model="q" :class="inputClass" placeholder="Tìm theo tên hoặc đường dẫn…" aria-label="Tìm lookbook" />
     </form>

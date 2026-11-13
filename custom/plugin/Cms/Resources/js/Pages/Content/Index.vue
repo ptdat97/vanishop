@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
@@ -58,7 +57,6 @@ function changePageSize(pageSize: number): void {
         <Link v-if="urls.banners" :href="urls.banners" :class="secondaryButton">Banner danh mục</Link>
         <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm {{ kindLabels[kind].singular }}</Link>
     </PageHeader>
-    <FlashMessage />
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
         <Link v-for="(labels, key) in kindLabels" :key="key" :href="urls[key]" :class="[secondaryButton, kind === key ? 'border-indigo-500 text-red-700' : '']">

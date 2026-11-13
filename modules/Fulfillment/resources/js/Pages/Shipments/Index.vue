@@ -109,7 +109,6 @@ async function cancel(id: number): Promise<void> {
     <Head title="Giao hàng" />
     <p class="mb-2 text-sm text-slate-500">Giao hàng</p>
     <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho." />
-    <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
 
     <form class="mb-4 grid gap-2 sm:grid-cols-3" @submit.prevent="search()">
         <input v-model="filters.order" :class="inputClass" placeholder="Số đơn" aria-label="Số đơn" />

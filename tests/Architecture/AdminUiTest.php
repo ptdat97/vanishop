@@ -88,3 +88,8 @@ it('không structuredClone dữ liệu trang (props của Inertia là Proxy ph�
 it('module Core không ghi cứng bảng nhãn trạng thái (server dịch qua <module>::labels)', function () {
     expect(adminUiOffenders('/(Labels|labels)\s*(:[^=]*)?=\s*\{/', coreOnly: true))->toBe([]);
 });
+
+it('thông báo chung chỉ qua toast: trang không tự vẽ lỗi chung (errors.business, errors.product, lock_version…) hay khung flash', function () {
+    // Toaster (AdminLayout) hiện `flash.success` và lỗi chung trong `GENERAL_ERROR_KEYS` của @admin/toast; trang gọi `toast()`.
+    expect(adminUiOffenders('/errors\??\.(business|product|lock_version|category|link_type|campaign|changes|option_type|option_value)\b|FlashMessage/'))->toBe([]);
+});

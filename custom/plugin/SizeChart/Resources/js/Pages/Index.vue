@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { primaryButton } from '@admin/styles';
@@ -26,7 +25,6 @@ const columns = [
     <PageHeader title="Bảng size" subtitle="Gán bảng ở form sản phẩm, danh mục hoặc thương hiệu. Sản phẩm chưa có bảng nào dùng bảng mặc định.">
         <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm bảng size</Link>
     </PageHeader>
-    <FlashMessage />
 
     <DataTable :columns="columns" :rows="charts" :row-label="(chart) => chart.name" empty-text="Chưa có bảng size.">
         <template #cell-name="{ row }">

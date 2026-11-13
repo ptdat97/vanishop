@@ -82,7 +82,6 @@ async function destroy(): Promise<void> {
         </template>
     </PageHeader>
 
-    <p v-if="errors.campaign" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.campaign }}</p>
 
     <section v-if="report" class="mb-6 grid gap-3 sm:grid-cols-4">
         <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đơn của campaign</div><div class="text-xl font-semibold">{{ report.orders }}</div><div class="text-xs text-slate-400">{{ report.usages }} lượt khuyến mãi · {{ report.price_list_orders }} đơn giá sale</div></div>
@@ -98,7 +97,6 @@ async function destroy(): Promise<void> {
             <FormField label="Mô tả" :error="errors.description"><textarea v-model="form.description" rows="2" :class="inputClass" :disabled="!editable" /></FormField>
             <FormField label="Bắt đầu (giờ cửa hàng)" :error="errors.starts_at"><DateInput v-model="form.starts_at" with-time :disabled="!editable" /></FormField>
             <FormField label="Kết thúc (giờ cửa hàng)" :error="errors.ends_at"><DateInput v-model="form.ends_at" with-time :disabled="!editable" /></FormField>
-            <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
             <button v-if="editable" type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
             <p class="text-xs text-slate-500">Campaign quyết định lịch và trạng thái của mọi thành viên: nháp → thành viên tắt; kích hoạt → bật theo lịch này; dừng → tắt ngay.</p>
         </div>

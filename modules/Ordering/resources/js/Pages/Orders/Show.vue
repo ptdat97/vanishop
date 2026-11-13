@@ -8,6 +8,7 @@ import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { toast } from '@admin/toast';
 import { confirmAction, promptFields, type ConfirmField } from '@admin/confirm';
 import { useMoney } from '@admin/money';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -158,8 +159,10 @@ const history = computed(() =>
         ...props.timeline.map((entry, index) => ({ kind: 'module' as const, ts: entry.ts, order: index, entry })),
     ].sort((a, b) => a.ts - b.ts),
 );
-const actionErrors = computed(() =>
-    ['tracking_number', 'service_code', 'amount', 'idempotency_key', 'status', 'order_id'].map((key) => errors.value[key]).filter((message): message is string => Boolean(message)),
+// Lỗi của thao tác ở bảng điều khiển (nhập qua hộp thoại, không có ô trên trang) → toast lỗi.
+watch(
+    () => ['tracking_number', 'service_code', 'amount', 'idempotency_key', 'status', 'order_id'].map((key) => errors.value[key]).filter((message): message is string => Boolean(message)),
+    (messages) => messages.forEach((message) => toast(message, 'error')),
 );
 
 async function runAction(action: PanelAction): Promise<void> {
@@ -298,10 +301,6 @@ function addNote(): void {
             <span v-if="index < steps.length - 1" class="text-slate-300">›</span>
         </li>
     </ol>
-    <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
-        {{ errors.business }}
-    </p>
-    <p v-for="message in actionErrors" :key="message" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ message }}</p>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">

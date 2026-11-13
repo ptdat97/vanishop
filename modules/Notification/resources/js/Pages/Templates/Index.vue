@@ -142,9 +142,6 @@ async function remove(template: Template): Promise<void> {
         </label>
         <p class="text-xs text-slate-500">Biến có sẵn: {{ variableHint }}</p>
         <label class="flex items-center gap-2"><input v-model="form.active" type="checkbox" /> Đang dùng</label>
-        <p v-if="form.errors.lock_version" class="text-xs text-red-600">
-            {{ form.errors.lock_version }}
-        </p>
         <div class="flex gap-2">
             <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
             <button type="button" :class="secondaryButton" @click="((editing = null), (creating = false))">Huỷ</button>

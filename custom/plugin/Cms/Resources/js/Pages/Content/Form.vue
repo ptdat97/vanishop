@@ -2,7 +2,6 @@
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
 import DateInput from '@admin/Components/DateInput.vue';
-import FlashMessage from '@admin/Components/FlashMessage.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -185,7 +184,6 @@ function onPicked(items: MediaItem[]): void {
             {{ item.public_url ? 'Xem trên cửa hàng' : 'Xem trước' }}
         </a>
     </PageHeader>
-    <FlashMessage />
 
     <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="save">
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">

@@ -125,7 +125,6 @@ async function destroy(): Promise<void> {
             </div>
         </div>
 
-        <p v-if="errors.lock_version" class="text-sm text-red-600">{{ errors.lock_version }}</p>
         <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
     </form>
 </template>

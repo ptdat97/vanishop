@@ -79,7 +79,7 @@ final class ReturnReasons
     public function delete(ReturnReason $reason): void
     {
         if ($this->used($reason)) {
-            throw ValidationException::withMessages(['reason' => __('returns::messages.reason_in_use')]);
+            throw ValidationException::withMessages(['business' => __('returns::messages.reason_in_use')]);
         }
         $reason->delete();
         $this->all = null;

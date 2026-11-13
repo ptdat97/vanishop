@@ -79,7 +79,6 @@ const formatDate = useDateTime();
         <Link v-if="plugin.has_settings && canConfigure" :href="url('settings')" :class="primaryButton">Cấu hình</Link>
     </PageHeader>
 
-    <p v-if="errors.business" class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm whitespace-pre-line text-red-700">{{ errors.business }}</p>
 
     <div class="grid gap-4 lg:grid-cols-3">
         <section class="space-y-4 lg:col-span-2">

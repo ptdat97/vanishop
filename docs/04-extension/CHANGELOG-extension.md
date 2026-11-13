@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.32 — 2026-11-13
+
+Admin: mọi thông báo qua toast ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)).
+
+### Thêm
+- `@admin/toast`: `toast(message, tone = 'success' | 'error' | 'warning' | 'info')` cho trang module/plugin; `GENERAL_ERROR_KEYS`. `Toaster` hiện thêm toast lỗi/cảnh báo (giữ tới khi đóng, đọc bởi trình đọc màn hình) và tự hiện lỗi chung của phản hồi (`errors.business`, `product`, `lock_version`, `category`, `link_type`, `campaign`, `changes`, `option_type`, `option_value`).
+
+### Gỡ (phá vỡ)
+- Component `FlashMessage` (`@admin/Components/FlashMessage.vue`) — trang plugin bỏ `<FlashMessage />`; thông báo hiện bằng `Toaster` sẵn trong layout. `vani.cms`, `vani.lookbook`, `vani.size-chart` đã bỏ.
+- Trang không tự vẽ khung lỗi chung (`errors.business`, `errors.product`, `errors.lock_version`…) — arch test `AdminUiTest` chặn.
+- Xoá lý do đổi trả đang dùng: lỗi trả về khoá `business` (trước `reason`).
+
 ## 0.4.31 — 2026-11-13
 
 Admin: biến thể trong popup toàn màn hình ([variant-matrix §3.1](../03-domains/variant-matrix.md)).

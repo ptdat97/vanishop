@@ -87,7 +87,6 @@ async function cancel(id: number): Promise<void> {
     <p class="mb-2 text-sm text-slate-500">Tồn kho</p>
     <PageHeader title="Chuyển kho" subtitle="pending → đã gửi → đã nhận. Khi gửi, tồn kho đi được trừ; hàng đang đi đường không bán được; khi nhận, tồn kho đến được cộng." />
 
-    <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
 
     <form v-if="canManage" class="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="create">
         <div class="grid gap-3 sm:grid-cols-2">

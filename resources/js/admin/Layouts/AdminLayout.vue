@@ -2,7 +2,6 @@
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import ConfirmDialog from '../Components/ConfirmDialog.vue';
-import FlashMessage from '../Components/FlashMessage.vue';
 import Toaster from '../Components/Toaster.vue';
 import type { NavigationItem, SharedProps } from '../types';
 
@@ -241,7 +240,6 @@ function logout(): void {
                 </div>
             </header>
             <main class="flex-1 p-4 sm:p-6">
-                <FlashMessage />
                 <slot />
             </main>
         </div>

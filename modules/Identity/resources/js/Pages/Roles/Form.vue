@@ -45,7 +45,6 @@ const errors = computed(() => usePage().props.errors as Record<string, string>);
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
     </PageHeader>
 
-    <p v-if="errors.business" class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ errors.business }}</p>
 
     <form class="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
         <fieldset :disabled="role?.is_system" class="space-y-4">

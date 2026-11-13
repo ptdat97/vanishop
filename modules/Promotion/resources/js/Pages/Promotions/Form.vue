@@ -192,7 +192,6 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
         <p v-if="promotion" class="text-sm text-slate-500 sm:col-span-2">
             Đã dùng {{ promotion.usage_count }} lượt<span v-if="promotion.budget_amount">, <MoneyText :amount="promotion.budget_used_amount" /> ngân sách</span>.
         </p>
-        <p v-if="form.errors.lock_version" class="text-sm text-red-600 sm:col-span-2">{{ form.errors.lock_version }}</p>
         <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>
     </form>
 

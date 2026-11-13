@@ -62,9 +62,6 @@ function submit(): void {
         <Link :href="orderUrl" :class="secondaryButton">← Đơn {{ order.number }}</Link>
     </PageHeader>
 
-    <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">
-        {{ errors.business }}
-    </p>
     <p v-if="deadlineText" class="mb-4 text-sm text-slate-600">Hạn đổi/trả theo chính sách: {{ deadlineText }}</p>
 
     <form class="space-y-6" @submit.prevent="submit">

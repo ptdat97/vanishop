@@ -85,7 +85,6 @@ function resolve(): void {
         <button v-if="can.in_transit" type="button" :class="secondaryButton" @click="transition('in_transit')">Khách đã gửi</button>
         <button v-if="can.reject" type="button" :class="dangerButton" @click="transition('rejected')">Từ chối</button>
     </PageHeader>
-    <p v-if="errors.business" class="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{{ errors.business }}</p>
     <p v-if="props.return.customerNote" class="mb-4 rounded bg-amber-50 p-3 text-sm">Khách ghi chú: {{ props.return.customerNote }}</p>
     <div v-if="props.return.attachments?.length" class="mb-4 flex flex-wrap gap-2" data-return-photos>
         <a v-for="photo in props.return.attachments" :key="photo.id" :href="photo.url" target="_blank" rel="noopener"><img :src="photo.url" alt="Ảnh khách gửi" class="h-24 w-24 rounded border border-slate-200 object-cover" /></a>
@@ -126,7 +125,6 @@ function resolve(): void {
         </p>
         <input v-model="resolveForm.note" :class="inputClass" placeholder="Ghi chú" />
         <p v-for="(error, key) in resolveForm.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
-        <p v-if="errors.business" class="text-sm text-red-600">{{ errors.business }}</p>
         <button type="submit" :class="primaryButton" :disabled="resolveForm.processing">Tạo đơn thay thế và hoàn tất</button>
     </form>
 

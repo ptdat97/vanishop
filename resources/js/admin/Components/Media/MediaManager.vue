@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from '@admin/toast';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { getJson, HttpError, postJson } from '@admin/http';
@@ -47,7 +48,6 @@ const selected = ref<Map<number, MediaItem>>(new Map());
 const loading = ref(false);
 const uploading = ref(false);
 const dragging = ref(false);
-const message = ref<{ type: 'ok' | 'error'; text: string } | null>(null);
 const moveTarget = ref('');
 
 const searching = computed(() => keyword.value.trim() !== '');
@@ -61,7 +61,7 @@ function url(path: string): string {
 
 function fail(error: unknown): void {
     const errors = error instanceof HttpError ? Object.values(error.errors).flat() : [];
-    message.value = { type: 'error', text: errors[0] ?? (error instanceof Error ? error.message : 'Có lỗi xảy ra.') };
+    toast(errors[0] ?? (error instanceof Error ? error.message : 'Có lỗi xảy ra.'), 'error');
 }
 
 async function load(): Promise<void> {
@@ -118,11 +118,10 @@ function pickNow(item: MediaItem): void {
 }
 
 async function run(action: () => Promise<{ message?: string } | unknown>, reload = true): Promise<void> {
-    message.value = null;
     try {
         const result = (await action()) as { message?: string } | undefined;
         if (result && typeof result === 'object' && result.message) {
-            message.value = { type: 'ok', text: result.message };
+            toast(result.message);
         }
         if (reload) {
             await load();
@@ -269,7 +268,6 @@ onMounted(load);
                 </label>
             </div>
 
-            <p v-if="message" class="mx-3 mt-3 rounded px-3 py-2 text-sm" :class="message.type === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ message.text }}</p>
             <p class="px-3 pt-2 text-xs text-slate-500">
                 {{ searching ? `Kết quả tìm "${keyword.trim()}"` : folderName(folder) }} · {{ meta.total }} {{ noun }}
                 <template v-if="canManage"> · kéo thả {{ noun }} vào đây để tải lên thư mục này</template>
