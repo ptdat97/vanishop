@@ -28,6 +28,8 @@ final class BrandRequest extends FormRequest
             'logo_media_id' => ['nullable', 'integer', Rule::exists('media', 'id')],
             'status' => ['required', Rule::in([Brand::ACTIVE, Brand::HIDDEN])],
             'position' => ['required', 'integer', 'min:0'],
+            // Khoá lạc quan khi sửa: hai người sửa cùng thương hiệu → người lưu sau được báo, không ghi đè im lặng.
+            'lock_version' => [$brand instanceof Brand ? 'required' : 'nullable', 'integer', 'min:0'],
         ];
     }
 

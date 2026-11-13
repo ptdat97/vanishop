@@ -37,6 +37,7 @@ final class BrandController
                 'logo_media_id' => $brand->logo_media_id,
                 'status' => $brand->status,
                 'position' => $brand->position,
+                'lock_version' => $brand->lock_version,
                 'styles_count' => (int) $brand->getAttribute('styles_count'),
             ])->all(),
             'canManage' => Gate::allows('catalog.manage'),
@@ -59,7 +60,7 @@ final class BrandController
     public function update(Brand $brand, BrandRequest $request, TaxonomyService $taxonomy, AdminScreen $screen): RedirectResponse
     {
         $request->validate($screen->validationRules('brand'));
-        $this->orFormError(fn () => $screen->saving('brand', (array) $request->input('extensions', []), fn () => $taxonomy->saveBrand($request->toData(), $brand), fn (): int => $brand->id));
+        $this->orFormError(fn () => $screen->saving('brand', (array) $request->input('extensions', []), fn () => $taxonomy->saveBrand($request->toData(), $brand, (int) $request->validated('lock_version')), fn (): int => $brand->id));
 
         return back()->with('success', __('catalog::messages.saved'));
     }

@@ -99,7 +99,7 @@ it('form danh mục và thương hiệu mở cho plugin (0.3.43): phần form tr
     $brand = Brand::factory()->create(['code' => 'LM', 'slug' => 'lumiere', 'name' => 'Lumière']);
     $categoryPayload = fn (array $extensions, string $name = 'Đầm') => ['slug' => 'dam', 'parent_id' => null, 'status' => 'active', 'position' => 0,
         'lock_version' => $category->fresh()->lock_version, 'translations' => ['vi' => ['name' => $name]], 'extensions' => $extensions];
-    $brandPayload = fn (array $extensions, string $name = 'Lumière') => ['code' => 'LM', 'slug' => 'lumiere', 'name' => $name, 'description' => null, 'status' => 'active', 'position' => 0, 'extensions' => $extensions];
+    $brandPayload = fn (array $extensions, string $name = 'Lumière') => ['code' => 'LM', 'slug' => 'lumiere', 'name' => $name, 'description' => null, 'status' => 'active', 'position' => 0, 'lock_version' => $brand->fresh()->lock_version, 'extensions' => $extensions];
 
     $this->put("/admin/catalog/categories/{$category->id}", $categoryPayload([]))->assertSessionHasErrors('extensions.vani-cod.size.chart');
     $this->put("/admin/catalog/categories/{$category->id}", $categoryPayload(['vani-cod' => ['size' => ['chart' => 'đầm-nữ']]]))->assertSessionHasNoErrors();

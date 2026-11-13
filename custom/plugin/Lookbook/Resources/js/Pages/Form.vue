@@ -28,6 +28,7 @@ const props = defineProps<{
         category_id: number | null;
         position: number;
         active: boolean;
+        lock_version: number;
         public_url: string | null;
     };
     categories: Array<{ value: number; label: string }>;
@@ -45,7 +46,8 @@ const { form, save } = useAdminForm({
     category_id: props.lookbook?.category_id ?? (null as number | null),
     position: props.lookbook?.position ?? 0,
     active: props.lookbook?.active ?? false,
-});
+    lock_version: props.lookbook?.lock_version ?? null,
+}, { lockVersion: () => props.lookbook?.lock_version });
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function pick(items: MediaItem[]): void {

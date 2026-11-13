@@ -25,7 +25,7 @@ final class Lookbooks
     public function __construct(private readonly MediaDirectory $media) {}
 
     /**
-     * @param  array{slug?: ?string, translations: array<string, array<string, ?string>>, cover_media_id?: ?int, category_id?: ?int, position?: ?int, active?: bool, images?: list<array{media_id: int, alt?: array<string, ?string>}>}  $data
+     * @param  array{lock_version?: ?int, slug?: ?string, translations: array<string, array<string, ?string>>, cover_media_id?: ?int, category_id?: ?int, position?: ?int, active?: bool, images?: list<array{media_id: int, alt?: array<string, ?string>}>}  $data
      */
     public function save(?Lookbook $lookbook, array $data): Lookbook
     {
@@ -56,12 +56,20 @@ final class Lookbooks
         }
 
         return DB::transaction(function () use ($lookbook, $data, $translations, $slug, $images, $cover): Lookbook {
+            if ($lookbook !== null) {
+                // Tăng phiên bản có điều kiện: hai người lưu cùng lúc → chỉ một người thành công.
+                $updated = Lookbook::query()->whereKey($lookbook->id)->where('lock_version', (int) ($data['lock_version'] ?? -1))->increment('lock_version');
+                if ($updated === 0) {
+                    throw ValidationException::withMessages(['lock_version' => 'Lookbook đã được người khác cập nhật. Tải lại trang rồi sửa lại.']);
+                }
+                $lookbook->lock_version = (int) $data['lock_version'] + 1;
+                $lookbook->syncOriginalAttribute('lock_version');
+            }
             $lookbook ??= new Lookbook;
             $lookbook->fill([
                 'slug' => $slug, 'translations' => $translations, 'cover_media_id' => $cover,
                 'category_id' => isset($data['category_id']) && (int) $data['category_id'] > 0 ? (int) $data['category_id'] : null,
                 'position' => (int) ($data['position'] ?? 0), 'active' => (bool) ($data['active'] ?? false),
-                'lock_version' => ($lookbook->lock_version ?? 0) + 1,
             ])->save();
 
             LookbookImage::query()->where('lookbook_id', $lookbook->id)->delete();

@@ -77,7 +77,7 @@ final class LookbookController
     public function update(Request $request, Lookbook $lookbook): RedirectResponse
     {
         Gate::authorize('lookbook.manage');
-        $this->lookbooks->save($lookbook, $this->validated($request));
+        $this->lookbooks->save($lookbook, $this->validated($request, $lookbook));
 
         return back()->with('success', 'Đã lưu lookbook.');
     }
@@ -100,7 +100,7 @@ final class LookbookController
                 'id' => $lookbook->id, 'slug' => $lookbook->slug, 'translations' => $lookbook->translations,
                 'cover' => $lookbook->cover_media_id === null ? null : ['id' => $lookbook->cover_media_id, 'url' => ($media[$lookbook->cover_media_id] ?? null)?->urlFor(400)],
                 'images' => $lookbook->images->map(fn ($image): array => ['media_id' => $image->media_id, 'alt' => (object) ($image->alt ?? []), 'thumb_url' => ($media[$image->media_id] ?? null)?->urlFor(160)])->all(),
-                'category_id' => $lookbook->category_id, 'position' => $lookbook->position, 'active' => $lookbook->active,
+                'category_id' => $lookbook->category_id, 'position' => $lookbook->position, 'active' => $lookbook->active, 'lock_version' => $lookbook->lock_version,
                 'public_url' => $lookbook->active ? vani_route('storefront.p.vani-lookbook.show', $lookbook->slug) : null,
             ],
             'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : ' (đang ẩn)')], $this->catalog->search('category', '', StoreLocale::default(), 200)),
@@ -115,9 +115,11 @@ final class LookbookController
     /**
      * @return array<string, mixed>
      */
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Lookbook $lookbook = null): array
     {
         $rules = [
+            // Khoá lạc quan khi sửa: người lưu sau được báo, không ghi đè im lặng.
+            'lock_version' => [$lookbook === null ? 'nullable' : 'required', 'integer', 'min:0'],
             'slug' => ['nullable', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'cover_media_id' => ['nullable', 'integer'],
             'category_id' => ['nullable', 'integer'],

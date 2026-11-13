@@ -69,7 +69,15 @@ it('Admin: tạo lookbook (slug tự sinh từ tên, trùng thì báo lỗi), da
     $this->get("{$this->admin}?per_page=50")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Lookbook::Index')
         ->where('lookbooks.data.0.images_count', 1)->where('lookbooks.per_page', 50));
     $this->get("{$this->admin}?per_page=101")->assertSessionHasErrors('per_page');
-    $this->get("{$this->admin}/{$lookbook->id}")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Lookbook::Form')->where('lookbook.images.0.media_id', $media->id));
+    $this->get("{$this->admin}/{$lookbook->id}")->assertOk()->assertInertia(fn (Assert $page) => $page->component('Lookbook::Form')->where('lookbook.images.0.media_id', $media->id)->where('lookbook.lock_version', 0));
+
+    // Sửa theo phiên bản đã mở; người thứ hai còn giữ phiên bản cũ → báo xung đột, không ghi đè.
+    $edit = fn (string $name, ?int $version) => $this->put("{$this->admin}/{$lookbook->id}", ['translations' => ['vi' => ['name' => $name]], 'slug' => 'he-ruc-ro', 'images' => [['media_id' => $media->id]], 'active' => true, 'lock_version' => $version]);
+    $edit('Hè 2026', 0)->assertSessionHasNoErrors();
+    $edit('Ghi đè', 0)->assertSessionHasErrors('lock_version');
+    $edit('Ghi đè', null)->assertSessionHasErrors('lock_version');
+    expect($lookbook->fresh())->lock_version->toBe(1)
+        ->and($lookbook->fresh()->text('name', 'vi'))->toBe('Hè 2026');
 
     $this->delete("{$this->admin}/{$lookbook->id}")->assertRedirect();
     expect(Lookbook::query()->count())->toBe(0)

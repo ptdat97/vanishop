@@ -69,11 +69,20 @@ final class TaxonomyService
 
     /**
      * @param  array{code: string, slug: string, name: string, description: string|null, status: string, position: int, logo_media_id?: int|null}  $data
+     * @param  int|null  $expectedLockVersion  phiên bản form đã mở (sửa); khác phiên bản hiện tại → StaleRecord
      */
-    public function saveBrand(array $data, ?Brand $brand = null): Brand
+    public function saveBrand(array $data, ?Brand $brand = null, ?int $expectedLockVersion = null): Brand
     {
         $brand ??= new Brand;
         $isNew = ! $brand->exists;
+        if (! $isNew) {
+            $updated = Brand::query()->whereKey($brand->id)->where('lock_version', (int) $expectedLockVersion)->increment('lock_version');
+            if ($updated === 0) {
+                throw new StaleRecord;
+            }
+            $brand->lock_version = (int) $expectedLockVersion + 1;
+            $brand->syncOriginalAttribute('lock_version');
+        }
         $brand->fill($data)->save();
         // Logo từ Thư viện ảnh: khai báo đang dùng để thư viện không cho xoá.
         if (array_key_exists('logo_media_id', $data)) {

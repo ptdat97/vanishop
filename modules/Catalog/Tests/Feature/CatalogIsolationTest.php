@@ -40,8 +40,13 @@ it('quản lý thương hiệu: tạo, sửa, chống trùng mã/slug, không xo
     $this->post('/admin/catalog/brands', $payload())->assertSessionHasErrors(['code', 'slug']);
 
     $brand = Brand::query()->where('slug', 'lumiere')->sole();
-    $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Lumière Paris']))->assertSessionHasNoErrors();
-    expect($brand->fresh()->name)->toBe('Lumière Paris');
+    $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Lumière Paris', 'lock_version' => 0]))->assertSessionHasNoErrors();
+    expect($brand->fresh())->name->toBe('Lumière Paris')->lock_version->toBe(1);
+    // Người thứ hai mở form trước lần lưu trên (phiên bản 0) → báo xung đột, không ghi đè; thiếu phiên bản → lỗi validate.
+    $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Ghi đè', 'lock_version' => 0]))->assertSessionHasErrors('lock_version');
+    $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Ghi đè']))->assertSessionHasErrors('lock_version');
+    $this->put("/admin/catalog/brands/{$brand->id}", $payload(['name' => 'Lumière Paris 2', 'lock_version' => 1]))->assertSessionHasNoErrors();
+    expect($brand->fresh())->name->toBe('Lumière Paris 2')->lock_version->toBe(2);
 
     T::product($brand->id, ['style_code' => 'LM-01']);
     $this->delete("/admin/catalog/brands/{$brand->id}")->assertSessionHasErrors('brand');

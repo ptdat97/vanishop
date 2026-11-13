@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.42 — 2026-11-13
+
+Khoá lạc quan cho thương hiệu và lookbook.
+
+### Sửa
+- Thương hiệu: sửa cần `lock_version` (form gửi kèm); hai người sửa cùng lúc → người lưu sau nhận lỗi `lock_version` (toast), không ghi đè im lặng. `TaxonomyService::saveBrand($data, $brand, $expectedLockVersion)` tăng phiên bản có điều kiện.
+- `vani.lookbook`: cùng cơ chế (trước đây chỉ tăng phiên bản, không kiểm). Form gửi `lock_version` và nhận phiên bản mới sau mỗi lần lưu.
+
+### Đổi (phá vỡ)
+- `PUT admin/catalog/brands/{brand}` và `PUT admin/plugins/vani-lookbook/{lookbook}` bắt buộc `lock_version`.
+- Kiểm tra kiến trúc: form `useAdminForm` có `lock_version` phải truyền `lockVersion`.
+
 ## 0.4.41 — 2026-11-13
 
 Admin: Toaster — hợp đồng lỗi thống nhất, lỗi HTTP/mất mạng, giới hạn số toast.

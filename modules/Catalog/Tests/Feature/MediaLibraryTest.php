@@ -188,7 +188,7 @@ it('logo thương hiệu chọn từ Thư viện ảnh: khai báo đang dùng, s
     $payload = ['code' => 'LM', 'slug' => 'lumiere', 'name' => 'Lumière', 'description' => null, 'status' => 'active', 'position' => 0];
 
     $this->put("/admin/catalog/brands/{$brand->id}", [...$payload, 'logo_media_id' => 999999])->assertSessionHasErrors('logo_media_id');
-    $this->put("/admin/catalog/brands/{$brand->id}", [...$payload, 'logo_media_id' => $logo['id']])->assertSessionHasNoErrors();
+    $this->put("/admin/catalog/brands/{$brand->id}", [...$payload, 'logo_media_id' => $logo['id'], 'lock_version' => $brand->fresh()->lock_version])->assertSessionHasNoErrors();
 
     expect(DB::table('mediables')->where(['media_id' => $logo['id'], 'mediable_type' => 'brand', 'role' => 'logo'])->exists())->toBeTrue()
         ->and($this->getJson('/api/storefront/v1/brands/lumiere')->assertOk()->json('data.logo_url'))->toContain('-w400.');

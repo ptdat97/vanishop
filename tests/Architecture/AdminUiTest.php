@@ -104,3 +104,13 @@ it('form tạo/sửa theo Admin Form Standard (useAdminForm): chống gửi lặ
         ->and($offenders)->toBe([], 'Dùng useAdminForm từ @admin/forms')
         ->and(adminUiOffenders("/\\bsyncLockVersion\\b|addEventListener\\('beforeunload'/"))->toBe([], 'Dùng useAdminForm / useLeaveGuard từ @admin/forms');
 });
+
+it('form có lock_version truyền lockVersion cho useAdminForm (lưu liên tiếp không báo nhầm xung đột)', function () {
+    $offenders = array_values(array_filter(adminUiFiles(), function (string $file): bool {
+        $source = (string) file_get_contents(base_path($file));
+
+        return str_contains($source, 'useAdminForm(') && preg_match('/^\s*lock_version:/m', $source) === 1 && ! str_contains($source, 'lockVersion:');
+    }));
+
+    expect($offenders)->toBe([]);
+});

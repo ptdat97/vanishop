@@ -101,7 +101,7 @@ it('Admin: tạo, sửa (xung đột lock_version), xoá bỏ mọi gán; gán b
     $category = T::seed(fn () => Category::factory()->create(['slug' => 'ao']));
     $this->put("/admin/catalog/categories/{$category->id}", ['slug' => 'ao', 'parent_id' => null, 'status' => 'active', 'position' => 0, 'lock_version' => $category->fresh()->lock_version,
         'translations' => ['vi' => ['name' => 'Áo']], 'extensions' => ['vani-size-chart' => ['chart' => ['chart' => (string) $chart->id]]]])->assertSessionHasNoErrors();
-    $this->put("/admin/catalog/brands/{$this->brand->id}", ['code' => $this->brand->code, 'slug' => $this->brand->slug, 'name' => $this->brand->name, 'description' => null, 'status' => 'active', 'position' => 0,
+    $this->put("/admin/catalog/brands/{$this->brand->id}", ['code' => $this->brand->code, 'slug' => $this->brand->slug, 'name' => $this->brand->name, 'description' => null, 'status' => 'active', 'position' => 0, 'lock_version' => $this->brand->fresh()->lock_version,
         'extensions' => ['vani-size-chart' => ['chart' => ['chart' => (string) $chart->id]]]])->assertSessionHasNoErrors();
     expect($this->charts->assignedChart('category', $category->id))->toBe($chart->id)
         ->and($this->charts->assignedChart('brand', $this->brand->id))->toBe($chart->id)

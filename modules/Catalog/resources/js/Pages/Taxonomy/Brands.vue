@@ -24,6 +24,7 @@ interface BrandRow {
     logo_media_id: number | null;
     status: 'active' | 'hidden';
     position: number;
+    lock_version: number;
     styles_count: number;
 }
 
@@ -42,13 +43,13 @@ const columns = [
 
 const sectionsFor = (id: number | null): ExtensionSection[] => props.extensionSections[id === null ? 'new' : String(id)] ?? [];
 const sections = computed(() => sectionsFor(editingId.value));
-const empty = () => ({ code: '', slug: '', name: '', description: '' as string | null, logo_media_id: null as number | null, status: 'active' as 'active' | 'hidden', position: 0, extensions: initialExtensionValues(sectionsFor(null)) });
+const empty = () => ({ code: '', slug: '', name: '', description: '' as string | null, logo_media_id: null as number | null, status: 'active' as 'active' | 'hidden', position: 0, lock_version: null as number | null, extensions: initialExtensionValues(sectionsFor(null)) });
 const form = useForm(empty());
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 
 function edit(brand: BrandRow): void {
     editingId.value = brand.id;
-    form.defaults({ code: brand.code, slug: brand.slug, name: brand.name, description: brand.description, logo_media_id: brand.logo_media_id, status: brand.status, position: brand.position, extensions: initialExtensionValues(sectionsFor(brand.id)) });
+    form.defaults({ code: brand.code, slug: brand.slug, name: brand.name, description: brand.description, logo_media_id: brand.logo_media_id, status: brand.status, position: brand.position, lock_version: brand.lock_version, extensions: initialExtensionValues(sectionsFor(brand.id)) });
     form.reset();
 }
 
