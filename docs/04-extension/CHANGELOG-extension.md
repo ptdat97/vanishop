@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.38 — 2026-11-13
+
+Admin: DataTable — sắp xếp theo cột, trạng thái tải, thao tác hàng loạt của trang, trạng thái trống.
+
+### Thêm
+- `DataTable`: cột `sortable` + `:sort` + `@sort` (tiêu đề là nút, có `aria-sort`; tăng → giảm → mặc định); `loading` (làm mờ, `aria-busy`); `selectable` + slot `bulk` (`selected`, `clear`) cho thao tác hàng loạt của chính trang; slot `empty`. Đổi trang/lọc → lựa chọn chỉ giữ dòng còn hiển thị.
+- `@admin/list`: `useListQuery(url)` (`visit`, `sortQuery`, `loading`) — giữ trạng thái/vị trí cuộn, bỏ tham số rỗng, đổi lọc/sắp xếp về trang 1; `nextSort`, `cleanQuery`, kiểu `ListSortState`.
+- PHP `Modules\Shared\Http\ListSort::fromRequest($request, ['khoá' => 'cột'])` → `apply($query)` / `toArray()`: chỉ nhận khoá cho phép, khoá lạ bỏ qua (thứ tự mặc định).
+- Danh sách sản phẩm sắp theo mã, trạng thái; danh sách đơn sắp theo số đơn (ngày đặt), tổng tiền. Prop trang mới `sort`.
+
 ## 0.4.37 — 2026-11-13
 
 Admin: tải tệp lên — kiểm trước khi gửi, tiến độ, thử lại.

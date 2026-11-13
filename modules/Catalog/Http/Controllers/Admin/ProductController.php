@@ -34,6 +34,7 @@ use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
 use Modules\Shared\Domain\Text\VietnameseText;
+use Modules\Shared\Http\ListSort;
 
 final class ProductController
 {
@@ -49,6 +50,7 @@ final class ProductController
         $perPage = (int) ($validated['per_page'] ?? 30);
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status');
+        $sort = ListSort::fromRequest($request, ['style_code' => 'style_code', 'status' => 'status']);
 
         $styles = Style::query()
             ->with(['translations', 'brand:id,name', 'variants.gallery.media'])
@@ -59,8 +61,7 @@ final class ProductController
             })
             ->when(is_string($status) && StyleStatus::tryFrom($status) !== null, fn ($query) => $query->where('status', $status))
             ->when(($pluginIds = $screen->filterIds('product', (array) $request->query('ext', []))) !== null, fn ($query) => $query->whereIn('id', $pluginIds))
-            ->orderByDesc('updated_at')
-            ->orderByDesc('id')
+            ->when($sort, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('updated_at')->orderByDesc('id'))
             ->paginate($perPage)
             ->withQueryString();
 
@@ -71,6 +72,7 @@ final class ProductController
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
             'filters' => ['q' => $search, 'status' => $status],
+            'sort' => $sort?->toArray(),
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
                     'views' => $viewCounts[$style->id] ?? 0,

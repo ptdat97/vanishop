@@ -128,3 +128,15 @@ it('ưu tiên đơn quá hạn lâu nhất trước mà không đổi thứ tự
         ->where('orders.0.id', $oldest->id)
         ->where('orders.1.id', $newest->id));
 });
+
+it('danh sách đơn sắp theo tổng tiền khi bấm tiêu đề cột; mặc định mới nhất trước', function () {
+    [$first, $second, $third] = [($this->place)(), ($this->place)(), ($this->place)()];
+    DB::table('orders')->where('id', $first->id)->update(['total_amount' => 900_000]);
+    DB::table('orders')->where('id', $second->id)->update(['total_amount' => 100_000]);
+    DB::table('orders')->where('id', $third->id)->update(['total_amount' => 500_000]);
+    $numbers = fn (string $query): array => array_column($this->get("{$this->url}{$query}")->assertOk()->viewData('page')['props']['orders'], 'number');
+
+    expect($numbers('?sort=total&direction=asc'))->toBe([$second->number, $third->number, $first->number])
+        ->and($numbers('?sort=total&direction=desc'))->toBe([$first->number, $third->number, $second->number])
+        ->and($numbers(''))->toBe([$third->number, $second->number, $first->number]);
+});

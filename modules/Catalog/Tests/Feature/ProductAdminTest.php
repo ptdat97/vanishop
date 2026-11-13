@@ -141,3 +141,19 @@ it('danh sách sản phẩm tìm được theo tên không dấu', function () {
     $this->get("{$this->base}?per_page=50")->assertInertia(fn (Assert $page) => $page->where('products.per_page', 50));
     $this->get("{$this->base}?per_page=101")->assertSessionHasErrors('per_page');
 });
+
+it('danh sách sản phẩm sắp theo cột được phép; khoá lạ giữ thứ tự mặc định (mới cập nhật trước)', function () {
+    T::seed(function () {
+        Style::factory()->create(['style_code' => 'B-200', 'updated_at' => now()->subDay()]);
+        Style::factory()->create(['style_code' => 'A-100', 'updated_at' => now()->subDays(2)]);
+        Style::factory()->create(['style_code' => 'C-300', 'updated_at' => now()]);
+    });
+    $codes = fn (string $query): array => $this->get("{$this->base}?{$query}")->assertOk()->viewData('page')['props']['products']['data'];
+
+    expect(array_column($codes('sort=style_code&direction=asc'), 'style_code'))->toBe(['A-100', 'B-200', 'C-300'])
+        ->and(array_column($codes('sort=style_code&direction=desc'), 'style_code'))->toBe(['C-300', 'B-200', 'A-100'])
+        ->and(array_column($codes('sort=search_text&direction=asc'), 'style_code'))->toBe(['C-300', 'B-200', 'A-100']);
+
+    $this->get("{$this->base}?sort=style_code&direction=sideways")->assertInertia(fn (Assert $page) => $page->where('sort', ['key' => 'style_code', 'direction' => 'desc']));
+    $this->get("{$this->base}?sort=search_text")->assertInertia(fn (Assert $page) => $page->where('sort', null));
+});

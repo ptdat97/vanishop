@@ -38,6 +38,7 @@ use Modules\Ordering\Http\Requests\ShippingAddressRequest;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\Code128;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
@@ -66,7 +67,8 @@ final class OrderController
         $filters = array_map(fn (mixed $value): string => is_scalar($value) ? (string) $value : '', array_replace(array_fill_keys($keys, ''), $request->only($keys)));
         $extensionFilters = (array) $request->query('ext', []);
         $scoped = [...$filters, 'ids' => $screen->filterIds('order', $extensionFilters)];
-        $page = $queries->search($scoped, $perPage);
+        $sort = ListSort::fromRequest($request, ['number' => 'orders.placed_at', 'total' => 'orders.total_amount']);
+        $page = $queries->search($scoped, $perPage, $sort);
         $ids = collect($page->items())->pluck('id')->all();
 
         // Cột và thao tác hàng loạt: plugin (AdminScreen) + module Core (slot vani.admin.order.list_columns / bulk_actions).
@@ -96,6 +98,7 @@ final class OrderController
         return Inertia::render('Ordering::Orders/Index', [
             'baseUrl' => route('admin.orders.orders.index'),
             'filters' => $filters,
+            'sort' => $sort?->toArray(),
             'stages' => OrderStage::STAGES,
             'actionableStages' => OrderStage::ACTIONABLE,
             'stageCounts' => $queries->stageCounts($scoped),

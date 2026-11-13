@@ -15,6 +15,7 @@ use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderAdjustment;
 use Modules\Ordering\Persistence\Models\OrderLine;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreClock;
 
@@ -25,16 +26,19 @@ final class OrderQueries
      * (ngày đặt Y-m-d theo giờ cửa hàng), `q` (số đơn hoặc SĐT), `ids`. Mỗi đơn có thêm thuộc tính `stage`.
      *
      * @param  array<string, mixed>  $filters  ids: giới hạn theo bộ lọc của plugin
+     * @param  ListSort|null  $sort  sắp theo cột người dùng chọn; null → hàng đợi cũ nhất trước, còn lại mới nhất trước
      * @return LengthAwarePaginator<int, Order>
      */
-    public function search(array $filters, int $perPage = 30): LengthAwarePaginator
+    public function search(array $filters, int $perPage = 30, ?ListSort $sort = null): LengthAwarePaginator
     {
         return $this->filtered($filters)
             ->select('orders.*')->selectRaw(OrderStage::sql().' as stage')
             ->with('lines')
-            ->when((int) ($filters['aged'] ?? 0) > 0 || (string) ($filters['actionable'] ?? '') === '1',
-                fn ($query) => $query->orderBy('placed_at')->orderBy('id'),
-                fn ($query) => $query->orderByDesc('placed_at')->orderByDesc('id'))
+            ->when($sort,
+                fn ($query) => $sort->apply($query, 'orders.id'),
+                fn ($query) => (int) ($filters['aged'] ?? 0) > 0 || (string) ($filters['actionable'] ?? '') === '1'
+                    ? $query->orderBy('placed_at')->orderBy('id')
+                    : $query->orderByDesc('placed_at')->orderByDesc('id'))
             ->paginate($perPage)
             ->withQueryString();
     }

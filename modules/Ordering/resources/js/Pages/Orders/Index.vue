@@ -2,6 +2,7 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FileInput from '@admin/Components/FileInput.vue';
+import { useListQuery, type ListSortState } from '@admin/list';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
@@ -24,6 +25,7 @@ type Filters = { stage: string; aged: string; actionable: string; status: string
 const props = defineProps<{
     baseUrl: string;
     filters: Filters;
+    sort: ListSortState | null;
     stages: string[];
     actionableStages: string[];
     stageCounts: Record<string, number>;
@@ -96,17 +98,19 @@ const options = (values: string[] | Record<string, string>, labels: Record<strin
 const totalCount = computed(() => Object.values(props.stageCounts).reduce((sum, count) => sum + count, 0));
 const hasActiveFilters = computed(() => Object.values(form).some((value) => value !== '') || Object.values(ext).some((value) => value !== ''));
 const columns = [
-    { key: 'number', label: 'Đơn' },
+    { key: 'number', label: 'Đơn', sortable: true },
     { key: 'customer', label: 'Khách' },
     { key: 'items', label: 'Sản phẩm' },
-    { key: 'total', label: 'Tổng', align: 'right' as const },
+    { key: 'total', label: 'Tổng', align: 'right' as const, sortable: true },
     { key: 'stage', label: 'Giai đoạn' },
     { key: 'payment_status', label: 'Thanh toán' },
 ];
 
-function search(page = 1, pageSize = props.pagination.per_page): void {
+const list = useListQuery(() => props.baseUrl);
+
+function search(page = 1, pageSize = props.pagination.per_page, sort = props.sort): void {
     selected.value = [];
-    router.get(props.baseUrl, { ...form, ext, page, per_page: pageSize }, { preserveState: true, preserveScroll: true });
+    list.visit({ ...form, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
 }
 
 function openOrder(order: { id: number }): void {
@@ -264,7 +268,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <span class="text-slate-500">Đã chọn {{ selected.length }} đơn trên trang hiện tại</span>
         <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="đơn trên trang hiện tại" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :row-label="(order) => order.number" :row-click="openOrder" empty-text="Không có đơn nào.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :row-label="(order) => order.number" :row-click="openOrder" empty-text="Không có đơn nào.">
         <template #cell-number="{ row }">
             <span class="font-mono">{{ row.number }}</span>
             <div class="text-xs text-slate-400">{{ row.placed_at }}</div>

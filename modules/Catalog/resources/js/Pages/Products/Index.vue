@@ -4,6 +4,7 @@ import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue'
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
+import { useListQuery, type ListSortState } from '@admin/list';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { labelOptions } from '@admin/options';
@@ -18,6 +19,7 @@ const props = defineProps<{
     nav: NavItem[];
     labels: CatalogLabels;
     filters: { q: string; status: string | null };
+    sort: ListSortState | null;
     products: {
         data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; skus: number; image_url: string | null; views: number }>;
         current: number;
@@ -51,15 +53,17 @@ const savingStock = ref(false);
 const columns = [
     { key: 'image', label: '', class: 'w-16' },
     { key: 'name', label: 'Sản phẩm', class: 'font-medium' },
-    { key: 'style_code', label: 'Mã', class: 'font-mono text-xs' },
+    { key: 'style_code', label: 'Mã', class: 'font-mono text-xs', sortable: true },
     { key: 'brand', label: 'Thương hiệu' },
     { key: 'skus', label: 'SKU' },
     { key: 'views', label: 'Lượt xem 30 ngày', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'status', label: 'Trạng thái' },
+    { key: 'status', label: 'Trạng thái', sortable: true },
 ];
 
-function search(page = 1, pageSize = props.products.per_page): void {
-    router.get(baseUrl.value, { q: q.value || undefined, status: status.value || undefined, ext, page: page > 1 ? page : undefined, per_page: pageSize }, { preserveState: true, replace: true });
+const list = useListQuery(() => baseUrl.value);
+
+function search(page = 1, pageSize = props.products.per_page, sort = props.sort): void {
+    list.visit({ q: q.value, status: status.value, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
 }
 
 function changePageSize(pageSize: number): void {
@@ -160,7 +164,7 @@ function savePrice(url: string): void {
         <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
         <ExtensionActions :actions="extensions.actions" :ids="selected" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" empty-text="Không có sản phẩm nào.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, products.per_page, next)" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" empty-text="Không có sản phẩm nào.">
         <template #cell-image="{ row }">
             <img v-if="row.image_url" :src="row.image_url" alt="" class="h-12 w-10 rounded object-cover" />
             <div v-else class="h-12 w-10 rounded bg-slate-100" />
