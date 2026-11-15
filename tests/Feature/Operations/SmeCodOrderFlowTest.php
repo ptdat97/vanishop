@@ -5,7 +5,6 @@ use Illuminate\Testing\TestResponse;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Ordering\Persistence\Models\Order;
-use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -17,8 +16,7 @@ require_once __DIR__.'/../../../modules/Checkout/Tests/Feature/CheckoutTestHelpe
 
 beforeEach(function () {
     ['s' => $this->s] = C::store(stock: 20);
-    // Cửa hàng chọn "CSKH gọi xác nhận mọi đơn": đơn COD dừng ở "Cần xác nhận".
-    T::seed(fn () => app(Settings::class)->set('vani.cod', 'auto_confirm_mode', 'off'));
+    // Mặc định (ADR-046 chốt ①): đơn COD dừng ở "Cần xác nhận" để nhân viên gọi/nhắn xác nhận.
 
     $api = '/api/storefront/v1';
     $created = $this->postJson("{$api}/carts")->assertCreated();

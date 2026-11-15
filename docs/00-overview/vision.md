@@ -91,7 +91,7 @@ flowchart LR
 5. **Một đơn — một vận đơn — một kho** là mặc định; tách kiện, nhiều kho là `vani.warehouse` ([ADR-042](../19-adr/ADR-042-inventory-warehouse-plugins.md), [ADR-043](../19-adr/ADR-043-fulfillment-stays-in-core.md)).
 6. **Nhãn và lý do bằng tiếng Việt của nghề:** "Cần xác nhận", "Chờ đóng gói", "Đã đẩy lên hãng", "Bom hàng", "Hoàn về"; mọi thao tác đổi trạng thái ngoài trình tự bắt buộc lý do.
 
-Trạng thái thực thi: tài liệu **Accepted**, code theo đợt V1–V4 ([stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046)).
+Trạng thái thực thi: **Implemented** (Core 0.4.53–0.4.54) — đợt V1–V4 ([stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046)); G9 kiểm bằng `tests/Feature/Operations/StaffedCheckpointsTest`.
 
 ## 3. Mục tiêu (Goals)
 
