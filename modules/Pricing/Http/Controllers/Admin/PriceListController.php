@@ -4,26 +4,30 @@ declare(strict_types=1);
 
 namespace Modules\Pricing\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\PriceListService;
+use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
+use Modules\Pricing\Http\Requests\BulkPricesRequest;
 use Modules\Pricing\Http\Requests\PriceListRequest;
 use Modules\Pricing\Http\Requests\PricesRequest;
-use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Shared\Support\StoreClock;
 
 final class PriceListController
 {
+    /** Số SKU mỗi trang ở trang làm việc bảng giá (mặc định là giá trị đầu). */
+    private const PER_PAGE_OPTIONS = [50, 100, 200];
+
     public function home(): RedirectResponse
     {
         Gate::authorize('pricing.view');
@@ -50,6 +54,7 @@ final class PriceListController
                     'customer_group' => $groupNames[$list->customer_group_id] ?? null,
                     'priority' => $list->priority,
                     'status' => $list->status,
+                    'state' => PriceListWorkspace::state($list),
                     'starts_at' => StoreClock::format($list->starts_at),
                     'ends_at' => StoreClock::format($list->ends_at),
                     'prices_count' => $list->prices_count,
@@ -95,33 +100,67 @@ final class PriceListController
     }
 
     /**
-     * Lưới giá theo mã sản phẩm: mọi variant của style với giá hiện tại trong bảng giá.
+     * Trang làm việc của bảng giá (đợt 1): mọi SKU trong bảng (tìm, phân trang), sửa giá trong ô, chọn nhiều để áp giá
+     * hàng loạt hoặc gỡ; thêm sản phẩm. `?style=` (đường dẫn cũ) được hiểu như ô tìm.
      */
-    public function prices(PriceList $priceList, Request $request, VariantDirectory $variants): Response
+    public function prices(PriceList $priceList, Request $request, PriceListWorkspace $workspace): Response
     {
         Gate::authorize('pricing.view');
-
-        $styleCode = trim((string) $request->query('style', ''));
-        $rows = $styleCode === '' ? [] : $variants->ofStyleCode($styleCode);
-        $prices = Price::query()->where('price_list_id', $priceList->id)->where('min_qty', 1)
-            ->whereIn('variant_id', array_map(fn ($variant): int => $variant->id, $rows))->get()->keyBy('variant_id');
+        $text = trim((string) ($request->query('q') ?? $request->query('style', '')));
+        $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
+        $page = $workspace->rows($priceList, $text, max(1, (int) $request->query('page', 1)), $perPage, route('admin.pricing.price-lists.prices', $priceList));
 
         return Inertia::render('Pricing::PriceLists/Prices', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
             'labels' => __('pricing::labels'),
-            'priceList' => ['id' => $priceList->id, 'code' => $priceList->code, 'name' => $priceList->name, 'type' => $priceList->type->value],
-            'styleCode' => $styleCode,
-            'styleName' => $rows[0]->styleName ?? null,
-            'rows' => array_map(fn ($variant): array => [
-                'variant_id' => $variant->id,
-                'sku' => $variant->sku,
-                'variant_label' => VariantOptionsText::label($variant->options),
-                'status' => $variant->status,
-                'amount' => $prices->get($variant->id)?->amount,
-                'compare_at_amount' => $prices->get($variant->id)?->compare_at_amount,
-            ], $rows),
+            'priceList' => [
+                'id' => $priceList->id, 'code' => $priceList->code, 'name' => $priceList->name, 'type' => $priceList->type->value,
+                'state' => PriceListWorkspace::state($priceList),
+                'starts_at' => StoreClock::format($priceList->starts_at), 'ends_at' => StoreClock::format($priceList->ends_at),
+            ],
+            'q' => $text,
+            'rows' => $page->items(),
+            'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'summary' => $workspace->summary($priceList),
+            'capPercent' => intdiv($workspace->capBasisPoints(), 100),
             'canManage' => Gate::allows('pricing.manage'),
         ]);
+    }
+
+    /**
+     * Tìm sản phẩm để thêm vào bảng giá (JSON cho hộp thoại "Thêm sản phẩm").
+     */
+    public function candidates(PriceList $priceList, Request $request, PriceListWorkspace $workspace): JsonResponse
+    {
+        Gate::authorize('pricing.manage');
+        $text = (string) $request->validate(['q' => ['nullable', 'string', 'max:100']])['q'];
+
+        return response()->json(['data' => $workspace->candidates($priceList, $text)]);
+    }
+
+    public function previewBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): JsonResponse
+    {
+        return response()->json(['data' => $workspace->preview($priceList, $request->variantIds($priceList, $workspace), $request->rule())]);
+    }
+
+    public function applyBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): RedirectResponse
+    {
+        $result = $workspace->apply($priceList, $request->variantIds($priceList, $workspace), $request->rule());
+        $message = __('pricing::messages.bulk_applied', ['count' => $result['changed']]);
+        if ($result['skipped'] > 0) {
+            $message .= ' '.__('pricing::messages.bulk_skipped', ['count' => $result['skipped']]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function removePrices(PriceList $priceList, Request $request, PriceListWorkspace $workspace): RedirectResponse
+    {
+        Gate::authorize('pricing.manage');
+        $ids = (array) $request->validate(['variant_ids' => ['required', 'array', 'max:'.PriceListWorkspace::MAX_BULK], 'variant_ids.*' => ['integer', 'min:1']])['variant_ids'];
+
+        return back()->with('success', __('pricing::messages.bulk_removed', ['count' => $workspace->remove($priceList, array_map('intval', $ids))]));
     }
 
     public function updatePrices(PriceList $priceList, PricesRequest $request, PriceListService $service): RedirectResponse

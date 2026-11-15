@@ -90,11 +90,62 @@ it('từ chối giá gốc không lớn hơn giá bán, số âm và biến th�
     $this->put("{$this->base}/{$list->id}/prices", ['prices' => [['variant_id' => 999_999, 'amount' => 1000]]])->assertSessionHasErrors('prices.0.variant_id');
 });
 
-it('lưới giá hiển thị biến thể theo mã sản phẩm', function () {
-    $list = P::priceList(['code' => 'base'], [$this->s->id => [590_000]]);
+it('trang làm việc: mọi SKU đang có trong bảng giá, tìm theo tên/mã/SKU, giá niêm yết, % giảm, cảnh báo; tóm tắt cả bảng', function () {
+    $other = T::product($this->brand->id, ['style_code' => 'LM-DR02']);
+    [$dress] = P::variants($other, ['S']);
+    P::priceList(['code' => 'base'], [$this->s->id => [500_000], $this->m->id => [500_000], $dress->id => [800_000]]);
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10, 'starts_at' => now()->addDay()], [$this->s->id => [350_000], $this->m->id => [0], $dress->id => [800_000]]);
 
-    $this->get("{$this->base}/{$list->id}/prices?style=LM-SH01")->assertInertia(fn (Assert $page) => $page
-        ->component('Pricing::PriceLists/Prices')->has('rows', 2)->where('rows.0.amount', 590000)->where('rows.1.amount', null));
+    $this->get("{$this->base}/{$sale->id}/prices")->assertInertia(fn (Assert $page) => $page->component('Pricing::PriceLists/Prices')
+        ->where('priceList.state', 'scheduled')
+        ->has('rows', 3)
+        ->where('summary', ['products' => 2, 'variants' => 3, 'warnings' => ['zero' => 1, 'over_cap' => 1, 'not_lower' => 1]])
+        ->where('rows', fn ($rows) => collect($rows)->keyBy('variant_id')->pipe(fn ($rows) => $rows[$this->s->id]['list_amount'] === 500_000 && $rows[$this->s->id]['percent'] === 30 && $rows[$this->s->id]['warnings'] === []
+            && $rows[$this->m->id]['warnings'] === ['zero', 'over_cap'] && $rows[$dress->id]['warnings'] === ['not_lower'])));
+    $this->get("{$this->base}/{$sale->id}/prices?q=LM-DR02")->assertInertia(fn (Assert $page) => $page->has('rows', 1)->where('rows.0.variant_id', $dress->id));
+    $this->get($this->base)->assertInertia(fn (Assert $page) => $page->where('priceLists', fn ($lists) => collect($lists)->firstWhere('id', $sale->id)['state'] === 'scheduled'));
+});
+
+it('thêm sản phẩm: tìm theo tên/mã, xem trước giảm 30% (làm tròn 1.000đ), áp dụng ghi lịch sử giá; SKU chưa có giá niêm yết bị bỏ qua', function () {
+    P::priceList(['code' => 'base'], [$this->s->id => [499_000]]);
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
+    $rule = ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 30, 'round_to' => 1000];
+
+    $this->getJson("{$this->base}/{$sale->id}/candidates?q=lm-sh")->assertOk()->assertJsonPath('data.0.style_id', $this->style->id)->assertJsonPath('data.0.variants', 2)->assertJsonPath('data.0.in_list', 0);
+    $this->postJson("{$this->base}/{$sale->id}/bulk/preview", $rule)->assertOk()
+        ->assertJsonPath('data.summary', ['total' => 2, 'changed' => 1, 'skipped' => 1, 'warnings' => ['no_base' => 1]])
+        ->assertJsonPath('data.rows.0.new_amount', 349_000)->assertJsonPath('data.rows.0.percent', 30);
+    $this->post("{$this->base}/{$sale->id}/bulk", $rule)->assertSessionHas('success', 'Đã cập nhật giá 1 SKU. Bỏ qua 1 SKU chưa có giá niêm yết.');
+
+    expect(Price::query()->where('price_list_id', $sale->id)->pluck('amount', 'variant_id')->all())->toBe([$this->s->id => 349_000])
+        ->and(PriceHistory::query()->where('price_list_id', $sale->id)->count())->toBe(1);
+});
+
+it('áp giá cho SKU đã chọn hoặc toàn bộ bảng: đồng giá 0đ được (chỉ cảnh báo), giảm số tiền không âm; giá gạch còn lớn hơn được giữ; gỡ SKU', function () {
+    P::priceList(['code' => 'base'], [$this->s->id => [300_000], $this->m->id => [300_000]]);
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], [$this->s->id => [250_000, 400_000], $this->m->id => [250_000]]);
+
+    $this->postJson("{$this->base}/{$sale->id}/bulk/preview", ['scope' => 'variants', 'variant_ids' => [$this->m->id], 'mode' => 'fixed', 'value' => 0, 'round_to' => 0])
+        ->assertOk()->assertJsonPath('data.summary.warnings', ['zero' => 1, 'over_cap' => 1]);
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'variants', 'variant_ids' => [$this->m->id], 'mode' => 'fixed', 'value' => 0, 'round_to' => 0])->assertSessionHasNoErrors();
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'all', 'q' => 'LM-SH01-S', 'mode' => 'amount', 'value' => 500_000, 'round_to' => 1000])->assertSessionHasNoErrors();
+
+    expect(Price::query()->where('price_list_id', $sale->id)->get()->keyBy('variant_id')->map(fn (Price $price): array => [$price->amount, $price->compare_at_amount])->all())
+        ->toBe([$this->s->id => [0, 400_000], $this->m->id => [0, null]]);
+
+    $this->post("{$this->base}/{$sale->id}/remove", ['variant_ids' => [$this->s->id, $this->m->id]])->assertSessionHas('success', 'Đã gỡ 2 SKU khỏi bảng giá.');
+    expect(Price::query()->where('price_list_id', $sale->id)->count())->toBe(0);
+});
+
+it('áp giá hàng loạt: quyền sửa giá và dữ liệu hợp lệ', function () {
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale'], []);
+
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 120, 'round_to' => 1000])->assertSessionHasErrors('value');
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'variants', 'mode' => 'percent', 'value' => 10, 'round_to' => 500])->assertSessionHasErrors(['variant_ids', 'round_to']);
+    $this->actingAs(T::staff(['admin.access', 'pricing.view']), 'staff');
+    $this->post("{$this->base}/{$sale->id}/bulk", ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 10, 'round_to' => 1000])->assertForbidden();
+    $this->getJson("{$this->base}/{$sale->id}/candidates?q=LM")->assertForbidden();
+    $this->post("{$this->base}/{$sale->id}/remove", ['variant_ids' => [$this->s->id]])->assertForbidden();
 });
 
 it('quyền chỉ xem không sửa được giá', function () {

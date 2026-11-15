@@ -13,4 +13,7 @@ return [
     'deleted' => 'Deleted.',
     'prices_saved' => 'Updated :count prices.',
     'amount_negative' => 'Price cannot be negative.',
+    'bulk_applied' => 'Updated prices of :count SKUs.',
+    'bulk_skipped' => 'Skipped :count SKUs without a list price.',
+    'bulk_removed' => 'Removed :count SKUs from the price list.',
 ];

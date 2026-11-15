@@ -13,4 +13,7 @@ return [
     'deleted' => 'Đã xoá.',
     'prices_saved' => 'Đã cập nhật :count giá.',
     'amount_negative' => 'Giá không được âm.',
+    'bulk_applied' => 'Đã cập nhật giá :count SKU.',
+    'bulk_skipped' => 'Bỏ qua :count SKU chưa có giá niêm yết.',
+    'bulk_removed' => 'Đã gỡ :count SKU khỏi bảng giá.',
 ];

@@ -1,0 +1,304 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Pricing\Application;
+
+use Illuminate\Pagination\LengthAwarePaginator;
+use Modules\Catalog\Contracts\Data\VariantData;
+use Modules\Catalog\Contracts\Data\VariantOptionsText;
+use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Pricing\Domain\BulkPriceRule;
+use Modules\Pricing\Domain\PriceListType;
+use Modules\Pricing\Persistence\Models\Price;
+use Modules\Pricing\Persistence\Models\PriceList;
+
+/**
+ * Trang làm việc của một bảng giá (đợt 1 — thao tác gọn): mọi SKU đang có trong bảng (tìm, phân trang), tìm sản phẩm để
+ * thêm, xem trước và áp giá hàng loạt (giảm %, giảm số tiền, đồng giá) tính từ giá niêm yết. Ghi giá luôn qua
+ * PriceListService::setPrices (lịch sử giá, audit, PriceChanged). Cảnh báo không chặn: 0đ, không thấp hơn giá niêm yết,
+ * giảm vượt mức trần khuyến mãi của cửa hàng.
+ */
+final class PriceListWorkspace
+{
+    /** Số dòng xem trước trả về (tóm tắt tính trên mọi dòng). */
+    public const PREVIEW_ROWS = 100;
+
+    /** Tối đa SKU mỗi lần áp giá hàng loạt — giới hạn của PricesRequest. */
+    public const MAX_BULK = 2000;
+
+    public function __construct(
+        private readonly VariantDirectory $variants,
+        private readonly PriceListService $lists,
+    ) {}
+
+    /**
+     * Trạng thái hiển thị: đang chạy / sắp chạy / đã hết / tắt.
+     */
+    public static function state(PriceList $list): string
+    {
+        return match (true) {
+            $list->status !== 'active' => 'disabled',
+            $list->ends_at !== null && $list->ends_at->isPast() => 'expired',
+            $list->starts_at !== null && $list->starts_at->isFuture() => 'scheduled',
+            default => 'running',
+        };
+    }
+
+    public function capBasisPoints(): int
+    {
+        return (int) config('vanishop.promotion.max_discount_bp', 10_000);
+    }
+
+    /**
+     * SKU trong bảng giá, theo thứ tự tên sản phẩm → mã → trục; `$text` tìm theo SKU, mã, tên sản phẩm.
+     *
+     * @return list<int>
+     */
+    public function variantIds(PriceList $list, string $text = ''): array
+    {
+        $inList = array_flip(Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all());
+        if ($inList === []) {
+            return [];
+        }
+
+        return array_values(array_filter(array_column($this->variants->searchIndex($text), 'id'), fn (int $id): bool => isset($inList[$id])));
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    public function rows(PriceList $list, string $text, int $page, int $perPage, string $path): LengthAwarePaginator
+    {
+        $ids = $this->variantIds($list, $text);
+        $slice = array_slice($ids, ($page - 1) * $perPage, $perPage);
+
+        return new LengthAwarePaginator($this->describe($list, $slice), count($ids), $perPage, $page, ['path' => $path, 'query' => array_filter(['q' => $text])]);
+    }
+
+    /**
+     * Tóm tắt cả bảng giá: số sản phẩm, số SKU, số SKU theo từng cảnh báo.
+     *
+     * @return array{products: int, variants: int, warnings: array<string, int>}
+     */
+    public function summary(PriceList $list): array
+    {
+        $prices = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->pluck('amount', 'variant_id')->map(fn ($amount): int => (int) $amount)->all();
+        $base = $this->listAmounts(array_keys($prices), $list);
+        $warnings = [];
+        foreach ($prices as $variantId => $amount) {
+            foreach ($this->rowWarnings($list, $base[$variantId] ?? null, $amount) as $warning) {
+                $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
+            }
+        }
+        $styles = array_unique(array_map(fn (VariantData $variant): int => $variant->styleId, $this->variants->find(array_keys($prices))));
+
+        return ['products' => count($styles), 'variants' => count($prices), 'warnings' => $warnings];
+    }
+
+    /**
+     * Sản phẩm để thêm vào bảng giá: tìm theo tên, mã, SKU; tối đa 30 sản phẩm.
+     *
+     * @return list<array{style_id: int, style_code: string, name: string, variants: int, in_list: int, list_min: int|null, list_max: int|null}>
+     */
+    public function candidates(PriceList $list, string $text): array
+    {
+        if (trim($text) === '') {
+            return [];
+        }
+        $byStyle = [];
+        foreach ($this->variants->searchIndex($text) as $row) {
+            $byStyle[$row['style_id']][] = $row['id'];
+            if (count($byStyle) > 30) {
+                unset($byStyle[$row['style_id']]);
+                break;
+            }
+        }
+        $ids = array_merge(...array_values($byStyle ?: [[]]));
+        $found = $this->variants->find($ids);
+        $base = $this->listAmounts($ids, $list, forceBase: true);
+        $inList = array_flip(Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $ids)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all());
+
+        $result = [];
+        foreach ($byStyle as $styleId => $variantIds) {
+            $first = $found[$variantIds[0]] ?? null;
+            $amounts = array_values(array_filter(array_map(fn (int $id): ?int => $base[$id] ?? null, $variantIds), fn (?int $amount): bool => $amount !== null));
+            $result[] = [
+                'style_id' => (int) $styleId, 'style_code' => (string) $first?->styleCode, 'name' => (string) $first?->styleName,
+                'variants' => count($variantIds), 'in_list' => count(array_filter($variantIds, fn (int $id): bool => isset($inList[$id]))),
+                'list_min' => $amounts === [] ? null : min($amounts), 'list_max' => $amounts === [] ? null : max($amounts),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * SKU của các sản phẩm đã chọn (mọi biến thể, cả ngừng bán).
+     *
+     * @param  list<int>  $styleIds
+     * @return list<int>
+     */
+    public function variantIdsOfStyles(array $styleIds): array
+    {
+        $ids = [];
+        foreach ($this->variants->ofStyles($styleIds) as $variants) {
+            foreach ($variants as $variant) {
+                $ids[] = $variant->id;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Xem trước: giá niêm yết → giá mới, % giảm, cảnh báo từng dòng; tóm tắt trên mọi dòng.
+     *
+     * @param  list<int>  $variantIds
+     * @return array{rows: list<array<string, mixed>>, summary: array{total: int, changed: int, skipped: int, warnings: array<string, int>}}
+     */
+    public function preview(PriceList $list, array $variantIds, BulkPriceRule $rule): array
+    {
+        $computed = $this->compute($list, $variantIds, $rule);
+        $warnings = [];
+        foreach ($computed as $row) {
+            foreach ($row['warnings'] as $warning) {
+                $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
+            }
+        }
+        $found = $this->variants->find(array_slice(array_keys($computed), 0, self::PREVIEW_ROWS));
+        $rows = [];
+        foreach (array_slice($computed, 0, self::PREVIEW_ROWS, true) as $variantId => $row) {
+            $variant = $found[$variantId] ?? null;
+            $rows[] = [
+                'variant_id' => $variantId, 'name' => (string) $variant?->styleName, 'sku' => (string) $variant?->sku,
+                'variant_label' => $variant === null ? '' : VariantOptionsText::label($variant->options),
+                ...$row,
+            ];
+        }
+
+        return ['rows' => $rows, 'summary' => [
+            'total' => count($computed),
+            'changed' => count(array_filter($computed, fn (array $row): bool => $row['new_amount'] !== null && $row['new_amount'] !== $row['current_amount'])),
+            'skipped' => count(array_filter($computed, fn (array $row): bool => $row['new_amount'] === null)),
+            'warnings' => $warnings,
+        ]];
+    }
+
+    /**
+     * Áp giá: dòng không tính được (chưa có giá niêm yết) bị bỏ qua. Giá gốc (gạch) đang có được giữ khi còn lớn hơn giá mới.
+     *
+     * @param  list<int>  $variantIds
+     * @return array{changed: int, skipped: int, warnings: array<string, int>}
+     */
+    public function apply(PriceList $list, array $variantIds, BulkPriceRule $rule): array
+    {
+        $computed = $this->compute($list, $variantIds, $rule);
+        $compareAt = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', array_keys($computed))->pluck('compare_at_amount', 'variant_id')->all();
+        $rows = [];
+        $warnings = [];
+        foreach ($computed as $variantId => $row) {
+            if ($row['new_amount'] === null) {
+                continue;
+            }
+            $compare = isset($compareAt[$variantId]) ? (int) $compareAt[$variantId] : null;
+            $rows[] = ['variant_id' => $variantId, 'amount' => $row['new_amount'], 'compare_at_amount' => $compare !== null && $compare > $row['new_amount'] ? $compare : null];
+            foreach ($row['warnings'] as $warning) {
+                $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
+            }
+        }
+
+        return ['changed' => $rows === [] ? 0 : $this->lists->setPrices($list, $rows), 'skipped' => count($computed) - count($rows), 'warnings' => $warnings];
+    }
+
+    /**
+     * Gỡ SKU khỏi bảng giá (lịch sử giá ghi lại).
+     *
+     * @param  list<int>  $variantIds
+     */
+    public function remove(PriceList $list, array $variantIds): int
+    {
+        $existing = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all();
+
+        return $existing === [] ? 0 : $this->lists->setPrices($list, array_map(fn (int $id): array => ['variant_id' => $id, 'amount' => null, 'compare_at_amount' => null], $existing));
+    }
+
+    /**
+     * @param  list<int>  $variantIds
+     * @return list<array<string, mixed>>
+     */
+    private function describe(PriceList $list, array $variantIds): array
+    {
+        $found = $this->variants->find($variantIds);
+        $prices = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->get()->keyBy('variant_id');
+        $base = $this->listAmounts($variantIds, $list);
+        $rows = [];
+        foreach ($variantIds as $id) {
+            $variant = $found[$id] ?? null;
+            $price = $prices->get($id);
+            $amount = $price?->amount === null ? null : (int) $price->amount;
+            $rows[] = [
+                'variant_id' => $id, 'style_code' => (string) $variant?->styleCode, 'name' => (string) $variant?->styleName, 'sku' => (string) $variant?->sku,
+                'variant_label' => $variant === null ? '' : VariantOptionsText::label($variant->options), 'status' => (string) $variant?->status,
+                'list_amount' => $base[$id] ?? null, 'amount' => $amount, 'compare_at_amount' => $price?->compare_at_amount === null ? null : (int) $price->compare_at_amount,
+                'percent' => $list->type === PriceListType::Base ? null : BulkPriceRule::discountPercent($base[$id] ?? null, $amount),
+                'warnings' => $this->rowWarnings($list, $base[$id] ?? null, $amount),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  list<int>  $variantIds
+     * @return array<int, array{list_amount: int|null, current_amount: int|null, new_amount: int|null, percent: int|null, warnings: list<string>}>
+     */
+    private function compute(PriceList $list, array $variantIds, BulkPriceRule $rule): array
+    {
+        $variantIds = array_values(array_unique($variantIds));
+        $base = $this->listAmounts($variantIds, $list, forceBase: true);
+        $current = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->pluck('amount', 'variant_id')->all();
+        $rows = [];
+        foreach ($variantIds as $id) {
+            $listAmount = $base[$id] ?? null;
+            $new = $rule->apply($listAmount);
+            $rows[$id] = [
+                'list_amount' => $listAmount, 'current_amount' => isset($current[$id]) ? (int) $current[$id] : null, 'new_amount' => $new,
+                'percent' => BulkPriceRule::discountPercent($listAmount, $new),
+                'warnings' => $new === null ? [BulkPriceRule::WARN_NO_BASE] : $this->rowWarnings($list, $listAmount, $new),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function rowWarnings(PriceList $list, ?int $listAmount, ?int $amount): array
+    {
+        if ($amount === null || $list->type === PriceListType::Base) {
+            return $amount === 0 ? [BulkPriceRule::WARN_ZERO] : [];
+        }
+
+        return BulkPriceRule::warnings($listAmount, $amount, $this->capBasisPoints());
+    }
+
+    /**
+     * Giá niêm yết (bảng `base`, mua từ 1) theo SKU. Bảng giá đang xem là `base` thì không so với chính nó, trừ khi cần làm
+     * gốc tính giá (`forceBase`).
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, int>
+     */
+    private function listAmounts(array $variantIds, PriceList $list, bool $forceBase = false): array
+    {
+        if ($variantIds === [] || ($list->type === PriceListType::Base && ! $forceBase)) {
+            return [];
+        }
+        $baseId = PriceList::query()->where('code', ListPriceSync::BASE_CODE)->value('id');
+
+        return $baseId === null ? [] : Price::query()->where('price_list_id', $baseId)->where('min_qty', 1)->whereIn('variant_id', $variantIds)
+            ->pluck('amount', 'variant_id')->map(fn ($amount): int => (int) $amount)->all();
+    }
+}

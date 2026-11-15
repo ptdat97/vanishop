@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.55 — 2026-11-15
+
+Admin bảng giá thao tác gọn — đợt 1: trang làm việc của bảng giá, áp giá hàng loạt có xem trước.
+
+### Thêm
+- Trang làm việc `/{admin}/pricing/price-lists/{id}/prices` (thay trang "Nhập giá" theo từng mã sản phẩm): mọi SKU đang có trong bảng giá (tìm theo tên/mã/SKU, phân trang 50/100/200), giá niêm yết, % giảm, cảnh báo theo dòng; tóm tắt cả bảng (số sản phẩm, SKU, số cảnh báo); sửa giá/giá gạch trong ô, lưu các dòng đã sửa; chọn nhiều → "Áp giá…" hoặc "Gỡ khỏi bảng giá"; "Áp giá cho toàn bộ N SKU (khớp tìm kiếm)". `?style=` cũ được hiểu như ô tìm.
+- "Thêm sản phẩm": tự tìm khi gõ (tên, mã, SKU), chọn nhiều sản phẩm (giữ lựa chọn khi tìm tiếp) → bước cách tính giá.
+- Áp giá hàng loạt (`Pricing\Domain\BulkPriceRule`): **Giảm %**, **Giảm số tiền**, **Đồng giá**, tính từ giá niêm yết (bảng `base`); làm tròn tới 1.000đ (tuỳ chọn); không âm. **Xem trước** (giá niêm yết → hiện tại → mới, % giảm) trước khi áp. SKU chưa có giá niêm yết bị bỏ qua (trừ đồng giá). Ghi qua `PriceListService::setPrices` (lịch sử giá, audit, `PriceChanged`); giá gạch đang có được giữ khi còn lớn hơn giá mới.
+- Cảnh báo **không chặn** (Owner 2026-11-15 — giá sale có thể về 0đ): giá 0đ, không thấp hơn giá niêm yết, giảm vượt mức trần khuyến mãi (`vanishop.promotion.max_discount_bp`), chưa có giá niêm yết.
+- Danh sách bảng giá: nhãn **Đang chạy / Sắp chạy / Đã hết hạn / Tắt**; bấm dòng → trang làm việc; "Thông tin" → form.
+- Route Admin: `GET …/price-lists/{id}/candidates`, `POST …/bulk/preview`, `POST …/bulk`, `POST …/remove` (quyền `pricing.manage`).
+
 ## 0.4.54 — 2026-11-15
 
 Chốt ② của [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md): vận đơn lên hãng khi nhân viên bấm "Đẩy lên hãng" (đợt V2).
