@@ -74,7 +74,7 @@ sequenceDiagram
 
 ## 5. COD và chuyển khoản thủ công (Core)
 
-- **COD**: đặt hàng → `payment_status = cod_pending` → xác nhận đơn (tự động hoặc CSKH, tuỳ cấu hình) → `confirmed`. Giao thành công → `cod_collected` (khi hãng báo hoặc đối soát xác nhận). Giới hạn giá trị COD theo cấu hình.
+- **COD**: đặt hàng → `payment_status = cod_pending` → xác nhận đơn (tự động hoặc CSKH, tuỳ cấu hình) → `confirmed`. Giao thành công → `cod_collected` (khi hãng báo hoặc đối soát xác nhận). Shop tự giao, hãng không báo, hoặc đơn hoàn tất ngoài trình tự → nhân viên bấm **Đã thu tiền** (danh sách Thanh toán hoặc thẻ Thanh toán trên trang đơn; quyền `payments.confirm`, ghi chú bắt buộc; đơn đã huỷ thì từ chối). Đã thu rồi thì hãng báo giao sau đó không ghi nhận lần hai (0.4.50). Giới hạn giá trị COD theo cấu hình.
 - **Chuyển khoản thủ công**: hiển thị số tài khoản của cửa hàng + nội dung = mã đơn; nhân viên có quyền `payments.confirm` xác nhận đã nhận tiền (audit).
 
 ## 6. Phương thức theo thị trường VN

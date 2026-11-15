@@ -12,4 +12,5 @@ return [
     'capture_failed' => 'Cổng thanh toán từ chối thu khoản đã giữ. Kiểm tra lại với cổng hoặc liên hệ khách.',
     'captured' => 'Đã thu tiền.',
     'expired' => 'Đơn đã hết hạn thanh toán.',
+    'cod_collected' => 'Đã ghi nhận thu tiền khi giao.',
 ];

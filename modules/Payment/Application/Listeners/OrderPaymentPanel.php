@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Payment\Application\GatewayRegistry;
+use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
@@ -17,12 +18,12 @@ use Modules\Shared\Support\StoreClock;
 
 /**
  * Thẻ "Thanh toán" trên trang đơn Admin (slot vani.admin.order.sidebar) — 0.3.96: nhãn trạng thái, thao tác ngay trên trang
- * đơn: xác nhận đã nhận chuyển khoản (bước tiếp theo khi đơn chờ thanh toán), hoàn tiền, đánh dấu đã chuyển trả. Giao dịch
+ * đơn: xác nhận đã nhận chuyển khoản (bước tiếp theo khi đơn chờ thanh toán), ghi nhận đã thu COD, hoàn tiền, đánh dấu đã chuyển trả. Giao dịch
  * gộp vào lịch sử đơn (slot vani.admin.order.timeline).
  */
 final class OrderPaymentPanel
 {
-    public function __construct(private readonly GatewayRegistry $gateways, private readonly MoneyFormatter $money) {}
+    public function __construct(private readonly GatewayRegistry $gateways, private readonly MoneyFormatter $money, private readonly PaymentService $payments) {}
 
     /**
      * @return array{title: string, rows: list<array{label: string, value: string}>, link: array{label: string, url: string}, actions: list<array<string, mixed>>}
@@ -46,6 +47,10 @@ final class OrderPaymentPanel
                 && in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed, PaymentStatus::Expired], true)) {
                 $actions[] = ['key' => "{$payment->id}-confirm", 'label' => 'Xác nhận đã nhận tiền', 'url' => "{$base}/{$payment->id}/confirm", 'primary' => true, 'tone' => 'primary',
                     'fields' => [['key' => 'note', 'label' => 'Ghi chú (mã giao dịch ngân hàng, người kiểm tra…)', 'required' => true]]];
+            }
+            if (Gate::allows('payments.confirm') && $order->orderStatus !== 'cancelled' && $this->payments->canCollectCodManually($payment)) {
+                $actions[] = ['key' => "{$payment->id}-collect", 'label' => 'Đã thu tiền '.$money($payment->amount), 'url' => "{$base}/{$payment->id}/collect", 'tone' => 'secondary',
+                    'fields' => [['key' => 'note', 'label' => 'Ghi chú (người thu, shop tự giao, hãng chưa báo giao…)', 'required' => true]]];
             }
             if (Gate::allows('payments.refund')) {
                 if ($payment->status->hasCollected() && $payment->refunded_amount < $payment->amount) {

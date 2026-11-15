@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.50 — 2026-11-15
+
+Admin Thanh toán: ghi nhận đã thu COD, mở đơn từ danh sách, tìm theo số đơn.
+
+### Thêm
+- `PaymentService::collectCodManually()` + `POST /{admin}/payment/payments/{payment}/collect` (quyền `payments.confirm`, ghi chú bắt buộc): nhân viên ghi nhận đã thu tiền khi giao — shop tự giao, hãng không báo giao thành công, đơn hoàn tất ngoài trình tự. Đơn → `cod_collected`; đơn đã huỷ → từ chối. Nút "Đã thu tiền" ở danh sách Thanh toán và thẻ Thanh toán trên trang đơn.
+- Danh sách Thanh toán: số đơn mở trang đơn, ô tìm theo số đơn (`?q=`), gợi ý khi dòng không có thao tác (chờ khách trả qua cổng, tự thu khi vận đơn rời kho).
+
+### Sửa
+- `collectCod()` bỏ qua khi khoản đã thu: hãng báo giao sau khi nhân viên đã ghi nhận không còn ghi giao dịch "Đã thu COD" lần hai vào lịch sử đơn.
+
 ## 0.4.49 — 2026-11-13
 
 Sản phẩm không theo dõi tồn: lưới tồn, danh sách sản phẩm, kho do hệ thống ngoài quản lý.

@@ -6,17 +6,19 @@ import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-const props = defineProps<{
+type Props = {
     baseUrl: string;
     labels: { payment_status: Record<string, string> };
     status: string | null;
+    search: string;
     statuses: string[];
     payments: Array<{
         id: number;
         order_number: string | null;
+        order_url: string;
         gateway: string;
         status: string;
         amount: number;
@@ -24,6 +26,7 @@ const props = defineProps<{
         created_at: string | null;
         expires_at: string | null;
         can_confirm: boolean;
+        can_collect: boolean;
         can_capture: boolean;
         can_refund: boolean;
     }>;
@@ -31,7 +34,9 @@ const props = defineProps<{
     can: { confirm: boolean; refund: boolean };
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     perPageOptions: number[];
-}>();
+};
+
+const props = defineProps<Props>();
 
 const label = (status: string): string => props.labels.payment_status[status] ?? status;
 const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' =>
@@ -46,9 +51,25 @@ const columns = [
 ];
 const refunding = ref<null | { id: number; max: number }>(null);
 const refundForm = useForm({ amount: 0, reason: '', idempotency_key: '' });
+const search = ref(props.search);
 
 function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...(status ? { status } : {}), page, per_page: perPage }, { preserveState: true });
+    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), page, per_page: perPage }, { preserveState: true });
+}
+
+function hasActions(row: Props['payments'][number]): boolean {
+    return ((row.can_confirm || row.can_collect || row.can_capture) && props.can.confirm) || (row.can_refund && props.can.refund);
+}
+
+function hint(row: Props['payments'][number]): string | null {
+    if (row.status === 'pending' && !row.can_confirm && !row.can_collect) {
+        return 'Chờ khách thanh toán qua cổng';
+    }
+    if (row.status === 'authorized') {
+        return 'Tự thu khi vận đơn rời kho';
+    }
+
+    return null;
 }
 
 function goToPage(page: number): void {
@@ -57,6 +78,18 @@ function goToPage(page: number): void {
 
 function changePageSize(perPage: number): void {
     filter(props.status ?? '', undefined, perPage);
+}
+
+async function collectPayment(row: { id: number; amount: number }): Promise<void> {
+    const note = await confirmAction({
+        title: 'Ghi nhận đã thu tiền khi giao?',
+        message: 'Dùng khi shop tự giao hoặc hãng vận chuyển chưa báo giao thành công. Hãng báo sau đó sẽ không ghi nhận lần hai.',
+        confirmLabel: 'Đã thu tiền',
+        reason: { label: 'Ghi chú', placeholder: 'vd. shipper shop đã nộp tiền', required: true },
+    });
+    if (note !== false) {
+        router.post(`${props.baseUrl}/${row.id}/collect`, { note }, { preserveScroll: true });
+    }
 }
 
 async function capturePayment(id: number): Promise<void> {
@@ -94,7 +127,12 @@ async function completeRefund(id: number): Promise<void> {
 <template>
     <Head title="Thanh toán" />
     <p class="mb-2 text-sm text-slate-500">Thanh toán</p>
-    <PageHeader title="Thanh toán" subtitle="Xác nhận chuyển khoản thủ công, hoàn tiền. Tổng hoàn không vượt số đã thu." />
+    <PageHeader title="Thanh toán" subtitle="Xác nhận chuyển khoản, ghi nhận đã thu COD, hoàn tiền. Tổng hoàn không vượt số đã thu." />
+
+    <form class="mb-3 flex max-w-md gap-2" @submit.prevent="filter(status ?? '')">
+        <input v-model="search" :class="inputClass" type="search" placeholder="Tìm theo số đơn, vd. VN2611-000006" />
+        <button type="submit" :class="secondaryButton">Tìm</button>
+    </form>
 
     <div class="mb-4 flex flex-wrap gap-2">
         <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">Tất cả</button>
@@ -109,7 +147,10 @@ async function completeRefund(id: number): Promise<void> {
         </div>
     </section>
 
-    <DataTable :columns="columns" :rows="payments" empty-text="Chưa có thanh toán nào.">
+    <DataTable :columns="columns" :rows="payments" :empty-text="search ? 'Không có thanh toán của đơn này.' : 'Chưa có thanh toán nào.'">
+        <template #cell-order_number="{ row }">
+            <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
+        </template>
         <template #cell-amount="{ row }">
             <MoneyText :amount="row.amount" />
             <div v-if="row.refunded_amount" class="text-xs text-slate-500">đã hoàn <MoneyText :amount="row.refunded_amount" /></div>
@@ -119,9 +160,13 @@ async function completeRefund(id: number): Promise<void> {
             <div v-if="row.status === 'pending' && row.expires_at" class="mt-1 text-xs text-slate-400">hết hạn {{ row.expires_at }}</div>
         </template>
         <template #cell-actions="{ row }">
-            <button v-if="row.can_confirm && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="confirmPayment(row.id)">Xác nhận đã nhận tiền</button>
-            <button v-if="row.can_capture && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="capturePayment(row.id)">Thu tiền</button>
-            <button v-if="row.can_refund && can.refund" type="button" class="ml-3 text-indigo-600 hover:underline" @click="openRefund(row)">Hoàn tiền</button>
+            <div v-if="hasActions(row)" class="flex flex-wrap justify-end gap-3">
+                <button v-if="row.can_confirm && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="confirmPayment(row.id)">Xác nhận đã nhận tiền</button>
+                <button v-if="row.can_collect && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="collectPayment(row)">Đã thu tiền</button>
+                <button v-if="row.can_capture && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="capturePayment(row.id)">Thu tiền</button>
+                <button v-if="row.can_refund && can.refund" type="button" class="text-indigo-600 hover:underline" @click="openRefund(row)">Hoàn tiền</button>
+            </div>
+            <span v-else-if="hint(row)" class="text-xs text-slate-400">{{ hint(row) }}</span>
         </template>
     </DataTable>
     <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />

@@ -450,12 +450,43 @@ final class PaymentService implements Payments
         DB::transaction(function () use ($orderId, $amount, $shipmentReference): void {
             $payment = Payment::query()->where('order_id', $orderId)->lockForUpdate()->get()
                 ->first(fn (Payment $candidate): bool => $this->collectsOnDelivery($candidate->gateway_code));
-            if ($payment === null || ! $this->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
+            if ($payment === null || $payment->status->hasCollected() || ! $this->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
                 return;
             }
 
             $this->capture($payment, Money::of($amount, $payment->currency_code), 'carrier', 'cod_collected');
         });
+    }
+
+    /**
+     * Nhân viên ghi nhận đã thu tiền khi giao (shop tự giao, hãng không báo giao thành công, đơn hoàn tất ngoài trình tự).
+     * Idempotent: đã thu thì bỏ qua; hãng báo giao sau đó không ghi nhận lần hai. Đơn đã huỷ thì từ chối.
+     */
+    public function collectCodManually(int $paymentId, string $note): void
+    {
+        DB::transaction(function () use ($paymentId, $note): void {
+            $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
+            if ($payment->status->hasCollected()) {
+                return;
+            }
+            if (! $this->canCollectCodManually($payment) || $this->orders->find($payment->order_id)?->status === OrderStatus::Cancelled) {
+                throw PaymentRejected::invalidState($payment->status->value);
+            }
+
+            $this->recordTransaction($payment, 'cod_collected', "manual:{$payment->public_id}", $payment->amount, GatewayCallback::PAID, ['note' => $note]);
+            $this->capture($payment, Money::of($payment->amount, $payment->currency_code), 'staff', 'cod_collected');
+            $this->audit->record('payment.cod_collected_manually', 'payment', $payment->id, ['amount' => $payment->amount, 'note' => $note]);
+        });
+    }
+
+    /**
+     * Khoản thu khi giao đang chờ — hiện nút "Đã thu tiền" ở Admin (đơn huỷ thì khoản này đã bị huỷ theo đơn).
+     */
+    public function canCollectCodManually(Payment $payment): bool
+    {
+        return $payment->status === PaymentStatus::Pending
+            && $payment->amount > 0
+            && $this->collectsOnDelivery($payment->gateway_code);
     }
 
     /**

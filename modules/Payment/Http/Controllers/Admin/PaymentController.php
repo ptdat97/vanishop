@@ -33,12 +33,16 @@ final class PaymentController
         return redirect()->route('admin.payment.payments.index');
     }
 
-    public function index(Request $request, OrderReader $orders, GatewayRegistry $gateways): Response
+    public function index(Request $request, OrderReader $orders, GatewayRegistry $gateways, PaymentService $service): Response
     {
         Gate::authorize('payments.view');
         $status = $request->query('status');
+        $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = Payment::query()->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $page = Payment::query()
+            ->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))
+            ->when($search !== '', fn ($query) => $query->where('order_id', $orders->findByNumber($search)?->id ?? 0))
+            ->orderByDesc('id')->paginate($perPage)->withQueryString();
         $payments = collect($page->items());
         $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
         $refunds = Refund::query()->whereIn('payment_id', Payment::query()->select('id'))->where('status', 'requested')->orderBy('id')->get();
@@ -47,10 +51,12 @@ final class PaymentController
             'baseUrl' => route('admin.payment.payments.index'),
             'labels' => __('payment::labels'),
             'status' => $status,
+            'search' => $search,
             'statuses' => array_column(PaymentStatus::cases(), 'value'),
             'payments' => $payments->map(fn (Payment $payment): array => [
                 'id' => $payment->id,
                 'order_number' => $numbers[$payment->order_id] ?? null,
+                'order_url' => route('admin.orders.orders.show', ['order' => $payment->order_id]),
                 'gateway' => $gateways->get($payment->gateway_code)?->label() ?? $payment->gateway_code,
                 'status' => $payment->status->value,
                 'amount' => $payment->amount,
@@ -59,6 +65,7 @@ final class PaymentController
                 'expires_at' => StoreClock::format($payment->expires_at),
                 'can_confirm' => in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed, PaymentStatus::Expired], true)
                     && ($gateways->get($payment->gateway_code)?->capabilities()->manualConfirmation ?? false),
+                'can_collect' => $service->canCollectCodManually($payment),
                 'can_capture' => $payment->status === PaymentStatus::Authorized && $gateways->get($payment->gateway_code) instanceof CapturesLater,
                 'can_refund' => $payment->status->hasCollected() && $payment->refunded_amount < $payment->amount,
             ])->all(),
@@ -82,6 +89,18 @@ final class PaymentController
         $payments->confirmManually($payment->id, $data['note']);
 
         return back()->with('success', __('payment::messages.confirmed'));
+    }
+
+    /**
+     * Ghi nhận đã thu tiền khi giao (COD) — shop tự giao hoặc hãng không báo giao thành công.
+     */
+    public function collect(Payment $payment, Request $request, PaymentService $payments): RedirectResponse
+    {
+        Gate::authorize('payments.confirm');
+        $data = $request->validate(['note' => ['required', 'string', 'max:255']]);
+        $payments->collectCodManually($payment->id, $data['note']);
+
+        return back()->with('success', __('payment::messages.cod_collected'));
     }
 
     /**

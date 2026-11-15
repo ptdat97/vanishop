@@ -4,11 +4,13 @@ use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderTransitionRejected;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
+use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Persistence\Models\Payment;
@@ -199,4 +201,37 @@ it('thu tiền khi giao là capability của cổng, không phải mã "cod": c�
     expect($order->payment_status)->toBe('cod_pending')
         ->and($order->order_status->value)->toBe('processing')
         ->and((int) DB::table('shipments')->where('order_id', $order->id)->value('cod_amount'))->toBe(330_000);
+});
+
+it('COD: nhân viên ghi nhận đã thu tiền (shop tự giao) — cần quyền xác nhận và ghi chú; hãng báo giao sau đó không ghi nhận lần hai', function () {
+    ($this->order)('cod')->assertCreated();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    $base = '/admin/payment';
+    $this->actingAs(T::staff(['admin.access', 'payments.view']), 'staff');
+    $this->post("{$base}/payments/{$payment->id}/collect", ['note' => 'Shipper shop nộp'])->assertForbidden();
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.confirm']), 'staff');
+    $this->post("{$base}/payments/{$payment->id}/collect", [])->assertSessionHasErrors('note');
+
+    $this->post("{$base}/payments/{$payment->id}/collect", ['note' => 'Shipper shop nộp'])->assertSessionHasNoErrors();
+    app(PaymentService::class)->collectCod($payment->order_id, 330_000, 'shipment:1');
+
+    expect($payment->fresh()->status->value)->toBe('paid')
+        ->and(($this->orderRow)()->payment_status)->toBe('cod_collected')
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->pluck('gateway_transaction_id')->all())->toBe(["manual:{$payment->public_id}"]);
+    $this->get("{$base}/payments")->assertInertia(fn ($page) => $page->where('payments.0.can_collect', false)->where('payments.0.can_refund', true));
+});
+
+it('COD: đơn đã huỷ thì không ghi nhận đã thu được; danh sách tìm theo số đơn', function () {
+    ($this->order)('cod')->assertCreated();
+    $order = ($this->orderRow)();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.confirm']), 'staff');
+    $this->get("/admin/payment/payments?q={$order->number}")->assertInertia(fn ($page) => $page->has('payments', 1)->where('payments.0.can_collect', true)->where('payments.0.order_url', route('admin.orders.orders.show', ['order' => $order->id])));
+    $this->get('/admin/payment/payments?q=VN0000-999999')->assertInertia(fn ($page) => $page->has('payments', 0));
+    app(OrderCommands::class)->cancel($order->id, 'Khách đổi ý', 'staff');
+
+    $this->post("/admin/payment/payments/{$payment->id}/collect", ['note' => 'x'])->assertSessionHasErrors('business');
+
+    expect($payment->fresh()->status->value)->toBe('cancelled')
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(0);
 });

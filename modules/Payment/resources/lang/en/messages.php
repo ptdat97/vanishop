@@ -12,4 +12,5 @@ return [
     'capture_failed' => 'The gateway refused to capture the authorized amount. Check with the gateway or contact the customer.',
     'captured' => 'Payment captured.',
     'expired' => 'The payment window for this order has expired.',
+    'cod_collected' => 'Cash on delivery recorded as collected.',
 ];
