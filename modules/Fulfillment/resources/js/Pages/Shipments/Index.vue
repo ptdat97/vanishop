@@ -8,7 +8,7 @@ import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction, promptFields } from '@admin/confirm';
 import { codeOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, reactive } from 'vue';
 
 const props = defineProps<{
@@ -20,6 +20,7 @@ const props = defineProps<{
     shipments: Array<{
         id: number;
         order_number: string | null;
+        order_url: string;
         carrier: string;
         manual: boolean;
         service_code: string | null;
@@ -125,7 +126,7 @@ async function cancel(id: number): Promise<void> {
 
     <DataTable :columns="columns" :rows="shipments" :row-class="() => 'align-top'" empty-text="Chưa có vận đơn.">
         <template #cell-order_number="{ row }">
-            {{ row.order_number }}
+            <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
             <div class="font-sans text-xs text-slate-400">{{ row.items }} sản phẩm</div>
         </template>
         <template #cell-carrier="{ row }">

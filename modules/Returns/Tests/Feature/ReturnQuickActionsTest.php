@@ -117,3 +117,16 @@ it('hàng loạt "Đã nhận hàng (hỏng)": ghi tình trạng hỏng cho mọ
         ->and(DB::table('return_lines')->whereNotNull('restock_location_id')->count())->toBe(0)
         ->and(($this->onHand)())->toBe($stock);
 });
+
+it('danh sách: hiện số đơn (mở trang đơn), tìm theo số đơn hoặc số yêu cầu', function () {
+    $orderA = ($this->deliveredOrder)();
+    $a = ($this->requestReturn)($orderA);
+    $b = ($this->requestReturn)(($this->deliveredOrder)());
+
+    $byOrder = $this->get('/admin/returns/returns?q='.strtolower($orderA->number));
+    $byNumber = $this->get("/admin/returns/returns?q={$b->number}");
+
+    $byOrder->assertInertia(fn ($page) => $page->has('returns', 1)->where('returns.0.id', $a->id)->where('returns.0.order_number', $orderA->number)->where('returns.0.order_url', route('admin.orders.orders.show', ['order' => $orderA->id])));
+    $byNumber->assertInertia(fn ($page) => $page->has('returns', 1)->where('returns.0.id', $b->id));
+    $this->get('/admin/returns/returns?q=KHONG-CO')->assertInertia(fn ($page) => $page->has('returns', 0));
+});

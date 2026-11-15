@@ -10,11 +10,15 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Inventory\Application\ReservationService;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Application\OrderCommands;
+use Modules\Ordering\Application\OrderStatusChanger;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Payment\Application\GatewayRegistry;
+use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Promotion\Contracts\PromotionRule;
 use Modules\Promotion\Tests\Fixtures\MinSubtotalFixtureRule;
@@ -343,5 +347,37 @@ it('không theo dõi tồn + kho do hệ thống ngoài quản lý: chỉ bù �
     ($this->place)();
     expect(DB::table('stock_levels')->where('variant_id', $this->s->id)->where('location_id', $own->id)->first())->on_hand->toBe(1)->reserved->toBe(1)
         ->and(DB::table('stock_levels')->where('variant_id', $this->s->id)->where('location_id', $this->location->id)->exists())->toBeFalse();
+    ($this->assertInvariants)();
+});
+
+it('hoàn tất ngoài trình tự trước khi giao: trừ tồn đúng 1, vận đơn mở bị huỷ; COD ghi nhận tay một lần', function () {
+    [$order] = ($this->place)();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    ($this->system)(fn () => app(OrderStatusChanger::class)->change($order->fresh(), OrderStatus::Completed, 'khách nhận tại cửa hàng'));
+    expect($payment->fresh()->status->value)->toBe('pending');
+
+    ($this->system)(fn () => app(PaymentService::class)->collectCodManually($payment->id, 'thu tại quầy'));
+    ($this->system)(fn () => app(PaymentService::class)->collectCodManually($payment->id, 'bấm lần hai'));
+
+    expect(($this->onHand)())->toBe(9)
+        ->and($order->fresh()->order_status->value)->toBe('completed')
+        ->and($order->fresh()->payment_status)->toBe('cod_collected')
+        ->and(Shipment::query()->sole()->status->value)->toBe('cancelled')
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(1);
+    ($this->assertInvariants)();
+});
+
+it('hoàn tất ngoài trình tự khi hàng đang giao: không trừ tồn lần hai; hãng báo giao sau đó vẫn thu COD đúng một lần', function () {
+    [$order] = ($this->place)();
+    $shipment = Shipment::query()->sole();
+    ($this->ship)($shipment, ShipmentStatus::PickedUp, ShipmentStatus::InTransit);
+    ($this->system)(fn () => app(OrderStatusChanger::class)->change($order->fresh(), OrderStatus::Completed, 'khách báo đã nhận'));
+
+    ($this->ship)($shipment, ShipmentStatus::Delivered);
+
+    expect(($this->onHand)())->toBe(9)
+        ->and($order->fresh()->order_status->value)->toBe('completed')
+        ->and($order->fresh()->payment_status)->toBe('cod_collected')
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(1);
     ($this->assertInvariants)();
 });

@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.51 — 2026-11-15
+
+Admin vận hành: mở đơn từ Vận đơn và Đổi/trả, tìm đổi/trả theo số đơn; bất biến đơn hoàn tất ngoài trình tự.
+
+### Thêm
+- Danh sách Vận đơn: số đơn là liên kết sang trang đơn (`order_url`).
+- Danh sách Đổi/trả: cột Đơn (liên kết sang trang đơn), ô tìm theo số yêu cầu hoặc số đơn (`?q=`, không phân biệt hoa/thường).
+- Test bất biến: đơn hoàn tất ngoài trình tự trước khi giao (trừ tồn đúng 1, vận đơn mở bị huỷ, COD ghi nhận tay một lần) và khi hàng đang giao (không trừ tồn lần hai, hãng báo giao sau đó thu COD đúng một lần).
+
 ## 0.4.50 — 2026-11-15
 
 Admin Thanh toán: ghi nhận đã thu COD, mở đơn từ danh sách, tìm theo số đơn.

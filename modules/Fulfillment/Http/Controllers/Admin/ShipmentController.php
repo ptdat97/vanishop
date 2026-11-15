@@ -73,6 +73,7 @@ final class ShipmentController
             'shipments' => $shipments->map(fn (Shipment $shipment): array => [
                 'id' => $shipment->id,
                 'order_number' => $numbers[$shipment->order_id] ?? null,
+                'order_url' => route('admin.orders.orders.show', ['order' => $shipment->order_id]),
                 'carrier' => $registry->carrier($shipment->carrier_code)?->label() ?? $shipment->carrier_code,
                 'manual' => ! ($registry->carrier($shipment->carrier_code)?->capabilities()->autoBooking ?? false),
                 'service_code' => $shipment->service_code,

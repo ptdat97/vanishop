@@ -54,13 +54,14 @@ function queriesFor(string $url): int
     return $count;
 }
 
-it('vận đơn và thanh toán: 31 bản ghi → trang 1 có 30, trang 2 có 1; đổi số dòng; lọc trạng thái giữ khi chuyển trang; số đơn đúng từng dòng', function () {
+it('vận đơn và thanh toán: 31 bản ghi → trang 1 có 30, trang 2 có 1; đổi số dòng; lọc trạng thái giữ khi chuyển trang; số đơn đúng từng dòng, mở được trang đơn', function () {
     $orders = placeOrders(31, $this->s->id);
     $latest = Order::query()->withoutGlobalScopes()->find(end($orders))->number;
 
     foreach (['/admin/fulfillment/shipments' => 'shipments', '/admin/payment/payments' => 'payments'] as $url => $prop) {
         $this->get($url)->assertInertia(fn (Assert $page) => $page->has($prop, 30)
             ->where("{$prop}.0.order_number", $latest)
+            ->where("{$prop}.0.order_url", route('admin.orders.orders.show', ['order' => end($orders)]))
             ->where('pagination.total', 31)->where('pagination.last_page', 2));
         $this->get("{$url}?page=2")->assertInertia(fn (Assert $page) => $page->has($prop, 1)->where('pagination.page', 2));
         $this->get("{$url}?per_page=50")->assertInertia(fn (Assert $page) => $page->has($prop, 31)->where('pagination.per_page', 50));
