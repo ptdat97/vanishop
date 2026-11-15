@@ -17,6 +17,7 @@ use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerQueries;
 use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Application\CustomerStats;
+use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Extension\Contracts\AdminScreen;
@@ -62,6 +63,19 @@ final class CustomerController
         ]);
     }
 
+    /**
+     * Nhân viên thêm ghi chú CSKH (trang khách, thẻ "Ghi chú CSKH" trên trang đơn).
+     */
+    public function addNote(string $customer, Request $request, CustomerQueries $queries, CustomerNotes $notes): RedirectResponse
+    {
+        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        $model = $queries->byPublicId($customer) ?? abort(404);
+        $data = $request->validate(['note' => ['required', 'string', 'max:500']]);
+        $notes->add($model->id, $data['note'], 'staff');
+
+        return back()->with('success', __('customer::messages.note_added'));
+    }
+
     public function show(string $customer, Request $request, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
@@ -80,6 +94,8 @@ final class CustomerController
                 'merged_into' => $model->merged_into_id === null ? null : Customer::query()->whereKey($model->merged_into_id)->value('public_id'),
             ],
             'segment' => ['customer_group_id' => $model->customer_group_id, 'tags' => $segments->tagsOf($model->id), 'groups' => $segments->groups()],
+            // Ghi chú CSKH (nhân viên + plugin, EP v3 X6).
+            'notes' => app(CustomerNotes::class)->latest($model->id),
             'addresses' => $addresses->all($model->id),
             'consents' => $consents->all($model->id),
             'stats' => $stats->of($model),

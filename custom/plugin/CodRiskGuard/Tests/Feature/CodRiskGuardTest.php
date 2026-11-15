@@ -3,7 +3,12 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Contracts\CustomerNotes;
+use Modules\Customer\Contracts\CustomerSegments;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Domain\ShipmentStatus;
+use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -75,4 +80,20 @@ it('lịch sử hoàn về theo SĐT: dưới ngưỡng là trung bình, từ ng
 
     T::seed(fn () => app(Settings::class)->set(CodRiskGuardServiceProvider::ID, 'returned_threshold', 1));
     expect($risk()[0])->toMatchArray(['level' => 'high', 'label' => 'Hoàn về 1 lần']);
+});
+
+it('đơn hoàn về: khách được gắn nhãn "bom-hang" và có ghi chú CSKH (EP v3 X6)', function () {
+    C::autoConfirmCod();
+    $order = ($this->place)();
+    $shipment = Shipment::query()->where('order_id', $order->id)->sole();
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () use ($shipment) {
+        $service = app(FulfillmentService::class);
+        $service->book($shipment->id, 'T1');
+        foreach ([ShipmentStatus::PickedUp, ShipmentStatus::Returning, ShipmentStatus::Returned] as $status) {
+            $service->updateStatus($shipment->id, $status, "t:{$status->value}", 'staff');
+        }
+    });
+
+    expect(app(CustomerSegments::class)->segmentOf($order->customer_id)->tags)->toBe(['bom-hang'])
+        ->and(app(CustomerNotes::class)->latest($order->customer_id)[0])->toMatchArray(['note' => "Đơn {$order->number} bị hoàn về (khách không nhận).", 'source' => 'system:vani.cod-risk-guard']);
 });

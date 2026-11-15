@@ -138,7 +138,7 @@ R26: mỗi đợt làm **cùng** plugin tham chiếu (plugin thật trong repo, 
 | **X5** ✅ 0.4.63 | `Payments` mở `collectCod`/`collectCodManually`/`paymentId`; `RefundPayout`; `Reconciliations` + hàng đợi "Đối soát lệch" | `vani.bank-statement` 1.0.0 (mới), kênh chuyển trả mẫu của `vani.hello-world`; `vani.cod-reconciliation` dùng `collectCod` + `Reconciliations` khi làm | P1 |
 | **X3** ✅ 0.4.61 | `CarrierAssignment`, `PackingSlipTemplate`, `ReturnPickup` + `ReturnPickups` | `vani.carrier-routing` 1.0.0 (mới), mẫu A6 của `vani.hello-world`; `ReturnPickup` mới có hãng giả trong test — GHN thật chờ mở lại kết nối ngoài | P2 |
 | **X4** ✅ 0.4.62 | `BulkPriceMode`, `PriceRounding`, `vani.pricing.bulk.warnings`. **Chưa làm:** giá theo số lượng (`min_qty`) — đổi giá dòng giỏ/snapshot đơn, cần ADR + Owner duyệt | `vani.cost-price` 1.0.0 (mới) | P2 |
-| **X6** | `CustomerSegments` (ghi), `CustomerNotes` | `vani.loyalty`, `vani.cod-risk-guard` | P2 |
+| **X6** ✅ 0.4.64 | `CustomerSegments` (ghi: `tag`/`untag`/`assignGroup`), `CustomerNotes` + thẻ "Ghi chú CSKH" trên trang đơn | `vani.cod-risk-guard` 1.1.0 (nhãn `bom-hang` + ghi chú khi đơn hoàn về); `vani.loyalty` dùng khi làm | P2 |
 | **X7** | `BackorderPolicy`, `IncomingStock` — sau ADR | `vani.preorder` | P3 |
 
 Mỗi đợt: cập nhật [extension-point-catalog](../04-extension/extension-point-catalog.md) (§1–§5), snapshot public API, [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md), contract test trong `Modules\<Ctx>\Testing`, tài liệu plugin trong `docs/05-plugin/contracts`.

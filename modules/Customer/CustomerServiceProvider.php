@@ -11,15 +11,18 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\CustomerAccountService;
+use Modules\Customer\Application\CustomerNoteService;
 use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Application\CustomerSessionService;
+use Modules\Customer\Application\Listeners\OrderCustomerNotesPanel;
 use Modules\Customer\Application\Listeners\RefreshCustomerStats;
 use Modules\Customer\Application\Listeners\RememberPreferredLocale;
 use Modules\Customer\Application\OtpSenders\EmailOtpSender;
 use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
 use Modules\Customer\Contracts\CustomerAccounts;
+use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Contracts\CustomerSegments;
 use Modules\Customer\Contracts\CustomerSessions;
@@ -30,6 +33,7 @@ use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
+use Modules\Extension\Facades\Hook;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderLinesCancelled;
@@ -58,6 +62,8 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         // Phân khúc khách: một instance mỗi request (cache nhóm khách khi tính giá nhiều lần).
         $this->app->scoped(CustomerSegmentService::class);
         $this->app->alias(CustomerSegmentService::class, CustomerSegments::class);
+        // EP v3 X6: ghi chú CSKH theo khách.
+        $this->app->bind(CustomerNotes::class, CustomerNoteService::class);
         $this->app->bind(CustomerGroupDirectory::class, fn ($app): CustomerGroupDirectory => $app->make(CustomerSegmentService::class));
         $this->app->bind(CustomerSessions::class, CustomerSessionService::class);
         $this->app->bind(CustomerAccounts::class, CustomerAccountService::class);
@@ -93,6 +99,7 @@ final class CustomerServiceProvider extends ModuleServiceProvider
 
         Event::listen(OrderPlaced::class, RefreshCustomerStats::class);
         Event::listen(OrderPlaced::class, RememberPreferredLocale::class);
+        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderCustomerNotesPanel::class)($order), priority: 120);
         Event::listen(OrderCancelled::class, RefreshCustomerStats::class);
         Event::listen(OrderLinesCancelled::class, RefreshCustomerStats::class);
 

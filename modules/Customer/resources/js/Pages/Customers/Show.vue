@@ -62,7 +62,13 @@ const props = defineProps<{
     can: { merge: boolean; anonymize: boolean; segment: boolean };
     segment: { customer_group_id: number | null; tags: string[]; groups: Array<{ id: number; code: string; name: string }> };
     extensions: ExtensionDetail & { id: number };
+    /** Ghi chú CSKH (nhân viên + plugin, EP v3 X6). */
+    notes: Array<{ note: string; source: string; at: string | null }>;
 }>();
+const noteForm = useForm({ note: '' });
+function addNote(): void {
+    noteForm.post(`${props.baseUrl}/${props.customer.id}/notes`, { preserveScroll: true, onSuccess: () => noteForm.reset() });
+}
 
 const orderColumns = [
     { key: 'number', label: 'Đơn', class: 'font-mono text-xs' },
@@ -115,6 +121,18 @@ async function anonymize(): Promise<void> {
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             <ExtensionTabs :tabs="extensions.tabs" />
+            <section class="rounded-lg border border-slate-200 bg-white p-4" data-customer-notes>
+                <h2 class="mb-2 font-semibold">Ghi chú CSKH</h2>
+                <form v-if="can.segment" class="mb-3 flex gap-2" @submit.prevent="addNote">
+                    <input v-model="noteForm.note" :class="inputClass" maxlength="500" placeholder="vd. khách hẹn nhận sau 18h" aria-label="Ghi chú CSKH" />
+                    <button type="submit" :class="secondaryButton" :disabled="noteForm.processing || !noteForm.note.trim()">Thêm</button>
+                </form>
+                <p v-if="!notes.length" class="text-sm text-slate-500">Chưa có ghi chú.</p>
+                <div v-for="(note, index) in notes" :key="index" class="border-t border-slate-100 py-1.5 text-sm">
+                    {{ note.note }}
+                    <div class="text-xs text-slate-400">{{ note.at }}<template v-if="note.source !== 'staff'"> · {{ note.source }}</template></div>
+                </div>
+            </section>
             <section class="rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="mb-3 font-semibold">Đơn hàng gần đây</h2>
                 <DataTable :columns="orderColumns" :rows="orders" :row-key="(order) => order.number" empty-text="Chưa có đơn." bare>

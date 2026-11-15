@@ -28,4 +28,5 @@ return [
     'group_saved' => 'Đã lưu nhóm khách.',
     'group_deleted' => 'Đã xoá nhóm khách.',
     'deletion_blocked' => 'Chưa xoá được tài khoản vì còn việc đang xử lý: :items. Vui lòng chờ hoàn tất hoặc liên hệ cửa hàng.',
+    'note_added' => 'Đã thêm ghi chú.',
 ];

@@ -111,6 +111,41 @@ final class CustomerSegmentService implements CustomerGroupDirectory, CustomerSe
         unset($this->groupCache[$customer->id]);
     }
 
+    public function tag(int $customerId, string $tag, string $source): void
+    {
+        $tag = self::normalizeTags([$tag])[0] ?? '';
+        if ($tag === '' || DB::table('customer_tags')->where('customer_id', $customerId)->where('tag', $tag)->exists()) {
+            return;
+        }
+        if (count($this->tagsOf($customerId)) >= self::MAX_TAGS) {
+            throw ValidationException::withMessages(['tags' => __('customer::messages.too_many_tags', ['max' => self::MAX_TAGS])]);
+        }
+        DB::table('customer_tags')->insertOrIgnore(['customer_id' => $customerId, 'tag' => $tag, 'created_at' => now()]);
+        $this->audit->record('customer.tagged', 'customer', $customerId, ['tag' => $tag, 'source' => $source]);
+    }
+
+    public function untag(int $customerId, string $tag, string $source): void
+    {
+        $tag = self::normalizeTags([$tag])[0] ?? '';
+        if ($tag !== '' && DB::table('customer_tags')->where('customer_id', $customerId)->where('tag', $tag)->delete() > 0) {
+            $this->audit->record('customer.untagged', 'customer', $customerId, ['tag' => $tag, 'source' => $source]);
+        }
+    }
+
+    public function assignGroup(int $customerId, ?int $groupId, string $source): void
+    {
+        if ($groupId !== null && ! CustomerGroup::query()->whereKey($groupId)->exists()) {
+            throw ValidationException::withMessages(['customer_group_id' => __('customer::messages.group_not_found')]);
+        }
+        $before = Customer::query()->whereKey($customerId)->value('customer_group_id');
+        if ($before === $groupId) {
+            return;
+        }
+        Customer::query()->whereKey($customerId)->update(['customer_group_id' => $groupId, 'updated_at' => now()]);
+        unset($this->groupCache[$customerId]);
+        $this->audit->record('customer.group_changed', 'customer', $customerId, ['from' => $before, 'to' => $groupId, 'source' => $source]);
+    }
+
     /**
      * @param  list<string>  $tags
      * @return list<string>

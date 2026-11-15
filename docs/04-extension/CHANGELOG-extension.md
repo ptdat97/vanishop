@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.64 — 2026-11-16
+
+EP v3 đợt X6 — khách hàng và CSKH ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+
+### Thêm
+- `CustomerSegments` (ghi): `tag(customerId, tag, source)`, `untag(...)`, `assignGroup(customerId, ?groupId, source)` — nhãn chuẩn hoá dạng slug, không trùng, audit kèm nguồn (`staff` | `system:<id plugin>`).
+- Service contract **`CustomerNotes`** (`add(customerId, note, source)`, `latest(customerId, limit)`) + bảng `customer_notes`: khu "Ghi chú CSKH" trên trang khách (nhân viên thêm, `POST /{admin}/customers/{customer}/notes`, quyền `customers.segment`) và thẻ "Ghi chú CSKH" trên trang đơn (slot `vani.admin.order.sidebar`, 3 ghi chú gần nhất + thêm ghi chú).
+- `vani.cod-risk-guard` 1.1.0: đơn hoàn về → khách gắn nhãn `bom-hang` + ghi chú CSKH (cấu hình bật/tắt).
+
 ## 0.4.63 — 2026-11-16
 
 EP v3 đợt X5 — tiền: đối soát và chuyển trả ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).

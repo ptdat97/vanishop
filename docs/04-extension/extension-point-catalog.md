@@ -89,6 +89,8 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `ShipmentReader` | Vận đơn của một đơn (Storefront, panel Admin). **Implemented**. Ghi nhận trạng thái đi qua webhook chung/Admin, chưa công bố `ShipmentRecorder` | Fulfillment |
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
+| `CustomerSegments` | Đọc nhóm/nhãn của khách; từ 0.4.64 ghi: `tag`, `untag`, `assignGroup` (nguồn + audit). **Implemented** (EP v3 X6) | Customer |
+| `CustomerNotes` | Ghi chú CSKH theo khách (nhân viên + plugin), hiện ở trang khách và trang đơn. **Implemented** (0.4.64, EP v3 X6) | Customer |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
 | `PageSeo` | Trang storefront khai báo URL tương ứng theo ngôn ngữ + ngôn ngữ đã dịch (`alternates`), hoặc `noindex()`; layout sinh canonical/hreflang/robots/nút chuyển ngôn ngữ. **Implemented** (0.3.61, ADR-038) | Storefront |
 | `LinkResolver` | Phân giải `LinkTarget` → `ResolvedLink {url, label, exists}` theo ngôn ngữ, theo lô; loại đang có, tìm đối tượng. **Implemented** (0.3.58) | Storefront |
