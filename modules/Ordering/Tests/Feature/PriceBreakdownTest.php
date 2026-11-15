@@ -20,6 +20,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store(); // base S 300.000
     P::priceList(['code' => 'sale-he', 'type' => 'sale', 'priority' => 10], [$this->s->id => [240_000, 300_000]]);
     C::promotion(['name' => 'Giảm 10% toàn shop', 'action_type' => 'percent_off', 'action_config' => ['basis_points' => 1000], 'priority' => 10]);

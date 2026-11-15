@@ -16,6 +16,7 @@ use Modules\Payment\Events\PaymentCaptured;
 require_once __DIR__.'/IntegrationTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     FakeErpConnector::reset();
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->placeOrder = function (): string {

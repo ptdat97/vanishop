@@ -14,6 +14,7 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $s] = C::store();
     // Đơn COD 2 sản phẩm, đã giao.
     $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();

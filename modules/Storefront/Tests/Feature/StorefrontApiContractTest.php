@@ -88,6 +88,7 @@ function assertStorefrontContract(TestResponse $response, string $path, string $
 }
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m] = C::store();
     $category = T::seed(fn () => Category::factory()->create(['slug' => 'dam-vay']));
     $category->syncTranslations(['vi' => ['name' => 'Đầm váy']]);

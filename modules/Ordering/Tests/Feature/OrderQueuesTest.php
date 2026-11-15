@@ -20,13 +20,13 @@ beforeEach(function () {
     ['s' => $this->s] = C::store(stock: 50);
     // CSKH gọi xác nhận: đơn COD dừng ở "Cần xác nhận".
     T::seed(fn () => app(Settings::class)->set('vani.cod', 'auto_confirm_mode', 'off'));
-    $this->place = function (string $method = 'cod'): Order {
+    $this->place = function (string $method = 'cod', ?string $phone = null): Order {
         $api = '/api/storefront/v1';
         $created = $this->postJson("{$api}/carts")->assertCreated();
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
         $cart = $created->json('data.id');
         $this->postJson("{$api}/carts/{$cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 2], $headers)->assertOk();
-        $this->postJson("{$api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => $method, 'expected_total' => 600_000]), [...$headers, 'Idempotency-Key' => 'k-'.$cart])->assertCreated();
+        $this->postJson("{$api}/checkout/{$cart}/orders", C::orderPayload(['payment_method' => $method, 'expected_total' => 600_000, ...($phone === null ? [] : ['contact' => ['phone' => $phone]])]), [...$headers, 'Idempotency-Key' => 'k-'.$cart])->assertCreated();
 
         return Order::query()->withoutGlobalScopes()->latest('id')->first();
     };
@@ -139,4 +139,30 @@ it('danh sách đơn sắp theo tổng tiền khi bấm tiêu đề cột; mặc
     expect($numbers('?sort=total&direction=asc'))->toBe([$second->number, $third->number, $first->number])
         ->and($numbers('?sort=total&direction=desc'))->toBe([$first->number, $third->number, $second->number])
         ->and($numbers(''))->toBe([$third->number, $second->number, $first->number]);
+});
+
+it('"Cần xác nhận": mỗi dòng kèm lịch sử nhận hàng của SĐT (đơn khác) để xác nhận hàng loạt; đơn đã qua chốt không kèm; một truy vấn cho cả trang', function () {
+    $delivered = ($this->place)();
+    $returned = ($this->place)();
+    DB::table('orders')->where('id', $delivered->id)->update(['order_status' => 'processing', 'fulfillment_status' => 'delivered']);
+    DB::table('orders')->where('id', $returned->id)->update(['order_status' => 'processing', 'fulfillment_status' => 'returned_to_sender']);
+    $repeat = ($this->place)();
+    $newcomer = ($this->place)('cod', '0987 000 111');
+    $queries = function (): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->get($this->url.'?stage=to_confirm')->assertOk();
+
+        return count(DB::getQueryLog());
+    };
+    $queries(); // làm nóng: lần đầu nạp quyền nhân viên
+    $before = $queries();
+    ($this->place)('cod', '0987 000 222');
+
+    $this->get($this->url.'?stage=to_confirm')->assertInertia(fn (Assert $page) => $page->has('orders', 3)
+        ->where('orders', fn ($orders) => collect($orders)->keyBy('id')->pipe(fn ($rows) => $rows[$repeat->id]['history'] === ['orders' => 2, 'delivered' => 1, 'returned_to_sender' => 1, 'cancelled' => 0]
+            && $rows[$newcomer->id]['history'] === ['orders' => 0, 'delivered' => 0, 'returned_to_sender' => 0, 'cancelled' => 0])));
+    $this->get($this->url.'?stage=shipping')->assertInertia(fn (Assert $page) => $page->has('orders', 0));
+    $this->get($this->url)->assertInertia(fn (Assert $page) => $page->where('orders', fn ($orders) => collect($orders)->firstWhere('id', $delivered->id)['history'] === null));
+    expect($queries())->toBe($before);
 });

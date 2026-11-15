@@ -42,6 +42,7 @@ require_once __DIR__.'/../../../modules/Checkout/Tests/Feature/CheckoutTestHelpe
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     FakeOnlineGateway::$refunds = [];
     ['s' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();

@@ -14,7 +14,7 @@ import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
-import { paymentStatusTone, stageTone } from '../../statusTones';
+import { customerRiskFlag, type DeliveryHistory, paymentStatusTone, stageTone } from '../../statusTones';
 
 /**
  * Danh sách đơn theo hàng đợi việc (0.3.96): thẻ giai đoạn vận hành (OrderStage) có số đếm, bộ lọc ngày/nguồn/thanh toán,
@@ -57,6 +57,8 @@ const props = defineProps<{
         payment_method: string;
         source: string;
         label: string;
+        /** Chỉ có ở đơn "Cần xác nhận": lịch sử nhận hàng của SĐT (các đơn khác). */
+        history: DeliveryHistory | null;
     }>;
     pagination: { current: number; last: number; from: number | null; to: number | null; total: number; per_page: number };
     extensions: ExtensionList;
@@ -277,6 +279,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <template #cell-customer="{ row }">
             {{ row.customer }}
             <div class="text-xs text-slate-400">{{ row.phone }}<template v-if="row.province"> · {{ row.province }}</template></div>
+            <div v-if="customerRiskFlag(row.history)" class="mt-1"><StatusBadge :label="customerRiskFlag(row.history)!.label" :tone="customerRiskFlag(row.history)!.tone" /></div>
         </template>
         <template #cell-items="{ row }">
             <div v-for="item in row.items.slice(0, 2)" :key="item.sku" class="font-mono text-xs">{{ item.sku }} × {{ item.quantity }}</div>

@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.53 — 2026-11-15
+
+Chốt ① của [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md): đơn COD mặc định chờ nhân viên xác nhận (đợt V1).
+
+### Đổi hành vi mặc định
+- **`vani.cod` 1.2.0:** tự xác nhận đơn COD **mặc định tắt** — `VANI_COD_AUTO_CONFIRM` mặc định `false`; chưa chọn "Tự xác nhận đơn COD" trong Admin → Cấu hình thì đơn COD dừng ở `pending` ("Cần xác nhận"), chưa có vận đơn. Chế độ `trusted`/`all` và listener `AutoConfirmCodOrder` giữ nguyên làm điểm mở rộng. Cửa hàng muốn giữ hành vi cũ: chọn `all` hoặc đặt `VANI_COD_AUTO_CONFIRM=true`.
+- Đơn đã trả online / chuyển khoản đã xác nhận vẫn tự sang `confirmed`.
+
+### Thêm
+- Danh sách đơn: dòng "Cần xác nhận" có `history` (lịch sử nhận hàng của SĐT: số đơn khác, đã nhận, hoàn về, đã huỷ) và nhãn Từng hoàn hàng / Khách mới / Khách quen — xác nhận hàng loạt không cần mở từng đơn. Một truy vấn cho cả trang (`OrderQueries::deliveryHistoryByPhone()`).
+- Trang đơn: nhãn rủi ro khách cạnh nút Xác nhận khi đơn đang "Cần xác nhận".
+- Test: `C::autoConfirmCod()` (helper test) cho test kiểm luồng sau khi đơn đã xác nhận.
+
 ## 0.4.52 — 2026-11-15
 
 Thanh toán của đơn huỷ và đơn hoàn tất còn COD chưa thu (backlog L35, L36).

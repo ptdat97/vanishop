@@ -11,6 +11,7 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/IntegrationTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store();
     $this->placeOrder = function (string $key): string {
         $headers = [];

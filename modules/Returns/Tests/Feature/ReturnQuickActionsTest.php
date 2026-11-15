@@ -19,6 +19,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store(stock: 10);
     $this->deliveredOrder = function (): Order {
         $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();

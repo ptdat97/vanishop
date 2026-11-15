@@ -14,6 +14,7 @@ use Modules\Tenancy\Contracts\Settings;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';
     $created = $this->postJson("{$this->api}/carts")->assertCreated();

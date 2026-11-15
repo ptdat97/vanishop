@@ -56,23 +56,26 @@ it('quote liệt kê các cổng khả dụng', function () {
     expect(array_column($methods, 'code'))->toBe(['fake_online']);
 });
 
-it('COD: đơn tự xác nhận, payment chờ thu, không hết hạn', function () {
+it('COD mặc định: đơn chờ nhân viên xác nhận (ADR-046), payment chờ thu, không hết hạn, chưa có vận đơn', function () {
     ($this->order)('cod')->assertCreated()
         ->assertJsonPath('data.payment.method', 'cod')
         ->assertJsonPath('data.payment.status', 'pending')
         ->assertJsonPath('data.payment.action.type', 'none')
         ->assertJsonPath('data.payment.expires_at', null);
 
-    expect(($this->orderRow)()->order_status->value)->toBe('processing')
+    expect(($this->orderRow)()->order_status->value)->toBe('pending')
         ->and(($this->orderRow)()->payment_status)->toBe('cod_pending')
-        ->and(DB::table('order_events')->where('type', 'status_changed')->value('reason'))->toBe('cod_auto_confirm');
+        ->and(DB::table('order_events')->where('type', 'status_changed')->exists())->toBeFalse()
+        ->and(DB::table('shipments')->exists())->toBeFalse();
 });
 
-it('COD: tắt tự xác nhận thì đơn chờ CSKH', function () {
-    config(['vani.cod.auto_confirm' => false]);
+it('COD bật tự xác nhận (điểm mở rộng): đơn xác nhận ngay với nguồn system, tạo vận đơn', function () {
+    C::autoConfirmCod();
     ($this->order)('cod')->assertCreated();
 
-    expect(($this->orderRow)()->order_status->value)->toBe('pending');
+    expect(($this->orderRow)()->order_status->value)->toBe('processing')
+        ->and(DB::table('order_events')->where('type', 'status_changed')->where('to_status', 'confirmed')->first(['reason', 'source']))->toEqual((object) ['reason' => 'cod_auto_confirm', 'source' => 'system'])
+        ->and(DB::table('shipments')->count())->toBe(1);
 });
 
 it('online: redirect → IPN hợp lệ → đơn đã thanh toán + xác nhận; IPN trùng không xử lý lại', function () {
@@ -184,6 +187,7 @@ it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên x
 
 it('state machine: không chuyển ngược trạng thái; chuyển trùng là no-op', function () {
     config(['vanishop.fulfillment.auto_create' => false]);
+    C::autoConfirmCod();
     ($this->order)('cod');
     $order = ($this->orderRow)();
     $transitions = app(OrderTransitions::class);
@@ -195,6 +199,7 @@ it('state machine: không chuyển ngược trạng thái; chuyển trùng là n
 
 it('thu tiền khi giao là capability của cổng, không phải mã "cod": cổng plugin khai báo collectsOnDelivery được xử lý như COD', function () {
     app(Extensions::class)->tag([FakeCollectOnDeliveryGateway::class], GatewayRegistry::TAG);
+    C::autoConfirmCod();
 
     ($this->order)('fake_pay_at_door')->assertCreated()->assertJsonPath('data.payment.method', 'fake_pay_at_door');
 

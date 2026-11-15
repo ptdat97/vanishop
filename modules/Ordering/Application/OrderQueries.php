@@ -65,6 +65,28 @@ final class OrderQueries
      * Đơn chưa xác nhận hoặc chưa giao hãng mà đã đặt quá `$hours` giờ (ô "Việc cần làm", bộ lọc `aged`).
      */
     /**
+     * Lịch sử nhận hàng theo SĐT cho nhiều SĐT một lúc (danh sách đơn "Cần xác nhận" — chốt ①, ADR-046): một truy vấn
+     * cho cả trang. Số đơn tính cả đơn đang xem; khoá là SĐT dạng E.164 như `orders.customer_phone`.
+     *
+     * @param  list<string>  $phones
+     * @return array<string, array{orders: int, delivered: int, returned_to_sender: int, cancelled: int}>
+     */
+    public function deliveryHistoryByPhone(array $phones): array
+    {
+        $phones = array_values(array_unique(array_filter($phones, fn (string $phone): bool => $phone !== '')));
+        if ($phones === []) {
+            return [];
+        }
+
+        return Order::query()->whereIn('customer_phone', $phones)->groupBy('customer_phone')
+            ->selectRaw("customer_phone, count(*) as orders, sum(case when fulfillment_status = 'delivered' then 1 else 0 end) as delivered, sum(case when fulfillment_status = 'returned_to_sender' then 1 else 0 end) as returned, sum(case when order_status = 'cancelled' then 1 else 0 end) as cancelled")
+            ->toBase()->get()
+            ->mapWithKeys(fn (object $row): array => [(string) $row->customer_phone => [
+                'orders' => (int) $row->orders, 'delivered' => (int) $row->delivered, 'returned_to_sender' => (int) $row->returned, 'cancelled' => (int) $row->cancelled,
+            ]])->all();
+    }
+
+    /**
      * Đơn đã hoàn tất mà tiền thu khi giao chưa ghi nhận (thường do hoàn tất ngoài trình tự) — ô "Việc cần làm".
      */
     public function completedAwaitingCodCount(): int

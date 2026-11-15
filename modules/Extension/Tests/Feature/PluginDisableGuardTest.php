@@ -17,6 +17,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store();
     $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
     $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];

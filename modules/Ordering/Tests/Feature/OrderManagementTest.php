@@ -13,6 +13,7 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     config(['vani.bank-transfer.account' => ['bank' => 'VCB', 'account_number' => '0123456789', 'account_name' => 'VANI']]);
     ['brand' => $this->brand, 's' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';

@@ -17,6 +17,7 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     ['s' => $this->s, 'm' => $this->m] = C::store();
     $this->place = function (string $method = 'cod', int $expected = 500_000) {

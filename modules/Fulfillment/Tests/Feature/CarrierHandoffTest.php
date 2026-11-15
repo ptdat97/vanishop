@@ -16,6 +16,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store(stock: 30);
     T::seed(fn () => DB::table('variants')->where('id', $this->s->id)->update(['weight_gram' => 450]));
     // COD tự xác nhận (mặc định) → Fulfillment tự tạo vận đơn chờ mã.

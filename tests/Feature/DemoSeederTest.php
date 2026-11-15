@@ -92,10 +92,11 @@ it('DemoSeeder dựng cả cửa hàng (catalog có ảnh, kho, nội dung, tran
         ->and(app(MenuRepository::class)->published('header'))->not->toBeEmpty()
         ->and(app(MenuRepository::class)->published('footer_1'))->not->toBeEmpty();
 
-    // Đơn đi đúng luồng: đang xử lý (COD tự xác nhận), đang giao, đã giao (COD đã thu), hoàn tất, đã huỷ; tồn khớp sổ biến động.
+    // Đơn đi đúng luồng: cần xác nhận (COD mặc định chờ nhân viên — ADR-046), đang xử lý, đang giao, đã giao (COD đã thu),
+    // hoàn tất, đã huỷ; tồn khớp sổ biến động.
     $orders = DB::table('orders')->where('note', '[demo] Đơn mẫu')->get();
     expect($orders)->toHaveCount(12)
-        ->and($orders->pluck('order_status')->unique()->sort()->values()->all())->toBe(['cancelled', 'completed', 'processing'])
+        ->and($orders->pluck('order_status')->unique()->sort()->values()->all())->toBe(['cancelled', 'completed', 'pending', 'processing'])
         ->and($orders->where('payment_status', 'cod_collected')->count())->toBeGreaterThan(0)
         ->and($orders->whereIn('fulfillment_status', ['shipped'])->count())->toBeGreaterThan(0);
     $this->artisan('vani:inventory:verify')->assertSuccessful();

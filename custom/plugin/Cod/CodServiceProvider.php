@@ -33,10 +33,10 @@ final class CodServiceProvider extends PluginServiceProvider
         $this->settings([
             ['key' => 'max_amount', 'label' => 'Đơn COD tối đa (₫)', 'type' => 'int', 'help' => 'Để trống = theo VANI_COD_MAX_AMOUNT.'],
             ['key' => 'auto_confirm_mode', 'label' => 'Tự xác nhận đơn COD', 'type' => 'select', 'options' => [
-                'all' => 'Có — xác nhận ngay mọi đơn COD',
+                'off' => 'Không — nhân viên gọi/nhắn xác nhận mọi đơn (khuyến nghị)',
                 'trusted' => 'Chỉ khách quen (đã nhận hàng, chưa từng bị hoàn về)',
-                'off' => 'Không — CSKH gọi xác nhận mọi đơn',
-            ], 'help' => 'Khách quen tính theo số điện thoại. Để trống = theo VANI_COD_AUTO_CONFIRM (bật = xác nhận mọi đơn).'],
+                'all' => 'Có — xác nhận ngay mọi đơn COD',
+            ], 'help' => 'Khách quen tính theo số điện thoại. Để trống = theo VANI_COD_AUTO_CONFIRM (mặc định tắt).'],
             ['key' => 'trusted_min_delivered', 'label' => 'Khách quen: số đơn đã giao tối thiểu', 'type' => 'int', 'default' => 1, 'rules' => ['min:1', 'max:100'], 'help' => 'Dùng khi chọn "Chỉ khách quen".'],
         ]);
 

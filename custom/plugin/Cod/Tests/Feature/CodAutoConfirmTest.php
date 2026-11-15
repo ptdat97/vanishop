@@ -28,7 +28,10 @@ beforeEach(function () {
     $this->confirmReason = fn (Order $order) => DB::table('order_events')->where('order_id', $order->id)->where('to_status', 'confirmed')->value('reason');
 });
 
-it('chưa chọn chế độ: theo công tắc cũ auto_confirm / VANI_COD_AUTO_CONFIRM (mặc định bật = xác nhận mọi đơn)', function () {
+it('chưa chọn chế độ: theo công tắc cũ auto_confirm / VANI_COD_AUTO_CONFIRM — mặc định tắt (ADR-046), nhân viên xác nhận', function () {
+    expect(($this->place)()->order_status->value)->toBe('pending');
+
+    config(['vani.cod.auto_confirm' => true]);
     expect(($this->confirmReason)(($this->place)()))->toBe('cod_auto_confirm');
 
     T::seed(fn () => app(Settings::class)->set('vani.cod', 'auto_confirm', false));

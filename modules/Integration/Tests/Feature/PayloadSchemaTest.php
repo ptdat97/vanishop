@@ -38,6 +38,7 @@ it('mọi loại event trong envelope có schema data riêng, và ngược lại
 });
 
 it('event phát từ các luồng thật (đặt, xác nhận, giao, thu tiền, đổi trả, hoàn tiền, huỷ, đối soát) khớp schema', function () {
+    C::autoConfirmCod();
     app(Extensions::class)->tag([FakeOnlineGateway::class], GatewayRegistry::TAG);
     FakeOnlineGateway::$refunds = [];
     ['s' => $s] = C::store();

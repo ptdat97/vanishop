@@ -40,6 +40,7 @@ require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.
 uses(DatabaseTruncation::class, KeepsReferenceData::class)->group('concurrency');
 
 beforeEach(function () {
+    C::autoConfirmCod();
     if (DB::getDriverName() !== 'mysql') {
         $this->markTestSkipped('Concurrency test cần MySQL (SQLite in-memory không chia sẻ giữa tiến trình).');
     }

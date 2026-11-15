@@ -95,6 +95,8 @@ final class OrderController
         }
         array_push($actions, ...$screen->actions('order', 'bulk'));
 
+        $histories = $queries->deliveryHistoryByPhone(collect($page->items())->filter(fn (Order $order): bool => $order->getAttribute('stage') === 'to_confirm')->map(fn (Order $order): string => (string) $order->customer_phone)->values()->all());
+
         return Inertia::render('Ordering::Orders/Index', [
             'baseUrl' => route('admin.orders.orders.index'),
             'filters' => $filters,
@@ -106,6 +108,8 @@ final class OrderController
             'statuses' => array_column(OrderStatus::cases(), 'value'),
             'paymentStatuses' => PaymentStatus::VALUES,
             'labels' => [...__('ordering::labels'), 'payment_method' => $this->paymentMethodLabels()],
+            // Chốt ① (ADR-046): đơn "Cần xác nhận" kèm lịch sử nhận hàng theo SĐT (đơn khác của SĐT) để xác nhận hàng loạt
+            // mà không mở từng đơn.
             'orders' => collect($page->items())->map(fn (Order $order): array => [
                 'id' => $order->id,
                 'number' => $order->number,
@@ -123,6 +127,9 @@ final class OrderController
                 'payment_method' => $order->payment_method,
                 'source' => $order->source,
                 'label' => CustomerStatusLabel::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
+                'history' => $order->getAttribute('stage') === 'to_confirm' && isset($histories[(string) $order->customer_phone])
+                    ? [...$histories[(string) $order->customer_phone], 'orders' => $histories[(string) $order->customer_phone]['orders'] - 1]
+                    : null,
             ])->all(),
             'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'extensions' => [

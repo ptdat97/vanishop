@@ -15,6 +15,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     config(['vani.bank-transfer.account' => ['bank' => 'VCB', 'account_number' => '0123456789', 'account_name' => 'VANI']]);
     ['s' => $this->s] = C::store(stock: 20);
     $this->place = function (string $method = 'cod'): Order {

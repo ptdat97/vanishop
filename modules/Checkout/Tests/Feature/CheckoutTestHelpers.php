@@ -56,6 +56,15 @@ final class CheckoutTestHelpers
     }
 
     /**
+     * Bật điểm mở rộng tự xác nhận đơn COD của `vani.cod` (ADR-046 chốt ①; mặc định tắt) — cho test kiểm luồng **sau**
+     * khi đơn đã xác nhận (vận đơn, tồn, đổi trả, tích hợp), để mỗi đơn COD vừa đặt đã `confirmed` → `processing`.
+     */
+    public static function autoConfirmCod(): void
+    {
+        config(['vani.cod.auto_confirm' => true]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function orderPayload(array $overrides = []): array

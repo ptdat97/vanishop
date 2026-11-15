@@ -26,6 +26,7 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     FakeSmsChannel::$sent = [];
     FakeSmsChannel::$results = [];
     ['brand' => $this->brand, 's' => $this->s] = C::store();

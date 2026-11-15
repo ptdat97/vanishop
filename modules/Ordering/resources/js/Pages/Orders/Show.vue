@@ -15,7 +15,7 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { orderStatusTone, paymentStatusTone, stageTone } from '../../statusTones';
+import { customerRiskFlag, orderStatusTone, paymentStatusTone, stageTone } from '../../statusTones';
 
 type Division = { code: string; name: string };
 /** Thao tác trên thẻ bên phải (0.3.96) — module sở hữu thẻ (Fulfillment, Payment…) kiểm tra quyền và xử lý POST. */
@@ -177,13 +177,7 @@ async function runAction(action: PanelAction): Promise<void> {
     router.post(action.url, { ...(action.data ?? {}), ...values }, { preserveScroll: true });
 }
 /** Nhãn rủi ro khách theo lịch sử nhận hàng (SĐT): từng hoàn hàng / khách mới / khách quen. */
-const customerFlag = computed((): { label: string; tone: 'danger' | 'warning' | 'success' } | null => {
-    const history = props.customerHistory;
-    if (history.returned_to_sender > 0) return { label: `Từng hoàn hàng ${history.returned_to_sender} lần`, tone: 'danger' };
-    if (history.orders === 0) return { label: 'Khách mới', tone: 'warning' };
-    if (history.delivered > 0) return { label: 'Khách quen', tone: 'success' };
-    return null;
-});
+const customerFlag = computed(() => customerRiskFlag(props.customerHistory));
 const statusForm = useForm({ status: '', reason: '' });
 const statusOptions = computed(() =>
     props.statusCard.change.options
@@ -294,6 +288,7 @@ function addNote(): void {
     <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
         <Link :href="listUrl" :class="secondaryButton">Danh sách</Link>
         <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">In phiếu giao</a>
+        <span v-if="stage === 'to_confirm' && customerFlag" class="self-center" data-confirm-risk><StatusBadge :label="customerFlag.label" :tone="customerFlag.tone" /></span>
         <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
         <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
         <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />

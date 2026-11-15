@@ -19,6 +19,7 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     app(Extensions::class)->tag([FakeApiCarrier::class], CarrierRegistry::CARRIERS_TAG);
     FakeApiCarrier::$failBooking = false;
     FakeApiCarrier::$booked = [];

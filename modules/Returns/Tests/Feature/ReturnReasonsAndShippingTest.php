@@ -18,6 +18,7 @@ use Modules\Shared\Context\CurrentContext;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s] = C::store();
     $this->api = '/api/storefront/v1';
     $this->reasons = '/admin/returns/reasons';

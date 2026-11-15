@@ -25,6 +25,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['s' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store(); // cùng mẫu "Đầm lụa": S 300k, M 200k
     [$this->premium] = P::variants(T::product(null, ['name' => 'Áo khoác']), ['L']);
     [$this->basic] = P::variants(T::product(null, ['name' => 'Áo thun']), ['L']);

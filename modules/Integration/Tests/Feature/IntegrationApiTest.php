@@ -15,6 +15,7 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/IntegrationTestHelpers.php';
 
 beforeEach(function () {
+    C::autoConfirmCod();
     ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m] = C::store();
     $this->erp = H::client('erp-main');
     $this->api = '/api/integration/v1';

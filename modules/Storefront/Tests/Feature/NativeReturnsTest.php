@@ -23,6 +23,7 @@ require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 */
 
 beforeEach(function () {
+    C::autoConfirmCod();
     H::fakeOtp();
     ['s' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store(); // "Đầm lụa" S + M
     $this->placeDelivered = function (string $key): Order {

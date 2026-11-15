@@ -27,6 +27,7 @@ function promotionWithRule(string $ruleType, array $config, int $amountOff): Pro
 }
 
 beforeEach(function () {
+    C::autoConfirmCod();
     FirstOrderFixtureRule::$passes = true;
     app(Extensions::class)->tag([MinSubtotalFixtureRule::class, FirstOrderFixtureRule::class], PromotionRule::TAG);
     config(['vani.shipping-flat-rate.fee' => 0]);
