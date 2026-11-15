@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.59 — 2026-11-15
+
+EP v3 đợt X1 — màn vận hành Admin mở cho plugin ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+
+### Thêm
+- Tài nguyên Admin mới cho `adminColumn` / `adminFilter` / `adminAction` (đơn lẻ + hàng loạt): `shipment` (vận đơn), `return` (đổi trả — kèm `adminTab` + thao tác chi tiết trên trang yêu cầu), `payment` (thanh toán), `promotion` (khuyến mãi), `stock` (lưới tồn — id = SKU; bộ lọc áp cả khi "chọn mọi SKU khớp bộ lọc"), `price_list_item` (trang làm việc bảng giá — id = SKU), `variant` (bộ lọc phụ của SkuPicker).
+- Registry **`adminTool(resource, key, label, permission, handle, accept, maxKb, help, fields)`** — công cụ tải file ở đầu danh sách (nhập sao kê, nhập tồn của hãng…): Core kiểm quyền, loại + dung lượng file, ghi audit `plugin.tool`; `handle(UploadedFile, array $fields)` trả thông báo, lỗi nghiệp vụ ném `ValidationException`/`BusinessRuleViolation` (lỗi theo dòng: khoá `import.N`). Route chung `POST /{admin}/extensions/{resource}/tools/{plugin}/{key}`.
+- `Modules\Shared\Support\SpreadsheetRows` vào danh sách hỗ trợ công khai cho plugin (đọc file tải lên).
+- `AdminScreen::tools(resource)`, `AdminScreen::listProps(resource, ids, filterValues)` — prop `extensions` của trang danh sách (cột, bộ lọc + giá trị, thao tác hàng loạt, công cụ).
+- Component Admin `@admin/Components/Extensions/ExtensionTools.vue`; `SkuPicker` nhận `filters` (bộ lọc `variant` của plugin), `search(term, filters)` — chọn bộ lọc thì tìm cả khi chưa gõ.
+- Tham chiếu: `vani.hello-world` 0.3.0 — "Đánh dấu Hello" (bảng `plg_hello_world_flags`) trên mọi tài nguyên mới.
+
 ## 0.4.58 — 2026-11-15
 
 Component Admin dùng chung chọn số lượng lớn SKU.

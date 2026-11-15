@@ -235,8 +235,9 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 | `schedule(fn (Schedule $s) => …)` | Tác vụ định kỳ, chỉ chạy khi plugin bật ở ít nhất một phạm vi — Implemented (0.3) |
 | `NotificationCatalog::define()` (contract Notification) | Loại tin + biến + mẫu mặc định theo kênh; mẫu trong DB thắng — Implemented (0.3) |
 | `adminFormSection(resource, key, label, fields, load, save)` | Phần form của plugin trên form tạo/sửa của Core (`product`); `save` trong transaction lưu của Core; input `extensions.<id-plugin-dạng-slug>.<key>.<field>` — Implemented (0.3.2) |
-| `adminColumn(resource, key, label, resolve)` | Cột trên danh sách (`product`, `order`, `customer`), `resolve` nhận cả trang id — Implemented (0.3.2) |
+| `adminColumn(resource, key, label, resolve)` | Cột trên danh sách (`product`, `order`, `customer`; từ 0.4.59: `shipment`, `return`, `payment`, `promotion`, `stock`, `price_list_item`), `resolve` nhận cả trang id — Implemented (0.3.2) |
 | `adminFilter(resource, key, label, options, apply)` | Bộ lọc danh sách, `apply` trả id thoả (giao nhau giữa các bộ lọc) — Implemented (0.3.2) |
+| `adminTool(resource, key, label, permission, handle, accept, maxKb, help, fields)` | Công cụ tải file ở đầu danh sách (`shipment`, `return`, `payment`, `promotion`, `stock`, `price_list_item`…); Core kiểm quyền/file + audit — Implemented (0.4.59, EP v3 X1) |
 | `adminAction(resource, key, label, permission, handle, scope)` | Nút trên trang chi tiết / chọn nhiều (danh sách đơn); Core kiểm tra quyền + audit — Implemented (0.3.2) |
 | `adminTab(resource, key, label, rows)` | Tab nhãn/giá trị trên trang chi tiết (`order`, `customer`) — Implemented (0.3.2) |
 | Trường checkout của plugin | Thay cho `checkoutFields()`: client gửi `extra[<plugin id>]` ở đặt hàng → plugin kiểm tra qua `vani.checkout.before_validate` và lưu qua `vani.order.before_create` — Implemented (0.3) |

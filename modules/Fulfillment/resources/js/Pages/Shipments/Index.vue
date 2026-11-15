@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -8,8 +11,9 @@ import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction, promptFields } from '@admin/confirm';
 import { codeOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
@@ -36,10 +40,14 @@ const props = defineProps<{
     canManage: boolean;
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     perPageOptions: number[];
+    /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
+    extensions: ExtensionList;
 }>();
 
 const filters = reactive({ ...props.filters });
-const hasActiveFilters = computed(() => Boolean(filters.order || filters.status));
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
+const selected = ref<number[]>([]);
+const hasActiveFilters = computed(() => Boolean(filters.order || filters.status || Object.values(ext).some(Boolean)));
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const columns = [
     { key: 'order_number', label: 'Đơn', class: 'font-mono' },
@@ -59,7 +67,7 @@ function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' 
 }
 
 function search(page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...filters, page, per_page: perPage }, { preserveState: true });
+    router.get(props.baseUrl, { ...filters, ext: { ...ext }, page, per_page: perPage }, { preserveState: true });
 }
 
 function goToPage(page: number): void {
@@ -73,6 +81,7 @@ function changePageSize(perPage: number): void {
 function clearFilters(): void {
     filters.order = '';
     filters.status = '';
+    Object.keys(ext).forEach((key) => (ext[key] = ''));
     search();
 }
 
@@ -111,9 +120,12 @@ async function cancel(id: number): Promise<void> {
     <p class="mb-2 text-sm text-slate-500">Giao hàng</p>
     <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho." />
 
+    <ExtensionTools :tools="extensions.tools ?? []" />
+
     <form class="mb-4 grid gap-2 sm:grid-cols-3" @submit.prevent="search()">
         <input v-model="filters.order" :class="inputClass" placeholder="Số đơn" aria-label="Số đơn" />
         <Select v-model="filters.status" :options="codeOptions(statuses, labels.shipment_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="primaryButton">Áp dụng</button>
         <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ bộ lọc</button>
         <span v-if="hasActiveFilters" class="self-center text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
@@ -124,7 +136,11 @@ async function cancel(id: number): Promise<void> {
         <button v-if="order.can_create && canManage" type="button" :class="primaryButton" @click="create">Tạo vận đơn</button>
     </div>
 
-    <DataTable :columns="columns" :rows="shipments" :row-class="() => 'align-top'" empty-text="Chưa có vận đơn.">
+    <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="vận đơn" />
+    </div>
+    <DataTable v-model:selected="selected" :columns="columns" :rows="shipments" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" empty-text="Chưa có vận đơn.">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
             <div class="font-sans text-xs text-slate-400">{{ row.items }} sản phẩm</div>

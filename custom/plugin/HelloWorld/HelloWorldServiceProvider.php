@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Plugin\HelloWorld;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Modules\Cart\Contracts\CartLineOption;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Contracts\StorefrontEnricher;
@@ -99,5 +102,58 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
         $this->adminTab('customer', 'hello', 'Hello World',
             rows: fn (int $customerId): array => [['label' => 'Lời chào', 'value' => "Xin chào khách #{$customerId}"]],
         );
+        $this->extendOperationScreens();
+    }
+
+    /**
+     * Implementation tham chiếu của EP v3 X1 (R26): "Đánh dấu Hello" trên vận đơn, đổi trả, thanh toán, khuyến mãi, tồn kho
+     * và bảng giá — thao tác hàng loạt ghi vào bảng riêng, cột + bộ lọc đọc lại, công cụ nhập danh sách id từ file, tab trên
+     * trang đổi trả, bộ lọc phụ của SkuPicker. Tồn kho, bảng giá, SkuPicker dùng chung id SKU (`variant`).
+     */
+    private function extendOperationScreens(): void
+    {
+        $flags = fn () => DB::table('plg_hello_world_flags');
+        $flagged = fn (string $subject): array => $flags()->where('subject', $subject)->pluck('subject_id')->map(fn ($id): int => (int) $id)->all();
+        $flag = function (string $subject, int $id) use ($flags): void {
+            $flags()->insertOrIgnore(['subject' => $subject, 'subject_id' => $id, 'created_at' => now()]);
+        };
+        $subjects = ['shipment' => 'shipment', 'return' => 'return', 'payment' => 'payment', 'promotion' => 'promotion', 'stock' => 'variant', 'price_list_item' => 'variant'];
+
+        foreach ($subjects as $resource => $subject) {
+            $this->adminColumn($resource, 'flag', 'Hello',
+                resolve: fn (array $ids): array => array_fill_keys(array_values(array_intersect($ids, $flagged($subject))), '★ Đã đánh dấu'),
+            );
+            $this->adminFilter($resource, 'flagged', 'Hello', ['yes' => 'Đã đánh dấu'], apply: fn (string $value): array => $flagged($subject));
+            $this->adminAction($resource, 'flag', 'Đánh dấu Hello', 'hello-world.view',
+                handle: function (int $id) use ($flag, $subject): ?string {
+                    $flag($subject, $id);
+
+                    return null;
+                }, scope: 'bulk',
+            );
+            $this->adminTool($resource, 'import_flags', 'Nhập đánh dấu Hello', 'hello-world.view',
+                handle: function (UploadedFile $file, array $fields) use ($flag, $subject): string {
+                    $ids = array_values(array_unique(array_filter(array_map(fn (array $row): int => (int) ($row[0] ?? 0), SpreadsheetRows::fromUpload($file)), fn (int $id): bool => $id > 0)));
+                    if ($ids === []) {
+                        throw ValidationException::withMessages(['file' => 'File không có id nào ở cột đầu.']);
+                    }
+                    foreach ($ids as $id) {
+                        $flag($subject, $id);
+                    }
+
+                    return 'Đã đánh dấu '.count($ids).' mục'.(($fields['note'] ?? '') !== '' ? " ({$fields['note']})" : '').'.';
+                },
+                help: 'File .csv/.xlsx: mỗi dòng một id ở cột đầu.', fields: [['key' => 'note', 'label' => 'Ghi chú', 'placeholder' => 'tuỳ chọn']],
+            );
+        }
+        $this->adminTab('return', 'hello', 'Hello World',
+            rows: fn (int $returnId): array => [['label' => 'Đánh dấu', 'value' => in_array($returnId, $flagged('return'), true) ? 'Có' : 'Không']],
+        );
+        $this->adminAction('return', 'flag_one', 'Đánh dấu Hello', 'hello-world.view', handle: function (int $id) use ($flag): string {
+            $flag('return', $id);
+
+            return 'Đã đánh dấu Hello.';
+        });
+        $this->adminFilter('variant', 'flagged', 'Hello', ['yes' => 'Đã đánh dấu'], apply: fn (string $value): array => $flagged('variant'));
     }
 }

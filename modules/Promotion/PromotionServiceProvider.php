@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Promotion;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Promotion\Application\Actions\AmountOffAction;
@@ -24,6 +25,8 @@ final class PromotionServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
+        $this->app->make(AdminScreen::class)->declareResource('promotion');
         $this->app->make(Extensions::class)->tag([PercentOffAction::class, AmountOffAction::class], PromotionRegistry::ACTIONS_TAG);
         $this->app->make(Extensions::class)->kindContract('promotion', PromotionRule::TAG);
         $this->app->bind(PromotionEngine::class, fn ($app): PromotionEvaluator => new PromotionEvaluator(

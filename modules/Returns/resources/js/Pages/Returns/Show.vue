@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import type { ExtensionDetail } from '@admin/types';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
@@ -38,6 +41,8 @@ const props = defineProps<{
         refund: number;
     };
     replacementOrder: null | { number: string | null; url: string };
+    /** Thao tác + tab của plugin (EP v3 X1). */
+    extensions: ExtensionDetail & { id: number };
     can: { approve: boolean; reject: boolean; in_transit: boolean; receive: boolean; resolve: boolean };
 }>();
 
@@ -84,7 +89,9 @@ function resolve(): void {
         <button v-if="can.approve" type="button" :class="primaryButton" @click="transition('approved')">Duyệt</button>
         <button v-if="can.in_transit" type="button" :class="secondaryButton" @click="transition('in_transit')">Khách đã gửi</button>
         <button v-if="can.reject" type="button" :class="dangerButton" @click="transition('rejected')">Từ chối</button>
+        <ExtensionActions :actions="extensions.actions" :ids="[extensions.id]" />
     </PageHeader>
+    <ExtensionTabs :tabs="extensions.tabs" class="mb-4" />
     <p v-if="props.return.customerNote" class="mb-4 rounded bg-amber-50 p-3 text-sm">Khách ghi chú: {{ props.return.customerNote }}</p>
     <div v-if="props.return.attachments?.length" class="mb-4 flex flex-wrap gap-2" data-return-photos>
         <a v-for="photo in props.return.attachments" :key="photo.id" :href="photo.url" target="_blank" rel="noopener"><img :src="photo.url" alt="Ảnh khách gửi" class="h-24 w-24 rounded border border-slate-200 object-cover" /></a>

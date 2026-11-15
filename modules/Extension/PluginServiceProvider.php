@@ -6,6 +6,7 @@ namespace Modules\Extension;
 
 use Closure;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\FileViewFinder;
@@ -184,6 +185,18 @@ abstract class PluginServiceProvider extends ServiceProvider
     protected function adminFilter(string $resource, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500): void
     {
         $this->app->make(AdminExtensions::class)->filter($resource, $this->pluginId(), $key, $label, $options, $apply, $order);
+    }
+
+    /**
+     * Công cụ tải file ở đầu danh sách Admin (EP v3 X1): Core kiểm quyền, loại và dung lượng file, ghi audit; `handle`
+     * nhận file + ô phụ và trả thông báo (lỗi nghiệp vụ: ném ValidationException/BusinessRuleViolation).
+     *
+     * @param  Closure(UploadedFile, array<string, string>): (string|null)  $handle
+     * @param  list<array{key: string, label: string, placeholder?: string}>  $fields
+     */
+    protected function adminTool(string $resource, string $key, string $label, string $permission, Closure $handle, string $accept = '.xlsx,.csv', int $maxKb = 5120, ?string $help = null, array $fields = [], int $order = 500): void
+    {
+        $this->app->make(AdminExtensions::class)->tool($resource, $this->pluginId(), $key, $label, $permission, $handle, $accept, $maxKb, $help, $fields, $order);
     }
 
     /**

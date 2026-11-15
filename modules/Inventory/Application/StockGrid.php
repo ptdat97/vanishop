@@ -27,7 +27,7 @@ final class StockGrid
     ) {}
 
     /**
-     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
+     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
      * @return array{products: list<array<string, mixed>>, total_products: int, total_variants: int, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     public function page(array $criteria, int $page, int $perPage = 20): array
@@ -68,7 +68,7 @@ final class StockGrid
     /**
      * Id mọi variant khớp bộ lọc (chọn "tất cả kết quả" để sửa hàng loạt).
      *
-     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
+     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria
      * @return list<int>
      */
     public function variantIds(array $criteria): array
@@ -120,11 +120,12 @@ final class StockGrid
     /**
      * Mọi variant khớp (không giới hạn): khoá + số bán được, tính bằng chỉ mục của Catalog và một truy vấn gộp tồn.
      *
-     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>}  $criteria
+     * @param  array{q?: string, style?: string, filter?: string, options?: array<string, string>, ids?: list<int>|null}  $criteria  `ids`: giới hạn theo bộ lọc của plugin (EP v3 X1)
      * @return array{rows: list<array{id: int, style_id: int, style_code: string, options: array<string, string>, status: string, sellable: int, tracked: bool}>, locations: list<Location>, option_filters: list<array{code: string, name: string, values: list<string>}>}
      */
     private function matching(array $criteria): array
     {
+        $only = isset($criteria['ids']) && is_array($criteria['ids']) ? array_flip(array_map('intval', $criteria['ids'])) : null;
         $style = trim((string) ($criteria['style'] ?? ''));
         $filter = in_array($criteria['filter'] ?? 'all', self::FILTERS, true) ? (string) ($criteria['filter'] ?? 'all') : 'all';
         $wanted = array_filter(array_map(fn ($code): string => trim((string) $code), (array) ($criteria['options'] ?? [])), fn (string $code): bool => $code !== '');
@@ -153,6 +154,9 @@ final class StockGrid
 
         $rows = [];
         foreach ($index as $row) {
+            if ($only !== null && ! isset($only[$row['id']])) {
+                continue;
+            }
             foreach ($wanted as $type => $code) {
                 if (($row['options'][$type] ?? null) !== $code) {
                     continue 2;

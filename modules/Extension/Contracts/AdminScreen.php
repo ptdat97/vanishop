@@ -89,6 +89,23 @@ interface AdminScreen
     public function actions(string $resource, string $scope): array;
 
     /**
+     * Công cụ tải file của plugin ở đầu danh sách (EP v3 X1) mà nhân viên hiện tại được dùng; POST multipart `file` + ô phụ.
+     *
+     * @return list<array{key: string, label: string, accept: string, max_kb: int, help: string|null, fields: list<array<string, string>>, url: string}>
+     */
+    public function tools(string $resource): array;
+
+    /**
+     * Prop `extensions` của một trang danh sách: cột (của các id trên trang), bộ lọc + giá trị đang chọn, thao tác hàng
+     * loạt, công cụ tải file.
+     *
+     * @param  list<int>  $ids
+     * @param  array<string, mixed>  $filterValues
+     * @return array<string, mixed>
+     */
+    public function listProps(string $resource, array $ids, array $filterValues): array;
+
+    /**
      * Tab của plugin trên trang chi tiết.
      *
      * @return list<array{key: string, label: string, rows: list<array{label: string, value: string}>}>

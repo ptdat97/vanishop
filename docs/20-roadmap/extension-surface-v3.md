@@ -133,7 +133,7 @@ R26: mỗi đợt làm **cùng** plugin tham chiếu (plugin thật trong repo, 
 
 | Đợt | Nội dung | Plugin tham chiếu | Ưu tiên |
 |---|---|---|---|
-| **X1** | Màn vận hành mở cho plugin: `adminColumn`/`Filter`/`Action`/`Tab` + `list_tools` cho vận đơn, đổi trả, thanh toán, tồn, bảng giá, khuyến mãi; bộ lọc phụ SkuPicker | `vani.hello-world` + `AdminScreenContract` | P1 — nền cho X2–X5 |
+| **X1** ✅ 0.4.59 | Màn vận hành mở cho plugin: `adminColumn`/`Filter`/`Action` (+ `Tab` trang đổi trả) và `adminTool` (thay cho slot `list_tools` riêng từng module) cho vận đơn, đổi trả, thanh toán, tồn, bảng giá, khuyến mãi; bộ lọc phụ SkuPicker (`variant`). Vận đơn chưa có trang chi tiết nên chưa có tab | `vani.hello-world` ("Đánh dấu Hello") + `HelloWorldOperationScreensTest`, test trình duyệt `OperationScreensTest` | P1 |
 | **X2** | `OrderActions`, guard ở bốn lệnh, `OrderRiskSignal`, `ConfirmationChannel` | `vani.cod-risk-guard` (mới, P2→P1), `vani.zalo-zns` | P1 — bài toán bom hàng là chi phí lớn nhất của shop COD |
 | **X5** | `Payments` mở thu COD/xác nhận; `RefundPayout`; `Reconciliation` chung | `vani.cod-reconciliation`, `vani.bank-statement` | P1 |
 | **X3** | `CarrierAssignment`, `PackingSlipTemplate`, `ReturnPickup` | `vani.carrier-routing`, `vani.ghn` | P2 |

@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Application\LocationService;
@@ -42,7 +43,7 @@ final class StockController
      * Lưới tồn: sản phẩm × kho (tìm theo tên/mã/SKU, lọc theo giá trị tuỳ chọn `opt[<loại>]`, hết hàng / sắp hết), sửa số trong ô, chọn nhiều để sửa
      * hàng loạt. `?style=` (link từ form sản phẩm) = đúng các variant của mã sản phẩm đó.
      */
-    public function index(Request $request, StockGrid $grid, Extensions $extensions, LowStockThreshold $lowStock): Response
+    public function index(Request $request, StockGrid $grid, Extensions $extensions, LowStockThreshold $lowStock, AdminScreen $screen): Response
     {
         Gate::authorize('inventory.view');
 
@@ -52,7 +53,7 @@ final class StockController
         $perPage = (int) ($validated['per_page'] ?? self::PER_PAGE);
         $criteria = $this->criteria($request->query());
         $page = max(1, (int) $request->query('page', 1));
-        $result = $grid->page($criteria, $page, $perPage);
+        $result = $grid->page([...$criteria, 'ids' => $screen->filterIds('stock', $criteria['ext'])], $page, $perPage);
         $canManageLocations = Gate::allows('inventory.locations.manage', [ScopeRef::owner()]);
         // Nút của plugin (vd. vận hành kho — ADR-042): chỉ implementation của plugin đang bật.
         $links = $extensions->implementations(StockPageLink::TAG, StockPageLink::class, fn (StockPageLink $link): string => $link::class);
@@ -88,13 +89,15 @@ final class StockController
             ], $result['locations']),
             'products' => $result['products'],
             'canAdjust' => Gate::allows('inventory.adjust'),
+            // Cột/lọc/thao tác hàng loạt/công cụ của plugin theo SKU (EP v3 X1) — vd. cột "Hàng đang về", nhập tồn của hãng.
+            'extensions' => $screen->listProps('stock', array_merge([], ...array_map(fn (array $product): array => array_map(fn (array $variant): int => (int) $variant['id'], $product['variants']), $result['products'])), $criteria['ext']),
         ]);
     }
 
     /**
      * Sửa hàng loạt tại một kho: các SKU đã chọn (`variant_ids`) hoặc mọi SKU khớp bộ lọc (`all` + điều kiện lọc).
      */
-    public function bulk(Request $request, StockGrid $grid, StockBulkEditor $editor, StockQueries $queries): RedirectResponse
+    public function bulk(Request $request, StockGrid $grid, StockBulkEditor $editor, StockQueries $queries, AdminScreen $screen): RedirectResponse
     {
         Gate::authorize('inventory.adjust');
         $data = $request->validate([
@@ -113,7 +116,8 @@ final class StockController
         $location = collect($queries->locations())->firstWhere('id', (int) $data['location_id']);
         abort_if($location === null, 404);
 
-        $ids = ($data['all'] ?? false) ? $grid->variantIds($this->criteria((array) ($data['criteria'] ?? []))) : array_map('intval', $data['variant_ids']);
+        $criteria = $this->criteria((array) ($data['criteria'] ?? []));
+        $ids = ($data['all'] ?? false) ? $grid->variantIds([...$criteria, 'ids' => $screen->filterIds('stock', $criteria['ext'])]) : array_map('intval', $data['variant_ids']);
         if (count($ids) > StockBulkEditor::MAX_VARIANTS) {
             throw ValidationException::withMessages(['changes' => __('inventory::messages.bulk_too_many', ['count' => count($ids), 'max' => StockBulkEditor::MAX_VARIANTS])]);
         }
@@ -137,6 +141,8 @@ final class StockController
             'q' => trim((string) ($input['q'] ?? '')), 'style' => trim((string) ($input['style'] ?? '')),
             'filter' => in_array($filter, StockGrid::FILTERS, true) ? $filter : 'all',
             'options' => array_filter(array_map(fn ($code): string => trim(is_scalar($code) ? (string) $code : ''), array_slice((array) ($input['opt'] ?? $input['options'] ?? []), 0, 3, true)), fn (string $code): bool => $code !== '' && mb_strlen($code) <= 32),
+            // Bộ lọc của plugin (EP v3 X1): `plugin:key` => giá trị.
+            'ext' => array_filter((array) ($input['ext'] ?? []), fn ($value): bool => is_string($value) && $value !== ''),
         ];
     }
 

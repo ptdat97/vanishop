@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Returns;
 
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
@@ -28,6 +29,8 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
+        $this->app->make(AdminScreen::class)->declareResource('return');
         $this->app->bind(Returns::class, ReturnService::class);
         $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
         $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);

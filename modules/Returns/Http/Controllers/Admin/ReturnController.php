@@ -14,6 +14,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Returns\Application\ReturnReasons;
 use Modules\Returns\Application\ReturnService;
@@ -36,14 +37,17 @@ final class ReturnController
         return redirect()->route('admin.returns.returns.index');
     }
 
-    public function index(Request $request, OrderReader $orders): Response
+    public function index(Request $request, OrderReader $orders, AdminScreen $screen): Response
     {
         Gate::authorize('returns.view');
+        $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
+        $extensionIds = $screen->filterIds('return', $extensionFilters);
         $status = (string) $request->query('status', '');
         $search = strtoupper(trim((string) $request->query('q', '')));
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
         $page = ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('number', $search)->orWhere('order_id', $orders->findByNumber($search)?->id ?? 0)))
+            ->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
             ->orderByDesc('id')->paginate($perPage)->withQueryString();
         $numbers = $orders->numbers(collect($page->items())->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
 
@@ -61,6 +65,8 @@ final class ReturnController
                 ['key' => 'receive', 'label' => 'Đã nhận hàng (còn bán được)', 'url' => route('admin.returns.returns.bulk-receive'), 'confirm' => true],
                 ['key' => 'receive_damaged', 'label' => 'Đã nhận hàng (hỏng, không nhập kho)', 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'damaged']), 'confirm' => true],
             ] : [],
+            // Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1); thao tác hàng loạt của plugin nối sau của Core.
+            'extensions' => $screen->listProps('return', collect($page->items())->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
             'counts' => ReturnRequest::query()->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total)->all(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'perPageOptions' => self::PER_PAGE_OPTIONS,
@@ -129,12 +135,14 @@ final class ReturnController
         return redirect()->route('admin.returns.returns.show', ['return' => $view->id])->with('success', __('returns::messages.created'));
     }
 
-    public function show(ReturnRequest $return, ReturnService $returns, OrderReader $orders): Response
+    public function show(ReturnRequest $return, ReturnService $returns, OrderReader $orders, AdminScreen $screen): Response
     {
         Gate::authorize('returns.view');
         $canManage = Gate::allows('returns.manage');
 
         return Inertia::render('Returns::Returns/Show', [
+            // Thao tác + tab của plugin trên trang chi tiết (EP v3 X1) — vd. tab "Ảnh kiểm hàng".
+            'extensions' => ['id' => $return->id, 'actions' => $screen->actions('return', 'detail'), 'tabs' => $screen->tabs('return', $return->id)],
             'labels' => $this->labels(),
             'baseUrl' => route('admin.returns.returns.index'),
             'orderUrl' => route('admin.orders.orders.show', ['order' => $return->order_id]),

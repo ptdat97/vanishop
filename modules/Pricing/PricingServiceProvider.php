@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
@@ -42,6 +43,8 @@ final class PricingServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
+        $this->app->make(AdminScreen::class)->declareResource('price_list_item');
         $this->app->singleton(PriceListPriorityStrategy::class);
         $this->app->make(Extensions::class)->tag([PriceListPriorityStrategy::class], PricingStrategy::TAG);
         // Ma trận biến thể (variant-matrix §3.3): cột giá + dọn giá khi SKU bị xoá.

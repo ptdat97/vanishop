@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import FileInput from '@admin/Components/FileInput.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
@@ -10,6 +13,7 @@ import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { getJson, HttpError, postJson } from '@admin/http';
 import type { SkuPickerProduct } from '@admin/skuPicker';
+import type { ExtensionFilter, ExtensionList } from '@admin/types';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
@@ -66,7 +70,12 @@ const props = defineProps<{
     productsUrl: string;
     /** Từ danh sách sản phẩm "Đưa vào bảng giá…": mở sẵn hộp thoại cách tính giá cho các sản phẩm này. */
     addStyleIds: number[];
+    /** Cột/lọc/thao tác/công cụ của plugin theo SKU (EP v3 X1). */
+    extensions: ExtensionList;
+    /** Bộ lọc phụ của plugin cho SkuPicker (`adminFilter('variant', …)`). */
+    skuPickerFilters: ExtensionFilter[];
 }>();
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const editable = computed(() => props.canManage && !props.readOnly);
 
 const listUrl = computed(() => `${props.baseUrl}/${props.priceList.id}`);
@@ -75,7 +84,7 @@ const search = ref(props.q);
 const selected = ref<number[]>([]);
 
 function visit(page?: number, perPage = props.pagination.per_page): void {
-    router.get(`${listUrl.value}/prices`, { q: search.value.trim() || undefined, page, per_page: perPage === props.perPageOptions[0] ? undefined : perPage }, { preserveState: true, preserveScroll: true });
+    router.get(`${listUrl.value}/prices`, { q: search.value.trim() || undefined, ext: { ...ext }, page, per_page: perPage === props.perPageOptions[0] ? undefined : perPage }, { preserveState: true, preserveScroll: true });
 }
 
 // Sửa giá trong ô: chỉ gửi các dòng đã đổi.
@@ -167,7 +176,8 @@ function applyBulk(): void {
 // Thêm sản phẩm: SkuPicker (mặc định hiện sản phẩm, mở rộng để chọn từng SKU) → bước cách tính giá cho các SKU đã chọn.
 const addOpen = ref(false);
 const chosen = ref<number[]>([]);
-const searchCandidates = async (term: string): Promise<SkuPickerProduct[]> => (await getJson<{ data: SkuPickerProduct[] }>(`${listUrl.value}/candidates`, { q: term })).data;
+const searchCandidates = async (term: string, filters: Record<string, string>): Promise<SkuPickerProduct[]> =>
+    (await getJson<{ data: SkuPickerProduct[] }>(`${listUrl.value}/candidates`, { q: term, ...Object.fromEntries(Object.entries(filters).map(([key, value]) => [`ext[${key}]`, value])) })).data;
 function continueToRule(): void {
     addOpen.value = false;
     openBulk({ scope: 'variants', variant_ids: [...chosen.value] }, `Thêm ${chosen.value.length} SKU vào "${props.priceList.name}"`);
@@ -228,13 +238,16 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
 
     <form class="mb-3 flex max-w-lg gap-2" @submit.prevent="visit()">
         <input v-model="search" :class="inputClass" type="search" placeholder="Tìm theo tên, mã sản phẩm hoặc SKU trong bảng giá" aria-label="Tìm trong bảng giá" />
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
+    <ExtensionTools :tools="extensions.tools ?? []" />
 
     <DataTable
         v-model:selected="selected"
         :columns="columns"
         :rows="rows"
+        :extensions="extensions"
         :selectable="editable"
         :extension-id="(row) => row.variant_id"
         :row-key="(row) => row.variant_id"
@@ -245,6 +258,7 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
         <template #bulk="{ selected: ids, clear }">
             <button type="button" :class="secondaryButton" class="!py-1" @click="openBulk({ scope: 'variants', variant_ids: [...ids] }, `Áp giá cho ${ids.length} SKU đã chọn`)">Áp giá…</button>
             <button type="button" :class="secondaryButton" class="!py-1" @click="removeSelected([...ids], clear)">Gỡ khỏi bảng giá</button>
+            <ExtensionActions :actions="extensions.actions" :ids="[...ids]" selection-description="SKU" />
             <button v-if="pagination.total > ids.length" type="button" class="text-indigo-700 hover:underline" @click="openBulk({ scope: 'all', q }, `Áp giá cho toàn bộ ${pagination.total} SKU${q ? ' khớp tìm kiếm' : ''}`)">
                 Áp giá cho toàn bộ {{ pagination.total }} SKU{{ q ? ' khớp tìm kiếm' : '' }}
             </button>
@@ -293,7 +307,7 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
     </Dialog>
 
     <Dialog v-model:open="addOpen" title="Thêm sản phẩm vào bảng giá" size="large" :dirty="chosen.length > 0">
-        <SkuPicker v-model="chosen" :search="searchCandidates" placeholder="Gõ tên, mã sản phẩm hoặc SKU — vd. đầm, VS-DSC" />
+        <SkuPicker v-model="chosen" :search="searchCandidates" :filters="skuPickerFilters" placeholder="Gõ tên, mã sản phẩm hoặc SKU — vd. đầm, VS-DSC" />
         <template #footer>
             <button type="button" :class="primaryButton" :disabled="!chosen.length" data-continue @click="continueToRule">Tiếp: cách tính giá ({{ chosen.length }} SKU)</button>
         </template>

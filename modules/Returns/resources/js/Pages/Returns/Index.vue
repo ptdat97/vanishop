@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import type { ExtensionAction } from '@admin/types';
+import type { ExtensionAction, ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { type ReturnLabels, returnStatusTone } from '../../labels';
 
 const props = defineProps<{
@@ -21,6 +23,8 @@ const props = defineProps<{
     counts: Record<string, number>;
     /** Thao tác hàng loạt (0.3.102): Duyệt, Đã nhận hàng. */
     actions: ExtensionAction[];
+    /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
+    extensions: ExtensionList;
     returns: Array<{ id: number; number: string; status: string; reason_code: string; refund_amount: number; source: string; order_number: string | null; order_url: string; created_at: string | null }>;
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     perPageOptions: number[];
@@ -28,7 +32,9 @@ const props = defineProps<{
 
 const selected = ref<number[]>([]);
 const search = ref(props.search);
-const bulk = { columns: [], values: {}, actions: props.actions };
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
+const allActions = computed(() => [...props.actions, ...props.extensions.actions]);
+const bulk = computed(() => ({ ...props.extensions, actions: allActions.value }));
 const columns = [
     { key: 'number', label: 'Yêu cầu' },
     { key: 'order_number', label: 'Đơn', class: 'font-mono' },
@@ -38,7 +44,7 @@ const columns = [
 ];
 
 function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), page, per_page: perPage }, { preserveState: true });
+    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), ext: { ...ext }, page, per_page: perPage }, { preserveState: true });
 }
 
 function goToPage(page: number): void {
@@ -59,6 +65,7 @@ function changePageSize(perPage: number): void {
 
     <form class="mb-3 flex max-w-md gap-2" @submit.prevent="filter(status)">
         <input v-model="search" :class="inputClass" type="search" placeholder="Số yêu cầu hoặc số đơn" aria-label="Tìm yêu cầu đổi/trả" />
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
@@ -70,9 +77,10 @@ function changePageSize(perPage: number): void {
         </button>
     </div>
 
-    <div v-if="actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+    <ExtensionTools :tools="extensions.tools ?? []" />
+    <div v-if="allActions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
         <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
-        <ExtensionActions :actions="actions" :ids="selected" />
+        <ExtensionActions :actions="allActions" :ids="selected" />
     </div>
     <DataTable v-model:selected="selected" :columns="columns" :rows="returns" :extensions="bulk" :row-label="(item) => item.number" :empty-text="search ? 'Không có yêu cầu khớp.' : 'Chưa có yêu cầu nào.'">
         <template #cell-number="{ row }">

@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 
 type Props = {
     baseUrl: string;
@@ -34,6 +38,8 @@ type Props = {
     can: { confirm: boolean; refund: boolean };
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     perPageOptions: number[];
+    /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
+    extensions: ExtensionList;
 };
 
 const props = defineProps<Props>();
@@ -52,9 +58,11 @@ const columns = [
 const refunding = ref<null | { id: number; max: number }>(null);
 const refundForm = useForm({ amount: 0, reason: '', idempotency_key: '' });
 const search = ref(props.search);
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
+const selected = ref<number[]>([]);
 
 function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), page, per_page: perPage }, { preserveState: true });
+    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), ext: { ...ext }, page, per_page: perPage }, { preserveState: true });
 }
 
 function hasActions(row: Props['payments'][number]): boolean {
@@ -128,9 +136,11 @@ async function completeRefund(id: number): Promise<void> {
     <Head title="Thanh toán" />
     <p class="mb-2 text-sm text-slate-500">Thanh toán</p>
     <PageHeader title="Thanh toán" subtitle="Xác nhận chuyển khoản, ghi nhận đã thu COD, hoàn tiền. Tổng hoàn không vượt số đã thu." />
+    <ExtensionTools :tools="extensions.tools ?? []" />
 
     <form class="mb-3 flex max-w-md gap-2" @submit.prevent="filter(status ?? '')">
         <input v-model="search" :class="inputClass" type="search" placeholder="Tìm theo số đơn, vd. VN2611-000006" />
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
@@ -147,7 +157,11 @@ async function completeRefund(id: number): Promise<void> {
         </div>
     </section>
 
-    <DataTable :columns="columns" :rows="payments" :empty-text="search ? 'Không có thanh toán của đơn này.' : 'Chưa có thanh toán nào.'">
+    <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="thanh toán" />
+    </div>
+    <DataTable v-model:selected="selected" :extensions="extensions" :row-label="(row) => row.order_number ?? String(row.id)" :columns="columns" :rows="payments" :empty-text="search ? 'Không có thanh toán của đơn này.' : 'Chưa có thanh toán nào.'">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
         </template>

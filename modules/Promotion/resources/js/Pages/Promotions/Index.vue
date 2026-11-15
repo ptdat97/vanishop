@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { useMoney } from '@admin/money';
 import { primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { reactive, ref, watch } from 'vue';
 import type { PromotionLabels } from '../../labels';
 
 const props = defineProps<{
@@ -28,7 +33,12 @@ const props = defineProps<{
     }>;
     canManage: boolean;
     campaignsUrl: string;
+    /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
+    extensions: ExtensionList;
 }>();
+const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
+const selected = ref<number[]>([]);
+watch(ext, () => router.get(props.baseUrl, { ext: { ...ext } }, { preserveState: true, preserveScroll: true }));
 
 const money = useMoney();
 const columns = [
@@ -53,7 +63,15 @@ function describe(type: string, config: Record<string, number>): string {
         <Link :href="campaignsUrl" :class="secondaryButton">Campaign</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm khuyến mãi</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="canManage ? (promotion) => router.visit(`${props.baseUrl}/${promotion.id}/edit`) : undefined" empty-text="Chưa có khuyến mãi nào.">
+    <ExtensionTools :tools="extensions.tools ?? []" />
+    <div v-if="extensions.filters.length || extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
+        <template v-if="extensions.actions.length">
+            <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
+            <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="khuyến mãi" />
+        </template>
+    </div>
+    <DataTable v-model:selected="selected" :extensions="extensions" :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="canManage ? (promotion) => router.visit(`${props.baseUrl}/${promotion.id}/edit`) : undefined" empty-text="Chưa có khuyến mãi nào.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-400">

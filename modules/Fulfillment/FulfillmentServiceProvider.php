@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
@@ -53,6 +54,8 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
+        $this->app->make(AdminScreen::class)->declareResource('shipment');
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
         $this->app->bind(ShipmentBooking::class, FulfillmentService::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);

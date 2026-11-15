@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\ListPriceSync;
 use Modules\Pricing\Application\PriceListFile;
@@ -113,12 +114,13 @@ final class PriceListController
      * Trang làm việc của bảng giá (đợt 1): mọi SKU trong bảng (tìm, phân trang), sửa giá trong ô, chọn nhiều để áp giá
      * hàng loạt hoặc gỡ; thêm sản phẩm. `?style=` (đường dẫn cũ) được hiểu như ô tìm.
      */
-    public function prices(PriceList $priceList, Request $request, PriceListWorkspace $workspace): Response
+    public function prices(PriceList $priceList, Request $request, PriceListWorkspace $workspace, AdminScreen $screen): Response
     {
         Gate::authorize('pricing.view');
+        $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
         $text = trim((string) ($request->query('q') ?? $request->query('style', '')));
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = $workspace->rows($priceList, $text, max(1, (int) $request->query('page', 1)), $perPage, route('admin.pricing.price-lists.prices', $priceList));
+        $page = $workspace->rows($priceList, $text, max(1, (int) $request->query('page', 1)), $perPage, route('admin.pricing.price-lists.prices', $priceList), $screen->filterIds('price_list_item', $extensionFilters));
 
         return Inertia::render('Pricing::PriceLists/Prices', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
@@ -137,6 +139,9 @@ final class PriceListController
             // Giá niêm yết sửa ở sản phẩm (form, ma trận, danh sách sản phẩm) — trang bảng giá chỉ xem.
             'readOnly' => $priceList->type === PriceListType::Base,
             'productsUrl' => route('admin.catalog.products.index'),
+            // Cột/lọc/thao tác/công cụ của plugin theo SKU (EP v3 X1) — vd. cột giá vốn/biên lợi nhuận.
+            'extensions' => $screen->listProps('price_list_item', array_column($page->items(), 'variant_id'), $extensionFilters),
+            'skuPickerFilters' => $screen->filters('variant'),
             // Từ danh sách sản phẩm "Đưa vào bảng giá…": sản phẩm đã chọn, mở sẵn hộp thoại cách tính giá.
             'addStyleIds' => $priceList->type === PriceListType::Base ? [] : $this->styleIdsFromQuery((string) $request->query('add', '')),
             'canManage' => Gate::allows('pricing.manage'),
@@ -161,13 +166,14 @@ final class PriceListController
         return redirect()->route('admin.pricing.price-lists.prices', ['priceList' => (int) $data['price_list_id'], 'add' => implode(',', array_unique(array_map('intval', $data['ids'])))]);
     }
 
-    public function candidates(PriceList $priceList, Request $request, PriceListWorkspace $workspace): JsonResponse
+    public function candidates(PriceList $priceList, Request $request, PriceListWorkspace $workspace, AdminScreen $screen): JsonResponse
     {
         Gate::authorize('pricing.manage');
         $this->ensureEditable($priceList);
-        $text = (string) $request->validate(['q' => ['nullable', 'string', 'max:100']])['q'];
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'ext' => ['nullable', 'array']]);
+        $only = $screen->filterIds('variant', array_filter((array) ($data['ext'] ?? []), 'is_string'));
 
-        return response()->json(['data' => $workspace->candidates($priceList, $text)]);
+        return response()->json(['data' => $workspace->candidates($priceList, (string) ($data['q'] ?? ''), $only)]);
     }
 
     public function previewBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): JsonResponse

@@ -9,6 +9,7 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
@@ -56,6 +57,8 @@ final class InventoryServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
+        // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
+        $this->app->make(AdminScreen::class)->declareResource('stock');
         $this->app->bind(InventoryReservation::class, ReservationService::class);
         $this->app->bind(InventoryReturns::class, ReturnService::class);
         $this->app->bind(InventorySync::class, AuthoritySyncService::class);

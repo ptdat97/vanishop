@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
+import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
 import FileInput from '@admin/Components/FileInput.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -9,6 +12,7 @@ import { confirmAction } from '@admin/confirm';
 import { getJson } from '@admin/http';
 import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import type { InventoryLabels } from '../../labels';
@@ -18,7 +22,7 @@ type Variant = { id: number; sku: string; style_code: string; style_name: string
 type Product = { style_code: string; style_name: string; tracked: boolean; sellable: number; variants: Variant[] };
 type Row = Variant & { first: boolean; product: Product; index: number };
 type StockLocation = { id: number; code: string; name: string; external: boolean; online: boolean };
-type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; options: Record<string, string> };
+type Criteria = { q: string; style: string; filter: 'all' | 'out' | 'low'; options: Record<string, string>; ext?: Record<string, string> };
 type OptionFilter = { code: string; name: string; values: string[] };
 
 /**
@@ -38,11 +42,15 @@ const props = defineProps<{
     locations: StockLocation[];
     products: Product[];
     canAdjust: boolean;
+    /** Cột/lọc/thao tác hàng loạt/công cụ của plugin theo SKU (EP v3 X1). */
+    extensions: ExtensionList;
 }>();
 
 const page = usePage<{ errors: Record<string, string> }>();
 // PHP trả mảng rỗng `[]` khi không lọc tuỳ chọn → chuẩn hoá thành object.
 const criteria = reactive<Criteria>({ ...props.query, options: { ...(Array.isArray(props.query.options) ? {} : props.query.options) } });
+/** Bộ lọc của plugin (EP v3 X1). */
+const ext = reactive<Record<string, string>>({ ...(Array.isArray(props.query.ext) ? {} : (props.query.ext ?? {})) });
 const filterOptions = computed(() => [
     { value: 'all', label: 'Tất cả' },
     { value: 'out', label: 'Hết hàng (online)' },
@@ -116,7 +124,8 @@ function params(overrides: Partial<Criteria> & { page?: number; per_page?: numbe
     const merged = { ...criteria, ...overrides };
     return {
         q: merged.q.trim() || undefined, style: merged.style || undefined, filter: merged.filter === 'all' ? undefined : merged.filter,
-        opt: Object.fromEntries(Object.entries(merged.options).filter(([, code]) => code !== '')), page: overrides.page && overrides.page > 1 ? overrides.page : undefined,
+        opt: Object.fromEntries(Object.entries(merged.options).filter(([, code]) => code !== '')),
+        ext: Object.fromEntries(Object.entries(ext).filter(([, value]) => value !== '')), page: overrides.page && overrides.page > 1 ? overrides.page : undefined,
         per_page: overrides.per_page ?? props.pagination.per_page,
     };
 }
@@ -138,6 +147,7 @@ function changePageSize(perPage: number): void {
 
 function clearFilters(): void {
     Object.assign(criteria, { q: '', style: '', filter: 'all', options: {} });
+    Object.keys(ext).forEach((key) => (ext[key] = ''));
     void visit({});
 }
 
@@ -272,6 +282,7 @@ function createDefault(): void {
         <Link v-for="link in links" :key="link.url" :href="link.url" :class="secondaryButton">{{ link.label }}</Link>
         <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">Kho chính</button>
     </PageHeader>
+    <ExtensionTools :tools="extensions.tools ?? []" />
     <form v-if="editingLocation && urls.main_location && mainLocation" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm md:grid-cols-3" data-main-location @submit.prevent="saveLocation">
         <p class="md:col-span-3">Kho chính của cửa hàng. Cần nhiều kho, cửa hàng nhận tại quầy hay chuyển kho: bật plugin <strong>Vận hành kho</strong>.</p>
         <input v-model="locationForm.name" :class="inputClass" placeholder="Tên kho" aria-label="Tên kho" />
@@ -315,6 +326,7 @@ function createDefault(): void {
             :aria-label="filter.name"
             @update:model-value="(code) => (criteria.options[filter.code] = String(code ?? ''))"
         />
+        <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="primaryButton">Lọc</button>
         <button v-if="query.q || query.style || query.filter !== 'all' || hasOptionFilter" type="button" :class="secondaryButton" @click="clearFilters">Bỏ lọc</button>
         <span v-if="query.style" class="text-sm text-slate-600">Đang xem mã {{ query.style }}</span>
@@ -333,6 +345,7 @@ function createDefault(): void {
         <Select v-model="bulk.location_id" :options="bulkLocationOptions" class="w-56" aria-label="Kho" />
         <input v-model="bulk.reason" :class="[inputClass, 'w-56']" :placeholder="bulk.action === 'adjust' ? 'Lý do (bắt buộc)' : 'Lý do (tuỳ chọn)'" maxlength="255" aria-label="Lý do" />
         <button type="button" :class="primaryButton" :disabled="bulkProcessing || !bulk.location_id || (bulk.action === 'adjust' && !bulk.reason.trim())" @click="applyBulk">Áp dụng</button>
+        <ExtensionActions v-if="!allMatching" :actions="extensions.actions" :ids="selected" selection-description="SKU" />
         <button type="button" :class="secondaryButton" @click="clearSelection">Bỏ chọn</button>
     </div>
 
@@ -360,6 +373,9 @@ function createDefault(): void {
                     <span v-if="!row.product.tracked" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700" title="Sản phẩm luôn bán được; tồn tự bù khi có đơn" data-untracked>Không theo dõi tồn</span>
                 </div>
                 <div class="font-mono text-xs text-slate-600">{{ row.sku }}<template v-if="row.options_label"> · {{ row.options_label }}</template><span v-if="row.status !== 'active'"> · ngừng bán</span></div>
+                <div v-for="column in extensions.columns" :key="column.key" class="text-xs text-slate-500" :data-extension-column="column.key">
+                    <template v-if="extensions.values[row.id]?.[column.key] !== null && extensions.values[row.id]?.[column.key] !== undefined">{{ column.label }}: {{ extensions.values[row.id][column.key] }}</template>
+                </div>
             </template>
             <template #cell-sellable="{ row }">
                 <span v-if="!row.tracked" class="text-sky-700" title="Không theo dõi tồn — luôn bán được">Không giới hạn</span>

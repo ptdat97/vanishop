@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
@@ -33,15 +34,18 @@ final class PaymentController
         return redirect()->route('admin.payment.payments.index');
     }
 
-    public function index(Request $request, OrderReader $orders, GatewayRegistry $gateways, PaymentService $service): Response
+    public function index(Request $request, OrderReader $orders, GatewayRegistry $gateways, PaymentService $service, AdminScreen $screen): Response
     {
         Gate::authorize('payments.view');
+        $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
+        $extensionIds = $screen->filterIds('payment', $extensionFilters);
         $status = $request->query('status');
         $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
         $page = Payment::query()
             ->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))
             ->when($search !== '', fn ($query) => $query->where('order_id', $orders->findByNumber($search)?->id ?? 0))
+            ->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
             ->orderByDesc('id')->paginate($perPage)->withQueryString();
         $payments = collect($page->items());
         $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
@@ -79,6 +83,8 @@ final class PaymentController
                 'confirm' => Gate::allows('payments.confirm'),
                 'refund' => Gate::allows('payments.refund'),
             ],
+            // Cột/lọc/thao tác hàng loạt/công cụ tải file của plugin (EP v3 X1) — vd. nhập sao kê ngân hàng.
+            'extensions' => $screen->listProps('payment', $payments->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
         ]);
     }
 

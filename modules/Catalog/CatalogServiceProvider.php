@@ -76,6 +76,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->make(AdminScreen::class)->declareResource('product');
         $this->app->make(AdminScreen::class)->declareResource('category');
         $this->app->make(AdminScreen::class)->declareResource('brand');
+        // Bộ lọc phụ của SkuPicker (EP v3 X1): plugin lọc SKU theo dữ liệu riêng (bộ sưu tập, nhãn…); id = variant id.
+        $this->app->make(AdminScreen::class)->declareResource('variant');
         $this->app->bind(MediaDirectory::class, EloquentMediaDirectory::class);
         // Scoped: ghi nhớ ảnh đã tra trong một request (theme gọi vani_image() nhiều lần).
         $this->app->scoped(MediaUrls::class, EloquentMediaUrls::class);

@@ -17,6 +17,8 @@ const PLUGIN_PUBLIC_SUPPORT = [
     'Modules\\Extension\\Facades\\Hook',
     'Modules\\Shared\\Support\\LocalizedUrls',
     'Modules\\Shared\\Support\\MoneyFormatter',
+    // EP v3 X1: plugin đọc file tải lên qua adminTool (nhập sao kê, nhập tồn…).
+    'Modules\\Shared\\Support\\SpreadsheetRows',
     'Modules\\Shared\\Support\\StoreClock',
     'Modules\\Shared\\Support\\StoreLocale',
 ];

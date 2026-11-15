@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Extension\Application\Admin;
 
 use Closure;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +22,7 @@ use Throwable;
 final class AdminExtensions implements AdminScreen
 {
     /** @var array<string, array<string, array<string, mixed>>> loại => "resource|plugin|key" => định nghĩa */
-    private array $items = ['section' => [], 'column' => [], 'action' => [], 'tab' => [], 'filter' => []];
+    private array $items = ['section' => [], 'column' => [], 'action' => [], 'tab' => [], 'filter' => [], 'tool' => []];
 
     /** @var array<string, true> */
     private array $resources = [];
@@ -87,6 +88,47 @@ final class AdminExtensions implements AdminScreen
     public function filter(string $resource, string $plugin, string $key, string $label, array|Closure $options, Closure $apply, int $order = 500): void
     {
         $this->put('filter', $resource, $plugin, $key, compact('label', 'options', 'apply', 'order'));
+    }
+
+    /**
+     * Công cụ tải file ở đầu danh sách (EP v3 X1): nhập sao kê, nhập tồn của hãng… `handle` nhận file đã kiểm (loại, dung
+     * lượng) + giá trị ô phụ, trả thông báo; lỗi nghiệp vụ → ném ValidationException/BusinessRuleViolation.
+     *
+     * @param  Closure(UploadedFile, array<string, string>): (string|null)  $handle
+     * @param  list<array{key: string, label: string, placeholder?: string}>  $fields
+     */
+    public function tool(string $resource, string $plugin, string $key, string $label, string $permission, Closure $handle, string $accept = '.xlsx,.csv', int $maxKb = 5120, ?string $help = null, array $fields = [], int $order = 500): void
+    {
+        $this->put('tool', $resource, $plugin, $key, compact('label', 'permission', 'handle', 'accept', 'maxKb', 'help', 'fields', 'order'));
+    }
+
+    public function tools(string $resource): array
+    {
+        $tools = [];
+        foreach ($this->active('tool', $resource) as $item) {
+            if (Gate::allows($item['permission'])) {
+                $tools[] = [
+                    'key' => "{$item['plugin']}:{$item['key']}", 'label' => $item['label'], 'accept' => $item['accept'], 'max_kb' => $item['maxKb'],
+                    'help' => $item['help'], 'fields' => $item['fields'],
+                    'url' => route('admin.extensions.tool', ['resource' => $resource, 'plugin' => $item['plugin'], 'key' => $item['key']]),
+                ];
+            }
+        }
+
+        return $tools;
+    }
+
+    /**
+     * Phần mở rộng cho trang danh sách, gom một lần (cột của trang, bộ lọc, giá trị lọc đang chọn, thao tác hàng loạt,
+     * công cụ tải file) — cùng hình dạng prop `extensions` mọi danh sách Admin dùng.
+     *
+     * @param  list<int>  $ids
+     * @param  array<string, mixed>  $filterValues
+     * @return array<string, mixed>
+     */
+    public function listProps(string $resource, array $ids, array $filterValues): array
+    {
+        return [...$this->columns($resource, $ids), 'filters' => $this->filters($resource), 'filterValues' => $filterValues, 'actions' => $this->actions($resource, 'bulk'), 'tools' => $this->tools($resource)];
     }
 
     public function formSections(string $resource, ?int $id): array
@@ -216,6 +258,18 @@ final class AdminExtensions implements AdminScreen
     public static function inputKey(string $plugin): string
     {
         return str_replace('.', '-', $plugin);
+    }
+
+    /**
+     * Công cụ đang bật theo khoá (cho controller thực thi).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findTool(string $resource, string $plugin, string $key): ?array
+    {
+        $item = $this->items['tool']["{$resource}|{$plugin}|{$key}"] ?? null;
+
+        return $item !== null && $this->isActive($item['plugin']) ? $item : null;
     }
 
     /**

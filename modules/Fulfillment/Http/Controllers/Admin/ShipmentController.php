@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Fulfillment\Application\CarrierHandoff;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
@@ -47,9 +48,11 @@ final class ShipmentController
         return redirect()->route('admin.fulfillment.shipments.index');
     }
 
-    public function index(Request $request, OrderReader $orders, CarrierRegistry $registry): Response
+    public function index(Request $request, OrderReader $orders, CarrierRegistry $registry, AdminScreen $screen): Response
     {
         Gate::authorize('fulfillment.view');
+        $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
+        $extensionIds = $screen->filterIds('shipment', $extensionFilters);
         $status = (string) $request->query('status', '');
         $number = strtoupper(trim((string) $request->query('order', '')));
         $order = $number === '' ? null : $orders->findByNumber($number);
@@ -58,6 +61,7 @@ final class ShipmentController
         $page = Shipment::query()->with('lines')
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($number !== '', fn ($query) => $query->where('order_id', $order->id ?? 0))
+            ->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
             ->orderByDesc('id')->paginate($perPage)->withQueryString();
         $shipments = collect($page->items());
         $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
@@ -92,6 +96,8 @@ final class ShipmentController
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             'canManage' => Gate::allows('fulfillment.manage'),
+            // Cột/lọc/thao tác hàng loạt/công cụ tải file của plugin (EP v3 X1).
+            'extensions' => $screen->listProps('shipment', $shipments->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
         ]);
     }
 

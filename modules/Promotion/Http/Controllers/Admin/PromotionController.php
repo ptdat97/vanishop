@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Application\PromotionService;
 use Modules\Promotion\Domain\Stacking;
@@ -28,14 +29,18 @@ final class PromotionController
         return redirect()->route('admin.promotion.promotions.index');
     }
 
-    public function index(): Response
+    public function index(Request $request, AdminScreen $screen): Response
     {
         Gate::authorize('promotion.view');
+        $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
+        $extensionIds = $screen->filterIds('promotion', $extensionFilters);
+        $promotions = Promotion::query()->withCount('vouchers')->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
+            ->orderByDesc('priority')->orderByDesc('id')->get();
 
         return Inertia::render('Promotion::Promotions/Index', [
             'baseUrl' => route('admin.promotion.promotions.index'),
             'labels' => __('promotion::labels'),
-            'promotions' => Promotion::query()->withCount('vouchers')->orderByDesc('priority')->orderByDesc('id')->get()->map(fn (Promotion $promotion): array => [
+            'promotions' => $promotions->map(fn (Promotion $promotion): array => [
                 'id' => $promotion->id,
                 'name' => $promotion->name,
                 'status' => $promotion->status,
@@ -53,6 +58,8 @@ final class PromotionController
             ])->all(),
             'canManage' => Gate::allows('promotion.manage'),
             'campaignsUrl' => route('admin.promotion.campaigns.index'),
+            // Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1).
+            'extensions' => $screen->listProps('promotion', $promotions->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
         ]);
     }
 

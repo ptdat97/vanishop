@@ -97,6 +97,17 @@ export interface ExtensionFilter {
     options: Record<string, string>;
 }
 
+/** Công cụ tải file của plugin ở đầu danh sách (`adminTool`, EP v3 X1; danh sách đơn: slot `vani.admin.order.list_tools`). */
+export interface ExtensionTool {
+    key: string;
+    label: string;
+    url: string;
+    accept?: string;
+    max_kb?: number;
+    help?: string | null;
+    fields?: Array<{ key: string; label: string; placeholder?: string }>;
+}
+
 export interface ExtensionList {
     columns: Array<{ key: string; label: string }>;
     values: Record<number, Record<string, string | number | boolean | null>>;
@@ -105,6 +116,7 @@ export interface ExtensionList {
     filters: ExtensionFilter[];
     filterValues: Record<string, string>;
     actions: ExtensionAction[];
+    tools?: ExtensionTool[];
 }
 
 export interface ExtensionDetail {

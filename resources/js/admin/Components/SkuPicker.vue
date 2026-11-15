@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { useAsyncOptions } from '@admin/search';
 import { countSelected, selectableIds, selectionState, toggleGroup, toggleOne, type SkuPickerProduct } from '@admin/skuPicker';
 import { inputClass } from '@admin/styles';
+import type { ExtensionFilter } from '@admin/types';
 import { computed, reactive, ref, useId, watch } from 'vue';
 
 /**
@@ -16,35 +18,40 @@ import { computed, reactive, ref, useId, watch } from 'vue';
  * - `search(term)` trả `SkuPickerProduct[]` (xem `@admin/skuPicker`): chờ 250 ms sau khi gõ, bỏ kết quả cũ. Từ khoá rỗng
  *   không tìm, trừ khi `searchEmpty`.
  * - v-model: id SKU (variant) đã chọn.
+ * - `filters`: bộ lọc phụ của plugin (`adminFilter('variant', …)`, EP v3 X1) — vd. bộ sưu tập; giá trị gửi kèm
+ *   `search(term, filterValues)`; chọn bộ lọc thì tìm cả khi chưa gõ.
  */
 const props = withDefaults(
-    defineProps<{ search: (term: string) => Promise<SkuPickerProduct[]>; placeholder?: string; searchEmpty?: boolean; ariaLabel?: string }>(),
-    { placeholder: 'Gõ tên, mã sản phẩm hoặc SKU', searchEmpty: false, ariaLabel: 'Tìm sản phẩm' },
+    defineProps<{ search: (term: string, filters: Record<string, string>) => Promise<SkuPickerProduct[]>; filters?: ExtensionFilter[]; placeholder?: string; searchEmpty?: boolean; ariaLabel?: string }>(),
+    { filters: () => [], placeholder: 'Gõ tên, mã sản phẩm hoặc SKU', searchEmpty: false, ariaLabel: 'Tìm sản phẩm' },
 );
 const selected = defineModel<number[]>({ default: () => [] });
 
 const uid = useId();
 const term = ref('');
+const filterValues = reactive<Record<string, string>>({});
+const hasFilter = computed(() => Object.values(filterValues).some(Boolean));
+const active = computed(() => Boolean(term.value.trim()) || hasFilter.value || props.searchEmpty);
 const searched = ref(false);
 const remote = useAsyncOptions(async (value: string) => {
-    const found = await props.search(value);
+    const found = await props.search(value, Object.fromEntries(Object.entries(filterValues).filter(([, selected]) => selected)));
     searched.value = true;
 
     return found;
 });
-const products = computed(() => (term.value.trim() || props.searchEmpty ? remote.results.value : []));
+const products = computed(() => (active.value ? remote.results.value : []));
 const expanded = reactive(new Set<number>());
 
 watch(
-    term,
-    (value) => {
-        if (value.trim() || props.searchEmpty) {
-            remote.query(value.trim());
+    [term, filterValues],
+    () => {
+        if (active.value) {
+            remote.query(term.value.trim());
         } else {
             searched.value = false;
         }
     },
-    { immediate: props.searchEmpty },
+    { immediate: props.searchEmpty, deep: true },
 );
 
 const allIds = computed(() => products.value.flatMap(selectableIds));
@@ -64,7 +71,10 @@ function toggleExpandAll(): void {
 
 <template>
     <div class="space-y-2" data-sku-picker>
-        <input v-model="term" :class="inputClass" type="search" :placeholder="placeholder" :aria-label="ariaLabel" autocomplete="off" />
+        <div class="flex flex-wrap gap-2">
+            <input v-model="term" :class="inputClass" class="min-w-60 flex-1" type="search" :placeholder="placeholder" :aria-label="ariaLabel" autocomplete="off" />
+            <ExtensionFilters v-if="filters.length" v-model="filterValues" :filters="filters" />
+        </div>
 
         <div v-if="products.length" class="rounded-md border border-slate-200">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-sm">
@@ -131,7 +141,7 @@ function toggleExpandAll(): void {
         </div>
         <p v-else-if="remote.loading.value" class="text-sm text-slate-500">Đang tìm…</p>
         <p v-else-if="remote.failed.value" class="text-sm text-red-600">Không tìm được — thử lại.</p>
-        <p v-else-if="searched && (term.trim() || searchEmpty)" class="text-sm text-slate-500">Không tìm thấy sản phẩm nào khớp “{{ term.trim() }}”.</p>
+        <p v-else-if="searched && active" class="text-sm text-slate-500">Không tìm thấy sản phẩm nào khớp<template v-if="term.trim()"> “{{ term.trim() }}”</template>.</p>
         <p v-else class="text-sm text-slate-500">Gõ để tìm. Chọn cả sản phẩm, hoặc bấm vào sản phẩm để chọn từng SKU.</p>
 
         <div v-if="selected.length" class="flex items-center justify-between text-sm text-indigo-700" data-selected-count>

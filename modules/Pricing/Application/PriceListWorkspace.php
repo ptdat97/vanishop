@@ -55,10 +55,14 @@ final class PriceListWorkspace
     /**
      * SKU trong bảng giá, theo thứ tự tên sản phẩm → mã → trục; `$text` tìm theo SKU, mã, tên sản phẩm.
      *
+     * @param  list<int>|null  $only  giới hạn thêm (bộ lọc của plugin — EP v3 X1); null = không giới hạn
      * @return list<int>
      */
-    public function variantIds(PriceList $list, string $text = ''): array
+    public function variantIds(PriceList $list, string $text = '', ?array $only = null): array
     {
+        if ($only !== null) {
+            return array_values(array_intersect($this->variantIds($list, $text), $only));
+        }
         $inList = array_flip(Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all());
         if ($inList === []) {
             return [];
@@ -70,9 +74,9 @@ final class PriceListWorkspace
     /**
      * @return LengthAwarePaginator<int, array<string, mixed>>
      */
-    public function rows(PriceList $list, string $text, int $page, int $perPage, string $path): LengthAwarePaginator
+    public function rows(PriceList $list, string $text, int $page, int $perPage, string $path, ?array $only = null): LengthAwarePaginator
     {
-        $ids = $this->variantIds($list, $text);
+        $ids = $this->variantIds($list, $text, $only);
         $slice = array_slice($ids, ($page - 1) * $perPage, $perPage);
 
         return new LengthAwarePaginator($this->describe($list, $slice), count($ids), $perPage, $page, ['path' => $path, 'query' => array_filter(['q' => $text])]);
@@ -103,15 +107,20 @@ final class PriceListWorkspace
      * phẩm, mỗi sản phẩm kèm mọi SKU. Chữ phụ: khoảng giá niêm yết và số SKU đã có trong bảng; từng SKU: giá niêm yết, giá
      * đang có trong bảng.
      *
+     * @param  list<int>|null  $only  SKU thoả bộ lọc phụ của plugin (`variant`); có bộ lọc thì tìm cả khi chưa gõ
      * @return list<array{id: int, code: string, name: string, meta: string|null, variants: list<array{id: int, sku: string, label: string, status: string, meta: string|null}>}>
      */
-    public function candidates(PriceList $list, string $text): array
+    public function candidates(PriceList $list, string $text, ?array $only = null): array
     {
-        if (trim($text) === '') {
+        if (trim($text) === '' && $only === null) {
             return [];
         }
+        $allowed = $only === null ? null : array_flip($only);
         $byStyle = [];
         foreach ($this->variants->searchIndex($text) as $row) {
+            if ($allowed !== null && ! isset($allowed[$row['id']])) {
+                continue;
+            }
             if (! isset($byStyle[$row['style_id']]) && count($byStyle) === 30) {
                 break;
             }
