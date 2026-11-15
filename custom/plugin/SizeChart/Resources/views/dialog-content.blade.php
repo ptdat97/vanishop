@@ -41,11 +41,11 @@
         <section class="rounded border border-slate-200 p-3" data-size-advisor data-rules='@json($chart['advisor']['rules'])'>
             <h3 class="mb-2 font-semibold">{{ __('Tìm size của tôi') }}</h3>
             <div class="flex flex-wrap items-end gap-3">
-                <label class="flex flex-col">{{ __('Chiều cao (cm)') }}<input type="number" min="50" max="250" class="w-28 rounded border border-slate-300 px-2 py-1" data-advisor-height></label>
-                <label class="flex flex-col">{{ __('Cân nặng (kg)') }}<input type="number" min="10" max="250" class="w-28 rounded border border-slate-300 px-2 py-1" data-advisor-weight></label>
+                <label class="flex flex-col gap-2">{{ __('Chiều cao (cm)') }}<input type="number" min="50" max="250" class="w-28 rounded border border-slate-300 px-2 py-1" data-advisor-height></label>
+                <label class="flex flex-col gap-2">{{ __('Cân nặng (kg)') }}<input type="number" min="10" max="250" class="w-28 rounded border border-slate-300 px-2 py-1" data-advisor-weight></label>
                 <button type="button" class="rounded bg-primary px-3 py-1.5 text-white" data-advisor-run>{{ __('Gợi ý') }}</button>
             </div>
-            <p class="mt-2" role="status" data-advisor-result></p>
+            <p class="mt-2 font-semibold" role="status" data-advisor-result></p>
             <button type="button" class="mt-1 text-sm underline" data-advisor-pick hidden>{{ __('Chọn size này') }}</button>
         </section>
     @endif
