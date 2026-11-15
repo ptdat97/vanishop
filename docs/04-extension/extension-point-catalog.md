@@ -21,6 +21,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `PackingSlipTemplate` | `vani.ordering.packing_slips` | Ordering | Mẫu chuẩn A5 của Core. **Implemented** (0.4.61): mẫu phiếu giao của plugin, chọn trên trang in; tham chiếu A6 của `vani.hello-world` | [fulfillment §3.0](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `reserved_locations` (**Implemented**; đề xuất phải khớp hàng đang giữ) | [fulfillment](../09-order/fulfillment.md) |
+| `BackorderPolicy` | `vani.inventory.backorder_policies` | Inventory | — (plugin). **Implemented** (0.4.65, EP v3 X7): hạn mức đặt trước theo SKU, Core áp ở kho bù tồn (giữ vượt tồn thật tối đa hạn mức); tham chiếu `vani.preorder` | [ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md) |
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
 | `StockPageLink` | `vani.inventory.stock_links` | Inventory | — (plugin); `vani.warehouse` thêm liên kết chuyển kho và quản lý kho (0.3.88) | [inventory](../08-inventory/inventory.md) |
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
@@ -90,6 +91,8 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |
 | `CustomerSegments` | Đọc nhóm/nhãn của khách; từ 0.4.64 ghi: `tag`, `untag`, `assignGroup` (nguồn + audit). **Implemented** (EP v3 X6) | Customer |
+| `Backorders` | Đọc hạn mức/số chờ hàng theo SKU, số còn chờ của một đơn (FIFO). **Implemented** (0.4.65, EP v3 X7) | Inventory |
+| `IncomingStock` | Ghi/đọc hàng đang về + ngày dự kiến theo SKU (bảng `incoming_stock`). **Implemented** (0.4.65, EP v3 X7) | Inventory |
 | `CustomerNotes` | Ghi chú CSKH theo khách (nhân viên + plugin), hiện ở trang khách và trang đơn. **Implemented** (0.4.64, EP v3 X6) | Customer |
 | `CustomerDirectory` | Tìm/tạo khách theo SĐT, đọc consent | Customer |
 | `PageSeo` | Trang storefront khai báo URL tương ứng theo ngôn ngữ + ngôn ngữ đã dịch (`alternates`), hoặc `noindex()`; layout sinh canonical/hreflang/robots/nút chuyển ngôn ngữ. **Implemented** (0.3.61, ADR-038) | Storefront |

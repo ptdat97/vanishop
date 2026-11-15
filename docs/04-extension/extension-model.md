@@ -40,7 +40,7 @@ flowchart TD
 Các điểm sau **không có** extension point, và sẽ không bao giờ có:
 
 - Bảng chuyển trạng thái đơn, thanh toán, fulfillment. Plugin chỉ **yêu cầu** chuyển qua `OrderTransitions`.
-- Công thức ATS và logic khoá reservation. Plugin chỉ điều chỉnh qua `InventoryStrategy`, và kết quả luôn ≤ công thức gốc.
+- Công thức ATS và logic khoá reservation. Plugin chỉ điều chỉnh qua `InventoryStrategy`, và kết quả luôn ≤ công thức gốc. Ngoại lệ duy nhất có kiểm soát: hạn mức đặt trước `BackorderPolicy` ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)) — Core tự áp ở kho bù tồn, plugin chỉ trả con số hạn mức.
 - Kiểu `Money`, làm tròn cuối cùng của tổng đơn.
 - Kiểm tra quyền, xác thực, chữ ký webhook.
 - Nội dung snapshot đơn sau khi tạo.

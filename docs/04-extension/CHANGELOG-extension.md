@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.65 — 2026-11-16
+
+EP v3 đợt X7 — đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)).
+
+### Thêm
+- Contract **`BackorderPolicy`** (tag `vani.inventory.backorder_policies`) + `Data\BackorderAllowance(limit, expectedOn)`: hạn mức đặt trước theo SKU. Core cho giữ vượt tồn thật tối đa hạn mức ở kho bù tồn; nhiều policy → lấy lớn nhất; policy lỗi → bỏ qua; SKU không theo dõi tồn không áp.
+- Service contract **`Backorders`**: `status(variantIds)` (hạn mức, đang chờ, còn suất, ngày dự kiến), `waitingFor(reservationKey)` (số còn chờ của một đơn, hàng về lấp đơn cũ trước).
+- Service contract **`IncomingStock`** (`set(variantId, quantity, ?expectedOn, source)`, `forVariants`) + bảng `incoming_stock`; `Data\IncomingStockData`.
+- `vani.preorder` 1.0.0 (tham chiếu).
+
+### Đổi (không phá vỡ)
+- `StockLevel::reserve($quantity, $backorder = 0)`, `StockLevel::bookable()`, `Allocation::allocate(..., $backorders = [])` (Domain, không phải public API plugin).
+
 ## 0.4.64 — 2026-11-16
 
 EP v3 đợt X6 — khách hàng và CSKH ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).

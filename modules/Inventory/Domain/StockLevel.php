@@ -40,12 +40,23 @@ final readonly class StockLevel
         return max(0, $this->available());
     }
 
-    public function reserve(int $quantity): self
+    /**
+     * Số giữ thêm được khi cho đặt trước tối đa `$backorder` sản phẩm chờ hàng (ADR-047): max(0, available + backorder).
+     */
+    public function bookable(int $backorder = 0): int
+    {
+        return max(0, $this->available() + max(0, $backorder));
+    }
+
+    /**
+     * Giữ hàng; `$backorder` > 0 cho phép số đang giữ vượt tồn thật tối đa ngần ấy (hạn mức đặt trước, ADR-047).
+     */
+    public function reserve(int $quantity, int $backorder = 0): self
     {
         $this->assertPositive($quantity);
 
-        if ($quantity > $this->ats()) {
-            throw new InsufficientStock($this->variantId, $quantity, $this->ats());
+        if ($quantity > $this->bookable($backorder)) {
+            throw new InsufficientStock($this->variantId, $quantity, $this->bookable($backorder));
         }
 
         return $this->with(reserved: $this->reserved + $quantity);

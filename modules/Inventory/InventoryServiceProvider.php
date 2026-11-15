@@ -17,7 +17,9 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Identity\Application\ScopeOptions;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Inventory\Application\AuthoritySyncService;
+use Modules\Inventory\Application\BackorderService;
 use Modules\Inventory\Application\EloquentLocationRegistry;
+use Modules\Inventory\Application\IncomingStockService;
 use Modules\Inventory\Application\InventoryReconciler;
 use Modules\Inventory\Application\Listeners\ProductListStock;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
@@ -35,6 +37,8 @@ use Modules\Inventory\Console\EnsureDefaultLocationCommand;
 use Modules\Inventory\Console\ReleaseExpiredReservationsCommand;
 use Modules\Inventory\Console\VerifyStockCommand;
 use Modules\Inventory\Contracts\AvailabilityReader;
+use Modules\Inventory\Contracts\Backorders;
+use Modules\Inventory\Contracts\IncomingStock;
 use Modules\Inventory\Contracts\InventoryReconciliation;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Inventory\Contracts\InventoryReturns;
@@ -79,7 +83,11 @@ final class InventoryServiceProvider extends ModuleServiceProvider
             (string) config('vanishop.inventory.strategy', 'standard'),
             $app->make(VariantDirectory::class),
             $app->make(OnlineLocations::class),
+            $app->make(BackorderService::class),
         ));
+        // Đặt trước có giới hạn và hàng đang về (ADR-047, EP v3 X7).
+        $this->app->bind(Backorders::class, BackorderService::class);
+        $this->app->bind(IncomingStock::class, IncomingStockService::class);
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, ScopeOptions $scopes): void

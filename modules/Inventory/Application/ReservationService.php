@@ -39,6 +39,7 @@ final class ReservationService implements InventoryReservation
         private readonly OnlineLocations $locations,
         private readonly VariantDirectory $variants,
         private readonly Metrics $metrics,
+        private readonly BackorderService $backorders,
     ) {}
 
     public function reserve(ReservationRequest $request): array
@@ -72,6 +73,14 @@ final class ReservationService implements InventoryReservation
             $topUpLocation = $this->locations->topUpLocation();
             $untracked = $topUpLocation === null ? [] : array_keys(array_filter($variants, fn ($variant): bool => ! $variant->tracksInventory));
             $untracked = array_values(array_intersect($untracked, array_keys($quantities)));
+            // Hạn mức đặt trước (ADR-047) ở kho bù tồn; dòng tồn ở đó phải có để khoá và giữ vượt tồn thật.
+            $backorders = $topUpLocation === null ? [] : array_map(fn ($allowance): int => $allowance->limit, $this->backorders->allowances(array_keys($quantities)));
+            foreach (array_keys($backorders) as $variantId) {
+                if (! in_array($topUpLocation, $candidates[$variantId], true)) {
+                    unset($backorders[$variantId]);
+                }
+            }
+            $this->ledger->ensure(array_map(fn (int $variantId): array => [(int) $topUpLocation, $variantId], array_keys($backorders)));
 
             // Dòng tồn là điểm tuần tự hoá: khoá xong mới kiểm tra idempotency (đọc thường, không khoá —
             // khoá dòng chưa tồn tại sẽ lấy gap lock và gây deadlock khi nhiều đơn cùng chèn reservation).
@@ -107,7 +116,7 @@ final class ReservationService implements InventoryReservation
                 )));
 
                 try {
-                    $plan = Allocation::allocate($variantId, $quantity, $levels);
+                    $plan = Allocation::allocate($variantId, $quantity, $levels, isset($backorders[$variantId]) ? [$topUpLocation => $backorders[$variantId]] : []);
                 } catch (InsufficientStock $exception) {
                     $this->metrics->increment('inventory.reservation_failed', 1, 'insufficient');
 
@@ -116,7 +125,7 @@ final class ReservationService implements InventoryReservation
 
                 foreach ($plan as $locationId => $take) {
                     $record = $records["{$locationId}:{$variantId}"];
-                    $this->ledger->save($record, $record->toDomain()->reserve($take), MovementType::Reserve, null, $request->key);
+                    $this->ledger->save($record, $record->toDomain()->reserve($take, $locationId === $topUpLocation ? ($backorders[$variantId] ?? 0) : 0), MovementType::Reserve, null, $request->key);
                     StockReservation::query()->create([
                         'reservation_key' => $request->key,
                         'location_id' => $locationId,

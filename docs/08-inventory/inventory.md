@@ -72,6 +72,8 @@ ATS           = InventoryStrategy.ats(variant)   // mặc định: Σ ATS(locati
 
 `InventoryStrategy` (ví dụ chừa tồn an toàn theo kho bằng plugin) chỉ được **giảm** ATS so với công thức chuẩn, không được tăng. Core kiểm tra `min(strategy, standard)`.
 
+**Đặt trước có giới hạn** ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md), 0.4.65): SKU có hạn mức từ `BackorderPolicy` → tại kho bù tồn `ATS = max(0, available + limit)`, cho phép `reserved` vượt `on_hand` tối đa `limit`. Số chờ hàng = `max(0, reserved + safety_stock − on_hand)` — không bộ đếm riêng. Giữ hàng lấy tồn thật ở mọi kho trước; hàng về lấp đơn giữ trước (`Backorders::waitingFor`). Hàng đang về lưu ở `incoming_stock` (`IncomingStock`), không tự cộng vào ATS.
+
 ## 3. Vòng đời reservation
 
 ```mermaid

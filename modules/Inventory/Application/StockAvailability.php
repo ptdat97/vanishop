@@ -14,7 +14,8 @@ use Modules\Tenancy\Contracts\Settings;
 
 /**
  * ATS = Σ ATS(location) của các location đang hoạt động và giao đơn online, sau đó áp InventoryStrategy
- * nhưng không bao giờ vượt con số chuẩn. SKU của sản phẩm không theo dõi tồn → `UNLIMITED`.
+ * nhưng không bao giờ vượt con số chuẩn. SKU của sản phẩm không theo dõi tồn → `UNLIMITED`. SKU có hạn mức đặt trước
+ * (`BackorderPolicy`, ADR-047): ATS của kho bù tồn = max(0, available + hạn mức).
  */
 final class StockAvailability implements AvailabilityReader
 {
@@ -24,6 +25,7 @@ final class StockAvailability implements AvailabilityReader
         private readonly string $defaultCode,
         private readonly VariantDirectory $variants,
         private readonly OnlineLocations $locations,
+        private readonly BackorderService $backorders,
     ) {}
 
     public function forVariants(array $variantIds): array
@@ -38,11 +40,26 @@ final class StockAvailability implements AvailabilityReader
             ->where('locations.status', 'active')
             ->where('locations.ships_online_orders', true)
             ->whereIn('stock_levels.variant_id', $variantIds)
-            ->get(['stock_levels.variant_id', 'stock_levels.on_hand', 'stock_levels.reserved', 'stock_levels.safety_stock']);
+            ->get(['stock_levels.variant_id', 'stock_levels.location_id', 'stock_levels.on_hand', 'stock_levels.reserved', 'stock_levels.safety_stock']);
 
+        $topUpLocation = $this->locations->topUpLocation();
+        $allowances = $topUpLocation === null ? [] : array_map(fn ($allowance): int => $allowance->limit, $this->backorders->allowances($variantIds));
         $standard = array_fill_keys($variantIds, 0);
+        $backorderCounted = [];
         foreach ($rows as $row) {
-            $standard[(int) $row->variant_id] += max(0, (int) $row->on_hand - (int) $row->reserved - (int) $row->safety_stock);
+            $variantId = (int) $row->variant_id;
+            $backorder = 0;
+            if ((int) $row->location_id === $topUpLocation && isset($allowances[$variantId])) {
+                $backorder = $allowances[$variantId];
+                $backorderCounted[$variantId] = true;
+            }
+            $standard[$variantId] += max(0, (int) $row->on_hand - (int) $row->reserved - (int) $row->safety_stock + $backorder);
+        }
+        // Chưa có dòng tồn ở kho bù tồn: hạn mức nguyên vẹn (dòng tồn tạo khi giữ hàng).
+        foreach ($allowances as $variantId => $limit) {
+            if (! isset($backorderCounted[$variantId])) {
+                $standard[$variantId] += $limit;
+            }
         }
 
         $adjusted = $this->strategy()->adjust($standard);
@@ -51,7 +68,7 @@ final class StockAvailability implements AvailabilityReader
         }
         // Không theo dõi tồn: luôn bán được khi có kho online do VaniShop quản lý tồn để bù (ReservationService); không có thì
         // tính như sản phẩm thường để giỏ/checkout không hứa bán được rồi giữ hàng thất bại.
-        if ($this->locations->topUpLocation() !== null) {
+        if ($topUpLocation !== null) {
             foreach ($this->variants->untrackedInventory($variantIds) as $variantId) {
                 $standard[$variantId] = self::UNLIMITED;
             }
