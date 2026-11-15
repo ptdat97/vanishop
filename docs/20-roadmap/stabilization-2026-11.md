@@ -9,6 +9,7 @@
 | **P0** | Hoàn thiện API-first | Hợp nhất API và Blade đến hết, bảo vệ hợp đồng OpenAPI khỏi thay đổi phá vỡ âm thầm, kiểm soát API storefront của plugin |
 | **P1** | Ổn định Commerce Core | Checkout, Cart, Inventory, Ordering, Payment, Returns: concurrency và ranh giới transaction |
 | **P1** | Production readiness | CI chạy được thật, Redis, backup/restore, logging, monitoring, security, load test |
+| **P1** | Vận hành có người | Ba chốt có người: xác nhận đơn COD, đẩy đơn lên hãng, duyệt đổi trả ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)) |
 | **P2** | Trải nghiệm Admin | Catalog, sản phẩm, giá, tồn, đơn, vận hành, báo cáo |
 | **P2** | Storefront | Theme, mobile-first, SEO, tốc độ tải, checkout |
 
@@ -50,6 +51,18 @@ Khảo sát 2026-11-12: sửa nhanh giá/tồn ngay trong danh sách sản phẩ
 |---|---|---|---|
 | **A1 — Admin không cắt dữ liệu âm thầm** | Lưới tồn, Tổng quan "hết/sắp hết", "chọn mọi kết quả lọc", xuất CSV giới hạn 5.000 biến thể mà không báo (backlog L20/L26) — shop 300 mẫu × 16 màu/size đã chạm | Test 6.000 biến thể: mọi màn hình thấy đủ, số truy vấn không tăng theo số biến thể | ✅ 0.4.19 — `VariantDirectory::searchIndex()` + `StockQueries::sellableByVariant()`; sửa hàng loạt vượt mức → báo thu hẹp bộ lọc |
 | **A2 — Danh sách đầy đủ** | Vận đơn, Thanh toán, Đổi trả chỉ hiện 100 bản ghi mới nhất, không phân trang (shop 30 đơn/ngày: sau 4 ngày vận đơn cũ không mở được từ danh sách); tra số đơn từng dòng (N+1) | Test 31 bản ghi: 30 + 1, đổi số dòng, lọc giữ khi chuyển trang; số truy vấn không tăng theo số dòng | ✅ 0.4.20 — phân trang server 30/50/100 như danh sách đơn; `OrderReader::numbers()`. Còn: mã giảm giá của một khuyến mãi hiện tối đa 200 (backlog L32) |
+
+## P1 — Vận hành có người (ADR-046)
+
+Owner giao 2026-11-15: ba chốt có người — nhân viên xác nhận đơn COD, nhân viên đóng gói và đẩy đơn lên hãng, CSKH duyệt đổi trả ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md), [vision §2.2](../00-overview/vision.md#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)). Hướng làm: **gỡ nhánh tự động**, không thêm cấu hình. Đổi contract plugin → tăng số giữa của Core (0.5.0) ở đợt đầu đổi contract; dev không cần tương thích ngược.
+
+| Đợt | Việc | Kiểm chứng | Trạng thái |
+|---|---|---|---|
+| **V0 — Nền đã có** | Hàng đợi + hàng loạt cho ba chốt; ghi nhận COD tay; đơn huỷ không còn "COD chờ thu" | — | ✅ 0.3.96–0.4.52 — "Cần xác nhận"/`bulk-confirm`, in phiếu, xuất/nhập file hãng, `bulk-create`, `bulk-hand-over`, đổi trả hàng loạt; "Đã thu tiền" COD (0.4.50); Vận đơn/Đổi trả mở đơn, tìm theo số đơn (0.4.51); `payment_status = voided`, ô "Đơn hoàn tất chưa thu COD" (0.4.52) |
+| **V1 — Chốt ①: COD luôn chờ nhân viên** | Gỡ `AutoConfirmCodOrder`, cài đặt `auto_confirm_mode`/`trusted_min_delivered`, `VANI_COD_AUTO_CONFIRM` khỏi `vani.cod`. Đơn đã trả online / chuyển khoản đã xác nhận giữ tự sang `confirmed`. Trang đơn "Cần xác nhận": lịch sử giao/hoàn theo SĐT nổi rõ cạnh nút Xác nhận | Đặt COD (kể cả khách đã nhận nhiều đơn) → `pending`, ở "Cần xác nhận", chưa có vận đơn; xác nhận hàng loạt → `processing` + vận đơn nháp; test SME G8 đi qua bước xác nhận | ⬜ |
+| **V2 — Chốt ②: đẩy lên hãng khi nhân viên bấm** | `createForOrder` không dispatch `BookShipmentJob`; thêm `bulk-book` "Đẩy lên hãng" (hãng `autoBooking`) ở danh sách đơn lọc "Chờ đóng gói" và trang đơn; nhãn giai đoạn `to_ship` → "Chờ đóng gói"; lọc theo hãng | Xác nhận đơn với hãng API → không gọi hãng; bấm hàng loạt 30 đơn → 30 job sau commit, lỗi → `booking_failed`; huỷ đơn trước khi đẩy → không gọi hãng | ⬜ |
+| **V3 — Chốt ③: CSKH duyệt mọi đổi trả** | Bỏ `ReturnDecision::$autoApprove` và nhánh `auto_approved` trong `ReturnService`; `ReturnPolicy` chỉ trả lời được gửi hay không; contract test plugin cập nhật | Yêu cầu từ web luôn `requested`, vào "Đổi/trả chờ duyệt"; chính sách plugin không duyệt được | ⬜ |
+| **V4 — Kiểm chứng ba chốt** | Test vận hành end-to-end: đặt COD → (①) xác nhận hàng loạt → (②) in phiếu, đẩy lên hãng, bàn giao → giao → (③) khách gửi đổi trả, CSKH duyệt, nhận hàng, chuyển trả tiền — chỉ qua Tổng quan, danh sách, trang đơn; arch test: không listener Core nào gọi `confirm`/`approve`/`BookShipmentJob` ngoài lệnh của nhân viên | Mục tiêu G9 của vision đo được bằng test | ⬜ |
 
 ## P2 — Trải nghiệm Admin và Storefront (ứng viên)
 

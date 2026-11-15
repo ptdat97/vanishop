@@ -16,6 +16,18 @@ flowchart LR
 | Payment, Refund | Payment | [payment](../10-payment/payment.md) |
 | Fulfillment, Shipment | Fulfillment | [fulfillment](fulfillment.md) |
 
+### 1.1 Ba chốt có người ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md))
+
+| Chốt | Trạng thái chờ (hàng đợi Admin) | Lệnh của nhân viên | Sau lệnh |
+|---|---|---|---|
+| ① Xác nhận đơn COD | `pending` + `cod_pending` → "Cần xác nhận" | `OrderCommands::confirm` (trang đơn, hàng loạt `bulk-confirm`) | `confirmed` → Fulfillment tạo vận đơn nháp → `processing`, "Chờ đóng gói" |
+| ② Đẩy lên hãng | Vận đơn `pending_booking` → "Chờ đóng gói" | Đẩy lên hãng (hãng API, hàng loạt) / nhập mã / nhập file; bàn giao shipper | `created` → `picked_up` (trừ tồn) → hãng cập nhật tới `delivered` |
+| ③ Đổi trả | Yêu cầu `requested` → "Đổi/trả chờ duyệt" | `ReturnService::approve`/`reject`, nhận hàng, hoàn tất | Nhập kho hàng bán được, hoàn tiền/đơn thay thế |
+
+- Đơn **đã trả tiền trước** (cổng online báo `paid`/`authorized`, hoặc nhân viên xác nhận đã nhận chuyển khoản — chính là chốt ① của đơn chuyển khoản) tự sang `confirmed`; đơn chuyển khoản/online chưa trả nằm ở "Chờ thanh toán", không vào "Cần xác nhận".
+- Không có lệnh tự động nào thay cho ba chốt trong Core. Plugin muốn tự động hoá phải gọi đúng lệnh của nhân viên với nguồn `system` (có `order_events`/`return_events` như người làm).
+- **Hiện trạng (0.4.52) còn khác thiết kế** — đợt V1–V3 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046): `vani.cod` còn tự xác nhận COD (mặc định bật), vận đơn hãng API còn tự đặt khi tạo, `ReturnDecision::$autoApprove` còn trong contract.
+
 ## 2. Order là bản ghi nghiệp vụ bất biến
 
 Sau khi tạo, đơn giữ **snapshot** và không phụ thuộc dữ liệu catalog hiện tại (rule R15):
@@ -84,7 +96,7 @@ Bất biến (I7, `tests/Feature/Invariants`): niêm yết − giảm giá bán 
 ```mermaid
 stateDiagram-v2
     [*] --> pending: PlaceOrder
-    pending --> confirmed: thanh toán thành công / COD được xác nhận
+    pending --> confirmed: thanh toán thành công / nhân viên xác nhận (COD, chuyển khoản)
     pending --> cancelled: hết hạn thanh toán / khách huỷ
     confirmed --> processing: đã phân bổ kho (internal) / đối tác nhận đơn (external)
     confirmed --> cancelled: huỷ trước xử lý
@@ -141,7 +153,7 @@ Một giỏ chứa sản phẩm của nhiều brand tạo **một đơn** (một
 ```mermaid
 stateDiagram-v2
     [*] --> requested
-    requested --> approved: CSKH duyệt / auto theo ReturnPolicy
+    requested --> approved: CSKH duyệt (không tự duyệt — ADR-046)
     requested --> rejected
     approved --> in_transit: khách gửi / hãng lấy
     approved --> received: trả tại cửa hàng (plugin)
@@ -156,6 +168,8 @@ stateDiagram-v2
 | Core | Plugin |
 |---|---|
 | Trạng thái RMA, `ReturnPolicy` (mặc định `days_window`), tính tiền hoàn từ `line_total` đã phân bổ, nhập lại tồn (movement `return`, sellable hay không), hoàn tiền thủ công | Hoàn tiền tự động qua cổng (plugin payment), trả tại cửa hàng (`vani.store-omnichannel`), nhãn trả hàng của hãng VC |
+
+**CSKH kiểm soát mọi yêu cầu** ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)): khách gửi yêu cầu trên web (token đơn, ảnh đính kèm) hoặc CSKH tạo hộ khi khách gọi/nhắn; `ReturnPolicy` chỉ trả lời **được gửi hay không** (hạn đổi trả, dòng đã giao), không quyết định duyệt. CSKH duyệt/từ chối (từng yêu cầu hoặc hàng loạt), nhận hàng và ghi tình trạng, chọn hoàn tiền (được hoàn ít hơn để trừ phí) hoặc đổi hàng. COD/chuyển khoản: hoàn tiền là CSKH chuyển trả tay rồi bấm "Đã chuyển trả".
 
 Invariant: tổng số lượng trả của một dòng ≤ số lượng đã giao (App, khoá dòng `order_lines` khi tạo RMA); tổng hoàn ≤ số đã thu (Payment).
 

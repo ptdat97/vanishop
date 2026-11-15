@@ -23,6 +23,11 @@
 | Shipment | Kiện giao | Một lần giao hàng của đơn, có mã vận đơn |
 | RMA / Return | Đổi trả | Yêu cầu đổi/trả hàng |
 | COD | Thu hộ | Thanh toán khi nhận hàng |
+| Xác nhận đơn | Chốt ① | Nhân viên gọi/nhắn khách xác nhận đơn COD trước khi đóng gói ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)); đơn `pending` → `confirmed` |
+| Chờ đóng gói | Hàng đợi chốt ② | Đơn đã xác nhận, vận đơn nháp `pending_booking`, chưa có ở hãng |
+| Đẩy lên hãng | Chốt ② | Nhân viên đặt vận đơn ở hãng (bấm cho hãng API, hoặc nhập mã/nhập file cho hãng nhập tay) sau khi đóng gói; vận đơn `created` |
+| Bàn giao | — | Shipper lấy hàng; vận đơn `picked_up`, tồn được trừ |
+| Bom hàng | — | Khách COD không nhận hàng; vận đơn hoàn về (`returned`), hàng nhập lại kho |
 | ODO | Hệ thống vận hành đơn/giao nhận | Hệ thống ngoài có thể xử lý pick–pack–ship; vai trò tạm hoãn, sẽ kết nối qua module Integration |
 | Integration Client | Đối tác tích hợp | Hệ thống ngoài được cấp API key/scope để gọi Integration API và nhận webhook |
 | fulfillment.mode | Chế độ xử lý giao hàng | `internal` (VaniShop tự phân bổ kho, đặt vận đơn) hoặc `external` (hệ thống ngoài xử lý) |

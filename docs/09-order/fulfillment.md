@@ -11,7 +11,7 @@
 | Core (`modules/Fulfillment`) | Plugin |
 |---|---|
 | Shipment, shipment line, trạng thái chuẩn hoá, lịch sử | Hãng vận chuyển (`vani.ghn`, `vani.ghtk`…) |
-| `SourcingStrategy` mặc định `priority_first_fit` | Sourcing nâng cao, ship-from-store |
+| `SourcingStrategy` mặc định `reserved_locations` | Sourcing nâng cao, ship-from-store |
 | `FulfillmentMethod` mặc định `delivery` | `pickup` (BOPIS) |
 | Carrier `flat_rate` (bảng phí) + `manual` (nhập mã vận đơn) | Đối soát COD (`vani.cod-reconciliation`) |
 | Chế độ `internal` / `external` (hệ thống ngoài xử lý qua Integration API) | Connector ODO |
@@ -49,6 +49,24 @@ Trạng thái vận đơn chuẩn hoá: `created`, `picked_up`, `in_transit`, `o
 
 ## 3. Flow (internal)
 
+### 3.0 Chốt ② — nhân viên đóng gói và đẩy lên hãng ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md))
+
+Shop SME lấy hàng theo đợt (sáng/chiều). Vận đơn chỉ có ở hãng khi hàng đã đóng gói:
+
+| Bước | Nhân viên | Trạng thái vận đơn | Hệ thống |
+|---|---|---|---|
+| Đơn được xác nhận | — | `pending_booking` ("Chờ đóng gói") | Tạo vận đơn nháp: kho, dòng, số tiền thu hộ; đơn `processing`. **Không** gọi hãng |
+| Lọc và in | Lọc hàng đợi "Chờ đóng gói" theo hãng/ngày → chọn nhiều → in phiếu giao (mã vạch số đơn) | `pending_booking` | Phiếu gồm dòng hàng, COD, địa chỉ |
+| Đóng gói, đẩy lên hãng | Hãng API: chọn các đơn đã đóng gói → **Đẩy lên hãng** (hàng loạt). Hãng nhập tay: tạo đơn ở web hãng (xuất file) → nhập mã vận đơn (từng đơn hoặc nhập file) | `created` (có mã) | Hãng API: `BookShipmentJob` sau commit, lỗi → `booking_failed` vào hàng đợi "Sự cố giao hàng" |
+| Bàn giao shipper | Chọn nhiều → **Đã bàn giao** (`bulk-hand-over`) hoặc webhook của hãng | `picked_up` | Chốt hàng đang giữ (trừ tồn) |
+| Giao / hoàn | — (hãng báo) hoặc nhân viên cập nhật tay | `delivered` / `returned` | COD ghi nhận; hàng hoàn nhập lại kho |
+
+- **Không** có trạng thái "đã đóng gói" riêng: đóng gói nằm giữa `pending_booking` và `created`.
+- Huỷ đơn khi vận đơn còn `pending_booking`/`created` → huỷ vận đơn (hãng API: gọi huỷ ở hãng), nhả hàng giữ.
+- **Hiện trạng (0.4.52) còn khác:** hãng có `autoBooking` được đặt ngay khi tạo vận đơn (`FulfillmentService::createForOrder` dispatch `BookShipmentJob`); chưa có thao tác hàng loạt "Đẩy lên hãng" — đợt V2 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046).
+
+### 3.1 Luồng kỹ thuật
+
 ```mermaid
 sequenceDiagram
     participant O as Ordering
@@ -60,6 +78,7 @@ sequenceDiagram
     F->>F: SourcingStrategy.allocate
     F->>I: chuyển reservation sang location được chọn (nếu khác)
     F->>F: tạo Shipment(status=pending_booking) + OrderTransitions(processing)  [1 transaction]
+    Note over F,J: chờ nhân viên bấm "Đẩy lên hãng" (chốt ②, ADR-046)
     F-->>J: dispatch BookShipment (afterCommit)
     J->>C: createShipment (timeout 10s, retry)
     C-->>J: tracking_number
