@@ -1024,3 +1024,13 @@ window.addEventListener('popstate', (event) => {
 if (document.querySelector('[data-vani-listing]')) {
     history.replaceState({ vaniListing: true }, '', window.location.href);
 }
+
+/* ── Thông báo dùng chung: bấm nút đóng → ẩn thông báo ───────────────────────── */
+document.addEventListener('click', (event) => {
+    const close = event.target.closest('button[data-vani-notification-close]');
+    if (!close) return;
+    const item = close.closest('[data-vani-notification]');
+    if (!item) return;
+    item.classList.add('vani-notification-closing');
+    item.addEventListener('animationend', () => item.remove(), { once: true });
+});

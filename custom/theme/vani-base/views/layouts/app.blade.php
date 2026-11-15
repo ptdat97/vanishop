@@ -131,17 +131,7 @@
 
     <main class="mx-auto container px-4 py-6">
         <x-vani::hook-slot name="vani.storefront.layout.main.before" />
-        @if ($pageCache)
-            <p role="status" class="mb-4 rounded-[var(--radius-theme)] bg-emerald-50 px-4 py-2 text-sm text-emerald-800" data-vani-flash="status" hidden></p>
-            <p role="alert" class="mb-4 rounded-[var(--radius-theme)] bg-red-50 px-4 py-2 text-sm text-red-700" data-vani-error-for="business" hidden></p>
-        @else
-            @if (session('status'))
-                <p role="status" class="mb-4 rounded-[var(--radius-theme)] bg-emerald-50 px-4 py-2 text-sm text-emerald-800">{{ session('status') }}</p>
-            @endif
-            @error('business')
-                <p role="alert" class="mb-4 rounded-[var(--radius-theme)] bg-red-50 px-4 py-2 text-sm text-red-700">{{ $message }}</p>
-            @enderror
-        @endif
+        @include('theme::partials.notification', ['pageCache' => $pageCache])
 
         @yield('content')
         <x-vani::hook-slot name="vani.storefront.layout.main.after" />

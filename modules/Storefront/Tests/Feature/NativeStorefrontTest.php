@@ -72,6 +72,44 @@ it('renders reusable drawer content with escaped title and caller-provided attri
         ->toContain('data-vani-mini-cart-body');
 });
 
+it('thông báo dùng chung hiển thị từ session flash và tin nhắn tùy chỉnh', function () {
+    view()->addNamespace('theme', base_path('custom/theme/vani-base/views'));
+
+    // Không có tin nhắn → chỗ trống để JS điền (trang cache CDN).
+    $html = view('theme::partials.notification')->render();
+    expect($html)->toContain('data-vani-flash="status"')
+        ->toContain('data-vani-error-for="business"')
+        ->toContain('hidden');
+
+    // Tin nhắn thành công từ session flash (`status`).
+    session()->flash('status', 'Đã thêm sản phẩm vào giỏ.');
+    $html = view('theme::partials.notification')->render();
+    expect($html)->toContain('role="status"')
+        ->toContain('Đã thêm sản phẩm vào giỏ.')
+        ->toContain('data-vani-notification-close');
+    expect(str_contains($html, 'hidden'))->toBeFalse();
+
+    // Tin nhắn lỗi từ session flash (`error`) — cùng lúc có cả status và error.
+    session()->flash('error', 'Thanh toán không thành công.');
+    $html = view('theme::partials.notification')->render();
+    expect($html)->toContain('role="alert"')
+        ->toContain('Thanh toán không thành công.')
+        ->toContain('Đã thêm sản phẩm vào giỏ.');
+    expect(str_contains($html, 'hidden'))->toBeFalse();
+
+    // Tin nhắn tùy chỉnh truyền vào, thoát HTML (chống XSS).
+    $html = view('theme::partials.notification', [
+        'messages' => [
+            ['type' => 'warning', 'message' => '<script>alert("xss")</script>', 'dismissible' => false],
+            ['type' => 'info', 'message' => 'Cảm ơn bạn đã mua hàng.', 'dismissible' => true],
+        ],
+    ])->render();
+    expect($html)->toContain('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;')
+        ->toContain('Cảm ơn bạn đã mua hàng.')
+        ->toContain('role="status"')
+        ->toContain('data-vani-notification-close');
+});
+
 it('trang thương hiệu chỉ có sản phẩm của brand; brand ẩn, danh mục/sản phẩm không có → 404', function () {
     $this->get('/thuong-hieu/urbanx')->assertOk()->assertSee('Áo thun Urbanx')->assertDontSee('Đầm lụa');
 
