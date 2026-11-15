@@ -4,14 +4,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Events\ReturnResolved;
 use Modules\Returns\Persistence\Models\ReturnRequest;
+use Modules\Returns\Tests\Feature\Fixtures\AutoApproveWrongSizePolicy;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -167,4 +171,18 @@ it('quyền, khoá lạc quan, panel trên trang đơn', function () {
     ($this->staff)();
     $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'approved', 'lock_version' => 5])->assertSessionHasErrors('business');
     $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'rejected', 'lock_version' => 0])->assertSessionHasErrors('note');
+});
+
+it('chính sách của plugin tự duyệt (điểm mở rộng ADR-046): duyệt ngay với nguồn system; lý do khác chờ CSKH; nhận hàng vẫn do CSKH', function () {
+    app(Extensions::class)->tag([AutoApproveWrongSizePolicy::class], ReturnPolicy::TAG);
+    T::seed(fn () => app(Settings::class)->set('core', 'returns.policy', 'test_auto_wrong_size'));
+    [$order, $headers] = ($this->placeAndDeliver)();
+    $stock = ($this->onHand)();
+
+    ($this->requestReturn)($order, $headers, 1)->assertCreated()->assertJsonPath('data.returns.0.status', 'approved');
+    ($this->requestReturn)($order, $headers, 1, 'changed_mind')->assertCreated()->assertJsonPath('data.returns.1.status', 'requested');
+
+    $approved = ReturnRequest::query()->where('reason_code', 'wrong_size')->sole();
+    expect(DB::table('return_events')->where('return_request_id', $approved->id)->where('to_status', 'approved')->first(['note', 'source']))->toEqual((object) ['note' => 'auto_approved', 'source' => 'system'])
+        ->and(($this->onHand)())->toBe($stock);
 });
