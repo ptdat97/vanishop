@@ -33,6 +33,7 @@ use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderRisks;
 use Modules\Ordering\Contracts\OrderStatusAction;
+use Modules\Ordering\Contracts\PackingSlipTemplate;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Domain\OrderStateMachine;
@@ -439,8 +440,14 @@ final class OrderController
             'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
         ])['ids'])));
         $orders = Order::query()->with('lines')->whereIn('id', $ids)->get()->sortBy(fn (Order $order): int => (int) array_search($order->id, $ids, true));
+        // Mẫu phiếu của plugin (EP v3 X3, PackingSlipTemplate); `?template=` không có/đã tắt → mẫu Core.
+        $templates = app(Extensions::class)->implementations(PackingSlipTemplate::TAG, PackingSlipTemplate::class);
+        $current = $templates[(string) $request->query('template', '')] ?? null;
+        $link = fn (?string $code): string => route('admin.orders.orders.print', array_filter(['ids' => $ids, 'template' => $code]));
 
-        return view('ordering::admin.print', [
+        return view($current?->view() ?? 'ordering::admin.print', [
+            'templates' => [['code' => null, 'label' => 'Mẫu chuẩn (A5)', 'url' => $link(null)], ...array_values(array_map(fn (PackingSlipTemplate $template): array => ['code' => $template->code(), 'label' => $template->label(), 'url' => $link($template->code())], $templates))],
+            'current' => $current?->code(),
             'shopName' => (string) config('app.name'),
             'orders' => $orders->map(function (Order $order) use ($money): array {
                 $address = (array) $order->shipping_address;

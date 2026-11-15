@@ -1,0 +1,21 @@
+{
+    "id": "vani.carrier-routing",
+    "name": {
+        "vi": "Chọn hãng theo tuyến",
+        "en": "Carrier routing"
+    },
+    "description": {
+        "vi": "Chọn hãng vận chuyển cho vận đơn mới theo quy tắc của shop: tỉnh/thành nhận hàng, mức thu hộ. Tham chiếu cho CarrierAssignment (EP v3 X3).",
+        "en": "Picks the carrier for new shipments by shop rules: destination province, COD amount. Reference for CarrierAssignment (EP v3 X3)."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\CarrierRouting\\CarrierRoutingServiceProvider",
+    "requires": {
+        "vanishop": "^0.4",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

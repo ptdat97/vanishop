@@ -16,5 +16,6 @@ Route::post('returns/bulk-approve', [ReturnController::class, 'bulkApprove'])->n
 Route::post('returns/bulk-receive', [ReturnController::class, 'bulkReceive'])->name('returns.bulk-receive');
 Route::get('returns/{return}', [ReturnController::class, 'show'])->name('returns.show');
 Route::post('returns/{return}/transition', [ReturnController::class, 'transition'])->name('returns.transition');
+Route::post('returns/{return}/pickup', [ReturnController::class, 'pickup'])->name('returns.pickup');
 Route::post('returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
 Route::post('returns/{return}/resolve', [ReturnController::class, 'resolve'])->name('returns.resolve');

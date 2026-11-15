@@ -17,6 +17,7 @@ use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiRates;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Events\OrderCompleted;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Returns\Persistence\Models\ReturnRequest;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -25,6 +26,7 @@ beforeEach(function () {
     app(Extensions::class)->tag([FakeApiCarrier::class], CarrierRegistry::CARRIERS_TAG);
     FakeApiCarrier::$failBooking = false;
     FakeApiCarrier::$booked = [];
+    FakeApiCarrier::$returnPickups = [];
 
     ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m, 'location' => $this->location] = C::store();
     $this->api = '/api/storefront/v1';
@@ -328,4 +330,23 @@ it('hook vani.fulfillment.before_push (EP v3 X2): chặn đẩy lên hãng ở n
 
     expect($api->fresh()->status->value)->toBe('pending_booking')->and($manual->fresh()->status->value)->toBe('pending_booking')
         ->and(FakeApiCarrier::$booked)->toBe([]);
+});
+
+it('ReturnPickup (EP v3 X3): yêu cầu đã duyệt của đơn giao bằng hãng hỗ trợ → "Gọi hãng lấy hàng trả" → Đang gửi về với mã của hãng', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api', 'vanishop.fulfillment.booking' => 'on_create']);
+    ($this->place)();
+    $order = ($this->order)();
+    $shipment = Shipment::query()->withoutGlobalScopes()->sole();
+    $this->postJson('/api/shipping/fake_api/webhook', FakeApiCarrier::webhook((string) $shipment->tracking_number, 'delivered', 'E1'))->assertOk();
+    $this->actingAs(T::staff(['admin.access', 'orders.view', 'returns.view', 'returns.manage']), 'staff');
+    $this->post('/admin/returns/returns', ['order_id' => $order->id, 'lines' => [$order->lines()->value('id') => 1], 'reason_code' => 'wrong_size'])->assertRedirect();
+    $return = ReturnRequest::query()->sole();
+    $this->post("/admin/returns/returns/{$return->id}/transition", ['to' => 'approved', 'lock_version' => $return->lock_version])->assertSessionHasNoErrors();
+
+    $this->get("/admin/returns/returns/{$return->id}")->assertInertia(fn (Assert $page) => $page->where('pickupCarrier', 'Hãng giả'));
+    $this->post("/admin/returns/returns/{$return->id}/pickup")->assertSessionHas('success', 'Đã gọi hãng đến lấy hàng trả — mã vận đơn FKR000001.');
+
+    expect($return->fresh()->status->value)->toBe('in_transit')->and($return->fresh()->return_tracking_number)->toBe('FKR000001')
+        ->and(FakeApiCarrier::$returnPickups[0]->orderNumber)->toBe($order->number);
+    $this->post("/admin/returns/returns/{$return->id}/pickup")->assertSessionHasErrors('business');
 });

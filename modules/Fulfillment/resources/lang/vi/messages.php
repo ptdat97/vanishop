@@ -16,4 +16,5 @@ return [
     'updated' => 'Đã cập nhật trạng thái vận đơn.',
     'cancelled' => 'Đã huỷ vận đơn.',
     'push_blocked' => 'Chưa đẩy lên hãng được: :reasons',
+    'return_pickup_unavailable' => 'Hãng đã giao đơn này không hỗ trợ đến lấy hàng trả.',
 ];

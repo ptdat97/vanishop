@@ -15,6 +15,9 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `ConfirmationChannel` | `vani.ordering.confirmation_channels` | Ordering | — (plugin). **Implemented** (0.4.60): gửi yêu cầu xác nhận đơn cho khách (Zalo OA, tổng đài); tham chiếu `vani.hello-world` | [order §1.1](../09-order/order.md) |
 | `OrderStatusAction` | `vani.ordering.status_actions` | Ordering | — (plugin). **Implemented** (0.3.98): thao tác đổi trạng thái do plugin thanh toán/vận chuyển cắm vào thẻ "Trạng thái đơn" trên trang đơn Admin — `describe(OrderData)` → `OrderStatusActionView` (nhãn, quyền, ô nhập `FieldDefinition`, xác nhận, `primary`) hoặc null; `perform(OrderData, input)` đổi trạng thái qua contract Core (R30). Core hiện nút, kiểm quyền, validate, ghi audit `order.status_action`; lỗi nghiệp vụ hiện cho nhân viên, lỗi khác báo chung | [order](../09-order/order.md) |
 | `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `manual`. **Implemented** + bộ contract test `ShippingCarrierContract` (phí ở checkout: `ShippingRateProvider`) | [fulfillment](../09-order/fulfillment.md) |
+| `CarrierAssignment` | `vani.fulfillment.carrier_assignments` | Fulfillment | — (plugin). **Implemented** (0.4.61, EP v3 X3): chọn hãng cho vận đơn mới theo tuyến/thu hộ; tham chiếu `vani.carrier-routing` | [fulfillment](../09-order/fulfillment.md) |
+| `ReturnPickup` (interface tuỳ chọn của `ShippingCarrier`) | — | Fulfillment | — **Implemented** (0.4.61): hãng lấy hàng trả tại nhà khách; nút trên yêu cầu đổi trả đã duyệt | [order §7](../09-order/order.md) |
+| `PackingSlipTemplate` | `vani.ordering.packing_slips` | Ordering | Mẫu chuẩn A5 của Core. **Implemented** (0.4.61): mẫu phiếu giao của plugin, chọn trên trang in; tham chiếu A6 của `vani.hello-world` | [fulfillment §3.0](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
 | `SourcingStrategy` | `vani.fulfillment.sourcing` | Fulfillment | `reserved_locations` (**Implemented**; đề xuất phải khớp hàng đang giữ) | [fulfillment](../09-order/fulfillment.md) |
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
@@ -78,6 +81,7 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `OrderRisks` | Tín hiệu rủi ro đã gộp (`forOrders`, `hasHigh`). **Implemented** (0.4.60) | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
+| `ReturnPickups` | Gọi hãng đã giao đơn đến lấy hàng trả (`carrierLabel`, `book`). **Implemented** (0.4.61, EP v3 X3) | Fulfillment |
 | `ShipmentReader` | Vận đơn của một đơn (Storefront, panel Admin). **Implemented**. Ghi nhận trạng thái đi qua webhook chung/Admin, chưa công bố `ShipmentRecorder` | Fulfillment |
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |

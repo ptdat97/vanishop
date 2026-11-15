@@ -125,3 +125,12 @@ it('khuyến mãi: cột + thao tác hàng loạt của plugin; plugin tắt th�
     app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(PluginManager::class)->disable('vani.hello-world'));
     $this->get('/admin/promotion/promotions')->assertInertia(fn (Assert $page) => $page->where('extensions.columns', [])->where('extensions.actions', [])->where('extensions.tools', []));
 });
+
+it('mẫu phiếu giao của plugin (EP v3 X3, PackingSlipTemplate): chọn trên trang in; mẫu không có → mẫu chuẩn', function () {
+    $order = ($this->place)();
+    ($this->staff)(['orders.view']);
+
+    $this->get("/admin/orders/orders/print?ids[]={$order->id}")->assertOk()->assertSee('A6 máy in nhiệt (Hello)')->assertDontSee('data-slip-a6', false);
+    $this->get("/admin/orders/orders/print?ids[]={$order->id}&template=hello-a6")->assertOk()->assertSee("data-slip-a6=\"{$order->number}\"", false)->assertSee('Cho khách xem hàng');
+    $this->get("/admin/orders/orders/print?ids[]={$order->id}&template=khong-co")->assertOk()->assertDontSee('data-slip-a6', false);
+});

@@ -177,18 +177,18 @@ final class ReturnService implements Returns
         return $this->reasons->label($code, $locale);
     }
 
-    public function markShipped(int $orderId, string $returnPublicId, ?string $trackingNumber, string $source): ReturnView
+    public function markShipped(int $orderId, string $returnPublicId, ?string $trackingNumber, string $source, string $notePrefix = 'shipped_by_customer'): ReturnView
     {
         $return = ReturnRequest::query()->where('order_id', $orderId)->where('public_id', $returnPublicId)->firstOrFail();
         $tracking = $trackingNumber === null || trim($trackingNumber) === '' ? null : mb_substr(trim($trackingNumber), 0, 64);
 
-        DB::transaction(function () use ($return, $tracking, $source): void {
+        DB::transaction(function () use ($return, $tracking, $source, $notePrefix): void {
             $locked = ReturnRequest::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
             if ($locked->status !== ReturnStatus::Approved) {
                 throw ReturnRejected::invalidTransition($locked->status->value, ReturnStatus::InTransit->value);
             }
             $locked->update(['return_tracking_number' => $tracking]);
-            $this->move($locked, ReturnStatus::InTransit, $tracking === null ? 'shipped_by_customer' : "shipped_by_customer: {$tracking}", $source);
+            $this->move($locked, ReturnStatus::InTransit, $tracking === null ? $notePrefix : "{$notePrefix}: {$tracking}", $source);
             $this->syncOrder($locked->order_id);
             $this->audit->record('return.in_transit', 'return_request', $locked->id, ['number' => $locked->number, 'tracking' => $tracking, 'source' => $source]);
         });

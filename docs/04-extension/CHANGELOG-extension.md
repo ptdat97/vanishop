@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.61 — 2026-11-15
+
+EP v3 đợt X3 — giao hàng theo tuyến, mẫu phiếu giao, hãng lấy hàng trả ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+
+### Thêm
+- Contract **`Fulfillment\Contracts\CarrierAssignment`** (tag `vani.fulfillment.carrier_assignments`, `assign(CarrierAssignmentContext): ?CarrierChoice`): chọn hãng (+ dịch vụ) cho vận đơn mới theo quy tắc của shop. Thứ tự: nhân viên chọn → `CarrierAssignment` → hãng của phương thức khách chọn → hãng mặc định; lựa chọn trỏ tới hãng không nhận vận đơn mới bị bỏ; lý do ghi vào lịch sử vận đơn. DTO `CarrierAssignmentContext` (địa chỉ, thu hộ, tổng, số sản phẩm, phương thức giao), `CarrierChoice`.
+- Contract **`Ordering\Contracts\PackingSlipTemplate`** (tag `vani.ordering.packing_slips`): mẫu phiếu giao của plugin (view Blade cùng dữ liệu mẫu Core); trang in có bộ chọn mẫu (`?template=<code>`).
+- Interface tuỳ chọn của hãng **`Fulfillment\Contracts\ReturnPickup`** (`bookReturn(ReturnPickupData): CarrierShipment`) + service **`ReturnPickups`** (`carrierLabel`, `book`): nút "Gọi <hãng> lấy hàng trả" trên yêu cầu đổi trả đã duyệt (hãng đã giao đơn hỗ trợ) → `POST /{admin}/returns/returns/{id}/pickup` → yêu cầu "Đang gửi về" với mã của hãng (ghi chú `carrier_pickup`). `ReturnService::markShipped()` thêm tham số `notePrefix`.
+- Plugin tham chiếu **`vani.carrier-routing` 1.0.0** (mới): quy tắc `tinh:79,01 = hãng[:dịch vụ]`, `cod>=N = hãng`, `* = hãng`. `vani.hello-world`: mẫu phiếu A6 máy in nhiệt. `ReturnPickup`: hãng giả trong test (hãng thật — GHN — chờ mở lại kết nối ngoài).
+
 ## 0.4.60 — 2026-11-15
 
 EP v3 đợt X2 — ba chốt có người: lệnh, chặn, tín hiệu, kênh xác nhận ([extension-surface-v3](../20-roadmap/extension-surface-v3.md), [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)).

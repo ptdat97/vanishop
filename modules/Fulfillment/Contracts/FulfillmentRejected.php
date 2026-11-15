@@ -46,6 +46,11 @@ final class FulfillmentRejected extends BusinessRuleViolation
         return new self('fulfillment.push_blocked', 422, __('fulfillment::messages.push_blocked', ['reasons' => implode('; ', $reasons)]));
     }
 
+    public static function returnPickupUnavailable(): self
+    {
+        return new self('fulfillment.return_pickup_unavailable', 422, __('fulfillment::messages.return_pickup_unavailable'));
+    }
+
     public static function trackingTaken(): self
     {
         return new self('shipment.tracking_taken', 422, __('fulfillment::messages.tracking_taken'));

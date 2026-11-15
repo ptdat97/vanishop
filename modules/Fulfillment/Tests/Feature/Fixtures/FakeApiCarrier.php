@@ -9,15 +9,17 @@ use Illuminate\Http\Request;
 use Modules\Fulfillment\Contracts\Data\CarrierCapabilities;
 use Modules\Fulfillment\Contracts\Data\CarrierEvent;
 use Modules\Fulfillment\Contracts\Data\CarrierShipment;
+use Modules\Fulfillment\Contracts\Data\ReturnPickupData;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
 use Modules\Fulfillment\Contracts\InvalidCarrierEvent;
+use Modules\Fulfillment\Contracts\ReturnPickup;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
 use RuntimeException;
 
 /**
  * Hãng giả có API đặt vận đơn + webhook ký HMAC — mô phỏng plugin như vani.ghn.
  */
-final class FakeApiCarrier implements ShippingCarrier
+final class FakeApiCarrier implements ReturnPickup, ShippingCarrier
 {
     public const SECRET = 'carrier-secret';
 
@@ -25,6 +27,9 @@ final class FakeApiCarrier implements ShippingCarrier
 
     /** @var array<string, string> */
     public static array $booked = [];
+
+    /** @var list<ReturnPickupData> lấy hàng trả đã đặt (EP v3 X3) */
+    public static array $returnPickups = [];
 
     public function code(): string
     {
@@ -80,5 +85,12 @@ final class FakeApiCarrier implements ShippingCarrier
         $fields = ['tracking' => $tracking, 'status' => $status, 'event' => $event];
 
         return [...$fields, 'sig' => self::sign($fields)];
+    }
+
+    public function bookReturn(ReturnPickupData $data): CarrierShipment
+    {
+        self::$returnPickups[] = $data;
+
+        return new CarrierShipment('FKR'.str_pad((string) count(self::$returnPickups), 6, '0', STR_PAD_LEFT));
     }
 }

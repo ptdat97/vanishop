@@ -15,9 +15,11 @@ use Inertia\Response;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Fulfillment\Contracts\ReturnPickups;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Returns\Application\ReturnReasons;
 use Modules\Returns\Application\ReturnService;
+use Modules\Returns\Contracts\ReturnRejected;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Domain\BusinessRuleViolation;
@@ -160,7 +162,24 @@ final class ReturnController
                 'receive' => $canManage && $return->status->canMoveTo(ReturnStatus::Received),
                 'resolve' => Gate::allows('returns.refund') && $return->status->canMoveTo(ReturnStatus::Resolved),
             ],
+            // Hãng đã giao đơn đến lấy hàng trả (EP v3 X3, ReturnPickup): tên hãng khi hỗ trợ, yêu cầu đã duyệt.
+            'pickupCarrier' => $canManage && $return->status === ReturnStatus::Approved ? app(ReturnPickups::class)->carrierLabel($return->order_id) : null,
         ]);
+    }
+
+    /**
+     * Gọi hãng đã giao đơn đến lấy hàng trả (EP v3 X3): gọi hãng ngoài transaction → yêu cầu "Đang gửi về" với mã vận đơn.
+     */
+    public function pickup(ReturnRequest $return, ReturnService $returns, ReturnPickups $pickups): RedirectResponse
+    {
+        Gate::authorize('returns.manage');
+        if ($return->status !== ReturnStatus::Approved) {
+            throw ReturnRejected::invalidTransition($return->status->value, ReturnStatus::InTransit->value);
+        }
+        $tracking = $pickups->book($return->order_id, $return->number, (int) $return->lines()->sum('quantity'));
+        $returns->markShipped($return->order_id, $return->public_id, $tracking, 'staff', 'carrier_pickup');
+
+        return back()->with('success', __('returns::messages.pickup_booked', ['tracking' => $tracking]));
     }
 
     /**

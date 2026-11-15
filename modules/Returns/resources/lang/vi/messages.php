@@ -33,4 +33,5 @@ return [
     'reason_deleted' => 'Đã xoá lý do.',
     'attachments' => ['too_many' => 'Tối đa :max ảnh cho một yêu cầu.', 'invalid_file' => 'Ảnh phải là JPEG, PNG hoặc WebP, tối đa 5 MB.', 'closed' => 'Yêu cầu đã xử lý, không thêm ảnh được.'],
     'approve_blocked' => 'Chưa duyệt được yêu cầu: :reasons',
+    'pickup_booked' => 'Đã gọi hãng đến lấy hàng trả — mã vận đơn :tracking.',
 ];

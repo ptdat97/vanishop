@@ -57,6 +57,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.ghtk` (chuyển từ VnShipping — [đợt M2](vanicommerce-plugin-migration.md)) | `ShippingCarrier` + `ShippingRateProvider` | P2 |
 | `vani.viettelpost`, `vani.jt`, `vani.ninjavan` | `ShippingCarrier` | P2 |
 | `vani.ahamove` | `ShippingCarrier` | P3 |
+| `vani.carrier-routing` ✅ (quy tắc tỉnh/thu hộ → hãng, lý do vào lịch sử vận đơn) | `CarrierAssignment` | **Implemented** 2026-11-15 (1.0.0, EP v3 X3) |
 | `vani.cod-reconciliation` | Events fulfillment, `PaymentRecorder`, Admin pages | P2 |
 
 ### Bán hàng, khuyến mãi, khách hàng

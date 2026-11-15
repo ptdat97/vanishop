@@ -44,7 +44,15 @@ const props = defineProps<{
     /** Thao tác + tab của plugin (EP v3 X1). */
     extensions: ExtensionDetail & { id: number };
     can: { approve: boolean; reject: boolean; in_transit: boolean; receive: boolean; resolve: boolean };
+    /** Hãng đã giao đơn có thể đến lấy hàng trả (EP v3 X3). */
+    pickupCarrier: string | null;
 }>();
+
+async function bookPickup(): Promise<void> {
+    if ((await confirmAction({ title: `Gọi ${props.pickupCarrier} đến lấy hàng trả?`, message: 'Hãng đến địa chỉ giao của đơn; yêu cầu chuyển sang "Đang gửi về" với mã vận đơn của hãng.', confirmLabel: 'Gọi hãng' })) !== false) {
+        router.post(`${props.baseUrl}/${props.return.id}/pickup`, {}, { preserveScroll: true });
+    }
+}
 
 const money = useMoney();
 const columns = computed(() => [
@@ -88,6 +96,7 @@ function resolve(): void {
         <Link :href="orderUrl" :class="secondaryButton">Đơn {{ orderNumber }}</Link>
         <button v-if="can.approve" type="button" :class="primaryButton" @click="transition('approved')">Duyệt</button>
         <button v-if="can.in_transit" type="button" :class="secondaryButton" @click="transition('in_transit')">Khách đã gửi</button>
+        <button v-if="pickupCarrier" type="button" :class="secondaryButton" data-pickup @click="bookPickup">Gọi {{ pickupCarrier }} lấy hàng trả</button>
         <button v-if="can.reject" type="button" :class="dangerButton" @click="transition('rejected')">Từ chối</button>
         <ExtensionActions :actions="extensions.actions" :ids="[extensions.id]" />
     </PageHeader>

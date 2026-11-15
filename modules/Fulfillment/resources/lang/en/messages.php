@@ -16,4 +16,5 @@ return [
     'updated' => 'Shipment status updated.',
     'cancelled' => 'Shipment cancelled.',
     'push_blocked' => 'Cannot send to the carrier yet: :reasons',
+    'return_pickup_unavailable' => 'The carrier that delivered this order does not support return pickups.',
 ];

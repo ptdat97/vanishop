@@ -9,8 +9,12 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
+use Modules\Fulfillment\Contracts\CarrierAssignment;
 use Modules\Fulfillment\Contracts\Data\AllocationProposal;
+use Modules\Fulfillment\Contracts\Data\CarrierAssignmentContext;
+use Modules\Fulfillment\Contracts\Data\CarrierChoice;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
 use Modules\Fulfillment\Contracts\Data\SourcingRequest;
 use Modules\Fulfillment\Contracts\FulfillmentRejected;
@@ -47,22 +51,23 @@ final class FulfillmentService implements ShipmentBooking
         private readonly InventoryReservation $inventory,
         private readonly InventoryReturns $returns,
         private readonly AuditLogger $audit,
+        private readonly Extensions $extensions,
     ) {}
 
     /**
      * Tạo shipment cho đơn đã xác nhận theo SourcingStrategy. Trả các shipment id vừa tạo.
      *
-     * Carrier: chỉ định tường minh (nhân viên) → carrier của phương thức giao khách chọn (`shippingMethod.source`,
+     * Carrier: chỉ định tường minh (nhân viên) → quy tắc `CarrierAssignment` của plugin (EP v3 X3) → carrier của phương thức giao khách chọn (`shippingMethod.source`,
      * dịch vụ = `shippingMethod.code`) nếu carrier đó đang bật → carrier mặc định (`vanishop.fulfillment.default_carrier`).
      *
      * @return list<int>
      */
     public function createForOrder(int $orderId, ?string $carrierCode = null): array
     {
-        [$carrierCode, $serviceCode] = $this->carrierFor($orderId, $carrierCode);
+        [$carrierCode, $serviceCode, $assignedBy] = $this->carrierFor($orderId, $carrierCode);
         $carrier = $this->registry->carrier($carrierCode) ?? throw new \InvalidArgumentException("Carrier [{$carrierCode}] chưa đăng ký.");
 
-        $ids = DB::transaction(function () use ($orderId, $carrierCode, $serviceCode): array {
+        $ids = DB::transaction(function () use ($orderId, $carrierCode, $serviceCode, $assignedBy): array {
             $order = $this->orders->find($orderId) ?? throw FulfillmentRejected::orderNotReady('missing');
             if (! in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)) {
                 throw FulfillmentRejected::orderNotReady($order->status->value);
@@ -91,7 +96,7 @@ final class FulfillmentService implements ShipmentBooking
                 foreach ($proposal->lines as $lineId => $quantity) {
                     ShipmentLine::query()->create(['shipment_id' => $shipment->id, 'order_line_id' => $lineId, 'variant_id' => $variantByLine[$lineId], 'quantity' => $quantity]);
                 }
-                $this->recordEvent($shipment, ShipmentStatus::PendingBooking, "created:{$shipment->public_id}", 'system', null, []);
+                $this->recordEvent($shipment, ShipmentStatus::PendingBooking, "created:{$shipment->public_id}", 'system', $assignedBy, []);
                 event(new ShipmentCreated($shipment->id, $orderId, $carrierCode));
                 $ids[] = $shipment->id;
             }
@@ -146,22 +151,39 @@ final class FulfillmentService implements ShipmentBooking
     }
 
     /**
-     * @return array{0: string, 1: ?string} [carrier, dịch vụ]
+     * Hãng cho vận đơn mới: nhân viên chọn → quy tắc của plugin (`CarrierAssignment`, EP v3 X3) → hãng của phương thức
+     * giao khách chọn → hãng mặc định. Phần tử thứ ba: lý do chọn (ghi vào lịch sử vận đơn).
+     *
+     * @return array{0: string, 1: ?string, 2: ?string} [carrier, dịch vụ, lý do]
      */
     private function carrierFor(int $orderId, ?string $requested): array
     {
         if ($requested !== null) {
-            return [$requested, null];
+            return [$requested, null, null];
         }
 
-        $method = $this->orders->find($orderId)?->shippingMethod ?? [];
+        $order = $this->orders->find($orderId);
+        $method = $order?->shippingMethod ?? [];
+        if ($order !== null) {
+            $context = new CarrierAssignmentContext(
+                $order->id, $order->number, $order->shippingAddress, $order->paymentStatus === 'cod_pending' ? $order->totalAmount : 0, $order->totalAmount,
+                array_sum(array_map(fn ($line): int => $line->quantity, $this->orders->lines($orderId))), $method,
+            );
+            foreach ($this->extensions->implementations(CarrierAssignment::TAG, CarrierAssignment::class, fn (CarrierAssignment $rule): string => $rule::class) as $rule) {
+                $choice = $this->extensions->call($rule, fn (): ?CarrierChoice => $rule->assign($context), null, 'carrier.assign');
+                if ($choice instanceof CarrierChoice && $this->registry->acceptsNewShipments($choice->carrierCode)) {
+                    return [$choice->carrierCode, $choice->serviceCode, $choice->reason];
+                }
+            }
+        }
+
         $source = (string) ($method['source'] ?? '');
         if ($source !== '' && $this->registry->acceptsNewShipments($source)) {
-            return [$source, isset($method['code']) ? (string) $method['code'] : null];
+            return [$source, isset($method['code']) ? (string) $method['code'] : null, null];
         }
 
         // Phí giao không gắn hãng (phí cố định), carrier đã tắt hoặc đang ngừng (draining) → carrier mặc định.
-        return [(string) config('vanishop.fulfillment.default_carrier', 'manual'), null];
+        return [(string) config('vanishop.fulfillment.default_carrier', 'manual'), null, null];
     }
 
     /**

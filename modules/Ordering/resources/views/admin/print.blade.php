@@ -40,6 +40,13 @@
 <body>
     <div class="toolbar">
         <span>{{ count($orders) }} phiếu giao</span>
+        @if (count($templates ?? []) > 1)
+            <span>Mẫu:
+                @foreach ($templates as $template)
+                    @if ($template['code'] === ($current ?? null))<strong>{{ $template['label'] }}</strong>@else<a href="{{ $template['url'] }}">{{ $template['label'] }}</a>@endif{{ $loop->last ? '' : ' · ' }}
+                @endforeach
+            </span>
+        @endif
         <button type="button" onclick="window.print()">In</button>
     </div>
     @foreach ($orders as $order)

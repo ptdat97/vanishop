@@ -27,7 +27,9 @@ use Modules\Fulfillment\Application\Listeners\RebuildShipmentsOnLinesCancelled;
 use Modules\Fulfillment\Application\Listeners\SettleOrderOnStatusOverride;
 use Modules\Fulfillment\Application\Listeners\ShipmentDashboardTasks;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
+use Modules\Fulfillment\Application\ReturnPickupService;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
+use Modules\Fulfillment\Contracts\ReturnPickups;
 use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
@@ -58,6 +60,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $this->app->make(AdminScreen::class)->declareResource('shipment');
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
         $this->app->bind(ShipmentBooking::class, FulfillmentService::class);
+        $this->app->bind(ReturnPickups::class, ReturnPickupService::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
         $this->app->make(Extensions::class)->requires(ShippingCarrier::CARRIERS_TAG, Requirement::AtLeastOne, 'Hãng vận chuyển');
         $this->app->make(Extensions::class)->kindContract('shipping_carrier', ShippingCarrier::CARRIERS_TAG);

@@ -12,6 +12,7 @@ use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Ordering\Contracts\ConfirmationChannel;
+use Modules\Ordering\Contracts\PackingSlipTemplate;
 use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontBlock;
@@ -20,6 +21,7 @@ use Plugin\HelloWorld\Infrastructure\GiftMessageOption;
 use Plugin\HelloWorld\Infrastructure\HelloBannerBlock;
 use Plugin\HelloWorld\Infrastructure\HelloConfirmationChannel;
 use Plugin\HelloWorld\Infrastructure\HelloEnricher;
+use Plugin\HelloWorld\Infrastructure\HelloSlipA6;
 
 /**
  * Plugin mẫu: minh hoạ slot hook (Admin + storefront), làm giàu dữ liệu storefront, mở rộng màn hình Admin của Core
@@ -58,6 +60,9 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
 
         $this->extendCoreAdminScreens();
         $this->contribute(ConfirmationChannel::TAG, HelloConfirmationChannel::class);
+        // View Admin (chỉ tiếng Việt như mẫu phiếu Core) — tách khỏi view storefront có bản dịch.
+        $this->loadViewsFrom($this->pluginPath('Resources/admin-views'), 'vani-hello-world-admin');
+        $this->contribute(PackingSlipTemplate::TAG, HelloSlipA6::class);
 
         // Cú pháp ngắn (ADR-031): listener vẫn thuộc vani.hello-world (suy ra từ vị trí file) → tắt plugin là tắt.
         vani_add_filter('vani.admin.page.catalog.products.index', fn (array $props): array => [...$props, 'helloWorld' => ['banner' => 'Xin chào từ plugin']]);
