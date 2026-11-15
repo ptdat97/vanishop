@@ -36,6 +36,16 @@ final class FulfillmentRejected extends BusinessRuleViolation
         return new self('shipment.allocation_mismatch', 422, __('fulfillment::messages.allocation_mismatch'));
     }
 
+    /**
+     * Hook `vani.fulfillment.before_push` chặn (EP v3 X2).
+     *
+     * @param  list<string>  $reasons
+     */
+    public static function pushBlocked(array $reasons): self
+    {
+        return new self('fulfillment.push_blocked', 422, __('fulfillment::messages.push_blocked', ['reasons' => implode('; ', $reasons)]));
+    }
+
     public static function trackingTaken(): self
     {
         return new self('shipment.tracking_taken', 422, __('fulfillment::messages.tracking_taken'));

@@ -13,6 +13,16 @@ final class OrderActionRejected extends BusinessRuleViolation
         parent::__construct($message);
     }
 
+    /**
+     * Hook `vani.order.before_confirm` chặn (EP v3 X2): lý do của plugin hiện cho nhân viên.
+     *
+     * @param  list<string>  $reasons
+     */
+    public static function confirmBlocked(array $reasons): self
+    {
+        return new self('order.confirm_blocked', 422, __('ordering::messages.confirm_blocked', ['reasons' => implode('; ', $reasons)]));
+    }
+
     public static function cannotCancel(): self
     {
         return new self('order.cannot_cancel', 409, __('ordering::messages.cannot_cancel'));

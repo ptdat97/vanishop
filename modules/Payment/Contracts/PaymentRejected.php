@@ -42,6 +42,16 @@ final class PaymentRejected extends BusinessRuleViolation
         return new self('payment.capture_failed', 502, __('payment::messages.capture_failed'), ['gateway_message' => $gatewayMessage]);
     }
 
+    /**
+     * Hook `vani.payment.before_refund` chặn (EP v3 X2).
+     *
+     * @param  list<string>  $reasons
+     */
+    public static function refundBlocked(array $reasons): self
+    {
+        return new self('payment.refund_blocked', 422, __('payment::messages.refund_blocked', ['reasons' => implode('; ', $reasons)]), ['reasons' => $reasons]);
+    }
+
     public static function refundExceeds(int $refundable): self
     {
         return new self('payment.refund_exceeds', 422, __('payment::messages.refund_exceeds', ['amount' => app(MoneyFormatter::class)->formatAmount($refundable, (string) config('vanishop.currency'))]), ['refundable' => $refundable]);

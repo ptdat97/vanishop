@@ -9,6 +9,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Contracts\Data\AllocationProposal;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
 use Modules\Fulfillment\Contracts\Data\SourcingRequest;
@@ -120,7 +121,7 @@ final class FulfillmentService implements ShipmentBooking
         $queued = 0;
         $shipments = Shipment::query()->whereIn('id', $shipmentIds)->whereIn('status', [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed])->get();
         foreach ($shipments as $shipment) {
-            if (! ($this->registry->carrier($shipment->carrier_code)?->capabilities()->autoBooking ?? false)) {
+            if (! ($this->registry->carrier($shipment->carrier_code)?->capabilities()->autoBooking ?? false) || $this->pushBlockers($shipment) !== []) {
                 continue;
             }
             $shipment->update(['booking_attempts' => 0]);
@@ -129,6 +130,19 @@ final class FulfillmentService implements ShipmentBooking
         }
 
         return $queued;
+    }
+
+    /**
+     * Lý do chưa được đẩy lên hãng (hook `vani.fulfillment.before_push`, EP v3 X2): vd. thiếu khối lượng, phường chưa chuẩn
+     * hoá. Áp cho "Đẩy lên hãng" (nút, hàng loạt, `on_create`, plugin) và nhập mã vận đơn tay.
+     *
+     * @return list<string>
+     */
+    public function pushBlockers(Shipment|int $shipment): array
+    {
+        $shipment = $shipment instanceof Shipment ? $shipment : Shipment::query()->findOrFail($shipment);
+
+        return array_values(array_filter(Hook::collect('vani.fulfillment.before_push', $this->data($shipment)), fn ($message): bool => is_string($message) && $message !== ''));
     }
 
     /**

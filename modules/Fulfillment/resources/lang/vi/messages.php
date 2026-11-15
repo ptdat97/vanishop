@@ -15,4 +15,5 @@ return [
     'booked' => 'Đã ghi nhận mã vận đơn.',
     'updated' => 'Đã cập nhật trạng thái vận đơn.',
     'cancelled' => 'Đã huỷ vận đơn.',
+    'push_blocked' => 'Chưa đẩy lên hãng được: :reasons',
 ];

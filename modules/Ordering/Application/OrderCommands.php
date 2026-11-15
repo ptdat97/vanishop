@@ -8,11 +8,14 @@ use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Checkout\Contracts\ShippingAddresses;
+use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
+use Modules\Ordering\Contracts\OrderActions;
+use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Events\OrderLinesCancelled;
@@ -26,7 +29,7 @@ use Modules\Tenancy\Contracts\Settings;
 /**
  * Thao tác trên đơn ngoài luồng đặt hàng: xác nhận, huỷ, đổi địa chỉ, ghi chú. Mọi thao tác ghi order_events.
  */
-final class OrderCommands
+final class OrderCommands implements OrderActions
 {
     public function __construct(
         private readonly OrderTransitions $transitions,
@@ -37,12 +40,24 @@ final class OrderCommands
         private readonly PromotionClawback $clawback,
         private readonly PromotionEngine $promotions,
         private readonly Settings $settings,
+        private readonly OrderReader $orders,
     ) {}
 
-    public function confirm(int $orderId, string $reason): void
+    /**
+     * Xác nhận đơn — nhân viên (trang đơn, hàng loạt) và tự động hoá của plugin (`OrderActions`, nguồn `system:<plugin>`)
+     * đi chung lệnh này. Hook chặn `vani.order.before_confirm` (EP v3 X2) trả lý do → từ chối, đơn giữ nguyên.
+     */
+    public function confirm(int $orderId, string $reason, string $source = 'staff'): void
     {
-        $this->transitions->transition($orderId, OrderStatus::Confirmed, $reason, 'staff');
-        $this->audit->record('order.confirmed', 'order', $orderId, ['reason' => $reason]);
+        $order = $this->orders->find($orderId);
+        if ($order !== null) {
+            $blocked = array_values(array_filter(Hook::collect('vani.order.before_confirm', $order), fn ($message): bool => is_string($message) && $message !== ''));
+            if ($blocked !== []) {
+                throw OrderActionRejected::confirmBlocked($blocked);
+            }
+        }
+        $this->transitions->transition($orderId, OrderStatus::Confirmed, $reason, $source);
+        $this->audit->record('order.confirmed', 'order', $orderId, ['reason' => $reason, 'source' => $source]);
     }
 
     /**
@@ -74,8 +89,8 @@ final class OrderCommands
             $this->transitions->transition($order->id, OrderStatus::Cancelled, $reason, $source);
         });
 
-        if ($source === 'staff') {
-            $this->audit->record('order.cancelled', 'order', $orderId, ['reason' => $reason]);
+        if ($source !== 'customer') {
+            $this->audit->record('order.cancelled', 'order', $orderId, ['reason' => $reason, 'source' => $source]);
         }
     }
 
@@ -257,20 +272,20 @@ final class OrderCommands
         });
     }
 
-    public function addNote(int $orderId, string $note): void
+    public function addNote(int $orderId, string $note, string $source = 'staff'): void
     {
-        $this->event($orderId, 'note', null, ['note' => $note]);
+        $this->event($orderId, 'note', null, ['note' => $note], $source);
     }
 
     /**
      * @param  array<string, mixed>  $data
      */
-    private function event(int $orderId, string $type, ?string $reason, array $data): void
+    private function event(int $orderId, string $type, ?string $reason, array $data, string $source = 'staff'): void
     {
         $actor = $this->context->has() ? $this->context->actor() : null;
         DB::table('order_events')->insert([
             'order_id' => $orderId, 'type' => $type, 'from_status' => null, 'to_status' => null, 'reason' => $reason,
-            'actor_type' => $actor?->type->value, 'actor_id' => $actor?->id, 'source' => 'staff', 'correlation_id' => Context::get('correlation_id'),
+            'actor_type' => $actor?->type->value, 'actor_id' => $actor?->id, 'source' => $source, 'correlation_id' => Context::get('correlation_id'),
             'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'created_at' => now(),
         ]);
     }

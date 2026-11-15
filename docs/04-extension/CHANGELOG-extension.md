@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.60 — 2026-11-15
+
+EP v3 đợt X2 — ba chốt có người: lệnh, chặn, tín hiệu, kênh xác nhận ([extension-surface-v3](../20-roadmap/extension-surface-v3.md), [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)).
+
+### Thêm
+- Service contract **`Ordering\Contracts\OrderActions`**: `confirm`, `cancel`, `addNote` với `source` (`staff` | `system:<id plugin>`) — cùng chính sách, hook chặn, lịch sử `order_events`, audit như nhân viên. `OrderCommands` triển khai (nhân viên và plugin chung một lệnh).
+- Hook chặn (validate, trả `list<string>` lý do): **`vani.order.before_confirm`** (xác nhận đơn: nút, hàng loạt — lý do theo từng đơn, tự xác nhận của `vani.cod`), **`vani.fulfillment.before_push`** (đẩy lên hãng: nút, hàng loạt, `on_create`, plugin; nhập mã vận đơn tay — `FulfillmentService::pushBlockers()`), **`vani.returns.before_approve`** (CSKH duyệt, duyệt hàng loạt, tự duyệt của `ReturnPolicy` — bị chặn thì chờ CSKH), **`vani.payment.before_refund`** (hoàn tiền do nhân viên tạo; hoàn tự động khi huỷ đơn không qua). Lỗi mới: `order.confirm_blocked`, `fulfillment.push_blocked`, `return.approve_blocked`, `payment.refund_blocked`.
+- Contract **`OrderRiskSignal`** (tag `vani.ordering.risk_signals`, `assess(list<int>): array<int, list<RiskSignal>>`) + DTO `RiskSignal` (`low`/`medium`/`high`, nhãn, lý do, nguồn) + service **`OrderRisks`** (`forOrders`, `hasHigh`): tín hiệu hiện trên dòng "Cần xác nhận" (một lần cho cả trang) và trang đơn; lỗi plugin bị bỏ.
+- Contract **`ConfirmationChannel`** (tag `vani.ordering.confirmation_channels`): nút "Gửi xác nhận qua …" trên đơn "Cần xác nhận" và thao tác hàng loạt (`POST …/orders/{order}/confirmation/{channel}`, `…/orders/bulk-confirmation/{channel}`); gọi ngoài transaction, ghi lịch sử đơn.
+- Plugin tham chiếu **`vani.cod-risk-guard` 1.0.0** (mới): danh sách đen SĐT, ngưỡng đơn hoàn về → tín hiệu; chặn xác nhận SĐT trong danh sách đen. `vani.hello-world` 0.3.0: kênh xác nhận mẫu "Hello (thử)".
+
+### Đổi hành vi
+- `vani.cod` 1.3.0: tự xác nhận đi qua `OrderActions::confirm` (hook chặn áp dụng) và bỏ qua đơn có tín hiệu rủi ro `high`.
+
 ## 0.4.59 — 2026-11-15
 
 EP v3 đợt X1 — màn vận hành Admin mở cho plugin ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).

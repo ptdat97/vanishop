@@ -37,3 +37,10 @@ export function stageTone(stage: string): Tone {
         } as Record<string, Tone>
     )[stage] ?? 'neutral';
 }
+
+export type RiskSignal = { level: 'low' | 'medium' | 'high'; label: string; reason: string | null; source: string };
+
+/** Tông màu tín hiệu rủi ro của plugin (OrderRiskSignal, EP v3 X2). */
+export function riskTone(level: string): Tone {
+    return ({ high: 'danger', medium: 'warning', low: 'neutral' } as Record<string, Tone>)[level] ?? 'neutral';
+}

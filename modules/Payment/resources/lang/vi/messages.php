@@ -13,4 +13,5 @@ return [
     'captured' => 'Đã thu tiền.',
     'expired' => 'Đơn đã hết hạn thanh toán.',
     'cod_collected' => 'Đã ghi nhận thu tiền khi giao.',
+    'refund_blocked' => 'Chưa hoàn tiền được: :reasons',
 ];

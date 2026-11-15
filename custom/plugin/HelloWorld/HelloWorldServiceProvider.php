@@ -11,12 +11,14 @@ use Modules\Cart\Contracts\CartLineOption;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Ordering\Contracts\ConfirmationChannel;
 use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Modules\Storefront\Contracts\StorefrontEnricher;
 use Plugin\HelloWorld\Infrastructure\GiftMessageOption;
 use Plugin\HelloWorld\Infrastructure\HelloBannerBlock;
+use Plugin\HelloWorld\Infrastructure\HelloConfirmationChannel;
 use Plugin\HelloWorld\Infrastructure\HelloEnricher;
 
 /**
@@ -55,6 +57,7 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
             : null);
 
         $this->extendCoreAdminScreens();
+        $this->contribute(ConfirmationChannel::TAG, HelloConfirmationChannel::class);
 
         // Cú pháp ngắn (ADR-031): listener vẫn thuộc vani.hello-world (suy ra từ vị trí file) → tắt plugin là tắt.
         vani_add_filter('vani.admin.page.catalog.products.index', fn (array $props): array => [...$props, 'helloWorld' => ['banner' => 'Xin chào từ plugin']]);

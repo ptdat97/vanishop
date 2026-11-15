@@ -15,7 +15,7 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
-import { customerRiskFlag, orderStatusTone, paymentStatusTone, stageTone } from '../../statusTones';
+import { customerRiskFlag, orderStatusTone, paymentStatusTone, type RiskSignal, riskTone, stageTone } from '../../statusTones';
 
 type Division = { code: string; name: string };
 /** Thao tác trên thẻ bên phải (0.3.96) — module sở hữu thẻ (Fulfillment, Payment…) kiểm tra quyền và xử lý POST. */
@@ -118,6 +118,8 @@ const props = defineProps<{
             options: Array<{ value: string; label: string; mode: 'normal' | 'forced' | null; permission: string | null; blocked: string | null; allowed: boolean }>;
         };
     };
+    /** Tín hiệu rủi ro của plugin khi đơn còn chờ xác nhận (EP v3 X2). */
+    risks: RiskSignal[];
     customerHistory: { orders: number; delivered: number; returned_to_sender: number; cancelled: number; orders_url: string };
     printUrl: string;
     timeline: Array<{ ts: number; at: string; title: string; detail: string | null; source: string | null }>;
@@ -289,6 +291,7 @@ function addNote(): void {
         <Link :href="listUrl" :class="secondaryButton">Danh sách</Link>
         <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">In phiếu giao</a>
         <span v-if="stage === 'to_confirm' && customerFlag" class="self-center" data-confirm-risk><StatusBadge :label="customerFlag.label" :tone="customerFlag.tone" /></span>
+        <span v-for="risk in risks" :key="`${risk.source}:${risk.label}`" class="self-center" :title="risk.reason ?? undefined" data-risk><StatusBadge :label="risk.label" :tone="riskTone(risk.level)" /></span>
         <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
         <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
         <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />

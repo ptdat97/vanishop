@@ -16,7 +16,6 @@ use Modules\Fulfillment\Application\CarrierHandoff;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Contracts\FulfillmentRejected;
-use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -140,19 +139,31 @@ final class ShipmentController
      * "Đẩy lên hãng" hàng loạt từ danh sách đơn (ADR-046 chốt ②): vận đơn chờ đặt/đặt lỗi của hãng có API thuộc các đơn
      * đã chọn. Vận đơn của hãng nhập tay hoặc đã có mã được bỏ qua.
      */
-    public function bulkPush(Request $request, ShipmentBooking $booking): RedirectResponse
+    public function bulkPush(Request $request, FulfillmentService $fulfillment, OrderReader $orders): RedirectResponse
     {
         Gate::authorize('fulfillment.manage');
-        $ids = Shipment::query()->whereIn('order_id', $this->orderIds($request))->where('status', '!=', ShipmentStatus::Cancelled)->pluck('id')->map(fn ($id): int => (int) $id)->all();
-        $pushed = $booking->pushToCarrier($ids);
+        $shipments = Shipment::query()->whereIn('order_id', $this->orderIds($request))->where('status', '!=', ShipmentStatus::Cancelled)->get();
+        $pushed = $fulfillment->pushToCarrier($shipments->pluck('id')->map(fn ($id): int => (int) $id)->all());
+        // Vận đơn bị plugin chặn (vani.fulfillment.before_push): báo lý do theo đơn.
+        $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
+        $blocked = [];
+        foreach ($shipments->whereIn('status', [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed]) as $shipment) {
+            if (($reasons = $fulfillment->pushBlockers($shipment)) !== []) {
+                $blocked[] = ($numbers[$shipment->order_id] ?? "#{$shipment->order_id}").': '.implode('; ', $reasons);
+            }
+        }
+        $redirect = back()->with('success', __('fulfillment::messages.pushed', ['count' => $pushed, 'skipped' => $shipments->count() - $pushed]));
 
-        return back()->with('success', __('fulfillment::messages.pushed', ['count' => $pushed, 'skipped' => count($ids) - $pushed]));
+        return $blocked === [] ? $redirect : $redirect->withErrors(['business' => implode(' · ', array_slice($blocked, 0, 5))]);
     }
 
-    public function push(Shipment $shipment, ShipmentBooking $booking): RedirectResponse
+    public function push(Shipment $shipment, FulfillmentService $fulfillment): RedirectResponse
     {
         Gate::authorize('fulfillment.manage');
-        $pushed = $booking->pushToCarrier([$shipment->id]);
+        if (($reasons = $fulfillment->pushBlockers($shipment)) !== []) {
+            throw FulfillmentRejected::pushBlocked($reasons);
+        }
+        $pushed = $fulfillment->pushToCarrier([$shipment->id]);
         if ($pushed === 0) {
             throw FulfillmentRejected::invalidTransition($shipment->status->value, ShipmentStatus::Created->value);
         }
@@ -238,6 +249,9 @@ final class ShipmentController
     {
         Gate::authorize('fulfillment.manage');
         $data = $request->validate(['tracking_number' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._-]+$/'], 'service_code' => ['nullable', 'string', 'max:64']]);
+        if (($reasons = $fulfillment->pushBlockers($shipment)) !== []) {
+            throw FulfillmentRejected::pushBlocked($reasons);
+        }
         $fulfillment->book($shipment->id, $data['tracking_number'], $data['service_code'] ?? null);
 
         return back()->with('success', __('fulfillment::messages.booked'));

@@ -14,6 +14,7 @@ use Modules\Checkout\Contracts\Data\ReplacementOrderRequest;
 use Modules\Checkout\Contracts\ReplacementOrders;
 use Modules\Checkout\Contracts\ReplacementUnavailable;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReturns;
@@ -131,7 +132,8 @@ final class ReturnService implements Returns
 
             $return->update(['refund_amount' => $total]);
             $this->event($return, null, ReturnStatus::Requested, $reasonCode, $source);
-            if ($decision->autoApprove) {
+            // Tự duyệt của chính sách plugin cũng qua hook chặn (EP v3 X2); bị chặn → chờ CSKH.
+            if ($decision->autoApprove && $this->approveBlockers($return) === []) {
                 $this->move($return, ReturnStatus::Approved, 'auto_approved', 'system');
             }
             $this->syncOrder($orderId);
@@ -241,6 +243,9 @@ final class ReturnService implements Returns
             }
             if ($to === ReturnStatus::Cancelled && $source === 'customer' && $return->status !== ReturnStatus::Requested) {
                 throw ReturnRejected::invalidTransition($return->status->value, $to->value);
+            }
+            if ($to === ReturnStatus::Approved && ($blocked = $this->approveBlockers($return)) !== []) {
+                throw ReturnRejected::approveBlocked($blocked);
             }
 
             $this->move($return, $to, $note, $source);
@@ -422,6 +427,16 @@ final class ReturnService implements Returns
             $this->audit->record('return.exchanged', 'return_request', $return->id, ['replacement' => $replacement->number, 'payable' => $quote['payable'], 'refunded' => $quote['refund']]);
             event(new ReturnResolved($return->id, $return->order_id, $quote['refund'], $return->public_id, $return->number, $replacement->id));
         });
+    }
+
+    /**
+     * Lý do chưa được duyệt (hook `vani.returns.before_approve`, chốt ③ ADR-046, EP v3 X2) — vd. khách chưa gửi ảnh.
+     *
+     * @return list<string>
+     */
+    private function approveBlockers(ReturnRequest $return): array
+    {
+        return array_values(array_filter(Hook::collect('vani.returns.before_approve', $this->view($return->refresh())), fn ($message): bool => is_string($message) && $message !== ''));
     }
 
     public function view(ReturnRequest $return): ReturnView

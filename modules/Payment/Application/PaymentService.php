@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
@@ -294,8 +295,17 @@ final class PaymentService implements Payments
         });
     }
 
+    /**
+     * Hoàn tiền do nhân viên tạo (trang Thanh toán, thẻ Thanh toán trên trang đơn). Hook chặn `vani.payment.before_refund`
+     * (EP v3 X2) — vd. phải duyệt của quản lý trên mức tiền; hoàn tự động khi huỷ đơn/IPN muộn không qua hook này.
+     */
     public function refund(int $paymentId, Money $amount, string $reason, string $idempotencyKey): void
     {
+        $payment = Payment::query()->findOrFail($paymentId);
+        $blocked = array_values(array_filter(Hook::collect('vani.payment.before_refund', $this->toView($payment), $amount, $reason), fn ($message): bool => is_string($message) && $message !== ''));
+        if ($blocked !== []) {
+            throw PaymentRejected::refundBlocked($blocked);
+        }
         $this->createRefund($paymentId, $amount, $reason, $idempotencyKey);
     }
 

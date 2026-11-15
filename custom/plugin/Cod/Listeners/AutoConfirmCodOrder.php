@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Plugin\Cod\Listeners;
 
 use Modules\Ordering\Contracts\Data\OrderStatus;
+use Modules\Ordering\Contracts\OrderActionRejected;
+use Modules\Ordering\Contracts\OrderActions;
 use Modules\Ordering\Contracts\OrderReader;
-use Modules\Ordering\Contracts\OrderTransitions;
+use Modules\Ordering\Contracts\OrderRisks;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\Cod\CodServiceProvider;
@@ -18,7 +20,8 @@ use Plugin\Cod\CodServiceProvider;
  *   `trusted` — chỉ khi SĐT đã có ≥ N đơn giao thành công và chưa từng bị hoàn về (chống bom hàng); còn lại nhân viên gọi;
  *   `all`     — xác nhận ngay mọi đơn COD.
  * Chưa chọn: theo công tắc cũ `auto_confirm` (1.0) rồi VANI_COD_AUTO_CONFIRM (mặc định tắt → `off`).
- * Tự xác nhận đi qua cùng `OrderTransitions` như nhân viên, nguồn `system`, lý do `cod_auto_confirm[_trusted]`.
+ * Tự xác nhận đi qua `OrderActions::confirm` như nhân viên (hook chặn áp dụng), nguồn `system`, lý do
+ * `cod_auto_confirm[_trusted]`; đơn có tín hiệu rủi ro `high` (OrderRiskSignal) hoặc bị hook chặn → chờ nhân viên.
  */
 final class AutoConfirmCodOrder
 {
@@ -26,7 +29,8 @@ final class AutoConfirmCodOrder
 
     public function __construct(
         private readonly OrderReader $orders,
-        private readonly OrderTransitions $transitions,
+        private readonly OrderActions $actions,
+        private readonly OrderRisks $risks,
         private readonly Settings $settings,
     ) {}
 
@@ -44,8 +48,16 @@ final class AutoConfirmCodOrder
         if ($mode === 'trusted' && ! $this->trusted($order->recipient['phone'], $order->id)) {
             return;
         }
+        // EP v3 X2: plugin chấm rủi ro báo "cao" → để nhân viên gọi xác nhận, không tự xác nhận.
+        if ($this->risks->hasHigh($order->id)) {
+            return;
+        }
 
-        $this->transitions->transition($order->id, OrderStatus::Confirmed, $mode === 'all' ? 'cod_auto_confirm' : 'cod_auto_confirm_trusted', 'system');
+        try {
+            // Cùng lệnh với nhân viên (ADR-046): hook chặn vani.order.before_confirm áp dụng; bị chặn → đơn chờ nhân viên.
+            $this->actions->confirm($order->id, $mode === 'all' ? 'cod_auto_confirm' : 'cod_auto_confirm_trusted', 'system');
+        } catch (OrderActionRejected) {
+        }
     }
 
     public function mode(): string

@@ -11,6 +11,8 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | Contract | Tag | Context | Mặc định trong Core | Tài liệu |
 |---|---|---|---|---|
 | `PaymentGateway` | `vani.payment.gateways` | Payment | `cod`, `manual_bank_transfer`. **Implemented** + bộ contract test `PaymentGatewayContract`. Interface tuỳ chọn: `CapturesLater` (0.3.5), `CallbackResponder` (0.3.15: phản hồi IPN theo `CallbackOutcome`, tham chiếu `vani.vnpay`) | [payment](../10-payment/payment.md) |
+| `OrderRiskSignal` | `vani.ordering.risk_signals` | Ordering | — (plugin). **Implemented** (0.4.60, EP v3 X2): tín hiệu rủi ro đơn theo lô, hiện trên "Cần xác nhận" và trang đơn; tham chiếu `vani.cod-risk-guard` | [order §1.1](../09-order/order.md) |
+| `ConfirmationChannel` | `vani.ordering.confirmation_channels` | Ordering | — (plugin). **Implemented** (0.4.60): gửi yêu cầu xác nhận đơn cho khách (Zalo OA, tổng đài); tham chiếu `vani.hello-world` | [order §1.1](../09-order/order.md) |
 | `OrderStatusAction` | `vani.ordering.status_actions` | Ordering | — (plugin). **Implemented** (0.3.98): thao tác đổi trạng thái do plugin thanh toán/vận chuyển cắm vào thẻ "Trạng thái đơn" trên trang đơn Admin — `describe(OrderData)` → `OrderStatusActionView` (nhãn, quyền, ô nhập `FieldDefinition`, xác nhận, `primary`) hoặc null; `perform(OrderData, input)` đổi trạng thái qua contract Core (R30). Core hiện nút, kiểm quyền, validate, ghi audit `order.status_action`; lỗi nghiệp vụ hiện cho nhân viên, lỗi khác báo chung | [order](../09-order/order.md) |
 | `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `manual`. **Implemented** + bộ contract test `ShippingCarrierContract` (phí ở checkout: `ShippingRateProvider`) | [fulfillment](../09-order/fulfillment.md) |
 | `FulfillmentMethod` | `vani.fulfillment.methods` | Fulfillment | `delivery` | [fulfillment](../09-order/fulfillment.md) |
@@ -72,6 +74,8 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `OrderReader` | Đọc đơn (DTO snapshot). **Implemented** | Ordering |
 | `OrderStatistics` | Số liệu bán hàng tổng hợp: tổng, theo ngày (múi giờ), theo phương thức thanh toán/nguồn đơn/sản phẩm/thương hiệu, đếm theo trạng thái. **Implemented** (0.3.12) | Ordering |
 | `CustomerOrders` | Tra cứu/xem/huỷ đơn cho khách vãng lai. **Implemented** | Ordering |
+| `OrderActions` | Lệnh nhân viên cho plugin: xác nhận/huỷ theo chính sách, ghi chú — hook chặn + lịch sử nguồn `system:<plugin>`. **Implemented** (0.4.60, EP v3 X2) | Ordering |
+| `OrderRisks` | Tín hiệu rủi ro đã gộp (`forOrders`, `hasHigh`). **Implemented** (0.4.60) | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
 | `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
 | `ShipmentReader` | Vận đơn của một đơn (Storefront, panel Admin). **Implemented**. Ghi nhận trạng thái đi qua webhook chung/Admin, chưa công bố `ShipmentRecorder` | Fulfillment |
@@ -122,6 +126,10 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.checkout.context` | filter | có (khi đặt hàng; không I/O mạng) | Bổ sung `PromotionContext::$attributes` từ request (mã giới thiệu, chiến dịch). **Implemented** (0.3.4) |
 | `vani.order.before_create` | filter | có (không I/O mạng) | Bổ sung `orders.meta` (khoá theo plugin id) trước khi lưu; tham số `(meta, CheckoutRequest, Totals)`; không sửa giá/dòng. Đọc lại qua `OrderData::$meta`. **Implemented** (0.3) |
 | `vani.order.after_create` | action | có (chỉ ghi DB) | Plugin ghi dữ liệu gắn với đơn (attribution, điểm chờ); tham số `PlacedOrder`. **Implemented** |
+| `vani.order.before_confirm` | validate | không | Chặn xác nhận đơn (nhân viên, hàng loạt, tự động hoá); trả lý do. **Implemented** (0.4.60, EP v3 X2) |
+| `vani.fulfillment.before_push` | validate | không | Chặn đẩy vận đơn lên hãng / nhập mã tay; tham số `ShipmentData`. **Implemented** (0.4.60) |
+| `vani.returns.before_approve` | validate | có (transaction duyệt) | Chặn duyệt đổi trả (cả tự duyệt); tham số `ReturnView`. **Implemented** (0.4.60) |
+| `vani.payment.before_refund` | validate | không | Chặn hoàn tiền do nhân viên tạo; tham số `(PaymentView, Money, reason)`. **Implemented** (0.4.60) |
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
 | `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.dashboard.tasks` | slot | 0.3.101 | Ô "Việc cần làm" đầu trang tổng quan; trả `list<{key, label, count, url, tone?, hint?, order?}>`. **Implemented** (Ordering, Returns, Fulfillment, Payment, Inventory) |

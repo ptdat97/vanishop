@@ -30,4 +30,7 @@ return [
     'deletion_open_order' => 'đơn :number chưa hoàn tất',
     'deletion_open_return' => 'đổi trả của đơn :number đang xử lý',
     'cannot_confirm_receipt' => 'Chỉ xác nhận đã nhận hàng khi đơn đã giao (hoặc đang giao đã lâu) và chưa xác nhận.',
+    'confirm_blocked' => 'Chưa xác nhận được đơn: :reasons',
+    'confirmation_not_pending' => 'Chỉ gửi yêu cầu xác nhận cho đơn đang chờ xác nhận.',
+    'bulk_confirmation_sent' => 'Đã gửi yêu cầu xác nhận qua :channel cho :count đơn; bỏ qua :skipped đơn.',
 ];

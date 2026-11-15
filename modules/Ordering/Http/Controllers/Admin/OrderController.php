@@ -23,12 +23,15 @@ use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
 use Modules\Ordering\Application\OrderStatusChanger;
+use Modules\Ordering\Contracts\ConfirmationChannel;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\OrderStatusActionView;
+use Modules\Ordering\Contracts\Data\RiskSignal;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderRisks;
 use Modules\Ordering\Contracts\OrderStatusAction;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
@@ -40,6 +43,7 @@ use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\Code128;
+use Modules\Shared\Support\ExternalCalls;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
 use Throwable;
@@ -84,6 +88,10 @@ final class OrderController
             ['key' => 'print', 'label' => 'In phiếu giao', 'url' => route('admin.orders.orders.print'), 'confirm' => false, 'method' => 'get', 'target' => '_blank'],
         ];
         if (Gate::allows('orders.manage')) {
+            // Gửi yêu cầu xác nhận qua kênh của plugin (EP v3 X2): chỉ đơn đang "Cần xác nhận" được gửi, đơn khác bỏ qua.
+            foreach ($this->confirmationChannels() as $channel) {
+                $actions[] = ['key' => "confirmation_{$channel->code()}", 'label' => "Gửi xác nhận qua {$channel->label()}", 'url' => route('admin.orders.orders.bulk-confirmation', ['channel' => $channel->code()]), 'confirm' => true];
+            }
             // Đổi trạng thái hàng loạt (0.3.99): mỗi đơn đi đúng đường (theo trình tự / ngoài trình tự nếu có quyền), đơn bị chặn được bỏ qua.
             $actions[] = ['key' => 'status', 'label' => 'Đổi trạng thái', 'url' => route('admin.orders.orders.bulk-status'), 'confirm' => true, 'fields' => [
                 ['key' => 'status', 'label' => 'Trạng thái mới', 'required' => true, 'options' => array_map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => (string) __("ordering::labels.order_status.{$status->value}")], OrderStatus::cases())],
@@ -95,6 +103,9 @@ final class OrderController
         }
         array_push($actions, ...$screen->actions('order', 'bulk'));
 
+        $toConfirm = collect($page->items())->filter(fn (Order $order): bool => $order->getAttribute('stage') === 'to_confirm')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        // Tín hiệu rủi ro của plugin (EP v3 X2, OrderRiskSignal) cho dòng "Cần xác nhận" — một lần cho cả trang.
+        $risks = app(OrderRisks::class)->forOrders($toConfirm);
         $histories = $queries->deliveryHistoryByPhone(collect($page->items())->filter(fn (Order $order): bool => $order->getAttribute('stage') === 'to_confirm')->map(fn (Order $order): string => (string) $order->customer_phone)->values()->all());
 
         return Inertia::render('Ordering::Orders/Index', [
@@ -127,6 +138,7 @@ final class OrderController
                 'payment_method' => $order->payment_method,
                 'source' => $order->source,
                 'label' => CustomerStatusLabel::of($order->order_status->value, (string) $order->payment_status, (string) $order->fulfillment_status, (string) $order->return_status)['label'],
+                'risks' => array_map(fn (RiskSignal $signal): array => $signal->toArray(), $risks[$order->id] ?? []),
                 'history' => $order->getAttribute('stage') === 'to_confirm' && isset($histories[(string) $order->customer_phone])
                     ? [...$histories[(string) $order->customer_phone], 'orders' => $histories[(string) $order->customer_phone]['orders'] - 1]
                     : null,
@@ -166,6 +178,10 @@ final class OrderController
             'deliveryIssue' => $this->deliveryIssue($order),
             'timeline' => $this->timeline($detail),
             // Thẻ Khách (0.3.97): lịch sử nhận hàng theo SĐT — đánh giá rủi ro trước khi xác nhận đơn COD.
+            // Tín hiệu rủi ro của plugin (EP v3 X2) khi đơn còn chờ xác nhận.
+            'risks' => OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)
+                ? array_map(fn (RiskSignal $signal): array => $signal->toArray(), app(OrderRisks::class)->forOrders([$order->id])[$order->id] ?? [])
+                : [],
             'customerHistory' => [...$reader->deliveryHistory($detail->customer['phone'], $order->id), 'orders_url' => route('admin.orders.orders.index', ['q' => $detail->customer['phone']])],
             'printUrl' => route('admin.orders.orders.print', ['ids' => [$order->id]]),
             'can' => [
@@ -197,6 +213,10 @@ final class OrderController
         $actions = [];
         if (Gate::allows('orders.manage') && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
             $actions[] = ['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => "{$url}/confirm", 'primary' => true, 'tone' => 'primary'];
+            foreach ($this->confirmationChannels() as $channel) {
+                $actions[] = ['key' => "confirmation-{$channel->code()}", 'label' => "Gửi xác nhận qua {$channel->label()}", 'url' => "{$url}/confirmation/{$channel->code()}", 'tone' => 'secondary',
+                    'confirm' => "Gửi yêu cầu xác nhận đơn cho khách qua {$channel->label()}?"];
+            }
         }
         if (Gate::allows('orders.manage') && OrderPolicy::staffCanComplete($order->order_status, (string) $order->fulfillment_status, (string) $order->return_status)) {
             $actions[] = ['key' => 'complete', 'label' => 'Hoàn tất đơn', 'url' => "{$url}/complete", 'tone' => 'secondary',
@@ -458,6 +478,7 @@ final class OrderController
         $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
 
         $confirmed = 0;
+        $blocked = [];
         foreach (Order::query()->whereIn('id', $data['ids'])->get() as $order) {
             if (! OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
                 continue;
@@ -465,12 +486,62 @@ final class OrderController
             try {
                 $commands->confirm($order->id, 'staff_confirmed_bulk');
                 $confirmed++;
+            } catch (OrderActionRejected $exception) {
+                // Plugin chặn (vani.order.before_confirm) — báo lý do theo đơn; đơn đổi trạng thái ở nơi khác: bỏ qua.
+                $blocked[] = "{$order->number}: {$exception->getMessage()}";
             } catch (BusinessRuleViolation) {
-                // Đơn vừa đổi trạng thái ở nơi khác: bỏ qua.
+            }
+        }
+        $message = __('ordering::messages.bulk_confirmed', ['count' => $confirmed, 'skipped' => count($data['ids']) - $confirmed]);
+
+        return $blocked === [] ? back()->with('success', $message) : back()->with('success', $message)->withErrors(['business' => implode(' · ', array_slice($blocked, 0, 5))]);
+    }
+
+    /**
+     * Gửi yêu cầu xác nhận đơn cho khách qua kênh của plugin (EP v3 X2) — ngoài transaction; ghi lịch sử đơn.
+     */
+    public function requestConfirmation(Order $order, string $channel, OrderCommands $commands, OrderReader $reader): RedirectResponse
+    {
+        Gate::authorize('orders.manage');
+        $found = $this->confirmationChannels()[$channel] ?? abort(404);
+        if (! OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
+            throw OrderActionRejected::statusChangeBlocked(__('ordering::messages.confirmation_not_pending'));
+        }
+        ExternalCalls::guard("ordering.confirmation:{$channel}");
+        $message = $found->request($reader->find($order->id) ?? abort(404));
+        $commands->addNote($order->id, "Gửi yêu cầu xác nhận qua {$found->label()}: {$message}");
+
+        return back()->with('success', $message);
+    }
+
+    public function bulkRequestConfirmation(Request $request, string $channel, OrderCommands $commands, OrderReader $reader): RedirectResponse
+    {
+        Gate::authorize('orders.manage');
+        $found = $this->confirmationChannels()[$channel] ?? abort(404);
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
+        ExternalCalls::guard("ordering.confirmation:{$channel}");
+        $sent = 0;
+        foreach (Order::query()->whereIn('id', $data['ids'])->get() as $order) {
+            $view = $reader->find($order->id);
+            if ($view === null || ! OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
+                continue;
+            }
+            try {
+                $commands->addNote($order->id, "Gửi yêu cầu xác nhận qua {$found->label()}: ".$found->request($view));
+                $sent++;
+            } catch (BusinessRuleViolation) {
             }
         }
 
-        return back()->with('success', __('ordering::messages.bulk_confirmed', ['count' => $confirmed, 'skipped' => count($data['ids']) - $confirmed]));
+        return back()->with('success', __('ordering::messages.bulk_confirmation_sent', ['count' => $sent, 'channel' => $found->label(), 'skipped' => count($data['ids']) - $sent]));
+    }
+
+    /**
+     * @return array<string, ConfirmationChannel>
+     */
+    private function confirmationChannels(): array
+    {
+        return app(Extensions::class)->implementations(ConfirmationChannel::TAG, ConfirmationChannel::class);
     }
 
     public function confirm(Order $order, Request $request, OrderCommands $commands): RedirectResponse

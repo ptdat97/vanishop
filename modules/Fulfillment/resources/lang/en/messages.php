@@ -15,4 +15,5 @@ return [
     'booked' => 'Tracking number recorded.',
     'updated' => 'Shipment status updated.',
     'cancelled' => 'Shipment cancelled.',
+    'push_blocked' => 'Cannot send to the carrier yet: :reasons',
 ];

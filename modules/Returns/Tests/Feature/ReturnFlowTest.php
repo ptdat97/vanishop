@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -185,4 +186,18 @@ it('chính sách của plugin tự duyệt (điểm mở rộng ADR-046): duyệ
     $approved = ReturnRequest::query()->where('reason_code', 'wrong_size')->sole();
     expect(DB::table('return_events')->where('return_request_id', $approved->id)->where('to_status', 'approved')->first(['note', 'source']))->toEqual((object) ['note' => 'auto_approved', 'source' => 'system'])
         ->and(($this->onHand)())->toBe($stock);
+});
+
+it('hook vani.returns.before_approve (EP v3 X2): chặn CSKH duyệt và cả tự duyệt của chính sách plugin', function () {
+    app(Extensions::class)->tag([AutoApproveWrongSizePolicy::class], ReturnPolicy::TAG);
+    T::seed(fn () => app(Settings::class)->set('core', 'returns.policy', 'test_auto_wrong_size'));
+    Hook::onValidate('vani.returns.before_approve', fn ($view): array => $view->attachments === [] ? ['Khách chưa gửi ảnh'] : []);
+    [$order, $headers] = ($this->placeAndDeliver)();
+
+    ($this->requestReturn)($order, $headers, 1)->assertCreated()->assertJsonPath('data.returns.0.status', 'requested');
+    $return = ReturnRequest::query()->sole();
+    ($this->staff)();
+    $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'approved', 'lock_version' => $return->lock_version])->assertSessionHasErrors(['business' => 'Chưa duyệt được yêu cầu: Khách chưa gửi ảnh']);
+
+    expect($return->fresh()->status->value)->toBe('requested');
 });

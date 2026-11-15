@@ -15,12 +15,16 @@ use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;
 use Modules\Ordering\Application\EloquentOrderStatistics;
 use Modules\Ordering\Application\Listeners\OrderDashboardTasks;
+use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderedVariants;
 use Modules\Ordering\Application\OrderFactory;
 use Modules\Ordering\Application\OrderReceipt;
+use Modules\Ordering\Application\OrderRiskService;
 use Modules\Ordering\Application\OrderTransitionService;
 use Modules\Ordering\Contracts\CustomerOrders;
+use Modules\Ordering\Contracts\OrderActions;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderRisks;
 use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Contracts\OrderWriter;
@@ -49,6 +53,9 @@ final class OrderingServiceProvider extends ModuleServiceProvider
         $this->app->bind(OrderReader::class, EloquentOrderReader::class);
         $this->app->bind(OrderStatistics::class, EloquentOrderStatistics::class);
         $this->app->bind(OrderTransitions::class, OrderTransitionService::class);
+        // EP v3 X2: lệnh của nhân viên cho plugin tự động hoá; tín hiệu rủi ro đã gộp.
+        $this->app->bind(OrderActions::class, OrderCommands::class);
+        $this->app->bind(OrderRisks::class, OrderRiskService::class);
         $this->app->bind(CustomerOrders::class, CustomerOrderService::class);
     }
 

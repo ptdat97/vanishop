@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderTransitionRejected;
@@ -241,4 +242,18 @@ it('COD: đơn đã huỷ thì không ghi nhận đã thu được; danh sách t
     expect($payment->fresh()->status->value)->toBe('cancelled')
         ->and(($this->orderRow)()->payment_status)->toBe('voided')
         ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(0);
+});
+
+it('hook vani.payment.before_refund (EP v3 X2): chặn hoàn tiền do nhân viên tạo, kèm lý do', function () {
+    C::autoConfirmCod();
+    ($this->order)('cod')->assertCreated();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.confirm', 'payments.refund']), 'staff');
+    $this->post("/admin/payment/payments/{$payment->id}/collect", ['note' => 'thu tại quầy'])->assertSessionHasNoErrors();
+    Hook::onValidate('vani.payment.before_refund', fn ($view, $amount): array => $amount->amount > 100_000 ? ['Trên 100.000đ cần quản lý duyệt'] : []);
+
+    $this->post("/admin/payment/payments/{$payment->id}/refunds", ['amount' => 200_000, 'reason' => 'x', 'idempotency_key' => 'r1'])->assertSessionHasErrors(['business' => 'Chưa hoàn tiền được: Trên 100.000đ cần quản lý duyệt']);
+    $this->post("/admin/payment/payments/{$payment->id}/refunds", ['amount' => 50_000, 'reason' => 'x', 'idempotency_key' => 'r2'])->assertSessionHasNoErrors();
+
+    expect(DB::table('refunds')->pluck('amount')->all())->toBe([50_000]);
 });

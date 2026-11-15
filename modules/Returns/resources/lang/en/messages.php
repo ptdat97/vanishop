@@ -32,4 +32,5 @@ return [
     'reason_saved' => 'Reason saved.',
     'reason_deleted' => 'Reason deleted.',
     'attachments' => ['too_many' => 'Up to :max photos per request.', 'invalid_file' => 'Photos must be JPEG, PNG or WebP, up to 5 MB.', 'closed' => 'This request has been processed; photos can no longer be added.'],
+    'approve_blocked' => 'Request cannot be approved yet: :reasons',
 ];

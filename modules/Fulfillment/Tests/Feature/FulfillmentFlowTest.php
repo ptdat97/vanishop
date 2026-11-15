@@ -7,6 +7,7 @@ use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Contracts\ShippingRateProvider;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Contracts\ShipmentBooking;
@@ -309,4 +310,22 @@ it('hàng đang hoàn về và đã hoàn về đều nằm ở hàng đợi "S�
     $this->post("{$this->ship}/{$shipment->id}/status", ['status' => 'returned'])->assertSessionHasNoErrors();
     expect(($this->order)()->delivery_issue)->toBeNull();
     $this->get('/admin/orders/orders?stage=issue')->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.delivery_issue', 'returned'));
+});
+
+it('hook vani.fulfillment.before_push (EP v3 X2): chặn đẩy lên hãng ở nút, hàng loạt, on_create và nhập mã tay; vận đơn giữ "Chờ đóng gói"', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api', 'vanishop.fulfillment.booking' => 'on_create']);
+    Hook::onValidate('vani.fulfillment.before_push', fn ($data): array => ['Thiếu khối lượng kiện']);
+    ($this->place)();
+    $api = Shipment::query()->withoutGlobalScopes()->sole();
+    config(['vanishop.fulfillment.default_carrier' => 'manual']);
+    ($this->place)();
+    $manual = Shipment::query()->withoutGlobalScopes()->whereKeyNot($api->id)->sole();
+    ($this->asStaff)();
+
+    $this->post("{$this->ship}/{$api->id}/push")->assertSessionHasErrors(['business' => 'Chưa đẩy lên hãng được: Thiếu khối lượng kiện']);
+    $this->post("{$this->ship}/bulk-push", ['ids' => [$api->order_id]])->assertSessionHas('success', fn (string $m) => str_contains($m, 'Đã đẩy 0'))->assertSessionHasErrors('business');
+    $this->post("{$this->ship}/{$manual->id}/book", ['tracking_number' => 'TAY1'])->assertSessionHasErrors('business');
+
+    expect($api->fresh()->status->value)->toBe('pending_booking')->and($manual->fresh()->status->value)->toBe('pending_booking')
+        ->and(FakeApiCarrier::$booked)->toBe([]);
 });

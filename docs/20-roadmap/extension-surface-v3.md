@@ -134,7 +134,7 @@ R26: mỗi đợt làm **cùng** plugin tham chiếu (plugin thật trong repo, 
 | Đợt | Nội dung | Plugin tham chiếu | Ưu tiên |
 |---|---|---|---|
 | **X1** ✅ 0.4.59 | Màn vận hành mở cho plugin: `adminColumn`/`Filter`/`Action` (+ `Tab` trang đổi trả) và `adminTool` (thay cho slot `list_tools` riêng từng module) cho vận đơn, đổi trả, thanh toán, tồn, bảng giá, khuyến mãi; bộ lọc phụ SkuPicker (`variant`). Vận đơn chưa có trang chi tiết nên chưa có tab | `vani.hello-world` ("Đánh dấu Hello") + `HelloWorldOperationScreensTest`, test trình duyệt `OperationScreensTest` | P1 |
-| **X2** | `OrderActions`, guard ở bốn lệnh, `OrderRiskSignal`, `ConfirmationChannel` | `vani.cod-risk-guard` (mới, P2→P1), `vani.zalo-zns` | P1 — bài toán bom hàng là chi phí lớn nhất của shop COD |
+| **X2** ✅ 0.4.60 | `OrderActions`, guard ở bốn lệnh (`vani.order.before_confirm`, `vani.fulfillment.before_push`, `vani.returns.before_approve`, `vani.payment.before_refund`), `OrderRiskSignal` + `OrderRisks`, `ConfirmationChannel` | `vani.cod-risk-guard` 1.0.0 (mới), kênh mẫu của `vani.hello-world` (Zalo OA thật chờ mở lại kết nối ngoài) | P1 |
 | **X5** | `Payments` mở thu COD/xác nhận; `RefundPayout`; `Reconciliation` chung | `vani.cod-reconciliation`, `vani.bank-statement` | P1 |
 | **X3** | `CarrierAssignment`, `PackingSlipTemplate`, `ReturnPickup` | `vani.carrier-routing`, `vani.ghn` | P2 |
 | **X4** | `BulkPriceMode`, `PriceRounding`, `vani.pricing.bulk.warnings`; giá theo số lượng (ADR) | `vani.cost-price` | P2 |

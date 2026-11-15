@@ -16,6 +16,16 @@ final class ReturnRejected extends BusinessRuleViolation
         parent::__construct($message);
     }
 
+    /**
+     * Hook `vani.returns.before_approve` chặn (EP v3 X2).
+     *
+     * @param  list<string>  $reasons
+     */
+    public static function approveBlocked(array $reasons): self
+    {
+        return new self('return.approve_blocked', 422, __('returns::messages.approve_blocked', ['reasons' => implode('; ', $reasons)]), ['reasons' => $reasons]);
+    }
+
     public static function notEligible(string $reason): self
     {
         return new self('return.not_eligible', 422, __("returns::messages.policy.{$reason}"), ['reason' => $reason]);

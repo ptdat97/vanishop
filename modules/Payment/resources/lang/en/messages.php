@@ -13,4 +13,5 @@ return [
     'captured' => 'Payment captured.',
     'expired' => 'The payment window for this order has expired.',
     'cod_collected' => 'Cash on delivery recorded as collected.',
+    'refund_blocked' => 'Refund cannot be created yet: :reasons',
 ];
