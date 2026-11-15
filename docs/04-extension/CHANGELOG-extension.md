@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.56 — 2026-11-15
+
+Admin bảng giá thao tác gọn — đợt 2: tạo nhanh, một bảng niêm yết, đưa sản phẩm vào bảng giá từ danh sách sản phẩm.
+
+### Thêm
+- Tạo bảng giá chỉ cần **Loại** (Sale / Thành viên — thành viên chọn nhóm khách), **Tên**, khung giờ. Mã tự sinh từ tên (trùng thì thêm `-2`…), độ ưu tiên mặc định theo loại (`PriceListType::defaultPriority()`: niêm yết 0, sale 10, thành viên 20); sửa được trong "Nâng cao". Tạo xong vào thẳng trang làm việc. Form sửa: "Đang dùng" là ô bật/tắt; nút về trang giá.
+- Danh sách sản phẩm: thao tác hàng loạt **"Đưa vào bảng giá…"** (chọn bảng sale/thành viên) → `POST /{admin}/pricing/price-lists/add-products` → trang làm việc của bảng giá với hộp thoại cách tính giá mở sẵn cho các sản phẩm đã chọn (`?add=`), xem trước rồi áp. Chỉ hiện khi đã có bảng sale/thành viên.
+
+### Đổi hành vi
+- **Một bảng giá niêm yết** (mã `base`): `PriceListRequest` không cho tạo thêm bảng loại `base` (khi đã có), bảng niêm yết chính không đổi loại/mã. Cài mới chưa có bảng niêm yết thì tạo được, mã luôn `base`.
+- **Bảng giá niêm yết chỉ xem ở trang bảng giá**: sửa trong ô, áp hàng loạt, gỡ, tìm sản phẩm để thêm trên bảng `base` → lỗi `business` ("sửa ở sản phẩm"); trang hiện chỉ đường sang danh sách sản phẩm. Giá niêm yết sửa ở form/ma trận sản phẩm và danh sách sản phẩm như trước.
+- Trường `code`, `priority` của `PriceListRequest` thành tuỳ chọn.
+
 ## 0.4.55 — 2026-11-15
 
 Admin bảng giá thao tác gọn — đợt 1: trang làm việc của bảng giá, áp giá hàng loạt có xem trước.

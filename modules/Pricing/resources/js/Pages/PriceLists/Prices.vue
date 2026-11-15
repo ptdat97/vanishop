@@ -68,7 +68,13 @@ const props = defineProps<{
     summary: { products: number; variants: number; warnings: Record<string, number> };
     capPercent: number;
     canManage: boolean;
+    /** Bảng giá niêm yết: chỉ xem — giá niêm yết sửa ở sản phẩm. */
+    readOnly: boolean;
+    productsUrl: string;
+    /** Từ danh sách sản phẩm "Đưa vào bảng giá…": mở sẵn hộp thoại cách tính giá cho các sản phẩm này. */
+    addStyleIds: number[];
 }>();
+const editable = computed(() => props.canManage && !props.readOnly);
 
 const listUrl = computed(() => `${props.baseUrl}/${props.priceList.id}`);
 const isBase = computed(() => props.priceList.type === 'base');
@@ -125,6 +131,17 @@ function openBulk(scope: Scope, title: string): void {
     bulkOpen.value = true;
 }
 watch(rule, () => (preview.value = null));
+// Đến từ danh sách sản phẩm ("Đưa vào bảng giá…"): mở sẵn hộp thoại; khai báo sau các biến của hộp thoại vì chạy ngay.
+watch(
+    () => props.addStyleIds,
+    (ids) => {
+        if (ids.length && editable.value) {
+            openBulk({ scope: 'styles', style_ids: [...ids] }, `Đưa ${ids.length} sản phẩm vào "${props.priceList.name}"`);
+            router.replace({ url: `${listUrl.value}/prices`, preserveState: true, preserveScroll: true });
+        }
+    },
+    { immediate: true, flush: 'post' },
+);
 
 async function loadPreview(): Promise<void> {
     if (rule.value === null || Number.isNaN(rule.value)) {
@@ -215,9 +232,13 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
     <PageHeader :title="priceList.name" :subtitle="`${labels.price_list_type[priceList.type] ?? priceList.type} · ${priceList.starts_at || priceList.ends_at ? `${priceList.starts_at ?? '—'} → ${priceList.ends_at ?? '—'}` : 'không giới hạn thời gian'}`">
         <StatusBadge :label="labels.price_list_state[priceList.state] ?? priceList.state" :tone="stateTone(priceList.state)" class="self-center" />
         <Link v-if="canManage" :href="`${listUrl}/edit`" :class="secondaryButton">Thông tin bảng giá</Link>
-        <button v-if="canManage" type="button" :class="primaryButton" data-add-products @click="addOpen = true">Thêm sản phẩm</button>
+        <button v-if="editable" type="button" :class="primaryButton" data-add-products @click="addOpen = true">Thêm sản phẩm</button>
+        <Link v-if="readOnly" :href="productsUrl" :class="primaryButton">Sửa giá ở danh sách sản phẩm</Link>
     </PageHeader>
 
+    <div v-if="readOnly" class="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600" data-read-only>
+        Đây là giá bán thường của cửa hàng — chỉ xem ở đây. Sửa giá ở form sản phẩm, hoặc sửa trong ô / "Đổi giá" hàng loạt ở danh sách sản phẩm, để mỗi giá chỉ có một chỗ sửa.
+    </div>
     <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600" data-summary>
         <span><strong>{{ summary.products }}</strong> sản phẩm · <strong>{{ summary.variants }}</strong> SKU</span>
         <span v-for="(count, warning) in summary.warnings" :key="warning"><StatusBadge :label="`${warningLabel(String(warning))}: ${count}`" :tone="warningTone(String(warning))" /></span>
@@ -233,12 +254,12 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
         v-model:selected="selected"
         :columns="columns"
         :rows="rows"
-        :selectable="canManage"
+        :selectable="editable"
         :extension-id="(row) => row.variant_id"
         :row-key="(row) => row.variant_id"
         :row-label="(row) => row.sku"
         :row-class="(row) => (row.status !== 'active' ? 'align-top text-slate-400' : 'align-top')"
-        :empty-text="q ? 'Không có SKU nào khớp trong bảng giá này.' : 'Bảng giá chưa có sản phẩm. Bấm “Thêm sản phẩm”.'"
+        :empty-text="q ? 'Không có SKU nào khớp trong bảng giá này.' : readOnly ? 'Chưa có giá niêm yết nào.' : 'Bảng giá chưa có sản phẩm. Bấm “Thêm sản phẩm”.'"
     >
         <template #bulk="{ selected: ids, clear }">
             <button type="button" :class="secondaryButton" class="!py-1" @click="openBulk({ scope: 'variants', variant_ids: [...ids] }, `Áp giá cho ${ids.length} SKU đã chọn`)">Áp giá…</button>
@@ -253,18 +274,18 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
         </template>
         <template #cell-list_amount="{ row }"><MoneyText v-if="row.list_amount !== null" :amount="row.list_amount" /><span v-else class="text-xs text-slate-400">chưa có</span></template>
         <template #cell-amount="{ row }">
-            <input v-model.number="edits[row.variant_id].amount" :class="inputClass" class="max-w-36" type="number" min="0" step="1000" :disabled="!canManage" :aria-label="`Giá ${row.sku}`" />
+            <input v-model.number="edits[row.variant_id].amount" :class="inputClass" class="max-w-36" type="number" min="0" step="1000" :disabled="!editable" :aria-label="`Giá ${row.sku}`" />
         </template>
         <template #cell-percent="{ row }">
             <span v-if="row.percent !== null" class="font-medium text-emerald-700">−{{ row.percent }}%</span>
             <div v-for="warning in row.warnings" :key="warning" class="mt-0.5"><StatusBadge :label="warningLabel(warning)" :tone="warningTone(warning)" /></div>
         </template>
         <template #cell-compare_at_amount="{ row }">
-            <input v-model.number="edits[row.variant_id].compare_at_amount" :class="inputClass" class="max-w-36" type="number" min="0" step="1000" :disabled="!canManage" :aria-label="`Giá gạch ${row.sku}`" />
+            <input v-model.number="edits[row.variant_id].compare_at_amount" :class="inputClass" class="max-w-36" type="number" min="0" step="1000" :disabled="!editable" :aria-label="`Giá gạch ${row.sku}`" />
         </template>
     </DataTable>
     <p v-for="(message, key) in saveForm.errors" :key="key" class="mt-2 text-sm text-red-600">{{ message }}</p>
-    <div v-if="canManage && dirtyRows.length" class="sticky bottom-0 mt-3 flex items-center gap-3 border-t border-slate-200 bg-white/95 py-3">
+    <div v-if="editable && dirtyRows.length" class="sticky bottom-0 mt-3 flex items-center gap-3 border-t border-slate-200 bg-white/95 py-3">
         <button type="button" :class="primaryButton" :disabled="saveForm.processing" data-save-edits @click="saveEdits">Lưu {{ dirtyRows.length }} giá đã sửa</button>
         <span class="text-xs text-slate-500">Để trống giá = gỡ SKU khỏi bảng giá. Mọi thay đổi được ghi vào lịch sử giá.</span>
     </div>

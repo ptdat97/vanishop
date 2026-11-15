@@ -6,6 +6,8 @@ namespace Modules\Pricing\Application\Listeners;
 
 use Illuminate\Support\Facades\Gate;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Pricing\Application\PriceListWorkspace;
+use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Shared\Support\MoneyFormatter;
@@ -82,7 +84,15 @@ final class ProductListPrices
             return [];
         }
 
-        return [[
+        // "Đưa vào bảng giá…" (thao tác gọn đợt 2): chọn bảng giá sale/thành viên → trang làm việc mở sẵn cách tính + xem trước.
+        $lists = PriceList::query()->where('type', '!=', PriceListType::Base)->orderByDesc('id')->get();
+        $addToList = $lists->isEmpty() ? [] : [[
+            'key' => 'add_to_price_list', 'label' => 'Đưa vào bảng giá…', 'url' => route('admin.pricing.price-lists.add-products'),
+            'fields' => [['key' => 'price_list_id', 'label' => 'Bảng giá', 'required' => true, 'value' => (string) $lists->first()->id,
+                'options' => $lists->map(fn (PriceList $list): array => ['value' => (string) $list->id, 'label' => $list->name.' · '.__('pricing::labels.price_list_state.'.PriceListWorkspace::state($list))])->all()]],
+        ]];
+
+        return [...$addToList, [
             'key' => 'price', 'label' => 'Đổi giá', 'url' => route('admin.pricing.base-prices.bulk'), 'confirm' => true,
             'fields' => [
                 ['key' => 'mode', 'label' => 'Cách đổi', 'required' => true, 'value' => 'percent_down', 'options' => [

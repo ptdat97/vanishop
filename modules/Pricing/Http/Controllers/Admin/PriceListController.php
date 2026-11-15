@@ -9,10 +9,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Pricing\Application\BulkBasePrice;
+use Modules\Pricing\Application\ListPriceSync;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
@@ -74,7 +76,8 @@ final class PriceListController
     {
         $list = $service->save($request->toData());
 
-        return redirect()->route('admin.pricing.price-lists.edit', ['priceList' => $list->id])->with('success', __('pricing::messages.saved'));
+        // Tạo xong vào thẳng trang làm việc để thêm sản phẩm.
+        return redirect()->route('admin.pricing.price-lists.prices', ['priceList' => $list->id])->with('success', __('pricing::messages.created'));
     }
 
     public function edit(PriceList $priceList): Response
@@ -124,6 +127,11 @@ final class PriceListController
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             'summary' => $workspace->summary($priceList),
             'capPercent' => intdiv($workspace->capBasisPoints(), 100),
+            // Giá niêm yết sửa ở sản phẩm (form, ma trận, danh sách sản phẩm) — trang bảng giá chỉ xem.
+            'readOnly' => $priceList->type === PriceListType::Base,
+            'productsUrl' => route('admin.catalog.products.index'),
+            // Từ danh sách sản phẩm "Đưa vào bảng giá…": sản phẩm đã chọn, mở sẵn hộp thoại cách tính giá.
+            'addStyleIds' => $priceList->type === PriceListType::Base ? [] : $this->styleIdsFromQuery((string) $request->query('add', '')),
             'canManage' => Gate::allows('pricing.manage'),
         ]);
     }
@@ -131,9 +139,25 @@ final class PriceListController
     /**
      * Tìm sản phẩm để thêm vào bảng giá (JSON cho hộp thoại "Thêm sản phẩm").
      */
+    /**
+     * Danh sách sản phẩm → "Đưa vào bảng giá…" (slot vani.admin.product.bulk_actions): mở trang làm việc của bảng giá đã chọn
+     * với các sản phẩm đó, hộp thoại cách tính giá mở sẵn (xem trước trước khi áp).
+     */
+    public function addProducts(Request $request): RedirectResponse
+    {
+        Gate::authorize('pricing.manage');
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'price_list_id' => ['required', 'integer', Rule::exists('price_lists', 'id')->whereNot('type', PriceListType::Base->value)],
+        ]);
+
+        return redirect()->route('admin.pricing.price-lists.prices', ['priceList' => (int) $data['price_list_id'], 'add' => implode(',', array_unique(array_map('intval', $data['ids'])))]);
+    }
+
     public function candidates(PriceList $priceList, Request $request, PriceListWorkspace $workspace): JsonResponse
     {
         Gate::authorize('pricing.manage');
+        $this->ensureEditable($priceList);
         $text = (string) $request->validate(['q' => ['nullable', 'string', 'max:100']])['q'];
 
         return response()->json(['data' => $workspace->candidates($priceList, $text)]);
@@ -141,11 +165,14 @@ final class PriceListController
 
     public function previewBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): JsonResponse
     {
+        $this->ensureEditable($priceList);
+
         return response()->json(['data' => $workspace->preview($priceList, $request->variantIds($priceList, $workspace), $request->rule())]);
     }
 
     public function applyBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): RedirectResponse
     {
+        $this->ensureEditable($priceList);
         $result = $workspace->apply($priceList, $request->variantIds($priceList, $workspace), $request->rule());
         $message = __('pricing::messages.bulk_applied', ['count' => $result['changed']]);
         if ($result['skipped'] > 0) {
@@ -158,6 +185,7 @@ final class PriceListController
     public function removePrices(PriceList $priceList, Request $request, PriceListWorkspace $workspace): RedirectResponse
     {
         Gate::authorize('pricing.manage');
+        $this->ensureEditable($priceList);
         $ids = (array) $request->validate(['variant_ids' => ['required', 'array', 'max:'.PriceListWorkspace::MAX_BULK], 'variant_ids.*' => ['integer', 'min:1']])['variant_ids'];
 
         return back()->with('success', __('pricing::messages.bulk_removed', ['count' => $workspace->remove($priceList, array_map('intval', $ids))]));
@@ -165,9 +193,32 @@ final class PriceListController
 
     public function updatePrices(PriceList $priceList, PricesRequest $request, PriceListService $service): RedirectResponse
     {
+        $this->ensureEditable($priceList);
         $count = $service->setPrices($priceList, $request->rows());
 
         return back()->with('success', __('pricing::messages.prices_saved', ['count' => $count]));
+    }
+
+    /**
+     * `?add=1,2,3` (từ "Đưa vào bảng giá…") → id sản phẩm, tối đa 200.
+     *
+     * @return list<int>
+     */
+    private function styleIdsFromQuery(string $value): array
+    {
+        $ids = array_filter(array_map('intval', explode(',', $value)), fn (int $id): bool => $id > 0);
+
+        return array_slice(array_values(array_unique($ids)), 0, 200);
+    }
+
+    /**
+     * Giá niêm yết chỉ sửa ở sản phẩm (một chỗ sửa): form/ma trận biến thể, sửa trong ô và "Đổi giá" ở danh sách sản phẩm.
+     */
+    private function ensureEditable(PriceList $list): void
+    {
+        if ($list->type === PriceListType::Base) {
+            throw ValidationException::withMessages(['business' => __('pricing::messages.base_read_only')]);
+        }
     }
 
     private function form(?PriceList $list): Response
@@ -187,7 +238,9 @@ final class PriceListController
                 'status' => $list->status,
                 'lock_version' => $list->lock_version,
             ],
-            'types' => array_column(PriceListType::cases(), 'value'),
+            // Chỉ bảng niêm yết chính là `base`; tạo mới / bảng `base` thừa (dữ liệu cũ) chọn Sale hoặc Thành viên.
+            'types' => $list?->code === ListPriceSync::BASE_CODE ? [PriceListType::Base->value] : [PriceListType::Sale->value, PriceListType::Member->value],
+            'defaultPriorities' => array_combine(array_column(PriceListType::cases(), 'value'), array_map(fn (PriceListType $type): int => $type->defaultPriority(), PriceListType::cases())),
             'customerGroups' => app(CustomerGroupDirectory::class)->groups(),
         ]);
     }

@@ -16,4 +16,6 @@ return [
     'bulk_applied' => 'Đã cập nhật giá :count SKU.',
     'bulk_skipped' => 'Bỏ qua :count SKU chưa có giá niêm yết.',
     'bulk_removed' => 'Đã gỡ :count SKU khỏi bảng giá.',
+    'created' => 'Đã tạo bảng giá. Bấm “Thêm sản phẩm” để đưa sản phẩm vào.',
+    'base_read_only' => 'Giá niêm yết sửa ở sản phẩm (form sản phẩm hoặc danh sách sản phẩm), không sửa ở đây.',
 ];

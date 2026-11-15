@@ -16,4 +16,6 @@ return [
     'bulk_applied' => 'Updated prices of :count SKUs.',
     'bulk_skipped' => 'Skipped :count SKUs without a list price.',
     'bulk_removed' => 'Removed :count SKUs from the price list.',
+    'created' => 'Price list created. Click “Add products” to add products.',
+    'base_read_only' => 'List prices are edited on products (product form or product list), not here.',
 ];

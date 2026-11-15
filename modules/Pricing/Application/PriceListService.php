@@ -6,6 +6,7 @@ namespace Modules\Pricing\Application;
 
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Identity\Contracts\AuditLogger;
@@ -46,6 +47,10 @@ final class PriceListService
             }
 
             $list ??= new PriceList(['currency_code' => (string) config('vanishop.currency')]);
+            if ($data['code'] === '') {
+                // Mã tự sinh từ tên khi tạo (vd. "Sale 11.11" → sale-11-11, trùng thì thêm -2…); sửa để trống = giữ mã cũ.
+                $data['code'] = $list->exists ? $list->code : $this->uniqueCode($data['name']);
+            }
             $list->fill($data)->save();
 
             $this->audit->record($list->wasRecentlyCreated ? 'pricing.price_list.created' : 'pricing.price_list.updated', 'price_list', $list->id, ['code' => $list->code]);
@@ -53,6 +58,17 @@ final class PriceListService
 
             return $list;
         });
+    }
+
+    private function uniqueCode(string $name): string
+    {
+        $base = Str::limit(Str::slug($name), 56, '') ?: 'bang-gia';
+        $code = $base;
+        for ($suffix = 2; PriceList::query()->where('code', $code)->exists(); $suffix++) {
+            $code = "{$base}-{$suffix}";
+        }
+
+        return $code;
     }
 
     /**

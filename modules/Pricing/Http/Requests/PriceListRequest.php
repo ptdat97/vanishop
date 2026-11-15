@@ -7,6 +7,7 @@ namespace Modules\Pricing\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Modules\Pricing\Application\ListPriceSync;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\PriceList;
@@ -25,16 +26,25 @@ final class PriceListRequest extends FormRequest
     public function rules(): array
     {
         $list = $this->route('priceList');
+        $list = $list instanceof PriceList ? $list : null;
+        $isMainBase = $list?->code === ListPriceSync::BASE_CODE;
+        // Một bảng giá niêm yết duy nhất (mã `base`): tạo mới chỉ Sale/Thành viên; bảng niêm yết chính giữ loại và mã.
+        // Chưa có bảng niêm yết nào (cài mới) thì được tạo, mã luôn là `base`.
+        $baseAllowed = $isMainBase || ($list === null && ! PriceList::query()->where('type', PriceListType::Base)->exists());
 
         return [
-            'code' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9_-]*$/',
-                Rule::unique('price_lists', 'code')->ignore($list instanceof PriceList ? $list->id : null)],
+            'code' => ['nullable', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9_-]*$/',
+                Rule::unique('price_lists', 'code')->ignore($list?->id),
+                Rule::prohibitedIf($isMainBase && $this->input('code') !== null && $this->input('code') !== ListPriceSync::BASE_CODE)],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', Rule::enum(PriceListType::class)],
+            'type' => ['required', Rule::in($isMainBase ? [PriceListType::Base->value] : array_values(array_filter(
+                array_column(PriceListType::cases(), 'value'),
+                fn (string $type): bool => $type !== PriceListType::Base->value || $baseAllowed,
+            )))],
             // Giá thành viên: bảng `member` bắt buộc gắn nhóm khách; loại khác có thể gắn (vd. sale riêng cho VIP).
             'customer_group_id' => [Rule::requiredIf($this->input('type') === PriceListType::Member->value), 'nullable', 'integer',
                 Rule::in(array_column(app(CustomerGroupDirectory::class)->groups(), 'id'))],
-            'priority' => ['required', 'integer', 'min:-1000', 'max:1000'],
+            'priority' => ['nullable', 'integer', 'min:-1000', 'max:1000'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -48,11 +58,12 @@ final class PriceListRequest extends FormRequest
     public function toData(): array
     {
         return [
-            'code' => (string) $this->validated('code'),
+            'code' => $this->validated('type') === PriceListType::Base->value ? ListPriceSync::BASE_CODE : (string) ($this->validated('code') ?? ''),
             'name' => (string) $this->validated('name'),
             'type' => (string) $this->validated('type'),
             'customer_group_id' => $this->validated('customer_group_id') === null ? null : (int) $this->validated('customer_group_id'),
-            'priority' => (int) $this->validated('priority'),
+            // Để trống = mặc định theo loại (niêm yết 0, sale 10, thành viên 20) — nhân viên không cần biết "priority".
+            'priority' => $this->validated('priority') === null ? PriceListType::from((string) $this->validated('type'))->defaultPriority() : (int) $this->validated('priority'),
             // Nhân viên nhập theo giờ cửa hàng; lưu UTC.
             'starts_at' => $this->validated('starts_at') === null ? null : StoreClock::fromInput((string) $this->validated('starts_at'))->toDateTimeString(),
             'ends_at' => $this->validated('ends_at') === null ? null : StoreClock::fromInput((string) $this->validated('ends_at'))->toDateTimeString(),

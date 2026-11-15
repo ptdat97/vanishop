@@ -2,6 +2,7 @@
 
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Pricing\Persistence\Models\Price;
+use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 
 require_once __DIR__.'/../../modules/Pricing/Tests/Feature/PricingTestHelpers.php';
@@ -35,4 +36,22 @@ it('thêm sản phẩm → giảm 30% → xem trước → áp dụng: giá vào
 
     $page->assertNoJavaScriptErrors();
     expect(Price::query()->where('price_list_id', $this->list->id)->pluck('amount')->all())->toBe([209_000, 209_000]);
+});
+
+it('đến từ danh sách sản phẩm ("Đưa vào bảng giá…"): hộp thoại cách tính mở sẵn, giảm 20% → áp dụng', function () {
+    $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices?add={$this->style->id}");
+
+    $page->assertSee('Đưa 1 sản phẩm vào')
+        ->type('input[aria-label="Giảm %"]', '20')
+        ->click('[data-preview]')->assertSee('2 SKU đổi giá')
+        ->click('[data-apply]')->assertSee('Đã cập nhật giá 2 SKU.');
+
+    $page->assertNoJavaScriptErrors();
+    expect(Price::query()->where('price_list_id', $this->list->id)->pluck('amount')->all())->toBe([239_000, 239_000]);
+});
+
+it('bảng giá niêm yết: chỉ xem, chỉ đường sửa giá ở sản phẩm', function () {
+    $base = PriceList::query()->where('code', 'base')->sole();
+
+    visit("/admin/pricing/price-lists/{$base->id}/prices")->assertSee('chỉ xem ở đây')->assertSee('Sửa giá ở danh sách sản phẩm')->assertDontSee('Thêm sản phẩm')->assertNoJavaScriptErrors();
 });

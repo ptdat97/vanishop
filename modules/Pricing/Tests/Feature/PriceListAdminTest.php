@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -54,7 +55,7 @@ it('khung giờ nhập và hiển thị theo múi giờ cửa hàng (vanishop.lo
 
 it('nhập giá hàng loạt, ghi lịch sử giá, audit và phát PriceChanged', function () {
     Event::fake([PriceChanged::class]);
-    $list = P::priceList(['code' => 'base'], []);
+    $list = P::priceList(['code' => 'sale-1', 'type' => 'sale'], []);
 
     $this->put("{$this->base}/{$list->id}/prices", ['prices' => [
         ['variant_id' => $this->s->id, 'amount' => 590000, 'compare_at_amount' => null],
@@ -75,7 +76,7 @@ it('nhập giá hàng loạt, ghi lịch sử giá, audit và phát PriceChanged
 });
 
 it('không ghi lịch sử khi giá không đổi', function () {
-    $list = P::priceList(['code' => 'base'], [$this->s->id => [590_000]]);
+    $list = P::priceList(['code' => 'sale-1', 'type' => 'sale'], [$this->s->id => [590_000]]);
 
     $this->put("{$this->base}/{$list->id}/prices", ['prices' => [['variant_id' => $this->s->id, 'amount' => 590000, 'compare_at_amount' => null]]])->assertSessionHasNoErrors();
 
@@ -83,7 +84,7 @@ it('không ghi lịch sử khi giá không đổi', function () {
 });
 
 it('từ chối giá gốc không lớn hơn giá bán, số âm và biến thể không tồn tại', function () {
-    $list = P::priceList(['code' => 'base'], []);
+    $list = P::priceList(['code' => 'sale-1', 'type' => 'sale'], []);
 
     $this->put("{$this->base}/{$list->id}/prices", ['prices' => [['variant_id' => $this->s->id, 'amount' => 500000, 'compare_at_amount' => 500000]]])->assertSessionHasErrors('prices.0.compare_at_amount');
     $this->put("{$this->base}/{$list->id}/prices", ['prices' => [['variant_id' => $this->s->id, 'amount' => -1]]])->assertSessionHasErrors('prices.0.amount');
@@ -216,4 +217,54 @@ it('trả về 404 khi sửa giá cho sản phẩm không tồn tại', function
         ->assertNotFound();
 
     expect(PriceList::query()->where('code', 'base')->exists())->toBeFalse();
+});
+
+it('tạo bảng giá chỉ cần loại, tên (và khung giờ): mã tự sinh từ tên, độ ưu tiên theo loại, vào thẳng trang làm việc', function () {
+    $group = T::seed(fn () => DB::table('customer_groups')->insertGetId(['code' => 'vip', 'name' => 'VIP', 'created_at' => now(), 'updated_at' => now()]));
+
+    $this->post($this->base, ['type' => 'sale', 'name' => 'Sale 11.11', 'status' => 'active'])->assertSessionHasNoErrors()
+        ->assertRedirect("{$this->base}/".PriceList::query()->where('name', 'Sale 11.11')->value('id').'/prices');
+    $this->post($this->base, ['type' => 'sale', 'name' => 'Sale 11.11', 'status' => 'active'])->assertSessionHasNoErrors();
+    $this->post($this->base, ['type' => 'member', 'name' => 'Giá VIP', 'status' => 'active'])->assertSessionHasErrors('customer_group_id');
+    $this->post($this->base, ['type' => 'member', 'name' => 'Giá VIP', 'customer_group_id' => $group, 'status' => 'active'])->assertSessionHasNoErrors();
+
+    expect(PriceList::query()->orderBy('id')->get(['code', 'type', 'priority'])->map(fn (PriceList $list): array => [$list->code, $list->type->value, $list->priority])->all())
+        ->toBe([['sale-1111', 'sale', 10], ['sale-1111-2', 'sale', 10], ['gia-vip', 'member', 20]]);
+});
+
+it('chỉ một bảng giá niêm yết: không tạo thêm; bảng niêm yết chính không đổi loại, không đổi mã', function () {
+    $main = P::priceList(['code' => 'base'], []);
+
+    $this->post($this->base, ['type' => 'base', 'name' => 'Giá pro', 'code' => 'pro', 'status' => 'active'])->assertSessionHasErrors('type');
+    $this->put("{$this->base}/{$main->id}", ['type' => 'sale', 'name' => 'X', 'status' => 'active', 'lock_version' => 0])->assertSessionHasErrors('type');
+    $this->put("{$this->base}/{$main->id}", ['type' => 'base', 'name' => 'X', 'code' => 'gia-chinh', 'status' => 'active', 'lock_version' => 0])->assertSessionHasErrors('code');
+    $this->put("{$this->base}/{$main->id}", ['type' => 'base', 'name' => 'Giá bán lẻ', 'status' => 'active', 'lock_version' => 0])->assertSessionHasNoErrors();
+
+    expect($main->fresh()->only(['code', 'name', 'priority']))->toBe(['code' => 'base', 'name' => 'Giá bán lẻ', 'priority' => 0]);
+});
+
+it('bảng giá niêm yết chỉ xem ở trang bảng giá: không sửa trong ô, không áp hàng loạt, không gỡ — sửa ở sản phẩm', function () {
+    $main = P::priceList(['code' => 'base'], [$this->s->id => [300_000]]);
+
+    $this->get("{$this->base}/{$main->id}/prices")->assertInertia(fn (Assert $page) => $page->where('readOnly', true)->has('rows', 1));
+    $this->put("{$this->base}/{$main->id}/prices", ['prices' => [['variant_id' => $this->s->id, 'amount' => 1]]])->assertSessionHasErrors('business');
+    $this->post("{$this->base}/{$main->id}/bulk", ['scope' => 'all', 'mode' => 'percent', 'value' => 10, 'round_to' => 0])->assertSessionHasErrors('business');
+    $this->post("{$this->base}/{$main->id}/remove", ['variant_ids' => [$this->s->id]])->assertSessionHasErrors('business');
+
+    expect(Price::query()->where('price_list_id', $main->id)->value('amount'))->toBe(300_000);
+});
+
+it('danh sách sản phẩm → "Đưa vào bảng giá…": chỉ bảng sale/thành viên; mở trang làm việc với sản phẩm đã chọn', function () {
+    $main = P::priceList(['code' => 'base'], []);
+    $this->actingAs(T::staff(['admin.access', 'catalog.view', 'pricing.view', 'pricing.manage']), 'staff');
+    $products = fn (): array => collect($this->get('/admin/catalog/products')->viewData('page')['props']['extensions']['actions'])->keyBy('key')->all();
+    expect($products())->not->toHaveKey('add_to_price_list');
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
+
+    $action = $products()['add_to_price_list'];
+
+    expect(array_column($action['fields'][0]['options'], 'value'))->toBe([(string) $sale->id]);
+    $this->post($action['url'], ['ids' => [$this->style->id], 'price_list_id' => $sale->id])->assertRedirect("{$this->base}/{$sale->id}/prices?add={$this->style->id}");
+    $this->post($action['url'], ['ids' => [$this->style->id], 'price_list_id' => $main->id])->assertSessionHasErrors('price_list_id');
+    $this->get("{$this->base}/{$sale->id}/prices?add={$this->style->id},x,0")->assertInertia(fn (Assert $page) => $page->where('addStyleIds', [$this->style->id]));
 });

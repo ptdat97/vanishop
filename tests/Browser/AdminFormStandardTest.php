@@ -10,7 +10,7 @@ require_once __DIR__.'/../../modules/Pricing/Tests/Feature/PricingTestHelpers.ph
 | Admin Form Standard trên trình duyệt thật (useAdminForm, useLeaveGuard, Toaster) — form sửa bảng giá làm mẫu.
 */
 
-const NAME_INPUT = 'form > div:first-child input';
+const NAME_INPUT = 'input[aria-label="Tên bảng giá"]';
 
 beforeEach(function () {
     $this->actingAs(T::staff(['admin.access', 'pricing.view', 'pricing.manage']), 'staff');
@@ -22,7 +22,7 @@ it('lưu liên tiếp: mỗi lần hiện toast thành công, lần hai không b
     $page = visit($this->edit);
 
     $page->type(NAME_INPUT, 'Sale 11.11')->press('Lưu')->assertSee('Đã lưu.');
-    $page->type(NAME_INPUT, 'Sale 11.11 lần hai')->press('Lưu')->assertSee('Sửa bảng giá: Sale 11.11 lần hai');
+    $page->type(NAME_INPUT, 'Sale 11.11 lần hai')->press('Lưu')->assertSee('Thông tin bảng giá: Sale 11.11 lần hai');
 
     $page->assertDontSee('Bảng giá đã được người khác cập nhật')->assertNoJavaScriptErrors();
     expect($this->list->fresh())->name->toBe('Sale 11.11 lần hai')->lock_version->toBe(2);
@@ -49,17 +49,17 @@ it('lỗi validation: báo tại ô và một toast nhắc; sửa lại thì lư
 it('rời trang khi còn thay đổi chưa lưu → hỏi lại; "Thôi" ở lại, "Rời trang" thì đi; đã lưu thì không hỏi', function () {
     $page = visit($this->edit);
 
-    $page->type(NAME_INPUT, 'Chưa lưu')->click('Quay lại')
+    $page->type(NAME_INPUT, 'Chưa lưu')->click('Về trang giá')
         ->assertSee('Rời trang khi còn thay đổi chưa lưu?')
         ->click('Thôi')
         ->assertPathIs($this->edit)
         ->assertValue(NAME_INPUT, 'Chưa lưu');
 
-    $page->click('Quay lại')->click('Rời trang')->assertPathIs('/admin/pricing/price-lists');
+    $page->click('Về trang giá')->click('Rời trang')->assertPathIs("/admin/pricing/price-lists/{$this->list->id}/prices");
     expect($this->list->fresh()->name)->toBe('Bảng giá');
 
     $saved = visit($this->edit);
     $saved->type(NAME_INPUT, 'Đã lưu rồi')->press('Lưu')->assertSee('Đã lưu.')
-        ->click('Quay lại')->assertPathIs('/admin/pricing/price-lists')->assertDontSee('Rời trang khi còn thay đổi chưa lưu?')
+        ->click('Về trang giá')->assertPathIs("/admin/pricing/price-lists/{$this->list->id}/prices")->assertDontSee('Rời trang khi còn thay đổi chưa lưu?')
         ->assertNoJavaScriptErrors();
 });
