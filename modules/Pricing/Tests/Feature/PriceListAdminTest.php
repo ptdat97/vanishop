@@ -115,7 +115,11 @@ it('thêm sản phẩm: tìm theo tên/mã, xem trước giảm 30% (làm tròn 
     $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
     $rule = ['scope' => 'styles', 'style_ids' => [$this->style->id], 'mode' => 'percent', 'value' => 30, 'round_to' => 1000];
 
-    $this->getJson("{$this->base}/{$sale->id}/candidates?q=lm-sh")->assertOk()->assertJsonPath('data.0.style_id', $this->style->id)->assertJsonPath('data.0.variants', 2)->assertJsonPath('data.0.in_list', 0);
+    $this->getJson("{$this->base}/{$sale->id}/candidates?q=lm-sh")->assertOk()
+        ->assertJsonPath('data.0.id', $this->style->id)->assertJsonPath('data.0.code', 'LM-SH01')->assertJsonPath('data.0.meta', 'niêm yết 499.000 ₫')
+        ->assertJsonPath('data.0.variants.0.id', $this->s->id)->assertJsonPath('data.0.variants.0.sku', $this->s->sku)
+        ->assertJsonPath('data.0.variants.0.status', 'active')->assertJsonPath('data.0.variants.0.meta', 'niêm yết 499.000 ₫')
+        ->assertJsonPath('data.0.variants.1.meta', null);
     $this->postJson("{$this->base}/{$sale->id}/bulk/preview", $rule)->assertOk()
         ->assertJsonPath('data.summary', ['total' => 2, 'changed' => 1, 'skipped' => 1, 'warnings' => ['no_base' => 1]])
         ->assertJsonPath('data.rows.0.new_amount', 349_000)->assertJsonPath('data.rows.0.percent', 30);

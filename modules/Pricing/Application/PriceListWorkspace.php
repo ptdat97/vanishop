@@ -12,6 +12,7 @@ use Modules\Pricing\Domain\BulkPriceRule;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Support\MoneyFormatter;
 
 /**
  * Trang làm việc của một bảng giá (đợt 1 — thao tác gọn): mọi SKU đang có trong bảng (tìm, phân trang), tìm sản phẩm để
@@ -30,6 +31,7 @@ final class PriceListWorkspace
     public function __construct(
         private readonly VariantDirectory $variants,
         private readonly PriceListService $lists,
+        private readonly MoneyFormatter $money,
     ) {}
 
     /**
@@ -97,9 +99,11 @@ final class PriceListWorkspace
     }
 
     /**
-     * Sản phẩm để thêm vào bảng giá: tìm theo tên, mã, SKU; tối đa 30 sản phẩm.
+     * Sản phẩm để thêm vào bảng giá, theo hợp đồng của SkuPicker (`@admin/skuPicker`): tìm theo tên, mã, SKU; tối đa 30 sản
+     * phẩm, mỗi sản phẩm kèm mọi SKU. Chữ phụ: khoảng giá niêm yết và số SKU đã có trong bảng; từng SKU: giá niêm yết, giá
+     * đang có trong bảng.
      *
-     * @return list<array{style_id: int, style_code: string, name: string, variants: int, in_list: int, list_min: int|null, list_max: int|null}>
+     * @return list<array{id: int, code: string, name: string, meta: string|null, variants: list<array{id: int, sku: string, label: string, status: string, meta: string|null}>}>
      */
     public function candidates(PriceList $list, string $text): array
     {
@@ -108,25 +112,40 @@ final class PriceListWorkspace
         }
         $byStyle = [];
         foreach ($this->variants->searchIndex($text) as $row) {
-            $byStyle[$row['style_id']][] = $row['id'];
-            if (count($byStyle) > 30) {
-                unset($byStyle[$row['style_id']]);
+            if (! isset($byStyle[$row['style_id']]) && count($byStyle) === 30) {
                 break;
             }
+            $byStyle[$row['style_id']][] = $row['id'];
         }
-        $ids = array_merge(...array_values($byStyle ?: [[]]));
+        $ids = array_merge([], ...array_values($byStyle));
         $found = $this->variants->find($ids);
-        $base = $this->listAmounts($ids, $list, forceBase: true);
-        $inList = array_flip(Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $ids)->pluck('variant_id')->map(fn ($id): int => (int) $id)->all());
+        $base = $this->baseAmounts($ids);
+        $inList = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $ids)->pluck('amount', 'variant_id')->map(fn ($amount): int => (int) $amount)->all();
+        $money = fn (int $amount): string => $this->money->formatAmount($amount, (string) $list->currency_code);
 
         $result = [];
         foreach ($byStyle as $styleId => $variantIds) {
             $first = $found[$variantIds[0]] ?? null;
             $amounts = array_values(array_filter(array_map(fn (int $id): ?int => $base[$id] ?? null, $variantIds), fn (?int $amount): bool => $amount !== null));
+            $already = count(array_filter($variantIds, fn (int $id): bool => isset($inList[$id])));
+            $meta = array_filter([
+                $amounts === [] ? 'chưa có giá niêm yết' : 'niêm yết '.(min($amounts) === max($amounts) ? $money(min($amounts)) : $money(min($amounts)).' – '.$money(max($amounts))),
+                $already > 0 ? "{$already}/".count($variantIds).' SKU đã có trong bảng' : null,
+            ]);
             $result[] = [
-                'style_id' => (int) $styleId, 'style_code' => (string) $first?->styleCode, 'name' => (string) $first?->styleName,
-                'variants' => count($variantIds), 'in_list' => count(array_filter($variantIds, fn (int $id): bool => isset($inList[$id]))),
-                'list_min' => $amounts === [] ? null : min($amounts), 'list_max' => $amounts === [] ? null : max($amounts),
+                'id' => (int) $styleId, 'code' => (string) $first?->styleCode, 'name' => (string) $first?->styleName, 'meta' => implode(' · ', $meta),
+                'variants' => array_values(array_filter(array_map(function (int $id) use ($found, $base, $inList, $money): ?array {
+                    $variant = $found[$id] ?? null;
+                    if ($variant === null) {
+                        return null;
+                    }
+                    $meta = array_filter([
+                        isset($base[$id]) ? 'niêm yết '.$money($base[$id]) : null,
+                        isset($inList[$id]) ? 'trong bảng '.$money($inList[$id]) : null,
+                    ]);
+
+                    return ['id' => $id, 'sku' => $variant->sku, 'label' => VariantOptionsText::label($variant->options), 'status' => $variant->status, 'meta' => $meta === [] ? null : implode(' · ', $meta)];
+                }, $variantIds))),
             ];
         }
 

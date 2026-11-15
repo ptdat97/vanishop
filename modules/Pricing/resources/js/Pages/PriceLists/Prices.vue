@@ -4,12 +4,13 @@ import FileInput from '@admin/Components/FileInput.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import SkuPicker from '@admin/Components/SkuPicker.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { getJson, HttpError, postJson } from '@admin/http';
+import type { SkuPickerProduct } from '@admin/skuPicker';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
-import { toast } from '@admin/toast';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import { stateTone, warningTone } from '../../priceListState';
@@ -42,15 +43,6 @@ interface PreviewRow {
     new_amount: number | null;
     percent: number | null;
     warnings: string[];
-}
-interface Candidate {
-    style_id: number;
-    style_code: string;
-    name: string;
-    variants: number;
-    in_list: number;
-    list_min: number | null;
-    list_max: number | null;
 }
 type Scope = { scope: 'variants'; variant_ids: number[] } | { scope: 'styles'; style_ids: number[] } | { scope: 'all'; q: string };
 
@@ -172,42 +164,15 @@ function applyBulk(): void {
     });
 }
 
-// Thêm sản phẩm: tìm theo tên/mã/SKU, chọn nhiều → sang bước cách tính giá.
+// Thêm sản phẩm: SkuPicker (mặc định hiện sản phẩm, mở rộng để chọn từng SKU) → bước cách tính giá cho các SKU đã chọn.
 const addOpen = ref(false);
-const addSearch = ref('');
-const candidates = ref<Candidate[]>([]);
 const chosen = ref<number[]>([]);
-const searching = ref(false);
-const searchedFor = ref('');
-async function findCandidates(): Promise<void> {
-    const text = addSearch.value.trim();
-    if (!text || text === searchedFor.value) return;
-    searching.value = true;
-    try {
-        candidates.value = (await getJson<{ data: Candidate[] }>(`${listUrl.value}/candidates`, { q: text })).data;
-        searchedFor.value = text;
-    } catch (error) {
-        toast(error instanceof HttpError ? error.message : 'Không tìm được sản phẩm.', 'error');
-    } finally {
-        searching.value = false;
-    }
-}
-// Tự tìm khi ngừng gõ (không cần bấm Tìm).
-let searchTimer: ReturnType<typeof setTimeout> | undefined;
-watch(addSearch, () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(findCandidates, 300);
-});
-function toggleAllCandidates(): void {
-    const ids = candidates.value.map((candidate) => candidate.style_id);
-    chosen.value = ids.every((id) => chosen.value.includes(id)) ? chosen.value.filter((id) => !ids.includes(id)) : [...new Set([...chosen.value, ...ids])];
-}
+const searchCandidates = async (term: string): Promise<SkuPickerProduct[]> => (await getJson<{ data: SkuPickerProduct[] }>(`${listUrl.value}/candidates`, { q: term })).data;
 function continueToRule(): void {
     addOpen.value = false;
-    openBulk({ scope: 'styles', style_ids: [...chosen.value] }, `Thêm ${chosen.value.length} sản phẩm vào "${props.priceList.name}"`);
+    openBulk({ scope: 'variants', variant_ids: [...chosen.value] }, `Thêm ${chosen.value.length} SKU vào "${props.priceList.name}"`);
     chosen.value = [];
 }
-const range = (candidate: Candidate): string | null => (candidate.list_min === null ? null : candidate.list_min === candidate.list_max ? `${candidate.list_min}` : `${candidate.list_min}–${candidate.list_max}`);
 
 // Nhập/xuất file: file xuất cũng là mẫu nhập (sửa cột Giá / Giá gạch rồi nhập lại).
 const importOpen = ref(false);
@@ -327,33 +292,10 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
         </template>
     </Dialog>
 
-    <Dialog v-model:open="addOpen" title="Thêm sản phẩm vào bảng giá" size="large">
-        <form class="mb-3" @submit.prevent="findCandidates">
-            <input v-model="addSearch" :class="inputClass" type="search" placeholder="Gõ tên, mã sản phẩm hoặc SKU — vd. đầm, VS-DSC" aria-label="Tìm sản phẩm" />
-        </form>
-        <div v-if="candidates.length" class="max-h-96 overflow-y-auto rounded-md border border-slate-200">
-            <label class="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-sm">
-                <input type="checkbox" :checked="candidates.every((candidate) => chosen.includes(candidate.style_id))" @change="toggleAllCandidates" />
-                Chọn tất cả {{ candidates.length }} kết quả
-            </label>
-            <label v-for="candidate in candidates" :key="candidate.style_id" class="flex items-center gap-3 border-b border-slate-100 px-3 py-2 text-sm last:border-0">
-                <input v-model="chosen" type="checkbox" :value="candidate.style_id" :aria-label="`Chọn ${candidate.name}`" :data-candidate="candidate.style_code" />
-                <span class="flex-1">
-                    <span class="font-medium">{{ candidate.name }}</span>
-                    <span class="ml-2 font-mono text-xs text-slate-400">{{ candidate.style_code }}</span>
-                    <span class="block text-xs text-slate-500">
-                        {{ candidate.variants }} SKU<template v-if="candidate.in_list"> · {{ candidate.in_list }} đã có trong bảng</template>
-                        <template v-if="range(candidate)"> · niêm yết <MoneyText v-if="candidate.list_min === candidate.list_max" :amount="candidate.list_min!" /><template v-else><MoneyText :amount="candidate.list_min!" />–<MoneyText :amount="candidate.list_max!" /></template></template>
-                    </span>
-                </span>
-            </label>
-        </div>
-        <p v-else-if="searching" class="text-sm text-slate-500">Đang tìm…</p>
-        <p v-else-if="searchedFor" class="text-sm text-slate-500">Không tìm thấy sản phẩm nào khớp “{{ searchedFor }}”.</p>
-        <p v-else class="text-sm text-slate-500">Gõ tên, mã sản phẩm hoặc SKU để tìm. Chọn được nhiều sản phẩm một lần.</p>
-        <p v-if="chosen.length" class="mt-2 text-sm text-indigo-700">Đã chọn {{ chosen.length }} sản phẩm (giữ lựa chọn khi tìm tiếp).</p>
+    <Dialog v-model:open="addOpen" title="Thêm sản phẩm vào bảng giá" size="large" :dirty="chosen.length > 0">
+        <SkuPicker v-model="chosen" :search="searchCandidates" placeholder="Gõ tên, mã sản phẩm hoặc SKU — vd. đầm, VS-DSC" />
         <template #footer>
-            <button type="button" :class="primaryButton" :disabled="!chosen.length" data-continue @click="continueToRule">Tiếp: cách tính giá ({{ chosen.length }} sản phẩm)</button>
+            <button type="button" :class="primaryButton" :disabled="!chosen.length" data-continue @click="continueToRule">Tiếp: cách tính giá ({{ chosen.length }} SKU)</button>
         </template>
     </Dialog>
 

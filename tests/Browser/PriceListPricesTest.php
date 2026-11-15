@@ -28,7 +28,7 @@ it('thêm sản phẩm → giảm 30% → xem trước → áp dụng: giá vào
 
     $page->click('[data-add-products]')
         ->type('input[aria-label="Tìm sản phẩm"]', $this->style->style_code)
-        ->click("[data-candidate=\"{$this->style->style_code}\"]")
+        ->click("[data-product=\"{$this->style->style_code}\"]")
         ->click('[data-continue]')
         ->type('input[aria-label="Giảm %"]', '30')
         ->click('[data-preview]')->assertSee('2 SKU đổi giá')
@@ -66,4 +66,26 @@ it('nhập giá từ file: chọn tệp, nhập, bảng hiện giá mới; dòng
 
     $page->assertNoJavaScriptErrors();
     expect(Price::query()->where('price_list_id', $this->list->id)->pluck('amount', 'variant_id')->all())->toBe([$this->s->id => 150_000]);
+});
+
+it('SkuPicker: mặc định hiện sản phẩm; mở rộng để chọn từng SKU; lựa chọn giữ khi tìm tiếp', function () {
+    $other = T::product();
+    P::variants($other);
+    $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices");
+
+    $page->click('[data-add-products]')
+        ->type('input[aria-label="Tìm sản phẩm"]', $this->style->style_code)
+        ->assertSee($this->style->style_code)->assertDontSee($this->s->sku)
+        ->click("[data-expand=\"{$this->style->style_code}\"]")->assertSee($this->s->sku)->assertSee($this->m->sku)
+        ->click("[data-sku=\"{$this->m->sku}\"]")->assertSee('Đã chọn 1 SKU')
+        ->clear('input[aria-label="Tìm sản phẩm"]')->type('input[aria-label="Tìm sản phẩm"]', $other->style_code)
+        ->click("[data-product=\"{$other->style_code}\"]")->assertSee('Đã chọn 3 SKU')
+        ->click('[data-continue]')
+        ->click('label:has-text("Đồng giá")')->type('input[aria-label="Đồng giá"]', '99000')
+        ->click('[data-preview]')->assertSee('3 SKU đổi giá')
+        ->click('[data-apply]')->assertSee('Đã cập nhật giá 3 SKU.');
+
+    $page->assertNoJavaScriptErrors();
+    expect(Price::query()->where('price_list_id', $this->list->id)->pluck('variant_id')->all())->not->toContain($this->s->id)
+        ->and(Price::query()->where('price_list_id', $this->list->id)->count())->toBe(3);
 });

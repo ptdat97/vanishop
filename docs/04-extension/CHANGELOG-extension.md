@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.58 — 2026-11-15
+
+Component Admin dùng chung chọn số lượng lớn SKU.
+
+### Thêm
+- `@admin/Components/SkuPicker.vue` (+ logic thuần `@admin/skuPicker`): mặc định hiện **sản phẩm**, bấm mở rộng để hiện các **SKU** của sản phẩm; ô chọn sản phẩm chọn/bỏ mọi SKU của nó (gạch ngang khi chọn một phần), "Chọn tất cả kết quả", "Mở rộng/Thu gọn tất cả"; tìm ở server khi gõ (250 ms, bỏ kết quả cũ); lựa chọn giữ khi tìm tiếp; SKU `disabled` hiện nhưng không chọn được, SKU ngừng bán có nhãn. v-model là id SKU. Nguồn dữ liệu: `search(term) => Promise<SkuPickerProduct[]>` — mỗi module tự cung cấp endpoint theo hợp đồng `{ id, code, name, meta?, variants: [{ id, sku, label, status?, meta?, disabled? }] }` (chữ phụ `meta` do module định dạng: giá, tồn…).
+- Bảng giá: hộp thoại "Thêm sản phẩm" dùng SkuPicker — chọn cả sản phẩm hoặc từng SKU; `GET …/price-lists/{id}/candidates` trả theo hợp đồng trên (chữ phụ: giá niêm yết, giá đang có trong bảng).
+- Test JS thuần `resources/js/admin/tests/skuPicker.test.mjs` (`npm run test:admin`).
+
 ## 0.4.57 — 2026-11-15
 
 Admin bảng giá thao tác gọn — đợt 3: nhập/xuất file, xử lý bảng niêm yết thừa.
