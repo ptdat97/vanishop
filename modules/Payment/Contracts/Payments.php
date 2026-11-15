@@ -76,6 +76,21 @@ interface Payments
     public function confirmManually(int $paymentId, string $note): void;
 
     /**
+     * Id nội bộ của payment theo mã công khai (PaymentView::$publicId) — cho plugin gọi các lệnh nhận id (EP v3 X5).
+     */
+    public function paymentId(string $paymentPublicId): ?int;
+
+    /**
+     * Ghi nhận đã thu tiền khi giao theo đơn (bảng kê COD của hãng, EP v3 X5). Idempotent theo `$reference`.
+     */
+    public function collectCod(int $orderId, int $amount, string $reference): void;
+
+    /**
+     * Nhân viên/plugin ghi nhận đã thu COD (shop tự giao, hãng không báo). Idempotent; đơn đã huỷ → PaymentRejected.
+     */
+    public function collectCodManually(int $paymentId, string $note): void;
+
+    /**
      * Thu khoản đang giữ tiền (cổng CapturesLater). Idempotent; cổng từ chối → PaymentRejected.
      */
     public function captureAuthorized(int $paymentId, string $source): void;

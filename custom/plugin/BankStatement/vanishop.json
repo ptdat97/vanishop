@@ -1,0 +1,21 @@
+{
+    "id": "vani.bank-statement",
+    "name": {
+        "vi": "Đối soát sao kê ngân hàng",
+        "en": "Bank statement reconciliation"
+    },
+    "description": {
+        "vi": "Nhập file sao kê (mã giao dịch, số tiền, nội dung): chuyển khoản có số đơn trong nội dung và đúng số tiền được xác nhận đã nhận tiền; giao dịch lệch vào hàng đợi \"Đối soát lệch\". Tham chiếu cho Payments, Reconciliations, adminTool (EP v3 X5).",
+        "en": "Imports bank statements: transfers whose description contains the order number with the exact amount are confirmed; mismatches go to the reconciliation queue. Reference for Payments, Reconciliations, adminTool (EP v3 X5)."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\BankStatement\\BankStatementServiceProvider",
+    "requires": {
+        "vanishop": "^0.4",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": [],
+    "author": "VaniShop Team"
+}

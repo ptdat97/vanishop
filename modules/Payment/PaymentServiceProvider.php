@@ -27,11 +27,13 @@ use Modules\Payment\Application\Listeners\PaymentDashboardTasks;
 use Modules\Payment\Application\Listeners\SettleCancelledOrderPayments;
 use Modules\Payment\Application\Listeners\SettlePartialCancellation;
 use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Application\ReconciliationLedger;
 use Modules\Payment\Console\ExpirePaymentsCommand;
 use Modules\Payment\Console\ReconcilePaymentsCommand;
 use Modules\Payment\Console\VerifyPaymentsCommand;
 use Modules\Payment\Contracts\PaymentGateway;
 use Modules\Payment\Contracts\Payments;
+use Modules\Payment\Contracts\Reconciliations;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Shared\Support\ModuleServiceProvider;
@@ -48,6 +50,8 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
         $this->app->make(AdminScreen::class)->declareResource('payment');
         $this->app->bind(Payments::class, PaymentService::class);
+        // EP v3 X5: bảng đối soát chung cho plugin.
+        $this->app->bind(Reconciliations::class, ReconciliationLedger::class);
         // Cổng thanh toán đều là plugin (COD, chuyển khoản: plugin hệ thống vani.cod, vani.bank-transfer — ADR-029).
         $this->app->make(Extensions::class)->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
         // Đơn đổi hàng thu phần chênh khi giao (Returns → ReplacementOrders): thiếu cổng thu khi giao thì đổi khác mẫu đắt hơn bị từ chối.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payment\Application\Listeners;
 
 use Illuminate\Support\Facades\Gate;
+use Modules\Payment\Application\ReconciliationLedger;
 use Modules\Payment\Persistence\Models\Refund;
 
 /**
@@ -21,7 +22,12 @@ final class PaymentDashboardTasks
             return [];
         }
 
-        return [[
+        $mismatches = app(ReconciliationLedger::class)->openCount();
+
+        return [...($mismatches > 0 ? [[
+            'key' => 'payments.reconciliation_mismatch', 'label' => 'Đối soát lệch', 'count' => $mismatches, 'hint' => 'Sao kê/bảng kê không khớp đơn',
+            'url' => route('admin.payment.payments.index'), 'tone' => 'warning', 'order' => 61,
+        ]] : []), [
             'key' => 'payments.refunds_requested', 'label' => 'Hoàn tiền chờ chuyển trả', 'count' => Refund::query()->where('status', 'requested')->count(),
             'url' => route('admin.payment.payments.index'), 'tone' => 'warning', 'order' => 60,
         ]];

@@ -52,6 +52,11 @@ final class PaymentRejected extends BusinessRuleViolation
         return new self('payment.refund_blocked', 422, __('payment::messages.refund_blocked', ['reasons' => implode('; ', $reasons)]), ['reasons' => $reasons]);
     }
 
+    public static function payoutFailed(string $channel, string $message): self
+    {
+        return new self('payment.payout_failed', 422, __('payment::messages.payout_failed', ['channel' => $channel, 'message' => $message]));
+    }
+
     public static function refundExceeds(int $refundable): self
     {
         return new self('payment.refund_exceeds', 422, __('payment::messages.refund_exceeds', ['amount' => app(MoneyFormatter::class)->formatAmount($refundable, (string) config('vanishop.currency'))]), ['refundable' => $refundable]);

@@ -59,6 +59,7 @@ Cột Đợt ghi ✅ nghĩa là plugin đã có trong `custom/plugin/`.
 | `vani.ahamove` | `ShippingCarrier` | P3 |
 | `vani.carrier-routing` ✅ (quy tắc tỉnh/thu hộ → hãng, lý do vào lịch sử vận đơn) | `CarrierAssignment` | **Implemented** 2026-11-15 (1.0.0, EP v3 X3) |
 | `vani.cost-price` ✅ (giá vốn theo SKU, "Giá vốn + %", giá đẹp đuôi 9.000, cảnh báo dưới giá vốn) | `BulkPriceMode`, `PriceRounding`, `vani.pricing.bulk.warnings`, `adminColumn`/`adminTool` | **Implemented** 2026-11-16 (1.0.0, EP v3 X4) |
+| `vani.bank-statement` ✅ (nhập sao kê, tự xác nhận chuyển khoản khớp số đơn + số tiền, dòng lệch vào đối soát chung) | `Payments`, `Reconciliations`, `adminTool` | **Implemented** 2026-11-16 (1.0.0, EP v3 X5) |
 | `vani.cod-reconciliation` | Events fulfillment, `PaymentRecorder`, Admin pages | P2 |
 
 ### Bán hàng, khuyến mãi, khách hàng

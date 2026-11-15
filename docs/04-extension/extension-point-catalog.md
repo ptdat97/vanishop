@@ -13,6 +13,7 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `PaymentGateway` | `vani.payment.gateways` | Payment | `cod`, `manual_bank_transfer`. **Implemented** + bộ contract test `PaymentGatewayContract`. Interface tuỳ chọn: `CapturesLater` (0.3.5), `CallbackResponder` (0.3.15: phản hồi IPN theo `CallbackOutcome`, tham chiếu `vani.vnpay`) | [payment](../10-payment/payment.md) |
 | `OrderRiskSignal` | `vani.ordering.risk_signals` | Ordering | — (plugin). **Implemented** (0.4.60, EP v3 X2): tín hiệu rủi ro đơn theo lô, hiện trên "Cần xác nhận" và trang đơn; tham chiếu `vani.cod-risk-guard` | [order §1.1](../09-order/order.md) |
 | `ConfirmationChannel` | `vani.ordering.confirmation_channels` | Ordering | — (plugin). **Implemented** (0.4.60): gửi yêu cầu xác nhận đơn cho khách (Zalo OA, tổng đài); tham chiếu `vani.hello-world` | [order §1.1](../09-order/order.md) |
+| `RefundPayout` | `vani.payment.refund_payouts` | Payment | — (plugin). **Implemented** (0.4.63, EP v3 X5): chuyển trả khoản hoàn qua API ngân hàng/ví; tham chiếu `vani.hello-world` | [payment](../10-payment/payment.md) |
 | `OrderStatusAction` | `vani.ordering.status_actions` | Ordering | — (plugin). **Implemented** (0.3.98): thao tác đổi trạng thái do plugin thanh toán/vận chuyển cắm vào thẻ "Trạng thái đơn" trên trang đơn Admin — `describe(OrderData)` → `OrderStatusActionView` (nhãn, quyền, ô nhập `FieldDefinition`, xác nhận, `primary`) hoặc null; `perform(OrderData, input)` đổi trạng thái qua contract Core (R30). Core hiện nút, kiểm quyền, validate, ghi audit `order.status_action`; lỗi nghiệp vụ hiện cho nhân viên, lỗi khác báo chung | [order](../09-order/order.md) |
 | `ShippingCarrier` | `vani.shipping.carriers` | Fulfillment | `manual`. **Implemented** + bộ contract test `ShippingCarrierContract` (phí ở checkout: `ShippingRateProvider`) | [fulfillment](../09-order/fulfillment.md) |
 | `CarrierAssignment` | `vani.fulfillment.carrier_assignments` | Fulfillment | — (plugin). **Implemented** (0.4.61, EP v3 X3): chọn hãng cho vận đơn mới theo tuyến/thu hộ; tham chiếu `vani.carrier-routing` | [fulfillment](../09-order/fulfillment.md) |
@@ -82,8 +83,9 @@ Extension contract không có abstract base: mở rộng bằng field tuỳ ch�
 | `OrderActions` | Lệnh nhân viên cho plugin: xác nhận/huỷ theo chính sách, ghi chú — hook chặn + lịch sử nguồn `system:<plugin>`. **Implemented** (0.4.60, EP v3 X2) | Ordering |
 | `OrderRisks` | Tín hiệu rủi ro đã gộp (`forOrders`, `hasHigh`). **Implemented** (0.4.60) | Ordering |
 | `OrderTransitions` | Chuyển trạng thái qua state machine, cập nhật `payment_status`. **Implemented** | Ordering |
-| `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế). **Implemented** | Payment |
+| `Payments` | Phương thức khả dụng, tạo/khởi tạo payment, xác nhận thủ công, hoàn tiền (thay `PaymentRecorder` trong thiết kế); từ 0.4.63: `paymentId`, `collectCod`, `collectCodManually`. **Implemented** | Payment |
 | `ReturnPickups` | Gọi hãng đã giao đơn đến lấy hàng trả (`carrierLabel`, `book`). **Implemented** (0.4.61, EP v3 X3) | Fulfillment |
+| `Reconciliations` | Bảng đối soát chung: dòng khớp/lệch theo nguồn + tham chiếu; lệch vào hàng đợi "Đối soát lệch". **Implemented** (0.4.63, EP v3 X5) | Payment |
 | `ShipmentReader` | Vận đơn của một đơn (Storefront, panel Admin). **Implemented**. Ghi nhận trạng thái đi qua webhook chung/Admin, chưa công bố `ShipmentRecorder` | Fulfillment |
 | `InventoryReturns` | Nhập lại hàng về kho (movement `return`). **Implemented** | Inventory |
 | `Returns` | Tạo/xem/huỷ yêu cầu đổi/trả, số lượng còn trả được. **Implemented** | Returns |

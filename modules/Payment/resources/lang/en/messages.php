@@ -14,4 +14,7 @@ return [
     'expired' => 'The payment window for this order has expired.',
     'cod_collected' => 'Cash on delivery recorded as collected.',
     'refund_blocked' => 'Refund cannot be created yet: :reasons',
+    'payout_failed' => 'Payout via :channel failed: :message',
+    'payout_done' => 'Paid out via :channel (ref :reference).',
+    'reconciliation_resolved' => 'Reconciliation line marked as resolved.',
 ];

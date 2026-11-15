@@ -40,6 +40,10 @@ type Props = {
     perPageOptions: number[];
     /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
     extensions: ExtensionList;
+    /** Kênh chuyển trả của plugin (EP v3 X5). */
+    payouts: Array<{ code: string; label: string }>;
+    /** Dòng đối soát lệch chờ xử lý (EP v3 X5). */
+    reconciliation: Array<{ id: number; source: string; reference: string; order_id: number | null; expected: number | null; actual: number | null; note: string | null; created_at: string }>;
 };
 
 const props = defineProps<Props>();
@@ -124,6 +128,19 @@ function submitRefund(): void {
     refundForm.post(`${props.baseUrl}/${refunding.value!.id}/refunds`, { preserveScroll: true, onSuccess: () => (refunding.value = null) });
 }
 
+async function payout(id: number, channel: { code: string; label: string }): Promise<void> {
+    if ((await confirmAction({ title: `Chuyển trả khoản hoàn qua ${channel.label}?`, confirmLabel: 'Chuyển trả' })) !== false) {
+        router.post(props.baseUrl.replace(/\/payments$/, `/refunds/${id}/payout/${channel.code}`), {}, { preserveScroll: true });
+    }
+}
+
+async function resolveEntry(id: number): Promise<void> {
+    const note = await confirmAction({ title: 'Đánh dấu đã xử lý dòng đối soát?', confirmLabel: 'Đã xử lý', reason: { label: 'Cách xử lý', placeholder: 'vd. khách chuyển thiếu, đã gọi bổ sung', required: true } });
+    if (note !== false) {
+        router.post(props.baseUrl.replace(/\/payments$/, `/reconciliation/${id}/resolve`), { note }, { preserveScroll: true });
+    }
+}
+
 async function completeRefund(id: number): Promise<void> {
     const note = await confirmAction({ title: 'Đã chuyển trả tiền cho khách?', confirmLabel: 'Đã chuyển trả', reason: { label: 'Ghi chú', placeholder: 'vd. mã giao dịch chuyển trả', required: true } });
     if (note !== false) {
@@ -149,11 +166,27 @@ async function completeRefund(id: number): Promise<void> {
         <button v-for="value in statuses" :key="value" type="button" :class="status === value ? primaryButton : secondaryButton" @click="filter(value)">{{ label(value) }}</button>
     </div>
 
+    <section v-if="reconciliation.length" class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4" data-reconciliation>
+        <h2 class="mb-2 font-semibold">Đối soát lệch</h2>
+        <div v-for="entry in reconciliation" :key="entry.id" class="flex items-center justify-between gap-3 border-t border-amber-100 py-2 text-sm">
+            <span>
+                <span class="font-mono text-xs">{{ entry.reference }}</span> · {{ entry.note }}
+                <template v-if="entry.expected !== null"> · cần <MoneyText :amount="entry.expected" /></template>
+                <template v-if="entry.actual !== null"> · nhận <MoneyText :amount="entry.actual" /></template>
+                <span class="text-xs text-slate-500"> · {{ entry.source }}</span>
+            </span>
+            <button v-if="can.confirm" type="button" class="text-indigo-600 hover:underline" @click="resolveEntry(entry.id)">Đã xử lý</button>
+        </div>
+    </section>
+
     <section v-if="refunds.length" class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
         <h2 class="mb-2 font-semibold">Chờ hoàn tiền thủ công</h2>
         <div v-for="refund in refunds" :key="refund.id" class="flex items-center justify-between border-t border-amber-100 py-2 text-sm">
             <span><MoneyText :amount="refund.amount" /> · {{ refund.reason }} · {{ refund.created_at }}</span>
-            <button v-if="can.refund" type="button" class="text-indigo-600 hover:underline" @click="completeRefund(refund.id)">Đã chuyển trả</button>
+            <span v-if="can.refund" class="flex gap-3">
+                <button v-for="channel in payouts" :key="channel.code" type="button" class="text-indigo-600 hover:underline" :data-payout="channel.code" @click="payout(refund.id, channel)">Chuyển trả qua {{ channel.label }}</button>
+                <button type="button" class="text-indigo-600 hover:underline" @click="completeRefund(refund.id)">Đã chuyển trả</button>
+            </span>
         </div>
     </section>
 

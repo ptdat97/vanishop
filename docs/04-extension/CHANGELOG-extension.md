@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.63 — 2026-11-16
+
+EP v3 đợt X5 — tiền: đối soát và chuyển trả ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+
+### Thêm
+- `Payments` thêm `paymentId(publicId)`, `collectCod(orderId, amount, reference)` (idempotent theo tham chiếu — bảng kê COD), `collectCodManually(paymentId, note)` — trước đây chỉ có trong `PaymentService` nội bộ.
+- Contract **`RefundPayout`** (tag `vani.payment.refund_payouts`, `payout(RefundData): PayoutResult`): nút "Chuyển trả qua …" cho khoản hoàn "chờ chuyển trả" (`POST /{admin}/payment/refunds/{refund}/payout/{channel}`); gọi ngoài transaction; thành công → đã chuyển trả kèm tham chiếu; lỗi → giữ nguyên, lỗi `payment.payout_failed`.
+- Service contract **`Reconciliations`** (`record(source, reference, matched, orderId?, paymentId?, expected?, actual?, note?)`, idempotent theo nguồn + tham chiếu) + bảng `reconciliation_entries`: khu "Đối soát lệch" trên trang Thanh toán (nút "Đã xử lý" kèm cách xử lý, quyền `payments.confirm`), ô Việc cần làm `payments.reconciliation_mismatch`.
+- Plugin tham chiếu **`vani.bank-statement` 1.0.0** (mới): công cụ "Nhập sao kê ngân hàng" trên trang Thanh toán — chuyển khoản có số đơn trong nội dung và đúng số tiền được xác nhận, giao dịch lệch vào đối soát. `vani.hello-world`: kênh chuyển trả mẫu.
+
 ## 0.4.62 — 2026-11-16
 
 EP v3 đợt X4 — giá theo cách làm của shop ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).

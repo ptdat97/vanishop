@@ -14,4 +14,7 @@ return [
     'expired' => 'Đơn đã hết hạn thanh toán.',
     'cod_collected' => 'Đã ghi nhận thu tiền khi giao.',
     'refund_blocked' => 'Chưa hoàn tiền được: :reasons',
+    'payout_failed' => 'Chuyển trả qua :channel không thành công: :message',
+    'payout_done' => 'Đã chuyển trả qua :channel (mã :reference).',
+    'reconciliation_resolved' => 'Đã đánh dấu xử lý dòng đối soát.',
 ];

@@ -15,6 +15,7 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
+use Modules\Payment\Application\ReconciliationLedger;
 use Modules\Payment\Contracts\CapturesLater;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
@@ -75,6 +76,9 @@ final class PaymentController
             ])->all(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'perPageOptions' => self::PER_PAGE_OPTIONS,
+            // EP v3 X5: kênh chuyển trả của plugin; dòng đối soát lệch chờ xử lý.
+            'payouts' => array_values(array_map(fn ($payout): array => ['code' => $payout->code(), 'label' => $payout->label()], $service->payouts())),
+            'reconciliation' => app(ReconciliationLedger::class)->open(),
             'refunds' => $refunds->map(fn (Refund $refund): array => [
                 'id' => $refund->id, 'payment_id' => $refund->payment_id, 'amount' => $refund->amount, 'reason' => $refund->reason,
                 'created_at' => StoreClock::format($refund->created_at),
@@ -131,6 +135,27 @@ final class PaymentController
         $payments->refund($payment->id, Money::of((int) $data['amount'], $payment->currency_code), $data['reason'], 'admin:'.Str::lower($data['idempotency_key']));
 
         return back()->with('success', __('payment::messages.refund_created'));
+    }
+
+    /**
+     * Chuyển trả khoản hoàn qua kênh của plugin (EP v3 X5).
+     */
+    public function payout(Refund $refund, string $channel, PaymentService $payments): RedirectResponse
+    {
+        Gate::authorize('payments.refund');
+        $label = ($payments->payouts()[$channel] ?? abort(404))->label();
+        $reference = $payments->payoutRefund($refund->id, $channel);
+
+        return back()->with('success', __('payment::messages.payout_done', ['channel' => $label, 'reference' => $reference]));
+    }
+
+    public function resolveReconciliation(int $entry, Request $request, ReconciliationLedger $ledger): RedirectResponse
+    {
+        Gate::authorize('payments.confirm');
+        $data = $request->validate(['note' => ['required', 'string', 'max:255']]);
+        $ledger->resolve($entry, $data['note']);
+
+        return back()->with('success', __('payment::messages.reconciliation_resolved'));
     }
 
     public function completeRefund(Refund $refund, Request $request, PaymentService $payments): RedirectResponse

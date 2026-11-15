@@ -25,8 +25,11 @@ use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\Data\PaymentView;
+use Modules\Payment\Contracts\Data\PayoutResult;
+use Modules\Payment\Contracts\Data\RefundData;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Contracts\Payments;
+use Modules\Payment\Contracts\RefundPayout;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Domain\RefundRules;
 use Modules\Payment\Events\PaymentAuthorized;
@@ -431,6 +434,49 @@ final class PaymentService implements Payments
         }
 
         $this->refund($payment->id, $amount, $reason, $idempotencyKey);
+    }
+
+    public function paymentId(string $paymentPublicId): ?int
+    {
+        $id = Payment::query()->where('public_id', $paymentPublicId)->value('id');
+
+        return $id === null ? null : (int) $id;
+    }
+
+    /**
+     * Kênh chuyển trả của plugin (EP v3 X5).
+     *
+     * @return array<string, RefundPayout>
+     */
+    public function payouts(): array
+    {
+        return $this->extensions->implementations(RefundPayout::TAG, RefundPayout::class);
+    }
+
+    /**
+     * Chuyển trả khoản hoàn "chờ chuyển trả" qua plugin (EP v3 X5): gọi ngoài transaction; thành công → ghi nhận đã chuyển
+     * trả với tham chiếu; lỗi → giữ nguyên, ném PaymentRejected với thông báo của plugin. Trả tham chiếu giao dịch.
+     */
+    public function payoutRefund(int $refundId, string $channel): string
+    {
+        $payout = $this->payouts()[$channel] ?? throw PaymentRejected::notFound();
+        $refund = Refund::query()->whereKey($refundId)->firstOrFail();
+        if ($refund->status !== 'requested') {
+            throw PaymentRejected::invalidState((string) $refund->status);
+        }
+        $payment = Payment::query()->whereKey($refund->payment_id)->firstOrFail();
+        $order = $this->orders->find($payment->order_id);
+        ExternalCalls::guard("payment.refund_payout:{$channel}");
+        $result = $this->extensions->call($payout, fn () => $payout->payout(new RefundData(
+            (string) $refund->public_id, (string) $payment->public_id, (string) $order?->number, (int) $refund->amount, (string) $payment->currency_code, (string) $refund->reason,
+            ['full_name' => (string) ($order?->recipient['full_name'] ?? ''), 'phone' => (string) ($order?->recipient['phone'] ?? '')],
+        )), new PayoutResult(false, null, null), 'payment.refund_payout');
+        if (! $result->successful) {
+            throw PaymentRejected::payoutFailed($payout->label(), (string) ($result->message ?? ''));
+        }
+        $this->completeManualRefund($refund->id, "Chuyển trả qua {$payout->label()}".($result->reference === null ? '' : ": {$result->reference}"));
+
+        return (string) $result->reference;
     }
 
     /**

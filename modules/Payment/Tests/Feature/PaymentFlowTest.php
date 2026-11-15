@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Ordering\Application\OrderCommands;
@@ -14,10 +15,14 @@ use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Contracts\Data\GatewayCallback;
 use Modules\Payment\Contracts\Data\GatewayStatus;
+use Modules\Payment\Contracts\Payments;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Tests\Feature\Fixtures\FakeCollectOnDeliveryGateway;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
+use Modules\Shared\Context\ContextScope;
+use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Plugin\HelloWorld\HelloWorldServiceProvider;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -256,4 +261,28 @@ it('hook vani.payment.before_refund (EP v3 X2): chặn hoàn tiền do nhân vi�
     $this->post("/admin/payment/payments/{$payment->id}/refunds", ['amount' => 50_000, 'reason' => 'x', 'idempotency_key' => 'r2'])->assertSessionHasNoErrors();
 
     expect(DB::table('refunds')->pluck('amount')->all())->toBe([50_000]);
+});
+
+it('RefundPayout (EP v3 X5): "Chuyển trả qua …" ghi nhận đã chuyển trả với tham chiếu; kênh từ chối giữ "chờ chuyển trả"', function () {
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), function () {
+        app(PluginManager::class)->install('vani.hello-world');
+        app(PluginManager::class)->enable('vani.hello-world');
+    });
+    app()->register(HelloWorldServiceProvider::class);
+    C::autoConfirmCod();
+    ($this->order)('cod')->assertCreated();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    app(Payments::class)->collectCod($payment->order_id, 330_000, 'bang-ke:1');
+    app(Payments::class)->collectCod($payment->order_id, 330_000, 'bang-ke:1');
+    $this->actingAs(T::staff(['admin.access', 'payments.view', 'payments.refund']), 'staff');
+    $this->post("/admin/payment/payments/{$payment->id}/refunds", ['amount' => 50_000, 'reason' => 'x', 'idempotency_key' => 'r1'])->assertSessionHasNoErrors();
+    $refund = DB::table('refunds')->sole();
+
+    $this->get('/admin/payment/payments')->assertInertia(fn ($page) => $page->where('payouts', [['code' => 'hello', 'label' => 'Hello (thử)']]));
+    $this->post("/admin/payment/refunds/{$refund->id}/payout/hello")->assertSessionHas('success', fn (string $message) => str_starts_with($message, 'Đã chuyển trả qua Hello (thử) (mã HELLO-'));
+
+    expect(DB::table('refunds')->value('status'))->toBe('completed')
+        ->and(app(Payments::class)->paymentId($payment->public_id))->toBe($payment->id)
+        ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(1);
+    $this->post("/admin/payment/refunds/{$refund->id}/payout/hello")->assertSessionHasErrors('business');
 });
