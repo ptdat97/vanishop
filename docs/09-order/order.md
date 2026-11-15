@@ -25,8 +25,8 @@ flowchart LR
 | ③ Đổi trả | Yêu cầu `requested` → "Đổi/trả chờ duyệt" | `ReturnService::approve`/`reject`, nhận hàng, hoàn tất | Nhập kho hàng bán được, hoàn tiền/đơn thay thế |
 
 - Đơn **đã trả tiền trước** (cổng online báo `paid`/`authorized`, hoặc nhân viên xác nhận đã nhận chuyển khoản — chính là chốt ① của đơn chuyển khoản) tự sang `confirmed`; đơn chuyển khoản/online chưa trả nằm ở "Chờ thanh toán", không vào "Cần xác nhận".
-- Không có lệnh tự động nào thay cho ba chốt trong Core. Plugin muốn tự động hoá phải gọi đúng lệnh của nhân viên với nguồn `system` (có `order_events`/`return_events` như người làm).
-- **Hiện trạng (0.4.52) còn khác thiết kế** — đợt V1–V3 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046): `vani.cod` còn tự xác nhận COD (mặc định bật), vận đơn hãng API còn tự đặt khi tạo, `ReturnDecision::$autoApprove` còn trong contract.
+- **Mặc định có người, tự động là điểm mở rộng** ([ADR-046 §4](../19-adr/ADR-046-staffed-operations-vietnam.md#decision)): ① `vani.cod` `auto_confirm_mode` (`off` mặc định · `trusted` · `all`) hoặc plugin nghe `OrderPlaced`; ② `vanishop.fulfillment.booking` (`manual` mặc định · `on_create`) hoặc plugin nghe `ShipmentCreated`/đặt theo đợt; ③ `ReturnPolicy` của plugin trả `autoApprove`. Tự động hoá chỉ gọi đúng lệnh của nhân viên với nguồn `system` (có `order_events`/`return_events` như người làm).
+- **Hiện trạng (0.4.52) còn khác mặc định** — đợt V1–V3 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046): `vani.cod` mặc định tự xác nhận mọi đơn COD; vận đơn hãng API tự đặt khi tạo (chưa có cấu hình `booking`, chưa có "Đẩy lên hãng" hàng loạt).
 
 ## 2. Order là bản ghi nghiệp vụ bất biến
 
@@ -153,7 +153,7 @@ Một giỏ chứa sản phẩm của nhiều brand tạo **một đơn** (một
 ```mermaid
 stateDiagram-v2
     [*] --> requested
-    requested --> approved: CSKH duyệt (không tự duyệt — ADR-046)
+    requested --> approved: CSKH duyệt / ReturnPolicy của plugin tự duyệt (mặc định không — ADR-046)
     requested --> rejected
     approved --> in_transit: khách gửi / hãng lấy
     approved --> received: trả tại cửa hàng (plugin)
@@ -169,7 +169,7 @@ stateDiagram-v2
 |---|---|
 | Trạng thái RMA, `ReturnPolicy` (mặc định `days_window`), tính tiền hoàn từ `line_total` đã phân bổ, nhập lại tồn (movement `return`, sellable hay không), hoàn tiền thủ công | Hoàn tiền tự động qua cổng (plugin payment), trả tại cửa hàng (`vani.store-omnichannel`), nhãn trả hàng của hãng VC |
 
-**CSKH kiểm soát mọi yêu cầu** ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)): khách gửi yêu cầu trên web (token đơn, ảnh đính kèm) hoặc CSKH tạo hộ khi khách gọi/nhắn; `ReturnPolicy` chỉ trả lời **được gửi hay không** (hạn đổi trả, dòng đã giao), không quyết định duyệt. CSKH duyệt/từ chối (từng yêu cầu hoặc hàng loạt), nhận hàng và ghi tình trạng, chọn hoàn tiền (được hoàn ít hơn để trừ phí) hoặc đổi hàng. COD/chuyển khoản: hoàn tiền là CSKH chuyển trả tay rồi bấm "Đã chuyển trả".
+**CSKH kiểm soát mọi yêu cầu** ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)): khách gửi yêu cầu trên web (token đơn, ảnh đính kèm) hoặc CSKH tạo hộ khi khách gọi/nhắn; `ReturnPolicy` mặc định (`days_window`) chỉ trả lời **được gửi hay không** (hạn đổi trả, dòng đã giao), không tự duyệt; chính sách của plugin được tự duyệt ca đủ điều kiện (`ReturnDecision::$autoApprove`, nguồn `system`, lý do `auto_approved`) — nhận hàng và hoàn tiền thủ công vẫn là CSKH. CSKH duyệt/từ chối (từng yêu cầu hoặc hàng loạt), nhận hàng và ghi tình trạng, chọn hoàn tiền (được hoàn ít hơn để trừ phí) hoặc đổi hàng. COD/chuyển khoản: hoàn tiền là CSKH chuyển trả tay rồi bấm "Đã chuyển trả".
 
 Invariant: tổng số lượng trả của một dòng ≤ số lượng đã giao (App, khoá dòng `order_lines` khi tạo RMA); tổng hoàn ≤ số đã thu (Payment).
 

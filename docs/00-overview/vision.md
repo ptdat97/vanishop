@@ -56,9 +56,9 @@ Cửa hàng mục tiêu hiện tại là một shop thời trang SME: vài nhân
 |---|---|---|
 | Kho | Một "Kho chính", sửa tồn trên lưới, nhập CSV | Plugin `vani.warehouse`: nhiều kho, chuyển kho, đối soát; ERP qua Integration API |
 | Đơn hàng | Nhân viên xử lý trên Admin theo hàng đợi việc; đơn kênh chat ở Pancake | Integration API v1 (đồng bộ đơn, ERP/ODO) |
-| Xác nhận đơn COD | Luôn có nhân viên gọi/nhắn xác nhận ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)); đơn đã trả online tự xác nhận | Plugin nghe `OrderPlaced` gọi lệnh xác nhận của nhân viên (nguồn `system`) |
-| Giao hàng | Nhân viên lọc đơn chờ đóng gói, in phiếu, đóng gói, đẩy lên nhiều hãng (bấm hàng loạt hoặc nhập mã/nhập file); web ghi mã vận đơn và trạng thái | Plugin hãng (`ShippingCarrier`): đặt vận đơn qua API **khi nhân viên bấm**, webhook trạng thái |
-| Đổi trả | Khách gửi yêu cầu hoặc CSKH tạo hộ; CSKH duyệt, nhận hàng, hoàn tiền | Plugin nghe `ReturnRequested` gọi lệnh duyệt của CSKH |
+| Xác nhận đơn COD | Nhân viên gọi/nhắn xác nhận ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)); đơn đã trả online tự xác nhận | Bật `vani.cod` tự xác nhận (khách quen / mọi đơn), hoặc plugin nghe `OrderPlaced` gọi lệnh xác nhận |
+| Giao hàng | Nhân viên lọc đơn chờ đóng gói, in phiếu, đóng gói, đẩy lên nhiều hãng (bấm hàng loạt hoặc nhập mã/nhập file); web ghi mã vận đơn và trạng thái | Plugin hãng (`ShippingCarrier`), webhook trạng thái; bật `vanishop.fulfillment.booking = on_create` hoặc plugin đặt theo đợt |
+| Đổi trả | Khách gửi yêu cầu hoặc CSKH tạo hộ; CSKH duyệt, nhận hàng, hoàn tiền | `ReturnPolicy` của plugin tự duyệt ca đủ điều kiện (`autoApprove`) |
 | Ngôn ngữ, tiền tệ | Tiếng Việt, VND | Bật `VANI_LOCALES`, cột `currency` đã có ([§4](#4-không-nằm-trong-phạm-vi-non-goals)) |
 | Báo cáo | Báo cáo cơ bản trong Admin | Plugin báo cáo, dữ liệu sang ERP |
 
@@ -76,7 +76,7 @@ flowchart LR
     F -. khách muốn đổi/trả .-> H{{"③ CSKH duyệt, nhận hàng,<br/>kiểm tra, hoàn tiền/đổi"}}
 ```
 
-| Chốt | Người làm | Việc của hệ thống | Hệ thống không làm |
+| Chốt | Người làm | Việc của hệ thống | Mặc định không làm (bật được — quy tắc 4) |
 |---|---|---|---|
 | ① Xác nhận đơn COD | Nhân viên vận hành (thường kiêm CSKH) | Hàng đợi "Cần xác nhận" có số đếm; lịch sử giao/hoàn theo SĐT; sửa địa chỉ, huỷ dòng ngay trên trang đơn; xác nhận hàng loạt | Tự xác nhận đơn COD, kể cả khách quen |
 | ② Đóng gói, đẩy lên hãng | Nhân viên kho | Hàng đợi "Chờ đóng gói" lọc theo hãng/kho/ngày; in phiếu giao có mã vạch; đẩy hàng loạt lên hãng API hoặc xuất/nhập file cho hãng nhập tay; bàn giao cho shipper hàng loạt | Đặt vận đơn ở hãng khi nhân viên chưa bấm |
@@ -84,10 +84,10 @@ flowchart LR
 
 **Quy tắc thiết kế rút ra:**
 
-1. **Tự động hoá phần ghi chép, không tự động hoá quyết định.** Giữ hàng, trừ tồn, tính tiền hoàn, ghi COD, cập nhật trạng thái từ hãng — tự động và có bất biến. Xác nhận đơn COD, đặt vận đơn, duyệt đổi trả — người bấm.
+1. **Tự động hoá phần ghi chép; quyết định mặc định là người.** Giữ hàng, trừ tồn, tính tiền hoàn, ghi COD, cập nhật trạng thái từ hãng — luôn tự động và có bất biến. Xác nhận đơn COD, đặt vận đơn, duyệt đổi trả — mặc định người bấm, bật tự động được (quy tắc 4).
 2. **Mỗi chốt là một hàng đợi, làm được hàng loạt.** Nhân viên mở Tổng quan → bấm ô có số đếm → danh sách đã lọc → chọn nhiều → một thao tác. Không phải mở từng đơn cho việc lặp lại.
 3. **Sửa được tại chốt.** Ở chốt ① sửa được địa chỉ, SĐT, huỷ dòng, đổi size trước khi xác nhận; ở chốt ② huỷ hoặc tạo lại vận đơn; ở chốt ③ hoàn ít hơn (trừ phí), đổi hàng thay hoàn tiền. Không bắt nhân viên huỷ đơn rồi tạo lại.
-4. **Đơn giản logic thay vì thêm cấu hình.** Không giữ nhánh tự động "tắt sẵn"; ba chốt cố định trong Core. Shop cần tự động thì viết plugin nghe sự kiện và gọi đúng lệnh của nhân viên — có lịch sử như người làm.
+4. **Mặc định có người, tự động là điểm mở rộng.** Luồng tự động đã chuẩn (tự xác nhận COD, tự đặt vận đơn, tự duyệt đổi trả) **không gỡ**: giữ trong Core, tắt mặc định, bật bằng cấu hình hoặc plugin khi shop lớn lên. Mọi tự động hoá — của Core hay plugin — chỉ gọi **đúng lệnh của nhân viên** (cùng kiểm tra, khoá, bất biến, lịch sử với nguồn `system`), không có đường tắt ghi thẳng trạng thái. Điểm mở rộng của từng chốt: [ADR-046 §4](../19-adr/ADR-046-staffed-operations-vietnam.md#decision).
 5. **Một đơn — một vận đơn — một kho** là mặc định; tách kiện, nhiều kho là `vani.warehouse` ([ADR-042](../19-adr/ADR-042-inventory-warehouse-plugins.md), [ADR-043](../19-adr/ADR-043-fulfillment-stays-in-core.md)).
 6. **Nhãn và lý do bằng tiếng Việt của nghề:** "Cần xác nhận", "Chờ đóng gói", "Đã đẩy lên hãng", "Bom hàng", "Hoàn về"; mọi thao tác đổi trạng thái ngoài trình tự bắt buộc lý do.
 
@@ -105,13 +105,13 @@ Trạng thái thực thi: tài liệu **Accepted**, code theo đợt V1–V4 ([s
 | G6 | Hiệu năng | TTFB storefront P95 < 300 ms (cache nóng), LCP mobile < 2,5 s |
 | G7 | Pháp lý | Tuân thủ quy định TMĐT, bảo vệ dữ liệu cá nhân, hoá đơn điện tử |
 | G8 | Vận hành dễ thao tác cho SME ([§2.1](#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên)) | Một đơn COD thường đi từ "Cần xác nhận" tới "Đang giao" chỉ trên danh sách đơn + trang đơn, không mở trang khác; việc lặp lại hằng ngày (xác nhận, đẩy lên hãng, bàn giao) có thao tác hàng loạt; nhân viên mới tự xử lý đơn trong ngày đầu |
-| G9 | Có người ở ba chốt ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)) | 100% đơn COD có nhân viên xác nhận trước khi tạo được mã vận đơn; 0 vận đơn đặt ở hãng mà nhân viên chưa bấm; 100% yêu cầu đổi trả có CSKH duyệt; mỗi chốt xử lý 50 đơn trong ≤ 5 thao tác (lọc → chọn tất cả → một nút) |
+| G9 | Có người ở ba chốt ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)) | Với cấu hình mặc định: 100% đơn COD có nhân viên xác nhận trước khi tạo được mã vận đơn; 0 vận đơn đặt ở hãng mà nhân viên chưa bấm; 100% yêu cầu đổi trả có CSKH duyệt. Khi bật tự động: mọi bước tự động có lịch sử nguồn `system` + lý do. Mỗi chốt xử lý 50 đơn trong ≤ 5 thao tác (lọc → chọn tất cả → một nút) |
 
 ## 4. Không nằm trong phạm vi (Non-goals)
 
 - Danh sách hạng mục **không phải mục tiêu của dự án** (không hoãn, không đóng băng): [ADR-033](../19-adr/ADR-033-out-of-scope.md). Không thiết kế, không plugin, không extension point chuẩn bị cho chúng.
 - **Không** làm SaaS cho khách hàng khác (một bản cài đặt = một Owner).
-- **Không** làm nền tảng TMĐT toàn cầu: không luồng khép kín không người (tự xác nhận COD, tự đặt vận đơn, tự duyệt đổi trả), không chấm điểm gian lận/rủi ro tự động, không quy trình kho nhiều bước (wave picking, đóng gói theo trạm). Ba chốt có người là thiết kế, không phải tạm thời ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)).
+- **Không** làm nền tảng TMĐT toàn cầu: mặc định không chạy luồng khép kín không người, Core không xây chấm điểm gian lận/rủi ro hay quy trình kho nhiều bước (wave picking, đóng gói theo trạm). Ba chốt có người là thiết kế mặc định, không phải tạm thời; tự động hoá từng chốt là điểm mở rộng cho plugin ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)).
 - **Không** thay thế ERP (kế toán, giá vốn, mua hàng, sản xuất) hay ODO (vận hành kho, pick–pack, điều phối vận chuyển).
 - **Không** tự xây POS (POS hiện hữu tích hợp qua API; POS riêng là tuỳ chọn về sau).
 - **Không** hỗ trợ bán xuyên biên giới / đa tiền tệ ở giai đoạn đầu (thiết kế schema vẫn chừa chỗ).
@@ -179,7 +179,7 @@ mindmap
 ## 7. Nguyên tắc định hướng
 
 1. **SME trước, vận hành trước** ([§2.1](#21-định-hướng-giai-đoạn-bắt-đầu-từ-sme-mở-rộng-khi-doanh-nghiệp-lớn-lên)): mặc định đơn giản cho cửa hàng nhỏ, Admin theo công việc hằng ngày, điểm mở rộng giữ sẵn cho lúc doanh nghiệp lớn — không làm trước.
-2. **Có người ở mỗi chốt** ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)): hệ thống tự động phần ghi chép (tồn, tiền, trạng thái), con người quyết định xác nhận đơn COD, đẩy đơn lên hãng, duyệt đổi trả.
+2. **Có người ở mỗi chốt** ([§2.2](#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt)): hệ thống tự động phần ghi chép (tồn, tiền, trạng thái), con người quyết định xác nhận đơn COD, đẩy đơn lên hãng, duyệt đổi trả — mặc định; tự động hoá từng chốt bật được bằng cấu hình/plugin, đi qua cùng lệnh của nhân viên.
 3. **Clean-room tuyệt đối**: không copy mã, schema, asset, file ngôn ngữ từ BeikeShop. Chỉ học ý tưởng ở mức khái niệm.
 4. **Một cửa hàng, không phân mảnh**: dữ liệu nghiệp vụ ở cấp cửa hàng; brand là thuộc tính catalog để duyệt/lọc/báo cáo, không phải ranh giới dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
 5. **Authority dữ liệu rõ ràng** cho từng loại dữ liệu, xem ma trận trong [erp-integration](../11-integration/erp-integration.md).

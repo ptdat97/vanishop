@@ -46,7 +46,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [043](ADR-043-fulfillment-stays-in-core.md) | Fulfillment ở lại Core (chốt tồn, COD, đổi trả dựa vào nó); làm gọn cho SME bằng giao diện — menu "Giao hàng" chỉ hiện khi có hãng API hoặc nhiều kho; hãng API, nhiều kho là plugin | Accepted |
 | [044](ADR-044-storefront-api-first.md) | Storefront API-first: API v1 là hợp đồng, Blade là một cách dùng (in-process); hành vi ở use-case; JS của theme chỉ gọi API (API nhận phiên web cùng nguồn); một mô hình mã giảm giá | Accepted |
 | [045](ADR-045-flexible-variant-options.md) | Biến thể linh hoạt: danh mục loại tuỳ chọn dùng chung (swatch/nút/dropdown, lọc được), 1–3 trục mỗi sản phẩm, ảnh theo SKU, snapshot `options` ở giỏ/đơn/payload | Accepted |
-| [046](ADR-046-staffed-operations-vietnam.md) | Vận hành có người ở ba chốt: nhân viên xác nhận đơn COD, nhân viên đóng gói và đẩy đơn lên hãng, CSKH duyệt đổi trả; gỡ nhánh tự động thay vì thêm cấu hình; đơn đã trả trước giữ tự xác nhận | Accepted |
+| [046](ADR-046-staffed-operations-vietnam.md) | Vận hành có người ở ba chốt (mặc định): nhân viên xác nhận đơn COD, nhân viên đóng gói và đẩy đơn lên hãng, CSKH duyệt đổi trả; luồng tự động giữ làm điểm mở rộng (cấu hình/plugin, gọi đúng lệnh của nhân viên); đơn đã trả trước giữ tự xác nhận | Accepted |
 | [033](ADR-033-out-of-scope.md) | **Phạm vi: những gì VaniShop không làm** (thay ADR-015 đã xoá) · bổ sung 2026-11-05: plugin chỉ phát triển nội bộ, chưa làm plugin SDK cho bên thứ ba | Accepted |
 | [030](ADR-030-extension-surface-v2.md) | **Bề mặt mở rộng v2: plugin bổ sung capability qua registry có kiểu (Admin, storefront, dòng giỏ, plugin nền)** | Accepted |
 

@@ -63,7 +63,8 @@ Shop SME lấy hàng theo đợt (sáng/chiều). Vận đơn chỉ có ở hãn
 
 - **Không** có trạng thái "đã đóng gói" riêng: đóng gói nằm giữa `pending_booking` và `created`.
 - Huỷ đơn khi vận đơn còn `pending_booking`/`created` → huỷ vận đơn (hãng API: gọi huỷ ở hãng), nhả hàng giữ.
-- **Hiện trạng (0.4.52) còn khác:** hãng có `autoBooking` được đặt ngay khi tạo vận đơn (`FulfillmentService::createForOrder` dispatch `BookShipmentJob`); chưa có thao tác hàng loạt "Đẩy lên hãng" — đợt V2 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046).
+- **Bật tự động khi lớn lên** (điểm mở rộng, không gỡ): `vanishop.fulfillment.booking` = `manual` (mặc định) · `on_create` (đặt ngay khi tạo vận đơn, hãng phải có `autoBooking`); plugin nghe `ShipmentCreated` hoặc chạy theo lịch (vd. đặt theo đợt 10h/15h) và gọi lệnh "Đẩy lên hãng" — cùng job, cùng idempotent, cùng hàng đợi sự cố như nhân viên bấm.
+- **Hiện trạng (0.4.52) còn khác mặc định:** hãng có `autoBooking` luôn được đặt ngay khi tạo vận đơn (tương đương `on_create`); chưa có cấu hình `booking` và thao tác hàng loạt "Đẩy lên hãng" — đợt V2 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046).
 
 ### 3.1 Luồng kỹ thuật
 
@@ -78,7 +79,7 @@ sequenceDiagram
     F->>F: SourcingStrategy.allocate
     F->>I: chuyển reservation sang location được chọn (nếu khác)
     F->>F: tạo Shipment(status=pending_booking) + OrderTransitions(processing)  [1 transaction]
-    Note over F,J: chờ nhân viên bấm "Đẩy lên hãng" (chốt ②, ADR-046)
+    Note over F,J: booking=manual (mặc định): chờ nhân viên bấm "Đẩy lên hãng"; on_create/plugin: ngay hoặc theo đợt
     F-->>J: dispatch BookShipment (afterCommit)
     J->>C: createShipment (timeout 10s, retry)
     C-->>J: tracking_number
