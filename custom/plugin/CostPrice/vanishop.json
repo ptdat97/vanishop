@@ -1,0 +1,21 @@
+{
+    "id": "vani.cost-price",
+    "name": {
+        "vi": "Giá vốn",
+        "en": "Cost price"
+    },
+    "description": {
+        "vi": "Giá vốn theo SKU (nhập từ file), cột giá vốn trên trang bảng giá, cách tính \"Giá vốn + %\", làm tròn giá đuôi 9.000, cảnh báo bán dưới giá vốn. Tham chiếu cho BulkPriceMode, PriceRounding, vani.pricing.bulk.warnings (EP v3 X4).",
+        "en": "Per-SKU cost price (file import), cost column on the price list workspace, \"Cost + %\" bulk mode, .9000 rounding, below-cost warning. Reference for BulkPriceMode, PriceRounding, vani.pricing.bulk.warnings (EP v3 X4)."
+    },
+    "version": "1.0.0",
+    "kind": "feature",
+    "provider": "Plugin\\CostPrice\\CostPriceServiceProvider",
+    "requires": {
+        "vanishop": "^0.4",
+        "plugins": {}
+    },
+    "conflicts": [],
+    "permissions": ["cost-price.manage"],
+    "author": "VaniShop Team"
+}

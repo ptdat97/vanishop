@@ -23,6 +23,8 @@ Plugin đăng ký bằng `contribute(<Contract>::TAG, Implementation::class)` �
 | `InventoryStrategy` | `vani.inventory.strategies` | Inventory | `standard` (ATS = on_hand − reserved − safety). **Implemented**; strategy chỉ giảm được ATS (Core kẹp `min(strategy, standard)`) | [inventory](../08-inventory/inventory.md) |
 | `StockPageLink` | `vani.inventory.stock_links` | Inventory | — (plugin); `vani.warehouse` thêm liên kết chuyển kho và quản lý kho (0.3.88) | [inventory](../08-inventory/inventory.md) |
 | `PricingStrategy` | `vani.pricing.strategies` | Pricing | `price_list_priority`: **Implemented** (chọn bằng `VANI_PRICING_STRATEGY`) | [catalog-pricing](../03-domains/catalog-pricing.md) |
+| `BulkPriceMode` | `vani.pricing.bulk_modes` | Pricing | Core: giảm %, giảm số tiền, đồng giá. **Implemented** (0.4.62, EP v3 X4): cách tính thêm cho "Áp giá…"; tham chiếu `vani.cost-price` (Giá vốn + %) | [catalog-pricing §6.1a](../03-domains/catalog-pricing.md) |
+| `PriceRounding` | `vani.pricing.roundings` | Pricing | Core: tới 1.000đ. **Implemented** (0.4.62): cách làm tròn thêm; tham chiếu đuôi 9.000 của `vani.cost-price` | [catalog-pricing §6.1a](../03-domains/catalog-pricing.md) |
 | `TaxCalculator` | `vani.tax.calculators` | Checkout | Core: `none`; `vn_vat_inclusive` là plugin hệ thống `vani.tax-vn-vat` (**Implemented**, chọn bằng `core.tax.calculator`/`VANI_TAX_CALCULATOR`). Bắt buộc đúng 1 | [cart-checkout](../03-domains/cart-checkout.md) |
 | `PhoneNumberPolicy` | `vani.phone.policies` | Shared (gắn ở composition root) | Core: `international`; `vn` là plugin hệ thống `vani.phone-vn` (**Implemented 0.3.42**, chọn bằng `vanishop.locale.phone_policy`/`VANI_PHONE_POLICY`). Bắt buộc đúng 1; gọi qua `Shared\Support\Phones` | [commerce-kernel §3.2](../02-architecture/commerce-kernel.md) |
 | `TotalsCalculator` | `vani.totals.calculators` | Checkout | subtotal (100), promotion (200), shipping (500), tax (800), guard (900); plugin dùng 300–399. **Implemented** | [cart-checkout](../03-domains/cart-checkout.md) |
@@ -134,6 +136,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | `vani.fulfillment.before_push` | validate | không | Chặn đẩy vận đơn lên hãng / nhập mã tay; tham số `ShipmentData`. **Implemented** (0.4.60) |
 | `vani.returns.before_approve` | validate | có (transaction duyệt) | Chặn duyệt đổi trả (cả tự duyệt); tham số `ReturnView`. **Implemented** (0.4.60) |
 | `vani.payment.before_refund` | validate | không | Chặn hoàn tiền do nhân viên tạo; tham số `(PaymentView, Money, reason)`. **Implemented** (0.4.60) |
+| `vani.pricing.bulk.warnings` | filter | không | Cảnh báo thêm theo SKU ở trang làm việc bảng giá / xem trước (chỉ thêm, không chặn). **Implemented** (0.4.62, EP v3 X4) |
 | `vani.integration.order_payload` | filter | không | Bổ sung payload canonical gửi đối tác; tham số `(payload, OrderData)`; chỉ được **thêm** khoá. **Implemented** (0.3) |
 | `vani.admin.dashboard.cards` | slot | — | Card trên dashboard Admin; trả `{title, body}`. **Implemented** (HelloWorld dùng) |
 | `vani.admin.dashboard.tasks` | slot | 0.3.101 | Ô "Việc cần làm" đầu trang tổng quan; trả `list<{key, label, count, url, tone?, hint?, order?}>`. **Implemented** (Ordering, Returns, Fulfillment, Payment, Inventory) |

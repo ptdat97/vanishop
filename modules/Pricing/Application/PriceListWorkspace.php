@@ -8,6 +8,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Catalog\Contracts\Data\VariantData;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Facades\Hook;
+use Modules\Pricing\Contracts\BulkPriceMode;
+use Modules\Pricing\Contracts\PriceRounding;
 use Modules\Pricing\Domain\BulkPriceRule;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\Price;
@@ -32,7 +36,37 @@ final class PriceListWorkspace
         private readonly VariantDirectory $variants,
         private readonly PriceListService $lists,
         private readonly MoneyFormatter $money,
+        private readonly Extensions $extensions,
     ) {}
+
+    /**
+     * Cách tính / làm tròn của plugin (EP v3 X4) cho hộp thoại "Áp giá…".
+     *
+     * @return array{modes: list<array{code: string, label: string, hint: string}>, roundings: list<array{code: string, label: string}>}
+     */
+    public function pluginOptions(): array
+    {
+        return [
+            'modes' => array_values(array_map(fn (BulkPriceMode $mode): array => ['code' => $mode->code(), 'label' => $mode->label(), 'hint' => $mode->hint()], $this->modes())),
+            'roundings' => array_values(array_map(fn (PriceRounding $rounding): array => ['code' => $rounding->code(), 'label' => $rounding->label()], $this->roundings())),
+        ];
+    }
+
+    /**
+     * @return array<string, BulkPriceMode>
+     */
+    public function modes(): array
+    {
+        return array_filter($this->extensions->implementations(BulkPriceMode::TAG, BulkPriceMode::class), fn (BulkPriceMode $mode): bool => ! in_array($mode->code(), BulkPriceRule::MODES, true));
+    }
+
+    /**
+     * @return array<string, PriceRounding>
+     */
+    public function roundings(): array
+    {
+        return $this->extensions->implementations(PriceRounding::TAG, PriceRounding::class);
+    }
 
     /**
      * Trạng thái hiển thị: đang chạy / sắp chạy / đã hết / tắt.
@@ -93,7 +127,7 @@ final class PriceListWorkspace
         $base = $this->listAmounts(array_keys($prices), $list);
         $warnings = [];
         foreach ($prices as $variantId => $amount) {
-            foreach ($this->rowWarnings($list, $base[$variantId] ?? null, $amount) as $warning) {
+            foreach ($this->rowWarnings($list, $base[$variantId] ?? null, $amount, (int) $variantId) as $warning) {
                 $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
             }
         }
@@ -185,9 +219,9 @@ final class PriceListWorkspace
      * @param  list<int>  $variantIds
      * @return array{rows: list<array<string, mixed>>, summary: array{total: int, changed: int, skipped: int, warnings: array<string, int>}}
      */
-    public function preview(PriceList $list, array $variantIds, BulkPriceRule $rule): array
+    public function preview(PriceList $list, array $variantIds, BulkPriceRule $rule, ?BulkPriceMode $mode = null, ?PriceRounding $rounding = null, float $value = 0): array
     {
-        $computed = $this->compute($list, $variantIds, $rule);
+        $computed = $this->compute($list, $variantIds, $rule, $mode, $rounding, $value);
         $warnings = [];
         foreach ($computed as $row) {
             foreach ($row['warnings'] as $warning) {
@@ -219,9 +253,9 @@ final class PriceListWorkspace
      * @param  list<int>  $variantIds
      * @return array{changed: int, skipped: int, warnings: array<string, int>}
      */
-    public function apply(PriceList $list, array $variantIds, BulkPriceRule $rule): array
+    public function apply(PriceList $list, array $variantIds, BulkPriceRule $rule, ?BulkPriceMode $mode = null, ?PriceRounding $rounding = null, float $value = 0): array
     {
-        $computed = $this->compute($list, $variantIds, $rule);
+        $computed = $this->compute($list, $variantIds, $rule, $mode, $rounding, $value);
         $compareAt = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', array_keys($computed))->pluck('compare_at_amount', 'variant_id')->all();
         $rows = [];
         $warnings = [];
@@ -270,7 +304,7 @@ final class PriceListWorkspace
                 'variant_label' => $variant === null ? '' : VariantOptionsText::label($variant->options), 'status' => (string) $variant?->status,
                 'list_amount' => $base[$id] ?? null, 'amount' => $amount, 'compare_at_amount' => $price?->compare_at_amount === null ? null : (int) $price->compare_at_amount,
                 'percent' => $list->type === PriceListType::Base ? null : BulkPriceRule::discountPercent($base[$id] ?? null, $amount),
-                'warnings' => $this->rowWarnings($list, $base[$id] ?? null, $amount),
+                'warnings' => $this->rowWarnings($list, $base[$id] ?? null, $amount, $id),
             ];
         }
 
@@ -281,19 +315,35 @@ final class PriceListWorkspace
      * @param  list<int>  $variantIds
      * @return array<int, array{list_amount: int|null, current_amount: int|null, new_amount: int|null, percent: int|null, warnings: list<string>}>
      */
-    private function compute(PriceList $list, array $variantIds, BulkPriceRule $rule): array
+    /**
+     * Tính giá mới: cách tính của Core (`BulkPriceRule`) hoặc của plugin (`BulkPriceMode`, EP v3 X4); làm tròn của plugin
+     * (`PriceRounding`) thay cho "tới 1.000đ" của Core khi được chọn.
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, array{list_amount: int|null, current_amount: int|null, new_amount: int|null, percent: int|null, warnings: list<string>}>
+     */
+    private function compute(PriceList $list, array $variantIds, BulkPriceRule $rule, ?BulkPriceMode $mode = null, ?PriceRounding $rounding = null, float $value = 0): array
     {
         $variantIds = array_values(array_unique($variantIds));
         $base = $this->listAmounts($variantIds, $list, forceBase: true);
         $current = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)->whereIn('variant_id', $variantIds)->pluck('amount', 'variant_id')->all();
+        $fromPlugin = $mode === null ? [] : (array) $this->extensions->call($mode, fn (): array => $mode->compute($variantIds, $value, $base), [], 'pricing.bulk_mode');
         $rows = [];
         foreach ($variantIds as $id) {
             $listAmount = $base[$id] ?? null;
-            $new = $rule->apply($listAmount);
+            if ($mode !== null) {
+                $raw = $fromPlugin[$id] ?? null;
+                $new = is_int($raw) ? max(0, $rounding === null && $rule->roundTo > 0 ? (int) (round($raw / $rule->roundTo) * $rule->roundTo) : $raw) : null;
+            } else {
+                $new = $rounding === null ? $rule->apply($listAmount) : (new BulkPriceRule($rule->mode, $rule->value, 0))->apply($listAmount);
+            }
+            if ($new !== null && $rounding !== null) {
+                $new = max(0, $rounding->round($new));
+            }
             $rows[$id] = [
                 'list_amount' => $listAmount, 'current_amount' => isset($current[$id]) ? (int) $current[$id] : null, 'new_amount' => $new,
                 'percent' => BulkPriceRule::discountPercent($listAmount, $new),
-                'warnings' => $new === null ? [BulkPriceRule::WARN_NO_BASE] : $this->rowWarnings($list, $listAmount, $new),
+                'warnings' => $new === null ? [BulkPriceRule::WARN_NO_BASE] : $this->rowWarnings($list, $listAmount, $new, $id),
             ];
         }
 
@@ -303,13 +353,20 @@ final class PriceListWorkspace
     /**
      * @return list<string>
      */
-    private function rowWarnings(PriceList $list, ?int $listAmount, ?int $amount): array
+    private function rowWarnings(PriceList $list, ?int $listAmount, ?int $amount, int $variantId = 0): array
     {
         if ($amount === null || $list->type === PriceListType::Base) {
-            return $amount === 0 ? [BulkPriceRule::WARN_ZERO] : [];
+            $core = $amount === 0 ? [BulkPriceRule::WARN_ZERO] : [];
+        } else {
+            $core = BulkPriceRule::warnings($listAmount, $amount, $this->capBasisPoints());
         }
+        if ($amount === null || $variantId === 0) {
+            return $core;
+        }
+        // Cảnh báo của plugin (EP v3 X4, vd. "Dưới giá vốn"): chỉ được thêm — cảnh báo của Core luôn giữ.
+        $extra = Hook::filter('vani.pricing.bulk.warnings', [], $variantId, $listAmount, $amount, $list->code);
 
-        return BulkPriceRule::warnings($listAmount, $amount, $this->capBasisPoints());
+        return array_values(array_unique([...$core, ...array_filter(is_array($extra) ? $extra : [], fn ($warning): bool => is_string($warning) && $warning !== '')]));
     }
 
     /**

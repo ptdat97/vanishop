@@ -137,7 +137,7 @@ R26: mỗi đợt làm **cùng** plugin tham chiếu (plugin thật trong repo, 
 | **X2** ✅ 0.4.60 | `OrderActions`, guard ở bốn lệnh (`vani.order.before_confirm`, `vani.fulfillment.before_push`, `vani.returns.before_approve`, `vani.payment.before_refund`), `OrderRiskSignal` + `OrderRisks`, `ConfirmationChannel` | `vani.cod-risk-guard` 1.0.0 (mới), kênh mẫu của `vani.hello-world` (Zalo OA thật chờ mở lại kết nối ngoài) | P1 |
 | **X5** | `Payments` mở thu COD/xác nhận; `RefundPayout`; `Reconciliation` chung | `vani.cod-reconciliation`, `vani.bank-statement` | P1 |
 | **X3** ✅ 0.4.61 | `CarrierAssignment`, `PackingSlipTemplate`, `ReturnPickup` + `ReturnPickups` | `vani.carrier-routing` 1.0.0 (mới), mẫu A6 của `vani.hello-world`; `ReturnPickup` mới có hãng giả trong test — GHN thật chờ mở lại kết nối ngoài | P2 |
-| **X4** | `BulkPriceMode`, `PriceRounding`, `vani.pricing.bulk.warnings`; giá theo số lượng (ADR) | `vani.cost-price` | P2 |
+| **X4** ✅ 0.4.62 | `BulkPriceMode`, `PriceRounding`, `vani.pricing.bulk.warnings`. **Chưa làm:** giá theo số lượng (`min_qty`) — đổi giá dòng giỏ/snapshot đơn, cần ADR + Owner duyệt | `vani.cost-price` 1.0.0 (mới) | P2 |
 | **X6** | `CustomerSegments` (ghi), `CustomerNotes` | `vani.loyalty`, `vani.cod-risk-guard` | P2 |
 | **X7** | `BackorderPolicy`, `IncomingStock` — sau ADR | `vani.preorder` | P3 |
 

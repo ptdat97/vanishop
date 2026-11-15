@@ -142,6 +142,8 @@ final class PriceListController
             // Cột/lọc/thao tác/công cụ của plugin theo SKU (EP v3 X1) — vd. cột giá vốn/biên lợi nhuận.
             'extensions' => $screen->listProps('price_list_item', array_column($page->items(), 'variant_id'), $extensionFilters),
             'skuPickerFilters' => $screen->filters('variant'),
+            // Cách tính / làm tròn của plugin cho "Áp giá…" (EP v3 X4).
+            'bulkOptions' => $workspace->pluginOptions(),
             // Từ danh sách sản phẩm "Đưa vào bảng giá…": sản phẩm đã chọn, mở sẵn hộp thoại cách tính giá.
             'addStyleIds' => $priceList->type === PriceListType::Base ? [] : $this->styleIdsFromQuery((string) $request->query('add', '')),
             'canManage' => Gate::allows('pricing.manage'),
@@ -180,13 +182,13 @@ final class PriceListController
     {
         $this->ensureEditable($priceList);
 
-        return response()->json(['data' => $workspace->preview($priceList, $request->variantIds($priceList, $workspace), $request->rule())]);
+        return response()->json(['data' => $workspace->preview($priceList, $request->variantIds($priceList, $workspace), $request->rule(), $request->pluginMode(), $request->pluginRounding(), $request->value())]);
     }
 
     public function applyBulk(PriceList $priceList, BulkPricesRequest $request, PriceListWorkspace $workspace): RedirectResponse
     {
         $this->ensureEditable($priceList);
-        $result = $workspace->apply($priceList, $request->variantIds($priceList, $workspace), $request->rule());
+        $result = $workspace->apply($priceList, $request->variantIds($priceList, $workspace), $request->rule(), $request->pluginMode(), $request->pluginRounding(), $request->value());
         $message = __('pricing::messages.bulk_applied', ['count' => $result['changed']]);
         if ($result['skipped'] > 0) {
             $message .= ' '.__('pricing::messages.bulk_skipped', ['count' => $result['skipped']]);

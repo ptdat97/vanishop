@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Application\PriceListWorkspace;
+use Modules\Pricing\Contracts\BulkPriceMode;
+use Modules\Pricing\Contracts\PriceRounding;
 use Modules\Pricing\Domain\BulkPriceRule;
 use Modules\Pricing\Persistence\Models\PriceList;
 
@@ -36,9 +38,11 @@ final class BulkPricesRequest extends FormRequest
             'style_ids' => ['required_if:scope,styles', 'array', 'max:200'],
             'style_ids.*' => ['integer', 'min:1'],
             'q' => ['nullable', 'string', 'max:100'],
-            'mode' => ['required', Rule::in(BulkPriceRule::MODES)],
+            // Cách tính của Core + của plugin (BulkPriceMode, EP v3 X4); làm tròn của plugin (PriceRounding) thay "tới 1.000đ".
+            'mode' => ['required', Rule::in([...BulkPriceRule::MODES, ...array_keys($this->workspace()->modes())])],
             'value' => ['required', 'numeric', 'min:0', Rule::when($this->input('mode') === 'percent', ['max:100'], ['max:'.PriceListService::MAX_AMOUNT])],
             'round_to' => ['required', 'integer', Rule::in(BulkPriceRule::ROUNDINGS)],
+            'rounding' => ['nullable', 'string', Rule::in(array_keys($this->workspace()->roundings()))],
         ];
     }
 
@@ -54,8 +58,34 @@ final class BulkPricesRequest extends FormRequest
     {
         $value = (float) $this->validated('value');
         $mode = (string) $this->validated('mode');
+        if (! in_array($mode, BulkPriceRule::MODES, true)) {
+            // Cách tính của plugin: Core chỉ giữ phần làm tròn của quy tắc.
+            return new BulkPriceRule('fixed', 0, (int) $this->validated('round_to'));
+        }
 
         return new BulkPriceRule($mode, $mode === 'percent' ? (int) round($value * 100) : (int) round($value), (int) $this->validated('round_to'));
+    }
+
+    public function pluginMode(): ?BulkPriceMode
+    {
+        return $this->workspace()->modes()[(string) $this->validated('mode')] ?? null;
+    }
+
+    public function pluginRounding(): ?PriceRounding
+    {
+        $code = $this->validated('rounding');
+
+        return is_string($code) ? ($this->workspace()->roundings()[$code] ?? null) : null;
+    }
+
+    public function value(): float
+    {
+        return (float) $this->validated('value');
+    }
+
+    private function workspace(): PriceListWorkspace
+    {
+        return app(PriceListWorkspace::class);
     }
 
     /**

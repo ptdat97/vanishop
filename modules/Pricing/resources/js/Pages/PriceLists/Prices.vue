@@ -7,6 +7,7 @@ import FileInput from '@admin/Components/FileInput.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Select from '@admin/Components/Select.vue';
 import SkuPicker from '@admin/Components/SkuPicker.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
@@ -74,6 +75,8 @@ const props = defineProps<{
     extensions: ExtensionList;
     /** Bộ lọc phụ của plugin cho SkuPicker (`adminFilter('variant', …)`). */
     skuPickerFilters: ExtensionFilter[];
+    /** Cách tính / làm tròn của plugin cho "Áp giá…" (EP v3 X4). */
+    bulkOptions: { modes: Array<{ code: string; label: string; hint: string }>; roundings: Array<{ code: string; label: string }> };
 }>();
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const editable = computed(() => props.canManage && !props.readOnly);
@@ -118,12 +121,21 @@ async function removeSelected(ids: number[], clear: () => void): Promise<void> {
 const bulkOpen = ref(false);
 const bulkScope = ref<Scope | null>(null);
 const bulkTitle = ref('');
-const rule = reactive({ mode: 'percent' as 'percent' | 'amount' | 'fixed', value: null as number | null, round: true });
+const rule = reactive({ mode: 'percent' as string, value: null as number | null, round: true, rounding: '' });
+const modeOptions = computed(() => [
+    ...Object.entries(props.labels.bulk.modes).map(([code, label]) => ({ code, label, hint: ({ percent: '% so với giá niêm yết', amount: 'đ bớt khỏi giá niêm yết', fixed: 'đ cho mọi SKU' } as Record<string, string>)[code] ?? '' })),
+    ...props.bulkOptions.modes,
+]);
+const currentMode = computed(() => modeOptions.value.find((option) => option.code === rule.mode) ?? modeOptions.value[0]);
 const preview = ref<{ rows: PreviewRow[]; summary: { total: number; changed: number; skipped: number; warnings: Record<string, number> } } | null>(null);
 const previewing = ref(false);
 const applying = ref(false);
 const ruleError = ref('');
-const payload = () => ({ ...(bulkScope.value as Scope), mode: rule.mode, value: rule.value ?? 0, round_to: rule.round && rule.mode !== 'fixed' ? 1000 : 0 });
+const payload = () => ({
+    ...(bulkScope.value as Scope), mode: rule.mode, value: rule.value ?? 0,
+    round_to: rule.round && !rule.rounding && rule.mode !== 'fixed' ? 1000 : 0,
+    ...(rule.rounding ? { rounding: rule.rounding } : {}),
+});
 
 function openBulk(scope: Scope, title: string): void {
     bulkScope.value = scope;
@@ -316,14 +328,15 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
     <Dialog v-model:open="bulkOpen" :title="bulkTitle" size="large">
         <div class="space-y-4">
             <fieldset class="flex flex-wrap gap-2" aria-label="Cách tính">
-                <label v-for="(label, mode) in labels.bulk.modes" :key="mode" class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm" :class="rule.mode === mode ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
-                    <input v-model="rule.mode" type="radio" :value="mode" /> {{ label }}
+                <label v-for="option in modeOptions" :key="option.code" class="flex items-center gap-2 rounded-md border px-3 py-2 text-sm" :class="rule.mode === option.code ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
+                    <input v-model="rule.mode" type="radio" :value="option.code" :data-mode="option.code" /> {{ option.label }}
                 </label>
             </fieldset>
             <div class="flex flex-wrap items-center gap-3">
-                <input v-model.number="rule.value" :class="inputClass" class="max-w-44" type="number" min="0" :step="rule.mode === 'percent' ? 1 : 1000" :aria-label="labels.bulk.modes[rule.mode]" :placeholder="rule.mode === 'percent' ? 'vd. 30' : 'vd. 199000'" />
-                <span class="text-sm text-slate-500">{{ rule.mode === 'percent' ? '% so với giá niêm yết' : rule.mode === 'amount' ? 'đ bớt khỏi giá niêm yết' : 'đ cho mọi SKU' }}</span>
-                <label v-if="rule.mode !== 'fixed'" class="flex items-center gap-2 text-sm"><input v-model="rule.round" type="checkbox" /> Làm tròn tới 1.000đ</label>
+                <input v-model.number="rule.value" :class="inputClass" class="max-w-44" type="number" min="0" :step="['amount', 'fixed'].includes(rule.mode) ? 1000 : 1" :aria-label="currentMode.label" :placeholder="['amount', 'fixed'].includes(rule.mode) ? 'vd. 199000' : 'vd. 30'" />
+                <span class="text-sm text-slate-500">{{ currentMode.hint }}</span>
+                <label v-if="rule.mode !== 'fixed' && !rule.rounding" class="flex items-center gap-2 text-sm"><input v-model="rule.round" type="checkbox" /> Làm tròn tới 1.000đ</label>
+                <Select v-if="bulkOptions.roundings.length" v-model="rule.rounding" :options="bulkOptions.roundings.map((option) => ({ value: option.code, label: option.label }))" empty-label="Làm tròn chuẩn" empty-value="" class="w-56" aria-label="Cách làm tròn" />
             </div>
             <p v-if="ruleError" class="text-sm text-red-600">{{ ruleError }}</p>
             <button type="button" :class="secondaryButton" :disabled="previewing" data-preview @click="loadPreview">Xem trước</button>

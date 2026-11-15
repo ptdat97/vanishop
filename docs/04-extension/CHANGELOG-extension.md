@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.62 — 2026-11-16
+
+EP v3 đợt X4 — giá theo cách làm của shop ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+
+### Thêm
+- Contract **`Pricing\Contracts\BulkPriceMode`** (tag `vani.pricing.bulk_modes`, `compute(variantIds, value, listAmounts): array<int, int|null>`): cách tính thêm trong hộp thoại "Áp giá…" của bảng giá; Core lo làm tròn, xem trước, cảnh báo, ghi `setPrices`. Mã trùng cách tính của Core bị bỏ.
+- Contract **`Pricing\Contracts\PriceRounding`** (tag `vani.pricing.roundings`, `round(int): int`): cách làm tròn thay "tới 1.000đ" (`rounding` trong request áp giá hàng loạt).
+- Hook filter **`vani.pricing.bulk.warnings`** (`warnings, variantId, listAmount, amount, priceListCode`): cảnh báo thêm theo SKU trên trang làm việc, tóm tắt và xem trước — chỉ được thêm, không chặn.
+- Prop `bulkOptions` (cách tính / làm tròn của plugin) cho trang làm việc bảng giá.
+- Plugin tham chiếu **`vani.cost-price` 1.0.0** (mới): giá vốn theo SKU (nhập file qua `adminTool`, cột qua `adminColumn` — X1), "Giá vốn + %", "Giá đẹp đuôi 9.000", cảnh báo "Dưới giá vốn".
+
+### Chưa làm
+- Giá theo số lượng (`prices.min_qty`): đổi giá dòng giỏ và snapshot đơn — cần ADR riêng trước khi mở.
+
 ## 0.4.61 — 2026-11-15
 
 EP v3 đợt X3 — giao hàng theo tuyến, mẫu phiếu giao, hãng lấy hàng trả ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
