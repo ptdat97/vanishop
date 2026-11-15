@@ -47,7 +47,7 @@ it('thẻ hàng đợi: số đếm và lọc theo giai đoạn vận hành; c�
         ->where('stageCounts.awaiting_payment', 1)
         ->where('stageCounts.shipping', 1)
         ->where('stageCounts.issue', 1)
-        ->where('labels.stage.to_ship', 'Chờ giao hãng')
+        ->where('labels.stage.to_ship', 'Chờ đóng gói')
         // Nhãn cách thanh toán do Payment cung cấp (cổng đang cài), Ordering không ghi cứng mã cổng.
         ->where('labels.payment_method.cod', fn (string $label): bool => $label !== 'cod' && $label !== '')
         ->where('orders.0.items.0.quantity', 2)
@@ -65,7 +65,7 @@ it('thẻ hàng đợi: số đếm và lọc theo giai đoạn vận hành; c�
         ->where('stageCounts.awaiting_payment', 1));
     $this->get("{$this->url}?stage=awaiting_payment")->assertInertia(fn (Assert $page) => $page->has('orders', 1)->where('orders.0.id', $transfer->id));
 
-    // Xác nhận hàng loạt: đơn không còn chờ xác nhận (đang giao) bị bỏ qua. Xác nhận → Fulfillment tự tạo vận đơn → Chờ giao hãng.
+    // Xác nhận hàng loạt: đơn không còn chờ xác nhận (đang giao) bị bỏ qua. Xác nhận → Fulfillment tự tạo vận đơn → Chờ đóng gói.
     $this->post("{$this->url}/bulk-confirm", ['ids' => [$a->id, $b->id, $shipping->id]])->assertRedirect()
         ->assertSessionHas('success', 'Đã xác nhận 2 đơn; bỏ qua 1 đơn không còn chờ xác nhận.');
     $this->get("{$this->url}?stage=to_ship")->assertInertia(fn (Assert $page) => $page->has('orders', 2)

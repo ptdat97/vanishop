@@ -37,6 +37,14 @@ final class CarrierRegistry
     }
 
     /**
+     * Có hãng kết nối API tự đặt vận đơn (`autoBooking`) — bật thao tác "Đẩy lên hãng", menu "Giao hàng".
+     */
+    public function hasAutoBooking(): bool
+    {
+        return array_filter($this->carriers(), fn (ShippingCarrier $carrier): bool => $carrier->capabilities()->autoBooking) !== [];
+    }
+
+    /**
      * @return array<string, ShippingCarrier>
      */
     public function carriers(): array

@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.4.53',
+    'version' => '0.4.54',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -304,6 +304,9 @@ return [
     'fulfillment' => [
         // Tự tạo vận đơn khi đơn được xác nhận.
         'auto_create' => (bool) env('VANI_FULFILLMENT_AUTO_CREATE', true),
+        // Đặt vận đơn ở hãng có API (ADR-046 chốt ②): `manual` — khi nhân viên bấm "Đẩy lên hãng" sau khi đóng gói (mặc định);
+        // `on_create` — đặt ngay khi tạo vận đơn. Plugin tự động hoá gọi Fulfillment\Contracts\ShipmentBooking.
+        'booking' => env('VANI_FULFILLMENT_BOOKING', 'manual'),
         // Carrier mặc định cho vận đơn mới (plugin hãng: ghn, ghtk…).
         'default_carrier' => env('VANI_FULFILLMENT_CARRIER', 'manual'),
         'sourcing' => env('VANI_FULFILLMENT_SOURCING', 'reserved_locations'),

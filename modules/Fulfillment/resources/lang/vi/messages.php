@@ -4,6 +4,7 @@ return [
     'tracking_imported' => 'Đã ghi :booked mã vận đơn; :unchanged dòng đã có mã; :errors dòng lỗi.',
     'bulk_created' => 'Đã tạo vận đơn cho :count đơn; bỏ qua :skipped đơn chưa xác nhận hoặc đã có vận đơn.',
     'bulk_handed_over' => 'Đã ghi nhận bàn giao :count vận đơn cho hãng.',
+    'pushed' => 'Đã đẩy :count vận đơn lên hãng — mã vận đơn về sau ít phút; lỗi hiện ở "Sự cố giao hàng". Bỏ qua :skipped vận đơn đã có mã hoặc của hãng nhập tay.',
     'manual' => 'Vận đơn thủ công',
     'transition_invalid' => 'Không thể chuyển vận đơn từ :from sang :to.',
     'order_not_ready' => 'Đơn đang ở trạng thái :status, chưa tạo vận đơn được.',

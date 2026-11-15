@@ -109,7 +109,8 @@ final class OrderShipmentPanel
                 ...($manual ? [['key' => "{$shipment->id}-book", 'label' => $prefix.'Nhập mã vận đơn', 'url' => "{$url}/book", 'primary' => true, 'tone' => 'primary', 'fields' => [
                     ['key' => 'tracking_number', 'label' => 'Mã vận đơn', 'required' => true],
                     ['key' => 'service_code', 'label' => 'Hãng vận chuyển', 'placeholder' => 'vd. GHN, J&T, Viettel Post'],
-                ]]] : []),
+                ]]] : [['key' => "{$shipment->id}-push", 'label' => $prefix.($shipment->status === ShipmentStatus::BookingFailed ? 'Đẩy lại lên hãng' : 'Đẩy lên hãng'), 'url' => "{$url}/push", 'primary' => true, 'tone' => 'primary',
+                    'confirm' => 'Đã đóng gói xong? Đẩy vận đơn lên hãng để hãng đến lấy hàng.']]),
                 $cancel,
             ],
             $shipment->status === ShipmentStatus::Created => [$status(ShipmentStatus::PickedUp, 'Đã bàn giao cho hãng', true, 'primary'), $cancel],

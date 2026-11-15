@@ -4,6 +4,7 @@ return [
     'tracking_imported' => 'Recorded :booked tracking numbers; :unchanged already recorded; :errors rows failed.',
     'bulk_created' => 'Created shipments for :count orders; skipped :skipped not confirmed or already shipped.',
     'bulk_handed_over' => 'Marked :count shipments as handed to the carrier.',
+    'pushed' => 'Sent :count shipments to the carrier — tracking numbers arrive shortly; failures show under "Delivery issues". Skipped :skipped already booked or manual-carrier shipments.',
     'manual' => 'Manual shipment',
     'transition_invalid' => 'The shipment cannot move from :from to :to.',
     'order_not_ready' => 'The order is :status; shipments cannot be created yet.',

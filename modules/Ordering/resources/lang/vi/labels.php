@@ -12,7 +12,7 @@ return [
     'event_type' => ['status_overridden' => 'Đổi trạng thái ngoài trình tự', 'placed' => 'Đặt hàng', 'status_changed' => 'Đổi trạng thái', 'payment_status_changed' => 'Thanh toán', 'address_changed' => 'Đổi địa chỉ', 'note' => 'Ghi chú', 'delivery_issue_changed' => 'Sự cố giao hàng'],
     // Giai đoạn vận hành (hàng đợi việc ở danh sách đơn — OrderStage).
     'delivery_issue' => ['booking_failed' => 'Đặt vận đơn lỗi', 'failed_attempt' => 'Giao không thành công', 'returning' => 'Đang hoàn về', 'returned' => 'Đã hoàn về'],
-    'stage' => ['to_confirm' => 'Cần xác nhận', 'awaiting_payment' => 'Chờ thanh toán', 'to_ship' => 'Chờ giao hãng', 'shipping' => 'Đang giao', 'issue' => 'Sự cố giao hàng', 'returns' => 'Đổi/trả', 'delivered' => 'Đã giao', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã huỷ'],
+    'stage' => ['to_confirm' => 'Cần xác nhận', 'awaiting_payment' => 'Chờ thanh toán', 'to_ship' => 'Chờ đóng gói', 'shipping' => 'Đang giao', 'issue' => 'Sự cố giao hàng', 'returns' => 'Đổi/trả', 'delivered' => 'Đã giao', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã huỷ'],
     'source' => ['web' => 'Website', 'app' => 'App', 'zalo' => 'Zalo', 'admin' => 'Admin', 'pos' => 'Cửa hàng', 'exchange' => 'Đổi hàng'],
     // Trạng thái hiển thị cho khách (tính từ 4 chiều của đơn — CustomerStatus).
     'customer_status' => ['cancelled' => 'Đã huỷ', 'returning' => 'Đang đổi/trả', 'returned' => 'Đã trả hàng', 'completed' => 'Hoàn tất', 'delivered' => 'Đã giao', 'shipping' => 'Đang giao', 'delivery_failed' => 'Giao không thành công', 'awaiting_payment' => 'Chờ thanh toán', 'awaiting_confirmation' => 'Chờ xác nhận', 'preparing' => 'Đang chuẩn bị hàng'],

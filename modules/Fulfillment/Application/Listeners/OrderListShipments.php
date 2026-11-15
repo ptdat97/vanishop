@@ -11,7 +11,8 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 
 /**
  * Danh sách đơn Admin (0.3.96): cột "Vận đơn" (slot vani.admin.order.list_columns) và thao tác hàng loạt "Tạo vận đơn",
- * "Đã bàn giao cho hãng" (slot vani.admin.order.bulk_actions). Nhân viên nhập mã vận đơn lên hãng rồi ghi lại ở đây.
+ * "Đẩy lên hãng" (khi có hãng kết nối API — ADR-046 chốt ②), "Đã bàn giao cho hãng" (slot vani.admin.order.bulk_actions).
+ * Hãng nhập tay: nhân viên tạo đơn ở hãng rồi nhập mã vận đơn ở đây.
  */
 final class OrderListShipments
 {
@@ -48,6 +49,7 @@ final class OrderListShipments
 
         return [
             ['key' => 'create_shipments', 'label' => 'Tạo vận đơn', 'url' => route('admin.fulfillment.shipments.bulk-create'), 'confirm' => true],
+            ...($this->carriers->hasAutoBooking() ? [['key' => 'push', 'label' => 'Đẩy lên hãng', 'url' => route('admin.fulfillment.shipments.bulk-push'), 'confirm' => true]] : []),
             ['key' => 'hand_over', 'label' => 'Đã bàn giao cho hãng', 'url' => route('admin.fulfillment.shipments.bulk-hand-over'), 'confirm' => true],
             ['key' => 'export', 'label' => 'Xuất file cho hãng', 'url' => route('admin.fulfillment.shipments.export'), 'confirm' => false, 'method' => 'get'],
         ];

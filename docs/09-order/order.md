@@ -26,7 +26,7 @@ flowchart LR
 
 - Đơn **đã trả tiền trước** (cổng online báo `paid`/`authorized`, hoặc nhân viên xác nhận đã nhận chuyển khoản — chính là chốt ① của đơn chuyển khoản) tự sang `confirmed`; đơn chuyển khoản/online chưa trả nằm ở "Chờ thanh toán", không vào "Cần xác nhận".
 - **Mặc định có người, tự động là điểm mở rộng** ([ADR-046 §4](../19-adr/ADR-046-staffed-operations-vietnam.md#decision)): ① `vani.cod` `auto_confirm_mode` (`off` mặc định · `trusted` · `all`) hoặc plugin nghe `OrderPlaced`; ② `vanishop.fulfillment.booking` (`manual` mặc định · `on_create`) hoặc plugin nghe `ShipmentCreated`/đặt theo đợt; ③ `ReturnPolicy` của plugin trả `autoApprove`. Tự động hoá chỉ gọi đúng lệnh của nhân viên với nguồn `system` (có `order_events`/`return_events` như người làm).
-- **Hiện trạng (0.4.53):** chốt ① đúng mặc định (`vani.cod` 1.2.0 tắt tự xác nhận; danh sách "Cần xác nhận" có nhãn rủi ro theo SĐT). Còn khác ở chốt ②: vận đơn hãng API tự đặt khi tạo (chưa có cấu hình `booking`, chưa có "Đẩy lên hãng" hàng loạt) — đợt V2 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046).
+- **Hiện trạng (0.4.53):** chốt ① đúng mặc định (`vani.cod` 1.2.0 tắt tự xác nhận; danh sách "Cần xác nhận" có nhãn rủi ro theo SĐT). Chốt ② đúng mặc định từ 0.4.54 (`vanishop.fulfillment.booking = manual`, "Đẩy lên hãng" hàng loạt). Còn: V3 (ghi rõ điểm mở rộng tự duyệt đổi trả), V4 (test ba chốt) — [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046).
 
 ## 2. Order là bản ghi nghiệp vụ bất biến
 

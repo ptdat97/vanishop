@@ -13,6 +13,7 @@ use Modules\Fulfillment\Contracts\Data\AllocationProposal;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
 use Modules\Fulfillment\Contracts\Data\SourcingRequest;
 use Modules\Fulfillment\Contracts\FulfillmentRejected;
+use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Domain\FulfillmentProgress;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Events\ShipmentCreated;
@@ -36,7 +37,7 @@ use Throwable;
  * (unique chống trùng) → không cho lùi trạng thái → tính lại fulfillment_status của đơn → commit giữ hàng khi mọi
  * shipment đã rời kho → nhập lại kho khi hàng hoàn về.
  */
-final class FulfillmentService
+final class FulfillmentService implements ShipmentBooking
 {
     public function __construct(
         private readonly CarrierRegistry $registry,
@@ -102,13 +103,32 @@ final class FulfillmentService
             return $ids;
         });
 
-        if ($carrier->capabilities()->autoBooking) {
-            foreach ($ids as $id) {
-                BookShipmentJob::dispatch($id)->afterCommit();
-            }
+        if ($carrier->capabilities()->autoBooking && config('vanishop.fulfillment.booking', 'manual') === 'on_create') {
+            $this->pushToCarrier($ids);
         }
 
         return $ids;
+    }
+
+    /**
+     * "Đẩy lên hãng" (ADR-046 chốt ②) — xem ShipmentBooking. Vận đơn đặt lỗi được đặt lại từ đầu (đủ số lần thử).
+     *
+     * @param  list<int>  $shipmentIds
+     */
+    public function pushToCarrier(array $shipmentIds): int
+    {
+        $queued = 0;
+        $shipments = Shipment::query()->whereIn('id', $shipmentIds)->whereIn('status', [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed])->get();
+        foreach ($shipments as $shipment) {
+            if (! ($this->registry->carrier($shipment->carrier_code)?->capabilities()->autoBooking ?? false)) {
+                continue;
+            }
+            $shipment->update(['booking_attempts' => 0]);
+            BookShipmentJob::dispatch($shipment->id)->afterCommit();
+            $queued++;
+        }
+
+        return $queued;
     }
 
     /**
@@ -173,8 +193,12 @@ final class FulfillmentService
         try {
             $this->book($shipmentId, null);
         } catch (Throwable $exception) {
-            Log::warning('Đặt vận đơn với hãng lỗi.', ['shipment' => $shipment->public_id, 'carrier' => $shipment->carrier_code, 'exception' => $exception]);
             $shipment->refresh();
+            if (! in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true)) {
+                // Lần đẩy khác (bấm trùng, plugin) vừa đặt xong hoặc vận đơn vừa bị huỷ: không còn gì để làm.
+                return;
+            }
+            Log::warning('Đặt vận đơn với hãng lỗi.', ['shipment' => $shipment->public_id, 'carrier' => $shipment->carrier_code, 'exception' => $exception]);
             $shipment->update(['last_error' => mb_substr($exception->getMessage(), 0, 255)]);
             if ($shipment->booking_attempts >= $maxAttempts && $shipment->status === ShipmentStatus::PendingBooking) {
                 DB::transaction(fn () => $this->apply(Shipment::query()->whereKey($shipmentId)->lockForUpdate()->firstOrFail(), ShipmentStatus::BookingFailed, "booking_failed:{$shipment->booking_attempts}", 'system', $exception->getMessage(), [], strict: false));

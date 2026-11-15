@@ -9,6 +9,7 @@ use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiCarrier;
 use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiRates;
@@ -123,8 +124,8 @@ it('huỷ đơn khi vận đơn chưa lấy hàng → huỷ vận đơn, nhả h
         ->and(($this->order)()->fulfillment_status)->toBe('unfulfilled');
 });
 
-it('hãng có API: đặt vận đơn tự động sau commit; webhook trùng và sai thứ tự không làm lùi trạng thái', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+it('hãng có API, booking = on_create (điểm mở rộng): đặt vận đơn tự động sau commit; webhook trùng và sai thứ tự không làm lùi trạng thái', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api', 'vanishop.fulfillment.booking' => 'on_create']);
     ($this->place)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();
     expect($shipment->status->value)->toBe('created')->and($shipment->tracking_number)->toBe('FK000001');
@@ -142,6 +143,44 @@ it('hãng có API: đặt vận đơn tự động sau commit; webhook trùng v�
     $this->postJson('/api/shipping/fake_api/webhook', [...FakeApiCarrier::webhook('FK000001', 'returned', 'E9'), 'status' => 'x'])->assertStatus(400);
     $this->postJson('/api/shipping/fake_api/webhook', FakeApiCarrier::webhook('KHONGCO', 'in_transit', 'E1'))->assertNotFound();
     $this->postJson('/api/shipping/manual/webhook', [])->assertNotFound();
+});
+
+it('hãng có API, mặc định booking = manual (ADR-046 chốt ②): xác nhận không gọi hãng; nhân viên "Đẩy lên hãng" hàng loạt; bấm trùng không đặt hai lần; hãng nhập tay bị bỏ qua', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    ($this->place)();
+    $api = Shipment::query()->withoutGlobalScopes()->sole();
+    config(['vanishop.fulfillment.default_carrier' => 'manual']);
+    ($this->place)();
+    $manual = Shipment::query()->withoutGlobalScopes()->whereKeyNot($api->id)->sole();
+    ($this->asStaff)();
+    expect($api->status->value)->toBe('pending_booking')->and(FakeApiCarrier::$booked)->toBe([]);
+    $this->get("/admin/orders/orders/{$api->order_id}")->assertInertia(fn (Assert $page) => $page->where('panels', fn ($panels) => collect($panels)->flatMap(fn ($panel) => $panel['actions'] ?? [])->contains(fn ($action) => $action['key'] === "{$api->id}-push" && $action['primary'])));
+
+    $this->post("{$this->ship}/bulk-push", ['ids' => [$api->order_id, $manual->order_id]])
+        ->assertSessionHas('success', fn (string $message) => str_contains($message, 'Đã đẩy 1 vận đơn') && str_contains($message, 'Bỏ qua 1'));
+    $this->post("{$this->ship}/bulk-push", ['ids' => [$api->order_id]])->assertSessionHas('success', fn (string $message) => str_contains($message, 'Đã đẩy 0 vận đơn'));
+
+    expect($api->fresh()->status->value)->toBe('created')->and($api->fresh()->tracking_number)->toBe('FK000001')
+        ->and(FakeApiCarrier::$booked)->toHaveCount(1)
+        ->and($manual->fresh()->status->value)->toBe('pending_booking');
+    $this->post("{$this->ship}/{$api->id}/push")->assertSessionHasErrors('business');
+});
+
+it('đẩy lên hãng bị lỗi → booking_failed; "Đẩy lại lên hãng" trên trang đơn đặt lại từ đầu; plugin gọi ShipmentBooking cùng kết quả', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    FakeApiCarrier::$failBooking = true;
+    ($this->place)();
+    $shipment = Shipment::query()->withoutGlobalScopes()->sole();
+    app(FulfillmentService::class)->bookAutomatically($shipment->id, 1);
+    ($this->asStaff)();
+    $this->get("/admin/orders/orders/{$shipment->order_id}")->assertInertia(fn (Assert $page) => $page->where('panels', fn ($panels) => collect($panels)->flatMap(fn ($panel) => $panel['actions'] ?? [])->contains(fn ($action) => $action['key'] === "{$shipment->id}-push" && $action['label'] === 'Đẩy lại lên hãng')));
+    FakeApiCarrier::$failBooking = false;
+
+    $this->post("{$this->ship}/{$shipment->id}/push")->assertSessionHasNoErrors();
+
+    expect($shipment->fresh()->status->value)->toBe('created')
+        ->and(($this->order)()->delivery_issue)->toBeNull()
+        ->and(app(ShipmentBooking::class)->pushToCarrier([$shipment->id]))->toBe(0);
 });
 
 it('hãng lỗi khi đặt vận đơn quá số lần thử → booking_failed, nhân viên chuyển sang nhập tay', function () {
@@ -200,6 +239,7 @@ it('Admin: quyền, mã vận đơn trùng', function () {
 
 it('vận đơn dùng carrier của phương thức giao khách chọn (dịch vụ = mã phương thức); phí cố định hoặc carrier tắt → mặc định', function () {
     app(Extensions::class)->tag([FakeApiRates::class], ShippingRateProvider::TAG);
+    config(['vanishop.fulfillment.booking' => 'on_create']);
     $placeWith = function (string $method, int $expected, string $key) {
         $created = $this->postJson("{$this->api}/carts")->assertCreated();
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -235,7 +275,7 @@ it('sự cố giao hàng: đặt vận đơn lỗi và giao không thành công 
     expect(($this->order)()->delivery_issue)->toBe('booking_failed');
     $issueQueue()->assertInertia(fn (Assert $page) => $page->where('stageCounts.issue', 1)->has('orders', 1)->where('orders.0.delivery_issue', 'booking_failed'));
 
-    // Hãng hoạt động lại, nhân viên đặt lại vận đơn → hết sự cố, đơn về "Chờ giao hãng".
+    // Hãng hoạt động lại, nhân viên đặt lại vận đơn → hết sự cố, đơn về "Chờ đóng gói".
     FakeApiCarrier::$failBooking = false;
     $this->post("{$this->ship}/{$shipment->id}/book", ['tracking_number' => 'TAY1'])->assertSessionHasNoErrors();
     expect(($this->order)()->delivery_issue)->toBeNull();

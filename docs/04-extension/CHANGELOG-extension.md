@@ -4,6 +4,23 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.54 — 2026-11-15
+
+Chốt ② của [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md): vận đơn lên hãng khi nhân viên bấm "Đẩy lên hãng" (đợt V2).
+
+### Thêm
+- Contract `Modules\Fulfillment\Contracts\ShipmentBooking::pushToCarrier(list<int> $shipmentIds): int` — đặt vận đơn ở hãng có API (`autoBooking`) cho vận đơn `pending_booking`/`booking_failed` (đặt lại đủ số lần thử); vận đơn đã có mã, đã huỷ, hãng nhập tay bị bỏ qua. Job `BookShipmentJob` sau commit như cũ. Dùng chung cho nút, thao tác hàng loạt và plugin tự động hoá (vd. đặt theo đợt giờ lấy hàng).
+- Cấu hình `vanishop.fulfillment.booking` (`VANI_FULFILLMENT_BOOKING`): `manual` (mặc định) · `on_create` (đặt ngay khi tạo vận đơn — hành vi trước 0.4.54).
+- Admin: thao tác hàng loạt "Đẩy lên hãng" ở danh sách đơn (khi có hãng API; `POST /{admin}/fulfillment/shipments/bulk-push`), nút "Đẩy lên hãng" / "Đẩy lại lên hãng" trên thẻ Giao hàng của trang đơn (`POST …/shipments/{shipment}/push`) — trước đây vận đơn hãng API đặt lỗi không có nút đặt lại.
+- `CarrierRegistry::hasAutoBooking()`.
+
+### Đổi hành vi mặc định
+- Vận đơn của hãng có API **không** còn tự đặt khi đơn được xác nhận; giữ hành vi cũ: `VANI_FULFILLMENT_BOOKING=on_create`.
+- Giai đoạn `to_ship` đổi nhãn "Chờ giao hãng" → **"Chờ đóng gói"**; ô Việc cần làm "Đơn chờ đóng gói" (gợi ý: in phiếu, đóng gói, đẩy lên hãng, bàn giao).
+
+### Sửa
+- `bookAutomatically()`: lần đẩy trùng (bấm hai lần, plugin) gặp vận đơn vừa được đặt/huỷ thì dừng êm, không ghi lỗi giả vào vận đơn.
+
 ## 0.4.53 — 2026-11-15
 
 Chốt ① của [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md): đơn COD mặc định chờ nhân viên xác nhận (đợt V1).

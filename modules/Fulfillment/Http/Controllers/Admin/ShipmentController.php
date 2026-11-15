@@ -14,6 +14,8 @@ use Inertia\Response;
 use Modules\Fulfillment\Application\CarrierHandoff;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Contracts\FulfillmentRejected;
+use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Contracts\Data\OrderStatus;
@@ -125,6 +127,30 @@ final class ShipmentController
         }
 
         return back()->with('success', __('fulfillment::messages.bulk_created', ['count' => $created, 'skipped' => count($ids) - $created]));
+    }
+
+    /**
+     * "Đẩy lên hãng" hàng loạt từ danh sách đơn (ADR-046 chốt ②): vận đơn chờ đặt/đặt lỗi của hãng có API thuộc các đơn
+     * đã chọn. Vận đơn của hãng nhập tay hoặc đã có mã được bỏ qua.
+     */
+    public function bulkPush(Request $request, ShipmentBooking $booking): RedirectResponse
+    {
+        Gate::authorize('fulfillment.manage');
+        $ids = Shipment::query()->whereIn('order_id', $this->orderIds($request))->where('status', '!=', ShipmentStatus::Cancelled)->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $pushed = $booking->pushToCarrier($ids);
+
+        return back()->with('success', __('fulfillment::messages.pushed', ['count' => $pushed, 'skipped' => count($ids) - $pushed]));
+    }
+
+    public function push(Shipment $shipment, ShipmentBooking $booking): RedirectResponse
+    {
+        Gate::authorize('fulfillment.manage');
+        $pushed = $booking->pushToCarrier([$shipment->id]);
+        if ($pushed === 0) {
+            throw FulfillmentRejected::invalidTransition($shipment->status->value, ShipmentStatus::Created->value);
+        }
+
+        return back()->with('success', __('fulfillment::messages.pushed', ['count' => 1, 'skipped' => 0]));
     }
 
     /**

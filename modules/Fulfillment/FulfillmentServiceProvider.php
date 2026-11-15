@@ -17,6 +17,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\Carriers\ManualCarrier;
 use Modules\Fulfillment\Application\EloquentShipmentReader;
+use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Application\Listeners\CancelShipmentsOnOrderCancel;
 use Modules\Fulfillment\Application\Listeners\CreateShipmentsOnConfirm;
 use Modules\Fulfillment\Application\Listeners\OrderListShipments;
@@ -26,6 +27,7 @@ use Modules\Fulfillment\Application\Listeners\SettleOrderOnStatusOverride;
 use Modules\Fulfillment\Application\Listeners\ShipmentDashboardTasks;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
+use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Fulfillment\Contracts\ShippingCarrier;
 use Modules\Fulfillment\Contracts\SourcingStrategy;
@@ -52,6 +54,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
+        $this->app->bind(ShipmentBooking::class, FulfillmentService::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
         $this->app->make(Extensions::class)->requires(ShippingCarrier::CARRIERS_TAG, Requirement::AtLeastOne, 'Hãng vận chuyển');
         $this->app->make(Extensions::class)->kindContract('shipping_carrier', ShippingCarrier::CARRIERS_TAG);
@@ -68,7 +71,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         return match ((string) config('vanishop.fulfillment.admin_menu', 'auto')) {
             'always' => true,
             'never' => false,
-            default => array_filter($this->app->make(CarrierRegistry::class)->carriers(), fn (ShippingCarrier $carrier): bool => $carrier->capabilities()->autoBooking) !== []
+            default => $this->app->make(CarrierRegistry::class)->hasAutoBooking()
                 || count(array_filter($this->app->make(LocationRegistry::class)->all(), fn (LocationData $location): bool => $location->status === 'active' && $location->shipsOnlineOrders)) >= 2,
         };
     }
