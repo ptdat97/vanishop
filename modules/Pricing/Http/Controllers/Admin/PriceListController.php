@@ -15,6 +15,7 @@ use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\ListPriceSync;
+use Modules\Pricing\Application\PriceListFile;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
@@ -23,7 +24,10 @@ use Modules\Pricing\Http\Requests\BulkPricesRequest;
 use Modules\Pricing\Http\Requests\PriceListRequest;
 use Modules\Pricing\Http\Requests\PricesRequest;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Support\SimpleXlsx;
+use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Shared\Support\StoreClock;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class PriceListController
 {
@@ -62,6 +66,9 @@ final class PriceListController
                     'prices_count' => $list->prices_count,
                 ])->all(),
             'canManage' => Gate::allows('pricing.manage'),
+            // Dữ liệu cũ: bảng loại niêm yết ngoài bảng chính (mã `base`) — cần đổi sang Sale/Thành viên hoặc xoá.
+            'extraBaseLists' => $lists->filter(fn (PriceList $list): bool => $list->type === PriceListType::Base && $list->code !== ListPriceSync::BASE_CODE)
+                ->map(fn (PriceList $list): array => ['id' => $list->id, 'name' => $list->name, 'code' => $list->code])->values()->all(),
         ]);
     }
 
@@ -189,6 +196,45 @@ final class PriceListController
         $ids = (array) $request->validate(['variant_ids' => ['required', 'array', 'max:'.PriceListWorkspace::MAX_BULK], 'variant_ids.*' => ['integer', 'min:1']])['variant_ids'];
 
         return back()->with('success', __('pricing::messages.bulk_removed', ['count' => $workspace->remove($priceList, array_map('intval', $ids))]));
+    }
+
+    /**
+     * Xuất bảng giá ra Excel — cũng là mẫu để nhập lại (sửa cột Giá / Giá gạch).
+     */
+    public function export(PriceList $priceList, PriceListFile $file): BinaryFileResponse
+    {
+        Gate::authorize('pricing.view');
+        $path = tempnam(sys_get_temp_dir(), 'vani-price-list-').'.xlsx';
+        SimpleXlsx::write($path, $file->export($priceList), 'Bang gia');
+
+        return response()->download($path, "bang-gia-{$priceList->code}-".now(StoreClock::timezone())->format('Ymd-Hi').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
+    }
+
+    /**
+     * Nhập giá từ file (.xlsx/.csv): cột SKU + Giá (+ Giá gạch). Dòng lỗi được báo, dòng hợp lệ vẫn được ghi.
+     */
+    public function import(PriceList $priceList, Request $request, PriceListFile $file): RedirectResponse
+    {
+        Gate::authorize('pricing.manage');
+        $this->ensureEditable($priceList);
+        $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:xlsx,csv,txt']]);
+        try {
+            $rows = SpreadsheetRows::fromUpload($request->file('file'));
+        } catch (\RuntimeException $exception) {
+            throw ValidationException::withMessages(['file' => $exception->getMessage()]);
+        }
+        $result = $file->import($priceList, $rows);
+        $redirect = back()->with('success', __('pricing::messages.imported', ['changed' => $result['changed'], 'unchanged' => $result['unchanged'], 'errors' => count($result['errors'])]));
+
+        // Mỗi dòng lỗi một khoá (Inertia chỉ chuyển câu đầu tiên của mỗi khoá).
+        $errors = [];
+        foreach (array_slice($result['errors'], 0, 30) as $index => $message) {
+            $errors["import.{$index}"] = $message;
+        }
+
+        return $errors === [] ? $redirect : $redirect->withErrors($errors);
     }
 
     public function updatePrices(PriceList $priceList, PricesRequest $request, PriceListService $service): RedirectResponse

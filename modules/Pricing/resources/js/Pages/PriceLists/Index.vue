@@ -23,6 +23,8 @@ const props = defineProps<{
         prices_count: number;
     }>;
     canManage: boolean;
+    /** Bảng loại niêm yết ngoài bảng chính (dữ liệu cũ) — cần đổi sang Sale/Thành viên hoặc xoá. */
+    extraBaseLists: Array<{ id: number; name: string; code: string }>;
 }>();
 
 const columns = [
@@ -41,6 +43,11 @@ const columns = [
     <PageHeader title="Bảng giá" subtitle="Bấm vào bảng giá để xem và sửa giá. Bảng giá ưu tiên cao hơn thắng; giá niêm yết làm giá gạch khi đang giảm.">
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bảng giá</Link>
     </PageHeader>
+    <div v-if="extraBaseLists.length" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-extra-base>
+        Cửa hàng chỉ dùng một bảng giá niêm yết (mã <span class="font-mono">base</span>). Các bảng sau đang là loại niêm yết thừa — mở và chọn
+        <strong>Sale</strong> hoặc <strong>Thành viên</strong>, hoặc xoá nếu không dùng:
+        <span v-for="(list, index) in extraBaseLists" :key="list.id"><template v-if="index">, </template><Link :href="`${baseUrl}/${list.id}/edit`" class="font-medium underline">{{ list.name }}</Link></span>.
+    </div>
     <DataTable :columns="columns" :rows="priceLists" :row-label="(list) => list.name" :row-click="(list) => router.visit(`${props.baseUrl}/${list.id}/prices`)" empty-text="Chưa có bảng giá nào.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>

@@ -117,6 +117,12 @@ interface PricingStrategy
 Core dùng strategy được cấu hình cho cửa hàng; giá trả về vẫn là `Money` và được snapshot vào đơn.
 - Giá **đã bao gồm VAT** (thói quen B2C tại VN); lưu `tax_class` để tách thuế khi xuất hoá đơn.
 
+### 6.1a Thao tác Admin (0.4.55–0.4.57)
+
+- **Một bảng giá niêm yết** (mã `base`): giá bán thường, sửa ở sản phẩm (form/ma trận, sửa trong ô và "Đổi giá" ở danh sách sản phẩm); trang bảng giá chỉ xem. Bảng sale/thành viên tạo bằng Loại + Tên + khung giờ (mã, độ ưu tiên tự sinh).
+- **Trang làm việc của bảng giá**: mọi SKU trong bảng, sửa trong ô, chọn nhiều → áp giá (giảm %, giảm số tiền, đồng giá — tính từ giá niêm yết, làm tròn 1.000đ, có xem trước) hoặc gỡ; thêm sản phẩm (tìm theo tên/mã/SKU) hoặc "Đưa vào bảng giá…" từ danh sách sản phẩm; xuất/nhập file.
+- Cảnh báo **không chặn** (giá sale được về 0đ — Owner 2026-11-15): 0đ, không thấp hơn giá niêm yết, giảm vượt mức trần khuyến mãi của cửa hàng, chưa có giá niêm yết.
+
 ### 6.2 Lịch sử giá & tuân thủ
 
 - Ghi `price_history` mỗi lần đổi giá (ai, khi nào, giá cũ/mới) — phục vụ kiểm tra khuyến mãi theo quy định (giá trước khuyến mãi phải là giá thực tế đã bán).

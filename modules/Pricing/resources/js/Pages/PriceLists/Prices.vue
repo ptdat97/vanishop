@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -208,6 +209,19 @@ function continueToRule(): void {
 }
 const range = (candidate: Candidate): string | null => (candidate.list_min === null ? null : candidate.list_min === candidate.list_max ? `${candidate.list_min}` : `${candidate.list_min}–${candidate.list_max}`);
 
+// Nhập/xuất file: file xuất cũng là mẫu nhập (sửa cột Giá / Giá gạch rồi nhập lại).
+const importOpen = ref(false);
+const importForm = useForm({ file: null as File | null });
+const importErrors = computed(() => Object.entries(importForm.errors as Record<string, string>).filter(([key]) => key.startsWith('import.') || key === 'file').map(([, message]) => message));
+function submitImport(): void {
+    importForm.post(`${listUrl.value}/import`, { forceFormData: true, preserveScroll: true, onSuccess: () => {
+        if (!importErrors.value.length) {
+            importOpen.value = false;
+            importForm.reset();
+        }
+    } });
+}
+
 const columns = computed(() => [
     { key: 'name', label: 'Sản phẩm / SKU' },
     ...(isBase.value ? [] : [{ key: 'list_amount', label: 'Giá niêm yết', align: 'right' as const }]),
@@ -233,6 +247,8 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
         <StatusBadge :label="labels.price_list_state[priceList.state] ?? priceList.state" :tone="stateTone(priceList.state)" class="self-center" />
         <Link v-if="canManage" :href="`${listUrl}/edit`" :class="secondaryButton">Thông tin bảng giá</Link>
         <button v-if="editable" type="button" :class="primaryButton" data-add-products @click="addOpen = true">Thêm sản phẩm</button>
+        <a :href="`${listUrl}/export`" :class="secondaryButton" data-export>Xuất file</a>
+        <button v-if="editable" type="button" :class="secondaryButton" data-import @click="importOpen = true">Nhập file</button>
         <Link v-if="readOnly" :href="productsUrl" :class="primaryButton">Sửa giá ở danh sách sản phẩm</Link>
     </PageHeader>
 
@@ -290,6 +306,26 @@ const warningLabel = (warning: string): string => (warning === 'over_cap' ? `Gi�
         <span class="text-xs text-slate-500">Để trống giá = gỡ SKU khỏi bảng giá. Mọi thay đổi được ghi vào lịch sử giá.</span>
     </div>
     <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="(page) => visit(page)" @per-page-change="(perPage) => visit(undefined, perPage)" />
+
+    <Dialog v-model:open="importOpen" title="Nhập giá từ file" :dirty="Boolean(importForm.file)">
+        <div class="space-y-3 text-sm">
+            <p class="text-slate-600">
+                File Excel (.xlsx) hoặc CSV có cột <strong>SKU</strong> và <strong>Giá</strong> ở dòng đầu; cột <strong>Giá gạch</strong> tuỳ chọn. Dễ nhất: bấm
+                <a :href="`${listUrl}/export`" class="text-indigo-600 hover:underline">Xuất file</a>, sửa cột Giá rồi nhập lại.
+            </p>
+            <ul class="list-disc pl-5 text-xs text-slate-500">
+                <li>Ô giá trống = giữ nguyên; 0 = giá 0đ. Viết 199000 hoặc 199.000.</li>
+                <li>SKU chưa có trong bảng sẽ được thêm. Dòng lỗi được báo, các dòng khác vẫn được ghi.</li>
+            </ul>
+            <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" :progress="importForm.progress?.percentage" />
+            <ul v-if="importErrors.length" class="max-h-48 space-y-1 overflow-y-auto rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700" data-import-errors>
+                <li v-for="message in importErrors" :key="message">{{ message }}</li>
+            </ul>
+        </div>
+        <template #footer>
+            <button type="button" :class="primaryButton" :disabled="!importForm.file || importForm.processing" data-import-submit @click="submitImport">Nhập giá</button>
+        </template>
+    </Dialog>
 
     <Dialog v-model:open="addOpen" title="Thêm sản phẩm vào bảng giá" size="large">
         <form class="mb-3" @submit.prevent="findCandidates">

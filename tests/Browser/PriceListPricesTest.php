@@ -55,3 +55,15 @@ it('bảng giá niêm yết: chỉ xem, chỉ đường sửa giá ở sản ph�
 
     visit("/admin/pricing/price-lists/{$base->id}/prices")->assertSee('chỉ xem ở đây')->assertSee('Sửa giá ở danh sách sản phẩm')->assertDontSee('Thêm sản phẩm')->assertNoJavaScriptErrors();
 });
+
+it('nhập giá từ file: chọn tệp, nhập, bảng hiện giá mới; dòng lỗi hiện trong hộp thoại', function () {
+    $path = tempnam(sys_get_temp_dir(), 'gia').'.csv';
+    file_put_contents($path, "SKU;Giá\n{$this->s->sku};150.000\nKHONG-CO;1000\n");
+
+    $page = visit("/admin/pricing/price-lists/{$this->list->id}/prices");
+    $page->click('[data-import]')->attach('input[type="file"]', $path)->click('[data-import-submit]')
+        ->assertSee('Dòng 3: không có SKU "KHONG-CO".');
+
+    $page->assertNoJavaScriptErrors();
+    expect(Price::query()->where('price_list_id', $this->list->id)->pluck('amount', 'variant_id')->all())->toBe([$this->s->id => 150_000]);
+});

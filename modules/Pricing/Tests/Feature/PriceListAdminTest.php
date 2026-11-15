@@ -1,16 +1,19 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\AuditLog;
+use Modules\Pricing\Application\PriceListFile;
 use Modules\Pricing\Events\PriceChanged;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceHistory;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
+use Modules\Shared\Support\SimpleXlsx;
 
 require_once __DIR__.'/PricingTestHelpers.php';
 
@@ -267,4 +270,57 @@ it('danh sách sản phẩm → "Đưa vào bảng giá…": chỉ bảng sale/t
     $this->post($action['url'], ['ids' => [$this->style->id], 'price_list_id' => $sale->id])->assertRedirect("{$this->base}/{$sale->id}/prices?add={$this->style->id}");
     $this->post($action['url'], ['ids' => [$this->style->id], 'price_list_id' => $main->id])->assertSessionHasErrors('price_list_id');
     $this->get("{$this->base}/{$sale->id}/prices?add={$this->style->id},x,0")->assertInertia(fn (Assert $page) => $page->where('addStyleIds', [$this->style->id]));
+});
+
+it('xuất file bảng giá: SKU, sản phẩm, tuỳ chọn, giá niêm yết, giá, giá gạch — dùng làm mẫu nhập lại', function () {
+    P::priceList(['code' => 'base'], [$this->s->id => [300_000], $this->m->id => [300_000]]);
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale'], [$this->s->id => [199_000, 250_000]]);
+
+    $response = $this->get("{$this->base}/{$sale->id}/export")->assertDownload();
+    $rows = SimpleXlsx::read($response->baseResponse->getFile()->getPathname());
+
+    expect($rows[0])->toBe(PriceListFile::HEADER)
+        ->and($rows)->toHaveCount(2)
+        ->and([$rows[1][0], $rows[1][3], $rows[1][4], $rows[1][5]])->toBe([$this->s->sku, '300000', '199000', '250000']);
+});
+
+it('nhập file: cập nhật/thêm theo SKU, 0đ hợp lệ, ô trống giữ nguyên; dòng lỗi được báo, dòng khác vẫn ghi', function () {
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale'], [$this->s->id => [199_000]]);
+    $csv = implode("\n", [
+        'SKU;Sản phẩm;Giá;Giá gạch',
+        "{$this->s->sku};Áo;189.000;",
+        "{$this->m->sku};Áo;0;",
+        'KHONG-CO;X;100000;',
+        "{$this->s->sku}-x;X;;",
+        "{$this->m->sku};Áo;199.5;",
+        "{$this->m->sku};Áo;100000;90000",
+    ]);
+
+    $this->post("{$this->base}/{$sale->id}/import", ['file' => UploadedFile::fake()->createWithContent('gia.csv', $csv)])
+        ->assertSessionHas('success', 'Đã nhập file: cập nhật 2 giá, 0 giá không đổi, 3 dòng lỗi.')
+        ->assertSessionHasErrors(['import.0' => 'Dòng 6 ('.$this->m->sku.'): giá không hợp lệ — nhập số đồng, vd. 199000 hoặc 199.000.']);
+
+    expect(Price::query()->where('price_list_id', $sale->id)->orderBy('variant_id')->pluck('amount', 'variant_id')->all())->toBe([$this->s->id => 189_000, $this->m->id => 0]);
+});
+
+it('nhập file: thiếu cột SKU/Giá bị từ chối; bảng niêm yết không nhập ở đây', function () {
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale'], []);
+    $main = P::priceList(['code' => 'base'], []);
+
+    $this->post("{$this->base}/{$sale->id}/import", ['file' => UploadedFile::fake()->createWithContent('gia.csv', "Mã;Tiền\nA;1")])->assertSessionHasErrors('file');
+    $this->post("{$this->base}/{$main->id}/import", ['file' => UploadedFile::fake()->createWithContent('gia.csv', "SKU;Giá\n{$this->s->sku};1")])->assertSessionHasErrors('business');
+    expect(Price::query()->count())->toBe(0);
+});
+
+it('bảng niêm yết thừa (dữ liệu cũ): danh sách cảnh báo; sửa phải chọn Sale/Thành viên', function () {
+    P::priceList(['code' => 'base'], []);
+    $extra = P::priceList(['code' => 'pro'], []);
+
+    $this->get($this->base)->assertInertia(fn (Assert $page) => $page->where('extraBaseLists', [['id' => $extra->id, 'name' => 'Bảng giá', 'code' => 'pro']]));
+    $this->get("{$this->base}/{$extra->id}/edit")->assertInertia(fn (Assert $page) => $page->where('types', ['sale', 'member']));
+    $this->put("{$this->base}/{$extra->id}", ['type' => 'base', 'name' => 'Pro', 'status' => 'active', 'lock_version' => 0])->assertSessionHasErrors('type');
+    $this->put("{$this->base}/{$extra->id}", ['type' => 'sale', 'name' => 'Pro', 'status' => 'active', 'lock_version' => 0])->assertSessionHasNoErrors();
+
+    $this->get($this->base)->assertInertia(fn (Assert $page) => $page->where('extraBaseLists', []));
+    expect($extra->fresh()->type->value)->toBe('sale');
 });

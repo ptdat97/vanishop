@@ -22,6 +22,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\SimpleXlsx;
+use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Shared\Support\StoreClock;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -200,9 +201,7 @@ final class ShipmentController
         ]);
         $file = $request->file('file');
         try {
-            $rows = strtolower((string) $file->getClientOriginalExtension()) === 'xlsx'
-                ? SimpleXlsx::read((string) $file->getRealPath())
-                : self::csvRows((string) $file->getRealPath());
+            $rows = SpreadsheetRows::fromUpload($file);
         } catch (\RuntimeException $exception) {
             throw ValidationException::withMessages(['file' => $exception->getMessage()]);
         }
@@ -217,34 +216,6 @@ final class ShipmentController
         }
 
         return $errors === [] ? $redirect : $redirect->withErrors($errors);
-    }
-
-    /**
-     * CSV (UTF-8, có/không BOM; phân cách `,` `;` hoặc tab — Excel VN hay dùng `;`).
-     *
-     * @return list<list<string>>
-     */
-    private static function csvRows(string $path): array
-    {
-        $content = (string) file_get_contents($path);
-        $content = str_starts_with($content, "\xEF\xBB\xBF") ? substr($content, 3) : $content;
-        if (! mb_check_encoding($content, 'UTF-8')) {
-            throw new \RuntimeException('File CSV phải lưu dạng UTF-8.');
-        }
-        $first = strtok($content, "\n") ?: '';
-        $delimiter = collect([',', ';', "\t"])->sortByDesc(fn (string $candidate): int => substr_count($first, $candidate))->first();
-        $rows = [];
-        foreach (preg_split('/\r\n|\n|\r/', $content) ?: [] as $line) {
-            if (trim($line) === '') {
-                continue;
-            }
-            $rows[] = array_map('strval', str_getcsv($line, $delimiter, '"', ''));
-            if (count($rows) > SimpleXlsx::MAX_ROWS) {
-                throw new \RuntimeException('File có quá '.SimpleXlsx::MAX_ROWS.' dòng.');
-            }
-        }
-
-        return $rows;
     }
 
     /**

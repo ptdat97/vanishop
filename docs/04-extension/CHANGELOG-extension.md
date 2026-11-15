@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.57 — 2026-11-15
+
+Admin bảng giá thao tác gọn — đợt 3: nhập/xuất file, xử lý bảng niêm yết thừa.
+
+### Thêm
+- **Xuất file** bảng giá (`GET /{admin}/pricing/price-lists/{id}/export`, .xlsx): SKU, Sản phẩm, Tuỳ chọn, Giá niêm yết, Giá, Giá gạch — cũng là mẫu nhập.
+- **Nhập file** (`POST …/{id}/import`, .xlsx/.csv ≤ 5 MB, `Pricing\Application\PriceListFile`): nhận cột theo tiêu đề (không phân biệt hoa thường/dấu) — SKU, Giá, Giá gạch; cột khác bỏ qua. Ô giá trống = giữ nguyên; 0 = giá 0đ; số viết `199000` hoặc `199.000` (dấu chấm/phẩy chỉ là phân cách nghìn — `199.5` bị báo lỗi). SKU chưa có trong bảng được thêm. Dòng lỗi (SKU không có, giá sai, giá gạch ≤ giá) được báo theo số dòng, các dòng khác vẫn ghi qua `setPrices` (lịch sử giá, audit). Bảng niêm yết không nhập ở đây.
+- `Modules\Shared\Support\SpreadsheetRows::fromUpload()` — đọc .xlsx/.csv nhân viên tải lên (CSV UTF-8, `,` `;` tab); nhập mã vận đơn của Fulfillment dùng chung.
+- Danh sách bảng giá cảnh báo **bảng loại niêm yết thừa** (dữ liệu cũ, mã khác `base`) kèm liên kết; form sửa của bảng đó bắt chọn Sale/Thành viên (đã có từ 0.4.56), hoặc xoá.
+
 ## 0.4.56 — 2026-11-15
 
 Admin bảng giá thao tác gọn — đợt 2: tạo nhanh, một bảng niêm yết, đưa sản phẩm vào bảng giá từ danh sách sản phẩm.

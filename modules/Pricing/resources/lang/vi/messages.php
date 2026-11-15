@@ -18,4 +18,9 @@ return [
     'bulk_removed' => 'Đã gỡ :count SKU khỏi bảng giá.',
     'created' => 'Đã tạo bảng giá. Bấm “Thêm sản phẩm” để đưa sản phẩm vào.',
     'base_read_only' => 'Giá niêm yết sửa ở sản phẩm (form sản phẩm hoặc danh sách sản phẩm), không sửa ở đây.',
+    'imported' => 'Đã nhập file: cập nhật :changed giá, :unchanged giá không đổi, :errors dòng lỗi.',
+    'import_header' => 'File cần cột "SKU" và cột "Giá" ở dòng đầu (dùng file "Xuất file" làm mẫu).',
+    'import_row_invalid' => 'Dòng :line (:sku): giá không hợp lệ — nhập số đồng, vd. 199000 hoặc 199.000.',
+    'import_row_compare' => 'Dòng :line (:sku): giá gạch phải lớn hơn giá.',
+    'import_row_sku' => 'Dòng :line: không có SKU ":sku".',
 ];

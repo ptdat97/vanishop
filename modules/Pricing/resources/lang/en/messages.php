@@ -18,4 +18,9 @@ return [
     'bulk_removed' => 'Removed :count SKUs from the price list.',
     'created' => 'Price list created. Click “Add products” to add products.',
     'base_read_only' => 'List prices are edited on products (product form or product list), not here.',
+    'imported' => 'Imported: :changed prices updated, :unchanged unchanged, :errors rows failed.',
+    'import_header' => 'The file needs "SKU" and "Giá" (price) columns in the first row (use the exported file as a template).',
+    'import_row_invalid' => 'Row :line (:sku): invalid price.',
+    'import_row_compare' => 'Row :line (:sku): compare-at price must be greater than the price.',
+    'import_row_sku' => 'Row :line: SKU ":sku" not found.',
 ];

@@ -285,6 +285,20 @@ final class PriceListWorkspace
     }
 
     /**
+     * Giá niêm yết (bảng `base`, mua từ 1) theo SKU.
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, int>
+     */
+    public function baseAmounts(array $variantIds): array
+    {
+        $baseId = $variantIds === [] ? null : PriceList::query()->where('code', ListPriceSync::BASE_CODE)->value('id');
+
+        return $baseId === null ? [] : Price::query()->where('price_list_id', $baseId)->where('min_qty', 1)->whereIn('variant_id', $variantIds)
+            ->pluck('amount', 'variant_id')->map(fn ($amount): int => (int) $amount)->all();
+    }
+
+    /**
      * Giá niêm yết (bảng `base`, mua từ 1) theo SKU. Bảng giá đang xem là `base` thì không so với chính nó, trừ khi cần làm
      * gốc tính giá (`forceBase`).
      *
@@ -293,12 +307,6 @@ final class PriceListWorkspace
      */
     private function listAmounts(array $variantIds, PriceList $list, bool $forceBase = false): array
     {
-        if ($variantIds === [] || ($list->type === PriceListType::Base && ! $forceBase)) {
-            return [];
-        }
-        $baseId = PriceList::query()->where('code', ListPriceSync::BASE_CODE)->value('id');
-
-        return $baseId === null ? [] : Price::query()->where('price_list_id', $baseId)->where('min_qty', 1)->whereIn('variant_id', $variantIds)
-            ->pluck('amount', 'variant_id')->map(fn ($amount): int => (int) $amount)->all();
+        return $list->type === PriceListType::Base && ! $forceBase ? [] : $this->baseAmounts($variantIds);
     }
 }
