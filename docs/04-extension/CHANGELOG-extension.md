@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.52 — 2026-11-15
+
+Thanh toán của đơn huỷ và đơn hoàn tất còn COD chưa thu (backlog L35, L36).
+
+### Thêm
+- `orders.payment_status = voided` ("Đã huỷ thanh toán"): đơn huỷ khi không khoản nào đã thu hoặc đang giữ tiền (`PaymentService::settleCancelledOrder`). Trước đây đơn huỷ giữ "COD chờ thu"/"Chưa thanh toán". Thanh toán muộn sau huỷ vẫn chuyển tiếp sang `paid` → `refunded` như cũ. Trường `payment_status` trong API là chuỗi — client nên coi giá trị lạ là trung tính.
+- Ô "Việc cần làm" `orders.completed_cod_pending` — "Đơn hoàn tất chưa thu COD" (chỉ hiện khi có), mở danh sách đơn lọc `status=completed&payment_status=cod_pending` (`OrderQueries::completedAwaitingCodCount()`).
+
 ## 0.4.51 — 2026-11-15
 
 Admin vận hành: mở đơn từ Vận đơn và Đổi/trả, tìm đổi/trả theo số đơn; bất biến đơn hoàn tất ngoài trình tự.

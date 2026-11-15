@@ -7,7 +7,7 @@ export function orderStatusTone(status: string): Tone {
 
 /** Tông màu StatusBadge theo trạng thái thanh toán. */
 export function paymentStatusTone(status: string): Tone {
-    return ({ paid: 'success', cod_collected: 'success', authorized: 'info', cod_pending: 'warning', unpaid: 'warning', partially_refunded: 'neutral', refunded: 'neutral', failed: 'danger' } as Record<string, Tone>)[status] ?? 'neutral';
+    return ({ paid: 'success', cod_collected: 'success', authorized: 'info', cod_pending: 'warning', unpaid: 'warning', partially_refunded: 'neutral', refunded: 'neutral', failed: 'danger', voided: 'neutral' } as Record<string, Tone>)[status] ?? 'neutral';
 }
 
 /** Tông màu giai đoạn vận hành (OrderStage, 0.3.96). */

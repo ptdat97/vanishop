@@ -6,7 +6,7 @@
 
 return [
     'order_status' => ['pending' => 'Pending', 'confirmed' => 'Confirmed', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
-    'payment_status' => ['unpaid' => 'Unpaid', 'authorized' => 'Authorized', 'paid' => 'Paid', 'partially_refunded' => 'Partially refunded', 'refunded' => 'Refunded', 'cod_pending' => 'COD pending', 'cod_collected' => 'COD collected', 'failed' => 'Failed'],
+    'payment_status' => ['unpaid' => 'Unpaid', 'authorized' => 'Authorized', 'paid' => 'Paid', 'partially_refunded' => 'Partially refunded', 'refunded' => 'Refunded', 'cod_pending' => 'COD pending', 'cod_collected' => 'COD collected', 'failed' => 'Failed', 'voided' => 'Voided'],
     'fulfillment_status' => ['unfulfilled' => 'Unfulfilled', 'allocated' => 'Awaiting carrier', 'partially_shipped' => 'Partially shipped', 'shipped' => 'Shipping', 'delivered' => 'Delivered', 'returned_to_sender' => 'Returned to sender'],
     'return_status' => ['none' => 'None', 'requested' => 'Requested', 'in_progress' => 'In progress', 'partially_returned' => 'Partially returned', 'returned' => 'Returned'],
     'event_type' => ['status_overridden' => 'Status changed out of sequence', 'placed' => 'Placed', 'status_changed' => 'Status changed', 'payment_status_changed' => 'Payment', 'address_changed' => 'Address changed', 'note' => 'Note', 'delivery_issue_changed' => 'Delivery issue'],

@@ -531,6 +531,13 @@ final class PaymentService implements Payments
                 $this->refundRemaining($payment->id, "order_cancelled:{$reason}", "order-cancel:{$orderId}:{$payment->id}");
             }
         }
+
+        // Không khoản nào đã thu/đang giữ → đơn không còn gì để thu: bỏ "COD chờ thu"/"Chưa thanh toán" trên đơn huỷ.
+        $open = Payment::query()->where('order_id', $orderId)->get()->contains(fn (Payment $payment): bool => $payment->status->hasCollected()
+            || in_array($payment->status, [PaymentStatus::Authorized, PaymentStatus::Refunded], true));
+        if (! $open && Payment::query()->where('order_id', $orderId)->exists()) {
+            $this->transitions->setPaymentStatus($orderId, 'voided', 'order_cancelled', 'system');
+        }
     }
 
     /**

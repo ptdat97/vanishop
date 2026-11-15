@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Domain\OrderStage;
 use Modules\Ordering\Persistence\Models\Order;
@@ -63,6 +64,14 @@ final class OrderQueries
     /**
      * Đơn chưa xác nhận hoặc chưa giao hãng mà đã đặt quá `$hours` giờ (ô "Việc cần làm", bộ lọc `aged`).
      */
+    /**
+     * Đơn đã hoàn tất mà tiền thu khi giao chưa ghi nhận (thường do hoàn tất ngoài trình tự) — ô "Việc cần làm".
+     */
+    public function completedAwaitingCodCount(): int
+    {
+        return Order::query()->where('order_status', OrderStatus::Completed)->where('payment_status', 'cod_pending')->count();
+    }
+
     public function agedCount(int $hours): int
     {
         return $this->filtered(['aged' => $hours])->count();

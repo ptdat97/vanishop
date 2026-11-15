@@ -123,7 +123,8 @@ it('online: hết hạn thanh toán → huỷ đơn, nhả hàng, hoàn lượt 
         ->and(DB::table('order_events')->where('to_status', 'cancelled')->value('reason'))->toBe('payment_timeout')
         ->and(($this->reserved)())->toBe(0)
         ->and(DB::table('vouchers')->value('used_count'))->toEqual(0)
-        ->and(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('expired');
+        ->and(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('expired')
+        ->and($order->payment_status)->toBe('voided');
 
     ($this->callback)($paymentId, 'TXN-LATE', 'paid', 300_000)->assertOk();
 
@@ -233,5 +234,6 @@ it('COD: đơn đã huỷ thì không ghi nhận đã thu được; danh sách t
     $this->post("/admin/payment/payments/{$payment->id}/collect", ['note' => 'x'])->assertSessionHasErrors('business');
 
     expect($payment->fresh()->status->value)->toBe('cancelled')
+        ->and(($this->orderRow)()->payment_status)->toBe('voided')
         ->and(DB::table('payment_transactions')->where('type', 'cod_collected')->count())->toBe(0);
 });

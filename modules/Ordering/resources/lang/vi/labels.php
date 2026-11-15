@@ -6,7 +6,7 @@
 
 return [
     'order_status' => ['pending' => 'Chờ xác nhận', 'confirmed' => 'Đã xác nhận', 'processing' => 'Đang xử lý', 'completed' => 'Hoàn tất', 'cancelled' => 'Đã huỷ'],
-    'payment_status' => ['unpaid' => 'Chưa thanh toán', 'authorized' => 'Đã cấp phép', 'paid' => 'Đã thanh toán', 'partially_refunded' => 'Hoàn một phần', 'refunded' => 'Đã hoàn tiền', 'cod_pending' => 'COD chờ thu', 'cod_collected' => 'COD đã thu', 'failed' => 'Thất bại'],
+    'payment_status' => ['unpaid' => 'Chưa thanh toán', 'authorized' => 'Đã cấp phép', 'paid' => 'Đã thanh toán', 'partially_refunded' => 'Hoàn một phần', 'refunded' => 'Đã hoàn tiền', 'cod_pending' => 'COD chờ thu', 'cod_collected' => 'COD đã thu', 'failed' => 'Thất bại', 'voided' => 'Đã huỷ thanh toán'],
     'fulfillment_status' => ['unfulfilled' => 'Chưa giao', 'allocated' => 'Chờ giao hãng', 'partially_shipped' => 'Giao một phần', 'shipped' => 'Đang giao', 'delivered' => 'Đã giao', 'returned_to_sender' => 'Hoàn về'],
     'return_status' => ['none' => 'Không', 'requested' => 'Chờ duyệt', 'in_progress' => 'Đang xử lý', 'partially_returned' => 'Trả một phần', 'returned' => 'Đã trả hàng'],
     'event_type' => ['status_overridden' => 'Đổi trạng thái ngoài trình tự', 'placed' => 'Đặt hàng', 'status_changed' => 'Đổi trạng thái', 'payment_status_changed' => 'Thanh toán', 'address_changed' => 'Đổi địa chỉ', 'note' => 'Ghi chú', 'delivery_issue_changed' => 'Sự cố giao hàng'],

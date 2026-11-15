@@ -75,7 +75,7 @@ Bất biến (I7, `tests/Feature/Invariants`): niêm yết − giảm giá bán 
 | Chiều | Giá trị | Ai kích hoạt |
 |---|---|---|
 | `order_status` | `pending` → `confirmed` → `processing` → `completed` / `cancelled` | Hệ thống, CSKH |
-| `payment_status` | `unpaid`, `authorized`, `paid`, `partially_refunded`, `refunded`, `cod_pending`, `cod_collected`, `failed` | Payment |
+| `payment_status` | `unpaid`, `authorized`, `paid`, `partially_refunded`, `refunded`, `cod_pending`, `cod_collected`, `failed`, `voided` (đơn huỷ khi chưa thu tiền, 0.4.52) | Payment |
 | `fulfillment_status` | `unfulfilled`, `allocated`, `partially_shipped`, `shipped`, `delivered`, `returned_to_sender` (tổng hợp từ shipment) | Fulfillment |
 | `return_status` | `none`, `requested`, `in_progress`, `partially_returned`, `returned` | Returns |
 

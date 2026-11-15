@@ -5,7 +5,11 @@ use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Inventory\Application\Listeners\StockDashboardTasks;
+use Modules\Ordering\Application\OrderStatusChanger;
+use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Shared\Context\ContextScope;
+use Modules\Shared\Context\CurrentContext;
 use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -52,6 +56,20 @@ it('đủ quyền: ô của mọi module theo thứ tự, số đếm đúng, li
         ->and($tasks['stock.low']['url'])->toBe(route('admin.inventory.stock.index', ['filter' => 'low']));
 
     $this->get($tasks['orders.aged']['url'])->assertOk()->assertInertia(fn ($page) => $page->has('orders', 1)->where('orders.0.id', $old->id)->where('filters.aged', '24'));
+});
+
+it('đơn hoàn tất ngoài trình tự còn COD chưa thu: hiện ô, mở ra đúng đơn; ghi nhận đã thu thì ô biến mất', function () {
+    $order = ($this->place)();
+    ($this->place)();
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(OrderStatusChanger::class)->change($order->fresh(), OrderStatus::Completed, 'khách nhận tại cửa hàng'));
+    $this->actingAs(T::staff(['admin.access', 'orders.view', 'payments.view', 'payments.confirm']), 'staff');
+
+    $task = ($this->tasks)()['orders.completed_cod_pending'];
+
+    expect($task['count'])->toBe(1);
+    $this->get($task['url'])->assertInertia(fn ($page) => $page->has('orders', 1)->where('orders.0.id', $order->id));
+    $this->post('/admin/payment/payments/'.DB::table('payments')->where('order_id', $order->id)->value('id').'/collect', ['note' => 'thu tại quầy'])->assertSessionHasNoErrors();
+    expect(($this->tasks)())->not->toHaveKey('orders.completed_cod_pending');
 });
 
 it('chỉ ô thuộc quyền; không có ô nào thì trang vẫn mở', function () {
