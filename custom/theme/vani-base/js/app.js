@@ -1034,3 +1034,74 @@ document.addEventListener('click', (event) => {
     item.classList.add('vani-notification-closing');
     item.addEventListener('animationend', () => item.remove(), { once: true });
 });
+
+/* ── ToastManager: thông báo tự động biến mất (top-right, stackable) ────────── */
+const ToastManager = (() => {
+    const container = document.querySelector('[data-vani-toast-container]');
+    if (!container) return null;
+
+    let nextIndex = 0;
+    const timers = new Map();
+
+    const clearTimer = (id) => {
+        const timer = timers.get(id);
+        if (timer) {
+            clearTimeout(timer);
+            timers.delete(id);
+        }
+    };
+
+    const dismiss = (el) => {
+        if (!el || !el.isConnected) return;
+        clearTimer(Number(el.dataset.vaniToastId));
+        el.classList.add('vani-toast-closing');
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+    };
+
+    const show = (message, type = 'info', duration = 5000) => {
+        const el = document.createElement('div');
+        const id = nextIndex++;
+        el.id = `vani-toast-js-${id}`;
+        el.className = `vani-toast mb-2 rounded-[var(--radius-theme)] border p-3 text-sm leading-relaxed shadow-lg
+            ${type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            : type === 'error' ? 'bg-red-50 border-red-200 text-red-700'
+            : type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-800'
+            : 'bg-blue-50 border-blue-200 text-blue-800'}`;
+        el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.setAttribute('data-vani-toast', '');
+        el.setAttribute('data-vani-toast-id', id);
+        el.setAttribute('data-vani-toast-duration', duration);
+        el.innerHTML = `
+            <div class="flex items-start gap-3">
+                <p>${message}</p>
+                <button type="button"
+                        class="mt-0.5 shrink-0 inline-flex items-center rounded text-current hover:bg-current hover:text-white opacity-70 hover:opacity-100"
+                        data-vani-toast-close
+                        aria-label="${t('close')}">
+                    ×
+                </button>
+            </div>`;
+        container.appendChild(el);
+
+        const timer = setTimeout(() => dismiss(el), duration);
+        timers.set(id, timer);
+        return el;
+    };
+
+    // Bấm nút đóng trên mỗi toast
+    container.addEventListener('click', (event) => {
+        const close = event.target.closest('button[data-vani-toast-close]');
+        if (!close) return;
+        const el = close.closest('[data-vani-toast]');
+        if (el) dismiss(el);
+    });
+
+    return { show, dismiss };
+})();
+
+// Expose cho plugin / theme con sử dụng: window.vani.toast.show(msg, type, duration)
+if (typeof window.vani === 'undefined') {
+    window.vani = {};
+}
+window.vani.toast = ToastManager;

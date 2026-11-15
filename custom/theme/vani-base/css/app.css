@@ -528,6 +528,130 @@ html:has(.vani-modal[open]) {
 }
 
 /* =========================================================
+   10.6. TOAST (THÔNG BÁO TỰ ĐỘNG BIẾN MẤT)
+   Thành phần `theme::partials.toast` — floating toast, tự động đóng sau duration.
+ ========================================================= */
+
+.vani-toast-container {
+    position: fixed;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    pointer-events: none;
+}
+
+.vani-toast-container.vani-toast-top-right {
+    top: 1rem;
+    right: 1rem;
+    align-items: flex-end;
+}
+
+.vani-toast-container.vani-toast-top-left {
+    top: 1rem;
+    left: 1rem;
+    align-items: flex-start;
+}
+
+.vani-toast-container.vani-toast-top-center {
+    top: 1rem;
+    left: 50%;
+    transform: translatex(-50%);
+    align-items: center;
+}
+
+.vani-toast-container.vani-toast-bottom-right {
+    bottom: 1rem;
+    right: 1rem;
+    align-items: flex-end;
+}
+
+.vani-toast-container.vani-toast-bottom-left {
+    bottom: 1rem;
+    left: 1rem;
+    align-items: flex-start;
+}
+
+.vani-toast {
+    min-width: 280px;
+    max-width: 420px;
+    pointer-events: auto;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    animation: vani-toast-slide-in 250ms var(--ease-luxury);
+}
+
+.vani-toast button[data-vani-toast-close] {
+    line-height: 1;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.vani-toast button[data-vani-toast-close]:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.vani-toast-closing {
+    animation: vani-toast-slide-out 250ms var(--ease-luxury) forwards;
+}
+
+.vani-toast-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 3px;
+    border-radius: var(--radius-theme) var(--radius-theme) 0 0;
+    background: currentColor;
+    opacity: 0.5;
+    transform-origin: 0% 0%;
+    transform: scalex(1);
+    animation: vani-toast-progress linear forwards;
+}
+
+@keyframes vani-toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translatey(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translatey(0);
+    }
+}
+
+@keyframes vani-toast-slide-out {
+    to {
+        opacity: 0;
+        transform: translatey(-12px);
+        height: 0;
+        margin: 0;
+        padding: 0;
+        border: none;
+        overflow: hidden;
+    }
+}
+
+@keyframes vani-toast-progress {
+    to {
+        transform: scalex(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vani-toast {
+        animation: none;
+    }
+    .vani-toast-closing {
+        animation: none;
+    }
+    .vani-toast-progress {
+        animation: none;
+    }
+}
+
+/* =========================================================
    11. PROSE / RICH CONTENT
 ========================================================= */
 

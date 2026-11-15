@@ -110,6 +110,43 @@ it('thông báo dùng chung hiển thị từ session flash và tin nhắn tùy 
         ->toContain('data-vani-notification-close');
 });
 
+it('toast render từ messages tùy chỉnh, thoát HTML (chống XSS), có dữ liệu auto-dismiss', function () {
+    view()->addNamespace('theme', base_path('custom/theme/vani-base/views'));
+
+    // Không có toast → container trống, không có phần tử toast nào.
+    $html = view('theme::partials.toast')->render();
+    expect($html)->toContain('data-vani-toast-container');
+    expect(str_contains($html, 'data-vani-toast"'))->toBeFalse();
+
+    // Toast thành công.
+    $html = view('theme::partials.toast', [
+        'toasts' => [
+            ['type' => 'success', 'message' => 'Đã thêm sản phẩm vào giỏ.', 'duration' => 3000],
+            ['type' => 'error', 'message' => 'Thanh toán không thành công.', 'duration' => 5000],
+            ['type' => 'warning', 'message' => 'Sản phẩm sắp hết hàng.', 'dismissible' => false],
+        ],
+        'position' => 'top-center',
+    ])->render();
+    expect($html)->toContain('vani-toast-top-center')
+        ->toContain('Đã thêm sản phẩm vào giỏ.')
+        ->toContain('Thanh toán không thành công.')
+        ->toContain('Sản phẩm sắp hết hàng.')
+        ->toContain('data-vani-toast-duration="3000"')
+        ->toContain('data-vani-toast-duration="5000"')
+        ->toContain('role="status"')
+        ->toContain('role="alert"')
+        ->toContain('data-vani-toast-close');
+    expect(str_contains($html, 'hidden'))->toBeFalse();
+
+    // XSS được thoát.
+    $html = view('theme::partials.toast', [
+        'toasts' => [
+            ['type' => 'info', 'message' => '<img src=x onerror=alert(1)>'],
+        ],
+    ])->render();
+    expect($html)->toContain('&lt;img src=x onerror=alert(1)&gt;');
+});
+
 it('trang thương hiệu chỉ có sản phẩm của brand; brand ẩn, danh mục/sản phẩm không có → 404', function () {
     $this->get('/thuong-hieu/urbanx')->assertOk()->assertSee('Áo thun Urbanx')->assertDontSee('Đầm lụa');
 
