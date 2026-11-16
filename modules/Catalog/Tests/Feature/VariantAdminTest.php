@@ -218,6 +218,80 @@ it('một nút Lưu: tạo sản phẩm kèm biến thể trong một lần; ma 
     expect(T::seed(fn () => $created->variants()->count()))->toBe(1);
 });
 
+it('sản phẩm đơn: 0 trục + một SKU không tuỳ chọn — tạo kèm giá, sửa ở lần lưu sau; nhiều ô hay đã có trục thì từ chối', function () {
+    $payload = ['style_code' => 'ONE-01', 'slug' => 'san-pham-don', 'status' => 'draft', 'translations' => ['vi' => ['name' => 'Sản phẩm đơn']]];
+    $single = fn (array $overrides = []): array => ['values' => [], 'enabled' => true, 'status' => 'active', 'sku' => 'ONE-01', 'barcode' => null, 'weight_gram' => 200, 'fields' => ['pricing' => ['price' => 150_000, 'compare_at' => 200_000]], ...$overrides];
+
+    $this->post('/admin/catalog/products', [...$payload, 'variants' => ['axes' => [], 'cells' => [$single(), $single(['sku' => 'ONE-02'])]]])->assertSessionHasErrors('cells');
+    $this->post('/admin/catalog/products', [...$payload, 'variants' => ['axes' => [], 'cells' => [$single()]]])->assertRedirect()->assertSessionHasNoErrors();
+
+    $created = T::seed(fn () => Style::query()->where('style_code', 'ONE-01')->sole());
+    $variant = T::seed(fn () => $created->variants()->with('optionValues')->sole());
+    expect($variant)->sku->toBe('ONE-01')->weight_gram->toBe(200)
+        ->and($variant->optionValues)->toBeEmpty()
+        ->and(T::seed(fn () => $created->options()->count()))->toBe(0)
+        ->and(DB::table('prices')->where('variant_id', $variant->id)->first())->amount->toBe(150_000)->compare_at_amount->toBe(200_000);
+
+    $this->put("/admin/catalog/products/{$created->id}", [...$payload, 'lock_version' => $created->fresh()->lock_version, 'variants' => ['axes' => [], 'cells' => [$single(['sku' => 'ONE-01-X', 'fields' => ['pricing' => ['price' => 120_000]]])]]])
+        ->assertSessionHasNoErrors();
+    expect($variant->fresh()->sku)->toBe('ONE-01-X')
+        ->and(T::seed(fn () => $created->variants()->count()))->toBe(1)
+        ->and(DB::table('prices')->where('variant_id', $variant->id)->value('amount'))->toBe(120_000);
+
+    // Đã có SKU đơn: thêm trục (màu, size) bị chặn như đổi loại tuỳ chọn khi còn SKU.
+    $this->put("/admin/catalog/products/{$created->id}", [...$payload, 'lock_version' => $created->fresh()->lock_version, 'variants' => ['axes' => [['option_type_id' => $this->colorType, 'value_ids' => [$this->ivory->id]]], 'cells' => [
+        ['values' => [$this->ivory->id], 'enabled' => true, 'status' => 'active', 'sku' => 'ONE-01-IVR', 'fields' => []],
+    ]]])->assertSessionHasErrors('axes');
+
+    // Sản phẩm đã có trục biến thể: không lưu kiểu sản phẩm đơn.
+    ($this->save)([($this->cell)($this->ivory, $this->s)])->assertSessionHasNoErrors();
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => [], 'cells' => [$single(['sku' => 'LM24-ONE'])]]])->assertSessionHasErrors('axes');
+});
+
+it('chuyển sản phẩm đơn sang có biến thể: SKU đơn trở thành một ô (giữ id, giá, tồn), ô khác tạo mới', function () {
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => [], 'cells' => [
+        ['values' => [], 'enabled' => true, 'status' => 'active', 'sku' => 'LM24-SH012', 'fields' => ['pricing' => ['price' => 300_000], 'inventory' => ['on_hand' => 4]]],
+    ]]])->assertSessionHasNoErrors();
+    $single = T::seed(fn () => Variant::query()->sole());
+    $axes = [['option_type_id' => $this->colorType, 'value_ids' => [$this->ivory->id, $this->black->id]]];
+    $cells = [
+        ['values' => [$this->ivory->id], 'enabled' => true, 'status' => 'active', 'sku' => 'LM24-SH012', 'fields' => ['pricing' => ['price' => 310_000]]],
+        ['values' => [$this->black->id], 'enabled' => true, 'status' => 'active', 'sku' => 'LM24-SH012-BLK', 'fields' => []],
+    ];
+
+    // Không có `adopt_single`: đổi trục khi còn SKU bị chặn như trước. Ô đích không có trong lưới → lỗi, không đổi gì.
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => $axes, 'cells' => [[...$cells[0], 'sku' => 'LM24-SH012-IVR'], $cells[1]]]])->assertSessionHasErrors('axes');
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => $axes, 'cells' => [$cells[1]], 'adopt_single' => [$this->ivory->id]]])->assertSessionHasErrors('adopt_single');
+    expect(T::seed(fn () => $this->style->options()->count()))->toBe(0)->and(T::seed(fn () => Variant::query()->count()))->toBe(1);
+
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => $axes, 'cells' => $cells, 'adopt_single' => [$this->ivory->id]]])->assertSessionHasNoErrors();
+
+    $variants = T::seed(fn () => Variant::query()->with('optionValues')->get()->keyBy('sku'));
+    expect($variants)->toHaveCount(2)
+        ->and($variants['LM24-SH012']->id)->toBe($single->id)
+        ->and($variants['LM24-SH012']->optionValues->pluck('id')->all())->toBe([$this->ivory->id])
+        ->and($variants['LM24-SH012-BLK']->optionValues->pluck('id')->all())->toBe([$this->black->id])
+        ->and(DB::table('prices')->where('variant_id', $single->id)->value('amount'))->toBe(310_000)
+        ->and((int) DB::table('stock_levels')->where('variant_id', $single->id)->value('on_hand'))->toBe(4);
+
+    // Đã có trục: không chuyển lại lần nữa.
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => $axes, 'cells' => $cells, 'adopt_single' => [$this->ivory->id]]])->assertSessionHasErrors('adopt_single');
+});
+
+it('form sửa sản phẩm đơn: SKU không tuỳ chọn, không có trục', function () {
+    $this->put($this->base, [...($this->productPayload)(), 'variants' => ['axes' => [], 'cells' => [
+        ['values' => [], 'enabled' => true, 'status' => 'active', 'sku' => 'LM24-SH012', 'fields' => []],
+    ]]])->assertSessionHasNoErrors();
+
+    $this->get("{$this->base}/edit")->assertInertia(fn (Assert $page) => $page
+        ->where('product.variants.0.sku', 'LM24-SH012')
+        ->where('product.variants.0.values', [])
+        ->where('variantMatrix.axes', []));
+
+    $slug = T::seed(fn () => $this->style->slugFor('vi'));
+    $this->getJson("/api/storefront/v1/products/{$slug}")->assertOk()->assertJsonCount(1, 'data.variants');
+});
+
 it('lưu sản phẩm + ma trận là một transaction: ma trận lỗi, xung đột phiên bản hay phần form của plugin lỗi → không đổi gì (tên, phiên bản, SKU, giá, tồn)', function () {
     $snapshot = fn (): array => T::seed(fn () => [
         'name' => $this->style->fresh()->translate('name'),

@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.59 — 2026-11-16
+
+Form sản phẩm: sản phẩm đơn (một SKU không màu / size) và chuyển trực tiếp sang có biến thể.
+
+### Thêm
+- Form "Thêm sản phẩm": chọn **Loại sản phẩm** — "Sản phẩm đơn" (mặc định; khối "SKU & giá" một dòng: Ảnh, SKU, Barcode, Khối lượng, Trạng thái và cột do module góp như Giá bán niêm yết, Giá so sánh) hoặc "Có biến thể" (ma trận như cũ). Hai khối độc lập, lưu khối đang chọn; đổi loại được khi sản phẩm chưa có SKU. Component `Catalog/Components/DefaultVariantEditor.vue`.
+- Ma trận biến thể (`VariantMatrix::save`) nhận **sản phẩm đơn**: `axes: []` + tối đa một ô `values: []` (SKU không tuỳ chọn). Cột góp vào (`VariantFieldProvider`) lưu như mọi SKU.
+- **Chuyển sản phẩm đơn sang có biến thể**: gửi trục + `adopt_single` (id giá trị theo thứ tự trục) — SKU đơn trở thành ô đó, giữ id, giá, tồn, ảnh, lịch sử đơn; ô khác tạo mới. Admin: nút "Chuyển sang có biến thể" trên sản phẩm đơn đã lưu, chọn ô nhận SKU hiện có trong ma trận. `ProductOptions::syncAxes(..., fromSingle: true)` + `adoptSingleVariant()`.
+
+### Đổi
+- `VariantMatrix`: `axes` không còn bắt buộc ≥ 1 (rỗng = sản phẩm đơn); sản phẩm đã có trục gửi `axes: []` → lỗi `axes`; nhiều ô khi 0 trục → lỗi `cells`.
+- Admin: menu "Khách hàng" thành mục cấp 1 (không còn trong nhóm "Bán hàng").
+
 ## 0.4.58 — 2026-11-15
 
 Component Admin dùng chung chọn số lượng lớn SKU.

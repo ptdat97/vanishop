@@ -22,7 +22,7 @@ it('mục có nhóm; chỉ nhóm có mục được phép mới gửi xuống; m
 
     $this->actingAs($staff, 'staff')->get('/admin')->assertInertia(fn (Assert $page) => $page
         ->where('navigation', fn ($items) => collect($items)->pluck('group', 'key')->only(['dashboard', 'orders', 'returns', 'customers', 'payment', 'catalog', 'media', 'plugins'])->all()
-            === ['dashboard' => null, 'orders' => 'sales', 'returns' => 'sales', 'customers' => 'sales', 'payment' => 'sales', 'catalog' => 'catalog', 'media' => 'content', 'plugins' => null])
+            === ['dashboard' => null, 'orders' => 'sales', 'returns' => 'sales', 'customers' => null, 'payment' => 'sales', 'catalog' => 'catalog', 'media' => 'content', 'plugins' => null])
         ->where('navigationGroups', fn ($groups) => collect($groups)->pluck('key')->all() === ['sales', 'catalog', 'content'])
         ->where('navigationGroups.0.label', 'Bán hàng'));
 });

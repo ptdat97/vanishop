@@ -24,11 +24,14 @@ final class ProductOptions
      * Ghi trục (1–3 loại tuỳ chọn theo thứ tự) và giá trị sản phẩm dùng (theo thứ tự). Đổi tập loại khi đã có SKU → lỗi
      * (phải tắt hết SKU trước); đổi thứ tự trục → tính lại khoá tổ hợp của mọi SKU. Bỏ giá trị đang có SKU → lỗi.
      *
+     * `$fromSingle`: sản phẩm đơn (chưa có trục, một SKU không tuỳ chọn) đang chuyển sang có biến thể — cho đặt trục lần đầu dù
+     * đã có SKU; SKU đó được gắn vào một tổ hợp ngay sau (`adoptSingleVariant`).
+     *
      * @param  list<array{option_type_id: int, value_ids: list<int>}>  $axes
      *
      * @throws ValidationException
      */
-    public function syncAxes(Style $style, array $axes): void
+    public function syncAxes(Style $style, array $axes, bool $fromSingle = false): void
     {
         if ($axes === [] || count($axes) > self::MAX_AXES) {
             throw ValidationException::withMessages(['axes' => __('catalog::messages.axes_count', ['max' => self::MAX_AXES])]);
@@ -51,7 +54,7 @@ final class ProductOptions
 
         $current = $style->options()->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all();
         $hasVariants = $style->variants()->exists();
-        if ($hasVariants && (array_diff($current, $typeIds) !== [] || array_diff($typeIds, $current) !== [])) {
+        if ($hasVariants && ! ($fromSingle && $current === []) && (array_diff($current, $typeIds) !== [] || array_diff($typeIds, $current) !== [])) {
             throw ValidationException::withMessages(['axes' => __('catalog::messages.axes_locked')]);
         }
 
@@ -102,6 +105,22 @@ final class ProductOptions
         event(new VariantCreated($variant->id, $style->id, $variant->sku));
 
         return $variant;
+    }
+
+    /**
+     * Gắn SKU của sản phẩm đơn vào một tổ hợp (một giá trị cho mỗi trục, theo thứ tự trục) — giữ nguyên SKU (id, giá, tồn, ảnh,
+     * lịch sử đơn), chỉ thêm giá trị tuỳ chọn. Gọi sau `syncAxes(..., fromSingle: true)`.
+     *
+     * @param  list<int>  $valueIds
+     */
+    public function adoptSingleVariant(Style $style, Variant $variant, array $valueIds): void
+    {
+        $typeIds = $style->options()->pluck('option_type_id')->map(fn ($id): int => (int) $id)->all();
+        foreach ($valueIds as $index => $valueId) {
+            DB::table('variant_option_values')->insert(['variant_id' => $variant->id, 'option_type_id' => $typeIds[$index], 'option_value_id' => $valueId]);
+        }
+        $variant->forceFill(['option_key' => Variant::keyFor($valueIds)])->save();
+        $variant->unsetRelation('optionValues');
     }
 
     /** Tính lại khoá tổ hợp theo thứ tự trục hiện tại (sau khi đổi thứ tự trục). */

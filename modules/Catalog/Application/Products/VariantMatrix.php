@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Application\Products;
 
 use Closure;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -72,6 +73,9 @@ final class VariantMatrix
     /**
      * Lưu cả lưới (ADR-045). `$input`: axes (1–3: option_type_id, value_ids theo thứ tự), cells (values: id giá trị theo thứ
      * tự trục, enabled, status, sku, barcode, weight_gram, fields: {"<provider>": {"<field>": giá trị}}).
+     * Sản phẩm đơn (không màu, size…): axes rỗng + tối đa một ô `values: []` — một SKU không tuỳ chọn.
+     * Chuyển sản phẩm đơn sang có biến thể: gửi trục + `adopt_single` (id giá trị theo thứ tự trục) — SKU đơn trở thành ô đó
+     * (giữ id, giá, tồn, ảnh), dữ liệu của ô ghi vào chính SKU này.
      *
      * @param  array<string, mixed>  $input
      * @param  Closure(string): bool  $can
@@ -84,10 +88,17 @@ final class VariantMatrix
         $style->load('variants.optionValues');
         $existing = $style->variants->keyBy(fn (Variant $variant): string => self::canonical($variant->optionValues->mapWithKeys(fn ($value): array => [$value->option_type_id => $value->id])->all()));
         $providers = array_filter($this->providers(), fn (VariantFieldProvider $provider): bool => $can($provider->permission() ?? 'catalog.manage'));
+        [$single, $adopt, $existing] = $this->adoption($style, $input, $existing);
         [$axes, $cells] = $this->validate($input, $existing->all(), $providers);
+        if ($axes === [] && $style->options()->exists()) {
+            throw ValidationException::withMessages(['axes' => __('catalog::messages.single_variant_has_axes')]);
+        }
         $typeIds = array_column($axes, 'option_type_id');
+        if ($single !== null && ! collect($cells)->contains(fn (array $cell): bool => $cell['enabled'] && $cell['values'] === $adopt)) {
+            throw ValidationException::withMessages(['adopt_single' => __('catalog::messages.single_variant_adopt_invalid')]);
+        }
 
-        $result = DB::transaction(function () use ($style, $axes, $cells, $existing, $typeIds): array {
+        $result = DB::transaction(function () use ($style, $axes, $cells, $existing, $typeIds, $single, $adopt): array {
             // Tắt ô trước khi đổi trục: đổi tập loại tuỳ chọn chỉ được khi không còn SKU nào.
             $toRemove = [];
             foreach ($cells as $cell) {
@@ -97,7 +108,12 @@ final class VariantMatrix
                 }
             }
             [$deleted, $deactivated] = $this->remove($toRemove);
-            $this->options->syncAxes($style, $axes);
+            if ($axes !== []) {
+                $this->options->syncAxes($style, $axes, fromSingle: $single !== null);
+            }
+            if ($single !== null) {
+                $this->options->adoptSingleVariant($style, $single, $adopt);
+            }
 
             $created = $updated = 0;
             $variantIdsByCell = [];
@@ -146,6 +162,31 @@ final class VariantMatrix
     }
 
     /**
+     * Chuyển sản phẩm đơn sang có biến thể (`adopt_single`): chỉ khi sản phẩm chưa có trục và có đúng một SKU không tuỳ chọn.
+     * Trả SKU đơn, tổ hợp đích và danh sách SKU hiện có khoá lại theo tổ hợp đích (để ô đích cập nhật chính SKU đó).
+     *
+     * @param  array<string, mixed>  $input
+     * @param  Collection<string, Variant>  $existing
+     * @return array{0: Variant|null, 1: list<int>, 2: Collection<string, Variant>}
+     *
+     * @throws ValidationException
+     */
+    private function adoption(Style $style, array $input, Collection $existing): array
+    {
+        if (! array_key_exists('adopt_single', $input) || $input['adopt_single'] === null) {
+            return [null, [], $existing];
+        }
+        $single = $existing->get('');
+        $adopt = is_array($input['adopt_single']) ? array_values(array_map('intval', array_filter($input['adopt_single'], 'is_numeric'))) : [];
+        $typeIds = array_map('intval', array_column(array_filter((array) ($input['axes'] ?? []), 'is_array'), 'option_type_id'));
+        if ($single === null || $existing->count() !== 1 || $style->options()->exists() || $adopt === [] || count($adopt) !== count($typeIds) || count($adopt) !== count((array) $input['adopt_single'])) {
+            throw ValidationException::withMessages(['adopt_single' => __('catalog::messages.single_variant_adopt_invalid')]);
+        }
+
+        return [$single, $adopt, collect([self::canonical(array_combine($typeIds, $adopt)) => $single])];
+    }
+
+    /**
      * Khoá tổ hợp không phụ thuộc thứ tự trục: "loại:giá trị|…" sắp theo id loại.
      *
      * @param  array<int, int>  $valueByType
@@ -182,12 +223,12 @@ final class VariantMatrix
     private function validate(array $input, array $existing, array $providers): array
     {
         $rules = [
-            'axes' => ['required', 'array', 'min:1', 'max:'.ProductOptions::MAX_AXES],
+            'axes' => ['present', 'array', 'max:'.ProductOptions::MAX_AXES],
             'axes.*.option_type_id' => ['required', 'integer', Rule::exists('option_types', 'id')],
             'axes.*.value_ids' => ['required', 'array', 'min:1', 'max:100'],
             'axes.*.value_ids.*' => ['integer', 'distinct'],
             'cells' => ['present', 'array', 'max:1000'],
-            'cells.*.values' => ['required', 'array'],
+            'cells.*.values' => ['present', 'array'],
             'cells.*.values.*' => ['integer'],
             'cells.*.enabled' => ['required', 'boolean'],
             'cells.*.status' => ['required_if:cells.*.enabled,true', 'nullable', Rule::enum(VariantStatus::class)],
@@ -209,6 +250,9 @@ final class VariantMatrix
 
         $axes = array_map(fn (array $axis): array => ['option_type_id' => (int) $axis['option_type_id'], 'value_ids' => array_values(array_map('intval', $axis['value_ids']))], array_values($data['axes']));
         $typeIds = array_column($axes, 'option_type_id');
+        if ($axes === [] && count($data['cells']) > 1) {
+            throw ValidationException::withMessages(['cells' => __('catalog::messages.single_variant_one')]);
+        }
         $cells = [];
         $seen = [];
         $errors = [];

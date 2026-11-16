@@ -17,6 +17,7 @@ import { slugify } from '@admin/slug';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
+import DefaultVariantEditor from '../../Components/DefaultVariantEditor.vue';
 import ProductLinks from '../../Components/ProductLinks.vue';
 import ProductVideos from '../../Components/ProductVideos.vue';
 import VariantMatrixEditor from '../../Components/VariantMatrixEditor.vue';
@@ -114,18 +115,49 @@ const matrix = ref<InstanceType<typeof VariantMatrixEditor> | null>(null);
 const variantsOpen = ref(false);
 const variantSummary = computed(() => matrix.value?.summary ?? null);
 const isVariantError = (field: string): boolean => field === 'axes' || /^(axes|cells|variant|variants\.images)\./.test(field);
+/**
+ * Loại sản phẩm: "đơn" (một SKU không màu, size — DefaultVariantEditor) hoặc "có biến thể" (ma trận). Hai khối độc lập, mỗi lần
+ * lưu chỉ gửi khối đang chọn. Đổi loại được khi sản phẩm chưa có SKU nào.
+ */
+const defaultVariant = ref<InstanceType<typeof DefaultVariantEditor> | null>(null);
+const hasAxisVariants = props.product !== null && (variants.value.some((variant) => variant.values.length > 0) || props.variantMatrix.axes.some((axis) => axis.value_ids.length > 0));
+const productKind = ref<'single' | 'variants'>(hasAxisVariants ? 'variants' : 'single');
+const canChangeKind = computed(() => variants.value.length === 0);
+const singleVariant = computed(() => (variants.value.length === 1 && variants.value[0].values.length === 0 ? variants.value[0] : null));
+const singleValues = computed(() => (singleVariant.value ? props.variantMatrix.values[singleVariant.value.id] ?? {} : {}));
+const kindOptions = [
+    { value: 'single', label: 'Sản phẩm đơn', hint: 'Một SKU, không màu / size' },
+    { value: 'variants', label: 'Có biến thể', hint: 'Nhiều SKU theo màu, size…' },
+] as const;
+/** Sản phẩm đơn đã có SKU → chuyển sang có biến thể: SKU đó trở thành một ô của ma trận (VariantMatrix `adopt_single`). */
+const converting = ref(false);
+function startConversion(): void {
+    converting.value = true;
+    productKind.value = 'variants';
+    variantsOpen.value = true;
+}
+function cancelConversion(): void {
+    converting.value = false;
+    productKind.value = 'single';
+    variantsOpen.value = false;
+    matrix.value?.reset();
+}
 function submit(): void {
+    const single = productKind.value === 'single';
     form.transform((data) => {
-        const variants = matrix.value?.payload() ?? null;
+        const variants = single ? (defaultVariant.value?.payload() ?? null) : (matrix.value?.payload() ?? null);
         return variants === null ? data : { ...data, variants };
     });
     const options = {
         preserveScroll: true,
         onSuccess: () => {
-            if (!Object.keys(page.props.errors ?? {}).some(isVariantError)) variantsOpen.value = false;
+            if (!Object.keys(page.props.errors ?? {}).some(isVariantError)) {
+                variantsOpen.value = false;
+                converting.value = false;
+            }
         },
         onError: (errors: Record<string, string>) => {
-            if (Object.keys(errors).some(isVariantError)) variantsOpen.value = true;
+            if (!single && Object.keys(errors).some(isVariantError)) variantsOpen.value = true;
         },
     };
     if (props.product) {
@@ -254,8 +286,52 @@ async function destroy(): Promise<void> {
                 </FormField>
             </div>
 
-            <!-- Biến thể: thẻ tóm tắt trên form; quản lý trong popup toàn màn hình (một nút Lưu chung). -->
-            <section class="rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="variants-card-title">
+            <!-- Loại sản phẩm: đơn (một SKU, không màu/size) hoặc có biến thể (ma trận) — hai khối độc lập, lưu khối đang chọn. -->
+            <fieldset v-if="canChangeKind" class="rounded-lg border border-slate-200 bg-white p-5" data-product-kind>
+                <legend class="sr-only">Loại sản phẩm</legend>
+                <h2 class="text-sm font-medium">Loại sản phẩm</h2>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                    <label
+                        v-for="option in kindOptions"
+                        :key="option.value"
+                        class="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm"
+                        :class="productKind === option.value ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'"
+                    >
+                        <input v-model="productKind" type="radio" name="product-kind" :value="option.value" class="mt-0.5" />
+                        <span>
+                            <span class="block font-medium text-slate-900">{{ option.label }}</span>
+                            <span class="block text-xs text-slate-500">{{ option.hint }}</span>
+                        </span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <!-- Sản phẩm đơn: một SKU ngay trên form. -->
+            <section v-show="productKind === 'single'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="single-variant-title">
+                <div>
+                    <h2 id="single-variant-title" class="text-sm font-medium">
+                        SKU &amp; giá
+                        <span v-if="defaultVariant?.dirty && product" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">Chưa lưu</span>
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-600">Sản phẩm đơn — một SKU, không màu / size. <template v-if="!product">Để trống thì lưu sản phẩm chưa có SKU.</template></p>
+                    <button v-if="singleVariant" type="button" class="mt-2 text-sm text-indigo-600 underline" data-convert-to-variants @click="startConversion">
+                        Chuyển sang có biến thể (SKU này trở thành một ô màu / size)
+                    </button>
+                </div>
+                <DefaultVariantEditor
+                    ref="defaultVariant"
+                    v-model:media-ids="form.media_ids"
+                    :product-url="productUrl"
+                    :style-code="form.style_code || 'SKU'"
+                    :variant="singleVariant"
+                    :values="singleValues"
+                    :columns="variantMatrix.columns"
+                    :status-labels="labels.variant_status"
+                />
+            </section>
+
+            <!-- Có biến thể: thẻ tóm tắt trên form; quản lý trong popup toàn màn hình (một nút Lưu chung). -->
+            <section v-show="productKind === 'variants'" class="rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="variants-card-title">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h2 id="variants-card-title" class="text-sm font-medium">
@@ -273,6 +349,10 @@ async function destroy(): Promise<void> {
                     <button type="button" :class="primaryButton" data-open-variants @click="variantsOpen = true">
                         {{ variantSummary && variantSummary.active + variantSummary.inactive > 0 ? 'Quản lý biến thể' : 'Thiết lập biến thể' }}
                     </button>
+                </div>
+                <div v-if="converting" class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-indigo-50 p-3 text-sm text-indigo-900">
+                    <span>Đang chuyển sang có biến thể — SKU {{ singleVariant?.sku }} sẽ thành một ô. Bấm Lưu để hoàn tất.</span>
+                    <button type="button" class="ml-auto underline" @click="cancelConversion">Huỷ chuyển đổi</button>
                 </div>
                 <div v-if="variantSummary?.axes.length" class="mt-3 space-y-1.5">
                     <div v-for="axis in variantSummary.axes" :key="axis.name" class="flex flex-wrap items-center gap-1.5 text-xs">
@@ -303,6 +383,7 @@ async function destroy(): Promise<void> {
                     :columns="variantMatrix.columns"
                     :values="variantMatrix.values"
                     :status-labels="labels.variant_status"
+                    :adopt-variant="converting ? singleVariant : null"
                 />
                 <template #footer>
                     <span v-if="variantSummary?.dirty" class="text-sm text-amber-700">Có thay đổi chưa lưu</span>
@@ -315,7 +396,7 @@ async function destroy(): Promise<void> {
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
             <ProductLinks v-if="product" :product-url="productUrl" :links="product.links" :link-types="linkTypes" :link-types-url="linkTypesUrl" />
             <template v-else>
-                <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="new-product-images-title" data-new-product-images>
+                <section v-if="productKind === 'variants'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="new-product-images-title" data-new-product-images>
                     <div>
                         <h2 id="new-product-images-title" class="text-sm font-medium">Ảnh sản phẩm</h2>
                         <p class="mt-1 text-sm text-slate-600">Chọn hoặc tải ảnh lên, kéo để sắp thứ tự (ảnh đầu là ảnh đại diện). Ảnh riêng từng màu chọn ngay trong "Thiết lập biến thể"; khi lưu, ảnh ở đây dùng cho các màu chưa có ảnh riêng.</p>
