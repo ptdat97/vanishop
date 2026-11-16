@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DataTable from '@admin/Components/DataTable.vue';
+import Dialog from '@admin/Components/Dialog.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
@@ -8,10 +9,11 @@ import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
+import { useMoney } from '@admin/money';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 type Props = {
     baseUrl: string;
@@ -61,6 +63,13 @@ const columns = [
 ];
 const refunding = ref<null | { id: number; max: number }>(null);
 const refundForm = useForm({ amount: 0, reason: '', idempotency_key: '' });
+const refundOpen = computed({
+    get: () => refunding.value !== null,
+    set: (open: boolean) => {
+        if (!open) refunding.value = null;
+    },
+});
+const money = useMoney();
 const search = ref(props.search);
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
@@ -122,6 +131,8 @@ function openRefund(payment: { id: number; amount: number; refunded_amount: numb
     refundForm.amount = refunding.value.max;
     refundForm.reason = '';
     refundForm.idempotency_key = crypto.randomUUID().replaceAll('-', '').slice(0, 24);
+    refundForm.clearErrors();
+    refundForm.defaults();
 }
 
 function submitRefund(): void {
@@ -218,14 +229,23 @@ async function completeRefund(id: number): Promise<void> {
     </DataTable>
     <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />
 
-    <form v-if="refunding" class="mt-4 grid max-w-md gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitRefund">
-        <p class="font-medium">Hoàn tiền (tối đa <MoneyText :amount="refunding.max" />)</p>
-        <input v-model.number="refundForm.amount" :class="inputClass" type="number" min="1" :max="refunding.max" />
-        <input v-model="refundForm.reason" :class="inputClass" placeholder="Lý do" />
-        <p v-for="(error, key) in refundForm.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
-        <div class="flex gap-2">
-            <button type="submit" :class="primaryButton" :disabled="refundForm.processing">Hoàn tiền</button>
-            <button type="button" :class="secondaryButton" @click="refunding = null">Huỷ</button>
-        </div>
-    </form>
+    <Dialog v-model:open="refundOpen" title="Hoàn tiền" :subtitle="refunding ? `Tối đa ${money(refunding.max)}` : undefined" :dirty="refundForm.isDirty && !refundForm.processing">
+        <template #default>
+            <form v-if="refunding" id="refund-form" class="grid gap-3" data-refund-form @submit.prevent="submitRefund">
+                <label class="grid gap-1 text-sm">
+                    <span class="font-medium">Số tiền hoàn</span>
+                    <input v-model.number="refundForm.amount" :class="inputClass" type="number" min="1" :max="refunding.max" required />
+                </label>
+                <label class="grid gap-1 text-sm">
+                    <span class="font-medium">Lý do</span>
+                    <input v-model="refundForm.reason" :class="inputClass" placeholder="vd. khách trả hàng, giao thiếu" required />
+                </label>
+                <p v-for="(error, key) in refundForm.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
+            </form>
+        </template>
+        <template #footer="{ close }">
+            <button type="submit" form="refund-form" :class="primaryButton" :disabled="refundForm.processing">Hoàn tiền</button>
+            <button type="button" :class="secondaryButton" @click="close">Huỷ</button>
+        </template>
+    </Dialog>
 </template>
