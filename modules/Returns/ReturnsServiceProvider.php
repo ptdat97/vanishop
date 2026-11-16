@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Returns;
 
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
@@ -13,6 +14,7 @@ use Modules\Identity\Application\PermissionRegistry;
 use Modules\Returns\Application\DaysWindowPolicy;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
 use Modules\Returns\Application\Listeners\ReturnDashboardTasks;
+use Modules\Returns\Application\ReturnedVariants;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Contracts\Returns;
@@ -34,6 +36,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $this->app->bind(Returns::class, ReturnService::class);
         $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
         $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);
+        $this->app->make(Extensions::class)->tag([ReturnedVariants::class], VariantUsage::TAG);
         $this->app->make(Extensions::class)->requires(ReturnPolicy::TAG, Requirement::ExactlyOne, 'Chính sách đổi trả');
     }
 

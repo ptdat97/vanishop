@@ -7,6 +7,7 @@ namespace Plugin\CostPrice;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Pricing\Contracts\BulkPriceMode;
 use Modules\Pricing\Contracts\PriceRounding;
@@ -14,6 +15,7 @@ use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\SpreadsheetRows;
 use Plugin\CostPrice\Infrastructure\CostMarkupMode;
 use Plugin\CostPrice\Infrastructure\CostPrices;
+use Plugin\CostPrice\Infrastructure\CostPriceUsage;
 use Plugin\CostPrice\Infrastructure\NineThousandRounding;
 
 /**
@@ -34,6 +36,7 @@ final class CostPriceServiceProvider extends PluginServiceProvider
         $this->permissions(['cost-price.manage' => 'Nhập giá vốn']);
         $this->contribute(BulkPriceMode::TAG, CostMarkupMode::class);
         $this->contribute(PriceRounding::TAG, NineThousandRounding::class);
+        $this->contribute(VariantUsage::TAG, CostPriceUsage::class);
         $costs = fn (): CostPrices => $this->app->make(CostPrices::class);
 
         $this->onFilter('vani.pricing.bulk.warnings', function (array $warnings, int $variantId, ?int $listAmount, int $amount) use ($costs): array {

@@ -317,6 +317,8 @@ final class ProductController
             // loại tuỳ chọn để chọn trục, cột do module/plugin góp + giá trị theo SKU.
             'variantMatrix' => [
                 ...app(VariantMatrix::class)->columns($style, fn (string $permission): bool => Gate::allows($permission)),
+                // SKU đã phát sinh (đơn, giỏ, giữ hàng, tồn, bảng giá, đổi trả): quyết định chuyển về sản phẩm đơn được hay không.
+                'used' => $style === null ? [] : app(VariantMatrix::class)->usedVariantIds($style->variants->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()),
                 // Sản phẩm mới: sẵn trục Màu + Size (chỉ cần chọn giá trị; bỏ trục nếu không cần).
                 'axes' => $style === null
                     ? $optionTypes->whereIn('code', [OptionType::COLOR, OptionType::SIZE])->sortBy(fn (OptionType $type): int => $type->code === OptionType::COLOR ? 0 : 1)

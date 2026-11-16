@@ -58,6 +58,8 @@ return [
     'single_variant_one' => 'Sản phẩm đơn chỉ có một SKU.',
     'single_variant_has_axes' => 'Sản phẩm đã có trục biến thể (màu, size…): quản lý SKU trong Thiết lập biến thể.',
     'single_variant_adopt_invalid' => 'Không chuyển được: chọn ô (đang bật) mà SKU hiện có sẽ trở thành.',
+    'collapse_invalid' => 'Không chuyển về sản phẩm đơn được: chọn một SKU của sản phẩm để giữ lại.',
+    'collapse_used' => 'Không chuyển về sản phẩm đơn được: SKU :skus đã phát sinh (đơn hàng, giỏ, giữ hàng, tồn kho, bảng giá hoặc đổi trả) — xoá sẽ mất lịch sử. Giữ sản phẩm có biến thể và ngừng bán các SKU không dùng.',
     'axes_locked' => 'Sản phẩm đã có SKU: tắt hết SKU trước khi đổi loại tuỳ chọn của trục.',
     'option_value_in_use' => 'Không bỏ được :count giá trị đang có SKU — tắt các SKU đó trước.',
     'option_type_in_use' => 'Loại tuỳ chọn đang được sản phẩm dùng làm trục.',

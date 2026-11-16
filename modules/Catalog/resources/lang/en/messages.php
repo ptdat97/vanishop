@@ -58,6 +58,8 @@ return [
     'single_variant_one' => 'A single product has exactly one SKU.',
     'single_variant_has_axes' => 'This product has variant axes (colour, size…): manage its SKUs in the variant setup.',
     'single_variant_adopt_invalid' => 'Cannot convert: choose an enabled cell for the existing SKU to become.',
+    'collapse_invalid' => 'Cannot convert to a single product: choose one of the product\'s SKUs to keep.',
+    'collapse_used' => 'Cannot convert to a single product: SKU :skus already has history (orders, carts, reservations, stock, price lists or returns) — deleting it would lose that history. Keep the variants and deactivate unused SKUs instead.',
     'axes_locked' => 'This product has SKUs: switch them all off before changing axis option types.',
     'option_value_in_use' => 'Cannot remove :count values still used by SKUs — switch those SKUs off first.',
     'option_type_in_use' => 'This option type is used as an axis by products.',

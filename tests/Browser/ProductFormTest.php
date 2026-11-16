@@ -87,3 +87,24 @@ it('sản phẩm đơn đã lưu: Chuyển sang có biến thể → chọn màu
 
     expect(T::seed(fn () => Variant::query()->with('optionValues')->find($variantId)->optionValues->pluck('id')->all()))->toBe([$color->id]);
 });
+
+it('có biến thể: Chuyển về sản phẩm đơn — chọn SKU giữ lại, Lưu: chỉ còn SKU giữ lại, không màu / size', function () {
+    $ivory = T::seed(fn () => OptionValue::factory()->color()->create(['code' => 'IVR']));
+    $black = T::seed(fn () => OptionValue::factory()->color()->create(['code' => 'BLK']));
+    $style = T::product(T::seed(fn () => Brand::factory()->create())->id, ['style_code' => 'LM-CLP-01']);
+    T::optionValues($style, $ivory, $black);
+    $kept = T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$ivory->id], ['sku' => 'LM-CLP-01-IVR'])->id);
+    T::seed(fn () => app(ProductOptions::class)->createVariant($style, [$black->id], ['sku' => 'LM-CLP-01-BLK']));
+
+    $page = visit("/admin/catalog/products/{$style->id}/edit");
+    $page->click('[data-collapse-to-single] summary')
+        ->click('[aria-label="SKU giữ lại"]')->click('[role="option"] >> text=LM-CLP-01-IVR')
+        ->press('Chuyển')
+        ->assertPresent('[data-collapsing]')
+        ->press('Lưu')
+        ->assertNotPresent('[data-collapsing]')
+        ->assertPresent('[data-single-variant]')
+        ->assertNoJavaScriptErrors();
+
+    expect(T::seed(fn () => Variant::query()->where('style_id', $style->id)->pluck('id')->all()))->toBe([$kept]);
+});

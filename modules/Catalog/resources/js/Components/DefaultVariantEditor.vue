@@ -78,8 +78,9 @@ function setField(column: Column, field: Field, value: FieldValue): void {
 /** Thêm mới: chưa nhập gì thì lưu sản phẩm chưa có SKU. Đã có SKU: gửi khi có thay đổi. */
 const dirty = computed(() => (props.variant ? JSON.stringify(draft) !== initial : skuEdited.value || JSON.stringify(draft) !== initial));
 
-function payload(): { axes: never[]; cells: Array<Record<string, unknown>> } | null {
-    if (!dirty.value) return null;
+/** `force`: gửi cả khi không đổi (chuyển về sản phẩm đơn — server cần ô của SKU giữ lại). */
+function payload(force = false): { axes: never[]; cells: Array<Record<string, unknown>> } | null {
+    if (!dirty.value && !force) return null;
     return {
         axes: [],
         cells: [{
@@ -92,7 +93,7 @@ defineExpose({ payload, dirty });
 useLeaveGuard(() => dirty.value);
 
 const rowError = computed(() => Object.entries(page.props.errors ?? {})
-    .filter(([field]) => field === 'axes' || field === 'cells' || field.startsWith('cells.0.') || (props.variant !== null && field === `variant.${props.variant.id}`))
+    .filter(([field]) => field === 'axes' || field === 'cells' || field === 'collapse_to' || field.startsWith('cells.0.') || (props.variant !== null && field === `variant.${props.variant.id}`))
     .map(([, message]) => message).join(' ') || null);
 
 // Ảnh của SKU đã lưu: chọn từ thư viện / xoá, lưu ngay.

@@ -123,6 +123,20 @@ final class ProductOptions
         $variant->unsetRelation('optionValues');
     }
 
+    /**
+     * Về sản phẩm đơn: bỏ trục và giá trị của sản phẩm, SKU giữ lại bỏ giá trị tuỳ chọn (giữ id — đơn, tồn, giá vẫn gắn với SKU;
+     * dòng đơn cũ đã chụp sẵn màu/size). Gọi khi mọi SKU khác đã bị xoá.
+     */
+    public function collapseToSingle(Style $style, Variant $kept): void
+    {
+        DB::table('variant_option_values')->where('variant_id', $kept->id)->delete();
+        $kept->forceFill(['option_key' => Variant::keyFor([])])->save();
+        $kept->unsetRelation('optionValues');
+        $style->optionValues()->delete();
+        $style->options()->delete();
+        $style->unsetRelation('options')->unsetRelation('optionValues');
+    }
+
     /** Tính lại khoá tổ hợp theo thứ tự trục hiện tại (sau khi đổi thứ tự trục). */
     private function rekey(Style $style): void
     {

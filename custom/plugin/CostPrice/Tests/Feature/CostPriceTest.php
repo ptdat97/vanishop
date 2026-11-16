@@ -1,9 +1,12 @@
 <?php
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Contracts\Extensions;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
@@ -58,3 +61,11 @@ it('"Giá vốn + 30%" làm tròn đuôi 9.000: xem trước rồi áp; giảm %
 it('làm tròn đuôi 9.000', function (int $amount, int $expected) {
     expect((new NineThousandRounding)->round($amount))->toBe($expected);
 })->with([[191_000, 199_000], [199_000, 199_000], [200_000, 209_000], [5_000, 5_000], [9_500, 19_000]]);
+
+it('xoá SKU (tắt ô ma trận, về sản phẩm đơn): giá vốn không giữ SKU lại nhưng được dọn trước khi xoá', function () {
+    $usage = app(Extensions::class)->implementations(VariantUsage::TAG, VariantUsage::class)[CostPriceServiceProvider::ID] ?? null;
+
+    expect($usage)->not->toBeNull()->and($usage->used([$this->s->id, $this->m->id]))->toBe([]);
+    T::seed(fn () => $usage->release([$this->m->id]));
+    expect(T::seed(fn () => DB::table('plg_cost_prices')->pluck('variant_id')->map(fn ($id): int => (int) $id)->all()))->toBe([$this->s->id]);
+});

@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.67 — 2026-11-16
+
+Chuyển đổi sản phẩm đơn ⇄ có biến thể không làm mất lịch sử thương mại.
+
+### Thêm
+- **Chuyển có biến thể về sản phẩm đơn** (`VariantMatrix::save`): `axes: []` + một ô `values: []` + `collapse_to` (id SKU giữ lại) — SKU giữ lại bỏ giá trị tuỳ chọn (giữ id, đơn, tồn, giá, ảnh; dòng đơn cũ đã chụp sẵn tuỳ chọn), SKU khác bị xoá, trục của sản phẩm bị bỏ. Chỉ cho phép khi mọi SKU bị xoá chưa phát sinh (`VariantUsage`), kiểm tra lại trong transaction; có SKU đã phát sinh → lỗi `collapse_to` kèm danh sách SKU. `ProductOptions::collapseToSingle()`, `VariantMatrix::usedVariantIds()`.
+- Form sửa sản phẩm: mục "Chuyển về sản phẩm đơn" (chọn SKU giữ lại; có đúng một SKU đã phát sinh thì chỉ giữ được SKU đó, từ hai trở lên thì báo không chuyển được). Prop `variantMatrix.used` — SKU đã phát sinh.
+- Returns: `ReturnedVariants` (`VariantUsage`) — SKU trong yêu cầu đổi/trả, kể cả SKU khách xin đổi sang, là đã phát sinh.
+- Plugin `vani.cost-price`: `CostPriceUsage` (`VariantUsage`) dọn giá vốn trước khi Catalog xoá SKU (khoá ngoại restrict làm việc xoá SKU có giá vốn bị lỗi).
+
+### Đổi
+- Inventory `StockedVariants`: tính cả giữ hàng ở mọi trạng thái (đang giữ, đã chốt, đã nhả) và hàng đang về. Trước đây SKU chỉ còn dòng giữ hàng đã nhả bị xoá khi tắt ô ma trận (MySQL: lỗi khoá ngoại).
+- Pricing `PricedVariants`: SKU nằm trong bảng giá ngoài bảng niêm yết (khuyến mãi, thành viên…) là đã phát sinh — tắt ô chỉ ngừng bán, không xoá giá trong bảng đó. Giá niêm yết vẫn dọn cùng SKU (`price_history` giữ nguyên).
+
 ## 0.4.66 — 2026-11-16
 
 Form sản phẩm: sản phẩm đơn (một SKU không màu / size) và chuyển trực tiếp sang có biến thể.

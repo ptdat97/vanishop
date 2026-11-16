@@ -62,6 +62,8 @@ const props = defineProps<{
         optionTypes: Array<{ id: number; code: string; name: string; display_type: string; values: Array<{ id: number; code: string; name: string | null; hex: string | null; group: string | null }> }>;
         columns: Array<{ code: string; label: string; editable: boolean; fields: Array<{ key: string; label: string; type: string; required: boolean; options: Record<string, string>; help: string | null }> }>;
         values: Record<number, Record<string, Record<string, string | number | boolean | null>>>;
+        /** SKU đã phát sinh (đơn, giỏ, giữ hàng, tồn, bảng giá, đổi trả). */
+        used: number[];
     };
 }>();
 
@@ -123,7 +125,31 @@ const defaultVariant = ref<InstanceType<typeof DefaultVariantEditor> | null>(nul
 const hasAxisVariants = props.product !== null && (variants.value.some((variant) => variant.values.length > 0) || props.variantMatrix.axes.some((axis) => axis.value_ids.length > 0));
 const productKind = ref<'single' | 'variants'>(hasAxisVariants ? 'variants' : 'single');
 const canChangeKind = computed(() => variants.value.length === 0);
-const singleVariant = computed(() => (variants.value.length === 1 && variants.value[0].values.length === 0 ? variants.value[0] : null));
+/**
+ * Chuyển về sản phẩm đơn: giữ một SKU (bỏ màu/size, giữ id và lịch sử), xoá các SKU còn lại — chỉ khi các SKU đó chưa phát sinh
+ * gì. Có SKU đã phát sinh thì chỉ SKU đó giữ lại được; từ hai SKU đã phát sinh trở lên thì không chuyển được (server kiểm tra lại).
+ */
+const collapseTo = ref<number | null>(null);
+const pickedCollapse = ref<number | null>(null);
+const hasOptionVariants = computed(() => variants.value.some((variant) => variant.values.length > 0));
+const usedVariants = computed(() => variants.value.filter((variant) => props.variantMatrix.used.includes(variant.id)));
+const collapseCandidates = computed(() => {
+    if (!hasOptionVariants.value || usedVariants.value.length > 1) return [];
+    return (usedVariants.value.length === 1 ? usedVariants.value : variants.value).map((variant) => ({ value: variant.id, label: `${variant.label} · ${variant.sku}` }));
+});
+function startCollapse(): void {
+    if (pickedCollapse.value === null) return;
+    collapseTo.value = pickedCollapse.value;
+    productKind.value = 'single';
+}
+function cancelCollapse(): void {
+    collapseTo.value = null;
+    productKind.value = 'variants';
+}
+const singleVariant = computed(() => {
+    if (collapseTo.value !== null) return variants.value.find((variant) => variant.id === collapseTo.value) ?? null;
+    return variants.value.length === 1 && variants.value[0].values.length === 0 ? variants.value[0] : null;
+});
 const singleValues = computed(() => (singleVariant.value ? props.variantMatrix.values[singleVariant.value.id] ?? {} : {}));
 const kindOptions = [
     { value: 'single', label: 'Sản phẩm đơn', hint: 'Một SKU, không màu / size' },
@@ -144,8 +170,11 @@ function cancelConversion(): void {
 }
 function submit(): void {
     const single = productKind.value === 'single';
+    const collapsing = single ? collapseTo.value : null;
     form.transform((data) => {
-        const variants = single ? (defaultVariant.value?.payload() ?? null) : (matrix.value?.payload() ?? null);
+        const variants = collapsing !== null
+            ? { ...defaultVariant.value!.payload(true)!, collapse_to: collapsing }
+            : (single ? (defaultVariant.value?.payload() ?? null) : (matrix.value?.payload() ?? null));
         return variants === null ? data : { ...data, variants };
     });
     const options = {
@@ -154,6 +183,8 @@ function submit(): void {
             if (!Object.keys(page.props.errors ?? {}).some(isVariantError)) {
                 variantsOpen.value = false;
                 converting.value = false;
+                collapseTo.value = null;
+                pickedCollapse.value = null;
             }
         },
         onError: (errors: Record<string, string>) => {
@@ -314,7 +345,11 @@ async function destroy(): Promise<void> {
                         <span v-if="defaultVariant?.dirty && product" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">Chưa lưu</span>
                     </h2>
                     <p class="mt-1 text-sm text-slate-600">Sản phẩm đơn — một SKU, không màu / size. <template v-if="!product">Để trống thì lưu sản phẩm chưa có SKU.</template></p>
-                    <button v-if="singleVariant" type="button" class="mt-2 text-sm text-indigo-600 underline" data-convert-to-variants @click="startConversion">
+                    <div v-if="collapseTo !== null" class="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-indigo-50 p-3 text-sm text-indigo-900" data-collapsing>
+                        <span>Đang chuyển về sản phẩm đơn — giữ SKU {{ singleVariant?.sku }} (bỏ màu/size, giữ đơn, tồn, giá, ảnh); xoá {{ variants.length - 1 }} SKU còn lại (chưa phát sinh gì). Bấm Lưu để hoàn tất.</span>
+                        <button type="button" class="ml-auto underline" @click="cancelCollapse">Huỷ chuyển đổi</button>
+                    </div>
+                    <button v-else-if="singleVariant" type="button" class="mt-2 text-sm text-indigo-600 underline" data-convert-to-variants @click="startConversion">
                         Chuyển sang có biến thể (SKU này trở thành một ô màu / size)
                     </button>
                 </div>
@@ -354,6 +389,25 @@ async function destroy(): Promise<void> {
                     <span>Đang chuyển sang có biến thể — SKU {{ singleVariant?.sku }} sẽ thành một ô. Bấm Lưu để hoàn tất.</span>
                     <button type="button" class="ml-auto underline" @click="cancelConversion">Huỷ chuyển đổi</button>
                 </div>
+                <details v-if="product && hasOptionVariants && !converting" class="mt-3 text-sm" data-collapse-to-single>
+                    <summary class="cursor-pointer text-indigo-600">Chuyển về sản phẩm đơn</summary>
+                    <div class="mt-2 space-y-2 rounded-md border border-slate-200 p-3">
+                        <template v-if="collapseCandidates.length">
+                            <p class="text-slate-600">
+                                Giữ một SKU (bỏ màu/size, giữ id, đơn, tồn, giá, ảnh); các SKU còn lại bị xoá.
+                                <template v-if="usedVariants.length === 1">Chỉ giữ được {{ usedVariants[0].sku }} vì SKU này đã phát sinh.</template>
+                            </p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="w-72"><Select v-model="pickedCollapse" :options="collapseCandidates" placeholder="Chọn SKU giữ lại…" aria-label="SKU giữ lại" /></div>
+                                <button type="button" :class="secondaryButton" :disabled="pickedCollapse === null" @click="startCollapse">Chuyển</button>
+                            </div>
+                        </template>
+                        <p v-else class="text-amber-800">
+                            Không chuyển được: {{ usedVariants.length }} SKU đã phát sinh (đơn hàng, giỏ, giữ hàng, tồn kho, bảng giá hoặc đổi trả) — xoá sẽ mất lịch sử.
+                            Giữ sản phẩm có biến thể và ngừng bán các SKU không dùng.
+                        </p>
+                    </div>
+                </details>
                 <div v-if="variantSummary?.axes.length" class="mt-3 space-y-1.5">
                     <div v-for="axis in variantSummary.axes" :key="axis.name" class="flex flex-wrap items-center gap-1.5 text-xs">
                         <span class="w-16 shrink-0 font-medium text-slate-500">{{ axis.name }}</span>

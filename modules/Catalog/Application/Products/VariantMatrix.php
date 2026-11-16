@@ -76,6 +76,9 @@ final class VariantMatrix
      * Sản phẩm đơn (không màu, size…): axes rỗng + tối đa một ô `values: []` — một SKU không tuỳ chọn.
      * Chuyển sản phẩm đơn sang có biến thể: gửi trục + `adopt_single` (id giá trị theo thứ tự trục) — SKU đơn trở thành ô đó
      * (giữ id, giá, tồn, ảnh), dữ liệu của ô ghi vào chính SKU này.
+     * Chuyển ngược về sản phẩm đơn: `axes: []` + một ô `values: []` + `collapse_to` (id SKU giữ lại) — SKU đó bỏ giá trị tuỳ
+     * chọn (giữ id và mọi lịch sử), SKU khác bị xoá; chỉ cho phép khi mọi SKU khác chưa phát sinh gì (`VariantUsage`) —
+     * không chuyển đổi nào làm mất lịch sử thương mại.
      *
      * @param  array<string, mixed>  $input
      * @param  Closure(string): bool  $can
@@ -89,8 +92,9 @@ final class VariantMatrix
         $existing = $style->variants->keyBy(fn (Variant $variant): string => self::canonical($variant->optionValues->mapWithKeys(fn ($value): array => [$value->option_type_id => $value->id])->all()));
         $providers = array_filter($this->providers(), fn (VariantFieldProvider $provider): bool => $can($provider->permission() ?? 'catalog.manage'));
         [$single, $adopt, $existing] = $this->adoption($style, $input, $existing);
+        [$kept, $others, $existing] = $this->collapsing($style, $input, $existing);
         [$axes, $cells] = $this->validate($input, $existing->all(), $providers);
-        if ($axes === [] && $style->options()->exists()) {
+        if ($axes === [] && $kept === null && $style->options()->exists()) {
             throw ValidationException::withMessages(['axes' => __('catalog::messages.single_variant_has_axes')]);
         }
         $typeIds = array_column($axes, 'option_type_id');
@@ -98,7 +102,7 @@ final class VariantMatrix
             throw ValidationException::withMessages(['adopt_single' => __('catalog::messages.single_variant_adopt_invalid')]);
         }
 
-        $result = DB::transaction(function () use ($style, $axes, $cells, $existing, $typeIds, $single, $adopt): array {
+        $result = DB::transaction(function () use ($style, $axes, $cells, $existing, $typeIds, $single, $adopt, $kept, $others): array {
             // Tắt ô trước khi đổi trục: đổi tập loại tuỳ chọn chỉ được khi không còn SKU nào.
             $toRemove = [];
             foreach ($cells as $cell) {
@@ -108,6 +112,16 @@ final class VariantMatrix
                 }
             }
             [$deleted, $deactivated] = $this->remove($toRemove);
+            if ($kept !== null) {
+                // Kiểm tra lại trong transaction: SKU vừa phát sinh (đơn, giữ hàng…) giữa lúc kiểm tra và lúc lưu → huỷ cả lần lưu.
+                $late = $this->usedVariantIds($others);
+                if ($late !== []) {
+                    throw ValidationException::withMessages(['collapse_to' => __('catalog::messages.collapse_used', ['skus' => Variant::query()->whereKey($late)->limit(5)->pluck('sku')->implode(', ')])]);
+                }
+                [$collapsed] = $this->remove($others);
+                $deleted += $collapsed;
+                $this->options->collapseToSingle($style, $kept);
+            }
             if ($axes !== []) {
                 $this->options->syncAxes($style, $axes, fromSingle: $single !== null);
             }
@@ -159,6 +173,57 @@ final class VariantMatrix
         }
 
         return [...array_diff_key($result, ['variant_ids' => true]), 'field_errors' => $fieldErrors];
+    }
+
+    /**
+     * SKU đã phát sinh dữ liệu ở bất kỳ nhà cung cấp `VariantUsage` nào (đơn, giỏ, giữ hàng, tồn, bảng giá, đổi trả…). Nhà
+     * cung cấp lỗi → coi mọi SKU là đã phát sinh (an toàn: không xoá).
+     *
+     * @param  list<int>  $variantIds
+     * @return list<int>
+     */
+    public function usedVariantIds(array $variantIds): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+        $used = [];
+        foreach ($this->extensions->implementations(VariantUsage::TAG, VariantUsage::class) as $usage) {
+            array_push($used, ...array_map('intval', (array) $this->extensions->call($usage, fn (): array => $usage->used($variantIds), $variantIds, 'catalog.variant_usage.used')));
+        }
+
+        return array_values(array_unique(array_intersect($variantIds, $used)));
+    }
+
+    /**
+     * Chuyển ngược về sản phẩm đơn (`collapse_to`): sản phẩm đang có trục, SKU giữ lại thuộc sản phẩm; mọi SKU khác chưa phát
+     * sinh gì (sẽ bị xoá) — có SKU đã phát sinh thì từ chối, kèm danh sách SKU. Trả SKU giữ lại, các SKU sẽ xoá và danh sách
+     * SKU hiện có khoá theo ô không tuỳ chọn (để ô đó cập nhật chính SKU giữ lại).
+     *
+     * @param  array<string, mixed>  $input
+     * @param  Collection<string, Variant>  $existing
+     * @return array{0: Variant|null, 1: list<int>, 2: Collection<string, Variant>}
+     *
+     * @throws ValidationException
+     */
+    private function collapsing(Style $style, array $input, Collection $existing): array
+    {
+        if (! array_key_exists('collapse_to', $input) || $input['collapse_to'] === null) {
+            return [null, [], $existing];
+        }
+        $kept = is_numeric($input['collapse_to']) ? $existing->first(fn (Variant $variant): bool => $variant->id === (int) $input['collapse_to']) : null;
+        if ($kept === null || ($input['axes'] ?? null) !== [] || ! $style->options()->exists()) {
+            throw ValidationException::withMessages(['collapse_to' => __('catalog::messages.collapse_invalid')]);
+        }
+        $others = $existing->reject(fn (Variant $variant): bool => $variant->id === $kept->id);
+        $otherIds = $others->pluck('id')->map(fn (mixed $id): int => (int) $id)->values()->all();
+        $used = $this->usedVariantIds($otherIds);
+        if ($used !== []) {
+            $skus = $others->whereIn('id', $used)->pluck('sku')->take(5)->implode(', ').(count($used) > 5 ? '…' : '');
+            throw ValidationException::withMessages(['collapse_to' => __('catalog::messages.collapse_used', ['skus' => $skus])]);
+        }
+
+        return [$kept, $otherIds, collect(['' => $kept])];
     }
 
     /**
@@ -319,10 +384,7 @@ final class VariantMatrix
             return [0, 0];
         }
         $usages = $this->extensions->implementations(VariantUsage::TAG, VariantUsage::class);
-        $used = [];
-        foreach ($usages as $usage) {
-            array_push($used, ...array_map('intval', (array) $this->extensions->call($usage, fn (): array => $usage->used($variantIds), $variantIds, 'catalog.variant_usage.used')));
-        }
+        $used = $this->usedVariantIds($variantIds);
         $keep = array_values(array_intersect($variantIds, $used));
         $delete = array_values(array_diff($variantIds, $used));
 

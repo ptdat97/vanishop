@@ -23,6 +23,9 @@ final class StockedVariants implements VariantUsage
             ->merge(DB::table('stock_movements')->whereIn('variant_id', $variantIds)->distinct()->pluck('variant_id'))
             ->merge(DB::table('stock_levels')->whereIn('variant_id', $variantIds)->where(fn ($query) => $query->where('on_hand', '!=', 0)->orWhere('reserved', '!=', 0))->pluck('variant_id'))
             ->merge(DB::table('inventory_reconciliation_lines')->whereIn('variant_id', $variantIds)->pluck('variant_id'))
+            // Giữ hàng ở mọi trạng thái (đang giữ, đã chốt, đã nhả) là lịch sử của đơn/checkout; hàng đang về là kế hoạch nhập.
+            ->merge(DB::table('stock_reservations')->whereIn('variant_id', $variantIds)->distinct()->pluck('variant_id'))
+            ->merge(DB::table('incoming_stock')->whereIn('variant_id', $variantIds)->where('quantity', '>', 0)->pluck('variant_id'))
             ->map(fn ($id): int => (int) $id)->unique()->values()->all();
     }
 
