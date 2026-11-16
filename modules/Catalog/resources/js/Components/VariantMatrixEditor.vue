@@ -56,6 +56,8 @@ const props = defineProps<{
     columns: Column[];
     values: Record<number, Record<string, Record<string, FieldValue>>>;
     statusLabels: Record<string, string>;
+    /** Chuyển sản phẩm đơn sang có biến thể: SKU không tuỳ chọn này trở thành một ô (giữ id, giá, tồn, ảnh). */
+    adoptVariant?: Variant | null;
 }>();
 
 const MAX_AXES = 3;
@@ -70,9 +72,11 @@ const valueName = (valueId: number): string => {
 };
 const isSwatch = (typeId: number): boolean => typeById.value.get(typeId)?.display_type === 'swatch';
 /** Đã có SKU thì không đổi được tập loại tuỳ chọn (server cũng chặn); vẫn đổi được thứ tự trục, thêm/bớt giá trị chưa dùng. */
-const locked = computed(() => props.variants.length > 0);
+const locked = computed(() => props.variants.some((variant) => variant.values.length > 0));
 
 const axes = ref<Axis[]>([]);
+/** Ô (khoá tổ hợp) mà SKU đơn trở thành khi chuyển sang có biến thể. */
+const adoptTarget = ref<string | null>(null);
 const drafts = reactive<Record<string, Draft>>({});
 const dirty = ref(false);
 let submitted: string[] = [];
@@ -88,7 +92,8 @@ function init(): void {
     initializing = true;
     axes.value = props.axes.map((axis) => ({ option_type_id: axis.option_type_id, value_ids: [...axis.value_ids] }));
     Object.keys(drafts).forEach((existing) => delete drafts[existing]);
-    for (const variant of props.variants) {
+    adoptTarget.value = null;
+    for (const variant of props.variants.filter((item) => item.values.length > 0)) {
         drafts[comboKey(variant.values, props.axes)] = {
             variantId: variant.id, enabled: true, sku: variant.sku, barcode: variant.barcode, weight_gram: variant.weight_gram, status: variant.status,
             fields: JSON.parse(JSON.stringify(props.values[variant.id] ?? {})),
@@ -144,6 +149,8 @@ const combos = computed<number[][]>(() => activeAxes.value.length === 0
 const comboLabel = (values: number[]): string => values.map(valueName).join(' / ');
 const draftOf = (values: number[]): Draft | undefined => drafts[comboKey(values)];
 
+const autoSku = (values: number[]): string => [props.styleCode, ...values.map((id) => valueById.value.get(id)?.code ?? id)].join('-').toUpperCase();
+
 function toggle(values: number[], force?: boolean): void {
     const existing = draftOf(values);
     if (existing) {
@@ -152,7 +159,7 @@ function toggle(values: number[], force?: boolean): void {
     }
     if (force === false) return;
     drafts[comboKey(values)] = {
-        variantId: null, enabled: true, sku: [props.styleCode, ...values.map((id) => valueById.value.get(id)?.code ?? id)].join('-').toUpperCase(),
+        variantId: null, enabled: true, sku: autoSku(values),
         barcode: null, weight_gram: null, status: 'active', fields: {},
     };
 }
@@ -213,6 +220,34 @@ interface Row { values: number[]; key: string; label: string; draft: Draft }
 const rows = computed(() => combos.value
     .map((values) => ({ values, key: comboKey(values), label: comboLabel(values), draft: draftOf(values) }))
     .filter((row): row is Row => row.draft !== undefined && row.draft.enabled));
+/*
+ * Chuyển từ sản phẩm đơn: SKU hiện có nhận một ô đang bật (mặc định ô đầu) — ô đó mang SKU, barcode, khối lượng, giá… của SKU
+ * hiện có; đổi ô thì ô cũ về SKU tự sinh. Lưu: gửi `adopt_single` = giá trị của ô.
+ */
+const adoptOptions = computed(() => rows.value.map((row) => ({ value: row.key, label: row.label })));
+watch(() => [props.adoptVariant?.id ?? null, rows.value.map((row) => row.key).join(',')] as const, () => {
+    if (!props.adoptVariant) {
+        adoptTarget.value = null;
+    } else if (!rows.value.some((row) => row.key === adoptTarget.value)) {
+        adoptTarget.value = rows.value[0]?.key ?? null;
+    }
+});
+watch(adoptTarget, (next, previous) => {
+    const adopted = props.adoptVariant;
+    if (!adopted) return;
+    const before = previous ? rows.value.find((row) => row.key === previous) ?? null : null;
+    if (before && before.draft.sku === adopted.sku) {
+        Object.assign(before.draft, { sku: autoSku(before.values), barcode: null, weight_gram: null, status: 'active', fields: {} });
+    }
+    const target = next ? drafts[next] : undefined;
+    if (target) {
+        Object.assign(target, {
+            sku: adopted.sku, barcode: adopted.barcode, weight_gram: adopted.weight_gram, status: adopted.status,
+            fields: JSON.parse(JSON.stringify(props.values[adopted.id] ?? {})),
+        });
+    }
+});
+
 const fieldColumns = computed(() => props.columns.flatMap((column) => column.fields.map((field) => ({ key: `f:${column.code}.${field.key}`, column, field }))));
 const tableColumns = computed(() => [
     { key: 'label', label: activeAxes.value.map((axis) => typeName(axis.option_type_id)).join(' / '), class: 'whitespace-nowrap' },
@@ -260,7 +295,7 @@ type Cell = { values: number[]; enabled: boolean; status: string; sku: string; b
  * Dữ liệu ma trận gửi kèm form sản phẩm; null = không đổi gì. Trục chưa chọn giá trị nào bị bỏ khi sản phẩm chưa có SKU (vd. sản
  * phẩm chỉ có màu thì để trống Size).
  */
-function payload(): { axes: Axis[]; cells: Cell[]; images?: Array<{ value_id: number; media_ids: number[] }> } | null {
+function payload(): { axes: Axis[]; cells: Cell[]; images?: Array<{ value_id: number; media_ids: number[] }>; adopt_single?: number[] } | null {
     if (!dirty.value) return null;
     const sent = activeAxes.value;
     if (sent.length === 0) return null;
@@ -276,6 +311,10 @@ function payload(): { axes: Axis[]; cells: Cell[]; images?: Array<{ value_id: nu
             values, enabled: draft.enabled, status: draft.status, sku: draft.sku, barcode: draft.barcode, weight_gram: draft.weight_gram,
             fields: Object.fromEntries(props.columns.filter((column) => column.editable).map((column) => [column.code, draft.fields[column.code] ?? {}])),
         });
+    }
+    if (props.adoptVariant) {
+        const target = rows.value.find((row) => row.key === adoptTarget.value);
+        return { axes: sent, cells, adopt_single: target ? target.values : [] };
     }
     return props.productUrl ? { axes: sent, cells } : { axes: sent, cells, images: imageGroups() };
 }
@@ -300,7 +339,7 @@ const summary = computed(() => ({
     dirty: dirty.value,
 }));
 
-defineExpose({ payload, summary });
+defineExpose({ payload, summary, reset: init });
 
 /** Lỗi của ô: `cells.<n>.<trường>` theo thứ tự đã gửi; lỗi của cột góp vào: `variant.<id>`. */
 function rowError(rowKey: string, variantId: number | null): string | null {
@@ -311,7 +350,7 @@ function rowError(rowKey: string, variantId: number | null): string | null {
     return [...own, ...(provided ? [provided] : [])].join(' ') || null;
 }
 const valueImageErrors = computed(() => Object.fromEntries(Object.entries(errors.value).filter(([field]) => field.startsWith('variants.images'))));
-const axisErrors = computed(() => Object.entries(errors.value).filter(([field]) => field === 'axes' || field.startsWith('axes.')).map(([, message]) => message));
+const axisErrors = computed(() => Object.entries(errors.value).filter(([field]) => field === 'axes' || field.startsWith('axes.') || field === 'adopt_single').map(([, message]) => message));
 
 // Ảnh theo SKU (chỉ SKU đã lưu).
 const variantById = computed(() => new Map(props.variants.map((variant) => [variant.id, variant])));
@@ -629,6 +668,10 @@ const enabledCount = computed(() => rows.value.length);
                     <h3 class="text-sm font-semibold text-slate-900">3. Chi tiết SKU</h3>
                     <button v-if="productUrl && variants.length" type="button" :class="secondaryButton" data-assign-images @click="assign.picking = true">Gán ảnh cho nhiều SKU</button>
                     <span class="text-xs text-slate-500">Sửa trực tiếp trong bảng: SKU, giá, tồn… <template v-if="summary.withoutImages"> · <span class="text-amber-700">{{ summary.withoutImages }} SKU chưa có ảnh</span></template></span>
+                </div>
+                <div v-if="adoptVariant" class="flex flex-wrap items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm" data-adopt-single>
+                    <span>SKU hiện có <span class="font-mono text-xs font-medium">{{ adoptVariant.sku }}</span> (giữ giá, tồn, ảnh, lịch sử đơn) trở thành ô</span>
+                    <div class="w-56"><Select v-model="adoptTarget" :options="adoptOptions" aria-label="Ô nhận SKU hiện có" /></div>
                 </div>
                 <div v-if="!productUrl && imageAxis && imageValues.length" class="space-y-3 rounded-md border border-slate-200 bg-white p-3 text-sm" data-value-images>
                     <div>
