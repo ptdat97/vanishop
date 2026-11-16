@@ -28,7 +28,7 @@ final class PaymentDashboardTasks
             'key' => 'payments.reconciliation_mismatch', 'label' => 'Đối soát lệch', 'count' => $mismatches, 'hint' => 'Sao kê/bảng kê không khớp đơn',
             'url' => route('admin.payment.payments.index'), 'tone' => 'warning', 'order' => 61,
         ]] : []), [
-            'key' => 'payments.refunds_requested', 'label' => 'Hoàn tiền chờ chuyển trả', 'count' => Refund::query()->where('status', 'requested')->count(),
+            'key' => 'payments.refunds_requested', 'label' => 'Hoàn tiền chờ chuyển trả', 'count' => Refund::query()->whereIn('status', ['requested', 'paying_out'])->count(),
             'url' => route('admin.payment.payments.index'), 'tone' => 'warning', 'order' => 60,
         ]];
     }

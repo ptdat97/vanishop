@@ -34,7 +34,7 @@ type Props = {
         can_capture: boolean;
         can_refund: boolean;
     }>;
-    refunds: Array<{ id: number; payment_id: number; amount: number; reason: string; created_at: string | null }>;
+    refunds: Array<{ id: number; payment_id: number; amount: number; reason: string; paying_out: boolean; created_at: string | null }>;
     can: { confirm: boolean; refund: boolean };
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     perPageOptions: number[];
@@ -182,9 +182,9 @@ async function completeRefund(id: number): Promise<void> {
     <section v-if="refunds.length" class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
         <h2 class="mb-2 font-semibold">Chờ hoàn tiền thủ công</h2>
         <div v-for="refund in refunds" :key="refund.id" class="flex items-center justify-between border-t border-amber-100 py-2 text-sm">
-            <span><MoneyText :amount="refund.amount" /> · {{ refund.reason }} · {{ refund.created_at }}</span>
+            <span><MoneyText :amount="refund.amount" /> · {{ refund.reason }} · {{ refund.created_at }}<template v-if="refund.paying_out"> · <strong data-paying-out>Đang chuyển trả — kiểm tra ngân hàng trước khi bấm "Đã chuyển trả"</strong></template></span>
             <span v-if="can.refund" class="flex gap-3">
-                <button v-for="channel in payouts" :key="channel.code" type="button" class="text-indigo-600 hover:underline" :data-payout="channel.code" @click="payout(refund.id, channel)">Chuyển trả qua {{ channel.label }}</button>
+                <button v-for="channel in refund.paying_out ? [] : payouts" :key="channel.code" type="button" class="text-indigo-600 hover:underline" :data-payout="channel.code" @click="payout(refund.id, channel)">Chuyển trả qua {{ channel.label }}</button>
                 <button type="button" class="text-indigo-600 hover:underline" @click="completeRefund(refund.id)">Đã chuyển trả</button>
             </span>
         </div>

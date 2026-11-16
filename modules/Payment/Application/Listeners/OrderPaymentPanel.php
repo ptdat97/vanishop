@@ -38,7 +38,7 @@ final class OrderPaymentPanel
         foreach (Payment::query()->where('order_id', $order->id)->orderBy('id')->get() as $payment) {
             $gateway = $this->gateways->get($payment->gateway_code);
             $rows[] = ['label' => $gateway?->label() ?? $payment->gateway_code, 'value' => ($labels[$payment->status->value] ?? $payment->status->value).' · '.$money($payment->amount)];
-            $pendingRefunds = Refund::query()->where('payment_id', $payment->id)->where('status', 'requested')->get();
+            $pendingRefunds = Refund::query()->where('payment_id', $payment->id)->whereIn('status', ['requested', 'paying_out'])->get();
             if ($payment->refunded_amount > 0) {
                 $rows[] = ['label' => 'Đã hoàn', 'value' => $money($payment->refunded_amount).($pendingRefunds->isNotEmpty() ? ' (chờ chuyển trả '.$money((int) $pendingRefunds->sum('amount')).')' : '')];
             }

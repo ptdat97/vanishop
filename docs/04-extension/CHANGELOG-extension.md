@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.68 — 2026-11-16
+
+Kiểm soát tiền khi chuyển trả/đối soát, tương thích plugin khi nâng Core, đồng bộ tài liệu, license.
+
+### Sửa
+- **Chuyển trả hai lần** (`RefundPayout`): hai lần bấm "Chuyển trả qua …" cùng lúc trước đây đều gọi kênh. Nay Core giành khoản hoàn bằng UPDATE có điều kiện `requested → paying_out` trước khi gọi; lỗi → trả về `requested`; tiến trình chết giữa chừng → khoản hoàn hiện "Đang chuyển trả" ở trang Thanh toán, nhân viên kiểm tra ngân hàng rồi bấm "Đã chuyển trả" (`completeManualRefund` nhận cả `paying_out`). Hợp đồng `RefundPayout` ghi rõ: implementation phải dùng `RefundData::$refundPublicId` làm khoá idempotency phía ngân hàng/ví.
+- **Số tiền lệch chỉ ghi log**: cổng/hãng báo thu (hoặc giữ) số tiền khác khoản thanh toán → nay thêm dòng lệch vào hàng đợi "Đối soát lệch" (`Reconciliations`, source `payment`, idempotent theo khoản + số tiền). Trước đây COD hãng thu thiếu làm khoản thanh toán treo "chờ thu" mà không ai thấy.
+- **Plugin không tương thích Core vẫn được nạp**: dựng cache plugin (`vani:plugin:cache`, sau mọi thao tác vòng đời) nay chuyển plugin đang bật mà Core đã ra ngoài `requires.vanishop` sang `failed` (`incompatible_core: …`), kéo theo plugin phụ thuộc (`dependency_unavailable: …`), audit `extension.plugin.failed` ([plugin-system §6](../05-plugin/plugin-system.md)).
+
+### Tài liệu
+- `status`, `roadmap` đồng bộ Core 0.4.67/0.4.68; EP v3 X1–X7 đánh dấu xong; plugin-catalog thêm `vani.video-youtube`; rà soát hợp đồng plugin ([plugin-system §6.1](../05-plugin/plugin-system.md)).
+- License: `composer.json` `"license": "proprietary"` (trước ghi MIT), README trỏ tới `LICENSE.md`.
+
 ## 0.4.67 — 2026-11-16
 
 Chuyển đổi sản phẩm đơn ⇄ có biến thể không làm mất lịch sử thương mại.

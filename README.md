@@ -564,7 +564,14 @@ VaniShop được phát triển dựa trên các nguyên tắc:
 
 ## License
 
-Vui lòng kiểm tra thông tin license được công bố chính thức trong repository trước khi sử dụng, phân phối hoặc thương mại hóa VaniShop.
+VaniShop là **phần mềm độc quyền** (proprietary), giữ mọi quyền — xem [LICENSE.md](LICENSE.md). Tóm tắt:
+
+- Chỉ tổ chức/cá nhân được chủ sở hữu cho phép bằng văn bản mới được truy cập, cài đặt, chạy và sửa mã nguồn, trong phạm vi sử dụng nội bộ đã được duyệt.
+- Không sao chép, công bố, phân phối, bán, cho thuê, cấp phép lại hay đưa mã nguồn (kể cả bản sửa đổi) lên kho công khai.
+- Có quyền truy cập repository **không** có nghĩa là được cấp license.
+- Thư viện bên thứ ba giữ license riêng của chúng (Laravel và phần lớn dependency là MIT); kiểm tra trong CI theo [clean-room-license](docs/01-principles/clean-room-license.md).
+
+`composer.json` khai báo `"license": "proprietary"`; `package.json` đặt `"private": true`. Sử dụng ngoài phạm vi trên cần chủ sở hữu đồng ý bằng văn bản.
 
 ---
 

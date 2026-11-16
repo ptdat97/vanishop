@@ -1,8 +1,8 @@
 # Roadmap
 
-> Trạng thái: **Đang thực hiện** (Core 0.3.104, 2026-11-08). Các phase hardening 1–8 và slice chuyển sang một cửa hàng đã hoàn tất; trọng tâm hiện tại là làm vận hành hàng ngày cho SME đơn giản hơn. Backlog chi tiết hiện hành ở [reference-parity-refactor §6](reference-parity-refactor.md).
+> Trạng thái: **Đang thực hiện** (Core 0.4.67, 2026-11-16). Các phase hardening 1–8, slice chuyển sang một cửa hàng, Storefront API-first, biến thể linh hoạt và điểm mở rộng v3 (X1–X7) đã hoàn tất; trọng tâm hiện tại là làm vận hành hàng ngày cho SME đơn giản hơn. Backlog chi tiết hiện hành ở [reference-parity-refactor §6](reference-parity-refactor.md).
 >
-> **Mục tiêu hiện tại (2026-11-08): một cửa hàng, một người bán.** Phase 9 (ERP connector) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho nó. Chỉ mở lại khi Owner quyết định. Hạng mục **ngoài phạm vi** dự án (không phải đóng băng): [ADR-033](../19-adr/ADR-033-out-of-scope.md). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
+> **Mục tiêu hiện tại (2026-11-16): một cửa hàng, một người bán.** Phase 9 (ERP connector) **đóng băng**: không làm, không thiết kế thêm, không thêm extension point hay cột dữ liệu chuẩn bị cho nó. Chỉ mở lại khi Owner quyết định. Hạng mục **ngoài phạm vi** dự án (không phải đóng băng): [ADR-033](../19-adr/ADR-033-out-of-scope.md). Mỗi slice/phase xong phải cập nhật [status](../00-overview/status.md).
 
 ## 1. Nguyên tắc
 
@@ -121,6 +121,11 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 | 13 | Plugin go-live P1 còn lại: `vani.tracking-pixels` (`vani.vnpay`: đã có 2026-10-03, chờ chạy thử sandbox; `vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
+| 16 ✅ | **Storefront API-first** (xong 2026-11-12, Core 0.4.7–0.4.15): API v1 là hợp đồng, Blade dùng API in-process, một mô hình mã giảm giá, khoá hợp đồng HTTP | [api-first-refactor](api-first-refactor.md), [ADR-044](../19-adr/ADR-044-storefront-api-first.md) |
+| 17 ✅ | **Ổn định Commerce Core** (P1 C1–C3, P2 A2; 2026-11-12, Core 0.4.17–0.4.20) | [stabilization-2026-11](stabilization-2026-11.md) |
+| 18 ✅ | **Biến thể linh hoạt** F1–F6 (xong 2026-11-13, Core 0.4.25–0.4.29) + ma trận biến thể Admin (0.4.30–0.4.31) + sản phẩm đơn ⇄ có biến thể giữ lịch sử thương mại (0.4.66–0.4.67) | [flexible-variants](flexible-variants.md), [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) |
+| 19 ✅ | **Ba chốt có người** V1–V2 (2026-11-15, Core 0.4.53–0.4.54) | [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md) |
+| 20 ✅ | **Điểm mở rộng v3** X1–X7 (2026-11-15 → 16, Core 0.4.59–0.4.65): X1 màn vận hành mở cho plugin · X2 lệnh/chặn/tín hiệu/kênh xác nhận · X3 giao theo tuyến, mẫu phiếu, hãng lấy hàng trả · X4 giá theo cách làm của shop · X5 đối soát và chuyển trả · X6 khách hàng và CSKH · X7 đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)). Chưa làm: giá theo số lượng (cần ADR) | [extension-surface-v3](extension-surface-v3.md) |
 | Later | Advanced merchandising, recommendation. | — |
 
 ## 4. Hardening Commerce Kernel (từ 2026-10-04)
@@ -218,7 +223,7 @@ Phase 10 cũ đã bỏ: hạng mục ngoài phạm vi ([ADR-033](../19-adr/ADR-0
 
 ### Việc kế tiếp
 
-Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5). Củng cố kiến trúc API-first cho storefront (Blade là một cách dùng Storefront API): [api-first-refactor](api-first-refactor.md) (Designed 2026-11-11, chờ Owner duyệt §4).
+Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. API-first (16), biến thể linh hoạt (18) và EP v3 (20) đã xong. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5). Việc còn mở về hợp đồng plugin (version hợp đồng tách khỏi version Core, log `vani.deprecation`): [plugin-system §6](../05-plugin/plugin-system.md).
 
 Phase 9 đóng băng, không nằm trong backlog.
 

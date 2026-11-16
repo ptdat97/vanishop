@@ -168,7 +168,8 @@ Extension point public được đánh version theo **SemVer của Core**:
 
 - Extension contract có thể khai báo `REQUIRED` (`at_least_one`/`exactly_one`): Core từ chối tắt implementation cuối cùng (Designed, [commerce-kernel §5](../02-architecture/commerce-kernel.md)).
 - Plugin khai báo `requires.vanishop: "^1.2"`. Loader từ chối bật plugin không tương thích ([plugin-system](../05-plugin/plugin-system.md)).
-- Deprecation được log (`vani.deprecation`) khi plugin dùng điểm đã deprecated.
+- Deprecation được log (`vani.deprecation`) khi plugin dùng điểm đã deprecated. (**Designed** — chưa có code; xem [plugin-system §6.1](../05-plugin/plugin-system.md).)
+- Thực tế 0.4.x: một số thay đổi phá vỡ đã ra ở bản vá (0.4.21–0.4.27) dù policy yêu cầu tăng số giữa — từ 0.4.68 trở đi, thay đổi phá vỡ extension point phải lên 0.5.0 trở lên.
 - [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).
 - `tests/Architecture/PublicApiSnapshotTest.php` chụp chữ ký của `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot`: đổi API mà không cập nhật snapshot (`VANI_UPDATE_API_SNAPSHOT=1`) + changelog thì CI đỏ. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.
 

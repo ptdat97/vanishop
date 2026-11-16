@@ -1,6 +1,6 @@
 # Danh mục plugin
 
-> Trạng thái: ba plugin chứng minh kiến trúc đã **cài đặt trong repo** (slice 10 — xem [roadmap](../20-roadmap/roadmap.md)); các plugin còn lại ở mức **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md`.
+> Trạng thái (Core 0.4.67, 2026-11-16): 29 plugin có trong `custom/plugin/` — plugin hệ thống, ba plugin chứng minh kiến trúc (slice 10), plugin chuyển từ VaniCommerce và plugin tham chiếu của EP v3 (X1–X7). Dòng đánh dấu ✅ / **Implemented** đã có code + test; dòng chỉ ghi đợt (P1–P3, Later) là **Planned** ([status](../00-overview/status.md)). Tài liệu này chốt **phạm vi** và **extension point** mỗi plugin dùng; đặc tả chi tiết nằm trong `custom/plugin/<Name>/README.md`.
 
 > Plugin chuyển từ `VaniCommerce/plugins/` (43 plugin của Owner): phân loại, đợt M1–M3 và quy trình đặc tả → viết lại ở [vanicommerce-plugin-migration](vanicommerce-plugin-migration.md). Plugin mới phát sinh từ đó (`vani.size-chart`, `vani.storefront-extras`, `vani.ghtk`, `vani.twilio-verify`, `vani.product-qna`, `vani.reviews`, `vani.product-compare`, `vani.scarcity-signals`, `vani.pre-order`, `vani.workflow`, `vani.marketing-automation`) được thêm vào bảng dưới khi bắt đầu đặc tả.
 
@@ -120,6 +120,7 @@ Hạng mục ngoài phạm vi dự án (không có plugin): [ADR-033](../19-adr/
 | `vani.warehouse` ✅ (vận hành kho: nhiều kho/cửa hàng, ưu tiên giữ hàng, kho do ERP/POS quản lý, chuyển kho, đối soát nguồn ngoài — [ADR-042](../19-adr/ADR-042-inventory-warehouse-plugins.md)) | **Implemented** 2026-11-06 (1.0.0); cửa hàng một kho không cần |
 | ~~`vani.demo-catalog`~~ | **Đã gỡ** 2026-11-05 — gộp vào `database/seeders/DemoSeeder` (bộ ảnh `database/seeders/Demo/photos`) |
 | `vani.media-webp` (ảnh thu nhỏ trong `public/cache` xuất WebP; `ImageFormat`) | **Implemented** (Core 0.3.28) |
+| `vani.video-youtube` ✅ (video sản phẩm từ YouTube, nhúng `youtube-nocookie`, không gọi API) | **Implemented** (1.0.0; `VideoDriver`, Core 0.3.46) |
 
 ## 4. Quy tắc
 

@@ -358,6 +358,12 @@ final class PluginManager
             fn (PluginManifest $manifest): bool => $records->has($manifest->id) && $records[$manifest->id]->status->loadsProvider(),
         );
 
+        foreach ($this->unloadable($loadable) as $id => $reason) {
+            PluginRecord::query()->whereKey($id)->update(['status' => PluginStatus::Failed, 'last_error' => $reason]);
+            $this->audit->record('extension.plugin.failed', 'plugin', $id, ['reason' => $reason, 'core' => $this->coreVersion]);
+            unset($loadable[$id]);
+        }
+
         $entries = [];
         foreach ($this->resolver->loadOrder($loadable) as $id) {
             $entries[] = [
@@ -369,6 +375,44 @@ final class PluginManager
         }
 
         $this->cache->write($entries);
+    }
+
+    /**
+     * Plugin không được nạp dù đang bật: Core vừa nâng ra ngoài `requires.vanishop` (`incompatible_core`), hoặc plugin
+     * phụ thuộc của nó vừa bị loại (lan theo đồ thị). Deploy Core mới (`vani:plugin:cache` trong `optimize`) vì vậy không nạp
+     * plugin viết cho Core cũ — plugin chuyển `failed` kèm lý do, Core vẫn chạy ([plugin-system §6](docs/05-plugin/plugin-system.md)).
+     *
+     * @param  array<string, PluginManifest>  $loadable
+     * @return array<string, string> id → lý do
+     */
+    private function unloadable(array $loadable): array
+    {
+        $excluded = [];
+        foreach ($loadable as $id => $manifest) {
+            foreach ($this->resolver->problemsFor($id, $loadable, array_keys($loadable), $this->coreVersion) as $problem) {
+                if ($problem->code === 'incompatible_core') {
+                    $excluded[$id] = "incompatible_core: {$problem->message}";
+                }
+            }
+        }
+
+        do {
+            $changed = false;
+            foreach ($loadable as $id => $manifest) {
+                if (isset($excluded[$id])) {
+                    continue;
+                }
+                foreach (array_keys($manifest->requiresPlugins) as $dependency) {
+                    if (isset($excluded[$dependency])) {
+                        $excluded[$id] = "dependency_unavailable: plugin phụ thuộc [{$dependency}] không được nạp.";
+                        $changed = true;
+                        break;
+                    }
+                }
+            }
+        } while ($changed);
+
+        return $excluded;
     }
 
     private function afterStateChange(): void

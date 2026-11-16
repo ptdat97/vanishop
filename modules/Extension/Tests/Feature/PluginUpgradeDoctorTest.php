@@ -7,6 +7,7 @@ use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Plugins\PluginDoctor;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginOperationFailed;
+use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
@@ -85,4 +86,25 @@ it('doctor: báo version cần nâng, migration chưa chạy, plugin failed, man
     $this->artisan('vani:plugin:doctor')->assertFailed();
     expect(Artisan::call('vani:plugin:doctor', ['--json' => true]))->toBe(1)
         ->and(json_decode(Artisan::output(), true))->toBeArray();
+});
+
+it('dựng cache khi deploy: plugin đang bật không còn tương thích Core chuyển failed (kèm plugin phụ thuộc nó), không được nạp', function () {
+    File::ensureDirectoryExists("{$this->root}/Dependent");
+    File::put("{$this->root}/Dependent/vanishop.json", json_encode([
+        'id' => 'fixture.dependent', 'name' => ['vi' => 'fixture.dependent'], 'version' => '1.0.0', 'kind' => 'feature',
+        'provider' => PluginRecord::class, 'requires' => ['vanishop' => '^0.4', 'plugins' => ['fixture.greeting' => '^1.0']],
+    ]));
+    app()->instance(ManifestRepository::class, new ManifestRepository($this->root));
+    ($this->plugins)()->enable('fixture.greeting');
+    ($this->plugins)()->install('fixture.dependent');
+    ($this->plugins)()->enable('fixture.dependent');
+    expect(array_column(app(PluginStateCache::class)->read(), 'id'))->toBe(['fixture.greeting', 'fixture.dependent']);
+
+    ($this->deploy)('Greeting', ['requires' => ['vanishop' => '^9.0']]);
+    $this->artisan('vani:plugin:cache')->assertSuccessful();
+
+    expect(app(PluginStateCache::class)->read())->toBe([])
+        ->and(PluginRecord::query()->find('fixture.greeting'))->status->toBe(PluginStatus::Failed)->last_error->toStartWith('incompatible_core')
+        ->and(PluginRecord::query()->find('fixture.dependent'))->status->toBe(PluginStatus::Failed)->last_error->toContain('[fixture.greeting]')
+        ->and(AuditLog::query()->where('action', 'extension.plugin.failed')->count())->toBe(2);
 });

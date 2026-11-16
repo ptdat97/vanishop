@@ -163,8 +163,19 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 3. Kiểm tra `conflicts` hai chiều.
 4. `enable` plugin A khi dependency B chưa enable → từ chối (hoặc `--with-deps`).
 5. `disable`/`uninstall` B khi còn plugin phụ thuộc đang enable → từ chối.
-6. Nâng Core làm plugin không còn tương thích → plugin chuyển `failed` với lý do `incompatible_core`, Core vẫn chạy.
+6. Nâng Core làm plugin không còn tương thích → khi dựng cache nạp plugin (`vani:plugin:cache`, chạy trong `php artisan optimize` lúc deploy, và sau mọi thao tác vòng đời) plugin chuyển `failed` với `last_error = incompatible_core: …`, plugin phụ thuộc nó chuyển `failed` với `dependency_unavailable: …`, audit `extension.plugin.failed`; không plugin nào trong số đó được nạp, Core vẫn chạy. Sửa: nâng plugin (`vani:plugin:upgrade`) rồi `enable`. **Implemented** 0.4.68 (trước đó chỉ `doctor` báo, plugin vẫn được nạp).
 7. `disable`/`--drain` plugin cung cấp implementation **cuối cùng** của extension point bắt buộc (thanh toán, phí giao, thuế, carrier, kênh thông báo) → từ chối (**Implemented**). Plugin phụ thuộc đang `draining` vẫn tính là đang chạy.
+
+### 6.1 Rà soát hợp đồng plugin (2026-11-16, Core 0.4.68)
+
+| Hạng mục | Hiện trạng | Đánh giá |
+|---|---|---|
+| Tương thích version Core | `requires.vanishop` (semver) kiểm ở install/enable/upgrade; dựng cache loại plugin không tương thích (mục 6) | Đủ về cơ chế. **Nhưng** mọi plugin trong repo khai `^0.4`, trong khi 0.4.x đã có thay đổi phá vỡ ở bản vá (0.4.21, 0.4.22, 0.4.25–0.4.27 — xem changelog): ràng buộc `^0.4` không bảo vệ được plugin. Policy ([extension-model §5](../04-extension/extension-model.md)) yêu cầu phá vỡ ở giai đoạn `0.x` phải tăng số giữa |
+| Version hợp đồng tách khỏi version Core | Không có — version Core tăng mỗi commit (kể cả thay đổi không liên quan plugin) | **Thiếu.** Đề xuất (cần ADR): hằng `vanishop.extension_api` (major.minor) chỉ tăng khi `public-api.snapshot` đổi; manifest khai `requires.extension_api`; `PublicApiSnapshotTest` bắt buộc tăng hằng này khi snapshot đổi chữ ký |
+| Deprecation policy | `@deprecated` + giữ ≥ 1 minor (đang có 2 chỗ: `AdminScreen`, `ReportPeriod`) | Log `vani.deprecation` khi plugin dùng điểm deprecated **chưa có code** |
+| Migration khi nâng plugin | Chỉ tiến, chạy migration/seeder chưa chạy, expand/contract; lỗi → `failed` + `last_error` | Đủ. MySQL không rollback DDL → migration phải idempotent (mục 7) |
+| Dependency resolution | semver, topo sort, vòng, `conflicts`, capability, chặn tắt nguồn cuối | Đủ |
+| Rollback khi plugin lỗi | Lỗi `register()`/`boot()` → bỏ qua plugin, Core chạy; safe mode; `draining`; không hạ version | Không có hạ version tự động (cố ý: dữ liệu đã migrate). Rollback = deploy lại code cũ của plugin **cùng** version đã cài, hoặc `disable`. Circuit breaker theo plugin vẫn Designed (§8) |
 
 ## 7. Migration, upgrade, rollback
 

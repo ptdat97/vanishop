@@ -50,7 +50,7 @@ final class PaymentController
             ->orderByDesc('id')->paginate($perPage)->withQueryString();
         $payments = collect($page->items());
         $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
-        $refunds = Refund::query()->whereIn('payment_id', Payment::query()->select('id'))->where('status', 'requested')->orderBy('id')->get();
+        $refunds = Refund::query()->whereIn('payment_id', Payment::query()->select('id'))->whereIn('status', ['requested', 'paying_out'])->orderBy('id')->get();
 
         return Inertia::render('Payment::Payments/Index', [
             'baseUrl' => route('admin.payment.payments.index'),
@@ -80,7 +80,7 @@ final class PaymentController
             'payouts' => array_values(array_map(fn ($payout): array => ['code' => $payout->code(), 'label' => $payout->label()], $service->payouts())),
             'reconciliation' => app(ReconciliationLedger::class)->open(),
             'refunds' => $refunds->map(fn (Refund $refund): array => [
-                'id' => $refund->id, 'payment_id' => $refund->payment_id, 'amount' => $refund->amount, 'reason' => $refund->reason,
+                'id' => $refund->id, 'payment_id' => $refund->payment_id, 'amount' => $refund->amount, 'reason' => $refund->reason, 'paying_out' => $refund->status === 'paying_out',
                 'created_at' => StoreClock::format($refund->created_at),
             ])->all(),
             'can' => [

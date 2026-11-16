@@ -29,6 +29,7 @@ use Modules\Payment\Contracts\Data\PayoutResult;
 use Modules\Payment\Contracts\Data\RefundData;
 use Modules\Payment\Contracts\PaymentRejected;
 use Modules\Payment\Contracts\Payments;
+use Modules\Payment\Contracts\Reconciliations;
 use Modules\Payment\Contracts\RefundPayout;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Domain\RefundRules;
@@ -58,6 +59,7 @@ final class PaymentService implements Payments
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
         private readonly Extensions $extensions,
+        private readonly Reconciliations $reconciliations,
     ) {}
 
     public function availableMethods(Money $amount): array
@@ -455,22 +457,33 @@ final class PaymentService implements Payments
 
     /**
      * Chuyển trả khoản hoàn "chờ chuyển trả" qua plugin (EP v3 X5): gọi ngoài transaction; thành công → ghi nhận đã chuyển
-     * trả với tham chiếu; lỗi → giữ nguyên, ném PaymentRejected với thông báo của plugin. Trả tham chiếu giao dịch.
+     * trả với tham chiếu; lỗi → trả về "chờ chuyển trả", ném PaymentRejected với thông báo của plugin. Trả tham chiếu giao dịch.
+     *
+     * Trước khi gọi kênh, khoản hoàn được **giành** bằng UPDATE có điều kiện `requested → paying_out`: hai lần bấm cùng lúc
+     * (hai nhân viên, bấm đúp) chỉ một lần gọi kênh — không chuyển tiền hai lần. Tiến trình chết giữa chừng → khoản hoàn
+     * nằm ở `paying_out` (hiện "Đang chuyển trả" ở trang Thanh toán): nhân viên kiểm tra ngân hàng rồi bấm "Đã chuyển trả".
      */
     public function payoutRefund(int $refundId, string $channel): string
     {
         $payout = $this->payouts()[$channel] ?? throw PaymentRejected::notFound();
         $refund = Refund::query()->whereKey($refundId)->firstOrFail();
-        if ($refund->status !== 'requested') {
-            throw PaymentRejected::invalidState((string) $refund->status);
+        if (Refund::query()->whereKey($refundId)->where('status', 'requested')->update(['status' => 'paying_out', 'updated_at' => now()]) === 0) {
+            throw PaymentRejected::invalidState((string) Refund::query()->whereKey($refundId)->value('status'));
         }
         $payment = Payment::query()->whereKey($refund->payment_id)->firstOrFail();
         $order = $this->orders->find($payment->order_id);
-        ExternalCalls::guard("payment.refund_payout:{$channel}");
-        $result = $this->extensions->call($payout, fn () => $payout->payout(new RefundData(
-            (string) $refund->public_id, (string) $payment->public_id, (string) $order?->number, (int) $refund->amount, (string) $payment->currency_code, (string) $refund->reason,
-            ['full_name' => (string) ($order?->recipient['full_name'] ?? ''), 'phone' => (string) ($order?->recipient['phone'] ?? '')],
-        )), new PayoutResult(false, null, null), 'payment.refund_payout');
+        $result = new PayoutResult(false, null, null);
+        try {
+            ExternalCalls::guard("payment.refund_payout:{$channel}");
+            $result = $this->extensions->call($payout, fn () => $payout->payout(new RefundData(
+                (string) $refund->public_id, (string) $payment->public_id, (string) $order?->number, (int) $refund->amount, (string) $payment->currency_code, (string) $refund->reason,
+                ['full_name' => (string) ($order?->recipient['full_name'] ?? ''), 'phone' => (string) ($order?->recipient['phone'] ?? '')],
+            )), $result, 'payment.refund_payout');
+        } finally {
+            if (! $result->successful) {
+                Refund::query()->whereKey($refundId)->where('status', 'paying_out')->update(['status' => 'requested', 'updated_at' => now()]);
+            }
+        }
         if (! $result->successful) {
             throw PaymentRejected::payoutFailed($payout->label(), (string) ($result->message ?? ''));
         }
@@ -480,13 +493,14 @@ final class PaymentService implements Payments
     }
 
     /**
-     * Nhân viên đã chuyển trả tiền (hoàn thủ công: COD, chuyển khoản).
+     * Nhân viên đã chuyển trả tiền (hoàn thủ công: COD, chuyển khoản), hoặc kênh chuyển trả báo thành công. Nhận cả khoản
+     * đang `paying_out` (kênh đã giành, tiến trình chết trước khi ghi nhận — nhân viên đã kiểm tra ngân hàng).
      */
     public function completeManualRefund(int $refundId, string $note): void
     {
         DB::transaction(function () use ($refundId, $note): void {
             $refund = Refund::query()->whereKey($refundId)->lockForUpdate()->firstOrFail();
-            if ($refund->status !== 'requested') {
+            if (! in_array($refund->status, ['requested', 'paying_out'], true)) {
                 return;
             }
 
@@ -633,6 +647,7 @@ final class PaymentService implements Payments
     {
         if ($amount->amount !== $payment->amount || $amount->currency->code !== $payment->currency_code) {
             Log::warning('Số tiền thanh toán không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $amount->amount]);
+            $this->amountMismatch($payment, $amount, 'Số tiền thu không khớp khoản thanh toán');
 
             return true;
         }
@@ -674,6 +689,7 @@ final class PaymentService implements Payments
     {
         if ($amount->amount !== $payment->amount || $amount->currency->code !== $payment->currency_code) {
             Log::warning('Số tiền giữ không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $amount->amount]);
+            $this->amountMismatch($payment, $amount, 'Số tiền giữ không khớp khoản thanh toán');
 
             return true;
         }
@@ -693,6 +709,16 @@ final class PaymentService implements Payments
         }
 
         return true;
+    }
+
+    /**
+     * Cổng/hãng báo số tiền khác khoản thanh toán: không ghi nhận, đưa vào hàng đợi "Đối soát lệch" (trước chỉ ghi log —
+     * COD hãng thu thiếu thì khoản thanh toán treo "chờ thu" mà không ai thấy). Idempotent theo (khoản, số tiền báo về).
+     */
+    private function amountMismatch(Payment $payment, Money $amount, string $note): void
+    {
+        $this->reconciliations->record('payment', "amount:{$payment->public_id}:{$amount->amount}{$amount->currency->code}", false,
+            $payment->order_id, $payment->id, (int) $payment->amount, $amount->amount, $note);
     }
 
     private function fail(Payment $payment, string $source): bool
