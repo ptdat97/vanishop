@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Pricing\Application;
 
 use Illuminate\Pagination\LengthAwarePaginator;
-use Modules\Catalog\Contracts\Data\VariantData;
+use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\Extensions;
@@ -29,8 +29,12 @@ final class PriceListWorkspace
     /** Số dòng xem trước trả về (tóm tắt tính trên mọi dòng). */
     public const PREVIEW_ROWS = 100;
 
-    /** Tối đa SKU mỗi lần áp giá hàng loạt — giới hạn của PricesRequest. */
-    public const MAX_BULK = 2000;
+    /**
+     * Tối đa SKU mỗi lần xem trước/áp giá hàng loạt (chạy đồng bộ trong request; ghi theo lô — 3.000 SKU ≈ 2 s). Vượt mức →
+     * báo lỗi để thu hẹp ô tìm, **không** cắt bớt âm thầm (trước 0.4.69 cắt về 2.000 SKU đầu: bảng 3.000 SKU chỉ đổi giá
+     * 2.000 SKU mà vẫn báo thành công). Bằng mức sửa tồn hàng loạt (`StockGrid::MAX_BULK_VARIANTS`).
+     */
+    public const MAX_BULK = 5000;
 
     public function __construct(
         private readonly VariantDirectory $variants,
@@ -131,9 +135,11 @@ final class PriceListWorkspace
                 $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
             }
         }
-        $styles = array_unique(array_map(fn (VariantData $variant): int => $variant->styleId, $this->variants->find(array_keys($prices))));
+        // Đếm sản phẩm bằng một truy vấn — trước đây dựng VariantData cho mọi SKU trong bảng chỉ để đếm.
+        $products = $prices === [] ? 0 : (int) DB::table('prices')->join('variants', 'variants.id', '=', 'prices.variant_id')
+            ->where('prices.price_list_id', $list->id)->where('prices.min_qty', 1)->distinct()->count('variants.style_id');
 
-        return ['products' => count($styles), 'variants' => count($prices), 'warnings' => $warnings];
+        return ['products' => $products, 'variants' => count($prices), 'warnings' => $warnings];
     }
 
     /**
@@ -363,8 +369,9 @@ final class PriceListWorkspace
         if ($amount === null || $variantId === 0) {
             return $core;
         }
-        // Cảnh báo của plugin (EP v3 X4, vd. "Dưới giá vốn"): chỉ được thêm — cảnh báo của Core luôn giữ.
-        $extra = Hook::filter('vani.pricing.bulk.warnings', [], $variantId, $listAmount, $amount, $list->code);
+        // Cảnh báo của plugin (EP v3 X4, vd. "Dưới giá vốn"): chỉ được thêm — cảnh báo của Core luôn giữ. Gọi theo từng SKU
+        // (cả bảng 3.000 SKU khi tóm tắt) nên bỏ qua hẳn khi không plugin nào nghe.
+        $extra = Hook::hasListeners('vani.pricing.bulk.warnings') ? Hook::filter('vani.pricing.bulk.warnings', [], $variantId, $listAmount, $amount, $list->code) : [];
 
         return array_values(array_unique([...$core, ...array_filter(is_array($extra) ? $extra : [], fn ($warning): bool => is_string($warning) && $warning !== '')]));
     }

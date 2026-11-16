@@ -92,27 +92,51 @@ final class PriceListService
             $existing = Price::query()->where('price_list_id', $list->id)->where('min_qty', 1)
                 ->whereIn('variant_id', array_column($rows, 'variant_id'))->lockForUpdate()->get()->keyBy('variant_id');
             $changed = [];
+            $upserts = [];
+            $deletes = [];
+            $history = [];
+            $now = now();
+            $actor = $this->context->has() ? $this->context->actor() : null;
 
+            // Ghi theo lô (đo 2026-11-16: đổi giá 600 SKU từng dòng ≈ 1.900 truy vấn, 4 s): một upsert, một delete, một insert
+            // lịch sử cho mỗi 500 dòng. Hàng đã khoá ở trên nên không có ghi chen giữa đọc và ghi.
             foreach ($rows as $row) {
                 $current = $existing->get($row['variant_id']);
                 $oldAmount = $current?->amount;
                 $oldCompare = $current?->compare_at_amount;
+                $newCompare = $row['amount'] === null ? null : $row['compare_at_amount'];
 
-                if ($oldAmount === $row['amount'] && $oldCompare === ($row['amount'] === null ? null : $row['compare_at_amount'])) {
+                if ($oldAmount === $row['amount'] && $oldCompare === $newCompare) {
                     continue;
                 }
 
                 if ($row['amount'] === null) {
-                    $current?->delete();
+                    if ($current !== null) {
+                        $deletes[] = $current->id;
+                    }
                 } else {
-                    Price::query()->updateOrCreate(
-                        ['price_list_id' => $list->id, 'variant_id' => $row['variant_id'], 'min_qty' => 1],
-                        ['amount' => $row['amount'], 'compare_at_amount' => $row['compare_at_amount']],
-                    );
+                    $upserts[$row['variant_id']] = [
+                        'price_list_id' => $list->id, 'variant_id' => $row['variant_id'], 'min_qty' => 1,
+                        'amount' => $row['amount'], 'compare_at_amount' => $newCompare, 'created_at' => $now, 'updated_at' => $now,
+                    ];
                 }
 
-                $this->history($list->id, $row['variant_id'], $oldAmount, $row['amount'], $oldCompare, $row['amount'] === null ? null : $row['compare_at_amount']);
+                $history[] = [
+                    'price_list_id' => $list->id, 'variant_id' => $row['variant_id'],
+                    'old_amount' => $oldAmount, 'new_amount' => $row['amount'], 'old_compare_at_amount' => $oldCompare, 'new_compare_at_amount' => $newCompare,
+                    'actor_type' => $actor?->type->value, 'actor_id' => $actor?->id, 'correlation_id' => Context::get('correlation_id'), 'created_at' => $now,
+                ];
                 $changed[] = $row['variant_id'];
+            }
+
+            foreach (array_chunk(array_values($upserts), 500) as $chunk) {
+                Price::query()->upsert($chunk, ['price_list_id', 'variant_id', 'min_qty'], ['amount', 'compare_at_amount', 'updated_at']);
+            }
+            foreach (array_chunk($deletes, 500) as $chunk) {
+                Price::query()->whereKey($chunk)->delete();
+            }
+            foreach (array_chunk($history, 500) as $chunk) {
+                PriceHistory::query()->insert($chunk);
             }
 
             if ($changed !== []) {
@@ -132,23 +156,5 @@ final class PriceListService
             $this->audit->record('pricing.price_list.deleted', 'price_list', $list->id, ['code' => $list->code]);
             event(new PriceChanged($list->id, $variantIds));
         });
-    }
-
-    private function history(int $listId, int $variantId, ?int $oldAmount, ?int $newAmount, ?int $oldCompare, ?int $newCompare): void
-    {
-        $actor = $this->context->has() ? $this->context->actor() : null;
-
-        PriceHistory::query()->create([
-            'price_list_id' => $listId,
-            'variant_id' => $variantId,
-            'old_amount' => $oldAmount,
-            'new_amount' => $newAmount,
-            'old_compare_at_amount' => $oldCompare,
-            'new_compare_at_amount' => $newCompare,
-            'actor_type' => $actor?->type->value,
-            'actor_id' => $actor?->id,
-            'correlation_id' => Context::get('correlation_id'),
-            'created_at' => now(),
-        ]);
     }
 }

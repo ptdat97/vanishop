@@ -5,6 +5,7 @@ return [
     'bulk_mode_invalid' => 'Cách đổi giá không hợp lệ.',
     'bulk_value_invalid' => 'Giá trị phải lớn hơn 0 (giảm % phải dưới 100).',
     'bulk_value_too_high' => 'Giảm quá giá hiện tại — giá mới phải lớn hơn 0.',
+    'bulk_too_many' => 'Phạm vi có :count SKU, vượt mức :max SKU mỗi lần áp giá. Thu hẹp ô tìm (theo mã, tên sản phẩm) rồi áp từng phần.',
     'window_invalid' => 'Thời điểm kết thúc phải sau thời điểm bắt đầu.',
     'variant_not_found' => 'Biến thể không tồn tại.',
     'compare_at_invalid' => 'Giá gốc phải lớn hơn giá bán.',

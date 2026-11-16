@@ -8,6 +8,7 @@ use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Pricing\Application\PriceListFile;
+use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Events\PriceChanged;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceHistory;
@@ -143,6 +144,54 @@ it('áp giá cho SKU đã chọn hoặc toàn bộ bảng: đồng giá 0đ đư
 
     $this->post("{$this->base}/{$sale->id}/remove", ['variant_ids' => [$this->s->id, $this->m->id]])->assertSessionHas('success', 'Đã gỡ 2 SKU khỏi bảng giá.');
     expect(Price::query()->where('price_list_id', $sale->id)->count())->toBe(0);
+});
+
+/**
+ * Chèn nhanh $count SKU (bản sao cột của một SKU thật, khác SKU/khoá tuỳ chọn) kèm giá niêm yết và giá trong bảng sale.
+ *
+ * @return list<int>
+ */
+function manySkusInSale(object $test, int $count, int $saleId, int $baseId): array
+{
+    $template = (array) DB::table('variants')->where('id', $test->s->id)->first();
+    unset($template['id']);
+    foreach (array_chunk(range(1, $count), 500) as $chunk) {
+        DB::table('variants')->insert(array_map(fn (int $i): array => ['sku' => "BULK-{$i}", 'option_key' => "bulk-{$i}", 'barcode' => null] + $template, $chunk));
+    }
+    $ids = DB::table('variants')->where('sku', 'like', 'BULK-%')->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    foreach ([$baseId => 200_000, $saleId => 180_000] as $listId => $amount) {
+        foreach (array_chunk($ids, 500) as $chunk) {
+            DB::table('prices')->insert(array_map(fn (int $id): array => ['price_list_id' => $listId, 'variant_id' => $id, 'amount' => $amount, 'min_qty' => 1, 'created_at' => now(), 'updated_at' => now()], $chunk));
+        }
+    }
+
+    return $ids;
+}
+
+it('áp giá cả bảng: đổi đủ mọi SKU (trước đây cắt âm thầm về 2.000 SKU đầu)', function () {
+    $base = P::priceList(['code' => 'base'], []);
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
+    manySkusInSale($this, 2_100, $sale->id, $base->id);
+    $rule = ['scope' => 'all', 'mode' => 'percent', 'value' => 50, 'round_to' => 1000];
+
+    $this->postJson("{$this->base}/{$sale->id}/bulk/preview", $rule)->assertOk()->assertJsonPath('data.summary.total', 2_100);
+    $this->post("{$this->base}/{$sale->id}/bulk", $rule)->assertSessionHasNoErrors()->assertSessionHas('success', 'Đã cập nhật giá 2100 SKU.');
+
+    expect(Price::query()->where('price_list_id', $sale->id)->where('amount', 100_000)->count())->toBe(2_100);
+});
+
+it('áp giá: phạm vi vượt mức mỗi lần thì báo số SKU để thu hẹp, không đổi giá nào', function () {
+    $base = P::priceList(['code' => 'base'], []);
+    $sale = P::priceList(['code' => 'sale-1111', 'type' => 'sale', 'priority' => 10], []);
+    manySkusInSale($this, PriceListWorkspace::MAX_BULK + 1, $sale->id, $base->id);
+    $rule = ['scope' => 'all', 'mode' => 'percent', 'value' => 50, 'round_to' => 1000];
+
+    $this->postJson("{$this->base}/{$sale->id}/bulk/preview", $rule)->assertUnprocessable()
+        ->assertJsonPath('errors.scope.0', 'Phạm vi có 5.001 SKU, vượt mức 5.000 SKU mỗi lần áp giá. Thu hẹp ô tìm (theo mã, tên sản phẩm) rồi áp từng phần.');
+    $this->post("{$this->base}/{$sale->id}/bulk", $rule)->assertSessionHasErrors('scope');
+    $this->post("{$this->base}/{$sale->id}/bulk", [...$rule, 'q' => 'BULK-1'])->assertSessionHasNoErrors();
+
+    expect(Price::query()->where('price_list_id', $sale->id)->where('amount', 100_000)->count())->toBe(1_111); // BULK-1, BULK-10…19, BULK-100…199, BULK-1000…1999
 });
 
 it('áp giá hàng loạt: quyền sửa giá và dữ liệu hợp lệ', function () {

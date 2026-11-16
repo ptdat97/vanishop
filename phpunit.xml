@@ -26,11 +26,15 @@
         <testsuite name="Browser">
             <directory>tests/Browser</directory>
         </testsuite>
+        <testsuite name="Performance">
+            <directory>tests/Performance</directory>
+        </testsuite>
     </testsuites>
     <groups>
         <exclude>
             <group>concurrency</group>
             <group>browser</group>
+            <group>performance</group>
         </exclude>
     </groups>
     <source>

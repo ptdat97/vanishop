@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application\Products;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleOption;
@@ -25,6 +27,33 @@ final class VariantOptions
         return array_map(fn (string $relation): string => $prefix.$relation, [
             'optionValues.type.translations', 'optionValues.translations', 'style.options.type', 'style.optionValues',
         ]);
+    }
+
+    /**
+     * Nạp sẵn mọi thứ các hàm dưới đây cần cho một lô SKU, **dùng chung** model giữa các SKU: style (kèm bản dịch, trục,
+     * vị trí giá trị) mỗi sản phẩm một lần, giá trị tuỳ chọn (kèm loại, bản dịch) mỗi giá trị một lần. Thay cho
+     * `with(relations())` ở đường đọc nhiều SKU: eager load quan hệ nhiều-nhiều dựng một bản sao giá trị (và loại, bản dịch)
+     * cho từng SKU — 3.000 SKU × 2 trục ≈ 30.000 model, phần lớn thời gian của danh sách sản phẩm/tồn/bảng giá Admin.
+     *
+     * @param  EloquentCollection<int, Variant>  $variants
+     */
+    public static function load(EloquentCollection $variants): void
+    {
+        if ($variants->isEmpty()) {
+            return;
+        }
+
+        $variants->load(['style.translations', 'style.options.type', 'style.optionValues']);
+        $rows = DB::table('variant_option_values')->whereIn('variant_id', $variants->modelKeys())->get(['variant_id', 'option_value_id']);
+        $values = OptionValue::query()->with(['type.translations', 'translations'])
+            ->whereKey($rows->pluck('option_value_id')->unique()->values()->all())->get()->keyBy('id');
+        $byVariant = $rows->groupBy('variant_id');
+
+        foreach ($variants as $variant) {
+            $variant->setRelation('optionValues', new EloquentCollection(
+                $byVariant->get($variant->id, collect())->map(fn (object $row): ?OptionValue => $values->get($row->option_value_id))->filter()->values()->all(),
+            ));
+        }
     }
 
     /**

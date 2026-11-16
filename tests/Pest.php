@@ -19,6 +19,9 @@ pest()->extend(TestCase::class)
 
 pest()->extend(TestCase::class)->in('Architecture', 'Concurrency');
 
+// Đo thao tác Admin trên dữ liệu cỡ thật (nhóm `performance`, không chạy mặc định): xem tests/Performance.
+pest()->extend(TestCase::class)->use(RefreshDatabase::class)->in('Performance');
+
 // Test trình duyệt thật (pestphp/pest-plugin-browser + Playwright): nhóm `browser`, không chạy mặc định — `vendor/bin/pest --group=browser`.
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)

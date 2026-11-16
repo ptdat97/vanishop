@@ -7,6 +7,7 @@ namespace Modules\Pricing\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Pricing\Contracts\BulkPriceMode;
@@ -89,7 +90,11 @@ final class BulkPricesRequest extends FormRequest
     }
 
     /**
+     * Mọi SKU trong phạm vi — không cắt bớt: vượt `MAX_BULK` thì báo lỗi kèm số SKU để nhân viên thu hẹp ô tìm.
+     *
      * @return list<int>
+     *
+     * @throws ValidationException
      */
     public function variantIds(PriceList $list, PriceListWorkspace $workspace): array
     {
@@ -98,7 +103,11 @@ final class BulkPricesRequest extends FormRequest
             'styles' => $workspace->variantIdsOfStyles(array_map('intval', (array) $this->validated('style_ids'))),
             default => $workspace->variantIds($list, trim((string) $this->validated('q'))),
         };
+        $ids = array_values(array_unique($ids));
+        if (count($ids) > PriceListWorkspace::MAX_BULK) {
+            throw ValidationException::withMessages(['scope' => __('pricing::messages.bulk_too_many', ['count' => number_format(count($ids), 0, ',', '.'), 'max' => number_format(PriceListWorkspace::MAX_BULK, 0, ',', '.')])]);
+        }
 
-        return array_slice(array_values(array_unique($ids)), 0, PriceListWorkspace::MAX_BULK);
+        return $ids;
     }
 }

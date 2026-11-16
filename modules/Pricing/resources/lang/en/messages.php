@@ -5,6 +5,7 @@ return [
     'bulk_mode_invalid' => 'Invalid price change mode.',
     'bulk_value_invalid' => 'Value must be greater than 0 (percent decrease below 100).',
     'bulk_value_too_high' => 'Decrease exceeds the current price — the new price must be above 0.',
+    'bulk_too_many' => 'The selection has :count SKUs, over the limit of :max SKUs per bulk update. Narrow the search (code, product name) and apply in parts.',
     'window_invalid' => 'The end time must be after the start time.',
     'variant_not_found' => 'The variant does not exist.',
     'compare_at_invalid' => 'The compare-at price must be greater than the price.',

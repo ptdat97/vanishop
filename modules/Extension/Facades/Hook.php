@@ -16,6 +16,7 @@ use Modules\Extension\Application\Hooks\HookManager;
  * @method static void onAction(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
  * @method static void onValidate(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
  * @method static void onSlot(string $name, callable $callback, int $priority = 100, ?string $pluginId = null)
+ * @method static bool hasListeners(string $name)
  *
  * @see HookManager
  */

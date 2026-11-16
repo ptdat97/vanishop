@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.4.69 — 2026-11-16
+
+Đo và tối ưu thao tác Admin một ngày làm việc (1.000 sản phẩm, 3.000 SKU, 120 đơn); sửa áp giá cả bảng bị cắt âm thầm.
+
+### Sửa
+- **Áp giá cả bảng bỏ sót SKU mà vẫn báo thành công**: phạm vi "cả bảng"/"sản phẩm đã chọn" bị cắt về 2.000 SKU đầu (`BulkPricesRequest::variantIds`) — bảng sale 3.000 SKU chỉ đổi giá 2.000 SKU. Nay lấy đủ mọi SKU; giới hạn `PriceListWorkspace::MAX_BULK` nâng 2.000 → 5.000 (bằng sửa tồn hàng loạt) và vượt mức thì báo lỗi `scope` kèm số SKU (`pricing::messages.bulk_too_many`), không đổi giá nào.
+
+### Hiệu năng (không đổi hợp đồng)
+- `VariantDirectory::find/ofStyles/findBySkus` đọc thẳng bằng query builder, dựng `VariantData` không qua model (cùng kết quả: tên theo locale có fallback, tuỳ chọn theo thứ tự trục, thứ tự SKU theo vị trí giá trị). Trước đó `find()` 3.000 SKU mất 1,8 s, phần lớn là dựng model. `ofStyleCode`/`search` nạp quan hệ dùng chung (`VariantOptions::load`).
+- `PriceListService::setPrices` ghi theo lô (upsert + insert lịch sử 500 dòng/lần) thay cho 3 truy vấn mỗi SKU; lịch sử giá, audit, `PriceChanged` giữ nguyên.
+- Trang làm việc bảng giá: đếm sản phẩm bằng một truy vấn; hook `vani.pricing.bulk.warnings` chỉ gọi khi có plugin nghe (`Hook::hasListeners`, thêm vào docblock facade).
+- Kết quả đo (MySQL, máy dev): tổng thời gian chờ máy chủ trong ngày 154,5 s → 56,4 s; danh sách sản phẩm 271 → 93 ms; đổi giá niêm yết 200 sản phẩm 4,6 s → 0,37 s (2.070 → 27 truy vấn); áp giá sale 200 sản phẩm 4,2 s → 0,3 s; trang làm việc bảng sale 2,0 s → 0,39 s; xuất file tồn 3,0 s → 0,49 s.
+
+### Thêm
+- `tests/Performance/AdminWorkflowBenchmarkTest.php` (nhóm `performance`, không chạy mặc định): dựng dữ liệu cỡ thật qua service/API, đo 30 thao tác (ms, SQL ms, số truy vấn, KB, lần/ngày), ghi `storage/logs/admin-benchmark.md`, chặn hồi quy số truy vấn. Chạy: `DB_CONNECTION=mysql DB_DATABASE=vanishop_bench php -d memory_limit=3G vendor/bin/pest tests/Performance --group=performance`.
+
 ## 0.4.68 — 2026-11-16
 
 Kiểm soát tiền khi chuyển trả/đối soát, tương thích plugin khi nâng Core, đồng bộ tài liệu, license.
