@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Tenancy\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Khai báo một cấu hình để Admin sinh form. `secret` được mã hoá khi lưu và không trả về giao diện.
  */
+#[PluginApi]
 final readonly class SettingDefinition
 {
     /** `media` (0.3.87): id ảnh của Thư viện ảnh (ô chọn ảnh trong Admin). */

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Một dòng hàng khi đánh giá khuyến mãi. `key` = variant id (duy nhất trong giỏ).
  */
+#[PluginApi]
 final readonly class PromotionLine
 {
     public function __construct(

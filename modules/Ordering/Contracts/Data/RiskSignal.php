@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Ordering\Contracts\Data;
 
 use InvalidArgumentException;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Một tín hiệu rủi ro của đơn (EP v3 X2, `OrderRiskSignal`): mức `low` | `medium` | `high`, nhãn ngắn hiện cho nhân viên
  * ("SĐT trong danh sách đen"), lý do chi tiết (tuỳ chọn). `source` do Core điền (id plugin).
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 final readonly class RiskSignal
 {
     public const LEVELS = ['low', 'medium', 'high'];

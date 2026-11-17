@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Tập dòng đủ điều kiện (khoá dòng). Rỗng = khuyến mãi không áp dụng.
  */
+#[PluginApi]
 final readonly class Eligibility
 {
     /**

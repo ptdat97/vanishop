@@ -9,6 +9,7 @@ use Modules\Fulfillment\Contracts\Data\CarrierCapabilities;
 use Modules\Fulfillment\Contracts\Data\CarrierEvent;
 use Modules\Fulfillment\Contracts\Data\CarrierShipment;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.shipping.carriers`). Core: `manual`. Plugin: GHN, GHTK, Viettel Post…
@@ -18,6 +19,7 @@ use Modules\Fulfillment\Contracts\Data\ShipmentData;
  * - createShipment() chạy trong job SAU commit, idempotent theo $shipment->publicId.
  * - parseWebhook() xác minh + chuẩn hoá; Core ghi nhận (khử trùng, không cho lùi trạng thái).
  */
+#[PluginApi]
 interface ShippingCarrier
 {
     public const CARRIERS_TAG = 'vani.shipping.carriers';

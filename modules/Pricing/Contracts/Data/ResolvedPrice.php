@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Pricing\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
+#[PluginApi]
 final readonly class ResolvedPrice
 {
     public function __construct(

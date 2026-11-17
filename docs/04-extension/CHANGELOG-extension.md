@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.1 — 2026-11-17 · Extension API 1.0.0
+
+Củng cố kiến trúc — đợt K2 "hợp đồng plugin" ([ADR-048](../19-adr/ADR-048-extension-api-version.md), [architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Từ bản này, **API cho plugin có version riêng** `vanishop.extension_api` (bắt đầu **1.0.0**); version Core vẫn tăng theo từng thay đổi.
+
+### Thêm
+- `config('vanishop.extension_api')` = `1.0.0`. Manifest khai **`requires.extension_api`** (semver); `requires.vanishop` thành tuỳ chọn (chỉ khi cần bản sửa lỗi cụ thể của Core). Không tương thích → `incompatible_extension_api` (không cài/bật được; đang bật thì không được nạp, chuyển `failed` như `incompatible_core`). Admin → Plugin hiện "Yêu cầu API mở rộng".
+- Thuộc tính **`Modules\Shared\Contracts\PluginApi`** đánh dấu class thuộc API cho plugin (195 class: plugin đang dùng, interface có `TAG`, kiểu kéo theo). `Contracts`/`Events` không đánh dấu là API giữa module — plugin không được dùng (R5), Core đổi được mà không tăng `extension_api`.
+- Mức ổn định: `#[PluginApi]` (stable) / `#[PluginApi(PluginApi::EXPERIMENTAL)]`. 23 class mới của EP v3 (X1–X7) và `Campaigns` ở mức **experimental**; hook có `stability: experimental` như trước.
+- `tests/Architecture/plugin-api.snapshot` + `PluginApiSnapshotTest`: bề mặt plugin (class đánh dấu, `PluginServiceProvider`, class hỗ trợ, helper `vani_*`, hook public) chụp với version `extension_api`; khi ghi snapshot mới, test tự xếp loại — xoá/đổi phần stable bắt tăng **major**, còn lại tăng **minor**. Test P7: plugin trong repo khai `requires.extension_api` theo major hiện tại.
+
+### Đổi
+- 29 plugin trong repo: `requires.vanishop: ^0.5` → `requires.extension_api: ^1.0`.
+
 ## 0.5.0 — 2026-11-17
 
 Củng cố kiến trúc — đợt K1 "ranh giới có test" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). **Phá vỡ** (lên số giữa theo [extension-model §5](extension-model.md)): mọi plugin trong repo đổi `requires.vanishop` sang `^0.5`.

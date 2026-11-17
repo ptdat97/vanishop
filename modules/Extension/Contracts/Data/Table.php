@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Bảng dữ liệu: cột có định dạng, dòng là mảng `key cột => giá trị vô hướng`.
  */
+#[PluginApi]
 final readonly class Table
 {
     /**

@@ -13,6 +13,11 @@ use UnexpectedValueException;
 final class DependencyResolver
 {
     /**
+     * @param  string|null  $extensionApi  version API cho plugin đang chạy (`vanishop.extension_api`, ADR-048); null = không kiểm
+     */
+    public function __construct(private readonly ?string $extensionApi = null) {}
+
+    /**
      * Các vấn đề khiến $pluginId không thể cài/bật khi $active là tập plugin sẽ cùng hoạt động.
      *
      * @param  array<string, PluginManifest>  $available  mọi plugin tìm thấy
@@ -28,9 +33,13 @@ final class DependencyResolver
 
         $problems = [];
 
-        if (! $this->satisfies($coreVersion, $manifest->requiresCore)) {
+        if ($manifest->requiresCore !== null && ! $this->satisfies($coreVersion, $manifest->requiresCore)) {
             $problems[] = new DependencyProblem($pluginId, 'incompatible_core',
                 "Cần VaniShop {$manifest->requiresCore}, hiện tại là {$coreVersion}.");
+        }
+        if ($manifest->requiresExtensionApi !== null && $this->extensionApi !== null && ! $this->satisfies($this->extensionApi, $manifest->requiresExtensionApi)) {
+            $problems[] = new DependencyProblem($pluginId, 'incompatible_extension_api',
+                "Cần API mở rộng {$manifest->requiresExtensionApi}, hiện tại là {$this->extensionApi}.");
         }
 
         foreach ($manifest->requiresPlugins as $dependencyId => $constraint) {

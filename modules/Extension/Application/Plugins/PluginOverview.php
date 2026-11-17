@@ -88,6 +88,7 @@ final class PluginOverview
             'installed_at' => $record?->installed_at?->toIso8601String(),
             'path' => str_replace(base_path().'/', '', $manifest->path),
             'requires_core' => $manifest->requiresCore,
+            'requires_extension_api' => $manifest->requiresExtensionApi,
             'requires_plugins' => array_map(fn (string $id, string $constraint): array => [
                 'id' => $id,
                 'constraint' => $constraint,

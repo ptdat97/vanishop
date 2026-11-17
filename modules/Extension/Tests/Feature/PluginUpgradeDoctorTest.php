@@ -9,6 +9,7 @@ use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginOperationFailed;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
 use Modules\Extension\Tests\Fixtures\FixturePlugins;
@@ -107,4 +108,15 @@ it('dựng cache khi deploy: plugin đang bật không còn tương thích Core 
         ->and(PluginRecord::query()->find('fixture.greeting'))->status->toBe(PluginStatus::Failed)->last_error->toStartWith('incompatible_core')
         ->and(PluginRecord::query()->find('fixture.dependent'))->status->toBe(PluginStatus::Failed)->last_error->toContain('[fixture.greeting]')
         ->and(AuditLog::query()->where('action', 'extension.plugin.failed')->count())->toBe(2);
+});
+
+it('ADR-048: Core nâng extension_api ra ngoài requires.extension_api của plugin đang bật → không nạp, failed incompatible_extension_api', function () {
+    ($this->plugins)()->enable('fixture.greeting');
+    ($this->deploy)('Greeting', ['requires' => ['extension_api' => '^9.0']]);
+    app()->forgetInstance(DependencyResolver::class);
+    $this->artisan('vani:plugin:cache')->assertSuccessful();
+
+    expect(app(PluginStateCache::class)->read())->toBe([])
+        ->and(PluginRecord::query()->find('fixture.greeting'))->status->toBe(PluginStatus::Failed)
+        ->last_error->toStartWith('incompatible_extension_api: Cần API mở rộng ^9.0, hiện tại là '.config('vanishop.extension_api'));
 });

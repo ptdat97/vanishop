@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts\Data;
 
 use InvalidArgumentException;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Một kích thước ảnh thu nhỏ (0.3.87): rộng, cao (null = theo tỉ lệ gốc), `crop` = cắt cho đủ khung rộng × cao (không thì
  * thu vừa trong khung, giữ tỉ lệ). Không bao giờ phóng to ảnh gốc. Khoá `key()` nằm trong tên file cache
  * (`-w400`, `-w400h600`, `-w400h600c`) nên đổi kích thước là đổi URL — không có bản cache cũ bị dùng nhầm.
  */
+#[PluginApi]
 final readonly class ImageSize
 {
     public const MIN = 16;

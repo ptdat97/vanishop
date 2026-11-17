@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Kết quả báo cáo: các số tổng (trên cùng), biểu đồ tuỳ chọn, bảng chi tiết (cũng là nội dung file CSV).
  */
+#[PluginApi]
 final readonly class ReportResult
 {
     /**

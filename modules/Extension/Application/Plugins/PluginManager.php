@@ -378,7 +378,8 @@ final class PluginManager
     }
 
     /**
-     * Plugin không được nạp dù đang bật: Core vừa nâng ra ngoài `requires.vanishop` (`incompatible_core`), hoặc plugin
+     * Plugin không được nạp dù đang bật: Core vừa nâng ra ngoài `requires.extension_api`/`requires.vanishop`
+     * (`incompatible_extension_api`/`incompatible_core`), hoặc plugin
      * phụ thuộc của nó vừa bị loại (lan theo đồ thị). Deploy Core mới (`vani:plugin:cache` trong `optimize`) vì vậy không nạp
      * plugin viết cho Core cũ — plugin chuyển `failed` kèm lý do, Core vẫn chạy ([plugin-system §6](docs/05-plugin/plugin-system.md)).
      *
@@ -390,8 +391,8 @@ final class PluginManager
         $excluded = [];
         foreach ($loadable as $id => $manifest) {
             foreach ($this->resolver->problemsFor($id, $loadable, array_keys($loadable), $this->coreVersion) as $problem) {
-                if ($problem->code === 'incompatible_core') {
-                    $excluded[$id] = "incompatible_core: {$problem->message}";
+                if (in_array($problem->code, ['incompatible_core', 'incompatible_extension_api'], true)) {
+                    $excluded[$id] = "{$problem->code}: {$problem->message}";
                 }
             }
         }

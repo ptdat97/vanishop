@@ -47,7 +47,7 @@ custom/plugin/VietQr/
   "kind": "payment_gateway",
   "provider": "Plugin\\VietQr\\VietQrServiceProvider",
   "requires": {
-    "vanishop": "^0.3",
+    "extension_api": "^1.0",
     "plugins": {}
   },
   "conflicts": [],
@@ -66,7 +66,8 @@ custom/plugin/VietQr/
 | `id` | ✔ | `vendor.name`, duy nhất, không đổi |
 | `version` | ✔ | SemVer |
 | `provider` | ✔ | ServiceProvider |
-| `requires.vanishop` | ✔ | Ràng buộc phiên bản Core (Composer semver; phiên bản Core hiện tại thuộc nhánh `0.3.x`) |
+| `requires.extension_api` | ✔ | Ràng buộc version **API cho plugin** (`vanishop.extension_api`, Composer semver — [ADR-048](../19-adr/ADR-048-extension-api-version.md)); không thoả → `incompatible_extension_api` |
+| `requires.vanishop` | | Chỉ khi plugin cần một bản sửa lỗi cụ thể của Core (ghi lý do trong README); plugin trong repo không khai |
 | `requires.plugins` | | `{ "vani.einvoice": "^1.0" }` |
 | `requires.capabilities` | | `["vani.payment.gateways"]` (0.3.33): tag extension point cần **ít nhất một** implementation đang bật — của Core hoặc plugin bất kỳ. Thiếu → không bật được (`missing_capability`); plugin là nguồn cuối cùng → không tắt được; doctor `capability_missing`. Dùng khi cần "có cổng thanh toán nào đó" thay vì phụ thuộc đúng một plugin |
 | `conflicts` | | Danh sách plugin id không được bật cùng lúc |
@@ -158,7 +159,7 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 
 ## 6. Dependency resolution và tương thích
 
-1. Đọc mọi manifest, kiểm tra `requires.vanishop` với phiên bản Core (`config('vanishop.version')`), dùng `composer/semver`.
+1. Đọc mọi manifest, kiểm tra `requires.extension_api` với `config('vanishop.extension_api')` và `requires.vanishop` (nếu khai) với `config('vanishop.version')`, dùng `composer/semver`.
 2. Dựng đồ thị `requires.plugins`; **topological sort** để xác định thứ tự install/boot; phát hiện vòng thì báo lỗi, không cài.
 3. Kiểm tra `conflicts` hai chiều.
 4. `enable` plugin A khi dependency B chưa enable → từ chối (hoặc `--with-deps`).
@@ -172,8 +173,8 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 
 | Hạng mục | Hiện trạng | Đánh giá |
 |---|---|---|
-| Tương thích version Core | `requires.vanishop` (semver) kiểm ở install/enable/upgrade; dựng cache loại plugin không tương thích (mục 6) | Đủ về cơ chế. **Nhưng** mọi plugin trong repo khai `^0.4`, trong khi 0.4.x đã có thay đổi phá vỡ ở bản vá (0.4.21, 0.4.22, 0.4.25–0.4.27 — xem changelog): ràng buộc `^0.4` không bảo vệ được plugin. Policy ([extension-model §5](../04-extension/extension-model.md)) yêu cầu phá vỡ ở giai đoạn `0.x` phải tăng số giữa |
-| Version hợp đồng tách khỏi version Core | Không có — version Core tăng mỗi commit (kể cả thay đổi không liên quan plugin) | **Thiếu.** Đề xuất (cần ADR): hằng `vanishop.extension_api` (major.minor) chỉ tăng khi `public-api.snapshot` đổi; manifest khai `requires.extension_api`; `PublicApiSnapshotTest` bắt buộc tăng hằng này khi snapshot đổi chữ ký |
+| Tương thích version Core | `requires.vanishop` (semver) kiểm ở install/enable/upgrade; dựng cache loại plugin không tương thích (mục 6) | ✅ 0.5.1: thay bằng `requires.extension_api` ([ADR-048](../19-adr/ADR-048-extension-api-version.md)); `requires.vanishop` tuỳ chọn |
+| Version hợp đồng tách khỏi version Core | ✅ 0.5.1 — `vanishop.extension_api` (1.0.0), `#[PluginApi]` + `plugin-api.snapshot`, mức `stable`/`experimental`, test tự xếp loại major/minor ([ADR-048](../19-adr/ADR-048-extension-api-version.md)) | Đủ |
 | Deprecation policy | `@deprecated` + giữ ≥ 1 minor (đang có 2 chỗ: `AdminScreen`, `ReportPeriod`) | Log `vani.deprecation` khi plugin dùng điểm deprecated **chưa có code** |
 | Migration khi nâng plugin | Chỉ tiến, chạy migration/seeder chưa chạy, expand/contract; lỗi → `failed` + `last_error` | Đủ. MySQL không rollback DDL → migration phải idempotent (mục 7) |
 | Dependency resolution | semver, topo sort, vòng, `conflicts`, capability, chặn tắt nguồn cuối | Đủ |

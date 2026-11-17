@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts;
 
 use Modules\Catalog\Contracts\Data\VariantData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract: tra variant cho các module khác (Pricing, Inventory, Ordering…).
  */
+#[PluginApi]
 interface VariantDirectory
 {
     /**

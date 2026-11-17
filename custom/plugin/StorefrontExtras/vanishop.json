@@ -12,7 +12,7 @@
     "kind": "feature",
     "provider": "Plugin\\StorefrontExtras\\StorefrontExtrasServiceProvider",
     "requires": {
-        "vanishop": "^0.5",
+        "extension_api": "^1.0",
         "plugins": {}
     },
     "conflicts": [],

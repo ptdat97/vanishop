@@ -6,6 +6,7 @@ namespace Modules\Ordering\Contracts;
 
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderStatusActionView;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (0.3.98): thao tác đổi trạng thái do plugin (thanh toán, vận chuyển…) cắm vào thẻ "Trạng thái đơn" trên
@@ -18,6 +19,7 @@ use Modules\Ordering\Contracts\Data\OrderStatusActionView;
  *
  * Đăng ký: `$this->contribute(OrderStatusAction::TAG, MyAction::class)` trong PluginServiceProvider.
  */
+#[PluginApi]
 interface OrderStatusAction
 {
     public const TAG = 'vani.ordering.status_actions';

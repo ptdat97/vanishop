@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Customer\Contracts;
 
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract cho module khác (Checkout, Admin…).
  */
+#[PluginApi]
 interface Customers
 {
     public function find(int $customerId): ?CustomerData;

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Đơn đầy đủ để hiển thị (khách hoặc Admin), từ snapshot — không đọc catalog hiện tại.
  */
+#[PluginApi]
 final readonly class OrderDetail
 {
     /**

@@ -11,7 +11,7 @@
   "version": "0.1.0",
   "kind": "payment_gateway",
   "provider": "Plugin\\VietQr\\VietQrServiceProvider",
-  "requires": { "vanishop": "^0.3", "plugins": {} },
+  "requires": { "extension_api": "^1.0", "plugins": {} },
   "conflicts": [],
   "permissions": ["payments.view"],
   "author": "VaniShop Team"
@@ -25,7 +25,8 @@
 | `version` | ✔ | SemVer `x.y.z[-pre]` |
 | `kind` | ✔ | Phân loại hiển thị (`payment_gateway`, `shipping_carrier`, `promotion`, `connector`, `notification_channel`, `storefront`, `business`, `theme_extension`) |
 | `provider` | ✔ | FQCN của provider, extends `Modules\Extension\PluginServiceProvider` |
-| `requires.vanishop` | ✔ | Ràng buộc Composer semver với `config('vanishop.version')` (Core hiện ở nhánh `0.3.x`) |
+| `requires.extension_api` | ✔ | Ràng buộc Composer semver với `config('vanishop.extension_api')` — version API cho plugin ([ADR-048](../../19-adr/ADR-048-extension-api-version.md)) |
+| `requires.vanishop` | | Tuỳ chọn: ràng buộc với `config('vanishop.version')`, chỉ khi cần bản sửa lỗi cụ thể của Core |
 | `requires.plugins` | | `{ "plugin.id": "^x.y" }` → sắp thứ tự nạp, chặn bật khi thiếu |
 | `requires.capabilities` | | `["tag.extension-point"]` (0.3.33) → cần ≥1 implementation đang bật (Core hoặc plugin bất kỳ); chặn bật khi thiếu, chặn tắt nguồn cuối cùng; nguồn `draining` không tính là thay thế |
 | `conflicts` | | Kiểm tra hai chiều |
@@ -53,7 +54,7 @@ custom/plugin/<Name>/                 # namespace Plugin\<Name>\
 
 | Lệnh | Điều kiện | Việc Core làm |
 |---|---|---|
-| `vani:plugin:install <id>` | Chưa cài; deps/conflict/`requires.vanishop` đạt | Chạy migration trong `Database/migrations` → `installed`. Migration lỗi → `failed` + `last_error` |
+| `vani:plugin:install <id>` | Chưa cài; deps/conflict/`requires.extension_api` (và `requires.vanishop` nếu khai) đạt | Chạy migration trong `Database/migrations` → `installed`. Migration lỗi → `failed` + `last_error` |
 | `vani:plugin:enable <id>` | Không `failed`; deps đã bật | → `enabled` toàn cửa hàng, audit |
 | `vani:plugin:disable <id>` | Không còn plugin phụ thuộc đang bật | → `disabled`. **Không đụng dữ liệu** |
 | `vani:plugin:upgrade <id>` | Version manifest > version đã cài; tương thích Core/deps | Chạy migration mới, cập nhật version; `failed` → `installed` nếu thành công; audit |
@@ -105,7 +106,8 @@ MySQL không rollback DDL: migration lỗi giữa chừng → plugin `failed`; s
 
 ## 6. Checklist
 
-- [ ] `vanishop.json` đủ trường bắt buộc; `requires.vanishop` khớp phiên bản Core
+- [ ] `vanishop.json` đủ trường bắt buộc; `requires.extension_api` theo major hiện tại
+- [ ] Chỉ dùng class có `#[PluginApi]` (R5); class `experimental` có thể đổi ở bản minor
 - [ ] Provider chỉ đăng ký; logic ở `Application`/`Infrastructure`
 - [ ] Dùng `contribute()`/`on*()` của `PluginServiceProvider`, không đăng ký trực tiếp vào container/eventy/event
 - [ ] Tag lấy từ hằng `TAG` của interface trong `Contracts`

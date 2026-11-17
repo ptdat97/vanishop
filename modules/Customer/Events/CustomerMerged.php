@@ -6,7 +6,9 @@ namespace Modules\Customer\Events;
 
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
+use Modules\Shared\Contracts\PluginApi;
 
+#[PluginApi]
 final readonly class CustomerMerged implements ShouldDispatchAfterCommit
 {
     use Dispatchable;

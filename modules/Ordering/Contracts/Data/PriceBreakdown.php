@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Các tầng giá của đơn (roadmap Phase 8, 0.3.37), tính từ snapshot (không đổi khi catalog/khuyến mãi đổi):
  *
@@ -13,6 +15,7 @@ namespace Modules\Ordering\Contracts\Data;
  * "Giảm giá bán" = chênh niêm yết → giá bán của bảng giá sale/thành viên (`priceLists` theo mã bảng giá). "Giảm khác" =
  * bù giá trị hàng trả khi đổi hàng và phần không tách được theo khuyến mãi (đơn trước 0.3.31). Mọi số là đồng (VND).
  */
+#[PluginApi]
 final readonly class PriceBreakdown
 {
     /**

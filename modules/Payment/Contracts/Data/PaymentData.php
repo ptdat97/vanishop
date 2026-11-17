@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\Payment\Contracts\Data;
 
 use DateTimeImmutable;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
+#[PluginApi]
 final readonly class PaymentData
 {
     public function __construct(

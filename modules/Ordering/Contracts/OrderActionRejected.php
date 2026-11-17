@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
+#[PluginApi]
 final class OrderActionRejected extends BusinessRuleViolation
 {
     private function __construct(private readonly string $code_, private readonly int $status_, string $message)

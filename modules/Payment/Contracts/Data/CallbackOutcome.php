@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Kết quả Core xử lý một callback/IPN (0.3.15) — cổng `CallbackResponder` dựa vào đây để trả mã phản hồi riêng.
  */
+#[PluginApi]
 enum CallbackOutcome: string
 {
     /** Đã ghi nhận (thu tiền, giữ tiền, thất bại hoặc chờ). */

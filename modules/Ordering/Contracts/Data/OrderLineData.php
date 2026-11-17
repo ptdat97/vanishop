@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
+#[PluginApi]
 final readonly class OrderLineData
 {
     public function __construct(

@@ -12,6 +12,7 @@ use Modules\Payment\Contracts\Data\GatewayStatus;
 use Modules\Payment\Contracts\Data\PaymentContext;
 use Modules\Payment\Contracts\Data\PaymentData;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -22,6 +23,7 @@ use Modules\Shared\Domain\Money\Money;
  * - verifyCallback() chỉ xác minh + chuẩn hoá; Core mới là nơi ghi nhận (unique transaction, so số tiền).
  * - refund() idempotent theo $idempotencyKey.
  */
+#[PluginApi]
 interface PaymentGateway
 {
     public const TAG = 'vani.payment.gateways';

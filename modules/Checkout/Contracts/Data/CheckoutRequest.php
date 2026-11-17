@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Checkout\Contracts\Data;
 
 use Modules\Cart\Contracts\Data\CartKey;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Dữ liệu khách nhập ở checkout. Checkout không lưu phiên: mỗi lần quote/đặt hàng gửi đủ dữ liệu.
  */
+#[PluginApi]
 final readonly class CheckoutRequest
 {
     /**

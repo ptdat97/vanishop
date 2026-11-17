@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Storefront\Contracts\Data\LinkTarget;
 use Modules\Storefront\Contracts\Data\ResolvedLink;
 
@@ -11,6 +12,7 @@ use Modules\Storefront\Contracts\Data\ResolvedLink;
  * Service contract: phân giải link có kiểu thành URL + nhãn theo ngôn ngữ, qua `LinkType` đã đăng ký. Nhãn ghi đè của
  * `LinkTarget` thắng nhãn mặc định của đối tượng.
  */
+#[PluginApi]
 interface LinkResolver
 {
     public function resolve(LinkTarget $target, string $locale): ResolvedLink;

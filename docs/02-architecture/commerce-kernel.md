@@ -194,7 +194,7 @@ Plugin có thể là "lõi" cho plugin khác (ví dụ `vani.loyalty` công bố
 
 1. Mô tả nhu cầu **tổng quát** (không gắn với một plugin), kiểm tra danh sách chờ ở [extension-point-catalog §7](../04-extension/extension-point-catalog.md).
 2. PR vào Core: contract/event/hook + tài liệu catalog + implementation tham chiếu + contract test (R26) + [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md).
-3. Plugin dùng extension point mới, khai báo `requires.vanishop` là phiên bản có nó.
+3. Plugin dùng extension point mới, khai báo `requires.extension_api` là phiên bản có nó ([ADR-048](../19-adr/ADR-048-extension-api-version.md)).
 
 Ví dụ **sai**: thêm `if ($order->meta['loyalty_points'])` vào `PlaceOrder`. Ví dụ **đúng**: Core có hook `vani.order.after_create`, plugin loyalty nghe hook đó và ghi điểm vào bảng riêng.
 

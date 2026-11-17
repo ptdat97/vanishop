@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Tài liệu tìm kiếm của một style (dùng cho SearchProvider có chỉ mục ngoài; provider `database` đọc thẳng bảng).
  */
+#[PluginApi]
 final readonly class ProductDocument
 {
     /**

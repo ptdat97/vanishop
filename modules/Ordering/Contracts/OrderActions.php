@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract (EP v3 X2): lệnh của nhân viên trên đơn cho plugin tự động hoá gọi — **cùng** chính sách, hook chặn
  * (`vani.order.before_confirm`), lịch sử `order_events` và audit như khi nhân viên bấm (ADR-046: không có đường tắt cho
  * máy). `source`: `staff` hoặc `system:<id plugin>` (vd. `system:vani.cod-risk-guard`), ghi vào lịch sử đơn.
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface OrderActions
 {
     /**

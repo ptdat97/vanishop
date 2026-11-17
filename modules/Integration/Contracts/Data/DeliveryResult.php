@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Integration\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Kết quả gửi/xử lý một message: ok | retryable (thử lại theo backoff) | permanent (không thử lại)
  * | stale (inbox: bản cũ hơn dữ liệu hiện có, bỏ qua).
  */
+#[PluginApi]
 final readonly class DeliveryResult
 {
     private const OK = 'ok';

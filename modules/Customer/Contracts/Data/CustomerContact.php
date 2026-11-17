@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Nơi gửi OTP / tin giao dịch. customerId null = SĐT chưa có hồ sơ.
  */
+#[PluginApi]
 final readonly class CustomerContact
 {
     public function __construct(

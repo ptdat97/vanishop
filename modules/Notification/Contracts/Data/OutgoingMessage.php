@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Notification\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Tin đã render xong, gửi cho kênh. `meta` là tham số riêng của kênh đã render biến (vd. ZNS: template_id, params).
  */
+#[PluginApi]
 final readonly class OutgoingMessage
 {
     /**

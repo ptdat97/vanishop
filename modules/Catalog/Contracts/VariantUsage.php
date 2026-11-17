@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Extension point (variant-matrix §3.2–3.3): SKU nào đã phát sinh dữ liệu ở module/plugin của bạn (dòng đơn, dòng giỏ,
  * biến động tồn…). Tắt một ô trong ma trận biến thể: SKU có phát sinh ở bất kỳ nhà cung cấp nào → chỉ chuyển ngừng bán;
  * không phát sinh → mọi nhà cung cấp `release()` dữ liệu phụ thuộc không đáng giữ, rồi Catalog xoá hẳn SKU (cùng một
  * transaction). Nhà cung cấp lỗi khi kiểm tra được coi như "đã phát sinh" (an toàn: không xoá).
  */
+#[PluginApi]
 interface VariantUsage
 {
     public const TAG = 'vani.catalog.variant_usage';

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Shared\Contracts\Data;
 
 use DateTimeImmutable;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Một lần báo cảnh báo vận hành tới kênh (AlertChannel). Nội dung không chứa dữ liệu cá nhân của khách.
  */
+#[PluginApi]
 final readonly class Alert
 {
     public const CRITICAL = 'critical';

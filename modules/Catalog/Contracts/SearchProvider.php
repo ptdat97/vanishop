@@ -7,6 +7,7 @@ namespace Modules\Catalog\Contracts;
 use Modules\Catalog\Contracts\Data\ProductDocument;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\ProductSearchResult;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point: nhà cung cấp tìm kiếm sản phẩm (tag vani.search.providers).
@@ -15,6 +16,7 @@ use Modules\Catalog\Contracts\Data\ProductSearchResult;
  *
  * @see docs/04-extension/extension-point-catalog.md
  */
+#[PluginApi]
 interface SearchProvider
 {
     /** Tag extension point: plugin đóng góp qua `contribute(SearchProvider::TAG, …)`. */

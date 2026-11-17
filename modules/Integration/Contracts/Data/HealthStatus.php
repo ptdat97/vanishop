@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Integration\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
+#[PluginApi]
 final readonly class HealthStatus
 {
     public function __construct(public bool $healthy, public ?string $message = null) {}

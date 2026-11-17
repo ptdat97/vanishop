@@ -6,12 +6,14 @@ namespace Modules\Fulfillment\Contracts;
 
 use Modules\Fulfillment\Contracts\Data\AllocationProposal;
 use Modules\Fulfillment\Contracts\Data\SourcingRequest;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.fulfillment.sourcing`): chọn kho giao cho từng dòng.
  * Mặc định `reserved_locations`: giao từ đúng location đã giữ hàng lúc đặt (một shipment mỗi location).
  * Hiện Core chỉ chấp nhận đề xuất khớp với hàng đang giữ (chưa có chuyển giữ hàng giữa kho).
  */
+#[PluginApi]
 interface SourcingStrategy
 {
     /** Tag extension point: plugin đóng góp qua `contribute(SourcingStrategy::TAG, …)`. */

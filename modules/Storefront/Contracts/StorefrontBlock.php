@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Storefront\Contracts;
 
 use Modules\Extension\Contracts\Data\FieldDefinition;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.storefront.blocks`, storefront §4, ADR-030 W6): khối của page builder (trang chủ).
@@ -12,6 +13,7 @@ use Modules\Extension\Contracts\Data\FieldDefinition;
  * với dữ liệu trả về. Lỗi ở `resolve()` hoặc lúc render → bỏ khối đó, trang vẫn hiển thị.
  * View: core `theme::blocks.<type>`; plugin dùng namespace view riêng (theme override được).
  */
+#[PluginApi]
 interface StorefrontBlock
 {
     public const TAG = 'vani.storefront.blocks';

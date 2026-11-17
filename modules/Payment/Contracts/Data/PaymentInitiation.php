@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Việc khách cần làm tiếp: none (COD), redirect (trang cổng), qr (mã QR), instructions (chuyển khoản thủ công).
  */
+#[PluginApi]
 final readonly class PaymentInitiation
 {
     public const NONE = 'none';

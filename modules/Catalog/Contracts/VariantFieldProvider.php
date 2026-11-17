@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts;
 
 use Modules\Extension\Contracts\Data\FieldDefinition;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (docs/03-domains/variant-matrix.md §3.3): góp **cột dữ liệu theo SKU** vào ma trận biến thể của Admin
@@ -14,6 +15,7 @@ use Modules\Extension\Contracts\Data\FieldDefinition;
  * Giá trị trên màn hình và khi lưu có khoá `<code()>.<field key>`. Lỗi của một nhà cung cấp được cô lập: cột không hiện,
  * phần còn lại vẫn chạy. Contract test: `Modules\Catalog\Testing\VariantFieldProviderContract`.
  */
+#[PluginApi]
 interface VariantFieldProvider
 {
     public const TAG = 'vani.catalog.variant_fields';

@@ -6,12 +6,14 @@ namespace Modules\Integration\Contracts;
 
 use Modules\Integration\Contracts\Data\DeliveryResult;
 use Modules\Integration\Contracts\Data\InboxMessage;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point: xử lý message vào đã lưu inbox (webhook của SaaS, event của ERP…), bất đồng bộ.
  * Handler dịch message sang lời gọi Service contract của context sở hữu — không ghi bảng của module khác.
  * Phải idempotent (R18): cùng message có thể được xử lý lại khi retry/replay.
  */
+#[PluginApi]
 interface InboundHandler
 {
     public const TAG = 'vani.integration.inbound';

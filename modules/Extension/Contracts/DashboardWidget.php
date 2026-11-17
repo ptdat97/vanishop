@@ -7,12 +7,14 @@ namespace Modules\Extension\Contracts;
 use Modules\Extension\Contracts\Data\Metric;
 use Modules\Extension\Contracts\Data\Series;
 use Modules\Extension\Contracts\Data\Table;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.admin.dashboard.widgets`, ADR-030 §4.G, W6b): ô trên trang Tổng quan Admin.
  * Core kiểm tra `permission()`, gọi `render()` (lỗi → bỏ ô đó, ghi log kèm plugin) và vẽ theo kiểu dữ liệu trả về —
  * plugin không gửi HTML/Vue. Đọc dữ liệu qua contract đọc của Core (`OrderStatistics`, `OrderReader`…), không I/O mạng.
  */
+#[PluginApi]
 interface DashboardWidget
 {
     public const TAG = 'vani.admin.dashboard.widgets';

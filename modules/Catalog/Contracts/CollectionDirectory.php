@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract: bộ sưu tập chứa từng style.
  * Rule khuyến mãi theo bộ sưu tập (`vani.promotion-rules`) dùng contract này.
  */
+#[PluginApi]
 interface CollectionDirectory
 {
     /**

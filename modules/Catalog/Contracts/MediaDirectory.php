@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts;
 
 use Modules\Catalog\Contracts\Data\MediaData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract (0.3.29): plugin dùng ảnh của Thư viện ảnh dùng chung (chọn qua MediaPicker ở Admin) — vd. CMS.
@@ -12,6 +13,7 @@ use Modules\Catalog\Contracts\Data\MediaData;
  * Plugin lưu `id` ảnh, tra URL khi hiển thị (`find`), và khai báo nơi đang dùng (`syncUsages`) để Thư viện ảnh không cho
  * xoá ảnh đang dùng. `$ownerType` đặt theo plugin, vd. `plg.cms.post`; Core dùng `catalog.*`.
  */
+#[PluginApi]
 interface MediaDirectory
 {
     /**

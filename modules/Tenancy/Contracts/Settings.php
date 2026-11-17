@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Tenancy\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 
 /**
  * Service contract: cấu hình của cửa hàng (một cấp, ADR-028) cho Core và plugin.
  * `namespace` = `core` hoặc id plugin. Giá trị lưu dạng JSON; secret mã hoá bằng APP_KEY.
  */
+#[PluginApi]
 interface Settings
 {
     /**

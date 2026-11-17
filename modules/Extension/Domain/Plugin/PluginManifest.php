@@ -39,7 +39,8 @@ final readonly class PluginManifest
         public string $version,
         public string $kind,
         public string $provider,
-        public string $requiresCore,
+        /** `requires.vanishop` (tuỳ chọn từ 0.5.1, ADR-048): chỉ khi plugin cần một bản sửa lỗi cụ thể của Core. */
+        public ?string $requiresCore,
         public array $requiresPlugins,
         public array $conflicts,
         public array $permissions,
@@ -66,6 +67,8 @@ final readonly class PluginManifest
         public ?string $icon = null,
         /** Thư mục tài nguyên tĩnh (0.3.69, `assets`), tương đối trong thư mục plugin — publish sang public/plugins/<id>/. */
         public ?string $assets = null,
+        /** `requires.extension_api` (ADR-048): ràng buộc semver với version API cho plugin (`vanishop.extension_api`). */
+        public ?string $requiresExtensionApi = null,
     ) {}
 
     /**
@@ -95,8 +98,13 @@ final readonly class PluginManifest
         }
 
         $requires = is_array($data['requires']) ? $data['requires'] : [];
-        if (! isset($requires['vanishop']) || ! is_string($requires['vanishop'])) {
-            throw InvalidManifest::because($path, 'thiếu requires.vanishop');
+        foreach (['vanishop', 'extension_api'] as $key) {
+            if (isset($requires[$key]) && ! is_string($requires[$key])) {
+                throw InvalidManifest::because($path, "requires.{$key} phải là chuỗi ràng buộc semver");
+            }
+        }
+        if (! isset($requires['extension_api']) && ! isset($requires['vanishop'])) {
+            throw InvalidManifest::because($path, 'thiếu requires.extension_api (ADR-048)');
         }
 
         $capabilities = array_values(array_unique(array_map('strval', (array) ($requires['capabilities'] ?? []))));
@@ -127,7 +135,7 @@ final readonly class PluginManifest
             version: $version,
             kind: $kind,
             provider: (string) $data['provider'],
-            requiresCore: $requires['vanishop'],
+            requiresCore: $requires['vanishop'] ?? null,
             requiresPlugins: array_map('strval', (array) ($requires['plugins'] ?? [])),
             conflicts: array_values(array_map('strval', (array) ($data['conflicts'] ?? []))),
             permissions: array_values(array_map('strval', (array) ($data['permissions'] ?? []))),
@@ -139,6 +147,7 @@ final readonly class PluginManifest
             author: isset($data['author']) ? (string) $data['author'] : null,
             icon: $icon,
             assets: $assets,
+            requiresExtensionApi: $requires['extension_api'] ?? null,
         );
     }
 

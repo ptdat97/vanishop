@@ -8,11 +8,13 @@ use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Support\StoreClock;
 
 /**
  * Khoảng thời gian báo cáo [from, to) theo múi giờ cửa hàng. Core dựng từ lựa chọn trên Admin.
  */
+#[PluginApi]
 final readonly class ReportPeriod
 {
     /**

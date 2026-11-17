@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Truy vấn tìm kiếm sản phẩm hiển thị trên storefront.
  * Giữa các nhóm là AND; trong cùng một nhóm (nhiều giá trị của một loại tuỳ chọn, của một thuộc tính) là OR.
  */
+#[PluginApi]
 final readonly class ProductSearchQuery
 {
     public const SORT_NEWEST = 'newest';

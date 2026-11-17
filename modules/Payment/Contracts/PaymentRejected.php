@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\MoneyFormatter;
 
+#[PluginApi]
 final class PaymentRejected extends BusinessRuleViolation
 {
     /**

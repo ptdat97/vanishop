@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
+#[PluginApi]
 final readonly class GatewayStatus
 {
     public function __construct(

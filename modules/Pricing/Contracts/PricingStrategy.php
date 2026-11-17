@@ -6,10 +6,12 @@ namespace Modules\Pricing\Contracts;
 
 use Modules\Pricing\Contracts\Data\PricingContext;
 use Modules\Pricing\Contracts\Data\ResolvedPrice;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point: cách chọn giá của variant (tag vani.pricing.strategies). Mặc định: price_list_priority.
  */
+#[PluginApi]
 interface PricingStrategy
 {
     /** Tag extension point: plugin đóng góp qua `contribute(PricingStrategy::TAG, …)`. */

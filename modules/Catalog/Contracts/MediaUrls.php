@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract (0.3.69, ADR-037 — `vani_image()`): URL ảnh của Thư viện ảnh theo id, chọn bản thu nhỏ rộng ≥ $width
  * (không có thì ảnh gốc). Lưu id, tra URL lúc hiển thị — URL bản thu nhỏ đổi khi đổi định dạng/disk/kích thước.
@@ -11,6 +13,7 @@ namespace Modules\Catalog\Contracts;
  * 0.3.87: `$size` nhận thêm **tên** kích thước (plugin khai báo qua `ImageSizeProvider`, vd. `lookbook.cover`); `$group`
  * `product` = cắt theo tỉ lệ ảnh sản phẩm (Admin → Thư viện ảnh → Kích thước ảnh, mặc định 2:3).
  */
+#[PluginApi]
 interface MediaUrls
 {
     /**

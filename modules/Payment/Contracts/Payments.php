@@ -6,11 +6,13 @@ namespace Modules\Payment\Contracts;
 
 use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Payment\Contracts\Data\PaymentView;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Service contract của Payment cho Checkout, Storefront, Admin.
  */
+#[PluginApi]
 interface Payments
 {
     /**

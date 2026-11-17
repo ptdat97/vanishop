@@ -6,7 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.0',
+    'version' => '0.5.1',
+
+    /*
+    | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
+    | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
+    | requires.extension_api.
+    */
+    'extension_api' => '1.0.0',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),

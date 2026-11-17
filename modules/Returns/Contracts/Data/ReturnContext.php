@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Returns\Contracts\Data;
 
 use DateTimeImmutable;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Dữ liệu để ReturnPolicy quyết định: đơn, dòng muốn trả, thời điểm giao gần nhất.
  */
+#[PluginApi]
 final readonly class ReturnContext
 {
     /**

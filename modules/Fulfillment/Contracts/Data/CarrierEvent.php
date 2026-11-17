@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Fulfillment\Contracts\Data;
 
 use DateTimeImmutable;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Sự kiện vận đơn đã xác minh + chuẩn hoá. `status` là một giá trị của ShipmentStatus (created, picked_up, …).
  */
+#[PluginApi]
 final readonly class CarrierEvent
 {
     /**

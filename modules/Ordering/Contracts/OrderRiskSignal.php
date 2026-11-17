@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Ordering\Contracts;
 
 use Modules\Ordering\Contracts\Data\RiskSignal;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.ordering.risk_signals`, EP v3 X2): plugin chấm rủi ro đơn (bom hàng, gian lận…) cho chốt ①
@@ -12,6 +13,7 @@ use Modules\Ordering\Contracts\Data\RiskSignal;
  * định (muốn chặn xác nhận thì dùng hook `vani.order.before_confirm`). Gọi theo lô, chỉ đọc, không I/O mạng chậm — lỗi
  * plugin bị bỏ qua (trang vẫn mở).
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface OrderRiskSignal
 {
     public const TAG = 'vani.ordering.risk_signals';

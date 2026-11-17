@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract (0.3.88, ADR-042): biến động tồn vật lý do vận hành kho ghi (chuyển kho của `vani.warehouse`). Khoá
  * dòng tồn theo thứ tự cố định, ghi sổ biến động append-only (`transfer_out`/`transfer_in`), phát `AvailabilityChanged`.
@@ -11,6 +13,7 @@ namespace Modules\Inventory\Contracts;
  * Gọi bên trong `DB::transaction` của nơi gọi (cùng kết nối) để đổi trạng thái chứng từ và tồn là một transaction.
  * Chỉ kho do VaniShop quản lý tồn vật lý; kho của hệ thống ngoài → StockMovementRejected.
  */
+#[PluginApi]
 interface StockMovements
 {
     /**

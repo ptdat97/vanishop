@@ -6,6 +6,7 @@ namespace Modules\Fulfillment\Contracts;
 
 use Modules\Fulfillment\Contracts\Data\CarrierAssignmentContext;
 use Modules\Fulfillment\Contracts\Data\CarrierChoice;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.fulfillment.carrier_assignments`, EP v3 X3): chọn hãng cho vận đơn mới theo quy tắc của shop
@@ -13,6 +14,7 @@ use Modules\Fulfillment\Contracts\Data\CarrierChoice;
  * quả đầu tiên trỏ tới hãng đang nhận vận đơn mới thắng; null = để quy tắc mặc định (phương thức khách chọn → hãng mặc
  * định). Nhân viên vẫn huỷ và tạo lại vận đơn với hãng khác trước khi đẩy lên hãng.
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface CarrierAssignment
 {
     public const TAG = 'vani.fulfillment.carrier_assignments';

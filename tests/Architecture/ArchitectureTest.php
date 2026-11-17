@@ -4,6 +4,8 @@
 | Architecture rules — docs/01-principles/architecture-rules.md
 */
 
+require_once __DIR__.'/plugin-api.php';
+
 $modules = require __DIR__.'/../../config/modules.php';
 
 /** Nợ đã biết của R29 (xử lý ở đợt refactor vòng 0): danh sách chỉ được ngắn lại. */
@@ -82,8 +84,10 @@ arch('R5: Plugin chỉ dùng API public của Core')
     ->not->toUse($pluginForbiddenLayers);
 
 // Danh sách cấm theo tầng ở trên để lọt class ngoài 4 tầng đó (Support, Facades, Http…). Kiểm theo danh sách cho phép:
-// Contracts, Events, Testing, Shared\Domain, PluginServiceProvider và PLUGIN_PUBLIC_SUPPORT (đều có trong snapshot).
-it('R5: plugin chỉ tham chiếu class Core thuộc API public (danh sách cho phép)', function () {
+// class #[PluginApi] (ADR-048 — Contracts/Events còn lại là API giữa module), Testing, Shared\Domain,
+// PluginServiceProvider và PLUGIN_PUBLIC_SUPPORT (đều có trong plugin-api.snapshot).
+it('R5: plugin chỉ tham chiếu class Core thuộc API cho plugin (danh sách cho phép)', function () {
+    $pluginApi = pluginApiClasses();
     $offenders = [];
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('custom/plugin'), FilesystemIterator::SKIP_DOTS)) as $file) {
         $path = (string) $file;
@@ -96,7 +100,8 @@ it('R5: plugin chỉ tham chiếu class Core thuộc API public (danh sách cho 
             }
             $name = ltrim($token[1], '\\');
             if (! str_starts_with($name, 'Modules\\')
-                || preg_match('/^Modules\\\\\w+\\\\(Contracts|Events|Testing)(\\\\|$)/', $name) === 1
+                || isset($pluginApi[$name])
+                || preg_match('/^Modules\\\\\w+\\\\Testing(\\\\|$)/', $name) === 1
                 || str_starts_with($name, 'Modules\\Shared\\Domain\\')
                 || $name === 'Modules\\Extension\\PluginServiceProvider'
                 || in_array($name, PLUGIN_PUBLIC_SUPPORT, true)) {

@@ -7,6 +7,7 @@ namespace Modules\Integration\Contracts;
 use Modules\Integration\Contracts\Data\DeliveryResult;
 use Modules\Integration\Contracts\Data\HealthStatus;
 use Modules\Integration\Contracts\Data\OutboxMessage;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (mô hình B): VaniShop chủ động gửi message ra hệ thống ngoài (ERP, HĐĐT, sàn…).
@@ -18,6 +19,7 @@ use Modules\Integration\Contracts\Data\OutboxMessage;
  *
  * @see docs/11-integration/integration-platform.md §6
  */
+#[PluginApi]
 interface Connector
 {
     public const TAG = 'vani.integration.connectors';

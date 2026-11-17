@@ -26,7 +26,7 @@ it('từ chối manifest sai', function (array $override, string $reason) use ($
 })->with([
     'id sai dạng' => [['id' => 'VietQR'], 'vendor.name'],
     'version không semver' => [['version' => '1.0'], 'SemVer'],
-    'thiếu requires.vanishop' => [['requires' => ['plugins' => []]], 'requires.vanishop'],
+    'thiếu requires.extension_api (và requires.vanishop)' => [['requires' => ['plugins' => []]], 'requires.extension_api'],
 ]);
 
 it('từ chối manifest thiếu trường bắt buộc', function () use ($valid) {

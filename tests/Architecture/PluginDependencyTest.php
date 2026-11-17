@@ -37,14 +37,19 @@ it('plugin chỉ dùng Contracts/Events/Testing của plugin đã khai báo tron
     expect(array_values(array_unique($offenders)))->toBe([]);
 });
 
-it('mọi plugin trong repo tương thích với phiên bản Core hiện tại (requires.vanishop)', function () {
+it('mọi plugin trong repo tương thích với API cho plugin hiện tại (requires.extension_api, ADR-048) và Core nếu có khai', function () {
+    $extensionApi = (string) config('vanishop.extension_api');
     $coreVersion = (string) config('vanishop.version');
     $offenders = [];
     foreach (glob(__DIR__.'/../../custom/plugin/*/vanishop.json') as $file) {
         $manifest = json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR);
-        $constraint = (string) ($manifest['requires']['vanishop'] ?? '');
-        if ($constraint === '' || ! Semver::satisfies($coreVersion, $constraint)) {
-            $offenders[] = "{$manifest['id']} cần VaniShop [{$constraint}], Core là {$coreVersion}";
+        $constraint = (string) ($manifest['requires']['extension_api'] ?? '');
+        if ($constraint === '' || ! Semver::satisfies($extensionApi, $constraint)) {
+            $offenders[] = "{$manifest['id']} cần API mở rộng [{$constraint}], hiện tại là {$extensionApi}";
+        }
+        $core = $manifest['requires']['vanishop'] ?? null;
+        if ($core !== null && ! Semver::satisfies($coreVersion, (string) $core)) {
+            $offenders[] = "{$manifest['id']} cần VaniShop [{$core}], Core là {$coreVersion}";
         }
     }
 

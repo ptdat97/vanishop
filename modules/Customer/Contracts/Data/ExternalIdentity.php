@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Danh tính do nhà cung cấp đăng nhập trả về. Chỉ đặt `phoneVerified`/`emailVerified` = true khi nhà cung cấp
  * **cam kết** đã xác minh — Core dựa vào cờ này để ghép với tài khoản có sẵn.
  */
+#[PluginApi]
 final readonly class ExternalIdentity
 {
     public function __construct(

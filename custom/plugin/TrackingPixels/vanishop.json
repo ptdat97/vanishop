@@ -8,7 +8,7 @@
     "kind": "feature",
     "provider": "Plugin\\TrackingPixels\\TrackingPixelsServiceProvider",
     "requires": {
-        "vanishop": "^0.5",
+        "extension_api": "^1.0",
         "plugins": {}
     },
     "conflicts": [],

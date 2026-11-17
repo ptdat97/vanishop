@@ -6,11 +6,13 @@ namespace Modules\Checkout\Contracts\Data;
 
 use Modules\Promotion\Contracts\Data\PromotionResult;
 use Modules\Promotion\Contracts\Data\VoucherRejection;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Kết quả cuối của totals pipeline. grandTotal = Σ line total + shipping. Thuế đã gồm trong giá.
  */
+#[PluginApi]
 final readonly class Totals
 {
     /**

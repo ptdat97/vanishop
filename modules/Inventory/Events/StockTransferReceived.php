@@ -6,10 +6,12 @@ namespace Modules\Inventory\Events;
 
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Hàng đã nhập kho đến (movement `transfer_in`).
  */
+#[PluginApi]
 final readonly class StockTransferReceived implements ShouldDispatchAfterCommit
 {
     use Dispatchable;

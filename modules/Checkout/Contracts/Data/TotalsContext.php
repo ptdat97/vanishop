@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Modules\Checkout\Contracts\Data;
 
 use Modules\Promotion\Contracts\Data\PromotionResult;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Shared\Domain\Weight\Weight;
 
 /**
  * Trạng thái bất biến chạy qua các TotalsCalculator. Mỗi calculator trả bản mới qua with*().
  */
+#[PluginApi]
 final readonly class TotalsContext
 {
     /**

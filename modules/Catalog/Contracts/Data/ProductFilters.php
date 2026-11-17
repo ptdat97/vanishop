@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Bộ lọc sản phẩm theo ngôn ngữ của storefront (slug, mã) — Catalog tự đổi sang id.
  */
+#[PluginApi]
 final readonly class ProductFilters
 {
     /**

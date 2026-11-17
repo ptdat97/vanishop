@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract: số lượng có thể bán (ATS) của variant.
  */
+#[PluginApi]
 interface AvailabilityReader
 {
     /** ATS của SKU thuộc sản phẩm không theo dõi tồn (luôn bán được) — đủ lớn cho mọi so sánh số lượng, không hiển thị ra ngoài. */

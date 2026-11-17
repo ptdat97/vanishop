@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Một kho/cửa hàng (0.3.88, ADR-042) cho plugin vận hành kho (`vani.warehouse`) và module khác — chỉ đọc.
  */
+#[PluginApi]
 final readonly class LocationData
 {
     public const AUTHORITY_VANISHOP = 'vanishop';

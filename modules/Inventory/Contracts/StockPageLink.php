@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Extension point (tag `vani.inventory.stock_links`, 0.3.88): nút trên trang Admin → Tồn kho do plugin đóng góp (vd.
  * `vani.warehouse`: Chuyển kho, Kho & cửa hàng). Chỉ plugin đang bật mới có nút — tắt plugin là nút biến mất.
  * `managesLocations()` = plugin quản lý danh sách kho → Core ẩn form "Kho chính" (cửa hàng một kho).
  */
+#[PluginApi]
 interface StockPageLink
 {
     public const TAG = 'vani.inventory.stock_links';

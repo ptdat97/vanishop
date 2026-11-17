@@ -13,6 +13,7 @@ use Modules\Shared\Contracts\Data\Alert;
  * `send()` được gọi đồng bộ từ `vani:alerts:check` (scheduler) — không đẩy vào queue, vì queue có thể chính là thứ đang
  * hỏng. Lỗi của một kênh được cô lập (ghi log), các kênh khác vẫn nhận.
  */
+#[PluginApi]
 interface AlertChannel
 {
     public const TAG = 'vani.alert-channels';

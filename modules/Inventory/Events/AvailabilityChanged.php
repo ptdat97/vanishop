@@ -6,10 +6,12 @@ namespace Modules\Inventory\Events;
 
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * ATS có thể đã đổi (giữ/bỏ giữ/xuất/điều chỉnh) — cache, search index, feed có thể cập nhật.
  */
+#[PluginApi]
 final readonly class AvailabilityChanged implements ShouldDispatchAfterCommit
 {
     use Dispatchable;

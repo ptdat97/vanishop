@@ -8,10 +8,12 @@ use DateTimeInterface;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\Data\PriceBreakdown;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract: đọc đơn (snapshot).
  */
+#[PluginApi]
 interface OrderReader
 {
     public function find(int $orderId): ?OrderData;

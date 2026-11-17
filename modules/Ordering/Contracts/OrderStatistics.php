@@ -8,12 +8,14 @@ use DateTimeImmutable;
 use Modules\Ordering\Contracts\Data\SalesBucket;
 use Modules\Ordering\Contracts\Data\SalesDimension;
 use Modules\Ordering\Contracts\Data\SalesTotals;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract (đọc, ADR-030 §4.G): số liệu bán hàng tổng hợp cho báo cáo/dashboard (plugin `vani.reports`).
  * Doanh thu = `total_amount` của đơn **không bị huỷ**, tính theo `placed_at`; khoảng thời gian là [from, to).
  * Ngày được nhóm theo `$timezone` của cửa hàng. Khoảng tối đa {@see self::MAX_DAYS} ngày.
  */
+#[PluginApi]
 interface OrderStatistics
 {
     public const MAX_DAYS = 366;

@@ -7,6 +7,7 @@ namespace Modules\Notification\Contracts;
 use Modules\Notification\Contracts\Data\OutgoingMessage;
 use Modules\Notification\Contracts\Data\Recipient;
 use Modules\Notification\Contracts\Data\SendResult;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point: kênh gửi tin. Core có `mail`; SMS brandname, Zalo ZNS, web push là plugin
@@ -16,6 +17,7 @@ use Modules\Notification\Contracts\Data\SendResult;
  * `SendResult::retryable()` (timeout, 5xx, hết quota tạm thời) hoặc `permanent()` (số không hợp lệ, template bị từ chối).
  * `$message->idempotencyKey` ổn định giữa các lần thử — gửi kèm cho nhà cung cấp nếu họ hỗ trợ.
  */
+#[PluginApi]
 interface NotificationChannel
 {
     public const TAG = 'vani.notification.channels';

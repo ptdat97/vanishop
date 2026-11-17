@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Extension\Contracts\Data;
 
 use InvalidArgumentException;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Chuỗi giá trị theo nhãn (doanh thu theo ngày…), Admin vẽ dạng cột.
  */
+#[PluginApi]
 final readonly class Series
 {
     /**

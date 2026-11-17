@@ -3,6 +3,7 @@
 use Modules\Extension\Domain\Plugin\CircularDependency;
 use Modules\Extension\Domain\Plugin\DependencyProblem;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
+use Modules\Extension\Domain\Plugin\InvalidManifest;
 use Modules\Extension\Domain\Plugin\PluginManifest;
 
 function manifest(string $id, string $core = '^0.1', array $plugins = [], array $conflicts = [], string $version = '1.0.0'): PluginManifest
@@ -75,4 +76,17 @@ it('liệt kê plugin đang hoạt động phụ thuộc vào một plugin', fun
     $available = ['v.base' => manifest('v.base'), 'v.child' => manifest('v.child', plugins: ['v.base' => '*'])];
 
     expect((new DependencyResolver)->dependentsOf('v.base', $available, ['v.base', 'v.child']))->toBe(['v.child']);
+});
+
+it('ADR-048: kiểm requires.extension_api với version API cho plugin; requires.vanishop tuỳ chọn; thiếu cả hai → manifest lỗi', function () {
+    $make = fn (array $requires): PluginManifest => PluginManifest::fromArray([
+        'id' => 'v.a', 'name' => 'A', 'version' => '1.0.0', 'kind' => 'feature', 'provider' => 'X', 'requires' => $requires,
+    ], '/tmp/v.a');
+
+    $plugin = ['v.a' => $make(['extension_api' => '^1.0'])];
+    expect($plugin['v.a'])->requiresCore->toBeNull()->requiresExtensionApi->toBe('^1.0')
+        ->and((new DependencyResolver('1.3.0'))->problemsFor('v.a', $plugin, [], '9.9.9'))->toBe([])
+        ->and(codes((new DependencyResolver('2.0.0'))->problemsFor('v.a', $plugin, [], '0.5.1')))->toBe(['incompatible_extension_api'])
+        ->and(codes((new DependencyResolver('1.0.0'))->problemsFor('v.a', ['v.a' => $make(['extension_api' => '^1.0', 'vanishop' => '^0.6'])], [], '0.5.1')))->toBe(['incompatible_core'])
+        ->and(fn () => $make(['plugins' => []]))->toThrow(InvalidManifest::class, 'requires.extension_api');
 });

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Pricing\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Extension point (tag `vani.pricing.bulk_modes`, EP v3 X4): cách tính thêm trong hộp thoại "Áp giá…" của bảng giá, ngoài
  * giảm %, giảm số tiền, đồng giá của Core — vd. "Giá vốn + %". Core lo phần còn lại: làm tròn, xem trước, cảnh báo, ghi
  * `PriceListService::setPrices` (lịch sử giá). Chỉ tính, không ghi; không I/O mạng chậm.
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface BulkPriceMode
 {
     public const TAG = 'vani.pricing.bulk_modes';

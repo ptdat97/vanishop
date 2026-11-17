@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Ordering\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Một nhóm số liệu: `key` (ngày Y-m-d, mã phương thức, SKU…), `label` hiển thị, số đơn, số lượng (theo dòng), doanh thu.
  */
+#[PluginApi]
 final readonly class SalesBucket
 {
     public function __construct(

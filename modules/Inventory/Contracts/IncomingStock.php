@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Inventory\Contracts;
 
 use Modules\Inventory\Contracts\Data\IncomingStockData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract hàng đang về (ADR-047): nhân viên, plugin hoặc ERP ghi số lượng + ngày dự kiến theo SKU. Core không cộng
  * hàng đang về vào số bán được — plugin đọc để hiển thị "Hàng đang về" hoặc tính hạn mức đặt trước.
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface IncomingStock
 {
     /**

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Notification\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Loại tin (`order_placed`, `cart_abandoned`…) + biến dùng được trong mẫu + mẫu mặc định theo kênh.
  * Mẫu trong DB (Admin → Thông báo) luôn thắng mẫu mặc định.
  */
+#[PluginApi]
 final readonly class NotificationType
 {
     /**

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Extension\Contracts\Data;
 
 use InvalidArgumentException;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * @internal Định dạng giá trị mà Admin hiển thị cho Metric/Series/Column.
  */
+#[PluginApi]
 final class Formats
 {
     /** `compact`/`money_compact` (0.3.73): số rút gọn nghìn/triệu/tỷ cho dashboard — 1,3 N · 2,4 Tr ₫. */

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract: tra đối tượng catalog theo id cho link có kiểu (menu, khối giao diện) — theo lô, một truy vấn mỗi
  * loại — và tìm để chọn trong Admin.
  *
  * Loại: `category`, `collection`, `brand`, `product` (style).
  */
+#[PluginApi]
 interface CatalogLookup
 {
     public const KINDS = ['category', 'collection', 'brand', 'product'];

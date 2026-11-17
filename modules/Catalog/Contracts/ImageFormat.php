@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts;
 
 use Intervention\Image\Interfaces\EncoderInterface;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (0.3.28): định dạng đầu ra của ảnh thu nhỏ trong public/cache. Core không đăng ký implementation nào
@@ -13,6 +14,7 @@ use Intervention\Image\Interfaces\EncoderInterface;
  *
  * Đổi định dạng làm đổi URL ảnh (đuôi file); bản cache định dạng cũ vẫn nằm trên đĩa đến khi `vani:media:cache --clear`.
  */
+#[PluginApi]
 interface ImageFormat
 {
     public const TAG = 'catalog.image-format';

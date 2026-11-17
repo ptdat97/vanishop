@@ -156,22 +156,23 @@ return [
 
 "Public" ở đây là public **cho plugin nội bộ**: hiện không có plugin bên thứ ba và chưa làm plugin SDK ([ADR-033 mục 5](../19-adr/ADR-033-out-of-scope.md)). Policy dưới đây giữ để plugin nội bộ không vỡ khi Core đổi.
 
-Extension point public được đánh version theo **SemVer của Core**:
+Extension point public được đánh version theo **SemVer của API cho plugin** — `vanishop.extension_api`, tách khỏi version Core từ 0.5.1 ([ADR-048](../19-adr/ADR-048-extension-api-version.md)). Chỉ class có `#[PluginApi]` (cùng hook, `PluginServiceProvider`, helper) tính là API cho plugin; phần còn lại của `Contracts`/`Events` là API giữa module:
 
 | Thay đổi | Cho phép ở |
 |---|---|
 | Thêm contract/event/hook mới; thêm field **tuỳ chọn** vào DTO | Minor (1.x) |
 | Thêm method vào **service contract** (Core implement, plugin chỉ gọi: `OrderReader`, `Carts`…) | Minor |
 | Mở rộng **extension contract** (plugin implement: `PaymentGateway`, `NotificationChannel`…) bằng field tuỳ chọn trên DTO/capabilities, hoặc interface bổ sung tuỳ chọn mà Core kiểm tra bằng `instanceof` | Minor |
-| Đổi tên, xoá, đổi kiểu tham số, **thêm method vào extension contract**, đổi ngữ nghĩa | **Major** (giai đoạn `0.x`: tăng số giữa), sau khi đã `@deprecated` ít nhất 1 minor |
+| Đổi tên, xoá, đổi kiểu tham số, **thêm method vào extension contract**, đổi ngữ nghĩa — phần `stable` | **Major**, sau khi đã `@deprecated` ít nhất 1 minor |
+| Mọi thay đổi của phần `experimental` (`#[PluginApi(PluginApi::EXPERIMENTAL)]`, hook `stability: experimental`); `experimental` → `stable` | Minor |
 | Sửa internal | Bất kỳ lúc nào |
 
 - Extension contract có thể khai báo `REQUIRED` (`at_least_one`/`exactly_one`): Core từ chối tắt implementation cuối cùng (Designed, [commerce-kernel §5](../02-architecture/commerce-kernel.md)).
-- Plugin khai báo `requires.vanishop: "^1.2"`. Loader từ chối bật plugin không tương thích ([plugin-system](../05-plugin/plugin-system.md)).
+- Plugin khai báo `requires.extension_api: "^1.0"`. Loader từ chối bật plugin không tương thích (`incompatible_extension_api`) ([plugin-system](../05-plugin/plugin-system.md)). **Implemented** 0.5.1.
 - Deprecation được log (`vani.deprecation`) khi plugin dùng điểm đã deprecated. (**Designed** — chưa có code; xem [plugin-system §6.1](../05-plugin/plugin-system.md).)
-- Thực tế 0.4.x: một số thay đổi phá vỡ đã ra ở bản vá (0.4.21–0.4.27) dù policy yêu cầu tăng số giữa — từ 0.4.68 trở đi, thay đổi phá vỡ extension point phải lên 0.5.0 trở lên.
+- Thực tế 0.4.x: một số thay đổi phá vỡ đã ra ở bản vá (0.4.21–0.4.27). Từ 0.5.1, mức tăng do `PluginApiSnapshotTest` kiểm tự động trên `extension_api`.
 - [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).
-- `tests/Architecture/PublicApiSnapshotTest.php` chụp chữ ký của `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot`: đổi API mà không cập nhật snapshot (`VANI_UPDATE_API_SNAPSHOT=1`) + changelog thì CI đỏ. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.
+- `tests/Architecture/PluginApiSnapshotTest.php` chụp API cho plugin vào `plugin-api.snapshot` (header `Extension API x.y.z`): đổi mà không tăng `extension_api` đúng mức (xoá/đổi phần stable → major) + ghi "Extension API x.y.z" trong changelog thì CI đỏ. `PublicApiSnapshotTest` vẫn chụp toàn bộ `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot` theo version Core. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.
 
 ## 6. Kiểm thử
 

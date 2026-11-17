@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Dữ liệu gửi hãng để đặt vận đơn. `publicId` dùng làm mã đơn phía hãng (hãng tự khử trùng khi đặt lại).
  */
+#[PluginApi]
 final readonly class ShipmentData
 {
     /**

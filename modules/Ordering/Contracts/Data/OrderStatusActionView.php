@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Ordering\Contracts\Data;
 
 use Modules\Extension\Contracts\Data\FieldDefinition;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Nút của một OrderStatusAction trên thẻ "Trạng thái đơn" (0.3.98).
  */
+#[PluginApi]
 final readonly class OrderStatusActionView
 {
     /**

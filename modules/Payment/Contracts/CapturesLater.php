@@ -6,6 +6,7 @@ namespace Modules\Payment\Contracts;
 
 use Modules\Payment\Contracts\Data\GatewayResult;
 use Modules\Payment\Contracts\Data\PaymentData;
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
@@ -15,6 +16,7 @@ use Modules\Shared\Domain\Money\Money;
  * Core thu khi vận đơn rời kho (`vanishop.payment.capture_on = shipped`) hoặc nhân viên bấm thu; đơn huỷ khi đang giữ
  * tiền → `void`. Cả hai idempotent theo `$idempotencyKey` (gọi lại không thu/huỷ hai lần).
  */
+#[PluginApi]
 interface CapturesLater
 {
     public function capture(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult;

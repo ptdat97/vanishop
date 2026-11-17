@@ -6,12 +6,14 @@ namespace Modules\Customer\Contracts;
 
 use Modules\Customer\Contracts\Data\CustomerContact;
 use Modules\Customer\Contracts\Data\OtpPurpose;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point: kênh gửi OTP. Core có `email` (khi khách có email) và `log` (chỉ dev); SMS brandname /
  * Zalo ZNS là plugin (`vani.sms-brandname`, `vani.zalo-zns`). Kênh `isAvailable()` được thử theo `priority()`
  * giảm dần; kênh ném `OtpDeliveryFailed` thì chuyển sang kênh kế tiếp.
  */
+#[PluginApi]
 interface OtpSender
 {
     public const TAG = 'vani.customer.otp_senders';

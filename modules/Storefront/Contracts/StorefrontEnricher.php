@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Extension point (tag `vani.storefront.enrichers`, ADR-030): plugin bổ sung dữ liệu cho tài nguyên storefront.
  * Chạy ở Presenter nên native storefront và Storefront API nhận cùng dữ liệu. Kết quả chỉ được gắn dưới
@@ -12,6 +14,7 @@ namespace Modules\Storefront\Contracts;
  * Nhận cả danh sách một lần (batch, tránh N+1). Lỗi → Core bỏ dữ liệu của plugin đó, trang vẫn chạy.
  * Không gọi mạng đồng bộ; đọc dữ liệu riêng của plugin (bảng plg_*, cache).
  */
+#[PluginApi]
 interface StorefrontEnricher
 {
     public const TAG = 'vani.storefront.enrichers';

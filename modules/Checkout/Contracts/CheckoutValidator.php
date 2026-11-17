@@ -7,10 +7,12 @@ namespace Modules\Checkout\Contracts;
 use Modules\Checkout\Contracts\Data\CheckoutIssue;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Checkout\Contracts\Data\Totals;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.checkout.validators`). Chạy trong transaction PlaceOrder, chỉ đọc.
  */
+#[PluginApi]
 interface CheckoutValidator
 {
     /** Tag extension point: plugin đóng góp qua `contribute(CheckoutValidator::TAG, …)`. */

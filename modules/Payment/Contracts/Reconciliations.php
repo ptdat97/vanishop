@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract (EP v3 X5): bảng đối soát chung — plugin đối soát (sao kê ngân hàng, bảng kê COD của hãng…) ghi từng
  * dòng đã khớp hoặc lệch thay vì tự dựng bảng/trang riêng. Dòng lệch vào hàng đợi "Đối soát lệch" (trang Thanh toán, ô Việc
  * cần làm) để nhân viên xử lý. Idempotent theo (`source`, `reference`).
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface Reconciliations
 {
     /**

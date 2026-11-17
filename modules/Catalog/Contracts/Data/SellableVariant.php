@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Variant đang bán được, kèm thông tin hiển thị tối thiểu cho dòng giỏ/đơn. `options`: tổ hợp tuỳ chọn theo thứ tự trục
  * (ADR-045) — chụp vào dòng giỏ/đơn; hiển thị bằng VariantOptionsText.
  */
+#[PluginApi]
 final readonly class SellableVariant
 {
     /**

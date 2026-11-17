@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\BusinessRuleViolation;
 
 /**
  * Khuyến mãi/voucher hết lượt hoặc hết ngân sách ngay lúc ghi nhận (PlaceOrder) → đơn rollback.
  */
+#[PluginApi]
 final class PromotionUnavailable extends BusinessRuleViolation
 {
     private function __construct(private readonly string $code_, string $message, private readonly array $details_)

@@ -30,7 +30,8 @@ const props = defineProps<{
         has_icon: boolean;
         has_settings: boolean;
         path: string;
-        requires_core: string;
+        requires_core: string | null;
+        requires_extension_api: string | null;
         requires_plugins: Array<{ id: string; constraint: string; name: string | null; status: string }>;
         dependents: string[];
         conflicts: string[];
@@ -102,7 +103,8 @@ const formatDate = useDateTime();
                 <div><dt class="text-slate-500">Phiên bản</dt><dd>{{ plugin.installed_version ?? plugin.version }}<span v-if="plugin.installed_version && plugin.installed_version !== plugin.version" class="text-indigo-600"> → {{ plugin.version }}</span></dd></div>
                 <div><dt class="text-slate-500">Tác giả</dt><dd>{{ plugin.author ?? '—' }}</dd></div>
                 <div><dt class="text-slate-500">Cài lúc</dt><dd>{{ formatDate(plugin.installed_at) }}</dd></div>
-                <div><dt class="text-slate-500">Yêu cầu Core</dt><dd class="font-mono">{{ plugin.requires_core }}</dd></div>
+                <div><dt class="text-slate-500">Yêu cầu API mở rộng</dt><dd class="font-mono">{{ plugin.requires_extension_api ?? '—' }}</dd></div>
+                <div v-if="plugin.requires_core"><dt class="text-slate-500">Yêu cầu Core</dt><dd class="font-mono">{{ plugin.requires_core }}</dd></div>
                 <div class="sm:col-span-2"><dt class="text-slate-500">Thư mục</dt><dd class="font-mono text-xs">{{ plugin.path }}</dd></div>
             </dl>
 

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Phân khúc của một khách: nhóm (tối đa một) + tag.
  */
+#[PluginApi]
 final readonly class CustomerSegment
 {
     /**

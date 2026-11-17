@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Extension point (tag `vani.promotion.actions`): cách tính giảm giá. Core có `percent_off`, `amount_off`.
  */
+#[PluginApi]
 interface PromotionAction
 {
     public const TAG = 'vani.promotion.actions';

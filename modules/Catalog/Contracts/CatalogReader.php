@@ -6,6 +6,7 @@ namespace Modules\Catalog\Contracts;
 
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\SellableVariant;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract: đọc catalog đang hiển thị cho storefront.
@@ -13,6 +14,7 @@ use Modules\Catalog\Contracts\Data\SellableVariant;
  *
  * @phpstan-type VariantView array{id: int, sku: string, is_active: bool, option_values: list<array{option: string, value_id: int}>}
  */
+#[PluginApi]
 interface CatalogReader
 {
     /**

@@ -6,12 +6,14 @@ namespace Modules\Extension\Contracts;
 
 use Modules\Extension\Contracts\Data\ReportPeriod;
 use Modules\Extension\Contracts\Data\ReportResult;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.admin.reports`, ADR-030 §4.G, W6b): báo cáo trong Admin → Báo cáo.
  * Core dựng trang (chọn khoảng thời gian, bảng, biểu đồ, tổng), kiểm tra quyền và xuất CSV; plugin chỉ trả dữ liệu.
  * Đọc qua contract đọc của Core (`OrderStatistics`…); không ghi, không I/O mạng đồng bộ.
  */
+#[PluginApi]
 interface ReportProvider
 {
     public const TAG = 'vani.admin.reports';

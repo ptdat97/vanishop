@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Cart\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Extension point (tag `vani.cart.line_options`, ADR-030 W4): plugin nhận tuỳ chọn trên dòng giỏ (lời chúc gói quà,
  * chữ khắc…). Khách gửi `options.<plugin-id>.<field>` khi thêm dòng; Core gọi implementation của đúng plugin đó,
@@ -12,6 +14,7 @@ namespace Modules\Cart\Contracts;
  * Cùng variant khác tuỳ chọn là hai dòng. Tuỳ chọn **không đổi giá** (phụ thu: Designed — cần dòng phí trong totals).
  * Không I/O mạng (chạy khi khoá giỏ).
  */
+#[PluginApi]
 interface CartLineOption
 {
     public const TAG = 'vani.cart.line_options';

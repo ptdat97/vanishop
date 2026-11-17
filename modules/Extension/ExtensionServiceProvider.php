@@ -110,7 +110,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->singleton(AdminExtensions::class, fn ($app): AdminExtensions => new AdminExtensions(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->alias(AdminExtensions::class, AdminScreen::class);
         $this->app->singleton(AdminNavigation::class, fn ($app): AdminNavigation => new AdminNavigation(fn (): PluginActivation => $app->make(PluginActivation::class)));
-        $this->app->singleton(DependencyResolver::class);
+        $this->app->singleton(DependencyResolver::class, fn (): DependencyResolver => new DependencyResolver((string) config('vanishop.extension_api')));
         $this->app->bind(PluginDoctor::class, fn ($app): PluginDoctor => new PluginDoctor(
             $app->make(ManifestRepository::class), $app->make(DependencyResolver::class), $app->make(PluginLoader::class), $app->make(RequiredExtensions::class), $app->make(Extensions::class), $app->make(PluginHealth::class), (string) config('vanishop.version'), $app->make(PluginCapabilities::class), $app->make(PluginSeeders::class),
         ));

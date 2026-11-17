@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Catalog\Contracts;
 
 use Modules\Catalog\Contracts\Data\VideoThumbnail;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (0.3.46): nền tảng video cho video sản phẩm (YouTube, Vimeo, Bunny Stream…). Core không đăng ký
@@ -14,6 +15,7 @@ use Modules\Catalog\Contracts\Data\VideoThumbnail;
  * Phỏng theo VideoDriver của Vanilo (MIT, xem modules/Catalog/NOTICE); trả URL nhúng thay cho HTML nhúng để theme tự
  * dựng iframe (không in HTML do plugin sinh ra).
  */
+#[PluginApi]
 interface VideoDriver
 {
     public const TAG = 'catalog.video-driver';

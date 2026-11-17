@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Ảnh trong Thư viện ảnh, kèm URL hiện hành (ảnh gốc + các bản thu nhỏ trong public/cache). Không lưu URL này lâu dài:
  * URL bản thu nhỏ đổi khi đổi định dạng (plugin ImageFormat) hoặc disk — lưu `id` rồi tra lại khi hiển thị.
  */
+#[PluginApi]
 final readonly class MediaData
 {
     /**

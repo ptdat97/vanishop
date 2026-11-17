@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Customer\Contracts;
 
 use Modules\Customer\Contracts\Data\ExternalIdentity;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.customer.auth_providers`, ADR-030 §4.E): đăng nhập bằng tài khoản bên ngoài (Zalo,
@@ -14,6 +15,7 @@ use Modules\Customer\Contracts\Data\ExternalIdentity;
  * Quy tắc ghép (Core): danh tính đã liên kết → đăng nhập; chưa liên kết → theo SĐT **đã xác minh** (tạo khách nếu
  * chưa có) hoặc email **đã xác minh** của khách đang có; không có cả hai → từ chối (khách xác minh SĐT bằng OTP).
  */
+#[PluginApi]
 interface AuthProvider
 {
     public const TAG = 'vani.customer.auth_providers';

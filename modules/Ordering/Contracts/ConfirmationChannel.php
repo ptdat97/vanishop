@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Ordering\Contracts;
 
 use Modules\Ordering\Contracts\Data\OrderData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.ordering.confirmation_channels`, EP v3 X2): kênh gửi yêu cầu xác nhận đơn cho khách (tin
@@ -12,6 +13,7 @@ use Modules\Ordering\Contracts\Data\OrderData;
  * Core gọi `request()` **ngoài** transaction, ghi lịch sử đơn. Khách trả lời qua webhook của plugin → plugin gọi
  * `OrderActions::confirm()` / `cancel()` với nguồn `system:<id plugin>`.
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface ConfirmationChannel
 {
     public const TAG = 'vani.ordering.confirmation_channels';

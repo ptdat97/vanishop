@@ -6,6 +6,7 @@ namespace Modules\Payment\Contracts;
 
 use Modules\Payment\Contracts\Data\PayoutResult;
 use Modules\Payment\Contracts\Data\RefundData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.payment.refund_payouts`, EP v3 X5): chuyển trả tiền cho khoản hoàn "chờ chuyển trả" (COD,
@@ -16,6 +17,7 @@ use Modules\Payment\Contracts\Data\RefundData;
  * `RefundData::$refundPublicId` làm khoá idempotency phía ngân hàng/ví: lời gọi hết thời gian chờ nhưng tiền đã đi, nhân viên
  * bấm lại, thì ngân hàng không chuyển lần hai.
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 interface RefundPayout
 {
     public const TAG = 'vani.payment.refund_payouts';

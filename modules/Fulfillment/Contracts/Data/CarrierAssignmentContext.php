@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Ngữ cảnh chọn hãng khi tạo vận đơn (EP v3 X3, `CarrierAssignment`): địa chỉ giao (snapshot đơn), số tiền thu hộ, tổng
  * đơn, số sản phẩm, phương thức giao khách chọn (`source` = mã hãng nếu phí do hãng báo).
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 final readonly class CarrierAssignmentContext
 {
     /**

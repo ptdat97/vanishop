@@ -10,6 +10,7 @@ namespace Modules\Shared\Contracts;
  * chuẩn vào đơn, Storefront API + checkout native cho chọn tỉnh/phường. Không có → địa chỉ nhập tự do.
  * Dùng implementation đầu tiên đang bật. Dữ liệu tĩnh/cache — không I/O mạng (chạy trong transaction đặt hàng).
  */
+#[PluginApi]
 interface AddressDirectory
 {
     public const TAG = 'vani.address.directories';

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Kết quả kiểm tra sức khoẻ của plugin (cấu hình thiếu, token hết hạn, quota…).
  */
+#[PluginApi]
 final readonly class HealthStatus
 {
     public const OK = 'ok';

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Điều chỉnh truy vết được: giảm giá (âm), phí (dương). `source` = "core" hoặc mã plugin.
  */
+#[PluginApi]
 final readonly class Adjustment
 {
     /**

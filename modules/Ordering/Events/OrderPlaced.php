@@ -6,7 +6,9 @@ namespace Modules\Ordering\Events;
 
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
+use Modules\Shared\Contracts\PluginApi;
 
+#[PluginApi]
 final readonly class OrderPlaced implements ShouldDispatchAfterCommit
 {
     use Dispatchable;

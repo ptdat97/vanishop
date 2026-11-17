@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Hạn mức đặt trước của một SKU (ADR-047): tối đa `limit` sản phẩm chờ hàng, dự kiến có hàng ngày `expectedOn` (Y-m-d).
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 final readonly class BackorderAllowance
 {
     public function __construct(

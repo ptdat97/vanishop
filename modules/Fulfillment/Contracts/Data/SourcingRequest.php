@@ -6,7 +6,9 @@ namespace Modules\Fulfillment\Contracts\Data;
 
 use Modules\Inventory\Contracts\Data\ReservedLine;
 use Modules\Ordering\Contracts\Data\OrderLineData;
+use Modules\Shared\Contracts\PluginApi;
 
+#[PluginApi]
 final readonly class SourcingRequest
 {
     /**

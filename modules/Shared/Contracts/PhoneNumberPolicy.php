@@ -11,6 +11,7 @@ namespace Modules\Shared\Contracts;
  *
  * Gọi qua `Modules\Shared\Support\Phones` (khách đăng nhập OTP, checkout, tra cứu đơn, sổ địa chỉ). Không gọi mạng.
  */
+#[PluginApi]
 interface PhoneNumberPolicy
 {
     public const TAG = 'vani.phone.policies';

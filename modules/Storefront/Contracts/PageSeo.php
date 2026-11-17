@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract: trang storefront (Core hoặc plugin) khai báo URL tương ứng ở từng ngôn ngữ và ngôn ngữ đã có bản
  * dịch (ADR-038 §5–7). Layout theme sinh canonical, `hreflang`, `noindex` cho bản chưa dịch và nút chuyển ngôn ngữ
  * từ khai báo này. Trang không khai báo: URL suy ra từ route hiện tại, mọi ngôn ngữ có route coi như đã dịch.
  * Trạng thái gắn với request hiện tại (không sống qua request).
  */
+#[PluginApi]
 interface PageSeo
 {
     /**

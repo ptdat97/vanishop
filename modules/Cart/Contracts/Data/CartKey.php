@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Cart\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Định danh giỏ công khai + token bí mật do client giữ. Thiếu token đúng thì coi như giỏ không tồn tại.
  */
+#[PluginApi]
 final readonly class CartKey
 {
     public function __construct(

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Promotion\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Số liệu của Promotion về một chiến dịch: đơn đã áp khuyến mãi của chiến dịch, tổng giảm, số lượt, và mã các bảng giá
  * sale/thành viên thuộc chiến dịch (để tra đơn mua theo giá sale qua `OrderStatistics::orderIdsWithPriceLists`).
  */
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 final readonly class CampaignUsage
 {
     /**

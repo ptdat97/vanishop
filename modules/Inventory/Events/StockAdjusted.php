@@ -6,7 +6,9 @@ namespace Modules\Inventory\Events;
 
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
+use Modules\Shared\Contracts\PluginApi;
 
+#[PluginApi]
 final readonly class StockAdjusted implements ShouldDispatchAfterCommit
 {
     use Dispatchable;

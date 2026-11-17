@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Một con số (doanh thu hôm nay, số đơn chờ xử lý…). `format`: number | money (đơn vị nhỏ nhất, VND) | percent.
  */
+#[PluginApi]
 final readonly class Metric
 {
     public function __construct(

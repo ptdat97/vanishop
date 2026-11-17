@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Inventory\Contracts;
 
 use Modules\Inventory\Contracts\Data\LocationData;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract (0.3.88, ADR-042): danh sách và tạo/sửa kho. Core dùng cho "Kho chính"; plugin `vani.warehouse`
  * quản lý nhiều kho qua contract này — không ghi thẳng bảng tồn. Có audit; sửa dùng optimistic lock (`lock_version`).
  */
+#[PluginApi]
 interface LocationRegistry
 {
     /**

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Payment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
 use Modules\Shared\Domain\Money\Money;
 
 /**
  * Callback/IPN đã xác minh chữ ký, chuẩn hoá. `acknowledgement` là phản hồi cổng mong đợi (JSON).
  */
+#[PluginApi]
 final readonly class GatewayCallback
 {
     public const PAID = 'paid';

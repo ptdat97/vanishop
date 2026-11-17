@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Extension point: một loại link có kiểu (danh mục, thương hiệu, trang nội dung của plugin…) cho menu và khối giao
  * diện. Core có `category`, `collection`, `brand`, `product`, `route`, `url`; plugin thêm loại (vd. `vani.cms`: `page`).
@@ -11,6 +13,7 @@ namespace Modules\Storefront\Contracts;
  * Phân giải theo lô: `resolve()` nhận mọi giá trị của loại này trong một menu — một truy vấn cho cả lô. Không cache
  * qua request (đổi slug phải thấy ngay); `LinkResolver` ghi nhớ trong request.
  */
+#[PluginApi]
 interface LinkType
 {
     public const TAG = 'vani.storefront.link_types';

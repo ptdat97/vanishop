@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Modules\Notification\Contracts;
 
 use Modules\Notification\Contracts\Data\NotificationRequest;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Service contract: gửi một tin theo loại (`order_placed`…) tới người nhận, trên mọi kênh có template đang bật
  * và kênh đó liên lạc được với người nhận. Tin marketing chỉ gửi khi khách có consent theo kênh.
  * Idempotent theo `NotificationRequest::$key` + kênh.
  */
+#[PluginApi]
 interface Notifier
 {
     /**

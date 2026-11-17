@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Service contract: đăng ký và lấy implementation CÓ HIỆU LỰC của một extension point (tag).
  *
@@ -16,6 +18,7 @@ namespace Modules\Extension\Contracts;
  *
  * @see docs/04-extension/extension-model.md
  */
+#[PluginApi]
 interface Extensions
 {
     /**

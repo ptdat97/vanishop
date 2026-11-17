@@ -6,11 +6,13 @@ namespace Modules\Promotion\Contracts;
 
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Extension point (tag `vani.promotion.rules`): điều kiện của khuyến mãi — BxGy, đơn đầu tiên, theo bộ sưu tập…
  * Chỉ đọc, không ghi DB, không I/O mạng (chạy mỗi lần xem giỏ/checkout).
  */
+#[PluginApi]
 interface PromotionRule
 {
     public const TAG = 'vani.promotion.rules';

@@ -6,12 +6,14 @@ namespace Modules\Checkout\Contracts;
 
 use Modules\Checkout\Contracts\Data\ShippingOption;
 use Modules\Checkout\Contracts\Data\TotalsContext;
+use Modules\Shared\Contracts\PluginApi;
 
 /**
  * Nguồn phương thức giao + phí cho checkout (tag `vani.checkout.shipping_providers`).
  * Bắt buộc ≥ 1 đang bật (ADR-029). Phí cố định là plugin hệ thống `vani.shipping-flat-rate`; carrier (GHN…) là plugin.
  * Không gọi mạng đồng bộ không có timeout/cache.
  */
+#[PluginApi]
 interface ShippingRateProvider
 {
     public const TAG = 'vani.checkout.shipping_providers';

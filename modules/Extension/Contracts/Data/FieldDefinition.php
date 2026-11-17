@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Trường form do plugin khai báo (phần form trên màn hình Admin của Core — ADR-030). Admin render chung,
  * Core validate theo kiểu trước khi gọi `save` của plugin.
  */
+#[PluginApi]
 final readonly class FieldDefinition
 {
     /** `media` (0.3.87): id ảnh của Thư viện ảnh; `video` (0.3.91): id video của Thư viện ảnh — ô chọn dùng chung. */

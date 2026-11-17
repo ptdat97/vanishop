@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
 /**
  * Link có kiểu: lưu (loại, giá trị, nhãn ghi đè theo ngôn ngữ), phân giải lúc render bằng `LinkResolver` — đổi slug
  * hay tên đối tượng thì link tự theo. Ví dụ `{type: "category", value: "12"}`, `{type: "url", value: "https://…"}`.
  */
+#[PluginApi]
 final readonly class LinkTarget
 {
     /**
