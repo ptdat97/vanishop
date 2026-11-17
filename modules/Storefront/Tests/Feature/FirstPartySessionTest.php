@@ -26,13 +26,13 @@ it('khách đăng nhập trên Blade: API cùng nguồn nhận ra khách', funct
     $this->getJson('/api/storefront/v1/me', $headers)->assertOk()->assertJsonPath('data.phone', '+84912345678');
 })->with([
     'Sec-Fetch-Site: same-origin' => [['Sec-Fetch-Site' => 'same-origin']],
-    'Origin trùng host (trình duyệt cũ)' => [['Origin' => 'http://vanishop.test']],
+    'Origin trùng host (trình duyệt cũ)' => [fn (): array => ['Origin' => config('app.url')]], // host theo APP_URL (CI: .env.example)
 ]);
 
 it('khác nguồn, hoặc không có dấu hiệu cùng nguồn: không dùng phiên web — phải có Bearer', function (array $headers) {
     $this->getJson('/api/storefront/v1/me', $headers)->assertUnauthorized();
 })->with([
-    'Sec-Fetch-Site: cross-site' => [['Sec-Fetch-Site' => 'cross-site', 'Origin' => 'http://vanishop.test']],
+    'Sec-Fetch-Site: cross-site' => [fn (): array => ['Sec-Fetch-Site' => 'cross-site', 'Origin' => config('app.url')]],
     'Origin khác host' => [['Origin' => 'https://ke-gian.example']],
     'không có header' => [[]],
 ]);
@@ -60,7 +60,7 @@ it('ghi bằng phiên cùng nguồn: Sec-Fetch-Site same-origin là bằng chứ
     enforceCsrf();
     $address = fn (string $label): array => ['label' => $label, 'full_name' => 'Lan', 'phone' => '0912345678', 'province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh',
         'ward_code' => '70101065', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi'];
-    $oldBrowser = ['Origin' => 'http://vanishop.test'];
+    $oldBrowser = ['Origin' => config('app.url')];
 
     // Trình duyệt hiện đại tự đặt Sec-Fetch-Site; trang khác nguồn không giả được header này (Laravel kiểm theo nó).
     $this->postJson('/api/storefront/v1/me/addresses', $address('Nhà'), ['Sec-Fetch-Site' => 'same-origin'])->assertCreated();
