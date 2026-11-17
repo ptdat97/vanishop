@@ -81,8 +81,9 @@ it('modules/ không gắn mã implementation hay id của plugin (Core không bi
     }
     expect($codes)->toHaveKeys(['cod', 'manual_bank_transfer', 'vn_vat_inclusive', 'vani.cod']);
 
-    // Trùng chữ ngẫu nhiên, không phải mã của plugin: hệ size `vn` (cùng us/eu) là từ vựng catalog.
-    $coincidences = ['Catalog/Domain/SizeSystem.php' => ['vn']];
+    // Trùng chữ ngẫu nhiên, không phải mã của plugin: hệ size `vn` (cùng us/eu) là từ vựng catalog; `cod` là tên cột tiền thu
+    // hộ trong bảng kê của hãng vận chuyển.
+    $coincidences = ['Catalog/Domain/SizeSystem.php' => ['vn'], 'Fulfillment/Application/CodStatement.php' => ['cod']];
 
     $offenders = [];
     $root = realpath(__DIR__.'/../../modules');

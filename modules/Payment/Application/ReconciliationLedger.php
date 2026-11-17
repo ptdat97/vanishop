@@ -31,6 +31,18 @@ final class ReconciliationLedger implements Reconciliations
         }
     }
 
+    public function recorded(string $source, array $references): array
+    {
+        $found = [];
+        foreach (array_chunk(array_values(array_unique($references)), 500) as $chunk) {
+            foreach (DB::table('reconciliation_entries')->where('source', $source)->whereIn('reference', $chunk)->pluck('reference') as $reference) {
+                $found[] = (string) $reference;
+            }
+        }
+
+        return $found;
+    }
+
     public function openCount(): int
     {
         return DB::table('reconciliation_entries')->where('status', 'mismatch')->count();

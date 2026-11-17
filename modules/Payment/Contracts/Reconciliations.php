@@ -20,4 +20,12 @@ interface Reconciliations
      * @return bool false khi dòng đã ghi trước đó
      */
     public function record(string $source, string $reference, bool $matched, ?int $orderId = null, ?int $paymentId = null, ?int $expected = null, ?int $actual = null, ?string $note = null): bool;
+
+    /**
+     * Các tham chiếu trong `$references` đã có dòng của nguồn `$source` (mọi trạng thái) — để xem trước file đối soát.
+     *
+     * @param  list<string>  $references
+     * @return list<string>
+     */
+    public function recorded(string $source, array $references): array;
 }

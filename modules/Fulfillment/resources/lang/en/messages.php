@@ -17,4 +17,6 @@ return [
     'cancelled' => 'Shipment cancelled.',
     'push_blocked' => 'Cannot send to the carrier yet: :reasons',
     'return_pickup_unavailable' => 'The carrier that delivered this order does not support return pickups.',
+    'cod_statement_imported' => 'COD statement reconciled: :matched matched, :mismatched mismatched lines moved to "Reconciliation issues".',
+    'cod_statement_expired' => 'The preview has expired — upload the file again.',
 ];

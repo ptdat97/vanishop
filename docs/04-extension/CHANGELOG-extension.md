@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.18 — 2026-11-18 · Extension API 1.2.0
+
+Stabilization A9 — Đối soát COD.
+
+### Thêm
+- Nhập bảng kê COD của hãng vận chuyển (`Giao hàng → Vận đơn → Nhập bảng kê COD`, module Fulfillment — `CodStatement`, route `admin.fulfillment.cod-statements.*`, quyền `payments.confirm`): file .xlsx/.csv có cột mã vận đơn + tiền thu hộ (+ phí, nếu có; nhận "199.000", "199,000 đ"); xem trước từng dòng (khớp / lệch tiền / không có vận đơn / vận đơn chưa giao / đã đối soát trước đó / lặp trong file / số tiền sai) rồi mới ghi. Áp dụng: dòng khớp → sổ đối soát `matched` (nguồn `cod_statement`, tham chiếu = mã vận đơn) và ghi nhận đã thu nếu khoản COD chưa được ghi (`Payments::collectCod`, idempotent); dòng lệch → hàng đợi "Đối soát lệch" ở trang Thanh toán. Nhập lại cùng file không ghi lần hai; có audit `payment.cod_statement.imported`.
+- `Payment\Contracts\Reconciliations::recorded(source, references)` — các tham chiếu đã có trong sổ đối soát của một nguồn (để plugin đối soát xem trước file, đánh dấu dòng đã nhập). Thêm phương thức → Extension API 1.2.0 (tương thích ngược với plugin `^1.x` chỉ gọi contract).
+
 ## 0.5.17 — 2026-11-18 · Extension API 1.1.0 (không đổi)
 
 Stabilization A8 — Đơn hàng. Không đổi API cho plugin.

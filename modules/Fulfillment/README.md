@@ -4,7 +4,7 @@
 
 ## Trách nhiệm
 
-Vận đơn theo kho, chọn hãng, đẩy lên hãng, webhook trạng thái, thu COD, chốt tồn khi rời kho, hãng lấy hàng trả.
+Vận đơn theo kho, chọn hãng, đẩy lên hãng, webhook trạng thái, thu COD, đối soát bảng kê COD của hãng (`CodStatement` → sổ `Reconciliations` của Payment), chốt tồn khi rời kho, hãng lấy hàng trả.
 
 ## Bất biến
 

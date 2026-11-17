@@ -94,6 +94,7 @@ final class ShipmentController
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             'canManage' => Gate::allows('fulfillment.manage'),
+            'codStatementUrl' => Gate::allows('payments.confirm') ? route('admin.fulfillment.cod-statements.preview') : null,
             // Cột/lọc/thao tác hàng loạt/công cụ tải file của plugin (EP v3 X1).
             'extensions' => $screen->listProps('shipment', $shipments->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
         ]);

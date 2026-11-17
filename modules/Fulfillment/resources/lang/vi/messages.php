@@ -17,4 +17,6 @@ return [
     'cancelled' => 'Đã huỷ vận đơn.',
     'push_blocked' => 'Chưa đẩy lên hãng được: :reasons',
     'return_pickup_unavailable' => 'Hãng đã giao đơn này không hỗ trợ đến lấy hàng trả.',
+    'cod_statement_imported' => 'Đã đối soát bảng kê COD: :matched dòng khớp, :mismatched dòng lệch chuyển vào "Đối soát lệch".',
+    'cod_statement_expired' => 'Bản xem trước đã hết hạn — tải file lên lại.',
 ];

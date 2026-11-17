@@ -3,6 +3,7 @@ import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import ExtensionTools from '@admin/Components/Extensions/ExtensionTools.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -12,7 +13,7 @@ import { confirmAction, promptFields } from '@admin/confirm';
 import { codeOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 
 const props = defineProps<{
@@ -38,11 +39,20 @@ const props = defineProps<{
         can_cancel: boolean;
     }>;
     canManage: boolean;
+    /** Nhập bảng kê COD của hãng (A9) — null khi không có quyền xác nhận thanh toán. */
+    codStatementUrl: string | null;
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
     perPageOptions: number[];
     /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
     extensions: ExtensionList;
 }>();
+
+// Bảng kê COD của hãng (A9): tải file → trang xem trước, chưa ghi gì.
+const showCodStatement = ref(false);
+const codStatementForm = useForm<{ file: File | null }>({ file: null });
+function submitCodStatement(): void {
+    if (props.codStatementUrl) codStatementForm.post(props.codStatementUrl, { forceFormData: true });
+}
 
 const filters = reactive({ ...props.filters });
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
@@ -118,7 +128,15 @@ async function cancel(id: number): Promise<void> {
 <template>
     <Head title="Giao hàng" />
     <p class="mb-2 text-sm text-slate-500">Giao hàng</p>
-    <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho." />
+    <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho.">
+        <button v-if="codStatementUrl" type="button" :class="secondaryButton" data-cod-statement-toggle @click="showCodStatement = !showCodStatement">Nhập bảng kê COD</button>
+    </PageHeader>
+    <form v-if="showCodStatement" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-cod-statement @submit.prevent="submitCodStatement">
+        <p>File Excel (.xlsx) hoặc CSV hãng gửi khi chuyển tiền thu hộ. Cần cột <strong>Mã vận đơn</strong> và <strong>Tiền thu hộ</strong>; cột <strong>Phí</strong> nếu có được ghi kèm. Dòng lệch vào mục "Đối soát lệch" ở trang Thanh toán. Bước sau là xem trước, chưa ghi gì.</p>
+        <FileInput v-model="codStatementForm.file" accept=".xlsx,.csv" :max-kb="5120" label="Chọn file" :progress="codStatementForm.progress?.percentage ?? null" />
+        <p v-for="(error, key) in codStatementForm.errors" :key="key" class="text-red-600">{{ error }}</p>
+        <div><button type="submit" :class="primaryButton" :disabled="!codStatementForm.file || codStatementForm.processing">Xem trước</button></div>
+    </form>
 
     <ExtensionTools :tools="extensions.tools ?? []" />
 
