@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.14 — 2026-11-18 · Extension API 1.1.0 (không đổi)
+
+Stabilization A5 — Pricing. Không đổi API cho plugin.
+
+### Thêm
+- Đổi giá niêm yết theo bộ lọc: danh sách sản phẩm có "Chọn tất cả N sản phẩm khớp bộ lọc" (tới 2000, `GET products/ids`) cho mọi thao tác hàng loạt; "Đổi giá" có bước xem trước (số SKU, khoảng giá cũ → mới, cảnh báo qua hook `vani.pricing.bulk.warnings`, dòng mẫu). Thao tác hàng loạt khai `preview_url` → hộp xác nhận hiện kết quả xem trước (`ConfirmOptions.details`).
+- Lịch sử giá theo SKU (`Pricing → Lịch sử giá`): mọi lần đổi giá — người đổi, thời điểm, bảng giá, giá và giá gạch cũ → mới; tìm theo SKU/mã/tên sản phẩm, lọc theo bảng giá. Contract giữa module `Identity\Contracts\StaffNames` (id → tên nhân viên).
+
 ## 0.5.13 — 2026-11-17 · Extension API 1.1.0 (không đổi)
 
 Stabilization A4 — Admin Catalog. Không đổi API cho plugin.

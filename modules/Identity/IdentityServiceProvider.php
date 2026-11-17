@@ -8,6 +8,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
 use Modules\Identity\Application\DatabaseAuditLogger;
+use Modules\Identity\Application\EloquentStaffNames;
 use Modules\Identity\Application\InMemoryPermissionRegistry;
 use Modules\Identity\Application\ScopedRbacAuthorizer;
 use Modules\Identity\Application\ScopeOptionsRegistry;
@@ -19,6 +20,7 @@ use Modules\Identity\Contracts\Authorizer;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Contracts\ScopeOptions;
+use Modules\Identity\Contracts\StaffNames;
 use Modules\Identity\Http\Middleware\ConfigureAdminSession;
 use Modules\Identity\Http\Middleware\ResolveStaffContext;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -37,6 +39,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ScopeOptions::class, ScopeOptionsRegistry::class);
         $this->app->scoped(Authorizer::class, ScopedRbacAuthorizer::class);
         $this->app->scoped(AuditLogger::class, DatabaseAuditLogger::class);
+        $this->app->bind(StaffNames::class, EloquentStaffNames::class);
         // Chụp khi config đã nạp và trước mọi request; dùng để trả phiên về mặc định cho request storefront.
         $this->app->singleton(ConfigureAdminSession::DEFAULTS_BINDING, fn (): array => ConfigureAdminSession::snapshotDefaults());
     }

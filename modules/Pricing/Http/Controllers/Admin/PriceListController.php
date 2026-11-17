@@ -55,6 +55,7 @@ final class PriceListController
 
         return Inertia::render('Pricing::PriceLists/Index', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
+            'historyUrl' => route('admin.pricing.history'),
             'labels' => __('pricing::labels'),
             'priceLists' => $lists
                 ->map(fn (PriceList $list): array => [

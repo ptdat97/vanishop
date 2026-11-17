@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Pricing\Http\Controllers\Admin\PriceHistoryController;
 use Modules\Pricing\Http\Controllers\Admin\PriceListController;
 
 // Prefix: /{admin}/pricing — tên route: admin.pricing.*
@@ -14,6 +15,7 @@ Route::post('price-lists/{priceList}/bulk', [PriceListController::class, 'applyB
 Route::get('price-lists/{priceList}/export', [PriceListController::class, 'export'])->name('price-lists.export');
 Route::post('price-lists/{priceList}/import', [PriceListController::class, 'import'])->name('price-lists.import');
 Route::post('price-lists/{priceList}/remove', [PriceListController::class, 'removePrices'])->name('price-lists.remove');
+Route::get('history', [PriceHistoryController::class, 'index'])->name('history');
 Route::post('base-prices/bulk', [PriceListController::class, 'bulkBasePrice'])->name('base-prices.bulk');
 Route::post('base-prices/bulk/preview', [PriceListController::class, 'previewBulkBasePrice'])->name('base-prices.bulk.preview');
 Route::put('base-prices/{styleId}', [PriceListController::class, 'setProductBasePrice'])->whereNumber('styleId')->name('base-prices.style');

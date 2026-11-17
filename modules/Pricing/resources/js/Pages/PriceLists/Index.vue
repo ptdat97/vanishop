@@ -2,11 +2,12 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
-import { primaryButton } from '@admin/styles';
+import { primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { stateTone } from '../../priceListState';
 
 const props = defineProps<{
+    historyUrl: string;
     baseUrl: string;
     labels: { price_list_type: Record<string, string>; price_list_state: Record<string, string> };
     priceLists: Array<{
@@ -41,6 +42,7 @@ const columns = [
     <Head title="Bảng giá" />
     <p class="mb-2 text-sm text-slate-500">Giá bán</p>
     <PageHeader title="Bảng giá" subtitle="Bấm vào bảng giá để xem và sửa giá. Bảng giá ưu tiên cao hơn thắng; giá niêm yết làm giá gạch khi đang giảm.">
+        <Link :href="historyUrl" :class="secondaryButton" data-history>Lịch sử giá</Link>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bảng giá</Link>
     </PageHeader>
     <div v-if="extraBaseLists.length" class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-extra-base>
