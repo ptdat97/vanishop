@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'count_closed' => 'Phiên :number đã áp dụng hoặc đã huỷ.',
+    'count_reason' => 'Kiểm kê :number',
+    'count_started' => 'Đã mở phiên kiểm kê :number.',
+    'count_applied' => 'Đã áp dụng kiểm kê :number: :changed SKU đổi tồn, :unchanged SKU khớp.',
+    'count_cancelled' => 'Đã huỷ phiên :number.',
+    'count_recorded' => 'Đã ghi :count SKU.',
     'receipt_stale' => 'Phiếu vừa được người khác sửa — tải lại trang để xem bản mới.',
     'receipt_empty' => 'Phiếu nhập cần ít nhất một SKU có số lượng.',
     'receipt_too_many' => 'Một phiếu nhập tối đa :max SKU.',

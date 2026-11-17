@@ -15,6 +15,7 @@ use Inertia\Response;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Application\AdminQueries;
+use Modules\Inventory\Application\SkuQuantityRows;
 use Modules\Inventory\Application\StockReceiptService;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockReceipt;
@@ -98,7 +99,7 @@ final class StockReceiptController
     /**
      * Đọc dòng từ chữ dán/quét (`text`) hoặc file (.xlsx/.csv) → dòng phiếu (chưa lưu) để form thêm vào.
      */
-    public function parse(Request $request, StockReceiptService $receipts, VariantDirectory $variants): JsonResponse
+    public function parse(Request $request, SkuQuantityRows $parser, VariantDirectory $variants): JsonResponse
     {
         Gate::authorize('inventory.adjust');
         $request->validate(['text' => ['nullable', 'string', 'max:100000'], 'file' => ['nullable', 'file', 'max:2048', 'extensions:xlsx,csv,txt']]);
@@ -109,9 +110,9 @@ final class StockReceiptController
                 throw ValidationException::withMessages(['file' => $exception->getMessage()]);
             }
         } else {
-            $rows = array_map(fn (string $line): array => preg_split('/\s*[\t,;]\s*|\s{2,}|\s+(?=\d+$)/', trim($line)) ?: [], preg_split('/\r\n|\n|\r/', (string) $request->input('text', '')) ?: []);
+            $rows = SkuQuantityRows::fromText((string) $request->input('text', ''));
         }
-        $result = $receipts->parseRows($rows);
+        $result = $parser->parse($rows);
 
         return response()->json(['lines' => $this->lines($result['lines'], $variants), 'errors' => $result['errors']]);
     }

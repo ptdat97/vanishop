@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Inventory\Http\Controllers\Admin\ReconciliationController;
 use Modules\Inventory\Http\Controllers\Admin\StockController;
+use Modules\Inventory\Http\Controllers\Admin\StockCountController;
 use Modules\Inventory\Http\Controllers\Admin\StockReceiptController;
 
 // Prefix: /{admin}/inventory — tên route: admin.inventory.*
@@ -15,6 +16,13 @@ Route::get('stock/export', [StockController::class, 'export'])->name('stock.expo
 Route::post('stock/import', [StockController::class, 'import'])->name('stock.import');
 Route::post('stock/import/{token}', [StockController::class, 'applyImport'])->where('token', '[A-Za-z0-9]{40}')->name('stock.import.apply');
 Route::get('movements', [StockController::class, 'movements'])->name('movements.index');
+Route::get('counts', [StockCountController::class, 'index'])->name('counts.index');
+Route::post('counts', [StockCountController::class, 'store'])->name('counts.store');
+Route::get('counts/{count}', [StockCountController::class, 'show'])->whereNumber('count')->name('counts.show');
+Route::post('counts/{count}/lines', [StockCountController::class, 'record'])->whereNumber('count')->name('counts.record');
+Route::put('counts/{count}/lines/{variant}', [StockCountController::class, 'line'])->whereNumber(['count', 'variant'])->name('counts.line');
+Route::post('counts/{count}/apply', [StockCountController::class, 'apply'])->whereNumber('count')->name('counts.apply');
+Route::post('counts/{count}/cancel', [StockCountController::class, 'cancel'])->whereNumber('count')->name('counts.cancel');
 Route::get('receipts', [StockReceiptController::class, 'index'])->name('receipts.index');
 Route::get('receipts/create', [StockReceiptController::class, 'create'])->name('receipts.create');
 Route::post('receipts', [StockReceiptController::class, 'store'])->name('receipts.store');

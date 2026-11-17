@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'count_closed' => 'Count :number was already applied or cancelled.',
+    'count_reason' => 'Stock count :number',
+    'count_started' => 'Started stock count :number.',
+    'count_applied' => 'Applied count :number: :changed SKUs changed, :unchanged matched.',
+    'count_cancelled' => 'Cancelled count :number.',
+    'count_recorded' => 'Recorded :count SKUs.',
     'receipt_stale' => 'Someone else just changed this receipt — reload to see the latest version.',
     'receipt_empty' => 'A receipt needs at least one SKU with a quantity.',
     'receipt_too_many' => 'A receipt holds at most :max SKUs.',

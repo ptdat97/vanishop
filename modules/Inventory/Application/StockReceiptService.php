@@ -133,53 +133,6 @@ final class StockReceiptService
         });
     }
 
-    /**
-     * Dòng nhập từ chữ dán/quét hoặc file: "SKU", "SKU<tab/,/;>số lượng" (thiếu số lượng = 1, SKU lặp lại cộng dồn — quét mã
-     * từng món). Dòng tiêu đề (không phải SKU) bỏ qua.
-     *
-     * @param  list<list<string>>  $rows
-     * @return array{lines: array<int, int>, errors: list<string>}
-     */
-    public function parseRows(array $rows): array
-    {
-        $parsed = [];
-        $errors = [];
-        foreach ($rows as $index => $row) {
-            $sku = trim((string) ($row[0] ?? ''));
-            $quantity = trim((string) ($row[1] ?? ''));
-            if ($sku === '') {
-                continue;
-            }
-            if ($quantity !== '' && ! ctype_digit($quantity)) {
-                if ($index === 0) {
-                    continue; // tiêu đề
-                }
-                $errors[] = __('inventory::messages.receipt_quantity_invalid', ['line' => $index + 1, 'sku' => $sku]);
-
-                continue;
-            }
-            $parsed[] = ['line' => $index + 1, 'sku' => $sku, 'quantity' => $quantity === '' ? 1 : (int) $quantity];
-        }
-        $found = [];
-        foreach ($this->variants->findBySkus(array_values(array_unique(array_column($parsed, 'sku')))) as $variant) {
-            $found[mb_strtoupper($variant->sku)] = $variant;
-        }
-        $lines = [];
-        foreach ($parsed as $row) {
-            $variant = $found[mb_strtoupper($row['sku'])] ?? null;
-            if ($variant === null) {
-                if ($row['line'] !== 1) {
-                    $errors[] = __('inventory::messages.receipt_sku_unknown', ['line' => $row['line'], 'sku' => $row['sku']]);
-                }
-
-                continue;
-            }
-            $lines[$variant->id] = ($lines[$variant->id] ?? 0) + $row['quantity'];
-        }
-
-        return ['lines' => $lines, 'errors' => $errors];
-    }
-
     private function guardDraft(StockReceipt $receipt): void
     {
         if ($receipt->status !== StockReceipt::DRAFT) {

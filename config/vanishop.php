@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.15',
+    'version' => '0.5.16',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi

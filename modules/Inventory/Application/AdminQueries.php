@@ -6,6 +6,7 @@ namespace Modules\Inventory\Application;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Inventory\Persistence\Models\Location;
+use Modules\Inventory\Persistence\Models\StockCount;
 use Modules\Inventory\Persistence\Models\StockReceipt;
 
 /**
@@ -41,5 +42,19 @@ final class AdminQueries
     public function managedLocations(): array
     {
         return array_values(array_filter(Location::query()->orderByDesc('priority')->orderBy('code')->get()->all(), fn (Location $location): bool => $location->managesOnHand()));
+    }
+
+    /**
+     * Phiên kiểm kê (A7), mới nhất trước.
+     *
+     * @return LengthAwarePaginator<int, StockCount>
+     */
+    public function counts(?string $status, int $perPage): LengthAwarePaginator
+    {
+        return StockCount::query()->with('location:id,code,name')->withCount('lines')
+            ->when($status !== null, fn ($query) => $query->where('status', $status))
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
     }
 }

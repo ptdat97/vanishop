@@ -103,6 +103,8 @@
 | [`staff_password_reset_tokens`](#staff_password_reset_tokens) | 3 |
 | [`staff_role_assignments`](#staff_role_assignments) | 7 |
 | [`staff_users`](#staff_users) | 10 |
+| [`stock_count_lines`](#stock_count_lines) | 7 |
+| [`stock_counts`](#stock_counts) | 10 |
 | [`stock_levels`](#stock_levels) | 9 |
 | [`stock_movements`](#stock_movements) | 14 |
 | [`stock_receipt_lines`](#stock_receipt_lines) | 4 |
@@ -1803,6 +1805,39 @@ Khoá ngoại: role_id → roles(id); staff_user_id → staff_users(id) on delet
 | `updated_at` | timestamp | có |  |
 
 Index: PK (id); unique (email)
+
+## stock_count_lines
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `stock_count_id` | bigint unsigned |  |  |
+| `variant_id` | bigint unsigned |  |  |
+| `counted` | int unsigned |  |  |
+| `on_hand_at_count` | int |  |  |
+| `counted_at` | timestamp |  |  |
+| `applied_delta` | int | có |  |
+
+Index: PK (id); unique (stock_count_id, variant_id)
+
+Khoá ngoại: stock_count_id → stock_counts(id) on delete cascade
+
+## stock_counts
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `number` | varchar(32) |  |  |
+| `location_id` | bigint unsigned |  |  |
+| `note` | varchar(500) | có |  |
+| `status` | varchar(16) |  | `counting` |
+| `created_by_type` | varchar(16) | có |  |
+| `created_by_id` | bigint unsigned | có |  |
+| `applied_at` | timestamp | có |  |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: PK (id); unique (number); index (status, created_at)
 
 ## stock_levels
 

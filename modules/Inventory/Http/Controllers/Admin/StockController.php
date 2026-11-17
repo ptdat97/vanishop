@@ -74,6 +74,7 @@ final class StockController
                 'import' => route('admin.inventory.stock.import'),
                 'movements' => route('admin.inventory.movements.index'),
                 'receipts' => route('admin.inventory.receipts.index'),
+                'counts' => route('admin.inventory.counts.index'),
                 // Danh mục tỉnh/thành cho form Kho chính (AddressDirectory của plugin, qua Storefront API); không có → nhập mã tay.
                 'provinces' => url('/api/storefront/v1/address/provinces'),
                 'locations' => array_values(array_filter(array_map(fn (StockPageLink $link): ?string => $link->url(), $managed)))[0] ?? null,

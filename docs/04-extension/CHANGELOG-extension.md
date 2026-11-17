@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.16 — 2026-11-18 · Extension API 1.1.0 (không đổi)
+
+Stabilization A7 — Kiểm kê nhanh. Không đổi API cho plugin.
+
+### Thêm
+- Phiên kiểm kê (`Tồn kho → Kiểm kê`, `StockCountService`, bảng `stock_counts`/`stock_count_lines`, số `KK<yymm>-0001`): quét/gõ SKU (mỗi lần +1, "SKU 12" = +12) hoặc tải file, lưu ngay (nhiều người cùng đếm; ô quét gửi theo hàng đợi nên quét nhanh không mất mã), sửa/bỏ số đếm; mỗi lần ghi số đếm lưu tồn hệ thống lúc đó → "Áp dụng" chỉ ghi phần chênh `số đếm − tồn lúc đếm` (hàng bán trong lúc đếm giữ nguyên; chênh âm quá tồn hiện tại → ghi tới 0), một lần mỗi phiên; SKU chưa đếm không đổi. Đọc SKU/số lượng dùng chung với phiếu nhập (`SkuQuantityRows`).
+
 ## 0.5.15 — 2026-11-18 · Extension API 1.1.0 (không đổi)
 
 Stabilization A6 — Nhập hàng (thao tác SME). Không đổi API cho plugin.
