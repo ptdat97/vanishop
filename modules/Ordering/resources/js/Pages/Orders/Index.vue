@@ -24,6 +24,7 @@ type Filters = { stage: string; aged: string; actionable: string; status: string
 
 const props = defineProps<{
     baseUrl: string;
+    exportUrl: string;
     filters: Filters;
     sort: ListSortState | null;
     stages: string[];
@@ -112,6 +113,15 @@ const columns = [
 
 const list = useListQuery(() => props.baseUrl);
 
+/** Xuất Excel theo bộ lọc đang áp dụng (chuỗi truy vấn của trang), tối đa 10.000 đơn. */
+function exportHref(mode: 'orders' | 'lines'): string {
+    const query = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+    query.delete('page');
+    query.delete('per_page');
+    query.set('mode', mode);
+    return `${props.exportUrl}?${query}`;
+}
+
 function search(page = 1, pageSize = props.pagination.per_page, sort = props.sort): void {
     selected.value = [];
     list.visit({ ...form, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
@@ -174,6 +184,8 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
     <Head title="Đơn hàng" />
     <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
     <PageHeader title="Đơn hàng" :subtitle="`${pagination.total} đơn`">
+        <a :href="exportHref('orders')" :class="secondaryButton" data-export="orders">Xuất Excel</a>
+        <a :href="exportHref('lines')" :class="secondaryButton" data-export="lines">Xuất theo dòng SKU</a>
         <button v-for="tool in tools" :key="tool.key" type="button" :class="secondaryButton" :aria-expanded="openTool === tool.key" @click="toggleTool(tool.key)">
             {{ tool.label }}
         </button>

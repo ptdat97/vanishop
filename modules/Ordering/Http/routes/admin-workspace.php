@@ -7,6 +7,7 @@ use Modules\Ordering\Http\Controllers\Admin\OrderController;
 Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
 Route::post('orders/bulk-confirm', [OrderController::class, 'bulkConfirm'])->name('orders.bulk-confirm');
 Route::get('orders/print', [OrderController::class, 'print'])->name('orders.print');
+Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
 Route::post('orders/bulk-status', [OrderController::class, 'bulkStatus'])->name('orders.bulk-status');
 Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 Route::post('orders/{order}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');

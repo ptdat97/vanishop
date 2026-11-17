@@ -47,7 +47,9 @@ use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\Code128;
 use Modules\Shared\Support\ExternalCalls;
 use Modules\Shared\Support\MoneyFormatter;
+use Modules\Shared\Support\SimpleXlsx;
 use Modules\Shared\Support\StoreClock;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 final class OrderController
@@ -59,6 +61,27 @@ final class OrderController
         Gate::authorize('orders.view');
 
         return redirect()->route('admin.orders.orders.index');
+    }
+
+    /**
+     * Xuất đơn ra Excel theo đúng bộ lọc của danh sách (A8): `mode=orders` mỗi đơn một dòng, `mode=lines` mỗi dòng SKU một dòng.
+     * Có dữ liệu cá nhân của khách → ghi audit.
+     */
+    public function export(Request $request, OrderQueries $queries, AdminScreen $screen, AuditLogger $audit): BinaryFileResponse
+    {
+        Gate::authorize('orders.view');
+        $mode = $request->validate(['mode' => ['sometimes', Rule::in(['orders', 'lines'])]])['mode'] ?? 'orders';
+        $keys = ['stage', 'aged', 'actionable', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q'];
+        $filters = array_map(fn (mixed $value): string => is_scalar($value) ? (string) $value : '', array_replace(array_fill_keys($keys, ''), $request->only($keys)));
+        $rows = $queries->export([...$filters, 'ids' => $screen->filterIds('order', (array) $request->query('ext', []))], $mode);
+        $audit->record('orders.exported', 'order', null, ['mode' => $mode, 'rows' => count($rows) - 1, 'filters' => array_filter($filters)]);
+
+        $path = tempnam(sys_get_temp_dir(), 'vani-orders-').'.xlsx';
+        SimpleXlsx::write($path, $rows, $mode === 'lines' ? 'Dong don' : 'Don hang');
+
+        return response()->download($path, ($mode === 'lines' ? 'dong-don-' : 'don-hang-').now(StoreClock::timezone())->format('Ymd-Hi').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
     }
 
     public function index(Request $request, OrderQueries $queries, AdminScreen $screen): Response
@@ -112,6 +135,7 @@ final class OrderController
 
         return Inertia::render('Ordering::Orders/Index', [
             'baseUrl' => route('admin.orders.orders.index'),
+            'exportUrl' => route('admin.orders.orders.export'),
             'filters' => $filters,
             'sort' => $sort?->toArray(),
             'stages' => OrderStage::STAGES,

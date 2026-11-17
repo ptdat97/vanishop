@@ -44,6 +44,49 @@ final class OrderQueries
             ->withQueryString();
     }
 
+    /** Tối đa số đơn một lần xuất file (A8). */
+    public const EXPORT_MAX = 10_000;
+
+    /**
+     * Xuất đơn ra file theo đúng bộ lọc của danh sách (A8): `orders` mỗi đơn một dòng, `lines` mỗi dòng SKU một dòng (cho kế
+     * toán, đối chiếu). Mới nhất trước, tối đa EXPORT_MAX đơn.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return list<list<string|int|null>> dòng đầu là tiêu đề
+     */
+    public function export(array $filters, string $mode): array
+    {
+        $orderStatus = (array) __('ordering::labels.order_status');
+        $paymentStatus = (array) __('ordering::labels.payment_status');
+        $lines = $mode === 'lines';
+        $rows = [$lines
+            ? ['Số đơn', 'Ngày đặt', 'Trạng thái', 'SKU', 'Sản phẩm', 'Tuỳ chọn', 'Số lượng', 'Đã huỷ', 'Đơn giá', 'Giảm giá', 'Thành tiền']
+            : ['Số đơn', 'Ngày đặt', 'Trạng thái', 'Thanh toán', 'Phương thức', 'Nguồn', 'Khách hàng', 'Số điện thoại', 'Email', 'Tỉnh/thành', 'Phường/xã', 'Địa chỉ', 'Tạm tính', 'Giảm giá', 'Phí giao', 'Tổng', 'Ghi chú']];
+        $this->filtered($filters)->select('orders.*')->with($lines ? 'lines' : [])->orderByDesc('placed_at')->orderByDesc('id')
+            ->limit(self::EXPORT_MAX)->get()
+            ->each(function (Order $order) use (&$rows, $lines, $orderStatus, $paymentStatus): void {
+                $placed = StoreClock::format($order->placed_at);
+                $status = $orderStatus[$order->order_status->value] ?? $order->order_status->value;
+                if ($lines) {
+                    foreach ($order->lines as $line) {
+                        $options = implode(' / ', array_map(fn (array $option): string => $option['value'], $line->variant_options ?? []));
+                        $rows[] = [$order->number, $placed, $status, $line->sku, $line->product_name, $options, $line->quantity, $line->cancelled_quantity, $line->unit_amount, $line->discount_amount, $line->total_amount];
+                    }
+
+                    return;
+                }
+                $address = $order->shipping_address;
+                $rows[] = [
+                    $order->number, $placed, $status, $paymentStatus[$order->payment_status] ?? $order->payment_status, $order->payment_method, $order->source,
+                    $order->customer_snapshot['full_name'] ?? null, $order->customer_phone, $order->customer_snapshot['email'] ?? null,
+                    $address['province_name'] ?? null, $address['ward_name'] ?? null, $address['street_line'] ?? null,
+                    $order->subtotal_amount, $order->discount_amount, $order->shipping_amount, $order->total_amount, $order->note,
+                ];
+            });
+
+        return $rows;
+    }
+
     /**
      * Số đơn theo giai đoạn với cùng bộ lọc (trừ `stage`) — số trên các thẻ hàng đợi.
      *
