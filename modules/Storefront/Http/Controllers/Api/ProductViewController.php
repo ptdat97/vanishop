@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Catalog\Contracts\ProductViewStatistics;
+use Modules\Customer\Contracts\CustomerSessions;
 
 /**
  * Storefront API `POST /products/views` (ADR-044, thay `/_vani/xem`): beacon lượt xem PDP (§3.5-2), JS gửi sau khi trang
@@ -24,7 +25,7 @@ final class ProductViewController
             $viewer = $request->hasSession() && $request->cookies->has((string) config('session.cookie'))
                 ? $request->session()->getId()
                 : (string) $request->ip().'|'.$request->userAgent();
-            $customer = $request->attributes->get('customer');
+            $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
             $views->record($styleId, $viewer, $customer === null ? null : (int) $customer->id);
         }
 

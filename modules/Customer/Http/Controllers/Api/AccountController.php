@@ -12,10 +12,10 @@ use Modules\Customer\Application\AddressBook;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerService;
+use Modules\Customer\Contracts\Requests\AddressRequest;
+use Modules\Customer\Contracts\Requests\PasswordRequest;
+use Modules\Customer\Contracts\Requests\ProfileRequest;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
-use Modules\Customer\Http\Requests\AddressRequest;
-use Modules\Customer\Http\Requests\PasswordRequest;
-use Modules\Customer\Http\Requests\ProfileRequest;
 
 /**
  * /me — tài khoản của khách đã đăng nhập.

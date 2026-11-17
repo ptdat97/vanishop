@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Plugin\ProvincesVn\Infrastructure;
 
-use Modules\Checkout\Contracts\AddressDirectory;
+use Modules\Shared\Contracts\AddressDirectory;
 use RuntimeException;
 
 /**

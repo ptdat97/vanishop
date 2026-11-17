@@ -67,6 +67,14 @@ interface VariantDirectory
     public function untrackedInventory(array $variantIds): array;
 
     /**
+     * Sản phẩm (style) của từng SKU — một truy vấn nhẹ cho đếm sản phẩm trên danh sách lớn (không dựng VariantData).
+     *
+     * @param  list<int>  $variantIds
+     * @return array<int, int> variant id => style id (SKU không tồn tại thì không có mặt)
+     */
+    public function styleIdsOf(array $variantIds): array;
+
+    /**
      * Loại tuỳ chọn biến thể (ADR-045) theo thứ tự: mã => tên theo ngôn ngữ mặc định — nhãn cho bộ lọc theo tuỳ chọn.
      *
      * @return array<string, string>

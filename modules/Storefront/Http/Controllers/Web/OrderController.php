@@ -8,6 +8,7 @@ use Illuminate\Contracts\Session\Session;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Payment\Contracts\Payments;
@@ -24,7 +25,7 @@ final class OrderController
     public function show(Request $request, string $order, Session $session, CustomerOrders $orders, OrderPresenter $presenter, Payments $payments, PaymentPresenter $paymentPresenter, ReturnFormPresenter $returnForm): View
     {
         $stored = (array) $session->get("vani.orders.{$order}", []);
-        $customer = $request->attributes->get('customer');
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
         $detail = $orders->show($order, (string) ($stored['token'] ?? ''))
             ?? ($customer === null ? null : $orders->showForCustomer((int) $customer->id, $order));
         abort_if($detail === null, 404);
@@ -49,7 +50,7 @@ final class OrderController
     {
         $waive = $request->boolean('waive_returns');
         $stored = (array) $session->get("vani.orders.{$order}", []);
-        $customer = $request->attributes->get('customer');
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
         if (($stored['token'] ?? '') !== '' && $orders->show($order, (string) $stored['token']) !== null) {
             $orders->confirmReceived($order, (string) $stored['token'], $waive);
         } elseif ($customer !== null) {
@@ -67,7 +68,7 @@ final class OrderController
     public function pay(Request $request, string $order, Session $session, CustomerOrders $orders, Payments $payments): RedirectResponse
     {
         $stored = (array) $session->get("vani.orders.{$order}", []);
-        $customer = $request->attributes->get('customer');
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
         $detail = $orders->show($order, (string) ($stored['token'] ?? ''))
             ?? ($customer === null ? null : $orders->showForCustomer((int) $customer->id, $order));
         abort_if($detail === null, 404);

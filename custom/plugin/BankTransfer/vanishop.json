@@ -9,7 +9,7 @@
     "provider": "Plugin\\BankTransfer\\BankTransferServiceProvider",
     "bundled": true,
     "requires": {
-        "vanishop": "^0.4",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

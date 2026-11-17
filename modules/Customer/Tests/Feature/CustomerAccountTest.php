@@ -1,14 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
-use Modules\Checkout\Contracts\AddressDirectory;
-use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
 use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
+use Modules\Shared\Contracts\AddressDirectory;
+use Modules\Shared\Contracts\ShippingAddresses;
 
 require_once __DIR__.'/CustomerTestHelpers.php';
 

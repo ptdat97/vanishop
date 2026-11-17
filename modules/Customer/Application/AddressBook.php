@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\DB;
-use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Persistence\Models\CustomerAddress;
+use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Support\Phones;
 
 /**

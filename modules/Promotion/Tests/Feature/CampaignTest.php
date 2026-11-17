@@ -13,7 +13,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /*
 | Roadmap Phase 8: campaign = khuyến mãi + bảng giá sale/thành viên chạy chung lịch; campaign sở hữu lịch, kích hoạt /
-| dừng khẩn cấp một nút; báo cáo đơn dùng khuyến mãi của campaign.
+| dừng khẩn cấp một nút. Kết quả chiến dịch (đơn, doanh thu): tab của vani.reports — custom/plugin/Reports/Tests.
 */
 
 beforeEach(function () {
@@ -94,33 +94,4 @@ it('không có quyền bảng giá: sửa campaign không đụng tới danh sá
     $this->actingAs(T::staff(['admin.access', 'promotion.view', 'promotion.manage']), 'staff');
     $this->put("{$this->base}/{$campaign->id}", [...($this->payload)(['price_list_ids' => []]), 'lock_version' => $campaign->fresh()->lock_version])->assertSessionHasNoErrors();
     $this->get("{$this->base}/{$campaign->id}/edit")->assertInertia(fn (Assert $page) => $page->where('campaign.price_list_ids', [$this->sale->id])->where('can.price_lists', false));
-});
-
-it('báo cáo: đơn dùng khuyến mãi của campaign, doanh thu, tổng giảm', function () {
-    $this->post($this->base, ($this->payload)(['price_list_ids' => [], 'starts_at' => now()->subHour()->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i')]));
-    $campaign = Campaign::query()->sole();
-    $this->post("{$this->base}/{$campaign->id}/activate");
-
-    $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
-    $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
-    $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers);
-    $this->postJson("/api/storefront/v1/checkout/{$created->json('data.id')}/orders", C::orderPayload(['expected_total' => 270_000 + 30_000]), [...$headers, 'Idempotency-Key' => 'campaign-0001'])->assertCreated();
-
-    $this->get("{$this->base}/{$campaign->id}/edit")->assertInertia(fn (Assert $page) => $page
-        ->where('report.orders', 1)->where('report.revenue', 300_000)->where('report.promotion_discount', 30_000)->where('report.usages', 1));
-});
-
-it('báo cáo tính cả đơn chỉ hưởng giá sale của bảng giá campaign (không dùng khuyến mãi)', function () {
-    $this->post($this->base, ($this->payload)(['promotion_ids' => [], 'starts_at' => now()->subHour()->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\\TH:i')]));
-    $campaign = Campaign::query()->sole();
-    $this->post("{$this->base}/{$campaign->id}/activate");
-    expect(($this->price)())->toBe(200_000);
-
-    $created = $this->postJson('/api/storefront/v1/carts')->assertCreated();
-    $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
-    $this->postJson("/api/storefront/v1/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers);
-    $this->postJson("/api/storefront/v1/checkout/{$created->json('data.id')}/orders", C::orderPayload(['expected_total' => 200_000 + 30_000]), [...$headers, 'Idempotency-Key' => 'campaign-0002'])->assertCreated();
-
-    $this->get("{$this->base}/{$campaign->id}/edit")->assertInertia(fn (Assert $page) => $page
-        ->where('report.orders', 1)->where('report.price_list_orders', 1)->where('report.usages', 0)->where('report.revenue', 230_000));
 });

@@ -133,7 +133,7 @@ Mỗi đợt một commit, chạy đủ bộ test, cập nhật §2 của tài l
 
 | Đợt | Nội dung | Vì sao trước/sau | Kiểm chứng |
 |---|---|---|---|
-| **K1 — Ranh giới có test** | M1, M4, M5 (arch test) + sửa vi phạm hiện có: M2, M3, Pricing join `variants`, Storefront→`Customer\Http` | Rẻ, rủi ro thấp; khoá ranh giới trước khi tách Domain | Không còn cạnh ngược (trừ event), không truy cập bảng chéo; 3 vòng hai chiều biến mất |
+| **K1 — Ranh giới có test** ✅ 0.5.0 | M1, M4, M5 (arch test `ModuleBoundaryTest`) + sửa vi phạm hiện có: M2, M3, Pricing join `variants`, Storefront→`Customer\Http` | Rẻ, rủi ro thấp; khoá ranh giới trước khi tách Domain | Xong 2026-11-17: 3 vòng hai chiều biến mất; còn 1 cạnh ngược có ghi nợ (Identity→`AdminNavigation`, C1/K4); không còn truy cập bảng chéo |
 | **K2 — Hợp đồng plugin** | P1 (ADR-048), P2, P3, P7 | Cần trước khi viết thêm plugin hoặc tăng điểm mở rộng | Đổi một contract plugin mà không tăng `extension_api` → đỏ |
 | **K3 — Kiểm chứng plugin** | P4, P5, P6 | Dựa trên phân loại của K2 (chỉ viết suite cho contract plugin) | 44/44 tag có suite; breaker có test |
 | **K4 — Vòng 0 và Domain** | C1, D1–D4 (Payment → Returns → Fulfillment → controller) | Thay đổi lớn nhất; làm khi ranh giới và hợp đồng đã có test giữ | `PaymentService` < 400 dòng; R9 chặt; Domain có unit test |

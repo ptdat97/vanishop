@@ -6,7 +6,7 @@ namespace Modules\Storefront\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Modules\Customer\Http\Middleware\AuthenticateCustomer;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Tenancy\Contracts\Settings;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,7 +23,7 @@ final class RequireCheckoutSignIn
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->attributes->has(AuthenticateCustomer::ATTRIBUTE) || (bool) $this->settings->get('core', 'storefront.guest_checkout', true)) {
+        if ($request->attributes->has(CustomerSessions::REQUEST_ATTRIBUTE) || (bool) $this->settings->get('core', 'storefront.guest_checkout', true)) {
             return $next($request);
         }
 

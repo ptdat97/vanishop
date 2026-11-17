@@ -12,7 +12,7 @@
     "kind": "feature",
     "provider": "Plugin\\BankStatement\\BankStatementServiceProvider",
     "requires": {
-        "vanishop": "^0.4",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

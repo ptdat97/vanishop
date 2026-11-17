@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Contracts\CustomerRejected;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ActorType;
@@ -22,7 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class AuthenticateCustomer
 {
-    public const ATTRIBUTE = 'customer';
+    public const ATTRIBUTE = CustomerSessions::REQUEST_ATTRIBUTE;
 
     public function __construct(
         private readonly AuthService $auth,

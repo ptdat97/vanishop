@@ -109,32 +109,7 @@ it('R5: plugin chỉ tham chiếu class Core thuộc API public (danh sách cho 
     expect($offenders)->toBe([]);
 });
 
-// Module downstream (ghép nhiều context) chỉ gọi Contracts/Events của module khác.
-foreach ([
-    'Cart' => ['Catalog', 'Pricing', 'Inventory'],
-    'Promotion' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Ordering', 'Checkout'],
-    'Ordering' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Checkout'],
-    'Customer' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering'],
-    'Payment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Fulfillment'],
-    'Checkout' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Payment', 'Fulfillment'],
-    'Fulfillment' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment'],
-    'Returns' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment'],
-    'Notification' => ['Catalog', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
-    'Integration' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
-    'Storefront' => ['Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer', 'Checkout', 'Payment', 'Fulfillment', 'Returns'],
-] as $consumer => $upstreams) {
-    $forbidden = [];
-    foreach ($upstreams as $upstream) {
-        foreach (['Application', 'Persistence', 'Infrastructure', 'Domain'] as $layer) {
-            $forbidden[] = "Modules\\{$upstream}\\{$layer}";
-        }
-    }
-
-    arch("R5: {$consumer} chỉ dùng API public của ".implode(', ', $upstreams))
-        ->expect("Modules\\{$consumer}")
-        ->not->toUse($forbidden)
-        ->ignoring("Modules\\{$consumer}\\Tests");
-}
+// Module chỉ gọi Contracts/Events của module khác: tests/Architecture/ModuleBoundaryTest.php (M4 — mọi module, mọi tầng).
 
 arch('R12: Checkout không gọi HTTP ra ngoài (tích hợp đi qua outbox)')
     ->expect('Modules\\Checkout')

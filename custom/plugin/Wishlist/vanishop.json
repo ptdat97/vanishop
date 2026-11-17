@@ -12,7 +12,7 @@
     "kind": "feature",
     "provider": "Plugin\\Wishlist\\WishlistServiceProvider",
     "requires": {
-        "vanishop": "^0.4.14",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

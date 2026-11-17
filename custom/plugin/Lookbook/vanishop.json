@@ -12,7 +12,7 @@
     "kind": "content",
     "provider": "Plugin\\Lookbook\\LookbookServiceProvider",
     "requires": {
-        "vanishop": "^0.4.6",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

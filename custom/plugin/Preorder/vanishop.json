@@ -12,7 +12,7 @@
     "kind": "feature",
     "provider": "Plugin\\Preorder\\PreorderServiceProvider",
     "requires": {
-        "vanishop": "^0.4",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

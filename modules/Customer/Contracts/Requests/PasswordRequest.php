@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Customer\Http\Requests;
+namespace Modules\Customer\Contracts\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;

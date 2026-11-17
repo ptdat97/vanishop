@@ -20,10 +20,13 @@ use Modules\Extension\Contracts\DashboardWidget;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Identity\Application\PermissionRegistry;
+use Modules\Shared\Application\Addresses;
 use Modules\Shared\Application\Phone\InternationalPhonePolicy;
+use Modules\Shared\Contracts\AddressDirectory;
 use Modules\Shared\Contracts\AlertChannel;
 use Modules\Shared\Contracts\Metrics;
 use Modules\Shared\Contracts\PhoneNumberPolicy;
+use Modules\Shared\Contracts\ShippingAddresses;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(Metrics::class, PulseMetrics::class);
         // Luật số điện thoại của thị trường (0.3.42): implementation đang bật theo cấu hình; không có hiệu lực → `international`.
+        // Danh mục địa giới (vòng 0, cùng mẫu PhoneNumberPolicy): AddressDirectory đầu tiên đang bật; không có → địa chỉ tự do.
+        $this->app->bind(ShippingAddresses::class, fn ($app): ShippingAddresses => new Addresses(fn (): iterable => $app->make(Extensions::class)->tagged(AddressDirectory::TAG)));
         $this->app->bind(PhoneNumberPolicy::class, fn ($app): PhoneNumberPolicy => $app->make(Extensions::class)->select(
             PhoneNumberPolicy::TAG, (string) config('vanishop.locale.phone_policy', InternationalPhonePolicy::CODE), InternationalPhonePolicy::CODE,
         ) ?? new InternationalPhonePolicy);

@@ -8,9 +8,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Identity\Contracts\AuditLogger;
-use Modules\Ordering\Contracts\Data\SalesTotals;
-use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Pricing\Contracts\PriceListSchedule;
+use Modules\Promotion\Contracts\Campaigns;
+use Modules\Promotion\Contracts\Data\CampaignUsage;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
 
@@ -22,11 +22,10 @@ use Modules\Promotion\Persistence\Models\Promotion;
  * Nháp: thành viên tắt. Đang chạy (active): thành viên bật với khung giờ của campaign. Dừng (stopped, dừng khẩn cấp):
  * mọi thành viên tắt ngay, không bật lại được (tạo campaign mới).
  */
-final class CampaignService
+final class CampaignService implements Campaigns
 {
     public function __construct(
         private readonly PriceListSchedule $priceLists,
-        private readonly OrderStatistics $statistics,
         private readonly AuditLogger $audit,
     ) {}
 
@@ -105,25 +104,25 @@ final class CampaignService
     }
 
     /**
-     * Kết quả: đơn dùng khuyến mãi của campaign HOẶC mua món theo bảng giá của campaign (`order_lines.price_list_code`,
-     * từ 0.3.37) — doanh thu, số khách; tổng giảm khuyến mãi; số đơn hưởng giá sale/thành viên của campaign.
-     *
-     * @return array{totals: SalesTotals, promotion_discount: int, usages: int, price_list_orders: int}
+     * Số liệu Promotion sở hữu của chiến dịch: đơn đã áp khuyến mãi, tổng giảm, số lượt, mã bảng giá thuộc chiến dịch.
+     * Doanh số đơn do bên báo cáo tổng hợp qua `OrderStatistics` (vd. tab "Kết quả" của `vani.reports`).
      */
-    public function report(Campaign $campaign): array
+    public function usage(int $campaignId): ?CampaignUsage
     {
+        $campaign = Campaign::query()->find($campaignId);
+        if ($campaign === null) {
+            return null;
+        }
         $usages = DB::table('promotion_usages')->whereIn('promotion_id', Promotion::query()->where('campaign_id', $campaign->id)->select('id'))->where('status', 'applied');
         $listIds = $this->priceListIds($campaign);
-        $codes = array_values(array_map(fn (array $list): string => $list['code'], array_filter($this->priceLists->schedulable(), fn (array $list): bool => in_array($list['id'], $listIds, true))));
-        $priceListOrders = $this->statistics->orderIdsWithPriceLists($codes);
-        $promotionOrders = (clone $usages)->distinct()->pluck('order_id')->map(fn ($id): int => (int) $id)->all();
 
-        return [
-            'totals' => $this->statistics->summarize(array_values(array_unique([...$promotionOrders, ...$priceListOrders]))),
-            'promotion_discount' => (int) (clone $usages)->sum('discount_amount'),
-            'usages' => (clone $usages)->count(),
-            'price_list_orders' => count($priceListOrders),
-        ];
+        return new CampaignUsage(
+            campaignId: $campaign->id,
+            promotionOrderIds: (clone $usages)->distinct()->pluck('order_id')->map(fn ($id): int => (int) $id)->values()->all(),
+            promotionDiscount: (int) (clone $usages)->sum('discount_amount'),
+            usages: (clone $usages)->count(),
+            priceListCodes: array_values(array_map(fn (array $list): string => $list['code'], array_filter($this->priceLists->schedulable(), fn (array $list): bool => in_array($list['id'], $listIds, true)))),
+        );
     }
 
     /**

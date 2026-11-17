@@ -56,7 +56,7 @@ it('upgrade: bản mới không tương thích Core bị từ chối; plugin fai
     expect(fn () => ($this->plugins)()->upgrade('fixture.greeting'))->toThrow(PluginOperationFailed::class, 'incompatible_core');
 
     ($this->plugins)()->markFailed('fixture.greeting', 'incompatible_core');
-    ($this->deploy)('Greeting', ['version' => '2.0.1', 'requires' => ['vanishop' => '^0.4']]);
+    ($this->deploy)('Greeting', ['version' => '2.0.1', 'requires' => ['vanishop' => '^0.5']]);
     expect(($this->plugins)()->upgrade('fixture.greeting')->status)->toBe(PluginStatus::Installed);
 });
 
@@ -92,7 +92,7 @@ it('dựng cache khi deploy: plugin đang bật không còn tương thích Core 
     File::ensureDirectoryExists("{$this->root}/Dependent");
     File::put("{$this->root}/Dependent/vanishop.json", json_encode([
         'id' => 'fixture.dependent', 'name' => ['vi' => 'fixture.dependent'], 'version' => '1.0.0', 'kind' => 'feature',
-        'provider' => PluginRecord::class, 'requires' => ['vanishop' => '^0.4', 'plugins' => ['fixture.greeting' => '^1.0']],
+        'provider' => PluginRecord::class, 'requires' => ['vanishop' => '^0.5', 'plugins' => ['fixture.greeting' => '^1.0']],
     ]));
     app()->instance(ManifestRepository::class, new ManifestRepository($this->root));
     ($this->plugins)()->enable('fixture.greeting');

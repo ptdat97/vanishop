@@ -4,12 +4,12 @@
         "vi": "Địa giới hành chính Việt Nam",
         "en": "Vietnam administrative divisions"
     },
-    "version": "1.0.0",
+    "version": "1.1.0",
     "kind": "feature",
     "provider": "Plugin\\ProvincesVn\\ProvincesVnServiceProvider",
     "bundled": true,
     "requires": {
-        "vanishop": "^0.4",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

@@ -224,6 +224,16 @@ final class EloquentVariantDirectory implements VariantDirectory
             ->pluck('variants.id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 
+    public function styleIdsOf(array $variantIds): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+
+        return Variant::query()->whereIn('id', $variantIds)->pluck('style_id', 'id')
+            ->mapWithKeys(fn (mixed $styleId, mixed $id): array => [(int) $id => (int) $styleId])->all();
+    }
+
     public function optionTypes(): array
     {
         return OptionType::query()->with('translations')->orderBy('position')->orderBy('code')->get()

@@ -5,7 +5,7 @@
     "kind": "feature",
     "provider": "Plugin\\HelloWorld\\HelloWorldServiceProvider",
     "requires": {
-        "vanishop": "^0.4",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],

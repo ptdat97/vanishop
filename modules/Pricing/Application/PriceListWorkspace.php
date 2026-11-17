@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Pricing\Application;
 
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\Extensions;
@@ -135,9 +134,8 @@ final class PriceListWorkspace
                 $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
             }
         }
-        // Đếm sản phẩm bằng một truy vấn — trước đây dựng VariantData cho mọi SKU trong bảng chỉ để đếm.
-        $products = $prices === [] ? 0 : (int) DB::table('prices')->join('variants', 'variants.id', '=', 'prices.variant_id')
-            ->where('prices.price_list_id', $list->id)->where('prices.min_qty', 1)->distinct()->count('variants.style_id');
+        // Đếm sản phẩm bằng một truy vấn nhẹ của Catalog (không dựng VariantData; không join bảng của Catalog — R11).
+        $products = count(array_unique($this->variants->styleIdsOf(array_keys($prices))));
 
         return ['products' => $products, 'variants' => count($prices), 'warnings' => $warnings];
     }

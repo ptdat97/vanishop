@@ -112,7 +112,7 @@ Hạng mục ngoài phạm vi dự án (không có plugin): [ADR-033](../19-adr/
 ### Báo cáo & nội dung
 | Plugin | Đợt |
 |---|---|
-| `vani.reports` (widget Tổng quan, báo cáo doanh thu theo ngày/sản phẩm/thương hiệu/thanh toán/kênh, CSV) | **Implemented** (Core 0.3.12) |
+| `vani.reports` (widget Tổng quan, báo cáo doanh thu theo ngày/sản phẩm/thương hiệu/thanh toán/kênh, CSV; tab "Kết quả" trên trang chiến dịch — 1.2.0, Core 0.5.0) | **Implemented** (Core 0.3.12) |
 | `vani.advanced-reports` (hợp nhất Owner, cohort, RFM, phân bổ chi phí KM/loyalty) | P3 |
 | `vani.cms` (trang `/trang/*`, tin tức `/tin-tuc`, Markdown, hẹn giờ, xem trước, SEO, link header/footer, khối "Bài viết mới", sitemap, Storefront API) | **Implemented** (Core 0.3.14) — thay cho `vani.blog`; URL cố định; WYSIWYG hoãn. 1.5.0 (2026-11-05): thanh thông báo xoay vòng, hộp ưu đãi + điểm nổi bật trang sản phẩm, banner danh mục ([store-content](specs/store-content.md)) |
 | `vani.lookbook` ✅ (bộ ảnh theo mùa/chủ đề, `/lookbook`, khối trang chủ, sitemap, API — [đặc tả](specs/lookbook.md)) | **Implemented** 2026-11-05 (1.0.0) |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Storefront\Application;
 
 use Illuminate\Http\Request;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Shared\Support\LocalizedUrls;
 
 /**
@@ -25,7 +26,7 @@ final class CustomerSessionState
      */
     public function for(Request $request, string $locale): array
     {
-        $customer = $request->attributes->get('customer');
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
         $current = $this->cart->current();
 
         return [

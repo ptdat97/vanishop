@@ -131,7 +131,7 @@ return [
 ];
 ```
 
-Thứ tự này là hướng phụ thuộc: module chỉ nên dùng `Contracts` của module đứng trước (nghe `Events` thì từ module nào cũng được). Hiện còn 4 cạnh đi ngược — xem [architecture-consolidation §2.3](../20-roadmap/architecture-consolidation.md); arch test giữ thứ tự là việc M1 của đợt K1.
+Thứ tự này là hướng phụ thuộc: module chỉ nên dùng `Contracts` của module đứng trước (nghe `Events` thì từ module nào cũng được). Giữ bằng `tests/Architecture/ModuleBoundaryTest.php` (từ 0.5.0); nợ còn lại duy nhất: Identity dùng `AdminNavigation` của Extension (xử lý ở [architecture-consolidation C1](../20-roadmap/architecture-consolidation.md)).
 
 ## 6. Kiểm thử ranh giới
 

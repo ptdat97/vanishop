@@ -7,7 +7,6 @@ namespace Modules\Ordering\Application;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Modules\Checkout\Contracts\ShippingAddresses;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReservation;
@@ -23,6 +22,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Domain\Money\Money;
 use Modules\Tenancy\Contracts\Settings;
 

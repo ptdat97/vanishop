@@ -7,6 +7,7 @@ namespace Modules\Storefront\Http\Controllers\Web;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Returns\Contracts\Returns;
@@ -59,7 +60,7 @@ final class ReturnController
     {
         $stored = (array) $session->get("vani.orders.{$order}", []);
         $token = (string) ($stored['token'] ?? '');
-        $customer = $request->attributes->get('customer');
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
         $detail = $this->orders->show($order, $token) ?? ($customer === null ? null : $this->orders->showForCustomer((int) $customer->id, $order));
         abort_if($detail === null, 404);
 

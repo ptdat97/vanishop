@@ -41,6 +41,7 @@ use Modules\Shared\Application\IdempotencyStore;
 use Modules\Shared\Context\ActorType;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Contracts\Metrics;
+use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\Phones;
 use Modules\Tenancy\Contracts\Settings;
@@ -67,7 +68,7 @@ final class CheckoutService implements Checkout
         private readonly Extensions $extensions,
         private readonly Customers $customers,
         private readonly CurrentContext $currentContext,
-        private readonly Addresses $addresses,
+        private readonly ShippingAddresses $addresses,
         private readonly Metrics $metrics,
         private readonly Settings $settings,
     ) {}

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\Customer\Http\Requests;
+namespace Modules\Customer\Contracts\Requests;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Modules\Checkout\Contracts\ShippingAddresses;
+use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Support\Phones;
 
 /**

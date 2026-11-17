@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
+import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
 import FormField from '@admin/Components/FormField.vue';
-import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
+import type { ExtensionDetail } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { campaignStateTone, type PromotionLabels } from '../../labels';
@@ -27,7 +28,7 @@ const props = defineProps<{
         promotion_ids: number[];
         price_list_ids: number[];
     };
-    report: null | { orders: number; revenue: number; customers: number; cancelled: number; promotion_discount: number; usages: number; price_list_orders: number };
+    extensions: { tabs: ExtensionDetail['tabs'] };
     promotions: Array<{ id: number; name: string; requires_voucher: boolean }>;
     priceLists: Array<{ id: number; code: string; name: string; type: string; status: string }>;
     can: { manage: boolean; price_lists: boolean };
@@ -84,12 +85,8 @@ async function destroy(): Promise<void> {
     </PageHeader>
 
 
-    <section v-if="report" class="mb-6 grid gap-3 sm:grid-cols-4">
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đơn của campaign</div><div class="text-xl font-semibold">{{ report.orders }}</div><div class="text-xs text-slate-400">{{ report.usages }} lượt khuyến mãi · {{ report.price_list_orders }} đơn giá sale</div></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Doanh thu các đơn</div><div class="text-xl font-semibold"><MoneyText :amount="report.revenue" /></div></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Đã giảm (khuyến mãi)</div><div class="text-xl font-semibold"><MoneyText :amount="report.promotion_discount" /></div></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4"><div class="text-xs text-slate-500">Khách / đơn huỷ</div><div class="text-xl font-semibold">{{ report.customers }} / {{ report.cancelled }}</div></div>
-    </section>
+    <!-- Kết quả chiến dịch: tab do plugin báo cáo góp vào (vd. vani.reports). -->
+    <div v-if="extensions.tabs.length" class="mb-6"><ExtensionTabs :tabs="extensions.tabs" /></div>
 
     <form class="grid gap-6 lg:grid-cols-2" @submit.prevent="submit">
         <div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">

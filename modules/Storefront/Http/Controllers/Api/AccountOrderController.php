@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Modules\Cart\Contracts\Carts;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Context\ActorType;
@@ -87,7 +88,7 @@ final class AccountOrderController
             'variant_ids' => ['nullable', 'array', 'max:200'], 'variant_ids.*' => ['integer', 'min:1'],
             'style_ids' => ['nullable', 'array', 'max:100'], 'style_ids.*' => ['integer', 'min:1'],
         ]);
-        $customer = $request->attributes->get('customer');
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
         $styleIds = array_values(array_map('intval', $data['style_ids'] ?? []));
 
         $memberPrices = $prices->for((int) $customer->id, array_values(array_map('intval', $data['variant_ids'] ?? [])));

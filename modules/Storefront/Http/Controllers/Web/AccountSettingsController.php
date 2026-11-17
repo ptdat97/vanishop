@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
-use Modules\Customer\Http\Requests\AddressRequest;
-use Modules\Customer\Http\Requests\PasswordRequest;
-use Modules\Customer\Http\Requests\ProfileRequest;
+use Modules\Customer\Contracts\Requests\AddressRequest;
+use Modules\Customer\Contracts\Requests\PasswordRequest;
+use Modules\Customer\Contracts\Requests\ProfileRequest;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
 

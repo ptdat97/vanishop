@@ -10,8 +10,10 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Application\PermissionRegistry;
 use Modules\Promotion\Application\Actions\AmountOffAction;
 use Modules\Promotion\Application\Actions\PercentOffAction;
+use Modules\Promotion\Application\CampaignService;
 use Modules\Promotion\Application\PromotionEvaluator;
 use Modules\Promotion\Application\PromotionRegistry;
+use Modules\Promotion\Contracts\Campaigns;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Promotion\Contracts\PromotionRule;
 use Modules\Shared\Support\ModuleServiceProvider;
@@ -27,6 +29,8 @@ final class PromotionServiceProvider extends ModuleServiceProvider
     {
         // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
         $this->app->make(AdminScreen::class)->declareResource('promotion');
+        $this->app->make(AdminScreen::class)->declareResource('campaign');
+        $this->app->bind(Campaigns::class, CampaignService::class);
         $this->app->make(Extensions::class)->tag([PercentOffAction::class, AmountOffAction::class], PromotionRegistry::ACTIONS_TAG);
         $this->app->make(Extensions::class)->kindContract('promotion', PromotionRule::TAG);
         $this->app->bind(PromotionEngine::class, fn ($app): PromotionEvaluator => new PromotionEvaluator(

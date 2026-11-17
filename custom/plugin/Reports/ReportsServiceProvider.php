@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Plugin\Reports;
 
+use Illuminate\Support\Facades\Gate;
 use Modules\Extension\Contracts\DashboardWidget;
 use Modules\Extension\Contracts\ReportProvider;
 use Modules\Extension\PluginServiceProvider;
+use Plugin\Reports\Infrastructure\CampaignResults;
 use Plugin\Reports\Infrastructure\Reports\BrandSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ChannelSalesReport;
 use Plugin\Reports\Infrastructure\Reports\DailySalesReport;
@@ -20,7 +22,8 @@ use Plugin\Reports\Infrastructure\Widgets\TopProductsWidget;
 
 /**
  * Plugin báo cáo bán hàng (W6b, tham chiếu cho DashboardWidget + ReportProvider): widget Tổng quan và báo cáo
- * doanh thu theo ngày/sản phẩm/thương hiệu/thanh toán/kênh — đọc qua `OrderStatistics`, không có bảng riêng.
+ * doanh thu theo ngày/sản phẩm/thương hiệu/thanh toán/kênh, tab "Kết quả" của chiến dịch — đọc qua `OrderStatistics` và
+ * `Campaigns`, không có bảng riêng.
  */
 final class ReportsServiceProvider extends PluginServiceProvider
 {
@@ -40,6 +43,11 @@ final class ReportsServiceProvider extends PluginServiceProvider
         foreach ([RevenueTodayWidget::class, OrdersToProcessWidget::class, Revenue30DaysWidget::class, Sales14DaysWidget::class, TopProductsWidget::class] as $widget) {
             $this->contribute(DashboardWidget::TAG, $widget);
         }
+
+        // Tab "Kết quả" trên trang chiến dịch (Promotion → Chiến dịch): ghép số liệu Promotion + Ordering (M3).
+        $this->adminTab('campaign', 'results', 'Kết quả', rows: fn (int $campaignId): array => Gate::allows(self::PERMISSION)
+            ? $this->app->make(CampaignResults::class)->rows($campaignId)
+            : [['label' => 'Cần quyền xem báo cáo', 'value' => '']]);
 
         foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class] as $report) {
             $this->contribute(ReportProvider::TAG, $report);

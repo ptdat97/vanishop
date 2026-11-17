@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Plugin\ProvincesVn;
 
-use Modules\Checkout\Contracts\AddressDirectory;
 use Modules\Extension\Contracts\PluginHealthCheck;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Shared\Contracts\AddressDirectory;
 use Plugin\ProvincesVn\Infrastructure\DivisionsHealthCheck;
 use Plugin\ProvincesVn\Infrastructure\VnDivisions;
 

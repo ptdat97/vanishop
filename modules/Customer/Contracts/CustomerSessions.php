@@ -14,6 +14,9 @@ use Modules\Customer\Contracts\Data\CustomerData;
  */
 interface CustomerSessions
 {
+    /** Khách đã nhận diện của request (middleware `vani.customer` / `vani.customer-session`): `$request->attributes->get(...)` → `CustomerData`. */
+    public const REQUEST_ATTRIBUTE = 'customer';
+
     /**
      * Gửi OTP đăng nhập. `$phone` dạng người dùng nhập; trả thông tin kênh/thời gian chờ.
      *

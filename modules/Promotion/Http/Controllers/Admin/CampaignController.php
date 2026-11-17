@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Extension\Contracts\AdminScreen;
 use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Promotion\Application\CampaignService;
 use Modules\Promotion\Persistence\Models\Campaign;
@@ -99,8 +100,6 @@ final class CampaignController
 
     private function form(?Campaign $campaign, PriceListSchedule $priceLists, CampaignService $campaigns): Response
     {
-        $report = $campaign === null ? null : $campaigns->report($campaign);
-
         return Inertia::render('Promotion::Campaigns/Form', [
             'baseUrl' => route('admin.promotion.campaigns.index'),
             'labels' => __('promotion::labels'),
@@ -112,10 +111,8 @@ final class CampaignController
                 'promotion_ids' => $campaign->promotions()->pluck('id')->all(),
                 'price_list_ids' => $campaigns->priceListIds($campaign),
             ],
-            'report' => $report === null ? null : [
-                'orders' => $report['totals']->ordersCount, 'revenue' => $report['totals']->revenue, 'customers' => $report['totals']->customersCount,
-                'cancelled' => $report['totals']->cancelledCount, 'promotion_discount' => $report['promotion_discount'], 'usages' => $report['usages'], 'price_list_orders' => $report['price_list_orders'],
-            ],
+            // Kết quả chiến dịch (đơn, doanh thu) do plugin báo cáo góp vào dạng tab (vd. vani.reports) — M3.
+            'extensions' => ['tabs' => $campaign === null ? [] : app(AdminScreen::class)->tabs('campaign', $campaign->id)],
             'promotions' => Promotion::query()->where(fn ($query) => $query->whereNull('campaign_id')->when($campaign !== null, fn ($q) => $q->orWhere('campaign_id', $campaign?->id)))
                 ->orderByDesc('id')->get(['id', 'name', 'requires_voucher'])->map(fn (Promotion $promotion): array => ['id' => $promotion->id, 'name' => $promotion->name, 'requires_voucher' => $promotion->requires_voucher])->all(),
             'priceLists' => $priceLists->schedulable(),

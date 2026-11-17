@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.0 — 2026-11-17
+
+Củng cố kiến trúc — đợt K1 "ranh giới có test" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). **Phá vỡ** (lên số giữa theo [extension-model §5](extension-model.md)): mọi plugin trong repo đổi `requires.vanishop` sang `^0.5`.
+
+### Phá vỡ
+- `Checkout\Contracts\AddressDirectory`, `Checkout\Contracts\ShippingAddresses` → **`Shared\Contracts\AddressDirectory`**, **`Shared\Contracts\ShippingAddresses`** (vòng 0, cùng mẫu `PhoneNumberPolicy`); tag `vani.checkout.address_directories` → **`vani.address.directories`**. Gỡ phụ thuộc ngược Ordering→Checkout, Customer→Checkout (M2). `vani.provinces-vn` 1.1.0.
+- Promotion bỏ "kết quả chiến dịch" khỏi trang chiến dịch (prop `report`) — nay là tab "Kết quả" của `vani.reports` 1.2.0 (M3). Promotion không còn đọc `OrderStatistics`.
+
+### Thêm
+- Service contract **`Promotion\Contracts\Campaigns`** (`usage(campaignId)`) + `Data\CampaignUsage`: số liệu Promotion sở hữu của chiến dịch (đơn đã áp khuyến mãi, tổng giảm, lượt dùng, mã bảng giá) để plugin báo cáo ghép với `OrderStatistics`. Tài nguyên Admin `campaign` (tab của plugin trên trang chiến dịch).
+- `VariantDirectory::styleIdsOf(variantIds)`: SKU → sản phẩm, một truy vấn nhẹ (Pricing thôi join bảng `variants`, R11).
+- `CustomerSessions::REQUEST_ATTRIBUTE` (khách đã nhận diện của request); `Customer\Contracts\Requests\{AddressRequest, PasswordRequest, ProfileRequest}` — hợp đồng đầu vào dùng chung Storefront API và Blade (ADR-044 §2), trước ở `Customer\Http\Requests` (Storefront không còn dùng tầng `Http` của Customer).
+
+### Kiểm tra mới
+- `tests/Architecture/ModuleBoundaryTest.php`: M4/R7 (mọi module chỉ dùng `Contracts`/`Events` của module thương mại khác, mọi tầng kể cả `Http`, quét cả file route/hook) — thay khối R5 "module downstream" cũ; M1 (chỉ dùng `Contracts` của module đứng trước trong `config/modules.php`, nợ còn lại: Identity→`AdminNavigation`, xử lý ở K4); M5/R11 (chỉ module/plugin sở hữu bảng mới truy vấn bảng đó).
+
 ## 0.4.69 — 2026-11-16
 
 Đo và tối ưu thao tác Admin một ngày làm việc (1.000 sản phẩm, 3.000 SKU, 120 đơn); sửa áp giá cả bảng bị cắt âm thầm.

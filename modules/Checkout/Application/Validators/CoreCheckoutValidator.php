@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Checkout\Application\Validators;
 
-use Modules\Checkout\Application\Addresses;
 use Modules\Checkout\Application\PaymentMethods;
 use Modules\Checkout\Contracts\CheckoutValidator;
 use Modules\Checkout\Contracts\Data\CheckoutIssue;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
 use Modules\Checkout\Contracts\Data\Totals;
+use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Support\Phones;
 
 /**
@@ -19,7 +19,7 @@ final class CoreCheckoutValidator implements CheckoutValidator
 {
     public function __construct(
         private readonly PaymentMethods $payments,
-        private readonly Addresses $addresses,
+        private readonly ShippingAddresses $addresses,
     ) {}
 
     public function code(): string

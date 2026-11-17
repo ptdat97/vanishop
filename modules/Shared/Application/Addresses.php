@@ -2,22 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Modules\Checkout\Application;
+namespace Modules\Shared\Application;
 
-use Modules\Checkout\Contracts\AddressDirectory;
-use Modules\Checkout\Contracts\ShippingAddresses;
-use Modules\Extension\Contracts\Extensions;
+use Closure;
+use Modules\Shared\Contracts\AddressDirectory;
+use Modules\Shared\Contracts\ShippingAddresses;
 
 /**
  * Danh mục địa giới đang dùng (AddressDirectory đầu tiên đang bật) + chuẩn hoá địa chỉ giao hàng theo danh mục.
+ * Danh sách danh mục do composition root cung cấp (Shared không phụ thuộc registry của Extension).
  */
 final class Addresses implements ShippingAddresses
 {
-    public function __construct(private readonly Extensions $extensions) {}
+    /**
+     * @param  Closure(): iterable<mixed>  $directories
+     */
+    public function __construct(private readonly Closure $directories) {}
 
     public function directory(): ?AddressDirectory
     {
-        foreach ($this->extensions->tagged(AddressDirectory::TAG) as $directory) {
+        foreach (($this->directories)() as $directory) {
             if ($directory instanceof AddressDirectory) {
                 return $directory;
             }

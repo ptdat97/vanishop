@@ -8,7 +8,7 @@
     "kind": "content",
     "provider": "Plugin\\Cms\\CmsServiceProvider",
     "requires": {
-        "vanishop": "^0.4.16",
+        "vanishop": "^0.5",
         "plugins": {}
     },
     "conflicts": [],
