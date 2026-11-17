@@ -2,6 +2,7 @@
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
+import FileInput from '@admin/Components/FileInput.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
 import { useListQuery, type ListSortState } from '@admin/list';
@@ -10,7 +11,7 @@ import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { labelOptions, recordOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem } from '../../types';
@@ -32,6 +33,7 @@ const props = defineProps<{
     };
     canManage: boolean;
     canManagePrices: boolean;
+    fileUrls: { export: string; import: string };
     extensions: ExtensionList;
 }>();
 
@@ -67,6 +69,13 @@ const columns = [
 ];
 
 const list = useListQuery(() => baseUrl.value);
+// Nhập/xuất file (A4): mỗi SKU một dòng; file xuất là mẫu để nhập lại; nhập → trang xem trước, chưa ghi gì.
+const showImport = ref(false);
+const importForm = useForm<{ file: File | null }>({ file: null });
+
+function submitImport(): void {
+    importForm.post(props.fileUrls.import, { forceFormData: true });
+}
 
 function search(page = 1, pageSize = props.products.per_page, sort = props.sort): void {
     list.visit({ q: q.value, status: status.value, category: category.value, brand: brand.value, collection: collection.value, missing: missing.value, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
@@ -156,8 +165,17 @@ function savePrice(url: string): void {
     <Head title="Sản phẩm" />
     <CatalogTabs :nav="nav" active="products" />
     <PageHeader title="Sản phẩm" :subtitle="`${products.total} sản phẩm`">
+        <a :href="fileUrls.export" :class="secondaryButton" data-export>Xuất file</a>
+        <button v-if="canManage" type="button" :class="secondaryButton" data-import-toggle @click="showImport = !showImport">Nhập file</button>
         <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm sản phẩm</Link>
     </PageHeader>
+
+    <form v-if="showImport" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-import @submit.prevent="submitImport">
+        <p>File Excel (.xlsx) hoặc CSV, mỗi SKU một dòng; các dòng cùng <strong>Mã sản phẩm</strong> là một sản phẩm. Dùng file "Xuất file" làm mẫu. Ô trống = giữ nguyên; sản phẩm mới là bản nháp nếu không ghi trạng thái. Bước sau là xem trước, chưa ghi gì.</p>
+        <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" label="Chọn file" :progress="importForm.progress?.percentage ?? null" />
+        <p v-for="(error, key) in importForm.errors" :key="key" class="text-red-600">{{ error }}</p>
+        <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">Xem trước</button></div>
+    </form>
 
     <form class="mb-4 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="inputClass" class="max-w-xs" type="search" placeholder="Tìm theo tên hoặc mã (không cần dấu)" aria-label="Tìm sản phẩm" />

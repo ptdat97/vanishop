@@ -5,6 +5,7 @@
 */
 
 return [
+    'import_action' => ['create' => 'Create (draft)', 'update' => 'Update', 'error' => 'Error — skipped'],
     'product_status' => ['draft' => 'Draft', 'active' => 'On sale', 'archived' => 'Archived'],
     'option' => ['color' => 'Colour', 'size' => 'Size'],
     'option_display' => ['swatch' => 'Swatches', 'button' => 'Buttons', 'dropdown' => 'Dropdown'],

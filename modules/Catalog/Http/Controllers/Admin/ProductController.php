@@ -17,6 +17,7 @@ use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductBulkEditor;
 use Modules\Catalog\Application\Products\ProductDuplicator;
+use Modules\Catalog\Application\Products\ProductFile;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VariantImages;
@@ -40,6 +41,11 @@ use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\SimpleXlsx;
+use Modules\Shared\Support\SpreadsheetRows;
+use Modules\Shared\Support\StoreClock;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class ProductController
 {
@@ -108,6 +114,7 @@ final class ProductController
             ],
             'canManage' => Gate::allows('catalog.manage'),
             'canManagePrices' => Gate::allows('pricing.manage'),
+            'fileUrls' => ['export' => route('admin.catalog.products.export'), 'import' => route('admin.catalog.products.import')],
             'extensions' => [
                 ...$this->columns($screen, $styles->getCollection()->pluck('id')->all()),
                 'filters' => $screen->filters('product'),
@@ -182,6 +189,7 @@ final class ProductController
             ]),
             ['key' => 'delete', 'label' => 'Xoá bản nháp', 'url' => route('admin.catalog.products.bulk-delete'), 'confirm' => true],
         ] : [];
+        $actions[] = ['key' => 'export', 'label' => 'Xuất file', 'url' => route('admin.catalog.products.export'), 'confirm' => false, 'method' => 'get'];
         foreach (array_filter(Hook::slot('vani.admin.product.bulk_actions'), 'is_array') as $contributed) {
             array_push($actions, ...$contributed);
         }
@@ -252,6 +260,59 @@ final class ProductController
         $copy = $duplicator->duplicate($product, $data['style_code'], trim($data['name']));
 
         return redirect()->route('admin.catalog.products.edit', $copy)->with('success', __('catalog::messages.duplicated', ['code' => $copy->style_code]));
+    }
+
+    /**
+     * Xuất sản phẩm ra Excel (mỗi SKU một dòng) — cũng là mẫu để nhập lại. `ids[]` = chỉ sản phẩm đã chọn.
+     */
+    public function export(Request $request, ProductFile $file): BinaryFileResponse
+    {
+        Gate::authorize('catalog.view');
+        $ids = $request->validate(['ids' => ['sometimes', 'array', 'max:1000'], 'ids.*' => ['integer', 'min:1']])['ids'] ?? null;
+        $path = tempnam(sys_get_temp_dir(), 'vani-products-').'.xlsx';
+        SimpleXlsx::write($path, $file->export($ids === null ? null : array_map('intval', $ids)), 'San pham');
+
+        return response()->download($path, 'san-pham-'.now(StoreClock::timezone())->format('Ymd-Hi').'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend();
+    }
+
+    /**
+     * Tải file (.xlsx/.csv) → trang xem trước (chưa ghi gì).
+     */
+    public function import(Request $request, ProductFile $file): Response
+    {
+        Gate::authorize('catalog.manage');
+        $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:xlsx,csv,txt']]);
+        try {
+            $rows = SpreadsheetRows::fromUpload($request->file('file'));
+        } catch (RuntimeException $exception) {
+            throw ValidationException::withMessages(['file' => $exception->getMessage()]);
+        }
+        $preview = $file->preview($rows, $request->file('file')->getClientOriginalName());
+
+        return Inertia::render('Catalog::Products/Import', [
+            'nav' => CatalogNavigation::all(),
+            'preview' => $preview,
+            'actionLabels' => __('catalog::labels.import_action'),
+            'urls' => ['back' => route('admin.catalog.products.index'), 'apply' => $preview['token'] === null ? null : route('admin.catalog.products.import.apply', $preview['token'])],
+        ]);
+    }
+
+    public function applyImport(string $token, ProductFile $file): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $result = $file->apply($token);
+        if ($result === null) {
+            return redirect()->route('admin.catalog.products.index')->withErrors(['file' => __('catalog::messages.import_expired')]);
+        }
+        $response = redirect()->route('admin.catalog.products.index')->with('success', __('catalog::messages.imported', ['created' => $result['created'], 'updated' => $result['updated']]));
+        $errors = [];
+        foreach (array_slice($result['errors'], 0, 30) as $index => $message) {
+            $errors["import.{$index}"] = $message;
+        }
+
+        return $errors === [] ? $response : $response->withErrors($errors);
     }
 
     public function create(CategoryTreeQuery $tree): Response

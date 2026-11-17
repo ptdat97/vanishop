@@ -105,6 +105,39 @@ final class ProductService
     }
 
     /**
+     * Dữ liệu hiện tại của sản phẩm dưới dạng ProductInput — để sửa một phần (nhập file, A4) qua `update` mà không làm mất bản
+     * dịch, thuộc tính, khung giờ bán.
+     */
+    public function inputFor(Style $style): ProductInput
+    {
+        $style->loadMissing(['translations', 'attributeValues']);
+        $types = Attribute::query()->whereIn('id', $style->attributeValues->pluck('attribute_id'))->pluck('input_type', 'id');
+        $attributes = [];
+        foreach ($style->attributeValues->groupBy('attribute_id') as $attributeId => $rows) {
+            $attributes[(int) $attributeId] = match ($types->get($attributeId)) {
+                AttributeInputType::Multiselect => $rows->pluck('attribute_value_id')->map(fn ($id): int => (int) $id)->all(),
+                AttributeInputType::Select => (int) $rows->first()->attribute_value_id,
+                AttributeInputType::Boolean => (bool) $rows->first()->value_bool,
+                default => (string) $rows->first()->value_text,
+            };
+        }
+
+        return new ProductInput(
+            styleCode: $style->style_code,
+            slug: $style->slug,
+            status: $style->status,
+            translations: $style->translationsByLocale(),
+            publishedFrom: $style->published_from?->toDateTimeImmutable(),
+            publishedTo: $style->published_to?->toDateTimeImmutable(),
+            categoryIds: $style->categories()->pluck('categories.id')->map(fn ($id): int => (int) $id)->all(),
+            primaryCategoryId: $style->primary_category_id,
+            attributes: $attributes,
+            brandId: $style->brand_id,
+            trackInventory: $style->track_inventory,
+        );
+    }
+
+    /**
      * Chỉ xoá được bản nháp; sản phẩm đã bán dùng trạng thái archived để giữ lịch sử.
      */
     public function deleteDraft(Style $style): void

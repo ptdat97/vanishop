@@ -5,6 +5,7 @@
 */
 
 return [
+    'import_action' => ['create' => 'Tạo mới (nháp)', 'update' => 'Cập nhật', 'error' => 'Lỗi — bỏ qua'],
     'product_status' => ['draft' => 'Nháp', 'active' => 'Đang bán', 'archived' => 'Lưu trữ'],
     'option' => ['color' => 'Màu', 'size' => 'Size'],
     'option_display' => ['swatch' => 'Ô màu', 'button' => 'Nút', 'dropdown' => 'Danh sách thả xuống'],
