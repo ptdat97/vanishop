@@ -11,6 +11,7 @@ Stabilization A5 — Pricing. Không đổi API cho plugin.
 ### Thêm
 - Đổi giá niêm yết theo bộ lọc: danh sách sản phẩm có "Chọn tất cả N sản phẩm khớp bộ lọc" (tới 2000, `GET products/ids`) cho mọi thao tác hàng loạt; "Đổi giá" có bước xem trước (số SKU, khoảng giá cũ → mới, cảnh báo qua hook `vani.pricing.bulk.warnings`, dòng mẫu). Thao tác hàng loạt khai `preview_url` → hộp xác nhận hiện kết quả xem trước (`ConfirmOptions.details`).
 - Lịch sử giá theo SKU (`Pricing → Lịch sử giá`): mọi lần đổi giá — người đổi, thời điểm, bảng giá, giá và giá gạch cũ → mới; tìm theo SKU/mã/tên sản phẩm, lọc theo bảng giá. Contract giữa module `Identity\Contracts\StaffNames` (id → tên nhân viên).
+- Tổng quan giá ở đầu trang Bảng giá (`PriceOverview`): đợt sale/thành viên đang chạy (đánh dấu sắp kết thúc trong 3 ngày), sắp bắt đầu trong 7 ngày; SKU đang bán chưa có giá niêm yết (mẫu có link sửa sản phẩm); cảnh báo trên giá đang chạy theo nhãn của hook `vani.pricing.bulk.warnings` (vd. "Dưới giá vốn" khi bật `vani.cost-price`), kiểm tối đa 500 giá.
 
 ## 0.5.13 — 2026-11-17 · Extension API 1.1.0 (không đổi)
 

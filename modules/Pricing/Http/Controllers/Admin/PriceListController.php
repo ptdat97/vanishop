@@ -20,6 +20,7 @@ use Modules\Pricing\Application\ListPriceSync;
 use Modules\Pricing\Application\PriceListFile;
 use Modules\Pricing\Application\PriceListService;
 use Modules\Pricing\Application\PriceListWorkspace;
+use Modules\Pricing\Application\PriceOverview;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Http\Requests\BulkPricesRequest;
@@ -46,7 +47,7 @@ final class PriceListController
         return redirect()->route('admin.pricing.price-lists.index');
     }
 
-    public function index(): Response
+    public function index(PriceOverview $overview): Response
     {
         Gate::authorize('pricing.view');
 
@@ -56,6 +57,8 @@ final class PriceListController
         return Inertia::render('Pricing::PriceLists/Index', [
             'baseUrl' => route('admin.pricing.price-lists.index'),
             'historyUrl' => route('admin.pricing.history'),
+            // A5: tổng quan giá đang chạy — đợt đang chạy/sắp bắt đầu, SKU thiếu giá niêm yết, cảnh báo (giá vốn…).
+            'overview' => $this->overview($overview),
             'labels' => __('pricing::labels'),
             'priceLists' => $lists
                 ->map(fn (PriceList $list): array => [
@@ -76,6 +79,17 @@ final class PriceListController
             'extraBaseLists' => $lists->filter(fn (PriceList $list): bool => $list->type === PriceListType::Base && $list->code !== ListPriceSync::BASE_CODE)
                 ->map(fn (PriceList $list): array => ['id' => $list->id, 'name' => $list->name, 'code' => $list->code])->values()->all(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function overview(PriceOverview $overview): array
+    {
+        $summary = $overview->summary();
+        $summary['missing_base']['samples'] = array_map(fn (array $sample): array => [...$sample, 'url' => route('admin.catalog.products.edit', $sample['style_id'])], $summary['missing_base']['samples']);
+
+        return $summary;
     }
 
     public function create(): Response
