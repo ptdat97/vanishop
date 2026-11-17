@@ -13,7 +13,7 @@ import { type LinkTypeOption, type MenuItem, menuEditorKey, newMenuItem } from '
 const props = defineProps<{
     baseUrl: string;
     searchUrl: string;
-    locations: Array<{ code: string; label: string; depth: number }>;
+    locations: Array<{ code: string; label: string; depth: number; image_depth: number }>;
     location: string | null;
     menu: null | { items: MenuItem[]; published_at: string | null; has_changes: boolean; versions: Array<{ published_at: string | null; count: number }> };
     linkTypes: LinkTypeOption[];
@@ -120,7 +120,7 @@ async function restore(version: number): Promise<void> {
             </div>
             <p v-if="errors.items" class="text-sm text-red-600">{{ errors.items }}</p>
 
-            <MenuItems v-model:items="items" :max-depth="current.depth" :errors="errors" path="items" />
+            <MenuItems v-model:items="items" :max-depth="current.depth" :image-depth="current.image_depth" :errors="errors" path="items" />
             <p v-if="!items.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Chưa có mục nào.</p>
             <button type="button" :class="secondaryButton" @click="add">+ Thêm mục</button>
 

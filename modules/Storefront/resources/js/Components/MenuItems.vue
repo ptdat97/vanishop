@@ -19,6 +19,8 @@ import LinkPicker from './LinkPicker.vue';
  */
 const props = defineProps<{
     maxDepth: number;
+    /** Mục tới cấp này được gắn ảnh (theme.json `menus.<vị trí>.image_depth`, mặc định 1). */
+    imageDepth?: number;
     errors: Record<string, string | undefined>;
     /** Tiền tố khoá lỗi validate của cây, vd. `items` → `items.0.children.1.link`. */
     path: string;
@@ -118,9 +120,9 @@ const fieldError = (path: number[], field: string): string | undefined => props.
                     <DateInput v-model="item.visible_to" with-time />
                     <span v-if="fieldError(itemPath, 'visible_to')" class="text-xs text-red-600">{{ fieldError(itemPath, 'visible_to') }}</span>
                 </label>
-                <div v-if="level === 1" class="flex items-center gap-3 md:col-span-2">
+                <div v-if="level <= (imageDepth ?? 1)" class="flex items-center gap-3 md:col-span-2">
                     <img v-if="item.image_media_id && context.images[item.image_media_id]" :src="context.images[item.image_media_id]" alt="" class="h-12 w-12 rounded object-cover" />
-                    <button type="button" :class="secondaryButton" @click="picking = item">{{ item.image_media_id ? 'Đổi ảnh' : 'Ảnh (mega menu)' }}</button>
+                    <button type="button" :class="secondaryButton" @click="picking = item">{{ item.image_media_id ? 'Đổi ảnh' : level === 1 ? 'Ảnh (mega menu / banner)' : 'Ảnh (ô danh mục)' }}</button>
                     <button v-if="item.image_media_id" type="button" class="text-red-600 hover:underline" @click="item.image_media_id = null">Gỡ ảnh</button>
                 </div>
                 <div v-if="level < maxDepth" class="md:col-span-2">

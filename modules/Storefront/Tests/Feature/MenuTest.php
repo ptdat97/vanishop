@@ -16,6 +16,7 @@ use Modules\Storefront\Application\Links\ProductLinkType;
 use Modules\Storefront\Application\Links\RouteLinkType;
 use Modules\Storefront\Application\Links\UrlLinkType;
 use Modules\Storefront\Application\Menus\MenuPresenter;
+use Modules\Storefront\Application\Menus\MenuRepository;
 use Modules\Storefront\Testing\LinkTypeContract;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -78,7 +79,7 @@ it('Admin: vị trí theo theme; lưu nháp không đổi cửa hàng; xuất b�
         ->and(AuditLog::query()->where('action', 'storefront.menu_published')->exists())->toBeTrue();
 });
 
-it('render menu mobile toàn màn hình với điều hướng trượt tới và lui giữa các tầng', function () {
+it('menu mobile toàn màn hình: danh mục chia đôi dựng từ menu "Di động" đã phân giải (nhúng JSON)', function () {
     $this->put("{$this->url}/mobile", ['items' => [
         ($this->item)([
             'link' => ['type' => 'route', 'value' => 'storefront.brands'],
@@ -94,10 +95,35 @@ it('render menu mobile toàn màn hình với điều hướng trượt tới v�
     expect($html)->toContain('data-vani-mobile-menu-open')
         ->toContain('data-vani-mobile-menu-fallback')
         ->toContain('id="vani-mobile-menu"')
-        ->toContain('data-vani-menu-next')
-        ->toContain('data-vani-menu-back')
-        ->toContain('data-vani-menu-panel-id="vani-mobile-menu-root-0"')
+        ->toContain('data-vani-category-nav')
+        ->toContain('data-source="'.route('api.storefront.v1.categories.index').'"')
+        ->toContain('data-category-url="'.route('storefront.category', '__vani_slug__').'"')
+        ->toContain('data-cnav-template="tab"')
+        ->toContain('data-vani-bottom-nav')
+        ->toContain('data-cnav-items')
         ->toContain('Tra cứu đơn');
+});
+
+it('chưa có menu nào thì menu mobile không nhúng dữ liệu (JS tải cây danh mục Catalog qua API)', function () {
+    expect($this->get('/')->assertOk()->getContent())->toContain('data-vani-category-nav')->not->toContain('data-cnav-items');
+});
+
+it('ảnh mục menu theo image_depth của vị trí: "mobile" giữ ảnh mọi cấp, "header" chỉ cấp 1', function () {
+    $tree = [($this->item)([
+        'label' => ['vi' => 'Nữ'], 'image_media_id' => 11,
+        'children' => [($this->item)([
+            'label' => ['vi' => 'Trang phục'], 'image_media_id' => 12,
+            'children' => [($this->item)(['link' => ['type' => 'route', 'value' => 'storefront.track'], 'image_media_id' => 13])],
+        ])],
+    ])];
+
+    $this->put("{$this->url}/mobile", ['items' => $tree])->assertSessionHasNoErrors();
+    $this->put("{$this->url}/header", ['items' => $tree])->assertSessionHasNoErrors();
+
+    $mobile = app(MenuRepository::class)->state('mobile')['draft'][0];
+    $header = app(MenuRepository::class)->state('header')['draft'][0];
+    expect([$mobile['image_media_id'], $mobile['children'][0]['image_media_id'], $mobile['children'][0]['children'][0]['image_media_id']])->toBe([11, 12, 13])
+        ->and([$header['image_media_id'], $header['children'][0]['image_media_id'], $header['children'][0]['children'][0]['image_media_id']])->toBe([11, null, null]);
 });
 
 it('storefront bỏ mục tắt, ngoài khung giờ, hoặc trỏ tới đối tượng đã ẩn (kèm nhánh con)', function () {

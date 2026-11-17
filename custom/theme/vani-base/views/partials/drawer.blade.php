@@ -1,6 +1,7 @@
 {{--
     Drawer dùng chung cho storefront. Mở bằng nút/link có data-vani-drawer-open="<id>".
     Truyền id, title, contentView; contentData, dialogClass, dataAttributes và closeAttributes là tuỳ chọn.
+    showHeader = false: nội dung tự dựng thanh tiêu đề (phải có phần tử id="<id>-title" và nút data-vani-drawer-close).
 --}}
 <dialog id="{{ $id }}" class="vani-drawer {{ $dialogClass ?? '' }}" aria-labelledby="{{ $id }}-title"
     @foreach ($dataAttributes ?? [] as $attribute => $value)
@@ -10,6 +11,7 @@
     @endforeach
 >
     <div class="flex h-full flex-col">
+        @if ($showHeader ?? true)
         <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <h2 id="{{ $id }}-title" class="text-lg font-semibold">{{ $title }}</h2>
             <button type="button" class="px-2 text-2xl leading-none text-slate-500 hover:text-slate-900"
@@ -21,6 +23,7 @@
                 @endforeach
                 aria-label="{{ __('Đóng') }}">×</button>
         </div>
+        @endif
         @include($contentView, $contentData ?? [])
     </div>
 </dialog>

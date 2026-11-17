@@ -217,5 +217,12 @@
     "— Chọn tỉnh/thành —": "— Select province —",
     "— Không tải được, thử lại —": "— Couldn't load, try again —",
     "— Đang tải… —": "— Loading… —",
-    "Thông báo": "Notifications"
+    "Thông báo": "Notifications",
+    "Không tải được danh mục.": "Could not load categories.",
+    "Thử lại": "Try again",
+    "Cửa hàng chưa có danh mục.": "The store has no categories yet.",
+    "Danh mục này chưa có danh mục con.": "This category has no subcategories yet.",
+    "Chuyên đề": "Featured",
+    "Thanh điều hướng": "Navigation bar",
+    "Xem tất cả :name": "View all :name"
 }

@@ -11,7 +11,7 @@ final readonly class Theme
 {
     /**
      * @param  array<string, string>  $tokens  tên token => giá trị CSS (vd. "color-primary" => "#111827")
-     * @param  array<string, array{label: string, depth: int}>|null  $menus  vị trí menu theme render; null = dùng của theme cha
+     * @param  array<string, array{label: string, depth: int, image_depth: int}>|null  $menus  vị trí menu theme render; null = dùng của theme cha
      * @param  array<string, ThemeSettingSection>|null  $settings  nhóm cấu hình (đầu/chân trang…); null = dùng của theme cha
      */
     public function __construct(

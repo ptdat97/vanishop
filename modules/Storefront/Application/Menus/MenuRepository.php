@@ -18,7 +18,7 @@ use Throwable;
  * (module Storefront không có bảng, ADR-021): bản nháp, bản đã xuất bản và tối đa 10 bản xuất bản trước để khôi phục.
  * Storefront chỉ đọc bản đã xuất bản.
  *
- * Mục: `{id, link: LinkTarget|null, label: {locale: nhãn}, badge: null|new|sale, image_media_id (chỉ cấp 1), enabled,
+ * Mục: `{id, link: LinkTarget|null, label: {locale: nhãn}, badge: null|new|sale, image_media_id (tới cấp `image_depth` của vị trí, mặc định chỉ cấp 1), enabled,
  * visible_from, visible_to (giờ cửa hàng, `Y-m-d\TH:i`), children}`. Mục không có link là tiêu đề nhóm (cần nhãn).
  *
  * @phpstan-type MenuItem array{id: string, link: array{type: string, value: string, label: array<string, string>}|null, label: array<string, string>, badge: ?string, image_media_id: ?int, enabled: bool, visible_from: ?string, visible_to: ?string, children: list<mixed>}
@@ -40,7 +40,7 @@ final class MenuRepository
     ) {}
 
     /**
-     * @return array<string, array{label: string, depth: int}>
+     * @return array<string, array{label: string, depth: int, image_depth: int}>
      */
     public function locations(): array
     {
@@ -82,9 +82,9 @@ final class MenuRepository
      */
     public function saveDraft(string $location, array $items): void
     {
-        $depth = $this->location($location)['depth'];
+        ['depth' => $depth, 'image_depth' => $imageDepth] = $this->location($location);
         $count = 0;
-        $clean = $this->normalize($items, 1, $depth, 'items', $count);
+        $clean = $this->normalize($items, 1, $depth, $imageDepth, 'items', $count);
 
         $this->write($location, ['draft' => $clean, 'updated_at' => now()->toIso8601String()]);
     }
@@ -130,7 +130,7 @@ final class MenuRepository
     }
 
     /**
-     * @return array{label: string, depth: int}
+     * @return array{label: string, depth: int, image_depth: int}
      */
     private function location(string $location): array
     {
@@ -141,7 +141,7 @@ final class MenuRepository
      * @param  array<array-key, mixed>  $items  dữ liệu gửi lên (JSON object/mảng bất kỳ) — chuẩn hoá về danh sách
      * @return list<array<string, mixed>>
      */
-    private function normalize(array $items, int $level, int $maxDepth, string $path, int &$count): array
+    private function normalize(array $items, int $level, int $maxDepth, int $imageDepth, string $path, int &$count): array
     {
         $clean = [];
         foreach (array_values($items) as $index => $item) {
@@ -181,11 +181,11 @@ final class MenuRepository
                 'link' => $link?->toArray(),
                 'label' => $label,
                 'badge' => $badge === '' ? null : $badge,
-                'image_media_id' => $level === 1 && is_numeric($media) && (int) $media > 0 ? (int) $media : null,
+                'image_media_id' => $level <= $imageDepth && is_numeric($media) && (int) $media > 0 ? (int) $media : null,
                 'enabled' => (bool) ($item['enabled'] ?? true),
                 'visible_from' => $from,
                 'visible_to' => $to,
-                'children' => $this->normalize($children, $level + 1, $maxDepth, "{$key}.children", $count),
+                'children' => $this->normalize($children, $level + 1, $maxDepth, $imageDepth, "{$key}.children", $count),
             ];
         }
 

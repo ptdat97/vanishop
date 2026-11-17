@@ -6,8 +6,10 @@ namespace Database\Seeders\Demo;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
+use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Application\Menus\MenuRepository;
 use Modules\Storefront\Application\PageBlocks;
@@ -88,6 +90,67 @@ final class StorefrontSeeder extends Seeder
     }
 
     /**
+     * Menu di động (danh mục chia đôi của vani-base, 3 cấp, ảnh mọi cấp): cấp 1 = cột trái (ảnh = banner), cấp 2 có con =
+     * tiêu đề nhóm, mục lá = ô lưới có ảnh; cấp 1 không con (Lookbook, Tin tức) = link thẳng. Ảnh lấy từ sản phẩm demo.
+     * Tạo lại trên cửa hàng đã có menu: `saveDraft('mobile', app(StorefrontSeeder::class)->mobileMenu())` rồi `publish`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function mobileMenu(): array
+    {
+        $covers = DemoMedia::byStyle();
+        $used = [];
+        // Ảnh đầu tiên chưa dùng của các sản phẩm thoả điều kiện — mỗi ô một ảnh khác nhau.
+        $cover = function (callable $scope) use ($covers, &$used): ?int {
+            $codes = $scope(Style::query()->where('style_code', 'like', 'VS-%')->where('status', 'active'))->orderBy('id')->pluck('style_code');
+            foreach ($codes as $code) {
+                foreach ($covers[$code] ?? [] as $mediaId) {
+                    if (! isset($used[$mediaId])) {
+                        $used[$mediaId] = true;
+
+                        return $mediaId;
+                    }
+                }
+            }
+
+            return null;
+        };
+        $anyCover = fn (): ?int => $cover(fn ($query) => $query);
+        $item = fn (?array $link, ?string $label = null, array $children = [], ?int $image = null, ?string $badge = null): array => [
+            'id' => (string) Str::ulid(), 'link' => $link, 'label' => $label === null ? [] : [StoreLocale::default() => $label],
+            'badge' => $badge, 'image_media_id' => $image, 'enabled' => true, 'visible_from' => null, 'visible_to' => null, 'children' => $children,
+        ];
+        $categoryId = fn (string $slug): ?int => ($id = Category::query()->where('slug', $slug)->value('id')) === null ? null : (int) $id;
+        $categoryItem = fn (string $slug, ?string $badge = null): ?array => ($id = $categoryId($slug)) === null ? null
+            : $item(['type' => 'category', 'value' => (string) $id], null, [], $cover(fn ($query) => $query->where('primary_category_id', $id)) ?? $anyCover(), $badge);
+        $productItem = fn (Style $style): array => $item(['type' => 'product', 'value' => (string) $style->id], null, [], $cover(fn ($query) => $query->whereKey($style->id)));
+
+        $clothing = array_values(array_filter(array_map(fn (string $slug): ?array => $categoryItem($slug), array_keys(CatalogSeeder::CATEGORIES))));
+        $newest = Style::query()->where('style_code', 'like', 'VS-%')->where('status', 'active')->latest('id')->limit(6)->get()->map($productItem)->all();
+        $collections = ProductCollection::query()->orderBy('position')->get()
+            ->map(fn (ProductCollection $collection): array => $item(['type' => 'collection', 'value' => (string) $collection->id], null, [],
+                $cover(fn ($query) => $query->whereHas('collections', fn ($inner) => $inner->whereKey($collection->id))) ?? $anyCover()))->all();
+        $brands = Brand::query()->where('status', Brand::ACTIVE)->orderBy('position')->get()
+            ->map(fn (Brand $brand): array => $item(['type' => 'brand', 'value' => (string) $brand->id], null, [],
+                $cover(fn ($query) => $query->where('brand_id', $brand->id)) ?? $anyCover()))->all();
+
+        $women = $categoryId('nu');
+        $newArrivals = $categoryId(CatalogSeeder::NEW_ARRIVALS);
+
+        return array_values(array_filter([
+            $newArrivals === null ? null : $item(['type' => 'category', 'value' => (string) $newArrivals], null, $newest, $anyCover(), 'new'),
+            $women === null ? null : $item(['type' => 'category', 'value' => (string) $women], null, array_values(array_filter([
+                $clothing === [] ? null : $item(['type' => 'category', 'value' => (string) $women], 'Trang phục', $clothing),
+                $collections === [] ? null : $item(null, 'Theo bộ sưu tập', $collections),
+            ])), $anyCover()),
+            $collections === [] ? null : $item(null, 'Bộ sưu tập', array_map(fn (array $entry): array => [...$entry, 'id' => (string) Str::ulid(), 'image_media_id' => $anyCover() ?? $entry['image_media_id']], $collections), $anyCover()),
+            $brands === [] ? null : $item(['type' => 'route', 'value' => 'storefront.brands'], 'Thương hiệu', $brands, $anyCover()),
+            ContentSeeder::enabled('vani.lookbook') ? $item(['type' => 'url', 'value' => '/lookbook'], 'Lookbook') : null,
+            ContentSeeder::enabled('vani.cms') ? $item(['type' => 'url', 'value' => '/tin-tuc'], 'Tin tức') : null,
+        ]));
+    }
+
+    /**
      * @return array<string, list<array<string, mixed>>>
      */
     private function menus(): array
@@ -123,8 +186,7 @@ final class StorefrontSeeder extends Seeder
 
         return [
             'header' => $header,
-            // Menu di động tối đa 2 cấp: bỏ cấp con của cấp con.
-            'mobile' => array_map(fn (array $entry): array => [...$entry, 'id' => (string) Str::ulid(), 'children' => array_map(fn (array $child): array => [...$child, 'children' => []], $entry['children'])], $header),
+            'mobile' => $this->mobileMenu(),
             // Cột chân trang một cấp: tiêu đề cột là tên vị trí trong theme.
             'footer_1' => $support,
             'footer_2' => $about,

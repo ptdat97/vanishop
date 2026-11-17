@@ -121,9 +121,10 @@
         'title' => __('Danh mục'),
         'contentView' => 'theme::partials.mobile-menu-content',
         'contentData' => [
-            'items' => $mobileMenu ?? [],
-            'fallbackUrl' => vani_route('storefront.brands'),
+            // Menu "Di động" (chưa xuất bản → menu đầu trang); cả hai chưa có → cây danh mục Catalog qua Storefront API.
+            'items' => $mobileMenu,
         ],
+        'showHeader' => false,
         'dialogClass' => 'vani-mobile-menu',
         'dataAttributes' => ['data-vani-mobile-menu-dialog' => true],
     ])

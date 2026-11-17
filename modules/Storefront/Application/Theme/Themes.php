@@ -133,7 +133,7 @@ final class Themes
     /**
      * Vị trí menu của theme đang hoạt động (theme gần nhất trong chuỗi có khai báo `menus`).
      *
-     * @return array<string, array{label: string, depth: int}>
+     * @return array<string, array{label: string, depth: int, image_depth: int}>
      */
     public function menuLocations(): array
     {
@@ -218,17 +218,19 @@ final class Themes
     }
 
     /**
-     * `menus` trong theme.json: `{"header": {"label": "Menu chính", "depth": 3}}`; mã `[a-z][a-z0-9_]*`, độ sâu 1–3.
+     * `menus` trong theme.json: `{"header": {"label": "Menu chính", "depth": 3, "image_depth": 1}}`; mã `[a-z][a-z0-9_]*`,
+     * độ sâu 1–3; `image_depth` = mục tới cấp này được gắn ảnh (mặc định 1, tối đa bằng `depth`).
      *
      * @param  array<mixed>  $menus
-     * @return array<string, array{label: string, depth: int}>
+     * @return array<string, array{label: string, depth: int, image_depth: int}>
      */
     private static function parseMenus(array $menus): array
     {
         $locations = [];
         foreach ($menus as $code => $menu) {
             if (is_string($code) && preg_match('/^[a-z][a-z0-9_]{0,31}$/', $code) === 1 && is_array($menu)) {
-                $locations[$code] = ['label' => (string) ($menu['label'] ?? $code), 'depth' => max(1, min(3, (int) ($menu['depth'] ?? 1)))];
+                $depth = max(1, min(3, (int) ($menu['depth'] ?? 1)));
+                $locations[$code] = ['label' => (string) ($menu['label'] ?? $code), 'depth' => $depth, 'image_depth' => max(1, min($depth, (int) ($menu['image_depth'] ?? 1)))];
             }
         }
 

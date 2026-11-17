@@ -386,26 +386,6 @@ html:has(.vani-modal[open]) {
     }
 }
 
-.vani-mobile-menu-track {
-    display: flex;
-    width: 100%;
-    height: 100%;
-
-    transform: translateX(
-        calc(var(--vani-menu-index, 0) * -100%)
-    );
-
-    transition: transform 250ms var(--ease-luxury);
-}
-
-.vani-mobile-menu-panel {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-}
-
 /* =========================================================
    10. CAROUSEL / SWIPER
 ========================================================= */
@@ -793,8 +773,7 @@ html:has(.vani-modal[open]) {
 
     .vani-drawer,
     .vani-offcanvas,
-    .vani-modal,
-    .vani-mobile-menu-track {
+    .vani-modal {
         transition: none;
     }
 

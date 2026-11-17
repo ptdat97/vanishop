@@ -1,4 +1,5 @@
-import { createIcons, Heart, Menu, Search, ShoppingBag, UserRound } from 'lucide';
+import { createIcons, Heart, House, LayoutGrid, Menu, Search, ShoppingBag, Sparkles, UserRound } from 'lucide';
+import { mountMobileCategoryNav } from './mobile-category-nav.js';
 
 const accountMenuRoot = document.querySelector('[data-vani-account-menu-root]');
 if (accountMenuRoot) {
@@ -20,7 +21,7 @@ if (accountMenuRoot) {
  * Thư viện giao diện (Motion, Swiper, PhotoSwipe) chỉ tải khi trang cần (loadVendor bên dưới).
  * Dữ liệu đọc từ data-* đã render sẵn ở server.
  */
-createIcons({ icons: { Heart, Menu, Search, ShoppingBag, UserRound } });
+createIcons({ icons: { Heart, House, LayoutGrid, Menu, Search, ShoppingBag, Sparkles, UserRound } });
 document.documentElement.classList.add('js');
 
 // Chuỗi giao diện đã dịch theo ngôn ngữ trang (layout xuất JSON `data-vani-i18n`, khoá = id ổn định).
@@ -105,20 +106,6 @@ const lineUrl = (template, lineId) => String(template || '').replace('987654321'
 const firstError = (error, field) => (error.errors?.[field] || [])[0] || error.message;
 
 const dialogOpeners = new WeakMap();
-function activateMobileMenuPanel(menu, panel, focusTarget = null) {
-    const panels = [...menu.querySelectorAll('[data-vani-menu-panel]')];
-    const panelIndex = panels.indexOf(panel);
-    if (panelIndex < 0) return;
-
-    menu.querySelector('[data-vani-menu-track]')?.style.setProperty('--vani-menu-index', String(panelIndex));
-    panels.forEach((currentPanel, index) => {
-        const isActive = index === panelIndex;
-        currentPanel.inert = !isActive;
-        currentPanel.setAttribute('aria-hidden', String(!isActive));
-    });
-    menu.dataset.vaniMenuActive = panel.dataset.vaniMenuPanelId;
-    focusTarget?.focus();
-}
 document.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
     const opener = event.target.closest('[data-vani-drawer-open], [data-vani-modal-open]');
@@ -128,35 +115,12 @@ document.addEventListener('click', (event) => {
         if (dialog instanceof HTMLDialogElement && !dialog.open) {
             event.preventDefault();
             dialogOpeners.set(dialog, opener);
-            if (dialog.matches('[data-vani-mobile-menu-dialog]')) {
-                const menu = dialog.querySelector('[data-vani-mobile-menu]');
-                const rootPanel = menu?.querySelector('[data-vani-menu-panel-level="0"]');
-                if (menu && rootPanel) activateMobileMenuPanel(menu, rootPanel);
-            }
             dialog.showModal();
+            // Menu di động: tải danh mục (Storefront API) ở lần mở đầu; lỗi thì lần mở sau thử lại.
+            if (dialog.matches('[data-vani-mobile-menu-dialog]')) {
+                mountMobileCategoryNav(dialog.querySelector('[data-vani-category-nav]'));
+            }
         }
-        return;
-    }
-
-    const nextMenuButton = event.target.closest('[data-vani-menu-next]');
-    if (nextMenuButton) {
-        const menu = nextMenuButton.closest('[data-vani-mobile-menu]');
-        const targetId = nextMenuButton.dataset.vaniMenuTarget;
-        const targetPanel = [...(menu?.querySelectorAll('[data-vani-menu-panel]') ?? [])]
-            .find((panel) => panel.dataset.vaniMenuPanelId === targetId);
-        const backButton = targetPanel?.querySelector('[data-vani-menu-back]');
-        if (menu && targetPanel) activateMobileMenuPanel(menu, targetPanel, backButton);
-        return;
-    }
-
-    const backMenuButton = event.target.closest('[data-vani-menu-back]');
-    if (backMenuButton) {
-        const menu = backMenuButton.closest('[data-vani-mobile-menu]');
-        const targetId = backMenuButton.dataset.vaniMenuTarget;
-        const targetPanel = [...(menu?.querySelectorAll('[data-vani-menu-panel]') ?? [])]
-            .find((panel) => panel.dataset.vaniMenuPanelId === targetId);
-        const openerButton = document.getElementById(backMenuButton.dataset.vaniMenuFocus);
-        if (menu && targetPanel) activateMobileMenuPanel(menu, targetPanel, openerButton);
         return;
     }
 
@@ -182,11 +146,12 @@ document.addEventListener('close', (event) => {
     dialogOpeners.delete(event.target);
 }, true);
 
+// Có thể có nhiều nhãn số món (header + thanh điều hướng dưới của menu di động).
 function updateCartCount(count) {
-    const badge = document.querySelector('[data-vani-cart-count]');
-    if (!badge) return;
-    badge.textContent = count > 0 ? String(count) : '';
-    badge.hidden = !(count > 0);
+    document.querySelectorAll('[data-vani-cart-count]').forEach((badge) => {
+        badge.textContent = count > 0 ? String(count) : '';
+        badge.hidden = !(count > 0);
+    });
 }
 
 const offcanvas = document.querySelector('[data-vani-offcanvas-cart]');
@@ -792,17 +757,12 @@ function applySession(session) {
     sessionLoaded(session);
     document.dispatchEvent(new CustomEvent('vani:session', { detail: session }));
     dispatchCartChange(session.cart_change);
-    const account = document.querySelector('[data-vani-account]');
-    if (account) {
+    document.querySelectorAll('[data-vani-account]').forEach((account) => {
         account.setAttribute('aria-label', session.account.label);
         account.setAttribute('title', session.account.label);
         account.setAttribute('href', session.account.url);
-    }
-    const count = document.querySelector('[data-vani-cart-count]');
-    if (count && session.cart.count > 0) {
-        count.textContent = String(session.cart.count);
-        count.hidden = false;
-    }
+    });
+    if (session.cart.count > 0) updateCartCount(session.cart.count);
     const status = document.querySelector('[data-vani-flash="status"]');
     if (status && session.flash?.status) {
         status.textContent = session.flash.status;

@@ -14,8 +14,9 @@
             "depth": 3
         },
         "mobile": {
-            "label": "Menu di động",
-            "depth": 2
+            "label": "Menu di động (danh mục chia đôi)",
+            "depth": 3,
+            "image_depth": 3
         },
         "footer_1": {
             "label": "Chân trang — cột 1",
@@ -113,6 +114,17 @@
                     "max": 200,
                     "translatable": true,
                     "help": "Để trống = © năm + tên cửa hàng."
+                }
+            ]
+        },
+        "mobile_nav": {
+            "label": "Thanh điều hướng di động",
+            "fields": [
+                {
+                    "key": "topics_url",
+                    "label": "Link mục \"Chuyên đề\"",
+                    "type": "url",
+                    "help": "Thanh điều hướng dưới của menu danh mục trên điện thoại (trang chuyên đề, bộ sưu tập nổi bật…). Để trống = trang Thương hiệu."
                 }
             ]
         }
