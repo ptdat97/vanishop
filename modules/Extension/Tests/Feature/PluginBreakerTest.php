@@ -36,6 +36,7 @@ beforeEach(function () {
 afterEach(fn () => File::deleteDirectory($this->root));
 
 it('slot lỗi 5 lần/phút → bỏ qua plugin trong thời gian nghỉ (cả filter đọc của plugin); Core vẫn chạy; doctor báo; hết nghỉ thì thử lại', function () {
+    $this->useArrayCache(); // travel() qua thời gian nghỉ
     $calls = 0;
     $this->hooks->onSlot('test.breaker.slot', function () use (&$calls): string {
         $calls++;

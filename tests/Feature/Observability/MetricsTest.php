@@ -77,7 +77,7 @@ it('gauge chụp định kỳ: thanh toán chờ theo cổng, outbox tồn, plug
         ->and($values)->toHaveKey('integration.outbox_backlog');
 
     $this->artisan('vani:metrics:snapshot')->expectsOutputToContain('payments.pending = 2')->assertSuccessful();
-    expect(Cache::get(HealthCheck::HEARTBEAT_KEY))->toBeInt();
+    expect(Cache::get(HealthCheck::HEARTBEAT_KEY))->toBeNumeric(); // Redis trả về chuỗi số
 });
 
 it('PulseMetrics ghi vào Pulse; thẻ "Thương mại" hiện trên dashboard Pulse', function () {

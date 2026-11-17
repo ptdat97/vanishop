@@ -25,11 +25,11 @@ final class CircuitBreaker
     public function openUntil(string $system): ?CarbonImmutable
     {
         $until = $this->cache->get($this->key($system, 'open_until'));
-        if (! is_int($until) || $until <= now()->getTimestamp()) {
+        if (! is_numeric($until) || (int) $until <= now()->getTimestamp()) { // Redis trả timestamp về dạng chuỗi
             return null;
         }
 
-        return CarbonImmutable::createFromTimestamp($until);
+        return CarbonImmutable::createFromTimestamp((int) $until);
     }
 
     public function recordSuccess(string $system): void

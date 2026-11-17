@@ -60,6 +60,7 @@ it('ownerOf phân biệt implementation của Core và của plugin', function (
 });
 
 it('call(): implementation lỗi → giá trị dự phòng; plugin lỗi 5 lần/phút bị bỏ qua 5 phút (circuit breaker)', function () {
+    $this->useArrayCache(); // travel() qua thời gian nghỉ
     $this->plugins->install('fixture.extensions');
     $this->plugins->enable('fixture.extensions');
     app(PluginActivation::class)->flush();

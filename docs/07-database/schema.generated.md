@@ -29,6 +29,7 @@
 | [`customer_consents`](#customer_consents) | 9 |
 | [`customer_groups`](#customer_groups) | 7 |
 | [`customer_identities`](#customer_identities) | 7 |
+| [`customer_notes`](#customer_notes) | 7 |
 | [`customer_otps`](#customer_otps) | 10 |
 | [`customer_tags`](#customer_tags) | 4 |
 | [`customer_tokens`](#customer_tokens) | 7 |
@@ -36,6 +37,7 @@
 | [`external_references`](#external_references) | 7 |
 | [`failed_jobs`](#failed_jobs) | 7 |
 | [`idempotency_keys`](#idempotency_keys) | 10 |
+| [`incoming_stock`](#incoming_stock) | 7 |
 | [`integration_client_keys`](#integration_client_keys) | 8 |
 | [`integration_clients`](#integration_clients) | 9 |
 | [`integration_events`](#integration_events) | 9 |
@@ -83,6 +85,7 @@
 | [`pulse_aggregates`](#pulse_aggregates) | 9 |
 | [`pulse_entries`](#pulse_entries) | 6 |
 | [`pulse_values`](#pulse_values) | 6 |
+| [`reconciliation_entries`](#reconciliation_entries) | 12 |
 | [`refunds`](#refunds) | 12 |
 | [`return_attachments`](#return_attachments) | 8 |
 | [`return_events`](#return_events) | 9 |
@@ -111,7 +114,7 @@
 | [`style_translations`](#style_translations) | 9 |
 | [`style_video`](#style_video) | 3 |
 | [`style_view_stats`](#style_view_stats) | 3 |
-| [`styles`](#styles) | 14 |
+| [`styles`](#styles) | 15 |
 | [`users`](#users) | 8 |
 | [`variant_option_values`](#variant_option_values) | 3 |
 | [`variants`](#variants) | 11 |
@@ -513,6 +516,22 @@ Index: index (customer_id); unique (provider, subject); PK (id)
 
 Khoá ngoại: customer_id → customers(id) on delete cascade
 
+## customer_notes
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `customer_id` | bigint unsigned |  |  |
+| `note` | varchar(500) |  |  |
+| `source` | varchar(64) |  |  |
+| `actor_type` | varchar(32) | có |  |
+| `actor_id` | bigint unsigned | có |  |
+| `created_at` | timestamp | có |  |
+
+Index: index (customer_id, id); PK (id)
+
+Khoá ngoại: customer_id → customers(id) on delete cascade
+
 ## customer_otps
 
 | Cột | Kiểu | Null | Mặc định |
@@ -636,6 +655,22 @@ Index: index (connection, queue, failed_at); unique (uuid); PK (id)
 | `updated_at` | timestamp | có |  |
 
 Index: index (expires_at); unique (scope, key); PK (id)
+
+## incoming_stock
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `variant_id` | bigint unsigned |  |  |
+| `quantity` | int unsigned |  |  |
+| `expected_on` | date | có |  |
+| `source` | varchar(64) |  |  |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: unique (variant_id); PK (id)
+
+Khoá ngoại: variant_id → variants(id) on delete cascade
 
 ## integration_client_keys
 
@@ -1463,6 +1498,25 @@ Index: PK (id); index (key_hash); index (timestamp); index (timestamp, type, key
 | `value` | mediumtext |  |  |
 
 Index: PK (id); index (timestamp); index (type); unique (type, key_hash)
+
+## reconciliation_entries
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `source` | varchar(64) |  |  |
+| `reference` | varchar(128) |  |  |
+| `status` | varchar(16) |  |  |
+| `order_id` | bigint unsigned | có |  |
+| `payment_id` | bigint unsigned | có |  |
+| `expected` | bigint | có |  |
+| `actual` | bigint | có |  |
+| `note` | varchar(255) | có |  |
+| `resolution` | varchar(255) | có |  |
+| `created_at` | timestamp | có |  |
+| `resolved_at` | timestamp | có |  |
+
+Index: PK (id); unique (source, reference); index (status, id)
 
 ## refunds
 

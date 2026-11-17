@@ -37,9 +37,11 @@ final class HealthCheck
                 return ['status' => 'ok'];
             }),
             'cache' => $this->check(function (): array {
-                Cache::put('vani:health:probe', 1, 10);
+                // Chuỗi (không phải số): Redis trả số nguyên về dạng chuỗi, so sánh `=== 1` luôn sai trên production.
+                $probe = bin2hex(random_bytes(8));
+                Cache::put('vani:health:probe', $probe, 10);
 
-                return Cache::get('vani:health:probe') === 1 ? ['status' => 'ok'] : ['status' => 'fail', 'detail' => 'không đọc lại được giá trị'];
+                return Cache::get('vani:health:probe') === $probe ? ['status' => 'ok'] : ['status' => 'fail', 'detail' => 'không đọc lại được giá trị'];
             }),
             'required_extensions' => $this->check(function (): array {
                 $enabled = PluginRecord::query()->where('status', PluginStatus::Enabled)->pluck('id')->all();
@@ -58,10 +60,10 @@ final class HealthCheck
             }),
             'scheduler' => $this->check(function (): array {
                 $beat = Cache::get(self::HEARTBEAT_KEY);
-                if (! is_int($beat)) {
+                if (! is_numeric($beat)) { // Redis trả timestamp về dạng chuỗi
                     return ['status' => 'degraded', 'detail' => 'chưa có nhịp (schedule:run chưa chạy?)'];
                 }
-                $age = time() - $beat;
+                $age = time() - (int) $beat;
 
                 return $age > self::SCHEDULER_STALE_SECONDS ? ['status' => 'degraded', 'detail' => "nhịp cuối {$age}s trước"] : ['status' => 'ok'];
             }),

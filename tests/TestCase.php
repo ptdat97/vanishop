@@ -34,6 +34,16 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Cho test dùng `travel()` để vượt TTL của cache: TTL trên Redis chạy theo đồng hồ thật, không theo thời gian giả
+     * của Carbon, nên lượt chạy CI với `CACHE_STORE=redis` phải quay về store `array` ở các test này.
+     */
+    protected function useArrayCache(): void
+    {
+        config(['cache.default' => 'array']);
+        $this->app->forgetInstance('cache.store');
+    }
+
+    /**
      * `migrate:fresh` đầu phiên test chạy cả migration của mọi plugin trong custom/plugin: khi test cài plugin, bảng
      * đã có nên không chạy DDL giữa transaction của test (MySQL tự commit khi gặp DDL → mất savepoint của RefreshDatabase).
      */

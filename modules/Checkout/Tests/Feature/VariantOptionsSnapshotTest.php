@@ -26,7 +26,8 @@ it('giỏ và đơn mang tổ hợp tuỳ chọn của SKU; đơn giữ snapshot
     // 300.000 + phí giao 30.000 (chưa đủ mức miễn phí).
     $placed = $this->postJson("{$api}/checkout/{$cart}/orders", C::orderPayload(['expected_total' => 330_000]), [...$headers, 'Idempotency-Key' => "k-{$cart}"])->assertCreated();
     $order = Order::query()->withoutGlobalScopes()->latest('id')->firstOrFail();
-    expect($order->lines()->sole()->variant_options)->toBe($line['variant_options']);
+    // toEqual: cột JSON của MySQL sắp lại thứ tự khoá trong object; thứ tự trục (phần tử danh sách) vẫn được so.
+    expect($order->lines()->sole()->variant_options)->toEqual($line['variant_options']);
 
     $size->syncTranslations(['vi' => ['name' => 'Nhỏ']]);
     $this->getJson("{$api}/orders/{$order->public_id}", ['X-Vani-Order-Token' => $placed->json('data.access_token')])->assertOk()

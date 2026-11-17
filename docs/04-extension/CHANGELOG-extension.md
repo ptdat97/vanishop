@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.10 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Kiểm chứng phát hành 0.5.x (V1, V3) — lần đầu chạy cả bộ test với cache trên Redis. Không đổi public API.
+
+### Sửa
+- **`/health` luôn trả 503 khi cache là Redis** (bắt buộc ở production): Redis trả số nguyên về dạng chuỗi nên phép thử cache `=== 1` luôn sai. Phép thử nay dùng chuỗi ngẫu nhiên; nhịp scheduler nhận timestamp dạng chuỗi (trước luôn báo `degraded`).
+- **Circuit breaker của Integration không bao giờ mở trên Redis** (cùng nguyên nhân): connector hỏng vẫn bị gọi và tốn lượt thử.
+- Từ điển dữ liệu: thêm `customer_notes`, `incoming_stock`, `reconciliation_entries`, cột mới của `styles`.
+- Test: `VariantOptionsSnapshotTest` không so thứ tự khoá JSON (MySQL sắp lại); test dùng `travel()` vượt TTL cache quay về store `array` (`TestCase::useArrayCache()`).
+
 ## 0.5.9 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Rà soát và sửa lỗi sau đợt củng cố kiến trúc. Không đổi public API.

@@ -16,6 +16,7 @@ beforeEach(function () {
 });
 
 it('beacon lượt xem (Storefront API, ADR-044): miễn CSRF, 204, gom theo giờ, lọc trùng cùng phiên 30 phút, phát ProductViewed; mẫu ẩn bị bỏ', function () {
+    $this->useArrayCache(); // travel() qua khoảng lọc trùng 30 phút
     Event::fake([ProductViewed::class]);
 
     $this->post('/api/storefront/v1/products/views', ['style_id' => $this->style->id], ['Sec-Fetch-Site' => 'same-origin'])->assertNoContent();
