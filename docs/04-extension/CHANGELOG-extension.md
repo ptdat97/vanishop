@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.4 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K4/D1 "Domain Payment" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Không đổi public API (contract `Payments` giữ nguyên).
+
+### Đổi (nội bộ)
+- `Payment\Domain`: máy trạng thái `PaymentStatus::transitionTo()` (chuyển sai bảng → `InvalidPaymentTransition`), câu hỏi nghiệp vụ (`everCollected`, `canRetry`, `canConfirmManually`, `closesWithoutCollection`), `RefundStatus`, `RefundRules::decide()`/`isAutomatic()` + `RefundDecision`, `CodRules`, `PaymentAmount::matches()` — unit test không cần DB.
+- `PaymentService` (804 → 295 dòng) chỉ còn chọn cổng, tạo/khởi tạo/thử lại, đọc khoản; ghi nhận tiền ở `PaymentSettlement`, hoàn tiền/chuyển trả ở `RefundService`, sổ giao dịch + view ở `PaymentRecords`.
+
 ## 0.5.3 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K4/C1 "API vòng 0 khai báo rõ" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). API giữa module đổi; bề mặt plugin giữ nguyên.
