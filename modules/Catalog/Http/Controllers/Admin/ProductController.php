@@ -15,6 +15,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
+use Modules\Catalog\Application\Products\ProductBulkEditor;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VariantImages;
@@ -29,6 +30,7 @@ use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
+use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Persistence\Models\StyleOption;
 use Modules\Catalog\Persistence\Models\StyleOptionValue;
@@ -44,19 +46,33 @@ final class ProductController
 
     use ConvertsDomainErrors;
 
-    public function index(Request $request, AdminScreen $screen, ProductViewStatistics $views): Response
+    public function index(Request $request, AdminScreen $screen, ProductViewStatistics $views, CategoryTreeQuery $tree): Response
     {
         Gate::authorize('catalog.view');
 
         $validated = $request->validate([
             'per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])],
+            'category' => ['nullable', 'integer', 'min:1'],
+            'brand' => ['nullable', 'regex:/^(none|\\d+)$/'],
+            'collection' => ['nullable', 'integer', 'min:1'],
         ]);
         $perPage = (int) ($validated['per_page'] ?? 30);
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status');
         $sort = ListSort::fromRequest($request, ['style_code' => 'style_code', 'status' => 'status']);
+        $brand = $validated['brand'] ?? null;
+        $taxonomy = [
+            'category' => isset($validated['category']) ? (int) $validated['category'] : null,
+            'brand' => $brand === null || $brand === 'none' ? $brand : (int) $brand,
+            'collection' => isset($validated['collection']) ? (int) $validated['collection'] : null,
+        ];
 
-        $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $screen->filterIds('product', (array) $request->query('ext', [])), $sort, $perPage);
+        $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $screen->filterIds('product', (array) $request->query('ext', [])), $sort, $perPage);
+        $options = [
+            'categories' => $this->categoryOptions($tree->tree()),
+            'brands' => $this->queries->brands()->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
+            'collections' => $this->queries->collections()->map(fn (ProductCollection $collection): array => ['id' => $collection->id, 'label' => $collection->translate('name') ?? $collection->slug])->all(),
+        ];
 
         // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang.
         $viewCounts = $views->counts($styles->getCollection()->pluck('id')->all());
@@ -64,7 +80,8 @@ final class ProductController
         return Inertia::render('Catalog::Products/Index', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
-            'filters' => ['q' => $search, 'status' => $status],
+            'filters' => ['q' => $search, 'status' => $status, 'category' => $taxonomy['category'], 'brand' => $taxonomy['brand'] === null ? null : (string) $taxonomy['brand'], 'collection' => $taxonomy['collection']],
+            'filterOptions' => $options,
             'sort' => $sort?->toArray(),
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
@@ -90,7 +107,7 @@ final class ProductController
                 ...$this->columns($screen, $styles->getCollection()->pluck('id')->all()),
                 'filters' => $screen->filters('product'),
                 'filterValues' => (array) $request->query('ext', []),
-                'actions' => $this->bulkActions($screen),
+                'actions' => $this->bulkActions($screen, $options),
             ],
         ]);
     }
@@ -133,15 +150,32 @@ final class ProductController
     }
 
     /**
-     * Thao tác hàng loạt (0.3.103): Mở bán / Ngừng bán (Catalog) + module Core (đổi giá…) + plugin.
+     * Thao tác hàng loạt: Mở bán / Ngừng bán (0.3.103), gán/gỡ danh mục, đổi thương hiệu, thêm/gỡ bộ sưu tập, xoá bản nháp
+     * (stabilization A4) + module Core (đổi giá…) + plugin.
      *
+     * @param  array{categories: list<array{id: int, label: string}>, brands: list<array{id: int, label: string}>, collections: list<array{id: int, label: string}>}  $options
      * @return list<array<string, mixed>>
      */
-    private function bulkActions(AdminScreen $screen): array
+    private function bulkActions(AdminScreen $screen, array $options): array
     {
+        $choices = fn (array $items): array => array_map(fn (array $item): array => ['value' => (string) $item['id'], 'label' => $item['label']], $items);
+        $edit = fn (string $key, string $label, string $action, string $field, array $values): array => [
+            'key' => $key, 'label' => $label, 'url' => route('admin.catalog.products.bulk-edit'), 'confirm' => true, 'data' => ['action' => $action],
+            'fields' => [['key' => 'target_id', 'label' => $field, 'required' => $action !== 'brand', 'options' => $values]],
+        ];
         $actions = Gate::allows('catalog.manage') ? [
             ['key' => 'activate', 'label' => 'Mở bán', 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'active']],
             ['key' => 'archive', 'label' => 'Ngừng bán (ẩn khỏi cửa hàng)', 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'archived']],
+            ...($options['categories'] === [] ? [] : [
+                $edit('category_add', 'Thêm vào danh mục', 'category_add', 'Danh mục', $choices($options['categories'])),
+                $edit('category_remove', 'Gỡ khỏi danh mục', 'category_remove', 'Danh mục', $choices($options['categories'])),
+            ]),
+            $edit('brand', 'Đổi thương hiệu', 'brand', 'Thương hiệu (để trống = bỏ thương hiệu)', $choices($options['brands'])),
+            ...($options['collections'] === [] ? [] : [
+                $edit('collection_add', 'Thêm vào bộ sưu tập', 'collection_add', 'Bộ sưu tập', $choices($options['collections'])),
+                $edit('collection_remove', 'Gỡ khỏi bộ sưu tập', 'collection_remove', 'Bộ sưu tập', $choices($options['collections'])),
+            ]),
+            ['key' => 'delete', 'label' => 'Xoá bản nháp', 'url' => route('admin.catalog.products.bulk-delete'), 'confirm' => true],
         ] : [];
         foreach (array_filter(Hook::slot('vani.admin.product.bulk_actions'), 'is_array') as $contributed) {
             array_push($actions, ...$contributed);
@@ -149,6 +183,36 @@ final class ProductController
         array_push($actions, ...$screen->actions('product', 'bulk'));
 
         return $actions;
+    }
+
+    /**
+     * Gán/gỡ danh mục, đổi thương hiệu, thêm/gỡ bộ sưu tập cho nhiều sản phẩm (stabilization A4).
+     */
+    public function bulkEdit(Request $request, ProductBulkEditor $editor): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'action' => ['required', Rule::in(ProductBulkEditor::ACTIONS)],
+            'target_id' => [Rule::requiredIf($request->input('action') !== 'brand'), 'nullable', 'integer', 'min:1'],
+        ]);
+        $changed = $editor->apply(array_map('intval', $data['ids']), $data['action'], isset($data['target_id']) ? (int) $data['target_id'] : null);
+
+        return back()->with('success', __('catalog::messages.bulk_edited', ['count' => $changed]));
+    }
+
+    /**
+     * Xoá nhiều bản nháp; sản phẩm đã mở bán/ngừng bán được bỏ qua và báo lại.
+     */
+    public function bulkDelete(Request $request, ProductBulkEditor $editor): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
+        $result = $editor->deleteDrafts(array_map('intval', $data['ids']));
+
+        return back()->with('success', $result['skipped'] === 0
+            ? __('catalog::messages.bulk_deleted', ['count' => $result['deleted']])
+            : __('catalog::messages.bulk_deleted_skipped', ['count' => $result['deleted'], 'skipped' => $result['skipped']]));
     }
 
     /**

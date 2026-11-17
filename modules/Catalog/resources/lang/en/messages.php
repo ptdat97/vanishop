@@ -2,6 +2,10 @@
 
 return [
     'bulk_status_changed' => 'Moved :count products to ":status".',
+    'collection_not_found' => 'The collection does not exist.',
+    'bulk_edited' => 'Updated :count products.',
+    'bulk_deleted' => 'Deleted :count draft products.',
+    'bulk_deleted_skipped' => 'Deleted :count draft products; skipped :skipped active or archived products (use "Archive" to hide them).',
     'parent_not_found' => 'The parent category does not exist.',
     'attribute_values_required' => 'A select attribute needs at least one value.',
     'category_has_children' => 'A category with sub-categories cannot be deleted.',

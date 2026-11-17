@@ -7,7 +7,7 @@ import Pagination from '@admin/Components/Pagination.vue';
 import { useListQuery, type ListSortState } from '@admin/list';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
-import { labelOptions } from '@admin/options';
+import { labelOptions, recordOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -18,7 +18,8 @@ import type { CatalogLabels, NavItem } from '../../types';
 const props = defineProps<{
     nav: NavItem[];
     labels: CatalogLabels;
-    filters: { q: string; status: string | null };
+    filters: { q: string; status: string | null; category: number | null; brand: string | null; collection: number | null };
+    filterOptions: Record<'categories' | 'brands' | 'collections', Array<{ id: number; label: string }>>;
     sort: ListSortState | null;
     products: {
         data: Array<{ id: number; style_code: string; name: string | null; brand: string | null; status: string; skus: number; image_url: string | null; views: number }>;
@@ -37,6 +38,10 @@ const props = defineProps<{
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'products')?.url ?? '');
 const q = ref(props.filters.q);
 const status = ref(props.filters.status ?? '');
+const category = ref<number | ''>(props.filters.category ?? '');
+const brand = ref(props.filters.brand ?? '');
+const collection = ref<number | ''>(props.filters.collection ?? '');
+const brandOptions = computed(() => [{ value: 'none', label: 'Chưa có thương hiệu' }, ...props.filterOptions.brands.map((item) => ({ value: String(item.id), label: item.label }))]);
 const perPageOptions = [30, 50, 100];
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
@@ -63,7 +68,7 @@ const columns = [
 const list = useListQuery(() => baseUrl.value);
 
 function search(page = 1, pageSize = props.products.per_page, sort = props.sort): void {
-    list.visit({ q: q.value, status: status.value, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
+    list.visit({ q: q.value, status: status.value, category: category.value, brand: brand.value, collection: collection.value, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
 }
 
 function changePageSize(pageSize: number): void {
@@ -156,6 +161,9 @@ function savePrice(url: string): void {
     <form class="mb-4 flex flex-wrap gap-2" @submit.prevent="search()">
         <input v-model="q" :class="inputClass" class="max-w-xs" type="search" placeholder="Tìm theo tên hoặc mã (không cần dấu)" aria-label="Tìm sản phẩm" />
         <div class="w-44"><Select v-model="status" :options="labelOptions(labels.product_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" /></div>
+        <div v-if="filterOptions.categories.length" class="w-52"><Select v-model="category" :options="recordOptions(filterOptions.categories)" empty-label="Mọi danh mục" aria-label="Danh mục (gồm danh mục con)" /></div>
+        <div class="w-48"><Select v-model="brand" :options="brandOptions" empty-label="Mọi thương hiệu" aria-label="Thương hiệu" /></div>
+        <div v-if="filterOptions.collections.length" class="w-48"><Select v-model="collection" :options="recordOptions(filterOptions.collections)" empty-label="Mọi bộ sưu tập" aria-label="Bộ sưu tập" /></div>
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
         <button type="submit" :class="secondaryButton">Lọc</button>
     </form>

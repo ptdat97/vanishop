@@ -31,6 +31,8 @@ Route::put('filters', [FacetController::class, 'update'])->name('filters.update'
 Route::resource('link-types', LinkTypeController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['link-types' => 'linkType']);
 
 Route::post('products/bulk-status', [ProductController::class, 'bulkStatus'])->name('products.bulk-status');
+Route::post('products/bulk-edit', [ProductController::class, 'bulkEdit'])->name('products.bulk-edit');
+Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
 Route::resource('products', ProductController::class)->except('show');
 
 Route::post('products/{product}/links', [ProductLinkController::class, 'store'])->name('products.links.store');
