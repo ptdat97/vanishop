@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Identity\Application\AdminQueries;
 use Modules\Identity\Application\StaffAdministration;
 use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Http\Requests\StaffRequest;
-use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;
 
 /**
@@ -21,6 +21,8 @@ use Modules\Identity\Persistence\Models\StaffUser;
  */
 final class StaffController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(Request $request): Response
     {
         Gate::authorize('staff.manage');
@@ -32,21 +34,14 @@ final class StaffController
         $role = (int) $request->query('role', 0);
         $status = (string) $request->query('status', '');
 
-        $staff = StaffUser::query()
-            ->with('roleAssignments.role')
-            ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
-            ->when($role > 0, fn ($query) => $query->whereHas('roleAssignments', fn ($query) => $query->where('role_id', $role)))
-            ->when(in_array($status, [StaffUser::STATUS_ACTIVE, StaffUser::STATUS_INVITED, StaffUser::STATUS_LOCKED], true), fn ($query) => $query->where('status', $status))
-            ->orderBy('name')
-            ->paginate($perPage)
-            ->withQueryString();
+        $staff = $this->queries->staff($search, $role, $status, $perPage);
 
         return Inertia::render('Identity::Staff/Index', [
             'baseUrl' => route('admin.staff.index'),
             'labels' => __('identity::labels'),
             'rolesUrl' => route('admin.staff.roles.index'),
             'filters' => ['q' => $search, 'role' => $role ?: null, 'status' => $status ?: null],
-            'roles' => Role::query()->orderBy('name')->get(['id', 'name'])->all(),
+            'roles' => $this->queries->roleOptions(['id', 'name']),
             'staff' => [
                 'data' => $staff->getCollection()->map(fn (StaffUser $member): array => [
                     'id' => $member->id,
@@ -132,7 +127,7 @@ final class StaffController
                 'is_self' => $staff->is(request()->user('staff')),
             ],
             'assignments' => $assignments,
-            'roles' => Role::query()->orderBy('name')->get(['id', 'code', 'name'])->all(),
+            'roles' => $this->queries->roleOptions(['id', 'code', 'name']),
             'scopes' => $scopes->all(),
         ]);
     }

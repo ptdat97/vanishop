@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\File;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Media\MediaManager;
 use Modules\Catalog\Persistence\Models\Media;
 
@@ -21,6 +22,8 @@ use Modules\Catalog\Persistence\Models\Media;
  */
 final class MediaLibraryController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public const UPLOAD_TYPES = ['jpg', 'jpeg', 'png', 'webp'];
 
     /** Video (0.3.91): phát trực tiếp file gốc trên trình duyệt. */
@@ -70,7 +73,7 @@ final class MediaLibraryController
     {
         Gate::authorize('media.view');
         $ids = array_values(array_unique(array_map('intval', (array) $request->validate(['ids' => ['required', 'array', 'max:100'], 'ids.*' => ['integer']])['ids'])));
-        $items = Media::query()->whereKey($ids)->get()->keyBy('id');
+        $items = $this->queries->mediaByIds($ids);
 
         return response()->json(['items' => array_values(array_filter(array_map(fn (int $id): ?array => isset($items[$id]) ? $this->present($items[$id]) : null, $ids)))]);
     }

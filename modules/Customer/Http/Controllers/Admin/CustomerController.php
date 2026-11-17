@@ -13,6 +13,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Customer\Application\AccountLifecycle;
 use Modules\Customer\Application\AddressBook;
+use Modules\Customer\Application\AdminQueries;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerQueries;
 use Modules\Customer\Application\CustomerSegmentService;
@@ -31,6 +32,8 @@ use Modules\Shared\Support\StoreClock;
  */
 final class CustomerController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(Request $request, CustomerQueries $queries, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
         Gate::authorize('customers.view', [ScopeRef::owner()]);
@@ -91,7 +94,7 @@ final class CustomerController
                 'birth_date' => $model->birth_date?->format((string) config('vanishop.locale.formats.date')),
                 'gender' => $model->gender,
                 'last_login_at' => StoreClock::format($model->last_login_at),
-                'merged_into' => $model->merged_into_id === null ? null : Customer::query()->whereKey($model->merged_into_id)->value('public_id'),
+                'merged_into' => $model->merged_into_id === null ? null : $this->queries->publicId((int) $model->merged_into_id),
             ],
             'segment' => ['customer_group_id' => $model->customer_group_id, 'tags' => $segments->tagsOf($model->id), 'groups' => $segments->groups()],
             // Ghi chú CSKH (nhân viên + plugin, EP v3 X6).

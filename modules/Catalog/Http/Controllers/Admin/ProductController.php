@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
@@ -35,11 +36,12 @@ use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Facades\Hook;
-use Modules\Shared\Domain\Text\VietnameseText;
 use Modules\Shared\Http\ListSort;
 
 final class ProductController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     use ConvertsDomainErrors;
 
     public function index(Request $request, AdminScreen $screen, ProductViewStatistics $views): Response
@@ -54,18 +56,7 @@ final class ProductController
         $status = $request->query('status');
         $sort = ListSort::fromRequest($request, ['style_code' => 'style_code', 'status' => 'status']);
 
-        $styles = Style::query()
-            ->with(['translations', 'brand:id,name', 'variants.gallery.media'])
-            ->when($search !== '', function ($query) use ($search): void {
-                foreach (VietnameseText::tokens($search) as $token) {
-                    $query->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
-                }
-            })
-            ->when(is_string($status) && StyleStatus::tryFrom($status) !== null, fn ($query) => $query->where('status', $status))
-            ->when(($pluginIds = $screen->filterIds('product', (array) $request->query('ext', []))) !== null, fn ($query) => $query->whereIn('id', $pluginIds))
-            ->when($sort, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('updated_at')->orderByDesc('id'))
-            ->paginate($perPage)
-            ->withQueryString();
+        $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $screen->filterIds('product', (array) $request->query('ext', [])), $sort, $perPage);
 
         // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang.
         $viewCounts = $views->counts($styles->getCollection()->pluck('id')->all());
@@ -173,7 +164,7 @@ final class ProductController
         $status = StyleStatus::from($data['status']);
         $changed = 0;
         foreach (array_unique(array_map('intval', $data['ids'])) as $id) {
-            $changed += Style::query()->whereKey($id)->exists() && $products->changeStatus($id, $status) ? 1 : 0;
+            $changed += $this->queries->productExists($id) && $products->changeStatus($id, $status) ? 1 : 0;
         }
 
         return back()->with('success', __('catalog::messages.bulk_status_changed', ['count' => $changed, 'status' => __("catalog::labels.product_status.{$status->value}")]));
@@ -303,11 +294,11 @@ final class ProductController
 
     private function form(?Style $style, CategoryTreeQuery $tree): Response
     {
-        $attributes = Attribute::query()->with(['translations', 'values.translations'])->orderBy('position')->orderBy('code')->get();
-        $linkTypes = LinkType::query()->with('translations')->orderBy('position')->orderBy('code')->get();
+        $attributes = $this->queries->attributes();
+        $linkTypes = $this->queries->linkTypes();
         $videoDrivers = app(VideoDrivers::class);
 
-        $optionTypes = OptionType::query()->with(['translations', 'values.translations'])->orderBy('position')->orderBy('code')->get();
+        $optionTypes = $this->queries->optionTypes();
         $optionValueTypes = $optionTypes->flatMap(fn (OptionType $type) => $type->values)->mapWithKeys(fn (OptionValue $value): array => [$value->id => $value->option_type_id])->all();
 
         return Inertia::render('Catalog::Products/Form', [
@@ -383,7 +374,7 @@ final class ProductController
             // Lưới tồn kho lọc theo sản phẩm (module Inventory — link theo tên route, Catalog không phụ thuộc Inventory).
             'stockUrl' => $style !== null && Route::has('admin.inventory.stock.index') && Gate::allows('inventory.view') ? route('admin.inventory.stock.index', ['style' => $style->style_code]) : null,
             'categories' => $this->categoryOptions($tree->tree()),
-            'brands' => Brand::query()->orderBy('position')->orderBy('name')->get(['id', 'name'])->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
+            'brands' => $this->queries->brands()->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
             // Khối Thuộc tính luôn hiện (kể cả khi chưa có thuộc tính): tạo nhanh tại form, link tới trang quản lý.
             'attributeUrls' => ['index' => route('admin.catalog.attributes.index'), 'store' => route('admin.catalog.attributes.store')],
             'attributeDefinitions' => $attributes->map(fn (Attribute $attribute): array => [
@@ -428,7 +419,7 @@ final class ProductController
     private function linkFormValues(Style $style, Collection $linkTypes): array
     {
         $linked = app(StyleLinkService::class)->linkedStyleIds($style->id);
-        $styles = Style::query()->with('translations')->whereKey(array_merge([], ...array_values($linked)))->get()->keyBy('id');
+        $styles = $this->queries->productsByIds(array_merge([], ...array_values($linked)));
 
         return $linkTypes->filter(fn (LinkType $type): bool => isset($linked[$type->id]))
             ->map(fn (LinkType $type): array => [

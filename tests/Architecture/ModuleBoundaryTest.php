@@ -184,3 +184,26 @@ it('C1: module thương mại chỉ dùng API khai báo của Identity/Extension
 
     expect($offenders)->toBe([]);
 });
+
+it('R9/D4: controller không tự truy vấn — không ::query(), DB::, gọi truy vấn tĩnh trên model (type-hint model cho route binding, hàm tiện ích tĩnh vẫn được)', function () {
+    $offenders = [];
+    foreach (glob(base_path('modules/*/Http/Controllers')) ?: [] as $directory) {
+        foreach (boundaryFiles($directory) as $path) {
+            $code = (string) file_get_contents($path);
+            preg_match_all('/^use (Modules\\\\\w+\\\\Persistence\\\\Models\\\\(\w+));/m', $code, $models);
+            $patterns = ['/::query\(\)/', '/\bDB::/'];
+            foreach ($models[2] as $model) {
+                $patterns[] = '/\b'.$model.'::(query|where\w*|find\w*|first\w*|all|create|update\w*|insert\w*|upsert|destroy|count|pluck|with|withCount|latest|oldest|orderBy\w*|select\w*|exists|doesntExist|sum|max|min|avg)\(/';
+            }
+            foreach ($patterns as $pattern) {
+                if (preg_match_all($pattern, $code, $matches, PREG_OFFSET_CAPTURE) > 0) {
+                    foreach ($matches[0] as [$text, $offset]) {
+                        $offenders[] = boundaryRelative($path).':'.(substr_count(substr($code, 0, $offset), "\n") + 1)." {$text}";
+                    }
+                }
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});

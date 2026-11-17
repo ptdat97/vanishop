@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Fulfillment\Application\AdminQueries;
 use Modules\Fulfillment\Application\CarrierHandoff;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
@@ -28,6 +29,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class ShipmentController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     /** Số dòng mỗi trang (mặc định là giá trị đầu) — như danh sách đơn hàng. */
     private const PER_PAGE_OPTIONS = [30, 50, 100];
 
@@ -57,11 +60,7 @@ final class ShipmentController
         $order = $number === '' ? null : $orders->findByNumber($number);
 
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = Shipment::query()->with('lines')
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($number !== '', fn ($query) => $query->where('order_id', $order->id ?? 0))
-            ->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
-            ->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $page = $this->queries->shipments($status, $number === '' ? null : ($order->id ?? 0), $extensionIds, $perPage);
         $shipments = collect($page->items());
         $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
 
@@ -74,7 +73,7 @@ final class ShipmentController
                 'id' => $order->id, 'number' => $order->number, 'status' => $order->status->value,
                 'status_label' => (string) __("ordering::labels.order_status.{$order->status->value}"),
                 'can_create' => in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)
-                    && ! Shipment::query()->where('order_id', $order->id)->where('status', '!=', ShipmentStatus::Cancelled)->exists(),
+                    && ! $this->queries->hasActiveShipments($order->id),
             ],
             'shipments' => $shipments->map(fn (Shipment $shipment): array => [
                 'id' => $shipment->id,
@@ -121,7 +120,7 @@ final class ShipmentController
         foreach ($ids as $orderId) {
             $order = $orders->find($orderId);
             if ($order === null || ! in_array($order->status, [OrderStatus::Confirmed, OrderStatus::Processing], true)
-                || Shipment::query()->where('order_id', $orderId)->where('status', '!=', ShipmentStatus::Cancelled)->exists()) {
+                || $this->queries->hasActiveShipments($orderId)) {
                 continue;
             }
             try {
@@ -142,7 +141,7 @@ final class ShipmentController
     public function bulkPush(Request $request, FulfillmentService $fulfillment, OrderReader $orders): RedirectResponse
     {
         Gate::authorize('fulfillment.manage');
-        $shipments = Shipment::query()->whereIn('order_id', $this->orderIds($request))->where('status', '!=', ShipmentStatus::Cancelled)->get();
+        $shipments = $this->queries->activeShipmentsOf($this->orderIds($request));
         $pushed = $fulfillment->pushToCarrier($shipments->pluck('id')->map(fn ($id): int => (int) $id)->all());
         // Vận đơn bị plugin chặn (vani.fulfillment.before_push): báo lý do theo đơn.
         $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
@@ -178,7 +177,7 @@ final class ShipmentController
     public function bulkHandOver(Request $request, FulfillmentService $fulfillment): RedirectResponse
     {
         Gate::authorize('fulfillment.manage');
-        $shipments = Shipment::query()->whereIn('order_id', $this->orderIds($request))->where('status', ShipmentStatus::Created)->get();
+        $shipments = $this->queries->shipmentsOf($this->orderIds($request), ShipmentStatus::Created);
         $moved = 0;
         foreach ($shipments as $shipment) {
             try {

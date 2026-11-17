@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Pricing\Contracts\PriceListSchedule;
+use Modules\Promotion\Application\AdminQueries;
 use Modules\Promotion\Application\CampaignService;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
@@ -23,6 +24,8 @@ use Modules\Shared\Support\StoreClock;
  */
 final class CampaignController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(CampaignService $campaigns): Response
     {
         Gate::authorize('promotion.view');
@@ -31,7 +34,7 @@ final class CampaignController
             'baseUrl' => route('admin.promotion.campaigns.index'),
             'labels' => __('promotion::labels'),
             'promotionsUrl' => route('admin.promotion.promotions.index'),
-            'campaigns' => Campaign::query()->withCount('promotions')->orderByDesc('starts_at')->get()->map(fn (Campaign $campaign): array => [
+            'campaigns' => $this->queries->campaigns()->map(fn (Campaign $campaign): array => [
                 'id' => $campaign->id, 'code' => $campaign->code, 'name' => $campaign->name, 'state' => $campaign->state(),
                 'starts_at' => StoreClock::format($campaign->starts_at),
                 'ends_at' => StoreClock::format($campaign->ends_at),
@@ -113,8 +116,7 @@ final class CampaignController
             ],
             // Kết quả chiến dịch (đơn, doanh thu) do plugin báo cáo góp vào dạng tab (vd. vani.reports) — M3.
             'extensions' => ['tabs' => $campaign === null ? [] : app(AdminScreen::class)->tabs('campaign', $campaign->id)],
-            'promotions' => Promotion::query()->where(fn ($query) => $query->whereNull('campaign_id')->when($campaign !== null, fn ($q) => $q->orWhere('campaign_id', $campaign?->id)))
-                ->orderByDesc('id')->get(['id', 'name', 'requires_voucher'])->map(fn (Promotion $promotion): array => ['id' => $promotion->id, 'name' => $promotion->name, 'requires_voucher' => $promotion->requires_voucher])->all(),
+            'promotions' => $this->queries->promotionsForCampaign($campaign?->id)->map(fn (Promotion $promotion): array => ['id' => $promotion->id, 'name' => $promotion->name, 'requires_voucher' => $promotion->requires_voucher])->all(),
             'priceLists' => $priceLists->schedulable(),
             'can' => ['manage' => Gate::allows('promotion.manage'), 'price_lists' => Gate::allows('pricing.manage')],
         ]);

@@ -26,7 +26,7 @@
 |---|---|---|
 | R7 | Module chỉ gọi module khác qua `Contracts/` hoặc lắng nghe `Events/`. Không dùng Model, Repository, bảng của module khác. | Arch test |
 | R8 | `Domain/` không phụ thuộc framework/hạ tầng (Eloquent, Facade, HTTP, Queue). | Arch test: `expect('Modules\*\Domain')->not->toUse(['Illuminate\Database', 'Illuminate\Support\Facades', 'Illuminate\Http'])` |
-| R9 | **Không đặt business logic trong Controller.** Controller chỉ làm ba việc: validate (Form Request), gọi Application service/Action, trả Resource/View. | Review + arch test (controller không dùng `Persistence`) |
+| R9 | **Không đặt business logic trong Controller.** Controller chỉ làm ba việc: validate (Form Request), gọi Application service/Action, trả Resource/View. | Arch test `ModuleBoundaryTest` R9/D4 (0.5.7): controller không `::query()`, `DB::`, gọi truy vấn tĩnh trên model — truy vấn đọc ở `Application/AdminQueries`; type-hint model cho route binding được phép |
 | R10 | **Không đặt business logic trong Theme/Storefront/Vue/Blade/CSS.** Giao diện chỉ hiển thị dữ liệu do Application/API trả về. | Review |
 | R11 | Mỗi module sở hữu các bảng của mình, và chỉ module đó được ghi vào các bảng này. | Review + [database](../07-database/database.md) |
 

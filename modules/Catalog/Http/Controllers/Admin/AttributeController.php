@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Domain\AttributeInputType;
 use Modules\Catalog\Domain\AttributeKind;
@@ -16,13 +17,15 @@ use Modules\Catalog\Persistence\Models\Attribute;
 
 final class AttributeController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     use ConvertsDomainErrors;
 
     public function index(): Response
     {
         Gate::authorize('catalog.view');
 
-        $attributes = Attribute::query()->with(['translations'])->withCount('values')->orderBy('position')->orderBy('code')->get();
+        $attributes = $this->queries->attributesWithUsage();
 
         return Inertia::render('Catalog::Taxonomy/Attributes', [
             'nav' => CatalogNavigation::all(),

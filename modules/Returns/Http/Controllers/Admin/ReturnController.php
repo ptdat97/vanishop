@@ -17,6 +17,7 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Fulfillment\Contracts\ReturnPickups;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Returns\Application\AdminQueries;
 use Modules\Returns\Application\ReturnReasons;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Contracts\ReturnRejected;
@@ -30,7 +31,7 @@ final class ReturnController
     /** Số dòng mỗi trang (mặc định là giá trị đầu) — như danh sách đơn hàng. */
     private const PER_PAGE_OPTIONS = [30, 50, 100];
 
-    public function __construct(private readonly ReturnReasons $reasons) {}
+    public function __construct(private readonly ReturnReasons $reasons, private readonly AdminQueries $queries) {}
 
     public function home(): RedirectResponse
     {
@@ -47,10 +48,7 @@ final class ReturnController
         $status = (string) $request->query('status', '');
         $search = strtoupper(trim((string) $request->query('q', '')));
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('number', $search)->orWhere('order_id', $orders->findByNumber($search)?->id ?? 0)))
-            ->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
-            ->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $page = $this->queries->returns($status, $search, $search === '' ? null : ($orders->findByNumber($search)?->id ?? 0), $extensionIds, $perPage);
         $numbers = $orders->numbers(collect($page->items())->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
 
         return Inertia::render('Returns::Returns/Index', [
@@ -69,7 +67,7 @@ final class ReturnController
             ] : [],
             // Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1); thao tác hàng loạt của plugin nối sau của Core.
             'extensions' => $screen->listProps('return', collect($page->items())->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
-            'counts' => ReturnRequest::query()->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total)->all(),
+            'counts' => $this->queries->countsByStatus(),
             'pagination' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             'returns' => collect($page->items())->map(fn (ReturnRequest $return): array => [
@@ -190,7 +188,7 @@ final class ReturnController
         Gate::authorize('returns.manage');
         $done = 0;
         $ids = $this->bulkIds($request);
-        foreach (ReturnRequest::query()->whereIn('id', $ids)->get() as $return) {
+        foreach ($this->queries->returnsByIds($ids) as $return) {
             if (! $return->status->canMoveTo(ReturnStatus::Approved)) {
                 continue;
             }
@@ -216,7 +214,7 @@ final class ReturnController
         $damaged = $damaged === 'damaged';
         $done = 0;
         $ids = $this->bulkIds($request);
-        foreach (ReturnRequest::query()->with('lines')->whereIn('id', $ids)->get() as $return) {
+        foreach ($this->queries->returnsByIds($ids, withLines: true) as $return) {
             if (! $return->status->canMoveTo(ReturnStatus::Received)) {
                 continue;
             }

@@ -7,11 +7,11 @@ namespace Modules\Fulfillment\Http\Controllers\Api;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Modules\Fulfillment\Application\AdminQueries;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Contracts\InvalidCarrierEvent;
 use Modules\Fulfillment\Domain\ShipmentStatus;
-use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 
@@ -20,6 +20,8 @@ use Modules\Shared\Context\CurrentContext;
  */
 final class CarrierWebhookController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function __invoke(string $carrier, Request $request, CarrierRegistry $registry, FulfillmentService $fulfillment, CurrentContext $context): JsonResponse
     {
         $implementation = $registry->carrier($carrier);
@@ -35,7 +37,7 @@ final class CarrierWebhookController
         }
 
         $applied = $context->runAs(ContextScope::system("carrier webhook {$carrier}"), function () use ($carrier, $event, $status, $fulfillment): ?bool {
-            $shipment = Shipment::query()->where('carrier_code', $carrier)->where('tracking_number', $event->trackingNumber)->first();
+            $shipment = $this->queries->byTracking($carrier, $event->trackingNumber);
 
             return $shipment === null ? null : $fulfillment->updateStatus($shipment->id, $status, $event->eventId, "carrier:{$carrier}", $event->description, $event->maskedPayload, occurredAt: $event->occurredAt);
         });

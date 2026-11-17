@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Identity\Contracts\Data\ScopeRef;
+use Modules\Notification\Application\AdminQueries;
 use Modules\Notification\Application\ChannelRegistry;
 use Modules\Notification\Application\TemplateAdmin;
 use Modules\Notification\Contracts\Data\NotificationType;
@@ -25,6 +26,8 @@ use Modules\Shared\Support\StoreLocale;
  */
 final class NotificationController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function templates(ChannelRegistry $channels, NotificationCatalog $catalog): Response
     {
         Gate::authorize('notifications.view', [ScopeRef::owner()]);
@@ -33,7 +36,7 @@ final class NotificationController
             'baseUrl' => route('admin.notifications.templates.index'),
             'types' => array_map(fn (NotificationType $type): array => ['label' => $type->label, 'variables' => $type->variables], $catalog->types()),
             'channels' => array_keys($channels->all()),
-            'templates' => NotificationTemplate::query()->orderBy('type')->orderBy('channel')->orderBy('locale')->get()
+            'templates' => $this->queries->templates()
                 ->map(fn (NotificationTemplate $template): array => $this->present($template))->all(),
             'can' => ['manage' => Gate::allows('notifications.manage', [ScopeRef::owner()])],
         ]);
@@ -72,10 +75,7 @@ final class NotificationController
         $perPage = (int) ($validated['per_page'] ?? 50);
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $q = is_string($request->query('q')) ? trim($request->query('q')) : '';
-        $page = NotificationLog::query()
-            ->when($status !== null && $status !== '', fn ($query) => $query->where('status', $status))
-            ->when($q !== '', fn ($query) => $query->where(fn ($query) => $query->where('recipient', 'like', "%{$q}%")->orWhere('idempotency_key', 'like', "%{$q}%")))
-            ->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $page = $this->queries->logs($status ?? '', $q, $perPage);
 
         return Inertia::render('Notification::Logs/Index', [
             'baseUrl' => route('admin.notifications.logs'),

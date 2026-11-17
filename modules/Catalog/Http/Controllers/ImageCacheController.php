@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Catalog\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Media\ImageCache;
-use Modules\Catalog\Persistence\Models\Media;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
@@ -16,10 +16,12 @@ use Throwable;
  */
 final class ImageCacheController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function __invoke(string $shard, string $checksum, string $size, string $extension, ImageCache $cache): BinaryFileResponse|RedirectResponse
     {
         abort_unless(str_starts_with($checksum, $shard), 404);
-        $media = Media::query()->where('checksum', $checksum)->first();
+        $media = $this->queries->mediaByChecksum($checksum);
         abort_if($media === null, 404);
 
         try {

@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Promotion\Application\AdminQueries;
 use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Application\PromotionService;
 use Modules\Promotion\Domain\Stacking;
@@ -22,6 +23,8 @@ use Modules\Shared\Support\StoreClock;
 
 final class PromotionController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function home(): RedirectResponse
     {
         Gate::authorize('promotion.view');
@@ -34,8 +37,7 @@ final class PromotionController
         Gate::authorize('promotion.view');
         $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
         $extensionIds = $screen->filterIds('promotion', $extensionFilters);
-        $promotions = Promotion::query()->withCount('vouchers')->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
-            ->orderByDesc('priority')->orderByDesc('id')->get();
+        $promotions = $this->queries->promotions($extensionIds);
 
         return Inertia::render('Promotion::Promotions/Index', [
             'baseUrl' => route('admin.promotion.promotions.index'),

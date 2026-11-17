@@ -8,12 +8,15 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Collections\CollectionService;
 use Modules\Catalog\Http\Requests\Admin\CollectionRequest;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 
 final class CollectionController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(): Response
     {
         Gate::authorize('catalog.view');
@@ -21,7 +24,7 @@ final class CollectionController
         return Inertia::render('Catalog::Collections/Index', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
-            'collections' => ProductCollection::query()->with('translations')->withCount('styles')->orderBy('position')->orderBy('slug')->get()
+            'collections' => $this->queries->collections()
                 ->map(fn (ProductCollection $collection): array => [
                     'id' => $collection->id,
                     'slug' => $collection->slug,

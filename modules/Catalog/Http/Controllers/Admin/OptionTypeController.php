@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Taxonomy\OptionTypeService;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Domain\OptionDisplayType;
@@ -21,6 +22,8 @@ use Modules\Catalog\Persistence\Models\OptionValue;
  */
 final class OptionTypeController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(OptionTypeService $service): Response
     {
         Gate::authorize('catalog.view');
@@ -28,7 +31,7 @@ final class OptionTypeController
 
         return Inertia::render('Catalog::Taxonomy/OptionTypes', [
             'nav' => CatalogNavigation::all(),
-            'types' => OptionType::query()->with(['translations', 'values.translations'])->orderBy('position')->orderBy('code')->get()->map(fn (OptionType $type): array => [
+            'types' => $this->queries->optionTypes()->map(fn (OptionType $type): array => [
                 'id' => $type->id, 'code' => $type->code, 'display_type' => $type->display_type->value, 'is_filterable' => $type->is_filterable,
                 'position' => $type->position, 'translations' => $type->translationsByLocale(),
                 'products' => $typeUsage[$type->id] ?? 0,

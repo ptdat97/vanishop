@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Identity\Application\AdminQueries;
 use Modules\Identity\Application\RoleAdministration;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Http\Requests\RoleRequest;
@@ -20,6 +21,8 @@ use Modules\Identity\Persistence\Models\StaffUser;
  */
 final class RoleController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(): Response
     {
         Gate::authorize('staff.manage');
@@ -27,7 +30,7 @@ final class RoleController
         return Inertia::render('Identity::Roles/Index', [
             'baseUrl' => route('admin.staff.roles.index'),
             'staffUrl' => route('admin.staff.index'),
-            'roles' => Role::query()->withCount(['permissions', 'assignments'])->orderBy('name')->get()->map(fn (Role $role): array => [
+            'roles' => $this->queries->rolesWithUsage()->map(fn (Role $role): array => [
                 ...$role->only(['id', 'code', 'name', 'is_system']),
                 'permissions_count' => $role->permissions_count,
                 'assignments_count' => $role->assignments_count,

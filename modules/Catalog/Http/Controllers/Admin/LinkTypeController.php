@@ -8,19 +8,22 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Http\Requests\Admin\LinkTypeRequest;
 use Modules\Catalog\Persistence\Models\LinkType;
 
 final class LinkTypeController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function index(): Response
     {
         Gate::authorize('catalog.view');
 
         return Inertia::render('Catalog::Taxonomy/LinkTypes', [
             'nav' => CatalogNavigation::all(),
-            'linkTypes' => LinkType::query()->with('translations')->withCount('groups')->orderBy('position')->orderBy('code')->get()
+            'linkTypes' => $this->queries->linkTypesWithUsage()
                 ->map(fn (LinkType $type): array => [
                     'id' => $type->id,
                     'code' => $type->code,

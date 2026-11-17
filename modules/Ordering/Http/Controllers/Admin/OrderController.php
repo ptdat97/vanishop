@@ -18,6 +18,7 @@ use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Ordering\Application\AdminQueries;
 use Modules\Ordering\Application\CustomerStatusLabel;
 use Modules\Ordering\Application\OrderCommands;
 use Modules\Ordering\Application\OrderQueries;
@@ -51,7 +52,7 @@ use Throwable;
 
 final class OrderController
 {
-    public function __construct(private readonly Extensions $extensions) {}
+    public function __construct(private readonly Extensions $extensions, private readonly AdminQueries $queries) {}
 
     public function home(): RedirectResponse
     {
@@ -175,7 +176,7 @@ final class OrderController
                 'options' => array_map(fn (array $option): array => [...$option, 'allowed' => $option['mode'] !== null && Gate::allows((string) $option['permission'])], $changer->options($order)),
             ]],
             // Giai đoạn vận hành (thanh tiến trình) + sự kiện vận đơn/thanh toán gộp vào lịch sử (0.3.96).
-            'stage' => (string) Order::query()->whereKey($order->id)->selectRaw(OrderStage::sql().' as stage')->value('stage'),
+            'stage' => $this->queries->stage($order->id),
             'deliveryIssue' => $this->deliveryIssue($order),
             'timeline' => $this->timeline($detail),
             // Thẻ Khách (0.3.97): lịch sử nhận hàng theo SĐT — đánh giá rủi ro trước khi xác nhận đơn COD.
@@ -301,7 +302,7 @@ final class OrderController
         ]);
         $to = OrderStatus::from($data['status']);
         $changed = 0;
-        foreach (Order::query()->whereIn('id', $data['ids'])->get() as $order) {
+        foreach ($this->queries->ordersByIds($data['ids']) as $order) {
             $plan = $changer->plan($order, $to);
             if ($plan['mode'] === null || ! Gate::allows((string) $plan['permission'])) {
                 continue;
@@ -420,7 +421,7 @@ final class OrderController
     private function paymentMethodLabels(): array
     {
         $labels = [];
-        foreach (Order::query()->distinct()->pluck('payment_method')->filter() as $code) {
+        foreach ($this->queries->usedPaymentMethods() as $code) {
             $labels[(string) $code] = (string) $code;
         }
         foreach (array_filter(Hook::slot('vani.admin.order.payment_methods'), 'is_array') as $contributed) {
@@ -439,7 +440,7 @@ final class OrderController
         $ids = array_values(array_unique(array_map('intval', (array) $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
         ])['ids'])));
-        $orders = Order::query()->with('lines')->whereIn('id', $ids)->get()->sortBy(fn (Order $order): int => (int) array_search($order->id, $ids, true));
+        $orders = $this->queries->ordersWithLinesInOrder($ids);
         // Mẫu phiếu của plugin (EP v3 X3, PackingSlipTemplate); `?template=` không có/đã tắt → mẫu Core.
         $templates = app(Extensions::class)->implementations(PackingSlipTemplate::TAG, PackingSlipTemplate::class);
         $current = $templates[(string) $request->query('template', '')] ?? null;
@@ -486,7 +487,7 @@ final class OrderController
 
         $confirmed = 0;
         $blocked = [];
-        foreach (Order::query()->whereIn('id', $data['ids'])->get() as $order) {
+        foreach ($this->queries->ordersByIds($data['ids']) as $order) {
             if (! OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
                 continue;
             }
@@ -528,7 +529,7 @@ final class OrderController
         $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
         ExternalCalls::guard("ordering.confirmation:{$channel}");
         $sent = 0;
-        foreach (Order::query()->whereIn('id', $data['ids'])->get() as $order) {
+        foreach ($this->queries->ordersByIds($data['ids']) as $order) {
             $view = $reader->find($order->id);
             if ($view === null || ! OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
                 continue;

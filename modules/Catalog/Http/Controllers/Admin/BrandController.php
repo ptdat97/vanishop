@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Taxonomy\TaxonomyService;
 use Modules\Catalog\Http\Requests\Admin\BrandRequest;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -18,12 +19,14 @@ use Modules\Extension\Contracts\AdminScreen;
  */
 final class BrandController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     use ConvertsDomainErrors;
 
     public function index(AdminScreen $screen): Response
     {
         Gate::authorize('catalog.view');
-        $brands = Brand::query()->withCount('styles')->orderBy('position')->orderBy('name')->get();
+        $brands = $this->queries->brandsWithUsage();
 
         return Inertia::render('Catalog::Taxonomy/Brands', [
             'nav' => CatalogNavigation::all(),

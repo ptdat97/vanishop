@@ -13,6 +13,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Payment\Application\AdminQueries;
 use Modules\Payment\Application\GatewayRegistry;
 use Modules\Payment\Application\PaymentService;
 use Modules\Payment\Application\ReconciliationLedger;
@@ -25,6 +26,8 @@ use Modules\Shared\Support\StoreClock;
 
 final class PaymentController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     /** Số dòng mỗi trang (mặc định là giá trị đầu) — như danh sách đơn hàng. */
     private const PER_PAGE_OPTIONS = [30, 50, 100];
 
@@ -43,14 +46,10 @@ final class PaymentController
         $status = $request->query('status');
         $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = Payment::query()
-            ->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))
-            ->when($search !== '', fn ($query) => $query->where('order_id', $orders->findByNumber($search)?->id ?? 0))
-            ->when($extensionIds !== null, fn ($query) => $query->whereIn('id', $extensionIds))
-            ->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $page = $this->queries->payments(is_string($status) ? $status : '', $search === '' ? null : ($orders->findByNumber($search)?->id ?? 0), $extensionIds, $perPage);
         $payments = collect($page->items());
         $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
-        $refunds = Refund::query()->whereIn('payment_id', Payment::query()->select('id'))->whereIn('status', ['requested', 'paying_out'])->orderBy('id')->get();
+        $refunds = $this->queries->refundsAwaitingPayout();
 
         return Inertia::render('Payment::Payments/Index', [
             'baseUrl' => route('admin.payment.payments.index'),
@@ -161,7 +160,7 @@ final class PaymentController
     public function completeRefund(Refund $refund, Request $request, PaymentService $payments): RedirectResponse
     {
         Gate::authorize('payments.refund');
-        abort_unless(Payment::query()->whereKey($refund->payment_id)->exists(), 404);
+        abort_unless($this->queries->paymentExists((int) $refund->payment_id), 404);
         $data = $request->validate(['note' => ['required', 'string', 'max:255']]);
         $payments->completeManualRefund($refund->id, $data['note']);
 

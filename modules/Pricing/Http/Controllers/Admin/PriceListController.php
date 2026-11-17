@@ -14,6 +14,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\AdminScreen;
+use Modules\Pricing\Application\AdminQueries;
 use Modules\Pricing\Application\BulkBasePrice;
 use Modules\Pricing\Application\ListPriceSync;
 use Modules\Pricing\Application\PriceListFile;
@@ -32,6 +33,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class PriceListController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     /** Số SKU mỗi trang ở trang làm việc bảng giá (mặc định là giá trị đầu). */
     private const PER_PAGE_OPTIONS = [50, 100, 200];
 
@@ -46,7 +49,7 @@ final class PriceListController
     {
         Gate::authorize('pricing.view');
 
-        $lists = PriceList::query()->withCount('prices')->orderByDesc('priority')->orderBy('code')->get();
+        $lists = $this->queries->priceListsWithUsage();
         $groupNames = array_column(app(CustomerGroupDirectory::class)->groups(), 'name', 'id');
 
         return Inertia::render('Pricing::PriceLists/Index', [

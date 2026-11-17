@@ -10,17 +10,19 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Categories\CategoryService;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Media\MediaLibrary;
 use Modules\Catalog\Http\Requests\Admin\CategoryImageRequest;
 use Modules\Catalog\Http\Requests\Admin\CategoryRequest;
 use Modules\Catalog\Persistence\Models\Category;
-use Modules\Catalog\Persistence\Models\Media;
 use Modules\Extension\Contracts\AdminScreen;
 
 final class CategoryController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     use ConvertsDomainErrors;
 
     public function index(CategoryTreeQuery $tree): Response
@@ -116,7 +118,7 @@ final class CategoryController
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate(['media_id' => ['required', 'integer'], 'alt' => ['nullable', 'string', 'max:255']]);
-        $stored = Media::query()->find($data['media_id']);
+        $stored = $this->queries->media((int) $data['media_id']);
         if ($stored === null) {
             throw ValidationException::withMessages(['image' => __('catalog::messages.media_not_found')]);
         }

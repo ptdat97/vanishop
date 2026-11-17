@@ -7,6 +7,7 @@ namespace Modules\Catalog\Http\Controllers\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Persistence\Models\LinkType;
 use Modules\Catalog\Persistence\Models\Style;
@@ -16,6 +17,8 @@ use Modules\Catalog\Persistence\Models\Style;
  */
 final class ProductLinkController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     public function store(Style $product, Request $request, StyleLinkService $links): RedirectResponse
     {
         Gate::authorize('catalog.manage');
@@ -26,7 +29,7 @@ final class ProductLinkController
             'one_way' => ['boolean'],
         ]);
 
-        $added = $links->link($product, LinkType::query()->findOrFail($data['link_type_id']), array_values($data['style_codes']), (bool) ($data['one_way'] ?? false));
+        $added = $links->link($product, $this->queries->linkType((int) $data['link_type_id']), array_values($data['style_codes']), (bool) ($data['one_way'] ?? false));
 
         return back()->with('success', __('catalog::messages.links_added', ['count' => $added]));
     }

@@ -15,6 +15,7 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\Data\ScopeRef;
+use Modules\Inventory\Application\AdminQueries;
 use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockAdjustmentService;
@@ -29,6 +30,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class StockController
 {
+    public function __construct(private readonly AdminQueries $queries) {}
+
     /** Sản phẩm mỗi trang (mọi variant của một sản phẩm luôn cùng trang). */
     private const PER_PAGE = 20;
 
@@ -190,7 +193,7 @@ final class StockController
     public function updateLocation(int $location, Request $request, LocationService $locations): RedirectResponse
     {
         Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);
-        $record = Location::query()->findOrFail($location);
+        $record = $this->queries->location($location);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],

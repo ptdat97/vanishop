@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.7 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K4/D4 "controller mỏng". Không đổi public API.
+
+### Đổi (nội bộ)
+- 25 controller Admin/webhook không còn tự truy vấn: truy vấn đọc chuyển sang `Modules\<M>\Application\AdminQueries` (Catalog, Customer, Fulfillment, Identity, Inventory, Notification, Ordering, Payment, Pricing, Promotion, Returns), controller nhận qua constructor.
+- Arch test R9/D4 (`ModuleBoundaryTest`): controller không dùng `::query()`, `DB::`, gọi truy vấn tĩnh trên model. Type-hint model cho route model binding và hàm tiện ích tĩnh của model vẫn được.
+
 ## 0.5.6 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K4/D3 "Domain Fulfillment". Không đổi public API.
