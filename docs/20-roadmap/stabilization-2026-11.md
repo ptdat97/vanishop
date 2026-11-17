@@ -43,6 +43,130 @@ Giữ nguyên các ràng buộc đang có: kết nối ngoài đóng băng (GHTK
 | **R5 — Security** | Rà lại [security §5.1](../15-security/security.md) với code hiện tại (phiên cùng nguồn của API, CSRF, rate limit, upload) | `vani:security:check` + test | ✅ 0.4.18 — xem [security §5.1](../15-security/security.md) dòng 2026-11-12: CSRF phiên cùng nguồn có test thật, giới hạn dò mã giảm giá, `npm audit` trong CI, `security:check` bắt Redis eviction. Chưa: CSP (Report-Only trước), pentest bên thứ ba |
 | **R6 — Load test** | Kịch bản tải cho duyệt sản phẩm → giỏ → checkout (công cụ ngoài, không thêm dependency vào app) + số liệu mục tiêu | Báo cáo một lần chạy trên máy dev | 🟡 2026-11-12 — `scripts/load/storefront.js` (k6) cập nhật theo hợp đồng sau API-first (bỏ `voucher_codes` khi đặt đơn; thêm gợi ý tìm kiếm, `/store`, beacon lượt xem). Đo đọc trên dev bằng ApacheBench: mọi endpoint trong NFR, 0 lỗi ([operations §9](../18-operations/operations.md)). **Chưa**: chạy k6 đủ kịch bản (gồm đặt đơn) trên staging — máy dev chưa cài k6 và không chạy luồng ghi vào DB dev |
 
+## P1 — Kiểm chứng phát hành Core 0.5.x
+
+> Owner giao 2026-11-17. Chạy trên **macOS** (máy dev Windows thiếu `phpredis`, Playwright, `gh`). Làm lần lượt V1 → V6; đợt nào phải sửa code thì một commit riêng rồi mới sang đợt sau. Mọi bước dùng DB riêng (`vanishop_testing`, `vanishop_upgrade`), không đụng DB dev.
+
+| Đợt | Việc | Kiểm chứng | Trạng thái |
+|---|---|---|---|
+| **V1 — CI GitHub xanh** | Chạy đủ `ci.yml` trên GitHub Actions (quality + tests: SQLite, type coverage, MySQL 8.4, Redis, concurrency, trình duyệt, từ điển dữ liệu) | Lần chạy Actions của commit mới nhất trên `main` xanh cả hai job | 🟡 2026-11-17 — job `quality` xanh trên máy dev sau khi sửa: Pint (5 registry sai thứ tự import), **Larastan 35 lỗi** (sửa tận gốc: kiểu trả về `LengthAwarePaginator` cụ thể, shape `ext` của bộ lọc tồn, `@throws` của `OrderCommands::confirm`, `match` thiếu nhánh, `?->`/`array_values` thừa, kiểm tra thừa trong contract kit; 3 kiểm tra phòng thủ dữ liệu plugin vào baseline), `test:dnd`/`test:admin` truyền thư mục cho `node --test` (Node ≥ 22 không nhận) → `*.test.mjs`. Cả bộ Pest cần `memory_limit` > 512 MB. **Arch test chỉ chạy đúng trên macOS/Linux**: 17 test lọc đường dẫn theo `/` nên đỏ trên Windows (`MicrokernelTest` còn nạp lại file test → `Cannot redeclare`) — không phải lỗi code. Chưa: xem kết quả Actions |
+| **V2 — Regression tiền & hàng** | Payment, Refund, Returns, Fulfillment: chạy riêng nhóm test của 4 module + invariant + concurrency liên quan, trên SQLite và MySQL | Không đỏ; số test không giảm so với lần trước | ⬜ |
+| **V3 — MySQL 8.4 thực tế** | Cả bộ test + nhóm concurrency trên MySQL 8.4 (không phải SQLite), `migrate:fresh` + seed demo, `vani:docs:schema --check` | Xanh; từ điển dữ liệu khớp schema | ⬜ (máy dev có MySQL 8.4.3, chạy được phần này) |
+| **V4 — Nâng cấp 0.4.x → 0.5.x** | Dựng DB có dữ liệu ở bản 0.4.69 (`a738839f`, commit cuối trước 0.5.0), rồi nâng code lên `main` và migrate | `migrate` không lỗi, không còn migration treo; `vani:plugin:doctor` sạch; đối soát tồn/thanh toán không chênh; Admin + storefront mở được, đặt được đơn | ⬜ |
+| **V5 — 29 plugin sau khi nâng Core** | Với DB của V4: `vani:plugin:upgrade` từng plugin, `vani:plugin:doctor`, `vani:plugin:health`, test suite `Plugins` | Mọi plugin tương thích Extension API hiện hành (`requires.extension_api`), không lỗi migration, test plugin xanh | ⬜ |
+| **V6 — Migration, backup, restore** | Mọi migration có `down()` chạy được (`migrate:rollback` toàn bộ rồi `migrate` lại trên DB trống); `vani:backup:drill --fresh --with-files` | Rollback/migrate lại không lỗi; drill ghi bằng chứng `backup_drills` khớp số dòng và số file | ⬜ |
+
+### Chạy trên macOS
+
+Chuẩn bị một lần (Homebrew):
+
+```bash
+brew install php@8.4 composer node@20 mysql@8.4 redis gh
+pecl install redis                      # phpredis cho bước test Redis
+brew services start mysql@8.4 && brew services start redis
+gh auth login
+git clone https://github.com/ptdat97/vanishop.git && cd vanishop
+composer install && npm ci && npx playwright install chromium
+cp .env.example .env && php artisan key:generate && npm run build
+mysql -uroot -e "CREATE DATABASE IF NOT EXISTS vanishop_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+```
+
+Biến môi trường dùng lại (cùng giá trị với CI):
+
+```bash
+export MYSQL_ENV="DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_PORT=3306 DB_DATABASE=vanishop_testing DB_USERNAME=root DB_PASSWORD="
+```
+
+#### V1 — CI GitHub
+
+```bash
+gh run list --branch main --limit 5            # lần chạy của commit mới nhất
+gh run watch                                   # theo dõi lần đang chạy
+gh run view --log-failed                       # log bước đỏ
+gh workflow run CI --ref main                  # chạy lại khi cần (workflow cần `workflow_dispatch`; không có thì push commit mới)
+```
+
+Chạy lại y hệt CI tại máy (khi Actions đỏ, để sửa nhanh):
+
+```bash
+./scripts/ci/clean-room-check.sh
+composer licenses --no-dev --format=json | php scripts/ci/license-check.php
+vendor/bin/pint --test
+php -d memory_limit=2G vendor/bin/phpstan analyse --no-progress
+composer audit --no-dev && npm audit --omit=dev
+npx vue-tsc --noEmit -p tsconfig.json && npm run test:dnd && npm run test:admin && npm run build
+php -d memory_limit=-1 vendor/bin/pest --compact            # SQLite (cả bộ cần > 512 MB)
+vendor/bin/pest --type-coverage --min=97
+env $MYSQL_ENV vendor/bin/pest --compact                    # MySQL 8.4
+CACHE_STORE=redis SESSION_DRIVER=redis REDIS_HOST=127.0.0.1 REDIS_CLIENT=phpredis vendor/bin/pest --compact
+env $MYSQL_ENV vendor/bin/pest --compact --group=concurrency
+vendor/bin/pest --compact --group=browser
+env $MYSQL_ENV sh -c 'php artisan migrate:fresh --force --no-interaction && php artisan vani:docs:schema --check'
+```
+
+#### V2 — Regression Payment, Refund, Returns, Fulfillment
+
+Refund nằm trong Payment + Returns: `PaymentFlowTest`, `AuthorizeCaptureTest`, `PaymentVerifyTest`, `ReturnFlowTest`, `ExchangeTest`…
+
+```bash
+for db in sqlite mysql; do
+  [ $db = mysql ] && E="$MYSQL_ENV" || E=""
+  env $E vendor/bin/pest --compact modules/Payment/Tests modules/Returns/Tests modules/Fulfillment/Tests \
+    tests/Feature/Invariants modules/Storefront/Tests/Feature/NativeReturnsTest.php
+done
+env $MYSQL_ENV vendor/bin/pest --compact --group=concurrency tests/Concurrency   # huỷ ↔ IPN, hoàn tiền trùng, đổi trả trùng
+```
+
+#### V3 — MySQL 8.4 thực tế
+
+Các lệnh MySQL ở V1 (cả bộ, concurrency, từ điển dữ liệu), thêm dữ liệu demo:
+
+```bash
+env $MYSQL_ENV sh -c 'php artisan migrate:fresh --force && php artisan db:seed --class=DemoSeeder --force'
+```
+
+#### V4 — Nâng cấp 0.4.69 → `main`
+
+Worktree riêng, DB riêng:
+
+```bash
+mysql -uroot -e "DROP DATABASE IF EXISTS vanishop_upgrade; CREATE DATABASE vanishop_upgrade CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+export UPG_ENV="DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=vanishop_upgrade DB_USERNAME=root DB_PASSWORD="
+git worktree add ../vanishop-0.4 a738839f && cd ../vanishop-0.4
+composer install && cp ../vanishop/.env .env
+env $UPG_ENV php artisan vani:install --no-interaction
+env $UPG_ENV php artisan db:seed --class=DemoSeeder --force            # dữ liệu như cửa hàng đang chạy
+cd ../vanishop                                                         # code main
+env $UPG_ENV php artisan migrate --force && env $UPG_ENV php artisan migrate:status | grep -i pending
+env $UPG_ENV php artisan vani:plugin:doctor
+env $UPG_ENV php artisan vani:inventory:verify && env $UPG_ENV php artisan vani:payment:verify
+git worktree remove ../vanishop-0.4
+```
+
+Sau đó mở Admin + storefront với `$UPG_ENV` (`env $UPG_ENV php artisan serve`), đặt một đơn COD, xác nhận, giao, trả hàng.
+
+#### V5 — 29 plugin
+
+Tiếp DB của V4:
+
+```bash
+for id in $(php -r 'foreach (glob("custom/plugin/*/vanishop.json") as $f) echo json_decode(file_get_contents($f), true)["id"], PHP_EOL;'); do
+  env $UPG_ENV php artisan vani:plugin:upgrade "$id" || echo "LỖI: $id"
+done
+env $UPG_ENV php artisan vani:plugin:doctor && env $UPG_ENV php artisan vani:plugin:health
+vendor/bin/pest --compact --testsuite=Plugins && env $MYSQL_ENV vendor/bin/pest --compact --testsuite=Plugins
+```
+
+#### V6 — Migration, backup, restore
+
+```bash
+env $MYSQL_ENV sh -c 'php artisan migrate:fresh --force && php artisan migrate:rollback --force --step=1000 && php artisan migrate --force'
+php artisan vani:backup:drill --fresh --with-files            # DB dev; xem bằng chứng ở bảng backup_drills
+php artisan backup:list
+```
+
+Ghi kết quả từng đợt vào cột "Trạng thái" ở bảng trên (✅ + ngày + ghi chú lỗi đã sửa).
+
 ## P2 — Trải nghiệm Admin
 
 Khảo sát 2026-11-12: sửa nhanh giá/tồn ngay trong danh sách sản phẩm, thao tác hàng loạt cho đơn/vận đơn/đổi trả/tồn/giá và báo cáo doanh thu theo ngày/sản phẩm/thương hiệu/kênh/cổng **đã có**. Việc P2 Admin ưu tiên khoảng trống khi cửa hàng lớn lên và thao tác hằng ngày còn chậm.
