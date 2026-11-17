@@ -12,6 +12,8 @@ enum MovementType: string
     case Commit = 'commit';
     case Return = 'return';
     case Adjust = 'adjust';
+    /** Phiếu nhập nhanh (stabilization A6): `reference` = số phiếu. */
+    case Receive = 'receive';
     case TransferOut = 'transfer_out';
     case TransferIn = 'transfer_in';
     case SafetyStock = 'safety_stock';

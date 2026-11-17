@@ -1,6 +1,17 @@
 <?php
 
 return [
+    'receipt_stale' => 'Someone else just changed this receipt — reload to see the latest version.',
+    'receipt_empty' => 'A receipt needs at least one SKU with a quantity.',
+    'receipt_too_many' => 'A receipt holds at most :max SKUs.',
+    'receipt_unknown_variant' => 'Some SKUs no longer exist — reload the page.',
+    'receipt_not_draft' => 'Receipt :number was already received or cancelled.',
+    'receipt_reason' => 'Goods receipt :number',
+    'receipt_quantity_invalid' => 'Line :line (:sku): quantity must be a positive whole number.',
+    'receipt_sku_unknown' => 'Line :line: no SKU :sku.',
+    'receipt_saved' => 'Saved receipt :number.',
+    'receipt_received' => 'Received :number: added :units units.',
+    'receipt_cancelled' => 'Cancelled receipt :number.',
     'external_authority' => 'Physical stock at this location is managed by [:authority]; manual adjustments are not allowed.',
     'stale' => 'This record was changed by someone else. Reload the page.',
     'saved' => 'Saved.',

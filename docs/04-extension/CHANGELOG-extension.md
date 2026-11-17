@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.15 — 2026-11-18 · Extension API 1.1.0 (không đổi)
+
+Stabilization A6 — Nhập hàng (thao tác SME). Không đổi API cho plugin.
+
+### Thêm
+- Phiếu nhập nhanh (`Tồn kho → Nhập hàng`, `StockReceiptService`, bảng `stock_receipts`/`stock_receipt_lines`): số phiếu `PN<yymm>-0001`; dòng thêm bằng gõ/quét SKU (Enter, quét lại cộng dồn, "SKU 5"), dán nhiều dòng hoặc tải file (.xlsx/.csv); nháp sửa được (khoá lạc quan) → "Nhập kho" cộng tồn một lần (biến động mới `receive`, `reference` = số phiếu) và trừ hàng đang về (ADR-047); phiếu đã nhập/huỷ không sửa. Đơn mua nhiều bước, nhận một phần, giá vốn để plugin (backlog L41).
+
 ## 0.5.14 — 2026-11-18 · Extension API 1.1.0 (không đổi)
 
 Stabilization A5 — Pricing. Không đổi API cho plugin.

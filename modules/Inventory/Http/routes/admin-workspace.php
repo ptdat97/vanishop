@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Inventory\Http\Controllers\Admin\ReconciliationController;
 use Modules\Inventory\Http\Controllers\Admin\StockController;
+use Modules\Inventory\Http\Controllers\Admin\StockReceiptController;
 
 // Prefix: /{admin}/inventory — tên route: admin.inventory.*
 Route::get('stock', [StockController::class, 'index'])->name('stock.index');
@@ -14,6 +15,14 @@ Route::get('stock/export', [StockController::class, 'export'])->name('stock.expo
 Route::post('stock/import', [StockController::class, 'import'])->name('stock.import');
 Route::post('stock/import/{token}', [StockController::class, 'applyImport'])->where('token', '[A-Za-z0-9]{40}')->name('stock.import.apply');
 Route::get('movements', [StockController::class, 'movements'])->name('movements.index');
+Route::get('receipts', [StockReceiptController::class, 'index'])->name('receipts.index');
+Route::get('receipts/create', [StockReceiptController::class, 'create'])->name('receipts.create');
+Route::post('receipts', [StockReceiptController::class, 'store'])->name('receipts.store');
+Route::post('receipts/parse', [StockReceiptController::class, 'parse'])->name('receipts.parse');
+Route::get('receipts/{receipt}', [StockReceiptController::class, 'show'])->whereNumber('receipt')->name('receipts.show');
+Route::put('receipts/{receipt}', [StockReceiptController::class, 'update'])->whereNumber('receipt')->name('receipts.update');
+Route::post('receipts/{receipt}/receive', [StockReceiptController::class, 'receive'])->whereNumber('receipt')->name('receipts.receive');
+Route::post('receipts/{receipt}/cancel', [StockReceiptController::class, 'cancel'])->whereNumber('receipt')->name('receipts.cancel');
 
 // Kho chính (cửa hàng một kho, ADR-042): sửa tên/địa chỉ. Nhiều kho, chuyển kho: plugin vani.warehouse.
 Route::put('stock/location/{location}', [StockController::class, 'updateLocation'])->whereNumber('location')->name('stock.location');

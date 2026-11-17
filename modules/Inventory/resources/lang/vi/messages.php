@@ -1,6 +1,17 @@
 <?php
 
 return [
+    'receipt_stale' => 'Phiếu vừa được người khác sửa — tải lại trang để xem bản mới.',
+    'receipt_empty' => 'Phiếu nhập cần ít nhất một SKU có số lượng.',
+    'receipt_too_many' => 'Một phiếu nhập tối đa :max SKU.',
+    'receipt_unknown_variant' => 'Có SKU không còn tồn tại — tải lại trang.',
+    'receipt_not_draft' => 'Phiếu :number đã nhập kho hoặc đã huỷ.',
+    'receipt_reason' => 'Nhập hàng :number',
+    'receipt_quantity_invalid' => 'Dòng :line (:sku): số lượng phải là số nguyên dương.',
+    'receipt_sku_unknown' => 'Dòng :line: không có SKU :sku.',
+    'receipt_saved' => 'Đã lưu phiếu nhập :number.',
+    'receipt_received' => 'Đã nhập kho phiếu :number: cộng :units món.',
+    'receipt_cancelled' => 'Đã huỷ phiếu :number.',
     'external_authority' => 'Tồn vật lý của location này do hệ thống ngoài [:authority] quản lý; không điều chỉnh tay ở VaniShop.',
     'stale' => 'Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang.',
     'saved' => 'Đã lưu.',

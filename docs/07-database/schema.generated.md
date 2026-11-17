@@ -105,6 +105,8 @@
 | [`staff_users`](#staff_users) | 10 |
 | [`stock_levels`](#stock_levels) | 9 |
 | [`stock_movements`](#stock_movements) | 14 |
+| [`stock_receipt_lines`](#stock_receipt_lines) | 4 |
+| [`stock_receipts`](#stock_receipts) | 12 |
 | [`stock_reservations`](#stock_reservations) | 10 |
 | [`style_attribute_values`](#style_attribute_values) | 6 |
 | [`style_link_group_items`](#style_link_group_items) | 4 |
@@ -1840,6 +1842,38 @@ Khoá ngoại: location_id → locations(id); variant_id → variants(id)
 | `created_at` | datetime(6) |  |  |
 
 Index: PK (id); index (location_id, created_at); index (reference); index (variant_id, created_at)
+
+## stock_receipt_lines
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `stock_receipt_id` | bigint unsigned |  |  |
+| `variant_id` | bigint unsigned |  |  |
+| `quantity` | int unsigned |  |  |
+
+Index: PK (id); unique (stock_receipt_id, variant_id); index (variant_id)
+
+Khoá ngoại: stock_receipt_id → stock_receipts(id) on delete cascade
+
+## stock_receipts
+
+| Cột | Kiểu | Null | Mặc định |
+|---|---|---|---|
+| `id` | bigint unsigned |  |  |
+| `number` | varchar(32) |  |  |
+| `location_id` | bigint unsigned |  |  |
+| `supplier` | varchar(120) | có |  |
+| `note` | varchar(500) | có |  |
+| `status` | varchar(16) |  | `draft` |
+| `created_by_type` | varchar(16) | có |  |
+| `created_by_id` | bigint unsigned | có |  |
+| `received_at` | timestamp | có |  |
+| `lock_version` | int unsigned |  | `0` |
+| `created_at` | timestamp | có |  |
+| `updated_at` | timestamp | có |  |
+
+Index: PK (id); unique (number); index (status, created_at)
 
 ## stock_reservations
 

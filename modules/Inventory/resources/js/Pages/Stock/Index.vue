@@ -31,7 +31,7 @@ type OptionFilter = { code: string; name: string; values: string[] };
  */
 const props = defineProps<{
     labels: InventoryLabels;
-    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; provinces: string; locations: string | null; default_location: string | null; main_location: string | null };
+    urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; receipts: string; provinces: string; locations: string | null; default_location: string | null; main_location: string | null };
     links: Array<{ label: string; url: string }>;
     mainLocation: { id: number; name: string; address: string | null; province_code: string | null; lock_version: number } | null;
     query: Criteria;
@@ -277,6 +277,7 @@ function createDefault(): void {
 <template>
     <Head title="Tồn kho" />
     <PageHeader title="Tồn kho" subtitle="Gõ số tồn vào ô (Enter: xuống dòng) rồi Lưu, hoặc chọn nhiều SKU để sửa hàng loạt. Bán được = tồn − đang giữ − tồn an toàn.">
+        <Link :href="urls.receipts" :class="secondaryButton" data-receipts>Nhập hàng</Link>
         <a :href="urls.export" :class="secondaryButton">Xuất CSV</a>
         <button v-if="canAdjust && locations.length" type="button" :class="secondaryButton" @click="showImport = !showImport">Nhập CSV</button>
         <Link v-for="link in links" :key="link.url" :href="link.url" :class="secondaryButton">{{ link.label }}</Link>
