@@ -114,7 +114,8 @@ Http ──► Application ──► Domain
 
 | Mức | Context | Cách làm |
 |---|---|---|
-| **Rich domain** | Inventory, Checkout (totals), Ordering (state machine), Payment, Pricing, Promotion | Quy tắc nằm trong `Domain/` thuần PHP, test unit không cần DB. Eloquent chỉ lưu trữ |
+| **Rich domain** | Inventory, Ordering (state machine), Pricing, Promotion; **mục tiêu** cho Payment, Returns, Fulfillment (quy tắc hiện còn nằm trong Application service — [architecture-consolidation D1–D3](../20-roadmap/architecture-consolidation.md)) | Quy tắc nằm trong `Domain/` thuần PHP, test unit không cần DB. Eloquent chỉ lưu trữ |
+| **Điều phối** | Checkout (ghép giỏ, giá, khuyến mãi, thuế, phí giao; phép tính tiền dùng `Shared\Domain\Money`), Storefront (tầng ghép, không có bảng) | Application gọi contract các module khác; không có `Domain/` riêng |
 | **CRUD domain** | Content, Notification (template), cấu hình cửa hàng, brand và thuộc tính Catalog | Application dùng Eloquent trực tiếp qua Persistence; vẫn không có logic trong Controller |
 
 ## 5. Đăng ký module
@@ -122,13 +123,15 @@ Http ──► Application ──► Domain
 `App\Providers\ModuleServiceProvider` đọc `config/modules.php` (danh sách module theo thứ tự phụ thuộc) rồi đăng ký `<Context>ServiceProvider` của từng module. Service provider của module nạp route, migration, view, lang, trang Inertia, hooks.php và bind các Contract.
 
 ```php
-// config/modules.php
+// config/modules.php (2026-11-17) — upstream trước; Content và Reporting đã là plugin (vani.cms, vani.reports)
 return [
-    'Shared', 'Tenancy', 'Identity', 'Extension', 'Integration',
-    'Catalog', 'Pricing', 'Inventory', 'Customer', 'Cart', 'Promotion', 'Checkout',
-    'Ordering', 'Payment', 'Fulfillment', 'Returns', 'Content', 'Notification', 'Reporting',
+    'Shared', 'Tenancy', 'Identity', 'Extension',
+    'Catalog', 'Pricing', 'Inventory', 'Cart', 'Promotion', 'Ordering', 'Customer',
+    'Payment', 'Checkout', 'Fulfillment', 'Returns', 'Notification', 'Integration', 'Storefront',
 ];
 ```
+
+Thứ tự này là hướng phụ thuộc: module chỉ nên dùng `Contracts` của module đứng trước (nghe `Events` thì từ module nào cũng được). Hiện còn 4 cạnh đi ngược — xem [architecture-consolidation §2.3](../20-roadmap/architecture-consolidation.md); arch test giữ thứ tự là việc M1 của đợt K1.
 
 ## 6. Kiểm thử ranh giới
 

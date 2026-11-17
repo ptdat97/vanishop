@@ -168,6 +168,8 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 
 ### 6.1 Rà soát hợp đồng plugin (2026-11-16, Core 0.4.68)
 
+> Kế hoạch xử lý các mục "Thiếu"/"chưa có code" dưới đây (ADR-048 version API mở rộng, tách API plugin khỏi API giữa module, mức ổn định, deprecation log, circuit breaker): [architecture-consolidation §3.4, đợt K2–K3](../20-roadmap/architecture-consolidation.md).
+
 | Hạng mục | Hiện trạng | Đánh giá |
 |---|---|---|
 | Tương thích version Core | `requires.vanishop` (semver) kiểm ở install/enable/upgrade; dựng cache loại plugin không tương thích (mục 6) | Đủ về cơ chế. **Nhưng** mọi plugin trong repo khai `^0.4`, trong khi 0.4.x đã có thay đổi phá vỡ ở bản vá (0.4.21, 0.4.22, 0.4.25–0.4.27 — xem changelog): ràng buộc `^0.4` không bảo vệ được plugin. Policy ([extension-model §5](../04-extension/extension-model.md)) yêu cầu phá vỡ ở giai đoạn `0.x` phải tăng số giữa |
