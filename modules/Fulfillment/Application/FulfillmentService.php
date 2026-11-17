@@ -9,17 +9,16 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
-use Modules\Fulfillment\Contracts\CarrierAssignment;
 use Modules\Fulfillment\Contracts\Data\AllocationProposal;
-use Modules\Fulfillment\Contracts\Data\CarrierAssignmentContext;
-use Modules\Fulfillment\Contracts\Data\CarrierChoice;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
 use Modules\Fulfillment\Contracts\Data\SourcingRequest;
 use Modules\Fulfillment\Contracts\FulfillmentRejected;
 use Modules\Fulfillment\Contracts\ShipmentBooking;
+use Modules\Fulfillment\Domain\AllocationCheck;
+use Modules\Fulfillment\Domain\BookingRetry;
 use Modules\Fulfillment\Domain\FulfillmentProgress;
+use Modules\Fulfillment\Domain\ShipmentCod;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Events\ShipmentCreated;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
@@ -29,7 +28,6 @@ use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\Data\ReservedLine;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Inventory\Contracts\InventoryReturns;
-use Modules\Ordering\Contracts\Data\OrderLineData;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
@@ -51,7 +49,7 @@ final class FulfillmentService implements ShipmentBooking
         private readonly InventoryReservation $inventory,
         private readonly InventoryReturns $returns,
         private readonly AuditLogger $audit,
-        private readonly Extensions $extensions,
+        private readonly CarrierSelection $carriers,
     ) {}
 
     /**
@@ -64,7 +62,7 @@ final class FulfillmentService implements ShipmentBooking
      */
     public function createForOrder(int $orderId, ?string $carrierCode = null): array
     {
-        [$carrierCode, $serviceCode, $assignedBy] = $this->carrierFor($orderId, $carrierCode);
+        [$carrierCode, $serviceCode, $assignedBy] = $this->carriers->choose($orderId, $carrierCode);
         $carrier = $this->registry->carrier($carrierCode) ?? throw new \InvalidArgumentException("Carrier [{$carrierCode}] chưa đăng ký.");
 
         $ids = DB::transaction(function () use ($orderId, $carrierCode, $serviceCode, $assignedBy): array {
@@ -81,20 +79,29 @@ final class FulfillmentService implements ShipmentBooking
             $strategy = $this->registry->sourcing()
                 ?? throw new \InvalidArgumentException('SourcingStrategy chưa đăng ký.');
             $proposals = $strategy->allocate(new SourcingRequest($orderId, $lines, $reserved, $order->shippingAddress));
-            $this->assertMatchesReservation($proposals, $lines, $reserved);
+            $orderLines = [];
+            foreach ($lines as $line) {
+                $orderLines[$line->id] = ['variant' => $line->variantId, 'quantity' => $line->quantity];
+            }
+            if (! AllocationCheck::matches(
+                array_map(fn (AllocationProposal $proposal): array => ['location' => $proposal->locationId, 'lines' => $proposal->lines], $proposals),
+                $orderLines,
+                array_map(fn (ReservedLine $row): array => ['location' => $row->locationId, 'variant' => $row->variantId, 'quantity' => $row->quantity], $reserved),
+            )) {
+                throw FulfillmentRejected::allocationMismatch();
+            }
 
             $ids = [];
             // Thu hộ: cổng thu tiền khi giao đặt đơn ở `cod_pending` (GatewayCapabilities::collectsOnDelivery).
-            $cod = $order->paymentStatus === 'cod_pending' ? $order->totalAmount : 0;
-            foreach ($proposals as $index => $proposal) {
+            $cod = ShipmentCod::amounts(count($proposals), $order->paymentStatus === 'cod_pending', $order->totalAmount);
+            foreach (array_values($proposals) as $index => $proposal) {
                 $shipment = Shipment::query()->create([
                     'public_id' => (string) Str::ulid(), 'order_id' => $orderId, 'location_id' => $proposal->locationId,
-                    'carrier_code' => $carrierCode, 'service_code' => $serviceCode, 'cod_amount' => $index === 0 ? $cod : 0, 'currency_code' => $order->currencyCode,
+                    'carrier_code' => $carrierCode, 'service_code' => $serviceCode, 'cod_amount' => $cod[$index], 'currency_code' => $order->currencyCode,
                     'status' => ShipmentStatus::PendingBooking,
                 ]);
-                $variantByLine = array_column(array_map(fn ($line): array => ['id' => $line->id, 'variant' => $line->variantId], $lines), 'variant', 'id');
                 foreach ($proposal->lines as $lineId => $quantity) {
-                    ShipmentLine::query()->create(['shipment_id' => $shipment->id, 'order_line_id' => $lineId, 'variant_id' => $variantByLine[$lineId], 'quantity' => $quantity]);
+                    ShipmentLine::query()->create(['shipment_id' => $shipment->id, 'order_line_id' => $lineId, 'variant_id' => $orderLines[$lineId]['variant'], 'quantity' => $quantity]);
                 }
                 $this->recordEvent($shipment, ShipmentStatus::PendingBooking, "created:{$shipment->public_id}", 'system', $assignedBy, []);
                 event(new ShipmentCreated($shipment->id, $orderId, $carrierCode));
@@ -124,7 +131,7 @@ final class FulfillmentService implements ShipmentBooking
     public function pushToCarrier(array $shipmentIds): int
     {
         $queued = 0;
-        $shipments = Shipment::query()->whereIn('id', $shipmentIds)->whereIn('status', [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed])->get();
+        $shipments = Shipment::query()->whereIn('id', $shipmentIds)->get()->filter(fn (Shipment $shipment): bool => $shipment->status->awaitsBooking());
         foreach ($shipments as $shipment) {
             if (! ($this->registry->carrier($shipment->carrier_code)?->capabilities()->autoBooking ?? false) || $this->pushBlockers($shipment) !== []) {
                 continue;
@@ -151,49 +158,13 @@ final class FulfillmentService implements ShipmentBooking
     }
 
     /**
-     * Hãng cho vận đơn mới: nhân viên chọn → quy tắc của plugin (`CarrierAssignment`, EP v3 X3) → hãng của phương thức
-     * giao khách chọn → hãng mặc định. Phần tử thứ ba: lý do chọn (ghi vào lịch sử vận đơn).
-     *
-     * @return array{0: string, 1: ?string, 2: ?string} [carrier, dịch vụ, lý do]
-     */
-    private function carrierFor(int $orderId, ?string $requested): array
-    {
-        if ($requested !== null) {
-            return [$requested, null, null];
-        }
-
-        $order = $this->orders->find($orderId);
-        $method = $order?->shippingMethod ?? [];
-        if ($order !== null) {
-            $context = new CarrierAssignmentContext(
-                $order->id, $order->number, $order->shippingAddress, $order->paymentStatus === 'cod_pending' ? $order->totalAmount : 0, $order->totalAmount,
-                array_sum(array_map(fn ($line): int => $line->quantity, $this->orders->lines($orderId))), $method,
-            );
-            foreach ($this->extensions->implementations(CarrierAssignment::TAG, CarrierAssignment::class, fn (CarrierAssignment $rule): string => $rule::class) as $rule) {
-                $choice = $this->extensions->call($rule, fn (): ?CarrierChoice => $rule->assign($context), null, 'carrier.assign');
-                if ($choice instanceof CarrierChoice && $this->registry->acceptsNewShipments($choice->carrierCode)) {
-                    return [$choice->carrierCode, $choice->serviceCode, $choice->reason];
-                }
-            }
-        }
-
-        $source = (string) ($method['source'] ?? '');
-        if ($source !== '' && $this->registry->acceptsNewShipments($source)) {
-            return [$source, isset($method['code']) ? (string) $method['code'] : null, null];
-        }
-
-        // Phí giao không gắn hãng (phí cố định), carrier đã tắt hoặc đang ngừng (draining) → carrier mặc định.
-        return [(string) config('vanishop.fulfillment.default_carrier', 'manual'), null, null];
-    }
-
-    /**
      * Ghi nhận mã vận đơn (nhân viên nhập với carrier thủ công, hoặc kết quả đặt tự động).
      */
     public function book(int $shipmentId, ?string $trackingNumber, ?string $serviceCode = null, ?string $labelUrl = null): void
     {
         DB::transaction(function () use ($shipmentId, $trackingNumber, $serviceCode, $labelUrl): void {
             $shipment = Shipment::query()->whereKey($shipmentId)->lockForUpdate()->firstOrFail();
-            if (! in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true)) {
+            if (! $shipment->status->awaitsBooking()) {
                 throw FulfillmentRejected::invalidTransition($shipment->status->value, ShipmentStatus::Created->value);
             }
 
@@ -221,7 +192,7 @@ final class FulfillmentService implements ShipmentBooking
     public function bookAutomatically(int $shipmentId, int $maxAttempts): void
     {
         $shipment = Shipment::query()->find($shipmentId);
-        if ($shipment === null || ! in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true)) {
+        if ($shipment === null || ! $shipment->status->awaitsBooking()) {
             return;
         }
 
@@ -230,13 +201,13 @@ final class FulfillmentService implements ShipmentBooking
             $this->book($shipmentId, null);
         } catch (Throwable $exception) {
             $shipment->refresh();
-            if (! in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true)) {
+            if (! $shipment->status->awaitsBooking()) {
                 // Lần đẩy khác (bấm trùng, plugin) vừa đặt xong hoặc vận đơn vừa bị huỷ: không còn gì để làm.
                 return;
             }
             Log::warning('Đặt vận đơn với hãng lỗi.', ['shipment' => $shipment->public_id, 'carrier' => $shipment->carrier_code, 'exception' => $exception]);
             $shipment->update(['last_error' => mb_substr($exception->getMessage(), 0, 255)]);
-            if ($shipment->booking_attempts >= $maxAttempts && $shipment->status === ShipmentStatus::PendingBooking) {
+            if (BookingRetry::exhausted((int) $shipment->booking_attempts, $maxAttempts, $shipment->status)) {
                 DB::transaction(fn () => $this->apply(Shipment::query()->whereKey($shipmentId)->lockForUpdate()->firstOrFail(), ShipmentStatus::BookingFailed, "booking_failed:{$shipment->booking_attempts}", 'system', $exception->getMessage(), [], strict: false));
 
                 return;
@@ -379,48 +350,6 @@ final class FulfillmentService implements ShipmentBooking
             return true;
         } catch (UniqueConstraintViolationException) {
             return false;
-        }
-    }
-
-    /**
-     * @param  list<AllocationProposal>  $proposals
-     * @param  list<OrderLineData>  $lines
-     * @param  list<ReservedLine>  $reserved
-     */
-    private function assertMatchesReservation(array $proposals, array $lines, array $reserved): void
-    {
-        $proposedByLine = [];
-        $proposedByStock = [];
-        $variantByLine = [];
-        foreach ($lines as $line) {
-            $variantByLine[$line->id] = $line->variantId;
-        }
-        foreach ($proposals as $proposal) {
-            foreach ($proposal->lines as $lineId => $quantity) {
-                if (! isset($variantByLine[$lineId]) || $quantity < 1) {
-                    throw FulfillmentRejected::allocationMismatch();
-                }
-                $proposedByLine[$lineId] = ($proposedByLine[$lineId] ?? 0) + $quantity;
-                $key = "{$proposal->locationId}:{$variantByLine[$lineId]}";
-                $proposedByStock[$key] = ($proposedByStock[$key] ?? 0) + $quantity;
-            }
-        }
-
-        $reservedByStock = [];
-        foreach ($reserved as $row) {
-            $key = "{$row->locationId}:{$row->variantId}";
-            $reservedByStock[$key] = ($reservedByStock[$key] ?? 0) + $row->quantity;
-        }
-
-        foreach ($lines as $line) {
-            if (($proposedByLine[$line->id] ?? 0) !== $line->quantity) {
-                throw FulfillmentRejected::allocationMismatch();
-            }
-        }
-        foreach ($proposedByStock as $key => $quantity) {
-            if ($quantity > ($reservedByStock[$key] ?? 0)) {
-                throw FulfillmentRejected::allocationMismatch();
-            }
         }
     }
 }

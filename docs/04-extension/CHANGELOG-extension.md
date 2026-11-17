@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.6 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K4/D3 "Domain Fulfillment". Không đổi public API.
+
+### Đổi (nội bộ)
+- `Fulfillment\Domain`: `AllocationCheck` (phân bổ khớp dòng đơn và hàng đang giữ theo kho), `ShipmentCod` (COD thu ở vận đơn đầu), `BookingRetry` (hết lượt đặt lại), `ShipmentStatus::awaitsBooking()` — unit test không cần DB.
+- `FulfillmentService` 426 → 356 dòng; chọn hãng tách ra `CarrierSelection`.
+
 ## 0.5.5 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K4/D2 "Domain Returns". Không đổi public API (contract `Returns` giữ nguyên).

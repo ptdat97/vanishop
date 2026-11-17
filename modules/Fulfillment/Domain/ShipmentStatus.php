@@ -40,6 +40,12 @@ enum ShipmentStatus: string
         return in_array($this, [self::Delivered, self::Returned, self::Cancelled], true);
     }
 
+    /** Chờ đặt vận đơn với hãng (mới tạo hoặc đặt lỗi) — nhân viên "Đẩy lên hãng"/nhập mã được. */
+    public function awaitsBooking(): bool
+    {
+        return in_array($this, [self::PendingBooking, self::BookingFailed], true);
+    }
+
     /** Hàng đã rời kho. */
     public function hasLeftWarehouse(): bool
     {
