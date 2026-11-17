@@ -175,7 +175,7 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 |---|---|---|
 | Tương thích version Core | `requires.vanishop` (semver) kiểm ở install/enable/upgrade; dựng cache loại plugin không tương thích (mục 6) | ✅ 0.5.1: thay bằng `requires.extension_api` ([ADR-048](../19-adr/ADR-048-extension-api-version.md)); `requires.vanishop` tuỳ chọn |
 | Version hợp đồng tách khỏi version Core | ✅ 0.5.1 — `vanishop.extension_api` (1.0.0), `#[PluginApi]` + `plugin-api.snapshot`, mức `stable`/`experimental`, test tự xếp loại major/minor ([ADR-048](../19-adr/ADR-048-extension-api-version.md)) | Đủ |
-| Deprecation policy | `@deprecated` + giữ ≥ 1 minor (đang có 2 chỗ: `AdminScreen`, `ReportPeriod`) | Log `vani.deprecation` khi plugin dùng điểm deprecated **chưa có code** |
+| Deprecation policy | `@deprecated` + giữ ≥ 1 minor (đang có 2 chỗ: `AdminScreen`, `ReportPeriod`) | ✅ 0.5.2: `#[\Deprecated]`/`#[PluginApi(deprecated)]`/hook `deprecated`, log `vani.deprecation`, doctor `deprecated_usage`. Trước đó: log `vani.deprecation` khi plugin dùng điểm deprecated **chưa có code** |
 | Migration khi nâng plugin | Chỉ tiến, chạy migration/seeder chưa chạy, expand/contract; lỗi → `failed` + `last_error` | Đủ. MySQL không rollback DDL → migration phải idempotent (mục 7) |
 | Dependency resolution | semver, topo sort, vòng, `conflicts`, capability, chặn tắt nguồn cuối | Đủ |
 | Rollback khi plugin lỗi | Lỗi `register()`/`boot()` → bỏ qua plugin, Core chạy; safe mode; `draining`; không hạ version | Không có hạ version tự động (cố ý: dữ liệu đã migrate). Rollback = deploy lại code cũ của plugin **cùng** version đã cài, hoặc `disable`. Circuit breaker theo plugin vẫn Designed (§8) |
@@ -197,7 +197,7 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 | Tình huống | Hành vi |
 |---|---|
 | Exception trong `register()`/`boot()` (kể cả khi nghe hook chưa khai báo/hook internal) | Loader bắt lỗi, ghi log, đánh dấu plugin `failed` (không nạp ở request sau), **tiếp tục boot Core**: Implemented |
-| Plugin làm hỏng request liên tục | (Designed) Circuit breaker theo plugin: quá N lỗi/phút ở slot/filter không giao dịch thì tạm bỏ qua plugin đó 5 phút |
+| Plugin làm hỏng request liên tục | **Implemented** 0.5.2 (`PluginBreaker`; trước đó chỉ `Extensions::call`): circuit breaker theo plugin, doctor báo `breaker_open`: quá N lỗi/phút ở slot/filter không giao dịch thì tạm bỏ qua plugin đó 5 phút |
 | Sự cố nghiêm trọng | **Safe mode**: `VANI_PLUGINS_SAFE_MODE=true` → không nạp plugin nào: Implemented |
 | Cổng thanh toán plugin lỗi | `PaymentGateway::isAvailable()` trả false khi health check fail → ẩn phương thức |
 

@@ -7,6 +7,7 @@ namespace Modules\Extension\Application\Hooks;
 use Closure;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginBreaker;
 use Modules\Extension\Domain\Hooks\HookDefinition;
 use Modules\Extension\Domain\Hooks\HookNotDeclared;
 use Modules\Extension\Domain\Hooks\HookNotPublic;
@@ -38,6 +39,9 @@ final class HookManager
     /** @var array<string, array{hook: string, plugin: string, calls: int, total_ms: float, max_ms: float}> */
     private array $timings = [];
 
+    /** @var array<string, true> hook|plugin đã ghi log deprecation trong tiến trình này */
+    private array $deprecationsLogged = [];
+
     /**
      * @param  Closure(): PluginActivation  $activation  lấy theo request/job hiện tại (PluginActivation là scoped)
      */
@@ -49,6 +53,8 @@ final class HookManager
         private readonly float $slowMs = 50.0,
         /** Ghi log debug mỗi lần gọi hook (tên, loại, số listener) để dò luồng khi phát triển — `vanishop.hooks.trace`. */
         private readonly bool $trace = false,
+        /** Circuit breaker theo plugin cho slot và filter `on_error: skip` (K3/P6); null = không dùng. */
+        private readonly ?PluginBreaker $breaker = null,
     ) {}
 
     public function filter(string $name, mixed $value, mixed ...$args): mixed
@@ -96,7 +102,7 @@ final class HookManager
     public function onFilter(string $name, callable $callback, int $priority = self::DEFAULT_PRIORITY, ?string $pluginId = null): void
     {
         $this->listen($name, $pluginId, $priority, function (mixed $value, mixed ...$args) use ($name, $callback, $pluginId): mixed {
-            if (! $this->isActive($pluginId)) {
+            if (! $this->isActive($pluginId) || ($this->skipsErrors($name) && $this->breaker?->isOpen($pluginId))) {
                 return $value;
             }
 
@@ -109,6 +115,7 @@ final class HookManager
                 }
                 report($exception);
                 Log::warning('Filter lỗi, bỏ qua listener.', ['hook' => $name, 'plugin' => $pluginId]);
+                $this->breaker?->recordFailure($pluginId, "hook:{$name}");
 
                 return $value;
             }
@@ -162,7 +169,7 @@ final class HookManager
     public function onSlot(string $name, callable $callback, int $priority = self::DEFAULT_PRIORITY, ?string $pluginId = null): void
     {
         $this->listen($name, $pluginId, $priority, function (array $items, mixed ...$args) use ($name, $callback, $pluginId): array {
-            if (! $this->isActive($pluginId)) {
+            if (! $this->isActive($pluginId) || $this->breaker?->isOpen($pluginId)) {
                 return $items;
             }
 
@@ -170,6 +177,7 @@ final class HookManager
                 return [...$items, $callback(...$args)];
             } catch (Throwable $exception) {
                 Log::error('Hook slot lỗi, bỏ qua listener.', ['hook' => $name, 'plugin' => $pluginId, 'exception' => $exception]);
+                $this->breaker?->recordFailure($pluginId, "hook:{$name}");
 
                 return $items;
             }
@@ -225,6 +233,10 @@ final class HookManager
         }
 
         $this->listenerOwners[$name][] = $pluginId;
+        if ($definition?->deprecated !== null && $pluginId !== null && ! isset($this->deprecationsLogged["{$name}|{$pluginId}"])) {
+            $this->deprecationsLogged["{$name}|{$pluginId}"] = true;
+            Log::warning('vani.deprecation', ['kind' => 'hook', 'feature' => $name, 'plugin' => $pluginId, 'message' => $definition->deprecated]);
+        }
 
         $callable = new HookListener($pluginId, $this->timed($name, $pluginId, $listener));
 

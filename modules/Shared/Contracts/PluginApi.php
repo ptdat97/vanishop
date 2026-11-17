@@ -13,6 +13,8 @@ use Attribute;
  *
  * - `stable`: xoá/đổi chữ ký → tăng **major** của `extension_api`.
  * - `experimental`: điểm mở rộng mới, có thể đổi ở bản **minor**; lên `stable` sau một vòng phát hành có plugin thật dùng.
+ * - `deprecated`: thông điệp khi cả class ngừng khuyến nghị (thay thế bằng gì, gỡ ở bản nào) — `vani:plugin:doctor` cảnh
+ *   báo plugin còn dùng. Hằng/method ngừng khuyến nghị dùng `#[\Deprecated]` của PHP.
  */
 #[Attribute(Attribute::TARGET_CLASS)]
 final readonly class PluginApi
@@ -21,5 +23,5 @@ final readonly class PluginApi
 
     public const EXPERIMENTAL = 'experimental';
 
-    public function __construct(public string $stability = self::STABLE) {}
+    public function __construct(public string $stability = self::STABLE, public ?string $deprecated = null) {}
 }

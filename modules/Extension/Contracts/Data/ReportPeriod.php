@@ -21,6 +21,7 @@ final readonly class ReportPeriod
      * @deprecated 0.3.41 — múi giờ lấy từ cấu hình cửa hàng (`vanishop.locale.timezone`); không truyền `$timezone` là
      * dùng giá trị đó. Gỡ ở 1.0.
      */
+    #[\Deprecated(message: 'múi giờ lấy từ cấu hình cửa hàng (vanishop.locale.timezone); gỡ ở Extension API 2.0', since: '0.3.41')]
     public const TIMEZONE = 'Asia/Ho_Chi_Minh';
 
     public string $timezone;

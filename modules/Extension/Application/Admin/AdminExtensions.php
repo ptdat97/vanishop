@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Extension\Application\Plugins\PluginBreaker;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Throwable;
@@ -30,7 +31,7 @@ final class AdminExtensions implements AdminScreen
     /**
      * @param  Closure(): PluginActivation  $activation
      */
-    public function __construct(private readonly Closure $activation) {}
+    public function __construct(private readonly Closure $activation, private readonly ?PluginBreaker $breaker = null) {}
 
     public function declareResource(string $resource): void
     {
@@ -329,11 +330,15 @@ final class AdminExtensions implements AdminScreen
      */
     private function guard(array $item, string $operation, Closure $call, mixed $fallback): mixed
     {
+        if ($this->breaker?->isOpen($item['plugin'])) {
+            return $fallback;
+        }
         try {
             return $call();
         } catch (Throwable $exception) {
             report($exception);
             Log::warning('Phần mở rộng Admin của plugin lỗi, bỏ qua.', ['plugin' => $item['plugin'], 'resource' => $item['resource'], 'key' => $item['key'], 'operation' => $operation]);
+            $this->breaker?->recordFailure($item['plugin'], "admin:{$item['resource']}:{$operation}");
 
             return $fallback;
         }

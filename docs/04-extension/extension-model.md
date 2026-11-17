@@ -169,7 +169,7 @@ Extension point public được đánh version theo **SemVer của API cho plugi
 
 - Extension contract có thể khai báo `REQUIRED` (`at_least_one`/`exactly_one`): Core từ chối tắt implementation cuối cùng (Designed, [commerce-kernel §5](../02-architecture/commerce-kernel.md)).
 - Plugin khai báo `requires.extension_api: "^1.0"`. Loader từ chối bật plugin không tương thích (`incompatible_extension_api`) ([plugin-system](../05-plugin/plugin-system.md)). **Implemented** 0.5.1.
-- Deprecation được log (`vani.deprecation`) khi plugin dùng điểm đã deprecated. (**Designed** — chưa có code; xem [plugin-system §6.1](../05-plugin/plugin-system.md).)
+- Deprecation: class `#[PluginApi(deprecated: '…')]`, hằng/method `#[\Deprecated]` (PHP), hook khoá `deprecated` trong `hooks.php`. Plugin nghe hook deprecated → log `vani.deprecation`; `vani:plugin:doctor` cảnh báo `deprecated_usage` (quét tĩnh, kèm file:dòng). **Implemented** 0.5.2.
 - Thực tế 0.4.x: một số thay đổi phá vỡ đã ra ở bản vá (0.4.21–0.4.27). Từ 0.5.1, mức tăng do `PluginApiSnapshotTest` kiểm tự động trên `extension_api`.
 - [`CHANGELOG-extension.md`](CHANGELOG-extension.md) ghi mọi thay đổi extension point. **Implemented** (0.2.0).
 - `tests/Architecture/PluginApiSnapshotTest.php` chụp API cho plugin vào `plugin-api.snapshot` (header `Extension API x.y.z`): đổi mà không tăng `extension_api` đúng mức (xoá/đổi phần stable → major) + ghi "Extension API x.y.z" trong changelog thì CI đỏ. `PublicApiSnapshotTest` vẫn chụp toàn bộ `Contracts`, `Events`, `PluginServiceProvider` vào `public-api.snapshot` theo version Core. Không dùng abstract base cho contract — mở rộng extension contract theo hai cách ở bảng trên.

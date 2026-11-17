@@ -34,6 +34,8 @@ final class PluginDoctor
         private readonly string $coreVersion,
         private readonly PluginCapabilities $capabilities,
         private readonly PluginSeeders $seeders,
+        private readonly DeprecationScanner $deprecations,
+        private readonly PluginBreaker $breaker,
     ) {}
 
     /**
@@ -126,6 +128,20 @@ final class PluginDoctor
             }
             if (! $records->has($id) && $manifest->requiresCore !== null && ! $this->satisfiesCore($manifest->requiresCore)) {
                 $add($id, self::WARNING, 'incompatible_core', "Chưa cài; cần VaniShop {$manifest->requiresCore}, hiện tại {$this->coreVersion}.");
+            }
+        }
+
+        // Circuit breaker đang mở (K3/P6): plugin lỗi liên tục ở luồng đọc/hiển thị, đang bị bỏ qua.
+        foreach ($records as $id => $record) {
+            if ($running($record) && $this->breaker->isOpen($id)) {
+                $add($id, self::WARNING, 'breaker_open', "Plugin lỗi liên tục ở luồng đọc/hiển thị — đang tạm bỏ qua (tự thử lại sau tối đa {$this->breaker->cooldownSeconds()} giây). Xem log lỗi của plugin.");
+            }
+        }
+
+        // API đã ngừng khuyến nghị mà plugin đã cài còn dùng (K3/P5) — quét tĩnh, không nạp plugin.
+        foreach ($records as $id => $record) {
+            foreach (isset($manifests[$id]) ? $this->deprecations->scan($manifests[$id]->path) : [] as $usage) {
+                $add($id, self::WARNING, 'deprecated_usage', "Dùng {$usage['feature']} đã ngừng khuyến nghị: {$usage['message']} — {$usage['at']}.");
             }
         }
 

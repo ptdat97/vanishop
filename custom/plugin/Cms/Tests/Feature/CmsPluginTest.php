@@ -15,8 +15,10 @@ use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Testing\LinkTypeContract;
+use Modules\Storefront\Testing\SitemapProviderContract;
 use Plugin\Cms\CmsServiceProvider;
 use Plugin\Cms\Infrastructure\ArticleLinkType;
+use Plugin\Cms\Infrastructure\CmsSitemap;
 use Plugin\Cms\Infrastructure\PageLinkType;
 use Plugin\Cms\Persistence\Page;
 use Plugin\Cms\Persistence\Post;
@@ -229,4 +231,10 @@ it('nội dung CMS chỉ một ngôn ngữ: bản /en noindex, canonical về b�
         ->assertSee('<meta name="robots" content="noindex,follow">', false)
         ->assertSee('<link rel="canonical" href="'.url('/trang/gioi-thieu').'">', false);
     $this->get('/trang/gioi-thieu')->assertDontSee('name="robots"', false);
+});
+
+// Củng cố kiến trúc K3 (P4): sitemap của CMS chạy bộ contract test của Core.
+SitemapProviderContract::define('vani.cms', fn () => app(CmsSitemap::class), function (): void {
+    cmsPage();
+    cmsPost();
 });

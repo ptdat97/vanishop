@@ -16,6 +16,7 @@ interface AdminScreen
     /**
      * @deprecated 0.3.39 — danh sách cố định cũ, không còn dùng để kiểm tra; đọc `resources()`. Gỡ ở 1.0.
      */
+    #[\Deprecated(message: 'đọc AdminScreen::resources(); gỡ ở Extension API 2.0', since: '0.3.39')]
     public const RESOURCES = ['product', 'order', 'customer'];
 
     /**

@@ -6,7 +6,6 @@ namespace Modules\Extension\Application\Plugins;
 
 use Closure;
 use Illuminate\Contracts\Container\Container;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
@@ -107,8 +106,8 @@ final class ScopedExtensions implements Extensions
     public function call(object $implementation, callable $call, mixed $fallback, string $operation): mixed
     {
         $plugin = $this->ownerOf($implementation);
-        $breaker = $plugin === null ? null : "vani:plugin-breaker:{$plugin}";
-        if ($breaker !== null && Cache::has("{$breaker}:open")) {
+        $breaker = $this->container->make(PluginBreaker::class);
+        if ($breaker->isOpen($plugin)) {
             return $fallback;
         }
 
@@ -120,14 +119,7 @@ final class ScopedExtensions implements Extensions
                 'plugin' => $plugin ?? 'core', 'implementation' => $implementation::class, 'operation' => $operation, 'error' => $exception->getMessage(),
             ]);
 
-            if ($breaker !== null) {
-                Cache::add("{$breaker}:failures", 0, now()->addMinute());
-                if (Cache::increment("{$breaker}:failures") >= (int) config('vanishop.plugins.breaker.threshold', 5)) {
-                    Cache::put("{$breaker}:open", true, now()->addSeconds((int) config('vanishop.plugins.breaker.cooldown', 300)));
-                    Cache::forget("{$breaker}:failures");
-                    Log::error('Plugin lỗi liên tục — tạm bỏ qua trên luồng tuỳ chọn.', ['plugin' => $plugin, 'cooldown_seconds' => (int) config('vanishop.plugins.breaker.cooldown', 300)]);
-                }
-            }
+            $breaker->recordFailure($plugin, "extension:{$operation}");
 
             return $fallback;
         }

@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.2 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K3 "kiểm chứng plugin" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Bề mặt plugin không đổi (`plugin-api.snapshot` giữ nguyên).
+
+### Thêm
+- **Contract test cho 21 điểm mở rộng còn thiếu (R26)** trong `Modules\<Ctx>\Testing`: `CartLineOptionContract`, `VideoDriverContract`, `ImageFormatContract`, `VariantUsageContract`, `AddressDirectoryContract`, `PhoneNumberPolicyContract`, `AlertChannelContract`, `PluginHealthCheckContract`, `ReportProviderContract`, `DashboardWidgetContract`, `CarrierAssignmentContract`, `OrderRiskSignalContract`, `ConfirmationChannelContract`, `PackingSlipTemplateContract`, `OrderStatusActionContract`, `BackorderPolicyContract`, `StockPageLinkContract`, `RefundPayoutContract`, `PriceRoundingContract`, `BulkPriceModeContract`, `SitemapProviderContract`. Mọi implementation tham chiếu (Core + plugin trong repo) chạy bộ tương ứng; `CheckoutValidatorContract` nhận thêm `totals` tuỳ chọn và nay có Core chạy. Arch test: mỗi interface tự khai `TAG` phải có `<Tên>Contract` và ít nhất một implementation chạy nó.
+- **Deprecation**: `#[PluginApi(deprecated: '…')]` (cả class), `#[\Deprecated]` của PHP cho hằng/method (đã gắn `ReportPeriod::TIMEZONE`, `AdminScreen::RESOURCES`), khoá `deprecated` trong `hooks.php`. Plugin nghe hook deprecated → log `vani.deprecation` (một lần mỗi tiến trình); `vani:plugin:doctor` quét tĩnh mã plugin đã cài, cảnh báo `deprecated_usage` kèm file:dòng.
+- **Circuit breaker theo plugin** (`PluginBreaker`, cấu hình `vanishop.plugins.breaker`) mở rộng từ `Extensions::call` sang slot UI, filter `on_error: skip` và cột/tab/bộ lọc Admin của plugin: lỗi ≥ 5 lần/phút → bỏ qua plugin 5 phút trên các luồng đó, log lỗi; doctor báo `breaker_open`. Hook giao dịch (validate, action, filter `fail`) không dùng breaker.
+
 ## 0.5.1 — 2026-11-17 · Extension API 1.0.0
 
 Củng cố kiến trúc — đợt K2 "hợp đồng plugin" ([ADR-048](../19-adr/ADR-048-extension-api-version.md), [architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Từ bản này, **API cho plugin có version riêng** `vanishop.extension_api` (bắt đầu **1.0.0**); version Core vẫn tăng theo từng thay đổi.

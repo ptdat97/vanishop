@@ -20,6 +20,8 @@ final readonly class HookDefinition
         public string $stability = 'stable',
         /** `fail` = lỗi listener làm hỏng flow (giao dịch rollback); `skip` = bỏ listener lỗi, ghi log (luồng đọc/hiển thị). */
         public string $onError = 'fail',
+        /** Thông điệp khi hook đã ngừng khuyến nghị (`deprecated` trong hooks.php, K3/P5): plugin nghe hook → log `vani.deprecation`. */
+        public ?string $deprecated = null,
     ) {}
 
     /**
@@ -32,11 +34,11 @@ final readonly class HookDefinition
 
     public function withName(string $name): self
     {
-        return new self($name, $this->type, $this->public, $this->since, $this->args, $this->description, $this->stability, $this->onError);
+        return new self($name, $this->type, $this->public, $this->since, $this->args, $this->description, $this->stability, $this->onError, $this->deprecated);
     }
 
     /**
-     * @param  array{type: string, visibility?: string, since?: string, args?: array<string, string>, description?: string, stability?: string, on_error?: string}  $definition
+     * @param  array{type: string, visibility?: string, since?: string, args?: array<string, string>, description?: string, stability?: string, on_error?: string, deprecated?: string}  $definition
      */
     public static function fromArray(string $name, array $definition): self
     {
@@ -49,6 +51,7 @@ final readonly class HookDefinition
             description: $definition['description'] ?? '',
             stability: $definition['stability'] ?? 'stable',
             onError: $definition['on_error'] ?? 'fail',
+            deprecated: isset($definition['deprecated']) ? (string) $definition['deprecated'] : null,
         );
     }
 }

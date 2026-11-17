@@ -142,3 +142,33 @@ it('M5/R11: chỉ module/plugin sở hữu bảng mới truy vấn bảng đó',
 
     expect(array_values(array_unique($offenders)))->toBe([]);
 });
+
+it('P4/R26: mỗi điểm mở rộng có TAG có bộ contract test trong Testing/ và ít nhất một implementation chạy bộ đó', function () {
+    $missing = [];
+    $tests = '';
+    foreach ([base_path('modules'), base_path('custom/plugin'), base_path('tests')] as $root) {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) as $file) {
+            if (str_ends_with((string) $file, 'Test.php')) {
+                $tests .= file_get_contents((string) $file);
+            }
+        }
+    }
+    foreach (glob(base_path('modules/*/Contracts/*.php')) ?: [] as $path) {
+        $module = basename(dirname($path, 2));
+        $name = basename($path, '.php');
+        $interface = "Modules\\{$module}\\Contracts\\{$name}";
+        // Chỉ interface tự khai báo TAG (CartContentRule kế thừa TAG của PromotionRule — dùng chung bộ test).
+        if (! interface_exists($interface) || ! (new ReflectionClass($interface))->hasConstant('TAG')
+            || (new ReflectionClass($interface))->getReflectionConstant('TAG')->getDeclaringClass()->getName() !== $interface) {
+            continue;
+        }
+        $suite = "Modules\\{$module}\\Testing\\{$name}Contract";
+        if (! class_exists($suite)) {
+            $missing[] = "{$interface}: thiếu {$suite}";
+        } elseif (! str_contains($tests, "{$name}Contract::define(")) {
+            $missing[] = "{$interface}: chưa implementation nào chạy {$name}Contract::define()";
+        }
+    }
+
+    expect($missing)->toBe([]);
+});
