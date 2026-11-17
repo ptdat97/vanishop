@@ -25,11 +25,12 @@ it('cột Giá bán (khoảng giá theo size) và Tồn bán được; thao tác
     expect(collect($props['extensions']['columns'])->pluck('label')->all())->toContain('Giá bán', 'Tồn bán được')
         ->and($props['extensions']['values'][$this->style]['price'])->toBe('200.000 ₫ – 300.000 ₫')
         ->and($props['extensions']['values'][$this->style]['stock'])->toBe('4')
-        ->and(collect($props['extensions']['actions'])->pluck('key')->all())->toBe(['activate', 'archive', 'price']);
+        ->and(collect($props['extensions']['actions'])->pluck('key')->all())->toBe(['activate', 'archive', 'brand', 'delete', 'export', 'price']); // A4: danh mục/bộ sưu tập chỉ hiện khi cửa hàng có
 
     $this->actingAs(T::staff(['admin.access', 'catalog.view']), 'staff');
     $props = ($this->props)();
-    expect($props['extensions']['actions'])->toBe([])->and($props['extensions']['columns'])->toBe([]);
+    // Chỉ xem: xuất file được (A4), không có thao tác sửa.
+    expect(collect($props['extensions']['actions'])->pluck('key')->all())->toBe(['export'])->and($props['extensions']['columns'])->toBe([]);
 });
 
 it('Ngừng bán / Mở bán hàng loạt: đổi trạng thái, ghi audit', function () {
