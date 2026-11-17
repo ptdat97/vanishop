@@ -2,9 +2,11 @@
 
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
+use Modules\Catalog\Application\Products\ProductOptions;
 use Modules\Catalog\Events\ProductUpdated;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Persistence\Models\Category;
+use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -104,4 +106,25 @@ it('chỉ xem catalog: không có thao tác hàng loạt, gọi trực tiếp b�
     $this->post('/admin/catalog/products/bulk-edit', ['ids' => [$this->shirt->id], 'action' => 'brand', 'target_id' => $this->lumiere->id])->assertForbidden();
     $this->post('/admin/catalog/products/bulk-delete', ['ids' => [$this->plain->id]])->assertForbidden();
     expect($this->shirt->fresh()->brand_id)->toBe($this->urbanx->id);
+});
+
+it('báo và lọc sản phẩm thiếu dữ liệu: chưa có SKU, ảnh, danh mục, khối lượng SKU đang bán, mô tả', function () {
+    T::seed(function () {
+        $this->dress->syncTranslations(['vi' => ['name' => 'Đầm', 'description' => 'Đầm lụa mềm']]);
+        app(ProductOptions::class)->createVariant($this->dress, [], ['weight_gram' => 300]);
+        app(ProductOptions::class)->createVariant($this->shirt, [], ['weight_gram' => null]);
+        $media = Media::query()->create(['disk' => 'public', 'path' => 'media/d.jpg', 'folder' => '', 'original_name' => 'd.jpg', 'mime_type' => 'image/jpeg', 'size_bytes' => 1, 'width' => 1, 'height' => 1, 'checksum' => hash('sha256', 'd')]);
+        $this->dress->variants()->sole()->gallery()->create(['media_id' => $media->id, 'role' => 'gallery', 'position' => 1]);
+    });
+
+    expect(($this->codes)(['missing' => 'image']))->toBe(['AO01', 'TUI01'])
+        ->and(($this->codes)(['missing' => 'variants']))->toBe(['TUI01'])
+        ->and(($this->codes)(['missing' => 'weight']))->toBe(['AO01'])
+        ->and(($this->codes)(['missing' => 'category']))->toBe(['AO01', 'TUI01'])
+        ->and(($this->codes)(['missing' => 'description']))->toBe(['AO01', 'TUI01']);
+
+    $rows = collect($this->get('/admin/catalog/products')->viewData('page')['props']['products']['data'])->keyBy('style_code');
+    expect($rows['DAM01']['missing'])->toBe([])
+        ->and($rows['AO01']['missing'])->toBe(['Chưa có ảnh', 'Chưa có danh mục', 'SKU thiếu khối lượng', 'Chưa có mô tả']);
+    $this->get('/admin/catalog/products?missing=gia')->assertSessionHasErrors('missing');
 });

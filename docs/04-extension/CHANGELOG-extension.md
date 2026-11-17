@@ -11,6 +11,7 @@ Stabilization A4 — Admin Catalog. Không đổi API cho plugin.
 ### Thêm
 - Danh sách sản phẩm lọc theo danh mục (gồm danh mục con), thương hiệu (cả "chưa có thương hiệu"), bộ sưu tập; thao tác hàng loạt: thêm/gỡ danh mục, đổi/bỏ thương hiệu, thêm/gỡ bộ sưu tập, xoá bản nháp (`ProductBulkEditor`).
 - Nhân bản sản phẩm thành bản nháp (`ProductDuplicator`): nội dung, phân loại, thuộc tính, trục tuỳ chọn, SKU mới, ảnh, video; event giữa module `Catalog\Events\ProductDuplicated` — Pricing chép giá niêm yết sang SKU mới. Không chép tồn kho.
+- Báo sản phẩm thiếu dữ liệu: nhãn trên từng dòng và bộ lọc "Thiếu dữ liệu" (chưa có SKU, ảnh, danh mục, mô tả; SKU đang bán thiếu khối lượng). Giá thiếu báo ở tổng quan giá (A5).
 
 ## 0.5.12 — 2026-11-17 · Extension API 1.1.0
 

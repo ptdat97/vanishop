@@ -56,6 +56,7 @@ final class ProductController
             'category' => ['nullable', 'integer', 'min:1'],
             'brand' => ['nullable', 'regex:/^(none|\\d+)$/'],
             'collection' => ['nullable', 'integer', 'min:1'],
+            'missing' => ['nullable', Rule::in(array_keys(AdminQueries::MISSING))],
         ]);
         $perPage = (int) ($validated['per_page'] ?? 30);
         $search = trim((string) $request->query('q', ''));
@@ -66,6 +67,7 @@ final class ProductController
             'category' => isset($validated['category']) ? (int) $validated['category'] : null,
             'brand' => $brand === null || $brand === 'none' ? $brand : (int) $brand,
             'collection' => isset($validated['collection']) ? (int) $validated['collection'] : null,
+            'missing' => $validated['missing'] ?? null,
         ];
 
         $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $screen->filterIds('product', (array) $request->query('ext', [])), $sort, $perPage);
@@ -75,18 +77,20 @@ final class ProductController
             'collections' => $this->queries->collections()->map(fn (ProductCollection $collection): array => ['id' => $collection->id, 'label' => $collection->translate('name') ?? $collection->slug])->all(),
         ];
 
-        // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang.
+        // Lượt xem 30 ngày (§3.5-2), một truy vấn cho cả trang; dữ liệu còn thiếu (A4) vài truy vấn cho cả trang.
         $viewCounts = $views->counts($styles->getCollection()->pluck('id')->all());
+        $missing = $this->queries->missingData($styles->getCollection()->pluck('id')->map(fn ($id): int => (int) $id)->all());
 
         return Inertia::render('Catalog::Products/Index', [
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
-            'filters' => ['q' => $search, 'status' => $status, 'category' => $taxonomy['category'], 'brand' => $taxonomy['brand'] === null ? null : (string) $taxonomy['brand'], 'collection' => $taxonomy['collection']],
-            'filterOptions' => $options,
+            'filters' => ['q' => $search, 'status' => $status, 'category' => $taxonomy['category'], 'brand' => $taxonomy['brand'] === null ? null : (string) $taxonomy['brand'], 'collection' => $taxonomy['collection'], 'missing' => $taxonomy['missing']],
+            'filterOptions' => [...$options, 'missing' => AdminQueries::MISSING],
             'sort' => $sort?->toArray(),
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
                     'views' => $viewCounts[$style->id] ?? 0,
+                    'missing' => array_map(fn (string $key): string => AdminQueries::MISSING[$key], $missing[$style->id] ?? []),
                     'id' => $style->id,
                     'style_code' => $style->style_code,
                     'name' => $style->translate('name'),

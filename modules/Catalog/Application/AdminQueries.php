@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Application;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ use Modules\Catalog\Persistence\Models\ProductCollection;
 use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Domain\Text\VietnameseText;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\StoreLocale;
 
 /**
  * Truy vấn đọc cho màn hình Admin của Catalog — controller không tự truy vấn (architecture-consolidation D4, R9).
@@ -90,9 +92,10 @@ final class AdminQueries
 
     /**
      * Danh sách sản phẩm Admin: tìm theo từ khoá (không dấu), trạng thái, bộ lọc `category` (gồm danh mục con), `brand` (id hoặc
-     * `none` = chưa có thương hiệu), `collection` (stabilization A4), id do bộ lọc plugin trả, sắp xếp.
+     * `none` = chưa có thương hiệu), `collection`, `missing` (một mục của MISSING — stabilization A4), id do bộ lọc plugin trả,
+     * sắp xếp.
      *
-     * @param  array{category?: int|null, brand?: int|string|null, collection?: int|null}  $filters
+     * @param  array{category?: int|null, brand?: int|string|null, collection?: int|null, missing?: string|null}  $filters
      * @param  list<int>|null  $pluginIds  null = không lọc theo plugin
      * @return LengthAwarePaginator<int, Style>
      */
@@ -101,6 +104,7 @@ final class AdminQueries
         $category = $filters['category'] ?? null;
         $brand = $filters['brand'] ?? null;
         $collection = $filters['collection'] ?? null;
+        $missing = $filters['missing'] ?? null;
 
         return Style::query()
             ->with(['translations', 'brand:id,name', 'variants.gallery.media'])
@@ -114,10 +118,63 @@ final class AdminQueries
             ->when($brand === 'none', fn ($query) => $query->whereNull('brand_id'))
             ->when(is_int($brand), fn ($query) => $query->where('brand_id', $brand))
             ->when($collection !== null, fn ($query) => $query->whereIn('id', DB::table('collection_style')->where('collection_id', $collection)->select('style_id')))
+            ->when($missing !== null, fn ($query) => $this->whereMissing($query, (string) $missing))
             ->when($pluginIds !== null, fn ($query) => $query->whereIn('id', $pluginIds))
             ->when($sort, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('updated_at')->orderByDesc('id'))
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    /**
+     * Dữ liệu Catalog còn thiếu của từng sản phẩm (stabilization A4) — vài truy vấn cho cả trang, không theo từng dòng. Giá thiếu
+     * do Pricing báo ở tổng quan giá.
+     *
+     * @param  list<int>  $styleIds
+     * @return array<int, list<string>> style id => mục thiếu (khoá của MISSING)
+     */
+    public function missingData(array $styleIds): array
+    {
+        if ($styleIds === []) {
+            return [];
+        }
+        $result = array_fill_keys($styleIds, []);
+        foreach (array_keys(self::MISSING) as $key) {
+            $ids = $this->whereMissing(Style::query()->whereKey($styleIds), $key)->pluck('id');
+            foreach ($ids as $id) {
+                $result[(int) $id][] = $key;
+            }
+        }
+
+        return $result;
+    }
+
+    /** Loại dữ liệu thiếu có thể lọc, theo thứ tự ưu tiên khi hiển thị. */
+    public const MISSING = [
+        'variants' => 'Chưa có SKU',
+        'image' => 'Chưa có ảnh',
+        'category' => 'Chưa có danh mục',
+        'weight' => 'SKU thiếu khối lượng',
+        'description' => 'Chưa có mô tả',
+    ];
+
+    /**
+     * @param  Builder<Style>  $query
+     * @return Builder<Style>
+     */
+    private function whereMissing(Builder $query, string $key): Builder
+    {
+        $variants = fn () => DB::table('variants')->whereColumn('variants.style_id', 'styles.id');
+
+        return match ($key) {
+            'variants' => $query->whereNotExists($variants()),
+            'image' => $query->whereNotExists(DB::table('mediables')->join('variants', 'variants.id', '=', 'mediables.mediable_id')
+                ->where('mediables.mediable_type', 'catalog.variant')->where('mediables.role', 'gallery')->whereColumn('variants.style_id', 'styles.id')),
+            'category' => $query->whereNotExists(DB::table('category_style')->whereColumn('category_style.style_id', 'styles.id')),
+            'weight' => $query->whereExists($variants()->where('variants.status', 'active')->where(fn ($weight) => $weight->whereNull('variants.weight_gram')->orWhere('variants.weight_gram', 0))),
+            'description' => $query->whereNotExists(DB::table('style_translations')->whereColumn('style_translations.style_id', 'styles.id')
+                ->where('style_translations.locale', StoreLocale::default())->whereNotNull('description')->where('description', '!=', '')),
+            default => $query,
+        };
     }
 
     /**
