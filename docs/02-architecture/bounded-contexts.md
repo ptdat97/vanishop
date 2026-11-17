@@ -131,7 +131,7 @@ return [
 ];
 ```
 
-Thứ tự này là hướng phụ thuộc: module chỉ nên dùng `Contracts` của module đứng trước (nghe `Events` thì từ module nào cũng được). Giữ bằng `tests/Architecture/ModuleBoundaryTest.php` (từ 0.5.0); nợ còn lại duy nhất: Identity dùng `AdminNavigation` của Extension (xử lý ở [architecture-consolidation C1](../20-roadmap/architecture-consolidation.md)).
+Thứ tự này là hướng phụ thuộc: module chỉ nên dùng `Contracts` của module đứng trước (nghe `Events` thì từ module nào cũng được). Giữ bằng `tests/Architecture/ModuleBoundaryTest.php` (từ 0.5.0; không còn nợ từ 0.5.3). Với vòng 0, module thương mại dùng được toàn bộ `Shared` (shared kernel); của Identity/Extension/Tenancy chỉ dùng `Contracts`, `Events`, `Facades`, `Domain` (value type) — test C1.
 
 ## 6. Kiểm thử ranh giới
 

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Modules\Returns;
 
 use Modules\Catalog\Contracts\VariantUsage;
-use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\AdminNavigation;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Returns\Application\DaysWindowPolicy;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
 use Modules\Returns\Application\Listeners\ReturnDashboardTasks;

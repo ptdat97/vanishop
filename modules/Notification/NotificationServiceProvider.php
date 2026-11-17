@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\Notification;
 
 use Illuminate\Support\Facades\Event;
-use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\AdminNavigation;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Notification\Application\Channels\MailChannel;
 use Modules\Notification\Application\InMemoryNotificationCatalog;
 use Modules\Notification\Application\Listeners\SendOrderNotifications;

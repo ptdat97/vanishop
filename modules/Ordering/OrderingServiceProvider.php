@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\Ordering;
 
 use Modules\Catalog\Contracts\VariantUsage;
-use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\AdminNavigation;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Ordering\Application\CustomerDeletionGuard;
 use Modules\Ordering\Application\CustomerOrderService;
 use Modules\Ordering\Application\EloquentOrderReader;

@@ -1,4 +1,4 @@
-VaniShop 0.5.2
+VaniShop 0.5.3
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -440,6 +440,9 @@ class Modules\Customer\Events\CustomerRegistered
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+interface Modules\Extension\Contracts\AccountPages
+  add(string $plugin, string $key, string $label, string $route, int $order = 500): void
+  active(): array
 interface Modules\Extension\Contracts\AdminScreen
   const RESOURCES = array (
   0 => 'product',
@@ -563,6 +566,9 @@ interface Modules\Extension\Contracts\PluginDirectory
 interface Modules\Extension\Contracts\PluginHealthCheck
   const TAG = 'vani.health.checks'
   check(): Modules\Extension\Contracts\Data\HealthStatus
+interface Modules\Extension\Contracts\PluginViews
+  add(string $namespace, string $slug, string $path): void
+  all(): array
 interface Modules\Extension\Contracts\ReportProvider
   const TAG = 'vani.admin.reports'
   key(): string
@@ -649,6 +655,13 @@ class Modules\Fulfillment\Events\ShipmentStatusChanged
   static dispatchIf($boolean, ...$arguments)
   static dispatchUnless($boolean, ...$arguments)
   static broadcast(...$arguments)
+interface Modules\Identity\Contracts\AdminNavigation
+  const FALLBACK_GROUP = 'extensions'
+  add(string $key, string $label, string $route, ?string $permission = NULL, int $order = 100, ?string $pluginId = NULL, ?Closure $when = NULL, ?string $group = NULL): void
+  group(string $key, string $label, int $order): void
+  visibleGroups(): array
+  forPlugin(string $pluginId): array
+  visibleItems(): array
 interface Modules\Identity\Contracts\AuditLogger
   record(string $action, ?string $subjectType = NULL, string|int|null $subjectId = NULL, array $changes = array (
 )): void
@@ -658,6 +671,15 @@ class Modules\Identity\Contracts\Data\ScopeRef
   __construct(Modules\Identity\Domain\ScopeType $type, ?int $id = NULL)
   static owner(): self
   static location(int $locationId): self
+interface Modules\Identity\Contracts\PermissionRegistry
+  const WILDCARD = '*'
+  register(string $code, string $description): void
+  has(string $code): bool
+  all(): array
+interface Modules\Identity\Contracts\ScopeOptions
+  register(Modules\Identity\Domain\ScopeType $type, Closure $options): void
+  all(): array
+  exists(Modules\Identity\Domain\ScopeType $type, ?int $id): bool
 class Modules\Identity\Contracts\StaffRejected extends Modules\Shared\Domain\BusinessRuleViolation
   static self(): self
   static lastOwner(): self

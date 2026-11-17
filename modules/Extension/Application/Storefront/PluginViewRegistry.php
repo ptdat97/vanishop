@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Storefront;
 
+use Modules\Extension\Contracts\PluginViews;
 /**
  * View storefront của plugin (namespace → slug + thư mục gốc). Theme đang hoạt động override được view plugin tại
  * `custom/theme/<theme>/plugins/<slug>/` (ADR-025: thay khối bằng override view, không viết lại HTML).
  */
-final class PluginViews
+final class PluginViewRegistry implements PluginViews
 {
     /** @var array<string, array{slug: string, path: string}> */
     private array $namespaces = [];

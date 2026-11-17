@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Promotion;
 
-use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\AdminNavigation;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Promotion\Application\Actions\AmountOffAction;
 use Modules\Promotion\Application\Actions\PercentOffAction;
 use Modules\Promotion\Application\CampaignService;

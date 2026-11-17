@@ -6,7 +6,7 @@ namespace Modules\Identity\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Persistence\Models\Role;
 
 final class RoleRequest extends FormRequest

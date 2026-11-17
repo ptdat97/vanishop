@@ -7,16 +7,18 @@ namespace Modules\Identity;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
-use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Identity\Application\DatabaseAuditLogger;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Application\InMemoryPermissionRegistry;
 use Modules\Identity\Application\ScopedRbacAuthorizer;
-use Modules\Identity\Application\ScopeOptions;
+use Modules\Identity\Application\ScopeOptionsRegistry;
 use Modules\Identity\Console\CreateStaffCommand;
 use Modules\Identity\Console\ResetStaffPasswordCommand;
+use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\Authorizer;
 use Modules\Identity\Contracts\Data\ScopeRef;
+use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Http\Middleware\ConfigureAdminSession;
 use Modules\Identity\Http\Middleware\ResolveStaffContext;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -31,8 +33,8 @@ final class IdentityServiceProvider extends ModuleServiceProvider
 
     public function register(): void
     {
-        $this->app->singleton(PermissionRegistry::class);
-        $this->app->singleton(ScopeOptions::class);
+        $this->app->singleton(PermissionRegistry::class, InMemoryPermissionRegistry::class);
+        $this->app->singleton(ScopeOptions::class, ScopeOptionsRegistry::class);
         $this->app->scoped(Authorizer::class, ScopedRbacAuthorizer::class);
         $this->app->scoped(AuditLogger::class, DatabaseAuditLogger::class);
         // Chụp khi config đã nạp và trước mọi request; dùng để trả phiên về mặc định cho request storefront.

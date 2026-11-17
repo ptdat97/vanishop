@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Middleware;
-use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;

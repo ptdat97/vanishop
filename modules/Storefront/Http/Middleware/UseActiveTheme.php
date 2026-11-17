@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Translation\FileLoader;
-use Modules\Extension\Application\Storefront\PluginViews;
+use Modules\Extension\Contracts\PluginViews;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
 use Symfony\Component\HttpFoundation\Response;

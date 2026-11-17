@@ -11,13 +11,8 @@
 
 const BOUNDARY_RING0 = ['Shared', 'Tenancy', 'Identity', 'Extension'];
 
-/**
- * Nợ đã biết của M1 — chỉ được ngắn lại. Identity (vòng 0) dùng registry menu Admin của Extension: xử lý ở C1 (đợt K4,
- * chuyển AdminNavigation vào Identity\Contracts).
- */
-const MODULE_ORDER_DEBT = [
-    'Identity -> Extension\\Application\\Admin\\AdminNavigation',
-];
+/** Nợ đã biết của M1 — chỉ được ngắn lại (Identity→AdminNavigation đã trả ở C1, 0.5.3). */
+const MODULE_ORDER_DEBT = [];
 
 /**
  * @return iterable<string> đường dẫn file .php (không gồm Blade, Tests)
@@ -171,4 +166,21 @@ it('P4/R26: mỗi điểm mở rộng có TAG có bộ contract test trong Testi
     }
 
     expect($missing)->toBe([]);
+});
+
+it('C1: module thương mại chỉ dùng API khai báo của Identity/Extension/Tenancy (Contracts, Events, Facades, Domain value type)', function () {
+    $modules = require base_path('config/modules.php');
+    $offenders = [];
+    foreach (array_diff($modules, BOUNDARY_RING0) as $module) {
+        foreach (boundaryFiles(base_path("modules/{$module}")) as $path) {
+            foreach (boundaryReferences($path) as [$target, $rest, $line]) {
+                $layer = explode('\\', $rest)[0];
+                if (in_array($target, ['Identity', 'Extension', 'Tenancy'], true) && ! in_array($layer, ['Contracts', 'Events', 'Facades', 'Domain', 'Testing', 'PluginServiceProvider'], true)) {
+                    $offenders[] = boundaryRelative($path).":{$line} Modules\\{$target}\\{$rest}";
+                }
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
 });

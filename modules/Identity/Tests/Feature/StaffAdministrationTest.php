@@ -3,7 +3,7 @@
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Identity\Persistence\Models\Role;

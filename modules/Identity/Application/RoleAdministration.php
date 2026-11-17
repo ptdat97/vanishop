@@ -6,6 +6,7 @@ namespace Modules\Identity\Application;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Contracts\StaffRejected;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;

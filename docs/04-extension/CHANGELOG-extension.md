@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.3 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K4/C1 "API vòng 0 khai báo rõ" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). API giữa module đổi; bề mặt plugin giữ nguyên.
+
+### Đổi (API giữa module)
+- Service contract mới ở vòng 0, implementation đổi tên: `Identity\Contracts\AdminNavigation` (Extension cài đặt bằng `Extension\Application\Admin\AdminMenuRegistry`), `Identity\Contracts\PermissionRegistry` (`InMemoryPermissionRegistry`, hằng `WILDCARD` chuyển lên contract), `Identity\Contracts\ScopeOptions` (`ScopeOptionsRegistry`), `Extension\Contracts\AccountPages` (`AccountPageRegistry`), `Extension\Contracts\PluginViews` (`PluginViewRegistry`). Module dùng contract thay cho class `Application` của vòng 0.
+- Gỡ phụ thuộc ngược cuối cùng Identity→Extension (`AdminNavigation`): `MODULE_ORDER_DEBT` rỗng.
+
+### Kiểm tra mới
+- `ModuleBoundaryTest` C1: module thương mại chỉ dùng `Contracts`, `Events`, `Facades`, `Domain` của Identity/Extension/Tenancy; `Shared` là shared kernel, dùng được toàn bộ.
+
 ## 0.5.2 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K3 "kiểm chứng plugin" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Bề mặt plugin không đổi (`plugin-api.snapshot` giữ nguyên).

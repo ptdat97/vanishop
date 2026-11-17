@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\Authorizer;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Contracts\StaffRejected;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\RolePermission;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Identity\Application;
 
+use Modules\Identity\Contracts\ScopeOptions;
 use Closure;
 use Modules\Identity\Domain\ScopeType;
 
@@ -11,7 +12,7 @@ use Modules\Identity\Domain\ScopeType;
  * Lựa chọn phạm vi khi gán vai trò (Admin → Nhân viên). Identity ở vòng 0 không đọc bảng của module thương mại: module
  * sở hữu dữ liệu đăng ký nguồn, vd. Inventory đăng ký danh sách location cho `ScopeType::Location`.
  */
-final class ScopeOptions
+final class ScopeOptionsRegistry implements ScopeOptions
 {
     /** @var array<string, Closure(): array<int, string>> */
     private array $providers = [];

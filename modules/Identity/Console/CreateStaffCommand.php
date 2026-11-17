@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;

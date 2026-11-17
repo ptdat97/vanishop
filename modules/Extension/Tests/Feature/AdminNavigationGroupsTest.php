@@ -1,7 +1,7 @@
 <?php
 
 use Inertia\Testing\AssertableInertia as Assert;
-use Modules\Extension\Application\Admin\AdminNavigation;
+use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Persistence\Models\StaffUser;
 
 /*

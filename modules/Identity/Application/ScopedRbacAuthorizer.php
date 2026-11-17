@@ -7,6 +7,7 @@ namespace Modules\Identity\Application;
 use Illuminate\Support\Collection;
 use Modules\Identity\Contracts\Authorizer;
 use Modules\Identity\Contracts\Data\ScopeRef;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\StaffRoleAssignment;
 

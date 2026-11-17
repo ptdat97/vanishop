@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Storefront;
 
+use Modules\Extension\Contracts\AccountPages;
 use Closure;
 use Modules\Extension\Application\Plugins\PluginActivation;
 
 /**
  * Mục do plugin thêm vào menu tài khoản khách của native storefront (`accountPage()`, ADR-030 §4.B).
  */
-final class AccountPages
+final class AccountPageRegistry implements AccountPages
 {
     /** @var array<string, array{plugin: string, key: string, label: string, route: string, order: int}> */
     private array $pages = [];

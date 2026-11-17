@@ -6,13 +6,13 @@ namespace Modules\Extension\Application\Plugins;
 
 use Composer\Semver\Comparator;
 use Illuminate\Support\Collection;
-use Modules\Extension\Application\Admin\AdminNavigation;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Extension\Domain\Plugin\DependencyProblem;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Domain\Plugin\PluginManifest;
 use Modules\Extension\Domain\Plugin\PluginStatus;
 use Modules\Extension\Persistence\Models\PluginRecord;
+use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Tenancy\Contracts\Settings;
 
 /**

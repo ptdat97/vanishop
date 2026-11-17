@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Admin;
 
+use Modules\Identity\Contracts\AdminNavigation;
 use Closure;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -16,9 +17,8 @@ use Modules\Extension\Application\Plugins\PluginActivation;
  * Mục có thể thuộc một nhóm (accordion trên sidebar, Core 0.3.38). Mục không nhóm hiện ở cấp trên cùng. Mục khai
  * báo nhóm chưa đăng ký rơi vào nhóm `extensions` ("Mở rộng").
  */
-final class AdminNavigation
+final class AdminMenuRegistry implements AdminNavigation
 {
-    public const FALLBACK_GROUP = 'extensions';
 
     /** @var array<string, array{key: string, label: string, route: string, permission: string|null, order: int, plugin: string|null, group: string|null, when: (Closure(): bool)|null}> */
     private array $items = [];

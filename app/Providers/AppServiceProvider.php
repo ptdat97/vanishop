@@ -19,7 +19,7 @@ use Livewire\Livewire;
 use Modules\Extension\Contracts\DashboardWidget;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
-use Modules\Identity\Application\PermissionRegistry;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Application\Addresses;
 use Modules\Shared\Application\Phone\InternationalPhonePolicy;
 use Modules\Shared\Contracts\AddressDirectory;

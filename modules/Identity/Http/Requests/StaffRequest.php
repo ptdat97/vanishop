@@ -7,7 +7,7 @@ namespace Modules\Identity\Http\Requests;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Modules\Identity\Application\ScopeOptions;
+use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\StaffUser;
 
