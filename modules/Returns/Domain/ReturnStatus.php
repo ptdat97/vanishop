@@ -38,6 +38,18 @@ enum ReturnStatus: string
         return in_array($this, [self::Requested, self::Approved, self::InTransit, self::Received], true);
     }
 
+    /** Khách/CSKH còn bổ sung ảnh được (trước khi hàng gửi về). */
+    public function acceptsAttachments(): bool
+    {
+        return in_array($this, [self::Requested, self::Approved], true);
+    }
+
+    /** Khách tự huỷ được — chỉ khi CSKH chưa xử lý; nhân viên huỷ theo bảng chuyển trạng thái. */
+    public function customerCancellable(): bool
+    {
+        return $this === self::Requested;
+    }
+
     /** Số lượng của yêu cầu còn "chiếm chỗ" trong giới hạn trả của dòng. */
     public function countsTowardsLimit(): bool
     {

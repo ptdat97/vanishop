@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.5 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K4/D2 "Domain Returns". Không đổi public API (contract `Returns` giữ nguyên).
+
+### Đổi (nội bộ)
+- `Returns\Domain`: `ReturnLimits` (số còn trả được theo dòng, giới hạn tiền hoàn), `ReturnProgress` (`return_status` của đơn), `ReturnCondition` (bán được/hỏng → nhập kho lại), `ExchangeValuation` (giá trị đổi hàng: cùng mẫu giữ giá, khác mẫu bù trừ chia theo tỷ lệ), `ReturnStatus::acceptsAttachments()`/`customerCancellable()` — unit test không cần DB.
+- `ReturnService` 589 → 352 dòng; sổ sự kiện, đồng bộ đơn, số đã giao/đang trả, view ở `ReturnRecords`; đổi hàng ở `ExchangeResolution`.
+
 ## 0.5.4 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K4/D1 "Domain Payment" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Không đổi public API (contract `Payments` giữ nguyên).
