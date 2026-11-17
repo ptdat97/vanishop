@@ -82,7 +82,10 @@ it('sản phẩm đơn đã lưu: Chuyển sang có biến thể → chọn màu
         ->click('[aria-label="Thêm giá trị Màu"]')->click('[role="option"] >> text=IVR')
         ->assertPresent('[data-adopt-single]')
         ->click('[data-save-variants]')
-        ->assertNotPresent('[data-single-variant]')
+        // Khối "Sản phẩm đơn" dùng v-show (luôn trong DOM): sau khi lưu phải ẩn, thẻ "Có biến thể" hiện, popup đóng.
+        ->assertMissing('[data-single-variant]')
+        ->assertVisible('#variants-card-title')
+        ->assertMissing('[data-save-variants]')
         ->assertNoJavaScriptErrors();
 
     expect(T::seed(fn () => Variant::query()->with('optionValues')->find($variantId)->optionValues->pluck('id')->all()))->toBe([$color->id]);
@@ -103,7 +106,7 @@ it('có biến thể: Chuyển về sản phẩm đơn — chọn SKU giữ lạ
         ->assertPresent('[data-collapsing]')
         ->press('Lưu')
         ->assertNotPresent('[data-collapsing]')
-        ->assertPresent('[data-single-variant]')
+        ->assertVisible('[data-single-variant]')
         ->assertNoJavaScriptErrors();
 
     expect(T::seed(fn () => Variant::query()->where('style_id', $style->id)->pluck('id')->all()))->toBe([$kept]);

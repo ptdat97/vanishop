@@ -179,4 +179,4 @@ Owner trả lời 2026-11-17: **đồng ý cả 7 đề xuất** dưới đây.
 
 Arch test giữ các tính chất trên: `tests/Architecture/ModuleBoundaryTest.php` (M1, M4, M5, C1, R9/D4, P4/R26, D5), `PluginApiSnapshotTest` (P1–P3, P7), `ArchitectureTest` (R5 theo `#[PluginApi]`).
 
-Giới hạn còn lại (ghi backlog khi cần): test trình duyệt `ProductFormTest` — "sản phẩm đơn đã lưu: Chuyển sang có biến thể" hỏng từ trước đợt K (không do K1–K5); Core vẫn gom Admin UI + API trong cùng module (chủ đích, không tách).
+Giới hạn còn lại: Core vẫn gom Admin UI + API trong cùng module (chủ đích, không tách). Test trình duyệt `ProductFormTest` "Chuyển sang có biến thể" hỏng từ 0.4.59 do assert sai (khối "Sản phẩm đơn" dùng `v-show`, luôn có trong DOM) — đã sửa sang kiểm hiển thị, 2026-11-17.
