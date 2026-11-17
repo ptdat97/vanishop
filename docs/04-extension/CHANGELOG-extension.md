@@ -4,6 +4,27 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.12 — 2026-11-17 · Extension API 1.1.0
+
+**Email + mật khẩu là cách đăng nhập mặc định của khách; OTP theo số điện thoại chuyển thành plugin `vani.phone-otp-login`.** Phá vỡ Storefront API v1 ở nhóm `auth/*` (môi trường dev, không giữ tương thích ngược).
+
+### Thêm (API cho plugin, `experimental`)
+- `Modules\Customer\Contracts\PhoneOtpLogin` — `requestCode(phone, ip)`, `login(phone, code, device)`: khung OTP + quy tắc tài khoản của Core cho plugin đăng nhập OTP.
+- `Modules\Storefront\Contracts\CustomerSignIn` — `signIn(request, token, customerId)`: đưa khách vào phiên web của storefront native (cấp lại phiên, gộp giỏ vãng lai, trả URL quay lại).
+
+### Đổi (Storefront API v1)
+- Thêm `POST /auth/register` (202, gửi link xác minh — tài khoản chỉ tạo khi bấm link), `POST /auth/register/verify` (token → tài khoản + phiên), `POST /auth/password/forgot` (luôn 202), `POST /auth/password/reset` (204, thu hồi mọi phiên).
+- `POST /auth/login` nhận `email` + `password` (thay `phone`); sai quá 5 lần/phút → `customer.too_many_attempts`.
+- Bỏ `POST /auth/otp/request`, `POST /auth/otp/verify` → plugin `vani.phone-otp-login`: `POST /x/vani-phone-otp-login/otp/request|verify`.
+- `POST /me/delete` nhận `password` (thay mã OTP `delete_account`); tài khoản chưa có mật khẩu → `customer.password_required`.
+- `customer.v1.phone` có thể `null` (tài khoản đăng ký bằng email).
+- Đăng nhập mạng xã hội: ghép theo email đã xác minh (tạo tài khoản nếu chưa có), rồi SĐT đã xác minh của khách đang có; mã lỗi `customer.social_phone_required` → `customer.social_email_required`.
+
+### Đổi (hành vi)
+- Hồ sơ khách vãng lai cùng email thành tài khoản khi bấm link xác minh (giữ lịch sử đơn). Khách vãng lai đặt hàng với SĐT chưa có hồ sơ và email **đã xác minh** của một tài khoản → đơn vào lịch sử tài khoản đó. Đổi email trong hồ sơ bỏ dấu đã xác minh (cột mới `customers.email_verified_at`).
+- Storefront native: trang đăng nhập email + mật khẩu (`window.vani.auth.login`), trang đăng ký, quên/đặt lại mật khẩu; xoá tài khoản nhập lại mật khẩu. Form OTP do plugin gắn vào slot `vani.storefront.account.login`.
+- `OtpPurpose::DeleteAccount` không còn được Core dùng (giữ trong enum để không phá API cho plugin).
+
 ## 0.5.11 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Kiểm chứng phát hành 0.5.x (V6). Không đổi public API.

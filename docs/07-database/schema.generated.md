@@ -33,7 +33,7 @@
 | [`customer_otps`](#customer_otps) | 10 |
 | [`customer_tags`](#customer_tags) | 4 |
 | [`customer_tokens`](#customer_tokens) | 7 |
-| [`customers`](#customers) | 24 |
+| [`customers`](#customers) | 25 |
 | [`external_references`](#external_references) | 7 |
 | [`failed_jobs`](#failed_jobs) | 7 |
 | [`idempotency_keys`](#idempotency_keys) | 10 |
@@ -594,6 +594,7 @@ Khoá ngoại: customer_id → customers(id) on delete cascade
 | `customer_group_id` | bigint unsigned | có |  |
 | `registered_at` | timestamp | có |  |
 | `phone_verified_at` | timestamp | có |  |
+| `email_verified_at` | timestamp | có |  |
 | `password` | varchar(255) | có |  |
 | `merged_into_id` | bigint unsigned | có |  |
 | `meta` | json | có |  |

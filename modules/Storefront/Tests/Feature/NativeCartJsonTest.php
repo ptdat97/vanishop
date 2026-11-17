@@ -3,9 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
-use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -81,16 +79,13 @@ it('mã giảm giá ở giỏ: mã sai báo lý do; mã đúng hiện mức gi�
     expect((int) $order->total_amount)->toBe(540_000)->and((int) $order->discount_amount)->toBe(60_000);
 });
 
-it('đăng nhập OTP bằng JSON: gửi mã, xác thực trả đường dẫn quay lại và token CSRF mới', function () {
-    H::fakeOtp();
-    $this->postJson('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678'])->assertOk()
-        ->assertJsonPath('message', 'Đã gửi mã xác thực. Vui lòng kiểm tra tin nhắn.')->assertJsonPath('phone', '0912345678');
+it('đăng nhập email + mật khẩu bằng JSON: trả đường dẫn quay lại và token CSRF mới', function () {
+    $email = H::account()->email;
 
     // Lỗi nghiệp vụ trong request web JSON: mã trạng thái + câu báo lỗi, không phải trang lỗi 500.
-    $this->postJson('/tai-khoan/dang-nhap', ['code' => '000000'])->assertUnprocessable()
-        ->assertJsonPath('errors.business.0', 'Mã xác thực không đúng hoặc đã hết hạn.');
-    $code = FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login'];
-    $result = $this->postJson('/tai-khoan/dang-nhap', ['code' => $code])->assertOk()
+    $this->postJson('/tai-khoan/dang-nhap', ['email' => $email, 'password' => 'sai-mat-khau'])->assertUnauthorized()
+        ->assertJsonPath('errors.business.0', 'Email hoặc mật khẩu không đúng.');
+    $result = $this->postJson('/tai-khoan/dang-nhap', ['email' => $email, 'password' => H::PASSWORD])->assertOk()
         ->assertJsonPath('signed_in', true)->assertJsonPath('redirect', url('/tai-khoan'))->json();
     expect($result['csrf_token'])->toBeString()->not->toBe('');
 
@@ -110,7 +105,7 @@ it('layout: biểu tượng giỏ mở offcanvas, khung dialog, URL cho window.v
     $urls = json_decode($match[1], true);
     expect($urls['cart_line'])->toBe(url('/gio-hang/987654321'))
         ->and($urls['cart_voucher'])->toBe(url('/gio-hang/ma-giam-gia'))
-        ->and($urls['login_otp'])->toBe(url('/tai-khoan/dang-nhap/otp'));
+        ->and($urls['login_authenticate'])->toBe(url('/tai-khoan/dang-nhap'));
 
     $english = json_decode(preg_match('#data-vani-urls>(.*?)</script>#s', $this->get('/en/search')->getContent(), $en) ? $en[1] : '{}', true);
     expect($english['cart_voucher'] ?? null)->toBe(url('/en/cart/voucher'));

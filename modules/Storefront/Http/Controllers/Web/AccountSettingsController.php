@@ -60,24 +60,17 @@ final class AccountSettingsController
         return view('theme::pages.account.delete', [
             'customer' => $customer,
             'blockers' => $this->accounts->deletionBlockers($customer->id),
-            'otpSent' => (bool) $request->session()->get('vani.delete_otp_sent', false),
         ]);
     }
 
-    public function requestDeletionOtp(Request $request): RedirectResponse
-    {
-        $customer = $this->required($request);
-        $this->accounts->requestDeletionOtp($customer->id, (string) $request->ip());
-        $request->session()->put('vani.delete_otp_sent', true);
-
-        return redirect()->to(LocalizedUrls::route('storefront.account.delete'))->with('status', __('storefront::messages.otp_sent'));
-    }
-
+    /**
+     * Xác nhận bằng mật khẩu hiện tại; tài khoản chưa có mật khẩu (đăng nhập OTP/mạng xã hội) đặt mật khẩu ở trang hồ sơ trước.
+     */
     public function destroyAccount(Request $request): RedirectResponse
     {
         $customer = $this->required($request);
-        $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
-        $this->accounts->deleteAccount($customer->id, $data['code']);
+        $data = $request->validate(['password' => ['required', 'string', 'max:200']]);
+        $this->accounts->deleteAccount($customer->id, $data['password']);
 
         // Ẩn danh hoá đã thu hồi mọi token; bỏ phiên web để không còn dấu vết đăng nhập.
         $request->session()->invalidate();

@@ -61,9 +61,33 @@ final class CustomerRejected extends BusinessRuleViolation
         return new self(__('customer::messages.social_failed'), 'customer.social_failed', 422);
     }
 
-    public static function socialPhoneRequired(): self
+    /** Nhà cung cấp không trả email (hoặc SĐT) đã xác minh để ghép/tạo tài khoản. */
+    public static function socialEmailRequired(): self
     {
-        return new self(__('customer::messages.social_phone_required'), 'customer.social_phone_required', 422);
+        return new self(__('customer::messages.social_email_required'), 'customer.social_email_required', 422);
+    }
+
+    /** Link xác minh email đăng ký sai hoặc hết hạn. */
+    public static function registrationLinkInvalid(): self
+    {
+        return new self(__('customer::messages.registration_link_invalid'), 'customer.registration_link_invalid', 422);
+    }
+
+    /** Link đặt lại mật khẩu sai hoặc hết hạn. */
+    public static function passwordResetInvalid(): self
+    {
+        return new self(__('customer::messages.password_reset_invalid'), 'customer.password_reset_invalid', 422);
+    }
+
+    /** Thao tác cần nhập lại mật khẩu nhưng tài khoản chưa có (đăng nhập OTP/mạng xã hội): đặt mật khẩu trước. */
+    public static function passwordRequired(): self
+    {
+        return new self(__('customer::messages.password_required'), 'customer.password_required', 422);
+    }
+
+    public static function tooManyAttempts(int $retryAfter): self
+    {
+        return new self(__('customer::messages.too_many_attempts'), 'customer.too_many_attempts', 429, ['retry_after' => $retryAfter]);
     }
 
     public static function emailTaken(): self

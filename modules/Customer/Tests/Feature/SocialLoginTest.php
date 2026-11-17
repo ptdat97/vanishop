@@ -15,7 +15,7 @@ use Modules\Shared\Context\CurrentContext;
 
 require_once __DIR__.'/CustomerTestHelpers.php';
 
-AuthProviderContract::define('fake_id', fn () => new FakeAuthProvider, validParams: fn () => ['code' => 'phone'], invalidParams: fn () => ['code' => 'het-han']);
+AuthProviderContract::define('fake_id', fn () => new FakeAuthProvider, validParams: fn () => ['code' => 'email'], invalidParams: fn () => ['code' => 'het-han']);
 
 beforeEach(function () {
     config(['vanishop.customer.auth_redirect_uris' => ['https://shop.example']]);
@@ -37,27 +37,37 @@ it('liệt kê nhà cung cấp; redirect_uri ngoài danh sách bị chặn; URL 
     $this->postJson(H::API.'/auth/social/khong-co/start', ['redirect_uri' => 'https://shop.example/x'])->assertNotFound();
 });
 
-it('SĐT đã xác minh → tạo/đăng nhập khách, liên kết danh tính; lần sau đăng nhập theo danh tính', function () {
-    $token = ($this->login)('phone')->assertOk()->json('meta.token');
-    $this->getJson(H::API.'/me', H::auth($token))->assertOk()->assertJsonPath('data.phone', '+84912345678');
+it('email đã xác minh → tạo tài khoản (email đã xác minh), liên kết danh tính; lần sau đăng nhập theo danh tính', function () {
+    $token = ($this->login)('email')->assertOk()->json('meta.token');
+    $this->getJson(H::API.'/me', H::auth($token))->assertOk()->assertJsonPath('data.email', 'lan@example.com')->assertJsonPath('data.phone', null);
 
     $customer = Customer::query()->sole();
     expect($customer->isRegistered())->toBeTrue()
-        ->and(DB::table('customer_identities')->where('customer_id', $customer->id)->value('subject'))->toBe('user-phone');
+        ->and($customer->email_verified_at)->not->toBeNull()
+        ->and(DB::table('customer_identities')->where('customer_id', $customer->id)->value('subject'))->toBe('user-email');
 
-    $customer->update(['phone' => '+84900000000']); // đổi SĐT: vẫn đăng nhập theo danh tính đã liên kết
-    ($this->login)('phone')->assertOk();
+    $customer->update(['email' => 'doi@example.com']); // đổi email: vẫn đăng nhập theo danh tính đã liên kết
+    ($this->login)('email')->assertOk();
     expect(Customer::query()->count())->toBe(1);
 });
 
-it('email đã xác minh chỉ ghép với khách đang có; chưa xác minh hoặc không có SĐT → yêu cầu xác minh SĐT', function () {
-    ($this->login)('email')->assertStatus(422)->assertJsonPath('error.code', 'customer.social_phone_required');
-    ($this->login)('phone-unverified')->assertStatus(422)->assertJsonPath('error.code', 'customer.social_phone_required');
+it('email đã xác minh ghép với hồ sơ đang có (kể cả khách vãng lai) và đánh dấu email đã xác minh', function () {
+    $guest = Customer::query()->create(['public_id' => (string) Str::ulid(), 'phone' => '+84911111111', 'email' => 'lan@example.com', 'status' => 'active']);
 
-    Customer::query()->create(['public_id' => (string) Str::ulid(), 'phone' => '+84911111111', 'email' => 'lan@example.com', 'status' => 'active']);
-    ($this->login)('email-unverified')->assertStatus(422)->assertJsonPath('error.code', 'customer.social_phone_required');
-    ($this->login)('email')->assertOk();
-    expect(DB::table('customer_identities')->where('subject', 'user-email')->value('customer_id'))->toBe(Customer::query()->where('email', 'lan@example.com')->value('id'));
+    ($this->login)('email')->assertOk()->assertJsonPath('data.phone', '+84911111111');
+    expect($guest->fresh())->registered_at->not->toBeNull()->email_verified_at->not->toBeNull()
+        ->and(DB::table('customer_identities')->where('subject', 'user-email')->value('customer_id'))->toBe($guest->id);
+});
+
+it('chỉ có SĐT đã xác minh: ghép với khách đang có SĐT đó, không tạo tài khoản mới; chưa xác minh → social_email_required', function () {
+    ($this->login)('phone')->assertStatus(422)->assertJsonPath('error.code', 'customer.social_email_required');
+    ($this->login)('email-unverified')->assertStatus(422)->assertJsonPath('error.code', 'customer.social_email_required');
+    expect(Customer::query()->count())->toBe(0);
+
+    $existing = H::account('0912345678');
+    ($this->login)('phone-unverified')->assertStatus(422)->assertJsonPath('error.code', 'customer.social_email_required');
+    ($this->login)('phone')->assertOk();
+    expect(DB::table('customer_identities')->where('subject', 'user-phone')->value('customer_id'))->toBe($existing->id);
 });
 
 it('state chỉ dùng một lần và gắn với nhà cung cấp; nhà cung cấp lỗi → social_failed', function () {
@@ -68,7 +78,7 @@ it('state chỉ dùng một lần và gắn với nhà cung cấp; nhà cung c�
 });
 
 it('hợp nhất khách chuyển danh tính liên kết sang khách đích; ẩn danh hoá xoá danh tính', function () {
-    ($this->login)('phone')->assertOk();
+    ($this->login)('email')->assertOk();
     $source = Customer::query()->sole();
     $target = Customer::query()->create(['public_id' => (string) Str::ulid(), 'phone' => '+84922222222', 'status' => 'active', 'registered_at' => now()]);
     $lifecycle = app(AccountLifecycle::class);

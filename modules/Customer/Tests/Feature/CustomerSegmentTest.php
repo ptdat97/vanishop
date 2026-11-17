@@ -9,7 +9,6 @@ use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerGroup;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Shared\Support\Phones;
@@ -29,8 +28,7 @@ beforeEach(function () {
         'code' => 'vip', 'name' => 'Giá VIP', 'currency_code' => 'VND', 'type' => 'member', 'customer_group_id' => $this->vip->id, 'priority' => 20, 'status' => 'active',
     ])->prices()->create(['variant_id' => $this->s->id, 'amount' => 250_000]));
     $this->signIn = function (string $phone = '0912345678'): Customer {
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone]);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']]);
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account($phone)->email, 'password' => H::PASSWORD]);
 
         return Customer::query()->where('phone', Phones::fromString($phone)->e164)->sole();
     };

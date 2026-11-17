@@ -9,7 +9,7 @@
             <h1 class="mb-4 text-2xl font-semibold">{{ __('Xoá tài khoản') }}</h1>
             <div class="mb-6 space-y-2 text-sm text-slate-600">
                 <p>{{ __('Khi xoá, cửa hàng gỡ họ tên, số điện thoại, email, ngày sinh, sổ địa chỉ và các đồng ý nhận tin của bạn, đồng thời đăng xuất mọi thiết bị.') }}</p>
-                <p>{{ __('Đơn hàng đã đặt vẫn được lưu (không gắn với tài khoản) theo nghĩa vụ kế toán, thuế. Sau khi xoá, bạn vẫn đăng ký lại được bằng số điện thoại này.') }}</p>
+                <p>{{ __('Đơn hàng đã đặt vẫn được lưu (không gắn với tài khoản) theo nghĩa vụ kế toán, thuế. Sau khi xoá, bạn vẫn đăng ký lại được bằng email này.') }}</p>
             </div>
 
             @if ($blockers !== [])
@@ -22,28 +22,21 @@
                     </ul>
                     <p class="mt-2">{{ __('Vui lòng chờ hoàn tất hoặc') }} <a href="{{ vani_route('storefront.account.orders') }}" class="underline">{{ __('xem đơn hàng') }}</a>.</p>
                 </div>
-            @elseif (! $otpSent)
-                <form action="{{ vani_route('storefront.account.delete.otp') }}" method="post">
-                    @csrf
-                    <p class="mb-3 text-sm">{{ __('Mã xác nhận sẽ được gửi tới :phone.', ['phone' => $customer->phone]) }}</p>
-                    <button type="submit" class="rounded-[var(--radius-theme)] border border-red-600 px-4 py-2 font-medium text-red-700">{{ __('Gửi mã xác nhận') }}</button>
-                </form>
+            @elseif (! $customer->hasPassword)
+                <p class="text-sm">{{ __('Tài khoản chưa có mật khẩu. Vui lòng đặt mật khẩu trước để xác nhận xoá.') }} <a href="{{ vani_route('storefront.account.profile') }}" class="underline">{{ __('Đặt mật khẩu') }}</a></p>
             @else
                 <form action="{{ vani_route('storefront.account.delete.confirm') }}" method="post" class="space-y-3">
                     @csrf
+                    @error('business')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     <div>
-                        <label for="code" class="block text-sm">{{ __('Mã xác nhận gửi tới :phone', ['phone' => $customer->phone]) }}</label>
-                        <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
-                        @error('code')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                        <label for="password" class="block text-sm">{{ __('Nhập mật khẩu để xác nhận') }}</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                        @error('password')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <button type="submit" class="rounded-[var(--radius-theme)] bg-red-600 px-4 py-2 font-medium text-white">{{ __('Xoá vĩnh viễn tài khoản') }}</button>
                         <a href="{{ vani_route('storefront.account.profile') }}" class="text-sm underline">{{ __('Thôi, giữ tài khoản') }}</a>
                     </div>
-                </form>
-                <form action="{{ vani_route('storefront.account.delete.otp') }}" method="post" class="mt-3">
-                    @csrf
-                    <button type="submit" class="text-sm text-slate-500 underline">{{ __('Gửi lại mã') }}</button>
                 </form>
             @endif
         </section>

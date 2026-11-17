@@ -121,12 +121,6 @@ parameters:
 			path: modules/Customer/Application/AuthService.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>e164" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: modules/Customer/Application/CustomerSessionService.php
-
-		-
 			message: '#^Access to an undefined property Modules\\Customer\\Persistence\\Models\\Customer\:\:\$first_order_at\.$#'
 			identifier: property.notFound
 			count: 1
@@ -149,12 +143,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: modules/Customer/Application/CustomerStats.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>e164" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: modules/Customer/Http/Controllers/Api/AuthController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>last_error" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

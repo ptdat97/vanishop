@@ -6,7 +6,6 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Customer\Contracts\CustomerRejected;
-use Modules\Customer\Contracts\Data\OtpPurpose;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
@@ -34,7 +33,6 @@ final class AccountLifecycle
         private readonly CustomerStats $stats,
         private readonly AuditLogger $audit,
         private readonly CurrentContext $context,
-        private readonly OtpService $otp,
     ) {}
 
     /**
@@ -55,33 +53,18 @@ final class AccountLifecycle
     }
 
     /**
-     * Khách tự xoá tài khoản (quyền xoá dữ liệu): còn việc dở thì từ chối trước khi tiêu OTP; OTP mục đích
-     * `delete_account` gửi tới SĐT của tài khoản; rồi ẩn danh hoá (thu hồi mọi phiên, rút consent có ghi ledger).
+     * Khách tự xoá tài khoản (quyền xoá dữ liệu): còn việc dở thì từ chối trước khi kiểm mật khẩu; nhập lại mật khẩu (chưa
+     * có → `customer.password_required`, đặt mật khẩu trước); rồi ẩn danh hoá (thu hồi mọi phiên, rút consent có ghi ledger).
      */
-    public function deleteOwnAccount(int $customerId, string $code): void
+    public function deleteOwnAccount(int $customerId, string $password): void
     {
-        $customer = Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
+        Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
         if (($blockers = $this->deletionBlockers($customerId)) !== []) {
             throw CustomerRejected::deletionBlocked($blockers);
         }
 
-        $this->otp->verify((string) $customer->phone, OtpPurpose::DeleteAccount, $code);
+        $this->auth->confirmPassword($customerId, $password);
         $this->anonymize($customerId, 'customer_request');
-    }
-
-    /**
-     * Gửi OTP xác nhận xoá tài khoản tới SĐT của khách; còn việc dở thì từ chối, không gửi.
-     *
-     * @return array{channel: string, expires_in: int}
-     */
-    public function requestDeletionOtp(int $customerId, string $ip): array
-    {
-        $customer = Customer::query()->find($customerId) ?? throw CustomerRejected::notFound();
-        if (($blockers = $this->deletionBlockers($customerId)) !== []) {
-            throw CustomerRejected::deletionBlocked($blockers);
-        }
-
-        return $this->otp->request((string) $customer->phone, OtpPurpose::DeleteAccount, $ip);
     }
 
     /**

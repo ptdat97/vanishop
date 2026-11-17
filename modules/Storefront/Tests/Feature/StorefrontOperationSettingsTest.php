@@ -4,10 +4,8 @@ use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Identity\Persistence\Models\StaffUser;
-use Modules\Shared\Support\Phones;
 use Modules\Storefront\Application\Maintenance;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -125,8 +123,7 @@ describe('khách vãng lai', function () {
         $this->get('/thanh-toan')->assertRedirect(route('storefront.account.login'))->assertSessionHas('status', 'Vui lòng đăng nhập để đặt hàng.');
         $this->post('/thanh-toan', ['expected_total' => 330_000, 'idempotency_key' => 'guest-off-web-0001'])->assertRedirect(route('storefront.account.login'));
 
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login']])
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD])
             ->assertRedirect(route('storefront.checkout'));
         $this->get('/thanh-toan')->assertOk();
     });
@@ -143,8 +140,7 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
         $this->settings->set('core', 'storefront.price_visibility', 'members');
         $this->product = '/san-pham/'.$this->s->style->slug;
         $this->signIn = function (): void {
-            $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-            $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login']]);
+            $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD]);
         };
     });
 
@@ -211,8 +207,7 @@ describe('ẩn giá với khách chưa đăng nhập', function () {
         $this->get('/thanh-toan')->assertRedirect(route('storefront.account.login'));
 
         $this->from($productUrl)->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login']])
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD])
             ->assertRedirect($productUrl);
 
         $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1])->assertRedirect();

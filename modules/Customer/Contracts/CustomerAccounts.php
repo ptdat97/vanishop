@@ -51,15 +51,8 @@ interface CustomerAccounts
     public function deletionBlockers(int $customerId): array;
 
     /**
-     * Gửi OTP xác nhận xoá tới SĐT của tài khoản. Còn việc dở → `customer.deletion_blocked` (không gửi OTP).
-     *
-     * @return array{channel: string, expires_in: int}
+     * Xoá tài khoản = ẩn danh hoá (giữ đơn theo nghĩa vụ kế toán), thu hồi mọi phiên. Xác nhận bằng mật khẩu hiện tại. Còn việc
+     * dở → `customer.deletion_blocked`; sai mật khẩu → `customer.password_mismatch`; chưa có mật khẩu → `customer.password_required`.
      */
-    public function requestDeletionOtp(int $customerId, string $ip): array;
-
-    /**
-     * Xoá tài khoản = ẩn danh hoá (giữ đơn theo nghĩa vụ kế toán), thu hồi mọi phiên. Còn việc dở →
-     * `customer.deletion_blocked`; sai OTP → `customer.otp_invalid`.
-     */
-    public function deleteAccount(int $customerId, string $code): void;
+    public function deleteAccount(int $customerId, string $password): void;
 }

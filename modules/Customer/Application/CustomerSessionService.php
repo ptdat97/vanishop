@@ -4,30 +4,43 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Application;
 
-use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
-use Modules\Customer\Contracts\Data\OtpPurpose;
-use Modules\Shared\Support\Phones;
 
 final class CustomerSessionService implements CustomerSessions
 {
     public function __construct(
-        private readonly OtpService $otp,
         private readonly AuthService $auth,
         private readonly AddressBook $addresses,
     ) {}
 
-    public function requestLoginOtp(string $phone, string $ip): array
+    public function register(string $email, string $password, string $fullName): array
     {
-        return $this->otp->request($this->e164($phone), OtpPurpose::Login, $ip);
+        return $this->auth->register($email, $password, $fullName);
     }
 
-    public function loginWithOtp(string $phone, string $code, ?string $device = null): array
+    public function verifyRegistration(string $token, ?string $device = null): array
     {
-        $session = $this->auth->loginWithOtp($this->e164($phone), $code, $device);
+        $session = $this->auth->verifyRegistration($token, $device);
 
         return ['customer' => $session['customer'], 'token' => $session['token']];
+    }
+
+    public function loginWithPassword(string $email, string $password, string $ip, ?string $device = null): array
+    {
+        $session = $this->auth->loginWithPassword($email, $password, $ip, $device);
+
+        return ['customer' => $session['customer'], 'token' => $session['token']];
+    }
+
+    public function requestPasswordReset(string $email): void
+    {
+        $this->auth->requestPasswordReset($email);
+    }
+
+    public function resetPassword(string $token, string $password): void
+    {
+        $this->auth->resetPassword($token, $password);
     }
 
     public function authenticate(string $token): ?CustomerData
@@ -45,10 +58,5 @@ final class CustomerSessionService implements CustomerSessions
     public function addresses(int $customerId): array
     {
         return $this->addresses->all($customerId);
-    }
-
-    private function e164(string $phone): string
-    {
-        return Phones::parse($phone)?->e164 ?? throw CustomerRejected::otpInvalid();
     }
 }

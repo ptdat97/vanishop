@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.11',
+    'version' => '0.5.12',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.0.0',
+    'extension_api' => '1.1.0',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -191,7 +191,10 @@ return [
                 'track' => 'tra-cuu-don',
                 'account' => 'tai-khoan',
                 'account.login' => 'tai-khoan/dang-nhap',
-                'account.otp' => 'tai-khoan/dang-nhap/otp',
+                'account.register' => 'tai-khoan/dang-ky',
+                'account.register.verify' => 'tai-khoan/dang-ky/xac-minh/{token}',
+                'account.password.forgot' => 'tai-khoan/quen-mat-khau',
+                'account.password.reset' => 'tai-khoan/dat-lai-mat-khau/{token}',
                 'account.orders' => 'tai-khoan/don-hang',
                 'account.order' => 'tai-khoan/don-hang/{order}',
                 'account.order.cancel' => 'tai-khoan/don-hang/{order}/huy',
@@ -203,7 +206,6 @@ return [
                 'account.profile' => 'tai-khoan/ho-so',
                 'account.password' => 'tai-khoan/mat-khau',
                 'account.delete' => 'tai-khoan/xoa',
-                'account.delete.otp' => 'tai-khoan/xoa/otp',
                 'account.logout' => 'tai-khoan/dang-xuat',
             ],
             'en' => [
@@ -228,7 +230,10 @@ return [
                 'track' => 'track-order',
                 'account' => 'account',
                 'account.login' => 'account/login',
-                'account.otp' => 'account/login/otp',
+                'account.register' => 'account/register',
+                'account.register.verify' => 'account/register/verify/{token}',
+                'account.password.forgot' => 'account/forgot-password',
+                'account.password.reset' => 'account/reset-password/{token}',
                 'account.orders' => 'account/orders',
                 'account.order' => 'account/orders/{order}',
                 'account.order.cancel' => 'account/orders/{order}/cancel',
@@ -240,7 +245,6 @@ return [
                 'account.profile' => 'account/profile',
                 'account.password' => 'account/password',
                 'account.delete' => 'account/delete',
-                'account.delete.otp' => 'account/delete/otp',
                 'account.logout' => 'account/logout',
             ],
         ],
@@ -368,6 +372,15 @@ return [
         'token_ttl_days' => (int) env('VANI_CUSTOMER_TOKEN_TTL_DAYS', 90),
         // Đăng nhập mạng xã hội (AuthProvider): redirect_uri phải bắt đầu bằng một trong các tiền tố này (chống open redirect).
         'auth_redirect_uris' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_AUTH_REDIRECT_URIS', (string) env('APP_URL', '')))))),
+        // Đăng ký bằng email (mặc định của Core, 0.5.12): link xác minh và link đặt lại mật khẩu gửi qua email.
+        'email_auth' => [
+            'verify_ttl_hours' => (int) env('VANI_CUSTOMER_VERIFY_TTL_HOURS', 24),
+            'reset_ttl_minutes' => (int) env('VANI_CUSTOMER_RESET_TTL_MINUTES', 60),
+            // Frontend headless: URL trong email trỏ về app riêng (`{token}` được thay); trống = trang của storefront native.
+            'verify_url' => env('VANI_CUSTOMER_VERIFY_URL'),
+            'reset_url' => env('VANI_CUSTOMER_RESET_URL'),
+        ],
+        // OTP: khung gửi mã (OtpSender) dùng bởi plugin đăng nhập OTP (`vani.phone-otp-login`).
         'otp' => [
             // Giới hạn yêu cầu OTP trong cửa sổ `window` giây (chống SMS pumping).
             'per_phone' => (int) env('VANI_OTP_PER_PHONE', 3),

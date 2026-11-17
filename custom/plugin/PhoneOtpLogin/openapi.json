@@ -1,0 +1,61 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "vani.phone-otp-login — Storefront API",
+        "version": "1.0.0",
+        "description": "Đăng nhập bằng mã OTP gửi tới số điện thoại — phương thức bổ sung bên cạnh email + mật khẩu của Core (`/auth/login`). Kiểm bằng Modules\\Extension\\Testing\\StorefrontApiContract trong test của plugin (plugin-system §10b)."
+    },
+    "servers": [
+        {
+            "url": "/api/storefront/v1/x/vani-phone-otp-login"
+        }
+    ],
+    "paths": {
+        "/otp/request": {
+            "post": {
+                "summary": "Gửi mã OTP tới SĐT",
+                "responses": {
+                    "202": {
+                        "description": "Kênh đã gửi và thời hạn mã.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "schemas/otp-requested.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu sai, SĐT không hợp lệ hoặc không có kênh gửi mã (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    },
+                    "429": {
+                        "description": "Yêu cầu mã quá nhiều lần (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        },
+        "/otp/verify": {
+            "post": {
+                "summary": "Đăng nhập bằng mã OTP (SĐT chưa có hồ sơ → tạo tài khoản; hồ sơ khách vãng lai → nhận lại lịch sử đơn)",
+                "responses": {
+                    "200": {
+                        "description": "Khách + token Bearer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../../../docs/api/schemas/storefront/responses/customer-session.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Mã sai hoặc hết hạn (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    },
+                    "429": {
+                        "description": "Thử quá nhiều lần (lỗi theo error.v1 của Core: docs/api/schemas/integration/error.v1.json)"
+                    }
+                }
+            }
+        }
+    }
+}

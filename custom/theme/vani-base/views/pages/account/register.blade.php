@@ -1,0 +1,42 @@
+@extends('theme::layouts.app')
+
+@section('title', __('Đăng ký'))
+
+@section('content')
+    <div class="mx-auto max-w-sm">
+        <h1 class="mb-6 text-2xl font-semibold">{{ __('Đăng ký') }}</h1>
+        @if ($sentTo)
+            <div role="status" class="space-y-2 rounded-[var(--radius-theme)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <p class="font-medium">{{ __('Kiểm tra hộp thư của bạn') }}</p>
+                <p>{{ __('Chúng tôi đã gửi link xác minh tới :email. Bấm vào link trong email để hoàn tất đăng ký.', ['email' => $sentTo]) }}</p>
+                <p class="text-emerald-800">{{ __('Không thấy email? Hãy xem thư mục spam hoặc đăng ký lại.') }}</p>
+            </div>
+        @else
+            <form action="{{ vani_route('storefront.account.register.store') }}" method="post" class="space-y-3">
+                @csrf
+                @error('business')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                <div>
+                    <label for="full_name" class="block text-sm">{{ __('Họ tên') }}</label>
+                    <input id="full_name" name="full_name" type="text" autocomplete="name" value="{{ old('full_name') }}" required maxlength="120" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                    @error('full_name')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="email" class="block text-sm">Email</label>
+                    <input id="email" name="email" type="email" autocomplete="email" value="{{ old('email') }}" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                    @error('email')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="password" class="block text-sm">{{ __('Mật khẩu (tối thiểu 8 ký tự)') }}</label>
+                    <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                    @error('password')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="password_confirmation" class="block text-sm">{{ __('Nhập lại mật khẩu') }}</label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
+                </div>
+                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('Đăng ký') }}</button>
+            </form>
+        @endif
+        <p class="mt-4 text-center text-sm">{{ __('Đã có tài khoản?') }} <a href="{{ vani_route('storefront.account.login') }}" class="font-medium underline">{{ __('Đăng nhập') }}</a></p>
+    </div>
+@endsection

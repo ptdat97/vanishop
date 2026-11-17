@@ -59,13 +59,8 @@ final class CustomerAccountService implements CustomerAccounts
         return $this->lifecycle->deletionBlockers($customerId);
     }
 
-    public function requestDeletionOtp(int $customerId, string $ip): array
+    public function deleteAccount(int $customerId, string $password): void
     {
-        return $this->lifecycle->requestDeletionOtp($customerId, $ip);
-    }
-
-    public function deleteAccount(int $customerId, string $code): void
-    {
-        $this->lifecycle->deleteOwnAccount($customerId, $code);
+        $this->lifecycle->deleteOwnAccount($customerId, $password);
     }
 }

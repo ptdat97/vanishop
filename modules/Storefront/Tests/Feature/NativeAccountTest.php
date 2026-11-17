@@ -5,10 +5,8 @@ use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Application\Hooks\HookManager;
 use Modules\Ordering\Persistence\Models\Order;
-use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -17,8 +15,7 @@ beforeEach(function () {
     H::fakeOtp();
     ['s' => $this->s] = C::store();
     $this->signIn = function (string $phone = '0912345678'): void {
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone])->assertRedirect('/tai-khoan/dang-nhap');
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']])->assertRedirect('/tai-khoan');
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account($phone)->email, 'password' => H::PASSWORD])->assertRedirect('/tai-khoan');
     };
     $this->checkoutPayload = [
         'contact' => ['full_name' => 'Lan', 'phone' => '0912345678'],
@@ -27,7 +24,7 @@ beforeEach(function () {
     ];
 });
 
-it('trang tài khoản cần đăng nhập; đăng nhập OTP → gộp giỏ vãng lai, phiên báo Tài khoản + số món', function () {
+it('trang tài khoản cần đăng nhập; đăng nhập email + mật khẩu → gộp giỏ vãng lai, phiên báo Tài khoản + số món', function () {
     $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 2]);
 
@@ -37,6 +34,50 @@ it('trang tài khoản cần đăng nhập; đăng nhập OTP → gộp giỏ v�
     $this->get('/gio-hang')->assertSee('600.000 ₫');
     // Trang chủ cache được (giống nhau với mọi khách); nhãn header lấy qua /_vani/phien.
     $this->getJson('/_vani/phien')->assertJsonPath('signed_in', true)->assertJsonPath('account.label', 'Tài khoản')->assertJsonPath('cart.count', 2);
+});
+
+it('đăng ký: gửi link xác minh (chưa tạo tài khoản), bấm link → tạo tài khoản + đăng nhập, gộp giỏ; link dùng một lần', function () {
+    $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
+    $this->get('/tai-khoan/dang-ky')->assertOk()->assertSee('name="full_name"', false);
+
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'khac'])
+        ->assertSessionHasErrors('password');
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'Lan@Example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'])
+        ->assertRedirect('/tai-khoan/dang-ky');
+    $this->get('/tai-khoan/dang-ky')->assertSee('Kiểm tra hộp thư của bạn')->assertSee('lan@example.com');
+    expect(Customer::query()->count())->toBe(0);
+
+    $link = H::mailedLink('lan@example.com');
+    expect($link)->toStartWith(url('/tai-khoan/dang-ky/xac-minh/'));
+    $this->get($link)->assertRedirect('/tai-khoan');
+    expect(Customer::query()->sole())->email->toBe('lan@example.com')->full_name->toBe('Lan')->registered_at->not->toBeNull()->email_verified_at->not->toBeNull();
+    $this->get('/tai-khoan')->assertOk()->assertSee('Đăng xuất');
+    $this->get('/gio-hang')->assertSee('300.000 ₫');
+
+    $this->post('/tai-khoan/dang-xuat');
+    $this->get($link)->assertRedirect('/tai-khoan/dang-ky')->assertSessionHasErrors(['business' => 'Link xác minh không đúng hoặc đã hết hạn. Vui lòng đăng ký lại.']);
+    $this->post('/tai-khoan/dang-ky', ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'])
+        ->assertSessionHasErrors(['business' => 'Email đã được dùng cho tài khoản khác.']);
+});
+
+it('quên mật khẩu: không lộ email có phải tài khoản; link đặt mật khẩu mới, đăng xuất mọi phiên cũ, link dùng một lần', function () {
+    $customer = H::account();
+    $this->post('/tai-khoan/quen-mat-khau', ['email' => 'khong-co@example.com'])->assertRedirect('/tai-khoan/quen-mat-khau')
+        ->assertSessionHas('status', 'Nếu email này đã đăng ký, chúng tôi đã gửi link đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.');
+    $this->post('/tai-khoan/quen-mat-khau', ['email' => strtoupper($customer->email)])
+        ->assertSessionHas('status', 'Nếu email này đã đăng ký, chúng tôi đã gửi link đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.');
+    $oldToken = $this->postJson('/api/storefront/v1/auth/login', ['email' => $customer->email, 'password' => H::PASSWORD])->json('meta.token');
+
+    $link = H::mailedLink($customer->email);
+    expect($link)->toStartWith(url('/tai-khoan/dat-lai-mat-khau/'));
+    $this->get($link)->assertOk()->assertSee('Đặt mật khẩu mới');
+    $token = H::mailedToken($customer->email);
+    $this->post($link, ['token' => $token, 'password' => 'mat-khau-moi-9', 'password_confirmation' => 'mat-khau-moi-9'])
+        ->assertRedirect('/tai-khoan/dang-nhap')->assertSessionHas('status', 'Đã đặt mật khẩu mới. Vui lòng đăng nhập lại.');
+    $this->getJson('/api/storefront/v1/me', H::auth($oldToken))->assertUnauthorized();
+
+    $this->from($link)->post($link, ['token' => $token, 'password' => 'mat-khau-moi-0', 'password_confirmation' => 'mat-khau-moi-0'])->assertSessionHasErrors('business');
+    $this->post('/tai-khoan/dang-nhap', ['email' => $customer->email, 'password' => 'mat-khau-moi-9'])->assertRedirect('/tai-khoan');
 });
 
 it('các trang đăng nhập và tài khoản có slot với dữ liệu phù hợp', function () {
@@ -60,9 +101,13 @@ it('các trang đăng nhập và tài khoản có slot với dữ liệu phù h�
     $this->get(route('storefront.account.profile'))->assertSee('PLUGIN-PROFILE:+84912345678');
 });
 
-it('mã OTP sai → lỗi form, chưa đăng nhập', function () {
-    $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-    $this->post('/tai-khoan/dang-nhap', ['code' => '000000'])->assertSessionHasErrors('business');
+it('trang đăng nhập: email + mật khẩu, link đăng ký và quên mật khẩu; sai mật khẩu → lỗi form, chưa đăng nhập', function () {
+    $this->get('/tai-khoan/dang-nhap')->assertOk()->assertSee('name="email"', false)->assertSee('name="password"', false)
+        ->assertSee(url('/tai-khoan/dang-ky'))->assertSee(url('/tai-khoan/quen-mat-khau'))->assertDontSee('name="phone"', false);
+
+    $email = H::account()->email;
+    $this->from('/tai-khoan/dang-nhap')->post('/tai-khoan/dang-nhap', ['email' => $email, 'password' => 'sai-mat-khau'])
+        ->assertRedirect('/tai-khoan/dang-nhap')->assertSessionHasErrors(['business' => 'Email hoặc mật khẩu không đúng.']);
     $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');
 });
 

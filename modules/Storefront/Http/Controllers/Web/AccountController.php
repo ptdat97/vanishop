@@ -8,30 +8,33 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Customer\Contracts\Requests\RegisterRequest;
+use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Support\LocalizedUrls;
-use Modules\Storefront\Application\NativeCart;
+use Modules\Storefront\Application\NativeCustomerSignIn;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\ReturnFormPresenter;
+use Modules\Storefront\Contracts\CustomerSignIn;
 
 /**
- * Tài khoản khách trên native storefront: đăng nhập OTP (token trong phiên), đơn hàng, địa chỉ. Cùng contract
- * với Storefront API (CustomerSessions, CustomerOrders).
+ * Tài khoản khách trên native storefront: đăng nhập bằng email + mật khẩu (mặc định của Core, 0.5.12; token trong phiên), đăng
+ * ký qua link xác minh email, quên mật khẩu, đơn hàng, địa chỉ. Cùng contract với Storefront API (CustomerSessions,
+ * CustomerOrders). Phương thức khác (OTP của `vani.phone-otp-login`, mạng xã hội) gắn form vào slot `vani.storefront.account.login`.
  */
 final class AccountController
 {
-    private const TOKEN = 'vani.customer_token';
-
-    private const PENDING_PHONE = 'vani.login_phone';
+    private const TOKEN = NativeCustomerSignIn::TOKEN;
 
     public function __construct(
         private readonly CustomerSessions $sessions,
         private readonly CustomerOrders $orders,
         private readonly OrderPresenter $presenter,
+        private readonly CustomerSignIn $signIn,
     ) {}
 
     public function login(Request $request): View|RedirectResponse
@@ -40,57 +43,86 @@ final class AccountController
             return redirect()->to(LocalizedUrls::route('storefront.account'));
         }
 
-        return view('theme::pages.account.login', ['phone' => $request->session()->get(self::PENDING_PHONE)]);
+        return view('theme::pages.account.login');
     }
 
     /**
-     * Gửi mã OTP. JSON (`Accept: application/json`, `window.vani.auth.requestOtp`): `{message, phone}`.
+     * Email + mật khẩu → đăng nhập, gộp giỏ vãng lai. JSON (`window.vani.auth.login`): `{signed_in, message, redirect,
+     * csrf_token}` — phiên được cấp lại nên JS phải dùng `csrf_token` mới cho request sau.
      */
-    public function requestOtp(Request $request): RedirectResponse|JsonResponse
+    public function authenticate(Request $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validate(['phone' => ['required', 'string', 'max:20']]);
-        $this->sessions->requestLoginOtp($data['phone'], (string) $request->ip());
-        $request->session()->put(self::PENDING_PHONE, $data['phone']);
+        $data = $request->validate([
+            'email' => ['required', 'string', 'email', 'max:190'],
+            'password' => ['required', 'string', 'max:200'],
+        ]);
+        $session = $this->sessions->loginWithPassword($data['email'], $data['password'], (string) $request->ip(), 'web');
 
-        if ($request->expectsJson()) {
-            return response()->json(['message' => __('storefront::messages.otp_sent'), 'phone' => $data['phone']]);
+        return $this->signedIn($request, $session['token'], $session['customer']->id);
+    }
+
+    public function register(Request $request): View|RedirectResponse
+    {
+        if ($this->customer($request) !== null) {
+            return redirect()->to(LocalizedUrls::route('storefront.account'));
         }
 
-        return redirect()->to(LocalizedUrls::route('storefront.account.login'))->with('status', __('storefront::messages.otp_sent'));
+        return view('theme::pages.account.register', ['sentTo' => $request->session()->get('vani.register_sent_to')]);
     }
 
     /**
-     * Xác thực OTP → đăng nhập, gộp giỏ vãng lai. JSON: `{signed_in, message, redirect, csrf_token}` — phiên được cấp lại nên
-     * JS phải dùng `csrf_token` mới cho request sau.
+     * Gửi link xác minh; trang đăng ký chuyển sang thông báo "kiểm tra email".
      */
-    public function verify(Request $request, NativeCart $cart): RedirectResponse|JsonResponse
+    public function storeRegistration(RegisterRequest $request): RedirectResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
-        $phone = (string) $request->session()->get(self::PENDING_PHONE, '');
-        if ($phone === '') {
-            if ($request->expectsJson()) {
-                throw ValidationException::withMessages(['phone' => __('validation.required', ['attribute' => 'phone'])]);
-            }
+        $data = $request->validated();
+        $result = $this->sessions->register($data['email'], $data['password'], $data['full_name']);
 
-            return redirect()->to(LocalizedUrls::route('storefront.account.login'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.register'))->with('vani.register_sent_to', $result['email']);
+    }
+
+    /**
+     * Link trong email xác minh → tạo tài khoản và đăng nhập. Link sai/hết hạn → về trang đăng ký kèm lỗi.
+     */
+    public function verifyRegistration(Request $request, string $token): RedirectResponse
+    {
+        try {
+            $session = $this->sessions->verifyRegistration($token, 'web');
+        } catch (CustomerRejected $exception) {
+            return redirect()->to(LocalizedUrls::route('storefront.account.register'))->withErrors(['business' => $exception->getMessage()]);
         }
+        $redirect = $this->signIn->signIn($request, $session['token'], $session['customer']->id);
 
-        $session = $this->sessions->loginWithOtp($phone, $data['code'], 'web');
-        $request->session()->regenerate();
-        $request->session()->forget(self::PENDING_PHONE);
-        $request->session()->put(self::TOKEN, $session['token']);
-        $cart->attachGuestCartTo($session['customer']->id);
+        return redirect()->to($redirect)->with('status', __('storefront::messages.registered'));
+    }
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'signed_in' => true,
-                'message' => __('storefront::messages.signed_in'),
-                'redirect' => (string) $request->session()->pull('url.intended', LocalizedUrls::route('storefront.account')),
-                'csrf_token' => $request->session()->token(),
-            ]);
-        }
+    public function forgotPassword(): View
+    {
+        return view('theme::pages.account.forgot-password');
+    }
 
-        return redirect()->intended(LocalizedUrls::route('storefront.account'));
+    /**
+     * Luôn báo "đã gửi nếu email có tài khoản" — không lộ email nào là khách của cửa hàng.
+     */
+    public function sendPasswordReset(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['email' => ['required', 'string', 'email', 'max:190']]);
+        $this->sessions->requestPasswordReset($data['email']);
+
+        return redirect()->to(LocalizedUrls::route('storefront.account.password.forgot'))->with('status', __('storefront::messages.password_reset_sent'));
+    }
+
+    public function resetPasswordForm(string $token): View
+    {
+        return view('theme::pages.account.reset-password', ['token' => $token]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $this->sessions->resetPassword($data['token'], $data['password']);
+
+        return redirect()->to(LocalizedUrls::route('storefront.account.login'))->with('status', __('storefront::messages.password_reset_done'));
     }
 
     public function logout(Request $request): RedirectResponse|JsonResponse
@@ -165,6 +197,21 @@ final class AccountController
             'id' => $order->publicId, 'number' => $order->number, 'placed_at' => $order->placedAt,
             'status' => $order->customerStatus['label'], 'total' => $this->presenter->present($order)['total'],
         ], $orders);
+    }
+
+    private function signedIn(Request $request, string $token, int $customerId): RedirectResponse|JsonResponse
+    {
+        $redirect = $this->signIn->signIn($request, $token, $customerId);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'signed_in' => true,
+                'message' => __('storefront::messages.signed_in'),
+                'redirect' => $redirect,
+                'csrf_token' => $request->session()->token(),
+            ]);
+        }
+
+        return redirect()->to($redirect);
     }
 
     private function customer(Request $request): ?CustomerData

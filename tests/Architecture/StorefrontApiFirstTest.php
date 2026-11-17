@@ -32,8 +32,10 @@ const STOREFRONT_API_PAIRS = [
     'storefront.order.returns.store' => ['api.storefront.v1.orders.returns.store'],
     'storefront.order.returns.shipped' => ['api.storefront.v1.orders.returns.shipped'],
     'storefront.order.returns.cancel' => ['api.storefront.v1.orders.returns.cancel'],
-    'storefront.account.otp' => ['api.storefront.v1.auth.otp.request'],
-    'storefront.account.verify' => ['api.storefront.v1.auth.otp.verify'],
+    'storefront.account.authenticate' => ['api.storefront.v1.auth.login'],
+    'storefront.account.register.store' => ['api.storefront.v1.auth.register'],
+    'storefront.account.password.email' => ['api.storefront.v1.auth.password.forgot'],
+    'storefront.account.password.update-forgotten' => ['api.storefront.v1.auth.password.reset'],
     'storefront.account.logout' => ['api.storefront.v1.auth.logout'],
     'storefront.account.order.cancel' => ['api.storefront.v1.me.orders.cancel'],
     'storefront.account.profile.update' => ['api.storefront.v1.me.update'],
@@ -42,10 +44,11 @@ const STOREFRONT_API_PAIRS = [
     'storefront.account.addresses.update' => ['api.storefront.v1.me.addresses.update'],
     'storefront.account.addresses.default' => ['api.storefront.v1.me.addresses.update'],
     'storefront.account.addresses.destroy' => ['api.storefront.v1.me.addresses.destroy'],
-    'storefront.account.delete.otp' => ['api.storefront.v1.auth.otp.request'],
     'storefront.account.delete.confirm' => ['api.storefront.v1.me.destroy'],
     'storefront.track.search' => ['api.storefront.v1.orders.track'],
     // Plugin (route chỉ có khi plugin bật): nút tim là form thường khi tắt JS; có JS thì wishlist.js gọi API.
+    'storefront.p.vani-phone-otp-login.request' => ['api.storefront.x.vani-phone-otp-login.otp.request'],
+    'storefront.p.vani-phone-otp-login.verify' => ['api.storefront.x.vani-phone-otp-login.otp.verify'],
     'storefront.p.vani-wishlist.toggle' => ['api.storefront.x.vani-wishlist.items.store', 'api.storefront.x.vani-wishlist.items.destroy'],
 ];
 
@@ -66,6 +69,7 @@ const STOREFRONT_SHARED_INPUT = [
     'storefront.cart.add', 'storefront.cart.update', 'storefront.cart.select', 'storefront.cart.voucher',
     'storefront.checkout.store', 'storefront.order.returns.store',
     'storefront.account.profile.update', 'storefront.account.password.update',
+    'storefront.account.register.store', 'storefront.account.password.update-forgotten',
     'storefront.account.addresses.store', 'storefront.account.addresses.update',
 ];
 

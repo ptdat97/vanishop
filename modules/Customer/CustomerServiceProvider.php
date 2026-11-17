@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Modules\Customer\Application\AccountEmails;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\CustomerAccountService;
 use Modules\Customer\Application\CustomerNoteService;
@@ -21,12 +22,14 @@ use Modules\Customer\Application\Listeners\RememberPreferredLocale;
 use Modules\Customer\Application\OtpSenders\EmailOtpSender;
 use Modules\Customer\Application\OtpSenders\LogOtpSender;
 use Modules\Customer\Application\OtpService;
+use Modules\Customer\Application\PhoneOtpLoginService;
 use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Contracts\Customers;
 use Modules\Customer\Contracts\CustomerSegments;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\OtpSender;
+use Modules\Customer\Contracts\PhoneOtpLogin;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
 use Modules\Customer\Http\Middleware\CustomerSession;
 use Modules\Extension\Contracts\AdminScreen;
@@ -78,8 +81,13 @@ final class CustomerServiceProvider extends ModuleServiceProvider
             (int) config('vanishop.customer.otp.max_attempts', 5),
         ));
         $this->app->bind(AuthService::class, fn ($app): AuthService => new AuthService(
-            $app->make(OtpService::class), $app->make(CustomerService::class), (int) config('vanishop.customer.token_ttl_days', 90),
+            $app->make(OtpService::class), $app->make(CustomerService::class), $app->make(AccountEmails::class),
+            (int) config('vanishop.customer.token_ttl_days', 90),
+            (int) config('vanishop.customer.email_auth.verify_ttl_hours', 24),
+            (int) config('vanishop.customer.email_auth.reset_ttl_minutes', 60),
         ));
+        // OTP theo SĐT: phương thức bổ sung do plugin `vani.phone-otp-login` bật (0.5.12).
+        $this->app->bind(PhoneOtpLogin::class, PhoneOtpLoginService::class);
         $this->app->bind(LogOtpSender::class, fn (): LogOtpSender => new LogOtpSender((bool) config('vanishop.customer.otp.log_sender', false)));
         $this->app->make(Extensions::class)->tag([EmailOtpSender::class, LogOtpSender::class], OtpSender::TAG);
         $this->app->make(Extensions::class)->requires(OtpSender::TAG, Requirement::AtLeastOne, 'Kênh gửi OTP');

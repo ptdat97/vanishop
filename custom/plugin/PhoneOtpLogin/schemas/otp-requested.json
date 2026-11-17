@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "POST /auth/otp/request",
+    "title": "POST /otp/request",
     "type": "object",
     "required": [
         "data"
@@ -21,6 +21,5 @@
                 }
             }
         }
-    },
-    "$id": "https://vanishop.dev/schemas/storefront/responses/otp-requested.json"
+    }
 }

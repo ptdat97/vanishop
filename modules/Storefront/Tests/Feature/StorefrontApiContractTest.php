@@ -6,7 +6,6 @@ use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as Cu;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
@@ -93,7 +92,6 @@ beforeEach(function () {
     $category = T::seed(fn () => Category::factory()->create(['slug' => 'dam-vay']));
     $category->syncTranslations(['vi' => ['name' => 'Đầm váy']]);
     $this->api = Cu::API;
-    Cu::fakeOtp();
 });
 
 it('mọi route /api/storefront/v1 của Core có trong OpenAPI (đúng method) và ngược lại', function () {
@@ -178,17 +176,18 @@ it('khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn,
     assertStorefrontContract($this->postJson("{$this->api}/orders/{$order}/cancel", ['reason' => 'Đổi ý'], $orderHeaders)->assertOk(), '/orders/{order}/cancel', 'POST');
 });
 
-it('khách đăng nhập: OTP, hồ sơ, mật khẩu, sổ địa chỉ, đồng ý nhận tin, đơn, giỏ, giá, xuất dữ liệu, xoá tài khoản', function () {
-    assertStorefrontContract($this->postJson("{$this->api}/auth/otp/request", ['phone' => '0912345678'])->assertStatus(202), '/auth/otp/request', 'POST');
-    $verify = $this->postJson("{$this->api}/auth/otp/verify", ['phone' => '0912345678', 'code' => FakeOtpSender::$codes['+84912345678|login']])->assertOk();
-    assertStorefrontContract($verify, '/auth/otp/verify', 'POST');
+it('khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, đồng ý nhận tin, đơn, giỏ, giá, xuất dữ liệu, quên mật khẩu, xoá tài khoản', function () {
+    $register = ['full_name' => 'Lan', 'email' => 'lan@example.com', 'password' => 'mat-khau-123', 'password_confirmation' => 'mat-khau-123'];
+    assertStorefrontContract($this->postJson("{$this->api}/auth/register", $register)->assertStatus(202), '/auth/register', 'POST');
+    $verify = $this->postJson("{$this->api}/auth/register/verify", ['token' => Cu::mailedToken('lan@example.com')])->assertOk();
+    assertStorefrontContract($verify, '/auth/register/verify', 'POST');
     $auth = Cu::auth($verify->json('meta.token'));
-    Cu::guestOrder($this, $this->s->id, 'sf-contract-me-01', ['phone' => '0912345678']);
+    Cu::guestOrder($this, $this->s->id, 'sf-contract-me-01', ['phone' => '0912345678', 'email' => 'lan@example.com']);
     $call = fn (string $method, string $uri, string $path, array $body = []): TestResponse => assertStorefrontContract($this->json($method, $this->api.$uri, $body, $auth)->assertSuccessful(), $path, $method);
 
     $call('GET', '/me', '/me');
     $call('PATCH', '/me', '/me', ['full_name' => 'Lan']);
-    $call('PUT', '/me/password', '/me/password', ['password' => 'mat-khau-moi-123', 'password_confirmation' => 'mat-khau-moi-123']);
+    $call('PUT', '/me/password', '/me/password', ['current_password' => 'mat-khau-123', 'password' => 'mat-khau-moi-123', 'password_confirmation' => 'mat-khau-moi-123']);
     $address = $call('POST', '/me/addresses', '/me/addresses', [
         'full_name' => 'Lan', 'phone' => '0912345678', 'province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh',
         'ward_code' => '70101065', 'ward_name' => 'Phường Bến Thành', 'street_line' => '12 Lê Lợi',
@@ -206,13 +205,19 @@ it('khách đăng nhập: OTP, hồ sơ, mật khẩu, sổ địa chỉ, đồn
     $call('POST', "/me/orders/{$order}/cancel", '/me/orders/{order}/cancel', ['reason' => 'Đổi ý']);
     $call('GET', '/me/delete', '/me/delete');
 
-    $login = assertStorefrontContract($this->postJson("{$this->api}/auth/login", ['phone' => '0912345678', 'password' => 'mat-khau-moi-123'])->assertOk(), '/auth/login', 'POST');
+    $login = assertStorefrontContract($this->postJson("{$this->api}/auth/login", ['email' => 'lan@example.com', 'password' => 'mat-khau-moi-123'])->assertOk(), '/auth/login', 'POST');
     assertStorefrontContract($this->postJson("{$this->api}/auth/logout", [], Cu::auth($login->json('meta.token')))->assertNoContent(), '/auth/logout', 'POST');
 
-    $this->postJson("{$this->api}/auth/otp/request", ['phone' => '0912345678', 'purpose' => 'delete_account'])->assertStatus(202);
-    $call('POST', '/me/delete', '/me/delete', ['code' => FakeOtpSender::$codes['+84912345678|delete_account']]);
+    $call('POST', '/me/delete', '/me/delete', ['password' => 'mat-khau-moi-123']);
 
     assertStorefrontContract($this->getJson("{$this->api}/auth/social")->assertOk(), '/auth/social', 'GET');
+});
+
+it('quên mật khẩu → link email → đặt mật khẩu mới khớp schema', function () {
+    $email = Cu::account()->email;
+    assertStorefrontContract($this->postJson("{$this->api}/auth/password/forgot", ['email' => $email])->assertStatus(202), '/auth/password/forgot', 'POST');
+    $reset = ['token' => Cu::mailedToken($email), 'password' => 'mat-khau-moi-9', 'password_confirmation' => 'mat-khau-moi-9'];
+    assertStorefrontContract($this->postJson("{$this->api}/auth/password/reset", $reset)->assertNoContent(), '/auth/password/reset', 'POST');
 });
 
 it('sau khi giao: xác nhận đã nhận, đổi trả (gửi, huỷ, báo đã gửi về) khớp schema', function () {
@@ -295,7 +300,8 @@ it('mọi thao tác trong OpenAPI đều có response thành công thật đư�
     expect($missing)->toBe([], 'Thêm lời gọi thật cho thao tác này vào một luồng ở trên');
 })->depends(
     'it khách vãng lai: vỏ trang, catalog, địa chỉ, giỏ, checkout, đơn, thanh toán khớp schema',
-    'it khách đăng nhập: OTP, hồ sơ, mật khẩu, sổ địa chỉ, đồng ý nhận tin, đơn, giỏ, giá, xuất dữ liệu, xoá tài khoản',
+    'it khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, đồng ý nhận tin, đơn, giỏ, giá, xuất dữ liệu, quên mật khẩu, xoá tài khoản',
+    'it quên mật khẩu → link email → đặt mật khẩu mới khớp schema',
     'it sau khi giao: xác nhận đã nhận, đổi trả (gửi, huỷ, báo đã gửi về) khớp schema',
     'it thanh toán online lỗi: thanh toán lại khớp schema',
     'it phản hồi lỗi khớp error.v1 với đúng mã: 401, 404, 409, 422, 400 idempotency',

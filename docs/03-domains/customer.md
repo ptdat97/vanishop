@@ -1,8 +1,8 @@
 # Customer
 
-> Trạng thái: **Partially Implemented**. Đã có: tài khoản hợp nhất theo SĐT, profile ẩn cho khách vãng lai, OTP + mật khẩu, Customer Bearer token, sổ địa chỉ, consent + ledger, thống kê mua trên hồ sơ khách, merge, ẩn danh hoá, xuất dữ liệu, gộp giỏ, nhóm khách + tag, Admin khách hàng và trang tài khoản native `/tai-khoan`. Có luồng đăng nhập mạng xã hội qua contract `AuthProvider`; hiện chưa có provider sản xuất được đóng gói. **Còn thiếu:** tab hồ sơ do plugin, `/me/returns`, lệnh dọn token/OTP hết hạn và ngày sinh/giới tính dùng cho phân khúc.
+> Trạng thái: **Partially Implemented**. Đã có: tài khoản hợp nhất, **đăng nhập mặc định bằng email + mật khẩu** (đăng ký qua link xác minh email, quên mật khẩu — 0.5.12), profile ẩn cho khách vãng lai theo SĐT, đăng nhập OTP theo SĐT là plugin `vani.phone-otp-login`, Customer Bearer token, sổ địa chỉ, consent + ledger, thống kê mua trên hồ sơ khách, merge, ẩn danh hoá, xuất dữ liệu, gộp giỏ, nhóm khách + tag, Admin khách hàng và trang tài khoản native `/tai-khoan`. Có luồng đăng nhập mạng xã hội qua contract `AuthProvider`; hiện chưa có provider sản xuất được đóng gói. **Còn thiếu:** tab hồ sơ do plugin, `/me/returns`, lệnh dọn token/OTP hết hạn và ngày sinh/giới tính dùng cho phân khúc.
 >
-> Ghi chú triển khai: khách đăng nhập đặt hàng → đơn gắn khách (SĐT người nhận khác không tạo hồ sơ mới). Khách vãng lai → đơn gắn hồ sơ theo SĐT liên hệ, **kể cả khi SĐT đó đã là tài khoản** (đơn hiện trong lịch sử của chủ SĐT; người đặt không đọc được gì của tài khoản). Merge chuyển đơn (`OrderWriter::reassignCustomer`, mỗi đơn một dòng `order_events`), địa chỉ, consent; nguồn thành `merged` và giải phóng SĐT/email. Ẩn danh hoá cần OTP `delete_account`; đơn giữ snapshot. Khách tự xoá (API `POST /me/delete`, native `/tai-khoan/xoa`) bị từ chối khi còn việc dở do hook `vani.customer.before_delete` báo — Core: đơn chưa hoàn tất/huỷ hoặc đổi trả đang mở (`customer.deletion_blocked`, liệt kê số đơn); kiểm tra trước khi tiêu OTP. Nhân viên ẩn danh hoá trong Admin không bị chặn. `/me/orders` dùng phạm vi toàn cửa hàng, không lọc theo brand/kênh. Khuyến mãi xem [promotion](promotion.md); loyalty là plugin ([spec](../05-plugin/specs/loyalty.md)).
+> Ghi chú triển khai: khách đăng nhập đặt hàng → đơn gắn khách (SĐT người nhận khác không tạo hồ sơ mới). Khách vãng lai → đơn gắn hồ sơ theo SĐT liên hệ, **kể cả khi SĐT đó đã là tài khoản** (đơn hiện trong lịch sử của chủ SĐT; người đặt không đọc được gì của tài khoản). Merge chuyển đơn (`OrderWriter::reassignCustomer`, mỗi đơn một dòng `order_events`), địa chỉ, consent; nguồn thành `merged` và giải phóng SĐT/email. Khách tự xoá tài khoản phải nhập lại mật khẩu (tài khoản chưa có mật khẩu — OTP/mạng xã hội — đặt mật khẩu trước); đơn giữ snapshot. Khách tự xoá (API `POST /me/delete`, native `/tai-khoan/xoa`) bị từ chối khi còn việc dở do hook `vani.customer.before_delete` báo — Core: đơn chưa hoàn tất/huỷ hoặc đổi trả đang mở (`customer.deletion_blocked`, liệt kê số đơn); kiểm tra trước khi kiểm mật khẩu. Nhân viên ẩn danh hoá trong Admin không bị chặn. `/me/orders` dùng phạm vi toàn cửa hàng, không lọc theo brand/kênh. Khuyến mãi xem [promotion](promotion.md); loyalty là plugin ([spec](../05-plugin/specs/loyalty.md)).
 >
 > Theo [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md), khách hàng và consent thuộc phạm vi toàn cửa hàng; brand chỉ dùng để phân tích sản phẩm trong đơn, không phải phạm vi hồ sơ khách.
 
@@ -10,9 +10,9 @@
 
 | Core (`modules/Customer`) | Plugin |
 |---|---|
-| Tài khoản hợp nhất của cửa hàng, hồ sơ, sổ địa chỉ, nhóm khách, tag | Đăng nhập mạng xã hội (`vani.social-login`) |
+| Tài khoản hợp nhất của cửa hàng, hồ sơ, sổ địa chỉ, nhóm khách, tag | Đăng nhập mạng xã hội (`vani.social-login`), đăng nhập OTP theo SĐT (`vani.phone-otp-login`) |
 | Consent theo kênh gửi × mục đích | Gửi OTP qua SMS/ZNS (`vani.sms-brandname`, `vani.zalo-zns`) |
-| Xác thực: mật khẩu + OTP (khung `OtpSender`, mặc định gửi email) | Loyalty, wishlist, size advisor, phân khúc RFM |
+| Xác thực: email + mật khẩu (mặc định), khung OTP (`OtpSender`, contract `PhoneOtpLogin` cho plugin) | Loyalty, wishlist, size advisor, phân khúc RFM |
 | Hợp nhất trùng lặp (merge) có audit | |
 | Quyền của chủ thể dữ liệu (xuất, rút consent, xoá/ẩn danh) | |
 
@@ -28,8 +28,9 @@
 ## 3. Khách hàng hợp nhất
 
 - **Một tài khoản cho cả cửa hàng** (một website). Trang tài khoản ở `/tai-khoan`; lịch sử đơn gồm sản phẩm mọi brand.
-- **Định danh chính là số điện thoại** (chuẩn hoá E.164 `+84…`); email là phụ.
-- Khách vãng lai đặt hàng → tạo **profile ẩn** theo SĐT; khi khách đăng ký bằng số đó và xác thực OTP thì hợp nhất lịch sử đơn.
+- **Đăng nhập mặc định bằng email + mật khẩu** (0.5.12). Đăng ký chỉ gửi link xác minh (cache, chưa ghi DB); bấm link mới tạo tài khoản — hoặc biến hồ sơ khách vãng lai cùng email thành tài khoản, giữ lịch sử đơn — nên không ai chiếm được lịch sử của email không thuộc mình. `customers.email_verified_at`: đổi email trong hồ sơ thì bỏ dấu xác minh (link đặt lại mật khẩu xác minh lại).
+- SĐT (chuẩn hoá E.164 `+84…`) vẫn duy nhất trên khách đang hoạt động và là khoá của hồ sơ khách vãng lai: khách vãng lai đặt hàng → tạo **profile ẩn** theo SĐT. SĐT chưa có hồ sơ mà email liên hệ là email **đã xác minh** của một tài khoản → đơn vào lịch sử tài khoản đó (không ghi SĐT vào tài khoản).
+- Plugin `vani.phone-otp-login` thêm đăng nhập bằng mã OTP qua SĐT: SĐT chưa có hồ sơ → tạo tài khoản (không email); hồ sơ khách vãng lai cùng SĐT → thành tài khoản, giữ lịch sử đơn.
 - Dữ liệu khách từ POS (nếu có SĐT) đổ về qua [Integration](../11-integration/integration-platform.md), vào cùng hồ sơ.
 
 | Nhóm dữ liệu | Trường |
@@ -52,7 +53,8 @@ interface OtpSender
 }
 ```
 
-- OTP 6 số, TTL 5 phút, tối đa 5 lần thử (cấu hình `vanishop.customer.otp.ttl|max_attempts`); giới hạn tần suất theo SĐT + IP (chống SMS pumping, [security](../15-security/security.md)).
+- Email + mật khẩu: sai 5 lần/phút theo email + IP → `customer.too_many_attempts`; link xác minh hiệu lực 24 giờ, link đặt lại mật khẩu 60 phút, tối đa 3 email mỗi địa chỉ trong 10 phút (`vanishop.customer.email_auth.*`). Quên mật khẩu không báo email có phải tài khoản. Frontend headless đặt `VANI_CUSTOMER_VERIFY_URL` / `VANI_CUSTOMER_RESET_URL` (có `{token}`) để link trong email trỏ về app riêng.
+- OTP (plugin `vani.phone-otp-login`): 6 số, TTL 5 phút, tối đa 5 lần thử (cấu hình `vanishop.customer.otp.ttl|max_attempts`); giới hạn tần suất theo SĐT + IP (chống SMS pumping, [security](../15-security/security.md)).
 - Web storefront dùng session cookie; Storefront API dùng Customer Bearer token (`customer_tokens`, [ADR-024](../19-adr/ADR-024-customer-api-token.md)).
 
 ## 5. Giao tiếp khách hàng
@@ -65,5 +67,5 @@ interface OtpSender
 ## 6. Kiểm thử
 
 - Unit: chuẩn hoá SĐT (các dạng `09…`, `849…`, `+84 9…`).
-- Feature: khách vãng lai → đăng ký cùng SĐT → lịch sử đơn được gộp; merge chuyển đơn và phát `CustomerMerged`; rút consent chặn gửi marketing.
-- Security: brute-force OTP bị chặn.
+- Feature: khách vãng lai → đăng ký cùng email, bấm link → lịch sử đơn được gộp (OTP cùng SĐT: test của plugin); merge chuyển đơn và phát `CustomerMerged`; rút consent chặn gửi marketing.
+- Security: brute-force mật khẩu và OTP bị chặn; link xác minh/đặt lại dùng một lần.

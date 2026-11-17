@@ -6,9 +6,11 @@ use Modules\Customer\Http\Controllers\Api\AuthController;
 
 // Prefix: /api/storefront/v1 — tên route: api.storefront.v1.*
 Route::middleware('throttle:vani-customer-auth')->group(function () {
-    Route::post('auth/otp/request', [AuthController::class, 'requestOtp'])->name('auth.otp.request');
-    Route::post('auth/otp/verify', [AuthController::class, 'verifyOtp'])->name('auth.otp.verify');
+    Route::post('auth/register', [AuthController::class, 'register'])->name('auth.register');
+    Route::post('auth/register/verify', [AuthController::class, 'verifyRegistration'])->name('auth.register.verify');
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('auth/password/forgot', [AuthController::class, 'forgotPassword'])->name('auth.password.forgot');
+    Route::post('auth/password/reset', [AuthController::class, 'resetPassword'])->name('auth.password.reset');
     Route::get('auth/social', [AuthController::class, 'socialProviders'])->name('auth.social.index');
     Route::post('auth/social/{provider}/start', [AuthController::class, 'socialStart'])->where('provider', '[a-z0-9_.-]+')->name('auth.social.start');
     Route::post('auth/social/{provider}/complete', [AuthController::class, 'socialComplete'])->where('provider', '[a-z0-9_.-]+')->name('auth.social.complete');

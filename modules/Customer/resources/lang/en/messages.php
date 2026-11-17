@@ -7,7 +7,7 @@ return [
     'otp_unavailable' => 'We cannot send a verification code to this phone number yet.',
     'otp_subject' => 'VaniShop verification code',
     'otp_body' => 'Your verification code is :code (valid for 5 minutes). Do not share it with anyone.',
-    'invalid_credentials' => 'Incorrect phone number or password.',
+    'invalid_credentials' => 'Incorrect email or password.',
     'email_taken' => 'This email is used by another account.',
     'phone_invalid' => 'Invalid phone number.',
     'address_invalid' => 'Invalid province or ward. Please choose again from the current administrative list.',
@@ -19,8 +19,26 @@ return [
     'social_unknown' => 'This sign-in method is not available.',
     'social_state' => 'The sign-in session has expired or is invalid. Please try again.',
     'social_redirect' => 'This return address is not allowed.',
-    'social_failed' => 'Could not sign in with this account. Please try again or use your phone number.',
-    'social_phone_required' => 'Please verify your phone number to finish signing in.',
+    'social_failed' => 'Could not sign in with this account. Please try again or use your email.',
+    'social_email_required' => 'This account has no verified email. Please sign up with your email.',
+    'registration_link_invalid' => 'The verification link is invalid or has expired. Please sign up again.',
+    'password_reset_invalid' => 'The password reset link is invalid or has expired. Please request a new one.',
+    'password_required' => 'Your account has no password yet. Please set a password first.',
+    'too_many_attempts' => 'Too many attempts. Please try again later.',
+    'verify_email_subject' => 'Verify your email to finish signing up',
+    'verify_email_body' => 'Hi :name,
+
+Open this link to finish creating your account (valid for :hours hours):
+:url
+
+If you did not sign up, please ignore this email.',
+    'reset_password_subject' => 'Reset your password',
+    'reset_password_body' => 'Hi :name,
+
+Open this link to set a new password (valid for :minutes minutes):
+:url
+
+If you did not ask for this, please ignore this email — your current password stays the same.',
     'deletion_blocked' => 'The account cannot be deleted yet because of pending items: :items. Please wait until they are completed or contact the store.',
     'note_added' => 'Note added.',
 ];

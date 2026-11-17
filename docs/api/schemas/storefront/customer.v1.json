@@ -18,7 +18,10 @@
             "type": "string"
         },
         "phone": {
-            "type": "string"
+            "type": [
+                "string",
+                "null"
+            ]
         },
         "email": {
             "type": [

@@ -4,11 +4,12 @@
 
 ## Trách nhiệm
 
-Tài khoản khách hợp nhất theo SĐT, đăng nhập OTP/mật khẩu, sổ địa chỉ, consent, nhóm/nhãn, ghi chú CSKH.
+Tài khoản khách hợp nhất (email là cách đăng nhập mặc định: đăng ký qua link xác minh, email + mật khẩu, quên mật khẩu; hồ sơ khách vãng lai theo SĐT), khung OTP cho plugin đăng nhập bằng SĐT, sổ địa chỉ, consent, nhóm/nhãn, ghi chú CSKH.
 
 ## Bất biến
 
-- Một SĐT một tài khoản; hợp nhất chuyển lịch sử đơn về tài khoản đích.
+- Một SĐT một tài khoản, một email một tài khoản; hợp nhất chuyển lịch sử đơn về tài khoản đích.
+- Tài khoản email chỉ tạo khi bấm link xác minh; chỉ email đã xác minh mới dùng để gộp đơn khách vãng lai.
 - Tin marketing chỉ gửi khi có consent đúng kênh × mục đích.
 - Nhãn/nhóm/ghi chú do plugin ghi luôn kèm nguồn (`system:<plugin>`) và audit.
 
@@ -39,6 +40,7 @@ Tài khoản khách hợp nhất theo SĐT, đăng nhập OTP/mật khẩu, sổ
 | `Customers` | interface | plugin |
 | `OtpDeliveryFailed` | class | plugin |
 | `OtpSender` | interface | tag `vani.customer.otp_senders`, plugin |
+| `PhoneOtpLogin` | interface | plugin (experimental) |
 
 ## Event
 

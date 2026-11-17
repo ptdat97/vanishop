@@ -4,8 +4,6 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
-use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -18,8 +16,7 @@ require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 beforeEach(function () {
     H::fakeOtp();
     C::store();
-    $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-    $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login']])->assertRedirect();
+    $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD])->assertRedirect();
 });
 
 it('khách đăng nhập trên Blade: API cùng nguồn nhận ra khách', function (array $headers) {

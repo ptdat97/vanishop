@@ -70,9 +70,15 @@ foreach (StoreLocale::supported() as $locale) {
             Route::middleware('throttle:vani-order-track')->post($p('track'), [TrackOrderController::class, 'search'])->name('track.search');
 
             Route::get($p('account.login'), [AccountController::class, 'login'])->name('account.login');
+            Route::get($p('account.register'), [AccountController::class, 'register'])->name('account.register');
+            Route::get($p('account.password.forgot'), [AccountController::class, 'forgotPassword'])->name('account.password.forgot');
+            Route::get($p('account.password.reset'), [AccountController::class, 'resetPasswordForm'])->name('account.password.reset');
             Route::middleware('throttle:vani-customer-auth')->group(function () use ($p): void {
-                Route::post($p('account.otp'), [AccountController::class, 'requestOtp'])->name('account.otp');
-                Route::post($p('account.login'), [AccountController::class, 'verify'])->name('account.verify');
+                Route::post($p('account.login'), [AccountController::class, 'authenticate'])->name('account.authenticate');
+                Route::post($p('account.register'), [AccountController::class, 'storeRegistration'])->name('account.register.store');
+                Route::get($p('account.register.verify'), [AccountController::class, 'verifyRegistration'])->name('account.register.verify');
+                Route::post($p('account.password.forgot'), [AccountController::class, 'sendPasswordReset'])->name('account.password.email');
+                Route::post($p('account.password.reset'), [AccountController::class, 'resetPassword'])->name('account.password.update-forgotten');
             });
             Route::middleware('vani.customer-session:required')->group(function () use ($p): void {
                 Route::get($p('account'), [AccountController::class, 'dashboard'])->name('account');
@@ -84,7 +90,6 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::put($p('account.profile'), [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
                 Route::put($p('account.password'), [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
                 Route::get($p('account.delete'), [AccountSettingsController::class, 'deletion'])->name('account.delete');
-                Route::post($p('account.delete.otp'), [AccountSettingsController::class, 'requestDeletionOtp'])->middleware('throttle:vani-customer-auth')->name('account.delete.otp');
                 Route::post($p('account.delete'), [AccountSettingsController::class, 'destroyAccount'])->middleware('throttle:vani-customer-auth')->name('account.delete.confirm');
                 Route::get($p('account.addresses.create'), [AccountSettingsController::class, 'createAddress'])->name('account.addresses.create');
                 Route::post($p('account.addresses'), [AccountSettingsController::class, 'storeAddress'])->name('account.addresses.store');

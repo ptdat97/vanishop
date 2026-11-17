@@ -4,13 +4,11 @@ use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Ordering\Persistence\Models\Order;
 
 require_once __DIR__.'/CustomerTestHelpers.php';
 
 beforeEach(function () {
-    H::fakeOtp();
     ['brand' => $this->brand, 's' => $this->s, 'm' => $this->m] = C::store();
     $this->guestCart = function (int $variantId, int $quantity = 1): array {
         $created = $this->postJson(H::API.'/carts', [], H::CHANNEL)->assertCreated();
@@ -40,9 +38,7 @@ it('đăng nhập trên thiết bị khác kèm giỏ vãng lai → gộp vào g
     $this->postJson(H::API."/carts/{$mine}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], H::auth($token))->assertOk();
 
     [$guestId, $guestToken] = ($this->guestCart)($this->m->id, 2);
-    $response = $this->postJson(H::API.'/auth/otp/request', ['phone' => '0912345678'], H::CHANNEL);
-    $code = FakeOtpSender::$codes['+84912345678|login'];
-    $this->postJson(H::API.'/auth/otp/verify', ['phone' => '0912345678', 'code' => $code, 'cart_id' => $guestId], [...H::CHANNEL, 'X-Vani-Cart-Token' => $guestToken])
+    $this->postJson(H::API.'/auth/login', ['email' => H::email(), 'password' => H::PASSWORD, 'cart_id' => $guestId], [...H::CHANNEL, 'X-Vani-Cart-Token' => $guestToken])
         ->assertOk()->assertJsonPath('meta.cart_id', $mine);
 
     expect($this->getJson(H::API.'/me/cart', H::auth($token))->json('data.item_count'))->toBe(3)

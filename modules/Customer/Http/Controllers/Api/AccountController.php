@@ -86,18 +86,18 @@ final class AccountController
     }
 
     /**
-     * Xoá tài khoản = ẩn danh hoá; bắt buộc OTP mục đích `delete_account` gửi tới SĐT của tài khoản.
+     * Xoá tài khoản = ẩn danh hoá; xác nhận bằng mật khẩu hiện tại (chưa có → `customer.password_required`).
      */
     public function destroy(Request $request, AccountLifecycle $lifecycle): JsonResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:10']]);
-        $lifecycle->deleteOwnAccount(AuthenticateCustomer::customer($request)->id, $data['code']);
+        $data = $request->validate(['password' => ['required', 'string', 'max:200']]);
+        $lifecycle->deleteOwnAccount(AuthenticateCustomer::customer($request)->id, $data['password']);
 
         return response()->json(null, 204);
     }
 
     /**
-     * Xoá được tài khoản chưa — trả danh sách việc còn dở (đơn chưa hoàn tất, đổi trả đang mở…) để app hiển thị trước khi xin OTP.
+     * Xoá được tài khoản chưa — trả danh sách việc còn dở (đơn chưa hoàn tất, đổi trả đang mở…) để app hiển thị trước khi hỏi mật khẩu.
      */
     public function deletion(Request $request, AccountLifecycle $lifecycle): JsonResponse
     {

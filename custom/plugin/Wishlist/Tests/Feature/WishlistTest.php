@@ -8,7 +8,6 @@ use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Extension\Application\Plugins\PluginAssets;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Testing\StorefrontApiContract as Api;
@@ -40,8 +39,7 @@ beforeEach(function () {
     });
     app()->register(WishlistServiceProvider::class);
     $this->signIn = function (string $phone = '0912345678'): int {
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone]);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']]);
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account($phone)->email, 'password' => H::PASSWORD]);
 
         return (int) Customer::query()->where('phone', Phones::fromString($phone)->e164)->value('id');
     };

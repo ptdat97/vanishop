@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Contracts\PhoneOtpLogin;
 use Modules\Extension\Application\Plugins\PluginActivation;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Notification\Contracts\Data\OutgoingMessage;
@@ -91,11 +92,11 @@ it('OTP: ưu tiên ZNS; SĐT không dùng Zalo → Core tự chuyển sang SMS b
         'business.openapi.zalo.me/*' => Http::sequence()->push(['error' => 0, 'data' => ['msg_id' => 'otp-1']])->push(['error' => -118, 'message' => 'Zalo account not existed']),
         'rest.esms.vn/*' => Http::response(['CodeResult' => '100', 'SMSID' => 'sms-otp']),
     ]);
-    $headers = [];
 
-    $this->postJson('/api/storefront/v1/auth/otp/request', ['phone' => '0912345678'], $headers)->assertStatus(202)->assertJsonPath('data.channel', 'zns');
+    // Đăng nhập OTP là plugin `vani.phone-otp-login`; kênh gửi mã vẫn qua khung OtpSender của Core.
+    expect(app(PhoneOtpLogin::class)->requestCode('0912345678', '127.0.0.1')['channel'])->toBe('zns');
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/message/template') && $request['template_id'] === 'OTP-TPL' && preg_match('/^\d{6}$/', $request['template_data']['otp']) === 1);
 
-    $this->postJson('/api/storefront/v1/auth/otp/request', ['phone' => '0987654321'], $headers)->assertStatus(202)->assertJsonPath('data.channel', 'sms');
+    expect(app(PhoneOtpLogin::class)->requestCode('0987654321', '127.0.0.1')['channel'])->toBe('sms');
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'esms') && str_contains($request['Content'], 'la ma xac thuc'));
 });

@@ -6,7 +6,6 @@ use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerAddress;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -16,8 +15,7 @@ beforeEach(function () {
     H::fakeOtp();
     $this->store = C::store();
     $this->signIn = function (string $phone = '0912345678'): Customer {
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => $phone]);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString($phone)->e164.'|login']])->assertRedirect('/tai-khoan');
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account($phone)->email, 'password' => H::PASSWORD])->assertRedirect('/tai-khoan');
 
         return Customer::query()->where('phone', Phones::fromString($phone)->e164)->sole();
     };
@@ -37,18 +35,21 @@ it('sửa hồ sơ; email của khách khác → lỗi, không đổi', function
     $customer = ($this->signIn)();
     Customer::query()->create(['public_id' => (string) Str::ulid(), 'phone' => '+84911111111', 'email' => 'taken@example.com', 'status' => 'active']);
 
-    $this->get('/tai-khoan/ho-so')->assertOk()->assertSee('Hồ sơ')->assertSee('Đặt mật khẩu');
+    $this->get('/tai-khoan/ho-so')->assertOk()->assertSee('Hồ sơ')->assertSee('Đổi mật khẩu');
     $this->put('/tai-khoan/ho-so', ['full_name' => 'Trần Lan', 'email' => 'LAN@Example.com', 'birth_date' => '1995-05-20', 'gender' => 'female'])
         ->assertRedirect('/tai-khoan/ho-so')->assertSessionHas('status', 'Đã lưu hồ sơ.');
-    expect($customer->fresh())->full_name->toBe('Trần Lan')->email->toBe('lan@example.com')->gender->toBe('female');
+    // Email mới chưa chứng minh sở hữu: bỏ dấu đã xác minh (không dùng để gộp đơn vãng lai).
+    expect($customer->fresh())->full_name->toBe('Trần Lan')->email->toBe('lan@example.com')->gender->toBe('female')->email_verified_at->toBeNull();
 
     $this->from('/tai-khoan/ho-so')->put('/tai-khoan/ho-so', ['full_name' => 'Trần Lan', 'email' => 'taken@example.com'])->assertSessionHasErrors('business');
     $this->put('/tai-khoan/ho-so', ['full_name' => '', 'gender' => 'robot'])->assertSessionHasErrors(['full_name', 'gender']);
     expect($customer->fresh()->email)->toBe('lan@example.com');
 });
 
-it('đặt mật khẩu lần đầu, đổi mật khẩu phải đúng mật khẩu hiện tại', function () {
+it('đặt mật khẩu lần đầu (tài khoản OTP/mạng xã hội), đổi mật khẩu phải đúng mật khẩu hiện tại', function () {
     $customer = ($this->signIn)();
+    $customer->forceFill(['password' => null])->save();
+    $this->get('/tai-khoan/ho-so')->assertSee('Đặt mật khẩu')->assertDontSee('Mật khẩu hiện tại');
 
     $this->put('/tai-khoan/mat-khau', ['password' => 'matkhau-moi-1', 'password_confirmation' => 'khac'])->assertSessionHasErrors('password');
     $this->put('/tai-khoan/mat-khau', ['password' => 'matkhau-moi-1', 'password_confirmation' => 'matkhau-moi-1'])->assertRedirect('/tai-khoan/ho-so');
@@ -106,27 +107,34 @@ it('không sửa/xoá được địa chỉ của khách khác', function () {
     expect($foreign->fresh())->not->toBeNull();
 });
 
-it('xoá tài khoản: gửi OTP tới SĐT của tài khoản, xác nhận thì ẩn danh hoá và đăng xuất', function () {
+it('xoá tài khoản: nhập lại mật khẩu, đúng thì ẩn danh hoá và đăng xuất', function () {
     $customer = ($this->signIn)();
 
-    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Gửi mã xác nhận')->assertDontSee('Chưa xoá được tài khoản');
-    $this->post('/tai-khoan/xoa/otp')->assertRedirect('/tai-khoan/xoa');
-    $this->get('/tai-khoan/xoa')->assertSee('Xoá vĩnh viễn tài khoản');
+    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Nhập mật khẩu để xác nhận')->assertDontSee('Chưa xoá được tài khoản');
 
-    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['code' => '000000'])->assertSessionHasErrors('business');
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['password' => 'sai-mat-khau'])->assertRedirect('/tai-khoan/xoa')->assertSessionHasErrors('business');
     expect($customer->fresh()->status->value)->toBe('active');
 
-    $this->post('/tai-khoan/xoa', ['code' => FakeOtpSender::$codes['+84912345678|delete_account']])
+    $this->post('/tai-khoan/xoa', ['password' => H::PASSWORD])
         ->assertRedirect('/')->assertSessionHas('status', 'Tài khoản đã được xoá. Thông tin cá nhân của bạn đã được gỡ khỏi cửa hàng.');
-    expect($customer->fresh())->status->value->toBe('anonymized')->phone->toBeNull();
+    expect($customer->fresh())->status->value->toBe('anonymized')->phone->toBeNull()->email->toBeNull();
     $this->get('/tai-khoan')->assertRedirect('/tai-khoan/dang-nhap');
 });
 
-it('xoá tài khoản: còn đơn chưa hoàn tất thì liệt kê đơn, không gửi OTP', function () {
-    ($this->signIn)();
+it('xoá tài khoản: chưa có mật khẩu (đăng nhập OTP/mạng xã hội) thì phải đặt mật khẩu trước', function () {
+    $customer = ($this->signIn)();
+    $customer->forceFill(['password' => null])->save();
+
+    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Vui lòng đặt mật khẩu trước')->assertDontSee('Xoá vĩnh viễn tài khoản');
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['password' => 'bat-ky'])->assertSessionHasErrors('business');
+    expect($customer->fresh()->status->value)->toBe('active');
+});
+
+it('xoá tài khoản: còn đơn chưa hoàn tất thì liệt kê đơn, không xoá', function () {
+    $customer = ($this->signIn)();
     $number = H::guestOrder($this, $this->store['s']->id, 'native-delete-blocked');
 
-    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Chưa xoá được tài khoản')->assertSee($number)->assertDontSee('Gửi mã xác nhận');
-    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa/otp')->assertSessionHasErrors('business');
-    expect(FakeOtpSender::$codes)->not->toHaveKey('+84912345678|delete_account');
+    $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Chưa xoá được tài khoản')->assertSee($number)->assertDontSee('Nhập mật khẩu để xác nhận');
+    $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['password' => H::PASSWORD])->assertSessionHasErrors('business');
+    expect($customer->fresh()->status->value)->toBe('active');
 });

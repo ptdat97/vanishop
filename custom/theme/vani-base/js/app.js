@@ -41,7 +41,7 @@ const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, va
  * `code`. Theme con / plugin dùng lại:
  *   vani.cart.get() · add(variantId, quantity, options) · update(lineId, quantity) · remove(lineId) · select(lineIds)
  *   vani.cart.applyVoucher(code) · removeVoucher() · open(state?) · close()
- *   vani.auth.requestOtp(phone) · verify(code) · logout()
+ *   vani.auth.login(email, password) · logout()
  *   vani.search.suggest(q) · listing(url)        vani.request(method, url, data)
  * Sự kiện: `vani:cart` (detail = trạng thái giỏ), `vani:cart-updated` (thay đổi, 0.3.43), `vani:content-updated` (đã thay HTML).
  */
@@ -216,8 +216,7 @@ const cart = {
 };
 
 const auth = {
-    requestOtp: (phone) => request('POST', urls.login_otp, { phone }),
-    verify: (code) => request('POST', urls.login_verify, { code }),
+    login: (email, password) => request('POST', urls.login_authenticate, { email, password }),
     logout: () => request('POST', urls.logout),
 };
 
@@ -927,42 +926,22 @@ document.querySelectorAll('form[data-variant-form]').forEach((form) => {
     });
 });
 
-// Đăng nhập OTP không tải lại trang: gửi mã → hiện ô nhập mã; xác thực → về trang trước đó (hoặc tài khoản).
-const otpForm = document.querySelector('form[data-vani-login-otp]');
-const verifyForm = document.querySelector('form[data-vani-login-verify]');
-if (otpForm && verifyForm) {
-    const showError = (form, text) => {
-        const box = form.querySelector('[data-vani-form-error]');
-        if (box) {
-            box.textContent = text || '';
-            box.hidden = !text;
-        }
-    };
-    otpForm.addEventListener('submit', async (event) => {
+// Đăng nhập email + mật khẩu không tải lại trang: thành công → về trang trước đó (hoặc tài khoản).
+const loginForm = document.querySelector('form[data-vani-login]');
+if (loginForm) {
+    const errorBox = loginForm.querySelector('[data-vani-form-error]');
+    loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        showError(otpForm, '');
+        if (errorBox) errorBox.hidden = true;
+        const data = new FormData(loginForm);
         try {
-            const result = await auth.requestOtp(String(new FormData(otpForm).get('phone') ?? ''));
-            verifyForm.hidden = false;
-            verifyForm.querySelectorAll('[data-vani-login-phone]').forEach((element) => (element.textContent = result.phone));
-            const status = document.querySelector('[data-vani-flash="status"]');
-            if (status) {
-                status.textContent = result.message;
-                status.hidden = false;
-            }
-            verifyForm.querySelector('input[name="code"]')?.focus();
-        } catch (error) {
-            showError(otpForm, firstError(error, 'phone'));
-        }
-    });
-    verifyForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        showError(verifyForm, '');
-        try {
-            const result = await auth.verify(String(new FormData(verifyForm).get('code') ?? ''));
+            const result = await auth.login(String(data.get('email') ?? ''), String(data.get('password') ?? ''));
             window.location.href = result.redirect;
         } catch (error) {
-            showError(verifyForm, firstError(error, 'code'));
+            if (errorBox) {
+                errorBox.textContent = firstError(error, 'business') || firstError(error, 'email') || firstError(error, 'password');
+                errorBox.hidden = !errorBox.textContent;
+            }
         }
     });
 }

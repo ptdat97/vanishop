@@ -1133,22 +1133,25 @@
                 }
             }
         },
-        "/auth/otp/request": {
+        "/auth/register": {
             "post": {
                 "tags": [
                     "Tài khoản"
                 ],
-                "summary": "Gửi mã OTP",
+                "summary": "Đăng ký bằng email — gửi link xác minh (tài khoản tạo khi bấm link)",
                 "responses": {
                     "202": {
-                        "description": "Kênh đã gửi và thời hạn.",
+                        "description": "Đã gửi link xác minh tới email; thời hạn link.",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "../schemas/storefront/responses/otp-requested.json"
+                                    "$ref": "../schemas/storefront/responses/registration-pending.json"
                                 }
                             }
                         }
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationFailed"
@@ -1159,12 +1162,12 @@
                 }
             }
         },
-        "/auth/otp/verify": {
+        "/auth/register/verify": {
             "post": {
                 "tags": [
                     "Tài khoản"
                 ],
-                "summary": "Đăng nhập bằng OTP",
+                "summary": "Xác minh email (token trong link) → tạo tài khoản, đăng nhập",
                 "responses": {
                     "200": {
                         "description": "Khách + token Bearer.",
@@ -1176,8 +1179,8 @@
                             }
                         }
                     },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationFailed"
@@ -1193,7 +1196,7 @@
                 "tags": [
                     "Tài khoản"
                 ],
-                "summary": "Đăng nhập bằng mật khẩu",
+                "summary": "Đăng nhập bằng email + mật khẩu",
                 "responses": {
                     "200": {
                         "description": "Khách + token Bearer.",
@@ -1207,6 +1210,51 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/password/forgot": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Quên mật khẩu — gửi link đặt lại nếu email là tài khoản (luôn 202)",
+                "responses": {
+                    "202": {
+                        "description": "Đã nhận yêu cầu (không báo email có tồn tại hay không).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/email-accepted.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
+        "/auth/password/reset": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đặt mật khẩu mới bằng token trong link email (thu hồi mọi phiên)",
+                "responses": {
+                    "204": {
+                        "description": "Không có nội dung."
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationFailed"
@@ -1893,7 +1941,7 @@
                 "tags": [
                     "Tài khoản"
                 ],
-                "summary": "Xoá tài khoản (mã OTP)",
+                "summary": "Xoá tài khoản (nhập lại mật khẩu)",
                 "responses": {
                     "204": {
                         "description": "Không có nội dung."

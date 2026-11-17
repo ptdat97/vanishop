@@ -12,7 +12,7 @@
                 @method('PUT')
                 <div>
                     <label class="block text-sm">{{ __('Số điện thoại') }}</label>
-                    <p class="mt-1 text-slate-600">{{ $customer->phone }}</p>
+                    <p class="mt-1 text-slate-600">{{ $customer->phone ?? '—' }}</p>
                 </div>
                 <div>
                     <label for="full_name" class="block text-sm">{{ __('Họ tên') }}</label>
@@ -45,7 +45,7 @@
             </form>
 
             <h2 class="mb-1 mt-10 text-lg font-semibold">{{ $customer->hasPassword ? __('Đổi mật khẩu') : __('Đặt mật khẩu') }}</h2>
-            <p class="mb-4 text-sm text-slate-500">{{ __('Bạn vẫn đăng nhập được bằng mã OTP gửi tới số điện thoại.') }}</p>
+            <p class="mb-4 text-sm text-slate-500">{{ __('Dùng email và mật khẩu này để đăng nhập.') }}</p>
             <form action="{{ vani_route('storefront.account.password.update') }}" method="post" class="space-y-3">
                 @csrf
                 @method('PUT')

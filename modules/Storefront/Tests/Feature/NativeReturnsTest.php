@@ -3,7 +3,6 @@
 use Illuminate\Support\ViewErrorBag;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
-use Modules\Customer\Tests\Feature\Fixtures\FakeOtpSender;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -12,7 +11,6 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
-use Modules\Shared\Support\Phones;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -45,8 +43,7 @@ beforeEach(function () {
         return $order;
     };
     $this->signIn = function (): void {
-        $this->post('/tai-khoan/dang-nhap/otp', ['phone' => '0912345678']);
-        $this->post('/tai-khoan/dang-nhap', ['code' => FakeOtpSender::$codes[Phones::fromString('0912345678')->e164.'|login']]);
+        $this->post('/tai-khoan/dang-nhap', ['email' => H::account('0912345678')->email, 'password' => H::PASSWORD]);
     };
 });
 

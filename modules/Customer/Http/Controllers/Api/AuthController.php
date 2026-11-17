@@ -6,46 +6,44 @@ namespace Modules\Customer\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Customer\Application\AuthService;
-use Modules\Customer\Application\OtpService;
 use Modules\Customer\Application\SocialLogin;
 use Modules\Customer\Contracts\Data\CustomerData;
-use Modules\Customer\Contracts\Data\OtpPurpose;
-use Modules\Shared\Support\Phones;
+use Modules\Customer\Contracts\Requests\RegisterRequest;
+use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 
 /**
- * Đăng nhập khách: OTP (mặc định) hoặc mật khẩu. Trả `meta.token` (Bearer, chỉ một lần). Gửi kèm
- * `cart_id` + `X-Vani-Cart-Token` để gộp giỏ vãng lai vào giỏ của khách.
+ * Đăng nhập khách bằng email + mật khẩu (mặc định của Core, 0.5.12): đăng ký → link xác minh qua email → tài khoản + phiên;
+ * quên mật khẩu qua link email. Trả `meta.token` (Bearer, chỉ một lần). Gửi kèm `cart_id` + `X-Vani-Cart-Token` để gộp giỏ
+ * vãng lai vào giỏ của khách. OTP theo SĐT là plugin (`vani.phone-otp-login`), mạng xã hội qua `AuthProvider`.
  */
 final class AuthController
 {
     public function __construct(private readonly AuthService $auth) {}
 
-    public function requestOtp(Request $request, OtpService $otp): JsonResponse
+    /**
+     * Gửi link xác minh tới email (202); tài khoản chỉ tạo khi bấm link (`POST /auth/register/verify`).
+     */
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
-            'purpose' => ['nullable', Rule::enum(OtpPurpose::class)],
-        ]);
+        $data = $request->validated();
 
-        $result = $otp->request($this->phone($data['phone']), OtpPurpose::from($data['purpose'] ?? OtpPurpose::Login->value), (string) $request->ip());
-
-        return response()->json(['data' => $result], 202);
+        return response()->json(['data' => $this->auth->register($data['email'], $data['password'], $data['full_name'])], 202);
     }
 
-    public function verifyOtp(Request $request, Carts $carts): JsonResponse
+    /**
+     * Token trong link xác minh → tài khoản + phiên.
+     */
+    public function verifyRegistration(Request $request, Carts $carts): JsonResponse
     {
         $data = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
-            'code' => ['required', 'string', 'max:10'],
+            'token' => ['required', 'string', 'size:64'],
             'device' => ['nullable', 'string', 'max:64'],
             'cart_id' => ['nullable', 'string', 'size:26'],
         ]);
-        $session = $this->auth->loginWithOtp($this->phone($data['phone']), $data['code'], $data['device'] ?? null);
+        $session = $this->auth->verifyRegistration($data['token'], $data['device'] ?? null);
 
         return $this->respond($session, $request, $carts, $data['cart_id'] ?? null);
     }
@@ -53,14 +51,36 @@ final class AuthController
     public function login(Request $request, Carts $carts): JsonResponse
     {
         $data = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'string', 'email', 'max:190'],
             'password' => ['required', 'string', 'max:200'],
             'device' => ['nullable', 'string', 'max:64'],
             'cart_id' => ['nullable', 'string', 'size:26'],
         ]);
-        $session = $this->auth->loginWithPassword($this->phone($data['phone']), $data['password'], (string) $request->ip(), $data['device'] ?? null);
+        $session = $this->auth->loginWithPassword($data['email'], $data['password'], (string) $request->ip(), $data['device'] ?? null);
 
         return $this->respond($session, $request, $carts, $data['cart_id'] ?? null);
+    }
+
+    /**
+     * Luôn 202 (không báo email có phải tài khoản hay không).
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate(['email' => ['required', 'string', 'email', 'max:190']]);
+        $this->auth->requestPasswordReset($data['email']);
+
+        return response()->json(['data' => ['email' => AuthService::normalizeEmail($data['email'])]], 202);
+    }
+
+    /**
+     * Mật khẩu mới bằng token trong link email; mọi phiên cũ bị thu hồi — đăng nhập lại bằng mật khẩu mới.
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $this->auth->resetPassword($data['token'], $data['password']);
+
+        return response()->json(null, 204);
     }
 
     /**
@@ -82,7 +102,7 @@ final class AuthController
     }
 
     /**
-     * Hoàn tất: tham số nhà cung cấp trả về (vd. `code`) + `state` → token như đăng nhập OTP.
+     * Hoàn tất: tham số nhà cung cấp trả về (vd. `code`) + `state` → token như đăng nhập email.
      */
     public function socialComplete(Request $request, string $provider, SocialLogin $social, Carts $carts): JsonResponse
     {
@@ -117,10 +137,5 @@ final class AuthController
         }
 
         return response()->json(['data' => $session['customer']->toArray(), 'meta' => $meta]);
-    }
-
-    private function phone(string $input): string
-    {
-        return Phones::parse($input)?->e164 ?? throw ValidationException::withMessages(['phone' => __('Số điện thoại không hợp lệ.')]);
     }
 }

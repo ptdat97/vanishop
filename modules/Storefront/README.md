@@ -20,6 +20,7 @@ Không có bảng.
 
 | Contract | Loại | Ghi chú |
 |---|---|---|
+| `CustomerSignIn` | interface | plugin (experimental) |
 | `LinkResolver` | interface | plugin |
 | `LinkType` | interface | tag `vani.storefront.link_types`, plugin |
 | `PageSeo` | interface | plugin |

@@ -30,15 +30,28 @@ final class CustomerService implements Customers
         return app(ConsentService::class)->allows($customerId, $channel, $purpose);
     }
 
+    /**
+     * Khách vãng lai đặt hàng: đơn gắn hồ sơ theo SĐT liên hệ (kể cả khi SĐT đó đã là tài khoản). SĐT chưa có hồ sơ mà email
+     * liên hệ là email **đã xác minh** của một tài khoản → đơn vào lịch sử của tài khoản đó (0.5.12; không ghi SĐT vào tài khoản).
+     * Còn lại → tạo hồ sơ ẩn theo SĐT.
+     */
     public function resolveForCheckout(string $phone, string $fullName, ?string $email): int
     {
-        $customer = $this->findOrCreateByPhone(Phones::fromString($phone)->e164, $fullName);
+        $e164 = Phones::fromString($phone)->e164;
+        $email = $email === null ? '' : mb_strtolower(trim($email));
+        if ($email !== '' && $this->activeByPhone($e164) === null) {
+            $account = Customer::query()->where('email_normalized', $email)->whereNotNull('registered_at')->whereNotNull('email_verified_at')->first();
+            if ($account !== null) {
+                return $account->id;
+            }
+        }
+
+        $customer = $this->findOrCreateByPhone($e164, $fullName);
 
         $changes = [];
         if (($customer->full_name ?? '') === '' && trim($fullName) !== '') {
             $changes['full_name'] = trim($fullName);
         }
-        $email = $email === null ? '' : mb_strtolower(trim($email));
         if ($customer->email === null && $email !== '' && ! $this->emailInUse($email, $customer->id)) {
             $changes['email'] = $email;
         }
@@ -96,6 +109,10 @@ final class CustomerService implements Customers
                 throw CustomerRejected::emailTaken();
             }
             $attributes['email'] = $email === '' ? null : $email;
+            if ($attributes['email'] !== $customer->email) {
+                // Email mới chưa được chứng minh sở hữu: không dùng để gộp đơn cho tới khi xác minh lại (đặt lại mật khẩu qua link).
+                $attributes['email_verified_at'] = null;
+            }
         }
 
         // Khách sửa hồ sơ ở trang/ứng dụng ngôn ngữ nào thì đó là ngôn ngữ khách dùng (ADR-038 §8).

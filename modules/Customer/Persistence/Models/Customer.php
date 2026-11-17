@@ -23,6 +23,7 @@ use Modules\Customer\Domain\CustomerStatus;
  * @property CustomerStatus $status
  * @property Carbon|null $registered_at
  * @property Carbon|null $phone_verified_at
+ * @property Carbon|null $email_verified_at email đã xác minh qua link (0.5.12)
  * @property string|null $password
  * @property int|null $merged_into_id
  * @property int|null $customer_group_id nhóm khách (0.3.35)
@@ -33,7 +34,7 @@ use Modules\Customer\Domain\CustomerStatus;
 final class Customer extends Model
 {
     protected $fillable = [
-        'public_id', 'phone', 'email', 'full_name', 'birth_date', 'gender', 'preferred_locale', 'status', 'registered_at', 'phone_verified_at',
+        'public_id', 'phone', 'email', 'full_name', 'birth_date', 'gender', 'preferred_locale', 'status', 'registered_at', 'phone_verified_at', 'email_verified_at',
         'password', 'merged_into_id', 'meta', 'last_login_at', 'orders_count', 'total_spent', 'first_order_at', 'last_order_at',
     ];
 
@@ -42,7 +43,7 @@ final class Customer extends Model
     protected function casts(): array
     {
         return [
-            'status' => CustomerStatus::class, 'birth_date' => 'date', 'registered_at' => 'datetime', 'phone_verified_at' => 'datetime',
+            'status' => CustomerStatus::class, 'birth_date' => 'date', 'registered_at' => 'datetime', 'phone_verified_at' => 'datetime', 'email_verified_at' => 'datetime',
             'password' => 'hashed', 'merged_into_id' => 'integer', 'meta' => 'array', 'last_login_at' => 'datetime',
             'orders_count' => 'integer', 'total_spent' => 'integer', 'first_order_at' => 'datetime', 'last_order_at' => 'datetime',
         ];

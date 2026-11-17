@@ -32,12 +32,14 @@ use Modules\Storefront\Application\Links\ProductLinkType;
 use Modules\Storefront\Application\Links\RouteLinkType;
 use Modules\Storefront\Application\Links\UrlLinkType;
 use Modules\Storefront\Application\Menus\MenuPresenter;
+use Modules\Storefront\Application\NativeCustomerSignIn;
 use Modules\Storefront\Application\PopularSearches;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Contracts\CustomerSignIn;
 use Modules\Storefront\Contracts\LinkResolver;
 use Modules\Storefront\Contracts\LinkType;
 use Modules\Storefront\Contracts\PageSeo;
@@ -66,6 +68,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->bind(ProductCards::class, ProductViews::class);
+        $this->app->bind(CustomerSignIn::class, NativeCustomerSignIn::class);
         // Không chia sẻ instance: ghi nhớ phân giải link/menu chỉ trong một lượt render (một instance), không sống qua
         // request — kể cả khi tiến trình phục vụ nhiều request (Octane, queue) — để đổi slug thấy ngay.
         $this->app->bind(LinkResolver::class, LinkRegistry::class);
