@@ -64,10 +64,12 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', CheckoutService::GUEST_CHECKOUT, 'Cho phép khách vãng lai đặt hàng', 'bool', true,
-            help: 'Tắt: phải đăng nhập (OTP) mới đặt được hàng — trang thanh toán chuyển sang đăng nhập, Storefront API trả 403 `checkout.sign_in_required`. Xem giá và thêm giỏ vẫn không cần đăng nhập.',
+            help: 'Tắt: phải đăng nhập mới đặt được hàng — trang thanh toán chuyển sang đăng nhập, Storefront API trả 403 `checkout.sign_in_required`. Xem giá và thêm giỏ vẫn không cần đăng nhập.',
         ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
 
+        // Tạo đơn trong Admin (stabilization A8).
+        $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
         $this->bootModuleResources();
     }
 }

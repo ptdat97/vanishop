@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -136,6 +137,8 @@ final class OrderController
         return Inertia::render('Ordering::Orders/Index', [
             'baseUrl' => route('admin.orders.orders.index'),
             'exportUrl' => route('admin.orders.orders.export'),
+            // Tạo đơn trong Admin (A8, module Checkout).
+            'createUrl' => Gate::allows('orders.manage') && Route::has('admin.orders.new') ? route('admin.orders.new') : null,
             'filters' => $filters,
             'sort' => $sort?->toArray(),
             'stages' => OrderStage::STAGES,

@@ -36,7 +36,7 @@ final class CheckoutRejected extends BusinessRuleViolation
     }
 
     /**
-     * Cửa hàng tắt đặt hàng không đăng nhập (`storefront.guest_checkout`): khách đăng nhập (OTP) rồi đặt lại.
+     * Cửa hàng tắt đặt hàng không đăng nhập (`storefront.guest_checkout`): khách đăng nhập rồi đặt lại.
      */
     public static function signInRequired(): self
     {

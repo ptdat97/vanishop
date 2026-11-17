@@ -25,6 +25,7 @@ type Filters = { stage: string; aged: string; actionable: string; status: string
 const props = defineProps<{
     baseUrl: string;
     exportUrl: string;
+    createUrl: string | null;
     filters: Filters;
     sort: ListSortState | null;
     stages: string[];
@@ -186,6 +187,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
     <PageHeader title="Đơn hàng" :subtitle="`${pagination.total} đơn`">
         <a :href="exportHref('orders')" :class="secondaryButton" data-export="orders">Xuất Excel</a>
         <a :href="exportHref('lines')" :class="secondaryButton" data-export="lines">Xuất theo dòng SKU</a>
+        <Link v-if="createUrl" :href="createUrl" :class="primaryButton" data-create-order>Tạo đơn</Link>
         <button v-for="tool in tools" :key="tool.key" type="button" :class="secondaryButton" :aria-expanded="openTool === tool.key" @click="toggleTool(tool.key)">
             {{ tool.label }}
         </button>

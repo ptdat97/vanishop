@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'admin_order_created' => 'Đã tạo đơn. Kiểm tra lại rồi xác nhận đơn.',
     'invalid' => 'Thông tin đặt hàng chưa hợp lệ.',
     'totals_changed' => 'Tổng tiền đơn hàng đã thay đổi (giá, khuyến mãi hoặc phí giao). Vui lòng xem lại và xác nhận.',
     'cart_not_ready' => 'Giỏ hàng có sản phẩm hết hàng hoặc ngừng bán. Vui lòng cập nhật giỏ.',

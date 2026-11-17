@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'admin_order_created' => 'Order created. Review it, then confirm.',
     'invalid' => 'The order details are not valid.',
     'totals_changed' => 'The order total has changed (price, promotion or shipping). Please review and confirm.',
     'cart_not_ready' => 'Some items in the cart are out of stock or unavailable. Please update the cart.',

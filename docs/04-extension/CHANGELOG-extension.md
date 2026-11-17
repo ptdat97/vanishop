@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.17 — 2026-11-18 · Extension API 1.1.0 (không đổi)
+
+Stabilization A8 — Đơn hàng. Không đổi API cho plugin.
+
+### Thêm
+- Tạo đơn trong Admin (`Đơn hàng → Tạo đơn`, module Checkout — `AdminOrders`, route `admin.orders.new*`): tìm SKU đang bán, số lượng, người nhận + địa chỉ theo danh mục địa giới, phí giao, thanh toán; tính tiền qua `Checkout::quote` trên giỏ phía server của form (đồng bộ dòng mỗi lần tính) → `placeOrder` nguồn `admin` (cùng luật giá, khuyến mãi, phí giao, giữ hàng; tổng đổi giữa chừng → báo; khoá idempotency của form chống tạo trùng khi bấm lại).
+- Xuất đơn ra Excel theo đúng bộ lọc của danh sách: mỗi đơn một dòng hoặc mỗi dòng SKU một dòng (tối đa 10.000 đơn), ghi audit `orders.exported`.
+
+### Sửa
+- Chữ trợ giúp cài đặt "Cho phép khách vãng lai đặt hàng" và `CheckoutRejected::signInRequired` còn nhắc "đăng nhập (OTP)" — nay "đăng nhập" (email mặc định từ 0.5.12).
+
 ## 0.5.16 — 2026-11-18 · Extension API 1.1.0 (không đổi)
 
 Stabilization A7 — Kiểm kê nhanh. Không đổi API cho plugin.
