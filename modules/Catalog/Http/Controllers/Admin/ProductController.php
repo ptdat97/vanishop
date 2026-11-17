@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -53,30 +54,18 @@ final class ProductController
 
     use ConvertsDomainErrors;
 
+    /** Tối đa số sản phẩm một thao tác hàng loạt ("Chọn tất cả kết quả lọc", A5). */
+    public const BULK_MAX = 2000;
+
     public function index(Request $request, AdminScreen $screen, ProductViewStatistics $views, CategoryTreeQuery $tree): Response
     {
         Gate::authorize('catalog.view');
 
-        $validated = $request->validate([
-            'per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])],
-            'category' => ['nullable', 'integer', 'min:1'],
-            'brand' => ['nullable', 'regex:/^(none|\\d+)$/'],
-            'collection' => ['nullable', 'integer', 'min:1'],
-            'missing' => ['nullable', Rule::in(array_keys(AdminQueries::MISSING))],
-        ]);
-        $perPage = (int) ($validated['per_page'] ?? 30);
-        $search = trim((string) $request->query('q', ''));
-        $status = $request->query('status');
+        $perPage = (int) ($request->validate(['per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])]])['per_page'] ?? 30);
+        ['search' => $search, 'status' => $status, 'taxonomy' => $taxonomy, 'plugin_ids' => $pluginIds] = $this->listFilters($request, $screen);
         $sort = ListSort::fromRequest($request, ['style_code' => 'style_code', 'status' => 'status']);
-        $brand = $validated['brand'] ?? null;
-        $taxonomy = [
-            'category' => isset($validated['category']) ? (int) $validated['category'] : null,
-            'brand' => $brand === null || $brand === 'none' ? $brand : (int) $brand,
-            'collection' => isset($validated['collection']) ? (int) $validated['collection'] : null,
-            'missing' => $validated['missing'] ?? null,
-        ];
 
-        $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $screen->filterIds('product', (array) $request->query('ext', [])), $sort, $perPage);
+        $styles = $this->queries->products($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $pluginIds, $sort, $perPage);
         $options = [
             'categories' => $this->categoryOptions($tree->tree()),
             'brands' => $this->queries->brands()->map(fn (Brand $brand): array => ['id' => $brand->id, 'label' => $brand->name])->all(),
@@ -122,6 +111,47 @@ final class ProductController
                 'actions' => $this->bulkActions($screen, $options),
             ],
         ]);
+    }
+
+    /**
+     * Id mọi sản phẩm khớp bộ lọc hiện tại của danh sách (tối đa BULK_MAX) — "Chọn tất cả kết quả lọc" cho thao tác hàng loạt
+     * của Catalog và module khác (đổi giá niêm yết…).
+     */
+    public function ids(Request $request, AdminScreen $screen): JsonResponse
+    {
+        Gate::authorize('catalog.view');
+        ['search' => $search, 'status' => $status, 'taxonomy' => $taxonomy, 'plugin_ids' => $pluginIds] = $this->listFilters($request, $screen);
+        $result = $this->queries->productIds($search, is_string($status) ? StyleStatus::tryFrom($status) : null, $taxonomy, $pluginIds, self::BULK_MAX);
+
+        return response()->json(['ids' => $result['ids'], 'total' => $result['total'], 'capped' => $result['total'] > self::BULK_MAX]);
+    }
+
+    /**
+     * Bộ lọc của danh sách sản phẩm (dùng chung cho trang và "Chọn tất cả kết quả lọc").
+     *
+     * @return array{search: string, status: mixed, taxonomy: array{category: int|null, brand: int|string|null, collection: int|null, missing: string|null}, plugin_ids: list<int>|null}
+     */
+    private function listFilters(Request $request, AdminScreen $screen): array
+    {
+        $validated = $request->validate([
+            'category' => ['nullable', 'integer', 'min:1'],
+            'brand' => ['nullable', 'regex:/^(none|\\d+)$/'],
+            'collection' => ['nullable', 'integer', 'min:1'],
+            'missing' => ['nullable', Rule::in(array_keys(AdminQueries::MISSING))],
+        ]);
+        $brand = $validated['brand'] ?? null;
+
+        return [
+            'search' => trim((string) $request->query('q', '')),
+            'status' => $request->query('status'),
+            'taxonomy' => [
+                'category' => isset($validated['category']) ? (int) $validated['category'] : null,
+                'brand' => $brand === null || $brand === 'none' ? $brand : (int) $brand,
+                'collection' => isset($validated['collection']) ? (int) $validated['collection'] : null,
+                'missing' => $validated['missing'] ?? null,
+            ],
+            'plugin_ids' => $screen->filterIds('product', (array) $request->query('ext', [])),
+        ];
     }
 
     /**
@@ -205,7 +235,7 @@ final class ProductController
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate([
-            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'ids' => ['required', 'array', 'min:1', 'max:'.self::BULK_MAX], 'ids.*' => ['integer', 'min:1'],
             'action' => ['required', Rule::in(ProductBulkEditor::ACTIONS)],
             'target_id' => [Rule::requiredIf($request->input('action') !== 'brand'), 'nullable', 'integer', 'min:1'],
         ]);
@@ -220,7 +250,7 @@ final class ProductController
     public function bulkDelete(Request $request, ProductBulkEditor $editor): RedirectResponse
     {
         Gate::authorize('catalog.manage');
-        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1']]);
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:'.self::BULK_MAX], 'ids.*' => ['integer', 'min:1']]);
         $result = $editor->deleteDrafts(array_map('intval', $data['ids']));
 
         return back()->with('success', $result['skipped'] === 0
@@ -235,7 +265,7 @@ final class ProductController
     {
         Gate::authorize('catalog.manage');
         $data = $request->validate([
-            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'ids' => ['required', 'array', 'min:1', 'max:'.self::BULK_MAX], 'ids.*' => ['integer', 'min:1'],
             'status' => ['required', Rule::enum(StyleStatus::class)],
         ]);
         $status = StyleStatus::from($data['status']);
@@ -268,7 +298,7 @@ final class ProductController
     public function export(Request $request, ProductFile $file): BinaryFileResponse
     {
         Gate::authorize('catalog.view');
-        $ids = $request->validate(['ids' => ['sometimes', 'array', 'max:1000'], 'ids.*' => ['integer', 'min:1']])['ids'] ?? null;
+        $ids = $request->validate(['ids' => ['sometimes', 'array', 'max:'.self::BULK_MAX], 'ids.*' => ['integer', 'min:1']])['ids'] ?? null;
         $path = tempnam(sys_get_temp_dir(), 'vani-products-').'.xlsx';
         SimpleXlsx::write($path, $file->export($ids === null ? null : array_map('intval', $ids)), 'San pham');
 

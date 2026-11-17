@@ -15,6 +15,8 @@ export interface ConfirmField {
 export interface ConfirmOptions {
     title: string;
     message?: string;
+    /** Dòng chi tiết dưới lời nhắn (vd. kết quả xem trước của thao tác hàng loạt). */
+    details?: string[];
     confirmLabel?: string;
     tone?: 'primary' | 'danger';
     /** Ô nhập lý do trong hộp xác nhận (thay `prompt()`); kết quả trả về là nội dung đã nhập. */

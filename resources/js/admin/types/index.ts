@@ -89,6 +89,8 @@ export interface ExtensionAction {
     fields?: ConfirmField[];
     /** 0.3.103: giá trị cố định gửi kèm (vd. `{status: 'active'}`). */
     data?: Record<string, string | number | boolean>;
+    /** A5: xem trước — POST cùng dữ liệu, trả `{message, details?, warning?}` hiện trong hộp xác nhận trước khi ghi. */
+    preview_url?: string;
 }
 
 export interface ExtensionFilter {

@@ -8,11 +8,12 @@ import Pagination from '@admin/Components/Pagination.vue';
 import { useListQuery, type ListSortState } from '@admin/list';
 import Select from '@admin/Components/Select.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
+import { getJson } from '@admin/http';
 import { labelOptions, recordOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import CatalogTabs from '../../Components/CatalogTabs.vue';
 import type { CatalogLabels, NavItem } from '../../types';
 
@@ -48,6 +49,26 @@ const brandOptions = computed(() => [{ value: 'none', label: 'Chưa có thương
 const perPageOptions = [30, 50, 100];
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
+// "Chọn tất cả kết quả lọc" (A5): id mọi sản phẩm khớp bộ lọc đang áp dụng (tối đa 2000) — thao tác hàng loạt nhận danh sách này.
+const matching = ref<{ ids: number[]; total: number; capped: boolean } | null>(null);
+const loadingMatching = ref(false);
+const actionIds = computed(() => matching.value?.ids ?? selected.value);
+const pageFullySelected = computed(() => props.products.data.length > 0 && props.products.data.every((row) => selected.value.includes(row.id)));
+watch(
+    () => props.products,
+    () => (matching.value = null),
+);
+
+async function selectAllMatching(): Promise<void> {
+    loadingMatching.value = true;
+    const query: Record<string, string> = { q: q.value, status: status.value, category: String(category.value), brand: brand.value, collection: String(collection.value), missing: missing.value };
+    for (const [key, value] of Object.entries(ext)) query[`ext[${key}]`] = value;
+    try {
+        matching.value = await getJson(`${baseUrl.value}/ids`, query);
+    } finally {
+        loadingMatching.value = false;
+    }
+}
 const editingPriceId = ref<number | null>(null);
 const priceDraft = ref('');
 const priceError = ref('');
@@ -189,8 +210,16 @@ function savePrice(url: string): void {
     </form>
 
     <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
-        <ExtensionActions :actions="extensions.actions" :ids="selected" />
+        <span class="text-slate-500" data-selected-count>Đã chọn {{ actionIds.length }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="actionIds" selection-description="sản phẩm" />
+    </div>
+    <div v-if="matching" class="mb-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-900" data-select-matching>
+        Đã chọn tất cả {{ matching.ids.length }} sản phẩm khớp bộ lọc<span v-if="matching.capped"> (tối đa {{ matching.ids.length }} trên {{ matching.total }} — thu hẹp bộ lọc để chọn phần còn lại)</span>.
+        <button type="button" class="ml-1 underline" @click="matching = null">Chỉ chọn trên trang này</button>
+    </div>
+    <div v-else-if="extensions.actions.length && pageFullySelected && products.total > products.data.length" class="mb-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm" data-select-matching>
+        Đã chọn {{ products.data.length }} sản phẩm trên trang này.
+        <button type="button" class="ml-1 font-medium text-indigo-700 underline" :disabled="loadingMatching" @click="selectAllMatching">Chọn tất cả {{ products.total }} sản phẩm khớp bộ lọc</button>
     </div>
     <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, products.per_page, next)" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" empty-text="Không có sản phẩm nào.">
         <template #cell-image="{ row }">

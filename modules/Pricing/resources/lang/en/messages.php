@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'bulk_preview' => ':products products, :variants SKUs: list price :old → :new.',
+    'bulk_preview_skipped' => 'Skipping :count SKUs without a list price.',
+    'bulk_preview_warning' => 'Warning ":label": :count SKUs',
     'bulk_prices_changed' => 'Repriced :variants variants of :products products; skipped :skipped variants without a price.',
     'bulk_mode_invalid' => 'Invalid price change mode.',
     'bulk_value_invalid' => 'Value must be greater than 0 (percent decrease below 100).',

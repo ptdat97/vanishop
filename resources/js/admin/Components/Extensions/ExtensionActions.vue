@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { confirmAction, promptFields } from '@admin/confirm';
+import { HttpError, postJson } from '@admin/http';
 import { secondaryButton } from '@admin/styles';
 import type { ExtensionAction } from '@admin/types';
 import { router } from '@inertiajs/vue3';
@@ -20,6 +21,19 @@ async function run(action: ExtensionAction): Promise<void> {
         values = result;
     } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} ${props.selectionDescription}.` })) === false) {
         return;
+    }
+    if (action.preview_url) {
+        // Xem trước (A5): server tính trên đúng dữ liệu sẽ gửi, chưa ghi gì; người dùng xác nhận lần nữa.
+        let preview: { message: string; details?: string[]; warning?: boolean };
+        try {
+            preview = await postJson(action.preview_url, { ...(action.data ?? {}), ...values, ids: props.ids });
+        } catch (error) {
+            await confirmAction({ title: action.label, message: error instanceof HttpError ? error.message : 'Không xem trước được. Vui lòng thử lại.', confirmLabel: 'Đóng' });
+            return;
+        }
+        if ((await confirmAction({ title: `${action.label}?`, message: preview.message, details: preview.details, confirmLabel: action.label, tone: preview.warning ? 'danger' : 'primary' })) === false) {
+            return;
+        }
     }
     if (action.method === 'get') {
         // In phiếu / xuất file: trình duyệt mở hoặc tải trực tiếp (không qua Inertia).

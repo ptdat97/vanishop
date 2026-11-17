@@ -26,6 +26,7 @@ use Modules\Pricing\Http\Requests\BulkPricesRequest;
 use Modules\Pricing\Http\Requests\PriceListRequest;
 use Modules\Pricing\Http\Requests\PricesRequest;
 use Modules\Pricing\Persistence\Models\PriceList;
+use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\SimpleXlsx;
 use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Shared\Support\StoreClock;
@@ -303,20 +304,55 @@ final class PriceListController
     }
 
     /**
-     * Đổi giá niêm yết nhiều sản phẩm (danh sách sản phẩm → "Đổi giá", 0.3.103). `ids` là style id.
+     * Đổi giá niêm yết nhiều sản phẩm (danh sách sản phẩm → "Đổi giá", 0.3.103; tới 2000 sản phẩm khớp bộ lọc — A5). `ids` là
+     * style id.
      */
     public function bulkBasePrice(Request $request, BulkBasePrice $prices): RedirectResponse
     {
         Gate::authorize('pricing.manage');
+        $data = $this->bulkBasePriceInput($request);
+        $result = $prices->apply($data['ids'], $data['mode'], $data['value'], $data['strike']);
+
+        return back()->with('success', __('pricing::messages.bulk_prices_changed', $result));
+    }
+
+    /**
+     * Xem trước "Đổi giá" (A5): chưa ghi gì — câu tóm tắt cho hộp xác nhận (số SKU, khoảng giá cũ → mới, SKU bỏ qua, cảnh báo)
+     * và vài dòng mẫu.
+     */
+    public function previewBulkBasePrice(Request $request, BulkBasePrice $prices, MoneyFormatter $money): JsonResponse
+    {
+        Gate::authorize('pricing.manage');
+        $data = $this->bulkBasePriceInput($request);
+        $preview = $prices->preview($data['ids'], $data['mode'], $data['value'], $data['strike']);
+        $currency = (string) $prices->baseList()->currency_code;
+        $format = fn (?int $amount): string => $amount === null ? '—' : $money->formatAmount($amount, $currency);
+        $range = fn (array $range): string => $range['min'] === $range['max'] ? $format($range['min']) : $format($range['min']).' – '.$format($range['max']);
+        $message = __('pricing::messages.bulk_preview', ['products' => $preview['products'], 'variants' => $preview['variants'], 'old' => $range($preview['old']), 'new' => $range($preview['new'])]);
+        if ($preview['skipped'] > 0) {
+            $message .= ' '.__('pricing::messages.bulk_preview_skipped', ['count' => $preview['skipped']]);
+        }
+        $details = [
+            ...array_map(fn (string $label, int $count): string => __('pricing::messages.bulk_preview_warning', ['label' => $label, 'count' => $count]), array_keys($preview['warnings']), $preview['warnings']),
+            ...array_map(fn (array $sample): string => "{$sample['sku']}: {$format($sample['old'])} → {$format($sample['new'])}", $preview['samples']),
+        ];
+
+        return response()->json(['message' => $message, 'details' => $details, 'warning' => $preview['warnings'] !== []]);
+    }
+
+    /**
+     * @return array{ids: list<int>, mode: string, value: int, strike: bool}
+     */
+    private function bulkBasePriceInput(Request $request): array
+    {
         $data = $request->validate([
-            'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
+            'ids' => ['required', 'array', 'min:1', 'max:2000'], 'ids.*' => ['integer', 'min:1'],
             'mode' => ['required', Rule::in(BulkBasePrice::MODES)],
             'value' => ['required', 'integer', 'min:0', 'max:1000000000'],
             'strike' => ['nullable', 'boolean'],
         ]);
-        $result = $prices->apply(array_values(array_unique(array_map('intval', $data['ids']))), $data['mode'], (int) $data['value'], (bool) ($data['strike'] ?? false));
 
-        return back()->with('success', __('pricing::messages.bulk_prices_changed', $result));
+        return ['ids' => array_values(array_unique(array_map('intval', $data['ids']))), 'mode' => $data['mode'], 'value' => (int) $data['value'], 'strike' => (bool) ($data['strike'] ?? false)];
     }
 
     /**

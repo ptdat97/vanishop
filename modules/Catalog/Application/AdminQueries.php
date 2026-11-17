@@ -101,13 +101,43 @@ final class AdminQueries
      */
     public function products(string $search, ?StyleStatus $status, array $filters, ?array $pluginIds, ?ListSort $sort, int $perPage): LengthAwarePaginator
     {
+        return $this->productQuery($search, $status, $filters, $pluginIds)
+            ->with(['translations', 'brand:id,name', 'variants.gallery.media'])
+            ->when($sort, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('updated_at')->orderByDesc('id'))
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * Id mọi sản phẩm khớp bộ lọc của danh sách ("Chọn tất cả kết quả lọc", A5) — tối đa `$limit`.
+     *
+     * @param  array{category?: int|null, brand?: int|string|null, collection?: int|null, missing?: string|null}  $filters
+     * @param  list<int>|null  $pluginIds
+     * @return array{ids: list<int>, total: int}
+     */
+    public function productIds(string $search, ?StyleStatus $status, array $filters, ?array $pluginIds, int $limit): array
+    {
+        $query = $this->productQuery($search, $status, $filters, $pluginIds);
+
+        return [
+            'ids' => (clone $query)->orderByDesc('updated_at')->orderByDesc('id')->limit($limit)->pluck('id')->map(fn ($id): int => (int) $id)->all(),
+            'total' => $query->count(),
+        ];
+    }
+
+    /**
+     * @param  array{category?: int|null, brand?: int|string|null, collection?: int|null, missing?: string|null}  $filters
+     * @param  list<int>|null  $pluginIds
+     * @return Builder<Style>
+     */
+    private function productQuery(string $search, ?StyleStatus $status, array $filters, ?array $pluginIds): Builder
+    {
         $category = $filters['category'] ?? null;
         $brand = $filters['brand'] ?? null;
         $collection = $filters['collection'] ?? null;
         $missing = $filters['missing'] ?? null;
 
         return Style::query()
-            ->with(['translations', 'brand:id,name', 'variants.gallery.media'])
             ->when($search !== '', function ($query) use ($search): void {
                 foreach (VietnameseText::tokens($search) as $token) {
                     $query->where('search_text', 'like', '%'.addcslashes($token, '%_\\').'%');
@@ -119,10 +149,7 @@ final class AdminQueries
             ->when(is_int($brand), fn ($query) => $query->where('brand_id', $brand))
             ->when($collection !== null, fn ($query) => $query->whereIn('id', DB::table('collection_style')->where('collection_id', $collection)->select('style_id')))
             ->when($missing !== null, fn ($query) => $this->whereMissing($query, (string) $missing))
-            ->when($pluginIds !== null, fn ($query) => $query->whereIn('id', $pluginIds))
-            ->when($sort, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('updated_at')->orderByDesc('id'))
-            ->paginate($perPage)
-            ->withQueryString();
+            ->when($pluginIds !== null, fn ($query) => $query->whereIn('id', $pluginIds));
     }
 
     /**

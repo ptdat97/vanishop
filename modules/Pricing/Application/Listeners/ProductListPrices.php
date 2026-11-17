@@ -94,6 +94,8 @@ final class ProductListPrices
 
         return [...$addToList, [
             'key' => 'price', 'label' => 'Đổi giá', 'url' => route('admin.pricing.base-prices.bulk'), 'confirm' => true,
+            // A5: xem trước số SKU, khoảng giá cũ/mới, cảnh báo (giá vốn…) trước khi ghi.
+            'preview_url' => route('admin.pricing.base-prices.bulk.preview'),
             'fields' => [
                 ['key' => 'mode', 'label' => 'Cách đổi', 'required' => true, 'value' => 'percent_down', 'options' => [
                     ['value' => 'set', 'label' => 'Đặt giá mới (mọi size)'],

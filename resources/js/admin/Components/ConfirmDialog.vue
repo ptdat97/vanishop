@@ -45,6 +45,9 @@ function accept(): void {
                 <form @submit.prevent="accept">
                     <AlertDialogTitle class="text-base font-semibold text-slate-900">{{ options.title }}</AlertDialogTitle>
                     <AlertDialogDescription v-if="options.message" class="mt-2 text-sm text-slate-600">{{ options.message }}</AlertDialogDescription>
+                    <ul v-if="options.details?.length" class="mt-2 max-h-48 list-inside list-disc overflow-y-auto text-xs text-slate-600" data-confirm-details>
+                        <li v-for="detail in options.details" :key="detail">{{ detail }}</li>
+                    </ul>
                     <label v-for="(field, index) in options.fields" :key="field.key" class="mt-4 block text-sm">
                         <span class="mb-1 block font-medium text-slate-700">{{ field.label }}</span>
                         <Select v-if="field.options" v-model="values[field.key]" :options="field.options" empty-label="— Chọn —" :aria-label="field.label" />

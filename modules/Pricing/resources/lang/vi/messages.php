@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'bulk_preview' => ':products sản phẩm, :variants SKU: giá niêm yết :old → :new.',
+    'bulk_preview_skipped' => 'Bỏ qua :count SKU chưa có giá niêm yết.',
+    'bulk_preview_warning' => 'Cảnh báo ":label": :count SKU',
     'bulk_prices_changed' => 'Đã đổi giá :variants biến thể của :products sản phẩm; bỏ qua :skipped biến thể chưa có giá.',
     'bulk_mode_invalid' => 'Cách đổi giá không hợp lệ.',
     'bulk_value_invalid' => 'Giá trị phải lớn hơn 0 (giảm % phải dưới 100).',

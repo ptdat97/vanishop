@@ -33,6 +33,7 @@ Route::resource('link-types', LinkTypeController::class)->only(['index', 'store'
 Route::post('products/bulk-status', [ProductController::class, 'bulkStatus'])->name('products.bulk-status');
 Route::post('products/bulk-edit', [ProductController::class, 'bulkEdit'])->name('products.bulk-edit');
 Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
+Route::get('products/ids', [ProductController::class, 'ids'])->name('products.ids');
 Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
 Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
 Route::post('products/import/{token}', [ProductController::class, 'applyImport'])->where('token', '[A-Za-z0-9]{40}')->name('products.import.apply');

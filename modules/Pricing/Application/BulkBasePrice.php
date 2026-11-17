@@ -6,6 +6,7 @@ namespace Modules\Pricing\Application;
 
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\VariantDirectory;
+use Modules\Extension\Facades\Hook;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
 
@@ -36,6 +37,48 @@ final class BulkBasePrice
      * @return array{products: int, variants: int, skipped: int} skipped: biến thể chưa có giá (giảm/tăng % cần giá cũ)
      */
     public function apply(array $styleIds, string $mode, int $value, bool $strike): array
+    {
+        $plan = $this->plan($styleIds, $mode, $value, $strike);
+        $this->lists->setPrices($this->baseList(), array_map(fn (array $row): array => array_intersect_key($row, ['variant_id' => true, 'amount' => true, 'compare_at_amount' => true]), $plan['rows']));
+
+        return ['products' => $plan['products'], 'variants' => count($plan['rows']), 'skipped' => $plan['skipped']];
+    }
+
+    /**
+     * Xem trước (A5): chưa ghi gì — số SKU đổi, khoảng giá cũ/mới, cảnh báo (giá vốn… qua hook `vani.pricing.bulk.warnings`),
+     * vài dòng mẫu. Cùng phép tính với `apply`.
+     *
+     * @param  list<int>  $styleIds
+     * @return array{products: int, variants: int, skipped: int, old: array{min: int|null, max: int|null}, new: array{min: int|null, max: int|null}, warnings: array<string, int>, samples: list<array{sku: string, old: int|null, new: int}>}
+     */
+    public function preview(array $styleIds, string $mode, int $value, bool $strike): array
+    {
+        $plan = $this->plan($styleIds, $mode, $value, $strike);
+        $found = $this->variants->find(array_column($plan['rows'], 'variant_id'));
+        $warnings = [];
+        foreach ($plan['rows'] as $row) {
+            $labels = (array) Hook::filter('vani.pricing.bulk.warnings', [], $row['variant_id'], $row['old'], $row['amount'], 'base');
+            foreach (array_unique(array_map('strval', $labels)) as $label) {
+                $warnings[$label] = ($warnings[$label] ?? 0) + 1;
+            }
+        }
+        $old = array_values(array_filter(array_column($plan['rows'], 'old'), fn (?int $amount): bool => $amount !== null));
+        $new = array_column($plan['rows'], 'amount');
+
+        return [
+            'products' => $plan['products'], 'variants' => count($plan['rows']), 'skipped' => $plan['skipped'],
+            'old' => ['min' => $old === [] ? null : min($old), 'max' => $old === [] ? null : max($old)],
+            'new' => ['min' => $new === [] ? null : min($new), 'max' => $new === [] ? null : max($new)],
+            'warnings' => $warnings,
+            'samples' => array_map(fn (array $row): array => ['sku' => (string) ($found[$row['variant_id']]->sku ?? $row['variant_id']), 'old' => $row['old'], 'new' => $row['amount']], array_slice($plan['rows'], 0, 5)),
+        ];
+    }
+
+    /**
+     * @param  list<int>  $styleIds
+     * @return array{products: int, skipped: int, rows: list<array{variant_id: int, amount: int, compare_at_amount: int|null, old: int|null}>}
+     */
+    private function plan(array $styleIds, string $mode, int $value, bool $strike): array
     {
         if (! in_array($mode, self::MODES, true)) {
             throw ValidationException::withMessages(['mode' => __('pricing::messages.bulk_mode_invalid')]);
@@ -81,11 +124,10 @@ final class BulkBasePrice
                 $strike && $oldAmount !== null && $oldAmount > $amount => max($oldAmount, (int) $oldCompare),
                 default => $oldCompare !== null && $oldCompare > $amount ? $oldCompare : null,
             };
-            $rows[] = ['variant_id' => $variantId, 'amount' => $amount, 'compare_at_amount' => $compare];
+            $rows[] = ['variant_id' => $variantId, 'amount' => $amount, 'compare_at_amount' => $compare, 'old' => $oldAmount];
         }
-        $this->lists->setPrices($list, $rows);
 
-        return ['products' => $products, 'variants' => count($rows), 'skipped' => $skipped];
+        return ['products' => $products, 'skipped' => $skipped, 'rows' => $rows];
     }
 
     private static function round(float $amount): int
