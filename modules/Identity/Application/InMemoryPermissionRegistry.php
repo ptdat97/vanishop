@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Identity\Application;
 
 use Modules\Identity\Contracts\PermissionRegistry;
+
 /**
  * Danh sách permission do module Core và plugin khai báo.
  */

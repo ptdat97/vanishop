@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Identity\Application;
 
-use Modules\Identity\Contracts\ScopeOptions;
 use Closure;
+use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Domain\ScopeType;
 
 /**

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Admin;
 
-use Modules\Identity\Contracts\AdminNavigation;
 use Closure;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Modules\Extension\Application\Plugins\PluginActivation;
+use Modules\Identity\Contracts\AdminNavigation;
 
 /**
  * Registry menu Admin (singleton, đăng ký lúc boot). Mục hiển thị được tính theo từng request:
@@ -19,7 +19,6 @@ use Modules\Extension\Application\Plugins\PluginActivation;
  */
 final class AdminMenuRegistry implements AdminNavigation
 {
-
     /** @var array<string, array{key: string, label: string, route: string, permission: string|null, order: int, plugin: string|null, group: string|null, when: (Closure(): bool)|null}> */
     private array $items = [];
 
