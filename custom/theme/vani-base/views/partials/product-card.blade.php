@@ -1,5 +1,5 @@
 <article class="group vani-product-card" data-vani-motion="rise" data-vani-motion-item>
-    <a href="{{ vani_route('storefront.product', $product['slug']) }}" class="block">
+    <a href="{{ vani_route('storefront.product', $product['slug']) }}" class="relative block">
         @php([$ratioW, $ratioH] = vani_product_ratio())
         <div class="overflow-hidden rounded-[var(--radius-theme)] bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}">
             @if ($product['image_url'])
