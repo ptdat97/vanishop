@@ -33,8 +33,28 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Đưa lại `color_name` + `size_code` (giá trị trục Màu, mã trục Size); trục khác không có chỗ trong mô hình cũ nên mất.
+     */
     public function down(): void
     {
-        // Không quay lại cột màu/size cố định (ADR-045; dev: migrate:fresh).
+        Schema::table('order_lines', function (Blueprint $table): void {
+            $table->string('color_name')->nullable()->after('brand_name');
+            $table->string('size_code', 32)->default('')->after('color_name');
+        });
+
+        DB::table('order_lines')->whereNotNull('variant_options')->select(['id', 'variant_options'])->orderBy('id')->chunkById(500, function ($lines): void {
+            foreach ($lines as $line) {
+                $options = collect(json_decode((string) $line->variant_options, true) ?: []);
+                DB::table('order_lines')->where('id', $line->id)->update([
+                    'color_name' => $options->firstWhere('type', 'color')['value'] ?? null,
+                    'size_code' => mb_substr((string) ($options->firstWhere('type', 'size')['code'] ?? ''), 0, 32),
+                ]);
+            }
+        });
+
+        Schema::table('order_lines', function (Blueprint $table): void {
+            $table->dropColumn('variant_options');
+        });
     }
 };

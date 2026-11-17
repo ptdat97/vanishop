@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.11 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Kiểm chứng phát hành 0.5.x (V6). Không đổi public API.
+
+### Sửa
+- **`migrate:rollback` toàn bộ dừng ở `create_variants_table`** (FK từ `variant_option_values`): `create_option_tables` (ADR-045) có `down()` rỗng. Nay dựng lại cấu trúc màu × size (bảng rỗng); catalog đã có biến thể thì dừng với thông báo — quay lại bằng backup.
+- `add_variant_options_to_order_lines` có `down()` thật: đưa lại `color_name` (giá trị trục Màu) + `size_code` (mã trục Size).
+- CI: bước từ điển dữ liệu chạy thêm rollback toàn bộ rồi migrate lại trên MySQL 8.4.
+
 ## 0.5.10 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Kiểm chứng phát hành 0.5.x (V1, V3) — lần đầu chạy cả bộ test với cache trên Redis. Không đổi public API.

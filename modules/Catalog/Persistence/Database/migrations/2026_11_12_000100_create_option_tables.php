@@ -97,9 +97,64 @@ return new class extends Migration
         Schema::dropIfExists('sizes');
     }
 
+    /**
+     * Dựng lại cấu trúc màu × size cố định (bảng rỗng) để `migrate:rollback` toàn bộ chạy được (kiểm chứng 0.5.x V6).
+     * Dữ liệu tuỳ chọn không chuyển ngược được: đã có biến thể thì dừng — quay lại bằng backup.
+     */
     public function down(): void
     {
-        // Không quay lại mô hình màu × size cố định (ADR-045; dev: migrate:fresh).
+        if (DB::table('variants')->exists()) {
+            throw new RuntimeException('ADR-045: không chuyển ngược biến thể về màu × size — khôi phục từ backup.');
+        }
+
+        Schema::create('colors', function (Blueprint $table): void {
+            $table->id();
+            $table->string('code', 32);
+            $table->string('color_family', 16);
+            $table->char('hex', 7)->nullable();
+            $table->unsignedInteger('position')->default(0);
+            $table->timestamps();
+            $table->unique('code');
+            $table->index('color_family');
+        });
+        Schema::create('color_translations', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('color_id')->constrained()->cascadeOnDelete();
+            $table->string('locale', 8);
+            $table->string('name');
+            $table->unique(['color_id', 'locale']);
+        });
+        Schema::create('sizes', function (Blueprint $table): void {
+            $table->id();
+            $table->string('size_system', 16);
+            $table->string('code', 16);
+            $table->unsignedInteger('sort_order');
+            $table->timestamps();
+            $table->unique(['size_system', 'code']);
+            $table->index(['size_system', 'sort_order']);
+        });
+        Schema::create('style_colors', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('style_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('color_id')->constrained()->restrictOnDelete();
+            $table->unsignedInteger('position')->default(0);
+            $table->timestamps();
+            $table->unique(['style_id', 'color_id']);
+        });
+
+        Schema::table('variants', function (Blueprint $table): void {
+            $table->dropUnique(['style_id', 'option_key']);
+        });
+        Schema::table('variants', function (Blueprint $table): void {
+            $table->dropColumn('option_key');
+            $table->foreignId('style_color_id')->after('style_id')->constrained()->restrictOnDelete();
+            $table->foreignId('size_id')->after('style_color_id')->constrained()->restrictOnDelete();
+            $table->unique(['style_color_id', 'size_id']);
+        });
+
+        foreach (['variant_option_values', 'style_option_values', 'style_options', 'option_value_translations', 'option_values', 'option_type_translations', 'option_types'] as $table) {
+            Schema::dropIfExists($table);
+        }
     }
 
     private function migrateData(): void
