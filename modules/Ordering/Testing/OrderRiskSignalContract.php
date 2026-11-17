@@ -29,7 +29,7 @@ final class OrderRiskSignalContract
                     ->and(array_diff(array_keys($assessed), $ids))->toBe([])
                     ->and($signal()->assess($ids))->toEqual($assessed);
                 foreach ($assessed as $signals) {
-                    expect($signals)->toBeArray()->not->toBe([]);
+                    expect($signals)->toBeArray()->and($signals)->not->toBe([]);
                     foreach ($signals as $risk) {
                         expect($risk)->toBeInstanceOf(RiskSignal::class)
                             ->and($risk->level)->toBeIn(RiskSignal::LEVELS)

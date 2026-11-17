@@ -29,7 +29,8 @@ final class OrderDashboardTasks
         $codPending = $this->queries->completedAwaitingCodCount();
         $url = fn (array $query): string => route('admin.orders.orders.index', $query);
 
-        return array_values(array_filter([
+        // Chỉ mục cuối có thể null → lọc xong vẫn là list.
+        return array_filter([
             ['key' => 'orders.to_confirm', 'label' => 'Đơn cần xác nhận', 'count' => $counts['to_confirm'], 'url' => $url(['stage' => 'to_confirm']), 'tone' => 'warning', 'order' => 10],
             ['key' => 'orders.aged', 'label' => 'Đơn để quá '.self::AGED_HOURS.' giờ', 'count' => $this->queries->agedCount(self::AGED_HOURS), 'url' => $url(['aged' => self::AGED_HOURS]), 'tone' => 'danger', 'hint' => 'Chưa xác nhận hoặc chưa giao hãng', 'order' => 15],
             ['key' => 'orders.awaiting_payment', 'label' => 'Đơn chờ thanh toán', 'count' => $counts['awaiting_payment'], 'url' => $url(['stage' => 'awaiting_payment']), 'tone' => 'info', 'hint' => 'Chuyển khoản chưa về', 'order' => 20],
@@ -37,6 +38,6 @@ final class OrderDashboardTasks
             ['key' => 'orders.issue', 'label' => 'Đơn có sự cố giao hàng', 'hint' => 'Đặt vận đơn lỗi, giao không thành công, hoàn về', 'count' => $counts['issue'], 'url' => $url(['stage' => 'issue']), 'tone' => 'danger', 'order' => 50],
             // Chỉ hiện khi có: thường do hoàn tất ngoài trình tự mà chưa bấm "Đã thu tiền".
             $codPending > 0 ? ['key' => 'orders.completed_cod_pending', 'label' => 'Đơn hoàn tất chưa thu COD', 'hint' => 'Mở đơn → thẻ Thanh toán → Đã thu tiền', 'count' => $codPending, 'url' => $url(['status' => 'completed', 'payment_status' => 'cod_pending']), 'tone' => 'warning', 'order' => 55] : null,
-        ]));
+        ]);
     }
 }

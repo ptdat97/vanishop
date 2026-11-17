@@ -24,7 +24,7 @@ final class SitemapProviderContract
                 $seed();
                 $urls = $provider()->urls(1000);
                 expect($urls)->not->toBe([])
-                    ->and(array_values(array_unique($urls)))->toBe(array_values($urls))
+                    ->and(array_values(array_unique($urls)))->toBe($urls)
                     ->and(count($provider()->urls(1)))->toBeLessThanOrEqual(1)
                     ->and($provider()->urls(0))->toBe([]);
                 foreach ($urls as $url) {

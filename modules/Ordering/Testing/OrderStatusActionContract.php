@@ -6,7 +6,6 @@ namespace Modules\Ordering\Testing;
 
 use Closure;
 use Modules\Ordering\Contracts\Data\OrderData;
-use Modules\Ordering\Contracts\Data\OrderStatusActionView;
 use Modules\Ordering\Contracts\OrderStatusAction;
 
 /**
@@ -26,8 +25,7 @@ final class OrderStatusActionContract
                 expect($action()->code())->toMatch('/^[a-z0-9._-]+$/');
                 $data = $order();
                 $view = $action()->describe($data);
-                expect($view === null || $view instanceof OrderStatusActionView)->toBeTrue()
-                    ->and($action()->describe($data))->toEqual($view);
+                expect($action()->describe($data))->toEqual($view);
                 if ($view !== null) {
                     expect($view->label)->not->toBe('')->and($view->permission)->not->toBe('')
                         ->and($view->tone)->toBeIn(['primary', 'secondary', 'danger']);

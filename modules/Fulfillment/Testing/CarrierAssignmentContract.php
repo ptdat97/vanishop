@@ -26,8 +26,7 @@ final class CarrierAssignmentContract
                 $chosen = 0;
                 foreach ($contexts() as $context) {
                     $choice = $assignment()->assign($context);
-                    expect($choice === null || $choice instanceof CarrierChoice)->toBeTrue()
-                        ->and($assignment()->assign($context))->toEqual($choice);
+                    expect($assignment()->assign($context))->toEqual($choice);
                     if ($choice !== null) {
                         expect($choice->carrierCode)->toMatch('/^[a-z][a-z0-9_.-]*$/');
                         $chosen++;

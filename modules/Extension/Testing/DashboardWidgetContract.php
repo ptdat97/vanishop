@@ -29,8 +29,8 @@ final class DashboardWidgetContract
                     ->and($widget()->order())->toBeInt();
                 $permission = $widget()->permission();
                 expect($permission === null || $permission !== '')->toBeTrue();
-                $rendered = $widget()->render();
-                expect($rendered instanceof Metric || $rendered instanceof Series || $rendered instanceof Table)->toBeTrue();
+                // render(): Metric|Series|Table (kiểu native) — gọi được, không ném lỗi.
+                expect($widget()->render())->toBeObject();
             });
         });
     }

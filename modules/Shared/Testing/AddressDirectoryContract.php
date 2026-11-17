@@ -24,7 +24,8 @@ final class AddressDirectoryContract
                 $provinces = $directory()->provinces();
                 expect($provinces)->not->toBe([]);
                 foreach ($provinces as $province) {
-                    expect($province['code'])->toBeString()->not->toBe('')->and($province['name'])->toBeString()->not->toBe('');
+                    expect($province['code'])->toBeString()->and($province['code'])->not->toBe('')
+                        ->and($province['name'])->toBeString()->and($province['name'])->not->toBe('');
                 }
                 expect(count(array_unique(array_column($provinces, 'code'))))->toBe(count($provinces));
             });

@@ -48,7 +48,7 @@ final class ReturnController
         $status = (string) $request->query('status', '');
         $search = strtoupper(trim((string) $request->query('q', '')));
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = $this->queries->returns($status, $search, $search === '' ? null : ($orders->findByNumber($search)?->id ?? 0), $extensionIds, $perPage);
+        $page = $this->queries->returns($status, $search, $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage);
         $numbers = $orders->numbers(collect($page->items())->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
 
         return Inertia::render('Returns::Returns/Index', [

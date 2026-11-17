@@ -125,7 +125,7 @@ final class StockGrid
      */
     private function matching(array $criteria): array
     {
-        $only = isset($criteria['ids']) && is_array($criteria['ids']) ? array_flip(array_map('intval', $criteria['ids'])) : null;
+        $only = isset($criteria['ids']) ? array_flip(array_map('intval', $criteria['ids'])) : null;
         $style = trim((string) ($criteria['style'] ?? ''));
         $filter = in_array($criteria['filter'] ?? 'all', self::FILTERS, true) ? (string) ($criteria['filter'] ?? 'all') : 'all';
         $wanted = array_filter(array_map(fn ($code): string => trim((string) $code), (array) ($criteria['options'] ?? [])), fn (string $code): bool => $code !== '');

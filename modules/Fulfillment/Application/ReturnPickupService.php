@@ -38,7 +38,7 @@ final class ReturnPickupService implements ReturnPickups
         ExternalCalls::guard("fulfillment.return_pickup:{$shipment->carrier_code}");
 
         return $carrier->bookReturn(new ReturnPickupData($returnNumber, $order->number, (int) $shipment->location_id, $order->shippingAddress,
-            ['full_name' => (string) ($order->recipient['full_name'] ?? ''), 'phone' => (string) ($order->recipient['phone'] ?? '')], $itemCount))->trackingNumber;
+            ['full_name' => $order->recipient['full_name'], 'phone' => $order->recipient['phone']], $itemCount))->trackingNumber;
     }
 
     /**

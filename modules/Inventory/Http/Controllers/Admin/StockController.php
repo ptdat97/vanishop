@@ -134,7 +134,7 @@ final class StockController
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{q: string, style: string, filter: string, options: array<string, string>}
+     * @return array{q: string, style: string, filter: string, options: array<string, string>, ext: array<array-key, string>}
      */
     private function criteria(array $input): array
     {

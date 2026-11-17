@@ -46,7 +46,7 @@ final class PaymentController
         $status = $request->query('status');
         $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = $this->queries->payments(is_string($status) ? $status : '', $search === '' ? null : ($orders->findByNumber($search)?->id ?? 0), $extensionIds, $perPage);
+        $page = $this->queries->payments(is_string($status) ? $status : '', $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage);
         $payments = collect($page->items());
         $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
         $refunds = $this->queries->refundsAwaitingPayout();

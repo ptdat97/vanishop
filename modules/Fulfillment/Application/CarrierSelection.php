@@ -35,7 +35,7 @@ final class CarrierSelection
         }
 
         $order = $this->orders->find($orderId);
-        $method = $order?->shippingMethod ?? [];
+        $method = $order->shippingMethod ?? [];
         if ($order !== null) {
             $context = new CarrierAssignmentContext(
                 $order->id, $order->number, $order->shippingAddress, $order->paymentStatus === 'cod_pending' ? $order->totalAmount : 0, $order->totalAmount,

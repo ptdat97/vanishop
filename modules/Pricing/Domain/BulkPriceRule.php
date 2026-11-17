@@ -45,6 +45,8 @@ final readonly class BulkPriceRule
             'fixed' => $this->value,
             'percent' => $listAmount === null ? null : intdiv($listAmount * (10_000 - $this->value), 10_000),
             'amount' => $listAmount === null ? null : $listAmount - $this->value,
+            // Constructor đã chặn cách tính lạ.
+            default => throw new InvalidArgumentException("Cách tính giá không hợp lệ: {$this->mode}"),
         };
         if ($amount === null) {
             return null;

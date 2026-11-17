@@ -27,7 +27,8 @@ final class VideoDriverContract
 
             it('nhận đường dẫn mẫu → mã tham chiếu ổn định; chuỗi rác → null; link https', function () use ($driver, $sampleInput): void {
                 $reference = $driver()->reference($sampleInput);
-                expect($reference)->toBeString()->not->toBe('')
+                expect($reference)->toBeString();
+                expect($reference)->not->toBe('')
                     ->and($driver()->reference($sampleInput))->toBe($reference)
                     ->and($driver()->reference('khong phai video'))->toBeNull()
                     ->and($driver()->watchUrl($reference))->toStartWith('https://');

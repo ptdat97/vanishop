@@ -31,7 +31,7 @@ final class BulkPriceModeContract
                     ->and($mode()->compute($ids, $value, $listAmounts))->toBe($prices)
                     ->and(array_filter($prices, fn (?int $price): bool => $price !== null))->not->toBe([]);
                 foreach ($prices as $price) {
-                    expect($price === null || (is_int($price) && $price >= 0))->toBeTrue();
+                    expect($price === null || $price >= 0)->toBeTrue();
                 }
             });
         });

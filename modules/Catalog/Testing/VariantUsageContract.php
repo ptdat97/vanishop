@@ -27,7 +27,7 @@ final class VariantUsageContract
                 expect($usage()->used([]))->toBe([]);
                 $used = $usage()->used($ids);
                 expect(array_diff($used, $ids))->toBe([])
-                    ->and(array_values(array_unique($used)))->toBe(array_values($used));
+                    ->and(array_values(array_unique($used)))->toBe($used);
                 foreach ($used as $id) {
                     expect($id)->toBeInt();
                 }

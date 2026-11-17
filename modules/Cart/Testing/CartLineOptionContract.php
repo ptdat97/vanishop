@@ -28,7 +28,7 @@ final class CartLineOptionContract
                 $normalized = $option()->normalize($variantId, $valid);
                 expect($normalized)->not->toBe([]);
                 foreach ($normalized as $key => $value) {
-                    expect($key)->toBeString()->and($value === null || is_scalar($value))->toBeTrue();
+                    expect($key)->toBeString()->and(gettype($value))->toBeIn(['NULL', 'boolean', 'integer', 'double', 'string']);
                 }
                 expect(json_encode($normalized))->toBeString()
                     ->and($option()->normalize($variantId, $normalized))->toBe($normalized);

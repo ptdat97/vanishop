@@ -94,7 +94,7 @@ final class FulfillmentService implements ShipmentBooking
             $ids = [];
             // Thu hộ: cổng thu tiền khi giao đặt đơn ở `cod_pending` (GatewayCapabilities::collectsOnDelivery).
             $cod = ShipmentCod::amounts(count($proposals), $order->paymentStatus === 'cod_pending', $order->totalAmount);
-            foreach (array_values($proposals) as $index => $proposal) {
+            foreach ($proposals as $index => $proposal) {
                 $shipment = Shipment::query()->create([
                     'public_id' => (string) Str::ulid(), 'order_id' => $orderId, 'location_id' => $proposal->locationId,
                     'carrier_code' => $carrierCode, 'service_code' => $serviceCode, 'cod_amount' => $cod[$index], 'currency_code' => $order->currencyCode,

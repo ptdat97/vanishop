@@ -181,12 +181,6 @@ parameters:
 			path: modules/Fulfillment/Application/FulfillmentService.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>shippingMethod" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
 			identifier: parameter.notFound
 			count: 1
@@ -347,3 +341,21 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: modules/Tenancy/Application/DatabaseSettings.php
+
+		-
+			message: '#^Instanceof between Modules\\Inventory\\Contracts\\Data\\BackorderAllowance and Modules\\Inventory\\Contracts\\Data\\BackorderAllowance will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: modules/Inventory/Application/BackorderService.php
+
+		-
+			message: '#^Call to function is_array\(\) with list\<Modules\\Ordering\\Contracts\\Data\\RiskSignal\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: modules/Ordering/Application/OrderRiskService.php
+
+		-
+			message: '#^Instanceof between Modules\\Ordering\\Contracts\\Data\\RiskSignal and Modules\\Ordering\\Contracts\\Data\\RiskSignal will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: modules/Ordering/Application/OrderRiskService.php

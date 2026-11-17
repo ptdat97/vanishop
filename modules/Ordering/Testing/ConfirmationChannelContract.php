@@ -22,9 +22,11 @@ final class ConfirmationChannelContract
     {
         describe("ConfirmationChannel contract: {$label}", function () use ($channel, $order): void {
             it('mã, nhãn; gửi yêu cầu trả thông điệp', function () use ($channel, $order): void {
+                $message = $channel()->request($order());
                 expect($channel()->code())->toMatch('/^[a-z][a-z0-9_.-]*$/')
                     ->and($channel()->label())->not->toBe('')
-                    ->and($channel()->request($order()))->toBeString()->not->toBe('');
+                    ->and($message)->toBeString()
+                    ->and($message)->not->toBe('');
             });
         });
     }

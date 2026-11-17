@@ -15,6 +15,7 @@ use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderActions;
 use Modules\Ordering\Contracts\OrderReader;
+use Modules\Ordering\Contracts\OrderTransitionRejected;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Domain\OrderPolicy;
 use Modules\Ordering\Events\OrderLinesCancelled;
@@ -46,6 +47,9 @@ final class OrderCommands implements OrderActions
     /**
      * Xác nhận đơn — nhân viên (trang đơn, hàng loạt) và tự động hoá của plugin (`OrderActions`, nguồn `system:<plugin>`)
      * đi chung lệnh này. Hook chặn `vani.order.before_confirm` (EP v3 X2) trả lý do → từ chối, đơn giữ nguyên.
+     *
+     * @throws OrderActionRejected plugin chặn
+     * @throws OrderTransitionRejected đơn không còn ở trạng thái xác nhận được
      */
     public function confirm(int $orderId, string $reason, string $source = 'staff'): void
     {
