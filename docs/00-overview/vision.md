@@ -44,7 +44,7 @@ Với Owner, điều đó có nghĩa là:
 
 > **VaniShop bắt đầu từ mô hình SME. Ưu tiên số một là vận hành tối ưu, dễ thao tác. Các điểm mở rộng cần thiết được giữ sẵn để bật khi doanh nghiệp phát triển — không xây trước giao diện hay quy trình của doanh nghiệp lớn.** (Owner, 2026-11-06)
 
-Cửa hàng mục tiêu hiện tại là một shop thời trang SME: vài nhân viên kiêm nhiều việc (CSKH, đóng gói, đẩy đơn lên hãng vận chuyển), một kho, COD là chính, đơn từ kênh chat quản lý bằng Pancake, giao qua nhiều hãng nhập tay.
+Cửa hàng bán lẻ trực tiếp cho người tiêu dùng (D2C/B2C — bán cho doanh nghiệp nằm ngoài phạm vi, [ADR-033](../19-adr/ADR-033-out-of-scope.md)). Cửa hàng mục tiêu hiện tại là một shop thời trang SME: vài nhân viên kiêm nhiều việc (CSKH, đóng gói, đẩy đơn lên hãng vận chuyển), một kho, COD là chính, đơn từ kênh chat quản lý bằng Pancake, giao qua nhiều hãng nhập tay.
 
 **Ba nguyên tắc:**
 

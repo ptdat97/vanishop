@@ -17,6 +17,7 @@ VaniShop là phần mềm cho **một Owner, một website, một người bán*
    | Affiliate | Tiếp thị liên kết, hoa hồng giới thiệu, ghi nhận nguồn đơn (attribution) cho người giới thiệu |
    | Live Commerce | Bán qua phát trực tiếp |
    | Social commerce | Bán qua nền tảng mạng xã hội như một kênh có tích hợp riêng |
+   | B2B | Bán cho doanh nghiệp: giá sỉ / bậc giá theo số lượng mua, báo giá, tài khoản công ty nhiều người dùng, công nợ và hạn mức tín dụng, đơn đặt sỉ. Cửa hàng chỉ bán lẻ trực tiếp cho người tiêu dùng — D2C/B2C (Owner, bổ sung 2026-11-17) |
 
 2. Với các hạng mục trên: **không** tài liệu thiết kế, **không** plugin, **không** extension point, cột, bảng, nguồn đơn, scope phân quyền hay ví dụ chuẩn bị cho chúng, trong `docs/` lẫn code.
 3. Tên các hạng mục **chỉ xuất hiện trong ADR này**. Test `tests/Architecture/ScopeTest.php` chặn chúng trong `docs/` và code.

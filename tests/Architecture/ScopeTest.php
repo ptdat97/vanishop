@@ -13,7 +13,7 @@ const SCOPE_NEGATION_ONLY = ['README.md'];
 
 it('hạng mục ngoài phạm vi (ADR-033) không xuất hiện trong docs/ và code', function () {
     $root = realpath(__DIR__.'/../..');
-    $banned = '/micro-?services?|marketplace|creator|affiliate|live[ -]?commerce|live[ -]?stream|social commerce|sàn TMĐT|(?<![\w-])sellers?\b/iu';
+    $banned = '/micro-?services?|marketplace|creator|affiliate|live[ -]?commerce|live[ -]?stream|social commerce|sàn TMĐT|(?<![\w-])sellers?\b|\bB2B\b/iu';
     $allowed = ['docs/19-adr/ADR-033-out-of-scope.md', 'tests/Architecture/ScopeTest.php'];
     $extensions = ['md', 'json', 'php', 'vue', 'ts', 'js', 'neon', 'yml', 'yaml'];
 
