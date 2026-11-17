@@ -51,7 +51,8 @@ final class PaymentSettlement
         return DB::transaction(function () use ($gatewayCode, $callback, $type): CallbackOutcome {
             $payment = Payment::query()->where('public_id', $callback->paymentPublicId)->where('gateway_code', $gatewayCode)->lockForUpdate()->first()
                 ?? throw PaymentRejected::notFound();
-            $collectedBefore = $payment->status->hasCollected();
+            // Đã từng thu (kể cả đã hoàn hết) → IPN "đã trả" khác mã giao dịch là bản trùng, không ghi nhận lại.
+            $collectedBefore = $payment->status->everCollected();
 
             if (! $this->records->recordTransaction($payment, $type, $callback->gatewayTransactionId, $callback->amount->amount, $callback->status, $callback->maskedPayload)) {
                 return CallbackOutcome::Duplicate;
@@ -85,7 +86,7 @@ final class PaymentSettlement
     public function captureAuthorized(int $paymentId, string $source): void
     {
         $payment = Payment::query()->findOrFail($paymentId);
-        if ($payment->status->hasCollected()) {
+        if ($payment->status->everCollected()) {
             return;
         }
         $gateway = $this->gateways->get($payment->gateway_code);
@@ -114,7 +115,7 @@ final class PaymentSettlement
         DB::transaction(function () use ($paymentId, $note): void {
             $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
             $gateway = $this->gateways->get($payment->gateway_code);
-            if ($payment->status->hasCollected()) {
+            if ($payment->status->everCollected()) {
                 return;
             }
             if ($gateway === null || ! $gateway->capabilities()->manualConfirmation || ! $payment->status->canConfirmManually()) {
@@ -135,7 +136,7 @@ final class PaymentSettlement
         DB::transaction(function () use ($orderId, $amount, $shipmentReference): void {
             $payment = Payment::query()->where('order_id', $orderId)->lockForUpdate()->get()
                 ->first(fn (Payment $candidate): bool => $this->records->collectsOnDelivery($candidate->gateway_code));
-            if ($payment === null || $payment->status->hasCollected() || ! $this->records->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
+            if ($payment === null || $payment->status->everCollected() || ! $this->records->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
                 return;
             }
 
@@ -151,7 +152,7 @@ final class PaymentSettlement
     {
         DB::transaction(function () use ($paymentId, $note): void {
             $payment = Payment::query()->whereKey($paymentId)->lockForUpdate()->firstOrFail();
-            if ($payment->status->hasCollected()) {
+            if ($payment->status->everCollected()) {
                 return;
             }
             if (! $this->canCollectCodManually($payment) || $this->orders->find($payment->order_id)?->status === OrderStatus::Cancelled) {
@@ -252,7 +253,7 @@ final class PaymentSettlement
 
             return;
         }
-        if ($payment->status->hasCollected()) {
+        if ($payment->status->everCollected()) {
             return;
         }
 

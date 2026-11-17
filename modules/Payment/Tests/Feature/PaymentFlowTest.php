@@ -322,3 +322,28 @@ it('hãng báo thu COD khác số tiền của đơn: không ghi nhận đã thu
         ->and(DB::table('reconciliation_entries')->get(['source', 'status', 'order_id', 'expected', 'actual'])->map(fn ($row) => (array) $row)->all())
         ->toBe([['source' => 'payment', 'status' => 'mismatch', 'order_id' => $payment->order_id, 'expected' => 330_000, 'actual' => 300_000]]);
 });
+
+it('online: khách huỷ đơn (khoản thanh toán huỷ theo) rồi IPN mới về → vẫn ghi nhận tiền và tự hoàn, không lỗi', function () {
+    $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(OrderTransitions::class)->transition(($this->orderRow)()->id, OrderStatus::Cancelled, 'customer_request', 'customer'));
+    expect(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('cancelled');
+
+    ($this->callback)($paymentId, 'TXN-AFTER-CANCEL')->assertOk();
+
+    expect(Payment::query()->withoutGlobalScopes()->sole()->status->value)->toBe('refunded')
+        ->and(DB::table('refunds')->value('reason'))->toBe('late_payment_after_cancel')
+        ->and(($this->orderRow)()->order_status->value)->toBe('cancelled');
+});
+
+it('online: khoản đã hoàn hết, cổng gửi thêm IPN "đã trả" mã giao dịch khác → không ghi nhận lại', function () {
+    $paymentId = ($this->order)('fake_online')->assertCreated()->json('data.payment.id');
+    ($this->callback)($paymentId, 'TXN-1')->assertOk();
+    $payment = Payment::query()->withoutGlobalScopes()->sole();
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(Payments::class)->refund($payment->id, Money::vnd(330_000), 'test', 'refund-all-0001'));
+    expect($payment->fresh()->status->value)->toBe('refunded');
+
+    ($this->callback)($paymentId, 'TXN-2')->assertOk();
+
+    expect($payment->fresh()->status->value)->toBe('refunded')
+        ->and(($this->orderRow)()->payment_status)->toBe('refunded');
+});

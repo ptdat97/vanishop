@@ -94,7 +94,10 @@ it('không áp cho sản phẩm không theo dõi tồn, không có kho bù tồn
 it('IncomingStock ghi, đọc, xoá khi số lượng ≤ 0; ngày sai dạng bị từ chối', function () {
     $incoming = app(IncomingStock::class);
     $incoming->set($this->s->id, 20, '2026-11-30', 'staff');
+    $createdAt = DB::table('incoming_stock')->value('created_at');
+    $this->travel(1)->hours();
     $incoming->set($this->s->id, 12, null, 'system:erp');
+    expect(DB::table('incoming_stock')->count())->toBe(1)->and(DB::table('incoming_stock')->value('created_at'))->toBe($createdAt);
 
     expect($incoming->forVariants([$this->s->id, $this->m->id]))->toHaveCount(1)
         ->and($incoming->forVariants([$this->s->id])[$this->s->id])->quantity->toBe(12)->expectedOn->toBeNull()->source->toBe('system:erp')

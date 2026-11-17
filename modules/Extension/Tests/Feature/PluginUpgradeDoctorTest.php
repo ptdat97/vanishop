@@ -120,3 +120,11 @@ it('ADR-048: Core nâng extension_api ra ngoài requires.extension_api của plu
         ->and(PluginRecord::query()->find('fixture.greeting'))->status->toBe(PluginStatus::Failed)
         ->last_error->toStartWith('incompatible_extension_api: Cần API mở rộng ^9.0, hiện tại là '.config('vanishop.extension_api'));
 });
+
+it('doctor: plugin chưa cài cần API mở rộng khác → cảnh báo incompatible_extension_api', function () {
+    ($this->deploy)('Future', ['requires' => ['extension_api' => '^9.0']]);
+    app()->forgetInstance(PluginDoctor::class);
+
+    expect(collect(app(PluginDoctor::class)->diagnose())->where('plugin', 'fixture.future')->where('code', 'incompatible_extension_api')->pluck('message')->all())
+        ->toBe(['Chưa cài; Cần API mở rộng ^9.0, hiện tại là '.config('vanishop.extension_api').'.']);
+});

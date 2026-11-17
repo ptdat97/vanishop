@@ -25,9 +25,12 @@ final class IncomingStockService implements IncomingStock
             throw new InvalidArgumentException("Ngày dự kiến [{$expectedOn}] phải theo dạng Y-m-d.");
         }
 
-        DB::table('incoming_stock')->updateOrInsert(['variant_id' => $variantId], [
-            'quantity' => $quantity, 'expected_on' => $expectedOn, 'source' => mb_substr($source, 0, 64), 'updated_at' => now(), 'created_at' => now(),
-        ]);
+        // upsert: tạo mới thì có created_at; cập nhật chỉ đổi số lượng/ngày/nguồn và updated_at (giữ ngày tạo).
+        DB::table('incoming_stock')->upsert(
+            [['variant_id' => $variantId, 'quantity' => $quantity, 'expected_on' => $expectedOn, 'source' => mb_substr($source, 0, 64), 'created_at' => now(), 'updated_at' => now()]],
+            ['variant_id'],
+            ['quantity', 'expected_on', 'source', 'updated_at'],
+        );
     }
 
     public function forVariants(array $variantIds): array

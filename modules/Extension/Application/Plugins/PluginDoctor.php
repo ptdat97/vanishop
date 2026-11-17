@@ -129,6 +129,14 @@ final class PluginDoctor
             if (! $records->has($id) && $manifest->requiresCore !== null && ! $this->satisfiesCore($manifest->requiresCore)) {
                 $add($id, self::WARNING, 'incompatible_core', "Chưa cài; cần VaniShop {$manifest->requiresCore}, hiện tại {$this->coreVersion}.");
             }
+            // ADR-048: plugin chưa cài viết cho version API cho plugin khác (vd. bản mới cần extension_api 2.x).
+            if (! $records->has($id)) {
+                foreach ($this->resolver->problemsFor($id, $manifests, [], $this->coreVersion) as $problem) {
+                    if ($problem->code === 'incompatible_extension_api') {
+                        $add($id, self::WARNING, 'incompatible_extension_api', "Chưa cài; {$problem->message}");
+                    }
+                }
+            }
         }
 
         // Circuit breaker đang mở (K3/P6): plugin lỗi liên tục ở luồng đọc/hiển thị, đang bị bỏ qua.

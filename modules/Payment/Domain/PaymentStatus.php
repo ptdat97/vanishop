@@ -29,7 +29,8 @@ enum PaymentStatus: string
         'authorized' => ['paid', 'cancelled'],
         'paid' => ['partially_refunded', 'refunded'],
         'partially_refunded' => ['partially_refunded', 'refunded'],
-        'cancelled' => [],
+        // Tiền về sau khi khoản đã huỷ theo đơn (khách huỷ đúng lúc đang trả): ghi nhận rồi tự hoàn.
+        'cancelled' => ['paid'],
         'refunded' => [],
     ];
 

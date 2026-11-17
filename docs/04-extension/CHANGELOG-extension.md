@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.9 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Rà soát và sửa lỗi sau đợt củng cố kiến trúc. Không đổi public API.
+
+### Sửa
+- **IPN về sau khi khách huỷ đơn bị lỗi 500, tiền không được ghi nhận** (do máy trạng thái 0.5.4 thiếu `cancelled → paid`): nay ghi nhận rồi tự hoàn (`late_payment_after_cancel`) như trường hợp hết hạn.
+- **Khoản đã hoàn hết nhận thêm IPN "đã trả" (mã giao dịch khác)**: trước 0.5.4 chuyển ngược về `paid` và phát lại `PaymentCaptured`; 0.5.4 thành lỗi 500. Nay coi là bản trùng — mọi chốt ghi nhận tiền dùng `PaymentStatus::everCollected()`.
+- `IncomingStock::set()` không còn ghi đè `created_at` khi cập nhật số hàng đang về.
+- `vani:plugin:doctor` cảnh báo `incompatible_extension_api` cho plugin chưa cài viết cho version API cho plugin khác (trước chỉ báo `requires.vanishop`).
+- Circuit breaker theo plugin không còn hỏi cache ở mỗi listener slot/filter: giữ trạng thái trong tiến trình 5 giây.
+- Theme `vani-base`: thiếu bản dịch tiếng Anh của "Thông báo" (Toast) — `StorefrontI18nTest` xanh lại.
+- Test trình duyệt `ProductFormTest` (chuyển sản phẩm đơn ⇄ có biến thể): kiểm hiển thị thay vì có trong DOM (khối dùng `v-show`).
+
 ## 0.5.8 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K5 "tài liệu và quyết định". Không đổi code hành vi.

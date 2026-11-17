@@ -19,7 +19,8 @@ it('máy trạng thái: chỉ chuyển theo bảng; trạng thái cuối không 
         ->and(PaymentStatus::Authorized->canTransitionTo(PaymentStatus::Cancelled))->toBeTrue()
         ->and(PaymentStatus::Paid->canTransitionTo(PaymentStatus::Cancelled))->toBeFalse()       // đã thu thì phải hoàn, không huỷ
         ->and(PaymentStatus::Refunded->canTransitionTo(PaymentStatus::Paid))->toBeFalse()
-        ->and(fn () => PaymentStatus::Cancelled->transitionTo(PaymentStatus::Paid))->toThrow(InvalidPaymentTransition::class);
+        ->and(PaymentStatus::Cancelled->canTransitionTo(PaymentStatus::Paid))->toBeTrue()                 // tiền về sau khi huỷ theo đơn → ghi nhận rồi hoàn
+        ->and(fn () => PaymentStatus::Refunded->transitionTo(PaymentStatus::Paid))->toThrow(InvalidPaymentTransition::class);
 });
 
 it('câu hỏi nghiệp vụ theo trạng thái', function () {
