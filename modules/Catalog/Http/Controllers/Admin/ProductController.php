@@ -16,6 +16,7 @@ use Inertia\Response;
 use Modules\Catalog\Application\AdminQueries;
 use Modules\Catalog\Application\Categories\CategoryTreeQuery;
 use Modules\Catalog\Application\Products\ProductBulkEditor;
+use Modules\Catalog\Application\Products\ProductDuplicator;
 use Modules\Catalog\Application\Products\ProductService;
 use Modules\Catalog\Application\Products\StyleLinkService;
 use Modules\Catalog\Application\Products\VariantImages;
@@ -232,6 +233,21 @@ final class ProductController
         }
 
         return back()->with('success', __('catalog::messages.bulk_status_changed', ['count' => $changed, 'status' => __("catalog::labels.product_status.{$status->value}")]));
+    }
+
+    /**
+     * Nhân bản thành bản nháp (stabilization A4) rồi mở trang sửa bản mới.
+     */
+    public function duplicate(Request $request, Style $product, ProductDuplicator $duplicator): RedirectResponse
+    {
+        Gate::authorize('catalog.manage');
+        $data = $request->validate([
+            'style_code' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/', Rule::unique('styles', 'style_code')],
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+        $copy = $duplicator->duplicate($product, $data['style_code'], trim($data['name']));
+
+        return redirect()->route('admin.catalog.products.edit', $copy)->with('success', __('catalog::messages.duplicated', ['code' => $copy->style_code]));
     }
 
     public function create(CategoryTreeQuery $tree): Response

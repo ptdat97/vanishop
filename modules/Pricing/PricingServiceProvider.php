@@ -8,6 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Contracts\VariantFieldProvider;
 use Modules\Catalog\Contracts\VariantUsage;
+use Modules\Catalog\Events\ProductDuplicated;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
@@ -15,6 +16,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Pricing\Application\BasePriceImporter;
+use Modules\Pricing\Application\Listeners\CopyDuplicatedPrices;
 use Modules\Pricing\Application\Listeners\ProductListPrices;
 use Modules\Pricing\Application\Listeners\SyncListPrices;
 use Modules\Pricing\Application\NoCustomerGroups;
@@ -78,6 +80,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
 
         // Giá niêm yết thấp nhất của sản phẩm cho bộ lọc/sắp xếp theo giá (Catalog `ListPrices`): theo event + tự sửa lệch hằng ngày.
         Event::listen(PriceChanged::class, SyncListPrices::class);
+        Event::listen(ProductDuplicated::class, CopyDuplicatedPrices::class);
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:pricing:sync-list-prices')->dailyAt('03:10')->withoutOverlapping()->onOneServer();
         });

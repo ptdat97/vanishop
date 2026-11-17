@@ -8,7 +8,7 @@ import MediaField from '@admin/Components/Media/MediaField.vue';
 import MultiSelect from '@admin/Components/MultiSelect.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
-import { confirmAction } from '@admin/confirm';
+import { confirmAction, promptFields } from '@admin/confirm';
 import { codeOptions, recordOptions } from '@admin/options';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { initialExtensionValues, type ExtensionSection } from '@admin/types';
@@ -232,6 +232,23 @@ function createAttribute(): void {
     });
 }
 
+/** Nhân bản thành bản nháp với mã + tên mới (A4): SKU, ảnh, giá niêm yết chép theo; tồn kho không chép. */
+async function duplicate(): Promise<void> {
+    if (!props.product) return;
+    const values = await promptFields({
+        title: 'Nhân bản sản phẩm',
+        message: 'Tạo bản nháp có cùng mô tả, danh mục, thuộc tính, biến thể, ảnh và giá niêm yết. Tồn kho không được chép.',
+        confirmLabel: 'Nhân bản',
+        fields: [
+            { key: 'style_code', label: 'Mã sản phẩm mới', required: true, maxlength: 64, value: `${props.product.style_code}-2` },
+            { key: 'name', label: 'Tên sản phẩm mới', required: true, maxlength: 255, value: `${form.translations[defaultLocale]?.name ?? ''} (bản sao)` },
+        ],
+    });
+    if (values !== false) {
+        router.post(`${productUrl.value}/duplicate`, { style_code: values.style_code.trim().toUpperCase(), name: values.name });
+    }
+}
+
 async function destroy(): Promise<void> {
     if (props.product && (await confirmAction({ title: 'Xoá sản phẩm nháp này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
         router.delete(productUrl.value);
@@ -246,6 +263,7 @@ async function destroy(): Promise<void> {
     <PageHeader :title="product ? `Sửa: ${product.style_code}` : 'Thêm sản phẩm'">
         <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
         <Link v-if="stockUrl" :href="stockUrl" :class="secondaryButton" data-stock-link>Tồn kho</Link>
+        <button v-if="product" type="button" :class="secondaryButton" data-duplicate @click="duplicate">Nhân bản</button>
         <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">Xoá</button>
     </PageHeader>
 

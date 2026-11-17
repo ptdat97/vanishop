@@ -3,6 +3,7 @@
 return [
     'bulk_status_changed' => 'Đã chuyển :count sản phẩm sang ":status".',
     'collection_not_found' => 'Bộ sưu tập không tồn tại.',
+    'duplicated' => 'Đã tạo bản nháp :code. Kiểm tra lại ảnh, giá rồi mở bán.',
     'bulk_edited' => 'Đã cập nhật :count sản phẩm.',
     'bulk_deleted' => 'Đã xoá :count sản phẩm nháp.',
     'bulk_deleted_skipped' => 'Đã xoá :count sản phẩm nháp; bỏ qua :skipped sản phẩm đã mở bán hoặc ngừng bán (dùng "Ngừng bán" để ẩn).',

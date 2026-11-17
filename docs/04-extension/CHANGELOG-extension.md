@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.13 — 2026-11-17 · Extension API 1.1.0 (không đổi)
+
+Stabilization A4 — Admin Catalog. Không đổi API cho plugin.
+
+### Thêm
+- Danh sách sản phẩm lọc theo danh mục (gồm danh mục con), thương hiệu (cả "chưa có thương hiệu"), bộ sưu tập; thao tác hàng loạt: thêm/gỡ danh mục, đổi/bỏ thương hiệu, thêm/gỡ bộ sưu tập, xoá bản nháp (`ProductBulkEditor`).
+- Nhân bản sản phẩm thành bản nháp (`ProductDuplicator`): nội dung, phân loại, thuộc tính, trục tuỳ chọn, SKU mới, ảnh, video; event giữa module `Catalog\Events\ProductDuplicated` — Pricing chép giá niêm yết sang SKU mới. Không chép tồn kho.
+
 ## 0.5.12 — 2026-11-17 · Extension API 1.1.0
 
 **Email + mật khẩu là cách đăng nhập mặc định của khách; OTP theo số điện thoại chuyển thành plugin `vani.phone-otp-login`.** Phá vỡ Storefront API v1 ở nhóm `auth/*` (môi trường dev, không giữ tương thích ngược).
