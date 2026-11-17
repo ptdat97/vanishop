@@ -1,6 +1,6 @@
 # Củng cố kiến trúc — Core nhỏ, Domain rõ ràng, Module độc lập, Plugin ổn định (K1–K4)
 
-> Trạng thái: **Accepted** — Owner duyệt 2026-11-17 (Core 0.4.69), chọn đúng cả 7 đề xuất ở §5; làm K1 → K5, mỗi đợt một commit. Tiếp nối [extension-surface-v3](extension-surface-v3.md) (X1–X7 xong, 0.4.59–0.4.65).
+> Trạng thái: **Done** — Owner duyệt 2026-11-17 (Core 0.4.69), chọn đúng cả 7 đề xuất ở §5; K1 → K5 xong cùng ngày (Core 0.5.0 → 0.5.8, Extension API 1.0.0), mỗi đợt một commit. Kết quả đo: §7. Tiếp nối [extension-surface-v3](extension-surface-v3.md) (X1–X7 xong, 0.4.59–0.4.65).
 >
 > Liên quan: [commerce-kernel](../02-architecture/commerce-kernel.md) (bốn vòng, tiêu chí vào Core), [bounded-contexts](../02-architecture/bounded-contexts.md), [architecture-rules](../01-principles/architecture-rules.md) (R4–R11, R26–R29, R35), [extension-model §5](../04-extension/extension-model.md) (compatibility policy), [plugin-system §6.1](../05-plugin/plugin-system.md) (rà soát hợp đồng plugin).
 
@@ -101,8 +101,8 @@ Ba vòng phụ thuộc hai chiều ở mức contract (Checkout↔Ordering, Chec
 | # | Việc | Kết quả |
 |---|---|---|
 | C1 | **API vòng 0 khai báo rõ**: chuyển `AdminNavigation` vào `Identity\Contracts` (mục menu gắn quyền), `PermissionRegistry`/`ScopeOptions` vào `Identity\Contracts`, `AccountPages`/`PluginViews` vào `Extension\Contracts`. Arch test: module vòng 1 chỉ dùng `Contracts` + `Shared\{Domain,Support,Context,Http}` của vòng 0 | Gỡ Identity→Extension; vòng 0 có bề mặt nằm trong snapshot |
-| C2 | **Báo cáo kích thước Core theo đợt** (không chặn CI): số dòng theo module và tầng, số class public, số tag/hook. Ghi vào §2 của tài liệu này mỗi đợt | Thấy được Core phình ở đâu |
-| C3 | **Rà theo tiêu chí vào Core** ([commerce-kernel §2](../02-architecture/commerce-kernel.md)) cho các phần sau. Mỗi phần cần Owner quyết định giữ hay chuyển plugin: `Catalog\Application\Media` (1k dòng, driver ảnh/video); `Storefront\Application\{Theme,Menus,Links,Blocks}` (1,5k dòng, gần vai trò của `vani.cms`); `Integration` (3,4k dòng, ERP đóng băng) — đề xuất **đóng băng tăng trưởng**, chỉ sửa lỗi | Danh sách quyết định, chưa chuyển code trong K-đợt này |
+| C2 | **Báo cáo kích thước Core theo đợt** (không chặn CI): số dòng theo module và tầng, số class public, số tag/hook. Ghi vào §2 của tài liệu này mỗi đợt | Thấy được Core phình ở đâu ✅ 0.5.8: §7 |
+| C3 | **Rà theo tiêu chí vào Core** ([commerce-kernel §2](../02-architecture/commerce-kernel.md)) cho các phần sau. Mỗi phần cần Owner quyết định giữ hay chuyển plugin: `Catalog\Application\Media` (1k dòng, driver ảnh/video); `Storefront\Application\{Theme,Menus,Links,Blocks}` (1,5k dòng, gần vai trò của `vani.cms`); `Integration` (3,4k dòng, ERP đóng băng) — đề xuất **đóng băng tăng trưởng**, chỉ sửa lỗi | Danh sách quyết định, chưa chuyển code trong K-đợt này ✅ 0.5.8: **giữ ở Core** cả `Catalog\Media` (khung cho `ImageFormat`/`ImageSizeProvider`/`VideoDriver` + mặc định JPEG/PNG trung lập — tiêu chí 2, 3) và `Storefront\{Theme,Menus,Links,Blocks}` (khung cho `LinkType`/`StorefrontBlock`/theme + mặc định để bán đơn đầu tiên; `vani.cms` sở hữu trang/bài viết, không chồng lấn); `Integration` đóng băng tăng trưởng (ghi ở README module) |
 
 ### 3.3 Domain rõ ràng
 
@@ -112,8 +112,8 @@ Ba vòng phụ thuộc hai chiều ở mức contract (Checkout↔Ordering, Chec
 | D2 | **Returns**: aggregate yêu cầu đổi trả (số lượng ≤ đã giao trừ đã trả, hạn đổi trả, tiền hoàn theo dòng) vào `Domain/` | Như trên ✅ 0.5.5: `ReturnService` 352 dòng + `ReturnRecords`/`ExchangeResolution`; Domain `ReturnLimits`, `ReturnProgress`, `ReturnCondition`, `ExchangeValuation` |
 | D3 | **Fulfillment**: máy trạng thái vận đơn + quy tắc thu COD vào `Domain/` (đã có một phần) | Như trên ✅ 0.5.6: `AllocationCheck`, `ShipmentCod`, `BookingRetry`, `awaitsBooking()`; `FulfillmentService` 356 dòng + `CarrierSelection` |
 | D4 | **Controller mỏng**: truy vấn danh sách/chi tiết của `OrderController`, `ProductController`, `ShipmentController`, `ReturnController` chuyển sang class `Application/Queries` (đã có mẫu `CustomerQueries`, `StockGrid`). Thu hẹp arch test R9: controller không dùng `Persistence\Models` | 24 → 0 controller truy vấn trực tiếp ✅ 0.5.7: 25 controller → `Application/AdminQueries` theo module; R9 kiểm "không tự truy vấn" (không cấm type-hint model — route model binding giữ nguyên, cấm hẳn sẽ phải bỏ binding ở 33 controller mà không thêm giá trị) |
-| D5 | Phân loại domain trong [bounded-contexts §4](../02-architecture/bounded-contexts.md) đã sửa cho đúng code (2026-11-17: Checkout, Storefront là tầng điều phối; Payment/Returns/Fulfillment là mục tiêu rich domain). Còn lại: mỗi module có `README.md` ngắn — mức domain, bất biến, contract công bố, bảng sở hữu | Tài liệu khớp code (R24) |
-| D6 | **Ngôn ngữ chung**: bổ sung [glossary](../00-overview/glossary.md) các từ mới của X1–X7: chờ xác nhận, chờ đóng gói, đẩy lên hãng, đặt trước, chờ hàng, hàng đang về, đối soát lệch, chuyển trả, ghi chú CSKH, tín hiệu rủi ro | Admin, code và tài liệu dùng cùng từ |
+| D5 | Phân loại domain trong [bounded-contexts §4](../02-architecture/bounded-contexts.md) đã sửa cho đúng code (2026-11-17: Checkout, Storefront là tầng điều phối; Payment/Returns/Fulfillment là mục tiêu rich domain). Còn lại: mỗi module có `README.md` ngắn — mức domain, bất biến, contract công bố, bảng sở hữu | Tài liệu khớp code (R24) ✅ 0.5.8: README 18 module (mức domain, bất biến, bảng, contract — phần bảng/contract sinh từ code); arch test D5 |
+| D6 | **Ngôn ngữ chung**: bổ sung [glossary](../00-overview/glossary.md) các từ mới của X1–X7: chờ xác nhận, chờ đóng gói, đẩy lên hãng, đặt trước, chờ hàng, hàng đang về, đối soát lệch, chuyển trả, ghi chú CSKH, tín hiệu rủi ro | Admin, code và tài liệu dùng cùng từ ✅ 0.5.8: thêm 13 thuật ngữ |
 
 ### 3.4 Plugin ổn định
 
@@ -137,7 +137,7 @@ Mỗi đợt một commit, chạy đủ bộ test, cập nhật §2 của tài l
 | **K2 — Hợp đồng plugin** ✅ 0.5.1 | P1 ([ADR-048](../19-adr/ADR-048-extension-api-version.md)), P2, P3, P7 | Cần trước khi viết thêm plugin hoặc tăng điểm mở rộng | Xong 2026-11-17: Extension API 1.0.0; 195 class `#[PluginApi]` (23 experimental); `plugin-api.snapshot` tự xếp loại major/minor; 29 plugin khai `requires.extension_api: ^1.0` |
 | **K3 — Kiểm chứng plugin** ✅ 0.5.2 | P4, P5, P6 | Dựa trên phân loại của K2 (chỉ viết suite cho contract plugin) | Xong 2026-11-17: 21 suite mới + arch test (mọi tag tự khai có suite và có implementation chạy — phát hiện thêm `CheckoutValidator` chưa ai chạy); deprecation (`#[\Deprecated]`, `PluginApi(deprecated)`, hook `deprecated`, doctor `deprecated_usage`, log `vani.deprecation`); `PluginBreaker` cho slot/filter đọc/Admin |
 | **K4 — Vòng 0 và Domain** ✅ 0.5.3–0.5.7 | C1, D1–D4 (Payment → Returns → Fulfillment → controller) | Thay đổi lớn nhất; làm khi ranh giới và hợp đồng đã có test giữ | `PaymentService` < 400 dòng; R9 chặt; Domain có unit test |
-| **K5 — Tài liệu và quyết định** | C2, C3, D5, D6 | Chốt lại sau khi code ổn định | README mỗi module; danh sách quyết định C3 có câu trả lời |
+| **K5 — Tài liệu và quyết định** ✅ 0.5.8 | C2, C3, D5, D6 | Chốt lại sau khi code ổn định | Xong 2026-11-17: số liệu §7; C3 giữ Media + Storefront ở Core (đạt tiêu chí khung mở rộng), đóng băng Integration; README 18 module + arch test D5; glossary thêm 13 thuật ngữ |
 
 ## 5. Quyết định của Owner
 
@@ -159,3 +159,24 @@ Owner trả lời 2026-11-17: **đồng ý cả 7 đề xuất** dưới đây.
 - Không tách service / không gọi HTTP giữa module (R19).
 - Không làm plugin SDK cho bên thứ ba ([ADR-033 mục 5](../19-adr/ADR-033-out-of-scope.md)). "Plugin ổn định" ở đây là cho plugin nội bộ.
 - Giữ nguyên các ràng buộc hiện hành: kết nối ngoài đóng băng, chỉ tiếng Việt nhưng giữ cơ chế i18n, tìm kiếm chỉ bằng SQL, SME trước.
+
+## 7. Kết quả (2026-11-17, Core 0.5.8)
+
+| Chỉ số | Trước (0.4.69) | Sau (0.5.8) |
+|---|---|---|
+| Vòng phụ thuộc hai chiều giữa module | 3 | **0** |
+| Cạnh đi ngược `config/modules.php` (trừ event) | 4 | **0** (`MODULE_ORDER_DEBT` rỗng) |
+| Truy cập bảng của module khác (R11) | 1 | **0** |
+| Module thương mại dùng `Application` của vòng 0 | 5 class (26 chỗ) | **0** — `Identity\Contracts\{AdminNavigation, PermissionRegistry, ScopeOptions}`, `Extension\Contracts\{AccountPages, PluginViews}` |
+| Controller tự truy vấn (R9) | 24 | **0** — `Application/AdminQueries` theo module |
+| `PaymentService` / `ReturnService` / `FulfillmentService` | 804 / 589 / 426 dòng | **295 / 352 / 356** dòng; luật ở `Domain/` có unit test |
+| Version API cho plugin | Chung với Core (11 bản/2 ngày) | **`extension_api` 1.0.0** riêng; snapshot tự xếp loại major/minor |
+| Class plugin được dùng | 291 (mọi `Contracts`/`Events`) | **195** `#[PluginApi]` (23 experimental); 107 còn lại là API giữa module |
+| Tag có bộ contract test (R26) | 23/44 | **44/44** (+ arch test giữ) |
+| Deprecation, circuit breaker | Designed | **Implemented** (`vani.deprecation`, doctor `deprecated_usage`/`breaker_open`) |
+| README module | 0/18 | **18/18** (arch test D5) |
+| Kích thước Core (không tính test, migration) | 63,7k dòng | 66,7k dòng — tăng do `Domain/`, `AdminQueries`, 21 bộ contract test trong `Testing/`, `ModuleBoundaryTest` không tính |
+
+Arch test giữ các tính chất trên: `tests/Architecture/ModuleBoundaryTest.php` (M1, M4, M5, C1, R9/D4, P4/R26, D5), `PluginApiSnapshotTest` (P1–P3, P7), `ArchitectureTest` (R5 theo `#[PluginApi]`).
+
+Giới hạn còn lại (ghi backlog khi cần): test trình duyệt `ProductFormTest` — "sản phẩm đơn đã lưu: Chuyển sang có biến thể" hỏng từ trước đợt K (không do K1–K5); Core vẫn gom Admin UI + API trong cùng module (chủ đích, không tách).

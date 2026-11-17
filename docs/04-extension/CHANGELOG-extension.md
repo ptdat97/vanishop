@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.8 — 2026-11-17 · Extension API 1.0.0 (không đổi)
+
+Củng cố kiến trúc — đợt K5 "tài liệu và quyết định". Không đổi code hành vi.
+
+### Thêm
+- `modules/<Module>/README.md` cho 18 module: vòng, mức domain, trách nhiệm, bất biến, bảng sở hữu, contract công bố (plugin/experimental/giữa module), event. Arch test D5: README liệt kê đủ bảng sở hữu theo migration.
+- Glossary: 13 thuật ngữ vận hành và hợp đồng plugin (chờ xác nhận, đẩy lên hãng, đặt trước, chờ hàng, đối soát lệch, chuyển trả, API cho plugin, experimental…).
+- Quyết định C3: giữ `Catalog\Media` và `Storefront\{Theme,Menus,Links,Blocks}` ở Core; `Integration` đóng băng tăng trưởng.
+
 ## 0.5.7 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
 Củng cố kiến trúc — đợt K4/D4 "controller mỏng". Không đổi public API.

@@ -207,3 +207,27 @@ it('R9/D4: controller không tự truy vấn — không ::query(), DB::, gọi t
 
     expect($offenders)->toBe([]);
 });
+
+it('D5: mỗi module có README.md liệt kê đủ bảng sở hữu (không lệch khỏi migration)', function () {
+    $modules = require base_path('config/modules.php');
+    $problems = [];
+    foreach ($modules as $module) {
+        $readme = base_path("modules/{$module}/README.md");
+        if (! is_file($readme)) {
+            $problems[] = "{$module}: thiếu README.md";
+
+            continue;
+        }
+        $content = (string) file_get_contents($readme);
+        foreach (glob(base_path("modules/{$module}/Persistence/Database/migrations/*.php")) ?: [] as $migration) {
+            preg_match_all("/Schema::create\\(\\s*'(\\w+)'/", (string) file_get_contents($migration), $matches);
+            foreach ($matches[1] as $table) {
+                if (! str_contains($content, "`{$table}`")) {
+                    $problems[] = "{$module}: README thiếu bảng `{$table}`";
+                }
+            }
+        }
+    }
+
+    expect($problems)->toBe([]);
+});

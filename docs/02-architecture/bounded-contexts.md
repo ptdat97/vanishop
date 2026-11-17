@@ -110,7 +110,7 @@ Http ──► Application ──► Domain
 
 ### Hai mức độ "giàu" của domain
 
-Để tránh over-engineering, mỗi context chọn một mức, ghi rõ trong README của module:
+Để tránh over-engineering, mỗi context chọn một mức, ghi rõ trong `modules/<Module>/README.md` (có từ 0.5.8, arch test D5 giữ phần bảng sở hữu khớp migration):
 
 | Mức | Context | Cách làm |
 |---|---|---|

@@ -50,3 +50,16 @@
 | HĐĐT | Hoá đơn điện tử | Hoá đơn theo NĐ 123/2020 (sửa đổi NĐ 70/2025) |
 | ZNS | Zalo Notification Service | Tin nhắn giao dịch qua Zalo |
 | Clean-room | Phát triển độc lập | Quy trình đảm bảo không sao chép mã của bên thứ ba |
+| Chờ xác nhận | Cần xác nhận | Đơn COD vừa đặt, chờ nhân viên gọi/nhắn khách rồi bấm Xác nhận ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)) |
+| Chờ đóng gói | Vận đơn chưa đặt (`pending_booking`) | Đơn đã xác nhận, đã có vận đơn nháp (COD, phiếu in) nhưng chưa đặt với hãng |
+| Đẩy lên hãng | Đặt vận đơn với hãng | Nhân viên kho đóng gói xong mới bấm; vận đơn có mã (`created`). Plugin chặn được qua hook `vani.fulfillment.before_push` |
+| Tín hiệu rủi ro | Risk signal | Cảnh báo trên đơn chờ xác nhận (SĐT danh sách đen, từng hoàn về…) do plugin `OrderRiskSignal` chấm; mức thấp/trung bình/cao |
+| Đặt trước | Backorder có giới hạn | Bán SKU vượt tồn thật tối đa hạn mức của `BackorderPolicy`, chỉ ở kho bù tồn ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)) |
+| Chờ hàng | Số đang chờ hàng | `max(0, reserved + safety_stock − on_hand)` ở kho bù tồn; hàng về lấp đơn giữ trước |
+| Hàng đang về | Incoming stock | Số lượng + ngày dự kiến theo SKU (`IncomingStock`); không tự cộng vào ATS |
+| Đối soát lệch | Reconciliation mismatch | Tiền cổng/hãng/sao kê báo về khác khoản thanh toán: không ghi nhận, vào hàng đợi cho nhân viên xử lý |
+| Chuyển trả | Refund payout | Chuyển khoản hoàn cho khách (nhân viên làm tay hoặc kênh của plugin `RefundPayout`); khoản hoàn `requested` → `paying_out` → `completed` |
+| Ghi chú CSKH | Customer note | Ghi chú theo khách của nhân viên hoặc plugin (nguồn `staff` / `system:<plugin>`), hiện ở trang khách và trang đơn |
+| API cho plugin | Plugin API | Class có `#[PluginApi]` + hook + `PluginServiceProvider`; version riêng `vanishop.extension_api` ([ADR-048](../19-adr/ADR-048-extension-api-version.md)). Phần còn lại của `Contracts`/`Events` là **API giữa module** |
+| Experimental | Thử nghiệm | Mức ổn định của điểm mở rộng mới: đổi được ở bản minor của API cho plugin; lên `stable` sau một vòng có plugin thật dùng |
+| Kho bù tồn | Top-up location | Kho giao online đầu tiên (theo ưu tiên) do VaniShop quản lý tồn — nơi áp sản phẩm không theo dõi tồn và hạn mức đặt trước |

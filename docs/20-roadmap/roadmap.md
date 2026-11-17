@@ -225,7 +225,7 @@ Phase 10 cũ đã bỏ: hạng mục ngoài phạm vi ([ADR-033](../19-adr/ADR-0
 
 Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. API-first (16), biến thể linh hoạt (18) và EP v3 (20) đã xong. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5). Việc còn mở về hợp đồng plugin (version hợp đồng tách khỏi version Core, log `vani.deprecation`): [plugin-system §6](../05-plugin/plugin-system.md).
 
-**Giai đoạn tiếp theo (Owner duyệt 2026-11-17):** [architecture-consolidation](architecture-consolidation.md) — củng cố kiến trúc theo bốn trụ Core nhỏ, Domain rõ ràng, Module độc lập, Plugin ổn định; không thêm tính năng. Đợt K1 (ranh giới module có arch test) → K2 (ADR-048 version API mở rộng tách khỏi Core, mức ổn định) → K3 (contract test cho 21 tag còn thiếu, deprecation log, circuit breaker) → K4 (API vòng 0, tách Domain Payment/Returns/Fulfillment, controller mỏng) → K5 (tài liệu, quyết định giữ/chuyển plugin).
+**Củng cố kiến trúc — xong 2026-11-17 (Core 0.5.0–0.5.8):** [architecture-consolidation](architecture-consolidation.md) — củng cố kiến trúc theo bốn trụ Core nhỏ, Domain rõ ràng, Module độc lập, Plugin ổn định; không thêm tính năng. Đợt K1 (ranh giới module có arch test) → K2 (ADR-048 version API mở rộng tách khỏi Core, mức ổn định) → K3 (contract test cho 21 tag còn thiếu, deprecation log, circuit breaker) → K4 (API vòng 0, tách Domain Payment/Returns/Fulfillment, controller mỏng) → K5 (tài liệu, quyết định giữ/chuyển plugin).
 
 Phase 9 đóng băng, không nằm trong backlog.
 
