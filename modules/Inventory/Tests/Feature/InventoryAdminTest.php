@@ -9,6 +9,7 @@ use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockGrid;
+use Modules\Inventory\Application\StockQueries;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Inventory\Persistence\Models\StockMovement;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
@@ -302,10 +303,26 @@ it('cửa hàng lớn (6.000 biến thể): lưới tồn, Tổng quan, "chọn 
     $exported = $this->get("{$this->stockUrl}/export")->assertOk()->streamedContent();
     expect(substr_count($exported, "\n"))->toBeGreaterThanOrEqual(1 + $total * 2); // tiêu đề + mỗi biến thể × 2 kho
 
-    // Sửa hàng loạt chạy đồng bộ: vượt mức → báo thu hẹp bộ lọc, không ghi gì.
-    $this->post("{$this->stockUrl}/bulk", ['location_id' => $this->hn->id, 'action' => 'safety', 'quantity' => 1, 'all' => true, 'criteria' => ['filter' => 'out']])
-        ->assertSessionHasErrors(['changes']);
-    expect(DB::table('stock_levels')->where('safety_stock', 1)->count())->toBe(0);
+    // L20: quá 1.000 biến thể → chạy nền theo lô 500 (queue sync trong test: chạy xong ngay); trang tồn hỏi tiến độ.
+    $response = $this->post("{$this->stockUrl}/bulk", ['location_id' => $this->hn->id, 'action' => 'safety', 'quantity' => 1, 'all' => true, 'criteria' => ['filter' => 'out']])
+        ->assertSessionHasNoErrors()->assertSessionHas('success', fn (string $message) => str_contains($message, (string) ($total - 1)));
+    parse_str((string) parse_url((string) $response->headers->get('Location'), PHP_URL_QUERY), $query);
+    expect(DB::table('stock_levels')->where('location_id', $this->hn->id)->where('safety_stock', 1)->count())->toBe($total - 1);
+    $this->get("{$this->stockUrl}?run={$query['run']}")->assertOk()->assertInertia(fn ($page) => $page->where('bulkRun.url', route('admin.inventory.stock.runs.show', ['run' => $query['run']])));
+    $this->getJson(route('admin.inventory.stock.runs.show', ['run' => $query['run']]))->assertOk()
+        ->assertJsonPath('data.finished', true)->assertJsonPath('data.progress', 100)
+        ->assertJsonPath('data.counts.updated', $total - 1)->assertJsonPath('data.failed_jobs', 0);
+    expect(DB::table('job_batches')->value('total_jobs'))->toBe((int) ceil(($total - 1) / 500));
+
+    // L20: nhập file 1.200 dòng thay đổi → xem trước chỉ trả 1.000 dòng (tổng vẫn đủ) → áp dụng chạy nền, ghi đủ 1.200.
+    $skus = DB::table('variants')->where('sku', 'like', 'BIG-%')->orderBy('id')->limit(1200)->pluck('sku');
+    $csv = "sku,location,on_hand\n".$skus->map(fn (string $sku) => "{$sku},{$this->hn->code},7")->implode("\n");
+    $preview = $this->post("{$this->stockUrl}/import", ['file' => UploadedFile::fake()->createWithContent('ton.csv', $csv)])->assertOk()->viewData('page')['props']['preview'];
+    expect($preview['lines'])->toHaveCount(1000)->and($preview['hidden_lines'])->toBe(200)->and($preview['summary']['change'])->toBe(1200);
+    $applied = $this->post("{$this->stockUrl}/import/{$preview['token']}")->assertSessionHasNoErrors();
+    parse_str((string) parse_url((string) $applied->headers->get('Location'), PHP_URL_QUERY), $importRun);
+    $this->getJson(route('admin.inventory.stock.runs.show', ['run' => $importRun['run']]))->assertJsonPath('data.finished', true)->assertJsonPath('data.counts.updated', 1200);
+    expect(DB::table('stock_levels')->where('location_id', $this->hn->id)->where('on_hand', 7)->count())->toBe(1200);
 });
 
 it('sản phẩm không theo dõi tồn: lưới tồn có nhãn riêng, không vào lọc hết hàng/sắp hết và "Việc cần làm"; danh sách sản phẩm ghi "Không theo dõi tồn", không sửa tồn trong ô', function () {
@@ -327,4 +344,12 @@ it('sản phẩm không theo dõi tồn: lưới tồn có nhãn riêng, không 
         ->and($extensions['values'][$this->style->id]['stock'])->toBe('Hết hàng')
         ->and($extensions['editValues'][$made->id]['stock'] ?? null)->toBeNull()
         ->and($extensions['editValues'][$this->style->id]['stock'])->not->toBeNull();
+});
+
+it('tồn an toàn lớn hơn tồn (cột UNSIGNED trên MySQL): số bán được không lỗi tràn số, biến thể đó không bán được', function () {
+    I::stock($this->hn, $this->s->id, 2);
+    DB::table('stock_levels')->where('location_id', $this->hn->id)->where('variant_id', $this->s->id)->update(['safety_stock' => 5]);
+
+    expect(app(StockQueries::class)->sellableByVariant([$this->hn->id]))->not->toHaveKey($this->s->id);
+    $this->actingAs(T::staff(['admin.access', 'inventory.view']), 'staff')->get($this->stockUrl)->assertOk();
 });

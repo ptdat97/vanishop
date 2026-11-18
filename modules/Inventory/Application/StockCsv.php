@@ -11,6 +11,7 @@ use Modules\Catalog\Contracts\Data\VariantData;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Persistence\Models\Location;
+use Modules\Shared\Context\CurrentContext;
 
 /**
  * Nhập/xuất tồn kho bằng CSV trong Admin. File xuất mở được bằng Excel (UTF-8 BOM) và nhập lại được: cột bắt buộc
@@ -21,7 +22,11 @@ use Modules\Inventory\Persistence\Models\Location;
  */
 final class StockCsv
 {
-    public const MAX_ROWS = 5000;
+    /** Trần an toàn của một file (đọc vào bộ nhớ); quá `StockBulkRun::SYNC_LIMIT` dòng đổi thì ghi chạy nền (L20). */
+    public const MAX_ROWS = 50000;
+
+    /** Số dòng trả về trang xem trước (ưu tiên dòng lỗi/đổi); tổng theo trạng thái vẫn tính trên mọi dòng. */
+    public const PREVIEW_LINES = 1000;
 
     private const CACHE_PREFIX = 'inventory:stock-import:';
 
@@ -29,6 +34,8 @@ final class StockCsv
         private readonly VariantDirectory $variants,
         private readonly StockQueries $queries,
         private readonly StockAdjustmentService $stock,
+        private readonly StockBulkRun $runs,
+        private readonly CurrentContext $context,
     ) {}
 
     /**
@@ -99,7 +106,18 @@ final class StockCsv
             Cache::put(self::CACHE_PREFIX.$token, ['file' => $fileName, 'changes' => $changes], now()->addMinutes(30));
         }
 
-        return ['token' => $token, 'file' => $fileName, 'lines' => $lines, 'summary' => array_count_values(array_column($lines, 'status'))];
+        // File lớn: trang xem trước chỉ hiện dòng cần chú ý trước (lỗi, đổi), tối đa PREVIEW_LINES; tổng vẫn đủ.
+        $rank = ['invalid' => 0, 'unknown_sku' => 0, 'unknown_location' => 0, 'external' => 0, 'duplicate' => 0, 'change' => 1, 'same' => 2];
+        $shown = $lines;
+        if (count($shown) > self::PREVIEW_LINES) {
+            usort($shown, fn (array $a, array $b): int => [$rank[$a['status']] ?? 3, $a['line']] <=> [$rank[$b['status']] ?? 3, $b['line']]);
+        }
+
+        return [
+            'token' => $token, 'file' => $fileName, 'lines' => array_slice($shown, 0, self::PREVIEW_LINES),
+            'hidden_lines' => max(0, count($lines) - self::PREVIEW_LINES),
+            'summary' => array_count_values(array_column($lines, 'status')),
+        ];
     }
 
     /**
@@ -113,7 +131,9 @@ final class StockCsv
     }
 
     /**
-     * @return array{updated: int, conflicts: int}
+     * Áp các dòng đã xem trước. Quá `StockBulkRun::SYNC_LIMIT` dòng → chia lô chạy nền, trả `run` (id lượt chạy) thay vì kết quả.
+     *
+     * @return array{updated: int, conflicts: int, run: string|null}
      */
     public function apply(string $token): array
     {
@@ -121,9 +141,28 @@ final class StockCsv
         if (! is_array($data)) {
             throw ValidationException::withMessages(['token' => __('inventory::messages.import_expired')]);
         }
+        if (count($data['changes']) > StockBulkRun::SYNC_LIMIT) {
+            $scope = $this->context->scope();
+            $jobs = array_map(fn (array $chunk): ApplyStockChunkJob => new ApplyStockChunkJob('import', ['file' => $data['file'], 'changes' => $chunk], $scope), array_chunk($data['changes'], StockBulkRun::CHUNK));
+
+            return ['updated' => 0, 'conflicts' => 0, 'run' => $this->runs->dispatch(__('inventory::messages.import_run_label', ['file' => $data['file']]), $jobs)];
+        }
+
+        return [...$this->applyChanges((string) $data['file'], $data['changes']), 'run' => null];
+    }
+
+    /**
+     * Ghi một lô dòng (như kiểm kê; tồn đã đổi sau khi xem trước → xung đột, không ghi đè).
+     *
+     * @param  array<int, mixed>  $changes
+     * @return array{updated: int, conflicts: int}
+     */
+    public function applyChanges(string $file, array $changes): array
+    {
+        $data = ['file' => $file];
         $locations = collect($this->queries->locations())->keyBy('id');
         $result = ['updated' => 0, 'conflicts' => 0];
-        foreach ($data['changes'] as $change) {
+        foreach ($changes as $change) {
             $location = $locations->get($change['location_id']);
             if ($location === null || ! $location->managesOnHand()) {
                 $result['conflicts']++;

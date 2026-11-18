@@ -14,7 +14,7 @@ import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import type { InventoryLabels } from '../../labels';
 
 type Level = { on_hand: number; reserved: number; safety_stock: number; available: number };
@@ -31,6 +31,7 @@ type OptionFilter = { code: string; name: string; values: string[] };
  */
 const props = defineProps<{
     labels: InventoryLabels;
+    bulkRun: { url: string } | null;
     urls: { base: string; batch: string; bulk: string; change: string; export: string; import: string; movements: string; receipts: string; counts: string; provinces: string; locations: string | null; default_location: string | null; main_location: string | null };
     links: Array<{ label: string; url: string }>;
     mainLocation: { id: number; name: string; address: string | null; province_code: string | null; lock_version: number } | null;
@@ -272,6 +273,27 @@ function submitImport(): void {
 function createDefault(): void {
     if (props.urls.default_location) router.post(props.urls.default_location, {}, { preserveScroll: true });
 }
+
+// Việc hàng loạt chạy nền (L20): hỏi tiến độ mỗi 2 giây; xong thì tải lại lưới tồn và hiện kết quả.
+type RunStatus = { id: string; label: string; progress: number; finished: boolean; failed_jobs: number; counts: { updated: number; unchanged: number; skipped: number; conflicts: number } };
+const run = ref<RunStatus | null>(null);
+let runTimer: ReturnType<typeof setTimeout> | null = null;
+async function pollRun(): Promise<void> {
+    if (!props.bulkRun) return;
+    try {
+        run.value = (await getJson<{ data: RunStatus }>(props.bulkRun.url)).data;
+    } catch {
+        run.value = null;
+        return;
+    }
+    if (run.value.finished) {
+        router.reload({ only: ['products', 'pagination'] });
+        return;
+    }
+    runTimer = setTimeout(pollRun, 2000);
+}
+pollRun();
+onBeforeUnmount(() => runTimer && clearTimeout(runTimer));
 </script>
 
 <template>
@@ -285,6 +307,14 @@ function createDefault(): void {
         <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">Kho chính</button>
     </PageHeader>
     <ExtensionTools :tools="extensions.tools ?? []" />
+    <section v-if="run" class="mb-4 rounded-lg border border-slate-200 bg-white p-4 text-sm" role="status" aria-live="polite" data-bulk-run>
+        <p class="font-medium">{{ run.label }}</p>
+        <div class="mt-2 h-2 overflow-hidden rounded bg-slate-100"><div class="h-full bg-indigo-600 transition-all" :style="{ width: `${run.progress}%` }"></div></div>
+        <p class="mt-2 text-slate-600">
+            <template v-if="run.finished">Xong — </template><template v-else>Đang chạy {{ run.progress }}% — </template>
+            đã ghi {{ run.counts.updated }}<template v-if="run.counts.unchanged">, không đổi {{ run.counts.unchanged }}</template><template v-if="run.counts.conflicts">, xung đột {{ run.counts.conflicts }} (tồn đã đổi sau khi xem trước)</template><template v-if="run.counts.skipped">, bỏ qua {{ run.counts.skipped }}</template><template v-if="run.failed_jobs">, {{ run.failed_jobs }} lô lỗi — xem log</template>.
+        </p>
+    </section>
     <form v-if="editingLocation && urls.main_location && mainLocation" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm md:grid-cols-3" data-main-location @submit.prevent="saveLocation">
         <p class="md:col-span-3">Kho chính của cửa hàng. Cần nhiều kho, cửa hàng nhận tại quầy hay chuyển kho: bật plugin <strong>Vận hành kho</strong>.</p>
         <input v-model="locationForm.name" :class="inputClass" placeholder="Tên kho" aria-label="Tên kho" />

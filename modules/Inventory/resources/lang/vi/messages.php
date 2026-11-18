@@ -39,6 +39,10 @@ return [
     'import_unreadable' => 'Không đọc được file.',
     'import_header' => 'Dòng đầu của file phải có cột sku và on_hand (location tuỳ chọn).',
     'bulk_too_many' => 'Bộ lọc đang chọn :count biến thể — sửa hàng loạt tối đa :max mỗi lần. Thu hẹp bộ lọc (màu, size, tìm kiếm) rồi làm từng phần.',
+    'import_queued' => 'Đang áp dụng file ở nền — trang này hiện tiến độ.',
+    'import_run_label' => 'Nhập file :file',
+    'bulk_queued' => 'Đang sửa :count biến thể ở nền — trang này hiện tiến độ.',
+    'bulk_run_label' => 'Sửa hàng loạt :count biến thể tại :location',
     'import_too_many' => 'Tối đa :max dòng mỗi lần nhập.',
 
     'location_missing' => 'Kho không tồn tại.',

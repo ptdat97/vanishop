@@ -38,6 +38,10 @@ return [
     'import_unreadable' => 'Could not read the file.',
     'import_header' => 'The first row must have the sku and on_hand columns (location optional).',
     'bulk_too_many' => 'The filter matches :count variants — bulk edits are limited to :max at a time. Narrow the filter and edit in parts.',
+    'import_queued' => 'The file is being applied in the background — progress is shown on this page.',
+    'import_run_label' => 'Import :file',
+    'bulk_queued' => 'Updating :count variants in the background — progress is shown on this page.',
+    'bulk_run_label' => 'Bulk edit :count variants at :location',
     'import_too_many' => 'At most :max rows per import.',
     'adjusted' => 'Stock updated.',
 

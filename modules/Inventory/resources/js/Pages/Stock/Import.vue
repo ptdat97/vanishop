@@ -9,7 +9,7 @@ type Line = { line: number; sku: string; location: string; current: number | nul
 
 /** Xem trước nhập tồn CSV: chỉ dòng "Thay đổi" được ghi (như kiểm kê); chưa ghi gì cho tới khi bấm Áp dụng. */
 const props = defineProps<{
-    preview: { token: string | null; file: string; lines: Line[]; summary: Record<string, number> };
+    preview: { token: string | null; file: string; lines: Line[]; hidden_lines: number; summary: Record<string, number> };
     statusLabels: Record<string, string>;
     urls: { back: string; apply: string | null };
 }>();
@@ -57,5 +57,7 @@ function apply(): void {
             <span :class="problem(row.status) ? 'text-red-600' : row.status === 'change' ? 'text-indigo-700' : 'text-slate-500'">{{ statusLabels[row.status] ?? row.status }}</span>
         </template>
     </DataTable>
-    <p v-if="preview.lines.length > 1000" class="mt-2 text-xs text-slate-500">Chỉ hiện 1000 dòng đầu.</p>
+    <p v-if="preview.hidden_lines > 0" class="mt-2 text-xs text-slate-500">
+        File lớn: hiện {{ preview.lines.length }} dòng cần chú ý trước (lỗi, thay đổi) — còn {{ preview.hidden_lines }} dòng không hiện; tổng ở trên tính đủ. Trên 1.000 thay đổi thì áp dụng chạy nền, trang Tồn kho hiện tiến độ.
+    </p>
 </template>

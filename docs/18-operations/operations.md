@@ -43,7 +43,7 @@ Theo code (`config/horizon.php`, một supervisor, ưu tiên từ trên xuống)
 |---|---|---|
 | `notifications` | Email/SMS/ZNS giao dịch (`SendNotificationJob`) | Cao nhất |
 | `fulfillment` | Đẩy vận đơn lên hãng (`BookShipmentJob`) | Cao |
-| `default` | Outbox tích hợp và việc khác | Trung bình |
+| `default` | Outbox tích hợp, việc tồn kho hàng loạt lớn (nhập file / sửa hàng loạt > 1.000 dòng — `ApplyStockChunkJob`, theo dõi ở bảng `job_batches`), việc khác | Trung bình |
 | `search` | Cập nhật chỉ mục tìm kiếm SQL, giá niêm yết trên danh sách (`SyncProductSearchIndex`, `SyncListPrices`) | Thấp |
 
 IPN thanh toán xử lý ngay trong request callback; hàng giữ hết hạn và thanh toán quá hạn do lịch chạy mỗi phút (`vani:inventory:release-expired`, `vani:payment:expire`, `vani:payment:reconcile`), không qua queue. Tách queue riêng cho import/export lớn khi đo được nhu cầu.

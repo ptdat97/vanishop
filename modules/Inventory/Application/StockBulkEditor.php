@@ -7,6 +7,7 @@ namespace Modules\Inventory\Application;
 use Illuminate\Validation\ValidationException;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Persistence\Models\Location;
+use Modules\Shared\Context\CurrentContext;
 
 /**
  * Sửa tồn hàng loạt tại một kho cho các variant đã chọn (theo SKU, cả sản phẩm hoặc mọi kết quả lọc): đặt số tồn, cộng/trừ,
@@ -22,14 +23,38 @@ final class StockBulkEditor
     public function __construct(
         private readonly StockAdjustmentService $stock,
         private readonly AuditLogger $audit,
+        private readonly StockBulkRun $runs,
+        private readonly CurrentContext $context,
     ) {}
+
+    /**
+     * Quá `StockBulkRun::SYNC_LIMIT` biến thể → chia lô chạy nền (L20); audit ghi một lần lúc gửi. Trả id lượt chạy.
+     *
+     * @param  list<int>  $variantIds
+     * @param  'set'|'adjust'|'safety'  $action
+     */
+    public function queue(Location $location, array $variantIds, string $action, int $quantity, string $reason): string
+    {
+        if ($action !== 'safety' && ! $location->managesOnHand()) {
+            throw ValidationException::withMessages(['location_id' => __('inventory::messages.external_authority', ['authority' => $location->stock_authority])]);
+        }
+        $ids = array_values(array_unique($variantIds));
+        $scope = $this->context->scope();
+        $jobs = array_map(fn (array $chunk): ApplyStockChunkJob => new ApplyStockChunkJob('bulk', [
+            'location_id' => $location->id, 'variant_ids' => $chunk, 'action' => $action, 'quantity' => $quantity, 'reason' => $reason,
+        ], $scope), array_chunk($ids, StockBulkRun::CHUNK));
+        $run = $this->runs->dispatch(__('inventory::messages.bulk_run_label', ['count' => count($ids), 'location' => $location->code]), $jobs);
+        $this->audit->record('inventory.stock.bulk', 'location', $location->id, ['location' => $location->code, 'action' => $action, 'quantity' => $quantity, 'reason' => $reason, 'variants' => count($ids), 'run' => $run]);
+
+        return $run;
+    }
 
     /**
      * @param  list<int>  $variantIds
      * @param  'set'|'adjust'|'safety'  $action
      * @return array{updated: int, unchanged: int, skipped: int}
      */
-    public function apply(Location $location, array $variantIds, string $action, int $quantity, string $reason): array
+    public function apply(Location $location, array $variantIds, string $action, int $quantity, string $reason, bool $audit = true): array
     {
         if ($action !== 'safety' && ! $location->managesOnHand()) {
             throw ValidationException::withMessages(['location_id' => __('inventory::messages.external_authority', ['authority' => $location->stock_authority])]);
@@ -49,7 +74,9 @@ final class StockBulkEditor
             }
         }
 
-        $this->audit->record('inventory.stock.bulk', 'location', $location->id, ['location' => $location->code, 'action' => $action, 'quantity' => $quantity, 'reason' => $reason, 'variants' => count($variantIds), ...$result]);
+        if ($audit) {
+            $this->audit->record('inventory.stock.bulk', 'location', $location->id, ['location' => $location->code, 'action' => $action, 'quantity' => $quantity, 'reason' => $reason, 'variants' => count($variantIds), ...$result]);
+        }
 
         return $result;
     }

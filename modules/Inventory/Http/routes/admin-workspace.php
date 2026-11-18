@@ -14,6 +14,7 @@ Route::post('stock/bulk', [StockController::class, 'bulk'])->name('stock.bulk');
 Route::post('stock/default-location', [StockController::class, 'defaultLocation'])->name('stock.default-location');
 Route::get('stock/export', [StockController::class, 'export'])->name('stock.export');
 Route::post('stock/import', [StockController::class, 'import'])->name('stock.import');
+Route::get('stock/runs/{run}', [StockController::class, 'run'])->where('run', '[0-9a-z-]{36}')->name('stock.runs.show');
 Route::post('stock/import/{token}', [StockController::class, 'applyImport'])->where('token', '[A-Za-z0-9]{40}')->name('stock.import.apply');
 Route::get('movements', [StockController::class, 'movements'])->name('movements.index');
 Route::get('counts', [StockCountController::class, 'index'])->name('counts.index');

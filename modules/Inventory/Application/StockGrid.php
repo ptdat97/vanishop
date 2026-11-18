@@ -17,8 +17,8 @@ final class StockGrid
 {
     public const FILTERS = ['all', 'out', 'low'];
 
-    /** Sửa hàng loạt chạy đồng bộ trong request: chọn "mọi kết quả lọc" vượt mức này → báo thu hẹp bộ lọc (không cắt âm thầm). */
-    public const MAX_BULK_VARIANTS = 5000;
+    /** Trần an toàn của "mọi kết quả lọc" khi sửa hàng loạt (quá `StockBulkRun::SYNC_LIMIT` thì chạy nền — L20). */
+    public const MAX_BULK_VARIANTS = 100000;
 
     public function __construct(
         private readonly VariantDirectory $variants,

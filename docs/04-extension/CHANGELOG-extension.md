@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.35 — 2026-11-19 · Extension API 1.9.0 (không đổi)
+
+Backlog L20 (Owner: việc tồn kho hàng loạt lớn chạy nền). Không đổi API cho plugin.
+
+### Đổi
+- Nhập file tồn và sửa tồn hàng loạt: quá 1.000 dòng/biến thể → chia lô 500 chạy nền (`Inventory\Application\StockBulkRun`, `ApplyStockChunkJob`, `Bus::batch`, queue `default`) dưới danh tính nhân viên đã bấm; trang Tồn kho (`?run=`) hiện tiến độ và kết quả qua `GET admin/inventory/stock/runs/{run}`. Bỏ trần 5.000 (trần an toàn 50.000 dòng/file, 100.000 biến thể/lần). Trang xem trước file lớn trả tối đa 1.000 dòng, ưu tiên dòng lỗi/thay đổi (`hidden_lines`).
+- **Production cần worker queue `default` chạy** (Horizon đã cấu hình) — không có worker thì việc lớn đứng ở 0%.
+
+### Sửa
+- MySQL: số bán được (`StockQueries::sellableByVariant` — lưới tồn, Tổng quan) lỗi 1690 "BIGINT UNSIGNED out of range" khi một biến thể có tồn an toàn lớn hơn tồn khả dụng — cả trang Tồn kho trả 500. Điều kiện lọc nay so sánh thay vì trừ.
+
 ## 0.5.34 — 2026-11-19 · Extension API 1.9.0
 
 Backlog L44 (Owner: sản phẩm ngừng bán → 410 + gợi ý).

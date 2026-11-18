@@ -40,7 +40,9 @@ final class StockQueries
         }
 
         return DB::table('stock_levels')->whereIn('location_id', $locationIds)
-            ->whereRaw('on_hand - reserved - safety_stock > 0')
+            // So sánh, không trừ: cột UNSIGNED trên MySQL — `on_hand - reserved - safety_stock` âm (tồn an toàn > tồn) làm cả
+            // truy vấn lỗi 1690. Phép trừ trong sum() chỉ chạy trên dòng đã lọc (luôn dương).
+            ->whereRaw('on_hand > reserved + safety_stock')
             ->groupBy('variant_id')
             ->selectRaw('variant_id, sum(on_hand - reserved - safety_stock) as sellable')
             ->pluck('sellable', 'variant_id')

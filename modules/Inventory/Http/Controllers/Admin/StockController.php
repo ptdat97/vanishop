@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Http\Controllers\Admin;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -20,6 +21,7 @@ use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\LowStockThreshold;
 use Modules\Inventory\Application\StockAdjustmentService;
 use Modules\Inventory\Application\StockBulkEditor;
+use Modules\Inventory\Application\StockBulkRun;
 use Modules\Inventory\Application\StockCsv;
 use Modules\Inventory\Application\StockGrid;
 use Modules\Inventory\Application\StockQueries;
@@ -64,6 +66,9 @@ final class StockController
         $online = array_filter($result['locations'], fn (Location $location): bool => $location->status === 'active' && $location->ships_online_orders);
 
         return Inertia::render('Inventory::Stock/Index', [
+            // Việc hàng loạt chạy nền vừa gửi (L20): trang hỏi tiến độ tới khi xong rồi tải lại lưới.
+            'bulkRun' => is_string($request->query('run')) && preg_match('/^[0-9a-z-]{36}$/', (string) $request->query('run')) === 1
+                ? ['url' => route('admin.inventory.stock.runs.show', ['run' => (string) $request->query('run')])] : null,
             'labels' => __('inventory::labels'),
             'urls' => [
                 'base' => route('admin.inventory.stock.index'),
@@ -127,6 +132,12 @@ final class StockController
             throw ValidationException::withMessages(['changes' => __('inventory::messages.bulk_too_many', ['count' => count($ids), 'max' => StockBulkEditor::MAX_VARIANTS])]);
         }
         $reason = trim((string) ($data['reason'] ?? '')) ?: __('inventory::messages.bulk_reason');
+        if (count($ids) > StockBulkRun::SYNC_LIMIT) {
+            // Lô lớn chạy nền (L20): về lưới tồn, trang hiện tiến độ của lượt chạy.
+            $run = $editor->queue($location, $ids, $data['action'], (int) $data['quantity'], $reason);
+
+            return redirect()->route('admin.inventory.stock.index', ['run' => $run])->with('success', __('inventory::messages.bulk_queued', ['count' => count($ids)]));
+        }
         $result = $editor->apply($location, $ids, $data['action'], (int) $data['quantity'], $reason);
 
         $response = back()->with('success', __('inventory::messages.bulk_done', ['updated' => $result['updated'], 'unchanged' => $result['unchanged'], 'location' => $location->code]));
@@ -251,10 +262,23 @@ final class StockController
         ]);
     }
 
+    /** Tiến độ + kết quả của việc hàng loạt chạy nền (Admin hỏi định kỳ tới khi xong) — L20. */
+    public function run(string $run, StockBulkRun $runs): JsonResponse
+    {
+        Gate::authorize('inventory.view');
+        $status = $runs->status($run);
+        abort_if($status === null, 404);
+
+        return response()->json(['data' => $status]);
+    }
+
     public function applyImport(string $token, StockCsv $csv): RedirectResponse
     {
         Gate::authorize('inventory.adjust');
         $result = $csv->apply($token);
+        if ($result['run'] !== null) {
+            return redirect()->route('admin.inventory.stock.index', ['run' => $result['run']])->with('success', __('inventory::messages.import_queued'));
+        }
         $response = redirect()->route('admin.inventory.stock.index')->with('success', __('inventory::messages.import_applied', ['updated' => $result['updated']]));
 
         return $result['conflicts'] === 0 ? $response : $response->withErrors(['changes' => __('inventory::messages.import_conflicts', ['count' => $result['conflicts']])]);

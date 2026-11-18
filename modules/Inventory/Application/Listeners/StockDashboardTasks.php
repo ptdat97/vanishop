@@ -10,7 +10,7 @@ use Modules\Inventory\Application\StockGrid;
 
 /**
  * Ô "Việc cần làm" của tồn kho (0.3.101): biến thể đang bán đã hết hàng / sắp hết (≤ ngưỡng) ở kho giao online. Tính trên
- * lưới tồn (tối đa 5000 biến thể, backlog L20) nên nhớ 5 phút.
+ * lưới tồn (truy vấn gộp trên mọi biến thể) nên nhớ 5 phút.
  */
 final class StockDashboardTasks
 {
