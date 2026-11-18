@@ -16,12 +16,12 @@
 |---|---|---|---|
 | **Unit** | Domain, Value Object, Entity, Policy, Pricing, Promotion engine, Totals, State machine, Money | Không | `modules/<M>/Tests/Unit`, `custom/plugin/<P>/Tests/Unit` |
 | **Application** | Command/Query: Checkout, PlaceOrder, Payment, Inventory reserve | Có (SQLite in-memory hoặc MySQL) | `modules/<M>/Tests/Feature` |
-| **Integration** | Database thật (MySQL: lock, CHECK, unique), ERP/Payment/Shipping qua fake server | MySQL | `tests/Integration` |
-| **Contract** | Plugin ↔ Core (contract test suite), Connector ↔ External (JSON Schema, fake server), API (OpenAPI) | Tuỳ | `modules/<M>/Tests/Contract` (bộ trừu tượng), plugin kế thừa |
+| **Invariant / MySQL** | Bất biến thương mại trên DB thật (lock, CHECK, unique — chạy cả bộ test với `DB_CONNECTION=mysql` trên CI), Payment/Shipping qua fixture giả | SQLite + MySQL | `tests/Feature/Invariants`, `modules/<M>/Tests/Feature/Fixtures` |
+| **Contract** | Plugin ↔ Core (contract test suite), Connector ↔ External (JSON Schema, fake server), API (OpenAPI) | Tuỳ | `modules/<M>/Testing/*Contract.php` (bộ dùng chung), test của plugin gọi `…Contract::define()` |
 | **Architecture** | Ranh giới module, hướng phụ thuộc | Không | `tests/Architecture` |
 | **Concurrency** | Reservation, voucher, IPN, outbox worker | MySQL | `tests/Concurrency` |
 | **Trình duyệt (Admin)** | Admin Form Standard (lưu liên tiếp, xung đột, lỗi tại ô, cảnh báo rời trang), Toaster, Dialog (focus trap, trả focus, khoá cuộn) | SQLite in-memory | `tests/Browser` (Pest Browser, group `browser`) |
-| **End-to-End** | Browse → Cart → Checkout → Payment → Order → Fulfillment | MySQL | `tests/Browser` (Pest Browser — chưa có) |
+| **End-to-End** | Browse → Cart → Checkout → Payment → Order → Fulfillment | MySQL | Chưa có |
 
 `phpunit.xml`/`Pest.php` khai báo testsuite bao gồm `modules/*/Tests` và `custom/plugin/*/Tests`.
 

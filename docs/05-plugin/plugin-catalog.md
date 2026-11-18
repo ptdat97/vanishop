@@ -19,7 +19,7 @@ Theo [ADR-029](../19-adr/ADR-029-commerce-microkernel.md), Core chỉ giữ mặ
 | Khuyến mãi | Engine + action `percent_off`/`amount_off` + voucher. **Không có rule điều kiện** trong Core — rule đến từ plugin (`vani.promotion-rules`) | |
 | Đổi trả | `days_window` | |
 | Thông báo | Email (`mail`) | |
-| Đăng nhập | Mật khẩu, OTP email |
+| Đăng nhập | Email + mật khẩu (xác minh email, quên mật khẩu); OTP theo SĐT là plugin `vani.phone-otp-login` |
 | Tìm kiếm | Database — truy vấn SQL (Owner, 2026-11-12: dự án dùng truy vấn SQL qua provider `database`, không cần Meilisearch — plugin `vani.search-meilisearch` đã gỡ) |
 | Tích hợp | Integration API, webhook, outbox/inbox, khung connector |
 

@@ -37,7 +37,7 @@ flowchart LR
 |---|---|---|---|
 | 0 ✅ (phần lớn) | **Foundation** | `modules/`, `custom/` + autoload; `ModuleServiceProvider`; Shared (`Money`, `Phone`, `CurrentContext`, correlation id middleware); Tenancy/Brand/Channel tối thiểu (1 pháp nhân, 1 brand, 1 channel, `ResolveChannel`, `BelongsToBrand`); Identity (staff, RBAC theo scope, audit); Extension (`Hook` + registry, plugin loader, manifest, CLI `vani:plugin:*`, safe mode) + plugin mẫu `HelloWorld`; khung Admin Inertia; MySQL 8.4 + `.env`; CI (Pint, Larastan, Pest, arch test, clean-room) | Arch test chạy trong CI; nhân viên brand A không thấy dữ liệu brand B; `HelloWorld` install/enable/disable được theo scope |
 | 1 ✅ | **Catalog** | Danh mục, thuộc tính, màu/size, media. (`SearchProvider` dời sang slice 2 vì chưa có sản phẩm để tìm) | CRUD Admin + Storefront API đọc danh mục: **đạt** (2026-09-29) |
-| 2 ✅ | **Product (Style)** | Style, style color, nội dung đa ngôn ngữ, trạng thái, gắn danh mục/thuộc tính/ảnh, hook `vani.product.before_save`, event `ProductCreated/Updated`, **`SearchProvider`** (database + Meilisearch), bộ sưu tập thủ công | PDP render được từ Application query; tìm kiếm sản phẩm qua Storefront API: **đạt** (2026-09-30) |
+| 2 ✅ | **Product (Style)** | Style, style color, nội dung đa ngôn ngữ, trạng thái, gắn danh mục/thuộc tính/ảnh, hook `vani.product.before_save`, event `ProductCreated/Updated`, **`SearchProvider`** (database; plugin Meilisearch đã gỡ 2026-11-12), bộ sưu tập thủ công | PDP render được từ Application query; tìm kiếm sản phẩm qua Storefront API: **đạt** (2026-09-30) |
 | 3 ✅ | **Variant & Price** | Variant/SKU, bảng giá, `PricingStrategy` mặc định, `price_history` | Giá hiển thị đúng theo channel; test Money: **đạt** (2026-10-01). Thêm module `Storefront` làm tầng ghép (ADR-021) |
 | 4 ✅ | **Inventory** | Location, stock level, reservation, ledger, ATS, `InventoryStrategy` mặc định, điều chỉnh tay (import dời lại) | **Concurrency test không oversell pass trên MySQL**: **đạt** (2026-10-02). Storefront API có `in_stock`/`available`/`low_stock` |
 | 5 ✅ | **Cart** | Giỏ, gộp giỏ, Storefront API cart | Thêm/sửa/xoá giỏ qua API: **đạt** (2026-10-03). Native storefront dời tới khi có theme `vani-base`; gộp giỏ khi đăng nhập: **đạt** cùng slice Customer (2026-10-12) |
@@ -63,7 +63,7 @@ Xếp trước slice 12 theo quyết định của Owner (checkout trước đó
 
 - [x] Module `Customer`: tài khoản hợp nhất theo SĐT, profile ẩn cho khách vãng lai, unique `phone_active`/`email_normalized`
 - [x] Đăng nhập OTP (extension point `OtpSender`) + mật khẩu tuỳ chọn; token Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)); chống brute-force/SMS pumping
-- [x] `/me`, sổ địa chỉ, consent + ledger, xuất dữ liệu, xoá tài khoản (ẩn danh hoá, cần OTP)
+- [x] `/me`, sổ địa chỉ, consent + ledger, xuất dữ liệu, xoá tài khoản (ẩn danh hoá, xác nhận bằng mật khẩu từ 0.5.12)
 - [x] Gộp giỏ khi đăng nhập (`Carts::attachToCustomer`, `forCustomer`); Checkout gắn `customer_id`; `/me/orders`, `/me/cart`
 - [x] Merge khách (chuyển đơn qua `OrderWriter::reassignCustomer`) + Admin khách hàng; thống kê theo brand
 - [x] Concurrency: cùng SĐT đặt song song → một hồ sơ
@@ -125,7 +125,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 | 17 ✅ | **Ổn định Commerce Core** (P1 C1–C3, P2 A2; 2026-11-12, Core 0.4.17–0.4.20) | [stabilization-2026-11](stabilization-2026-11.md) |
 | 18 ✅ | **Biến thể linh hoạt** F1–F6 (xong 2026-11-13, Core 0.4.25–0.4.29) + ma trận biến thể Admin (0.4.30–0.4.31) + sản phẩm đơn ⇄ có biến thể giữ lịch sử thương mại (0.4.66–0.4.67) | [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) |
 | 19 ✅ | **Ba chốt có người** V1–V2 (2026-11-15, Core 0.4.53–0.4.54) | [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md) |
-| 20 ✅ | **Điểm mở rộng v3** X1–X7 (2026-11-15 → 16, Core 0.4.59–0.4.65): X1 màn vận hành mở cho plugin · X2 lệnh/chặn/tín hiệu/kênh xác nhận · X3 giao theo tuyến, mẫu phiếu, hãng lấy hàng trả · X4 giá theo cách làm của shop · X5 đối soát và chuyển trả · X6 khách hàng và CSKH · X7 đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)). Chưa làm: giá theo số lượng (cần ADR) | [extension-point-catalog](../04-extension/extension-point-catalog.md) |
+| 20 ✅ | **Điểm mở rộng v3** X1–X7 (2026-11-15 → 16, Core 0.4.59–0.4.65): X1 màn vận hành mở cho plugin · X2 lệnh/chặn/tín hiệu/kênh xác nhận · X3 giao theo tuyến, mẫu phiếu, hãng lấy hàng trả · X4 giá theo cách làm của shop · X5 đối soát và chuyển trả · X6 khách hàng và CSKH · X7 đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)). Giá theo số lượng (giá sỉ) bỏ — ngoài phạm vi ([ADR-033](../19-adr/ADR-033-out-of-scope.md), chỉ D2C/B2C) | [extension-point-catalog](../04-extension/extension-point-catalog.md) |
 | Later | Advanced merchandising, recommendation. | — |
 
 ## 4. Hardening Commerce Kernel (từ 2026-10-04)
@@ -168,7 +168,7 @@ Ký hiệu: ✅ có code + test · 🟡 một phần · ⬜ chưa làm.
 | Hạng mục | Trạng thái | Ghi chú |
 |---|---|---|
 | Đồng bộ tồn từ authority ngoài (`InventorySync`, version, chỉ authority của location) | ✅ | slice 11 |
-| Bảng đối soát tồn với nguồn ngoài | ✅ | `inventory_reconciliations` + `inventory_reconciliation_lines` (source, location, variant, expected, actual, difference, detected_at, resolved_at, resolution). Phân loại: `external_mismatch` (nguồn ngoài ≠ VaniShop), `on_hand_off_ledger`, `reserved_mismatch`/`reserved_off_ledger`, `negative_on_hand`. `vani:inventory:verify` và `vani:inventory:reconcile` (snapshot JSON `--file`/`--json`, `--dry-run`) dùng chung bảng; không tự sửa phía ngoài; chỉ áp phía VaniShop khi location có `stock_authority` = nguồn đó (movement `sync`, chống bản cũ theo `version`). Admin → Tồn kho → Đối soát (chỉ đọc) |
+| Bảng đối soát tồn với nguồn ngoài | ✅ | `inventory_reconciliations` + `inventory_reconciliation_lines` (source, location, variant, expected, actual, difference, detected_at, resolved_at, resolution). Phân loại: `external_mismatch` (nguồn ngoài ≠ VaniShop), `on_hand_off_ledger`, `reserved_mismatch`/`reserved_off_ledger`, `negative_on_hand`. `vani:inventory:verify` và `vani:warehouse:reconcile` (plugin `vani.warehouse`, ADR-042; snapshot JSON `--file`/`--json`, `--dry-run`) dùng chung bảng; không tự sửa phía ngoài; chỉ áp phía VaniShop khi location có `stock_authority` = nguồn đó (movement `sync`, chống bản cũ theo `version`). Admin → Tồn kho → Đối soát (chỉ đọc) |
 | Đối soát thanh toán với cổng | ✅ | Khoản `pending`: `vani:payment:reconcile` hỏi cổng và áp kết quả đã xác minh (cổng là authority của kết quả thu). Khoản đã thu (0.3.22): `vani:payment:verify` (hằng ngày 04:00) tra cổng, ghi `gateway_not_captured` / `amount_mismatch` / `refund_mismatch` vào `payment_reconciliations` + `payment_reconciliation_lines`, **không tự sửa**; lỗi còn mở không ghi lặp; COD/chuyển khoản tay bỏ qua; `refund_mismatch` chỉ khi cổng báo được tổng hoàn (`GatewayStatus::$refunded`) |
 
 ### Phase 4. Integration event reconciliation

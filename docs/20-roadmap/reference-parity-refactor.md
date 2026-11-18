@@ -84,7 +84,7 @@ Mỗi mục: **Tham chiếu** (hành vi đã quan sát, viết bằng lời) · 
 | `storefront.maintenance` | bool | false | Bật: mọi trang storefront trả 503 + trang bảo trì của theme, header `Retry-After`; nhân viên đã đăng nhập Admin vẫn xem được; `/health`, IPN thanh toán, webhook vận chuyển, Integration API **không** bị chặn |
 | `storefront.maintenance_message` | text | rỗng | Nội dung trang bảo trì |
 | `storefront.price_visibility` | enum `public`/`members` | `public` | `members`: khách chưa đăng nhập thấy "Đăng nhập để xem giá", không thêm được vào giỏ; Storefront API trả giá `null` + cờ; JSON-LD bỏ `offers` |
-| `storefront.guest_checkout` | bool | true | Tắt: checkout yêu cầu đăng nhập (OTP); API trả lỗi nghiệp vụ có mã |
+| `storefront.guest_checkout` | bool | true | Tắt: checkout yêu cầu đăng nhập; API trả lỗi nghiệp vụ có mã |
 | `storefront.per_page` | int 12–60 | 24 | Số sản phẩm mỗi trang danh mục/tìm kiếm |
 | `storefront.popular_searches` | danh sách chuỗi | rỗng | Gợi ý dưới ô tìm kiếm khi chưa gõ |
 | `storefront.placeholder_image` | media id | ảnh của theme | Ảnh thay thế khi sản phẩm thiếu ảnh |
@@ -145,7 +145,7 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 
 **Tham chiếu**: sản phẩm có biến thể sinh từ các chiều (màu, size…), mỗi biến thể một SKU (mã, giá, giá gốc, giá vốn, tồn, ảnh); sản phẩm có video, khối lượng + đơn vị, cờ cần giao hàng, lớp thuế, vị trí sắp xếp, bật/tắt, xoá mềm; thuộc tính theo nhóm; sản phẩm liên quan; đếm lượt xem có chống đếm trùng trong N phút; tìm kiếm + gợi ý (sản phẩm, danh mục, thương hiệu); "sản phẩm nổi bật"; **bộ lọc nhiều chiều** do Admin cấu hình (khoảng giá + chọn thuộc tính nào làm bộ lọc); danh sách thương hiệu theo chữ cái đầu; dữ liệu mẫu sinh tự động cho dev.
 
-**VaniShop hiện có**: Style/Style Color/variant, danh mục cây, thương hiệu, thuộc tính spec/internal, màu + size theo hệ size, media, bộ sưu tập, liên kết + video sản phẩm, `SearchProvider` (database + Meilisearch), `ProductFilters` (facet màu, thuộc tính, thương hiệu), dữ liệu demo `DemoSeeder` (database/seeders — thay plugin `vani.demo-catalog`, 2026-11-05).
+**VaniShop hiện có**: Style/Style Color/variant, danh mục cây, thương hiệu, thuộc tính spec/internal, màu + size theo hệ size, media, bộ sưu tập, liên kết + video sản phẩm, `SearchProvider` (database; plugin Meilisearch đã gỡ 2026-11-12), `ProductFilters` (facet màu, thuộc tính, thương hiệu), dữ liệu demo `DemoSeeder` (database/seeders — thay plugin `vani.demo-catalog`, 2026-11-05).
 
 **Đặc tả cần làm**
 1. ✅ (R2, 2026-11-04, Core 0.3.71 — thương hiệu, nhóm màu (danh sách/ô màu), từng thuộc tính spec lọc được; **giá và size chưa** vì `SearchProvider` chưa lọc được, cần mở rộng `ProductSearchQuery` + provider) **Cấu hình facet** (Admin → Catalog → Bộ lọc): bật/tắt từng facet (giá, màu, size, thương hiệu, từng thuộc tính `spec`), thứ tự hiển thị, kiểu hiển thị (danh sách tick, ô màu, thanh trượt giá). Lưu trong `Settings` (`catalog.facets`). `ProductFilters` và trang danh mục đọc cấu hình này; facet không có giá trị nào trong tập kết quả thì ẩn.
@@ -252,7 +252,7 @@ Mọi thao tác ghi audit qua `AuditLogger`. **Vị trí**: Core `Identity`. **�
 **VaniShop hiện có**: định danh SĐT + OTP, profile, địa chỉ, consent, token Bearer, merge, ẩn danh hoá, `AuthProvider`, nhóm khách + tag, `/tai-khoan/*` native.
 
 **Đặc tả cần làm**
-1. ✅ (R1-5, 2026-11-04, Core 0.3.57) **Xoá tài khoản tự phục vụ**: `/tai-khoan/xoa` — xác nhận bằng OTP; nếu còn đơn chưa hoàn tất/đổi trả đang mở thì từ chối (lỗi có mã, liệt kê đơn); nếu được → gọi luồng ẩn danh hoá sẵn có (`CustomerAnonymized`), thu hồi mọi token, đăng xuất. Ghi consent event. API tương ứng `DELETE /me`.
+1. ✅ (R1-5, 2026-11-04, Core 0.3.57) **Xoá tài khoản tự phục vụ**: `/tai-khoan/xoa` — xác nhận bằng OTP (từ 0.5.12: bằng mật khẩu); nếu còn đơn chưa hoàn tất/đổi trả đang mở thì từ chối (lỗi có mã, liệt kê đơn); nếu được → gọi luồng ẩn danh hoá sẵn có (`CustomerAnonymized`), thu hồi mọi token, đăng xuất. Ghi consent event. API tương ứng `DELETE /me`.
 2. **Duyệt tài khoản**: **không làm** — Owner quyết định tài khoản mới không cần duyệt (2026-11-03).
 3. ✅ (R3, 2026-11-05, plugin 1.0.0, Core 0.3.76 — [đặc tả](../05-plugin/specs/wishlist.md); Core thêm `accountRoutes()`, `csrf_token` trong dữ liệu phiên + event `vani:session`) **Yêu thích** → plugin `vani.wishlist` (đã có trong [plugin-catalog](../05-plugin/plugin-catalog.md)): thêm/bỏ từ thẻ sản phẩm và PDP (slot), trang `/tai-khoan/yeu-thich`, khách vãng lai lưu ở trình duyệt và gộp vào tài khoản khi đăng nhập; thông báo tuỳ chọn khi giảm giá/có hàng lại (consent marketing). Dữ liệu `plg_wishlist_*`.
 4. **Captcha đăng ký/OTP**: không làm captcha hình; giữ rate limit theo SĐT/IP hiện có. Nếu bị spam OTP, thêm `ChallengeProvider` (Turnstile…) — P2, cần ADR.

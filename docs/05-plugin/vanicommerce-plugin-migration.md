@@ -43,7 +43,7 @@ Mỗi plugin là một lát độc lập; không gộp nhiều plugin vào một
 | OfflinePay | `vani.bank-transfer` | — |
 | FlatShipping | `vani.shipping-flat-rate` | — |
 | VnPay | `vani.vnpay` | — |
-| MeiliSearch | `vani.search-meilisearch` | — |
+| MeiliSearch | ~~`vani.search-meilisearch`~~ ⛔ đã gỡ 2026-11-12 (tìm kiếm bằng SQL) | — |
 | ProvincesVN | `vani.provinces-vn` (dữ liệu đã dùng lại) | — |
 | MediaOptimizer | Core: ảnh thu nhỏ `public/cache`; `vani.media-webp` | Tạo sẵn thumbnail qua queue |
 | FileManagerPro | Core: Thư viện ảnh dùng chung | Thao tác thư mục |

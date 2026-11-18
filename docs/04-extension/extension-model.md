@@ -177,6 +177,6 @@ Extension point public được đánh version theo **SemVer của API cho plugi
 ## 6. Kiểm thử
 
 - **Contract test suite** do Core cung cấp: mỗi contract có một bộ test trừu tượng (ví dụ `PaymentGatewayContractTests`) mà plugin implement phải chạy và pass ([testing §6](../17-testing/testing.md)).
-- Test hook: plugin giả lập trong `tests/Fixtures/Plugins` đăng ký filter/action và kiểm tra Core gọi đúng thời điểm, đúng kiểu.
+- Test hook: plugin giả lập trong `modules/Extension/Tests/Fixtures` (`FixturePlugins`) đăng ký filter/action và kiểm tra Core gọi đúng thời điểm, đúng kiểu.
 - Arch test: plugin không dùng namespace internal của Core.
 - Mỗi extension point public có implementation tham chiếu + contract test (rule R26).

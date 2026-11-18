@@ -30,7 +30,7 @@
 | Dịch | Key dịch theo module: `ordering::status.confirmed`; không hard-code chuỗi tiếng Việt trong PHP |
 | Admin UI | Inertia + Vue 3 + TypeScript (`<script setup lang="ts">`); trang đặt tại `modules/<M>/resources/js/Pages/`, render bằng `Inertia::render('<Module>::<Trang>')`; props lấy qua API Resource, không truyền model thô; quyền hiển thị nút/menu lấy từ shared prop `can` (kiểm tra lại ở server) |
 | Route | Named route: `storefront.product.show`, `admin.orders.index`, `api.storefront.v1.carts.store` |
-| Artisan | Tạo file bằng `php artisan make:*` rồi di chuyển vào module (hoặc dùng `vani:make:*` khi đã có); lệnh riêng tiền tố `vani:` |
+| Artisan | Tạo file bằng `php artisan make:*` rồi di chuyển vào module; lệnh riêng tiền tố `vani:` |
 | Dependency | Mọi package mới cần ADR/phê duyệt; license MIT/BSD/Apache-2.0/ISC |
 
 ### Tên gọi thống nhất (ubiquitous language)

@@ -1,6 +1,6 @@
 # Nhất quán: transaction, idempotency, concurrency
 
-> Trạng thái: **Designed**. Quyết định: [ADR-013](../19-adr/ADR-013-outbox-inbox.md), [ADR-014](../19-adr/ADR-014-idempotency.md).
+> Trạng thái: **Implemented** (outbox/inbox, idempotency key, `lock_version`, transaction theo use-case — có test bất biến và concurrency). Quyết định: [ADR-013](../19-adr/ADR-013-outbox-inbox.md), [ADR-014](../19-adr/ADR-014-idempotency.md).
 
 ## 1. Transaction boundary
 
@@ -49,7 +49,7 @@ Cùng một key nhưng body khác (khác `request_hash`) → trả `409 idempote
 | Tình huống | Cơ chế |
 |---|---|
 | Nhiều khách cùng mua SKU cuối | Pessimistic lock `SELECT … FOR UPDATE` trên `stock_levels`, khoá theo thứ tự `(location_id, variant_id)` tăng dần để tránh deadlock ([inventory](../08-inventory/inventory.md)) |
-| Flash sale | Cổng chặn bằng counter Redis `DECRBY` trước khi vào transaction DB |
+| Flash sale | *Planned* — cổng chặn bằng counter Redis `DECRBY` trước khi vào transaction DB (chưa có; hiện chỉ dùng khoá dòng ở trên) |
 | Admin sửa cùng một bản ghi | Optimistic lock: cột `lock_version`, `UPDATE … WHERE id = ? AND lock_version = ?`, nếu không có dòng nào được cập nhật thì trả `409 stale_record` |
 | Hai IPN đến cùng lúc | Unique `(gateway, gateway_transaction_id)` + khoá dòng `payments` |
 | Inbound tồn từ ERP đến sai thứ tự | So `version`/`occurred_at`; bản cũ bị bỏ qua và ghi log |

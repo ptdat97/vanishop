@@ -37,14 +37,16 @@ flowchart TB
 
 ## 3. Queue
 
+Theo code (`config/horizon.php`, một supervisor, ưu tiên từ trên xuống):
+
 | Queue | Công việc | Ưu tiên |
 |---|---|---|
-| `critical` | Xử lý IPN thanh toán, giải phóng reservation, xác nhận đơn | Cao nhất |
-| `integration` | Outbox dispatcher, inbox processor | Cao |
-| `notifications` | Email/SMS/ZNS | Trung bình |
-| `search` | Đồng bộ index | Trung bình |
-| `default` | Khác | Trung bình |
-| `bulk` | Import/export, snapshot tồn, báo cáo | Thấp, giới hạn concurrency |
+| `notifications` | Email/SMS/ZNS giao dịch (`SendNotificationJob`) | Cao nhất |
+| `fulfillment` | Đẩy vận đơn lên hãng (`BookShipmentJob`) | Cao |
+| `default` | Outbox tích hợp và việc khác | Trung bình |
+| `search` | Cập nhật chỉ mục tìm kiếm SQL, giá niêm yết trên danh sách (`SyncProductSearchIndex`, `SyncListPrices`) | Thấp |
+
+IPN thanh toán xử lý ngay trong request callback; hàng giữ hết hạn và thanh toán quá hạn do lịch chạy mỗi phút (`vani:inventory:release-expired`, `vani:payment:expire`, `vani:payment:reconcile`), không qua queue. Tách queue riêng cho import/export lớn khi đo được nhu cầu.
 
 Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp theo cùng aggregate dùng `WithoutOverlapping`/`ShouldBeUnique`.
 

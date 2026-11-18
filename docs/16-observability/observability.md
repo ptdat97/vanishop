@@ -50,7 +50,7 @@ Module ghi qua `Modules\Shared\Contracts\Metrics` (`increment`, `gauge`), không
 | `integration.event_replay` | counter | `outbox` / `inbox` | `ReplayService` |
 | `integration.event_reconciliation_mismatch` / `integration.event_rebuilt` | counter | — | `vani:integration:reconcile-orders` |
 | `payments.reconciliation_mismatch` | counter | — | `vani:payment:verify` |
-| `inventory.reconciliation_mismatch` | counter | `internal` / mã nguồn | `vani:inventory:verify` / `vani:inventory:reconcile` |
+| `inventory.reconciliation_mismatch` | counter | `internal` / mã nguồn | `vani:inventory:verify` / `vani:warehouse:reconcile` (plugin `vani.warehouse`) |
 | `payments.pending`, `orders.pending` | gauge | mã cổng / — | `vani:metrics:snapshot` (mỗi phút) |
 | `integration.outbox_backlog`, `integration.outbox_failed`, `integration.inbox_failed` | gauge | — | như trên |
 | `inventory.reconciliation_open`, `payments.reconciliation_open` | gauge | — | như trên (dòng đối soát chưa xử lý) |

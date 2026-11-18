@@ -6,7 +6,7 @@
 
 | Loại | Guard | Bảng | Ghi chú |
 |---|---|---|---|
-| Khách hàng | Web session hoặc Customer Bearer token | `customers` | OTP/mật khẩu; social login qua `AuthProvider` |
+| Khách hàng | Web session hoặc Customer Bearer token | `customers` | Email + mật khẩu (mặc định); OTP theo SĐT qua plugin `vani.phone-otp-login`; social login qua `AuthProvider` |
 | Nhân viên | `staff` web session | `staff_users` | Mật khẩu + rate limit; **không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)); SSO chưa triển khai |
 | Hệ thống tích hợp | `integration` | `integration_clients` | API key + secret, HMAC, IP allowlist |
 

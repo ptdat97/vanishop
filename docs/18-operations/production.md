@@ -1,6 +1,6 @@
 # Vận hành production
 
-> Trạng thái: **Implemented** cho những gì có trong mã nguồn hiện tại (Core 0.3.28). Kiến trúc mục tiêu (nhiều web node, CDN, Meilisearch…) và chính sách RPO/RTO: [operations](operations.md). Giám sát: [observability](../16-observability/observability.md).
+> Trạng thái: **Implemented** cho những gì có trong mã nguồn hiện tại (Core 0.3.28). Kiến trúc mục tiêu (nhiều web node, CDN…) và chính sách RPO/RTO: [operations](operations.md). Giám sát: [observability](../16-observability/observability.md).
 >
 > Tài liệu này dành cho người cài đặt, deploy và trực vận hành website. Mỗi lệnh ở đây đều có trong mã nguồn; mục nào chưa làm được ghi rõ ở §12.
 

@@ -1,6 +1,6 @@
 # Money
 
-> Trạng thái: **Designed**. Quyết định: [ADR-011](../19-adr/ADR-011-money-representation.md).
+> Trạng thái: **Implemented** (`modules/Shared/Domain/Money`: `Money`, `Currency`; đa tiền tệ §4 vẫn Planned). Quyết định: [ADR-011](../19-adr/ADR-011-money-representation.md).
 
 ## 1. Biểu diễn
 
