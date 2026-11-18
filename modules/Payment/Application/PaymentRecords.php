@@ -54,10 +54,10 @@ final class PaymentRecords
      * Cổng/hãng báo số tiền khác khoản thanh toán: không ghi nhận, đưa vào hàng đợi "Đối soát lệch" (trước chỉ ghi log —
      * COD hãng thu thiếu thì khoản thanh toán treo "chờ thu" mà không ai thấy). Idempotent theo (khoản, số tiền báo về).
      */
-    public function amountMismatch(Payment $payment, Money $amount, string $note): void
+    public function amountMismatch(Payment $payment, Money $amount, string $note, ?int $expected = null): void
     {
         $this->reconciliations->record('payment', "amount:{$payment->public_id}:{$amount->amount}{$amount->currency->code}", false,
-            $payment->order_id, $payment->id, (int) $payment->amount, $amount->amount, $note);
+            $payment->order_id, $payment->id, $expected ?? (int) $payment->amount, $amount->amount, $note);
     }
 
     public function collectsOnDelivery(string $gatewayCode): bool

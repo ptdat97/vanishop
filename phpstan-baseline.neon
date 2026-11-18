@@ -163,12 +163,6 @@ parameters:
 			path: modules/Fulfillment/Application/FulfillmentService.php
 
 		-
-			message: '#^Property Modules\\Fulfillment\\Application\\FulfillmentService\:\:\$audit is never read, only written\.$#'
-			identifier: property.onlyWritten
-			count: 1
-			path: modules/Fulfillment/Application/FulfillmentService.php
-
-		-
 			message: '#^PHPDoc tag @param references unknown parameter\: \$details$#'
 			identifier: parameter.notFound
 			count: 1

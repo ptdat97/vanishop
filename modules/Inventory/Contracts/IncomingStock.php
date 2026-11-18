@@ -24,4 +24,11 @@ interface IncomingStock
      * @return array<int, IncomingStockData> variant id => hàng đang về (không có: bỏ qua)
      */
     public function forVariants(array $variantIds): array;
+
+    /**
+     * Hàng đang về có ngày dự kiến ≤ `$date` (Y-m-d) — 0.5.36, để nhắc CSKH đơn đặt trước quá ngày dự kiến (L37).
+     *
+     * @return array<int, IncomingStockData> variant id => hàng đang về
+     */
+    public function dueBy(string $date): array;
 }

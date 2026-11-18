@@ -6,9 +6,11 @@ namespace Modules\Fulfillment\Application\Listeners;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
+use Modules\Fulfillment\Persistence\Models\ShipmentLine;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
@@ -24,6 +26,7 @@ final class OrderShipmentPanel
     public function __construct(
         private readonly CarrierRegistry $carriers,
         private readonly MoneyFormatter $money,
+        private readonly VariantDirectory $variants,
     ) {}
 
     /**
@@ -106,6 +109,7 @@ final class OrderShipmentPanel
 
         return match (true) {
             in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true) => [
+                ...$this->splitAction($shipment, $url, $prefix),
                 ...($manual ? [['key' => "{$shipment->id}-book", 'label' => $prefix.'Nhập mã vận đơn', 'url' => "{$url}/book", 'primary' => true, 'tone' => 'primary', 'fields' => [
                     ['key' => 'tracking_number', 'label' => 'Mã vận đơn', 'required' => true],
                     ['key' => 'service_code', 'label' => 'Hãng vận chuyển', 'placeholder' => 'vd. GHN, J&T, Viettel Post'],
@@ -122,5 +126,28 @@ final class OrderShipmentPanel
             $shipment->status === ShipmentStatus::Returning => [$status(ShipmentStatus::Returned, 'Đã nhận hàng hoàn về', true, 'primary')],
             default => [],
         };
+    }
+
+    /**
+     * "Giao trước phần có hàng" (L37): vận đơn chờ đặt có từ 2 món — mỗi dòng một ô "số giao sau" (mặc định 0).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function splitAction(Shipment $shipment, string $url, string $prefix): array
+    {
+        $lines = ShipmentLine::query()->where('shipment_id', $shipment->id)->orderBy('id')->get();
+        if ((int) $lines->sum('quantity') < 2 || $shipment->booking_lease !== null) {
+            return [];
+        }
+        $skus = $this->variants->find($lines->pluck('variant_id')->map(fn (mixed $id): int => (int) $id)->all());
+
+        return [[
+            'key' => "{$shipment->id}-split", 'label' => $prefix.'Giao trước phần có hàng', 'url' => "{$url}/split", 'tone' => 'secondary',
+            'fields' => $lines->map(fn (ShipmentLine $line): array => [
+                'key' => "move_{$line->order_line_id}",
+                'label' => 'Giao sau — '.($skus[$line->variant_id]->sku ?? "#{$line->variant_id}")." (trên {$line->quantity})",
+                'value' => '0',
+            ])->values()->all(),
+        ]];
     }
 }

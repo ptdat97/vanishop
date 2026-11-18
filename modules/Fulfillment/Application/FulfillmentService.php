@@ -127,6 +127,68 @@ final class FulfillmentService implements ShipmentBooking
     }
 
     /**
+     * "Giao trước phần có hàng" (0.5.36, backlog L37 — Owner 2026-11-19): tách vận đơn đang chờ đặt thành hai — `$move`
+     * (order_line_id → số lượng) sang vận đơn mới cùng kho/hãng, ở "Chờ đóng gói" (vd. món đặt trước còn chờ hàng); vận đơn
+     * cũ giữ phần còn lại để đẩy lên hãng trước. COD thu theo giá trị từng kiện: vận đơn mới thu tiền hàng của phần chuyển
+     * (thành tiền dòng đã phân bổ giảm giá, chia theo số lượng), vận đơn cũ giữ phần còn lại + phí ship. Phí ship kiện thứ
+     * hai cửa hàng chịu. Trừ tồn vẫn khi mọi vận đơn đã rời kho.
+     *
+     * @param  array<int, int>  $move
+     */
+    public function split(int $shipmentId, array $move, ?int $staffId = null): int
+    {
+        $move = array_filter(array_map('intval', $move), fn (int $quantity): bool => $quantity > 0);
+
+        return DB::transaction(function () use ($shipmentId, $move, $staffId): int {
+            $shipment = Shipment::query()->whereKey($shipmentId)->lockForUpdate()->firstOrFail();
+            if (! $shipment->status->awaitsBooking() || $shipment->booking_lease !== null) {
+                throw FulfillmentRejected::invalidTransition($shipment->status->value, 'split');
+            }
+            $lines = ShipmentLine::query()->where('shipment_id', $shipment->id)->get()->keyBy('order_line_id');
+            $remaining = 0;
+            foreach ($lines as $lineId => $line) {
+                $moved = $move[$lineId] ?? 0;
+                if ($moved > $line->quantity) {
+                    throw FulfillmentRejected::splitInvalid();
+                }
+                $remaining += $line->quantity - $moved;
+            }
+            if ($move === [] || array_diff_key($move, $lines->all()) !== [] || $remaining === 0) {
+                throw FulfillmentRejected::splitInvalid();
+            }
+
+            $orderLines = collect($this->orders->lines($shipment->order_id))->keyBy('id');
+            $movedCod = 0;
+            if ($shipment->cod_amount > 0) {
+                foreach ($move as $lineId => $quantity) {
+                    $orderLine = $orderLines[$lineId] ?? null;
+                    $movedCod += $orderLine === null || $orderLine->quantity === 0 ? 0 : intdiv($orderLine->totalAmount * $quantity, $orderLine->quantity);
+                }
+                $movedCod = min($movedCod, $shipment->cod_amount);
+            }
+
+            $new = Shipment::query()->create([
+                'public_id' => (string) Str::ulid(), 'order_id' => $shipment->order_id, 'location_id' => $shipment->location_id,
+                'carrier_code' => $shipment->carrier_code, 'service_code' => $shipment->service_code, 'cod_amount' => $movedCod,
+                'currency_code' => $shipment->currency_code, 'status' => ShipmentStatus::PendingBooking,
+            ]);
+            foreach ($move as $lineId => $quantity) {
+                $line = $lines[$lineId];
+                ShipmentLine::query()->create(['shipment_id' => $new->id, 'order_line_id' => $lineId, 'variant_id' => $line->variant_id, 'quantity' => $quantity]);
+                $quantity === $line->quantity ? $line->delete() : $line->update(['quantity' => $line->quantity - $quantity]);
+            }
+            $shipment->update(['cod_amount' => $shipment->cod_amount - $movedCod]);
+
+            $this->recordEvent($new, ShipmentStatus::PendingBooking, "split:{$shipment->public_id}:{$new->public_id}", 'staff', "Tách từ vận đơn {$shipment->public_id}", []);
+            $this->audit->record('fulfillment.shipment.split', 'shipment', $shipment->id, ['new_shipment' => $new->public_id, 'lines' => $move, 'cod_moved' => $movedCod, 'staff' => $staffId]);
+            event(new ShipmentCreated($new->id, $new->order_id, $new->carrier_code));
+            $this->syncOrder($shipment->order_id);
+
+            return $new->id;
+        });
+    }
+
+    /**
      * "Đẩy lên hãng" (ADR-046 chốt ②) — xem ShipmentBooking. Vận đơn đặt lỗi được đặt lại từ đầu (đủ số lần thử).
      *
      * @param  list<int>  $shipmentIds

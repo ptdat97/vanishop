@@ -56,6 +56,12 @@ final class FulfillmentRejected extends BusinessRuleViolation
         return new self('shipment.tracking_taken', 422, __('fulfillment::messages.tracking_taken'));
     }
 
+    /** Tách vận đơn: số lượng không hợp lệ, không chuyển gì, hoặc chuyển hết (0.5.36, L37). */
+    public static function splitInvalid(): self
+    {
+        return new self('shipment.split_invalid', 422, __('fulfillment::messages.split_invalid'));
+    }
+
     /** Lần đặt khác đang gọi hãng cho vận đơn này (0.5.27 — giữ chỗ trước khi gọi hãng, backlog L31). */
     public static function bookingInProgress(): self
     {

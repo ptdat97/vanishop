@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.36 — 2026-11-19 · Extension API 1.10.0
+
+Backlog L37 (Owner: CSKH bấm "Giao trước phần có hàng", COD thu theo giá trị từng kiện).
+
+### Thêm (API cho plugin — minor; phá vỡ nhẹ theo R38)
+- `Payments::collectCod(int $orderId, int $amount, string $reference, ?int $expected = null)` — thêm `$expected` (tiền thu hộ của kiện). Không truyền: kỳ vọng = phần còn phải thu (hành vi cũ). Cài đặt `Payments` trong plugin (nếu có) phải thêm tham số.
+- `IncomingStock::dueBy(string $date)` — hàng đang về có ngày dự kiến ≤ ngày.
+- `ShipmentReader`, `ShipmentView` mở cho plugin (`experimental`).
+
+### Đổi
+- COD cộng dồn theo kiện: mỗi kiện giao ghi một `cod_collected`; đủ tổng mới `paid`. Số hãng báo khác số của kiện → "Đối soát lệch".
+- `FulfillmentService::split()` + thao tác "Giao trước phần có hàng" trên trang đơn (`POST admin/fulfillment/shipments/{id}/split`, ô `move_<order_line_id>`); lỗi `shipment.split_invalid`.
+- `vani.preorder` 1.1.0: chặn đẩy hãng theo từng kiện; ô "Đặt trước quá ngày dự kiến (SKU còn đơn chờ)" ở Việc cần làm.
+
 ## 0.5.35 — 2026-11-19 · Extension API 1.9.0 (không đổi)
 
 Backlog L20 (Owner: việc tồn kho hàng loạt lớn chạy nền). Không đổi API cho plugin.

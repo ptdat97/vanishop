@@ -130,17 +130,37 @@ final class PaymentSettlement
 
     /**
      * Hãng báo giao thành công vận đơn có COD → ghi nhận đã thu (cod_collected). Idempotent theo vận đơn.
+     *
+     * Đơn tách nhiều kiện thu theo giá trị từng kiện (0.5.36, L37): mỗi kiện một giao dịch `cod_collected`, cộng dồn; đủ tổng
+     * khoản thanh toán mới chuyển "đã thu"; thu vượt → "Đối soát lệch" như trước.
      */
-    public function collectCod(int $orderId, int $amount, string $shipmentReference): void
+    public function collectCod(int $orderId, int $amount, string $shipmentReference, ?int $expected = null): void
     {
-        DB::transaction(function () use ($orderId, $amount, $shipmentReference): void {
+        DB::transaction(function () use ($orderId, $amount, $shipmentReference, $expected): void {
             $payment = Payment::query()->where('order_id', $orderId)->lockForUpdate()->get()
                 ->first(fn (Payment $candidate): bool => $this->records->collectsOnDelivery($candidate->gateway_code));
-            if ($payment === null || $payment->status->everCollected() || ! $this->records->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
+            if ($payment === null || $payment->status->everCollected()) {
+                return;
+            }
+            $collected = (int) DB::table('payment_transactions')->where('payment_id', $payment->id)
+                ->where('type', 'cod_collected')->where('status', GatewayCallback::PAID)->sum('amount');
+            $expected ??= (int) $payment->amount - $collected;
+            if ($amount !== $expected) {
+                // Hãng thu thiếu/thừa so với kiện (hoặc so với phần còn phải thu): không ghi nhận, vào "Đối soát lệch".
+                Log::warning('Số tiền thu hộ không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $expected, 'received' => $amount]);
+                $this->records->amountMismatch($payment, Money::of($amount, $payment->currency_code), 'Số tiền thu không khớp khoản thanh toán', $expected);
+
+                return;
+            }
+            if (! $this->records->recordTransaction($payment, 'cod_collected', $shipmentReference, $amount, GatewayCallback::PAID, [])) {
+                return;
+            }
+            if ($collected + $amount < (int) $payment->amount) {
+                // Còn kiện chưa giao: chờ đủ tiền mới ghi nhận đã thu.
                 return;
             }
 
-            $this->capture($payment, Money::of($amount, $payment->currency_code), 'carrier', 'cod_collected');
+            $this->capture($payment, Money::of($collected + $amount, $payment->currency_code), 'carrier', 'cod_collected');
         });
     }
 

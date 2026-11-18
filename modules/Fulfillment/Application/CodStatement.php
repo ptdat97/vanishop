@@ -81,7 +81,7 @@ final class CodStatement
             $matched = $line['status'] === 'matched';
             DB::transaction(function () use ($line, $matched): void {
                 if ($matched) {
-                    $this->payments->collectCod((int) $line['order_id'], (int) $line['amount'], "cod-statement:{$line['tracking']}");
+                    $this->payments->collectCod((int) $line['order_id'], (int) $line['amount'], "cod-statement:{$line['tracking']}", (int) $line['expected']);
                 }
                 $this->ledger->record(self::SOURCE, $line['tracking'], $matched, $line['order_id'], null, $line['expected'], $line['amount'], $this->note($line));
             });

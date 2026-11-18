@@ -44,4 +44,10 @@ final class IncomingStockService implements IncomingStock
                 (int) $row->variant_id, (int) $row->quantity, $row->expected_on === null ? null : substr((string) $row->expected_on, 0, 10), (string) $row->source,
             )])->all();
     }
+
+    public function dueBy(string $date): array
+    {
+        return $this->forVariants(DB::table('incoming_stock')->whereNotNull('expected_on')->where('expected_on', '<=', $date)
+            ->pluck('variant_id')->map(fn (mixed $id): int => (int) $id)->all());
+    }
 }

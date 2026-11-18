@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Contracts\Data;
 
+use Modules\Shared\Contracts\PluginApi;
+
+#[PluginApi(PluginApi::EXPERIMENTAL)]
 final readonly class ShipmentView
 {
     /**

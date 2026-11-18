@@ -31,4 +31,4 @@
 - `StockLevel::reserve($qty, $backorder)` và `Allocation::allocate(..., $backorders)` nhận thêm hạn mức; mọi kiểm tra giữ hàng vẫn trong cùng transaction + khoá dòng (R14).
 - Hàng về thì **hạn mức cũ vẫn còn** nếu plugin không hạ: `vani.preorder` tính hạn mức từ hàng đang về và trừ hàng đang về khi nhập kho (`StockAdjusted`).
 - Báo cáo tồn có thể thấy `reserved > on_hand` ở kho bù tồn — đó là số đơn chờ hàng, hiển thị "Chờ hàng".
-- Không làm: đơn tách giao (phần có hàng giao trước), đặt cọc một phần, tự huỷ đơn đặt trước quá hạn — để plugin/đợt sau (backlog §6b).
+- ~~Không làm: đơn tách giao~~ — **0.5.36 (Owner 2026-11-19):** CSKH bấm "Giao trước phần có hàng" (tách vận đơn, COD theo từng kiện), nhắc CSKH khi quá ngày dự kiến ([fulfillment](../09-order/fulfillment.md)). Còn không làm: đặt cọc một phần, tự huỷ đơn đặt trước quá hạn (backlog §6b).

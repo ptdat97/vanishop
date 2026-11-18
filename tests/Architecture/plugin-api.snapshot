@@ -1,4 +1,4 @@
-Extension API 1.9.0
+Extension API 1.10.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -406,11 +406,15 @@ class Modules\Fulfillment\Contracts\Data\CarrierShipment
   __construct(string $trackingNumber, ?string $labelUrl = NULL, ?string $serviceCode = NULL)
 class Modules\Fulfillment\Contracts\Data\ShipmentData
   __construct(string $publicId, string $orderNumber, int $locationId, ?string $serviceCode, array $items, array $recipient, array $address, Modules\Shared\Domain\Money\Money $codAmount, ?string $trackingNumber = NULL)
+class Modules\Fulfillment\Contracts\Data\ShipmentView [experimental]
+  __construct(int $id, string $publicId, string $carrierCode, string $carrierLabel, ?string $serviceCode, ?string $trackingNumber, string $status, int $codAmount, ?string $lastError, array $lines, array $events, ?string $deliveredAt = NULL, int $locationId = 0)
 class Modules\Fulfillment\Contracts\Data\SourcingRequest
   __construct(int $orderId, array $lines, array $reserved, array $shippingAddress)
 interface Modules\Fulfillment\Contracts\DeliveryStatistics
   cod(DateTimeImmutable $from, DateTimeImmutable $to): array
 class Modules\Fulfillment\Contracts\InvalidCarrierEvent extends RuntimeException
+interface Modules\Fulfillment\Contracts\ShipmentReader [experimental]
+  forOrder(int $orderId): array
 interface Modules\Fulfillment\Contracts\ShippingCarrier
   const CARRIERS_TAG = 'vani.shipping.carriers'
   code(): string
@@ -492,6 +496,7 @@ class Modules\Inventory\Contracts\Data\ReservedLine
 interface Modules\Inventory\Contracts\IncomingStock [experimental]
   set(int $variantId, int $quantity, ?string $expectedOn, string $source): void
   forVariants(array $variantIds): array
+  dueBy(string $date): array
 interface Modules\Inventory\Contracts\InventoryReconciliation
   reconcileExternal(string $source, array $rows, bool $apply = true): array
 interface Modules\Inventory\Contracts\InventoryStrategy
@@ -796,7 +801,7 @@ interface Modules\Payment\Contracts\Payments
   retry(int $orderId, ?string $gatewayCode = NULL): Modules\Payment\Contracts\Data\PaymentView
   confirmManually(int $paymentId, string $note): void
   paymentId(string $paymentPublicId): ?int
-  collectCod(int $orderId, int $amount, string $reference): void
+  collectCod(int $orderId, int $amount, string $reference, ?int $expected = NULL): void
   collectCodManually(int $paymentId, string $note): void
   captureAuthorized(int $paymentId, string $source): void
   refund(int $paymentId, Modules\Shared\Domain\Money\Money $amount, string $reason, string $idempotencyKey): void

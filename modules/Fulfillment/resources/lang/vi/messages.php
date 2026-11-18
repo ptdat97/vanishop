@@ -11,6 +11,8 @@ return [
     'exists' => 'Đơn đã có vận đơn đang hoạt động.',
     'allocation_mismatch' => 'Phân bổ kho không khớp với hàng đang giữ cho đơn.',
     'tracking_taken' => 'Mã vận đơn đã được dùng cho vận đơn khác.',
+    'split_done' => 'Đã tách vận đơn: phần giao sau là vận đơn mới ở "Chờ đóng gói". Đẩy phần có hàng lên hãng như thường.',
+    'split_invalid' => 'Chọn số lượng cần giao sau cho ít nhất một dòng, và để lại ít nhất một món giao trước.',
     'booking_in_progress' => 'Vận đơn đang được đặt với hãng, vui lòng đợi vài giây rồi tải lại.',
     'created' => 'Đã tạo vận đơn.',
     'booked' => 'Đã ghi nhận mã vận đơn.',

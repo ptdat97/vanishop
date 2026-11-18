@@ -200,9 +200,9 @@ final class PaymentService implements Payments
         $this->settlement->confirmManually($paymentId, $note);
     }
 
-    public function collectCod(int $orderId, int $amount, string $shipmentReference): void
+    public function collectCod(int $orderId, int $amount, string $shipmentReference, ?int $expected = null): void
     {
-        $this->settlement->collectCod($orderId, $amount, $shipmentReference);
+        $this->settlement->collectCod($orderId, $amount, $shipmentReference, $expected);
     }
 
     public function collectCodManually(int $paymentId, string $note): void

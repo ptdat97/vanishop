@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Fulfillment\Contracts\Data\ShipmentData;
+use Modules\Fulfillment\Contracts\Data\ShipmentView;
+use Modules\Fulfillment\Contracts\ShipmentReader;
 use Modules\Inventory\Contracts\BackorderPolicy;
 use Modules\Inventory\Contracts\Backorders;
 use Modules\Inventory\Contracts\IncomingStock;
@@ -141,19 +143,70 @@ final class PreorderServiceProvider extends PluginServiceProvider
             return $rows;
         };
 
-        $this->onValidate('vani.fulfillment.before_push', function (ShipmentData $shipment) use ($waiting): array {
+        $this->onValidate('vani.fulfillment.before_push', function (ShipmentData $shipment): array {
             if (! (bool) vani_setting(self::ID, 'block_push', true)) {
                 return [];
             }
-            $rows = $waiting($this->app->make(OrderReader::class)->findByNumber($shipment->orderNumber)?->reservationKey);
+            $order = $this->app->make(OrderReader::class)->findByNumber($shipment->orderNumber);
+            $short = $order === null ? [] : $this->shortInShipment($order->id, (string) $order->reservationKey, $shipment->publicId);
 
-            return $rows === [] ? [] : ['Đơn đặt trước còn chờ hàng: '.implode(', ', array_column($rows, 'label')).' — nhập kho khi hàng về rồi đẩy lên hãng'];
+            return $short === [] ? [] : ['Vận đơn còn món chờ hàng: '.implode(', ', $short).' — nhập kho khi hàng về rồi đẩy lên hãng, hoặc "Giao trước phần có hàng" trên trang đơn'];
+        });
+        // Nhắc CSKH (L37): SKU đặt trước còn đơn chờ mà đã quá ngày dự kiến có hàng → cập nhật ngày hàng về hoặc báo khách.
+        $this->onSlot('vani.admin.dashboard.tasks', function (): array {
+            $due = $this->app->make(IncomingStock::class)->dueBy(now()->subDay()->format('Y-m-d'));
+            $overdue = $due === [] ? 0 : count(array_filter($this->app->make(Backorders::class)->status(array_keys($due)), fn (array $row): bool => $row['waiting'] > 0));
+
+            return [['key' => 'preorder.overdue', 'label' => 'Đặt trước quá ngày dự kiến (SKU còn đơn chờ)', 'count' => $overdue, 'url' => route('admin.inventory.stock.index'), 'tone' => 'warning', 'order' => 35]];
         });
         $this->onSlot('vani.admin.order.sidebar', function (OrderDetail $order) use ($waiting): ?array {
             $rows = $waiting($this->app->make(OrderReader::class)->find($order->id)?->reservationKey);
 
             return $rows === [] ? null : ['title' => 'Đặt trước — chờ hàng', 'rows' => $rows];
         });
+    }
+
+    /**
+     * Món của vận đơn `$shipmentPublicId` chưa có hàng: số có hàng của mỗi SKU (đặt − chờ) chia cho các vận đơn của đơn theo
+     * thứ tự tạo (vận đơn trước nhận trước); vận đơn này thiếu thì chặn đẩy. Đơn đã "Giao trước phần có hàng" → kiện có
+     * hàng đẩy được, kiện giao sau bị chặn tới khi hàng về.
+     *
+     * @return list<string> "SKU × số thiếu"
+     */
+    private function shortInShipment(int $orderId, string $reservationKey, string $shipmentPublicId): array
+    {
+        $waiting = $reservationKey === '' ? [] : $this->app->make(Backorders::class)->waitingFor($reservationKey);
+        if ($waiting === []) {
+            return [];
+        }
+        $shipments = array_values(array_filter($this->app->make(ShipmentReader::class)->forOrder($orderId), fn (ShipmentView $view): bool => $view->status !== 'cancelled'));
+        usort($shipments, fn (ShipmentView $a, ShipmentView $b): int => $a->id <=> $b->id);
+        $ordered = [];
+        foreach ($shipments as $view) {
+            foreach ($view->lines as $line) {
+                $ordered[$line['variant_id']] = ($ordered[$line['variant_id']] ?? 0) + $line['quantity'];
+            }
+        }
+        $available = [];
+        foreach ($ordered as $variantId => $quantity) {
+            $available[$variantId] = max(0, $quantity - ($waiting[$variantId] ?? 0));
+        }
+        $variants = $this->app->make(VariantDirectory::class)->find(array_keys($waiting));
+        foreach ($shipments as $view) {
+            $short = [];
+            foreach ($view->lines as $line) {
+                $given = min($line['quantity'], $available[$line['variant_id']] ?? 0);
+                $available[$line['variant_id']] = ($available[$line['variant_id']] ?? 0) - $given;
+                if ($line['quantity'] > $given) {
+                    $short[] = ($variants[$line['variant_id']]->sku ?? "#{$line['variant_id']}").' × '.($line['quantity'] - $given);
+                }
+            }
+            if ($view->publicId === $shipmentPublicId) {
+                return $short;
+            }
+        }
+
+        return [];
     }
 
     private static function shortDate(?string $date): ?string

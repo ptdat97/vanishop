@@ -84,8 +84,11 @@ interface Payments
 
     /**
      * Ghi nhận đã thu tiền khi giao theo đơn (bảng kê COD của hãng, EP v3 X5). Idempotent theo `$reference`.
+     *
+     * Đơn tách nhiều kiện (0.5.36): mỗi kiện một lần gọi, `$expected` = tiền thu hộ của kiện đó; cộng dồn đủ tổng khoản thanh
+     * toán mới "đã thu". `$amount` khác `$expected` (mặc định: phần còn phải thu) → "Đối soát lệch", không ghi nhận.
      */
-    public function collectCod(int $orderId, int $amount, string $reference): void;
+    public function collectCod(int $orderId, int $amount, string $reference, ?int $expected = null): void;
 
     /**
      * Nhân viên/plugin ghi nhận đã thu COD (shop tự giao, hãng không báo). Idempotent; đơn đã huỷ → PaymentRejected.

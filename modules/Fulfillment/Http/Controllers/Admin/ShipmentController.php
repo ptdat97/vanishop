@@ -157,6 +157,23 @@ final class ShipmentController
         return $blocked === [] ? $redirect : $redirect->withErrors(['business' => implode(' · ', array_slice($blocked, 0, 5))]);
     }
 
+    /**
+     * "Giao trước phần có hàng" (L37): ô `move_<order_line_id>` = số lượng chuyển sang vận đơn giao sau.
+     */
+    public function split(Shipment $shipment, Request $request, FulfillmentService $fulfillment): RedirectResponse
+    {
+        Gate::authorize('fulfillment.manage');
+        $move = [];
+        foreach ($request->all() as $key => $value) {
+            if (preg_match('/^move_(\d+)$/', (string) $key, $match) === 1 && is_scalar($value) && preg_match('/^\d{1,6}$/', trim((string) $value)) === 1) {
+                $move[(int) $match[1]] = (int) trim((string) $value);
+            }
+        }
+        $fulfillment->split($shipment->id, $move, (int) $request->user('staff')?->getAuthIdentifier());
+
+        return back()->with('success', __('fulfillment::messages.split_done'));
+    }
+
     public function push(Shipment $shipment, FulfillmentService $fulfillment): RedirectResponse
     {
         Gate::authorize('fulfillment.manage');

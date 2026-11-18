@@ -74,6 +74,7 @@ sequenceDiagram
 
 ## 5. COD và chuyển khoản thủ công (Core)
 
+- **Đơn tách nhiều kiện (0.5.36, L37):** COD thu theo giá trị từng kiện. Mỗi kiện giao thành công ghi một giao dịch `cod_collected` (idempotent theo vận đơn) với số kỳ vọng của kiện (`Payments::collectCod(..., $expected)`); cộng dồn đủ tổng khoản thanh toán mới chuyển `paid` / đơn `cod_collected`. Số hãng báo khác số của kiện (hoặc khác phần còn phải thu khi không truyền `$expected`) → "Đối soát lệch", không ghi nhận.
 - **COD**: đặt hàng → `payment_status = cod_pending` → **nhân viên gọi/nhắn xác nhận** → `confirmed` (chốt ①, [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)). Tự xác nhận (`vani.cod` `auto_confirm_mode` = `trusted`/`all`, hoặc plugin) là điểm mở rộng, mặc định `off` (`vani.cod` 1.2.0, Core 0.4.53). Giao thành công → `cod_collected` (khi hãng báo hoặc đối soát xác nhận). Shop tự giao, hãng không báo, hoặc đơn hoàn tất ngoài trình tự → nhân viên bấm **Đã thu tiền** (danh sách Thanh toán hoặc thẻ Thanh toán trên trang đơn; quyền `payments.confirm`, ghi chú bắt buộc; đơn đã huỷ thì từ chối). Đã thu rồi thì hãng báo giao sau đó không ghi nhận lần hai (0.4.50). Giới hạn giá trị COD theo cấu hình.
 - **Chuyển khoản thủ công**: hiển thị số tài khoản của cửa hàng + nội dung = mã đơn; nhân viên có quyền `payments.confirm` xác nhận đã nhận tiền (audit).
 

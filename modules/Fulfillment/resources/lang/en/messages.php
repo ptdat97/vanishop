@@ -11,6 +11,8 @@ return [
     'exists' => 'The order already has active shipments.',
     'allocation_mismatch' => 'The allocation does not match the stock reserved for the order.',
     'tracking_taken' => 'This tracking number is already used by another shipment.',
+    'split_done' => 'Shipment split: the later part is a new shipment waiting to be packed. Push the in-stock part to the carrier as usual.',
+    'split_invalid' => 'Choose a quantity to ship later for at least one line, and keep at least one item to ship first.',
     'booking_in_progress' => 'This shipment is being booked with the carrier, please wait a few seconds and reload.',
     'created' => 'Shipment created.',
     'booked' => 'Tracking number recorded.',

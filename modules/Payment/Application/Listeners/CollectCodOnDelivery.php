@@ -22,6 +22,6 @@ final class CollectCodOnDelivery
             return;
         }
 
-        $this->context->runAs(ContextScope::system('cod collected'), fn () => $this->payments->collectCod($event->orderId, $event->codAmount, "shipment:{$event->shipmentId}"));
+        $this->context->runAs(ContextScope::system('cod collected'), fn () => $this->payments->collectCod($event->orderId, $event->codAmount, "shipment:{$event->shipmentId}", $event->codAmount));
     }
 }
