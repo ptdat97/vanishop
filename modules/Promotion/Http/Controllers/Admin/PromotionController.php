@@ -69,7 +69,7 @@ final class PromotionController
     {
         Gate::authorize('promotion.manage');
 
-        return $this->form(null, $registry);
+        return $this->form(null, $registry, null);
     }
 
     public function store(PromotionRequest $request, PromotionService $service): RedirectResponse
@@ -79,11 +79,11 @@ final class PromotionController
         return redirect()->route('admin.promotion.promotions.edit', ['promotion' => $promotion->id])->with('success', __('promotion::messages.saved'));
     }
 
-    public function edit(Promotion $promotion, PromotionRegistry $registry): Response
+    public function edit(Promotion $promotion, PromotionRegistry $registry, Request $request): Response
     {
         Gate::authorize('promotion.manage');
 
-        return $this->form($promotion, $registry);
+        return $this->form($promotion, $registry, $request);
     }
 
     public function update(Promotion $promotion, PromotionRequest $request, PromotionService $service): RedirectResponse
@@ -125,8 +125,18 @@ final class PromotionController
         return back()->with('success', __('promotion::messages.saved'));
     }
 
-    private function form(?Promotion $promotion, PromotionRegistry $registry): Response
+    /** Số mã giảm giá mỗi trang trong form khuyến mãi (backlog L32: trước chỉ hiện 200 mã mới nhất, không tìm được). */
+    private const VOUCHERS_PER_PAGE = 50;
+
+    private function form(?Promotion $promotion, PromotionRegistry $registry, ?Request $request): Response
     {
+        $voucherQuery = trim((string) $request?->query('voucher_q', ''));
+        $vouchers = $promotion?->vouchers()
+            ->when($voucherQuery !== '', fn ($query) => $query->where('code', 'like', '%'.addcslashes(Voucher::normalize($voucherQuery), '%_\\').'%'))
+            ->orderByDesc('id')
+            ->paginate(self::VOUCHERS_PER_PAGE, pageName: 'voucher_page')
+            ->withQueryString();
+
         return Inertia::render('Promotion::Promotions/Form', [
             'baseUrl' => route('admin.promotion.promotions.index'),
             'labels' => __('promotion::labels'),
@@ -137,7 +147,7 @@ final class PromotionController
                 'ends_at' => StoreClock::toInput($promotion->ends_at),
                 'rules' => $promotion->rules->map(fn ($rule): array => ['type' => $rule->rule_type, 'label' => $registry->rule($rule->rule_type)?->label(), 'config' => $rule->config])->all(),
             ],
-            'vouchers' => $promotion === null ? [] : $promotion->vouchers()->orderByDesc('id')->limit(200)->get()->map(fn (Voucher $voucher): array => [
+            'vouchers' => $vouchers === null ? [] : collect($vouchers->items())->map(fn (Voucher $voucher): array => [
                 'id' => $voucher->id,
                 'code' => $voucher->code,
                 'status' => $voucher->status,
@@ -146,6 +156,12 @@ final class PromotionController
                 'expires_at' => StoreClock::format($voucher->expires_at),
             ])->all(),
             'vouchersTotal' => $promotion?->vouchers()->count() ?? 0,
+            // Phân trang + tìm theo mã (chuẩn hoá như khi tạo mã): khuyến mãi có hàng nghìn mã riêng cho từng khách.
+            'voucherFilters' => ['q' => $voucherQuery],
+            'voucherPagination' => $vouchers === null ? null : [
+                'page' => $vouchers->currentPage(), 'last_page' => $vouchers->lastPage(), 'from' => $vouchers->firstItem(),
+                'to' => $vouchers->lastItem(), 'total' => $vouchers->total(), 'per_page' => $vouchers->perPage(),
+            ],
             'actions' => array_map(fn ($action): array => ['type' => $action->type(), 'label' => $action->label()], array_values($registry->actions())),
             'ruleTypes' => array_map(fn ($rule): array => ['type' => $rule->type(), 'label' => $rule->label()], array_values($registry->rules())),
             'stackings' => array_column(Stacking::cases(), 'value'),

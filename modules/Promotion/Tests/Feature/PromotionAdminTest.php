@@ -89,6 +89,25 @@ it('tạo voucher cụ thể và sinh hàng loạt, mã duy nhất', function ()
         ->and($codes->filter(fn ($code) => str_starts_with($code, 'LM') && strlen($code) === 10))->toHaveCount(25);
 });
 
+it('form khuyến mãi: voucher phân trang 50 mã/trang, tìm theo mã (không phân biệt hoa thường, ký tự % là chữ thường) — L32', function () {
+    $this->post($this->base, promotionPayload());
+    $promotion = T::seed(fn () => Promotion::query()->sole());
+    $this->post("{$this->base}/{$promotion->id}/vouchers", ['prefix' => 'VIP', 'count' => 120, 'usage_limit' => 1])->assertSessionHasNoErrors();
+    $this->post("{$this->base}/{$promotion->id}/vouchers", ['code' => 'TET2027', 'usage_limit' => 5])->assertSessionHasNoErrors();
+    $edit = "{$this->base}/{$promotion->id}/edit";
+
+    $this->get($edit)->assertInertia(fn (Assert $page) => $page
+        ->where('vouchersTotal', 121)
+        ->has('vouchers', 50)
+        ->where('vouchers.0.code', 'TET2027')
+        ->where('voucherPagination', ['page' => 1, 'last_page' => 3, 'from' => 1, 'to' => 50, 'total' => 121, 'per_page' => 50]));
+    $this->get("{$edit}?voucher_page=3")->assertInertia(fn (Assert $page) => $page->has('vouchers', 21)->where('voucherPagination.page', 3));
+
+    $this->get("{$edit}?voucher_q=tet20")->assertInertia(fn (Assert $page) => $page
+        ->has('vouchers', 1)->where('vouchers.0.code', 'TET2027')->where('voucherFilters.q', 'tet20')->where('voucherPagination.total', 1));
+    $this->get("{$edit}?voucher_q=%25")->assertInertia(fn (Assert $page) => $page->has('vouchers', 0));
+});
+
 it('lưu và xoá điều kiện của plugin, từ chối loại chưa đăng ký hoặc config sai', function () {
     app(Extensions::class)->tag([MinQuantityTestRule::class], PromotionRegistry::RULES_TAG);
 

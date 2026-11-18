@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.28 — 2026-11-18 · Extension API 1.4.0 (không đổi)
+
+Backlog L32. Không đổi API cho plugin.
+
+### Đổi (Admin)
+- Form khuyến mãi: danh sách voucher phân trang 50 mã/trang (`voucher_page`) và ô tìm theo mã (`voucher_q`, chuẩn hoá như khi tạo mã) — trước chỉ hiện 200 mã mới nhất, khuyến mãi có hàng nghìn mã riêng cho từng khách thì mã cũ không bật/tắt được. Props mới `voucherFilters`, `voucherPagination`.
+
 ## 0.5.27 — 2026-11-18 · Extension API 1.4.0 (không đổi)
 
 Backlog L31: đặt vận đơn không giữ khoá trong lúc chờ hãng. Không đổi API cho plugin (`ShippingCarrier::createShipment` vẫn được gọi một lần cho mỗi lần đặt, nay ngoài transaction).

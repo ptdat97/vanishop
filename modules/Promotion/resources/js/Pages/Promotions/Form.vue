@@ -5,6 +5,7 @@ import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
+import Pagination from '@admin/Components/Pagination.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { codeOptions, labelOptions } from '@admin/options';
@@ -45,6 +46,8 @@ const props = defineProps<{
     };
     vouchers: Array<{ id: number; code: string; status: string; used_count: number; usage_limit: number | null; expires_at: string | null }>;
     vouchersTotal: number;
+    voucherFilters: { q: string };
+    voucherPagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number } | null;
     actions: Array<{ type: string; label: string }>;
     ruleTypes: Array<{ type: string; label: string }>;
     stackings: string[];
@@ -135,6 +138,16 @@ function createVouchers(): void {
     voucherForm.post(`${props.baseUrl}/${props.promotion!.id}/vouchers`, { preserveScroll: true, onSuccess: () => voucherForm.reset('code', 'count') });
 }
 
+// Tìm mã / chuyển trang danh sách voucher: chỉ tải lại phần voucher, giữ vị trí cuộn và dữ liệu form đang sửa.
+const voucherSearch = ref(props.voucherFilters.q);
+function loadVouchers(page = 1): void {
+    router.get(
+        `${props.baseUrl}/${props.promotion!.id}/edit`,
+        { voucher_q: voucherSearch.value.trim() || undefined, voucher_page: page > 1 ? page : undefined },
+        { only: ['vouchers', 'voucherFilters', 'voucherPagination'], preserveState: true, preserveScroll: true, replace: true },
+    );
+}
+
 function toggleVoucher(voucher: { id: number; status: string }): void {
     router.patch(`${props.baseUrl}/${props.promotion!.id}/vouchers/${voucher.id}`, { status: voucher.status === 'active' ? 'inactive' : 'active' }, { preserveScroll: true });
 }
@@ -206,7 +219,11 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
             <button type="submit" :class="primaryButton" :disabled="voucherForm.processing">Tạo mã</button>
             <p v-for="(error, key) in voucherForm.errors" :key="key" class="text-sm text-red-600 sm:col-span-5">{{ error }}</p>
         </form>
-        <DataTable :columns="voucherColumns" :rows="vouchers" empty-text="Chưa có voucher.">
+        <form class="mb-3 flex gap-2" role="search" @submit.prevent="loadVouchers()">
+            <input v-model="voucherSearch" :class="inputClass" type="search" placeholder="Tìm mã, vd. SALE10" aria-label="Tìm voucher theo mã" />
+            <button type="submit" :class="secondaryButton">Tìm</button>
+        </form>
+        <DataTable :columns="voucherColumns" :rows="vouchers" :empty-text="voucherFilters.q ? 'Không có mã khớp.' : 'Chưa có voucher.'">
             <template #cell-code="{ row }">{{ row.code }}<span v-if="row.status !== 'active'" class="font-sans text-xs text-slate-400"> · tắt</span></template>
             <template #cell-used_count="{ row }">{{ row.used_count }}<span v-if="row.usage_limit"> / {{ row.usage_limit }}</span></template>
             <template #cell-expires_at="{ row }">{{ row.expires_at ?? '—' }}</template>
@@ -214,5 +231,14 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
                 <button type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(row)">{{ row.status === 'active' ? 'Tắt' : 'Bật' }}</button>
             </template>
         </DataTable>
+        <Pagination
+            v-if="voucherPagination"
+            :current="voucherPagination.page"
+            :last="voucherPagination.last_page"
+            :from="voucherPagination.from"
+            :to="voucherPagination.to"
+            :total="voucherPagination.total"
+            @change="loadVouchers($event)"
+        />
     </section>
 </template>
