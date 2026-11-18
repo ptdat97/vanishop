@@ -105,6 +105,7 @@ it('trang chủ render khối của plugin + script; giỏ có thanh "Đã xem" 
         ['type' => 'extras_recently_viewed', 'config' => ['title' => 'Bạn đã xem gần đây']],
     ]));
     $this->get('/')->assertOk()->assertSee('Giao nhanh 2h')->assertSee('data-extras-recent', false)
+        ->assertSee('<path d="M3 7h11v8H3z', false) // đường SVG biểu tượng do khối dựng sẵn
         ->assertSee('https://shop.test/plugins/vani.storefront-extras/extras.', false);
 
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1]);
@@ -112,4 +113,19 @@ it('trang chủ render khối của plugin + script; giỏ có thanh "Đã xem" 
 
     T::seed(fn () => app(Settings::class)->set(StorefrontExtrasServiceProvider::ID, 'recent_on_cart', false));
     $this->get('/gio-hang')->assertOk()->assertDontSee('data-extras-recent', false);
+});
+
+it('lưới banner: ô lớn (bố cục 1 ô, ô đầu của bố cục 3 ô) rộng cả khung, ô khác nửa khung — partial ảnh của theme tính sizes', function () {
+    $cells = app(BannerGridBlock::class)->resolve(['layout' => '3', 'cell_1_image' => '/img/a.jpg', 'cell_2_image' => '/img/b.jpg', 'cell_2_link' => 'javascript:alert(1)'], 'vi')['cells'];
+
+    expect(array_map(fn (array $cell) => [$cell['wide'], $cell['image_layout'], $cell['href']], $cells))->toBe([
+        [true, [1152, 1, 1], '#'],
+        [false, [1152, 2, 1], '#'],
+    ])->and(app(BannerGridBlock::class)->resolve(['layout' => '1', 'cell_1_image' => '/img/a.jpg'], 'vi')['cells'][0]['wide'])->toBeTrue();
+});
+
+it('view của plugin không gọi lớp Core, không tự tính (dữ liệu dựng sẵn ở khối/provider)', function () {
+    foreach (glob(dirname(__DIR__, 2).'/Resources/views/{,*/}*.blade.php', GLOB_BRACE) as $file) {
+        expect((string) file_get_contents($file))->not->toContain('\\Modules\\')->not->toContain('@php');
+    }
 });

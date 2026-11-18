@@ -42,7 +42,11 @@ final class StorefrontController
         }
         $this->seo->alternates($urls, $lookbook->translatedLocales());
 
-        return view('vani-lookbook::pages.show', ['lookbook' => $this->presenter->detail($lookbook, App::getLocale())]);
+        $detail = $this->presenter->detail($lookbook, App::getLocale());
+        // Breadcrumb dựng sẵn (partial breadcrumb của theme thêm Trang chủ, JSON-LD).
+        $crumbs = [['label' => __('Lookbook'), 'url' => vani_route('storefront.p.vani-lookbook.index')], ['label' => (string) $detail['name']]];
+
+        return view('vani-lookbook::pages.show', ['lookbook' => $detail, 'crumbs' => $crumbs]);
     }
 
     public function apiIndex(Request $request): JsonResponse

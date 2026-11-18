@@ -15,6 +15,9 @@ final class BannerGridBlock implements StorefrontBlock
 {
     public const CELLS = 4;
 
+    /** Bề rộng khung nội dung của theme (px). */
+    private const CONTAINER = 1152;
+
     public function type(): string
     {
         return 'extras_banner_grid';
@@ -44,7 +47,15 @@ final class BannerGridBlock implements StorefrontBlock
         foreach (range(1, $layout) as $i) {
             [$image, $srcset] = Products::image($config["cell_{$i}_media"] ?? null, $config["cell_{$i}_image"] ?? '', 1200);
             if ($image !== '') {
-                $cells[] = ['image' => $image, 'srcset' => $srcset, 'title' => (string) ($config["cell_{$i}_title"] ?? ''), 'link' => Products::safeUrl($config["cell_{$i}_link"] ?? '')];
+                // Ô lớn: bố cục 1 ô, hoặc ô đầu của bố cục 3 ô (chiếm 2 cột × 2 hàng) — rộng cả khung; còn lại nửa khung.
+                $wide = $layout === 1 || ($layout === 3 && $cells === []);
+                $link = Products::safeUrl($config["cell_{$i}_link"] ?? '');
+                $cells[] = [
+                    'image' => $image, 'srcset' => $srcset !== '' ? $srcset : null, 'title' => (string) ($config["cell_{$i}_title"] ?? ''),
+                    'link' => $link, 'href' => $link !== '' ? $link : '#', 'wide' => $wide,
+                    // [khung px, cột desktop, cột mobile] cho partial ảnh của theme (→ `sizes`).
+                    'image_layout' => [self::CONTAINER, $wide ? 1 : 2, 1],
+                ];
             }
         }
 

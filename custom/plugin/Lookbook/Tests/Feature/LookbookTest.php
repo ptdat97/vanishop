@@ -130,3 +130,20 @@ it('ảnh bìa ở lưới dùng kích thước riêng của plugin (lookbook.co
     expect($this->get('/lookbook')->getContent())->toContain($cover->checksum.'-w500h500c.jpg')
         ->and(collect($sizes->catalog())->firstWhere('name', LookbookImageSizes::COVER)['overridden'])->toBeTrue();
 });
+
+it('chi tiết: breadcrumb dựng ở controller (Lookbook → tên, JSON-LD), ảnh qua partial ảnh của theme (ảnh đầu tải ngay)', function () {
+    $lookbook = ($this->save)();
+
+    $html = $this->get('/lookbook/'.$lookbook->slug)->assertOk()
+        ->assertSee('data-vani-breadcrumb', false)->assertSee('"name":"Lookbook","item":"'.url('/lookbook').'"', false)->getContent();
+    preg_match_all('#<a [^>]*rel="noopener"[^>]*>\s*<img ([^>]*)>#', $html, $images);
+    expect($images[1])->toHaveCount(2)
+        ->and($images[1][0])->toContain('fetchpriority="high"')->not->toContain('loading="lazy"')
+        ->and($images[1][1])->toContain('loading="lazy"');
+});
+
+it('view của plugin không gọi lớp Core (breadcrumb dựng ở controller, ảnh qua partial ảnh của theme)', function () {
+    foreach (glob(dirname(__DIR__, 2).'/Resources/views/{,*/}*.blade.php', GLOB_BRACE) as $file) {
+        expect((string) file_get_contents($file))->not->toContain('\\Modules\\');
+    }
+});

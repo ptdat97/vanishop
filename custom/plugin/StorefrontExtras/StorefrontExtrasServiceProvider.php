@@ -54,6 +54,6 @@ final class StorefrontExtrasServiceProvider extends PluginServiceProvider
                 'exclude' => array_values(array_filter(array_map(fn (array $line): ?string => $line['product']['slug'] ?? null, (array) ($cart['lines'] ?? [])))),
             ]);
         });
-        $this->onSlot('vani.storefront.layout.body_end', fn (): SlotView => new SlotView('vani-storefront-extras::script'));
+        $this->onSlot('vani.storefront.layout.body_end', fn (): SlotView => new SlotView('vani-storefront-extras::script', ['src' => vani_asset(self::ID, 'extras.js')]));
     }
 }
