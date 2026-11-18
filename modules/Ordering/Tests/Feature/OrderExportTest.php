@@ -40,7 +40,7 @@ it('mỗi đơn một dòng, mới nhất trước: số đơn, trạng thái, k
         ->and($rows[1][2])->toBe('Chờ xác nhận')
         ->and($rows[1][7])->toBe('+84912345678')
         ->and((int) $rows[1][15])->toBe(900_000)
-        ->and(DB::table('audit_logs')->where('action', 'orders.exported')->value('changes'))->toContain('"rows":2');
+        ->and(json_decode((string) DB::table('audit_logs')->where('action', 'orders.exported')->value('changes'), true))->toMatchArray(['mode' => 'orders', 'rows' => 2]);
 });
 
 it('theo dòng SKU và theo bộ lọc của danh sách (số đơn)', function () {
