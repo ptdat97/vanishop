@@ -167,7 +167,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $navigation->group('system', 'Hệ thống', 800);
         $navigation->add('dashboard', 'Tổng quan', 'admin.dashboard', 'admin.access', 0);
         $navigation->add('reports', 'Báo cáo', 'admin.reports.index', 'admin.access', 500, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);
-        $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 880);
+        $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 810);
         $navigation->add('settings', 'Cấu hình', 'admin.settings.index', 'settings.manage', 840, group: 'system');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
