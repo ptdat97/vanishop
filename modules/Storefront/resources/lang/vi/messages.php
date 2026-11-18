@@ -56,6 +56,7 @@ return [
     'menu_published' => 'Đã xuất bản menu.',
     'menu_discarded' => 'Đã bỏ thay đổi chưa xuất bản.',
     'menu_restored' => 'Đã đưa phiên bản cũ vào nháp. Xuất bản để áp dụng.',
+    'return_photos_added' => 'Đã gửi thêm ảnh cho yêu cầu đổi/trả.',
     'return_shipped' => 'Đã ghi nhận bạn gửi hàng về. Cửa hàng sẽ báo khi nhận được.',
     'payment_restarted' => 'Đã tạo lại yêu cầu thanh toán. Làm theo hướng dẫn bên dưới.',
     'order_received' => 'Cảm ơn bạn đã xác nhận nhận hàng.',

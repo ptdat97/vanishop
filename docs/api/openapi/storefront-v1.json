@@ -1107,6 +1107,50 @@
                 ]
             }
         },
+        "/orders/{order}/returns/{return}/photos": {
+            "post": {
+                "tags": [
+                    "Đổi trả"
+                ],
+                "summary": "Gửi thêm ảnh cho yêu cầu còn mở",
+                "responses": {
+                    "200": {
+                        "description": "Đơn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/order.json"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "orderToken": []
+                    },
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ],
+                "description": "multipart/form-data `photos[]` (jpg/png/webp, ≤ 5 MB/ảnh, tổng ≤ 5 ảnh mỗi yêu cầu). Chỉ khi `returns[].can_add_photos` = true (chờ duyệt/đã duyệt); yêu cầu đã đóng → 422."
+            }
+        },
         "/payments/{payment}": {
             "get": {
                 "tags": [

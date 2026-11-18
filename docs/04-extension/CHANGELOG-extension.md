@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.30 — 2026-11-18 · Extension API 1.6.0
+
+Backlog L16 (Owner quyết: giữ ảnh đổi trả 90 ngày sau khi yêu cầu đóng).
+
+### Thêm (API cho plugin — minor)
+- `OrderReader::customerOrderIds(int $customerId): list<int>` — mọi đơn của một khách (kể cả đơn huỷ), để xoá dữ liệu cá nhân gắn với đơn khi khách bị ẩn danh hoá.
+- `ReturnView::$acceptsAttachments` — yêu cầu còn nhận thêm ảnh (chờ duyệt/đã duyệt, chưa đủ 5 ảnh).
+
+### Thêm (Storefront API — không phá vỡ)
+- `POST /orders/{order}/returns/{return}/photos` (multipart `photos[]`): khách gửi thêm ảnh cho yêu cầu còn mở; `returns[].can_add_photos` trong đơn. Blade: form "Gửi thêm ảnh" trên trang đơn (`storefront.order.returns.photos`).
+
+### Đổi
+- Ảnh đổi trả là dữ liệu cá nhân: lệnh hằng đêm `vani:returns:purge-attachments` (03:45) xoá ảnh (file + dòng) của yêu cầu đã hoàn tất/từ chối/huỷ quá `vanishop.returns.attachments_retention_days` (90, `VANI_RETURN_ATTACHMENTS_RETENTION_DAYS`); khách bị ẩn danh hoá (`CustomerAnonymized`) → xoá ngay ảnh của mọi đơn của khách.
+
 ## 0.5.29 — 2026-11-18 · Extension API 1.5.0
 
 Backlog L22.

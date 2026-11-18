@@ -56,6 +56,17 @@ final class ReturnController
         return back()->with('status', __('storefront::messages.return_shipped'));
     }
 
+    /**
+     * Gửi thêm ảnh cho yêu cầu còn mở (chờ duyệt / đã duyệt, tối đa 5 ảnh) — L16.
+     */
+    public function photos(Request $request, string $order, string $return, Session $session): RedirectResponse
+    {
+        $data = $request->validate(ReturnRequestForm::photoRules(required: true));
+        $this->returns->attachPhotos($this->detail($request, $order, $session)->id, $return, array_values($data['photos']), 'customer');
+
+        return back()->with('status', __('storefront::messages.return_photos_added'));
+    }
+
     private function detail(Request $request, string $order, Session $session): OrderDetail
     {
         $stored = (array) $session->get("vani.orders.{$order}", []);

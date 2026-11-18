@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -248,6 +250,13 @@ it('sau khi giao: xác nhận đã nhận, đổi trả (gửi, huỷ, báo đã
     $return = ReturnRequest::query()->latest('id')->first();
     $this->actingAs(T::staff(['admin.access', 'returns.view', 'returns.manage']), 'staff')
         ->post("/admin/returns/returns/{$return->id}/transition", ['to' => 'approved', 'lock_version' => $return->lock_version])->assertSessionHasNoErrors();
+    Storage::fake('local');
+    $withPhoto = assertStorefrontContract(
+        $this->post("{$base}/returns/{$return->public_id}/photos", ['photos' => [UploadedFile::fake()->image('loi.jpg', 400, 400)]], [...$headers, 'Accept' => 'application/json'])->assertOk(),
+        '/orders/{order}/returns/{return}/photos', 'POST',
+    );
+    $withPhotoReturn = collect($withPhoto->json('data.returns'))->firstWhere('id', $return->public_id);
+    expect($withPhotoReturn['attachments'])->toHaveCount(1)->and($withPhotoReturn['can_add_photos'])->toBeTrue();
     assertStorefrontContract($this->postJson("{$base}/returns/{$return->public_id}/shipped", ['tracking_number' => 'GHN123'], $headers)->assertOk(), '/orders/{order}/returns/{return}/shipped', 'POST');
 
     assertStorefrontContract($this->postJson("{$base}/received", [], $headers)->assertOk(), '/orders/{order}/received', 'POST');

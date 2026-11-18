@@ -72,6 +72,19 @@ final class OrderController
     /**
      * Khách báo đã gửi hàng về (0.3.74): yêu cầu đã duyệt → đang gửi về, mã vận đơn trả tuỳ chọn.
      */
+    /**
+     * Gửi thêm ảnh (multipart `photos[]`) cho yêu cầu đổi trả còn mở — L16. Trả đơn (kèm `returns[].attachments`).
+     */
+    public function addReturnPhotos(Request $request, string $order, string $return, Returns $returns): JsonResponse
+    {
+        $data = $request->validate(ReturnRequestForm::photoRules(required: true));
+        $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
+        abort_if($detail === null, 404, __('ordering::messages.not_found'));
+        $returns->attachPhotos($detail->id, $return, array_values($data['photos']), 'customer');
+
+        return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))]);
+    }
+
     public function markReturnShipped(Request $request, string $order, string $return, Returns $returns): JsonResponse
     {
         $data = $request->validate(['tracking_number' => ['nullable', 'string', 'max:64']]);

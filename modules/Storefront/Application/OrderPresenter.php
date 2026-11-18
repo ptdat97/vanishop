@@ -74,6 +74,8 @@ final class OrderPresenter
                 'reason' => $this->returns->reasonLabel($return->reasonCode, App::getLocale()), 'resolution' => $return->resolution,
                 'return_tracking_number' => $return->returnTrackingNumber,
                 'attachments' => $return->attachments,
+                // Khách còn gửi thêm ảnh được (chờ duyệt/đã duyệt, chưa đủ 5 ảnh) — L16.
+                'can_add_photos' => $return->acceptsAttachments,
                 'refund' => $money($return->refundedAmount ?? $return->refundAmount), 'created_at' => $return->createdAt,
                 'lines' => array_map(fn (array $line): array => ['order_line_id' => $line['order_line_id'], 'name' => $line['name'], 'quantity' => $line['quantity']], $return->lines),
             ], $this->returns->forOrder($order->id)),

@@ -59,8 +59,7 @@ final class ReturnRequestForm extends FormRequest
             'reason_code' => ['required', 'string', Rule::in(array_column($this->container->make(Returns::class)->reasons(App::getLocale()), 'code'))],
             'note' => ['nullable', 'string', 'max:500'],
             // Ảnh đính kèm, kiểm trước khi tạo yêu cầu để không tạo yêu cầu rồi mới báo ảnh lỗi.
-            'photos' => ['nullable', 'array', 'max:'.Returns::MAX_ATTACHMENTS],
-            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            ...self::photoRules(),
         ];
     }
 
@@ -92,6 +91,19 @@ final class ReturnRequestForm extends FormRequest
                 }
             }
         }];
+    }
+
+    /**
+     * Luật ảnh dùng chung: tạo yêu cầu (tuỳ chọn) và "Thêm ảnh" cho yêu cầu còn mở (bắt buộc ≥ 1 ảnh) — L16.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function photoRules(bool $required = false): array
+    {
+        return [
+            'photos' => [$required ? 'required' : 'nullable', 'array', 'max:'.Returns::MAX_ATTACHMENTS],
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ];
     }
 
     /**

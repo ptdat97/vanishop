@@ -31,6 +31,7 @@ const STOREFRONT_API_PAIRS = [
     'storefront.order.pay' => ['api.storefront.v1.orders.payment.retry'],
     'storefront.order.returns.store' => ['api.storefront.v1.orders.returns.store'],
     'storefront.order.returns.shipped' => ['api.storefront.v1.orders.returns.shipped'],
+    'storefront.order.returns.photos' => ['api.storefront.v1.orders.returns.photos'],
     'storefront.order.returns.cancel' => ['api.storefront.v1.orders.returns.cancel'],
     'storefront.account.authenticate' => ['api.storefront.v1.auth.login'],
     'storefront.account.register.store' => ['api.storefront.v1.auth.register'],

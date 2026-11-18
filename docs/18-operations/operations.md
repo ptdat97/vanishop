@@ -57,7 +57,7 @@ Job phải **idempotent**, có `tries`, `backoff`, `timeout`; job tích hợp th
 | Mỗi phút | Giải phóng reservation hết hạn; dispatcher outbox (bổ sung cho worker); kiểm tra thanh toán treo |
 | 5 phút | Health check connector; đồng bộ trạng thái vận đơn (fallback polling) |
 | Hằng giờ | Kích hoạt/kết thúc khuyến mãi & bảng giá theo lịch; giỏ bỏ quên |
-| Hằng đêm | Snapshot tồn đối chiếu; chuyển điểm loyalty pending → available; hết hạn điểm; sitemap; feed sàn/quảng cáo; dọn log |
+| Hằng đêm | Xoá ảnh đổi trả của yêu cầu đã đóng quá 90 ngày (`vani:returns:purge-attachments`, 03:45); snapshot tồn đối chiếu; chuyển điểm loyalty pending → available; hết hạn điểm; sitemap; feed sàn/quảng cáo; dọn log |
 | Hằng tháng | Xét hạng thành viên |
 
 ## 5. Cache

@@ -65,6 +65,7 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::post($p('order.returns.store'), [ReturnController::class, 'store'])->name('order.returns.store');
                 Route::post($p('order.returns.cancel'), [ReturnController::class, 'cancel'])->name('order.returns.cancel');
                 Route::post($p('order.returns.shipped'), [ReturnController::class, 'shipped'])->name('order.returns.shipped');
+                Route::post($p('order.returns.photos'), [ReturnController::class, 'photos'])->name('order.returns.photos');
             });
 
             Route::get($p('track'), [TrackOrderController::class, 'show'])->name('track');

@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.29',
+    'version' => '0.5.30',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.5.0',
+    'extension_api' => '1.6.0',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -189,6 +189,7 @@ return [
                 'order.returns.store' => 'don-hang/{order}/doi-tra',
                 'order.returns.cancel' => 'don-hang/{order}/doi-tra/{return}/huy',
                 'order.returns.shipped' => 'don-hang/{order}/doi-tra/{return}/da-gui',
+                'order.returns.photos' => 'don-hang/{order}/doi-tra/{return}/anh',
                 'order.pay' => 'don-hang/{order}/thanh-toan',
                 'order.received' => 'don-hang/{order}/da-nhan',
                 'track' => 'tra-cuu-don',
@@ -229,6 +230,7 @@ return [
                 'order.returns.store' => 'orders/{order}/returns',
                 'order.returns.cancel' => 'orders/{order}/returns/{return}/cancel',
                 'order.returns.shipped' => 'orders/{order}/returns/{return}/shipped',
+                'order.returns.photos' => 'orders/{order}/returns/{return}/photos',
                 'order.pay' => 'orders/{order}/pay',
                 'order.received' => 'orders/{order}/received',
                 'track' => 'track-order',
@@ -341,6 +343,8 @@ return [
         'policy' => env('VANI_RETURN_POLICY', 'days_window'),
         // Ảnh đính kèm yêu cầu đổi trả (§3.13-3): disk riêng tư (không public), tối đa 5 ảnh, mỗi ảnh ≤ 5 MB.
         'attachments_disk' => env('VANI_RETURN_ATTACHMENTS_DISK', 'local'),
+        // Ảnh là dữ liệu cá nhân (L16): xoá khi yêu cầu đã đóng quá số ngày này (lệnh hằng đêm vani:returns:purge-attachments).
+        'attachments_retention_days' => (int) env('VANI_RETURN_ATTACHMENTS_RETENTION_DAYS', 90),
         // Chỉ là dữ liệu ban đầu của danh mục lý do (migration 0.3.74); sau đó quản lý ở Admin → Đổi trả → Lý do.
         'reasons' => ['wrong_size', 'not_as_described', 'defective', 'changed_mind', 'other'],
     ],

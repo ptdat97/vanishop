@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.29
+Storefront API v1 — VaniShop 0.5.30
 GET /address/provinces security[]
   200
     $: object
@@ -1626,6 +1626,7 @@ GET /me/orders security[customerBearer,firstPartySession]
     $.data[].returns: array
     $.data[].returns[]: object
     $.data[].returns[].attachments: array optional
+    $.data[].returns[].can_add_photos: boolean optional
     $.data[].returns[].created_at: string (date-time) optional
     $.data[].returns[].id: string
     $.data[].returns[].lines: array
@@ -1796,6 +1797,7 @@ GET /me/orders/{order} security[customerBearer,firstPartySession]
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -1962,6 +1964,7 @@ POST /me/orders/{order}/cancel security[customerBearer,firstPartySession]
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -2220,6 +2223,7 @@ GET /orders/track security[]
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -2386,6 +2390,7 @@ GET /orders/{order} security[orderToken,customerBearer,firstPartySession]
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -2545,6 +2550,7 @@ POST /orders/{order}/cancel security[orderToken,customerBearer,firstPartySession
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -2767,6 +2773,7 @@ POST /orders/{order}/received security[orderToken,customerBearer,firstPartySessi
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -2940,6 +2947,7 @@ POST /orders/{order}/returns security[orderToken,customerBearer,firstPartySessio
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -3113,6 +3121,7 @@ POST /orders/{order}/returns/{return}/cancel security[orderToken,customerBearer,
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array
@@ -3178,6 +3187,180 @@ POST /orders/{order}/returns/{return}/cancel security[orderToken,customerBearer,
     $.error.details: object|array optional
     $.error.message: string
   409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /orders/{order}/returns/{return}/photos security[orderToken,customerBearer,firstPartySession]
+  200
+    $: object
+    $.data: object
+    $.data.adjustments: array
+    $.data.adjustments[]: object
+    $.data.adjustments[].amount: object
+    $.data.adjustments[].amount.amount: integer
+    $.data.adjustments[].amount.currency: string
+    $.data.adjustments[].amount.formatted: string
+    $.data.adjustments[].code: string|null optional
+    $.data.adjustments[].label: string
+    $.data.adjustments[].type: string
+    $.data.can_cancel: boolean
+    $.data.customer: object
+    $.data.customer.email: string|null
+    $.data.customer.full_name: string
+    $.data.customer.phone: string
+    $.data.discount: object
+    $.data.discount.amount: integer
+    $.data.discount.currency: string
+    $.data.discount.formatted: string
+    $.data.fulfillment_status: string
+    $.data.id: string
+    $.data.lines: array
+    $.data.lines[]: object
+    $.data.lines[].discount: object optional
+    $.data.lines[].discount.amount: integer
+    $.data.lines[].discount.currency: string
+    $.data.lines[].discount.formatted: string
+    $.data.lines[].id: integer
+    $.data.lines[].name: string
+    $.data.lines[].quantity: integer
+    $.data.lines[].sku: string
+    $.data.lines[].total: object
+    $.data.lines[].total.amount: integer
+    $.data.lines[].total.currency: string
+    $.data.lines[].total.formatted: string
+    $.data.lines[].unit_price: object optional
+    $.data.lines[].unit_price.amount: integer
+    $.data.lines[].unit_price.currency: string
+    $.data.lines[].unit_price.formatted: string
+    $.data.lines[].variant_id: integer optional
+    $.data.lines[].variant_label: string
+    $.data.lines[].variant_options: array
+    $.data.lines[].variant_options[]: object
+    $.data.lines[].variant_options[].code: string
+    $.data.lines[].variant_options[].name: string
+    $.data.lines[].variant_options[].type: string
+    $.data.lines[].variant_options[].value: string
+    $.data.number: string
+    $.data.order_status: string
+    $.data.payment_method: string
+    $.data.payment_status: string
+    $.data.placed_at: string (date-time)
+    $.data.pricing: object
+    $.data.pricing.list_amount: object
+    $.data.pricing.list_amount.amount: integer
+    $.data.pricing.list_amount.currency: string
+    $.data.pricing.list_amount.formatted: string
+    $.data.pricing.markdown: object
+    $.data.pricing.markdown.amount: integer
+    $.data.pricing.markdown.currency: string
+    $.data.pricing.markdown.formatted: string
+    $.data.pricing.other_discount: object
+    $.data.pricing.other_discount.amount: integer
+    $.data.pricing.other_discount.currency: string
+    $.data.pricing.other_discount.formatted: string
+    $.data.pricing.promotion_discount: object
+    $.data.pricing.promotion_discount.amount: integer
+    $.data.pricing.promotion_discount.currency: string
+    $.data.pricing.promotion_discount.formatted: string
+    $.data.pricing.voucher_discount: object
+    $.data.pricing.voucher_discount.amount: integer
+    $.data.pricing.voucher_discount.currency: string
+    $.data.pricing.voucher_discount.formatted: string
+    $.data.pricing.vouchers: array
+    $.data.pricing.vouchers[]: string
+    $.data.receipt: object
+    $.data.receipt.can_confirm: boolean
+    $.data.receipt.confirmed_at: string|null (date-time)
+    $.data.receipt.returns_waived: boolean
+    $.data.returnable: object
+    $.data.returnable.deadline: string|null (date-time)
+    $.data.returnable.lines: object
+    $.data.returns: array
+    $.data.returns[]: object
+    $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
+    $.data.returns[].created_at: string (date-time) optional
+    $.data.returns[].id: string
+    $.data.returns[].lines: array
+    $.data.returns[].lines[]: object
+    $.data.returns[].lines[].name: string
+    $.data.returns[].lines[].order_line_id: integer
+    $.data.returns[].lines[].quantity: integer
+    $.data.returns[].number: string
+    $.data.returns[].reason_code: string|null optional
+    $.data.returns[].refund: object|null optional
+    $.data.returns[].refund.amount: integer
+    $.data.returns[].refund.currency: string
+    $.data.returns[].refund.formatted: string
+    $.data.returns[].resolution: string
+    $.data.returns[].return_tracking_number: string|null optional
+    $.data.returns[].status: string
+    $.data.shipments: array
+    $.data.shipments[]: object
+    $.data.shipments[].carrier: string
+    $.data.shipments[].events: array optional
+    $.data.shipments[].service: string|null optional
+    $.data.shipments[].status: string
+    $.data.shipments[].tracking_number: string|null optional
+    $.data.shipping_address: object
+    $.data.shipping_address.province_name: string
+    $.data.shipping_address.street_line: string
+    $.data.shipping_address.ward_name: string
+    $.data.shipping_fee: object
+    $.data.shipping_fee.amount: integer
+    $.data.shipping_fee.currency: string
+    $.data.shipping_fee.formatted: string
+    $.data.shipping_method: object|null
+    $.data.shipping_method.fee: object optional
+    $.data.shipping_method.fee.amount: integer
+    $.data.shipping_method.fee.currency: string
+    $.data.shipping_method.fee.formatted: string
+    $.data.shipping_method.label: string
+    $.data.status: object
+    $.data.status.code: string
+    $.data.status.label: string
+    $.data.subtotal: object
+    $.data.subtotal.amount: integer
+    $.data.subtotal.currency: string
+    $.data.subtotal.formatted: string
+    $.data.tax_included: object
+    $.data.tax_included.amount: integer
+    $.data.tax_included.currency: string
+    $.data.tax_included.formatted: string
+    $.data.timeline: array
+    $.data.timeline[]: object
+    $.data.timeline[].at: string (date-time)
+    $.data.timeline[].to: string|null optional
+    $.data.timeline[].type: string
+    $.data.total: object
+    $.data.total.amount: integer
+    $.data.total.currency: string
+    $.data.total.formatted: string
+  404
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  422
     $: object closed
     $.error: object closed
     $.error.code: string
@@ -3279,6 +3462,7 @@ POST /orders/{order}/returns/{return}/shipped security[orderToken,customerBearer
     $.data.returns: array
     $.data.returns[]: object
     $.data.returns[].attachments: array optional
+    $.data.returns[].can_add_photos: boolean optional
     $.data.returns[].created_at: string (date-time) optional
     $.data.returns[].id: string
     $.data.returns[].lines: array

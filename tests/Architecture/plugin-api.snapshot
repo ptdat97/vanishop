@@ -1,4 +1,4 @@
-Extension API 1.5.0
+Extension API 1.6.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -661,6 +661,7 @@ interface Modules\Ordering\Contracts\OrderReader
   numbers(array $orderIds): array
   lines(int $orderId): array
   customerHasPlacedOrder(int $customerId): bool
+  customerOrderIds(int $customerId): array
   customerStats(int $customerId): array
   deliveryHistory(string $phone, ?int $exceptOrderId = NULL): array
   cancellations(int $orderId): array

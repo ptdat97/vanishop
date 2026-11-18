@@ -37,5 +37,7 @@ final readonly class ReturnView
          * @var list<array{id: int, url: string}>
          */
         public array $attachments = [],
+        /** Còn thêm ảnh được (0.5.30): yêu cầu chờ duyệt/đã duyệt và chưa đủ `Returns::MAX_ATTACHMENTS` ảnh. */
+        public bool $acceptsAttachments = false,
     ) {}
 }

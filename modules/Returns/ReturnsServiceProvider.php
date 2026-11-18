@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Returns;
 
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Event;
 use Modules\Catalog\Contracts\VariantUsage;
+use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
@@ -18,9 +21,11 @@ use Modules\Returns\Application\Listeners\OrderReturnsPanel;
 use Modules\Returns\Application\Listeners\ReturnDashboardTasks;
 use Modules\Returns\Application\ReturnedVariants;
 use Modules\Returns\Application\ReturnService;
+use Modules\Returns\Console\PurgeReturnAttachmentsCommand;
 use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Contracts\Returns;
 use Modules\Returns\Contracts\ReturnStatistics;
+use Modules\Returns\Listeners\PurgeAnonymizedCustomerAttachments;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -57,6 +62,15 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
 
         $navigation->add('returns', 'Đổi/trả', 'admin.returns.home', 'returns.view', 70, group: 'sales');
         Hook::onSlot('vani.admin.order.sidebar', fn (OrderDetail $order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 110);
+
+        // Ảnh đổi trả là dữ liệu cá nhân (L16): xoá khi yêu cầu đóng quá hạn lưu, và ngay khi khách bị ẩn danh hoá.
+        Event::listen(CustomerAnonymized::class, PurgeAnonymizedCustomerAttachments::class);
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('vani:returns:purge-attachments')->dailyAt('03:45')->withoutOverlapping()->onOneServer();
+        });
+        if ($this->app->runningInConsole()) {
+            $this->commands([PurgeReturnAttachmentsCommand::class]);
+        }
 
         $this->loadWebRoutes($this->modulePath('Http/routes/attachments.php'));
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));

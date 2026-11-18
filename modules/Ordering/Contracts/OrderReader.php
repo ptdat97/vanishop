@@ -41,6 +41,14 @@ interface OrderReader
     public function customerHasPlacedOrder(int $customerId): bool;
 
     /**
+     * Id mọi đơn của một khách (kể cả đơn huỷ) — 0.5.30, để module/plugin xoá dữ liệu cá nhân gắn với đơn khi khách bị ẩn
+     * danh hoá (vd. ảnh đổi trả).
+     *
+     * @return list<int>
+     */
+    public function customerOrderIds(int $customerId): array;
+
+    /**
      * Đơn thay đổi sau một mốc, theo thứ tự (updated_at, id) tăng dần — cho đồng bộ kéo (keyset pagination).
      * Trang sau: truyền updated_at + id của đơn cuối trang trước.
      *

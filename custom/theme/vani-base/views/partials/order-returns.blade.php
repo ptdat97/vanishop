@@ -36,6 +36,19 @@
                         @endforeach
                     </div>
                 @endif
+                {{-- Yêu cầu chờ duyệt/đã duyệt, chưa đủ 5 ảnh: khách gửi thêm ảnh (CSKH hỏi thêm ảnh lỗi…). --}}
+                @if ($return['can_add_photos'] ?? false)
+                    <form action="{{ vani_route('storefront.order.returns.photos', [$order['id'], $return['id']]) }}" method="post" enctype="multipart/form-data" class="mt-3 flex flex-wrap items-end gap-2" data-return-add-photos>
+                        @csrf
+                        <label class="block">
+                            <span class="block text-slate-600">{{ __('Gửi thêm ảnh') }}</span>
+                            <input name="photos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required class="mt-1 text-sm">
+                        </label>
+                        <button type="submit" class="rounded-[var(--radius-theme)] border border-slate-300 px-3 py-1.5">{{ __('Gửi ảnh') }}</button>
+                        @error('photos')<p class="w-full text-red-600">{{ $message }}</p>@enderror
+                        @error('photos.*')<p class="w-full text-red-600">{{ $message }}</p>@enderror
+                    </form>
+                @endif
                 @if ($return['return_tracking_number'] ?? null)
                     <p class="mt-1 text-slate-500">{{ __('Mã vận đơn gửi về: :number', ['number' => $return['return_tracking_number']]) }}</p>
                 @endif

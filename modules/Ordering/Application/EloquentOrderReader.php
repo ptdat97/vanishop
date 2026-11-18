@@ -62,6 +62,11 @@ final class EloquentOrderReader implements OrderReader
             ->all();
     }
 
+    public function customerOrderIds(int $customerId): array
+    {
+        return Order::query()->where('customer_id', $customerId)->orderBy('id')->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+    }
+
     public function customerHasPlacedOrder(int $customerId): bool
     {
         return Order::query()

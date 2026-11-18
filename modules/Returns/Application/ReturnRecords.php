@@ -14,6 +14,7 @@ use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Returns\Contracts\Data\ReturnView;
 use Modules\Returns\Contracts\ReturnRejected;
+use Modules\Returns\Contracts\Returns;
 use Modules\Returns\Domain\ReturnProgress;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnAttachment;
@@ -39,6 +40,7 @@ final class ReturnRecords
     public function view(ReturnRequest $return): ReturnView
     {
         $orderLines = collect($this->orders->lines($return->order_id))->keyBy('id');
+        $attachments = ReturnAttachment::query()->where('return_request_id', $return->id)->orderBy('id')->get();
         $exchangeVariants = $return->resolution === 'exchange' ? $this->variants->find($return->lines()->pluck('exchange_variant_id')->filter()->unique()->values()->all()) : [];
 
         return vani_filter('vani.service.returns.view', new ReturnView(
@@ -68,10 +70,11 @@ final class ReturnRecords
             resolution: (string) $return->resolution,
             replacementOrderId: $return->replacement_order_id,
             returnTrackingNumber: $return->return_tracking_number,
-            attachments: ReturnAttachment::query()->where('return_request_id', $return->id)->orderBy('id')->get()->map(fn (ReturnAttachment $attachment): array => [
+            attachments: $attachments->map(fn (ReturnAttachment $attachment): array => [
                 'id' => $attachment->id,
                 'url' => URL::temporarySignedRoute('returns.attachment', now()->addMinutes(30), ['attachment' => $attachment->id]),
             ])->all(),
+            acceptsAttachments: $return->status->acceptsAttachments() && $attachments->count() < Returns::MAX_ATTACHMENTS,
         ), $return);
     }
 

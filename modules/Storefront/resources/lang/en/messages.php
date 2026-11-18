@@ -43,6 +43,7 @@ return [
     'menu_published' => 'Menu published.',
     'menu_discarded' => 'Unpublished changes discarded.',
     'menu_restored' => 'Previous version restored to draft. Publish to apply.',
+    'return_photos_added' => 'Your photos have been added to the return request.',
     'return_shipped' => 'Thanks — we have noted that you shipped the items back. We will let you know when they arrive.',
     'payment_restarted' => 'A new payment request has been created. Follow the instructions below.',
     'order_received' => 'Thanks for confirming you received your order.',

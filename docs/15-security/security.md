@@ -68,6 +68,7 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 | Consent theo mục đích | `customer_consents` theo kênh gửi/mục đích, có nguồn & thời điểm; checkbox **không tick sẵn** |
 | Thông báo xử lý | Chính sách bảo mật của cửa hàng (pháp nhân vận hành), liên kết tại mọi form thu thập |
 | Quyền của chủ thể | Trang tài khoản: tải dữ liệu của tôi, rút consent, yêu cầu xoá tài khoản (ẩn danh hoá, giữ đơn hàng theo nghĩa vụ kế toán/thuế) |
+| Thời hạn lưu | Ảnh khách gửi kèm yêu cầu đổi trả: xoá 90 ngày sau khi yêu cầu đóng (`vanishop.returns.attachments_retention_days`, lệnh hằng đêm) và xoá ngay khi khách bị ẩn danh hoá (0.5.30) |
 | Tối thiểu hoá | Không thu dữ liệu không cần; không lưu số thẻ (tokenize ở cổng TT) |
 | Mã hoá | TLS 1.2+; mã hoá cột nhạy cảm (số tài khoản ngân hàng hoàn tiền, secret tích hợp) bằng Laravel encrypted cast; key quản lý tách biệt |
 | Che dữ liệu | SĐT/địa chỉ che một phần trong danh sách Admin, log, payload tích hợp lưu trữ |

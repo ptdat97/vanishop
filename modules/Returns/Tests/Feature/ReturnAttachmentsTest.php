@@ -3,6 +3,7 @@
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
+use Modules\Customer\Application\AccountLifecycle;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -66,4 +67,52 @@ it('không thêm ảnh khi yêu cầu đã xử lý; tổng ảnh không vượt
     $return->update(['status' => 'cancelled']);
     expect(fn () => $returns->attachPhotos($this->order->id, $return->public_id, [UploadedFile::fake()->image('b.jpg')], 'customer'))
         ->toThrow(ReturnRejected::class);
+});
+
+it('L16: khách gửi thêm ảnh qua Storefront API khi yêu cầu còn mở; đủ 5 ảnh hoặc hàng đã gửi về thì hết nút và bị từ chối', function () {
+    ($this->request)([UploadedFile::fake()->image('a.jpg')])->assertCreated();
+    $return = ReturnRequest::query()->sole();
+    $url = "{$this->api}/orders/{$this->order->public_id}/returns/{$return->public_id}/photos";
+    $send = fn (int $count) => $this->post($url, ['photos' => array_map(fn (int $i) => UploadedFile::fake()->image("them{$i}.jpg"), range(1, $count))], [...$this->headers, 'Accept' => 'application/json']);
+
+    $this->post($url, [], [...$this->headers, 'Accept' => 'application/json'])->assertUnprocessable();
+    $after = $send(3)->assertOk()->json('data.returns.0');
+    expect($after['attachments'])->toHaveCount(4)->and($after['can_add_photos'])->toBeTrue();
+    expect($send(1)->assertOk()->json('data.returns.0.can_add_photos'))->toBeFalse();
+    $send(1)->assertUnprocessable();
+
+    $return->update(['status' => 'in_transit']);
+    expect(ReturnAttachment::query()->count())->toBe(5);
+    $this->getJson("{$this->api}/orders/{$this->order->public_id}", $this->headers)->assertJsonPath('data.returns.0.can_add_photos', false);
+});
+
+it('L16: ảnh của yêu cầu đã đóng quá 90 ngày bị xoá hằng đêm (file + dòng); yêu cầu còn mở hoặc mới đóng giữ nguyên', function () {
+    ($this->request)([UploadedFile::fake()->image('a.jpg'), UploadedFile::fake()->image('b.jpg')])->assertCreated();
+    $old = ReturnRequest::query()->sole();
+    $paths = ReturnAttachment::query()->pluck('path')->all();
+    $old->update(['status' => 'rejected']);
+    ReturnRequest::query()->whereKey($old->id)->update(['updated_at' => now()->subDays(91)]);
+
+    $this->artisan('vani:returns:purge-attachments')->expectsOutputToContain('Đã xoá 2 ảnh')->assertSuccessful();
+    expect(ReturnAttachment::query()->count())->toBe(0)->and(ReturnRequest::query()->count())->toBe(1);
+    foreach ($paths as $path) {
+        Storage::disk('local')->assertMissing($path);
+    }
+
+    // Mới đóng (30 ngày) và còn mở: không xoá.
+    ($this->request)([UploadedFile::fake()->image('c.jpg')])->assertCreated();
+    ReturnRequest::query()->latest('id')->first()->update(['status' => 'resolved', 'resolved_at' => now()->subDays(30)]);
+    $this->artisan('vani:returns:purge-attachments')->assertSuccessful();
+    expect(ReturnAttachment::query()->count())->toBe(1);
+});
+
+it('L16: khách bị ẩn danh hoá → ảnh đổi trả của mọi đơn của khách bị xoá ngay', function () {
+    ($this->request)([UploadedFile::fake()->image('a.jpg')])->assertCreated();
+    $path = ReturnAttachment::query()->value('path');
+    expect($this->order->customer_id)->not->toBeNull();
+
+    app(CurrentContext::class)->runAs(ContextScope::system('test'), fn () => app(AccountLifecycle::class)->anonymize((int) $this->order->customer_id, 'staff'));
+
+    expect(ReturnAttachment::query()->count())->toBe(0)->and(ReturnRequest::query()->count())->toBe(1);
+    Storage::disk('local')->assertMissing($path);
 });

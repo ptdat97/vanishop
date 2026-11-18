@@ -630,6 +630,10 @@
                     "attachments": {
                         "type": "array"
                     },
+                    "can_add_photos": {
+                        "type": "boolean",
+                        "description": "Còn gửi thêm ảnh được (chờ duyệt/đã duyệt, chưa đủ 5 ảnh) — POST /orders/{order}/returns/{return}/photos."
+                    },
                     "refund": {
                         "type": [
                             "object",

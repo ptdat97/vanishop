@@ -60,6 +60,7 @@ Route::post('orders/{order}/returns', [OrderController::class, 'requestReturn'])
 Route::post('orders/{order}/returns/{return}/cancel', [OrderController::class, 'cancelReturn'])->where(['order' => '[0-9A-Z]{26}', 'return' => '[0-9A-Z]{26}'])->name('orders.returns.cancel');
 Route::post('orders/{order}/received', [OrderController::class, 'confirmReceived'])->where('order', '[0-9A-Z]{26}')->middleware('throttle:10,1')->name('orders.received');
 Route::post('orders/{order}/payment/retry', [OrderController::class, 'retryPayment'])->where('order', '[0-9A-Z]{26}')->middleware('throttle:10,1')->name('orders.payment.retry');
+Route::post('orders/{order}/returns/{return}/photos', [OrderController::class, 'addReturnPhotos'])->where(['order' => '[0-9A-Z]{26}', 'return' => '[0-9A-Z]{26}'])->middleware('throttle:10,1')->name('orders.returns.photos');
 Route::post('orders/{order}/returns/{return}/shipped', [OrderController::class, 'markReturnShipped'])->where(['order' => '[0-9A-Z]{26}', 'return' => '[0-9A-Z]{26}'])->middleware('throttle:10,1')->name('orders.returns.shipped');
 
 Route::middleware('vani.customer')->group(function () {
