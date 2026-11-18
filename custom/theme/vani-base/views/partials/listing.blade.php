@@ -3,7 +3,13 @@
 <div data-vani-listing>
 <x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingView['context'], $listing]" />
 <div class="grid gap-8 md:grid-cols-[14rem_1fr]">
-    <aside class="space-y-6 text-sm" aria-label="{{ __('Bộ lọc') }}">
+    <aside class="text-sm" aria-label="{{ __('Bộ lọc') }}">
+        <details class="group md:contents" data-vani-filter-disclosure>
+            <summary class="flex cursor-pointer list-none items-center justify-between rounded-[var(--radius-theme)] border border-slate-200 px-4 py-3 font-semibold marker:hidden md:hidden">
+                <span>{{ __('Bộ lọc') }}</span>
+                <svg viewBox="0 0 20 20" class="size-4 transition-transform group-open:rotate-180" fill="none" aria-hidden="true"><path d="m4 7 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </summary>
+            <div class="space-y-6 pt-4 md:block md:pt-0">
         {{-- Bộ lọc theo cấu hình Admin → Catalog → Bộ lọc (thứ tự, bật/tắt, kiểu hiển thị); link thường, chạy khi tắt JS. --}}
         @foreach ($listingView['filters'] as $filter)
             @if ($filter['display'] === 'range')
@@ -52,6 +58,8 @@
             </section>
         @endforeach
         <x-vani::hook-slot name="vani.storefront.plp.filters" :args="[$listing]" />
+            </div>
+        </details>
     </aside>
 
     <section>
