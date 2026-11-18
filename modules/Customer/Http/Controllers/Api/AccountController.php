@@ -12,6 +12,7 @@ use Modules\Customer\Application\AddressBook;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerService;
+use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Requests\AddressRequest;
 use Modules\Customer\Contracts\Requests\PasswordRequest;
 use Modules\Customer\Contracts\Requests\ProfileRequest;
@@ -27,9 +28,28 @@ final class AccountController
         return response()->json(['data' => CustomerService::toData(AuthenticateCustomer::customer($request))->toArray()]);
     }
 
-    public function update(ProfileRequest $request, CustomerService $customers): JsonResponse
+    public function update(ProfileRequest $request, CustomerService $customers, AuthService $auth): JsonResponse
     {
-        return response()->json(['data' => $customers->updateProfile(AuthenticateCustomer::customer($request)->id, $request->validated())->toArray()]);
+        $customer = AuthenticateCustomer::customer($request);
+        $previousEmail = $customer->email;
+        $updated = $customers->updateProfile($customer->id, $request->validated());
+        // Đổi/thêm email → gửi link xác minh tới email mới (L40).
+        if ($updated->email !== null && $updated->email !== $previousEmail) {
+            $auth->sendEmailVerification($customer->id);
+        }
+
+        return response()->json(['data' => $updated->toArray()]);
+    }
+
+    /** Gửi lại link xác minh email (0.5.32). 202 khi đã gửi; email đã xác minh hoặc chưa có email → 409. */
+    public function sendEmailVerification(Request $request, AuthService $auth): JsonResponse
+    {
+        $customer = AuthenticateCustomer::customer($request);
+        if (! $auth->sendEmailVerification($customer->id)) {
+            throw CustomerRejected::emailAlreadyVerified();
+        }
+
+        return response()->json(['data' => ['email' => $customer->email]], 202);
     }
 
     public function password(PasswordRequest $request, AuthService $auth): JsonResponse

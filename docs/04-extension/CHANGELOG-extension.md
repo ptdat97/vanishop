@@ -4,6 +4,22 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.32 — 2026-11-18 · Extension API 1.8.0
+
+Backlog L40: xác minh email sau khi đổi email trong hồ sơ. Từ bản này `vanishop.extension_api_stage = dev` (Owner 2026-11-18): API cho plugin chưa chốt, thay đổi phá vỡ chỉ cần tăng minor + ghi ở đây; plugin trong repo cập nhật theo ([ADR-048 — sửa đổi](../19-adr/ADR-048-extension-api-version.md)).
+
+### Thêm (API cho plugin — minor)
+- `CustomerSessions::sendEmailVerification(int $customerId): bool`, `CustomerSessions::verifyEmail(string $token): ?CustomerData` — gửi link xác minh email hiện tại của tài khoản (link một lần, hiệu lực `verify_ttl_hours`), bấm link → đã xác minh.
+- **Phá vỡ (giai đoạn dev — ADR-048 sửa đổi 2026-11-18):** `CustomerData` thêm tham số constructor `bool $emailVerified = false` (`email_verified` trong `toArray()`). Plugin tự dựng `CustomerData` (fake trong test) không phải sửa vì có giá trị mặc định.
+- `CustomerRejected::emailLinkInvalid()` (`customer.email_link_invalid`, 422), `emailAlreadyVerified()` (`customer.email_already_verified`, 409).
+
+### Thêm (Storefront API — không phá vỡ)
+- `POST /me/email/verification` (gửi lại link, 202), `POST /auth/email/verify` (`token`) — xác minh, không đăng nhập. `GET/PATCH /me` có `email_verified`; `PATCH /me` đổi email → tự gửi link tới email mới.
+- Headless: `vanishop.customer.email_auth.verify_email_url` (`VANI_CUSTOMER_VERIFY_EMAIL_URL`, có `{token}`).
+
+### Đổi (theme)
+- Trang Hồ sơ: email chưa xác minh hiện "Email chưa xác minh. Gửi lại link xác minh" (form `storefront.account.email.resend`); link trong email mở `storefront.account.email.verify` (không cần đăng nhập).
+
 ## 0.5.31 — 2026-11-18 · Extension API 1.7.0
 
 Backlog L10 (Owner quyết: gợi ý shop chịu phí ship trả khi lỗi do cửa hàng).

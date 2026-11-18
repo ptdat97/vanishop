@@ -37,8 +37,8 @@ it('sửa hồ sơ; email của khách khác → lỗi, không đổi', function
 
     $this->get('/tai-khoan/ho-so')->assertOk()->assertSee('Hồ sơ')->assertSee('Đổi mật khẩu');
     $this->put('/tai-khoan/ho-so', ['full_name' => 'Trần Lan', 'email' => 'LAN@Example.com', 'birth_date' => '1995-05-20', 'gender' => 'female'])
-        ->assertRedirect('/tai-khoan/ho-so')->assertSessionHas('status', 'Đã lưu hồ sơ.');
-    // Email mới chưa chứng minh sở hữu: bỏ dấu đã xác minh (không dùng để gộp đơn vãng lai).
+        ->assertRedirect('/tai-khoan/ho-so')->assertSessionHas('status', 'Đã lưu hồ sơ. Đã gửi link xác minh tới lan@example.com. Vui lòng kiểm tra hộp thư.');
+    // Email mới chưa chứng minh sở hữu: bỏ dấu đã xác minh (không dùng để gộp đơn vãng lai) — gửi link xác minh (L40).
     expect($customer->fresh())->full_name->toBe('Trần Lan')->email->toBe('lan@example.com')->gender->toBe('female')->email_verified_at->toBeNull();
 
     $this->from('/tai-khoan/ho-so')->put('/tai-khoan/ho-so', ['full_name' => 'Trần Lan', 'email' => 'taken@example.com'])->assertSessionHasErrors('business');
@@ -137,4 +137,25 @@ it('xoá tài khoản: còn đơn chưa hoàn tất thì liệt kê đơn, khôn
     $this->get('/tai-khoan/xoa')->assertOk()->assertSee('Chưa xoá được tài khoản')->assertSee($number)->assertDontSee('Nhập mật khẩu để xác nhận');
     $this->from('/tai-khoan/xoa')->post('/tai-khoan/xoa', ['password' => H::PASSWORD])->assertSessionHasErrors('business');
     expect($customer->fresh()->status->value)->toBe('active');
+});
+
+it('L40: đổi email → email mới chưa xác minh, tự gửi link; hồ sơ có nút gửi lại; bấm link → đã xác minh; link sai báo lỗi', function () {
+    $customer = ($this->signIn)();
+    $this->get('/tai-khoan/ho-so')->assertOk()->assertDontSee('data-email-unverified', false);
+
+    $this->put('/tai-khoan/ho-so', ['full_name' => 'Lan', 'email' => 'lan.moi@example.com'])
+        ->assertRedirect('/tai-khoan/ho-so')->assertSessionHas('status', fn (string $status) => str_contains($status, 'lan.moi@example.com'));
+    expect($customer->fresh()->email_verified_at)->toBeNull();
+    $this->get('/tai-khoan/ho-so')->assertSee('data-email-unverified', false)->assertSee('Gửi lại link xác minh');
+
+    $this->post('/tai-khoan/xac-minh-email')->assertRedirect('/tai-khoan/ho-so')->assertSessionHasNoErrors();
+    $link = H::mailedLink('lan.moi@example.com');
+    expect($link)->toContain('/tai-khoan/xac-minh-email/');
+
+    $this->get('/tai-khoan/xac-minh-email/'.str_repeat('x', 64))->assertRedirect('/tai-khoan/ho-so')->assertSessionHasErrors('business');
+    $this->get(parse_url($link, PHP_URL_PATH))->assertRedirect('/tai-khoan/ho-so')->assertSessionHas('status', 'Đã xác minh email.');
+    expect($customer->fresh()->email_verified_at)->not->toBeNull();
+    $this->get('/tai-khoan/ho-so')->assertDontSee('data-email-unverified', false);
+    // Link dùng một lần.
+    $this->get(parse_url($link, PHP_URL_PATH))->assertSessionHasErrors('business');
 });

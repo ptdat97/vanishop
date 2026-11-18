@@ -1,4 +1,4 @@
-Extension API 1.7.0
+Extension API 1.8.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -236,7 +236,7 @@ interface Modules\Customer\Contracts\Customers
 class Modules\Customer\Contracts\Data\CustomerContact
   __construct(string $phone, ?string $email = NULL, ?string $fullName = NULL, ?int $customerId = NULL)
 class Modules\Customer\Contracts\Data\CustomerData
-  __construct(int $id, string $publicId, ?string $phone, ?string $email, ?string $fullName, string $status, bool $registered, ?string $birthDate = NULL, ?string $gender = NULL, bool $hasPassword = false, ?string $preferredLocale = NULL)
+  __construct(int $id, string $publicId, ?string $phone, ?string $email, ?string $fullName, string $status, bool $registered, ?string $birthDate = NULL, ?string $gender = NULL, bool $hasPassword = false, ?string $preferredLocale = NULL, bool $emailVerified = false)
   toArray(): array
 class Modules\Customer\Contracts\Data\CustomerSegment
   __construct(?int $groupId, ?string $groupCode, ?string $groupName, array $tags)

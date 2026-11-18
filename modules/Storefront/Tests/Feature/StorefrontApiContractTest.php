@@ -189,6 +189,13 @@ it('khách: đăng ký (link email), hồ sơ, mật khẩu, sổ địa chỉ, 
 
     $call('GET', '/me', '/me');
     $call('PATCH', '/me', '/me', ['full_name' => 'Lan']);
+    // L40: đổi email → email mới chưa xác minh, tự gửi link; gửi lại; bấm link → đã xác minh.
+    expect($call('PATCH', '/me', '/me', ['full_name' => 'Lan', 'email' => 'lan.moi@example.com'])->json('data.email_verified'))->toBeFalse();
+    assertStorefrontContract($this->postJson("{$this->api}/me/email/verification", [], $auth)->assertStatus(202), '/me/email/verification', 'POST');
+    assertStorefrontContract($this->postJson("{$this->api}/auth/email/verify", ['token' => Cu::mailedToken('lan.moi@example.com')])->assertOk(), '/auth/email/verify', 'POST')
+        ->assertJsonPath('data.email_verified', true);
+    $this->postJson("{$this->api}/me/email/verification", [], $auth)->assertStatus(409);
+    $this->patchJson("{$this->api}/me", ['full_name' => 'Lan', 'email' => 'lan@example.com'], $auth)->assertOk();
     $call('PUT', '/me/password', '/me/password', ['current_password' => 'mat-khau-123', 'password' => 'mat-khau-moi-123', 'password_confirmation' => 'mat-khau-moi-123']);
     $address = $call('POST', '/me/addresses', '/me/addresses', [
         'full_name' => 'Lan', 'phone' => '0912345678', 'province_code' => '29', 'province_name' => 'Thành phố Hồ Chí Minh',

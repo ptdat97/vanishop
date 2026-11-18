@@ -22,6 +22,10 @@ return [
     'social_failed' => 'Could not sign in with this account. Please try again or use your email.',
     'social_email_required' => 'This account has no verified email. Please sign up with your email.',
     'registration_link_invalid' => 'The verification link is invalid or has expired. Please sign up again.',
+    'email_link_invalid' => 'The email verification link is invalid or has expired. Open your profile to send a new link.',
+    'email_verification_sent' => 'We sent a verification link to :email. Please check your inbox.',
+    'email_verified' => 'Your email has been verified.',
+    'email_already_verified' => 'Your email is already verified, or your account has no email.',
     'password_reset_invalid' => 'The password reset link is invalid or has expired. Please request a new one.',
     'password_required' => 'Your account has no password yet. Please set a password first.',
     'too_many_attempts' => 'Too many attempts. Please try again later.',
@@ -32,6 +36,13 @@ Open this link to finish creating your account (valid for :hours hours):
 :url
 
 If you did not sign up, please ignore this email.',
+    'verify_email_change_subject' => 'Verify your account email',
+    'verify_email_change_body' => 'Hi :name,
+
+Open this link to verify this email for your account (valid for :hours hours):
+:url
+
+If you did not change your email, please ignore this email.',
     'reset_password_subject' => 'Reset your password',
     'reset_password_body' => 'Hi :name,
 

@@ -19,6 +19,15 @@
 
 Bề mặt trong `plugin-api.snapshot`: class `#[PluginApi]`, `PluginServiceProvider` (public + protected), class hỗ trợ `PLUGIN_PUBLIC_SUPPORT`, helper `vani_*`, hook `public` (tên, loại, tham số, mức ổn định).
 
+## Sửa đổi 2026-11-18 (Owner): giai đoạn dev — API chưa chốt
+
+Quy tắc thiết kế: [architecture-rules R38](../01-principles/architecture-rules.md).
+
+
+- Dự án đang phát triển, chưa có plugin bên ngoài: **API cho plugin chưa chốt, ưu tiên Core**. Core được đổi cả phần `stable` (đổi constructor DTO, đổi/xoá method, đổi kiểu) khi cần cho Core; **plugin trong repo phải cập nhật theo** trong cùng commit.
+- `vanishop.extension_api_stage` = `dev` (mặc định, `VANI_EXTENSION_API_STAGE`): `PluginApiSnapshotTest` hạ mức "major" xuống "minor" — vẫn phải tăng `extension_api` và ghi CHANGELOG-extension (nêu rõ thay đổi phá vỡ để plugin ngoài repo, nếu có, biết mà sửa). Không cần `@deprecated` trước.
+- Khi chốt API (trước khi mở cho plugin bên thứ ba): đặt `stable`, quy tắc §5 áp lại đầy đủ.
+
 ## Consequences
 
 - Core đổi API giữa module (vd. chuyển contract, thêm method service contract chỉ module dùng) không còn ép nâng plugin.

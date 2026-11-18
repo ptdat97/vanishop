@@ -117,6 +117,11 @@ it('API cho plugin khớp snapshot; đổi phải tăng extension_api đúng m�
 
     if (getenv('VANI_UPDATE_API_SNAPSHOT') === '1' || $recorded === '') {
         $bump = $recorded === '' ? null : pluginApiRequiredBump($recordedBody, $body);
+        // Giai đoạn dev (vanishop.extension_api_stage): API chưa chốt — thay đổi phá vỡ chỉ cần tăng minor; plugin trong repo
+        // cập nhật theo (test của plugin chạy cùng bộ test nên bắt được chỗ chưa cập nhật).
+        if ($bump === 'major' && config('vanishop.extension_api_stage') === 'dev') {
+            $bump = 'minor';
+        }
         if ($bump !== null) {
             [$oldMajor, $oldMinor] = array_map('intval', explode('.', $recordedVersion));
             [$newMajor, $newMinor] = array_map('intval', explode('.', $version));

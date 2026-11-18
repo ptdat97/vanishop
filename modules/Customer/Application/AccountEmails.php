@@ -24,6 +24,17 @@ final class AccountEmails
         });
     }
 
+    /** Xác minh email của tài khoản đang có (đổi/thêm email trong hồ sơ — 0.5.32). */
+    public function sendEmailChangeVerification(string $email, ?string $fullName, string $token, int $ttlHours): void
+    {
+        $url = $this->url('verify_email_url', 'storefront.account.email.verify', $token);
+        $body = __('customer::messages.verify_email_change_body', ['name' => $fullName ?? $email, 'url' => $url, 'hours' => $ttlHours]);
+
+        Mail::raw($body, function (Message $message) use ($email, $fullName): void {
+            $message->to($email, $fullName)->subject(__('customer::messages.verify_email_change_subject'));
+        });
+    }
+
     public function sendPasswordReset(string $email, ?string $fullName, string $token, int $ttlMinutes): void
     {
         $url = $this->url('reset_url', 'storefront.account.password.reset', $token);

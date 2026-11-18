@@ -10,6 +10,7 @@ use Modules\Cart\Contracts\Carts;
 use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\SocialLogin;
+use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\RegisterRequest;
 use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
@@ -46,6 +47,17 @@ final class AuthController
         $session = $this->auth->verifyRegistration($data['token'], $data['device'] ?? null);
 
         return $this->respond($session, $request, $carts, $data['cart_id'] ?? null);
+    }
+
+    /**
+     * Xác minh email sau khi đổi email trong hồ sơ (0.5.32): token từ link trong email. Không tạo phiên đăng nhập.
+     */
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'size:64']]);
+        $customer = $this->auth->verifyEmail($data['token']) ?? throw CustomerRejected::emailLinkInvalid();
+
+        return response()->json(['data' => ['email' => $customer->email, 'email_verified' => $customer->emailVerified]]);
     }
 
     public function login(Request $request, Carts $carts): JsonResponse

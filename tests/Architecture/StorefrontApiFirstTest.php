@@ -40,6 +40,7 @@ const STOREFRONT_API_PAIRS = [
     'storefront.account.logout' => ['api.storefront.v1.auth.logout'],
     'storefront.account.order.cancel' => ['api.storefront.v1.me.orders.cancel'],
     'storefront.account.profile.update' => ['api.storefront.v1.me.update'],
+    'storefront.account.email.resend' => ['api.storefront.v1.me.email.verification'],
     'storefront.account.password.update' => ['api.storefront.v1.me.password'],
     'storefront.account.addresses.store' => ['api.storefront.v1.me.addresses.store'],
     'storefront.account.addresses.update' => ['api.storefront.v1.me.addresses.update'],

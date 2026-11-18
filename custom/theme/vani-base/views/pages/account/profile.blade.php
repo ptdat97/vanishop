@@ -23,6 +23,13 @@
                     <label for="email" class="block text-sm">Email</label>
                     <input id="email" name="email" type="email" autocomplete="email" value="{{ old('email', $customer->email) }}" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                     @error('email')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
+                    @if ($customer->email && ! $customer->emailVerified)
+                        {{-- Nút gửi lại thuộc form riêng (không lồng form) — thuộc tính `form`. --}}
+                        <p class="mt-1 text-sm text-amber-700" data-email-unverified>
+                            {{ __('Email chưa xác minh.') }}
+                            <button type="submit" form="resend-email-verification" class="underline">{{ __('Gửi lại link xác minh') }}</button>
+                        </p>
+                    @endif
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div>
@@ -43,6 +50,9 @@
                 </div>
                 <button type="submit" class="rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('Lưu hồ sơ') }}</button>
             </form>
+            @if ($customer->email && ! $customer->emailVerified)
+                <form id="resend-email-verification" action="{{ vani_route('storefront.account.email.resend') }}" method="post" hidden>@csrf</form>
+            @endif
 
             <h2 class="mb-1 mt-10 text-lg font-semibold">{{ $customer->hasPassword ? __('Đổi mật khẩu') : __('Đặt mật khẩu') }}</h2>
             <p class="mb-4 text-sm text-slate-500">{{ __('Dùng email và mật khẩu này để đăng nhập.') }}</p>

@@ -22,6 +22,8 @@ final readonly class CustomerData
         public bool $hasPassword = false,
         /** Ngôn ngữ khách hay dùng (0.3.62, ADR-038 §8), null = chưa biết. */
         public ?string $preferredLocale = null,
+        /** Email đã xác minh qua link (0.5.32); false khi chưa có email hoặc vừa đổi email. */
+        public bool $emailVerified = false,
     ) {}
 
     /**
@@ -32,7 +34,7 @@ final readonly class CustomerData
         return [
             'id' => $this->publicId, 'phone' => $this->phone, 'email' => $this->email, 'full_name' => $this->fullName,
             'birth_date' => $this->birthDate, 'gender' => $this->gender, 'registered' => $this->registered, 'has_password' => $this->hasPassword,
-            'preferred_locale' => $this->preferredLocale,
+            'preferred_locale' => $this->preferredLocale, 'email_verified' => $this->emailVerified,
         ];
     }
 }

@@ -35,6 +35,8 @@ final class AuthService
 
     private const RESET_KEY = 'vani:customer-password-reset:';
 
+    private const EMAIL_VERIFY_KEY = 'vani:customer-email-verify:';
+
     /** Số email đăng ký/đặt lại gửi tới một địa chỉ trong 10 phút (chống dùng cửa hàng để spam hộp thư). */
     private const EMAILS_PER_ADDRESS = 3;
 
@@ -298,6 +300,36 @@ final class AuthService
     public static function normalizeEmail(string $email): string
     {
         return mb_strtolower(trim($email));
+    }
+
+    public function sendEmailVerification(int $customerId): bool
+    {
+        $customer = Customer::query()->find($customerId);
+        if ($customer === null || $customer->email === null || $customer->email === '' || $customer->email_verified_at !== null) {
+            return false;
+        }
+        $email = self::normalizeEmail($customer->email);
+        $this->throttleEmails("customer-email-verify:{$email}");
+
+        $token = Str::random(64);
+        Cache::put(self::EMAIL_VERIFY_KEY.hash('sha256', $token), ['customer_id' => $customer->id, 'email' => $email], now()->addHours($this->verifyTtlHours));
+        $this->emails->sendEmailChangeVerification($customer->email, $customer->full_name, $token, $this->verifyTtlHours);
+
+        return true;
+    }
+
+    public function verifyEmail(string $token): ?CustomerData
+    {
+        $pending = Cache::pull(self::EMAIL_VERIFY_KEY.hash('sha256', $token));
+        $customer = is_array($pending) ? Customer::query()->find((int) $pending['customer_id']) : null;
+        if ($customer === null || $customer->email === null || self::normalizeEmail($customer->email) !== $pending['email']) {
+            return null;
+        }
+        if ($customer->email_verified_at === null) {
+            $customer->update(['email_verified_at' => now()]);
+        }
+
+        return CustomerService::toData($customer->refresh());
     }
 
     private function activeByEmail(string $email): ?Customer

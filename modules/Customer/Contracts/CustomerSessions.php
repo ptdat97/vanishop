@@ -47,6 +47,18 @@ interface CustomerSessions
     public function logout(string $token): void;
 
     /**
+     * Gửi link xác minh email hiện tại của tài khoản (0.5.32 — đổi/thêm email trong hồ sơ, hoặc khách bấm "Gửi lại").
+     * Không có email hoặc đã xác minh → false (không gửi). Gửi quá nhiều tới một địa chỉ → `customer.too_many_attempts`.
+     */
+    public function sendEmailVerification(int $customerId): bool;
+
+    /**
+     * Bấm link xác minh email: đánh dấu đã xác minh nếu email của tài khoản vẫn là email đã gửi link. Link một lần;
+     * sai/hết hạn/email đã đổi tiếp → null.
+     */
+    public function verifyEmail(string $token): ?CustomerData;
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function addresses(int $customerId): array;

@@ -1235,6 +1235,33 @@
                 }
             }
         },
+        "/auth/email/verify": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xác minh email sau khi đổi email trong hồ sơ (token trong link) — không đăng nhập",
+                "description": "Body `token` (64 ký tự) từ link trong email. Sai/hết hạn hoặc email đã đổi tiếp → 422 `customer.email_link_invalid`.",
+                "responses": {
+                    "200": {
+                        "description": "Email đã xác minh.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/email-verified.json"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "tags": [
@@ -1505,6 +1532,44 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/RateLimited"
+                    }
+                },
+                "security": [
+                    {
+                        "customerBearer": []
+                    },
+                    {
+                        "firstPartySession": []
+                    }
+                ]
+            }
+        },
+        "/me/email/verification": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Gửi lại link xác minh email",
+                "description": "Email chưa xác minh (vừa đổi/thêm trong hồ sơ — `PATCH /me` tự gửi một lần). Đã xác minh hoặc chưa có email → 409 `customer.email_already_verified`.",
+                "responses": {
+                    "202": {
+                        "description": "Đã gửi link.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "../schemas/storefront/responses/email-accepted.json"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "409": {
+                        "$ref": "#/components/responses/Conflict"
                     },
                     "429": {
                         "$ref": "#/components/responses/RateLimited"

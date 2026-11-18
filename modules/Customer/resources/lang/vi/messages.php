@@ -22,6 +22,10 @@ return [
     'social_failed' => 'Không đăng nhập được bằng tài khoản này. Vui lòng thử lại hoặc dùng email.',
     'social_email_required' => 'Tài khoản này chưa có email đã xác minh. Vui lòng đăng ký bằng email.',
     'registration_link_invalid' => 'Link xác minh không đúng hoặc đã hết hạn. Vui lòng đăng ký lại.',
+    'email_link_invalid' => 'Link xác minh email không đúng hoặc đã hết hạn. Vào Hồ sơ để gửi lại link.',
+    'email_verification_sent' => 'Đã gửi link xác minh tới :email. Vui lòng kiểm tra hộp thư.',
+    'email_verified' => 'Đã xác minh email.',
+    'email_already_verified' => 'Email đã được xác minh, hoặc tài khoản chưa có email.',
     'password_reset_invalid' => 'Link đặt lại mật khẩu không đúng hoặc đã hết hạn. Vui lòng yêu cầu link mới.',
     'password_required' => 'Tài khoản chưa có mật khẩu. Vui lòng đặt mật khẩu trước.',
     'too_many_attempts' => 'Bạn thử quá nhiều lần. Vui lòng thử lại sau.',
@@ -32,6 +36,13 @@ Bấm vào link sau để hoàn tất đăng ký tài khoản (hiệu lực :hou
 :url
 
 Nếu bạn không đăng ký, hãy bỏ qua email này.',
+    'verify_email_change_subject' => 'Xác minh email tài khoản',
+    'verify_email_change_body' => 'Chào :name,
+
+Bấm vào link sau để xác minh email này cho tài khoản của bạn (hiệu lực :hours giờ):
+:url
+
+Nếu bạn không đổi email, hãy bỏ qua email này.',
     'reset_password_subject' => 'Đặt lại mật khẩu',
     'reset_password_body' => 'Chào :name,
 

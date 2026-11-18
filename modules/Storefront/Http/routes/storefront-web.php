@@ -79,6 +79,8 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::post($p('account.login'), [AccountController::class, 'authenticate'])->name('account.authenticate');
                 Route::post($p('account.register'), [AccountController::class, 'storeRegistration'])->name('account.register.store');
                 Route::get($p('account.register.verify'), [AccountController::class, 'verifyRegistration'])->name('account.register.verify');
+                // Link xác minh email sau khi đổi email (0.5.32): mở được trên máy khác, không cần đăng nhập — token đủ.
+                Route::get($p('account.email.verify'), [AccountSettingsController::class, 'verifyEmail'])->name('account.email.verify');
                 Route::post($p('account.password.forgot'), [AccountController::class, 'sendPasswordReset'])->name('account.password.email');
                 Route::post($p('account.password.reset'), [AccountController::class, 'resetPassword'])->name('account.password.update-forgotten');
             });
@@ -90,6 +92,7 @@ foreach (StoreLocale::supported() as $locale) {
                 Route::get($p('account.addresses'), [AccountController::class, 'addresses'])->name('account.addresses');
                 Route::get($p('account.profile'), [AccountSettingsController::class, 'profile'])->name('account.profile');
                 Route::put($p('account.profile'), [AccountSettingsController::class, 'updateProfile'])->name('account.profile.update');
+                Route::post($p('account.email.resend'), [AccountSettingsController::class, 'resendEmailVerification'])->middleware('throttle:vani-customer-auth')->name('account.email.resend');
                 Route::put($p('account.password'), [AccountSettingsController::class, 'updatePassword'])->middleware('throttle:vani-customer-auth')->name('account.password.update');
                 Route::get($p('account.delete'), [AccountSettingsController::class, 'deletion'])->name('account.delete');
                 Route::post($p('account.delete'), [AccountSettingsController::class, 'destroyAccount'])->middleware('throttle:vani-customer-auth')->name('account.delete.confirm');

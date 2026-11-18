@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.31
+Storefront API v1 — VaniShop 0.5.32
 GET /address/provinces security[]
   200
     $: object
@@ -38,12 +38,33 @@ GET /address/provinces/{province}/wards security[]
     $.error.correlation_id: string|null optional
     $.error.details: object|array optional
     $.error.message: string
+POST /auth/email/verify security[]
+  200
+    $: object
+    $.data: object
+    $.data.email: string (email)
+    $.data.email_verified: boolean
+  422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
 POST /auth/login security[]
   200
     $: object
     $.data: object
     $.data.birth_date: string|null
     $.data.email: string|null
+    $.data.email_verified: boolean optional
     $.data.full_name: string|null
     $.data.gender: string|null
     $.data.has_password: boolean
@@ -152,6 +173,7 @@ POST /auth/register/verify security[]
     $.data: object
     $.data.birth_date: string|null
     $.data.email: string|null
+    $.data.email_verified: boolean optional
     $.data.full_name: string|null
     $.data.gender: string|null
     $.data.has_password: boolean
@@ -200,6 +222,7 @@ POST /auth/social/{provider}/complete security[]
     $.data: object
     $.data.birth_date: string|null
     $.data.email: string|null
+    $.data.email_verified: boolean optional
     $.data.full_name: string|null
     $.data.gender: string|null
     $.data.has_password: boolean
@@ -1144,6 +1167,7 @@ GET /me security[customerBearer,firstPartySession]
     $.data: object
     $.data.birth_date: string|null
     $.data.email: string|null
+    $.data.email_verified: boolean optional
     $.data.full_name: string|null
     $.data.gender: string|null
     $.data.has_password: boolean
@@ -1171,6 +1195,7 @@ PATCH /me security[customerBearer,firstPartySession]
     $.data: object
     $.data.birth_date: string|null
     $.data.email: string|null
+    $.data.email_verified: boolean optional
     $.data.full_name: string|null
     $.data.gender: string|null
     $.data.has_password: boolean
@@ -1502,6 +1527,32 @@ POST /me/delete security[customerBearer,firstPartySession]
     $.error.details: object|array optional
     $.error.message: string
   422
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  429
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+POST /me/email/verification security[customerBearer,firstPartySession]
+  202
+    $: object
+    $.data: object
+    $.data.email: string (email)
+  401
+    $: object closed
+    $.error: object closed
+    $.error.code: string
+    $.error.correlation_id: string|null optional
+    $.error.details: object|array optional
+    $.error.message: string
+  409
     $: object closed
     $.error: object closed
     $.error.code: string

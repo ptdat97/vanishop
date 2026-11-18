@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Modules\Customer\Contracts\CustomerAccounts;
+use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\AddressRequest;
@@ -39,9 +40,40 @@ final class AccountSettingsController
     public function updateProfile(ProfileRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
-        $this->accounts->updateProfile($customer->id, $request->validated());
+        $updated = $this->accounts->updateProfile($customer->id, $request->validated());
+        // Đổi/thêm email → gửi link xác minh tới email mới (L40); quá số lần gửi thì vẫn lưu hồ sơ.
+        $status = __('storefront::messages.profile_saved');
+        if ($updated->email !== null && $updated->email !== $customer->email) {
+            try {
+                $this->sessions->sendEmailVerification($customer->id);
+                $status .= ' '.__('customer::messages.email_verification_sent', ['email' => $updated->email]);
+            } catch (CustomerRejected) {
+                // Đã gửi quá nhiều link tới địa chỉ này — khách bấm "Gửi lại" sau.
+            }
+        }
 
-        return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', __('storefront::messages.profile_saved'));
+        return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', $status);
+    }
+
+    public function resendEmailVerification(Request $request): RedirectResponse
+    {
+        $customer = $this->required($request);
+        if (! $this->sessions->sendEmailVerification($customer->id)) {
+            throw CustomerRejected::emailAlreadyVerified();
+        }
+
+        return redirect()->to(LocalizedUrls::route('storefront.account.profile'))->with('status', __('customer::messages.email_verification_sent', ['email' => $customer->email]));
+    }
+
+    /** Link trong email xác minh (không cần đăng nhập — token đủ). */
+    public function verifyEmail(string $token): RedirectResponse
+    {
+        $customer = $this->sessions->verifyEmail($token);
+        $target = LocalizedUrls::route('storefront.account.profile');
+
+        return $customer === null
+            ? redirect()->to($target)->withErrors(['business' => __('customer::messages.email_link_invalid')])
+            : redirect()->to($target)->with('status', __('customer::messages.email_verified'));
     }
 
     public function updatePassword(PasswordRequest $request): RedirectResponse

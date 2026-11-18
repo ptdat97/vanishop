@@ -254,5 +254,7 @@
     "Tìm phường/xã (gõ không dấu được)": "Search ward (accents optional)",
     "Tìm phường/xã": "Search ward",
     "Gửi thêm ảnh": "Add more photos",
-    "Gửi ảnh": "Send photos"
+    "Gửi ảnh": "Send photos",
+    "Email chưa xác minh.": "Email not verified yet.",
+    "Gửi lại link xác minh": "Resend verification link"
 }

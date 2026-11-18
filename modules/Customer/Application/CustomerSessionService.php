@@ -55,6 +55,16 @@ final class CustomerSessionService implements CustomerSessions
         $this->auth->logout($token);
     }
 
+    public function sendEmailVerification(int $customerId): bool
+    {
+        return $this->auth->sendEmailVerification($customerId);
+    }
+
+    public function verifyEmail(string $token): ?CustomerData
+    {
+        return $this->auth->verifyEmail($token);
+    }
+
     public function addresses(int $customerId): array
     {
         return $this->addresses->all($customerId);

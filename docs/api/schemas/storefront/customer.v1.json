@@ -29,6 +29,10 @@
                 "null"
             ]
         },
+        "email_verified": {
+            "type": "boolean",
+            "description": "Email đã xác minh qua link (0.5.32); false khi vừa đổi email — gửi lại bằng POST /me/email/verification."
+        },
         "full_name": {
             "type": [
                 "string",

@@ -110,7 +110,8 @@ final class CustomerService implements Customers
             }
             $attributes['email'] = $email === '' ? null : $email;
             if ($attributes['email'] !== $customer->email) {
-                // Email mới chưa được chứng minh sở hữu: không dùng để gộp đơn cho tới khi xác minh lại (đặt lại mật khẩu qua link).
+                // Email mới chưa được chứng minh sở hữu: không dùng để gộp đơn cho tới khi khách bấm link xác minh (nơi gọi gửi
+                // link qua CustomerSessions::sendEmailVerification) hoặc đặt lại mật khẩu qua link.
                 $attributes['email_verified_at'] = null;
             }
         }
@@ -135,7 +136,7 @@ final class CustomerService implements Customers
         return new CustomerData(
             $customer->id, $customer->public_id, $customer->phone, $customer->email, $customer->full_name, $customer->status->value,
             $customer->isRegistered(), $customer->birth_date?->format('Y-m-d'), $customer->gender, $customer->password !== null,
-            $customer->preferred_locale,
+            $customer->preferred_locale, $customer->email !== null && $customer->email_verified_at !== null,
         );
     }
 }

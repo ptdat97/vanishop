@@ -73,6 +73,18 @@ final class CustomerRejected extends BusinessRuleViolation
         return new self(__('customer::messages.registration_link_invalid'), 'customer.registration_link_invalid', 422);
     }
 
+    /** Gửi lại link xác minh khi email đã xác minh hoặc tài khoản chưa có email (0.5.32). */
+    public static function emailAlreadyVerified(): self
+    {
+        return new self(__('customer::messages.email_already_verified'), 'customer.email_already_verified', 409);
+    }
+
+    /** Link xác minh email (sau khi đổi email) sai/hết hạn, hoặc email đã đổi tiếp (0.5.32). */
+    public static function emailLinkInvalid(): self
+    {
+        return new self(__('customer::messages.email_link_invalid'), 'customer.email_link_invalid', 422);
+    }
+
     /** Link đặt lại mật khẩu sai hoặc hết hạn. */
     public static function passwordResetInvalid(): self
     {

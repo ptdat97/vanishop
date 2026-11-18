@@ -8,6 +8,7 @@ use Modules\Customer\Http\Controllers\Api\AuthController;
 Route::middleware('throttle:vani-customer-auth')->group(function () {
     Route::post('auth/register', [AuthController::class, 'register'])->name('auth.register');
     Route::post('auth/register/verify', [AuthController::class, 'verifyRegistration'])->name('auth.register.verify');
+    Route::post('auth/email/verify', [AuthController::class, 'verifyEmail'])->name('auth.email.verify');
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
     Route::post('auth/password/forgot', [AuthController::class, 'forgotPassword'])->name('auth.password.forgot');
     Route::post('auth/password/reset', [AuthController::class, 'resetPassword'])->name('auth.password.reset');
@@ -23,6 +24,7 @@ Route::middleware('vani.customer')->group(function () {
     Route::get('me/delete', [AccountController::class, 'deletion'])->name('me.deletion');
     Route::post('me/delete', [AccountController::class, 'destroy'])->middleware('throttle:vani-customer-auth')->name('me.destroy');
     Route::put('me/password', [AccountController::class, 'password'])->middleware('throttle:vani-customer-auth')->name('me.password');
+    Route::post('me/email/verification', [AccountController::class, 'sendEmailVerification'])->middleware('throttle:vani-customer-auth')->name('me.email.verification');
     Route::get('me/export', [AccountController::class, 'export'])->name('me.export');
     Route::get('me/addresses', [AccountController::class, 'addresses'])->name('me.addresses.index');
     Route::post('me/addresses', [AccountController::class, 'storeAddress'])->name('me.addresses.store');
