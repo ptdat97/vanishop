@@ -272,79 +272,78 @@ function loadVendor(name) {
 }
 window.vaniLoadVendor = loadVendor;
 
+/*
+ * Hiệu ứng hiện dần khi cuộn tới: `[data-vani-motion="rise|fade"]`, nhóm so le `[data-vani-motion-stagger]` >
+ * `[data-vani-motion-item]`. Chỉ CSS transition + IntersectionObserver (không tải thư viện Motion — ~60 KB gzip — cho
+ * mọi trang danh sách). Phần tử đã nằm trong màn hình đầu lúc tải trang hiện ngay, không chờ hiệu ứng (ảnh LCP không bị
+ * ẩn). Nội dung chèn sau (`vani:content-updated`) vẫn có hiệu ứng.
+ */
 const motionElementSelector = '[data-vani-motion]';
 const motionStaggerSelector = '[data-vani-motion-stagger]';
 const motionItemSelector = '[data-vani-motion-item]';
 if (
     document.querySelector(`${motionElementSelector}, ${motionStaggerSelector}`) &&
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    'IntersectionObserver' in window
 ) {
-    loadVendor('motion')
-        .then(({ animate, inView }) => {
-            const observed = new WeakSet();
-            document.documentElement.classList.add('vani-motion-ready');
-
-            const observeMotionTargets = (root) => {
-                const findTargets = (selector) => {
-                    const targets = [...root.querySelectorAll(selector)];
-                    if (root instanceof Element && root.matches(selector)) {
-                        targets.unshift(root);
-                    }
-                    return targets;
-                };
-                const staggerGroups = findTargets(motionStaggerSelector);
-                const staggeredItems = new WeakSet();
-
-                staggerGroups.forEach((group) => {
-                    if (observed.has(group)) return;
-                    const items = [...group.querySelectorAll(motionItemSelector)].filter((item) => item.closest(motionStaggerSelector) === group);
-                    if (items.length === 0) return;
-
-                    observed.add(group);
-                    items.forEach((item) => {
-                        staggeredItems.add(item);
-                        item.setAttribute('data-vani-motion-pending', '');
-                    });
-                    inView(group, () => {
-                        items.forEach((item, index) => {
-                            animate(item, { opacity: [0, 1], y: [12, 0] }, {
-                                duration: 0.65,
-                                delay: Math.min(index, 6) * 0.045,
-                                ease: [0.22, 1, 0.36, 1],
-                            }).then(() => item.removeAttribute('data-vani-motion-pending'));
-                        });
-                    });
-                });
-
-                const targets = findTargets(motionElementSelector);
-                targets.forEach((target) => {
-                    const motionParent = target.closest(motionElementSelector);
-                    if (observed.has(target) || staggeredItems.has(target) || (motionParent && motionParent !== target)) return;
-                    observed.add(target);
-                    const motion = target.dataset.vaniMotion ?? 'rise';
-                    target.setAttribute('data-vani-motion-pending', '');
-                    inView(target, () => {
-                        const keyframes = motion === 'fade' ? { opacity: [0, 1] } : { opacity: [0, 1], y: [12, 0] };
-                        animate(target, keyframes, {
-                            duration: 0.7,
-                            ease: [0.22, 1, 0.36, 1],
-                        }).then(() => target.removeAttribute('data-vani-motion-pending'));
-                    });
-                });
-            };
-
-            observeMotionTargets(document);
-            document.addEventListener('vani:content-updated', (event) => {
-                if (event.detail?.element instanceof Element) {
-                    observeMotionTargets(event.detail.element);
-                }
+    const observed = new WeakSet();
+    const staggered = new WeakSet();
+    // Mỗi phần tử theo dõi riêng; các mục so le hiện cùng một lượt (cùng hàng) lệch nhau 45 ms.
+    const observer = new IntersectionObserver((entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting).map((entry) => entry.target);
+        visible.forEach((element) => observer.unobserve(element));
+        requestAnimationFrame(() => {
+            let order = 0;
+            visible.forEach((element) => {
+                const delay = staggered.has(element) ? Math.min(order++, 6) * 45 : 0;
+                element.style.setProperty('--vani-motion-delay', `${delay}ms`);
+                element.removeAttribute('data-vani-motion-pending');
             });
-        })
-        .catch((error) => {
-            document.documentElement.classList.remove('vani-motion-ready');
-            document.querySelectorAll('[data-vani-motion-pending]').forEach((target) => target.removeAttribute('data-vani-motion-pending'));
-            console.error('Không thể tải Motion cho hiệu ứng sản phẩm.', error);
         });
+    });
+    const inFirstScreen = (element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.top < window.innerHeight && rect.bottom > 0;
+    };
+    const watch = (element, initial) => {
+        if (observed.has(element)) return;
+        observed.add(element);
+        if (initial && inFirstScreen(element)) return;
+        element.setAttribute('data-vani-motion-pending', '');
+        observer.observe(element);
+    };
+
+    const observeMotionTargets = (root, initial) => {
+        const findTargets = (selector) => {
+            const targets = [...root.querySelectorAll(selector)];
+            if (root instanceof Element && root.matches(selector)) {
+                targets.unshift(root);
+            }
+            return targets;
+        };
+
+        findTargets(motionStaggerSelector).forEach((group) => {
+            [...group.querySelectorAll(motionItemSelector)]
+                .filter((item) => item.closest(motionStaggerSelector) === group)
+                .forEach((item) => {
+                    staggered.add(item);
+                    watch(item, initial);
+                });
+        });
+
+        findTargets(motionElementSelector).forEach((target) => {
+            if (staggered.has(target) || target.parentElement?.closest(motionElementSelector)) return;
+            watch(target, initial);
+        });
+    };
+
+    document.documentElement.classList.add('vani-motion-ready');
+    observeMotionTargets(document, true);
+    document.addEventListener('vani:content-updated', (event) => {
+        if (event.detail?.element instanceof Element) {
+            observeMotionTargets(event.detail.element, false);
+        }
+    });
 }
 
 /**

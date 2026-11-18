@@ -196,8 +196,21 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+    /* Hiện dần khi cuộn tới (app.js): JS gắn data-vani-motion-pending lúc chưa thấy, gỡ khi thấy → transition. */
+    html.vani-motion-ready [data-vani-motion],
+    html.vani-motion-ready [data-vani-motion-item] {
+        transition:
+            opacity 650ms var(--ease-luxury) var(--vani-motion-delay, 0ms),
+            transform 650ms var(--ease-luxury) var(--vani-motion-delay, 0ms);
+    }
+
     html.vani-motion-ready [data-vani-motion-pending] {
         opacity: 0;
+        transform: translateY(12px);
+    }
+
+    html.vani-motion-ready [data-vani-motion='fade'][data-vani-motion-pending] {
+        transform: none;
     }
 
     .vani-product-card img {

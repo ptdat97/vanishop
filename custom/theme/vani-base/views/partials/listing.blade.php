@@ -86,7 +86,7 @@
             <x-vani::hook-slot name="vani.storefront.plp.empty" :args="[$listingView['context'], $listing]" />
         @else
             {{-- Lưới 3 cột cạnh cột lọc 14rem: vùng chứa ≈ 1152 − 224 − 32 px. --}}
-            @include('theme::partials.product-grid', ['products' => $listing['items'], 'gridClass' => 'grid grid-cols-2 gap-6 md:grid-cols-3', 'layout' => [896, 3, 2], 'stagger' => true])
+            @include('theme::partials.product-grid', ['products' => $listing['items'], 'gridClass' => 'grid grid-cols-2 gap-6 md:grid-cols-3', 'layout' => [896, 3, 2], 'stagger' => true, 'eager' => 2])
         @endif
 
         @if ($listingView['pages'] !== [])

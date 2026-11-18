@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.23 — 2026-11-18 · Extension API 1.3.0 (không đổi)
+
+Storefront S1: rào chắn mobile & tốc độ. Không đổi API cho plugin.
+
+### Đổi (theme)
+- Hiệu ứng hiện dần `data-vani-motion*` chạy bằng CSS transition + `IntersectionObserver`, không tải thư viện Motion nữa (JS trang danh sách 210 → 34 KB, chưa nén). Phần tử trong màn hình đầu lúc tải trang hiện ngay (trước đây ẩn tới khi thư viện tải xong — gồm ảnh hero, làm chậm LCP). `window.vaniLoadVendor('motion')` vẫn dùng được. Theme con có CSS riêng cho `[data-vani-motion-pending]`: trạng thái chờ nay là `opacity: 0; transform: translateY(12px)` (fade: chỉ opacity), độ trễ so le qua biến `--vani-motion-delay`.
+- `theme::partials.product-grid` nhận `$eager` (số ảnh đầu tải ngay); `theme::partials.product-card` nhận `$loading`. Trang danh sách: 2 ảnh đầu `eager` + `fetchpriority="high"`.
+
+### Kiểm thử
+- `tests/Browser/StorefrontMobileBudgetTest`: ở 375px không cuộn ngang, ảnh có `width`/`height`, JS ≤ 64 KB, CSS ≤ 96 KB lúc mở trang, ảnh màn hình đầu của trang danh sách/sản phẩm không lazy, không phần tử màn hình đầu bị ẩn chờ hiệu ứng; 320px không cuộn ngang.
+
 ## 0.5.22 — 2026-11-18 · Extension API 1.3.0 (không đổi)
 
 ### Sửa

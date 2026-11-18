@@ -207,6 +207,9 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 - URL: một website ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): `/san-pham/{slug}`, `/danh-muc/{slug}`, `/thuong-hieu/{slug}`…
 - SEO: một canonical cho mỗi sản phẩm (không lặp theo brand), một sitemap (chia file khi lớn, gồm trang brand), schema.org `Product`/`Offer` có `brand`, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
 - Mục tiêu: LCP mobile < 2,5s, CLS < 0,1.
+- **Ngân sách mobile (0.5.23, `tests/Browser/StorefrontMobileBudgetTest`):** ở màn 375px, các trang chính (trang chủ, danh mục, sản phẩm, tìm kiếm, thương hiệu, giỏ, tra cứu đơn, đăng nhập) phải: không cuộn ngang (danh mục và sản phẩm kiểm thêm ở 320px); mọi `<img>` có `width`/`height`; JS tải lúc mở trang ≤ 64 KB, CSS ≤ 96 KB (chưa nén); trang danh sách và trang sản phẩm không có ảnh `lazy` trong màn hình đầu; không phần tử nào trong màn hình đầu bị ẩn chờ hiệu ứng. Số đo 2026-11-18: JS 34 KB (trang sản phẩm 48 KB, thêm PhotoSwipe), CSS 74–79 KB. Theme con hoặc plugin làm vượt ngân sách → test đỏ.
+  - Lưới sản phẩm: `theme::partials.product-grid` nhận `$eager` (số ảnh đầu tải ngay, `fetchpriority="high"`); trang danh sách dùng 2 (hàng đầu trên điện thoại).
+  - Hiệu ứng hiện dần (`data-vani-motion="rise|fade"`, nhóm `data-vani-motion-stagger` > `data-vani-motion-item`): CSS transition + `IntersectionObserver`, không tải thư viện Motion (trước 0.5.23 tải ~60 KB gzip ở mọi trang có lưới sản phẩm, và ẩn cả nội dung màn hình đầu — kể cả ảnh hero — tới khi tải xong). Phần tử trong màn hình đầu lúc tải trang hiện ngay; phần tử phía dưới hiện khi cuộn tới, các mục so le cùng hàng lệch 45 ms. Theme con/plugin vẫn gọi được `window.vaniLoadVendor('motion')` khi cần animation riêng.
 
 ## 6. Kiểm thử
 

@@ -5,7 +5,7 @@
         <div @class(['overflow-hidden rounded-[var(--radius-theme)] bg-slate-100' => true, 'w-20 shrink-0 sm:w-28' => $isList]) style="aspect-ratio: {{ $productFrame['aspect'] }}">
             @if ($product['image_url'])
                 {{-- $layout: [vùng chứa px, cột desktop, cột mobile] của lưới đang dùng; mặc định lưới 4/2 trong khung 72rem. Khung theo tỉ lệ ảnh sản phẩm. --}}
-                @include('theme::partials.image', ['src' => $product['image_url'], 'srcset' => $product['image_srcset'] ?? null, 'alt' => $product['name'], 'layout' => $layout ?? [1152, 4, 2], 'width' => $productFrame['card']['width'], 'height' => $productFrame['card']['height'], 'class' => 'h-full w-full object-cover'])
+                @include('theme::partials.image', ['src' => $product['image_url'], 'srcset' => $product['image_srcset'] ?? null, 'alt' => $product['name'], 'layout' => $layout ?? [1152, 4, 2], 'width' => $productFrame['card']['width'], 'height' => $productFrame['card']['height'], 'class' => 'h-full w-full object-cover', 'loading' => $loading ?? 'lazy'])
             @endif
         </div>
         <x-vani::hook-slot name="vani.storefront.plp.card_badges" :args="[$product]" />
