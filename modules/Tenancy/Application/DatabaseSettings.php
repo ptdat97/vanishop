@@ -7,6 +7,7 @@ namespace Modules\Tenancy\Application;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
+use Modules\Tenancy\Events\SettingChanged;
 use Modules\Tenancy\Persistence\Models\SettingRecord;
 
 /**
@@ -40,12 +41,15 @@ final class DatabaseSettings implements Settings
             ['value' => $secret ? Crypt::encryptString($json) : $json, 'encrypted' => $secret],
         );
         unset($this->loaded[$namespace]);
+        // Không gửi giá trị cấu hình bí mật qua event.
+        event(new SettingChanged($namespace, $key, $secret ? null : $value));
     }
 
     public function forget(string $namespace, string $key): void
     {
         SettingRecord::query()->where(['namespace' => $namespace, 'key' => $key])->delete();
         unset($this->loaded[$namespace]);
+        event(new SettingChanged($namespace, $key, null));
     }
 
     public function explicit(string $namespace): array

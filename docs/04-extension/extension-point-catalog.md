@@ -121,6 +121,7 @@ Dispatch **sau commit**. Payload là DTO bất biến trong `Modules\<Ctx>\Event
 | Returns | `ReturnRequested`, `ReturnResolved` (**Implemented**) |
 | Integration | `IntegrationMessageFailed`, `IntegrationMessageDead` |
 | Extension | `PluginEnabled`, `PluginDisabled` |
+| Tenancy | `SettingChanged` (**Implemented**, 0.5.29 — `Settings::set`/`forget`; giá trị cấu hình `secret` không đi kèm event) |
 
 ## 4. Hooks public
 

@@ -94,6 +94,23 @@ it('tải lên: chỉ ảnh hợp lệ; ảnh trùng nội dung dùng lại ản
     $this->getJson("{$this->base}/browse?keyword=100%25")->assertOk()->assertJsonPath('meta.total', 0);
 });
 
+it('ảnh chọn ở cấu hình kiểu media là "đang dùng" (không xoá được); đổi/bỏ cấu hình thì ảnh cũ xoá được — L22', function () {
+    [$first, $second] = uploadTo('', [UploadedFile::fake()->image('thay-the.jpg', 600, 900), UploadedFile::fake()->image('chia-se.jpg', 1200, 630)]);
+    $this->actingAs(T::staff(['admin.access', 'settings.manage', 'media.view', 'media.manage']), 'staff');
+
+    $this->put('/admin/settings', ['namespace' => 'core', 'values' => [EloquentMediaUrls::PLACEHOLDER_SETTING => $first['id']]])->assertSessionHasNoErrors();
+    $this->postJson("{$this->base}/items/delete", ['ids' => [$first['id']]])->assertOk()->assertJsonPath('deleted', 0)->assertJsonPath('in_use', 1);
+
+    // Đổi sang ảnh khác: ảnh mới đang dùng, ảnh cũ được thả.
+    $this->put('/admin/settings', ['namespace' => 'core', 'values' => [EloquentMediaUrls::PLACEHOLDER_SETTING => $second['id']]])->assertSessionHasNoErrors();
+    $this->postJson("{$this->base}/items/delete", ['ids' => [$second['id']]])->assertOk()->assertJsonPath('in_use', 1);
+    $this->postJson("{$this->base}/items/delete", ['ids' => [$first['id']]])->assertOk()->assertJsonPath('deleted', 1);
+
+    // Bỏ cấu hình (về mặc định) → ảnh xoá được.
+    T::seed(fn () => app(Settings::class)->forget('core', EloquentMediaUrls::PLACEHOLDER_SETTING));
+    $this->postJson("{$this->base}/items/delete", ['ids' => [$second['id']]])->assertOk()->assertJsonPath('deleted', 1);
+});
+
 it('đổi tên, chuyển thư mục; xoá chỉ ảnh không còn dùng (kèm file gốc và bản thu nhỏ)', function () {
     $this->postJson("{$this->base}/folders", ['name' => 'Cũ'])->assertOk();
     [$used, $unused] = uploadTo('', [UploadedFile::fake()->image('dang-dung.jpg', 900, 1200), UploadedFile::fake()->image('bo-di.jpg', 900, 1201)]);

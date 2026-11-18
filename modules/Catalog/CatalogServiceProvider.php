@@ -41,6 +41,7 @@ use Modules\Catalog\Contracts\VideoDriver;
 use Modules\Catalog\Events\ProductArchived;
 use Modules\Catalog\Events\ProductCreated;
 use Modules\Catalog\Events\ProductUpdated;
+use Modules\Catalog\Listeners\DeclareSettingMedia;
 use Modules\Catalog\Listeners\SyncProductSearchIndex;
 use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\Variant;
@@ -52,6 +53,7 @@ use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
+use Modules\Tenancy\Events\SettingChanged;
 
 final class CatalogServiceProvider extends ModuleServiceProvider
 {
@@ -102,6 +104,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Event::listen([ProductCreated::class, ProductUpdated::class, ProductArchived::class], SyncProductSearchIndex::class);
+        // Ảnh chọn ở cấu hình kiểu `media` là "đang dùng" trong Thư viện ảnh (backlog L22).
+        Event::listen(SettingChanged::class, DeclareSettingMedia::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([SearchReindexCommand::class, MediaCacheCommand::class]);

@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.29 — 2026-11-18 · Extension API 1.5.0
+
+Backlog L22.
+
+### Thêm (API cho plugin — minor)
+- Domain event `Modules\Tenancy\Events\SettingChanged` (`namespace`, `key`, `value` — null khi xoá hoặc cấu hình `secret`), phát sau commit mỗi lần `Settings::set`/`forget`. Plugin nghe để phản ứng khi cấu hình đổi (`onEvent`, hoặc action `vani.event.tenancy.setting_changed`).
+
+### Sửa
+- Ảnh chọn ở cấu hình kiểu `media` (Ảnh thay thế, Ảnh khi chia sẻ link, cấu hình `media` của plugin) nay là "đang dùng" trong Thư viện ảnh — không xoá được; đổi/bỏ cấu hình thì ảnh cũ được thả (Catalog `DeclareSettingMedia`). Cấu hình đã lưu trước 0.5.29 được khai báo ở lần lưu kế tiếp.
+
 ## 0.5.28 — 2026-11-18 · Extension API 1.4.0 (không đổi)
 
 Backlog L32. Không đổi API cho plugin.
