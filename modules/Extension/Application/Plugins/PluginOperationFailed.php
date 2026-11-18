@@ -7,7 +7,7 @@ namespace Modules\Extension\Application\Plugins;
 use Modules\Extension\Domain\Plugin\DependencyProblem;
 use RuntimeException;
 
-final class PluginOperationFailed extends RuntimeException
+class PluginOperationFailed extends RuntimeException
 {
     /**
      * @param  list<DependencyProblem>  $problems

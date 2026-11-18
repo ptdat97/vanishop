@@ -4,6 +4,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.22 — 2026-11-18 · Extension API 1.3.0 (không đổi)
+
+### Sửa
+- `vani:plugin:upgrade <id>` khi plugin đã ở version trong code: báo "đã ở version …" và **trả mã 0** (trước là mã 1 — vòng nâng mọi plugin lúc deploy báo lỗi giả, backlog L38). Hạ version, không tương thích, migration lỗi vẫn mã 1. Admin vẫn báo như cũ (`PluginAlreadyCurrent` là một `PluginOperationFailed`).
+
 ## 0.5.21 — 2026-11-18 · Extension API 1.3.0 (không đổi)
 
 Theme `vani-base` đợt 2: layout và partial không còn tự tính. Không đổi API cho plugin.

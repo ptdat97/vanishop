@@ -245,7 +245,7 @@ final class PluginManager
         $from = $record->version;
 
         if (Comparator::equalTo($manifest->version, $from)) {
-            throw new PluginOperationFailed("Plugin [{$pluginId}] đã ở version {$from}.");
+            throw new PluginAlreadyCurrent("Plugin [{$pluginId}] đã ở version {$from}.");
         }
         if (Comparator::lessThan($manifest->version, $from)) {
             throw new PluginOperationFailed("Không hạ version [{$pluginId}] từ {$from} xuống {$manifest->version}.");

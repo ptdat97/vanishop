@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Extension\Console;
 
 use Illuminate\Console\Command;
+use Modules\Extension\Application\Plugins\PluginAlreadyCurrent;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Extension\Application\Plugins\PluginOperationFailed;
 
@@ -18,6 +19,10 @@ final class PluginUpgradeCommand extends Command
     {
         try {
             $record = $plugins->upgrade((string) $this->argument('plugin'));
+        } catch (PluginAlreadyCurrent $exception) {
+            $this->info($exception->getMessage());
+
+            return self::SUCCESS;
         } catch (PluginOperationFailed $exception) {
             $this->error($exception->getMessage());
 

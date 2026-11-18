@@ -140,7 +140,7 @@ php artisan vani:plugin:finish-draining           # (lịch 5 phút) tắt plugi
 php artisan vani:plugin:uninstall vani.vietqr [--purge [--drop-retained [--yes]]]   # --purge: rollback migration, xoá bảng owned (chặn khi còn tham chiếu/khoá ngoại/dữ liệu lưu giữ)
 php artisan vani:plugin:hooks [vani.vietqr]       # hook đã khai báo & listener (Core/plugin)
 php artisan vani:plugin:seed vani.vietqr [--rerun]  # (0.3.53) chạy seeder chưa chạy (sau khi sửa seeder lỗi); --rerun chạy lại tất cả
-php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit
+php artisan vani:plugin:upgrade vani.vietqr       # chỉ tiến version: kiểm tra tương thích Core/deps → chạy migration mới; failed → installed khi thành công; audit; đã ở version → mã 0
 php artisan vani:plugin:doctor [--json]           # nâng/hạ version chờ, migration chờ, plugin failed, thiếu manifest/provider, không tương thích, cache không dùng chung ở production; exit 1 khi có lỗi
 ```
 

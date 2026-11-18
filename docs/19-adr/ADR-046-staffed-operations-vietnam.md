@@ -1,6 +1,6 @@
 # ADR-046 — Vận hành có người ở ba chốt: xác nhận đơn COD, đẩy đơn lên hãng, duyệt đổi trả
 
-- Trạng thái: **Accepted** · Code: **Implemented** (Core 0.4.53–0.4.54, 2026-11-15) — đợt V1–V4 ở [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md#p1--vận-hành-có-người-adr-046) · Ngày: 2026-11-15 (bổ sung cùng ngày: giữ luồng tự động làm điểm mở rộng) · Người quyết định: Owner
+- Trạng thái: **Accepted** · Code: **Implemented** (Core 0.4.53–0.4.54, 2026-11-15) — đợt V1–V4 (bảng đợt đã gỡ khỏi [stabilization-2026-11](../20-roadmap/stabilization-2026-11.md) khi xong — xem lịch sử git; kiểm chứng: `tests/Feature/Operations/StaffedCheckpointsTest`) · Ngày: 2026-11-15 (bổ sung cùng ngày: giữ luồng tự động làm điểm mở rộng) · Người quyết định: Owner
 - Liên quan: [vision §2.2](../00-overview/vision.md#22-vận-hành-tại-việt-nam-có-người-ở-mỗi-chốt), [ADR-043](ADR-043-fulfillment-stays-in-core.md) (Fulfillment ở Core, gọn cho SME), [extension-model](../04-extension/extension-model.md), [order](../09-order/order.md), [fulfillment](../09-order/fulfillment.md), [payment §5](../10-payment/payment.md).
 
 ## Context

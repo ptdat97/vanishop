@@ -37,8 +37,9 @@ beforeEach(function () {
 
 afterEach(fn () => File::deleteDirectory($this->root));
 
-it('upgrade: chạy migration mới, cập nhật version, có audit; cùng version hoặc hạ version bị từ chối', function () {
+it('upgrade: chạy migration mới, cập nhật version, có audit; cùng version không có gì để nâng (lệnh vẫn thành công), hạ version bị từ chối', function () {
     expect(fn () => ($this->plugins)()->upgrade('fixture.greeting'))->toThrow(PluginOperationFailed::class, 'đã ở version 1.0.0');
+    $this->artisan('vani:plugin:upgrade', ['plugin' => 'fixture.greeting'])->expectsOutputToContain('đã ở version 1.0.0')->assertSuccessful();
 
     FixturePlugins::withMigration($this->root, 'Greeting');
     ($this->deploy)('Greeting', ['version' => '1.1.0']);
@@ -50,6 +51,7 @@ it('upgrade: chạy migration mới, cập nhật version, có audit; cùng vers
 
     ($this->deploy)('Greeting', ['version' => '1.0.5']);
     expect(fn () => ($this->plugins)()->upgrade('fixture.greeting'))->toThrow(PluginOperationFailed::class, 'Không hạ version');
+    $this->artisan('vani:plugin:upgrade', ['plugin' => 'fixture.greeting'])->assertFailed();
 });
 
 it('upgrade: bản mới không tương thích Core bị từ chối; plugin failed nâng thành công về installed', function () {
