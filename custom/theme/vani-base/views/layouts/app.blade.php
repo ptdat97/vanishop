@@ -40,6 +40,7 @@
                 @if ($shell['menus']['header'] !== null)
                     @include('theme::partials.menu', ['items' => $shell['menus']['header']])
                 @else
+                    <a href="{{ vani_route('storefront.categories') }}">{{ __('Danh mục') }}</a>
                     <a href="{{ vani_route('storefront.brands') }}">{{ __('Thương hiệu') }}</a>
                 @endif
                 <x-vani::hook-slot name="vani.storefront.header.nav" class="flex flex-wrap items-center gap-4 ml-4" />

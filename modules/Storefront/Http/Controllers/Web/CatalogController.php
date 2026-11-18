@@ -8,8 +8,10 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\App;
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\BrandIndex;
+use Modules\Storefront\Application\PageBlocks;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Contracts\PageSeo;
@@ -25,6 +27,36 @@ final class CatalogController
         private readonly CatalogReader $catalog,
         private readonly ProductViews $products,
     ) {}
+
+    public function categories(PageBlocks $pageBlocks): View
+    {
+        $locale = App::getLocale();
+        $categoryTree = $this->catalog->categoryTree($locale);
+        $categories = [];
+        $flatten = function (array $nodes, ?string $parentName = null) use (&$flatten, &$categories): void {
+            foreach ($nodes as $node) {
+                $categories[] = [
+                    'slug' => (string) $node['slug'],
+                    'name' => (string) $node['name'],
+                    'parent_name' => $parentName,
+                    'image_url' => $node['image_url'] ?? null,
+                ];
+                $flatten((array) ($node['children'] ?? []), (string) $node['name']);
+            }
+        };
+        $flatten($categoryTree);
+
+        $heroBlock = collect($pageBlocks->home() ?? [])->firstWhere('type', 'hero');
+        $banner = $heroBlock === null ? [] : ($pageBlocks->resolve([$heroBlock])[0]['data'] ?? []);
+        $now = now()->getTimestamp();
+
+        return view('theme::pages.categories', [
+            'categories' => $categories,
+            'bannerImage' => $banner['imageUrl'] ?? null,
+            'bannerImageSrcset' => $banner['imageSrcset'] ?? null,
+            'suggestedProducts' => $this->products->listing(new ProductFilters(now: $now, perPage: 8), $locale, $now)['items'],
+        ]);
+    }
 
     public function category(ProductListRequest $request, string $slug, PageSeo $seo): View|RedirectResponse
     {

@@ -10,11 +10,7 @@
         @foreach ($tabs as $tab)
             <div role="tabpanel" class="mb-6" data-extras-panel="{{ $loop->index }}">
                 <h3 class="mb-3 font-medium" data-extras-panel-title>{{ $tab['label'] }}</h3>
-                <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-                    @foreach ($tab['products'] as $product)
-                        @include('theme::partials.product-card', ['product' => $product])
-                    @endforeach
-                </div>
+                @include('theme::partials.product-grid', ['products' => $tab['products'], 'stagger' => false])
             </div>
         @endforeach
     </section>

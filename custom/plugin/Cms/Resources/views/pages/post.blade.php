@@ -34,11 +34,7 @@
     @if (($post['products'] ?? []) !== [])
         <section class="mx-auto mt-12 max-w-5xl" data-cms-post-products>
             <h2 class="mb-4 text-lg font-semibold">{{ __('Sản phẩm trong bài') }}</h2>
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-                @foreach ($post['products'] as $product)
-                    @include('theme::partials.product-card', ['product' => $product])
-                @endforeach
-            </div>
+            @include('theme::partials.product-grid', ['products' => $post['products']])
         </section>
     @endif
 @endsection

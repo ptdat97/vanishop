@@ -171,6 +171,7 @@ return [
         'paths' => [
             'vi' => [
                 'home' => '/',
+                'categories' => 'danh-muc',
                 'category' => 'danh-muc/{slug}',
                 'brands' => 'thuong-hieu',
                 'brand' => 'thuong-hieu/{slug}',
@@ -210,6 +211,7 @@ return [
             ],
             'en' => [
                 'home' => '/',
+                'categories' => 'categories',
                 'category' => 'category/{slug}',
                 'brands' => 'brands',
                 'brand' => 'brands/{slug}',

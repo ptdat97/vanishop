@@ -34,11 +34,7 @@
 
     <section>
         <h2 class="mb-4 text-lg font-semibold">{{ __('Sản phẩm mới') }}</h2>
-        <div class="grid grid-cols-2 gap-6 md:grid-cols-4" data-vani-motion-stagger>
-            @foreach ($newest as $product)
-                @include('theme::partials.product-card', ['product' => $product])
-            @endforeach
-        </div>
+        @include('theme::partials.product-grid', ['products' => $newest, 'stagger' => true])
     </section>
     @endif
     <x-vani::hook-slot name="vani.storefront.home.after_blocks" />

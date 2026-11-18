@@ -3,7 +3,7 @@
 Plugin nội dung (`kind: content`). Đây là implementation tham chiếu cho `storefrontPages(..., prefix:)` và `SitemapProvider` (Core 0.3.14).
 
 - **Trang** `/trang/{slug}`: giới thiệu, chính sách đổi trả, bảo mật… Mỗi trang có thể hiện link ở menu đầu trang và/hoặc chân trang, kèm thứ tự sắp xếp.
-- **Tin tức** `/tin-tuc`, `/tin-tuc/{slug}`: bài viết có ảnh bìa, tóm tắt và phân trang. Menu đầu trang tự có link "Tin tức" khi đã có bài đăng.
+- **Tin tức** `/tin-tuc`, `/tin-tuc/{slug}`: bài viết có ảnh bìa, tóm tắt và phân trang. Thêm link đến trang tin tức trong Admin → Giao diện → Menu nếu muốn hiển thị ở header.
 - **Soạn thảo** (Admin → Nội dung, quyền `cms.view` / `cms.manage`):
   - Nội dung viết bằng Markdown (GFM). Có xem trước, chèn ảnh từ Thư viện ảnh, và trường SEO (tiêu đề, mô tả).
   - Trạng thái nháp/đăng; có thể hẹn giờ đăng theo giờ Việt Nam.

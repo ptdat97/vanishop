@@ -203,11 +203,7 @@
     @foreach ($product['links'] ?? [] as $link)
         <section class="mt-12">
             <h2 class="mb-4 text-lg font-medium">{{ $link['name'] ?? $link['code'] }}</h2>
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-4" data-vani-motion-stagger>
-                @foreach (array_slice($link['products'], 0, 8) as $linked)
-                    @include('theme::partials.product-card', ['product' => $linked])
-                @endforeach
-            </div>
+            @include('theme::partials.product-grid', ['products' => array_slice($link['products'], 0, 8), 'stagger' => true])
         </section>
     @endforeach
     <x-vani::hook-slot name="vani.storefront.pdp.after_related_products" :args="[$product]" />

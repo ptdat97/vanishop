@@ -16,6 +16,7 @@ final class RouteLinkType implements LinkType
     /** @var array<string, string> tên route => nhãn mặc định */
     private const ROUTES = [
         'storefront.home' => 'Trang chủ',
+        'storefront.categories' => 'Danh mục',
         'storefront.brands' => 'Thương hiệu',
         'storefront.search' => 'Tất cả sản phẩm',
         'storefront.cart' => 'Giỏ hàng',

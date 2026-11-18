@@ -33,6 +33,7 @@ foreach (StoreLocale::supported() as $locale) {
             // Trang công khai: không phiên, CDN cache được (storefront §5); phần riêng của khách qua GET /_vani/phien.
             Route::withoutMiddleware(PublicPageCache::SESSIONLESS)->middleware('vani.page-cache')->group(function () use ($p): void {
                 Route::get($p('home'), HomeController::class)->name('home');
+                Route::get($p('categories'), [CatalogController::class, 'categories'])->name('categories');
                 Route::get($p('category'), [CatalogController::class, 'category'])->name('category');
                 Route::get($p('brands'), [CatalogController::class, 'brands'])->name('brands');
                 Route::get($p('brand'), [CatalogController::class, 'brand'])->name('brand');
