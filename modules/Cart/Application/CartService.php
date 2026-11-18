@@ -226,6 +226,8 @@ final class CartService implements Carts
             return;
         }
 
+        // Phần còn lại của giỏ được chọn lại (backlog L5, Owner 2026-11-18): khách quay lại giỏ là thanh toán được ngay.
+        CartLine::query()->where('cart_id', $cart->id)->update(['selected' => true]);
         // Mã giảm giá đã dùng cho đơn vừa đặt: không mang sang phần còn lại của giỏ.
         $cart->update(['meta' => [...($cart->meta ?? []), 'last_order_id' => $orderPublicId], 'voucher_codes' => null]);
         $this->touch($cart);

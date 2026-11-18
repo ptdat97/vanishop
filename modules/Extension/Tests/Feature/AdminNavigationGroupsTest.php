@@ -21,8 +21,9 @@ it('mục có nhóm; chỉ nhóm có mục được phép mới gửi xuống; m
     ])->create();
 
     $this->actingAs($staff, 'staff')->get('/admin')->assertInertia(fn (Assert $page) => $page
-        ->where('navigation', fn ($items) => collect($items)->pluck('group', 'key')->only(['dashboard', 'orders', 'returns', 'customers', 'payment', 'catalog', 'media', 'plugins'])->all()
-            === ['dashboard' => null, 'orders' => 'sales', 'returns' => 'sales', 'customers' => null, 'payment' => 'sales', 'catalog' => 'catalog', 'media' => 'content', 'plugins' => null])
+        ->where('navigation', fn ($items) => collect($items)->pluck('group', 'key')->only(['dashboard', 'orders', 'returns', 'customers', 'payment', 'catalog', 'media', 'plugins'])->sortKeys()->all()
+            // Chỉ kiểm nhóm của từng mục; thứ tự mục trong menu do vị trí (position) quyết, không thuộc test này.
+            === ['catalog' => 'catalog', 'customers' => null, 'dashboard' => null, 'media' => 'content', 'orders' => 'sales', 'payment' => 'sales', 'plugins' => null, 'returns' => 'sales'])
         ->where('navigationGroups', fn ($groups) => collect($groups)->pluck('key')->all() === ['sales', 'catalog', 'content'])
         ->where('navigationGroups.0.label', 'Bán hàng'));
 });

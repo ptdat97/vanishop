@@ -104,7 +104,8 @@ interface Carts
 
     /**
      * Sau khi đặt đơn từ các dòng đã chọn (0.3.64, trong cùng transaction với lockForCheckout): xoá các dòng đó khỏi giỏ.
-     * Không còn dòng nào → giỏ chuyển "converted" như markConverted; còn dòng → giỏ vẫn mở, dòng còn lại giữ nguyên.
+     * Không còn dòng nào → giỏ chuyển "converted" như markConverted; còn dòng → giỏ vẫn mở, dòng còn lại được chọn lại
+     * (0.5.26 — trước đó giữ trạng thái bỏ chọn).
      *
      * @param  list<int>  $lineIds
      */

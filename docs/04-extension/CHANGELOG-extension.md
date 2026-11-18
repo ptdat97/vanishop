@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.26 — 2026-11-18 · Extension API 1.4.0 (không đổi)
+
+Backlog §6b đợt 1 (L5, L13, L15, L34). Không đổi API cho plugin.
+
+### Đổi
+- `Carts::markOrdered` (đặt đơn từ một phần giỏ): các dòng còn lại được **chọn lại** — khách quay lại giỏ là thanh toán được ngay (L5, Owner quyết; trước: giữ trạng thái bỏ chọn).
+- Gỡ chuỗi `storefront::messages.return_reasons` không còn dùng (lý do đổi trả lấy từ danh mục) (L13).
+
+### Kiểm thử
+- Bộ test chạy `--parallel` không còn phụ thuộc thứ tự (L34): test lệnh `vani:warehouse:reconcile` đăng ký lệnh vào console kernel; `AdminNavigationGroupsTest` kiểm nhóm của mục menu, không kiểm thứ tự (vị trí menu do Owner chỉnh).
+
 ## 0.5.25 — 2026-11-18 · Extension API 1.4.0
 
 Storefront S3: SEO và chia sẻ link.

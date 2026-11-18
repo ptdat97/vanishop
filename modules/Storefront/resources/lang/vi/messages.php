@@ -40,13 +40,6 @@ return [
     'return_cancelled' => 'Đã huỷ yêu cầu đổi/trả.',
     'return_nothing_selected' => 'Chọn số lượng sản phẩm muốn đổi/trả.',
     'return_exchange_missing' => 'Chọn size/màu muốn đổi cho mọi sản phẩm đổi.',
-    'return_reasons' => [
-        'wrong_size' => 'Không vừa size',
-        'not_as_described' => 'Không giống mô tả',
-        'defective' => 'Lỗi sản phẩm',
-        'changed_mind' => 'Đổi ý',
-        'other' => 'Khác',
-    ],
     'return_statuses' => [
         'requested' => 'Chờ duyệt',
         'approved' => 'Đã duyệt — vui lòng gửi hàng về',

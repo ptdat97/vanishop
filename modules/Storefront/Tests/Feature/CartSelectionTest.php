@@ -42,7 +42,7 @@ it('API: chọn dòng — mặc định đã chọn, chỉ chọn một phần, 
     ($this->select)(['mode' => 'all', 'line_ids' => []])->assertUnprocessable();
 });
 
-it('đặt hàng chỉ lấy dòng đã chọn: khuyến mãi tính trên phần đó, dòng chưa chọn ở lại giỏ, giỏ chỉ đóng khi hết dòng', function () {
+it('đặt hàng chỉ lấy dòng đã chọn: khuyến mãi tính trên phần đó, dòng chưa chọn ở lại giỏ và được chọn lại (L5), giỏ chỉ đóng khi hết dòng', function () {
     C::promotion(['name' => 'Giảm 10%'], ['GIAM10' => 100]);
     $first = ($this->add)($this->s, 1)->json('data.lines.0.id');
     ($this->add)($this->m, 2);
@@ -62,11 +62,10 @@ it('đặt hàng chỉ lấy dòng đã chọn: khuyến mãi tính trên phần
         ->assertJsonPath('data.status', 'active')
         ->assertJsonCount(1, 'data.lines')
         ->assertJsonPath('data.lines.0.variant_id', $this->m->id)
-        ->assertJsonPath('data.lines.0.selected', false)
-        ->assertJsonPath('data.checkout_ready', false);
+        ->assertJsonPath('data.lines.0.selected', true)
+        ->assertJsonPath('data.checkout_ready', true);
 
-    // Lần đặt thứ hai lấy nốt dòng còn lại → giỏ hết dòng → đóng.
-    ($this->select)(['mode' => 'select', 'line_ids' => [$this->getJson("{$this->api}/carts/{$this->cart}", $this->cartHeaders)->json('data.lines.0.id')]])->assertOk();
+    // Lần đặt thứ hai lấy nốt dòng còn lại (đã được chọn lại sẵn) → giỏ hết dòng → đóng.
     ($this->place)(C::orderPayload(['expected_total' => 430_000]), 'selection-0002')->assertCreated();
     expect(Cart::query()->where('public_id', $this->cart)->value('status')->value)->toBe('converted');
 });

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Modules\Catalog\Persistence\Models\Brand;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -9,6 +10,7 @@ use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Plugin\Warehouse\Console\ReconcileCommand;
 use Plugin\Warehouse\WarehouseServiceProvider;
 
 require_once __DIR__.'/../../../../../modules/Inventory/Tests/Feature/InventoryTestHelpers.php';
@@ -19,6 +21,9 @@ beforeEach(function () {
         app(PluginManager::class)->enable(WarehouseServiceProvider::ID);
     });
     app()->register(WarehouseServiceProvider::class);
+    // Provider đăng ký giữa chừng: Artisan có thể đã dựng (migrate của test trước) nên `commands()` của provider không
+    // còn tác dụng — đăng ký lệnh thẳng vào console kernel để test không phụ thuộc thứ tự chạy (backlog L34).
+    app(Kernel::class)->registerCommand(app(ReconcileCommand::class));
     $this->brand = Brand::factory()->create();
     $this->style = T::product($this->brand->id, ['style_code' => 'LM-REC']);
     [$this->s, $this->m] = P::variants($this->style);
