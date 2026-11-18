@@ -5,7 +5,6 @@
       form[data-cart-voucher-form]  áp/bỏ mã giảm giá
     $cart: null | giỏ như Storefront API (CartPresenter::present) · $voucher: null | CartVoucher::preview.
 --}}
-@php([$ratioW, $ratioH] = vani_product_ratio())
 @if ($cart === null || $cart['lines'] === [])
     <div class="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center text-slate-500">
         <p>{{ __('Giỏ hàng trống.') }}</p>
@@ -15,7 +14,7 @@
     <ul class="flex-1 divide-y divide-slate-100 overflow-y-auto px-4" aria-label="{{ __('Sản phẩm trong giỏ') }}">
         @foreach ($cart['lines'] as $line)
             <li class="flex gap-3 py-4" data-line="{{ $line['id'] }}">
-                <div class="w-16 shrink-0 overflow-hidden rounded bg-slate-100" style="aspect-ratio: {{ $ratioW }} / {{ $ratioH }}">
+                <div class="w-16 shrink-0 overflow-hidden rounded bg-slate-100" style="aspect-ratio: {{ $productFrame['aspect'] }}">
                     @if ($line['product']['image_url'] ?? null)
                         <img src="{{ $line['product']['image_url'] }}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover">
                     @endif

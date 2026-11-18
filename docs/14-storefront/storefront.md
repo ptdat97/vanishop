@@ -152,6 +152,21 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
   - `variant_css`: CSS `:has()` ẩn/hiện nhóm SKU theo trục đầu (mã giá trị đã thoát, in thô trong `<style>`); `can_buy`.
 - Plugin đổi được cả `product` lẫn `page` qua hook `vani.storefront.view.pages.product`.
 
+## 4c-2. Dữ liệu dựng sẵn cho layout và partial
+
+> **Implemented** (Core 0.5.21). Template `vani-base` không gọi lớp Core, không đọc `request()`/`session()` (test `ThemeViewDataTest`); dữ liệu đến từ view composer của module Storefront (`Storefront\View\Composers`):
+
+| View | Biến | Nội dung |
+|---|---|---|
+| `layouts.app` (và partial nó include) | `$shell` | `page_cache`, `session_url`, `announcement {text, url}`, `menus {header, mobile (rơi về header), footer (vị trí đã xuất bản)}`, `search_query`, `account {url, label}` theo khách, `mobile_topics_url`, `contact {phone, phone_href, email, address, socials[]}` hoặc `null`, `copyright` (trống → © năm + tên cửa hàng), `payment_methods[]`, `cart_change` (flash giỏ của lần gửi trước), `urls` (cho `window.vani`). Vẫn có `$menus`, `$seo`, `$themeSettings`, `$popularSearches`, `$customerState`. |
+| `partials.listing` | `$listingView` | `context`, `action`, `filters[]` (lựa chọn có `url` bật/tắt + `active`; khoảng giá có `hidden_fields`, `min_value`/`max_value`, `min_placeholder`/`max_placeholder`, `clear_url`; bộ lọc thương hiệu ẩn ở trang thương hiệu), `sort {hidden_fields, current, by_price}`, `pages[] {number, url, current}` (rỗng khi một trang). |
+| `partials.image` | `$sizes` | Từ `$layout` khi có `srcset` (`ResponsiveImage::sizes`). |
+| `partials.product-card`, `partials.mini-cart` | `$productFrame` | `aspect` (tỉ lệ ảnh sản phẩm), `card {width, height}`. |
+| `partials.notification` | `$notifications` | `[{id, type, role, message, dismissible}]` từ `messages` hoặc flash `status`/`error` (trừ trang cache CDN). |
+| `partials.account-menu` | `$accountLinks`, `$accountMenu` | Trang tài khoản Core `{url, label, active}`; trang của plugin. |
+
+- Ngày giờ đơn đã định dạng theo giờ cửa hàng: `placed_at_label` (danh sách đơn, chi tiết đơn tài khoản), `returnForm.deadline_label`.
+
 ## 4d. Ảnh responsive
 
 > **Implemented** (Core 0.3.67, [reference-parity §3.16-5](../20-roadmap/reference-parity-refactor.md)).

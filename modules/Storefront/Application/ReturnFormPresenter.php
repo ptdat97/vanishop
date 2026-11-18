@@ -10,6 +10,7 @@ use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Inventory\Contracts\AvailabilityReader;
 use Modules\Returns\Contracts\Returns;
+use Modules\Shared\Support\StoreClock;
 
 /**
  * Dữ liệu form đổi/trả trên storefront native (order §7, §7.1): dòng còn trả được + lựa chọn đổi size/màu CÙNG MẪU
@@ -71,6 +72,9 @@ final class ReturnFormPresenter
         // Danh mục lý do do Admin quản lý (§3.13-1), theo ngôn ngữ trang.
         $reasons = array_column($this->returns->reasons(App::getLocale()), 'label', 'code');
 
-        return ['lines' => $lines, 'reasons' => $reasons, 'deadline' => $order['returnable']['deadline'] ?? null];
+        $deadline = $order['returnable']['deadline'] ?? null;
+
+        // `deadline_label`: ngày theo giờ cửa hàng, theme in thẳng.
+        return ['lines' => $lines, 'reasons' => $reasons, 'deadline' => $deadline, 'deadline_label' => StoreClock::format($deadline, 'date')];
     }
 }

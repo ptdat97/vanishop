@@ -58,8 +58,8 @@
                 <summary class="cursor-pointer font-medium">{{ __('Gửi yêu cầu đổi/trả') }}</summary>
                 <form action="{{ vani_route('storefront.order.returns.store', $order['id']) }}" method="post" class="mt-4 space-y-4 text-sm" enctype="multipart/form-data">
                     @csrf
-                    @if ($returnForm['deadline'])
-                        <p class="text-slate-500">{{ __('Hạn đổi/trả: :date', ['date' => \Modules\Shared\Support\StoreClock::format($returnForm['deadline'], 'date')]) }}</p>
+                    @if ($returnForm['deadline_label'])
+                        <p class="text-slate-500">{{ __('Hạn đổi/trả: :date', ['date' => $returnForm['deadline_label']]) }}</p>
                     @endif
 
                     <fieldset>

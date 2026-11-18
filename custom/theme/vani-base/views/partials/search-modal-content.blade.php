@@ -19,7 +19,7 @@
                 id="vani-search-modal-q"
                 name="q"
                 type="search"
-                value="{{ request()->routeIs('storefront.search') ? request('q') : '' }}"
+                value="{{ $shell['search_query'] ?? '' }}"
                 placeholder="{{ __('Bạn đang tìm kiếm gì?') }}"
                 class="min-w-0 flex-1 border-0 bg-transparent px-3 py-4
                        text-base outline-none ring-0 focus:ring-0"

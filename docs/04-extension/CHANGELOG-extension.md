@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.21 — 2026-11-18 · Extension API 1.3.0 (không đổi)
+
+Theme `vani-base` đợt 2: layout và partial không còn tự tính. Không đổi API cho plugin.
+
+### Đổi (theme)
+- View composer mới (`Storefront\View\Composers`): `$shell` cho layout (menu, thanh thông báo, liên hệ/mạng xã hội/phương thức thanh toán/bản quyền ở chân trang, link tài khoản theo khách, ô tìm kiếm, thay đổi giỏ, URL `window.vani`), `$listingView` cho danh sách (link lọc/sắp xếp/phân trang, form khoảng giá), `$sizes` cho `partials.image`, `$productFrame` cho thẻ sản phẩm và giỏ mini, `$notifications` cho thông báo, `$accountLinks` cho menu tài khoản. Bảng biến: [storefront §4c-2](../14-storefront/storefront.md). Theme con override các view này: đọc biến dựng sẵn thay vì gọi `ListingUrl`, `ResponsiveImage`, `StoreClock`, `CartController::CHANGE_FLASH`, `vani_product_ratio()`, `request()`, `session()`.
+- Ngày giờ đơn hàng định dạng sẵn: `placed_at_label` (danh sách đơn và chi tiết đơn ở trang tài khoản), `returnForm.deadline_label`.
+
+### Sửa
+- Id phần tử thông báo/toast in nguyên chữ `{{ $index }}` (mọi mục cùng id) — nay `vani-notification-0`, `vani-toast-0`…
+
 ## 0.5.20 — 2026-11-18 · Extension API 1.3.0 (không đổi)
 
 Theme `vani-base`: tính toán chuyển khỏi template trang sản phẩm và breadcrumb. Không đổi API cho plugin.

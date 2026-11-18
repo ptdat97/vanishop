@@ -33,7 +33,7 @@
             $text = $toast['message'] ?? '';
             $duration = $toast['duration'] ?? 5000;
             $canDismiss = $toast['dismissible'] ?? true;
-            $id = "vani-toast-{{ $index }}";
+            $id = "vani-toast-{$index}";
         @endphp
         <div id="{{ $id }}"
              class="vani-toast mb-2 rounded-[var(--radius-theme)] border p-3 text-sm leading-relaxed shadow-lg

@@ -16,6 +16,7 @@ use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Shared\Support\LocalizedUrls;
+use Modules\Shared\Support\StoreClock;
 use Modules\Storefront\Application\NativeCustomerSignIn;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\ReturnFormPresenter;
@@ -168,7 +169,7 @@ final class AccountController
         abort_if($detail === null, 404);
         $presented = $this->presenter->present($detail);
 
-        return view('theme::pages.account.order', ['order' => $presented, 'returnForm' => $returnForm->present($presented)]);
+        return view('theme::pages.account.order', ['order' => [...$presented, 'placed_at_label' => StoreClock::format($presented['placed_at'])], 'returnForm' => $returnForm->present($presented)]);
     }
 
     public function cancelOrder(Request $request, string $order): RedirectResponse
@@ -194,7 +195,7 @@ final class AccountController
     private function summaries(array $orders): array
     {
         return array_map(fn (OrderDetail $order): array => [
-            'id' => $order->publicId, 'number' => $order->number, 'placed_at' => $order->placedAt,
+            'id' => $order->publicId, 'number' => $order->number, 'placed_at' => $order->placedAt, 'placed_at_label' => StoreClock::format($order->placedAt),
             'status' => $order->customerStatus['label'], 'total' => $this->presenter->present($order)['total'],
         ], $orders);
     }

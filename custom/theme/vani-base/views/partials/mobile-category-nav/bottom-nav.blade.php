@@ -5,10 +5,10 @@
 --}}
 @php($tabs = [
     ['key' => 'home', 'label' => __('Trang chủ'), 'icon' => 'house', 'url' => vani_route('storefront.home')],
-    ['key' => 'topics', 'label' => __('Chuyên đề'), 'icon' => 'sparkles', 'url' => ($themeSettings['mobile_nav']['topics_url'] ?? null) ?: vani_route('storefront.brands')],
+    ['key' => 'topics', 'label' => __('Chuyên đề'), 'icon' => 'sparkles', 'url' => $shell['mobile_topics_url']],
     ['key' => 'categories', 'label' => __('Danh mục'), 'icon' => 'layout-grid', 'url' => null],
     ['key' => 'cart', 'label' => __('Giỏ hàng'), 'icon' => 'shopping-bag', 'url' => vani_route('storefront.cart')],
-    ['key' => 'account', 'label' => __('Tài khoản'), 'icon' => 'user-round', 'url' => request()->attributes->has('customer') ? vani_route('storefront.account') : vani_route('storefront.account.login')],
+    ['key' => 'account', 'label' => __('Tài khoản'), 'icon' => 'user-round', 'url' => $shell['account']['url']],
 ])
 @php($cartCount = $customerState['cart']['count'] ?? 0)
 <nav aria-label="{{ __('Thanh điều hướng') }}" class="shrink-0 border-t border-gray-100 bg-white pb-[env(safe-area-inset-bottom)]" data-vani-bottom-nav>

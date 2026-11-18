@@ -1,6 +1,7 @@
 <nav aria-label="{{ __('Tài khoản') }}" class="space-y-1 text-sm" data-vani-account-menu-links>
-    @foreach ([['storefront.account', __('Tổng quan')], ['storefront.account.orders', __('Đơn hàng')], ['storefront.account.addresses', __('Địa chỉ')], ['storefront.account.profile', __('Hồ sơ')]] as [$route, $label])
-        <a href="{{ vani_route($route) }}" @class(['block rounded px-3 py-2', 'bg-slate-100 font-semibold' => request()->routeIs($route, str_replace('storefront.', 'storefront.*.', $route))])>{{ $label }}</a>
+    {{-- $accountLinks: trang tài khoản của Core, Core dựng sẵn (URL, đang mở) — AccountMenuComposer. --}}
+    @foreach ($accountLinks as $link)
+        <a href="{{ $link['url'] }}" @class(['block rounded px-3 py-2', 'bg-slate-100 font-semibold' => $link['active']])>{{ $link['label'] }}</a>
     @endforeach
     @foreach ($accountMenu ?? [] as $item)
         {{-- Nhãn của plugin là khoá dịch (câu tiếng Việt) — plugin có bản dịch JSON thì hiện theo ngôn ngữ trang. --}}

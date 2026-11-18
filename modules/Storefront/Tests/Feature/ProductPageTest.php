@@ -4,7 +4,7 @@ use Modules\Storefront\View\ProductPage;
 
 /*
 | Dữ liệu hiển thị trang sản phẩm dựng sẵn ở Core (`$page` của `theme::pages.product`): metadata có dự phòng, ảnh phóng to,
-| CSS ẩn/hiện nhóm SKU thoát ký tự; template của theme chỉ in ra, không gọi lớp Core.
+| CSS ẩn/hiện nhóm SKU thoát ký tự (template chỉ in ra — xem ThemeViewDataTest).
 */
 
 beforeEach(function () {
@@ -59,10 +59,4 @@ it('CSS bộ chọn: mã giá trị được thoát — không thoát khỏi chu
 
     expect($css)->not->toContain('<')->not->toContain('x"')
         ->and($css)->toContain('[data-option-value="x\22 \5d \3c \2f style\3e \3c script\3e "]');
-});
-
-it('template trang sản phẩm và breadcrumb của vani-base không gọi lớp Core (StructuredData, VariantSelector…)', function () {
-    foreach (['pages/product.blade.php', 'partials/breadcrumb.blade.php'] as $file) {
-        expect((string) file_get_contents(base_path("custom/theme/vani-base/views/{$file}")))->not->toContain('\\Modules\\')->not->toContain('vani_product_ratio');
-    }
 });

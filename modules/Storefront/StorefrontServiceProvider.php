@@ -8,11 +8,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
-use Modules\Extension\Contracts\AccountPages;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
@@ -23,7 +21,6 @@ use Modules\Storefront\Application\Blocks\BrandGridBlock;
 use Modules\Storefront\Application\Blocks\HeroBlock;
 use Modules\Storefront\Application\Blocks\ProductGridBlock;
 use Modules\Storefront\Application\Blocks\RichTextBlock;
-use Modules\Storefront\Application\CustomerSessionState;
 use Modules\Storefront\Application\Links\BrandLinkType;
 use Modules\Storefront\Application\Links\CategoryLinkType;
 use Modules\Storefront\Application\Links\CollectionLinkType;
@@ -31,7 +28,6 @@ use Modules\Storefront\Application\Links\LinkRegistry;
 use Modules\Storefront\Application\Links\ProductLinkType;
 use Modules\Storefront\Application\Links\RouteLinkType;
 use Modules\Storefront\Application\Links\UrlLinkType;
-use Modules\Storefront\Application\Menus\MenuPresenter;
 use Modules\Storefront\Application\NativeCustomerSignIn;
 use Modules\Storefront\Application\PopularSearches;
 use Modules\Storefront\Application\PriceVisibility;
@@ -52,6 +48,12 @@ use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
 use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
 use Modules\Storefront\View\Breadcrumbs;
+use Modules\Storefront\View\Composers\AccountMenuComposer;
+use Modules\Storefront\View\Composers\ImageComposer;
+use Modules\Storefront\View\Composers\LayoutComposer;
+use Modules\Storefront\View\Composers\ListingComposer;
+use Modules\Storefront\View\Composers\NotificationComposer;
+use Modules\Storefront\View\Composers\ProductFrameComposer;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -102,20 +104,16 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         $router->aliasMiddleware('vani.maintenance', StorefrontMaintenance::class);
         $router->aliasMiddleware('vani.prices-visible', RequireVisiblePrices::class);
         $router->aliasMiddleware('vani.checkout-sign-in', RequireCheckoutSignIn::class);
-        View::composer('theme::layouts.app', fn ($view) => $view->with([
-            'menus' => $this->app->make(MenuPresenter::class),
-            'seo' => $this->app->make(PageAlternates::class)->tags(),
-            // Đầu/chân trang theo schema theme (§3.16-3): $themeSettings['footer']['copyright']…
-            // Cùng nguồn với Storefront API `GET /store` (StoreProfile, ADR-044).
-            'themeSettings' => $this->app->make(StoreProfile::class)->themeSettings(App::getLocale()),
-            'popularSearches' => $this->app->make(StoreProfile::class)->popularSearches(),
-            // Không CDN (mặc định): phần riêng của khách render sẵn; có CDN thì JS lấy qua /_vani/phien (storefront §5).
-            'customerState' => request()->attributes->has(PublicPageCache::ATTRIBUTE) ? null : $this->app->make(CustomerSessionState::class)->for(request(), App::getLocale()),
-        ]));
+        // Dữ liệu dựng sẵn cho theme — template chỉ in ra (layout, danh sách, ảnh, khung ảnh sản phẩm, thông báo, menu tài khoản).
+        View::composer('theme::layouts.app', LayoutComposer::class);
+        View::composer('theme::partials.listing', ListingComposer::class);
+        View::composer('theme::partials.image', ImageComposer::class);
+        View::composer(['theme::partials.product-card', 'theme::partials.mini-cart'], ProductFrameComposer::class);
+        View::composer('theme::partials.notification', NotificationComposer::class);
         View::composer('theme::pages.search', fn ($view) => $view->with('popularSearches', $this->app->make(StoreProfile::class)->popularSearches()));
         // Breadcrumb dựng sẵn (Trang chủ, link có kiểu, JSON-LD) — partial chỉ hiển thị `$breadcrumb`.
         View::composer('theme::partials.breadcrumb', fn ($view) => $view->with('breadcrumb', $this->app->make(Breadcrumbs::class)->trail((array) ($view->getData()['crumbs'] ?? []))));
-        View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
+        View::composer('theme::partials.account-menu', AccountMenuComposer::class);
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 
         $settings = $this->app->make(Settings::class);
