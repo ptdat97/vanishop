@@ -12,12 +12,14 @@ use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Returns\Application\DaysWindowPolicy;
+use Modules\Returns\Application\EloquentReturnStatistics;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
 use Modules\Returns\Application\Listeners\ReturnDashboardTasks;
 use Modules\Returns\Application\ReturnedVariants;
 use Modules\Returns\Application\ReturnService;
 use Modules\Returns\Contracts\ReturnPolicy;
 use Modules\Returns\Contracts\Returns;
+use Modules\Returns\Contracts\ReturnStatistics;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
@@ -34,6 +36,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
         $this->app->make(AdminScreen::class)->declareResource('return');
         $this->app->bind(Returns::class, ReturnService::class);
+        $this->app->bind(ReturnStatistics::class, EloquentReturnStatistics::class);
         $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
         $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);
         $this->app->make(Extensions::class)->tag([ReturnedVariants::class], VariantUsage::TAG);

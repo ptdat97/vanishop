@@ -26,6 +26,7 @@ Yêu cầu đổi/trả, CSKH duyệt, nhận hàng, nhập kho lại, hoàn ti�
 |---|---|---|
 | `ReturnPolicy` | interface | tag `vani.returns.policies`, plugin |
 | `ReturnRejected` | class | giữa module |
+| `ReturnStatistics` | interface | plugin (số liệu đổi/trả cho báo cáo) |
 | `Returns` | interface | giữa module |
 
 ## Event

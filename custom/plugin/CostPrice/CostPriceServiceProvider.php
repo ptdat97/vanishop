@@ -44,6 +44,8 @@ final class CostPriceServiceProvider extends PluginServiceProvider
 
             return $cost !== null && $amount < $cost ? [...$warnings, 'Dưới giá vốn'] : $warnings;
         });
+        // Báo cáo lợi nhuận gộp (vani.reports, A10): giá vốn đơn vị theo SKU, một truy vấn cho cả tập.
+        $this->onFilter('vani.pricing.unit_costs', fn (array $known, array $variantIds): array => $known + $costs()->of(array_values(array_map('intval', $variantIds))));
         $this->adminColumn('price_list_item', 'cost', 'Giá vốn', resolve: function (array $variantIds) use ($costs): array {
             $money = $this->app->make(MoneyFormatter::class);
 

@@ -8,8 +8,12 @@ use Modules\Shared\Context\CurrentContext;
 use Plugin\Reports\Infrastructure\Reports\BrandSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ChannelSalesReport;
 use Plugin\Reports\Infrastructure\Reports\DailySalesReport;
+use Plugin\Reports\Infrastructure\Reports\GrossProfitByProductReport;
+use Plugin\Reports\Infrastructure\Reports\GrossProfitDailyReport;
 use Plugin\Reports\Infrastructure\Reports\PaymentMethodSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ProductSalesReport;
+use Plugin\Reports\Infrastructure\Reports\ReturnReasonsReport;
+use Plugin\Reports\Infrastructure\Reports\ReturnsByProductReport;
 use Plugin\Reports\Infrastructure\Widgets\OrdersToProcessWidget;
 use Plugin\Reports\Infrastructure\Widgets\Revenue30DaysWidget;
 use Plugin\Reports\Infrastructure\Widgets\RevenueTodayWidget;
@@ -29,7 +33,7 @@ beforeEach(function () {
     app()->register(ReportsServiceProvider::class);
 });
 
-foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class] as $report) {
+foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class, GrossProfitDailyReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class] as $report) {
     ReportProviderContract::define('vani.reports '.class_basename($report), fn () => app($report));
 }
 foreach ([RevenueTodayWidget::class, OrdersToProcessWidget::class, Revenue30DaysWidget::class, Sales14DaysWidget::class, TopProductsWidget::class] as $widget) {

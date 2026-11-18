@@ -23,6 +23,7 @@ Vận đơn theo kho, chọn hãng, đẩy lên hãng, webhook trạng thái, th
 | Contract | Loại | Ghi chú |
 |---|---|---|
 | `CarrierAssignment` | interface | tag `vani.fulfillment.carrier_assignments`, plugin (experimental) |
+| `DeliveryStatistics` | interface | plugin (số liệu COD giao thất bại cho báo cáo) |
 | `FulfillmentRejected` | class | giữa module |
 | `InvalidCarrierEvent` | class | plugin |
 | `ReturnPickup` | interface | giữa module |

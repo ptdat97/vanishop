@@ -38,6 +38,15 @@ interface OrderStatistics
     public function breakdown(SalesDimension $dimension, DateTimeImmutable $from, DateTimeImmutable $to, int $limit = 20): array;
 
     /**
+     * Số lượng và doanh thu theo SKU, theo ngày (0.5.19 — báo cáo lợi nhuận gộp): đơn không huỷ theo `placed_at`, ngày theo
+     * `$timezone`; số lượng sau huỷ một phần, doanh thu = `order_lines.total_amount` (đã trừ giảm giá phân bổ, chưa gồm phí
+     * giao); hàng trả lại không trừ. `sku`/`product_name` là ảnh chụp lúc đặt (lấy dòng mới nhất). Sắp theo ngày rồi SKU.
+     *
+     * @return list<array{day: string, variant_id: int, sku: string, product_name: string, quantity: int, revenue: int}>
+     */
+    public function variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array;
+
+    /**
      * Sản phẩm (style) bán chạy theo **số lượng** trong khoảng (0.3.43): đơn không huỷ, số lượng dòng sau huỷ một phần (`quantity` đã trừ phần huỷ), không tính
      * đơn thay thế khi đổi hàng; hàng trả lại không trừ; dòng không có id style (đơn cũ) bị bỏ. Số lượng giảm dần, cùng số lượng thì id nhỏ trước. Tối đa 100.
      *

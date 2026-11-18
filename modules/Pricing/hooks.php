@@ -20,4 +20,12 @@ return [
         'args' => ['warnings' => 'array', 'variantId' => 'int', 'listAmount' => '?int', 'amount' => 'int', 'priceList' => 'string'],
         'description' => 'Cảnh báo thêm theo SKU trên trang làm việc bảng giá và xem trước "Áp giá…" (EP v3 X4) — vd. "Dưới giá vốn", "Dưới giá tối thiểu thương hiệu". Trả list<string> nhãn cảnh báo; chỉ được thêm (cảnh báo Core luôn giữ); không chặn lưu.',
     ],
+    'vani.pricing.unit_costs' => [
+        'type' => 'filter',
+        'visibility' => 'public',
+        'since' => '0.5.19',
+        'on_error' => 'skip',
+        'args' => ['costs' => 'array<int, int>', 'variantIds' => 'list<int>'],
+        'description' => 'Giá vốn đơn vị theo variant id (đơn vị nhỏ nhất) — vd. plugin `vani.cost-price` — cho báo cáo lợi nhuận gộp. Chỉ thêm khoá thuộc `variantIds`; SKU không có giá vốn thì không có khoá (báo cáo ghi rõ là thiếu). Gọi một lần cho cả tập SKU: đọc theo lô, không truy vấn từng SKU.',
+    ],
 ];

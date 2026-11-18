@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.19 — 2026-11-18 · Extension API 1.3.0
+
+Stabilization A10 — Báo cáo lợi nhuận gộp và đổi trả.
+
+### Thêm (API cho plugin)
+- `Ordering\Contracts\OrderStatistics::variantSales(from, to, timezone)` — số lượng và doanh thu dòng đơn theo SKU, theo ngày (đơn không huỷ; chưa gồm phí giao; hàng trả không trừ).
+- `Returns\Contracts\ReturnStatistics` (mới): `byVariant` (số lượng trả, tiền hoàn theo SKU), `byReason` (số yêu cầu, số lượng theo lý do, có nhãn) — yêu cầu tạo trong kỳ, trừ bị từ chối/đã huỷ.
+- `Fulfillment\Contracts\DeliveryStatistics` (mới): `cod(from, to)` — vận đơn COD trong kỳ: tổng, đã giao, giao thất bại (đang hoàn/đã hoàn về), tiền COD không thu được.
+- Hook filter `vani.pricing.unit_costs` (Pricing): giá vốn đơn vị theo variant id cho báo cáo lợi nhuận gộp; SKU không có giá vốn thì không có khoá.
+
+### Plugin
+- `vani.reports` 1.3.0: báo cáo "Lợi nhuận gộp theo ngày", "Lợi nhuận gộp theo sản phẩm" (giá vốn qua `vani.pricing.unit_costs`; SKU thiếu giá vốn ghi rõ và tách doanh thu riêng, không coi giá vốn = 0; chưa có nguồn giá vốn thì báo cần bật plugin Giá vốn), "Đổi trả theo sản phẩm" (tỷ lệ trả so với số bán cùng kỳ), "Lý do trả & giao thất bại" (COD giao thất bại, tiền COD không thu được). Xuất CSV như các báo cáo khác.
+- `vani.cost-price` 1.1.0: cấp giá vốn cho `vani.pricing.unit_costs`.
+
 ## 0.5.18 — 2026-11-18 · Extension API 1.2.0
 
 Stabilization A9 — Đối soát COD.

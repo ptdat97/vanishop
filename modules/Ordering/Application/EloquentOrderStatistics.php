@@ -118,6 +118,29 @@ final class EloquentOrderStatistics implements OrderStatistics
             ->all();
     }
 
+    public function variantSales(DateTimeImmutable $from, DateTimeImmutable $to, string $timezone): array
+    {
+        $this->guardRange($from, $to);
+        $zone = new DateTimeZone($timezone);
+        $rows = [];
+        // Nhóm theo ngày ở PHP (hàm múi giờ khác nhau giữa MySQL và SQLite); đọc theo con trỏ.
+        $lines = $this->lines($from, $to)->where('order_lines.quantity', '>', 0)
+            ->select(['orders.placed_at', 'order_lines.variant_id', 'order_lines.sku', 'order_lines.product_name', 'order_lines.quantity', 'order_lines.total_amount'])
+            ->orderBy('order_lines.id');
+        foreach ($lines->cursor() as $line) {
+            $day = (new DateTimeImmutable((string) $line->placed_at, new DateTimeZone('UTC')))->setTimezone($zone)->format('Y-m-d');
+            $key = "{$day}|{$line->variant_id}";
+            $rows[$key] ??= ['day' => $day, 'variant_id' => (int) $line->variant_id, 'sku' => '', 'product_name' => '', 'quantity' => 0, 'revenue' => 0];
+            $rows[$key]['sku'] = (string) $line->sku;
+            $rows[$key]['product_name'] = (string) $line->product_name;
+            $rows[$key]['quantity'] += (int) $line->quantity;
+            $rows[$key]['revenue'] += (int) $line->total_amount;
+        }
+        uasort($rows, fn (array $a, array $b): int => [$a['day'], $a['sku']] <=> [$b['day'], $b['sku']]);
+
+        return array_values($rows);
+    }
+
     public function countByStatus(): array
     {
         $counts = array_fill_keys(array_map(fn (OrderStatus $status): string => $status->value, OrderStatus::cases()), 0);

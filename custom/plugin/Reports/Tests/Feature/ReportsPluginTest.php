@@ -106,7 +106,7 @@ it('widget Tổng quan + báo cáo của plugin; nhân viên thiếu quyền ch�
             ->where('navigation', fn ($items) => collect($items)->pluck('key')->contains('reports')));
 
     $this->actingAs($manager, 'staff')->get('/admin/reports')
-        ->assertInertia(fn (Assert $page) => $page->has('reports', 5));
+        ->assertInertia(fn (Assert $page) => $page->has('reports', 9));
 
     $this->actingAs($manager, 'staff')->get('/admin/reports/sales-by-day?preset=7d')->assertOk()
         ->assertInertia(fn (Assert $page) => $page

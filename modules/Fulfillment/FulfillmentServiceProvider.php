@@ -16,6 +16,7 @@ use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\Carriers\ManualCarrier;
+use Modules\Fulfillment\Application\EloquentDeliveryStatistics;
 use Modules\Fulfillment\Application\EloquentShipmentReader;
 use Modules\Fulfillment\Application\FulfillmentService;
 use Modules\Fulfillment\Application\Listeners\CancelShipmentsOnOrderCancel;
@@ -28,6 +29,7 @@ use Modules\Fulfillment\Application\Listeners\ShipmentDashboardTasks;
 use Modules\Fulfillment\Application\ReservedLocationSourcing;
 use Modules\Fulfillment\Application\ReturnPickupService;
 use Modules\Fulfillment\Console\CompleteDeliveredOrdersCommand;
+use Modules\Fulfillment\Contracts\DeliveryStatistics;
 use Modules\Fulfillment\Contracts\ReturnPickups;
 use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Contracts\ShipmentReader;
@@ -59,6 +61,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         // Màn hình Admin của module mở cho plugin thêm cột/lọc/thao tác/công cụ (EP v3 X1).
         $this->app->make(AdminScreen::class)->declareResource('shipment');
         $this->app->bind(ShipmentReader::class, EloquentShipmentReader::class);
+        $this->app->bind(DeliveryStatistics::class, EloquentDeliveryStatistics::class);
         $this->app->bind(ShipmentBooking::class, FulfillmentService::class);
         $this->app->bind(ReturnPickups::class, ReturnPickupService::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
