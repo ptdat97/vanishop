@@ -5,6 +5,10 @@
 @if ($page['meta']['description'] !== null)
     @section('description', $page['meta']['description'])
 @endif
+@if ($page['meta']['image'] !== null)
+    @section('og_image', $page['meta']['image'])
+@endif
+@section('og_type', 'product')
 
 @push('head')
     @foreach ($page['meta']['json_ld'] as $jsonLd)

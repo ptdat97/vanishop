@@ -5,10 +5,10 @@
     @section('description', $lookbook['meta_description'])
 @endif
 
-@push('head')
-    @if ($lookbook['cover_url'])<meta property="og:image" content="{{ $lookbook['cover_url'] }}">@endif
-    <meta property="og:title" content="{{ $lookbook['name'] }}">
-@endpush
+{{-- Thẻ chia sẻ do layout của theme in (og:title = tiêu đề trang, og:url = canonical). --}}
+@if ($lookbook['cover_url'])
+    @section('og_image', $lookbook['cover_url'])
+@endif
 
 @section('content')
     @include('theme::partials.breadcrumb', ['crumbs' => $crumbs])

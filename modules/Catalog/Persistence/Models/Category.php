@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Domain\Category\CategoryPath;
 use Modules\Catalog\Domain\CategoryStatus;
 use Modules\Catalog\Persistence\Concerns\HasLocalizedSlug;
+use Modules\Catalog\Persistence\Concerns\RecordsSlugRedirects;
 use Modules\Catalog\Persistence\Database\Factories\CategoryFactory;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
@@ -32,6 +34,10 @@ final class Category extends Model
 
     use HasLocalizedSlug;
     use HasTranslations;
+    use RecordsSlugRedirects;
+
+    /** Loại bản ghi trong `slug_redirects` (đổi slug → link cũ chuyển hướng 301). */
+    public const SLUG_SUBJECT = CatalogReader::SLUG_CATEGORY;
 
     protected $fillable = ['parent_id', 'slug', 'path', 'depth', 'position', 'status', 'lock_version'];
 

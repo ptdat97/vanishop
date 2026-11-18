@@ -24,7 +24,7 @@ it('metadata: meta_title/meta_description, thiếu thì dùng tên và đoạn �
     $meta = app(ProductPage::class)->for(($this->product)())['meta'];
     expect($meta['title'])->toBe('Đầm lụa')
         ->and($meta['description'])->toBe('Lụa mềm, mặc mát.')
-        ->and(json_decode($meta['json_ld'][0], true))->toMatchArray(['@type' => 'Product', 'sku' => 'DAM01', 'image' => '/anh/1-600.jpg']);
+        ->and(json_decode($meta['json_ld'][0], true))->toMatchArray(['@type' => 'Product', 'sku' => 'DAM01', 'image' => url('/anh/1-600.jpg')]);
 
     $meta = app(ProductPage::class)->for(($this->product)(['meta_title' => 'Đầm lụa cao cấp', 'meta_description' => ' Mô tả SEO ', 'description' => null]))['meta'];
     expect([$meta['title'], $meta['description']])->toBe(['Đầm lụa cao cấp', 'Mô tả SEO'])

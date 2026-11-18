@@ -7,6 +7,8 @@ namespace Modules\Catalog\Persistence\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Persistence\Concerns\RecordsSlugRedirects;
 use Modules\Catalog\Persistence\Database\Factories\BrandFactory;
 
 /**
@@ -29,6 +31,11 @@ final class Brand extends Model
 {
     /** @use HasFactory<BrandFactory> */
     use HasFactory;
+
+    use RecordsSlugRedirects;
+
+    /** Loại bản ghi trong `slug_redirects` (đổi slug → link cũ chuyển hướng 301). */
+    public const SLUG_SUBJECT = CatalogReader::SLUG_BRAND;
 
     public const ACTIVE = 'active';
 

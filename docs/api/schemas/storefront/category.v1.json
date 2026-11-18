@@ -36,6 +36,20 @@
                 "null"
             ]
         },
+        "meta_title": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "Tiêu đề SEO nhập ở Admin (null = dùng tên)."
+        },
+        "meta_description": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "Mô tả SEO nhập ở Admin (null = dùng đoạn đầu mô tả)."
+        },
         "image_url": {
             "type": [
                 "string",

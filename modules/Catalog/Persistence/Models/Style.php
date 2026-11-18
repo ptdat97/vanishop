@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Domain\PublishWindow;
 use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Concerns\HasLocalizedSlug;
+use Modules\Catalog\Persistence\Concerns\RecordsSlugRedirects;
 use Modules\Catalog\Persistence\Database\Factories\StyleFactory;
 use Modules\Shared\Persistence\Concerns\HasTranslations;
 
@@ -41,6 +43,10 @@ final class Style extends Model
 
     use HasLocalizedSlug;
     use HasTranslations;
+    use RecordsSlugRedirects;
+
+    /** Loại bản ghi trong `slug_redirects` (đổi slug → link cũ chuyển hướng 301). */
+    public const SLUG_SUBJECT = CatalogReader::SLUG_PRODUCT;
 
     protected $fillable = ['brand_id', 'style_code', 'slug', 'status', 'published_from', 'published_to', 'primary_category_id', 'search_text', 'meta', 'lock_version', 'track_inventory'];
 

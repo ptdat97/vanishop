@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.24',
+    'version' => '0.5.25',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.3.0',
+    'extension_api' => '1.4.0',
 
     'plugins' => [
         'path' => $relativeToBase(env('VANI_PLUGINS_PATH', 'custom/plugin')),
@@ -166,6 +166,8 @@ return [
         'supported' => array_values(array_filter(array_map('trim', explode(',', (string) env('VANI_LOCALES', 'vi'))))),
         // Tên hiển thị của ngôn ngữ (tab bản dịch trong Admin).
         'labels' => ['vi' => 'Tiếng Việt', 'en' => 'English'],
+        // Mã ngôn ngữ_vùng cho thẻ chia sẻ `og:locale` (Facebook, Zalo); chưa khai thì dùng nguyên mã ngôn ngữ.
+        'og_locales' => ['vi' => 'vi_VN', 'en' => 'en_US'],
         // Đường dẫn storefront theo ngôn ngữ (ADR-038), khoá = tên route bỏ `storefront.`. Ngôn ngữ mặc định không tiền
         // tố; ngôn ngữ khác dưới `/<mã>`. Ngôn ngữ (hoặc khoá) chưa khai báo dùng đường dẫn của ngôn ngữ mặc định.
         'paths' => [

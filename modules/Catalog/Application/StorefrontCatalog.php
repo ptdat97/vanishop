@@ -22,6 +22,8 @@ use Modules\Catalog\Persistence\Models\Category;
 use Modules\Catalog\Persistence\Models\OptionType;
 use Modules\Catalog\Persistence\Models\OptionValue;
 use Modules\Catalog\Persistence\Models\ProductCollection;
+use Modules\Catalog\Persistence\Models\SlugRedirect;
+use Modules\Catalog\Persistence\Models\Style;
 use Modules\Shared\Support\StoreLocale;
 
 /**
@@ -109,6 +111,23 @@ final class StorefrontCatalog implements CatalogReader
     public function productsByIds(array $styleIds, string $locale, int $now): array
     {
         return vani_filter('vani.service.catalog.products_by_ids', $this->products->byIds($styleIds, $locale, $now), $locale);
+    }
+
+    public function slugRedirect(string $subject, string $slug, string $locale): ?string
+    {
+        $redirect = SlugRedirect::query()->where('subject', $subject)->where('slug', $slug)->first();
+        $model = match ($redirect?->subject) {
+            Style::SLUG_SUBJECT => Style::query()->with('translations')->find($redirect->subject_id),
+            Category::SLUG_SUBJECT => Category::query()->with('translations')->find($redirect->subject_id),
+            Brand::SLUG_SUBJECT => Brand::query()->find($redirect->subject_id),
+            default => null,
+        };
+
+        return match (true) {
+            $model instanceof Brand => (string) $model->slug,
+            $model instanceof Style, $model instanceof Category => $model->slugFor($locale),
+            default => null,
+        };
     }
 
     public function productDetail(string $slug, string $locale, int $now): ?array
@@ -304,6 +323,8 @@ final class StorefrontCatalog implements CatalogReader
             'locales' => $node['locales'],
             'name' => $node['name'],
             'description' => $node['description'],
+            'meta_title' => $node['meta_title'] ?? null,
+            'meta_description' => $node['meta_description'] ?? null,
             'image_url' => $node['image_url'],
             'children' => $this->present($node['children']),
         ], $nodes);

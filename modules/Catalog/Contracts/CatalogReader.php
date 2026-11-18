@@ -17,6 +17,13 @@ use Modules\Shared\Contracts\PluginApi;
 #[PluginApi]
 interface CatalogReader
 {
+    /** Loại bản ghi cho {@see slugRedirect()}. */
+    public const SLUG_PRODUCT = 'product';
+
+    public const SLUG_CATEGORY = 'category';
+
+    public const SLUG_BRAND = 'brand';
+
     /**
      * Cây danh mục đang hiển thị.
      *
@@ -30,6 +37,13 @@ interface CatalogReader
      * @return array<string, mixed>|null
      */
     public function category(string $slug, string $locale): ?array;
+
+    /**
+     * Slug hiện tại của bản ghi từng dùng `$slug` (0.5.25 — đổi slug ở Admin thì link cũ chuyển hướng 301): `$subject` =
+     * `product` | `category` | `brand`. null khi slug chưa từng đổi hoặc bản ghi không còn. Chỉ slug gốc (ngôn ngữ mặc
+     * định); trả slug theo `$locale`. Nơi gọi vẫn kiểm bản ghi còn hiển thị trước khi chuyển hướng.
+     */
+    public function slugRedirect(string $subject, string $slug, string $locale): ?string;
 
     /**
      * Gợi ý tìm kiếm (0.3.71, reference-parity §3.5-4): sản phẩm khớp (tối đa $products, theo SearchProvider), danh mục

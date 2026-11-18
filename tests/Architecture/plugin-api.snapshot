@@ -1,4 +1,4 @@
-Extension API 1.3.0
+Extension API 1.4.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -29,8 +29,12 @@ interface Modules\Catalog\Contracts\CatalogLookup
   visible(string $kind, array $ids, string $locale): array
   search(string $kind, string $query, string $locale, int $limit = 20): array
 interface Modules\Catalog\Contracts\CatalogReader
+  const SLUG_PRODUCT = 'product'
+  const SLUG_CATEGORY = 'category'
+  const SLUG_BRAND = 'brand'
   categoryTree(string $locale): array
   category(string $slug, string $locale): ?array
+  slugRedirect(string $subject, string $slug, string $locale): ?string
   suggestions(string $text, string $locale, int $now, int $products = 5): array
   brands(): array
   brand(string $slug): ?array

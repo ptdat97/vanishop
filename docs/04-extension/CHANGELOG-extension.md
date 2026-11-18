@@ -4,6 +4,27 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.25 — 2026-11-18 · Extension API 1.4.0
+
+Storefront S3: SEO và chia sẻ link.
+
+### Thêm (API cho plugin — minor)
+- `CatalogReader::slugRedirect(string $subject, string $slug, string $locale): ?string` + hằng `SLUG_PRODUCT`, `SLUG_CATEGORY`, `SLUG_BRAND`: slug hiện tại của bản ghi từng dùng `$slug` (đổi slug ở Admin → bảng `slug_redirects`). Plugin có trang theo slug của Catalog dùng để chuyển hướng 301.
+- `CatalogReader::category()` / `categoryTree()` (và Storefront API `GET /categories`, `/categories/{slug}`): thêm `meta_title`, `meta_description`.
+
+### Đổi (theme)
+- Layout in thẻ Open Graph/`twitter:card` cho trang công khai được index, mô tả dự phòng = mô tả cửa hàng; trang đặt section `og_image`, `og_type` (theme con/plugin không tự in `og:*`). `theme::pages.category`, `theme::pages.brand` nhận `$meta` (`Storefront\View\PageMeta`); `$page['meta']['image']` ở trang sản phẩm. Trang chủ có JSON-LD `Organization` + `WebSite`.
+- `$shell['share']` = `{site_name, description, image, locale, json_ld}`.
+- `vani.cms` 1.5.5, `vani.lookbook` 1.1.4: thẻ chia sẻ qua section, không tự in.
+
+### Sửa
+- Canonical/hreflang không còn kèm bộ lọc, sắp xếp, `utm_*`; trang 2 trở đi tự canonical (trước: về trang 1). Trang tìm kiếm `noindex`.
+- Trang thương hiệu không có mô tả in thẻ `<meta name="description" content="">` rỗng.
+- `image` trong JSON-LD `Product` là URL tuyệt đối.
+
+### Cấu hình
+- `core`/`storefront.meta_description`, `core`/`storefront.share_image` (Admin → Cấu hình); `vanishop.locale.og_locales`.
+
 ## 0.5.24 — 2026-11-18 · Extension API 1.3.0 (không đổi)
 
 Storefront S2: checkout trên điện thoại. Không đổi API cho plugin.

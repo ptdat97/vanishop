@@ -50,6 +50,7 @@ Sản phẩm (style), SKU (variant) theo 1–3 trục tuỳ chọn, danh mục, 
 - `style_options`
 - `style_option_values`
 - `variant_option_values`
+- `slug_redirects`
 
 ## Contract công bố
 

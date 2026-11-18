@@ -1,6 +1,13 @@
 @extends('theme::layouts.app')
 
-@section('title', $category['name'])
+{{-- $meta (PageMeta): tiêu đề/mô tả/ảnh chia sẻ đã có dự phòng. --}}
+@section('title', $meta['title'])
+@if ($meta['description'] !== null)
+    @section('description', $meta['description'])
+@endif
+@if ($meta['image'] !== null)
+    @section('og_image', $meta['image'])
+@endif
 
 @section('content')
     @include('theme::partials.breadcrumb', ['crumbs' => $crumbs])

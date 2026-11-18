@@ -5,10 +5,27 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@hasSection('title')@yield('title') — @endif{{ config('app.name') }}</title>
-    @hasSection('description')<meta name="description" content="@yield('description')">@endif
-    @hasSection('canonical')<link rel="canonical" href="@yield('canonical')">@elseif ($seo['canonical'] ?? null)<link rel="canonical" href="{{ $seo['canonical'] }}">@endif
+    {{-- Section `title`/`description`/`og_image`/`og_type` của trang (đã escape khi đặt); thiếu → giá trị cửa hàng ($shell['share']). --}}
+    @php($pageTitle = trim($__env->yieldContent('title')))
+    @php($pageDescription = trim($__env->yieldContent('description')) ?: e($shell['share']['description'] ?? ''))
+    @php($pageCanonical = trim($__env->yieldContent('canonical')) ?: e($seo['canonical'] ?? ''))
+    <title>@if ($pageTitle !== ''){!! $pageTitle !!} — @endif{{ config('app.name') }}</title>
+    @if ($pageDescription !== '')<meta name="description" content="{!! $pageDescription !!}">@endif
+    @if ($pageCanonical !== '')<link rel="canonical" href="{!! $pageCanonical !!}">@endif
     @if ($seo['robots'] ?? null)<meta name="robots" content="{{ $seo['robots'] }}">@endif
+    {{-- Thẻ chia sẻ (Facebook, Zalo, X) — chỉ trang công khai được index. --}}
+    @if (! ($seo['robots'] ?? null) && $pageCanonical !== '')
+        @php($pageImage = trim($__env->yieldContent('og_image')) ?: e($shell['share']['image'] ?? ''))
+        <meta property="og:type" content="{!! trim($__env->yieldContent('og_type')) ?: 'website' !!}">
+        <meta property="og:site_name" content="{{ $shell['share']['site_name'] }}">
+        <meta property="og:locale" content="{{ $shell['share']['locale'] }}">
+        <meta property="og:url" content="{!! $pageCanonical !!}">
+        <meta property="og:title" content="{!! $pageTitle !== '' ? $pageTitle : e($shell['share']['site_name']) !!}">
+        @if ($pageDescription !== '')<meta property="og:description" content="{!! $pageDescription !!}">@endif
+        @if ($pageImage !== '')<meta property="og:image" content="{!! $pageImage !!}">@endif
+        <meta name="twitter:card" content="{{ $pageImage !== '' ? 'summary_large_image' : 'summary' }}">
+    @endif
+    @if ($shell['share']['json_ld'])<script type="application/ld+json">{!! $shell['share']['json_ld'] !!}</script>@endif
     @foreach ($seo['hreflang'] ?? [] as $hreflang => $href)<link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">@endforeach
     {{-- Token in thô (không escape): `&#039;` trong <style> làm hỏng font-family. Giá trị cửa hàng nhập đã lọc ở Themes::tokens() (chặn ;{}<>). --}}
     <style>:root{@foreach ($themeTokens ?? [] as $token => $value)--vani-{!! $token !!}:{!! $value !!};@endforeach}</style>

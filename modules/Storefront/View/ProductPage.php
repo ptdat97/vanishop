@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\View;
 
-use Illuminate\Support\Str;
 use Modules\Catalog\Contracts\MediaUrls;
 
 /**
@@ -19,8 +18,6 @@ final class ProductPage
     /** Bề rộng ảnh phóng to khi ảnh không có srcset. */
     private const ZOOM_FALLBACK_WIDTH = 800;
 
-    private const DESCRIPTION_LIMIT = 160;
-
     /** `sizes` của ảnh gallery theo bố cục 2 cột của PDP (khung 1152px). */
     private const GALLERY_SIZES = '(min-width: 1152px) 560px, (min-width: 768px) 50vw, 100vw';
 
@@ -29,7 +26,7 @@ final class ProductPage
     /**
      * @param  array<string, mixed>  $product
      * @return array{
-     *     meta: array{title: string, description: string|null, json_ld: list<string>},
+     *     meta: array{title: string, description: string|null, image: string|null, json_ld: list<string>},
      *     crumbs: list<array{label: string, url?: string}>,
      *     gallery: array<string, mixed>,
      *     selector: array<string, mixed>,
@@ -56,17 +53,17 @@ final class ProductPage
      * Tiêu đề: `meta_title` → tên. Mô tả: `meta_description` → đoạn đầu mô tả (≤ 160 ký tự) → null.
      *
      * @param  array<string, mixed>  $product
-     * @return array{title: string, description: string|null, json_ld: list<string>}
+     * @return array{title: string, description: string|null, image: string|null, json_ld: list<string>}
      */
     private static function meta(array $product): array
     {
-        $description = self::filled($product['meta_description'] ?? null)
-            ?? (self::filled($product['description'] ?? null) === null ? null : Str::limit((string) preg_replace('/\s+/u', ' ', strip_tags((string) $product['description'])), self::DESCRIPTION_LIMIT));
+        $image = PageMeta::absoluteUrl($product['media']['gallery'][0]['url'] ?? $product['image_url'] ?? null);
 
         return [
-            'title' => self::filled($product['meta_title'] ?? null) ?? (string) $product['name'],
-            'description' => $description,
-            'json_ld' => [StructuredData::product([...$product, 'image_url' => $product['media']['gallery'][0]['url'] ?? $product['image_url'] ?? null])],
+            'title' => PageMeta::title($product['meta_title'] ?? null, (string) $product['name']),
+            'description' => PageMeta::description($product['meta_description'] ?? null, $product['description'] ?? null),
+            'image' => $image,
+            'json_ld' => [StructuredData::product([...$product, 'image_url' => $image])],
         ];
     }
 
@@ -199,10 +196,5 @@ final class ProductPage
     private static function cssString(string $value): string
     {
         return '"'.preg_replace_callback('/[^A-Za-z0-9_-]/u', fn (array $match): string => '\\'.dechex((int) mb_ord($match[0])).' ', $value).'"';
-    }
-
-    private static function filled(mixed $value): ?string
-    {
-        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 }

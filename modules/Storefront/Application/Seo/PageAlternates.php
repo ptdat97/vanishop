@@ -16,6 +16,7 @@ use Modules\Storefront\Http\Middleware\PublicPageCache;
  * - Trang công khai đã dịch: canonical tự trỏ, `hreflang` cho mọi ngôn ngữ đã dịch + `x-default` → ngôn ngữ mặc định.
  * - Trang công khai chưa dịch ở ngôn ngữ hiện hành: `noindex,follow`, canonical → bản ngôn ngữ mặc định, không hreflang.
  * - Trang giao dịch (không cache được: giỏ, checkout, đơn, tài khoản, tra cứu): `noindex`.
+ * - URL canonical/hreflang chỉ giữ tham số `page` (> 1): bộ lọc, sắp xếp, `utm_*`… không tạo trang trùng (0.5.25).
  * Khai báo lưu trên request (attribute), service không giữ trạng thái.
  */
 final class PageAlternates implements PageSeo
@@ -42,7 +43,11 @@ final class PageAlternates implements PageSeo
         $declared = $this->declared();
         $locale = App::getLocale();
         $default = StoreLocale::default();
-        $urls = $declared['urls'] ?? $this->fromRoute();
+        $routeUrls = $declared['urls'] ?? $this->fromRoute();
+        $urls = array_map(fn (string $url): string => $this->withPage($url), $routeUrls);
+        // Nút đổi ngôn ngữ giữ nguyên bộ lọc/sắp xếp khách đang xem (khác canonical).
+        $query = $this->request->getQueryString();
+        $switch = array_map(fn (string $url): string => $query !== null && $query !== '' ? "{$url}?{$query}" : $url, $routeUrls);
         $translated = $declared['translated'] ?? array_keys($urls);
         $public = (bool) $this->request->attributes->get(PublicPageCache::PUBLIC_PAGE) && ! ($declared['noindex'] ?? false);
 
@@ -51,7 +56,7 @@ final class PageAlternates implements PageSeo
             $switcher[] = [
                 'locale' => $option['code'],
                 'label' => $option['label'],
-                'url' => $urls[$option['code']] ?? LocalizedUrls::route('storefront.home', [], $option['code']),
+                'url' => $switch[$option['code']] ?? LocalizedUrls::route('storefront.home', [], $option['code']),
                 'current' => $option['code'] === $locale,
             ];
         }
@@ -106,15 +111,23 @@ final class PageAlternates implements PageSeo
         }
 
         $base = LocalizedUrls::baseName($name);
-        $query = $this->request->getQueryString();
         $urls = [];
         foreach (StoreLocale::supported() as $locale) {
             if (LocalizedUrls::has($base, $locale)) {
-                $urls[$locale] = LocalizedUrls::route($base, $route->parameters(), $locale).($query !== null && $query !== '' ? "?{$query}" : '');
+                $urls[$locale] = LocalizedUrls::route($base, $route->parameters(), $locale);
             }
         }
 
         return $urls;
+    }
+
+    /** Trang danh sách thứ N (> 1) tự canonical về chính nó (`?page=N`), không về trang 1. */
+    private function withPage(string $url): string
+    {
+        $page = $this->request->query('page');
+        $page = is_string($page) && ctype_digit($page) ? (int) $page : 1;
+
+        return $page > 1 ? $url.(str_contains($url, '?') ? '&' : '?')."page={$page}" : $url;
     }
 
     /**

@@ -2,16 +2,16 @@
 
 @section('title', $post['meta_title'])
 @section('description', $post['meta_description'])
+{{-- Thẻ chia sẻ do layout của theme in (og:title = tiêu đề trang, og:url = canonical). --}}
+@section('og_type', 'article')
+@if ($post['cover_url'])
+    @section('og_image', $post['cover_url'])
+@endif
 
 @push('head')
     @if ($preview)
         <meta name="robots" content="noindex">
     @endif
-    @if ($post['cover_url'])
-        <meta property="og:image" content="{{ $post['cover_url'] }}">
-    @endif
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="{{ $post['title'] }}">
 @endpush
 
 @section('content')

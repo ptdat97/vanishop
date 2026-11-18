@@ -35,6 +35,7 @@ use Modules\Storefront\Application\PopularSearches;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
+use Modules\Storefront\Application\Seo\StoreShare;
 use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
@@ -148,6 +149,17 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'core', 'storefront.per_page', 'Số sản phẩm mỗi trang', 'int', 24,
             help: 'Trang danh mục, thương hiệu, tìm kiếm và Storefront API khi không truyền per_page (12–60).',
             rules: ['min:12', 'max:60'],
+        ));
+        $settings->define(new SettingDefinition(
+            'core', StoreShare::DESCRIPTION_SETTING, 'Mô tả cửa hàng (Google, chia sẻ link)', 'text',
+            help: 'Hiện dưới tên cửa hàng trên Google và khi chia sẻ link trang chủ lên Facebook/Zalo; trang không có mô tả riêng cũng dùng câu này. Nên 1–2 câu, dưới 160 ký tự.',
+            rules: ['max:300'],
+        ));
+        $settings->define(new SettingDefinition(
+            'core', StoreShare::IMAGE_SETTING, 'Ảnh khi chia sẻ link', 'media',
+            help: 'Ảnh Facebook/Zalo hiện khi chia sẻ link trang không có ảnh riêng (trang chủ, danh mục chưa có ảnh…). Nên ảnh ngang 1200 × 630 px.',
+            // Ảnh không còn trong thư viện → bỏ qua (StoreShare trả null), không cần kiểm bảng của Catalog ở đây.
+            rules: ['min:1'],
         ));
         $settings->define(new SettingDefinition(
             'core', PopularSearches::SETTING, 'Từ khoá tìm kiếm nổi bật', 'text',

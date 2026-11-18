@@ -12,14 +12,17 @@ use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\CustomerSessionState;
 use Modules\Storefront\Application\Menus\MenuPresenter;
 use Modules\Storefront\Application\Seo\PageAlternates;
+use Modules\Storefront\Application\Seo\StoreShare;
 use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Http\Controllers\Web\CartController;
 use Modules\Storefront\Http\Middleware\PublicPageCache;
+use Modules\Storefront\View\StructuredData;
 
 /**
  * Dữ liệu dựng sẵn cho `theme::layouts.app` (và partial nó include): `$shell` gom mọi thứ layout cần tính — chế độ cache
  * trang, menu theo vị trí (di động rơi về đầu trang), thanh thông báo, liên hệ/mạng xã hội/phương thức thanh toán ở chân
- * trang, link tài khoản theo khách, ô tìm kiếm, thay đổi giỏ của lần gửi trước, URL cho `window.vani`. Layout chỉ in ra.
+ * trang, link tài khoản theo khách, ô tìm kiếm, thay đổi giỏ của lần gửi trước, URL cho `window.vani`, giá trị chia sẻ
+ * mặc định (`share`: tên, mô tả, ảnh của cửa hàng cho thẻ Open Graph; JSON-LD cửa hàng ở trang chủ). Layout chỉ in ra.
  * Giữ `$menus`, `$seo`, `$themeSettings`, `$popularSearches`, `$customerState` như trước cho theme con.
  */
 final class LayoutComposer
@@ -35,6 +38,7 @@ final class LayoutComposer
         private readonly StoreProfile $store,
         private readonly CustomerSessionState $sessionState,
         private readonly SessionManager $session,
+        private readonly StoreShare $share,
     ) {}
 
     public function compose(View $view): void
@@ -97,6 +101,7 @@ final class LayoutComposer
                 'email' => $email, 'address' => $address, 'socials' => $socials,
             ] : null,
             'copyright' => ($footer['copyright'] ?? null) ?: '© '.date('Y').' '.config('app.name'),
+            'share' => $this->shareDefaults($locale, $phone, $socials),
             'payment_methods' => array_values(array_filter(array_map('trim', preg_split('/\R/', (string) ($footer['payment_methods'] ?? '')) ?: []))),
             // Thay đổi giỏ của lần gửi trước → sự kiện `vani:cart-updated` (app.js). Trang có cache lấy qua /_vani/phien.
             'cart_change' => is_array($flash) ? $flash : null,
@@ -116,6 +121,32 @@ final class LayoutComposer
                 'search_suggestions' => route('api.storefront.v1.search.suggestions'),
                 'session' => LocalizedUrls::route('storefront.session', ['locale' => $locale]),
             ],
+        ];
+    }
+
+    /**
+     * Thẻ chia sẻ mặc định (Open Graph): trang tự đặt tiêu đề/mô tả/ảnh bằng section `title`, `description`, `og_image`,
+     * `og_type`; thiếu thì layout dùng giá trị ở đây.
+     *
+     * @param  list<array{network: string, url: string}>  $socials
+     * @return array{site_name: string, description: string|null, image: string|null, locale: string, json_ld: string|null}
+     */
+    private function shareDefaults(string $locale, ?string $phone, array $socials): array
+    {
+        $defaults = $this->share->defaults();
+        $home = $this->request->routeIs('storefront.home', 'storefront.*.home');
+
+        return [
+            ...$defaults,
+            'locale' => (string) (config('vanishop.locale.og_locales')[$locale] ?? $locale),
+            'json_ld' => $home ? StructuredData::store(
+                $defaults['site_name'],
+                LocalizedUrls::route('storefront.home'),
+                LocalizedUrls::route('storefront.search'),
+                $defaults['image'],
+                $phone,
+                array_column($socials, 'url'),
+            ) : null,
         ];
     }
 }

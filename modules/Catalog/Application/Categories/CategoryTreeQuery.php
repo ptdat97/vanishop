@@ -12,7 +12,7 @@ use Modules\Catalog\Persistence\Models\Mediable;
 /**
  * Đọc cây danh mục của cửa hàng (1 truy vấn + eager load, dựng cây trong bộ nhớ).
  *
- * @phpstan-type CategoryNode array{id: int, parent_id: int|null, slug: string, name: string|null, description: string|null, status: string, position: int, depth: int, image_url: string|null, children: list<mixed>}
+ * @phpstan-type CategoryNode array{id: int, parent_id: int|null, slug: string, name: string|null, description: string|null, meta_title: string|null, meta_description: string|null, status: string, position: int, depth: int, image_url: string|null, children: list<mixed>}
  */
 final class CategoryTreeQuery
 {
@@ -79,6 +79,8 @@ final class CategoryTreeQuery
             'locales' => $category->translatedLocales(),
             'name' => $category->translate('name', $locale),
             'description' => $category->translate('description', $locale),
+            'meta_title' => $category->translate('meta_title', $locale),
+            'meta_description' => $category->translate('meta_description', $locale),
             'status' => $category->status->value,
             'position' => $category->position,
             'depth' => $category->depth,

@@ -52,6 +52,41 @@ final class StructuredData
     }
 
     /**
+     * Trang chủ (0.5.25): `Organization` (tên, logo = ảnh chia sẻ, SĐT, mạng xã hội) + `WebSite` có `SearchAction` (ô tìm
+     * kiếm trên Google), chung một `@graph`.
+     *
+     * @param  list<string>  $sameAs  link mạng xã hội của cửa hàng
+     */
+    public static function store(string $name, string $url, string $searchUrl, ?string $logo, ?string $phone, array $sameAs): string
+    {
+        return self::encode([
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                array_filter([
+                    '@type' => 'Organization',
+                    '@id' => "{$url}#organization",
+                    'name' => $name,
+                    'url' => $url,
+                    'logo' => $logo,
+                    'contactPoint' => $phone === null ? null : ['@type' => 'ContactPoint', 'telephone' => $phone, 'contactType' => 'customer service'],
+                    'sameAs' => $sameAs === [] ? null : $sameAs,
+                ], fn (mixed $value): bool => $value !== null),
+                [
+                    '@type' => 'WebSite',
+                    'name' => $name,
+                    'url' => $url,
+                    'publisher' => ['@id' => "{$url}#organization"],
+                    'potentialAction' => [
+                        '@type' => 'SearchAction',
+                        'target' => ['@type' => 'EntryPoint', 'urlTemplate' => "{$searchUrl}?q={search_term_string}"],
+                        'query-input' => 'required name=search_term_string',
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     private static function encode(array $data): string
