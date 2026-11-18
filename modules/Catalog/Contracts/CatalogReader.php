@@ -46,6 +46,14 @@ interface CatalogReader
     public function slugRedirect(string $subject, string $slug, string $locale): ?string;
 
     /**
+     * Sản phẩm đã ngừng bán (lưu trữ) theo slug (0.5.34, L44): storefront trả 410 kèm gợi ý cùng danh mục. Null khi slug
+     * không thuộc sản phẩm lưu trữ nào.
+     *
+     * @return array{name: string, category_slug: string|null}|null
+     */
+    public function discontinuedProduct(string $slug, string $locale): ?array;
+
+    /**
      * Gợi ý tìm kiếm (0.3.71, reference-parity §3.5-4): sản phẩm khớp (tối đa $products, theo SearchProvider), danh mục
      * và thương hiệu đang hiện có tên khớp (tối đa 3 mỗi loại, không phân biệt hoa thường/dấu).
      *

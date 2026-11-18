@@ -99,7 +99,7 @@
 | [`shipment_events`](#shipment_events) | 9 |
 | [`shipment_lines`](#shipment_lines) | 7 |
 | [`shipments`](#shipments) | 20 |
-| [`slug_redirects`](#slug_redirects) | 6 |
+| [`slug_redirects`](#slug_redirects) | 7 |
 | [`staff_invite_tokens`](#staff_invite_tokens) | 3 |
 | [`staff_password_reset_tokens`](#staff_password_reset_tokens) | 3 |
 | [`staff_role_assignments`](#staff_role_assignments) | 7 |
@@ -1764,12 +1764,13 @@ Khoá ngoại: location_id → locations(id); order_id → orders(id)
 |---|---|---|---|
 | `id` | bigint unsigned |  |  |
 | `subject` | varchar(16) |  |  |
+| `locale` | varchar(8) |  | `` |
 | `subject_id` | bigint unsigned |  |  |
 | `slug` | varchar(191) |  |  |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); unique (subject, slug); index (subject, subject_id)
+Index: PK (id); unique (subject, locale, slug); index (subject, subject_id)
 
 ## staff_invite_tokens
 

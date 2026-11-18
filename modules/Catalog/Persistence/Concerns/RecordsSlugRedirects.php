@@ -15,7 +15,7 @@ trait RecordsSlugRedirects
 {
     public static function bootRecordsSlugRedirects(): void
     {
-        static::created(fn (self $model) => SlugRedirect::query()->where('subject', static::SLUG_SUBJECT)->where('slug', (string) $model->slug)->delete());
+        static::created(fn (self $model) => SlugRedirect::query()->where(['subject' => static::SLUG_SUBJECT, 'locale' => '', 'slug' => (string) $model->slug])->delete());
 
         // `updated` chạy trước khi đồng bộ original: getOriginal('slug') vẫn là slug cũ.
         static::updated(function (self $model): void {
@@ -23,10 +23,10 @@ trait RecordsSlugRedirects
                 return;
             }
             $subject = static::SLUG_SUBJECT;
-            SlugRedirect::query()->where('subject', $subject)->where('slug', (string) $model->slug)->delete();
+            SlugRedirect::query()->where(['subject' => $subject, 'locale' => '', 'slug' => (string) $model->slug])->delete();
             $previous = (string) $model->getOriginal('slug');
             if ($previous !== '') {
-                SlugRedirect::query()->updateOrCreate(['subject' => $subject, 'slug' => $previous], ['subject_id' => (int) $model->getKey()]);
+                SlugRedirect::query()->updateOrCreate(['subject' => $subject, 'locale' => '', 'slug' => $previous], ['subject_id' => (int) $model->getKey()]);
             }
         });
     }

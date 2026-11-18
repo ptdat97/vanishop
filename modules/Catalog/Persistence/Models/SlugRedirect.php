@@ -11,12 +11,13 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $id
  * @property string $subject
+ * @property string $locale '' = slug gốc
  * @property int $subject_id
  * @property string $slug
  */
 final class SlugRedirect extends Model
 {
-    protected $fillable = ['subject', 'subject_id', 'slug'];
+    protected $fillable = ['subject', 'locale', 'subject_id', 'slug'];
 
     protected function casts(): array
     {

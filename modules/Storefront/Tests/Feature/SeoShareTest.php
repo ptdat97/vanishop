@@ -105,11 +105,25 @@ it('đổi slug: link cũ chuyển 301 sang slug mới (giữ query); slug cũ �
     $this->get("/san-pham/{$old}")->assertOk()->assertSee('Áo mới');
 });
 
-it('đổi slug của sản phẩm đã ngừng bán → link cũ 404 (không chuyển tới trang 404)', function () {
+it('L44: sản phẩm ngừng bán (kể cả link slug cũ) → 410, noindex, gợi ý cùng danh mục; slug chưa từng có → 404', function () {
     $old = $this->product->slug;
+    T::product($this->brand->id, ['name' => 'Đầm cùng danh mục', 'category_ids' => [$this->category->id]]);
     T::seed(fn () => $this->product->update(['slug' => 'dam-cu', 'status' => 'archived']));
 
-    $this->get("/san-pham/{$old}")->assertNotFound();
+    foreach ([$old, 'dam-cu'] as $slug) {
+        $this->get("/san-pham/{$slug}")->assertStatus(410)
+            ->assertSee('Sản phẩm đã ngừng bán')
+            ->assertSee('<meta name="robots" content="noindex">', false)
+            ->assertSee('href="'.url('/danh-muc/dam').'"', false);
+    }
     $this->get('/san-pham/chua-tung-co')->assertNotFound();
-    expect(Style::query()->count())->toBe(1)->and(Brand::query()->count())->toBe(1);
+    expect(Style::query()->count())->toBe(2)->and(Brand::query()->count())->toBe(1);
+});
+
+it('L44: slug riêng của bản dịch đổi → link cũ của ngôn ngữ đó 301 sang slug mới', function () {
+    config(['vanishop.locale.supported' => ['vi', 'en']]);
+    $this->product->syncTranslations(['vi' => ['name' => 'Đầm lụa'], 'en' => ['name' => 'Silk dress', 'slug' => 'silk-dress']]);
+    $this->product->syncTranslations(['vi' => ['name' => 'Đầm lụa'], 'en' => ['name' => 'Silk dress', 'slug' => 'silk-midi-dress']]);
+
+    $this->get('/en/products/silk-dress')->assertStatus(301)->assertRedirect('/en/products/silk-midi-dress');
 });

@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.34 — 2026-11-19 · Extension API 1.9.0
+
+Backlog L44 (Owner: sản phẩm ngừng bán → 410 + gợi ý).
+
+### Thêm (API cho plugin — minor)
+- `CatalogReader::discontinuedProduct(string $slug, string $locale): ?array{name, category_slug}` — sản phẩm lưu trữ theo slug.
+
+### Đổi
+- `slug_redirects` thêm cột `locale` (migration mới; `''` = slug gốc): slug riêng của bản dịch (`style_translations`, `category_translations`) đổi → link cũ của ngôn ngữ đó 301. `CatalogReader::slugRedirect()` ưu tiên slug của ngôn ngữ đang xem.
+- Trang sản phẩm ngừng bán → HTTP 410 + view mới `theme::pages.product-gone` (gợi ý 8 sản phẩm cùng danh mục), `noindex`. Theme con không có view này dùng bản của `vani-base`.
+
 ## 0.5.33 — 2026-11-19 · Extension API 1.8.0 (không đổi)
 
 ### Sửa

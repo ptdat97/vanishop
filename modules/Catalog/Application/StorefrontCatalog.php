@@ -15,6 +15,7 @@ use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\MediaUrls;
 use Modules\Catalog\Domain\ColorFamily;
 use Modules\Catalog\Domain\OptionDisplayType;
+use Modules\Catalog\Domain\StyleStatus;
 use Modules\Catalog\Persistence\Models\Attribute;
 use Modules\Catalog\Persistence\Models\AttributeValue;
 use Modules\Catalog\Persistence\Models\Brand;
@@ -115,7 +116,8 @@ final class StorefrontCatalog implements CatalogReader
 
     public function slugRedirect(string $subject, string $slug, string $locale): ?string
     {
-        $redirect = SlugRedirect::query()->where('subject', $subject)->where('slug', $slug)->first();
+        // Slug riêng của bản dịch ở ngôn ngữ đang xem trước, rồi slug gốc (L44).
+        $redirect = SlugRedirect::query()->where('subject', $subject)->where('slug', $slug)->whereIn('locale', [$locale, ''])->orderByDesc('locale')->first();
         $model = match ($redirect?->subject) {
             Style::SLUG_SUBJECT => Style::query()->with('translations')->find($redirect->subject_id),
             Category::SLUG_SUBJECT => Category::query()->with('translations')->find($redirect->subject_id),
@@ -128,6 +130,18 @@ final class StorefrontCatalog implements CatalogReader
             $model instanceof Style, $model instanceof Category => $model->slugFor($locale),
             default => null,
         };
+    }
+
+    public function discontinuedProduct(string $slug, string $locale): ?array
+    {
+        $style = Style::query()->with('translations')->whereLocalizedSlug($slug, $locale)->where('status', StyleStatus::Archived->value)->orderByDesc('id')->first();
+        if ($style === null) {
+            return null;
+        }
+        $categoryId = $style->primary_category_id ?? $style->categories()->orderBy('categories.id')->value('categories.id');
+        $category = $categoryId === null ? null : Category::query()->with('translations')->where('status', 'active')->find($categoryId);
+
+        return ['name' => (string) $style->translate('name', $locale), 'category_slug' => $category?->slugFor($locale)];
     }
 
     public function productDetail(string $slug, string $locale, int $now): ?array
