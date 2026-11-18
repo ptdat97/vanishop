@@ -10,6 +10,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Fulfillment\Application\CarrierRegistry;
 use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Contracts\FulfillmentRejected;
 use Modules\Fulfillment\Contracts\ShipmentBooking;
 use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Fulfillment\Tests\Feature\Fixtures\FakeApiCarrier;
@@ -25,6 +26,7 @@ beforeEach(function () {
     C::autoConfirmCod();
     app(Extensions::class)->tag([FakeApiCarrier::class], CarrierRegistry::CARRIERS_TAG);
     FakeApiCarrier::$failBooking = false;
+    FakeApiCarrier::$duringBooking = null;
     FakeApiCarrier::$booked = [];
     FakeApiCarrier::$returnPickups = [];
 
@@ -223,6 +225,53 @@ it('đơn giữ hàng ở hai kho → hai vận đơn; chỉ trừ tồn khi c�
     expect(($this->order)()->fulfillment_status)->toBe('shipped')
         ->and((int) DB::table('stock_levels')->sum('reserved'))->toBe(0)
         ->and(($this->level)($this->s, $store)->on_hand)->toEqual(3);
+});
+
+it('đặt vận đơn (L31): giữ chỗ rồi gọi hãng ngoài transaction — lần đặt khác trong lúc hãng chưa trả lời bị từ chối, không đặt trùng', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    ($this->place)();
+    $shipment = Shipment::query()->withoutGlobalScopes()->sole();
+    $concurrent = null;
+    FakeApiCarrier::$duringBooking = function () use ($shipment, &$concurrent): void {
+        // Lúc hãng đang xử lý: lease đã ghi (đã commit, không giữ khoá dòng) — lần đặt thứ hai bị từ chối ngay.
+        expect($shipment->fresh()->booking_lease)->not->toBeNull();
+        try {
+            app(FulfillmentService::class)->book($shipment->id, null);
+        } catch (FulfillmentRejected $exception) {
+            $concurrent = $exception->errorCode();
+        }
+        app(FulfillmentService::class)->bookAutomatically($shipment->id, 1); // job song song: không tính là lỗi
+    };
+
+    app(FulfillmentService::class)->book($shipment->id, null);
+
+    expect($concurrent)->toBe('shipment.booking_in_progress')
+        ->and(FakeApiCarrier::$booked)->toHaveCount(1)
+        ->and($shipment->fresh())->status->value->toBe('created')->booking_lease->toBeNull()->booking_attempts->toBe(0);
+});
+
+it('đặt vận đơn (L31): hãng lỗi → trả chỗ ngay; chỗ giữ quá hạn (worker chết giữa chừng) → đặt lại được; huỷ trong lúc gọi hãng → không ghi đè', function () {
+    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    ($this->place)();
+    $shipment = Shipment::query()->withoutGlobalScopes()->sole();
+    $service = app(FulfillmentService::class);
+
+    FakeApiCarrier::$failBooking = true;
+    expect(fn () => $service->book($shipment->id, null))->toThrow(RuntimeException::class, 'Hãng đang bảo trì')
+        ->and($shipment->fresh()->booking_lease)->toBeNull();
+    FakeApiCarrier::$failBooking = false;
+
+    $shipment->update(['booking_started_at' => now()->subSeconds(30), 'booking_lease' => 'LEASE-CUA-WORKER-KHAC']);
+    expect(fn () => $service->book($shipment->id, null))->toThrow(FulfillmentRejected::class);
+    $shipment->update(['booking_started_at' => now()->subMinutes(3)]);
+    $service->book($shipment->id, null);
+    expect($shipment->fresh()->status->value)->toBe('created');
+
+    ($this->place)();
+    $second = Shipment::query()->withoutGlobalScopes()->latest('id')->first();
+    FakeApiCarrier::$duringBooking = fn () => $service->cancel($second->id, 'khách huỷ qua điện thoại');
+    expect(fn () => $service->book($second->id, null))->toThrow(FulfillmentRejected::class)
+        ->and($second->fresh())->status->value->toBe('cancelled')->tracking_number->toBeNull()->booking_lease->toBeNull();
 });
 
 it('Admin: quyền, mã vận đơn trùng', function () {

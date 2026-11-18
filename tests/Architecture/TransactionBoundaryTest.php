@@ -16,9 +16,7 @@ const EVENTS_DISPATCHED_IMMEDIATELY = [
 ];
 
 /** Lời gọi ra ngoài được phép nằm trong transaction (kèm lý do, có backlog). */
-const EXTERNAL_CALLS_IN_TRANSACTION = [
-    'modules/Fulfillment/Application/FulfillmentService.php:createShipment' => 'khoá vận đơn trong lúc đặt với hãng để hai worker không đặt trùng (backlog L31)',
-];
+const EXTERNAL_CALLS_IN_TRANSACTION = [];
 
 it('mọi domain event của Core phát sau khi transaction commit', function () {
     $immediate = [];

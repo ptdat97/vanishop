@@ -11,6 +11,7 @@ return [
     'exists' => 'The order already has active shipments.',
     'allocation_mismatch' => 'The allocation does not match the stock reserved for the order.',
     'tracking_taken' => 'This tracking number is already used by another shipment.',
+    'booking_in_progress' => 'This shipment is being booked with the carrier, please wait a few seconds and reload.',
     'created' => 'Shipment created.',
     'booked' => 'Tracking number recorded.',
     'updated' => 'Shipment status updated.',

@@ -56,6 +56,12 @@ final class FulfillmentRejected extends BusinessRuleViolation
         return new self('shipment.tracking_taken', 422, __('fulfillment::messages.tracking_taken'));
     }
 
+    /** Lần đặt khác đang gọi hãng cho vận đơn này (0.5.27 — giữ chỗ trước khi gọi hãng, backlog L31). */
+    public static function bookingInProgress(): self
+    {
+        return new self('shipment.booking_in_progress', 409, __('fulfillment::messages.booking_in_progress'));
+    }
+
     public function errorCode(): string
     {
         return $this->code_;

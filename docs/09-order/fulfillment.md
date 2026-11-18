@@ -90,6 +90,7 @@ sequenceDiagram
 
 - Đặt vận đơn ở hãng **luôn chạy sau commit**, trong job idempotent theo `shipment_id` (dùng mã shipment làm mã đơn hàng phía hãng để hãng tự khử trùng lặp).
 - Hãng lỗi quá số lần thử → shipment `booking_failed`, cảnh báo, nhân viên đặt lại hoặc chuyển sang `manual`.
+- **Ba bước, không giữ khoá khi chờ hãng (0.5.27, backlog L31):** (1) transaction ngắn khoá dòng vận đơn, ghi lease (`booking_started_at`, `booking_lease`) rồi commit; (2) gọi `createShipment` **ngoài transaction** (`ExternalCalls::guard`); (3) transaction ngắn ghi mã vận đơn và chuyển `created` chỉ khi lease vẫn là của lần này và vận đơn còn chờ đặt. Lần đặt khác (bấm trùng, worker khác) trong lúc lease còn hạn (120 giây — dài hơn timeout HTTP của plugin) bị từ chối `shipment.booking_in_progress` (409); job gặp lỗi này không tính là lần thử hỏng. Hãng lỗi → trả lease ngay. Vận đơn bị huỷ trong lúc gọi hãng → kết quả không ghi đè, log cảnh báo để nhân viên kiểm tra đơn ở hãng. Worker chết sau khi hãng đã tạo đơn: lease hết hạn thì lần sau đặt lại — dựa vào mã shipment làm mã đơn phía hãng để không tạo trùng.
 - `fulfillment_status` của đơn được **tính lại** từ các shipment sau mỗi thay đổi.
 
 ## 4. Chế độ external (khi có ODO hoặc WMS)

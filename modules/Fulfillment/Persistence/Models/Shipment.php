@@ -22,6 +22,8 @@ use Modules\Fulfillment\Domain\ShipmentStatus;
  * @property ShipmentStatus $status
  * @property int $booking_attempts
  * @property string|null $last_error lỗi đặt vận đơn gần nhất
+ * @property CarbonImmutable|null $booking_started_at lease: lần đặt đang gọi hãng (L31)
+ * @property string|null $booking_lease mã lease của lần đặt đang chạy
  * @property int $lock_version
  * @property CarbonImmutable|null $delivered_at
  */
@@ -34,6 +36,7 @@ final class Shipment extends Model
         return [
             'order_id' => 'integer', 'location_id' => 'integer', 'cod_amount' => 'integer', 'status' => ShipmentStatus::class,
             'booking_attempts' => 'integer', 'lock_version' => 'integer', 'shipped_at' => 'immutable_datetime', 'delivered_at' => 'immutable_datetime',
+            'booking_started_at' => 'immutable_datetime',
         ];
     }
 

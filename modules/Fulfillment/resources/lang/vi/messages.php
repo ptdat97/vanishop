@@ -11,6 +11,7 @@ return [
     'exists' => 'Đơn đã có vận đơn đang hoạt động.',
     'allocation_mismatch' => 'Phân bổ kho không khớp với hàng đang giữ cho đơn.',
     'tracking_taken' => 'Mã vận đơn đã được dùng cho vận đơn khác.',
+    'booking_in_progress' => 'Vận đơn đang được đặt với hãng, vui lòng đợi vài giây rồi tải lại.',
     'created' => 'Đã tạo vận đơn.',
     'booked' => 'Đã ghi nhận mã vận đơn.',
     'updated' => 'Đã cập nhật trạng thái vận đơn.',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Fulfillment\Tests\Feature\Fixtures;
 
+use Closure;
 use DateTimeImmutable;
 use Illuminate\Http\Request;
 use Modules\Fulfillment\Contracts\Data\CarrierCapabilities;
@@ -24,6 +25,9 @@ final class FakeApiCarrier implements ReturnPickup, ShippingCarrier
     public const SECRET = 'carrier-secret';
 
     public static bool $failBooking = false;
+
+    /** Chạy trong lúc "hãng đang xử lý" createShipment (test giữ chỗ khi đặt vận đơn, L31). */
+    public static ?Closure $duringBooking = null;
 
     /** @var array<string, string> */
     public static array $booked = [];
@@ -48,6 +52,9 @@ final class FakeApiCarrier implements ReturnPickup, ShippingCarrier
 
     public function createShipment(ShipmentData $shipment): CarrierShipment
     {
+        if (self::$duringBooking !== null) {
+            (self::$duringBooking)($shipment);
+        }
         if (self::$failBooking) {
             throw new RuntimeException('Hãng đang bảo trì');
         }

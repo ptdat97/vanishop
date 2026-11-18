@@ -98,7 +98,7 @@
 | [`settings`](#settings) | 7 |
 | [`shipment_events`](#shipment_events) | 9 |
 | [`shipment_lines`](#shipment_lines) | 7 |
-| [`shipments`](#shipments) | 18 |
+| [`shipments`](#shipments) | 20 |
 | [`slug_redirects`](#slug_redirects) | 6 |
 | [`staff_invite_tokens`](#staff_invite_tokens) | 3 |
 | [`staff_password_reset_tokens`](#staff_password_reset_tokens) | 3 |
@@ -1743,6 +1743,8 @@ Khoá ngoại: order_line_id → order_lines(id); shipment_id → shipments(id) 
 | `currency_code` | char(3) |  |  |
 | `status` | varchar(24) |  |  |
 | `booking_attempts` | smallint unsigned |  | `0` |
+| `booking_started_at` | timestamp | có |  |
+| `booking_lease` | varchar(26) | có |  |
 | `last_error` | varchar(255) | có |  |
 | `shipped_at` | timestamp | có |  |
 | `delivered_at` | timestamp | có |  |

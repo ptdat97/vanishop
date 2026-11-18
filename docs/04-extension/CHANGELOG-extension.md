@@ -4,6 +4,13 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.27 — 2026-11-18 · Extension API 1.4.0 (không đổi)
+
+Backlog L31: đặt vận đơn không giữ khoá trong lúc chờ hãng. Không đổi API cho plugin (`ShippingCarrier::createShipment` vẫn được gọi một lần cho mỗi lần đặt, nay ngoài transaction).
+
+### Đổi
+- `FulfillmentService::book` (nút "Đẩy lên hãng", hàng loạt, job, `ShipmentBooking`): giữ chỗ bằng lease (`shipments.booking_started_at`, `booking_lease`, migration mới) → gọi hãng ngoài transaction → ghi kết quả nếu lease còn của mình. Lần đặt trùng trong lúc hãng chưa trả lời → lỗi `shipment.booking_in_progress` (409). `TransactionBoundaryTest` không còn ngoại lệ nào.
+
 ## 0.5.26 — 2026-11-18 · Extension API 1.4.0 (không đổi)
 
 Backlog §6b đợt 1 (L5, L13, L15, L34). Không đổi API cho plugin.

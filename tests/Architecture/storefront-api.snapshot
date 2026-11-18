@@ -1,4 +1,4 @@
-Storefront API v1 — VaniShop 0.5.26
+Storefront API v1 — VaniShop 0.5.27
 GET /address/provinces security[]
   200
     $: object

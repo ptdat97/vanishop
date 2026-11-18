@@ -42,6 +42,9 @@ use Throwable;
  */
 final class FulfillmentService implements ShipmentBooking
 {
+    /** Thời hạn giữ chỗ khi đặt vận đơn — dài hơn timeout HTTP của plugin hãng (thường 30 giây). */
+    private const BOOKING_LEASE_SECONDS = 120;
+
     public function __construct(
         private readonly CarrierRegistry $registry,
         private readonly OrderReader $orders,
@@ -162,28 +165,58 @@ final class FulfillmentService implements ShipmentBooking
      */
     public function book(int $shipmentId, ?string $trackingNumber, ?string $serviceCode = null, ?string $labelUrl = null): void
     {
-        DB::transaction(function () use ($shipmentId, $trackingNumber, $serviceCode, $labelUrl): void {
+        // Ba bước (backlog L31): giữ chỗ trong transaction ngắn → gọi hãng NGOÀI transaction (không giữ khoá dòng khi hãng
+        // chậm) → ghi kết quả nếu lease còn là của lần này. Lần đặt khác trong lúc lease còn hạn bị từ chối (không đặt trùng).
+        $lease = (string) Str::ulid();
+        $shipment = DB::transaction(function () use ($shipmentId, $lease): Shipment {
             $shipment = Shipment::query()->whereKey($shipmentId)->lockForUpdate()->firstOrFail();
             if (! $shipment->status->awaitsBooking()) {
                 throw FulfillmentRejected::invalidTransition($shipment->status->value, ShipmentStatus::Created->value);
             }
+            if ($shipment->booking_started_at !== null && $shipment->booking_started_at->getTimestamp() > now()->getTimestamp() - self::BOOKING_LEASE_SECONDS) {
+                throw FulfillmentRejected::bookingInProgress();
+            }
+            $shipment->update(['booking_started_at' => now(), 'booking_lease' => $lease]);
 
-            // Ngoại lệ có chủ đích của ExternalCalls: gọi hãng khi đang khoá vận đơn để hai worker không đặt trùng một đơn
-            // ở hãng (backlog L31: tách thành giữ chỗ → gọi hãng → ghi kết quả).
+            return $shipment;
+        });
+
+        try {
             $carrier = $this->registry->carrier($shipment->carrier_code);
-            $booked = $carrier?->createShipment($this->data($shipment, $trackingNumber, $serviceCode));
-
-            try {
-                $shipment->update([
-                    'tracking_number' => $booked->trackingNumber ?? $trackingNumber, 'service_code' => $booked->serviceCode ?? $serviceCode,
-                    'label_url' => $booked->labelUrl ?? $labelUrl, 'last_error' => null,
-                ]);
-            } catch (UniqueConstraintViolationException) {
-                throw FulfillmentRejected::trackingTaken();
+            $booked = null;
+            if ($carrier !== null) {
+                ExternalCalls::guard("carrier.createShipment:{$shipment->carrier_code}");
+                $booked = $carrier->createShipment($this->data($shipment, $trackingNumber, $serviceCode));
             }
 
-            $this->apply($shipment, ShipmentStatus::Created, "booked:{$shipment->public_id}", 'system', null, [], strict: true);
-        });
+            DB::transaction(function () use ($shipmentId, $lease, $booked, $trackingNumber, $serviceCode, $labelUrl): void {
+                $shipment = Shipment::query()->whereKey($shipmentId)->lockForUpdate()->firstOrFail();
+                if ($shipment->booking_lease !== $lease || ! $shipment->status->awaitsBooking()) {
+                    // Vận đơn vừa bị huỷ, hoặc lease hết hạn và lần khác đã đặt: không ghi đè. Đơn có thể đã tạo ở hãng.
+                    Log::warning('Kết quả đặt vận đơn đến sau khi vận đơn đã đổi — kiểm tra đơn ở hãng.', [
+                        'shipment' => $shipment->public_id, 'carrier' => $shipment->carrier_code, 'tracking' => $booked?->trackingNumber,
+                    ]);
+
+                    throw FulfillmentRejected::invalidTransition($shipment->status->value, ShipmentStatus::Created->value);
+                }
+                try {
+                    $shipment->update([
+                        'tracking_number' => $booked->trackingNumber ?? $trackingNumber, 'service_code' => $booked->serviceCode ?? $serviceCode,
+                        'label_url' => $booked->labelUrl ?? $labelUrl, 'last_error' => null,
+                        'booking_started_at' => null, 'booking_lease' => null,
+                    ]);
+                } catch (UniqueConstraintViolationException) {
+                    throw FulfillmentRejected::trackingTaken();
+                }
+
+                $this->apply($shipment, ShipmentStatus::Created, "booked:{$shipment->public_id}", 'system', null, [], strict: true);
+            });
+        } catch (Throwable $exception) {
+            // Hãng lỗi, mã vận đơn trùng…: trả lease để lần sau (job thử lại, nhân viên bấm lại) đặt được ngay.
+            Shipment::query()->whereKey($shipmentId)->where('booking_lease', $lease)->update(['booking_started_at' => null, 'booking_lease' => null]);
+
+            throw $exception;
+        }
     }
 
     /**
@@ -200,6 +233,12 @@ final class FulfillmentService implements ShipmentBooking
         try {
             $this->book($shipmentId, null);
         } catch (Throwable $exception) {
+            if ($exception instanceof FulfillmentRejected && $exception->errorCode() === 'shipment.booking_in_progress') {
+                // Lần đặt khác (nhân viên bấm, worker khác) đang gọi hãng: để lần đó ghi kết quả, không tính là lỗi.
+                $shipment->decrement('booking_attempts');
+
+                return;
+            }
             $shipment->refresh();
             if (! $shipment->status->awaitsBooking()) {
                 // Lần đẩy khác (bấm trùng, plugin) vừa đặt xong hoặc vận đơn vừa bị huỷ: không còn gì để làm.
