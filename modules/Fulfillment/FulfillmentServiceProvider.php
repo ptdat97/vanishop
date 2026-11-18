@@ -41,6 +41,7 @@ use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Inventory\Contracts\Data\LocationData;
 use Modules\Inventory\Contracts\LocationRegistry;
+use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Ordering\Events\OrderLinesCancelled;
@@ -103,8 +104,8 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
         Event::listen(OrderStatusOverridden::class, SettleOrderOnStatusOverride::class);
         Event::listen(OrderLinesCancelled::class, RebuildShipmentsOnLinesCancelled::class);
-        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 95);
-        Hook::onSlot('vani.admin.order.timeline', fn ($order) => $this->app->make(OrderShipmentPanel::class)->timeline($order));
+        Hook::onSlot('vani.admin.order.sidebar', fn (OrderDetail $order) => $this->app->make(OrderShipmentPanel::class)($order), priority: 95);
+        Hook::onSlot('vani.admin.order.timeline', fn (OrderDetail $order) => $this->app->make(OrderShipmentPanel::class)->timeline($order));
         Hook::onSlot('vani.admin.order.list_columns', fn (array $orderIds) => $this->app->make(OrderListShipments::class)->column($orderIds));
         Hook::onSlot('vani.admin.order.bulk_actions', fn () => $this->app->make(OrderListShipments::class)->bulkActions());
         Hook::onSlot('vani.admin.order.list_tools', fn () => $this->app->make(OrderListShipments::class)->tools());

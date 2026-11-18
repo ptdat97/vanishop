@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Modules\Storefront;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
+use Illuminate\View\View as ViewInstance;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
@@ -34,6 +36,7 @@ use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Application\StoreProfile;
+use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
 use Modules\Storefront\Contracts\CustomerSignIn;
 use Modules\Storefront\Contracts\LinkResolver;
@@ -76,7 +79,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         // request — kể cả khi tiến trình phục vụ nhiều request (Octane, queue) — để đổi slug thấy ngay.
         $this->app->bind(LinkResolver::class, LinkRegistry::class);
         $this->app->bind(PageSeo::class, PageAlternates::class);
-        $this->app->singleton(Themes::class, fn ($app): Themes => new Themes(
+        $this->app->singleton(Themes::class, fn (Application $app): Themes => new Themes(
             (string) config('vanishop.storefront.themes_path'),
             $app->make(Settings::class),
             (string) config('vanishop.storefront.theme', Themes::BASE),
@@ -110,16 +113,16 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
         View::composer('theme::partials.image', ImageComposer::class);
         View::composer(['theme::partials.product-card', 'theme::partials.mini-cart'], ProductFrameComposer::class);
         View::composer('theme::partials.notification', NotificationComposer::class);
-        View::composer('theme::pages.search', fn ($view) => $view->with('popularSearches', $this->app->make(StoreProfile::class)->popularSearches()));
+        View::composer('theme::pages.search', fn (ViewInstance $view) => $view->with('popularSearches', $this->app->make(StoreProfile::class)->popularSearches()));
         // Breadcrumb dựng sẵn (Trang chủ, link có kiểu, JSON-LD) — partial chỉ hiển thị `$breadcrumb`.
-        View::composer('theme::partials.breadcrumb', fn ($view) => $view->with('breadcrumb', $this->app->make(Breadcrumbs::class)->trail((array) ($view->getData()['crumbs'] ?? []))));
+        View::composer('theme::partials.breadcrumb', fn (ViewInstance $view) => $view->with('breadcrumb', $this->app->make(Breadcrumbs::class)->trail((array) ($view->getData()['crumbs'] ?? []))));
         View::composer('theme::partials.account-menu', AccountMenuComposer::class);
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 
         $settings = $this->app->make(Settings::class);
         $settings->define(new SettingDefinition(
             'core', 'theme', 'Giao diện (theme)', 'select', (string) config('vanishop.storefront.theme', Themes::BASE),
-            options: array_map(fn ($theme): string => $theme->label, $this->app->make(Themes::class)->all()),
+            options: array_map(fn (Theme $theme): string => $theme->label, $this->app->make(Themes::class)->all()),
             help: 'Theme đang hoạt động của cửa hàng (custom/theme/*). Theme con chỉ override vài view, còn lại theo theme cha → vani-base.',
         ));
         $settings->define(new SettingDefinition(

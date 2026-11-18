@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Extension\Application\Plugins\PluginManager;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Ordering\Contracts\Data\SalesBucket;
 use Modules\Ordering\Contracts\Data\SalesDimension;
 use Modules\Ordering\Contracts\OrderStatistics;
 use Modules\Shared\Context\ContextScope;
@@ -71,18 +72,18 @@ it('OrderStatistics: tổng, theo ngày giờ VN, theo chiều; bỏ đơn huỷ
         ->toBe([3, 600_000, 1, 2, 30, 60, 200_000]);
 
     $daily = $stats->daily($from, $to, 'Asia/Ho_Chi_Minh');
-    expect(array_map(fn ($d) => [$d->key, $d->label, $d->ordersCount, $d->revenue], $daily))->toBe([
+    expect(array_map(fn (SalesBucket $d) => [$d->key, $d->label, $d->ordersCount, $d->revenue], $daily))->toBe([
         ['2026-10-01', '01/10', 1, 100_000],
         ['2026-10-02', '02/10', 2, 500_000],
     ]);
 
-    expect(array_map(fn ($b) => [$b->key, $b->ordersCount, $b->quantity, $b->revenue], $stats->breakdown(SalesDimension::Product, $from, $to)))->toBe([
+    expect(array_map(fn (SalesBucket $b) => [$b->key, $b->ordersCount, $b->quantity, $b->revenue], $stats->breakdown(SalesDimension::Product, $from, $to)))->toBe([
         ['Quần jean', 2, 2, 450_000],
         ['Áo thun', 2, 3, 150_000],
-    ])->and(array_map(fn ($b) => [$b->key, $b->label, $b->revenue], $stats->breakdown(SalesDimension::Brand, $from, $to)))->toBe([
+    ])->and(array_map(fn (SalesBucket $b) => [$b->key, $b->label, $b->revenue], $stats->breakdown(SalesDimension::Brand, $from, $to)))->toBe([
         ['', '', 450_000],
         ['Lumière', 'Lumière', 150_000],
-    ])->and(array_map(fn ($b) => [$b->key, $b->ordersCount, $b->revenue], $stats->breakdown(SalesDimension::PaymentMethod, $from, $to)))->toBe([
+    ])->and(array_map(fn (SalesBucket $b) => [$b->key, $b->ordersCount, $b->revenue], $stats->breakdown(SalesDimension::PaymentMethod, $from, $to)))->toBe([
         ['bank_transfer', 1, 300_000],
         ['cod', 2, 300_000],
     ])->and($stats->countByStatus())->toBe(['pending' => 1, 'confirmed' => 1, 'processing' => 1, 'completed' => 1, 'cancelled' => 1])
@@ -96,14 +97,14 @@ it('widget Tổng quan + báo cáo của plugin; nhân viên thiếu quyền ch�
 
     $this->actingAs($manager, 'staff')->get('/admin')->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('widgets', fn ($widgets) => collect($widgets)->pluck('key')->all() === ['reports_revenue_today', 'reports_orders_to_process', 'reports_revenue_30d', 'reports_sales_14d', 'reports_top_products'])
+            ->where('widgets', fn (mixed $widgets) => collect($widgets)->pluck('key')->all() === ['reports_revenue_today', 'reports_orders_to_process', 'reports_revenue_30d', 'reports_sales_14d', 'reports_top_products'])
             ->where('widgets.0.data.value', 500_000)
             ->where('widgets.0.data.hint', '2 đơn')
             ->where('widgets.0.plugin', 'vani.reports')
             ->where('widgets.1.data.value', 3)
-            ->where('widgets.3.data.labels', fn ($labels) => count($labels) === 14 && $labels[13] === '02/10')
+            ->where('widgets.3.data.labels', fn (mixed $labels) => count($labels) === 14 && $labels[13] === '02/10')
             ->where('widgets.4.data.rows.0', ['product' => 'Quần jean', 'quantity' => 2, 'revenue' => 450_000])
-            ->where('navigation', fn ($items) => collect($items)->pluck('key')->contains('reports')));
+            ->where('navigation', fn (mixed $items) => collect($items)->pluck('key')->contains('reports')));
 
     $this->actingAs($manager, 'staff')->get('/admin/reports')
         ->assertInertia(fn (Assert $page) => $page->has('reports', 9));
@@ -129,7 +130,7 @@ it('widget Tổng quan + báo cáo của plugin; nhân viên thiếu quyền ch�
     $clerk = StaffUser::factory()->withPermissions(['admin.access', 'orders.view'])->create();
     $this->actingAs($clerk, 'staff')->get('/admin')
         ->assertInertia(fn (Assert $page) => $page
-            ->where('widgets', fn ($widgets) => collect($widgets)->pluck('key')->all() === ['reports_orders_to_process'])
-            ->where('navigation', fn ($items) => ! collect($items)->pluck('key')->contains('reports')));
+            ->where('widgets', fn (mixed $widgets) => collect($widgets)->pluck('key')->all() === ['reports_orders_to_process'])
+            ->where('navigation', fn (mixed $items) => ! collect($items)->pluck('key')->contains('reports')));
     $this->actingAs($clerk, 'staff')->get('/admin/reports/sales-by-day')->assertNotFound();
 });

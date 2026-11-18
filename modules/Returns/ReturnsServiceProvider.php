@@ -11,6 +11,7 @@ use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Returns\Application\DaysWindowPolicy;
 use Modules\Returns\Application\EloquentReturnStatistics;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
@@ -55,7 +56,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $permissions->register('returns.refund', 'Hoàn tất đổi/trả và hoàn tiền');
 
         $navigation->add('returns', 'Đổi/trả', 'admin.returns.home', 'returns.view', 70, group: 'sales');
-        Hook::onSlot('vani.admin.order.sidebar', fn ($order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 110);
+        Hook::onSlot('vani.admin.order.sidebar', fn (OrderDetail $order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 110);
 
         $this->loadWebRoutes($this->modulePath('Http/routes/attachments.php'));
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));

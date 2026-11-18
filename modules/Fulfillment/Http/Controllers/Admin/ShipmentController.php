@@ -62,7 +62,7 @@ final class ShipmentController
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
         $page = $this->queries->shipments($status, $number === '' ? null : ($order->id ?? 0), $extensionIds, $perPage);
         $shipments = collect($page->items());
-        $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
+        $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn (mixed $id): int => (int) $id)->all());
 
         return Inertia::render('Fulfillment::Shipments/Index', [
             'baseUrl' => route('admin.fulfillment.shipments.index'),
@@ -96,7 +96,7 @@ final class ShipmentController
             'canManage' => Gate::allows('fulfillment.manage'),
             'codStatementUrl' => Gate::allows('payments.confirm') ? route('admin.fulfillment.cod-statements.preview') : null,
             // Cột/lọc/thao tác hàng loạt/công cụ tải file của plugin (EP v3 X1).
-            'extensions' => $screen->listProps('shipment', $shipments->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),
+            'extensions' => $screen->listProps('shipment', $shipments->pluck('id')->map(fn (mixed $id): int => (int) $id)->all(), $extensionFilters),
         ]);
     }
 
@@ -143,9 +143,9 @@ final class ShipmentController
     {
         Gate::authorize('fulfillment.manage');
         $shipments = $this->queries->activeShipmentsOf($this->orderIds($request));
-        $pushed = $fulfillment->pushToCarrier($shipments->pluck('id')->map(fn ($id): int => (int) $id)->all());
+        $pushed = $fulfillment->pushToCarrier($shipments->pluck('id')->map(fn (mixed $id): int => (int) $id)->all());
         // Vận đơn bị plugin chặn (vani.fulfillment.before_push): báo lý do theo đơn.
-        $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
+        $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn (mixed $id): int => (int) $id)->all());
         $blocked = [];
         foreach ($shipments->whereIn('status', [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed]) as $shipment) {
             if (($reasons = $fulfillment->pushBlockers($shipment)) !== []) {

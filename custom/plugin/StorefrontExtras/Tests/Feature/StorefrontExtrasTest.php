@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Mockery\MockInterface;
 use Modules\Catalog\Persistence\Models\Media;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -52,7 +53,7 @@ afterEach(fn () => File::deleteDirectory($this->assets));
 it('Bán chạy: theo số lượng đã bán, bỏ sản phẩm không còn bán, thiếu thì bù sản phẩm mới nhất', function () {
     $hidden = T::product($this->brand->id, ['status' => 'draft']);
     $other = T::product($this->brand->id, ['name' => 'Áo mới']);
-    app()->instance(OrderStatistics::class, Mockery::mock(OrderStatistics::class, fn ($mock) => $mock->shouldReceive('topStyles')->andReturn([
+    app()->instance(OrderStatistics::class, Mockery::mock(OrderStatistics::class, fn (MockInterface $mock) => $mock->shouldReceive('topStyles')->andReturn([
         ['style_id' => $hidden->id, 'quantity' => 9], ['style_id' => $this->s->style_id, 'quantity' => 5],
     ])));
 

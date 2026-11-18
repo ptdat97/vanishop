@@ -46,7 +46,7 @@ final class EloquentOrderStatistics implements OrderStatistics
     public function orderIdsWithPriceLists(array $priceListCodes): array
     {
         return $priceListCodes === [] ? [] : DB::table('order_lines')->whereIn('price_list_code', $priceListCodes)->distinct()->orderBy('order_id')
-            ->pluck('order_id')->map(fn ($id): int => (int) $id)->all();
+            ->pluck('order_id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 
     public function summarize(array $orderIds): SalesTotals

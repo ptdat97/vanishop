@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Plugin\Cms\Infrastructure;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Plugin\Cms\Persistence\Page;
 
@@ -22,7 +23,7 @@ final class Navigation
     {
         /** @var array{header: list<array{label: string, slug: string}>, footer: list<array{label: string, slug: string}>} $data */
         $data = Cache::remember(self::CACHE_KEY, 300, function (): array {
-            $pages = Page::query()->published()->where(fn ($query) => $query->where('show_in_header', true)->orWhere('show_in_footer', true))
+            $pages = Page::query()->published()->where(fn (Builder $query) => $query->where('show_in_header', true)->orWhere('show_in_footer', true))
                 ->orderBy('sort_order')->orderBy('title')->get(['title', 'slug', 'show_in_header', 'show_in_footer']);
 
             return [

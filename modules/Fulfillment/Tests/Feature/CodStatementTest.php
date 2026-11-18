@@ -47,10 +47,10 @@ beforeEach(function () {
 it('xem trước phân loại từng dòng, chưa ghi gì', function () {
     $this->post('/admin/fulfillment/cod-statements/preview', ['file' => ($this->file)()])->assertOk()->assertInertia(fn (Assert $page) => $page
         ->component('Fulfillment::CodStatements/Preview')
-        ->where('preview.lines', fn ($lines) => collect($lines)->pluck('status', 'line')->all() === [2 => 'matched', 3 => 'amount_mismatch', 4 => 'not_delivered', 5 => 'not_found', 6 => 'duplicate', 7 => 'invalid'])
+        ->where('preview.lines', fn (mixed $lines) => collect($lines)->pluck('status', 'line')->all() === [2 => 'matched', 3 => 'amount_mismatch', 4 => 'not_delivered', 5 => 'not_found', 6 => 'duplicate', 7 => 'invalid'])
         ->where('preview.lines.0.fee', 22_000)
         ->where('preview.total', 330_000)
-        ->where('urls.apply', fn ($url) => $url !== null));
+        ->where('urls.apply', fn (?string $url) => $url !== null));
 
     expect(DB::table('reconciliation_entries')->count())->toBe(0)
         ->and(Payment::query()->withoutGlobalScopes()->where('order_id', $this->delivered)->value('status')->value)->toBe('pending');
@@ -60,7 +60,7 @@ it('áp dụng: dòng khớp ghi nhận đã thu và vào sổ là khớp; dòng
     $preview = $this->post('/admin/fulfillment/cod-statements/preview', ['file' => ($this->file)()])->viewData('page')['props'];
     $this->post($preview['urls']['apply'])->assertRedirect('/admin/payment/payments')->assertSessionHas('success');
 
-    expect(DB::table('reconciliation_entries')->orderBy('reference')->get(['reference', 'status', 'order_id', 'expected', 'actual'])->map(fn ($row) => (array) $row)->all())->toEqual([
+    expect(DB::table('reconciliation_entries')->orderBy('reference')->get(['reference', 'status', 'order_id', 'expected', 'actual'])->map(fn (object $row) => (array) $row)->all())->toEqual([
         ['reference' => 'GHN001', 'status' => 'matched', 'order_id' => $this->delivered, 'expected' => 330_000, 'actual' => 330_000],
         ['reference' => 'GHN002', 'status' => 'mismatch', 'order_id' => $this->short, 'expected' => 330_000, 'actual' => 300_000],
         ['reference' => 'GHN003', 'status' => 'mismatch', 'order_id' => $this->transit, 'expected' => 330_000, 'actual' => 330_000],

@@ -50,7 +50,7 @@ it('danh sách: link bật/tắt lọc giữ tham số khác, bỏ trang; form g
         ->and($price['range']['min_placeholder'])->toBe(app(MoneyFormatter::class)->formatAmount(100_000, (string) config('vanishop.currency')))
         ->and(urldecode((string) $price['range']['clear_url']))->toEndWith('/tim-kiem?brand=a&sort=price_asc')
         ->and($view['sort'])->toMatchArray(['current' => 'price_asc', 'by_price' => true, 'hidden_fields' => ['brand' => 'a', 'price_min' => '200000']])
-        ->and(array_map(fn ($page) => [$page['number'], $page['current'], $page['url'] !== null], $view['pages']))->toBe([[1, false, true], [2, true, false], [3, false, true]])
+        ->and(array_map(fn (array $page) => [$page['number'], $page['current'], $page['url'] !== null], $view['pages']))->toBe([[1, false, true], [2, true, false], [3, false, true]])
         ->and($view['context'])->toBe(['type' => 'search', 'category' => null, 'brand' => null]);
 
     // Chưa lọc giá: không có link bỏ lọc; một trang: không phân trang.

@@ -100,7 +100,7 @@ it('điểm nổi bật: tối đa 8, bỏ dòng trống, hiện dưới tên v�
         ->and(strpos($html, 'data-vani-cms-highlights'))->toBeGreaterThan(strpos($html, '<h1'));
 
     $this->get("/admin/catalog/products/{$this->style->id}/edit")->assertInertia(fn (Assert $page) => $page
-        ->where('extensionSections', fn ($sections) => ($section = collect($sections)->firstWhere('plugin', CmsServiceProvider::ID)) !== null
+        ->where('extensionSections', fn (mixed $sections) => ($section = collect($sections)->firstWhere('plugin', CmsServiceProvider::ID)) !== null
             && str_starts_with($section['values'][ExtraContent::highlightKey('vi')] ?? '', "Lụa tơ tằm\nÝ 1")));
 
     // Xoá hết nội dung → bỏ dòng dữ liệu.

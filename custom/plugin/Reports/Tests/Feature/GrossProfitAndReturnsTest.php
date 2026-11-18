@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Extension\Contracts\Data\Metric;
 use Modules\Extension\Contracts\Data\ReportPeriod;
+use Modules\Extension\Contracts\Data\ReportResult;
 use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\ContextScope;
@@ -80,7 +82,7 @@ beforeEach(function () {
         ...grossProfitOrder('2026-09-01 03:00:00', [[$b, 1, 150_000]]),
     ];
     $this->period = new ReportPeriod(new DateTimeImmutable('2026-10-01T00:00:00+07:00'), new DateTimeImmutable('2026-10-03T00:00:00+07:00'));
-    $this->summary = fn ($result): array => collect($result->summary)->mapWithKeys(fn ($metric) => [$metric->label => [$metric->value, $metric->hint]])->all();
+    $this->summary = fn (ReportResult $result): array => collect($result->summary)->mapWithKeys(fn (Metric $metric) => [$metric->label => [$metric->value, $metric->hint]])->all();
 });
 
 it('chưa có nguồn giá vốn: không tính lợi nhuận, báo rõ thiếu giá vốn', function () {
@@ -105,7 +107,7 @@ it('có giá vốn (vani.cost-price): lợi nhuận theo SKU và theo ngày; SKU
         ]);
 
     $daily = app(GrossProfitDailyReport::class)->run($this->period);
-    expect(array_map(fn ($row) => [$row['date'], $row['revenue'], $row['cost'], $row['profit'], $row['uncosted']], $daily->table->rows))->toBe([
+    expect(array_map(fn (array $row) => [$row['date'], $row['revenue'], $row['cost'], $row['profit'], $row['uncosted']], $daily->table->rows))->toBe([
         ['2026-10-01', 400_000, 240_000, 160_000, 150_000],
         ['2026-10-02', 200_000, 120_000, 80_000, 0],
     ])->and($daily->chart->values)->toBe([160_000, 80_000]);
@@ -126,7 +128,7 @@ it('đổi trả: theo SKU (tỷ lệ so với số bán trong kỳ), theo lý d
         ->and(($this->summary)($byProduct)['Tỷ lệ trả'][0])->toBe(50.0);
 
     $reasons = app(ReturnReasonsReport::class)->run($this->period);
-    expect(array_map(fn ($row) => [$row['requests'], $row['quantity'], $row['share']], $reasons->table->rows))->toBe([[1, 1, 50.0], [1, 1, 50.0]])
+    expect(array_map(fn (array $row) => [$row['requests'], $row['quantity'], $row['share']], $reasons->table->rows))->toBe([[1, 1, 50.0], [1, 1, 50.0]])
         ->and(array_column($reasons->table->rows, 'reason'))->each->not->toBe('')
         ->and(($this->summary)($reasons))->toMatchArray([
             'COD giao thất bại' => [2, 'Trên 3 vận đơn COD · đã giao 1'],
