@@ -44,7 +44,6 @@ Admin → Nội dung → **Lookbook**: danh sách (ảnh bìa, tên, số ảnh,
 
 | Khoá | Kiểu | Mặc định |
 |---|---|---|
-| `show_in_header` | bool | bật |
 | `per_page` | số (6–48) | 12 |
 
 ## 6. Extension point
@@ -53,7 +52,7 @@ Admin → Nội dung → **Lookbook**: danh sách (ảnh bìa, tên, số ảnh,
 |---|---|---|
 | Trang `/lookbook`, `/lookbook/{slug}` | `storefrontPages(…, prefix:)` + `storefrontViews` (theme override) | ✅ (mẫu `vani.cms`) |
 | Sitemap | `SitemapProvider` | ✅ |
-| Link header | Slot `vani.storefront.header.nav` | ✅ |
+| Link header | Không tự thêm (gỡ 2026-11-18 vì trùng menu) — cửa hàng thêm link `/lookbook` qua Admin → Giao diện → Menu | — |
 | Khối trang chủ | `StorefrontBlock` | ✅ |
 | API headless | `storefrontRoutes` (`/api/storefront/v1/lookbooks`, `/{slug}`) | ✅ |
 | Ảnh | Thư viện ảnh (`MediaDirectory`, chọn ảnh trong Admin) | ✅ |

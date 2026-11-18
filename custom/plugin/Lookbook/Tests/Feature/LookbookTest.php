@@ -88,7 +88,7 @@ it('storefront: danh sách + chi tiết (ảnh theo thứ tự, Markdown an toà
     $lookbook = ($this->save)();
     $hidden = ($this->save)(['slug' => 'nhap', 'active' => false, 'translations' => ['vi' => ['name' => 'Nháp']]]);
 
-    $this->get('/lookbook')->assertOk()->assertSee('Thu Đông 2026')->assertDontSee('Nháp')->assertSee('data-lookbook-nav', false);
+    $this->get('/lookbook')->assertOk()->assertSee('Thu Đông 2026')->assertDontSee('Nháp');
     $html = $this->get('/lookbook/'.$lookbook->slug)->assertOk()->assertSee('<strong>mùa thu</strong>', false)->assertDontSee('<script>x', false)
         ->assertSee('data-lookbook-category', false)->assertSee('alt="Áo khoác"', false)->getContent();
     expect(strpos($html, '-a.jpg'))->toBeLessThan(strpos($html, '-b.jpg'));
@@ -109,10 +109,9 @@ it('bản tiếng Anh dùng tên đã dịch; thiếu bản dịch thì hiện t
     $this->get('/lookbook/'.$lookbook->slug)->assertOk()->assertDontSee('data-lookbook-category', false);
 });
 
-it('không có lookbook đang bật → không có link header, sitemap không có trang lookbook', function () {
+it('không có lookbook đang bật → sitemap không có trang lookbook', function () {
     ($this->save)(['active' => false]);
 
-    $this->get('/')->assertOk()->assertDontSee('data-lookbook-nav', false);
     $this->get('/sitemap.xml')->assertDontSee('/lookbook', false);
 });
 

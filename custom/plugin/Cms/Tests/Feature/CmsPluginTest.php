@@ -99,7 +99,8 @@ it('tin tức: danh sách mới nhất trước, phân trang, bài chi tiết; l
     $this->get('/tin-tuc/tuong-lai')->assertNotFound();
 
     $home = $this->get('/')->assertOk();
-    $home->assertSee('href="'.url('/trang/chinh-sach-doi-tra').'"', false)->assertSee('href="'.url('/tin-tuc').'"', false)
+    // "Tin tức" không tự thêm vào đầu trang — cửa hàng thêm qua Admin → Giao diện → Menu.
+    $home->assertSee('href="'.url('/trang/chinh-sach-doi-tra').'"', false)->assertDontSee('href="'.url('/tin-tuc').'"', false)
         ->assertSee('Thông tin')->assertSee('href="'.url('/trang/gioi-thieu').'"', false);
 
     $sitemap = $this->get('/sitemap.xml')->assertOk()->getContent();
