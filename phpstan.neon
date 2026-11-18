@@ -22,7 +22,8 @@ parameters:
             paths:
                 - custom/plugin/*/Config/*
         # View storefront `theme::…` (theme đang bật, UseActiveTheme) và view của plugin (`storefrontViews()`, chỉ đăng ký
-        # khi plugin bật) thuộc namespace đăng ký lúc chạy — Larastan không suy ra được view-string. Chỉ áp cho controller.
+        # khi plugin bật) thuộc namespace đăng ký lúc chạy — Larastan không suy ra được view-string. Chỉ áp cho controller và
+        # view-model trang storefront render partial của theme (ProductPage: giá từng SKU).
         -
             message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
             identifier: argument.type
@@ -30,4 +31,5 @@ parameters:
             reportUnmatched: false
             paths:
                 - modules/Storefront/Http/Controllers/Web/*
+                - modules/Storefront/View/ProductPage.php
                 - custom/plugin/*/Http/Controllers/*

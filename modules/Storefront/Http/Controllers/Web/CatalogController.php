@@ -14,6 +14,7 @@ use Modules\Storefront\Application\ProductViews;
 use Modules\Storefront\Application\Seo\PageAlternates;
 use Modules\Storefront\Contracts\PageSeo;
 use Modules\Storefront\Http\Requests\ProductListRequest;
+use Modules\Storefront\View\Breadcrumbs;
 
 /**
  * Trang danh sách (PLP): danh mục, thương hiệu, tìm kiếm — cùng ProductViews/ProductFilters với GET /api/storefront/v1/products.
@@ -35,7 +36,9 @@ final class CatalogController
         $seo->alternates(PageAlternates::forSlugs('storefront.category', $category['slugs']), $category['locales']);
         $request->merge(['category' => $slug]);
 
-        return view('theme::pages.category', ['category' => $category, ...$this->listing($request)]);
+        $crumbs = Breadcrumbs::categories($category['breadcrumb'] ?? [['name' => $category['name'], 'slug' => $category['slug']]]);
+
+        return view('theme::pages.category', ['category' => $category, 'crumbs' => $crumbs, ...$this->listing($request)]);
     }
 
     public function brands(): View
@@ -52,7 +55,9 @@ final class CatalogController
         abort_if($brand === null, 404);
         $request->merge(['brand' => $slug]);
 
-        return view('theme::pages.brand', ['brand' => $brand, ...$this->listing($request)]);
+        $crumbs = [['label' => __('Thương hiệu'), 'url' => LocalizedUrls::route('storefront.brands')], ['label' => (string) $brand['name']]];
+
+        return view('theme::pages.brand', ['brand' => $brand, 'crumbs' => $crumbs, ...$this->listing($request)]);
     }
 
     public function search(ProductListRequest $request): View

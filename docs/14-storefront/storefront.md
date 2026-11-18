@@ -137,8 +137,20 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
 
 > **Implemented** (Core 0.3.66, [reference-parity §3.16-6](../20-roadmap/reference-parity-refactor.md)).
 
-- Partial `theme::partials.breadcrumb` nhận `$crumbs = list<{label, url?, link?}>` (`link` = `LinkTarget` hoặc `{type, value}`, phân giải bằng `vani_link`; link không còn → chữ thường). Tự thêm "Trang chủ" ở đầu; mục cuối là trang hiện tại (không link, `aria-current`). In kèm JSON-LD `BreadcrumbList` (`StructuredData::breadcrumbs`, mục cuối không có `item`), URL và tên theo ngôn ngữ trang.
+- Partial `theme::partials.breadcrumb` nhận `$crumbs = list<{label, url?, link?}>` (`link` = `LinkTarget` hoặc `{type, value}`; link không còn → chữ thường). Từ 0.5.20 Core dựng sẵn qua view composer: `$breadcrumb = {items: list<{label, url|null, current}>, json_ld}` (`Storefront\View\Breadcrumbs` — thêm "Trang chủ" ở đầu, mục cuối là trang hiện tại không link, JSON-LD `BreadcrumbList` mục cuối không có `item`); partial chỉ hiển thị. Trang danh mục/thương hiệu nhận `$crumbs` dựng sẵn từ controller.
 - `vani-base` dùng ở PDP (danh mục chính → sản phẩm), danh mục (`$category['breadcrumb']` — đường từ gốc, `CatalogReader::category`), thương hiệu (Thương hiệu → tên).
+
+## 4c-1. Dữ liệu hiển thị trang sản phẩm
+
+> **Implemented** (Core 0.5.20).
+
+- `theme::pages.product` nhận `$product` (chi tiết sản phẩm) và `$page` do Core dựng (`Storefront\View\ProductPage`) — theme chỉ in ra, không gọi lớp Core hay tự tính:
+  - `meta`: `title` (`meta_title` → tên), `description` (`meta_description` → đoạn đầu mô tả ≤ 160 ký tự, bỏ thẻ → `null`), `json_ld` (list chuỗi JSON in trong `<script type="application/ld+json">`; `Product` dùng ảnh gallery đầu).
+  - `crumbs`: đường danh mục chính → tên sản phẩm, truyền cho partial breadcrumb.
+  - `gallery`: `aspect` (tỉ lệ khung ảnh sản phẩm), `label`, `slides[]` (`url`, `srcset`, `sizes`, `alt`, `width`/`height`, `main` — ảnh LCP, `zoom {url, width, height}` = bản lớn nhất trong srcset, không có thì ảnh chính 800px, `zoom_label`), `thumbs[]` (chỉ khi > 1 ảnh), `navigation`. Không có ảnh gallery → ảnh đại diện.
+  - `selector`: kết quả `VariantSelector` kèm `choose_message`, `rest_label`, trục đầu có `input_name`, mỗi giá trị `input_value`/`disabled`/`checked`/`images`/`price_html`/`low_stock`, SKU trong nhóm có `price_html`.
+  - `variant_css`: CSS `:has()` ẩn/hiện nhóm SKU theo trục đầu (mã giá trị đã thoát, in thô trong `<style>`); `can_buy`.
+- Plugin đổi được cả `product` lẫn `page` qua hook `vani.storefront.view.pages.product`.
 
 ## 4d. Ảnh responsive
 

@@ -51,6 +51,7 @@ use Modules\Storefront\Http\Middleware\RequireCheckoutSignIn;
 use Modules\Storefront\Http\Middleware\RequireVisiblePrices;
 use Modules\Storefront\Http\Middleware\StorefrontMaintenance;
 use Modules\Storefront\Http\Middleware\UseActiveTheme;
+use Modules\Storefront\View\Breadcrumbs;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -112,6 +113,8 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'customerState' => request()->attributes->has(PublicPageCache::ATTRIBUTE) ? null : $this->app->make(CustomerSessionState::class)->for(request(), App::getLocale()),
         ]));
         View::composer('theme::pages.search', fn ($view) => $view->with('popularSearches', $this->app->make(StoreProfile::class)->popularSearches()));
+        // Breadcrumb dựng sẵn (Trang chủ, link có kiểu, JSON-LD) — partial chỉ hiển thị `$breadcrumb`.
+        View::composer('theme::partials.breadcrumb', fn ($view) => $view->with('breadcrumb', $this->app->make(Breadcrumbs::class)->trail((array) ($view->getData()['crumbs'] ?? []))));
         View::composer('theme::partials.account-menu', fn ($view) => $view->with('accountMenu', $this->app->make(AccountPages::class)->active()));
         Blade::componentNamespace('Modules\\Storefront\\View\\Components', 'vani');
 

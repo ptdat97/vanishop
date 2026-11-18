@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.20 — 2026-11-18 · Extension API 1.3.0 (không đổi)
+
+Theme `vani-base`: tính toán chuyển khỏi template trang sản phẩm và breadcrumb. Không đổi API cho plugin.
+
+### Đổi (theme)
+- `theme::pages.product` nhận thêm `$page` (`Storefront\View\ProductPage`): metadata + dự phòng (tiêu đề, mô tả từ mô tả sản phẩm, JSON-LD), breadcrumb, gallery (khung, ảnh phóng to), bộ chọn biến thể (tên/giá trị ô nhập, giá từng SKU dạng HTML) và CSS ẩn/hiện nhóm SKU (mã giá trị thoát đúng cú pháp chuỗi CSS — trước đây `addslashes`). Template không còn gọi `StructuredData::product`, `VariantSelector::for`, `vani_product_ratio()` hay đọc `request()`. Theme con override trang sản phẩm: đọc `$page` thay vì tự tính. [storefront §4c-1](../14-storefront/storefront.md).
+- Partial `theme::partials.breadcrumb` vẫn nhận `$crumbs`; Core gắn `$breadcrumb = {items, json_ld}` qua view composer (`Storefront\View\Breadcrumbs`). Theme con override partial: hiển thị `$breadcrumb` thay vì tự dựng. Trang danh mục/thương hiệu nhận `$crumbs` từ controller.
+- Mô tả meta trang sản phẩm: thiếu `meta_description` → đoạn đầu mô tả (≤ 160 ký tự) thay vì để trống; không có mô tả → không in thẻ.
+
 ## 0.5.19 — 2026-11-18 · Extension API 1.3.0
 
 Stabilization A10 — Báo cáo lợi nhuận gộp và đổi trả.
