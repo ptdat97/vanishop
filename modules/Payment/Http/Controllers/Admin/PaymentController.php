@@ -22,6 +22,7 @@ use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Payment\Persistence\Models\Refund;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreClock;
 
 final class PaymentController
@@ -46,7 +47,8 @@ final class PaymentController
         $status = $request->query('status');
         $search = is_string($request->query('q')) ? trim($request->query('q')) : '';
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = $this->queries->payments(is_string($status) ? $status : '', $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage);
+        $sort = ListSort::fromRequest($request, ['amount' => 'payments.amount', 'created_at' => 'payments.created_at']);
+        $page = $this->queries->payments(is_string($status) ? $status : '', $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage, $sort);
         $payments = collect($page->items());
         $numbers = $orders->numbers($payments->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
         $refunds = $this->queries->refundsAwaitingPayout();
@@ -56,6 +58,7 @@ final class PaymentController
             'labels' => __('payment::labels'),
             'status' => $status,
             'search' => $search,
+            'sort' => $sort?->toArray(),
             'statuses' => array_column(PaymentStatus::cases(), 'value'),
             'payments' => $payments->map(fn (Payment $payment): array => [
                 'id' => $payment->id,

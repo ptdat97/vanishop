@@ -22,6 +22,7 @@ use Modules\Fulfillment\Persistence\Models\Shipment;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\SimpleXlsx;
 use Modules\Shared\Support\SpreadsheetRows;
 use Modules\Shared\Support\StoreClock;
@@ -60,7 +61,8 @@ final class ShipmentController
         $order = $number === '' ? null : $orders->findByNumber($number);
 
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = $this->queries->shipments($status, $number === '' ? null : ($order->id ?? 0), $extensionIds, $perPage);
+        $sort = ListSort::fromRequest($request, ['cod_amount' => 'shipments.cod_amount', 'created_at' => 'shipments.created_at']);
+        $page = $this->queries->shipments($status, $number === '' ? null : ($order->id ?? 0), $extensionIds, $perPage, $sort);
         $shipments = collect($page->items());
         $numbers = $orders->numbers($shipments->pluck('order_id')->map(fn (mixed $id): int => (int) $id)->all());
 
@@ -68,6 +70,7 @@ final class ShipmentController
             'baseUrl' => route('admin.fulfillment.shipments.index'),
             'labels' => __('fulfillment::labels'),
             'filters' => ['status' => $status, 'order' => $number],
+            'sort' => $sort?->toArray(),
             'statuses' => array_column(ShipmentStatus::cases(), 'value'),
             'order' => $order === null ? null : [
                 'id' => $order->id, 'number' => $order->number, 'status' => $order->status->value,

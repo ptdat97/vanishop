@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
@@ -9,7 +10,7 @@ import Pagination from '@admin/Components/Pagination.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionAction, ExtensionList } from '@admin/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import { type ReturnLabels, returnStatusTone } from '../../labels';
 
@@ -27,6 +28,7 @@ const props = defineProps<{
     extensions: ExtensionList;
     returns: Array<{ id: number; number: string; status: string; reason_code: string; refund_amount: number; source: string; order_number: string | null; order_url: string; created_at: string | null }>;
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    sort: ListSortState | null;
     perPageOptions: number[];
 }>();
 
@@ -36,15 +38,16 @@ const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues 
 const allActions = computed(() => [...props.actions, ...props.extensions.actions]);
 const bulk = computed(() => ({ ...props.extensions, actions: allActions.value }));
 const columns = [
-    { key: 'number', label: 'Yêu cầu' },
+    { key: 'number', label: 'Yêu cầu', sortable: true },
     { key: 'order_number', label: 'Đơn', class: 'font-mono' },
     { key: 'reason_code', label: 'Lý do' },
-    { key: 'refund_amount', label: 'Tiền hoàn' },
+    { key: 'refund_amount', label: 'Tiền hoàn', sortable: true },
     { key: 'status', label: 'Trạng thái' },
 ];
 
-function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), ext: { ...ext }, page, per_page: perPage }, { preserveState: true });
+const list = useListQuery(() => props.baseUrl);
+function filter(status: string, page?: number, perPage = props.pagination.per_page, sort = props.sort): void {
+    list.visit({ status, q: search.value.trim(), ext: { ...ext }, ...list.sortQuery(sort), page, per_page: perPage });
 }
 
 function goToPage(page: number): void {
@@ -82,7 +85,7 @@ function changePageSize(perPage: number): void {
         <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
         <ExtensionActions :actions="allActions" :ids="selected" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="returns" :extensions="bulk" :row-label="(item) => item.number" :empty-text="search ? 'Không có yêu cầu khớp.' : 'Chưa có yêu cầu nào.'">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="returns" :sort="sort" :loading="list.loading.value" @sort="(next) => filter(props.status, 1, pagination.per_page, next)" :extensions="bulk" :row-label="(item) => item.number" :empty-text="search ? 'Không có yêu cầu khớp.' : 'Chưa có yêu cầu nào.'">
         <template #cell-number="{ row }">
             <Link :href="`${baseUrl}/${row.id}`" class="font-mono text-indigo-600 hover:underline">{{ row.number }}</Link>
             <div class="text-xs text-slate-400">{{ row.created_at }} · {{ row.source === 'customer' ? 'khách gửi' : 'nhân viên tạo' }}</div>

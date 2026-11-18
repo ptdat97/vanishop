@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
@@ -39,6 +40,7 @@ type Props = {
     refunds: Array<{ id: number; payment_id: number; amount: number; reason: string; paying_out: boolean; created_at: string | null }>;
     can: { confirm: boolean; refund: boolean };
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    sort: ListSortState | null;
     perPageOptions: number[];
     /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
     extensions: ExtensionList;
@@ -56,9 +58,9 @@ const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'dan
 const columns = [
     { key: 'order_number', label: 'Đơn', class: 'font-mono' },
     { key: 'gateway', label: 'Phương thức' },
-    { key: 'amount', label: 'Số tiền' },
+    { key: 'amount', label: 'Số tiền', sortable: true },
     { key: 'status', label: 'Trạng thái' },
-    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs' },
+    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs', sortable: true },
     { key: 'actions', label: '', align: 'right' as const },
 ];
 const refunding = ref<null | { id: number; max: number }>(null);
@@ -74,8 +76,9 @@ const search = ref(props.search);
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
 
-function filter(status: string, page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...(status ? { status } : {}), ...(search.value.trim() ? { q: search.value.trim() } : {}), ext: { ...ext }, page, per_page: perPage }, { preserveState: true });
+const list = useListQuery(() => props.baseUrl);
+function filter(status: string, page?: number, perPage = props.pagination.per_page, sort = props.sort): void {
+    list.visit({ status, q: search.value.trim(), ext: { ...ext }, ...list.sortQuery(sort), page, per_page: perPage });
 }
 
 function hasActions(row: Props['payments'][number]): boolean {
@@ -205,7 +208,7 @@ async function completeRefund(id: number): Promise<void> {
         <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
         <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="thanh toán" />
     </div>
-    <DataTable v-model:selected="selected" :extensions="extensions" :row-label="(row) => row.order_number ?? String(row.id)" :columns="columns" :rows="payments" :empty-text="search ? 'Không có thanh toán của đơn này.' : 'Chưa có thanh toán nào.'">
+    <DataTable v-model:selected="selected" :sort="sort" :loading="list.loading.value" @sort="(next) => filter(props.status ?? '', 1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.order_number ?? String(row.id)" :columns="columns" :rows="payments" :empty-text="search ? 'Không có thanh toán của đơn này.' : 'Chưa có thanh toán nào.'">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
         </template>

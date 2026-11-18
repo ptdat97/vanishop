@@ -93,3 +93,20 @@ it('đổi trả: 31 yêu cầu → phân trang 30 + 1, lọc trạng thái', fu
     $this->get('/admin/returns/returns?page=2')->assertInertia(fn (Assert $page) => $page->has('returns', 1));
     $this->get('/admin/returns/returns?status=approved')->assertInertia(fn (Assert $page) => $page->has('returns', 0)->where('pagination.total', 0));
 });
+
+it('L33: Vận đơn, Thanh toán, Đổi trả sắp xếp theo cột ở server (sort/direction), giữ bộ lọc; khoá lạ bị bỏ qua', function () {
+    [$small, $large] = [placeOrders(1, $this->s->id, 1)[0], placeOrders(1, $this->s->id, 3)[0]];
+    $rows = fn (string $url, string $prop): array => $this->get($url)->assertOk()->viewData('page')['props'][$prop];
+
+    expect(array_column($rows('/admin/fulfillment/shipments?sort=cod_amount&direction=asc', 'shipments'), 'cod_amount'))->toBe(collect(array_column($rows('/admin/fulfillment/shipments', 'shipments'), 'cod_amount'))->sort()->values()->all())
+        ->and($this->get('/admin/fulfillment/shipments?sort=cod_amount&direction=asc')->viewData('page')['props']['sort'])->toBe(['key' => 'cod_amount', 'direction' => 'asc']);
+
+    $payments = $rows('/admin/payment/payments?sort=amount&direction=desc', 'payments');
+    expect((int) $payments[0]['amount'])->toBeGreaterThan((int) end($payments)['amount'])
+        ->and(collect($payments)->pluck('order_number')->first())->toBe(Order::query()->withoutGlobalScopes()->find($large)->number);
+
+    $this->get('/admin/returns/returns?sort=refund_amount&direction=asc&status=requested')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('sort', ['key' => 'refund_amount', 'direction' => 'asc'])->where('status', 'requested'));
+    $this->get('/admin/payment/payments?sort=drop_table')->assertOk()->assertInertia(fn (Assert $page) => $page->where('sort', null));
+    expect($small)->toBeLessThan($large);
+});

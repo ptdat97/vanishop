@@ -25,6 +25,7 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreClock;
 
 /**
@@ -46,13 +47,15 @@ final class CustomerController
         $extensionFilters = (array) $request->query('ext', []);
         $group = is_numeric($request->query('group')) ? (int) $request->query('group') : null;
         $tag = is_string($request->query('tag')) && $request->query('tag') !== '' ? (string) $request->query('tag') : null;
-        $page = $queries->search($q, $status, $perPage, ids: $screen->filterIds('customer', $extensionFilters), groupId: $group, tag: $tag);
+        $sort = ListSort::fromRequest($request, ['full_name' => 'customers.full_name', 'created_at' => 'customers.created_at']);
+        $page = $queries->search($q, $status, $perPage, ids: $screen->filterIds('customer', $extensionFilters), groupId: $group, tag: $tag, sort: $sort);
         $groupNames = collect($segments->groups())->pluck('name', 'id');
 
         return Inertia::render('Customer::Customers/Index', [
             'baseUrl' => route('admin.customers.index'),
             'labels' => __('customer::labels'),
             'filters' => ['q' => $q, 'status' => $status, 'group' => $group, 'tag' => $tag],
+            'sort' => $sort?->toArray(),
             'statuses' => array_column(CustomerStatus::cases(), 'value'),
             'groups' => $segments->groups(),
             'groupsUrl' => route('admin.customer-groups.index'),

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
@@ -42,6 +43,7 @@ const props = defineProps<{
     /** Nhập bảng kê COD của hãng (A9) — null khi không có quyền xác nhận thanh toán. */
     codStatementUrl: string | null;
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    sort: ListSortState | null;
     perPageOptions: number[];
     /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
     extensions: ExtensionList;
@@ -63,7 +65,7 @@ const columns = [
     { key: 'order_number', label: 'Đơn', class: 'font-mono' },
     { key: 'carrier', label: 'Vận chuyển' },
     { key: 'status', label: 'Trạng thái' },
-    { key: 'cod_amount', label: 'COD' },
+    { key: 'cod_amount', label: 'COD', sortable: true },
     { key: 'actions', label: '', align: 'right' as const, class: 'space-x-2' },
 ];
 const label = (status: string): string => props.labels.shipment_status[status] ?? status;
@@ -76,8 +78,9 @@ function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' 
     return 'info';
 }
 
-function search(page?: number, perPage = props.pagination.per_page): void {
-    router.get(props.baseUrl, { ...filters, ext: { ...ext }, page, per_page: perPage }, { preserveState: true });
+const list = useListQuery(() => props.baseUrl);
+function search(page?: number, perPage = props.pagination.per_page, sort = props.sort): void {
+    list.visit({ ...filters, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: perPage });
 }
 
 function goToPage(page: number): void {
@@ -158,7 +161,7 @@ async function cancel(id: number): Promise<void> {
         <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
         <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="vận đơn" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="shipments" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" empty-text="Chưa có vận đơn.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="shipments" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" empty-text="Chưa có vận đơn.">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
             <div class="font-sans text-xs text-slate-400">{{ row.items }} sản phẩm</div>

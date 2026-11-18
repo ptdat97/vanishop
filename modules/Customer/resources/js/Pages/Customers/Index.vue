@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -30,17 +31,19 @@ const props = defineProps<{
         group: string | null;
     }>;
     pagination: { page: number; last_page: number; from: number | null; to: number | null; total: number; per_page: number };
+    sort: ListSortState | null;
     extensions: Omit<ExtensionList, 'actions'>;
 }>();
 
 const columns = [
-    { key: 'full_name', label: 'Khách' },
+    { key: 'full_name', label: 'Khách', sortable: true },
     { key: 'phone', label: 'SĐT', class: 'font-mono text-xs' },
     { key: 'email', label: 'Email', class: 'text-xs' },
     { key: 'registered', label: 'Loại', class: 'text-xs' },
     { key: 'group', label: 'Nhóm', class: 'text-xs' },
-    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs' },
+    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs', sortable: true },
 ];
+const list = useListQuery(() => props.baseUrl);
 const filters = reactive<CustomerFilters>({
     q: props.filters.q ?? '',
     status: props.filters.status ?? '',
@@ -53,10 +56,8 @@ const hasActiveFilters = computed(() =>
     Object.values(filters).some((value) => value !== '' && value !== null) || Object.values(ext).some((value) => value !== ''),
 );
 
-function search(page?: number, pageSize = props.pagination.per_page): void {
-    const query = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '' && value !== null));
-    const extensionFilters = Object.fromEntries(Object.entries(ext).filter(([, value]) => value !== ''));
-    router.get(props.baseUrl, { ...query, ext: extensionFilters, page, per_page: pageSize }, { preserveState: true });
+function search(page?: number, pageSize = props.pagination.per_page, sort = props.sort): void {
+    list.visit({ ...filters, ext: { ...ext }, ...list.sortQuery(sort), page, per_page: pageSize });
 }
 
 function clearFilters(): void {
@@ -97,7 +98,7 @@ function changePageSize(pageSize: number): void {
         <span v-if="hasActiveFilters" class="text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
     </form>
 
-    <DataTable :columns="columns" :rows="customers" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" :row-click="openCustomer" empty-text="Không có khách nào.">
+    <DataTable :columns="columns" :rows="customers" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" :row-click="openCustomer" empty-text="Không có khách nào.">
         <template #cell-full_name="{ row }">
             <span class="font-medium">{{ row.full_name ?? '(chưa có tên)' }}</span>
             <div class="font-mono text-xs text-slate-400">

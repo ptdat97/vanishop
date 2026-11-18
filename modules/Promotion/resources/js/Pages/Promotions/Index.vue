@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
@@ -33,19 +34,22 @@ const props = defineProps<{
     }>;
     canManage: boolean;
     campaignsUrl: string;
+    sort: ListSortState | null;
     /** Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1). */
     extensions: ExtensionList;
 }>();
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
-watch(ext, () => router.get(props.baseUrl, { ext: { ...ext } }, { preserveState: true, preserveScroll: true }));
+const list = useListQuery(() => props.baseUrl);
+const reload = (sort = props.sort): void => list.visit({ ext: { ...ext }, ...list.sortQuery(sort) });
+watch(ext, () => reload());
 
 const money = useMoney();
 const columns = [
-    { key: 'name', label: 'Khuyến mãi' },
+    { key: 'name', label: 'Khuyến mãi', sortable: true },
     { key: 'action', label: 'Giảm' },
-    { key: 'period', label: 'Hiệu lực', class: 'text-xs' },
-    { key: 'usage', label: 'Đã dùng' },
+    { key: 'period', label: 'Hiệu lực', class: 'text-xs', sortable: true },
+    { key: 'usage', label: 'Đã dùng', sortable: true },
     { key: 'vouchers', label: 'Voucher' },
 ];
 
@@ -71,7 +75,7 @@ function describe(type: string, config: Record<string, number>): string {
             <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="khuyến mãi" />
         </template>
     </div>
-    <DataTable v-model:selected="selected" :extensions="extensions" :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="canManage ? (promotion) => router.visit(`${props.baseUrl}/${promotion.id}/edit`) : undefined" empty-text="Chưa có khuyến mãi nào.">
+    <DataTable v-model:selected="selected" :sort="sort" :loading="list.loading.value" @sort="(next) => reload(next)" :extensions="extensions" :columns="columns" :rows="promotions" :row-label="(promotion) => promotion.name" :row-click="canManage ? (promotion) => router.visit(`${props.baseUrl}/${promotion.id}/edit`) : undefined" empty-text="Chưa có khuyến mãi nào.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-400">

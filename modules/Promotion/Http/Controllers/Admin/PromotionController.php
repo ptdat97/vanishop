@@ -19,6 +19,7 @@ use Modules\Promotion\Http\Requests\PromotionRequest;
 use Modules\Promotion\Http\Requests\VoucherRequest;
 use Modules\Promotion\Persistence\Models\Promotion;
 use Modules\Promotion\Persistence\Models\Voucher;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreClock;
 
 final class PromotionController
@@ -37,11 +38,13 @@ final class PromotionController
         Gate::authorize('promotion.view');
         $extensionFilters = array_filter((array) $request->query('ext', []), 'is_string');
         $extensionIds = $screen->filterIds('promotion', $extensionFilters);
-        $promotions = $this->queries->promotions($extensionIds);
+        $sort = ListSort::fromRequest($request, ['name' => 'name', 'period' => 'starts_at', 'usage' => 'usage_count']);
+        $promotions = $this->queries->promotions($extensionIds, $sort);
 
         return Inertia::render('Promotion::Promotions/Index', [
             'baseUrl' => route('admin.promotion.promotions.index'),
             'labels' => __('promotion::labels'),
+            'sort' => $sort?->toArray(),
             'promotions' => $promotions->map(fn (Promotion $promotion): array => [
                 'id' => $promotion->id,
                 'name' => $promotion->name,

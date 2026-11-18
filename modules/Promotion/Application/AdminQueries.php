@@ -7,6 +7,7 @@ namespace Modules\Promotion\Application;
 use Illuminate\Database\Eloquent\Collection;
 use Modules\Promotion\Persistence\Models\Campaign;
 use Modules\Promotion\Persistence\Models\Promotion;
+use Modules\Shared\Http\ListSort;
 
 /**
  * Truy vấn đọc cho màn hình Admin của Promotion — controller không tự truy vấn (D4, R9).
@@ -17,10 +18,10 @@ final class AdminQueries
      * @param  list<int>|null  $ids  id do bộ lọc plugin trả; null = không lọc
      * @return Collection<int, Promotion>
      */
-    public function promotions(?array $ids): Collection
+    public function promotions(?array $ids, ?ListSort $sort = null): Collection
     {
         return Promotion::query()->withCount('vouchers')->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
-            ->orderByDesc('priority')->orderByDesc('id')->get();
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('priority')->orderByDesc('id'))->get();
     }
 
     /**

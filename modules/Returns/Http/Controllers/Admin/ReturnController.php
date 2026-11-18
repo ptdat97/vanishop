@@ -24,6 +24,7 @@ use Modules\Returns\Contracts\ReturnRejected;
 use Modules\Returns\Domain\ReturnStatus;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Domain\BusinessRuleViolation;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreClock;
 
 final class ReturnController
@@ -48,7 +49,8 @@ final class ReturnController
         $status = (string) $request->query('status', '');
         $search = strtoupper(trim((string) $request->query('q', '')));
         $perPage = in_array((int) $request->query('per_page'), self::PER_PAGE_OPTIONS, true) ? (int) $request->query('per_page') : self::PER_PAGE_OPTIONS[0];
-        $page = $this->queries->returns($status, $search, $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage);
+        $sort = ListSort::fromRequest($request, ['number' => 'return_requests.created_at', 'refund_amount' => 'return_requests.refund_amount']);
+        $page = $this->queries->returns($status, $search, $search === '' ? null : ($orders->findByNumber($search)->id ?? 0), $extensionIds, $perPage, $sort);
         $numbers = $orders->numbers(collect($page->items())->pluck('order_id')->map(fn ($id): int => (int) $id)->all());
 
         return Inertia::render('Returns::Returns/Index', [
@@ -57,6 +59,7 @@ final class ReturnController
             'reasonsUrl' => route('admin.returns.reasons.index'),
             'status' => $status,
             'search' => $search,
+            'sort' => $sort?->toArray(),
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
             // Số yêu cầu theo trạng thái trên các thẻ lọc (0.3.101).
             // Thao tác hàng loạt (0.3.102): duyệt; nhận hàng còn bán được hoặc hàng hỏng — yêu cầu không đúng trạng thái được bỏ qua.

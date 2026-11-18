@@ -6,6 +6,7 @@ namespace Modules\Customer\Application;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Modules\Customer\Persistence\Models\Customer;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\Phones;
 
 /**
@@ -17,7 +18,7 @@ final class CustomerQueries
      * @param  list<int>|null  $ids  giới hạn theo bộ lọc của plugin
      * @return LengthAwarePaginator<int, Customer>
      */
-    public function search(?string $q, ?string $status, int $perPage = 30, ?array $ids = null, ?int $groupId = null, ?string $tag = null): LengthAwarePaginator
+    public function search(?string $q, ?string $status, int $perPage = 30, ?array $ids = null, ?int $groupId = null, ?string $tag = null, ?ListSort $sort = null): LengthAwarePaginator
     {
         $q = trim((string) $q);
         $phone = $q === '' ? null : Phones::parse($q);
@@ -30,7 +31,7 @@ final class CustomerQueries
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
             ->when($groupId !== null, fn ($query) => $query->where('customer_group_id', $groupId))
             ->when($tag !== null && $tag !== '', fn ($query) => $query->whereIn('id', fn ($sub) => $sub->select('customer_id')->from('customer_tags')->where('tag', $tag)))
-            ->orderByDesc('id')
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))
             ->paginate($perPage)
             ->withQueryString();
     }

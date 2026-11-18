@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
@@ -59,4 +60,16 @@ it('không có quyền merge/ẩn danh → 403', function () {
     $this->get('/admin/customers')->assertOk();
     $this->post("/admin/customers/{$this->dupe->public_id}/merge", ['target' => $this->main->public_id])->assertForbidden();
     $this->post("/admin/customers/{$this->main->public_id}/anonymize")->assertForbidden();
+});
+
+it('L33: danh sách khách sắp theo tên / ngày tạo ở server, giữ bộ lọc', function () {
+    foreach (['Minh', 'An', 'Bình'] as $i => $name) {
+        Customer::query()->create(['public_id' => (string) Str::ulid(), 'phone' => '+8490000000'.$i, 'full_name' => $name, 'status' => 'active']);
+    }
+    $this->actingAs(T::staff(['admin.access', 'customers.view']), 'staff');
+
+    $names = fn (string $query) => array_values(array_intersect(array_column($this->get("/admin/customers{$query}")->assertOk()->viewData('page')['props']['customers'], 'full_name'), ['Minh', 'An', 'Bình']));
+    expect($names('?sort=full_name&direction=asc&status=active'))->toBe(['An', 'Bình', 'Minh'])
+        ->and($names('?sort=full_name&direction=desc'))->toBe(['Minh', 'Bình', 'An'])
+        ->and($this->get('/admin/customers?sort=full_name&direction=asc')->viewData('page')['props']['sort'])->toBe(['key' => 'full_name', 'direction' => 'asc']);
 });

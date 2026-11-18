@@ -7,6 +7,7 @@ namespace Modules\Returns\Application;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Modules\Returns\Persistence\Models\ReturnRequest;
+use Modules\Shared\Http\ListSort;
 
 /**
  * Truy vấn đọc cho màn hình Admin của Returns — controller không tự truy vấn (D4, R9).
@@ -19,12 +20,12 @@ final class AdminQueries
      * @param  list<int>|null  $ids
      * @return LengthAwarePaginator<int, ReturnRequest>
      */
-    public function returns(string $status, string $search, ?int $orderId, ?array $ids, int $perPage): LengthAwarePaginator
+    public function returns(string $status, string $search, ?int $orderId, ?array $ids, int $perPage, ?ListSort $sort = null): LengthAwarePaginator
     {
         return ReturnRequest::query()->withCount('lines')->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($search !== '', fn ($query) => $query->where(fn ($match) => $match->where('number', $search)->orWhere('order_id', $orderId ?? 0)))
             ->when($ids !== null, fn ($query) => $query->whereIn('id', $ids))
-            ->orderByDesc('id')->paginate($perPage)->withQueryString();
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))->paginate($perPage)->withQueryString();
     }
 
     /**
