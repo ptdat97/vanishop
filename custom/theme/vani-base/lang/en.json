@@ -246,5 +246,11 @@
     "Tài khoản chưa có mật khẩu. Vui lòng đặt mật khẩu trước để xác nhận xoá.": "Your account has no password yet. Please set a password first to confirm the deletion.",
     "Nhập mật khẩu để xác nhận": "Enter your password to confirm",
     "Dùng email và mật khẩu này để đăng nhập.": "Use this email and password to sign in.",
-    "Đơn hàng đã đặt vẫn được lưu (không gắn với tài khoản) theo nghĩa vụ kế toán, thuế. Sau khi xoá, bạn vẫn đăng ký lại được bằng email này.": "Orders you placed are kept (no longer linked to an account) for accounting and tax obligations. After deleting, you can still sign up again with this email."
+    "Đơn hàng đã đặt vẫn được lưu (không gắn với tài khoản) theo nghĩa vụ kế toán, thuế. Sau khi xoá, bạn vẫn đăng ký lại được bằng email này.": "Orders you placed are kept (no longer linked to an account) for accounting and tax obligations. After deleting, you can still sign up again with this email.",
+    "— Không có phường/xã khớp —": "— No matching ward —",
+    "Chưa đặt được đơn:": "Your order was not placed:",
+    "Địa chỉ đã lưu": "Saved address",
+    "— Chọn địa chỉ đã lưu —": "— Choose a saved address —",
+    "Tìm phường/xã (gõ không dấu được)": "Search ward (accents optional)",
+    "Tìm phường/xã": "Search ward"
 }

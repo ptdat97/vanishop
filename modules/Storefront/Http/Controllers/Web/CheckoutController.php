@@ -8,9 +8,12 @@ use Illuminate\Contracts\Session\Session;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Support\ViewErrorBag;
 use Modules\Checkout\Contracts\Checkout;
 use Modules\Checkout\Contracts\CheckoutRejected;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Payment\Contracts\Data\PaymentInitiation;
 use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\AddressOptions;
@@ -19,6 +22,7 @@ use Modules\Storefront\Application\CheckoutPresenter;
 use Modules\Storefront\Application\NativeCart;
 use Modules\Storefront\Application\PaymentPresenter;
 use Modules\Storefront\Http\Requests\CheckoutRequestForm;
+use Modules\Storefront\View\CheckoutForm;
 
 /**
  * Checkout của native storefront: một form, đặt hàng bằng POST thường (Idempotency-Key là trường ẩn sinh khi
@@ -32,6 +36,7 @@ final class CheckoutController
         private readonly CheckoutPresenter $presenter,
         private readonly AddressOptions $addresses,
         private readonly CartVoucher $voucher,
+        private readonly CheckoutForm $form,
     ) {}
 
     public function show(Request $request): View|RedirectResponse
@@ -45,16 +50,22 @@ final class CheckoutController
         // Mã của giỏ (ADR-044): mã hỏng tự bỏ khỏi giỏ, không phải lỗi. Mã khách vừa gõ ở đây đã được áp vào giỏ khi gửi form
         // (store); bị từ chối thì một dòng nhắc nhẹ kèm lý do (flash `voucher_notice`).
         $voucherCode = $this->voucher->preview($key)['code'] ?? '';
-        $checkoutQuote = $this->checkout->quote(CheckoutRequestForm::build($old, $key, (string) $request->attributes->get('order_source', 'web')));
+        $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
+        $errors = $request->session()->get('errors');
+        $form = $this->form->for($old, $customer === null ? null : (int) $customer->id, $errors instanceof ViewErrorBag ? $errors->getBag('default') : null);
+        // Báo giá theo đúng giá trị đang hiện trên form (cả địa chỉ điền sẵn): phí giao của hãng có thể theo địa chỉ.
+        $checkoutQuote = $this->checkout->quote(CheckoutRequestForm::build(Arr::undot($form['values']), $key, (string) $request->attributes->get('order_source', 'web')));
         $quote = $this->presenter->quote($checkoutQuote);
         $voucherNotice = $request->session()->get('voucher_notice');
         $quote['rejected_vouchers'] = [];
 
         $directory = $this->addresses->directory();
-        $province = (string) ($old['shipping_address']['province_code'] ?? '');
+        $province = $form['values']['shipping_address.province_code'] ?? '';
 
         return view('theme::pages.checkout', [
             'quote' => $quote,
+            // Giá trị từng ô (lần gửi trước, hoặc điền sẵn từ tài khoản), sổ địa chỉ, tóm tắt lỗi — CheckoutForm.
+            'form' => $form,
             'voucherCode' => $voucherCode,
             'voucherNotice' => $voucherNotice,
             'idempotencyKey' => (string) Str::ulid(),

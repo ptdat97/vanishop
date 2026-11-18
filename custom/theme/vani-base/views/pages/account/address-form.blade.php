@@ -33,6 +33,7 @@
                     </div>
                     <div>
                         <label for="ward_code" class="block text-sm">{{ __('Phường/Xã') }}</label>
+                        <input type="search" hidden placeholder="{{ __('Tìm phường/xã (gõ không dấu được)') }}" aria-label="{{ __('Tìm phường/xã') }}" aria-controls="ward_code" autocomplete="off" class="mt-1 w-full rounded border border-slate-300 px-3 py-2" data-ward-filter>
                         <select id="ward_code" name="ward_code" required data-ward-select class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                             <option value="">{{ $wards === [] ? __('— Chọn tỉnh/thành trước —') : __('— Chọn phường/xã —') }}</option>
                             @foreach ($wards as $ward)

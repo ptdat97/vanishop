@@ -11,7 +11,7 @@
 - Từ **01/07/2025**, Việt Nam áp dụng **chính quyền địa phương 2 cấp**: **34 tỉnh/thành phố** và **cấp xã (phường/xã/đặc khu)**, **bỏ cấp quận/huyện**.
 - **Hiện trạng:** Core khai báo contract `Shared\Contracts\AddressDirectory`; plugin hệ thống `vani.provinces-vn` (bundled) cung cấp danh mục 2 cấp (34 tỉnh/thành, 3.321 phường/xã). Checkout (API + native) kiểm `province_code` + `ward_code` hợp lệ và khớp nhau, tên lưu vào đơn lấy theo danh mục; Storefront API `GET /address/provinces`, `/address/provinces/{code}/wards`. Tắt plugin → địa chỉ nhập tự do.
 - Địa chỉ lưu: `province_code`, `ward_code`, `street_line` và **chuỗi snapshot** đầy đủ tại thời điểm đặt hàng (không phụ thuộc danh mục sau này).
-- **Chưa làm:** ánh xạ địa chỉ cũ 3 cấp → mới 2 cấp (gợi ý "Phường X (trước đây thuộc Quận Y)"), bảng mã địa giới theo từng hãng vận chuyển (kết nối hãng đang đóng băng), tìm địa chỉ gõ không dấu.
+- **Chưa làm:** ánh xạ địa chỉ cũ 3 cấp → mới 2 cấp (gợi ý "Phường X (trước đây thuộc Quận Y)"), bảng mã địa giới theo từng hãng vận chuyển (kết nối hãng đang đóng băng). Tìm phường/xã gõ không dấu đã có trên form checkout và sổ địa chỉ (0.5.24, lọc danh sách của tỉnh đang chọn — chưa tìm toàn quốc theo tên).
 - VAT gồm trong giá: plugin `vani.tax-vn-vat` (thuế suất ở Admin → Cấu hình hoặc `VANI_VAT_RATE_BP`, mặc định 10%) — kế toán xác nhận mức hiện hành.
 - Nguồn dữ liệu: danh mục đơn vị hành chính của Bộ Nội vụ, đóng gói trong plugin hệ thống `vani.provinces-vn` (`Database/data/vn-divisions-2025.json`); cập nhật = thay file + tăng version plugin.
 

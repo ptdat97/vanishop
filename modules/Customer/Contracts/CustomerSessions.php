@@ -15,7 +15,7 @@ use Modules\Customer\Contracts\Data\CustomerData;
  */
 interface CustomerSessions
 {
-    /** Khách đã nhận diện của request (middleware `vani.customer` / `vani.customer-session`): `$request->attributes->get(...)` → `CustomerData`. */
+    /** Khách đã nhận diện của request (middleware `vani.customer` / `vani.customer-session`): `$request->attributes->get(...)` → model khách (đọc `id`; cần dữ liệu khách thì `Customers::find($id)` → `CustomerData`), null = chưa đăng nhập. */
     public const REQUEST_ATTRIBUTE = 'customer';
 
     /**

@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.24 — 2026-11-18 · Extension API 1.3.0 (không đổi)
+
+Storefront S2: checkout trên điện thoại. Không đổi API cho plugin.
+
+### Đổi (theme)
+- `theme::pages.checkout` nhận `$form` (`Storefront\View\CheckoutForm`): `values` (giá trị từng ô — `old`, hoặc điền sẵn từ hồ sơ + địa chỉ mặc định khi khách đăng nhập), `saved_addresses`, `errors` (tóm tắt lỗi). Theme con override trang checkout: đọc `$form['values'][<ô>]` thay cho `old()`.
+- Tóm tắt lỗi đầu trang (`[data-checkout-errors]`), thanh đáy điện thoại (`[data-checkout-bar]`), ô lọc phường/xã (`[data-ward-filter]`, cả `theme::pages.account.address-form`), ô "Địa chỉ đã lưu" (`[data-checkout-saved-address]`). Đổi phường/phương thức → tính lại và thay `[data-checkout-summary]`, `[data-checkout-shipping]`, `[data-checkout-payment]`, `[data-checkout-bar]`, sau đó phát `vani:content-updated` (slot của plugin trong các khung này được render lại).
+
+### Sửa
+- Lỗi chung của checkout (tổng đã đổi, hết hàng…) không hiện khi tắt JS.
+- Đổi phường/phương thức giao không tính lại phí giao (plugin hãng tính phí theo địa chỉ → tổng hiển thị cũ, đặt hàng bị từ chối "tổng đã thay đổi").
+- Docblock `CustomerSessions::REQUEST_ATTRIBUTE` ghi giá trị là `CustomerData`; thực tế là model khách (đọc `id`, dùng `Customers::find`).
+
 ## 0.5.23 — 2026-11-18 · Extension API 1.3.0 (không đổi)
 
 Storefront S1: rào chắn mobile & tốc độ. Không đổi API cho plugin.

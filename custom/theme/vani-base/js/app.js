@@ -569,17 +569,55 @@ if (cartPage) {
     });
 }
 
-// Checkout: chọn tỉnh → tải phường/xã từ Storefront API (không JS: nút "Tải danh sách phường/xã").
+/** Chữ thường, bỏ dấu tiếng Việt (đ → d) — so khớp "phuong ben thanh" với "Phường Bến Thành". */
+const foldVietnamese = (text) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
+
+/** Ô tìm phường/xã (`[data-ward-filter]`) lọc danh sách đang có của select; hiện khi danh sách dài. */
+function mountWardFilter(filter, ward) {
+    let all = [];
+    const remember = () => {
+        all = [...ward.options].filter((option) => option.value !== '').map((option) => ({ value: option.value, label: option.textContent, key: foldVietnamese(option.textContent) }));
+        filter.value = '';
+        filter.hidden = all.length < 15;
+    };
+    filter.addEventListener('input', () => {
+        const query = foldVietnamese(filter.value);
+        const selected = ward.value;
+        const matches = all.filter((item) => item.key.includes(query));
+        ward.replaceChildren(
+            new Option(matches.length ? t('choose_ward') : t('wards_no_match'), ''),
+            ...matches.map((item) => new Option(item.label, item.value, false, item.value === selected)),
+        );
+        if (matches.length === 1) {
+            ward.value = matches[0].value;
+            ward.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+    // Enter trong ô tìm không gửi form.
+    filter.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            ward.focus();
+        }
+    });
+    remember();
+    return remember;
+}
+
+// Checkout / sổ địa chỉ: chọn tỉnh → tải phường/xã từ Storefront API (không JS: nút "Tải danh sách phường/xã").
 document.querySelectorAll('[data-province-select]').forEach((province) => {
     const ward = province.form?.querySelector('[data-ward-select]');
     if (!ward) {
         return;
     }
+    const filter = province.form.querySelector('[data-ward-filter]');
+    const rememberWards = filter ? mountWardFilter(filter, ward) : () => {};
 
-    province.addEventListener('change', async () => {
+    province.vaniLoadWards = async (selected = '') => {
         ward.replaceChildren(new Option(t('wards_loading'), ''));
         if (!province.value) {
             ward.replaceChildren(new Option(t('province_first'), ''));
+            rememberWards();
             return;
         }
         try {
@@ -587,12 +625,81 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
                 headers: { Accept: 'application/json' },
             });
             const { data } = await response.json();
-            ward.replaceChildren(new Option(t('choose_ward'), ''), ...data.map((item) => new Option(item.name, item.code)));
+            ward.replaceChildren(new Option(t('choose_ward'), ''), ...data.map((item) => new Option(item.name, item.code, false, item.code === selected)));
         } catch {
             ward.replaceChildren(new Option(t('wards_failed'), ''));
         }
-    });
+        rememberWards();
+    };
+    province.addEventListener('change', () => province.vaniLoadWards());
 });
+
+/*
+ * Checkout (`form[data-checkout-form]`):
+ * - Đổi phường/xã, phương thức giao hoặc thanh toán → tính lại như nút "Áp dụng" (POST `action=quote`), rồi thay khung
+ *   tóm tắt, danh sách phương thức, thanh tổng ở đáy và `expected_total` bằng bản server vừa render — phí giao theo địa
+ *   chỉ (plugin hãng vận chuyển) luôn khớp tổng khách thấy. Không JS: nút "Áp dụng" làm việc này.
+ * - "Địa chỉ đã lưu": điền người nhận + địa chỉ vào form.
+ * - Có tóm tắt lỗi: đưa focus tới đó (trình đọc màn hình đọc ngay, điện thoại không phải cuộn tìm).
+ */
+const checkoutForm = document.querySelector('form[data-checkout-form]');
+if (checkoutForm) {
+    document.querySelector('[data-checkout-errors]')?.focus();
+
+    let quoteController = null;
+    const requote = async () => {
+        quoteController?.abort();
+        quoteController = new AbortController();
+        const data = new FormData(checkoutForm);
+        data.set('action', 'quote');
+        const summary = checkoutForm.querySelector('[data-checkout-summary]');
+        summary?.setAttribute('aria-busy', 'true');
+        try {
+            // `getAttribute`: nút `name="action"` (Áp dụng) che thuộc tính `form.action`.
+            const response = await fetch(checkoutForm.getAttribute('action'), { method: 'POST', body: data, credentials: 'same-origin', headers: { Accept: 'text/html' }, signal: quoteController.signal });
+            if (!response.ok) return;
+            const next = new DOMParser().parseFromString(await response.text(), 'text/html');
+            ['[data-checkout-summary]', '[data-checkout-shipping]', '[data-checkout-payment]', '[data-checkout-bar]'].forEach((selector) => {
+                const fresh = next.querySelector(selector);
+                const current = checkoutForm.querySelector(selector);
+                if (fresh && current) current.replaceWith(document.importNode(fresh, true));
+            });
+            const total = next.querySelector('input[name="expected_total"]');
+            if (total) checkoutForm.querySelector('input[name="expected_total"]').value = total.value;
+            document.dispatchEvent(new CustomEvent('vani:content-updated', { detail: { element: checkoutForm } }));
+        } catch (error) {
+            if (error.name !== 'AbortError') console.error('Không tính lại được đơn hàng.', error);
+        } finally {
+            checkoutForm.querySelector('[data-checkout-summary]')?.removeAttribute('aria-busy');
+        }
+    };
+    checkoutForm.addEventListener('change', (event) => {
+        if (event.target.matches('[data-ward-select], input[name="shipping_method"], input[name="payment_method"]')) {
+            requote();
+        }
+    });
+
+    const saved = checkoutForm.querySelector('[data-checkout-saved-address]');
+    if (saved) {
+        checkoutForm.querySelector('[data-checkout-saved-address-wrap]').hidden = false;
+        saved.addEventListener('change', async () => {
+            const option = saved.selectedOptions[0];
+            if (!option?.dataset.fields) return;
+            const fields = JSON.parse(option.dataset.fields);
+            const byName = (key) => checkoutForm.elements.namedItem(key.replace(/^(\w+)\.(\w+)$/, '$1[$2]'));
+            ['contact.full_name', 'contact.phone', 'shipping_address.street_line', 'shipping_address.province_name', 'shipping_address.ward_name'].forEach((key) => {
+                const input = byName(key);
+                if (input && fields[key] !== undefined) input.value = fields[key];
+            });
+            const province = checkoutForm.querySelector('[data-province-select]');
+            if (province && fields['shipping_address.province_code']) {
+                province.value = fields['shipping_address.province_code'];
+                await province.vaniLoadWards?.(fields['shipping_address.ward_code'] ?? '');
+            }
+            requote();
+        });
+    }
+}
 
 // Form cần xác nhận (xoá địa chỉ…): không JS thì gửi luôn.
 document.querySelectorAll('form[data-confirm]').forEach((form) => {
