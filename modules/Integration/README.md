@@ -4,7 +4,7 @@
 
 ## Trách nhiệm
 
-Outbox/inbox, event feed, webhook HMAC, Integration API v1, connector là plugin. **Đóng băng tăng trưởng** (architecture-consolidation C3): chỉ sửa lỗi cho tới khi Owner mở lại ERP.
+Outbox/inbox, event feed, webhook HMAC, Integration API v1, connector là plugin. **Đóng băng tăng trưởng**: chỉ sửa lỗi cho tới khi Owner mở lại ERP.
 
 ## Bất biến
 

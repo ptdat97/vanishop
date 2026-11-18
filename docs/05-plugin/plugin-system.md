@@ -169,7 +169,7 @@ Mọi thao tác đi qua `PluginManager` — cùng kiểm tra, cache nạp plugin
 
 ### 6.1 Rà soát hợp đồng plugin (2026-11-16, Core 0.4.68)
 
-> Kế hoạch xử lý các mục "Thiếu"/"chưa có code" dưới đây (ADR-048 version API mở rộng, tách API plugin khỏi API giữa module, mức ổn định, deprecation log, circuit breaker): [architecture-consolidation §3.4, đợt K2–K3](../20-roadmap/architecture-consolidation.md).
+> Kế hoạch xử lý các mục "Thiếu"/"chưa có code" dưới đây (ADR-048 version API mở rộng, tách API plugin khỏi API giữa module, mức ổn định, deprecation log, circuit breaker): [architecture-rules](../01-principles/architecture-rules.md).
 
 | Hạng mục | Hiện trạng | Đánh giá |
 |---|---|---|

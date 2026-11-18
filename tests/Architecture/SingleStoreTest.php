@@ -2,7 +2,7 @@
 
 /*
 | Một cửa hàng (ADR-028): brand là thuộc tính catalog, không phải phạm vi dữ liệu.
-| `brand_id` chỉ được có ở Catalog (styles) và snapshot trên dòng đơn — docs/12-store/store-and-brand.md §6 bước 14.
+| `brand_id` chỉ được có ở Catalog (styles) và snapshot trên dòng đơn (ADR-028).
 */
 
 it('brand_id chỉ xuất hiện ở migration của Catalog và Ordering (snapshot dòng đơn)', function () {

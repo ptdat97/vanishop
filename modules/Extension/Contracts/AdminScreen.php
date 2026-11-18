@@ -7,7 +7,7 @@ namespace Modules\Extension\Contracts;
 use Closure;
 
 /**
- * Service contract: màn hình Admin của Core lấy phần mở rộng do plugin khai báo (ADR-030, extension-surface-v2 §4.A).
+ * Service contract: màn hình Admin của Core lấy phần mở rộng do plugin khai báo (ADR-030).
  * Tài nguyên do module sở hữu màn hình khai báo (`declareResource`, 0.3.39) — Extension (vòng 0) không biết tên tài
  * nguyên thương mại nào (R29). Id truyền cho plugin là id nội bộ (int) của bản ghi Core. Chỉ trả phần của plugin đang bật.
  */

@@ -7,7 +7,7 @@ namespace Modules\Shared\Contracts;
 use Attribute;
 
 /**
- * Đánh dấu class/interface/enum thuộc **API cho plugin** (ADR-048, architecture-consolidation P2–P3). Plugin chỉ được dùng
+ * Đánh dấu class/interface/enum thuộc **API cho plugin** (ADR-048). Plugin chỉ được dùng
  * class có thuộc tính này (R5); phần còn lại của `Contracts`/`Events` là API giữa module, đổi được mà không tăng
  * `vanishop.extension_api`. Chữ ký các class đánh dấu được chụp vào `tests/Architecture/plugin-api.snapshot`.
  *

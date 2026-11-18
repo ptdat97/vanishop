@@ -1,7 +1,7 @@
 # ADR-032 — Dependency được duyệt: vận hành go-live và chất lượng code
 
 - Trạng thái: Accepted · Ngày: 2026-10-02 · Người quyết định: Owner (chọn qua câu hỏi duyệt từng nhóm)
-- Liên quan: R25 (dependency phải được duyệt), [ADR-018](ADR-018-infrastructure-vietnam.md) (hạ tầng tại VN), [ADR-020](ADR-020-admin-shared-domain.md) (đường dẫn Admin bí mật), [ADR-026](ADR-026-plugin-deploy-via-code.md).
+- Liên quan: R25 (dependency phải được duyệt), [ADR-018](ADR-018-infrastructure-vietnam.md) (hạ tầng tại VN), [ADR-020](ADR-020-admin-path-no-2fa.md) (đường dẫn Admin bí mật), [ADR-026](ADR-026-plugin-deploy-via-code.md).
 
 ## Decision
 

@@ -3,7 +3,7 @@
 | Thuật ngữ | Tiếng Việt | Định nghĩa trong VaniShop |
 |---|---|---|
 | Owner | Chủ sở hữu | Chủ duy nhất của bản cài đặt và dữ liệu khách hàng |
-| Store | Cửa hàng | Toàn bộ bản cài đặt: một website, một giao diện, một bộ cấu hình ([store-and-brand](../12-store/store-and-brand.md)) |
+| Store | Cửa hàng | Toàn bộ bản cài đặt: một website, một giao diện, một bộ cấu hình ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 | Legal Entity | Pháp nhân vận hành | Công ty có MST đứng tên bán hàng trên website; xuất hoá đơn, nhận tiền. Một bản ghi |
 | Brand | Thương hiệu | Nhóm sản phẩm trong Catalog (trang brand, bộ lọc, điều kiện khuyến mãi, báo cáo). **Không** phải phạm vi dữ liệu |
 | Order source | Nguồn đơn | `web`, `app`, `zalo`, `admin`, `pos` — thuộc tính của đơn để báo cáo |

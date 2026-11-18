@@ -10,7 +10,7 @@ use Modules\Payment\Domain\RefundStatus;
 use Modules\Shared\Domain\Money\Money;
 
 /*
-| Domain Payment thuần PHP (architecture-consolidation D1): máy trạng thái, luật hoàn tiền, COD, khớp số tiền — không DB.
+| Domain Payment thuần PHP: máy trạng thái, luật hoàn tiền, COD, khớp số tiền — không DB.
 */
 
 it('máy trạng thái: chỉ chuyển theo bảng; trạng thái cuối không đi tiếp', function () {

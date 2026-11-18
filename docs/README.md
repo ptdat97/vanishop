@@ -37,7 +37,7 @@
 
 ## Đọc gì trước
 
-1. [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md) + [12-store/store-and-brand.md](12-store/store-and-brand.md): **định hướng hiện hành và đã phản ánh trong code** — một cửa hàng, một website, một giao diện; brand là thuộc tính của catalog, không phải tenant hay phạm vi dữ liệu.
+1. [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md): **định hướng hiện hành và đã phản ánh trong code** — một cửa hàng, một website, một giao diện; brand là thuộc tính của catalog, không phải tenant hay phạm vi dữ liệu.
 2. [00-overview/status.md](00-overview/status.md): cái gì **đã có code**, cái gì mới chỉ là thiết kế.
 3. [02-architecture/commerce-kernel.md](02-architecture/commerce-kernel.md): **bốn vòng** microkernel — cái gì vào Core, cái gì là plugin.
 4. [01-principles/architecture-rules.md](01-principles/architecture-rules.md): các quy tắc bắt buộc.
@@ -49,14 +49,14 @@
 |---|---|
 | Mới vào dự án, cần mental model | [overview](02-architecture/overview.md) → [system-map](02-architecture/system-map.md) |
 | Cần biết **hệ thống đang là gì** ở mức mã nguồn (bề mặt, module, middleware, lịch chạy) | [system-map](02-architecture/system-map.md), [request-lifecycle](02-architecture/request-lifecycle.md) |
-| Mô hình cửa hàng, brand, lộ trình gỡ đa brand | [store-and-brand](12-store/store-and-brand.md) |
+| Mô hình một cửa hàng; brand là dữ liệu Catalog | [ADR-028](19-adr/ADR-028-single-store-brand-as-catalog.md) |
 | Muốn biết **vì sao** làm thế này | [19-adr](19-adr/README.md) |
 | Đang viết plugin, cần **chữ ký chính xác + checklist** | [05-plugin/contracts](05-plugin/contracts/README.md) |
 | Tra extension point / hook public | [extension-point-catalog](04-extension/extension-point-catalog.md), `php artisan vani:plugin:hooks` |
 | So với hệ tham chiếu VaniCommerce: học gì, giữ gì | [reference-comparison](02-architecture/reference-comparison.md) (đọc lưu ý clean-room trước) |
 | Chuyển một plugin từ `VaniCommerce/plugins/` sang | [vanicommerce-plugin-migration](05-plugin/vanicommerce-plugin-migration.md) (đặc tả → viết lại) |
 | Bổ sung tính năng còn thiếu so với hệ tham chiếu v3, theo từng module; helper `vani_*` | [reference-parity-refactor](20-roadmap/reference-parity-refactor.md) (đặc tả + kế hoạch R0–R4) |
-| Giai đoạn tiếp theo của kiến trúc: Core nhỏ, Domain rõ ràng, Module độc lập, Plugin ổn định — hiện trạng đo được + kế hoạch K1–K5 | [architecture-consolidation](20-roadmap/architecture-consolidation.md) (Done, Core 0.5.0–0.5.8) |
+| Việc đang làm, thứ tự ưu tiên, backlog giới hạn | [stabilization-2026-11](20-roadmap/stabilization-2026-11.md), [reference-parity-refactor §6b](20-roadmap/reference-parity-refactor.md) |
 
 ## Cấu trúc
 
@@ -64,24 +64,23 @@
 |---|---|
 | **00-overview** | [vision](00-overview/vision.md) · [status](00-overview/status.md) · [glossary](00-overview/glossary.md) |
 | **01-principles** | [architecture-rules](01-principles/architecture-rules.md) · [clean-room-license](01-principles/clean-room-license.md) · [coding-conventions](01-principles/coding-conventions.md) |
-| **02-architecture** | [overview](02-architecture/overview.md) · [system-map](02-architecture/system-map.md) · [request-lifecycle](02-architecture/request-lifecycle.md) · [bounded-contexts](02-architecture/bounded-contexts.md) · [commerce-kernel](02-architecture/commerce-kernel.md) · [kernel-review](02-architecture/kernel-review.md) · [money](02-architecture/money.md) · [consistency](02-architecture/consistency.md) · [reference-comparison](02-architecture/reference-comparison.md) |
-| **03-domains** | [catalog-pricing](03-domains/catalog-pricing.md) · [customer](03-domains/customer.md) · [cart-checkout](03-domains/cart-checkout.md) · [promotion](03-domains/promotion.md) · [notification](03-domains/notification.md) · [vietnam-localization](03-domains/vietnam-localization.md) |
+| **02-architecture** | [overview](02-architecture/overview.md) · [system-map](02-architecture/system-map.md) · [request-lifecycle](02-architecture/request-lifecycle.md) · [bounded-contexts](02-architecture/bounded-contexts.md) · [commerce-kernel](02-architecture/commerce-kernel.md) · [money](02-architecture/money.md) · [consistency](02-architecture/consistency.md) · [reference-comparison](02-architecture/reference-comparison.md) |
+| **03-domains** | [catalog-pricing](03-domains/catalog-pricing.md) · [customer](03-domains/customer.md) · [cart-checkout](03-domains/cart-checkout.md) · [variant-matrix](03-domains/variant-matrix.md) · [promotion](03-domains/promotion.md) · [notification](03-domains/notification.md) · [vietnam-localization](03-domains/vietnam-localization.md) |
 | **04-extension** | [extension-model](04-extension/extension-model.md) · [extension-point-catalog](04-extension/extension-point-catalog.md) · [CHANGELOG-extension](04-extension/CHANGELOG-extension.md) |
-| **05-plugin** | [plugin-system](05-plugin/plugin-system.md) · [plugin-catalog](05-plugin/plugin-catalog.md) · contracts: [lifecycle](05-plugin/contracts/plugin-lifecycle.md), [hook](05-plugin/contracts/hook-signatures.md), [payment-gateway](05-plugin/contracts/payment-gateway.md), [shipping-carrier](05-plugin/contracts/shipping-carrier.md) · specs: [loyalty](05-plugin/specs/loyalty.md), [store-omnichannel](05-plugin/specs/store-omnichannel.md) |
+| **05-plugin** | [plugin-system](05-plugin/plugin-system.md) · [plugin-catalog](05-plugin/plugin-catalog.md) · contracts: [lifecycle](05-plugin/contracts/plugin-lifecycle.md), [hook](05-plugin/contracts/hook-signatures.md), [payment-gateway](05-plugin/contracts/payment-gateway.md), [shipping-carrier](05-plugin/contracts/shipping-carrier.md) · specs: [free-shipping-progress](05-plugin/specs/free-shipping-progress.md), [lookbook](05-plugin/specs/lookbook.md), [loyalty](05-plugin/specs/loyalty.md), [scarcity-signals](05-plugin/specs/scarcity-signals.md), [size-chart](05-plugin/specs/size-chart.md), [store-content](05-plugin/specs/store-content.md), [store-omnichannel](05-plugin/specs/store-omnichannel.md), [storefront-extras](05-plugin/specs/storefront-extras.md), [tracking-pixels](05-plugin/specs/tracking-pixels.md), [wishlist](05-plugin/specs/wishlist.md) · [vanicommerce-plugin-migration](05-plugin/vanicommerce-plugin-migration.md) |
 | **06-api** | [api](06-api/api.md) |
-| **07-database** | [database](07-database/database.md) |
+| **07-database** | [database](07-database/database.md) · [schema.generated](07-database/schema.generated.md) |
 | **08-inventory** | [inventory](08-inventory/inventory.md) |
 | **09-order** | [order](09-order/order.md) · [fulfillment](09-order/fulfillment.md) |
 | **10-payment** | [payment](10-payment/payment.md) |
 | **11-integration** | [integration-platform](11-integration/integration-platform.md) · [erp-integration](11-integration/erp-integration.md) |
-| **12-store** | [store-and-brand](12-store/store-and-brand.md) (mô hình một cửa hàng + lộ trình gỡ đa brand khỏi code) |
 | **14-storefront** | [storefront](14-storefront/storefront.md) |
 | **15-security** | [security](15-security/security.md) |
 | **16-observability** | [observability](16-observability/observability.md) |
 | **17-testing** | [testing](17-testing/testing.md) |
 | **18-operations** | [operations](18-operations/operations.md) · [production](18-operations/production.md) |
 | **19-adr** | [Danh sách ADR](19-adr/README.md) |
-| **20-roadmap** | [roadmap](20-roadmap/roadmap.md) |
+| **20-roadmap** | [roadmap](20-roadmap/roadmap.md) · [stabilization-2026-11](20-roadmap/stabilization-2026-11.md) · [reference-parity-refactor](20-roadmap/reference-parity-refactor.md) |
 
 ## Quy ước tài liệu
 

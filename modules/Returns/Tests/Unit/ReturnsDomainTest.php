@@ -7,7 +7,7 @@ use Modules\Returns\Domain\ReturnProgress;
 use Modules\Returns\Domain\ReturnStatus;
 
 /*
-| Domain Returns thuần PHP (architecture-consolidation D2): giới hạn số lượng/tiền, tiến độ đổi trả của đơn, tình trạng
+| Domain Returns thuần PHP: giới hạn số lượng/tiền, tiến độ đổi trả của đơn, tình trạng
 | hàng trả, giá trị đổi hàng — không DB.
 */
 

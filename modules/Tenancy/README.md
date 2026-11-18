@@ -1,6 +1,6 @@
 # Tenancy
 
-> Vòng 0 · Mức domain: **CRUD** · Tài liệu: [store-and-brand.md](../../docs/12-store/store-and-brand.md)
+> Vòng 0 · Mức domain: **CRUD** · Tài liệu: [ADR-028](../../docs/19-adr/ADR-028-single-store-brand-as-catalog.md)
 
 ## Trách nhiệm
 

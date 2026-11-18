@@ -10,7 +10,7 @@ use Modules\Tenancy\Contracts\Settings;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /*
-| "Vỏ" trang qua Storefront API (ADR-044, api-first-refactor đợt A2): client không phải Blade dựng được đầu/chân trang,
+| "Vỏ" trang qua Storefront API (ADR-044): client không phải Blade dựng được đầu/chân trang,
 | menu và trang chủ chỉ từ API — cùng dữ liệu mà layout và trang chủ Blade dùng.
 */
 

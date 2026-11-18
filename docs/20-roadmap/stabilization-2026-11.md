@@ -2,7 +2,7 @@
 
 > Trạng thái: **In progress** (Owner giao 2026-11-12, Core 0.4.15). Thứ tự làm đúng thứ tự ưu tiên; mỗi đợt một commit, cập nhật cột "Trạng thái" khi xong.
 >
-> Liên quan: [api-first-refactor](api-first-refactor.md) (A0–A5 đã xong), [roadmap §4–§5](roadmap.md) (hardening, go-live gate), [reference-parity-refactor §6b](reference-parity-refactor.md) (backlog giới hạn), [production](../18-operations/production.md), [observability](../16-observability/observability.md).
+> Liên quan: [ADR-044](../19-adr/ADR-044-storefront-api-first.md) (A0–A5 đã xong), [roadmap §4–§5](roadmap.md) (hardening, go-live gate), [reference-parity-refactor §6b](reference-parity-refactor.md) (backlog giới hạn), [production](../18-operations/production.md), [observability](../16-observability/observability.md).
 
 | Ưu tiên | Mảng | Mục tiêu |
 |---|---|---|

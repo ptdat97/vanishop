@@ -1,7 +1,7 @@
 # ADR-047 — Đặt trước có giới hạn và hàng đang về
 
 - Trạng thái: **Accepted** · Code: **Implemented** (Core 0.4.65, 2026-11-16, EP v3 X7) · Ngày: 2026-11-16 · Người quyết định: Owner (giao làm cùng đợt X1–X7)
-- Liên quan: [extension-surface-v3 X7](../20-roadmap/extension-surface-v3.md), [extension-model §2](../04-extension/extension-model.md) (bất biến ATS), [inventory](../08-inventory/inventory.md), [ADR-046](ADR-046-staffed-operations-vietnam.md) (nhân viên đẩy đơn lên hãng).
+- Liên quan: [extension-point-catalog](../04-extension/extension-point-catalog.md), [extension-model §2](../04-extension/extension-model.md) (bất biến ATS), [inventory](../08-inventory/inventory.md), [ADR-046](ADR-046-staffed-operations-vietnam.md) (nhân viên đẩy đơn lên hãng).
 
 ## Context
 

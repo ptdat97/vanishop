@@ -2,7 +2,7 @@
 
 - Trạng thái: Accepted · Ngày: 2026-10-01 · Người quyết định: Owner
 - Thay thế: [ADR-008](ADR-008-multi-brand-model.md), [ADR-019](ADR-019-shared-domain-brand-path.md). Sửa đổi một phần: [ADR-009](ADR-009-storefront-architecture.md) (theme theo brand), [ADR-023](ADR-023-stateless-checkout.md) (một brand mỗi đơn), [ADR-025](ADR-025-native-storefront-ssr-slots.md) (override theme brand).
-- Tài liệu gốc: [store-and-brand](../12-store/store-and-brand.md).
+- Tài liệu gốc: `docs/12-store/store-and-brand.md` (đã gỡ khỏi docs 2026-11-18 — xem lịch sử git).
 
 ## Context
 ADR-008/019 thiết kế VaniShop như nền tảng **đa thương hiệu**: Owner → pháp nhân → brand → kênh, mỗi brand một storefront theo đường dẫn, dữ liệu (giá, khuyến mãi, danh mục, quyền, cấu hình, plugin) cô lập theo brand. Code slice 0–11 đã làm theo hướng này.
@@ -33,7 +33,7 @@ Mô hình đa brand tốn kém ở mọi tầng (scope dữ liệu, test cô l�
 - (+) Mô hình đơn giản: bỏ một chiều phạm vi khỏi mọi bảng, query, quyền, test; Admin phẳng; một giỏ chứa sản phẩm nhiều brand, **không cần order group**.
 - (+) Pháp lý: một pháp nhân bán hàng của mình trên website của mình → **website TMĐT bán hàng** (thông báo với Bộ Công Thương), không phải sàn.
 - (+) SEO dồn về một cấu trúc URL, một sitemap.
-- (−) **Code hiện có đang theo mô hình đa brand** (tenant `brands`, `BelongsToBrand`, `channels`, brand workspace, plugin scope theo brand, `brandId` trên event). Cần một slice chuyển đổi ([store-and-brand §6](../12-store/store-and-brand.md)); đổi public API của Extension là thay đổi phá vỡ (Core 0.x → tăng số giữa).
+- (−) **Code hiện có đang theo mô hình đa brand** (tenant `brands`, `BelongsToBrand`, `channels`, brand workspace, plugin scope theo brand, `brandId` trên event). Cần một slice chuyển đổi (slice 12, xong 2026-10-02); đổi public API của Extension là thay đổi phá vỡ (Core 0.x → tăng số giữa).
 - (−) Nếu sau này Owner muốn một brand có website/giao diện riêng, phải dùng headless (Storefront API) hoặc một bản cài đặt khác.
 
 ## Trade-offs

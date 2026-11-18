@@ -2,7 +2,7 @@
 
 - Trạng thái: Accepted · Ngày: 2026-10-02 · Người quyết định: Owner
 - Mở rộng: [ADR-004](ADR-004-extension-points.md), [ADR-029](ADR-029-commerce-microkernel.md). Liên quan: [ADR-025](ADR-025-native-storefront-ssr-slots.md), [ADR-027](ADR-027-plugin-data-no-core-columns.md).
-- Tài liệu gốc: [extension-surface-v2](../04-extension/extension-surface-v2.md).
+- Tài liệu gốc: `docs/04-extension/extension-surface-v2.md` (đã gỡ khỏi docs 2026-11-18 — xem lịch sử git); danh mục hiện hành: [extension-point-catalog](../04-extension/extension-point-catalog.md).
 
 ## Context
 Extension point hiện có đủ cho capability **thay thế** (cổng, hãng, thuế, rule, kênh gửi) nhưng thiếu cho capability **bổ sung**: loyalty, hoá đơn điện tử, size chart, wishlist cần thêm trường/cột/thao tác vào màn hình Admin của Core, thêm dữ liệu vào sản phẩm/giỏ/đơn trả cho storefront, thêm trang và API riêng, thuộc tính trên dòng giỏ. Nghiên cứu hệ tham chiếu (BeikeShop v3.0.0.11, vai trò nghiên cứu, chỉ khái niệm) cho thấy nó giải quyết bằng điểm lọc dữ liệu view + điểm sau-lưu ở gần như mọi màn hình và điểm bọc quanh khối theme.

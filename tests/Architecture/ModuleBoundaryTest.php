@@ -1,7 +1,7 @@
 <?php
 
 /*
-| Ranh giới module (architecture-consolidation K1 — M1, M4, M5; R7, R11).
+| Ranh giới module (R7, R11).
 |
 | Quét token tên class trong mọi file .php (class, route, hook, helper) — không chỉ class như arch() của Pest.
 |   M4/R7: module chỉ dùng Contracts/Events của module thương mại khác (mọi module, mọi tầng kể cả Http).

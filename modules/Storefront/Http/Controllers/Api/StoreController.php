@@ -15,7 +15,7 @@ use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Themes;
 
 /**
- * "Vỏ" trang cho client không phải Blade (ADR-044, api-first-refactor đợt A2): thông tin cửa hàng, menu theo vị trí, trang
+ * "Vỏ" trang cho client không phải Blade (ADR-044): thông tin cửa hàng, menu theo vị trí, trang
  * chủ dựng bằng khối. Cùng use-case với layout và trang chủ của Blade.
  */
 final class StoreController

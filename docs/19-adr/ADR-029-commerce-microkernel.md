@@ -1,7 +1,7 @@
 # ADR-029 — Microkernel thương mại: bốn vòng, nghiệp vụ là plugin
 
 - Trạng thái: Accepted · Ngày: 2026-10-01 · Người quyết định: Owner
-- Mở rộng: [ADR-003](ADR-003-plugin-architecture.md), [ADR-004](ADR-004-extension-points.md). Liên quan: [ADR-028](ADR-028-single-store-brand-as-catalog.md), [kernel-review](../02-architecture/kernel-review.md).
+- Mở rộng: [ADR-003](ADR-003-plugin-architecture.md), [ADR-004](ADR-004-extension-points.md). Liên quan: [ADR-028](ADR-028-single-store-brand-as-catalog.md), [commerce-kernel](../02-architecture/commerce-kernel.md).
 - Tài liệu gốc: [commerce-kernel](../02-architecture/commerce-kernel.md).
 
 ## Context

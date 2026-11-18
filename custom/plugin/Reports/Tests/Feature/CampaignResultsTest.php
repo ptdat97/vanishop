@@ -13,7 +13,7 @@ use Plugin\Reports\ReportsServiceProvider;
 require_once __DIR__.'/../../../../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /*
-| Tab "Kết quả" trên trang chiến dịch (architecture-consolidation M3): Promotion chỉ công bố số liệu của mình qua
+| Tab "Kết quả" trên trang chiến dịch: Promotion chỉ công bố số liệu của mình qua
 | `Campaigns`; plugin báo cáo ghép với `OrderStatistics`. Không bật plugin → trang chiến dịch không có tab.
 */
 

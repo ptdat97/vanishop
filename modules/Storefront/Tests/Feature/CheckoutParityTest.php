@@ -8,7 +8,7 @@ use Modules\Ordering\Persistence\Models\Order;
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
 /*
-| Test song kênh (ADR-044, api-first-refactor đợt A1): cùng giỏ, cùng dữ liệu khách nhập, đặt hàng qua Storefront API và qua
+| Test song kênh (ADR-044): cùng giỏ, cùng dữ liệu khách nhập, đặt hàng qua Storefront API và qua
 | form checkout của Blade phải cho CÙNG kết quả — có đơn hay không, tổng tiền, giảm giá, lỗi ở trường nào. Hai kênh chỉ khác
 | cách gửi (header/token so với phiên/form) và cách trả (JSON so với chuyển hướng), không khác luật.
 */

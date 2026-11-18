@@ -51,7 +51,7 @@ erDiagram
 
 ### 1.1 Brand
 
-Brand là nhóm sản phẩm theo thương hiệu, **không** là phạm vi dữ liệu ([store-and-brand §2](../12-store/store-and-brand.md)):
+Brand là nhóm sản phẩm theo thương hiệu, **không** là phạm vi dữ liệu ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)):
 
 - `brands(code, slug, name, description, logo_path, meta_title, meta_description, status, position)`; `styles.brand_id` (nullable, `RESTRICT`). Bản dịch brand: Planned.
 - Dùng cho trang `/thuong-hieu/{slug}`, facet tìm kiếm, menu, rule khuyến mãi "thuộc brand", báo cáo, snapshot trên dòng đơn.

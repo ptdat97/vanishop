@@ -23,7 +23,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 /*
-| Hợp đồng /api/storefront/v1 (ADR-044, api-first-refactor đợt A4): OpenAPI docs/api/openapi/storefront-v1.json khớp
+| Hợp đồng /api/storefront/v1 (ADR-044): OpenAPI docs/api/openapi/storefront-v1.json khớp
 | route thật, và phản hồi thật (thành công + lỗi) khớp schema mà OpenAPI tham chiếu. Thêm/đổi endpoint hoặc đổi hình
 | dạng phản hồi mà không cập nhật OpenAPI/schema → đỏ. Route `x/<plugin>` do plugin tự mô tả.
 */

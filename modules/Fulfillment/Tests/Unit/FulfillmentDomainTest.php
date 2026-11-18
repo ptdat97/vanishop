@@ -6,7 +6,7 @@ use Modules\Fulfillment\Domain\ShipmentCod;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 
 /*
-| Domain Fulfillment thuần PHP (architecture-consolidation D3): đối chiếu phân bổ với hàng đang giữ, COD theo vận đơn,
+| Domain Fulfillment thuần PHP: đối chiếu phân bổ với hàng đang giữ, COD theo vận đơn,
 | ngưỡng đặt lại, trạng thái chờ đặt — không DB.
 */
 

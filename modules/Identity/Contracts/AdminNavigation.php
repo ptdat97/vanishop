@@ -9,7 +9,7 @@ use Closure;
 /**
  * Service contract: menu Admin (mục + nhóm), lọc theo quyền nhân viên và plugin đang bật. Contract ở Identity (vòng 0, đứng trước
  * Extension) để mọi module đăng ký menu mà không phụ thuộc tầng Application của Extension; Extension cài đặt
- * (`AdminMenuRegistry`) — architecture-consolidation C1.
+ * (`AdminMenuRegistry`).
  */
 interface AdminNavigation
 {

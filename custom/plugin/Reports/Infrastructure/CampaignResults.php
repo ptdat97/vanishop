@@ -10,8 +10,8 @@ use Modules\Shared\Support\MoneyFormatter;
 
 /**
  * Tab "Kết quả" trên trang chiến dịch: đơn dùng khuyến mãi của chiến dịch HOẶC mua theo bảng giá của chiến dịch — số đơn,
- * doanh thu, khách, đơn huỷ (Ordering) + tổng giảm và lượt dùng khuyến mãi (Promotion). Promotion không đọc số liệu đơn
- * (architecture-consolidation M3), nên phần ghép hai nguồn nằm ở plugin báo cáo.
+ * doanh thu, khách, đơn huỷ (Ordering) + tổng giảm và lượt dùng khuyến mãi (Promotion). Promotion không đọc số liệu đơn,
+ * nên phần ghép hai nguồn nằm ở plugin báo cáo.
  */
 final class CampaignResults
 {

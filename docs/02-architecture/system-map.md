@@ -10,7 +10,7 @@ Mọi bề mặt gọi **cùng Application layer / Contracts** của module. Kh�
 
 | Bề mặt | Đối tượng | Prefix | Auth | Nạp bởi | Trạng thái |
 |---|---|---|---|---|---|
-| **Storefront native** (Blade SSR) | Khách trên web | `/…` (một website, [store-and-brand §4](../12-store/store-and-brand.md)) | Phiên web (khách) | `StorefrontServiceProvider`, `storefront-web.php`, theme `custom/theme/vani-base` | Partially Implemented ([storefront](../14-storefront/storefront.md)) |
+| **Storefront native** (Blade SSR) | Khách trên web | `/…` (một website, [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) | Phiên web (khách) | `StorefrontServiceProvider`, `storefront-web.php`, theme `custom/theme/vani-base` | Partially Implemented ([storefront](../14-storefront/storefront.md)) |
 | **Storefront API** (JSON) | Headless, mobile, Zalo Mini App | `/api/storefront/v1` | Khách vãng lai: token giỏ/đơn ([ADR-022](../19-adr/ADR-022-guest-cart-token.md)); đã đăng nhập: Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)) | `loadStorefrontApiRoutes()` (Storefront, Customer) | Implemented |
 | **Admin** (Inertia + Vue) | Nhân viên | `/{VANI_ADMIN_PATH}` ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)) | Guard `staff`, phiên Admin riêng | Module providers đăng ký `loadAdminRoutes()` / `loadAdminSectionRoutes()` | Implemented |
 | **Admin API** (JSON) | App quản trị, công cụ nội bộ | `/api/admin/v1` | Designed | — | Designed |

@@ -1,7 +1,7 @@
 # ADR-045 — Biến thể linh hoạt: loại tuỳ chọn dùng chung, 1–3 trục mỗi sản phẩm, ảnh theo SKU
 
 - Trạng thái: **Accepted** · Ngày: 2026-11-12 · Người quyết định: Owner
-- Thay thế phần mô hình màu × size cố định của Catalog (bảng `colors`, `sizes`, `style_colors`, cột `variants.style_color_id|size_id`). Bổ sung: [variant-matrix](../03-domains/variant-matrix.md). Kế hoạch: [flexible-variants](../20-roadmap/flexible-variants.md).
+- Thay thế phần mô hình màu × size cố định của Catalog (bảng `colors`, `sizes`, `style_colors`, cột `variants.style_color_id|size_id`). Bổ sung: [variant-matrix](../03-domains/variant-matrix.md). Kế hoạch F1–F6: `flexible-variants.md` (đã gỡ khỏi docs 2026-11-18 — xem lịch sử git).
 
 ## Context
 

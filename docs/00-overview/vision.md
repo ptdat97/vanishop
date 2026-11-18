@@ -24,7 +24,7 @@ VaniShop là **Commerce Kernel** của Owner, chạy **một cửa hàng** ([ADR
 
 | Nhu cầu | Cách đáp ứng |
 |---|---|
-| Một website, nhiều thương hiệu | Brand là thực thể Catalog: trang brand, bộ lọc, khuyến mãi theo brand ([store-and-brand](../12-store/store-and-brand.md)) |
+| Một website, nhiều thương hiệu | Brand là thực thể Catalog: trang brand, bộ lọc, khuyến mãi theo brand ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)) |
 | Fashion commerce | Core: mô hình Style → Màu → Size ([catalog-pricing](../03-domains/catalog-pricing.md)) |
 | Native storefront và headless/API-first | Core: Storefront Application + API dùng chung catalog/giá/tồn ([storefront](../14-storefront/storefront.md)) |
 | ERP và tích hợp ngoài | Core: Integration platform; connector là plugin |

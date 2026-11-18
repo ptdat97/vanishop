@@ -1,6 +1,6 @@
 # ADR-048 — Version API cho plugin tách khỏi version Core; đánh dấu API cho plugin và mức ổn định
 
-- Trạng thái: **Accepted** · Code: **Implemented** (Core 0.5.1, Extension API 1.0.0, 2026-11-17) · Người quyết định: Owner (2026-11-17, [architecture-consolidation §5](../20-roadmap/architecture-consolidation.md) câu 1–3)
+- Trạng thái: **Accepted** · Code: **Implemented** (Core 0.5.1, Extension API 1.0.0, 2026-11-17) · Người quyết định: Owner (2026-11-17, câu 1–3 của kế hoạch củng cố kiến trúc `architecture-consolidation.md` (đã gỡ khỏi docs 2026-11-18 — xem lịch sử git))
 - Liên quan: [extension-model §5](../04-extension/extension-model.md) (compatibility policy), [plugin-system §3, §6](../05-plugin/plugin-system.md), [architecture-rules R5](../01-principles/architecture-rules.md), [CHANGELOG-extension](../04-extension/CHANGELOG-extension.md).
 
 ## Context

@@ -114,7 +114,7 @@ Http ──► Application ──► Domain
 
 | Mức | Context | Cách làm |
 |---|---|---|
-| **Rich domain** | Inventory, Ordering (state machine), Pricing, Promotion, Payment (máy trạng thái + luật hoàn tiền/COD, 0.5.4), Returns (giới hạn trả, tiến độ, giá trị đổi hàng, 0.5.5), Fulfillment (máy trạng thái vận đơn, đối chiếu phân bổ, COD theo vận đơn, 0.5.6) (quy tắc hiện còn nằm trong Application service — [architecture-consolidation D1–D3](../20-roadmap/architecture-consolidation.md)) | Quy tắc nằm trong `Domain/` thuần PHP, test unit không cần DB. Eloquent chỉ lưu trữ |
+| **Rich domain** | Inventory, Ordering (state machine), Pricing, Promotion, Payment (máy trạng thái + luật hoàn tiền/COD, 0.5.4), Returns (giới hạn trả, tiến độ, giá trị đổi hàng, 0.5.5), Fulfillment (máy trạng thái vận đơn, đối chiếu phân bổ, COD theo vận đơn, 0.5.6) (quy tắc hiện còn nằm trong Application service — [architecture-rules](../01-principles/architecture-rules.md)) | Quy tắc nằm trong `Domain/` thuần PHP, test unit không cần DB. Eloquent chỉ lưu trữ |
 | **Điều phối** | Checkout (ghép giỏ, giá, khuyến mãi, thuế, phí giao; phép tính tiền dùng `Shared\Domain\Money`), Storefront (tầng ghép, không có bảng) | Application gọi contract các module khác; không có `Domain/` riêng |
 | **CRUD domain** | Content, Notification (template), cấu hình cửa hàng, brand và thuộc tính Catalog | Application dùng Eloquent trực tiếp qua Persistence; vẫn không có logic trong Controller |
 

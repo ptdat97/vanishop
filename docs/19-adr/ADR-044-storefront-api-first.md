@@ -1,11 +1,11 @@
 # ADR-044 — Storefront API-first: API v1 là hợp đồng, Blade là một cách dùng
 
 - Trạng thái: **Accepted** · Ngày: 2026-11-11 · Người quyết định: Owner
-- Bổ sung: [ADR-009](ADR-009-storefront-architecture.md) (native và headless dùng cùng Application layer), [ADR-021](ADR-021-storefront-composition-module.md) (tầng ghép Storefront). Sửa đổi: [ADR-022](ADR-022-guest-cart-token.md), [ADR-024](ADR-024-customer-api-token.md) (API nhận thêm phiên web cùng nguồn). Kế hoạch: [api-first-refactor](../20-roadmap/api-first-refactor.md).
+- Bổ sung: [ADR-009](ADR-009-storefront-architecture.md) (native và headless dùng cùng Application layer), [ADR-021](ADR-021-storefront-composition-module.md) (tầng ghép Storefront). Sửa đổi: [ADR-022](ADR-022-guest-cart-token.md), [ADR-024](ADR-024-customer-api-token.md) (API nhận thêm phiên web cùng nguồn). Kế hoạch A0–A5: `api-first-refactor.md` (đã gỡ khỏi docs 2026-11-18 — xem lịch sử git).
 
 ## Context
 
-ADR-009 quyết định native storefront (Blade) và Storefront API dùng chung Application layer. Đánh giá ngày 2026-11-11 ([api-first-refactor §3](../20-roadmap/api-first-refactor.md#3-đánh-giá-hiện-trạng)) cho thấy điều đó mới đúng với lớp đọc dữ liệu:
+ADR-009 quyết định native storefront (Blade) và Storefront API dùng chung Application layer. Đánh giá ngày 2026-11-11 (`api-first-refactor.md` (đã gỡ khỏi docs 2026-11-18 — xem lịch sử git)) cho thấy điều đó mới đúng với lớp đọc dữ liệu:
 
 - Luật đầu vào của checkout, tài khoản, đổi trả được viết riêng ở controller Web và controller API.
 - Quy tắc 0.3.104 (bỏ mã giảm giá không dùng được rồi vẫn đặt đơn) chỉ có ở controller Web: cùng giỏ, cùng mã hỏng, Blade đặt được đơn còn API bị từ chối.

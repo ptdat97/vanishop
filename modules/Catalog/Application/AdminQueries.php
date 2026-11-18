@@ -22,7 +22,7 @@ use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreLocale;
 
 /**
- * Truy vấn đọc cho màn hình Admin của Catalog — controller không tự truy vấn (architecture-consolidation D4, R9).
+ * Truy vấn đọc cho màn hình Admin của Catalog — controller không tự truy vấn (R9).
  */
 final class AdminQueries
 {

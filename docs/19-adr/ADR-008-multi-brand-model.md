@@ -10,7 +10,7 @@ Nhầm Brand với Channel/Store/Category làm hỏng mô hình giá, đơn, ho�
 
 ## Decision
 - **Owner → Legal Entity → Brand**; **Channel** là thực thể độc lập chứa 1..N brand; **Location** thuộc pháp nhân, phục vụ 1..N brand.
-- Context riêng: Tenancy, Brand, Channel ([multi-brand](../12-store/store-and-brand.md)).
+- Context riêng: Tenancy, Brand, Channel ([multi-brand](ADR-028-single-store-brand-as-catalog.md)).
 - **Một database**, cô lập bằng `brand_id` + Policy + global scope + `CurrentContext` bắt buộc.
 - Product/Cart/Checkout/Order/Payment vẫn thuộc Commerce Core; brand chỉ là phạm vi.
 

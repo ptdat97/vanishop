@@ -17,7 +17,7 @@
 
 ## 1. Nguyên tắc
 
-> Đánh giá 2026-11-11: luồng đọc đã dùng chung tầng ghép; luồng ghi, "vỏ" trang và JSON của theme còn lệch API — kế hoạch ở [api-first-refactor](../20-roadmap/api-first-refactor.md).
+> Đánh giá 2026-11-11: luồng đọc đã dùng chung tầng ghép; luồng ghi, "vỏ" trang và JSON của theme còn lệch API — kế hoạch ở [ADR-044](../19-adr/ADR-044-storefront-api-first.md).
 
 - Storefront **độc lập với business domain**. Business logic **không** nằm trong Blade, Vue/React component, theme hay CSS (rule R10).
 - Storefront chỉ dùng **Storefront Application layer**: các query/command giống hệt những gì Storefront API công bố.
@@ -40,7 +40,7 @@ Nhờ vậy native và headless có cùng hành vi: giá, ATS, khuyến mãi, va
 
 ## 2. Một giao diện, tuỳ biến không fork
 
-Cửa hàng có **một theme đang hoạt động** (cấu hình `theme`, mặc định `vani-base`). Brand **không** có theme riêng; brand hiện diện qua trang brand, logo, bộ lọc ([store-and-brand §2](../12-store/store-and-brand.md)).
+Cửa hàng có **một theme đang hoạt động** (cấu hình `theme`, mặc định `vani-base`). Brand **không** có theme riêng; brand hiện diện qua trang brand, logo, bộ lọc ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)).
 
 | Lớp tuỳ biến | Lưu ở | Ai chỉnh |
 |---|---|---|
@@ -204,7 +204,7 @@ Core có block `brand_grid` (lưới logo brand dẫn tới trang brand). Plugin
   - `storefront.guest_checkout` (bool, mặc định bật): tắt thì `Checkout::placeOrder` từ chối khách chưa đăng nhập bằng `checkout.sign_in_required` (403) cho mọi kênh; trang `/thanh-toan` chuyển sang đăng nhập OTP rồi quay lại. Xem giá, thêm giỏ, báo giá vẫn không cần đăng nhập.
   - `storefront.price_visibility` (`public` | `members`, 0.3.50): một chỗ quyết định — `Storefront\Application\PriceVisibility` (ẩn khi `members` và actor của request không phải khách). `ProductViews` (web, Storefront API, `ProductCards`, khối trang chủ, sản phẩm liên kết) trả `price: null` + `price_hidden: true`; JSON-LD không có `offers` vì giá null. Trang cache được chạy không phiên nên HTML **luôn** là bản ẩn giá ("Đăng nhập để xem giá", `[data-vani-price-for]`); khách đã đăng nhập nhận giá sau qua Storefront API `GET /me/prices?style_ids[]=` gọi bằng phiên cùng nguồn (`private, no-store`, ADR-044). Giỏ và checkout (web + API) qua middleware `vani.prices-visible`: API 403 `storefront.sign_in_to_view_prices`, web chuyển sang đăng nhập rồi quay lại trang sản phẩm. Sitemap không chứa giá; chưa có feed sản phẩm.
 - Cache ứng dụng: `style:{id}:v{version}`, `brand:{id}:v{version}`; invalidate theo event (`ProductUpdated`, `PriceChanged`, `AvailabilityChanged`).
-- URL: một website ([store-and-brand §4](../12-store/store-and-brand.md)): `/san-pham/{slug}`, `/danh-muc/{slug}`, `/thuong-hieu/{slug}`…
+- URL: một website ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): `/san-pham/{slug}`, `/danh-muc/{slug}`, `/thuong-hieu/{slug}`…
 - SEO: một canonical cho mỗi sản phẩm (không lặp theo brand), một sitemap (chia file khi lớn, gồm trang brand), schema.org `Product`/`Offer` có `brand`, schema.org `Product`/`Offer`, hreflang khi đa ngôn ngữ.
 - Mục tiêu: LCP mobile < 2,5s, CLS < 0,1.
 

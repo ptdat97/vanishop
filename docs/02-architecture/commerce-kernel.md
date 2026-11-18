@@ -1,6 +1,6 @@
 # Microkernel thương mại: Kernel, Core và Plugin
 
-> Trạng thái: **Implemented** (Core 0.4.1). Bốn vòng có code; plugin hệ thống (slice 12d), extension point bắt buộc, plugin công bố hook (`publishHooks`, 0.3.6); ranh giới vòng giữ bằng arch test R5/R28/R29 (§10, rà soát và siết lại 2026-11-11). Quyết định: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (mở rộng [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md)). Đánh giá đối chiếu code: [kernel-review](kernel-review.md).
+> Trạng thái: **Implemented** (Core 0.4.1). Bốn vòng có code; plugin hệ thống (slice 12d), extension point bắt buộc, plugin công bố hook (`publishHooks`, 0.3.6); ranh giới vòng giữ bằng arch test R5/R28/R29 (§10, rà soát và siết lại 2026-11-11). Quyết định: [ADR-029](../19-adr/ADR-029-commerce-microkernel.md) (mở rộng [ADR-003](../19-adr/ADR-003-plugin-architecture.md), [ADR-004](../19-adr/ADR-004-extension-points.md)). Đánh giá đối chiếu code: [commerce-kernel](commerce-kernel.md).
 
 > **Kernel không biết thương mại. Core giữ primitive, bất biến và extension point. Nghiệp vụ — kể cả mặc định mang chính sách kinh doanh — là plugin.**
 

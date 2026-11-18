@@ -107,25 +107,25 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 - [x] MySQL + `.env`
 - [x] CI (chưa chạy trên GitHub vì repo chưa có remote CI)
 - [x] Larastan (level 5 + baseline, ADR-032)
-- [x] Settings cấu hình cấp cửa hàng trong Tenancy — làm trong đợt P0 của kernel-review (2026-10-14)
+- [x] Settings cấu hình cấp cửa hàng trong Tenancy — làm 2026-10-14
 
 ## 3. Sau khi chứng minh kiến trúc
 
 | Thứ tự | Hạng mục | Tài liệu |
 |---|---|---|
 | 11 🟡 | Integration platform đầy đủ (client, API, webhook, outbox/inbox, replay, reconciliation). **Phần lõi đã có** (2026-10-10), xem tiến độ ở trên. ERP connector: đóng băng (Phase 9) | [integration-platform](../11-integration/integration-platform.md), [erp-integration](../11-integration/erp-integration.md) |
-| 12 ✅ | **Chuyển sang một cửa hàng** (xong 2026-10-02) ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): brand thành thực thể Catalog (trang brand, facet, rule khuyến mãi, snapshot dòng đơn); gỡ `BelongsToBrand`, module Brand tenant + Channel, brand workspace, plugin scope theo brand, `X-Vani-Channel`; giỏ nhiều brand → một đơn; số đơn một dãy; Core `0.3.0` | [store-and-brand §6](../12-store/store-and-brand.md) |
+| 12 ✅ | **Chuyển sang một cửa hàng** (xong 2026-10-02) ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)): brand thành thực thể Catalog (trang brand, facet, rule khuyến mãi, snapshot dòng đơn); gỡ `BelongsToBrand`, module Brand tenant + Channel, brand workspace, plugin scope theo brand, `X-Vani-Channel`; giỏ nhiều brand → một đơn; số đơn một dãy; Core `0.3.0` | [ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md) |
 | 12b 🟡 | **Native storefront** (SSR mua hàng, slot, trang tài khoản/đơn, robots/sitemap, menu theo vị trí, URL đa ngôn ngữ, page cache CDN và giỏ tăng cường bằng JS đã có; còn page builder cho trang ngoài trang chủ và purge CDN theo event): theme `vani-base`, controller dùng chung Presenter với API, trang `/thuong-hieu/{slug}`, component slot và test JS tắt/slot lỗi | [storefront](../14-storefront/storefront.md), [ADR-025](../19-adr/ADR-025-native-storefront-ssr-slots.md) |
 | 12c 🟡 | (Phần Core xong 2026-10-02; GHN thật hoãn) PR Core: vận đơn chọn carrier theo `shippingMethod.source` của đơn (rơi về mặc định khi carrier không bật); `vani.ghn` gọi API GHN thật (báo cước có cache, đặt đơn idempotent) | [shipping-carrier](../05-plugin/contracts/shipping-carrier.md) |
 | 12d ✅ | **Microkernel** (xong 2026-10-02, trừ `vani.reports` — chưa có báo cáo để tách) ([ADR-029](../19-adr/ADR-029-commerce-microkernel.md)): extension point bắt buộc + manifest `bundled` + `vani:install`; tách `vani.cod`, `vani.bank-transfer`, `vani.shipping-flat-rate`, `vani.tax-vn-vat` khỏi module; Reporting thành `vani.reports`; arch test R28/R29; sau đó làm extension point còn thiếu theo đợt plugin ([catalog §7](../04-extension/extension-point-catalog.md)) | [commerce-kernel §6](../02-architecture/commerce-kernel.md) |
 | 13 | Plugin go-live P1 còn lại: `vani.tracking-pixels` (`vani.vnpay`: đã có 2026-10-03, chờ chạy thử sandbox; `vani.zalo-zns`, `vani.sms-brandname`: đã có, 2026-10-13) | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
-| 16 ✅ | **Storefront API-first** (xong 2026-11-12, Core 0.4.7–0.4.15): API v1 là hợp đồng, Blade dùng API in-process, một mô hình mã giảm giá, khoá hợp đồng HTTP | [api-first-refactor](api-first-refactor.md), [ADR-044](../19-adr/ADR-044-storefront-api-first.md) |
+| 16 ✅ | **Storefront API-first** (xong 2026-11-12, Core 0.4.7–0.4.15): API v1 là hợp đồng, Blade dùng API in-process, một mô hình mã giảm giá, khoá hợp đồng HTTP | [ADR-044](../19-adr/ADR-044-storefront-api-first.md) |
 | 17 ✅ | **Ổn định Commerce Core** (P1 C1–C3, P2 A2; 2026-11-12, Core 0.4.17–0.4.20) | [stabilization-2026-11](stabilization-2026-11.md) |
-| 18 ✅ | **Biến thể linh hoạt** F1–F6 (xong 2026-11-13, Core 0.4.25–0.4.29) + ma trận biến thể Admin (0.4.30–0.4.31) + sản phẩm đơn ⇄ có biến thể giữ lịch sử thương mại (0.4.66–0.4.67) | [flexible-variants](flexible-variants.md), [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) |
+| 18 ✅ | **Biến thể linh hoạt** F1–F6 (xong 2026-11-13, Core 0.4.25–0.4.29) + ma trận biến thể Admin (0.4.30–0.4.31) + sản phẩm đơn ⇄ có biến thể giữ lịch sử thương mại (0.4.66–0.4.67) | [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) |
 | 19 ✅ | **Ba chốt có người** V1–V2 (2026-11-15, Core 0.4.53–0.4.54) | [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md) |
-| 20 ✅ | **Điểm mở rộng v3** X1–X7 (2026-11-15 → 16, Core 0.4.59–0.4.65): X1 màn vận hành mở cho plugin · X2 lệnh/chặn/tín hiệu/kênh xác nhận · X3 giao theo tuyến, mẫu phiếu, hãng lấy hàng trả · X4 giá theo cách làm của shop · X5 đối soát và chuyển trả · X6 khách hàng và CSKH · X7 đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)). Chưa làm: giá theo số lượng (cần ADR) | [extension-surface-v3](extension-surface-v3.md) |
+| 20 ✅ | **Điểm mở rộng v3** X1–X7 (2026-11-15 → 16, Core 0.4.59–0.4.65): X1 màn vận hành mở cho plugin · X2 lệnh/chặn/tín hiệu/kênh xác nhận · X3 giao theo tuyến, mẫu phiếu, hãng lấy hàng trả · X4 giá theo cách làm của shop · X5 đối soát và chuyển trả · X6 khách hàng và CSKH · X7 đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)). Chưa làm: giá theo số lượng (cần ADR) | [extension-point-catalog](../04-extension/extension-point-catalog.md) |
 | Later | Advanced merchandising, recommendation. | — |
 
 ## 4. Hardening Commerce Kernel (từ 2026-10-04)
@@ -225,7 +225,7 @@ Phase 10 cũ đã bỏ: hạng mục ngoài phạm vi ([ADR-033](../19-adr/ADR-0
 
 Các hạng mục hardening Phase 1–8 ở trên đã hoàn tất; không còn là backlog đề xuất. API-first (16), biến thể linh hoạt (18) và EP v3 (20) đã xong. Ưu tiên sản phẩm hiện tại là vận hành SME theo [reference-parity-refactor §6, L26](reference-parity-refactor.md), song song với các điều kiện chưa hoàn thành trong go-live gate (§5). Việc còn mở về hợp đồng plugin (version hợp đồng tách khỏi version Core, log `vani.deprecation`): [plugin-system §6](../05-plugin/plugin-system.md).
 
-**Củng cố kiến trúc — xong 2026-11-17 (Core 0.5.0–0.5.8):** [architecture-consolidation](architecture-consolidation.md) — củng cố kiến trúc theo bốn trụ Core nhỏ, Domain rõ ràng, Module độc lập, Plugin ổn định; không thêm tính năng. Đợt K1 (ranh giới module có arch test) → K2 (ADR-048 version API mở rộng tách khỏi Core, mức ổn định) → K3 (contract test cho 21 tag còn thiếu, deprecation log, circuit breaker) → K4 (API vòng 0, tách Domain Payment/Returns/Fulfillment, controller mỏng) → K5 (tài liệu, quyết định giữ/chuyển plugin).
+**Củng cố kiến trúc — xong 2026-11-17 (Core 0.5.0–0.5.8):** củng cố kiến trúc theo bốn trụ Core nhỏ, Domain rõ ràng, Module độc lập, Plugin ổn định; không thêm tính năng. Đợt K1 (ranh giới module có arch test) → K2 (ADR-048 version API mở rộng tách khỏi Core, mức ổn định) → K3 (contract test cho 21 tag còn thiếu, deprecation log, circuit breaker) → K4 (API vòng 0, tách Domain Payment/Returns/Fulfillment, controller mỏng) → K5 (tài liệu, quyết định giữ/chuyển plugin).
 
 Phase 9 đóng băng, không nằm trong backlog.
 

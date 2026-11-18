@@ -178,7 +178,7 @@ Củng cố kiến trúc — đợt K4/D2 "Domain Returns". Không đổi public
 
 ## 0.5.4 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
-Củng cố kiến trúc — đợt K4/D1 "Domain Payment" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Không đổi public API (contract `Payments` giữ nguyên).
+Củng cố kiến trúc — đợt K4/D1 "Domain Payment" ([architecture-consolidation](../19-adr/ADR-048-extension-api-version.md)). Không đổi public API (contract `Payments` giữ nguyên).
 
 ### Đổi (nội bộ)
 - `Payment\Domain`: máy trạng thái `PaymentStatus::transitionTo()` (chuyển sai bảng → `InvalidPaymentTransition`), câu hỏi nghiệp vụ (`everCollected`, `canRetry`, `canConfirmManually`, `closesWithoutCollection`), `RefundStatus`, `RefundRules::decide()`/`isAutomatic()` + `RefundDecision`, `CodRules`, `PaymentAmount::matches()` — unit test không cần DB.
@@ -186,7 +186,7 @@ Củng cố kiến trúc — đợt K4/D1 "Domain Payment" ([architecture-consol
 
 ## 0.5.3 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
-Củng cố kiến trúc — đợt K4/C1 "API vòng 0 khai báo rõ" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). API giữa module đổi; bề mặt plugin giữ nguyên.
+Củng cố kiến trúc — đợt K4/C1 "API vòng 0 khai báo rõ" ([architecture-consolidation](../19-adr/ADR-048-extension-api-version.md)). API giữa module đổi; bề mặt plugin giữ nguyên.
 
 ### Đổi (API giữa module)
 - Service contract mới ở vòng 0, implementation đổi tên: `Identity\Contracts\AdminNavigation` (Extension cài đặt bằng `Extension\Application\Admin\AdminMenuRegistry`), `Identity\Contracts\PermissionRegistry` (`InMemoryPermissionRegistry`, hằng `WILDCARD` chuyển lên contract), `Identity\Contracts\ScopeOptions` (`ScopeOptionsRegistry`), `Extension\Contracts\AccountPages` (`AccountPageRegistry`), `Extension\Contracts\PluginViews` (`PluginViewRegistry`). Module dùng contract thay cho class `Application` của vòng 0.
@@ -197,7 +197,7 @@ Củng cố kiến trúc — đợt K4/C1 "API vòng 0 khai báo rõ" ([architec
 
 ## 0.5.2 — 2026-11-17 · Extension API 1.0.0 (không đổi)
 
-Củng cố kiến trúc — đợt K3 "kiểm chứng plugin" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Bề mặt plugin không đổi (`plugin-api.snapshot` giữ nguyên).
+Củng cố kiến trúc — đợt K3 "kiểm chứng plugin" ([architecture-consolidation](../19-adr/ADR-048-extension-api-version.md)). Bề mặt plugin không đổi (`plugin-api.snapshot` giữ nguyên).
 
 ### Thêm
 - **Contract test cho 21 điểm mở rộng còn thiếu (R26)** trong `Modules\<Ctx>\Testing`: `CartLineOptionContract`, `VideoDriverContract`, `ImageFormatContract`, `VariantUsageContract`, `AddressDirectoryContract`, `PhoneNumberPolicyContract`, `AlertChannelContract`, `PluginHealthCheckContract`, `ReportProviderContract`, `DashboardWidgetContract`, `CarrierAssignmentContract`, `OrderRiskSignalContract`, `ConfirmationChannelContract`, `PackingSlipTemplateContract`, `OrderStatusActionContract`, `BackorderPolicyContract`, `StockPageLinkContract`, `RefundPayoutContract`, `PriceRoundingContract`, `BulkPriceModeContract`, `SitemapProviderContract`. Mọi implementation tham chiếu (Core + plugin trong repo) chạy bộ tương ứng; `CheckoutValidatorContract` nhận thêm `totals` tuỳ chọn và nay có Core chạy. Arch test: mỗi interface tự khai `TAG` phải có `<Tên>Contract` và ít nhất một implementation chạy nó.
@@ -206,7 +206,7 @@ Củng cố kiến trúc — đợt K3 "kiểm chứng plugin" ([architecture-co
 
 ## 0.5.1 — 2026-11-17 · Extension API 1.0.0
 
-Củng cố kiến trúc — đợt K2 "hợp đồng plugin" ([ADR-048](../19-adr/ADR-048-extension-api-version.md), [architecture-consolidation](../20-roadmap/architecture-consolidation.md)). Từ bản này, **API cho plugin có version riêng** `vanishop.extension_api` (bắt đầu **1.0.0**); version Core vẫn tăng theo từng thay đổi.
+Củng cố kiến trúc — đợt K2 "hợp đồng plugin" ([ADR-048](../19-adr/ADR-048-extension-api-version.md), [architecture-consolidation](../19-adr/ADR-048-extension-api-version.md)). Từ bản này, **API cho plugin có version riêng** `vanishop.extension_api` (bắt đầu **1.0.0**); version Core vẫn tăng theo từng thay đổi.
 
 ### Thêm
 - `config('vanishop.extension_api')` = `1.0.0`. Manifest khai **`requires.extension_api`** (semver); `requires.vanishop` thành tuỳ chọn (chỉ khi cần bản sửa lỗi cụ thể của Core). Không tương thích → `incompatible_extension_api` (không cài/bật được; đang bật thì không được nạp, chuyển `failed` như `incompatible_core`). Admin → Plugin hiện "Yêu cầu API mở rộng".
@@ -219,7 +219,7 @@ Củng cố kiến trúc — đợt K2 "hợp đồng plugin" ([ADR-048](../19-a
 
 ## 0.5.0 — 2026-11-17
 
-Củng cố kiến trúc — đợt K1 "ranh giới có test" ([architecture-consolidation](../20-roadmap/architecture-consolidation.md)). **Phá vỡ** (lên số giữa theo [extension-model §5](extension-model.md)): mọi plugin trong repo đổi `requires.vanishop` sang `^0.5`.
+Củng cố kiến trúc — đợt K1 "ranh giới có test" ([architecture-consolidation](../19-adr/ADR-048-extension-api-version.md)). **Phá vỡ** (lên số giữa theo [extension-model §5](extension-model.md)): mọi plugin trong repo đổi `requires.vanishop` sang `^0.5`.
 
 ### Phá vỡ
 - `Checkout\Contracts\AddressDirectory`, `Checkout\Contracts\ShippingAddresses` → **`Shared\Contracts\AddressDirectory`**, **`Shared\Contracts\ShippingAddresses`** (vòng 0, cùng mẫu `PhoneNumberPolicy`); tag `vani.checkout.address_directories` → **`vani.address.directories`**. Gỡ phụ thuộc ngược Ordering→Checkout, Customer→Checkout (M2). `vani.provinces-vn` 1.1.0.
@@ -304,7 +304,7 @@ EP v3 đợt X7 — đặt trước và hàng đang về ([ADR-047](../19-adr/AD
 
 ## 0.4.64 — 2026-11-16
 
-EP v3 đợt X6 — khách hàng và CSKH ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+EP v3 đợt X6 — khách hàng và CSKH ([extension-surface-v3](extension-point-catalog.md)).
 
 ### Thêm
 - `CustomerSegments` (ghi): `tag(customerId, tag, source)`, `untag(...)`, `assignGroup(customerId, ?groupId, source)` — nhãn chuẩn hoá dạng slug, không trùng, audit kèm nguồn (`staff` | `system:<id plugin>`).
@@ -313,7 +313,7 @@ EP v3 đợt X6 — khách hàng và CSKH ([extension-surface-v3](../20-roadmap/
 
 ## 0.4.63 — 2026-11-16
 
-EP v3 đợt X5 — tiền: đối soát và chuyển trả ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+EP v3 đợt X5 — tiền: đối soát và chuyển trả ([extension-surface-v3](extension-point-catalog.md)).
 
 ### Thêm
 - `Payments` thêm `paymentId(publicId)`, `collectCod(orderId, amount, reference)` (idempotent theo tham chiếu — bảng kê COD), `collectCodManually(paymentId, note)` — trước đây chỉ có trong `PaymentService` nội bộ.
@@ -323,7 +323,7 @@ EP v3 đợt X5 — tiền: đối soát và chuyển trả ([extension-surface-
 
 ## 0.4.62 — 2026-11-16
 
-EP v3 đợt X4 — giá theo cách làm của shop ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+EP v3 đợt X4 — giá theo cách làm của shop ([extension-surface-v3](extension-point-catalog.md)).
 
 ### Thêm
 - Contract **`Pricing\Contracts\BulkPriceMode`** (tag `vani.pricing.bulk_modes`, `compute(variantIds, value, listAmounts): array<int, int|null>`): cách tính thêm trong hộp thoại "Áp giá…" của bảng giá; Core lo làm tròn, xem trước, cảnh báo, ghi `setPrices`. Mã trùng cách tính của Core bị bỏ.
@@ -337,7 +337,7 @@ EP v3 đợt X4 — giá theo cách làm của shop ([extension-surface-v3](../2
 
 ## 0.4.61 — 2026-11-15
 
-EP v3 đợt X3 — giao hàng theo tuyến, mẫu phiếu giao, hãng lấy hàng trả ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+EP v3 đợt X3 — giao hàng theo tuyến, mẫu phiếu giao, hãng lấy hàng trả ([extension-surface-v3](extension-point-catalog.md)).
 
 ### Thêm
 - Contract **`Fulfillment\Contracts\CarrierAssignment`** (tag `vani.fulfillment.carrier_assignments`, `assign(CarrierAssignmentContext): ?CarrierChoice`): chọn hãng (+ dịch vụ) cho vận đơn mới theo quy tắc của shop. Thứ tự: nhân viên chọn → `CarrierAssignment` → hãng của phương thức khách chọn → hãng mặc định; lựa chọn trỏ tới hãng không nhận vận đơn mới bị bỏ; lý do ghi vào lịch sử vận đơn. DTO `CarrierAssignmentContext` (địa chỉ, thu hộ, tổng, số sản phẩm, phương thức giao), `CarrierChoice`.
@@ -347,7 +347,7 @@ EP v3 đợt X3 — giao hàng theo tuyến, mẫu phiếu giao, hãng lấy hà
 
 ## 0.4.60 — 2026-11-15
 
-EP v3 đợt X2 — ba chốt có người: lệnh, chặn, tín hiệu, kênh xác nhận ([extension-surface-v3](../20-roadmap/extension-surface-v3.md), [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)).
+EP v3 đợt X2 — ba chốt có người: lệnh, chặn, tín hiệu, kênh xác nhận ([extension-surface-v3](extension-point-catalog.md), [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)).
 
 ### Thêm
 - Service contract **`Ordering\Contracts\OrderActions`**: `confirm`, `cancel`, `addNote` với `source` (`staff` | `system:<id plugin>`) — cùng chính sách, hook chặn, lịch sử `order_events`, audit như nhân viên. `OrderCommands` triển khai (nhân viên và plugin chung một lệnh).
@@ -361,7 +361,7 @@ EP v3 đợt X2 — ba chốt có người: lệnh, chặn, tín hiệu, kênh x
 
 ## 0.4.59 — 2026-11-15
 
-EP v3 đợt X1 — màn vận hành Admin mở cho plugin ([extension-surface-v3](../20-roadmap/extension-surface-v3.md)).
+EP v3 đợt X1 — màn vận hành Admin mở cho plugin ([extension-surface-v3](extension-point-catalog.md)).
 
 ### Thêm
 - Tài nguyên Admin mới cho `adminColumn` / `adminFilter` / `adminAction` (đơn lẻ + hàng loạt): `shipment` (vận đơn), `return` (đổi trả — kèm `adminTab` + thao tác chi tiết trên trang yêu cầu), `payment` (thanh toán), `promotion` (khuyến mãi), `stock` (lưới tồn — id = SKU; bộ lọc áp cả khi "chọn mọi SKU khớp bộ lọc"), `price_list_item` (trang làm việc bảng giá — id = SKU), `variant` (bộ lọc phụ của SkuPicker).
@@ -692,7 +692,7 @@ Admin biến thể đơn giản, ít thao tác ([variant-matrix §3](../03-domai
 
 ## 0.4.29 — 2026-11-13
 
-Biến thể linh hoạt, đợt F6 — plugin và tài liệu ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)); hoàn tất [kế hoạch](../20-roadmap/flexible-variants.md).
+Biến thể linh hoạt, đợt F6 — plugin và tài liệu ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md)); hoàn tất [kế hoạch](../19-adr/ADR-045-flexible-variant-options.md).
 
 ### Đổi
 - `vani.scarcity-signals` 1.0.1: "Chỉ còn N" theo SKU đang chọn ở mọi bộ chọn (nút hoặc danh sách thả xuống của sản phẩm một trục), không chỉ theo size.
@@ -746,7 +746,7 @@ Biến thể linh hoạt, đợt F2 — bộ lọc danh mục theo loại tuỳ 
 
 ## 0.4.25 — 2026-11-12
 
-Biến thể linh hoạt, đợt F1 — dữ liệu Catalog ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md), [kế hoạch](../20-roadmap/flexible-variants.md)). **Phá vỡ** mô hình màu × size cố định.
+Biến thể linh hoạt, đợt F1 — dữ liệu Catalog ([ADR-045](../19-adr/ADR-045-flexible-variant-options.md), [kế hoạch](../19-adr/ADR-045-flexible-variant-options.md)). **Phá vỡ** mô hình màu × size cố định.
 
 ### Thêm
 - Danh mục loại tuỳ chọn dùng chung: bảng `option_types` (mã, kiểu hiển thị `swatch` | `button` | `dropdown`, lọc được), `option_values` (mã, nhóm, hex, nhóm màu); Màu (`color`) và Size (`size`) là hai loại có sẵn. Admin: trang "Tuỳ chọn biến thể" (`/admin/catalog/option-types`, giá trị ở `/{optionType}/values`) thay trang Màu và Size.
@@ -932,7 +932,7 @@ Checkout của Storefront API và form Blade dùng một hợp đồng đầu v�
 
 ## 0.4.8 — 2026-11-12
 
-Mã giảm giá lưu theo giỏ — một mô hình cho mọi kênh (ADR-044 §5, đợt A1 của [api-first-refactor](../20-roadmap/api-first-refactor.md)).
+Mã giảm giá lưu theo giỏ — một mô hình cho mọi kênh (ADR-044 §5, đợt A1 của [api-first-refactor](../19-adr/ADR-044-storefront-api-first.md)).
 
 ### Thêm
 - `Carts::setVoucherCodes(CartKey $key, array $codes): CartView`, hằng `Carts::MAX_VOUCHER_CODES = 5`; `CartView::$voucherCodes` (tham số cuối, mặc định rỗng). Cột `carts.voucher_codes`. Đặt đơn từ giỏ thì xoá mã; gộp giỏ khi đăng nhập thì giỏ đích chưa có mã nhận mã của giỏ nguồn.
@@ -945,7 +945,7 @@ Mã giảm giá lưu theo giỏ — một mô hình cho mọi kênh (ADR-044 §5
 
 ## 0.4.7 — 2026-11-11
 
-Mã giảm giá không dùng được không chặn đặt hàng ở mọi kênh (ADR-044 §6, đợt A1 của [api-first-refactor](../20-roadmap/api-first-refactor.md)).
+Mã giảm giá không dùng được không chặn đặt hàng ở mọi kênh (ADR-044 §6, đợt A1 của [api-first-refactor](../19-adr/ADR-044-storefront-api-first.md)).
 
 ### Đổi (phá vỡ)
 - `Checkout::placeOrder()` không còn ném lỗi `checkout.voucher_invalid` khi có mã bị từ chối: mã bị bỏ, đơn đặt theo tổng không có mã đó; kết quả có `dropped_vouchers[{code, reason}]`. Khách đã thấy tổng có giảm mà mã hết lượt sau đó → `checkout.totals_changed` (409) như mọi lần tổng đổi.
@@ -2037,7 +2037,7 @@ Tài khoản khách native + địa chỉ theo danh mục ở mọi nơi. Chỉ 
 
 ## 0.3.12 — 2026-10-02
 
-Đợt W6b (phần báo cáo) của [extension-surface-v2](extension-surface-v2.md). Chỉ thêm.
+Đợt W6b (phần báo cáo) của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md). Chỉ thêm.
 
 ### Thêm
 - `Extension\Contracts\DashboardWidget` (tag `vani.admin.dashboard.widgets`): `key()`, `label()`, `permission()`, `width()` (1–3), `order()`, `render(): Metric|Series|Table`. Core lọc theo quyền, cô lập lỗi (`Extensions::call`), vẽ theo kiểu dữ liệu; prop `widgets` trên trang Tổng quan. Slot `vani.admin.dashboard.cards` giữ nguyên.
@@ -2060,7 +2060,7 @@ Tài khoản khách native + địa chỉ theo danh mục ở mọi nơi. Chỉ 
 
 ## 0.3.10 — 2026-10-02
 
-Đợt W6a của [extension-surface-v2](extension-surface-v2.md): page builder trang chủ. Chỉ thêm.
+Đợt W6a của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): page builder trang chủ. Chỉ thêm.
 
 ### Thêm
 - `Storefront\Contracts\StorefrontBlock` (tag `vani.storefront.blocks`: `type()`, `label()`, `fields()` (FieldDefinition), `resolve()`, `view()`) + bộ contract test `Storefront\Testing\StorefrontBlockContract`. Core: `hero`, `product_grid`, `brand_grid`, `rich_text`; tham chiếu plugin `vani.hello-world` (`hello_banner`).
@@ -2087,7 +2087,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.7 — 2026-10-02
 
-Đợt W5b của [extension-surface-v2](extension-surface-v2.md): đăng nhập bằng tài khoản bên ngoài. Chỉ thêm.
+Đợt W5b của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): đăng nhập bằng tài khoản bên ngoài. Chỉ thêm.
 
 ### Thêm
 - `Customer\Contracts\AuthProvider` (tag `vani.customer.auth_providers`), `AuthProviderFailed`, `Data\ExternalIdentity` + bộ contract test `Customer\Testing\AuthProviderContract`.
@@ -2096,7 +2096,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.6 — 2026-10-02
 
-Đợt W5a của [extension-surface-v2](extension-surface-v2.md): plugin làm nền cho plugin, loại plugin, sức khoẻ plugin.
+Đợt W5a của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): plugin làm nền cho plugin, loại plugin, sức khoẻ plugin.
 
 ### Thêm
 - `PluginServiceProvider::publishHooks($file)` — plugin công bố hook cho plugin khác; tên phải bắt đầu bằng id plugin. Arch test: plugin chỉ dùng `Contracts`/`Events`/`Testing` của plugin đã khai báo trong `requires.plugins`.
@@ -2108,7 +2108,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.5 — 2026-10-02
 
-Đợt W4b của [extension-surface-v2](extension-surface-v2.md): cổng giữ tiền rồi thu sau. Chỉ thêm.
+Đợt W4b của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): cổng giữ tiền rồi thu sau. Chỉ thêm.
 
 ### Thêm
 - `Payment\Contracts\CapturesLater` (interface bổ sung tuỳ chọn cho `PaymentGateway`: `capture()`, `void()`, idempotent theo key) — Core kiểm tra bằng `instanceof`.
@@ -2122,7 +2122,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.4 — 2026-10-02
 
-Đợt W4a của [extension-surface-v2](extension-surface-v2.md): tuỳ chọn dòng giỏ, ngữ cảnh khuyến mãi. Chỉ thêm.
+Đợt W4a của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): tuỳ chọn dòng giỏ, ngữ cảnh khuyến mãi. Chỉ thêm.
 
 ### Thêm
 - `Cart\Contracts\CartLineOption` (tag `vani.cart.line_options`) + `InvalidCartLineOption`: tuỳ chọn `options.<plugin-id>.<field>` khi thêm dòng (Storefront API `POST /carts/{id}/lines`, form native); cùng variant khác tuỳ chọn là hai dòng; tuỳ chọn không đổi giá. Mã lỗi `cart.option_unknown`, `cart.option_invalid`.
@@ -2136,7 +2136,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.3 — 2026-10-02
 
-Đợt W3 của [extension-surface-v2](extension-surface-v2.md): route và trang storefront của plugin, giỏ bị bỏ quên. Chỉ thêm.
+Đợt W3 của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): route và trang storefront của plugin, giỏ bị bỏ quên. Chỉ thêm.
 
 ### Thêm
 - `PluginServiceProvider::storefrontRoutes()` — `/api/storefront/v1/x/{slug}/…` (middleware Storefront API của Core + plugin phải bật).
@@ -2146,7 +2146,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.2 — 2026-10-02
 
-Đợt W2 của [extension-surface-v2](extension-surface-v2.md): plugin mở rộng màn hình Admin của Core. Chỉ thêm.
+Đợt W2 của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md): plugin mở rộng màn hình Admin của Core. Chỉ thêm.
 
 ### Thêm
 - `PluginServiceProvider::adminFormSection()`, `adminColumn()`, `adminAction()`, `adminTab()`, `adminFilter()` — tài nguyên `product`, `order`, `customer`.
@@ -2156,7 +2156,7 @@ Tài khoản khách native (slice 12b). Chỉ thêm.
 
 ## 0.3.1 — 2026-10-02
 
-Đợt W1 của [extension-surface-v2](extension-surface-v2.md) ([ADR-030](../19-adr/ADR-030-extension-surface-v2.md)). Chỉ thêm — plugin `^0.3` chạy tiếp.
+Đợt W1 của [extension-surface-v2](../19-adr/ADR-030-extension-surface-v2.md) ([ADR-030](../19-adr/ADR-030-extension-surface-v2.md)). Chỉ thêm — plugin `^0.3` chạy tiếp.
 
 ### Thêm
 - `Storefront\Contracts\StorefrontEnricher` (tag `vani.storefront.enrichers`; tài nguyên `product_card`, `product`, `cart`, `order`) + bộ contract test `Storefront\Testing\StorefrontEnricherContract`. Dữ liệu gắn dưới `extensions.<plugin-id>` ở cả native và Storefront API. Implementation tham chiếu: `vani.hello-world`.
@@ -2222,7 +2222,7 @@ Một cửa hàng ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)
 
 ## 0.2.0 — 2026-10-13
 
-Chốt bề mặt API sau slice 11, Customer, Notification và đợt P0 của [kernel-review](../02-architecture/kernel-review.md). Mọi plugin trong `custom/plugin` đã chuyển sang `^0.2`.
+Chốt bề mặt API sau slice 11, Customer, Notification và đợt P0 của [kernel-review](../02-architecture/commerce-kernel.md). Mọi plugin trong `custom/plugin` đã chuyển sang `^0.2`.
 
 ### Thêm
 - Extension point: `Integration\Contracts\Connector`, `InboundHandler`; `Notification\Contracts\NotificationChannel`; `Customer\Contracts\OtpSender`.

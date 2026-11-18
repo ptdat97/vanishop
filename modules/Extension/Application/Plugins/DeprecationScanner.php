@@ -15,7 +15,7 @@ use ReflectionClassConstant;
 use ReflectionMethod;
 
 /**
- * Quét tĩnh mã của plugin tìm chỗ dùng API đã ngừng khuyến nghị (architecture-consolidation P5): class
+ * Quét tĩnh mã của plugin tìm chỗ dùng API đã ngừng khuyến nghị: class
  * `#[PluginApi(deprecated: …)]`, hằng/method static `#[\Deprecated]`, hook khai báo `deprecated`. Chỉ đọc file — không
  * nạp plugin; gọi method trên đối tượng (`->x()`) không suy được kiểu nên không quét (PHP tự báo khi chạy).
  */

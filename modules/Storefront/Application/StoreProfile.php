@@ -11,7 +11,7 @@ use Modules\Storefront\Application\Theme\ThemeSettings;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
- * "Vỏ" của cửa hàng cho mọi kênh (ADR-044, api-first-refactor đợt A2): thông tin cần để dựng đầu/chân trang và quyết định
+ * "Vỏ" của cửa hàng cho mọi kênh (ADR-044): thông tin cần để dựng đầu/chân trang và quyết định
  * cách hiển thị — Storefront API `GET /store` và layout Blade đọc cùng một chỗ. Chỉ dữ liệu công khai.
  */
 final class StoreProfile

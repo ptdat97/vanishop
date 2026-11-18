@@ -1,6 +1,6 @@
 # vani.bank-statement
 
-Đối soát sao kê ngân hàng — plugin tham chiếu EP v3 X5 ([extension-surface-v3](../../../docs/20-roadmap/extension-surface-v3.md)).
+Đối soát sao kê ngân hàng — plugin tham chiếu EP v3 X5 ([extension-point-catalog](../../../docs/04-extension/extension-point-catalog.md)).
 
 Trang Thanh toán → **Nhập sao kê ngân hàng** (cột `Mã GD`, `Số tiền`, `Nội dung`):
 - nội dung chứa số đơn và số tiền đúng bằng khoản chờ → xác nhận đã nhận tiền (`Payments::confirmManually`);

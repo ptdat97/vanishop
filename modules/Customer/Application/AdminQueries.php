@@ -9,7 +9,7 @@ use Modules\Customer\Persistence\Models\Customer;
 use Modules\Customer\Persistence\Models\CustomerGroup;
 
 /**
- * Truy vấn đọc cho màn hình Admin của Customer — controller không tự truy vấn (architecture-consolidation D4, R9).
+ * Truy vấn đọc cho màn hình Admin của Customer — controller không tự truy vấn (R9).
  */
 final class AdminQueries
 {

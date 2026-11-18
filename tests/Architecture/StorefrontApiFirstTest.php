@@ -155,7 +155,7 @@ it('R37: cặp đã gom dùng CÙNG một FormRequest ở Blade và API (luật 
 
 it('R37: JS và view của theme/plugin không gọi endpoint JSON riêng ngoài Storefront API', function () {
     // Ngoại lệ duy nhất: /_vani/phien — "đường ống" của Blade khi trang được cache CDN (CSRF của form, flash, lỗi form lần
-    // gửi trước); không phải dữ liệu cửa hàng (ADR-044, api-first-refactor A3).
+    // gửi trước); không phải dữ liệu cửa hàng (ADR-044).
     $allowed = ['/_vani/phien', "'storefront.session'"];
     $pattern = '#/_vani/[a-z]+|storefront\.session\.[a-z]+|p/vani-wishlist/(ids|merge)|(?<!x\.)vani-wishlist\.(ids|merge)\b#';
     $offenders = [];
