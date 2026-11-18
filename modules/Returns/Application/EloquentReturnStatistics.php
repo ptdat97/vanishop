@@ -28,19 +28,32 @@ final class EloquentReturnStatistics implements ReturnStatistics
     public function byReason(DateTimeImmutable $from, DateTimeImmutable $to): array
     {
         $locale = app()->getLocale();
+        $storeFault = DB::table('return_reasons')->where('store_fault', true)->pluck('code')->all();
+        // Phí ship cửa hàng chịu: theo yêu cầu (không nhân theo số dòng của yêu cầu).
+        $storeShipping = DB::table('return_requests')
+            ->where('status', ReturnStatus::Resolved->value)->where('return_shipping_payer', 'store')
+            ->where('created_at', '>=', $this->utc($from))->where('created_at', '<', $this->utc($to))
+            ->groupBy('reason_code')->selectRaw('reason_code, sum(return_shipping_fee) as fee')->pluck('fee', 'reason_code');
 
         return $this->lines($from, $to)
             ->selectRaw('return_requests.reason_code, count(distinct return_requests.id) as requests, sum(return_lines.quantity) as quantity')
             ->groupBy('return_requests.reason_code')->orderByDesc('requests')->orderBy('return_requests.reason_code')->get()
             ->map(fn (object $row): array => [
                 'reason_code' => (string) $row->reason_code, 'label' => $this->returns->reasonLabel((string) $row->reason_code, $locale),
+                'store_fault' => in_array((string) $row->reason_code, $storeFault, true),
                 'requests' => (int) $row->requests, 'quantity' => (int) $row->quantity,
+                'store_shipping_fee' => (int) ($storeShipping[(string) $row->reason_code] ?? 0),
             ])->all();
+    }
+
+    private function utc(DateTimeImmutable $at): string
+    {
+        return $at->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
     }
 
     private function lines(DateTimeImmutable $from, DateTimeImmutable $to): Builder
     {
-        $utc = fn (DateTimeImmutable $at): string => $at->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $utc = fn (DateTimeImmutable $at): string => $this->utc($at);
 
         return DB::table('return_lines')
             ->join('return_requests', 'return_requests.id', '=', 'return_lines.return_request_id')

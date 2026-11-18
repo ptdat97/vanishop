@@ -41,6 +41,10 @@ use Modules\Tenancy\Contracts\Settings;
  */
 final class ReturnService implements Returns
 {
+    public const SHIPPING_PAYER_CUSTOMER = 'customer';
+
+    public const SHIPPING_PAYER_STORE = 'store';
+
     public function __construct(
         private readonly OrderReader $orders,
         private readonly OrderTransitions $transitions,
@@ -283,8 +287,11 @@ final class ReturnService implements Returns
     /**
      * Hoàn tất: hoàn tiền (mặc định toàn bộ số tính được; có thể trừ phí hư hỏng) qua Payment. Yêu cầu đổi hàng →
      * resolveExchange().
+     *
+     * Phí ship trả hàng (L10): `$returnShippingFee` + `$returnShippingPayer` (`customer` | `store`). Khách chịu → tiền
+     * hoàn thực tế = `$amount` − phí (không âm); cửa hàng chịu → không trừ. Chỉ ghi lại để báo cáo, không gọi hãng.
      */
-    public function resolve(int $returnId, ?int $amount, ?string $note): void
+    public function resolve(int $returnId, ?int $amount, ?string $note, int $returnShippingFee = 0, ?string $returnShippingPayer = null): void
     {
         $return = ReturnRequest::query()->findOrFail($returnId);
         if ($return->resolution === 'exchange') {
@@ -296,8 +303,13 @@ final class ReturnService implements Returns
         if (! ReturnLimits::refundWithinLimit($amount, (int) $return->refund_amount)) {
             throw ReturnRejected::refundExceeds($return->refund_amount);
         }
+        $returnShippingFee = max(0, $returnShippingFee);
+        $returnShippingPayer = $returnShippingFee === 0 ? null : ($returnShippingPayer === self::SHIPPING_PAYER_CUSTOMER ? self::SHIPPING_PAYER_CUSTOMER : self::SHIPPING_PAYER_STORE);
+        if ($returnShippingPayer === self::SHIPPING_PAYER_CUSTOMER) {
+            $amount = max(0, $amount - $returnShippingFee);
+        }
 
-        DB::transaction(function () use ($returnId, $amount, $note): void {
+        DB::transaction(function () use ($returnId, $amount, $note, $returnShippingFee, $returnShippingPayer): void {
             $return = ReturnRequest::query()->whereKey($returnId)->lockForUpdate()->firstOrFail();
             if (! $return->status->canMoveTo(ReturnStatus::Resolved)) {
                 throw ReturnRejected::invalidTransition($return->status->value, ReturnStatus::Resolved->value);
@@ -307,10 +319,10 @@ final class ReturnService implements Returns
                 $this->payments->refundOrder($return->order_id, Money::of($amount, $return->currency_code), "return:{$return->number}", "return:{$return->public_id}");
             }
 
-            $return->update(['refunded_amount' => $amount, 'resolved_at' => now()]);
+            $return->update(['refunded_amount' => $amount, 'resolved_at' => now(), 'return_shipping_fee' => $returnShippingFee, 'return_shipping_payer' => $returnShippingPayer]);
             $this->records->move($return, ReturnStatus::Resolved, $note, 'staff');
             $this->records->syncOrder($return->order_id);
-            $this->audit->record('return.resolved', 'return_request', $return->id, ['refunded' => $amount]);
+            $this->audit->record('return.resolved', 'return_request', $return->id, ['refunded' => $amount] + ($returnShippingFee > 0 ? ['return_shipping_fee' => $returnShippingFee, 'return_shipping_payer' => $returnShippingPayer] : []));
             event(new ReturnResolved($return->id, $return->order_id, $amount, $return->public_id, $return->number));
         });
     }

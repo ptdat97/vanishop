@@ -113,9 +113,10 @@ it('có giá vốn (vani.cost-price): lợi nhuận theo SKU và theo ngày; SKU
     ])->and($daily->chart->values)->toBe([160_000, 80_000]);
 });
 
-it('đổi trả: theo SKU (tỷ lệ so với số bán trong kỳ), theo lý do; bỏ yêu cầu bị từ chối; COD giao thất bại', function () {
+it('đổi trả: theo SKU (tỷ lệ so với số bán trong kỳ), theo lý do (tách lỗi do cửa hàng, phí ship trả shop chịu — L10); bỏ yêu cầu bị từ chối; COD giao thất bại', function () {
     grossProfitReturn($this->lines[0], $this->a, 1, 'wrong_size');
     grossProfitReturn($this->lines[2], $this->a, 1, 'defective', status: 'resolved');
+    DB::table('return_requests')->where('reason_code', 'defective')->update(['return_shipping_fee' => 30_000, 'return_shipping_payer' => 'store']);
     grossProfitReturn($this->lines[1], $this->b, 1, 'wrong_size', status: 'rejected');
     $location = I::location();
     foreach ([['delivered', 300_000], ['returned', 250_000], ['returning', 100_000], ['delivered', 0]] as $i => [$status, $cod]) {
@@ -128,9 +129,12 @@ it('đổi trả: theo SKU (tỷ lệ so với số bán trong kỳ), theo lý d
         ->and(($this->summary)($byProduct)['Tỷ lệ trả'][0])->toBe(50.0);
 
     $reasons = app(ReturnReasonsReport::class)->run($this->period);
-    expect(array_map(fn (array $row) => [$row['requests'], $row['quantity'], $row['share']], $reasons->table->rows))->toBe([[1, 1, 50.0], [1, 1, 50.0]])
+    expect(collect($reasons->table->rows)->mapWithKeys(fn (array $row) => [$row['fault'] => [$row['requests'], $row['quantity'], $row['share'], $row['store_shipping_fee']]])->sortKeys()->all())
+        ->toBe(['Lỗi do cửa hàng' => [1, 1, 50.0, 30_000], 'Phía khách' => [1, 1, 50.0, 0]])
         ->and(array_column($reasons->table->rows, 'reason'))->each->not->toBe('')
         ->and(($this->summary)($reasons))->toMatchArray([
+            'Lỗi do cửa hàng' => [50.0, '1 yêu cầu'],
+            'Phí ship trả shop chịu' => [30_000, null],
             'COD giao thất bại' => [2, 'Trên 3 vận đơn COD · đã giao 1'],
             'Tiền COD không thu được' => [350_000, null],
         ]);

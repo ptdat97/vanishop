@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.31 — 2026-11-18 · Extension API 1.7.0
+
+Backlog L10 (Owner quyết: gợi ý shop chịu phí ship trả khi lỗi do cửa hàng).
+
+### Thêm (API cho plugin — minor)
+- `ReturnStatistics::byReason()`: mỗi dòng thêm `store_fault` (lý do "lỗi do cửa hàng") và `store_shipping_fee` (phí ship trả hàng cửa hàng chịu, yêu cầu đã hoàn tất).
+
+### Đổi
+- Hoàn tất yêu cầu hoàn tiền (Admin → Đổi trả → chi tiết): thêm phí ship trả hàng + ai chịu (`return_shipping_fee`, `return_shipping_payer` — migration mới). Khách chịu → trừ vào tiền hoàn; cửa hàng chịu → không trừ. Lý do "lỗi do cửa hàng" → mặc định cửa hàng chịu. `ReturnService::resolve()` nhận thêm hai tham số tuỳ chọn.
+- `vani.reports` 1.3.1: báo cáo "Lý do trả" có cột Nhóm (Lỗi do cửa hàng / Phía khách), cột và chỉ số "Phí ship trả shop chịu", chỉ số tỷ lệ lỗi do cửa hàng.
+
 ## 0.5.30 — 2026-11-18 · Extension API 1.6.0
 
 Backlog L16 (Owner quyết: giữ ảnh đổi trả 90 ngày sau khi yêu cầu đóng).

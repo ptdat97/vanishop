@@ -22,9 +22,10 @@ interface ReturnStatistics
     public function byVariant(DateTimeImmutable $from, DateTimeImmutable $to): array;
 
     /**
-     * Số yêu cầu và số lượng theo lý do (nhãn theo ngôn ngữ hiện tại), số yêu cầu giảm dần.
+     * Số yêu cầu và số lượng theo lý do (nhãn theo ngôn ngữ hiện tại), số yêu cầu giảm dần. `store_fault` (0.5.31) = lý
+     * do "lỗi do cửa hàng"; `store_shipping_fee` = tổng phí ship trả hàng cửa hàng chịu của các yêu cầu đã hoàn tất.
      *
-     * @return list<array{reason_code: string, label: string, requests: int, quantity: int}>
+     * @return list<array{reason_code: string, label: string, store_fault: bool, requests: int, quantity: int, store_shipping_fee: int}>
      */
     public function byReason(DateTimeImmutable $from, DateTimeImmutable $to): array;
 }

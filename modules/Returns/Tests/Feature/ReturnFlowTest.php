@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
@@ -134,6 +135,24 @@ it('hàng hư hỏng không nhập kho; hoàn trừ phí; tiền hoàn theo giá
         ->and($return->lines()->value('condition'))->toBe('damaged')
         ->and($order->fresh()->return_status)->toBe('returned');
 });
+
+it('L10 phí ship trả hàng: khách chịu thì trừ vào tiền hoàn; cửa hàng chịu thì không trừ; lý do lỗi do cửa hàng mặc định cửa hàng chịu', function (string $reason, string $payer, int $refunded, bool $storeFault) {
+    [$order, $headers] = ($this->placeAndDeliver)();
+    ($this->requestReturn)($order, $headers, 1, $reason)->assertCreated();
+    $return = ReturnRequest::query()->withoutGlobalScopes()->sole();
+    ($this->staff)();
+    $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'approved', 'lock_version' => 0]);
+    $this->post("{$this->admin}/{$return->id}/transition", ['to' => 'in_transit', 'lock_version' => 1]);
+    $this->post("{$this->admin}/{$return->id}/receive", ['conditions' => [$return->lines()->value('id') => 'sellable']])->assertSessionHasNoErrors();
+    $this->get("{$this->admin}/{$return->id}")->assertInertia(fn (Assert $page) => $page->where('returnShipping.store_fault', $storeFault));
+
+    $this->post("{$this->admin}/{$return->id}/resolve", ['amount' => 300_000, 'return_shipping_fee' => 25_000, 'return_shipping_payer' => $payer])->assertSessionHasNoErrors();
+
+    expect($return->fresh())->refunded_amount->toBe($refunded)->return_shipping_fee->toBe(25_000)->return_shipping_payer->toBe($payer);
+})->with([
+    'đổi ý, khách chịu' => ['changed_mind', 'customer', 275_000, false],
+    'lỗi sản phẩm, cửa hàng chịu' => ['defective', 'store', 300_000, true],
+]);
 
 it('khách huỷ yêu cầu chưa duyệt → trả lại hạn mức; không huỷ được khi đã duyệt', function () {
     [$order, $headers] = ($this->placeAndDeliver)();

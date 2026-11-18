@@ -95,4 +95,10 @@ final class ReturnReasons
     {
         return (string) ($reason->names[$locale] ?? $reason->names[StoreLocale::default()] ?? $reason->code);
     }
+
+    /** Lý do có cờ "lỗi do cửa hàng" (cả lý do đã tắt) — L10: mặc định cửa hàng chịu phí ship trả. */
+    public function isStoreFault(string $code): bool
+    {
+        return ($this->all()[$code] ?? null)?->store_fault === true;
+    }
 }

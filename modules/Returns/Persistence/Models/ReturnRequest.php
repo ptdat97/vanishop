@@ -26,6 +26,8 @@ use Modules\Returns\Domain\ReturnStatus;
  * @property string $source customer | staff
  * @property string|null $customer_note
  * @property Carbon|null $resolved_at
+ * @property int $return_shipping_fee phí ship trả hàng (L10)
+ * @property string|null $return_shipping_payer customer | store
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -37,7 +39,7 @@ final class ReturnRequest extends Model
     {
         return [
             'order_id' => 'integer', 'status' => ReturnStatus::class, 'refund_amount' => 'integer', 'replacement_order_id' => 'integer',
-            'refunded_amount' => 'integer', 'lock_version' => 'integer', 'resolved_at' => 'immutable_datetime',
+            'refunded_amount' => 'integer', 'return_shipping_fee' => 'integer', 'lock_version' => 'integer', 'resolved_at' => 'immutable_datetime',
         ];
     }
 

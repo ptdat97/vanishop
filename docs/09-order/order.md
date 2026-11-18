@@ -171,6 +171,8 @@ stateDiagram-v2
 
 **CSKH kiểm soát mọi yêu cầu** ([ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md)): khách gửi yêu cầu trên web (token đơn, ảnh đính kèm) hoặc CSKH tạo hộ khi khách gọi/nhắn; `ReturnPolicy` mặc định (`days_window`) chỉ trả lời **được gửi hay không** (hạn đổi trả, dòng đã giao), không tự duyệt; chính sách của plugin được tự duyệt ca đủ điều kiện (`ReturnDecision::$autoApprove`, nguồn `system`, lý do `auto_approved`) — nhận hàng và hoàn tiền thủ công vẫn là CSKH. CSKH duyệt/từ chối (từng yêu cầu hoặc hàng loạt), nhận hàng và ghi tình trạng, chọn hoàn tiền (được hoàn ít hơn để trừ phí) hoặc đổi hàng. COD/chuyển khoản: hoàn tiền là CSKH chuyển trả tay rồi bấm "Đã chuyển trả".
 
+- **Phí ship trả hàng (0.5.31, backlog L10):** khi hoàn tất yêu cầu hoàn tiền, CSKH ghi phí ship hàng gửi về (`return_requests.return_shipping_fee`) và ai chịu (`return_shipping_payer`): khách chịu → trừ vào tiền hoàn (không âm); cửa hàng chịu → không trừ. Lý do có cờ "lỗi do cửa hàng" (mặc định `not_as_described`, `defective`; sửa ở Admin → Đổi trả → Lý do) → form mặc định cửa hàng chịu. Báo cáo "Lý do trả & COD giao thất bại" (`vani.reports` 1.3.1) tách nhóm lỗi do cửa hàng / phía khách và cộng phí ship trả shop chịu. Không áp cho đổi hàng (đơn thay thế tự tính chênh).
+
 Invariant: tổng số lượng trả của một dòng ≤ số lượng đã giao (App, khoá dòng `order_lines` khi tạo RMA); tổng hoàn ≤ số đã thu (Payment).
 
 ### 7.1 Đổi hàng (Implemented, 0.3.32)

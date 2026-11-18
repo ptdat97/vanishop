@@ -46,6 +46,7 @@ const props = defineProps<{
     can: { approve: boolean; reject: boolean; in_transit: boolean; receive: boolean; resolve: boolean };
     /** Hãng đã giao đơn có thể đến lấy hàng trả (EP v3 X3). */
     pickupCarrier: string | null;
+    returnShipping: { store_fault: boolean; fee: number; payer: 'customer' | 'store' | null };
 }>();
 
 async function bookPickup(): Promise<void> {
@@ -65,7 +66,16 @@ const columns = computed(() => [
 const url = computed(() => `${props.baseUrl}/${props.return.id}`);
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const conditions = reactive<Record<number, string>>(Object.fromEntries(props.return.lines.map((line) => [line.id, 'sellable'])));
-const resolveForm = useForm({ amount: props.return.refundAmount, note: '' });
+// Phí ship trả hàng (L10): lý do "lỗi do cửa hàng" → mặc định cửa hàng chịu (không trừ tiền hoàn); CSKH đổi được.
+const resolveForm = useForm({
+    amount: props.return.refundAmount,
+    note: '',
+    return_shipping_fee: 0 as number,
+    return_shipping_payer: (props.returnShipping.store_fault ? 'store' : 'customer') as 'customer' | 'store',
+});
+const refundAfterShipping = computed(() =>
+    resolveForm.return_shipping_payer === 'customer' ? Math.max(0, (resolveForm.amount || 0) - (resolveForm.return_shipping_fee || 0)) : resolveForm.amount || 0,
+);
 const isExchange = computed(() => props.return.resolution === 'exchange');
 
 async function transition(to: string): Promise<void> {
@@ -119,7 +129,10 @@ function resolve(): void {
             </template>
         </DataTable>
         <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <span>Tổng tiền hoàn tính được: <strong><MoneyText :amount="props.return.refundAmount" /></strong><span v-if="props.return.refundedAmount !== null"> · đã hoàn <MoneyText :amount="props.return.refundedAmount" /></span></span>
+            <span>
+                Tổng tiền hoàn tính được: <strong><MoneyText :amount="props.return.refundAmount" /></strong><span v-if="props.return.refundedAmount !== null"> · đã hoàn <MoneyText :amount="props.return.refundedAmount" /></span>
+                <span v-if="returnShipping.fee > 0"> · phí ship trả <MoneyText :amount="returnShipping.fee" /> ({{ returnShipping.payer === 'store' ? 'cửa hàng chịu' : 'khách chịu' }})</span>
+            </span>
             <button v-if="can.receive" type="button" :class="primaryButton" @click="receive">Xác nhận đã nhận hàng</button>
         </div>
     </section>
@@ -146,7 +159,15 @@ function resolve(): void {
 
     <form v-if="can.resolve && !isExchange" class="mb-6 grid max-w-md gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="resolve">
         <p class="font-medium">Hoàn tất và hoàn tiền</p>
-        <input v-model.number="resolveForm.amount" :class="inputClass" type="number" min="0" :max="props.return.refundAmount" />
+        <input v-model.number="resolveForm.amount" :class="inputClass" type="number" min="0" :max="props.return.refundAmount" aria-label="Tiền hoàn" />
+        <fieldset class="grid gap-2 rounded border border-slate-200 p-3 text-sm" data-return-shipping>
+            <legend class="px-1 font-medium">Phí ship trả hàng</legend>
+            <input v-model.number="resolveForm.return_shipping_fee" :class="inputClass" type="number" min="0" placeholder="0" aria-label="Phí ship trả hàng" />
+            <label class="flex items-center gap-2"><input v-model="resolveForm.return_shipping_payer" type="radio" value="store" /> Cửa hàng chịu (không trừ tiền hoàn)</label>
+            <label class="flex items-center gap-2"><input v-model="resolveForm.return_shipping_payer" type="radio" value="customer" /> Khách chịu (trừ vào tiền hoàn)</label>
+            <p v-if="returnShipping.store_fault" class="text-xs text-amber-700">Lý do trả là lỗi do cửa hàng — nên để cửa hàng chịu phí ship.</p>
+            <p class="text-slate-600">Khách nhận lại: <strong><MoneyText :amount="refundAfterShipping" /></strong></p>
+        </fieldset>
         <input v-model="resolveForm.note" :class="inputClass" placeholder="Ghi chú (vd. trừ phí hư hỏng)" />
         <p v-for="(error, key) in resolveForm.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
         <button type="submit" :class="primaryButton" :disabled="resolveForm.processing">Hoàn tất</button>

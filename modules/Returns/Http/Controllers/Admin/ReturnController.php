@@ -160,6 +160,12 @@ final class ReturnController
                 'receive' => $canManage && $return->status->canMoveTo(ReturnStatus::Received),
                 'resolve' => Gate::allows('returns.refund') && $return->status->canMoveTo(ReturnStatus::Resolved),
             ],
+            // Phí ship trả hàng (L10): lý do "lỗi do cửa hàng" → mặc định cửa hàng chịu; đã hoàn tất thì hiện số đã ghi.
+            'returnShipping' => [
+                'store_fault' => app(ReturnReasons::class)->isStoreFault($return->reason_code),
+                'fee' => $return->return_shipping_fee,
+                'payer' => $return->return_shipping_payer,
+            ],
             // Hãng đã giao đơn đến lấy hàng trả (EP v3 X3, ReturnPickup): tên hãng khi hỗ trợ, yêu cầu đã duyệt.
             'pickupCarrier' => $canManage && $return->status === ReturnStatus::Approved ? app(ReturnPickups::class)->carrierLabel($return->order_id) : null,
         ]);
@@ -269,8 +275,15 @@ final class ReturnController
     {
         Gate::authorize('returns.refund');
         $exchange = $return->resolution === 'exchange';
-        $data = $request->validate(['amount' => [$exchange ? 'nullable' : 'required', 'integer', 'min:0'], 'note' => ['nullable', 'string', 'max:255']]);
-        $returns->resolve($return->id, $exchange ? null : (int) $data['amount'], $data['note'] ?? null);
+        $data = $request->validate([
+            'amount' => [$exchange ? 'nullable' : 'required', 'integer', 'min:0'], 'note' => ['nullable', 'string', 'max:255'],
+            'return_shipping_fee' => ['nullable', 'integer', 'min:0', 'max:100000000'],
+            'return_shipping_payer' => ['nullable', Rule::in([ReturnService::SHIPPING_PAYER_CUSTOMER, ReturnService::SHIPPING_PAYER_STORE])],
+        ]);
+        $returns->resolve(
+            $return->id, $exchange ? null : (int) $data['amount'], $data['note'] ?? null,
+            (int) ($data['return_shipping_fee'] ?? 0), $data['return_shipping_payer'] ?? null,
+        );
 
         if ($exchange) {
             $number = $orders->find((int) $return->fresh()?->replacement_order_id)?->number;

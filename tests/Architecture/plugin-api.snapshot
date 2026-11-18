@@ -1,4 +1,4 @@
-Extension API 1.6.0
+Extension API 1.7.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array

@@ -91,7 +91,7 @@
 | [`return_events`](#return_events) | 9 |
 | [`return_lines`](#return_lines) | 11 |
 | [`return_reasons`](#return_reasons) | 8 |
-| [`return_requests`](#return_requests) | 18 |
+| [`return_requests`](#return_requests) | 20 |
 | [`role_permissions`](#role_permissions) | 2 |
 | [`roles`](#roles) | 6 |
 | [`sessions`](#sessions) | 6 |
@@ -1631,6 +1631,8 @@ Index: PK (id); unique (code)
 | `source` | varchar(16) |  |  |
 | `refund_amount` | bigint |  |  |
 | `refunded_amount` | bigint | có |  |
+| `return_shipping_fee` | bigint unsigned |  | `0` |
+| `return_shipping_payer` | varchar(8) | có |  |
 | `replacement_order_id` | bigint unsigned | có |  |
 | `currency_code` | char(3) |  |  |
 | `lock_version` | int unsigned |  | `0` |
