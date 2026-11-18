@@ -24,24 +24,24 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [019](ADR-019-shared-domain-brand-path.md) | Một domain chung, storefront brand theo đường dẫn | Superseded by 028 |
 | [020](ADR-020-admin-path-no-2fa.md) | Admin: đường dẫn cấu hình được, không dùng 2FA | Accepted |
 | [021](ADR-021-storefront-composition-module.md) | Module Storefront làm tầng ghép (Catalog + Pricing + …) | Accepted |
-| [022](ADR-022-guest-cart-token.md) | Giỏ khách vãng lai: id công khai + token bí mật, giỏ không giữ hàng | Accepted |
+| [022](ADR-022-guest-cart-token.md) | Giỏ khách vãng lai: id công khai + token bí mật, giỏ không giữ hàng | Accepted (sửa đổi bởi 044) |
 | [023](ADR-023-stateless-checkout.md) | Checkout không lưu phiên; PlaceOrder một transaction; một brand mỗi đơn | Accepted (sửa đổi bởi 028) |
-| [024](ADR-024-customer-api-token.md) | Phiên khách trên Storefront API: token Bearer mờ (hash), không dùng Sanctum | Accepted |
-| [025](ADR-025-native-storefront-ssr-slots.md) | Native storefront: SSR-first, JS tăng cường cục bộ, slot UI chỉ nối thêm, thay khối bằng override theme | Accepted |
+| [024](ADR-024-customer-api-token.md) | Phiên khách trên Storefront API: token Bearer mờ (hash), không dùng Sanctum | Accepted (sửa đổi bởi 044) |
+| [025](ADR-025-native-storefront-ssr-slots.md) | Native storefront: SSR-first, JS tăng cường cục bộ, slot UI chỉ nối thêm, thay khối bằng override theme | Accepted (sửa đổi bởi 028) |
 | [026](ADR-026-plugin-deploy-via-code.md) | Plugin chỉ vào hệ thống qua mã nguồn + CI, không upload qua Admin | Accepted |
 | [027](ADR-027-plugin-data-no-core-columns.md) | Plugin mở rộng dữ liệu bằng bảng `plg_*` + `meta`, không thêm cột vào bảng Core | Accepted |
 | [028](ADR-028-single-store-brand-as-catalog.md) | **Một Owner, một website, một giao diện; brand là thuộc tính catalog** | Accepted |
 | [029](ADR-029-commerce-microkernel.md) | **Microkernel thương mại: bốn vòng, nghiệp vụ là plugin, mặc định chính sách là plugin hệ thống** | Accepted |
 | [032](ADR-032-approved-dependencies-ops-quality.md) | **Dependency được duyệt: Horizon, S3, backup, Pulse, Intervention Image; Larastan, Rector, security advisories, type coverage** | Accepted |
 | [031](ADR-031-short-hook-syntax-auto-points.md) | **Cú pháp hook ngắn `vani_*` + điểm mở rộng tự động (mọi trang Admin, view storefront, API) giữ kiểm soát HookManager** | Accepted |
-| [034](ADR-034-vanicommerce-plugin-migration.md) | **VaniShop thay VaniCommerce; plugin của Owner chuyển sang bằng đặc tả rồi viết lại** | Accepted |
+| [034](ADR-034-vanicommerce-plugin-migration.md) | **VaniShop thay VaniCommerce; plugin của Owner chuyển sang bằng đặc tả rồi viết lại** | Accepted (§4 sửa đổi bởi 036) |
 | [035](ADR-035-product-links-videos-from-vanilo.md) | **Liên kết sản phẩm và video sản phẩm phỏng theo Vanilo (MIT), không phụ thuộc gói Vanilo** | Accepted |
 | [036](ADR-036-service-result-hooks.md) | **Hook tại kết quả service; chuyển plugin không bắt buộc đặc tả đầy đủ** | Accepted |
 | [037](ADR-037-vani-helpers.md) | **Bộ helper ngắn `vani_*` (danh sách đóng) cho plugin và theme, mỗi helper uỷ quyền một contract** | Accepted |
 | [038](ADR-038-localized-storefront-urls.md) | **URL storefront theo ngôn ngữ: `vi` không tiền tố, `en` dưới `/en` với đường dẫn + slug tiếng Anh, hreflang** | Accepted |
 | [039](ADR-039-admin-ui-reka.md) | Bộ component Admin trên Reka UI (headless) + Tailwind; trang module/plugin chỉ dùng `@admin/Components` | Accepted |
 | [040](ADR-040-typed-links-menus.md) | Link có kiểu (`LinkTarget`, `LinkResolver`, extension point `LinkType`) và menu storefront theo vị trí theme khai báo; nháp/xuất bản/phiên bản | Accepted |
-| [041](ADR-041-translation-provider.md) | Dịch máy trong form bản dịch Admin: extension point `TranslationProvider` (plugin), kết quả chỉ điền vào form, nhân viên duyệt rồi lưu | Proposed |
+| [041](ADR-041-translation-provider.md) | Dịch máy trong form bản dịch Admin: extension point `TranslationProvider` (plugin), kết quả chỉ điền vào form, nhân viên duyệt rồi lưu | Proposed — hoãn |
 | [042](ADR-042-inventory-warehouse-plugins.md) | Tách vận hành kho (nhiều kho, chuyển kho, đối soát nguồn ngoài, authority ERP/POS) thành plugin `vani.warehouse`; tồn kho (Inventory) ở lại Core | Accepted |
 | [043](ADR-043-fulfillment-stays-in-core.md) | Fulfillment ở lại Core (chốt tồn, COD, đổi trả dựa vào nó); làm gọn cho SME bằng giao diện — menu "Giao hàng" chỉ hiện khi có hãng API hoặc nhiều kho; hãng API, nhiều kho là plugin | Accepted |
 | [044](ADR-044-storefront-api-first.md) | Storefront API-first: API v1 là hợp đồng, Blade là một cách dùng (in-process); hành vi ở use-case; JS của theme chỉ gọi API (API nhận phiên web cùng nguồn); một mô hình mã giảm giá | Accepted |

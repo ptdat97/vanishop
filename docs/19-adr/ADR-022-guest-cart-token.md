@@ -1,6 +1,6 @@
 # ADR-022 — Giỏ khách vãng lai định danh bằng id công khai + token bí mật
 
-- Trạng thái: Accepted · Ngày: 2026-10-03 · Liên quan: [cart-checkout](../03-domains/cart-checkout.md), [api](../06-api/api.md)
+- Trạng thái: Accepted · Ngày: 2026-10-03 · **Sửa đổi bởi [ADR-044](ADR-044-storefront-api-first.md)**: Storefront API nhận thêm phiên web cùng nguồn (theme gọi API bằng cookie phiên) · Liên quan: [cart-checkout](../03-domains/cart-checkout.md), [api](../06-api/api.md)
 
 ## Context
 Slice 5 cần giỏ hàng cho Storefront API (headless, mobile, Zalo Mini App) trước khi có module Customer và native storefront. Khách chưa đăng nhập vẫn phải có giỏ riêng, không ai khác đọc/sửa được.

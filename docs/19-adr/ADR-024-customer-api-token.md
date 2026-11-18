@@ -1,6 +1,6 @@
 # ADR-024 — Phiên khách hàng trên Storefront API: token Bearer mờ, không dùng Sanctum
 
-- Trạng thái: Accepted · Ngày: 2026-10-12 · Liên quan: [customer](../03-domains/customer.md), [security](../15-security/security.md), [ADR-022](ADR-022-guest-cart-token.md)
+- Trạng thái: Accepted · Ngày: 2026-10-12 · **Sửa đổi bởi [ADR-044](ADR-044-storefront-api-first.md)**: ngoài Bearer token, API nhận phiên web cùng nguồn; từ 0.5.12 đăng nhập mặc định bằng email + mật khẩu (OTP SĐT là plugin) · Liên quan: [customer](../03-domains/customer.md), [security](../15-security/security.md), [ADR-022](ADR-022-guest-cart-token.md)
 
 ## Context
 Module Customer cần phiên đăng nhập cho Storefront API (headless, mobile, Zalo Mini App). Thiết kế ban đầu ghi "mobile/headless dùng Sanctum token", nhưng `laravel/sanctum` chưa có trong dependency và R25 cấm thêm dependency chưa được duyệt.
