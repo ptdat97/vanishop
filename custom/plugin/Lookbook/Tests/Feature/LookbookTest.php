@@ -141,9 +141,3 @@ it('chi tiết: breadcrumb dựng ở controller (Lookbook → tên, JSON-LD), �
         ->and($images[1][0])->toContain('fetchpriority="high"')->not->toContain('loading="lazy"')
         ->and($images[1][1])->toContain('loading="lazy"');
 });
-
-it('view của plugin không gọi lớp Core (breadcrumb dựng ở controller, ảnh qua partial ảnh của theme)', function () {
-    foreach (glob(dirname(__DIR__, 2).'/Resources/views/{,*/}*.blade.php', GLOB_BRACE) as $file) {
-        expect((string) file_get_contents($file))->not->toContain('\\Modules\\');
-    }
-});

@@ -33,3 +33,17 @@ it('mọi slot storefront đã khai báo đều được theme vani-base render 
 
     expect($missing)->toBe([]);
 });
+
+it('view storefront của plugin chỉ in dữ liệu: không gọi lớp Core, không @php, không đọc request/session (provider/khối dựng sẵn)', function () {
+    $offenders = [];
+    foreach (glob(base_path('custom/plugin/*/Resources/views/{,*/,*/*/}*.blade.php'), GLOB_BRACE) as $file) {
+        $source = (string) file_get_contents($file);
+        foreach (['\\Modules\\', '@php', 'request()', 'session('] as $needle) {
+            if (str_contains($source, $needle)) {
+                $offenders[] = str_replace(base_path().'/', '', $file).": {$needle}";
+            }
+        }
+    }
+
+    expect($offenders)->toBe([]);
+});

@@ -44,7 +44,7 @@ final class ScarcitySignalsServiceProvider extends PluginServiceProvider
 
         $this->onSlot('vani.storefront.pdp.add_to_cart_fields', fn (array $product): ?SlotView => (array) ($product['extensions'][self::ID]['low_stock'] ?? []) === []
             ? null
-            : new SlotView('vani-scarcity::pdp-left', ['lowStock' => $product['extensions'][self::ID]['low_stock']]));
+            : new SlotView('vani-scarcity::pdp-left', ['lowStock' => $product['extensions'][self::ID]['low_stock'], 'scriptSrc' => vani_asset(self::ID, 'scarcity.js')]));
         $this->onSlot('vani.storefront.pdp.after_price', fn (array $product): ?SlotView => ($sold = $product['extensions'][self::ID]['sold'] ?? null) === null
             ? null
             : new SlotView('vani-scarcity::pdp-sold', ['sold' => $sold]));

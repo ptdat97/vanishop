@@ -66,7 +66,7 @@ final class PreorderServiceProvider extends PluginServiceProvider
         $this->onSlot('vani.storefront.pdp.add_to_cart_fields', function (array $product): ?SlotView {
             $dates = (array) ($product['extensions'][self::ID]['variants'] ?? []);
 
-            return $dates === [] ? null : new SlotView('vani-preorder::pdp-preorder', ['dates' => array_map(fn (?string $date): ?string => self::shortDate($date), $dates)]);
+            return $dates === [] ? null : new SlotView('vani-preorder::pdp-preorder', ['dates' => array_map(fn (?string $date): ?string => self::shortDate($date), $dates), 'scriptSrc' => vani_asset(self::ID, 'preorder.js')]);
         });
     }
 

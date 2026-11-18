@@ -58,7 +58,12 @@ it('trang sản phẩm có nút tim + script của plugin; HTML trang cache gi�
         ->getContent();
 
     ($this->signIn)();
-    expect($this->get('/san-pham/'.$this->style->slug)->getContent())->toBe($guest);
+    expect($this->get('/san-pham/'.$this->style->slug)->getContent())->toBe($guest)
+        ->and($guest)->not->toContain('name="_token"');
+
+    // Không cache CDN: form có token CSRF (chạy khi tắt JS).
+    config(['vanishop.storefront.page_cache.enabled' => false]);
+    expect($this->get('/san-pham/'.$this->style->slug)->getContent())->toMatch('/data-vani-wishlist="'.$this->style->id.'"[^>]*>\s*<input type="hidden" name="_token"/');
 });
 
 it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ năng', function () {

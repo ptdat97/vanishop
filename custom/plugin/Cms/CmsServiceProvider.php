@@ -77,7 +77,12 @@ final class CmsServiceProvider extends PluginServiceProvider
 
         $this->onSlot('vani.storefront.layout.body_start', fn (): ?SlotView => ($announcement = $content()->announcement(app()->getLocale())) === null
             ? null
-            : new SlotView('vani-cms::announcement', ['announcement' => $announcement]));
+            : new SlotView('vani-cms::announcement', [
+                'announcement' => $announcement,
+                // Màu nền/chữ cửa hàng chọn → thuộc tính style; script xoay vòng chỉ khi có > 1 dòng.
+                'style' => trim(($announcement['bg'] ? "background-color:{$announcement['bg']};" : '').($announcement['fg'] ? "color:{$announcement['fg']};" : '')),
+                'scriptSrc' => count($announcement['lines']) > 1 ? vani_asset(self::ID, 'announcement.js') : '',
+            ]));
         $this->onSlot('vani.storefront.pdp.after_title', fn (array $product): ?SlotView => ($product['extensions'][self::ID]['highlights'] ?? []) === []
             ? null
             : new SlotView('vani-cms::highlights', ['highlights' => $product['extensions'][self::ID]['highlights']]));

@@ -56,9 +56,16 @@ final class WishlistServiceProvider extends PluginServiceProvider
         $this->accountPage('wishlist', 'Yêu thích', 'storefront.p.vani-wishlist.account.index', 300);
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
 
-        $this->onSlot('vani.storefront.plp.card_badges', fn (array $product): SlotView => new SlotView('vani-wishlist::button', ['styleId' => (int) $product['id'], 'compact' => true]));
-        $this->onSlot('vani.storefront.pdp.after_add_to_cart', fn (array $product): SlotView => new SlotView('vani-wishlist::button', ['styleId' => (int) $product['id'], 'compact' => false]));
+        // Trang cache CDN: HTML giống nhau với mọi khách nên không in token CSRF (JS gửi bằng fetch).
+        $button = fn (array $product, bool $compact): SlotView => new SlotView('vani-wishlist::button', [
+            'styleId' => (int) $product['id'], 'compact' => $compact, 'withCsrf' => ! request()->attributes->has('vani.page_cache'),
+        ]);
+        $this->onSlot('vani.storefront.plp.card_badges', fn (array $product): SlotView => $button($product, true));
+        $this->onSlot('vani.storefront.pdp.after_add_to_cart', fn (array $product): SlotView => $button($product, false));
         $this->onSlot('vani.storefront.header.actions', fn (): SlotView => new SlotView('vani-wishlist::header'));
-        $this->onSlot('vani.storefront.layout.body_end', fn (): SlotView => new SlotView('vani-wishlist::script'));
+        $this->onSlot('vani.storefront.layout.body_end', fn (): SlotView => new SlotView('vani-wishlist::script', [
+            'scriptSrc' => vani_asset(self::ID, 'wishlist.js'),
+            'urls' => ['ids' => route('api.storefront.x.vani-wishlist.ids'), 'items' => route('api.storefront.x.vani-wishlist.items.store'), 'merge' => route('api.storefront.x.vani-wishlist.items.merge')],
+        ]));
     }
 }

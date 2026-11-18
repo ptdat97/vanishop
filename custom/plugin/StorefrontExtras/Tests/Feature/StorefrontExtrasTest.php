@@ -123,9 +123,3 @@ it('lưới banner: ô lớn (bố cục 1 ô, ô đầu của bố cục 3 ô) 
         [false, [1152, 2, 1], '#'],
     ])->and(app(BannerGridBlock::class)->resolve(['layout' => '1', 'cell_1_image' => '/img/a.jpg'], 'vi')['cells'][0]['wide'])->toBeTrue();
 });
-
-it('view của plugin không gọi lớp Core, không tự tính (dữ liệu dựng sẵn ở khối/provider)', function () {
-    foreach (glob(dirname(__DIR__, 2).'/Resources/views/{,*/}*.blade.php', GLOB_BRACE) as $file) {
-        expect((string) file_get_contents($file))->not->toContain('\\Modules\\')->not->toContain('@php');
-    }
-});

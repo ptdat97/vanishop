@@ -55,7 +55,8 @@ it('thanh thông báo: tắt → không có HTML; nhiều dòng xoay vòng; Mark
     expect($html)->toContain('data-vani-cms-announcement')->toContain('data-pause="4000"')->toContain('background-color:#111111;')
         ->toContain('Miễn phí giao từ <strong>500k</strong>')->toContain('<a href="/khuyen-mai">Xem ưu đãi</a>')
         ->toContain('data-next')->not->toContain('<script>alert(1)')->not->toContain('javascript:alert')
-        ->and(substr_count($html, 'data-line'))->toBe(3);
+        ->and(substr_count($html, 'data-line'))->toBe(3)
+        ->and($html)->toMatch('#<script src="[^"]*vani\.cms/announcement\.[^"]*" defer>#');
 
     // Bản tiếng Anh chưa nhập → dùng ngôn ngữ mặc định.
     $this->get('/en')->assertOk()->assertSee('data-vani-cms-announcement', false);
