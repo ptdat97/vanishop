@@ -4,6 +4,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.33 — 2026-11-19 · Extension API 1.8.0 (không đổi)
+
+### Sửa
+- Outbox: deadlock InnoDB giữa các worker (CI run 44346155925, `OutboxConcurrencyTest` đỏ ~1/12 lần trên MySQL 8.4): `OutboxWorker::reclaimStuck()` chạy `UPDATE … WHERE status = 'processing'` ở mỗi lượt, khoá khoảng chỉ mục `status` và chạm với câu ghi "đã gửi" của worker khác. Nay đọc id không khoá trước, chỉ UPDATE theo khoá chính khi thật sự có message kẹt; `claim()` tự thử lại khi gặp deadlock (3 lần). Lỗi gốc hiện ra dưới dạng `TypeError` vì `Concurrency\ProcessDriver` của Laravel không dựng lại được `QueryException` từ tiến trình con.
+
 ## 0.5.32 — 2026-11-18 · Extension API 1.8.0
 
 Backlog L40: xác minh email sau khi đổi email trong hồ sơ. Từ bản này `vanishop.extension_api_stage = dev` (Owner 2026-11-18): API cho plugin chưa chốt, thay đổi phá vỡ chỉ cần tăng minor + ghi ở đây; plugin trong repo cập nhật theo ([ADR-048 — sửa đổi](../19-adr/ADR-048-extension-api-version.md)).

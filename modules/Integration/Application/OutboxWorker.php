@@ -61,9 +61,16 @@ final class OutboxWorker
 
     public function reclaimStuck(): int
     {
-        return OutboxRecord::query()
-            ->where('status', MessageStatus::Processing)
-            ->where('locked_at', '<', now()->subSeconds($this->processingTimeoutSeconds))
+        // Đọc không khoá trước (gần như luôn rỗng); chỉ UPDATE theo khoá chính khi có message kẹt. UPDATE quét theo `status`
+        // ở mỗi lượt chạy khoá khoảng chỉ mục và deadlock với claim() của worker khác (CI 2026-11-18, OutboxConcurrencyTest).
+        $cutoff = now()->subSeconds($this->processingTimeoutSeconds);
+        $stuck = OutboxRecord::query()->where('status', MessageStatus::Processing)->where('locked_at', '<', $cutoff)->pluck('id');
+        if ($stuck->isEmpty()) {
+            return 0;
+        }
+
+        return OutboxRecord::query()->whereKey($stuck->all())
+            ->where('status', MessageStatus::Processing)->where('locked_at', '<', $cutoff)
             ->update(['status' => MessageStatus::Pending, 'locked_at' => null, 'next_attempt_at' => now()]);
     }
 
@@ -95,7 +102,7 @@ final class OutboxWorker
             OutboxRecord::query()->whereIn('id', $ids)->update(['status' => MessageStatus::Processing, 'locked_at' => now()]);
 
             return OutboxRecord::query()->whereIn('id', $ids)->orderBy('id')->get();
-        });
+        }, attempts: 3); // deadlock giữa các worker → thử lại (DB::transaction chỉ lặp khi lỗi là deadlock)
     }
 
     private function deliver(OutboxRecord $record): void
