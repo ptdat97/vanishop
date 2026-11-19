@@ -17,7 +17,7 @@
 @section('content')
     <article class="mx-auto max-w-3xl">
         @include('vani-cms::_preview-notice')
-        <nav class="mb-4 text-sm text-slate-500"><a href="{{ vani_route('storefront.p.vani-cms.blog') }}" class="underline">{{ __('Tin tức') }}</a></nav>
+        <nav class="mb-4 text-sm text-slate-500"><a href="{{ vani_route('storefront.p.vani-cms.blog') }}" class="underline">{{ __('vani-cms::storefront.news') }}</a></nav>
         <h1 class="mb-2 text-3xl font-semibold">{{ $post['title'] }}</h1>
         @if ($post['published_date'])
             <p class="mb-6 text-sm text-slate-500">
@@ -33,7 +33,7 @@
     {{-- Sản phẩm gắn với bài (1.4.0): thẻ sản phẩm của theme. --}}
     @if (($post['products'] ?? []) !== [])
         <section class="mx-auto mt-12 max-w-5xl" data-cms-post-products>
-            <h2 class="mb-4 text-lg font-semibold">{{ __('Sản phẩm trong bài') }}</h2>
+            <h2 class="mb-4 text-lg font-semibold">{{ __('vani-cms::storefront.post_products') }}</h2>
             @include('theme::partials.product-grid', ['products' => $post['products']])
         </section>
     @endif

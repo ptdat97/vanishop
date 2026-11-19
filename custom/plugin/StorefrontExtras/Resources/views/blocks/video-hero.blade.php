@@ -6,7 +6,7 @@
         <source src="{{ $video['src'] }}" type="{{ $video['type'] }}">
     </video>
     <button type="button" class="absolute bottom-4 right-4 rounded-full bg-black/60 px-4 py-2 text-sm" data-extras-video-toggle
-            data-label-play="{{ __('Phát video') }}" data-label-pause="{{ __('Dừng video') }}">{{ $autoplay ? __('Dừng video') : __('Phát video') }}</button>
+            data-label-play="{{ __('vani-storefront-extras::storefront.play_video') }}" data-label-pause="{{ __('vani-storefront-extras::storefront.pause_video') }}">{{ $autoplay ? __('vani-storefront-extras::storefront.pause_video') : __('vani-storefront-extras::storefront.play_video') }}</button>
     @if ($title !== '' || $text !== '' || ($ctaLabel !== '' && $ctaUrl !== ''))
         <div class="absolute inset-0 flex flex-col items-start justify-end gap-3 bg-gradient-to-t from-black/60 to-transparent p-8">
             @if ($title !== '')<h2 class="text-3xl font-semibold">{{ $title }}</h2>@endif

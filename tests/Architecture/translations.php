@@ -288,6 +288,10 @@ function translationJsonUsages(): array
         }
     }
     foreach (translationSourceFiles() as $file) {
+        // Loader bọc của theme phải cài `addJsonPath()` của interface `Loader` (chỉ chuyển tiếp cho loader gốc).
+        if ($file === 'modules/Storefront/Application/Theme/ThemeTranslationLoader.php') {
+            continue;
+        }
         if (str_ends_with($file, '.php') && preg_match('/\b(loadJsonTranslationsFrom|addJsonPath)\(/', (string) file_get_contents("{$root}/{$file}")) === 1) {
             $found[] = $file;
         }

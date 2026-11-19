@@ -30,7 +30,7 @@ final class OtpLoginController
         }
         $request->session()->put(self::PENDING_PHONE, $phone);
 
-        return $this->back()->with('status', __('Đã gửi mã xác thực. Vui lòng kiểm tra tin nhắn.'));
+        return $this->back()->with('status', __('vani-phone-otp-login::storefront.code_sent'));
     }
 
     public function verify(Request $request, CustomerSignIn $signIn): RedirectResponse

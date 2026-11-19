@@ -40,7 +40,7 @@ final class PreorderServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-preorder');
         $this->settings([
             ['key' => 'share_percent', 'label' => 'Mở bán đặt trước bao nhiêu % hàng đang về (0–100)', 'type' => 'int', 'default' => 100, 'rules' => ['min:0', 'max:100'],
                 'help' => 'Vd. 50: đang về 40 cái thì mở 20 suất đặt trước. 0 = tạm dừng đặt trước, vẫn hiện "Đang về" ở Tồn kho.'],

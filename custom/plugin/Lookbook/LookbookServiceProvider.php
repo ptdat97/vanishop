@@ -27,7 +27,7 @@ final class LookbookServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-lookbook');
         $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'Tạo, sửa, xoá lookbook']);
         $this->settings([
             ['key' => 'per_page', 'label' => 'Số lookbook mỗi trang (6–48)', 'type' => 'int', 'default' => 12, 'rules' => ['min:6', 'max:48']],

@@ -24,15 +24,15 @@ final class WishlistController
         $customerId = $this->customerId($request);
         if ($customerId === null) {
             return $request->expectsJson()
-                ? response()->json(['message' => __('Đăng nhập để lưu sản phẩm yêu thích.')], 401)
+                ? response()->json(['message' => __('vani-wishlist::storefront.sign_in_to_save')], 401)
                 : redirect()->to(vani_route('storefront.account.login'));
         }
 
         $added = $this->wishlists->toggle($customerId, $styleId);
         $message = match ($added) {
-            true => __('Đã thêm vào yêu thích.'),
-            false => __('Đã bỏ khỏi yêu thích.'),
-            null => __('Không thêm được: sản phẩm không còn bán hoặc danh sách đã đủ :max sản phẩm.', ['max' => Wishlists::MAX]),
+            true => __('vani-wishlist::storefront.added'),
+            false => __('vani-wishlist::storefront.removed'),
+            null => __('vani-wishlist::storefront.add_failed', ['max' => Wishlists::MAX]),
         };
 
         return $request->expectsJson()

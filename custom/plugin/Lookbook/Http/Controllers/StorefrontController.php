@@ -44,7 +44,7 @@ final class StorefrontController
 
         $detail = $this->presenter->detail($lookbook, App::getLocale());
         // Breadcrumb dựng sẵn (partial breadcrumb của theme thêm Trang chủ, JSON-LD).
-        $crumbs = [['label' => __('Lookbook'), 'url' => vani_route('storefront.p.vani-lookbook.index')], ['label' => (string) $detail['name']]];
+        $crumbs = [['label' => __('vani-lookbook::storefront.lookbook'), 'url' => vani_route('storefront.p.vani-lookbook.index')], ['label' => (string) $detail['name']]];
 
         return view('vani-lookbook::pages.show', ['lookbook' => $detail, 'crumbs' => $crumbs]);
     }

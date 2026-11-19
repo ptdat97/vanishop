@@ -265,7 +265,7 @@ Designed ([commerce-kernel §7](../02-architecture/commerce-kernel.md)). Plugin 
 8. Plugin vào hệ thống qua repo + CI, không upload qua Admin ([ADR-026](../19-adr/ADR-026-plugin-deploy-via-code.md)).
 9. Checklist theo loại plugin: [contracts/](contracts/README.md).
 10. Không ghi đè binding, class, route hay middleware của Core (rule R35); thay capability bằng implementation của Contract.
-11. View storefront: chữ hiển thị bọc `__('câu tiếng Việt')`, bản dịch ở `Resources/lang/<locale>.json` nạp trong `boot()` bằng `$this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'))`; URL bằng `vani_route()` ([storefront §3a](../14-storefront/storefront.md)). ⚠️ Sẽ đổi theo [ADR-049](../19-adr/ADR-049-keyed-translations.md) (Accepted, chưa làm): khoá `vani-<plugin>::nhóm.khoá`, file `Resources/lang/{vi,en}/*.php` đăng ký bằng `$this->translations()`, bỏ JSON.
+11. Chữ hiển thị (view storefront, flash, nhãn `accountPage()`) dùng khoá `__('vani-<plugin>::<nhóm>.<khoá>')` ([ADR-049](../19-adr/ADR-049-keyed-translations.md)) — namespace = id plugin đổi `.` thành `-`; bản dịch ở `Resources/lang/{vi,en}/<nhóm>.php` đăng ký trong `boot()` bằng `$this->translations($this->pluginPath('Resources/lang'), 'vani-<plugin>')`. Không dùng câu làm khoá, không dùng `lang/*.json` (`TranslationKeysTest`). URL bằng `vani_route()` ([storefront §3a](../14-storefront/storefront.md)).
 
 12. Tính năng storefront đi qua Storefront API trước, trang Blade sau ([§10b](#10b-storefront-api-first-cho-plugin-adr-044)).
 

@@ -47,7 +47,7 @@ final class CmsServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-cms');
         $this->permissions(['cms.view' => 'Xem nội dung (trang, bài viết)', 'cms.manage' => 'Soạn, đăng, xoá nội dung']);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-cms');

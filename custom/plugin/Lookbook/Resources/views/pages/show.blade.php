@@ -31,6 +31,6 @@
     </div>
 
     @if ($lookbook['category'])
-        <p class="mt-8"><a href="{{ $lookbook['category']['url'] }}" class="rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white" data-lookbook-category>{{ __('Xem thêm tại :name', ['name' => $lookbook['category']['name']]) }}</a></p>
+        <p class="mt-8"><a href="{{ $lookbook['category']['url'] }}" class="rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white" data-lookbook-category>{{ __('vani-lookbook::storefront.shop_look', ['name' => $lookbook['category']['name']]) }}</a></p>
     @endif
 @endsection

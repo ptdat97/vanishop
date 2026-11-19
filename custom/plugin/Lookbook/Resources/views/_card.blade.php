@@ -5,5 +5,5 @@
         @endif
     </div>
     <p class="mt-2 font-medium group-hover:underline">{{ $lookbook['name'] }}</p>
-    <p class="text-sm text-slate-500">{{ trans_choice(':count ảnh', $lookbook['images_count'], ['count' => $lookbook['images_count']]) }}</p>
+    <p class="text-sm text-slate-500">{{ trans_choice('vani-lookbook::storefront.photo_count', $lookbook['images_count'], ['count' => $lookbook['images_count']]) }}</p>
 </a>

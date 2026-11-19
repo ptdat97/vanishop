@@ -25,7 +25,7 @@ final class ScarcitySignalsServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-scarcity-signals');
         $this->settings([
             ['key' => 'show_low_stock', 'label' => 'Hiện "Chỉ còn N" ở trang sản phẩm', 'type' => 'bool', 'default' => true, 'help' => 'Theo đúng size khách đang chọn, chỉ khi số bán được từ ngưỡng trở xuống.'],
             ['key' => 'low_stock_threshold', 'label' => 'Ngưỡng "sắp hết" (1–100)', 'type' => 'int', 'default' => 5, 'rules' => ['min:1', 'max:100']],

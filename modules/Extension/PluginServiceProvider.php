@@ -369,6 +369,7 @@ abstract class PluginServiceProvider extends ServiceProvider
     /**
      * Mục trong menu tài khoản khách native (`/tai-khoan`), trỏ tới route trang của plugin (storefrontPages()).
      * Trang cần đăng nhập: thêm middleware `vani.customer-session:required` trong file route.
+     * `$label` là khoá dịch của plugin (`vani-<plugin>::nhóm.khoá`, ADR-049) — theme hiện theo ngôn ngữ trang.
      */
     protected function accountPage(string $key, string $label, string $route, int $order = 500): void
     {

@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.42 — 2026-11-19 · Extension API 1.11.0
+
+ADR-049 đợt I4. **Thay đổi phá vỡ cho plugin/theme ngoài repo** (Owner: bỏ JSON ngay, không giữ tương thích): bản dịch `Resources/lang/<locale>.json` (khoá = câu tiếng Việt) không còn được dùng.
+
+### Đổi (plugin)
+- 10 plugin chuyển sang khoá `vani-<plugin>::storefront.<khoá>` và `$this->translations($this->pluginPath('Resources/lang'), 'vani-<plugin>')`, file `Resources/lang/{vi,en}/storefront.php`; xoá `en.json`: `vani.cms` 1.5.6, `vani.wishlist` 1.1.2, `vani.lookbook` 1.1.5, `vani.size-chart` 1.0.5, `vani.phone-otp-login` 1.0.1, `vani.storefront-extras` 1.2.2, `vani.scarcity-signals` 1.0.3, `vani.tracking-pixels` 1.0.2, `vani.preorder` 1.1.1, `vani.hello-world` 0.3.1.
+- `PluginServiceProvider::accountPage()`: `$label` là **khoá dịch** của plugin (vd. `vani-wishlist::storefront.wishlist`), theme hiện theo ngôn ngữ trang.
+- Plugin ngoài repo: đổi `__('Câu')` → `__('vani-<plugin>::<nhóm>.<khoá>')`, thêm `Resources/lang/{vi,en}/<nhóm>.php`, thay `loadJsonTranslationsFrom()` bằng `translations()` ([plugin-system §10 bước 11](../05-plugin/plugin-system.md)).
+
+### Test
+- Bỏ `StorefrontI18nTest` — `TranslationKeysTest` thay thế; luật 1 (không dùng câu làm khoá) và luật 4 (không JSON) không còn ngoại lệ.
+
 ## 0.5.41 — 2026-11-19 · Extension API 1.10.0 (không đổi)
 
 ADR-049 đợt I3. Không đổi API cho plugin.

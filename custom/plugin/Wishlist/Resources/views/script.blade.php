@@ -4,5 +4,5 @@
             data-ids-url="{{ $urls['ids'] }}"
             data-items-url="{{ $urls['items'] }}"
             data-merge-url="{{ $urls['merge'] }}"
-            data-label-add="{{ __('Yêu thích') }}" data-label-remove="{{ __('Bỏ yêu thích') }}"></script>
+            data-label-add="{{ __('vani-wishlist::storefront.wishlist') }}" data-label-remove="{{ __('vani-wishlist::storefront.remove_from_wishlist') }}"></script>
 @endif

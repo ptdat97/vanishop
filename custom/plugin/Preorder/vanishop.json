@@ -8,7 +8,7 @@
         "vi": "Mở bán đặt trước SKU hết hàng nhưng đang về, tối đa theo số đang về (hoặc một phần); trang sản phẩm báo \"Đặt trước — dự kiến có hàng\"; đơn còn chờ hàng không được đẩy lên hãng. Nhập hàng đang về từ file ở trang Tồn kho. Tham chiếu cho BackorderPolicy và IncomingStock (ADR-047, EP v3 X7).",
         "en": "Sell out-of-stock SKUs that are on the way, up to the incoming quantity (or a share); product page shows \"Pre-order — expected\"; orders still waiting for stock cannot be pushed to the carrier. Import incoming stock from a file on the Stock page. Reference for BackorderPolicy and IncomingStock (ADR-047, EP v3 X7)."
     },
-    "version": "1.1.0",
+    "version": "1.1.1",
     "kind": "feature",
     "provider": "Plugin\\Preorder\\PreorderServiceProvider",
     "requires": {

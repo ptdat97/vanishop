@@ -4,7 +4,7 @@
         <a href="{{ $link['url'] }}" @class(['block rounded px-3 py-2', 'bg-slate-100 font-semibold' => $link['active']])>{{ $link['label'] }}</a>
     @endforeach
     @foreach ($accountMenu ?? [] as $item)
-        {{-- Nhãn của plugin là khoá dịch (câu tiếng Việt) — plugin có bản dịch JSON thì hiện theo ngôn ngữ trang. --}}
+        {{-- Nhãn của plugin là khoá dịch của plugin (`vani-<plugin>::nhóm.khoá`, ADR-049) — hiện theo ngôn ngữ trang. --}}
         <a href="{{ $item['url'] }}" class="block rounded px-3 py-2" data-account-page="{{ $item['key'] }}">{{ __($item['label']) }}</a>
     @endforeach
     <x-vani::hook-slot name="vani.storefront.account.menu" />

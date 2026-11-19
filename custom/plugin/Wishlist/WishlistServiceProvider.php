@@ -30,7 +30,7 @@ final class WishlistServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-wishlist');
         $this->settings([
             ['key' => 'notify_back_in_stock', 'label' => 'Báo khách khi sản phẩm yêu thích có hàng lại', 'type' => 'bool', 'default' => false, 'help' => 'Tin marketing: chỉ gửi cho khách đồng ý nhận tin. Mẫu tin ở Admin → Thông báo.'],
             ['key' => 'notify_price_drop', 'label' => 'Báo khách khi sản phẩm yêu thích giảm giá', 'type' => 'bool', 'default' => false, 'help' => 'So với giá lúc thêm (hoặc lần báo trước). Tối đa một tin mỗi sản phẩm trong 7 ngày.'],
@@ -53,7 +53,7 @@ final class WishlistServiceProvider extends PluginServiceProvider
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-wishlist');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'));
         $this->accountRoutes($this->pluginPath('Http/routes/account.php'), ['vi' => 'yeu-thich', 'en' => 'wishlist']);
-        $this->accountPage('wishlist', 'Yêu thích', 'storefront.p.vani-wishlist.account.index', 300);
+        $this->accountPage('wishlist', 'vani-wishlist::storefront.wishlist', 'storefront.p.vani-wishlist.account.index', 300);
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
 
         // Trang cache CDN: HTML giống nhau với mọi khách nên không in token CSRF (JS gửi bằng fetch).

@@ -40,7 +40,7 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-hello-world');
         $this->permissions(['hello-world.view' => 'Xem trang Hello World']);
         $this->publishHooks($this->pluginPath('hooks.php'));
 
@@ -55,7 +55,7 @@ final class HelloWorldServiceProvider extends PluginServiceProvider
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-hello-world');
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));
         $this->storefrontPages($this->pluginPath('Http/routes/storefront-pages.php'));
-        $this->accountPage('hello', 'Hello World', 'storefront.p.vani-hello-world.index');
+        $this->accountPage('hello', 'vani-hello-world::storefront.account_page', 'storefront.p.vani-hello-world.index');
         $this->onSlot('vani.storefront.pdp.after_title', fn (array $product): ?SlotView => isset($product['extensions']['vani.hello-world'])
             ? new SlotView('vani-hello-world::greeting', $product['extensions']['vani.hello-world'])
             : null);

@@ -26,7 +26,7 @@ final class PhoneOtpLoginServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-phone-otp-login');
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-phone-otp-login');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'));
         $this->storefrontRoutes($this->pluginPath('Http/routes/storefront-api.php'));

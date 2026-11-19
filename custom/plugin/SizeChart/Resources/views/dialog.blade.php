@@ -5,7 +5,7 @@
 --}}
 
 <div data-vani-size-chart>
-    <button type="button" class="text-sm underline" data-size-chart-open>{{ __('Bảng size') }}</button>
+    <button type="button" class="text-sm underline" data-size-chart-open>{{ __('vani-size-chart::storefront.size_chart') }}</button>
     @include('theme::partials.modal', [
         'id' => 'vani-size-chart-dialog',
         'title' => $chart['name'],
@@ -39,7 +39,7 @@
         var weight = parseFloat(advisor.querySelector('[data-advisor-weight]').value);
         var match = rules.find(function (rule) { return height >= rule.height_min && height <= rule.height_max && weight >= rule.weight_min && weight <= rule.weight_max; });
         suggested = match ? match.size : null;
-        result.textContent = match ? @json(__('Size gợi ý:')) + ' ' + match.size + (match.note ? ' — ' + match.note : '') : @json(__('Chưa tìm thấy size phù hợp'));
+        result.textContent = match ? @json(__('vani-size-chart::storefront.suggested_size')) + ' ' + match.size + (match.note ? ' — ' + match.note : '') : @json(__('vani-size-chart::storefront.no_matching_size'));
         var radio = suggested && Array.prototype.find.call(document.querySelectorAll('[data-variant-form] input[name="variant_id"]:not(:disabled)'), function (input) {
             return input.closest('label').textContent.trim().split(/\s+/)[0] === suggested && (input.closest('[data-option-group], [data-primary-option]') || input).offsetParent !== null;
         });

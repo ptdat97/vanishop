@@ -31,7 +31,7 @@ final class StorefrontExtrasServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->loadJsonTranslationsFrom($this->pluginPath('Resources/lang'));
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-storefront-extras');
         $this->settings([
             ['key' => 'recent_on_cart', 'label' => 'Thanh "Đã xem" ở trang giỏ', 'type' => 'bool', 'default' => true],
             ['key' => 'recent_on_cart_limit', 'label' => 'Số sản phẩm thanh "Đã xem" ở giỏ (1–20)', 'type' => 'int', 'default' => 12, 'rules' => ['min:1', 'max:20']],
@@ -48,7 +48,7 @@ final class StorefrontExtrasServiceProvider extends PluginServiceProvider
             }
 
             return new SlotView('vani-storefront-extras::blocks.recently-viewed', [
-                'title' => __('Bạn đã xem'), 'layout' => 'scroll',
+                'title' => __('vani-storefront-extras::storefront.recently_viewed_title'), 'layout' => 'scroll',
                 'limit' => max(1, min(20, (int) vani_setting(self::ID, 'recent_on_cart_limit', 12))),
                 // Bỏ sản phẩm đã có trong giỏ.
                 'exclude' => array_values(array_filter(array_map(fn (array $line): ?string => $line['product']['slug'] ?? null, (array) ($cart['lines'] ?? [])))),

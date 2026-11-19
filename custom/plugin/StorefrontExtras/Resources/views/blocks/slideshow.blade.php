@@ -15,7 +15,7 @@
                             @if ($slide['link'] !== '' && $slide['label'] !== '')<a href="{{ $slide['link'] }}" class="mt-3 inline-block rounded-[var(--radius-theme)] bg-white px-4 py-2 text-sm font-medium text-slate-900">{{ $slide['label'] }}</a>@endif
                         </figcaption>
                     @elseif ($slide['link'] !== '')
-                        <a href="{{ $slide['link'] }}" class="absolute inset-0"><span class="sr-only">{{ __('Xem') }}</span></a>
+                        <a href="{{ $slide['link'] }}" class="absolute inset-0"><span class="sr-only">{{ __('vani-storefront-extras::storefront.view') }}</span></a>
                     @endif
                 </figure>
             @endforeach

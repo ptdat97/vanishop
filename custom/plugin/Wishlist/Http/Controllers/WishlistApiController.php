@@ -43,7 +43,7 @@ final class WishlistApiController
         $data = $request->validate(['style_id' => ['required', 'integer', 'min:1']]);
         $customerId = $this->customerId($request);
         if (! in_array((int) $data['style_id'], $this->wishlists->ids($customerId), true) && $this->wishlists->add($customerId, [(int) $data['style_id']]) === 0) {
-            return response()->json(['error' => ['code' => 'wishlist.unavailable', 'message' => __('Không thêm được: sản phẩm không còn bán hoặc danh sách đã đủ :max sản phẩm.', ['max' => Wishlists::MAX])]], 422);
+            return response()->json(['error' => ['code' => 'wishlist.unavailable', 'message' => __('vani-wishlist::storefront.add_failed', ['max' => Wishlists::MAX])]], 422);
         }
 
         return response()->json(['data' => ['ids' => $this->wishlists->ids($customerId)]], 201);
