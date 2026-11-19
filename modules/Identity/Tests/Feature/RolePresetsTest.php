@@ -32,6 +32,11 @@ it('4 mẫu, quyền đúng vai trò của từng team; luôn có admin.access',
         ->and($presets['analyst']['permissions'])->toContain('orders.view', 'orders.export', 'customers.view', 'inventory.view', 'promotion.view')
         ->and(collect($presets['analyst']['permissions'])->filter(fn (string $code): bool => ! str_ends_with($code, '.view') && ! in_array($code, ['admin.access', 'orders.export'], true))->all())->toBe([])
         ->and($presets['analyst']['permissions'])->not->toContain('customers.pii');
+
+    // Phân quyền theo team ở mức module (Owner 2026-11-19): team không làm kho/giao hàng thì không có quyền nào của kho.
+    foreach (['marketing', 'content'] as $team) {
+        expect(collect($presets[$team]['permissions'])->filter(fn (string $code): bool => preg_match('/^(inventory|fulfillment|warehouse)\./', $code) === 1)->all())->toBe([], $team);
+    }
 });
 
 it('quyền plugin khai mẫu tự vào đúng mẫu; trang sửa vai trò không có mẫu; lưu vai trò từ mẫu', function () {
