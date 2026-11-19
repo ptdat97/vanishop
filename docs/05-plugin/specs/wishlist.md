@@ -17,8 +17,8 @@
 ## 2. Hành vi
 
 1. **Đơn vị lưu**: một mẫu (style), không theo màu/size. Một khách tối đa 100 mẫu; thêm lại mẫu đã có không tạo dòng mới.
-2. **Khách đã đăng nhập** (phiên web hoặc Bearer): lưu ở server. Nút tim là form POST — chạy được khi tắt JS (thêm/bỏ rồi quay lại trang).
-3. **Khách vãng lai**: JS lưu tối đa 100 id mẫu trong `localStorage` của trình duyệt (không cookie, không server). Không JS: bấm tim → trang đăng nhập.
+2. **Khách đã đăng nhập** (phiên web hoặc Bearer): lưu ở server. Nút tim gọi Storefront API (`wishlist.js`, phiên cùng nguồn).
+3. **Khách vãng lai**: JS lưu tối đa 100 id mẫu trong `localStorage` của trình duyệt (không cookie, không server).
 4. **Gộp khi đăng nhập**: lần đầu trang biết khách đã đăng nhập (qua dữ liệu phiên của trang — `vani:session`), JS gửi danh sách trong trình duyệt lên server rồi xoá bản trong trình duyệt. Gộp là hợp (union), giữ giới hạn 100; mẫu không còn bán bị bỏ.
 5. **Trang cache CDN**: HTML của nút tim giống nhau với mọi khách; JS tô trạng thái theo danh sách của khách (server hoặc trình duyệt). Không lộ dữ liệu khách vào bản cache.
 6. **Trang danh sách** `/tai-khoan/yeu-thich` (cần đăng nhập): thẻ sản phẩm (giá, còn hàng theo chính sách hiện giá của cửa hàng) mới thêm trước; mẫu đã ẩn/ngừng bán hiện "Không còn bán" kèm nút bỏ.
@@ -36,7 +36,7 @@
 | Storefront API | `GET /api/storefront/v1/x/vani-wishlist/ids` | `{data: {ids[]}}`, `private, no-store` — wishlist.js tô nút tim |
 | Storefront API | `GET/POST /api/storefront/v1/x/vani-wishlist/items`, `DELETE …/items/{styleId}` | `GET` trả thẻ sản phẩm; `POST`/`DELETE` trả `{data: {ids}}` |
 | Storefront API | `POST /api/storefront/v1/x/vani-wishlist/items/merge` (`style_ids[]`) | Gộp danh sách của trình duyệt sau khi đăng nhập |
-| Web | `POST /p/vani-wishlist/toggle` (`style_id`) | Nút tim khi **tắt JS** (quay lại trang; vãng lai → trang đăng nhập) |
+| Web | `POST /p/vani-wishlist/toggle` (`style_id`) | Form của nút tim trên trang HTML (quay lại trang) |
 
 Xác thực API: Bearer (app) hoặc phiên web cùng nguồn — wishlist.js gọi bằng cookie phiên + `X-CSRF-TOKEN` (ADR-044, 1.1.0).
 
@@ -50,7 +50,7 @@ Thiếu — thêm vào Core 0.3.76:
 
 ## 6. Tiêu chí chấp nhận
 
-- Đã đăng nhập: thêm/bỏ ở thẻ và PDP (có/không JS), trang danh sách đúng thứ tự, giới hạn 100.
+- Đã đăng nhập: thêm/bỏ ở thẻ và PDP, trang danh sách đúng thứ tự, giới hạn 100.
 - Vãng lai: lưu trình duyệt; đăng nhập → gộp, bỏ trùng, bỏ mẫu không còn bán.
 - HTML trang cache giống nhau giữa khách vãng lai và khách đăng nhập.
 - Thông báo chỉ khi bật cấu hình, chỉ có hàng lại / giảm giá thật, tối đa 1 tin/loại/7 ngày, marketing (Core lọc consent).

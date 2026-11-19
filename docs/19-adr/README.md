@@ -27,7 +27,7 @@ Mỗi ADR ghi một quyết định quan trọng theo mẫu: **Context · Proble
 | [022](ADR-022-guest-cart-token.md) | Giỏ khách vãng lai: id công khai + token bí mật, giỏ không giữ hàng | Accepted (sửa đổi bởi 044) |
 | [023](ADR-023-stateless-checkout.md) | Checkout không lưu phiên; PlaceOrder một transaction; một brand mỗi đơn | Accepted (sửa đổi bởi 028) |
 | [024](ADR-024-customer-api-token.md) | Phiên khách trên Storefront API: token Bearer mờ (hash), không dùng Sanctum | Accepted (sửa đổi bởi 044) |
-| [025](ADR-025-native-storefront-ssr-slots.md) | Native storefront: SSR-first, JS tăng cường cục bộ, slot UI chỉ nối thêm, thay khối bằng override theme | Accepted (sửa đổi bởi 028) |
+| [025](ADR-025-native-storefront-ssr-slots.md) | Native storefront: SSR-first (SEO, tốc độ), JS cho tương tác, slot UI chỉ nối thêm, thay khối bằng override theme | Accepted (sửa đổi bởi 028; 2026-11-19: không hỗ trợ tắt JS) |
 | [026](ADR-026-plugin-deploy-via-code.md) | Plugin chỉ vào hệ thống qua mã nguồn + CI, không upload qua Admin | Accepted |
 | [027](ADR-027-plugin-data-no-core-columns.md) | Plugin mở rộng dữ liệu bằng bảng `plg_*` + `meta`, không thêm cột vào bảng Core | Accepted |
 | [028](ADR-028-single-store-brand-as-catalog.md) | **Một Owner, một website, một giao diện; brand là thuộc tính catalog** | Accepted |

@@ -10,7 +10,7 @@ Gửi sự kiện thương mại điện tử chuẩn tới Meta Pixel, Google A
 
 | Tính năng | Giữ / đổi |
 |---|---|
-| Nhúng script Meta Pixel, GA4, GTM (kèm thẻ `noscript` của GTM) | Giữ script; **bỏ** `noscript` của GTM (nạp GTM khi chưa đồng ý) |
+| Nhúng script Meta Pixel, GA4, GTM | Giữ script, chỉ nạp khi khách đã đồng ý |
 | Sự kiện trình duyệt: xem trang, xem sản phẩm, xem danh sách (danh mục), tìm kiếm, thêm vào giỏ, bỏ khỏi giỏ, bắt đầu thanh toán, chọn phương thức thanh toán, mua hàng | Giữ |
 | Mã sự kiện chung cho sự kiện mua (khử trùng giữa trình duyệt và server) | Giữ |
 | Gửi sự kiện mua từ server tới Meta (Conversions API) và GA4 (Measurement Protocol), băm SHA-256 email/SĐT/mã khách | Giữ, chuyển sang chạy nền (queue) |

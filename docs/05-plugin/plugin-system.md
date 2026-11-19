@@ -277,7 +277,7 @@ Storefront API là hợp đồng; trang Blade của theme chỉ là một cách 
 
 1. **Dữ liệu và thao tác ghi → `storefrontRoutes()`** (`/api/storefront/v1/x/{slug}/…`). App, Zalo Mini App, headless và JS của theme cùng dùng. Phản hồi theo phong bì `{data, meta}` và lỗi `error.v1` như API của Core; plugin tự mô tả OpenAPI của mình nếu công bố cho bên ngoài.
 2. **Trang Blade → `storefrontPages()` / `accountRoutes()`** dựng từ cùng service mà API dùng; form Blade dùng chung FormRequest với endpoint API (luật đầu vào viết một lần).
-3. **JS của plugin gọi API** bằng phiên web cùng nguồn (cookie + `X-CSRF-TOKEN`, `vani.first-party-session`), không tạo endpoint JSON riêng dưới `/p/{slug}`. Route web chỉ giữ cho form khi tắt JS (vd. nút tim của `vani.wishlist`).
+3. **JS của plugin gọi API** bằng phiên web cùng nguồn (cookie + `X-CSRF-TOKEN`, `vani.first-party-session`), không tạo endpoint JSON riêng dưới `/p/{slug}`.
 4. **Slot HTML** (`onSlot` vào `vani.storefront.*`) chỉ để trình bày. Dữ liệu cho khách mà client khác cũng cần (bảng size, tín hiệu khan hàng…) đi qua enricher của sản phẩm (`extensions.<plugin id>` trong JSON) hoặc endpoint API.
 
 **Hợp đồng API của plugin (0.4.16).** Plugin có `storefrontRoutes()` đặt `openapi.json` (OpenAPI 3.1) ở thư mục plugin, schema response trong `schemas/` (tập từ khoá của `Tests\Support\JsonSchemaSubset`, `$ref` tương đối — dùng lại được schema của Core như `docs/api/schemas/storefront/product-card.v1.json`). Lỗi không cần schema riêng: luôn theo `error.v1` của Core. Thời điểm theo ISO-8601 giờ cửa hàng (`StoreClock::iso()`). Trong test của plugin:

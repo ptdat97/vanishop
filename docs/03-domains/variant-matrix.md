@@ -85,7 +85,7 @@ chung (không trục tự do theo từng sản phẩm); giá và tồn thuộc m
   công bố số đo); mở trang với SKU chọn sẵn qua `?sku=<mã SKU>` (chọn đúng giá trị các trục, đổi ảnh của SKU); chọn chưa đủ trục mà bấm
   thêm giỏ → báo lỗi ngay tại nhóm trục thiếu.
 - Theme mặc định (0.4.28): trục đầu theo kiểu hiển thị (ô màu / nút / danh sách), mỗi giá trị của trục đầu một nhóm SKU nhãn theo
-  các trục còn lại (không JS vẫn chạy); chọn → ảnh và giá của SKU. Một trục: chọn thẳng SKU. Form gửi `axis[<mã loại>]`.
+  các trục còn lại; chọn → ảnh và giá của SKU. Một trục: chọn thẳng SKU. Form gửi `axis[<mã loại>]`.
 
 ## 5. Kiểm chứng
 

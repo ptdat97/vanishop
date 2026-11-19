@@ -23,7 +23,7 @@ Hai con số trên trang sản phẩm giúp khách quyết định mua: **còn b
 
 ## 3. Hành vi
 
-- **PDP**: enricher `product` → `extensions["vani.scarcity-signals"] = {low_stock: {variant id: còn lại}, threshold, sold: {count, days} | null}`; chỉ variant có 0 < còn lại ≤ ngưỡng mới có số. Slot `pdp.add_to_cart_fields` in bảng số còn lại; `scarcity.js` hiện "Chỉ còn N sản phẩm" khi khách chọn size có trong bảng (không JS hoặc chưa chọn size: không hiện). Slot `pdp.after_price`: "Đã bán N trong X ngày qua".
+- **PDP**: enricher `product` → `extensions["vani.scarcity-signals"] = {low_stock: {variant id: còn lại}, threshold, sold: {count, days} | null}`; chỉ variant có 0 < còn lại ≤ ngưỡng mới có số. Slot `pdp.add_to_cart_fields` in bảng số còn lại; `scarcity.js` hiện "Chỉ còn N sản phẩm" khi khách chọn size có trong bảng (chưa chọn size: không hiện). Slot `pdp.after_price`: "Đã bán N trong X ngày qua".
 - **Thẻ sản phẩm**: enricher `product_card` → `low_stock: true` khi tổng số bán được > 0 và ≤ ngưỡng chung; slot `plp.card_badges` hiện "Sắp hết".
 - Storefront API có cùng dữ liệu (headless).
 - Trang cache CDN: số trên HTML trễ tối đa bằng thời gian cache trang; "đã bán" trễ tối đa 1 giờ (bằng chứng xã hội, không phải tồn kho).
