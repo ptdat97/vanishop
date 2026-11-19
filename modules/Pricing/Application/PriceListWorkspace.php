@@ -10,12 +10,14 @@ use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Facades\Hook;
 use Modules\Pricing\Contracts\BulkPriceMode;
+use Modules\Pricing\Contracts\Data\DiscountCap;
 use Modules\Pricing\Contracts\PriceRounding;
 use Modules\Pricing\Domain\BulkPriceRule;
 use Modules\Pricing\Domain\PriceListType;
 use Modules\Pricing\Persistence\Models\Price;
 use Modules\Pricing\Persistence\Models\PriceList;
 use Modules\Shared\Support\MoneyFormatter;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Trang làm việc của một bảng giá (đợt 1 — thao tác gọn): mọi SKU đang có trong bảng (tìm, phân trang), tìm sản phẩm để
@@ -40,6 +42,7 @@ final class PriceListWorkspace
         private readonly PriceListService $lists,
         private readonly MoneyFormatter $money,
         private readonly Extensions $extensions,
+        private readonly Settings $settings,
     ) {}
 
     /**
@@ -86,7 +89,7 @@ final class PriceListWorkspace
 
     public function capBasisPoints(): int
     {
-        return (int) config('vanishop.promotion.max_discount_bp', 10_000);
+        return DiscountCap::basisPoints($this->settings->get('core', DiscountCap::SETTING));
     }
 
     /**

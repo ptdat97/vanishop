@@ -19,6 +19,7 @@ use Modules\Fulfillment\Application\Carriers\ManualCarrier;
 use Modules\Fulfillment\Application\EloquentDeliveryStatistics;
 use Modules\Fulfillment\Application\EloquentShipmentReader;
 use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Application\FulfillmentSettings;
 use Modules\Fulfillment\Application\Listeners\CancelShipmentsOnOrderCancel;
 use Modules\Fulfillment\Application\Listeners\CreateShipmentsOnConfirm;
 use Modules\Fulfillment\Application\Listeners\OrderListShipments;
@@ -95,6 +96,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
             optionsFromTag: SourcingStrategy::TAG, help: 'fulfillment::texts.fulfillment_service_provider.sourcingstrategy_when_creating_shipments',
             group: SettingGroup::Inventory,
         ));
+        FulfillmentSettings::define($this->app->make(Settings::class));
         $permissions->register('fulfillment.view', 'fulfillment::texts.fulfillment_service_provider.view_shipments');
         $permissions->register('fulfillment.manage', 'fulfillment::texts.fulfillment_service_provider.create_update_cancel_shipments');
 

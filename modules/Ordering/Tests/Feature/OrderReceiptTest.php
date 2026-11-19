@@ -46,6 +46,10 @@ it('chưa giao: không xác nhận được; đang giao quá số ngày cấu h�
     $this->getJson("{$this->api}/orders/{$this->order->public_id}", $this->headers)->assertJsonPath('data.receipt.can_confirm', false);
 
     DB::table('order_events')->where('order_id', $this->order->id)->where('to_status', 'shipped')->update(['created_at' => now()->subDays(6)]);
+    // Admin đặt 10 ngày → 6 ngày chưa đủ; về mặc định (5 ngày) → được.
+    app(Settings::class)->set('core', 'orders.confirm_receipt_after_days', 10);
+    $this->getJson("{$this->api}/orders/{$this->order->public_id}", $this->headers)->assertJsonPath('data.receipt.can_confirm', false);
+    app(Settings::class)->forget('core', 'orders.confirm_receipt_after_days');
     $this->getJson("{$this->api}/orders/{$this->order->public_id}", $this->headers)->assertJsonPath('data.receipt.can_confirm', true);
     ($this->confirm)()->assertOk()->assertJsonPath('data.receipt.returns_waived', false);
 });

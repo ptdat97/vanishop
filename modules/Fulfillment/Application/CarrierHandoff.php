@@ -34,6 +34,7 @@ final class CarrierHandoff
         private readonly OrderReader $orders,
         private readonly CatalogReader $catalog,
         private readonly FulfillmentService $fulfillment,
+        private readonly FulfillmentSettings $fulfillmentSettings,
     ) {}
 
     /**
@@ -50,7 +51,7 @@ final class CarrierHandoff
         foreach ($this->catalog->sellableVariants($variantIds, StoreLocale::default(), time()) as $id => $variant) {
             $weights[$id] = $variant->weightGram;
         }
-        $defaultWeight = max(1, (int) config('vanishop.fulfillment.default_item_weight_gram', 300));
+        $defaultWeight = $this->fulfillmentSettings->defaultItemWeightGram();
 
         $rows = [self::HEADERS];
         foreach ($shipments as $shipment) {

@@ -53,13 +53,14 @@ final class FulfillmentService implements ShipmentBooking
         private readonly InventoryReturns $returns,
         private readonly AuditLogger $audit,
         private readonly CarrierSelection $carriers,
+        private readonly FulfillmentSettings $fulfillmentSettings,
     ) {}
 
     /**
      * Tạo shipment cho đơn đã xác nhận theo SourcingStrategy. Trả các shipment id vừa tạo.
      *
      * Carrier: chỉ định tường minh (nhân viên) → quy tắc `CarrierAssignment` của plugin (EP v3 X3) → carrier của phương thức giao khách chọn (`shippingMethod.source`,
-     * dịch vụ = `shippingMethod.code`) nếu carrier đó đang bật → carrier mặc định (`vanishop.fulfillment.default_carrier`).
+     * dịch vụ = `shippingMethod.code`) nếu carrier đó đang bật → carrier mặc định (FulfillmentSettings::DEFAULT_CARRIER).
      *
      * @return list<int>
      */
@@ -119,7 +120,7 @@ final class FulfillmentService implements ShipmentBooking
             return $ids;
         });
 
-        if ($carrier->capabilities()->autoBooking && config('vanishop.fulfillment.booking', 'manual') === 'on_create') {
+        if ($carrier->capabilities()->autoBooking && $this->fulfillmentSettings->bookOnCreate()) {
             $this->pushToCarrier($ids);
         }
 

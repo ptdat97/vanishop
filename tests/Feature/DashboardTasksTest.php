@@ -56,6 +56,13 @@ it('đủ quyền: ô của mọi module theo thứ tự, số đếm đúng, li
         ->and($tasks['stock.low']['url'])->toBe(route('admin.inventory.stock.index', ['filter' => 'low']));
 
     $this->get($tasks['orders.aged']['url'])->assertOk()->assertInertia(fn ($page) => $page->has('orders', 1)->where('orders.0.id', $old->id)->where('filters.aged', '24'));
+
+    // Ngưỡng "tồn đọng" theo Admin → Cài đặt → Đơn hàng & đổi trả: 48 giờ → đơn 30 giờ chưa tính.
+    app(Settings::class)->set('core', 'orders.aged_hours', 48);
+    $tasks = ($this->tasks)();
+    expect($tasks['orders.aged']['count'])->toBe(0)
+        ->and($tasks['orders.aged']['url'])->toBe(route('admin.orders.orders.index', ['aged' => 48]))
+        ->and($tasks['orders.aged']['label'])->toContain('48');
 });
 
 it('đơn hoàn tất ngoài trình tự còn COD chưa thu: hiện ô, mở ra đúng đơn; ghi nhận đã thu thì ô biến mất', function () {

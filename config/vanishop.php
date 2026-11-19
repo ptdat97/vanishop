@@ -6,7 +6,7 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.52',
+    'version' => '0.5.53',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
@@ -295,8 +295,10 @@ return [
     /*
     | Đơn hàng: số đơn một dãy cho cả cửa hàng (ADR-028), dạng <tiền tố><yymm>-<6 số>.
     */
+    // Các mục đánh dấu [Admin] là giá trị mặc định: chủ shop đổi ở Admin → Cài đặt (namespace core), Admin để trống thì
+    // dùng giá trị ở đây.
     'orders' => [
-        'number_prefix' => env('VANI_ORDER_NUMBER_PREFIX', 'VN'),
+        'number_prefix' => env('VANI_ORDER_NUMBER_PREFIX', 'VN'), // [Admin]
     ],
 
     'pricing' => [
@@ -306,12 +308,12 @@ return [
 
     'cart' => [
         // Giới hạn chống giỏ ảo / gom hàng.
-        'max_line_quantity' => (int) env('VANI_CART_MAX_LINE_QUANTITY', 20),
-        'max_lines' => (int) env('VANI_CART_MAX_LINES', 50),
+        'max_line_quantity' => (int) env('VANI_CART_MAX_LINE_QUANTITY', 20), // [Admin]
+        'max_lines' => (int) env('VANI_CART_MAX_LINES', 50), // [Admin]
         // Giỏ không hoạt động quá số ngày này bị xoá (vani:cart:prune, chạy hằng ngày).
-        'ttl_days' => (int) env('VANI_CART_TTL_DAYS', 30),
+        'ttl_days' => (int) env('VANI_CART_TTL_DAYS', 30), // [Admin]
         // Giỏ của khách không hoạt động quá số phút này → CartAbandoned (vani:cart:detect-abandoned, 5 phút/lần).
-        'abandoned_after_minutes' => (int) env('VANI_CART_ABANDONED_AFTER_MINUTES', 60),
+        'abandoned_after_minutes' => (int) env('VANI_CART_ABANDONED_AFTER_MINUTES', 60), // [Admin]
     ],
 
     /*
@@ -321,29 +323,29 @@ return [
 
     'payment' => [
         // Cổng giữ tiền (CapturesLater): `shipped` = thu khi vận đơn rời kho; `manual` = nhân viên bấm thu.
-        'capture_on' => env('VANI_PAYMENT_CAPTURE_ON', 'shipped'),
+        'capture_on' => env('VANI_PAYMENT_CAPTURE_ON', 'shipped'), // [Admin]
         // vani:payment:reconcile chỉ hỏi cổng về khoản pending tạo trước N phút (tránh đua với callback đang tới).
         'reconcile_after_minutes' => (int) env('VANI_PAYMENT_RECONCILE_AFTER_MINUTES', 5),
     ],
 
     'fulfillment' => [
         // Tự tạo vận đơn khi đơn được xác nhận.
-        'auto_create' => (bool) env('VANI_FULFILLMENT_AUTO_CREATE', true),
+        'auto_create' => (bool) env('VANI_FULFILLMENT_AUTO_CREATE', true), // [Admin]
         // Đặt vận đơn ở hãng có API (ADR-046 chốt ②): `manual` — khi nhân viên bấm "Đẩy lên hãng" sau khi đóng gói (mặc định);
         // `on_create` — đặt ngay khi tạo vận đơn. Plugin tự động hoá gọi Fulfillment\Contracts\ShipmentBooking.
-        'booking' => env('VANI_FULFILLMENT_BOOKING', 'manual'),
+        'booking' => env('VANI_FULFILLMENT_BOOKING', 'manual'), // [Admin]
         // Carrier mặc định cho vận đơn mới (plugin hãng: ghn, ghtk…).
-        'default_carrier' => env('VANI_FULFILLMENT_CARRIER', 'manual'),
+        'default_carrier' => env('VANI_FULFILLMENT_CARRIER', 'manual'), // [Admin]
         'sourcing' => env('VANI_FULFILLMENT_SOURCING', 'reserved_locations'),
         // Menu Admin "Giao hàng" (trang vận đơn riêng, ADR-043): `auto` — chỉ hiện khi có hãng kết nối API (tự đặt vận đơn)
         // hoặc từ 2 kho giao online (vani.warehouse); shop nhỏ làm mọi việc giao hàng ngay trên trang đơn. `always` | `never`.
         'admin_menu' => env('VANI_FULFILLMENT_MENU', 'auto'),
         // Khối lượng mỗi sản phẩm khi biến thể chưa khai báo (file gửi hãng, 0.3.97).
-        'default_item_weight_gram' => (int) env('VANI_FULFILLMENT_DEFAULT_ITEM_GRAM', 300),
+        'default_item_weight_gram' => (int) env('VANI_FULFILLMENT_DEFAULT_ITEM_GRAM', 300), // [Admin]
         // Số ngày sau khi giao để đơn chuyển "completed" (hết hạn đổi trả).
-        'return_window_days' => (int) env('VANI_RETURN_WINDOW_DAYS', 7),
+        'return_window_days' => (int) env('VANI_RETURN_WINDOW_DAYS', 7), // [Admin]
         // Khách bấm "Đã nhận hàng" được khi đơn đang giao quá số ngày này (đã giao hết thì bấm được ngay).
-        'confirm_receipt_after_days' => (int) env('VANI_CONFIRM_RECEIPT_AFTER_DAYS', 5),
+        'confirm_receipt_after_days' => (int) env('VANI_CONFIRM_RECEIPT_AFTER_DAYS', 5), // [Admin]
     ],
 
     'returns' => [
@@ -352,7 +354,7 @@ return [
         // Ảnh đính kèm yêu cầu đổi trả (§3.13-3): disk riêng tư (không public), tối đa 5 ảnh, mỗi ảnh ≤ 5 MB.
         'attachments_disk' => env('VANI_RETURN_ATTACHMENTS_DISK', 'local'),
         // Ảnh là dữ liệu cá nhân (L16): xoá khi yêu cầu đã đóng quá số ngày này (lệnh hằng đêm vani:returns:purge-attachments).
-        'attachments_retention_days' => (int) env('VANI_RETURN_ATTACHMENTS_RETENTION_DAYS', 90),
+        'attachments_retention_days' => (int) env('VANI_RETURN_ATTACHMENTS_RETENTION_DAYS', 90), // [Admin]
         // Chỉ là dữ liệu ban đầu của danh mục lý do (migration 0.3.74); sau đó quản lý ở Admin → Đổi trả → Lý do.
         'reasons' => ['wrong_size', 'not_as_described', 'defective', 'changed_mind', 'other'],
     ],
@@ -365,7 +367,7 @@ return [
     'promotion' => [
         // Giá sàn: tổng giảm của một dòng không vượt tỷ lệ này (basis points; 5000 = 50%, NĐ 81/2018 — pháp chế xác nhận).
         // Chính sách của cửa hàng tại VN; Core không cấu hình = 10000 (không giới hạn).
-        'max_discount_bp' => (int) env('VANI_PROMOTION_MAX_DISCOUNT_BP', 5000),
+        'max_discount_bp' => (int) env('VANI_PROMOTION_MAX_DISCOUNT_BP', 5000), // [Admin]
     ],
 
     // Dữ liệu demo (`php artisan db:seed --class=DemoSeeder`, chỉ dev): thư mục ảnh sản phẩm (trống = bộ ảnh đi kèm

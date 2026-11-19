@@ -60,7 +60,7 @@ final readonly class BulkPriceRule
 
     /**
      * Cảnh báo cho một giá so với giá niêm yết. `$capBasisPoints` = mức giảm tối đa cửa hàng cấu hình cho khuyến mãi
-     * (vanishop.promotion.max_discount_bp); 10000 = không giới hạn.
+     * (DiscountCap — Admin → Cài đặt → Bán hàng & thuế); 10000 = không giới hạn.
      *
      * @return list<string>
      */

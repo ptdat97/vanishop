@@ -12,7 +12,7 @@ use Modules\Returns\Persistence\Models\ReturnRequest;
 
 /**
  * Xoá ảnh khách gửi kèm yêu cầu đổi trả (dữ liệu cá nhân — backlog L16, Owner 2026-11-18): ảnh của yêu cầu đã đóng
- * (hoàn tất / từ chối / huỷ) quá hạn lưu (mặc định 90 ngày, `vanishop.returns.attachments_retention_days`), và mọi ảnh
+ * (hoàn tất / từ chối / huỷ) quá hạn lưu (mặc định 90 ngày, `core.returns.attachments_retention_days` — Admin → Cài đặt), và mọi ảnh
  * của khách bị ẩn danh hoá. Xoá cả file trên disk lẫn dòng `return_attachments`; yêu cầu đổi trả giữ nguyên.
  */
 final class ReturnAttachmentPurge

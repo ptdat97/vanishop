@@ -74,6 +74,18 @@ return [
         'shipment_2' => 'Vận đơn: ',
         'tracking_number' => 'Mã vận đơn',
     ],
+    'settings' => [
+        'auto_create' => 'Tự tạo vận đơn khi xác nhận đơn',
+        'auto_create_help' => 'Tắt nếu muốn tự tạo vận đơn bằng tay cho từng đơn.',
+        'booking' => 'Đẩy vận đơn lên hãng vận chuyển',
+        'booking_help' => 'Chỉ áp dụng cho hãng có kết nối API.',
+        'booking_manual' => 'Khi nhân viên bấm "Đẩy lên hãng" (sau khi đóng gói)',
+        'booking_on_create' => 'Ngay khi tạo vận đơn',
+        'default_carrier' => 'Hãng vận chuyển mặc định',
+        'default_carrier_help' => 'Dùng khi phí giao không gắn với hãng nào, hoặc hãng đã chọn đang tắt.',
+        'default_item_weight_gram' => 'Khối lượng mặc định mỗi sản phẩm (gram)',
+        'default_item_weight_gram_help' => 'Dùng khi biến thể chưa khai báo khối lượng (tính phí, file gửi hãng).',
+    ],
     'shipment_dashboard_tasks' => [
         'call_customer_back_schedule_redelivery' => 'Gọi lại khách, hẹn giao lại hoặc hoàn về',
         'delivery_failed' => 'Giao không thành công',

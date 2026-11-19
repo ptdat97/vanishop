@@ -8,7 +8,7 @@ use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 
 /**
- * Giỏ của khách (có `customerId`) còn hàng nhưng không hoạt động quá `vanishop.cart.abandoned_after_minutes`.
+ * Giỏ của khách (có `customerId`) còn hàng nhưng không hoạt động quá `core.cart.abandoned_after_minutes` (CartSettings).
  * Phát một lần cho mỗi đợt không hoạt động; khách quay lại sửa giỏ rồi bỏ tiếp thì phát lại.
  * Plugin (vd. nhắc giỏ hàng) đọc chi tiết qua contract `Carts::forCustomer()` và tự kiểm tra consent trước khi gửi.
  */

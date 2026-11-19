@@ -39,4 +39,8 @@ return [
         'returnpolicy_applied_store_s_orders' => 'ReturnPolicy áp cho đơn của cửa hàng.',
         'view_return_exchange_requests' => 'Xem yêu cầu đổi/trả',
     ],
+    'settings' => [
+        'attachments_retention_days' => 'Giữ ảnh đổi trả (ngày)',
+        'attachments_retention_days_help' => 'Ảnh khách gửi kèm yêu cầu đổi trả bị xoá sau số ngày này kể từ khi yêu cầu đóng.',
+    ],
 ];

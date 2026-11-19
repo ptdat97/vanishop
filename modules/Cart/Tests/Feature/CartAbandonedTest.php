@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Event;
 use Modules\Cart\Events\CartAbandoned;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Tests\Feature\CustomerTestHelpers as H;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
@@ -27,7 +28,12 @@ it('giỏ của khách còn hàng, không hoạt động quá ngưỡng → phá
     ($this->detect)();
     expect($this->events)->toBe([]);
 
+    // Admin đặt ngưỡng 120 phút → 61 phút chưa phát; về mặc định (60) → phát.
     $this->travel(61)->minutes();
+    app(Settings::class)->set('core', 'cart.abandoned_after_minutes', 120);
+    ($this->detect)();
+    expect($this->events)->toBe([]);
+    app(Settings::class)->forget('core', 'cart.abandoned_after_minutes');
     ($this->detect)();
     ($this->detect)();
     expect($this->events)->toHaveCount(1)

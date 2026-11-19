@@ -43,4 +43,8 @@ gạch ',
         'when_decreasing_show_old_price' => 'Khi giảm: hiện giá cũ gạch ngang',
         'yes' => 'Có',
     ],
+    'settings' => [
+        'max_discount_percent' => 'Mức giảm tối đa (%)',
+        'max_discount_percent_help' => 'Giá sale và khuyến mãi không giảm quá % này so với giá niêm yết (Việt Nam: 50% theo NĐ 81/2018). 100 = không giới hạn.',
+    ],
 ];

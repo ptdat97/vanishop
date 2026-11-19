@@ -6,6 +6,7 @@ namespace Modules\Fulfillment\Application\Listeners;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Application\FulfillmentSettings;
 use Modules\Fulfillment\Contracts\FulfillmentRejected;
 use Modules\Ordering\Events\OrderConfirmed;
 use Modules\Shared\Context\ContextScope;
@@ -13,18 +14,19 @@ use Modules\Shared\Context\CurrentContext;
 use Throwable;
 
 /**
- * Đơn xác nhận → tạo shipment theo SourcingStrategy (tắt bằng VANI_FULFILLMENT_AUTO_CREATE=false).
+ * Đơn xác nhận → tạo shipment theo SourcingStrategy (tắt ở Admin → Cài đặt → Kho & giao hàng, FulfillmentSettings::AUTO_CREATE).
  */
 final class CreateShipmentsOnConfirm
 {
     public function __construct(
         private readonly FulfillmentService $fulfillment,
         private readonly CurrentContext $context,
+        private readonly FulfillmentSettings $fulfillmentSettings,
     ) {}
 
     public function handle(OrderConfirmed $event): void
     {
-        if (! config('vanishop.fulfillment.auto_create', true)) {
+        if (! $this->fulfillmentSettings->autoCreate()) {
             return;
         }
 

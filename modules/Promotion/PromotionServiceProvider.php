@@ -8,6 +8,7 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
+use Modules\Pricing\Contracts\Data\DiscountCap;
 use Modules\Promotion\Application\Actions\AmountOffAction;
 use Modules\Promotion\Application\Actions\PercentOffAction;
 use Modules\Promotion\Application\CampaignService;
@@ -17,6 +18,7 @@ use Modules\Promotion\Contracts\Campaigns;
 use Modules\Promotion\Contracts\PromotionEngine;
 use Modules\Promotion\Contracts\PromotionRule;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Settings;
 
 final class PromotionServiceProvider extends ModuleServiceProvider
 {
@@ -35,8 +37,9 @@ final class PromotionServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->kindContract('promotion', PromotionRule::TAG);
         $this->app->bind(PromotionEngine::class, fn ($app): PromotionEvaluator => new PromotionEvaluator(
             $app->make(PromotionRegistry::class),
-            // Giá sàn là bất biến của engine; mức trần do cửa hàng cấu hình (VN: 50%, NĐ 81/2018). Không cấu hình → không giới hạn.
-            (int) config('vanishop.promotion.max_discount_bp', PromotionEvaluator::NO_CAP_BP),
+            // Giá sàn là bất biến của engine; mức trần do cửa hàng cấu hình (VN: 50%, NĐ 81/2018) — Admin → Cài đặt → Bán
+            // hàng & thuế, đọc lúc dùng (mặc định VANI_PROMOTION_MAX_DISCOUNT_BP).
+            DiscountCap::basisPoints($app->make(Settings::class)->get('core', DiscountCap::SETTING)),
         ));
     }
 

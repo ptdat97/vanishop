@@ -77,7 +77,7 @@ it('Admin → Cài đặt: form (lựa chọn lấy từ extension point), lưu/
     $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
         ->where('system', fn ($groups) => collect($groups)->pluck('code')->all() === ['system:store', 'system:appearance', 'system:seo', 'system:sales', 'system:inventory', 'system:orders', 'system:mail']
             && collect($groups)->firstWhere('code', 'system:sales')['url'] === route('admin.settings.system', 'sales')
-            && collect($groups)->firstWhere('code', 'system:sales')['count'] === 3
+            && collect($groups)->firstWhere('code', 'system:sales')['count'] === 9
             && ! array_key_exists('fields', collect($groups)->first()))
         ->where('plugins', fn ($plugins) => ! collect($plugins)->contains('namespace', 'core')));
 
@@ -87,7 +87,7 @@ it('Admin → Cài đặt: form (lựa chọn lấy từ extension point), lưu/
         ->where('namespace', 'core')
         ->where('active', 'system:sales')
         ->where('nav.system.3.code', 'system:sales')
-        ->where('fields', fn ($fields) => collect($fields)->pluck('key')->sort()->values()->all() === ['pricing.strategy', 'storefront.guest_checkout', 'tax.calculator']
+        ->where('fields', fn ($fields) => collect($fields)->pluck('key')->sort()->values()->all() === ['cart.abandoned_after_minutes', 'cart.max_line_quantity', 'cart.max_lines', 'cart.ttl_days', 'payment.capture_on', 'pricing.max_discount_percent', 'pricing.strategy', 'storefront.guest_checkout', 'tax.calculator']
             && collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['none' => 'none', 'vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
     $this->get('/admin/settings/system/khong-co')->assertNotFound();
     $this->get('/admin/settings/system/other')->assertNotFound(); // nhóm không có cấu hình nào

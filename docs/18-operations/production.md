@@ -66,13 +66,22 @@ Core không ghi cứng các giá trị dưới đây — tất cả nằm trong 
 | | `locale.phone_policy` (`VANI_PHONE_POLICY`) | `vn` (plugin `vani.phone-vn`; tắt → chỉ nhận `+…`) |
 | | `locale.timezone` (`VANI_TIMEZONE`), `locale.formats.*` | `Asia/Ho_Chi_Minh`; `d/m/Y`, `d/m/Y H:i`… |
 | | `locale.money.*` (dấu phân cách, ký hiệu), `currency` (`VANI_CURRENCY`) | `1.250.000 ₫`; `VND` |
-| | `promotion.max_discount_bp`, `tax.calculator`, `orders.number_prefix` | 5000 (NĐ 81/2018); `vn_vat_inclusive`; `VN` |
+| | `tax.calculator` | `vn_vat_inclusive` |
 | Rate limit (request/phút/IP) | `rate_limits.storefront_api` (`VANI_RATE_STOREFRONT_API`), `cart_create`, `checkout`, `order_track`, `customer_auth`, `payment_callbacks`, `shipping_webhooks`, `integration_anonymous` | 240, 30, 20, 10, 20, 600, 600, 60 |
 | Bảo mật | `admin.login_max_attempts` (`VANI_ADMIN_LOGIN_MAX_ATTEMPTS`), `customer.otp.ttl`/`max_attempts` (`VANI_OTP_TTL`, `VANI_OTP_MAX_ATTEMPTS`), `integration.signature_tolerance` | 5; 300 giây/5 lần; 300 giây |
 | Plugin | `plugins.breaker.threshold`/`cooldown` (`VANI_PLUGIN_BREAKER_*`) | 5 lỗi/phút → bỏ qua 300 giây |
 | Giao hàng (menu) | `fulfillment.admin_menu` (`VANI_FULFILLMENT_MENU`): `auto` — menu "Giao hàng" chỉ hiện khi có hãng API hoặc ≥ 2 kho giao online (ADR-043); `always` / `never` | `auto` |
-| Giao hàng | `fulfillment.default_item_weight_gram` (`VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`) — khối lượng mỗi sản phẩm chưa khai báo trong file gửi hãng | 300 g |
 | Ảnh, thanh toán | `media.max_upload_kb` (`VANI_MEDIA_MAX_UPLOAD_KB`), `media.max_video_kb` (`VANI_MEDIA_MAX_VIDEO_KB`, video MP4/WebM), `media.max_files_per_upload`, `payment.reconcile_after_minutes` | 10240 KB, 102400 KB, 20 tệp; 5 phút |
+
+**Cấu hình nghiệp vụ chủ shop tự đổi ở Admin → Cài đặt** (0.5.53; biến môi trường chỉ còn là giá trị mặc định khi Admin để trống):
+
+| Nhóm trong Admin | Mục (biến môi trường mặc định) | Mặc định |
+|---|---|---|
+| Bán hàng & thuế | Số lượng tối đa mỗi sản phẩm trong giỏ (`VANI_CART_MAX_LINE_QUANTITY`), số sản phẩm khác nhau tối đa (`VANI_CART_MAX_LINES`), giỏ bị bỏ quên sau (`VANI_CART_ABANDONED_AFTER_MINUTES`), giữ giỏ không hoạt động (`VANI_CART_TTL_DAYS`) | 20; 50; 60 phút; 30 ngày |
+| | Mức giảm tối đa % (`VANI_PROMOTION_MAX_DISCOUNT_BP` ÷ 100), thu tiền online đã giữ (`VANI_PAYMENT_CAPTURE_ON`) | 50% (NĐ 81/2018); khi vận đơn rời kho |
+| Kho & giao hàng | Tự tạo vận đơn (`VANI_FULFILLMENT_AUTO_CREATE`), đẩy vận đơn lên hãng (`VANI_FULFILLMENT_BOOKING`), hãng mặc định (`VANI_FULFILLMENT_CARRIER`), khối lượng mặc định mỗi sản phẩm (`VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`) | bật; khi bấm; `manual`; 300 g |
+| Đơn hàng & đổi trả | Tiền tố mã đơn (`VANI_ORDER_NUMBER_PREFIX`), số ngày đổi trả (`VANI_RETURN_WINDOW_DAYS`), cho bấm "Đã nhận hàng" sau (`VANI_CONFIRM_RECEIPT_AFTER_DAYS`), giữ ảnh đổi trả (`VANI_RETURN_ATTACHMENTS_RETENTION_DAYS`), cảnh báo đơn tồn đọng sau | `VN`; 7; 5 ngày; 90 ngày; 24 giờ |
+| Email gửi đi | SMTP, người gửi (`MAIL_*`) | theo `.env` |
 
 Giới hạn cấu trúc (độ sâu danh mục, độ dài SKU, số khối trang chủ…) vẫn là hằng trong code — đổi chúng là đổi thiết kế, không phải vận hành.
 

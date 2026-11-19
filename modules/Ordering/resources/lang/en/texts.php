@@ -97,4 +97,14 @@ return [
         'paid_no_collect' => 'Paid — do not collect',
         'customer_note' => 'Customer note: :note',
     ],
+    'settings' => [
+        'aged_hours' => 'Flag stale orders after (hours)',
+        'aged_hours_help' => 'Orders not confirmed or not shipped for longer than this appear in the dashboard to-do list.',
+        'confirm_receipt_after_days' => 'Allow "I\'ve received it" after (days)',
+        'confirm_receipt_after_days_help' => 'While an order is in transit longer than this, customers can confirm receipt (delivered orders: immediately).',
+        'number_prefix' => 'Order number prefix',
+        'number_prefix_help' => 'Prefix of order numbers, e.g. VN → VN2611-00001. Letters, digits and hyphens; up to 10 characters. Applies to new orders only.',
+        'return_window_days' => 'Return window after delivery (days)',
+        'return_window_days_help' => 'Customers may request returns within this many days; afterwards the order completes automatically. 0 = no returns.',
+    ],
 ];

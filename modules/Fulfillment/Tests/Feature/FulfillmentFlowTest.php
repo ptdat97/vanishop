@@ -19,6 +19,7 @@ use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Events\OrderCompleted;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Returns\Persistence\Models\ReturnRequest;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -130,7 +131,8 @@ it('huỷ đơn khi vận đơn chưa lấy hàng → huỷ vận đơn, nhả h
 });
 
 it('hãng có API, booking = on_create (điểm mở rộng): đặt vận đơn tự động sau commit; webhook trùng và sai thứ tự không làm lùi trạng thái', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api', 'vanishop.fulfillment.booking' => 'on_create']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
+    app(Settings::class)->set('core', 'fulfillment.booking', 'on_create');
     ($this->place)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();
     expect($shipment->status->value)->toBe('created')->and($shipment->tracking_number)->toBe('FK000001');
@@ -151,10 +153,10 @@ it('hãng có API, booking = on_create (điểm mở rộng): đặt vận đơn
 });
 
 it('hãng có API, mặc định booking = manual (ADR-046 chốt ②): xác nhận không gọi hãng; nhân viên "Đẩy lên hãng" hàng loạt; bấm trùng không đặt hai lần; hãng nhập tay bị bỏ qua', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     ($this->place)();
     $api = Shipment::query()->withoutGlobalScopes()->sole();
-    config(['vanishop.fulfillment.default_carrier' => 'manual']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'manual');
     ($this->place)();
     $manual = Shipment::query()->withoutGlobalScopes()->whereKeyNot($api->id)->sole();
     ($this->asStaff)();
@@ -172,7 +174,7 @@ it('hãng có API, mặc định booking = manual (ADR-046 chốt ②): xác nh�
 });
 
 it('đẩy lên hãng bị lỗi → booking_failed; "Đẩy lại lên hãng" trên trang đơn đặt lại từ đầu; plugin gọi ShipmentBooking cùng kết quả', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     FakeApiCarrier::$failBooking = true;
     ($this->place)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();
@@ -189,7 +191,7 @@ it('đẩy lên hãng bị lỗi → booking_failed; "Đẩy lại lên hãng" t
 });
 
 it('hãng lỗi khi đặt vận đơn quá số lần thử → booking_failed, nhân viên chuyển sang nhập tay', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     FakeApiCarrier::$failBooking = true;
 
     ($this->place)(); // lỗi hãng không làm hỏng phản hồi đặt hàng
@@ -228,7 +230,7 @@ it('đơn giữ hàng ở hai kho → hai vận đơn; chỉ trừ tồn khi c�
 });
 
 it('đặt vận đơn (L31): giữ chỗ rồi gọi hãng ngoài transaction — lần đặt khác trong lúc hãng chưa trả lời bị từ chối, không đặt trùng', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     ($this->place)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();
     $concurrent = null;
@@ -251,7 +253,7 @@ it('đặt vận đơn (L31): giữ chỗ rồi gọi hãng ngoài transaction �
 });
 
 it('đặt vận đơn (L31): hãng lỗi → trả chỗ ngay; chỗ giữ quá hạn (worker chết giữa chừng) → đặt lại được; huỷ trong lúc gọi hãng → không ghi đè', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     ($this->place)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();
     $service = app(FulfillmentService::class);
@@ -291,7 +293,7 @@ it('Admin: quyền, mã vận đơn trùng', function () {
 
 it('vận đơn dùng carrier của phương thức giao khách chọn (dịch vụ = mã phương thức); phí cố định hoặc carrier tắt → mặc định', function () {
     app(Extensions::class)->tag([FakeApiRates::class], ShippingRateProvider::TAG);
-    config(['vanishop.fulfillment.booking' => 'on_create']);
+    app(Settings::class)->set('core', 'fulfillment.booking', 'on_create');
     $placeWith = function (string $method, int $expected, string $key) {
         $created = $this->postJson("{$this->api}/carts")->assertCreated();
         $headers = ['X-Vani-Cart-Token' => $created->json('meta.token')];
@@ -316,7 +318,7 @@ it('vận đơn dùng carrier của phương thức giao khách chọn (dịch v
 });
 
 it('sự cố giao hàng: đặt vận đơn lỗi và giao không thành công đưa đơn vào hàng đợi "Sự cố giao hàng"; xử lý xong thì ra', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     FakeApiCarrier::$failBooking = true;
     ($this->place)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();
@@ -364,11 +366,12 @@ it('hàng đang hoàn về và đã hoàn về đều nằm ở hàng đợi "S�
 });
 
 it('hook vani.fulfillment.before_push (EP v3 X2): chặn đẩy lên hãng ở nút, hàng loạt, on_create và nhập mã tay; vận đơn giữ "Chờ đóng gói"', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api', 'vanishop.fulfillment.booking' => 'on_create']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
+    app(Settings::class)->set('core', 'fulfillment.booking', 'on_create');
     Hook::onValidate('vani.fulfillment.before_push', fn ($data): array => ['Thiếu khối lượng kiện']);
     ($this->place)();
     $api = Shipment::query()->withoutGlobalScopes()->sole();
-    config(['vanishop.fulfillment.default_carrier' => 'manual']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'manual');
     ($this->place)();
     $manual = Shipment::query()->withoutGlobalScopes()->whereKeyNot($api->id)->sole();
     ($this->asStaff)();
@@ -382,7 +385,8 @@ it('hook vani.fulfillment.before_push (EP v3 X2): chặn đẩy lên hãng ở n
 });
 
 it('ReturnPickup (EP v3 X3): yêu cầu đã duyệt của đơn giao bằng hãng hỗ trợ → "Gọi hãng lấy hàng trả" → Đang gửi về với mã của hãng', function () {
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api', 'vanishop.fulfillment.booking' => 'on_create']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
+    app(Settings::class)->set('core', 'fulfillment.booking', 'on_create');
     ($this->place)();
     $order = ($this->order)();
     $shipment = Shipment::query()->withoutGlobalScopes()->sole();

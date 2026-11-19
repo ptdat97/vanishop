@@ -45,4 +45,10 @@ return [
     'refund_service' => [
         'pay_out_via_label' => 'Chuyển trả qua :label',
     ],
+    'settings' => [
+        'capture_on' => 'Thu tiền thanh toán online đã giữ',
+        'capture_on_help' => 'Cổng thanh toán giữ tiền trước (thẻ): chọn lúc trừ tiền thật của khách.',
+        'capture_on_manual' => 'Khi nhân viên bấm "Thu tiền"',
+        'capture_on_shipped' => 'Khi vận đơn rời kho',
+    ],
 ];

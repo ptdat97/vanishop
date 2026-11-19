@@ -6,6 +6,7 @@ namespace Modules\Fulfillment\Application\Listeners;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Fulfillment\Application\FulfillmentService;
+use Modules\Fulfillment\Application\FulfillmentSettings;
 use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
@@ -20,6 +21,7 @@ final class RebuildShipmentsOnLinesCancelled
     public function __construct(
         private readonly FulfillmentService $fulfillment,
         private readonly CurrentContext $context,
+        private readonly FulfillmentSettings $fulfillmentSettings,
     ) {}
 
     public function handle(OrderLinesCancelled $event): void
@@ -27,7 +29,7 @@ final class RebuildShipmentsOnLinesCancelled
         try {
             $this->context->runAs(ContextScope::system('rebuild shipments'), function () use ($event): void {
                 $this->fulfillment->cancelOpenShipments($event->orderId, 'lines_cancelled');
-                if (config('vanishop.fulfillment.auto_create', true)) {
+                if ($this->fulfillmentSettings->autoCreate()) {
                     $this->fulfillment->createForOrder($event->orderId);
                 }
             });

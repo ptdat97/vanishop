@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Ordering\Contracts\Data\OrderDraft;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\PlacedOrder;
 use Modules\Ordering\Contracts\OrderWriter;
@@ -19,12 +20,14 @@ use Modules\Shared\Application\NumberSequences;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Support\StoreClock;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Tenancy\Contracts\Settings;
 
 final class OrderFactory implements OrderWriter
 {
     public function __construct(
         private readonly NumberSequences $sequences,
         private readonly CurrentContext $context,
+        private readonly Settings $settings,
     ) {}
 
     public function create(OrderDraft $draft): PlacedOrder
@@ -32,7 +35,7 @@ final class OrderFactory implements OrderWriter
         $this->assertBalanced($draft);
         $now = StoreClock::now();
         $period = OrderNumber::period($now);
-        $number = OrderNumber::format((string) config('vanishop.orders.number_prefix', ''), $period, $this->sequences->next('order', $period));
+        $number = OrderNumber::format((string) $this->settings->get('core', OrderSettings::NUMBER_PREFIX), $period, $this->sequences->next('order', $period));
 
         $accessToken = Str::random(40);
         $order = Order::query()->create([

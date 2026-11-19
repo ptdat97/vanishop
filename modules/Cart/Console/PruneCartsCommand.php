@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Modules\Cart\Console;
 
 use Illuminate\Console\Command;
+use Modules\Cart\Contracts\Data\CartSettings;
 use Modules\Cart\Domain\CartStatus;
 use Modules\Cart\Persistence\Models\Cart;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Xoá giỏ không hoạt động quá hạn (mặc định 30 ngày). Giỏ đã đặt hàng được giữ lại để truy vết.
@@ -19,7 +21,7 @@ final class PruneCartsCommand extends Command
 
     public function handle(): int
     {
-        $days = (int) ($this->option('days') ?? config('vanishop.cart.ttl_days', 30));
+        $days = (int) ($this->option('days') ?? app(Settings::class)->get('core', CartSettings::TTL_DAYS));
         $deleted = 0;
 
         Cart::query()

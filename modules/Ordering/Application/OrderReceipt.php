@@ -6,13 +6,15 @@ namespace Modules\Ordering\Application;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Support\StoreClock;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Khách xác nhận đã nhận hàng (reference-parity §3.11-1): khi đơn đã giao hết, hoặc đang giao quá
- * `vanishop.fulfillment.confirm_receipt_after_days` ngày. Ghi vào `orders.meta` (`received_confirmed_at`,
+ * `core.orders.confirm_receipt_after_days` ngày (OrderSettings). Ghi vào `orders.meta` (`received_confirmed_at`,
  * `returns_waived`) + order_events; không đổi bảng chuyển trạng thái.
  */
 final class OrderReceipt
@@ -33,7 +35,7 @@ final class OrderReceipt
         }
         $shippedAt = self::changedAt($order->id, $status);
 
-        return $shippedAt !== null && $shippedAt->lt(now()->subDays((int) config('vanishop.fulfillment.confirm_receipt_after_days', 5)));
+        return $shippedAt !== null && $shippedAt->lt(now()->subDays((int) app(Settings::class)->get('core', OrderSettings::CONFIRM_RECEIPT_AFTER_DAYS)));
     }
 
     /** Lúc đơn chuyển sang trạng thái giao hàng này (order_events). */

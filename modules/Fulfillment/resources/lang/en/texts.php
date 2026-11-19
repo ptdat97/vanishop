@@ -74,6 +74,18 @@ return [
         'shipment_2' => 'Shipment:',
         'tracking_number' => 'Tracking number',
     ],
+    'settings' => [
+        'auto_create' => 'Create shipments when orders are confirmed',
+        'auto_create_help' => 'Turn off to create shipments manually for each order.',
+        'booking' => 'Book shipments with the carrier',
+        'booking_help' => 'Only for carriers connected by API.',
+        'booking_manual' => 'When staff click "Book with carrier" (after packing)',
+        'booking_on_create' => 'As soon as the shipment is created',
+        'default_carrier' => 'Default carrier',
+        'default_carrier_help' => 'Used when the shipping rate is not tied to a carrier, or the chosen carrier is off.',
+        'default_item_weight_gram' => 'Default weight per item (grams)',
+        'default_item_weight_gram_help' => 'Used when a variant has no weight (rates, carrier files).',
+    ],
     'shipment_dashboard_tasks' => [
         'call_customer_back_schedule_redelivery' => 'Call the customer back, schedule redelivery or return to sender',
         'delivery_failed' => 'Delivery failed',

@@ -6,9 +6,11 @@ namespace Modules\Cart\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Modules\Cart\Contracts\Data\CartSettings;
 use Modules\Cart\Domain\CartStatus;
 use Modules\Cart\Events\CartAbandoned;
 use Modules\Cart\Persistence\Models\Cart;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Phát CartAbandoned cho giỏ của khách còn hàng, không hoạt động quá ngưỡng (chạy 5 phút/lần).
@@ -22,7 +24,7 @@ final class DetectAbandonedCartsCommand extends Command
 
     public function handle(): int
     {
-        $minutes = (int) ($this->option('minutes') ?? config('vanishop.cart.abandoned_after_minutes', 60));
+        $minutes = (int) ($this->option('minutes') ?? app(Settings::class)->get('core', CartSettings::ABANDONED_AFTER_MINUTES));
         $count = 0;
 
         Cart::query()

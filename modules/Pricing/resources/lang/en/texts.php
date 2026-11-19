@@ -43,4 +43,8 @@ compare-at',
         'when_decreasing_show_old_price' => 'When decreasing: show the old price struck through',
         'yes' => 'Yes',
     ],
+    'settings' => [
+        'max_discount_percent' => 'Maximum discount (%)',
+        'max_discount_percent_help' => 'Sale prices and promotions cannot go below the list price by more than this (Vietnam: 50%, Decree 81/2018). 100 = no limit.',
+    ],
 ];

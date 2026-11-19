@@ -14,6 +14,7 @@ use Modules\Returns\Persistence\Models\ReturnAttachment;
 use Modules\Returns\Persistence\Models\ReturnRequest;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -92,6 +93,11 @@ it('L16: ảnh của yêu cầu đã đóng quá 90 ngày bị xoá hằng đêm
     $paths = ReturnAttachment::query()->pluck('path')->all();
     $old->update(['status' => 'rejected']);
     ReturnRequest::query()->whereKey($old->id)->update(['updated_at' => now()->subDays(91)]);
+    // Admin đặt giữ 120 ngày → chưa xoá; về mặc định 90 ngày → xoá.
+    app(Settings::class)->set('core', 'returns.attachments_retention_days', 120);
+    $this->artisan('vani:returns:purge-attachments')->assertSuccessful();
+    expect(ReturnAttachment::query()->count())->toBe(2);
+    app(Settings::class)->forget('core', 'returns.attachments_retention_days');
 
     $this->artisan('vani:returns:purge-attachments')->expectsOutputToContain('Đã xoá 2 ảnh')->assertSuccessful();
     expect(ReturnAttachment::query()->count())->toBe(0)->and(ReturnRequest::query()->count())->toBe(1);

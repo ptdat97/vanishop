@@ -15,6 +15,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Returns\Application\DaysWindowPolicy;
 use Modules\Returns\Application\EloquentReturnStatistics;
 use Modules\Returns\Application\Listeners\OrderReturnsPanel;
@@ -44,7 +45,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $this->app->make(AdminScreen::class)->declareResource('return');
         $this->app->bind(Returns::class, ReturnService::class);
         $this->app->bind(ReturnStatistics::class, EloquentReturnStatistics::class);
-        $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
+        $this->app->bind(DaysWindowPolicy::class, fn ($app): DaysWindowPolicy => new DaysWindowPolicy((int) $app->make(Settings::class)->get('core', OrderSettings::RETURN_WINDOW_DAYS)));
         $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);
         $this->app->make(Extensions::class)->tag([ReturnedVariants::class], VariantUsage::TAG);
         $this->app->make(Extensions::class)->requires(ReturnPolicy::TAG, Requirement::ExactlyOne, 'returns::texts.returns_service_provider.return_policy');
@@ -57,6 +58,10 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
             'core', 'returns.policy', 'returns::texts.returns_service_provider.return_policy', 'select', (string) config('vanishop.returns.policy', 'days_window'),
             optionsFromTag: ReturnPolicy::TAG, help: 'returns::texts.returns_service_provider.returnpolicy_applied_store_s_orders',
             group: SettingGroup::Orders,
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', ReturnService::ATTACHMENTS_RETENTION_DAYS, 'returns::texts.settings.attachments_retention_days', 'int', (int) config('vanishop.returns.attachments_retention_days', 90),
+            help: 'returns::texts.settings.attachments_retention_days_help', rules: ['min:7', 'max:3650'], group: SettingGroup::Orders,
         ));
         $permissions->register('returns.view', 'returns::texts.returns_service_provider.view_return_exchange_requests');
         $permissions->register('returns.manage', 'returns::texts.returns_service_provider.approve_reject_receive_returns');

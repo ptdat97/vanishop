@@ -11,6 +11,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Returns\Contracts\Returns;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../modules/Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -23,7 +24,8 @@ beforeEach(function () {
     C::autoConfirmCod();
     ['s' => $this->s] = C::store(stock: 100);
     // Dựng nhiều đơn nhanh trong một test: nới giới hạn tần suất tạo giỏ/đặt hàng và số lượng mỗi dòng.
-    config(['vanishop.rate_limits.cart_create' => 1000, 'vanishop.rate_limits.checkout' => 1000, 'vanishop.cart.max_line_quantity' => 50]);
+    config(['vanishop.rate_limits.cart_create' => 1000, 'vanishop.rate_limits.checkout' => 1000]);
+    app(Settings::class)->set('core', 'cart.max_line_quantity', 50);
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'fulfillment.view', 'payments.view', 'returns.view'])->create(), 'staff');
 });
 

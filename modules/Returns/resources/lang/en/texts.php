@@ -39,4 +39,8 @@ return [
         'returnpolicy_applied_store_s_orders' => 'ReturnPolicy applied to the store\'s orders.',
         'view_return_exchange_requests' => 'View return/exchange requests',
     ],
+    'settings' => [
+        'attachments_retention_days' => 'Keep return photos (days)',
+        'attachments_retention_days_help' => 'Photos attached to return requests are deleted this many days after the request closes.',
+    ],
 ];

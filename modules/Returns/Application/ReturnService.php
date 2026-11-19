@@ -11,6 +11,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReturns;
 use Modules\Ordering\Contracts\Data\OrderLineData;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Payment\Contracts\Payments;
@@ -41,6 +42,9 @@ use Modules\Tenancy\Contracts\Settings;
  */
 final class ReturnService implements Returns
 {
+    /** Số ngày giữ ảnh đổi trả sau khi yêu cầu đóng (Admin → Cài đặt → Đơn hàng & đổi trả). */
+    public const ATTACHMENTS_RETENTION_DAYS = 'returns.attachments_retention_days';
+
     public const SHIPPING_PAYER_CUSTOMER = 'customer';
 
     public const SHIPPING_PAYER_STORE = 'store';
@@ -156,7 +160,7 @@ final class ReturnService implements Returns
         $taken = $this->records->takenQuantities($orderId);
         $lines = ReturnLimits::remaining($delivered, $taken);
 
-        $days = (int) config('vanishop.fulfillment.return_window_days', 7);
+        $days = (int) $this->settings->get('core', OrderSettings::RETURN_WINDOW_DAYS);
 
         return ['lines' => $lines, 'deadline' => StoreClock::iso($deliveredAt?->modify("+{$days} days"))];
     }

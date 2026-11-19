@@ -11,6 +11,7 @@ use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Inventory\Contracts\InventoryReservation;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderActionRejected;
 use Modules\Ordering\Contracts\OrderActions;
@@ -268,7 +269,7 @@ final class OrderCommands implements OrderActions
             ]);
 
             $deliveredAt = OrderReceipt::changedAt($order->id, 'delivered');
-            $windowPassed = $deliveredAt !== null && $deliveredAt->lt(now()->subDays((int) config('vanishop.fulfillment.return_window_days', 7)));
+            $windowPassed = $deliveredAt !== null && $deliveredAt->lt(now()->subDays((int) $this->settings->get('core', OrderSettings::RETURN_WINDOW_DAYS)));
             if ((bool) $this->settings->get('core', OrderReceipt::SETTING_COMPLETE, false) && $order->fulfillment_status === 'delivered'
                 && $order->return_status === 'none' && ($waiveReturns || $windowPassed)) {
                 $this->transitions->transition($order->id, OrderStatus::Completed, 'customer_confirmed_received', $source);

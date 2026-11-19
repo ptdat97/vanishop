@@ -13,7 +13,7 @@ use Modules\Shared\Domain\Money\Money;
  * Interface bổ sung tuỳ chọn cho PaymentGateway (ADR-030 W4b): cổng **giữ tiền** (authorize, callback status
  * `authorized`) rồi **thu** sau (capture) — thẻ quốc tế, BNPL. Core kiểm tra bằng `instanceof`.
  *
- * Core thu khi vận đơn rời kho (`vanishop.payment.capture_on = shipped`) hoặc nhân viên bấm thu; đơn huỷ khi đang giữ
+ * Core thu khi vận đơn rời kho (cấu hình `core.payment.capture_on = shipped`) hoặc nhân viên bấm thu; đơn huỷ khi đang giữ
  * tiền → `void`. Cả hai idempotent theo `$idempotencyKey` (gọi lại không thu/huỷ hai lần).
  */
 #[PluginApi]

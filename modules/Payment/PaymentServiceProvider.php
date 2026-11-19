@@ -37,6 +37,9 @@ use Modules\Payment\Contracts\Reconciliations;
 use Modules\Payment\Domain\PaymentStatus;
 use Modules\Payment\Persistence\Models\Payment;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
+use Modules\Tenancy\Contracts\Settings;
 
 final class PaymentServiceProvider extends ModuleServiceProvider
 {
@@ -64,6 +67,11 @@ final class PaymentServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(PaymentDashboardTasks::class)());
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', CaptureAuthorizedOnShipment::SETTING, 'payment::texts.settings.capture_on', 'select', (string) config('vanishop.payment.capture_on', 'shipped'),
+            options: ['shipped' => 'payment::texts.settings.capture_on_shipped', 'manual' => 'payment::texts.settings.capture_on_manual'],
+            help: 'payment::texts.settings.capture_on_help', group: SettingGroup::Sales,
+        ));
         $permissions->register('payments.view', 'payment::texts.payment_service_provider.view_payments');
         $permissions->register('payments.confirm', 'payment::texts.payment_service_provider.confirm_money_received_manual_bank');
         $permissions->register('payments.refund', 'payment::texts.payment_service_provider.refund');

@@ -20,7 +20,7 @@
 | Chọn dòng (0.3.64) | `selected` mặc định true; `select`/`deselect`/`selectOnly` dưới cùng khoá giỏ. Checkout chỉ lấy dòng đã chọn (khuyến mãi, phí, thuế tính trên phần đó); dòng `unavailable` không tính là đã chọn; dòng chưa chọn không chặn thanh toán. Sau khi đặt, `markOrdered` xoá dòng đã vào đơn — giỏ chỉ `converted` khi hết dòng. Thêm lại dòng đã bỏ chọn → chọn lại |
 | Mua ngay | `buyNow` = thêm dòng + chỉ chọn riêng dòng đó, cùng một lần khoá; dòng khác ở lại giỏ (bỏ chọn) |
 | Gộp giỏ | Khi đăng nhập: cộng dồn số lượng, kẹp theo giới hạn dòng và ATS (không giảm dòng sẵn có của giỏ đích), bỏ dòng không còn bán, giỏ nguồn → `merged`, phát `CartUpdated` |
-| Giới hạn | Tối đa 20/variant, 50 dòng/giỏ (cấu hình `VANI_CART_MAX_LINE_QUANTITY`, `VANI_CART_MAX_LINES`) |
+| Giới hạn | Tối đa 20/variant, 50 dòng/giỏ (Admin → Cài đặt → Bán hàng & thuế; mặc định `VANI_CART_MAX_LINE_QUANTITY`, `VANI_CART_MAX_LINES`) |
 | Đồng thời | Mọi thay đổi khoá dòng `carts` (`FOR UPDATE`) → nhiều tab cùng sửa không mất cập nhật (concurrency test) |
 | Không giữ hàng | Giỏ **không** reserve tồn (tránh khoá hàng ảo); reserve chỉ xảy ra trong `PlaceOrder` |
 | Hết hạn | 30 ngày không hoạt động; job dọn dẹp |

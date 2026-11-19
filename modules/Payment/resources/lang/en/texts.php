@@ -45,4 +45,10 @@ return [
     'refund_service' => [
         'pay_out_via_label' => 'Pay out via :label',
     ],
+    'settings' => [
+        'capture_on' => 'Capture authorized online payments',
+        'capture_on_help' => 'For gateways that authorize first (cards): when the customer is actually charged.',
+        'capture_on_manual' => 'When staff click "Capture"',
+        'capture_on_shipped' => 'When the shipment leaves the warehouse',
+    ],
 ];

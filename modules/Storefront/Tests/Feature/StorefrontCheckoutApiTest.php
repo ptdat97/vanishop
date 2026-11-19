@@ -8,6 +8,7 @@ use Modules\Inventory\Tests\Feature\InventoryTestHelpers as I;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -96,6 +97,13 @@ it('đặt hàng COD thành công: snapshot, số đơn, giữ hàng không hế
     $this->getJson("{$this->api}/carts/{$this->cart}", $this->cartHeaders)->assertJsonPath('data.status', 'converted');
     $this->postJson("{$this->api}/carts/{$this->cart}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $this->cartHeaders)
         ->assertStatus(409)->assertJsonPath('error.code', 'cart.closed');
+});
+
+it('tiền tố mã đơn theo Admin → Cài đặt → Đơn hàng & đổi trả (đơn mới)', function () {
+    app(Settings::class)->set('core', 'orders.number_prefix', 'LAN');
+    ($this->add)($this->s, 1);
+
+    ($this->place)(C::orderPayload(['expected_total' => 330_000]))->assertCreated()->assertJsonPath('data.number', fn (string $number): bool => preg_match('/^LAN\d{4}-000001$/', $number) === 1);
 });
 
 it('request trùng Idempotency-Key trả lại đúng kết quả cũ; khác nội dung thì 409', function () {

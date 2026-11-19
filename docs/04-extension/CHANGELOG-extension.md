@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.53 — 2026-11-19 · Extension API 1.14.0 (không đổi)
+
+Cấu hình nghiệp vụ trước chỉ đặt được bằng `.env` nay chủ shop đổi ở Admin → Cài đặt (namespace `core`; `.env` thành giá trị mặc định khi Admin để trống). Đọc lúc dùng — đổi có hiệu lực ngay, kể cả queue worker đang chạy.
+
+### Thêm (cấu hình `core`)
+- **Bán hàng & thuế:** `cart.max_line_quantity`, `cart.max_lines`, `cart.abandoned_after_minutes`, `cart.ttl_days` (`Cart\Contracts\Data\CartSettings`); `pricing.max_discount_percent` (% thay cho basis point — `Pricing\Contracts\Data\DiscountCap`, dùng cho cả khuyến mãi và cảnh báo giá sale); `payment.capture_on` (`shipped` / `manual`).
+- **Kho & giao hàng:** `fulfillment.auto_create`, `fulfillment.booking` (`manual` / `on_create`), `fulfillment.default_carrier` (lựa chọn lấy từ các hãng đang bật), `fulfillment.default_item_weight_gram` (`Fulfillment\Application\FulfillmentSettings`).
+- **Đơn hàng & đổi trả:** `orders.number_prefix`, `orders.return_window_days`, `orders.confirm_receipt_after_days`, `orders.aged_hours` (trước là hằng 24 giờ — `Ordering\Contracts\Data\OrderSettings`); `returns.attachments_retention_days`.
+
+### Đổi
+- Các nơi đọc `config('vanishop.cart.*' | 'payment.capture_on' | 'fulfillment.{auto_create,booking,default_carrier,default_item_weight_gram,return_window_days,confirm_receipt_after_days}' | 'orders.number_prefix' | 'returns.attachments_retention_days' | 'promotion.max_discount_bp')` đọc `Settings` (`core`). Test hoặc plugin đặt các khoá này bằng `config([...])` phải chuyển sang `Settings::set('core', …)`.
+- Bỏ hằng `OrderDashboardTasks::AGED_HOURS`.
+
 ## 0.5.52 — 2026-11-19 · Extension API 1.14.0
 
 Admin → Cài đặt → **Email gửi đi**: chủ shop tự đặt SMTP và người gửi, có nút gửi thử.

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Pricing\Application\PriceListWorkspace;
 use Modules\Promotion\Application\PromotionRegistry;
 use Modules\Promotion\Contracts\Data\Eligibility;
 use Modules\Promotion\Contracts\Data\PromotionContext;
@@ -15,6 +16,7 @@ use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -57,6 +59,15 @@ it('không giảm quá giá sàn 50% mỗi dòng', function () {
     C::promotion(['name' => '30%', 'requires_voucher' => false, 'priority' => 1, 'action_config' => ['basis_points' => 3000]]);
 
     expect($this->engine->evaluate(($this->context)())->discountByLine())->toBe([$this->s->id => 150_000, $this->m->id => 200_000]);
+});
+
+it('mức giảm tối đa theo Admin → Cài đặt → Bán hàng & thuế (%, đọc lúc dùng)', function () {
+    C::promotion(['name' => '40%', 'requires_voucher' => false, 'priority' => 2, 'action_config' => ['basis_points' => 4000]]);
+    C::promotion(['name' => '30%', 'requires_voucher' => false, 'priority' => 1, 'action_config' => ['basis_points' => 3000]]);
+    app(Settings::class)->set('core', 'pricing.max_discount_percent', 30);
+
+    expect(app(PromotionEngine::class)->evaluate(($this->context)())->discountByLine())->toBe([$this->s->id => 90_000, $this->m->id => 120_000])
+        ->and(app(PriceListWorkspace::class)->capBasisPoints())->toBe(3000);
 });
 
 it('báo lý do voucher không áp được', function () {

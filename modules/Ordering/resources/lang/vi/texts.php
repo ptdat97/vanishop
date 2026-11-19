@@ -97,4 +97,14 @@ return [
         'paid_no_collect' => 'Đã thanh toán — không thu tiền',
         'customer_note' => 'Ghi chú của khách: :note',
     ],
+    'settings' => [
+        'aged_hours' => 'Cảnh báo đơn tồn đọng sau (giờ)',
+        'aged_hours_help' => 'Đơn chưa xác nhận hoặc chưa gửi quá số giờ này hiện ở "Việc cần làm" trên trang tổng quan.',
+        'confirm_receipt_after_days' => 'Cho khách bấm "Đã nhận hàng" sau (ngày)',
+        'confirm_receipt_after_days_help' => 'Khi đơn đang giao quá số ngày này, khách bấm được "Đã nhận hàng" (đơn đã giao hết thì bấm được ngay).',
+        'number_prefix' => 'Tiền tố mã đơn',
+        'number_prefix_help' => 'Chữ đầu mã đơn, vd. VN → VN2611-00001. Chỉ chữ, số, gạch ngang; tối đa 10 ký tự. Đổi chỉ áp dụng cho đơn mới.',
+        'return_window_days' => 'Số ngày được đổi trả sau khi giao',
+        'return_window_days_help' => 'Khách gửi yêu cầu đổi trả trong số ngày này; hết hạn thì đơn tự chuyển "Hoàn tất". 0 = không nhận đổi trả.',
+    ],
 ];

@@ -8,11 +8,13 @@ use Illuminate\Console\Command;
 use Modules\Fulfillment\Domain\FulfillmentProgress;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Đơn đã giao hết và quá hạn đổi trả → completed (OrderCompleted: loyalty, hoá đơn điện tử… lắng nghe).
@@ -25,7 +27,7 @@ final class CompleteDeliveredOrdersCommand extends Command
 
     public function handle(CurrentContext $context, OrderReader $orders, OrderTransitions $transitions): int
     {
-        $cutoff = now()->subDays((int) config('vanishop.fulfillment.return_window_days', 7));
+        $cutoff = now()->subDays((int) app(Settings::class)->get('core', OrderSettings::RETURN_WINDOW_DAYS));
 
         $completed = $context->runAs(ContextScope::system('complete delivered orders'), function () use ($cutoff, $orders, $transitions): int {
             $count = 0;

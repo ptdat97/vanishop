@@ -22,6 +22,7 @@ use Modules\Ordering\Application\OrderReceipt;
 use Modules\Ordering\Application\OrderRiskService;
 use Modules\Ordering\Application\OrderTransitionService;
 use Modules\Ordering\Contracts\CustomerOrders;
+use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\OrderActions;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderRisks;
@@ -76,6 +77,15 @@ final class OrderingServiceProvider extends ModuleServiceProvider
             help: 'ordering::texts.ordering_service_provider.customer_clicks_i_ve_received',
             group: SettingGroup::Orders,
         ));
+        $text = fn (string $key): string => "ordering::texts.settings.{$key}";
+        foreach ([
+            new SettingDefinition('core', OrderSettings::NUMBER_PREFIX, $text('number_prefix'), 'string', (string) config('vanishop.orders.number_prefix', ''), help: $text('number_prefix_help'), rules: ['max:10', 'regex:/^[A-Za-z0-9-]*$/'], group: SettingGroup::Orders),
+            new SettingDefinition('core', OrderSettings::RETURN_WINDOW_DAYS, $text('return_window_days'), 'int', (int) config('vanishop.fulfillment.return_window_days', 7), help: $text('return_window_days_help'), rules: ['min:0', 'max:90'], group: SettingGroup::Orders),
+            new SettingDefinition('core', OrderSettings::CONFIRM_RECEIPT_AFTER_DAYS, $text('confirm_receipt_after_days'), 'int', (int) config('vanishop.fulfillment.confirm_receipt_after_days', 5), help: $text('confirm_receipt_after_days_help'), rules: ['min:1', 'max:60'], group: SettingGroup::Orders),
+            new SettingDefinition('core', OrderSettings::AGED_HOURS, $text('aged_hours'), 'int', 24, help: $text('aged_hours_help'), rules: ['min:1', 'max:720'], group: SettingGroup::Orders),
+        ] as $definition) {
+            $this->app->make(Settings::class)->define($definition);
+        }
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('orders', $this->modulePath('Http/routes/admin-workspace.php'));

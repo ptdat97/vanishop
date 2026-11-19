@@ -18,6 +18,7 @@ use Modules\Payment\Tests\Feature\Fixtures\FakeCardGateway;
 use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 
@@ -74,7 +75,7 @@ it('giữ tiền → xác nhận đơn; vận đơn rời kho → thu tiền (m�
 });
 
 it('cổng từ chối thu khi rời kho → vẫn giữ tiền; nhân viên thu lại từ Admin; capture_on = manual thì không tự thu', function () {
-    config(['vanishop.payment.capture_on' => 'manual']);
+    app(Settings::class)->set('core', 'payment.capture_on', 'manual');
     ($this->authorize)();
     ($this->shipOut)();
     expect(($this->payment)()->status)->toBe('authorized');

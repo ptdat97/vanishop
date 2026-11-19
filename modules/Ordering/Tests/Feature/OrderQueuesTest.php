@@ -73,7 +73,7 @@ it('thẻ hàng đợi: số đếm và lọc theo giai đoạn vận hành; c�
 });
 
 it('Fulfillment hàng loạt: tạo vận đơn cho đơn đã xác nhận chưa có vận đơn; đã bàn giao chỉ với vận đơn đã có mã → đơn sang Đang giao', function () {
-    config(['vanishop.fulfillment.auto_create' => false]);
+    app(Settings::class)->set('core', 'fulfillment.auto_create', false);
     [$a, $b] = [($this->place)(), ($this->place)()];
     $this->post("{$this->url}/bulk-confirm", ['ids' => [$a->id, $b->id]])->assertRedirect();
     expect(Shipment::query()->count())->toBe(0);

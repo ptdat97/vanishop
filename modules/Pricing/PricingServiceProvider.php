@@ -27,6 +27,7 @@ use Modules\Pricing\Application\StrategyPriceResolver;
 use Modules\Pricing\Application\VariantPriceFields;
 use Modules\Pricing\Console\SyncListPricesCommand;
 use Modules\Pricing\Contracts\CustomerGroupDirectory;
+use Modules\Pricing\Contracts\Data\DiscountCap;
 use Modules\Pricing\Contracts\PriceImporter;
 use Modules\Pricing\Contracts\PriceListSchedule;
 use Modules\Pricing\Contracts\PriceResolver;
@@ -70,6 +71,10 @@ final class PricingServiceProvider extends ModuleServiceProvider
             'core', 'pricing.strategy', 'pricing::texts.pricing_service_provider.how_selling_price_chosen', 'select', (string) config('vanishop.pricing.strategy', 'price_list_priority'),
             optionsFromTag: PricingStrategy::TAG, help: 'pricing::texts.pricing_service_provider.pricingstrategy_used_store',
             group: SettingGroup::Sales,
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', DiscountCap::SETTING, 'pricing::texts.settings.max_discount_percent', 'int', intdiv((int) config('vanishop.promotion.max_discount_bp', 10_000), 100),
+            help: 'pricing::texts.settings.max_discount_percent_help', rules: ['min:1', 'max:100'], group: SettingGroup::Sales,
         ));
         $permissions->register('pricing.view', 'pricing::texts.pricing_service_provider.view_price_lists');
         $permissions->register('pricing.manage', 'pricing::texts.pricing_service_provider.edit_price_lists_selling_prices');

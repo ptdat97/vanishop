@@ -89,7 +89,7 @@ final class CardGateway implements PaymentGateway, CapturesLater
 |---|---|---|
 | Khách thanh toán | — | IPN trả `GatewayCallback` status `authorized` (chỉ cổng `CapturesLater` được dùng) |
 | Ghi nhận | Payment `authorized`, đơn xác nhận (`payment_status = authorized`), event `PaymentAuthorized` | — |
-| Thu | Vận đơn rời kho (`picked_up`) → `capture()` (`VANI_PAYMENT_CAPTURE_ON=shipped`); hoặc nhân viên bấm "Thu tiền". Lỗi → giữ `authorized` + log | Trả `GatewayResult` thành công + mã giao dịch; gọi lại cùng key trả cùng mã |
+| Thu | Vận đơn rời kho (`picked_up`) → `capture()` (Admin → Cài đặt → Bán hàng & thuế → "Thu tiền thanh toán online đã giữ", mặc định `VANI_PAYMENT_CAPTURE_ON=shipped`); hoặc nhân viên bấm "Thu tiền". Lỗi → giữ `authorized` + log | Trả `GatewayResult` thành công + mã giao dịch; gọi lại cùng key trả cùng mã |
 | Huỷ đơn | `void()` → payment `cancelled`, không tạo hoàn tiền | Huỷ giữ tiền |
 
 Cổng xác nhận thu bằng IPN `paid` sau đó cũng được: Core bỏ qua bản trùng. Hết hạn giữ tiền phía cổng (thường 7 ngày): Designed.

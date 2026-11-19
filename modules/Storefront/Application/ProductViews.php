@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Storefront\Application;
 
+use Modules\Cart\Contracts\Data\CartSettings;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\Data\ProductFilters;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
@@ -163,7 +164,7 @@ final class ProductViews implements ProductCards
         }];
         $product['purchase'] = [
             'min_quantity' => 1,
-            'max_quantity' => max(1, (int) config('vanishop.cart.max_line_quantity', 20)),
+            'max_quantity' => max(1, (int) $this->settings->get('core', CartSettings::MAX_LINE_QUANTITY)),
             'is_purchasable' => array_filter($product['variants'], $buyable) !== [],
         ];
         $product['links'] = $this->links($product['links'] ?? [], $locale, $now);

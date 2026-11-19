@@ -27,14 +27,14 @@ beforeEach(function () {
     app(Extensions::class)->tag([AutoApproveWrongSizePolicy::class], ReturnPolicy::TAG);
     FakeApiCarrier::$failBooking = false;
     FakeApiCarrier::$booked = [];
-    config(['vanishop.fulfillment.default_carrier' => 'fake_api']);
+    app(Settings::class)->set('core', 'fulfillment.default_carrier', 'fake_api');
     ['s' => $this->s, 'location' => $this->location] = C::store(stock: 10);
     $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.manage', 'fulfillment.view', 'fulfillment.manage', 'returns.view', 'returns.manage', 'returns.refund', 'payments.view', 'payments.refund']), 'staff');
 
     $this->run = function (bool $automated): array {
         if ($automated) {
             C::autoConfirmCod();
-            config(['vanishop.fulfillment.booking' => 'on_create']);
+            app(Settings::class)->set('core', 'fulfillment.booking', 'on_create');
             T::seed(fn () => app(Settings::class)->set('core', 'returns.policy', 'test_auto_wrong_size'));
         }
         $api = '/api/storefront/v1';

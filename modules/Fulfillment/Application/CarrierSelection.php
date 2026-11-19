@@ -20,6 +20,7 @@ final class CarrierSelection
         private readonly CarrierRegistry $registry,
         private readonly OrderReader $orders,
         private readonly Extensions $extensions,
+        private readonly FulfillmentSettings $fulfillmentSettings,
     ) {}
 
     /**
@@ -55,6 +56,6 @@ final class CarrierSelection
         }
 
         // Phí giao không gắn hãng (phí cố định), carrier đã tắt hoặc đang ngừng (draining) → carrier mặc định.
-        return [(string) config('vanishop.fulfillment.default_carrier', 'manual'), null, null];
+        return [$this->fulfillmentSettings->defaultCarrier(), null, null];
     }
 }

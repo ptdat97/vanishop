@@ -22,6 +22,7 @@ use Modules\Payment\Tests\Feature\Fixtures\FakeOnlineGateway;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
 use Modules\Shared\Domain\Money\Money;
+use Modules\Tenancy\Contracts\Settings;
 use Plugin\HelloWorld\HelloWorldServiceProvider;
 
 require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
@@ -192,7 +193,7 @@ it('chuyển khoản thủ công: hướng dẫn chuyển khoản, nhân viên x
 });
 
 it('state machine: không chuyển ngược trạng thái; chuyển trùng là no-op', function () {
-    config(['vanishop.fulfillment.auto_create' => false]);
+    app(Settings::class)->set('core', 'fulfillment.auto_create', false);
     C::autoConfirmCod();
     ($this->order)('cod');
     $order = ($this->orderRow)();

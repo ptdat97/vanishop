@@ -14,11 +14,13 @@ use Modules\Pricing\Tests\Feature\PricingTestHelpers as P;
 use Modules\Shared\Context\Actor;
 use Modules\Shared\Context\ContextScope;
 use Modules\Shared\Context\CurrentContext;
+use Modules\Tenancy\Contracts\Settings;
 
 require_once __DIR__.'/../../../Inventory/Tests/Feature/InventoryTestHelpers.php';
 
 beforeEach(function () {
-    config(['vanishop.cart.max_line_quantity' => 5, 'vanishop.cart.max_lines' => 3]);
+    app(Settings::class)->set('core', 'cart.max_line_quantity', 5);
+    app(Settings::class)->set('core', 'cart.max_lines', 3);
     $this->brand = Brand::factory()->create();
     [$this->s, $this->m, $this->l] = P::variants(T::product($this->brand->id), ['S', 'M', 'L']);
     $this->base = P::priceList(['code' => 'base'], [$this->s->id => [500_000], $this->m->id => [500_000], $this->l->id => [500_000]]);
@@ -56,7 +58,7 @@ it('cộng dồn khi thêm cùng variant; chặn vượt số có thể bán và
 });
 
 it('giới hạn số dòng trong giỏ', function () {
-    config(['vanishop.cart.max_lines' => 2]);
+    app(Settings::class)->set('core', 'cart.max_lines', 2);
     $carts = app(Carts::class);
     $key = $carts->create('VND')->key;
     $carts->addLine($key, $this->s->id, 1);
