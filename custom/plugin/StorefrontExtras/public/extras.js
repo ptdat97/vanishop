@@ -1,4 +1,4 @@
-// vani.storefront-extras — tương tác của khối (HTML chạy được khi tắt JS; JS chỉ làm tốt hơn).
+// vani.storefront-extras — tương tác của khối (HTML render sẵn ở server; JS gắn tương tác).
 (function () {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -66,7 +66,7 @@
         }, seconds * 1000);
     });
 
-    // Sản phẩm theo tab: không JS → xếp dọc; có JS → chuyển tab.
+    // Sản phẩm theo tab: HTML xếp dọc → JS chuyển thành tab.
     document.querySelectorAll('[data-extras-tabs]').forEach((block) => {
         const tabs = [...block.querySelectorAll('[data-extras-tab]')];
         const panels = [...block.querySelectorAll('[data-extras-panel]')];

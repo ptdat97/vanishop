@@ -1,7 +1,6 @@
 <?php
 
 return [
-    'apply_selection' => 'Apply selection',
     'cart_empty' => 'Your cart is empty.',
     'checkout_all_hint' => 'Press Checkout to buy all in-stock items in your cart.',
     'continue_shopping' => 'Continue shopping',
@@ -18,7 +17,6 @@ return [
     'shipping_calculated_at_checkout' => 'Shipping is calculated at checkout.',
     'subtotal_selected' => 'Subtotal (:count selected items)',
     'subtotal_selected_colon' => 'Subtotal (:count selected items):',
-    'update' => 'Update',
     'view_cart' => 'View cart',
     'voucher_code' => 'Code :code',
 ];

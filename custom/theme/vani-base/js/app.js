@@ -17,7 +17,7 @@ if (accountMenuRoot) {
 }
 
 /*
- * Đảo tương tác của vani-base (ADR-025): JS chỉ tăng cường, trang dùng được khi JS tắt.
+ * Đảo tương tác của vani-base (ADR-025): HTML render sẵn ở server (SEO, hiển thị nhanh), JS gắn tương tác.
  * Thư viện giao diện (Motion, Swiper, PhotoSwipe) chỉ tải khi trang cần (loadVendor bên dưới).
  * Dữ liệu đọc từ data-* đã render sẵn ở server.
  */
@@ -36,8 +36,7 @@ const t = (key, replace = {}) => Object.entries(replace).reduce((text, [name, va
 
 /*
  * ── window.vani (0.3.93): API cho frontend nạp dữ liệu không tải lại trang ─────────────────────────────────────────────
- * Gọi chính các route web của storefront với `Accept: application/json` (cùng phiên, validation, throttle như form; không JS
- * thì form vẫn chạy). URL theo ngôn ngữ trang lấy từ `script[data-vani-urls]`. Lỗi: Error có `status`, `errors` (theo trường),
+ * Gọi chính các route web của storefront với `Accept: application/json` (cùng phiên, validation, throttle như form). URL theo ngôn ngữ trang lấy từ `script[data-vani-urls]`. Lỗi: Error có `status`, `errors` (theo trường),
  * `code`. Theme con / plugin dùng lại:
  *   vani.cart.get() · add(variantId, quantity, options) · update(lineId, quantity) · remove(lineId) · select(lineIds)
  *   vani.cart.applyVoucher(code) · removeVoucher() · open(state?) · close()
@@ -378,7 +377,7 @@ if (carousels.length) {
 
 /**
  * Ảnh phóng to chung: vùng `[data-vani-lightbox]` chứa các `<a href=ảnh-lớn data-pswp-width data-pswp-height>`.
- * Không JS: liên kết mở ảnh lớn.
+ * Trước khi thư viện tải xong: liên kết mở ảnh lớn.
  */
 function mountLightbox(PhotoSwipeLightbox, gallery, onChange) {
     const lightbox = new PhotoSwipeLightbox({
@@ -459,7 +458,7 @@ document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
 });
 
 // PDP bộ chọn 1–3 trục (ADR-045): đổi giá trị trục đầu thì bỏ chọn SKU của nhóm khác (nhóm đó đang ẩn) và trả giá về khoảng giá
-// của sản phẩm; chọn SKU thì hiện đúng giá của SKU (data-price-html). Không JS: CSS :has() vẫn hiện đúng nhóm.
+// của sản phẩm; chọn SKU thì hiện đúng giá của SKU (data-price-html). Nhóm SKU hiện theo CSS :has().
 document.querySelectorAll('form[data-variant-form]').forEach((form) => {
     const chosen = (element) => (element.tagName === 'SELECT' ? element.selectedOptions[0] : element);
     const selectedVariant = () => form.querySelector('input[name="variant_id"]:checked, select[name="variant_id"]');
@@ -504,10 +503,9 @@ document.querySelectorAll('form[data-variant-form]').forEach((form) => {
     });
 });
 
-// Giỏ: đổi số lượng thì gửi form luôn (nút "Cập nhật" vẫn có cho trường hợp JS tắt).
+// Giỏ: đổi số lượng thì gửi luôn.
 // Trang giỏ đầy đủ (0.3.94): sửa số lượng, xoá dòng, chọn dòng, mã giảm giá qua window.vani.cart — server trả `page_html`,
 // thay vùng [data-vani-cart-page] (không tải lại trang). Gắn sự kiện ở vùng bao ngoài vì nội dung bên trong được thay.
-// Không JS: các form POST như cũ (nút "Cập nhật"/"Áp dụng lựa chọn" chỉ hiện khi tắt JS — [data-no-js]).
 if (cartPage) {
     const run = async (action) => {
         const error = cartPage.querySelector('[data-vani-cart-error]');
@@ -605,7 +603,7 @@ function mountWardFilter(filter, ward) {
     return remember;
 }
 
-// Checkout / sổ địa chỉ: chọn tỉnh → tải phường/xã từ Storefront API (không JS: nút "Tải danh sách phường/xã").
+// Checkout / sổ địa chỉ: chọn tỉnh → tải phường/xã từ Storefront API.
 document.querySelectorAll('[data-province-select]').forEach((province) => {
     const ward = province.form?.querySelector('[data-ward-select]');
     if (!ward) {
@@ -639,7 +637,7 @@ document.querySelectorAll('[data-province-select]').forEach((province) => {
  * Checkout (`form[data-checkout-form]`):
  * - Đổi phường/xã, phương thức giao hoặc thanh toán → tính lại như nút "Áp dụng" (POST `action=quote`), rồi thay khung
  *   tóm tắt, danh sách phương thức, thanh tổng ở đáy và `expected_total` bằng bản server vừa render — phí giao theo địa
- *   chỉ (plugin hãng vận chuyển) luôn khớp tổng khách thấy. Không JS: nút "Áp dụng" làm việc này.
+ *   chỉ (plugin hãng vận chuyển) luôn khớp tổng khách thấy.
  * - "Địa chỉ đã lưu": điền người nhận + địa chỉ vào form.
  * - Có tóm tắt lỗi: đưa focus tới đó (trình đọc màn hình đọc ngay, điện thoại không phải cuộn tìm).
  */
@@ -702,7 +700,7 @@ if (checkoutForm) {
     }
 }
 
-// Form cần xác nhận (xoá địa chỉ…): không JS thì gửi luôn.
+// Form cần xác nhận (xoá địa chỉ…).
 document.querySelectorAll('form[data-confirm]').forEach((form) => {
     form.addEventListener('submit', (event) => {
         if (!window.confirm(form.dataset.confirm)) {
@@ -712,7 +710,7 @@ document.querySelectorAll('form[data-confirm]').forEach((form) => {
 });
 
 // Trang cache được (không phiên, storefront §5): lấy phần riêng của khách — đăng nhập, số món trong giỏ, thông báo/lỗi
-// của lần gửi trước. Không có JS: trang vẫn mua được, chỉ không hiện các chi tiết này.
+// của lần gửi trước.
 /**
  * Sự kiện trình duyệt khi giỏ đổi (0.3.43) — plugin (đo quảng cáo…) nghe `document.addEventListener('vani:cart-updated', …)`.
  * detail: { action: 'add' | 'remove', variant_id, sku, name, quantity, unit_amount, currency }.
@@ -1053,7 +1051,7 @@ if (loginForm) {
     });
 }
 
-// Danh sách sản phẩm: lọc và phân trang không tải lại trang (link thường vẫn chạy khi tắt JS; mở tab mới/ctrl+click giữ nguyên).
+// Danh sách sản phẩm: lọc và phân trang không tải lại trang (link thường cho SEO; mở tab mới/ctrl+click giữ nguyên).
 document.addEventListener('click', (event) => {
     const link = event.target.closest('[data-vani-listing] a[href]');
     if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target) return;

@@ -36,7 +36,6 @@
 | Storefront API | `GET /api/storefront/v1/x/vani-wishlist/ids` | `{data: {ids[]}}`, `private, no-store` — wishlist.js tô nút tim |
 | Storefront API | `GET/POST /api/storefront/v1/x/vani-wishlist/items`, `DELETE …/items/{styleId}` | `GET` trả thẻ sản phẩm; `POST`/`DELETE` trả `{data: {ids}}` |
 | Storefront API | `POST /api/storefront/v1/x/vani-wishlist/items/merge` (`style_ids[]`) | Gộp danh sách của trình duyệt sau khi đăng nhập |
-| Web | `POST /p/vani-wishlist/toggle` (`style_id`) | Form của nút tim trên trang HTML (quay lại trang) |
 
 Xác thực API: Bearer (app) hoặc phiên web cùng nguồn — wishlist.js gọi bằng cookie phiên + `X-CSRF-TOKEN` (ADR-044, 1.1.0).
 

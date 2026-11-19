@@ -9,8 +9,8 @@ use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\StorefrontExtras\Infrastructure\Products;
 
 /**
- * Trình chiếu ảnh + chữ (reference-parity §3.16-4): tối đa SLIDES slide; không JS → trượt ngang bằng CSS scroll-snap,
- * có JS → tự chuyển theo `interval`. Slide thiếu ảnh bị bỏ.
+ * Trình chiếu ảnh + chữ (reference-parity §3.16-4): tối đa SLIDES slide; trượt ngang bằng CSS scroll-snap,
+ * JS tự chuyển theo `interval`. Slide thiếu ảnh bị bỏ.
  */
 final class SlideshowBlock implements StorefrontBlock
 {

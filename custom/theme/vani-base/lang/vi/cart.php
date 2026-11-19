@@ -1,7 +1,6 @@
 <?php
 
 return [
-    'apply_selection' => 'Áp dụng lựa chọn',
     'cart_empty' => 'Giỏ hàng trống.',
     'checkout_all_hint' => 'Bấm Thanh toán để mua tất cả sản phẩm còn hàng trong giỏ.',
     'continue_shopping' => 'Tiếp tục mua sắm',
@@ -18,7 +17,6 @@ return [
     'shipping_calculated_at_checkout' => 'Phí giao hàng tính ở bước thanh toán.',
     'subtotal_selected' => 'Tạm tính (:count sản phẩm đã chọn)',
     'subtotal_selected_colon' => 'Tạm tính (:count sản phẩm đã chọn):',
-    'update' => 'Cập nhật',
     'view_cart' => 'Xem giỏ hàng',
     'voucher_code' => 'Mã :code',
 ];

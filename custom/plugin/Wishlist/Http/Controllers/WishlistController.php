@@ -5,41 +5,15 @@ declare(strict_types=1);
 namespace Plugin\Wishlist\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Plugin\Wishlist\Http\Requests\WishlistItemRequest;
 use Plugin\Wishlist\Infrastructure\Wishlists;
 
 /**
- * Yêu thích trên storefront native: trạng thái cho JS, thêm/bỏ (JSON hoặc form không JS), gộp danh sách của trình duyệt,
- * trang trong tài khoản.
+ * Trang yêu thích trong tài khoản khách (thêm/bỏ/gộp: Storefront API — WishlistApiController).
  */
 final class WishlistController
 {
     public function __construct(private readonly Wishlists $wishlists) {}
-
-    public function toggle(WishlistItemRequest $request): JsonResponse|RedirectResponse
-    {
-        $styleId = (int) $request->validated()['style_id'];
-        $customerId = $this->customerId($request);
-        if ($customerId === null) {
-            return $request->expectsJson()
-                ? response()->json(['message' => __('vani-wishlist::storefront.sign_in_to_save')], 401)
-                : redirect()->to(vani_route('storefront.account.login'));
-        }
-
-        $added = $this->wishlists->toggle($customerId, $styleId);
-        $message = match ($added) {
-            true => __('vani-wishlist::storefront.added'),
-            false => __('vani-wishlist::storefront.removed'),
-            null => __('vani-wishlist::storefront.add_failed', ['max' => Wishlists::MAX]),
-        };
-
-        return $request->expectsJson()
-            ? response()->json(['in_wishlist' => $added === true, 'count' => count($this->wishlists->ids($customerId)), 'message' => $message], $added === null ? 422 : 200)
-            : back()->with('status', $message);
-    }
 
     public function index(Request $request): View
     {

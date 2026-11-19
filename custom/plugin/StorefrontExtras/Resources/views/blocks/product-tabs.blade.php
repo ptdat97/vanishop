@@ -1,4 +1,4 @@
-{{-- Không JS: các tab xếp dọc (mỗi tab có tiêu đề); JS (extras.js) chuyển thành tab. --}}
+{{-- HTML render sẵn các tab xếp dọc (mỗi tab có tiêu đề); JS (extras.js) chuyển thành tab. --}}
 @if ($tabs !== [])
     <section class="mb-10" data-block="extras_product_tabs" data-extras-tabs>
         @if ($title !== '')<h2 class="mb-4 text-lg font-semibold">{{ $title }}</h2>@endif

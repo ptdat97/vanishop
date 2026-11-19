@@ -35,7 +35,7 @@ beforeEach(function () {
     ], $overrides);
 });
 
-it('render SSR: trang chủ, thương hiệu, tìm kiếm, PDP có giá và form thêm giỏ dùng được khi tắt JS', function () {
+it('render SSR: trang chủ, thương hiệu, tìm kiếm, PDP có giá và form thêm giỏ render sẵn ở server', function () {
     $this->get('/')->assertOk()->assertSee('Đầm lụa')->assertSee('Urbanx')
         ->assertSee('id="vani-cart-drawer"', false)
         ->assertSee('data-vani-drawer-close', false)
@@ -427,7 +427,7 @@ it('PDP có ảnh: gallery (Swiper/PhotoSwipe) — ảnh chính + ảnh sau tả
         ->and($html)->toContain('data-images=\'[{"id":')
         ->toContain('data-gallery-image src="'.e($urls[1]).'"')
         ->toContain('data-pswp-width=')
-        // Chỉ ảnh đầu ưu tiên cao; không JS vẫn xem được (dải cuộn, liên kết mở ảnh lớn).
+        // Chỉ ảnh đầu ưu tiên cao; HTML render sẵn dải cuộn và liên kết mở ảnh lớn.
         ->and(substr_count($html, 'fetchpriority="high"'))->toBe(1);
 });
 

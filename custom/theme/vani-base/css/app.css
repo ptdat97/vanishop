@@ -736,8 +736,8 @@ html:has(.vani-modal[open]) {
 }
 
 /* =========================================================
-   12. PROGRESSIVE ENHANCEMENT
-   SSR-first: HTML remains accessible without JavaScript.
+   12. JS-ONLY CONTROLS
+   Hidden until app.js marks <html class="js"> (no dead buttons before JS loads).
 ========================================================= */
 
 [data-js-only] {
@@ -746,11 +746,6 @@ html:has(.vani-modal[open]) {
 
 .js [data-js-only] {
     display: revert;
-}
-
-/* No-JS controls */
-.js [data-no-js] {
-    display: none;
 }
 
 .js [data-vani-search-open] {

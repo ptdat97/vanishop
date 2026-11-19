@@ -5,7 +5,7 @@
 @section('content')
     <div class="mx-auto max-w-sm">
         <h1 class="mb-6 text-2xl font-semibold">{{ __('theme::account.sign_in') }}</h1>
-        {{-- app.js gửi JSON (window.vani.auth.login) — không tải lại trang; không JS: form POST như thường. --}}
+        {{-- app.js gửi JSON (window.vani.auth.login) — không tải lại trang. --}}
         <form action="{{ vani_route('storefront.account.authenticate') }}" method="post" class="space-y-3" data-vani-login>
             @csrf
             <div>

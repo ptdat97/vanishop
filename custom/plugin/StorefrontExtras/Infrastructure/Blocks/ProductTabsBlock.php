@@ -10,7 +10,7 @@ use Plugin\StorefrontExtras\Infrastructure\Products;
 
 /**
  * Sản phẩm theo tab (reference-parity §3.16-4): tối đa TABS tab, mỗi tab một nguồn (mới nhất, danh mục, bộ sưu tập,
- * thương hiệu, chọn tay). Không JS → các tab xếp dọc; có JS → chuyển tab. Tab không có sản phẩm bị bỏ.
+ * thương hiệu, chọn tay). HTML xếp dọc các tab, JS chuyển thành tab. Tab không có sản phẩm bị bỏ.
  */
 final class ProductTabsBlock implements StorefrontBlock
 {

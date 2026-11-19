@@ -22,8 +22,8 @@
     <div class="grid gap-8 md:grid-cols-2">
         @php($gallery = $page['gallery'])
         {{--
-            Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — cài qua npm, tải theo nhu cầu (app.js). Không JS:
-            dải ảnh cuộn ngang (scroll-snap), bấm ảnh mở bản lớn nhất. Khung theo tỉ lệ ảnh sản phẩm (Admin → Kích thước ảnh).
+            Gallery: Swiper (vuốt, mũi tên) + PhotoSwipe (phóng to) — cài qua npm, tải theo nhu cầu (app.js). HTML render
+            sẵn: dải ảnh cuộn ngang (scroll-snap), bấm ảnh mở bản lớn nhất. Khung theo tỉ lệ ảnh sản phẩm (Admin → Kích thước ảnh).
         --}}
         <x-vani::hook-slot name="vani.storefront.pdp.before_gallery" :args="[$product]" />
         <div data-product-gallery>
@@ -213,7 +213,7 @@
     <x-vani::hook-slot name="vani.storefront.pdp.after_related_products" :args="[$product]" />
 
     {{-- Lượt xem + "Đã xem gần đây" (§3.5-2): JS gửi beacon sau khi trang tải, lưu tối đa 12 mẫu trong trình duyệt và hiện
-         các mẫu đã xem khác (thẻ lấy từ Storefront API). HTML giống nhau với mọi khách; không JS → khung ẩn. --}}
+         các mẫu đã xem khác (thẻ lấy từ Storefront API). HTML giống nhau với mọi khách; JS hiện khung khi có dữ liệu. --}}
     <section class="mt-12" hidden data-vani-recently-viewed data-style-id="{{ $product['id'] }}"
              data-view-url="{{ route('api.storefront.v1.products.views') }}" data-products-url="{{ route('api.storefront.v1.products.index') }}" data-locale="{{ app()->getLocale() }}"
              data-product-url="{{ vani_route('storefront.product', '__slug__') }}">

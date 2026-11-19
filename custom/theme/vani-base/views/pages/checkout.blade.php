@@ -28,7 +28,7 @@
             <fieldset class="space-y-3">
                 <legend class="mb-2 font-semibold">{{ __('theme::common.recipient') }}</legend>
                 @if (count($form['saved_addresses']) > 1)
-                    {{-- Chỉ hiện khi có JS (app.js điền các ô theo địa chỉ chọn); không JS: form đã điền sẵn địa chỉ mặc định. --}}
+                    {{-- app.js hiện ô này và điền các ô theo địa chỉ chọn; form đã điền sẵn địa chỉ mặc định. --}}
                     <div hidden data-checkout-saved-address-wrap>
                         <label for="checkout-saved-address" class="block text-sm">{{ __('theme::checkout.saved_address') }}</label>
                         <select id="checkout-saved-address" class="mt-1 w-full rounded border border-slate-300 px-3 py-2" data-checkout-saved-address>
@@ -64,7 +64,7 @@
                     </div>
                     <div>
                         <label for="ward_code" class="block text-sm">{{ __('theme::common.ward') }}</label>
-                        {{-- Lọc danh sách phường/xã gõ không dấu (app.js hiện ô khi danh sách dài); không JS: chọn trong danh sách. --}}
+                        {{-- Lọc danh sách phường/xã gõ không dấu (app.js hiện ô khi danh sách dài). --}}
                         <input type="search" hidden placeholder="{{ __('theme::common.search_ward_hint') }}" aria-label="{{ __('theme::common.search_ward') }}" aria-controls="ward_code" autocomplete="off" class="mt-1 w-full rounded border border-slate-300 px-3 py-2" data-ward-filter>
                         <select id="ward_code" name="shipping_address[ward_code]" autocomplete="address-level2" @error('shipping_address.ward_code') aria-invalid="true" aria-describedby="ward_code-error" @enderror data-ward-select class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                             <option value="">{{ $wards === [] ? __('theme::common.select_province_first') : __('theme::common.select_ward') }}</option>
@@ -72,7 +72,6 @@
                                 <option value="{{ $ward['code'] }}" @selected(($values['shipping_address.ward_code'] ?? '') === $ward['code'])>{{ $ward['name'] }}</option>
                             @endforeach
                         </select>
-                        <noscript><button type="submit" name="action" value="quote" class="mt-1 text-sm underline">{{ __('theme::common.load_wards') }}</button></noscript>
                         @error('shipping_address.ward_code')<p id="ward_code-error" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>

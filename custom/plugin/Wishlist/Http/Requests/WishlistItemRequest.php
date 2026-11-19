@@ -7,8 +7,7 @@ namespace Plugin\Wishlist\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Thêm/bỏ một sản phẩm yêu thích — nút tim (form Blade khi tắt JS) và Storefront API `POST x/vani-wishlist/items` dùng
- * chung (ADR-044 §2).
+ * Thêm một sản phẩm yêu thích — Storefront API `POST x/vani-wishlist/items` (nút tim của wishlist.js và app).
  */
 final class WishlistItemRequest extends FormRequest
 {

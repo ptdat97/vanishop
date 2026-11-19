@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.50 — 2026-11-19 · Extension API 1.12.0 (không đổi)
+
+Gỡ phần dự phòng cho trình duyệt tắt JS (ADR-025 sửa đổi 2026-11-19). Không đổi API cho plugin.
+
+### Bỏ
+- `vani.wishlist` 1.2.0: nút tim là `<button type="button">` trong `[data-vani-wishlist]` (không còn form/token CSRF); bỏ route web `POST /p/vani-wishlist/toggle` và `Wishlists::toggle()`. Thêm/bỏ chỉ qua Storefront API `x/vani-wishlist/items`; trang tài khoản có nút `[data-vani-wishlist-remove]` gọi `DELETE …/items/{style}`.
+- Sổ địa chỉ: bỏ `action=reload` (nút `<noscript>` "Tải danh sách phường/xã") ở `AddressRequest` và `AccountSettingsController`; checkout bỏ nút `<noscript>` tương tự (`action=quote` vẫn dùng cho nút "Áp dụng" mã giảm giá và JS tính lại).
+- `vani-base`: bỏ nút `[data-no-js]` "Cập nhật" (số lượng) và "Áp dụng lựa chọn" (chọn dòng) ở trang giỏ, nút `<noscript>` "Áp dụng" sắp xếp ở danh sách, CSS `.js [data-no-js]`, khoá dịch `theme::cart.update`, `theme::cart.apply_selection`, `theme::common.load_wards`. Theme con override `partials.cart-page`, `pages.checkout`, `pages.account.address-form`, `partials.listing` nên bỏ các nút này.
+
 ## 0.5.49 — 2026-11-19 · Extension API 1.12.0 (không đổi)
 
 Backlog L46 — API-first: so khớp số liệu trang Blade với Storefront API. Không đổi API cho plugin.

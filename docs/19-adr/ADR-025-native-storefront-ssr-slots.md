@@ -27,7 +27,7 @@ Làm sao để plugin thêm UI vào storefront của nhiều brand mà không fo
 
 - Trình duyệt tắt JavaScript không còn là trường hợp cần hỗ trợ: storefront được phép dựa vào JS cho tương tác (giỏ, chọn biến thể, checkout, tài khoản). Tài liệu và tiêu chí kiểm thử không còn yêu cầu "chạy được khi tắt JS".
 - Vẫn giữ SSR là nguồn nội dung và không ẩn nội dung màn hình đầu chờ JS — vì SEO và tốc độ hiển thị, không phải vì JS bị tắt.
-- Form và route web dự phòng hiện có trong code (nút tim dạng form, nút "Tải danh sách phường/xã", `<noscript>`) chưa gỡ; gỡ dần khi đụng tới.
+- Phần dự phòng trong code đã gỡ ở Core 0.5.50: nút tim dạng form + route `POST /p/vani-wishlist/toggle`, nút "Tải danh sách phường/xã" (`action=reload`), các nút `<noscript>` và `[data-no-js]` ("Cập nhật", "Áp dụng lựa chọn"). HTML render sẵn ở server (link lọc, dải ảnh, tab xếp dọc) vẫn giữ vì SEO/tốc độ.
 
 ## Consequences
 - (+) SEO và trang vẫn đọc được khi JS lỗi; Storefront API và native dùng cùng Presenter.

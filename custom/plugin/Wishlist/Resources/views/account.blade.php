@@ -12,17 +12,13 @@
             @else
                 <div class="grid grid-cols-2 gap-6 md:grid-cols-3" data-vani-wishlist-page>
                     @foreach ($items as $item)
-                        <div>
+                        <div data-vani-wishlist-item>
                             @if ($item['card'] !== null)
                                 @include('theme::partials.product-card', ['product' => $item['card'], 'layout' => [896, 3, 2]])
                             @else
                                 <p class="rounded-[var(--radius-theme)] bg-slate-100 p-6 text-sm text-slate-500">{{ __('vani-wishlist::storefront.no_longer_available') }}</p>
                             @endif
-                            <form action="{{ vani_route('storefront.p.vani-wishlist.toggle') }}" method="post" class="mt-2">
-                                @csrf
-                                <input type="hidden" name="style_id" value="{{ $item['style_id'] }}">
-                                <button type="submit" class="text-sm text-slate-500 underline">{{ __('vani-wishlist::storefront.remove_from_wishlist') }}</button>
-                            </form>
+                            <button type="button" class="mt-2 text-sm text-slate-500 underline" data-vani-wishlist-remove="{{ $item['style_id'] }}">{{ __('vani-wishlist::storefront.remove_from_wishlist') }}</button>
                         </div>
                     @endforeach
                 </div>

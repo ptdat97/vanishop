@@ -77,7 +77,7 @@ it('cần quyền catalog.manage để lưu', function () {
     $this->put('/admin/catalog/filters', ['facets' => []])->assertForbidden();
 });
 
-it('link lọc theo thuộc tính lọc đúng và bỏ chọn được (không JS)', function () {
+it('link lọc theo thuộc tính lọc đúng và bỏ chọn được (link thường)', function () {
     $this->get('/tim-kiem?attr%5Bmaterial%5D=silk')->assertOk()->assertSee('Đầm lụa đen')->assertDontSee('Áo thun Urbanx')
         ->assertSee('href="'.e(url('/tim-kiem')).'"  aria-current="true"', false);
 });

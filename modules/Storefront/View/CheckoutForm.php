@@ -14,8 +14,8 @@ use Modules\Customer\Contracts\Data\CustomerData;
  * - `values`: giá trị từng ô — lần gửi trước (`old`) nếu có; chưa gửi lần nào và khách đã đăng nhập thì điền sẵn từ hồ
  *   sơ và địa chỉ mặc định trong sổ địa chỉ.
  * - `saved_addresses`: sổ địa chỉ của khách cho ô "Địa chỉ đã lưu" (JS điền vào form khi chọn).
- * - `errors`: tóm tắt lỗi đầu form (lỗi chung `business` không gắn ô nào + lỗi từng ô kèm id ô để nhảy tới) — hiện cả
- *   khi tắt JS, trên điện thoại khách không phải cuộn tìm ô lỗi.
+ * - `errors`: tóm tắt lỗi đầu form (lỗi chung `business` không gắn ô nào + lỗi từng ô kèm id ô để nhảy tới) — trên
+ *   điện thoại khách không phải cuộn tìm ô lỗi.
  */
 final class CheckoutForm
 {

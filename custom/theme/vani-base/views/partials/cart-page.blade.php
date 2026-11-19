@@ -1,7 +1,7 @@
 {{--
     Thân trang giỏ (0.3.94) — trang `pages.cart` và JSON của CartController (`page_html`, khi JS trên trang giỏ gửi
     `X-Vani-Cart-View: page`) dùng chung: app.js thay vùng [data-vani-cart-page] sau mỗi thao tác, không tải lại trang.
-    Không JS: các form POST như cũ. $cart: null | giỏ (CartPresenter::present) · $voucher: null | CartVoucher::preview.
+    $cart: null | giỏ (CartPresenter::present) · $voucher: null | CartVoucher::preview.
 --}}
 <p role="alert" class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700" data-vani-cart-error hidden></p>
 @if ($cart === null || $cart['lines'] === [])
@@ -9,14 +9,13 @@
     <x-vani::hook-slot name="vani.storefront.cart.empty" />
 @else
     <x-vani::hook-slot name="vani.storefront.cart.before_lines" :args="[$cart]" />
-    {{-- Chọn dòng để thanh toán (§3.8): ô chọn thuộc form này qua thuộc tính form=, JS tự gửi khi đổi; không JS: nút "Áp dụng lựa chọn". --}}
+    {{-- Chọn dòng để thanh toán (§3.8): ô chọn thuộc form này qua thuộc tính form=, JS tự gửi khi đổi. --}}
     <form id="cart-selection" action="{{ vani_route('storefront.cart.select') }}" method="post" class="mb-3 flex items-center gap-4 text-sm">
         @csrf
         <label class="flex items-center gap-2">
             <input type="checkbox" data-select-all @checked(collect($cart['lines'])->every(fn ($line) => $line['selected'] || in_array('unavailable', $line['issues'], true)))>
             {{ __('theme::cart.select_all') }}
         </label>
-        <button type="submit" class="underline" data-selection-submit data-no-js>{{ __('theme::cart.apply_selection') }}</button>
     </form>
     <ul class="divide-y divide-slate-200 border-y border-slate-200">
         @foreach ($cart['lines'] as $line)
@@ -42,7 +41,6 @@
                     @csrf
                     <label for="qty-{{ $line['id'] }}" class="sr-only">{{ __('theme::common.quantity') }}</label>
                     <input id="qty-{{ $line['id'] }}" name="quantity" type="number" min="0" max="20" value="{{ $line['quantity'] }}" data-autosubmit data-line="{{ $line['id'] }}" class="w-16 rounded border border-slate-300 px-2 py-1">
-                    <button type="submit" class="text-sm underline" data-no-js>{{ __('theme::cart.update') }}</button>
                 </form>
                 <p class="w-28 text-right font-medium" data-vani-value="line.total" data-vani-line="{{ $line['id'] }}" data-vani-amount="{{ $line['line_total']['amount'] ?? '' }}">{{ $line['line_total']['formatted'] ?? '—' }}</p>
                 <form action="{{ vani_route('storefront.cart.remove', $line['id']) }}" method="post" data-cart-remove-form data-line="{{ $line['id'] }}">

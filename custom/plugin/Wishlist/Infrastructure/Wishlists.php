@@ -26,21 +26,6 @@ final class Wishlists
         return WishlistItem::query()->where('customer_id', $customerId)->orderByDesc('id')->pluck('style_id')->map(fn ($id): int => (int) $id)->all();
     }
 
-    /**
-     * Thêm nếu chưa có, bỏ nếu đã có. null = không thêm được (mẫu không bán, đủ giới hạn).
-     */
-    public function toggle(int $customerId, int $styleId): ?bool
-    {
-        $existing = WishlistItem::query()->where('customer_id', $customerId)->where('style_id', $styleId)->first();
-        if ($existing !== null) {
-            $existing->delete();
-
-            return false;
-        }
-
-        return $this->add($customerId, [$styleId]) === 1 ? true : null;
-    }
-
     public function remove(int $customerId, int $styleId): void
     {
         WishlistItem::query()->where('customer_id', $customerId)->where('style_id', $styleId)->delete();

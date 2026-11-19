@@ -40,7 +40,6 @@
                                 <option value="{{ $ward['code'] }}" @selected(old('ward_code', $address['ward_code'] ?? '') === $ward['code'])>{{ $ward['name'] }}</option>
                             @endforeach
                         </select>
-                        <noscript><button type="submit" name="action" value="reload" formnovalidate class="mt-1 text-sm underline">{{ __('theme::common.load_wards') }}</button></noscript>
                         @error('ward_code')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                     </div>
                 @else

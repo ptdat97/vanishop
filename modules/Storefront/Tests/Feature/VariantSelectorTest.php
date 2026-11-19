@@ -42,7 +42,7 @@ it('swatch cho mỗi màu, màu còn hàng được chọn sẵn; mỗi màu m�
         ->and($html)->toContain('300.000');
 });
 
-it('thêm giỏ từ trang sản phẩm: SKU phải mang giá trị trục đầu đang chọn (không JS đổi màu sau khi chọn size); đúng màu thì vào giỏ', function () {
+it('thêm giỏ từ trang sản phẩm: SKU phải mang giá trị trục đầu đang chọn (đổi màu sau khi đã chọn size); đúng màu thì vào giỏ', function () {
     $this->post('/gio-hang', ['variant_id' => $this->pinkS->id, 'axis' => ['color' => $this->navy]])->assertSessionHasErrors('variant_id');
     $this->post('/gio-hang', ['variant_id' => $this->pinkS->id, 'axis' => ['color' => $this->pink]])->assertSessionHasNoErrors();
     // Chọn trục đầu mà chưa chọn SKU: báo còn thiếu tuỳ chọn; JS báo theo tên trục (data-choose-message).

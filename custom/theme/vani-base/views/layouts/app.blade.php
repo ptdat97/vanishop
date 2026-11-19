@@ -101,7 +101,7 @@
                     data-vani-account aria-label="{{ $shell['account']['label'] }}" title="{{ $shell['account']['label'] }}">
                     <i data-lucide="user-round" class="size-5" aria-hidden="true"></i>
                 </a>
-                {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); không JS vẫn là link tới trang giỏ. --}}
+                {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); link tới trang giỏ khi mở tab mới. --}}
                 <a href="{{ vani_route('storefront.cart') }}" data-vani-cart-open aria-haspopup="dialog"
                     class="relative inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     aria-label="{{ __('theme::common.cart') }}" title="{{ __('theme::common.cart') }}">

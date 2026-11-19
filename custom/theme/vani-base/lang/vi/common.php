@@ -11,7 +11,6 @@ return [
     'discount' => 'Giảm giá',
     'discount_code' => 'Mã giảm giá',
     'full_name' => 'Họ tên',
-    'load_wards' => 'Tải danh sách phường/xã',
     'loading' => 'Đang tải…',
     'next_image' => 'Ảnh sau',
     'notifications' => 'Thông báo',

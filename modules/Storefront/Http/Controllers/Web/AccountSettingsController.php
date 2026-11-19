@@ -21,7 +21,7 @@ use Modules\Storefront\Application\AddressOptions;
 /**
  * Tài khoản khách trên native storefront: sửa hồ sơ, đặt/đổi mật khẩu, sổ địa chỉ (thêm/sửa/xoá/mặc định), xoá
  * tài khoản (OTP tới SĐT của tài khoản; còn đơn/đổi trả đang xử lý thì chưa xoá được).
- * Form chạy không cần JS; tỉnh → phường: JS tải qua Storefront API, không JS có nút "Tải danh sách phường/xã".
+ * Tỉnh → phường: JS tải danh sách phường/xã qua Storefront API.
  */
 final class AccountSettingsController
 {
@@ -122,9 +122,6 @@ final class AccountSettingsController
     public function storeAddress(AddressRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
-        if ($request->input('action') === 'reload') {
-            return back()->withInput();
-        }
         $this->accounts->addAddress($customer->id, $request->toAddressData());
 
         return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));
@@ -141,9 +138,6 @@ final class AccountSettingsController
     public function updateAddress(AddressRequest $request, int $address): RedirectResponse
     {
         $customer = $this->required($request);
-        if ($request->input('action') === 'reload') {
-            return back()->withInput();
-        }
         $this->accounts->updateAddress($customer->id, $address, $request->toAddressData());
 
         return redirect()->to(LocalizedUrls::route('storefront.account.addresses'))->with('status', __('storefront::messages.address_saved'));

@@ -10,7 +10,7 @@ require_once __DIR__.'/../../../Checkout/Tests/Feature/CheckoutTestHelpers.php';
 require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 /*
-| Form checkout (stabilization S2): điền sẵn từ tài khoản, sổ địa chỉ, tóm tắt lỗi hiện cả khi không có JS.
+| Form checkout (stabilization S2): điền sẵn từ tài khoản, sổ địa chỉ, tóm tắt lỗi đầu form (render ở server).
 */
 
 beforeEach(function () {

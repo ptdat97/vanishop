@@ -21,7 +21,7 @@ use Modules\Storefront\Http\Requests\CartSelectionRequest;
 use Modules\Storefront\Http\Requests\CartVouchersRequest;
 
 /**
- * Giỏ của native storefront. Form POST — dùng được khi JS tắt (ADR-025); cùng route trả JSON khi request gửi
+ * Giỏ của native storefront. Form POST; cùng route trả JSON khi request gửi
  * `Accept: application/json` (giỏ mini offcanvas, `window.vani.cart` trong app.js của theme) — xem {@see self::payload()}.
  */
 final class CartController
@@ -76,7 +76,7 @@ final class CartController
     }
 
     /**
-     * Chọn dòng để thanh toán: `lines[]` là các dòng đã đánh dấu (form gửi cả khi JS tắt).
+     * Chọn dòng để thanh toán: `lines[]` là các dòng đã đánh dấu.
      */
     public function select(CartSelectionRequest $request): RedirectResponse|JsonResponse
     {

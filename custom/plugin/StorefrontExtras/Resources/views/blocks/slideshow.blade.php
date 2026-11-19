@@ -1,4 +1,4 @@
-{{-- Trình chiếu: không JS → trượt ngang (scroll-snap); JS tự chuyển theo data-interval (dừng khi rê chuột/giảm chuyển động). --}}
+{{-- Trình chiếu: trượt ngang (scroll-snap); JS tự chuyển theo data-interval (dừng khi rê chuột/giảm chuyển động). --}}
 @if ($slides !== [])
     <section class="relative mb-10" data-block="extras_slideshow" data-extras-slideshow data-interval="{{ $interval }}" aria-roledescription="carousel">
         <div class="flex snap-x snap-mandatory overflow-x-auto rounded-[var(--radius-theme)]" data-extras-slides>

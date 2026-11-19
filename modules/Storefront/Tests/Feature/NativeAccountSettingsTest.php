@@ -66,8 +66,8 @@ it('sổ địa chỉ: thêm theo danh mục (tên chuẩn), mã sai bị từ c
     $customer = ($this->signIn)();
 
     $this->get('/tai-khoan/dia-chi/them')->assertOk()->assertSee('Thành phố Hà Nội')->assertSee('data-province-select', false);
-    // Không JS: chọn tỉnh rồi "Tải danh sách phường/xã" → quay lại form, giữ dữ liệu, có danh sách phường.
-    $this->from('/tai-khoan/dia-chi/them')->post('/tai-khoan/dia-chi', ['province_code' => '01', 'action' => 'reload'])->assertRedirect('/tai-khoan/dia-chi/them');
+    // Lỗi validate: quay lại form, giữ tỉnh đã chọn và danh sách phường của tỉnh đó.
+    $this->from('/tai-khoan/dia-chi/them')->post('/tai-khoan/dia-chi', ['province_code' => '01'])->assertSessionHasErrors('full_name');
     $this->get('/tai-khoan/dia-chi/them')->assertSee('Phường Ba Đình');
     expect(CustomerAddress::query()->count())->toBe(0);
 

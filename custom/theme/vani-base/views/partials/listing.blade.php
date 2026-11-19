@@ -1,4 +1,4 @@
-{{-- data-vani-listing (0.3.93): app.js thay vùng này khi lọc/phân trang (không tải lại trang); không JS là link thường.
+{{-- data-vani-listing (0.3.93): app.js thay vùng này khi lọc/phân trang (không tải lại trang); link thường cho SEO.
      $listingView: link lọc/sắp xếp/phân trang Core dựng sẵn (Storefront\View\Composers\ListingComposer) — partial chỉ in ra. --}}
 <div data-vani-listing>
 <x-vani::hook-slot name="vani.storefront.plp.before_listing" :args="[$listingView['context'], $listing]" />
@@ -10,10 +10,10 @@
                 <svg viewBox="0 0 20 20" class="size-4 transition-transform group-open:rotate-180" fill="none" aria-hidden="true"><path d="m4 7 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </summary>
             <div class="space-y-6 pt-4 md:block md:pt-0">
-        {{-- Bộ lọc theo cấu hình Admin → Catalog → Bộ lọc (thứ tự, bật/tắt, kiểu hiển thị); link thường, chạy khi tắt JS. --}}
+        {{-- Bộ lọc theo cấu hình Admin → Catalog → Bộ lọc (thứ tự, bật/tắt, kiểu hiển thị); link thường (SEO). --}}
         @foreach ($listingView['filters'] as $filter)
             @if ($filter['display'] === 'range')
-                {{-- Khoảng giá niêm yết: form GET thường (chạy khi tắt JS), giữ các bộ lọc đang chọn. --}}
+                {{-- Khoảng giá niêm yết: form GET, giữ các bộ lọc đang chọn. --}}
                 <section data-filter="{{ $filter['key'] }}">
                     <h2 class="mb-2 font-semibold">{{ $filter['label'] }}</h2>
                     <form method="get" action="{{ $listingView['action'] }}" class="space-y-2">
@@ -78,7 +78,6 @@
                         <option value="price_desc" @selected($listingView['sort']['current'] === 'price_desc')>{{ __('theme::catalog.price_high_low') }}</option>
                     @endif
                 </select>
-                <noscript><button type="submit" class="underline">{{ __('theme::common.apply') }}</button></noscript>
             </form>
         </div>
         @if ($listing['items'] === [])

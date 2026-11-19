@@ -35,10 +35,10 @@
         }).then((response) => (response.ok ? response.json() : null)).then((json) => json?.data ?? null);
 
     const render = () => {
-        document.querySelectorAll('form[data-vani-wishlist]').forEach((form) => {
-            const active = ids.has(Number(form.dataset.vaniWishlist));
-            const button = form.querySelector('[data-vani-wishlist-button]');
-            const label = form.querySelector('[data-vani-wishlist-label]');
+        document.querySelectorAll('[data-vani-wishlist]').forEach((wrapper) => {
+            const active = ids.has(Number(wrapper.dataset.vaniWishlist));
+            const button = wrapper.querySelector('[data-vani-wishlist-button]');
+            const label = wrapper.querySelector('[data-vani-wishlist-label]');
             button?.setAttribute('aria-pressed', active ? 'true' : 'false');
             if (label) label.textContent = active ? config.labelRemove : config.labelAdd;
         });
@@ -70,11 +70,14 @@
         }).catch(() => {});
     };
 
-    document.addEventListener('submit', (event) => {
-        const form = event.target.closest?.('form[data-vani-wishlist]');
-        if (!form || !session) return;
+    // Nút tim nằm trong thẻ <a> của thẻ sản phẩm: chặn điều hướng của link cha.
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest?.('[data-vani-wishlist] [data-vani-wishlist-button]');
+        if (!button) return;
         event.preventDefault();
-        const styleId = Number(form.dataset.vaniWishlist);
+        event.stopPropagation();
+        if (!session) return;
+        const styleId = Number(button.closest('[data-vani-wishlist]').dataset.vaniWishlist);
         if (!session.signed_in) {
             ids.has(styleId) ? ids.delete(styleId) : ids.size < MAX && ids.add(styleId);
             writeLocal([...ids]);
@@ -88,6 +91,28 @@
                 render();
             })
             .catch(() => {});
+    });
+
+    // Trang yêu thích trong tài khoản: bỏ một mẫu rồi gỡ thẻ khỏi lưới (hết mẫu: tải lại để hiện trạng thái trống).
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest?.('[data-vani-wishlist-remove]');
+        if (!button || !session?.signed_in) return;
+        event.preventDefault();
+        button.disabled = true;
+        call('DELETE', `${config.itemsUrl}/${button.dataset.vaniWishlistRemove}`)
+            .then((data) => {
+                if (!data) {
+                    button.disabled = false;
+                    return;
+                }
+                ids = new Set((data.ids || []).map(Number));
+                button.closest('[data-vani-wishlist-item]')?.remove();
+                if (!document.querySelector('[data-vani-wishlist-item]')) window.location.reload();
+                render();
+            })
+            .catch(() => {
+                button.disabled = false;
+            });
     });
 
     // Theme thay HTML không tải lại trang (lọc/phân trang danh sách, giỏ mini — vani-base 0.3.93): tô lại nút tim mới.

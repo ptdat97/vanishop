@@ -8,8 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Chọn dòng để thanh toán — Storefront API `PUT /carts/{id}/selection` và Blade `POST /gio-hang/chon` (ADR-044 §2). Dạng
- * chuẩn của API: `mode` (`only` mặc định / `select` / `deselect`) + `line_ids`. Form Blade gửi `lines[]` (các ô đã đánh dấu,
- * kể cả khi JS tắt) = `mode=only`, và `checkout=1` cho nút "Thanh toán".
+ * chuẩn của API: `mode` (`only` mặc định / `select` / `deselect`) + `line_ids`. Form Blade gửi `lines[]` (các ô đã đánh dấu)
+ * = `mode=only`, và `checkout=1` cho nút "Thanh toán".
  */
 final class CartSelectionRequest extends FormRequest
 {

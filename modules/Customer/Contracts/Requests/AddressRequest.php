@@ -13,7 +13,7 @@ use Modules\Shared\Support\Phones;
  * Hợp đồng đầu vào DUY NHẤT của sổ địa chỉ khách cho mọi kênh (ADR-044 §2): Storefront API `POST/PATCH /me/addresses` và
  * form địa chỉ của Blade. Cửa hàng có danh mục địa giới (vd. `vani.provinces-vn`) → bắt buộc mã tỉnh/phường, tên lấy theo
  * danh mục; không có → bắt buộc tên (nhập tự do). `PATCH` của API là sửa một phần (trường không gửi giữ nguyên); form Blade
- * luôn gửi đủ. Nút "Tải lại phường" của form Blade không JS (`action=reload`) không validate.
+ * luôn gửi đủ.
  */
 final class AddressRequest extends FormRequest
 {
@@ -22,10 +22,6 @@ final class AddressRequest extends FormRequest
      */
     public function rules(): array
     {
-        if ($this->input('action') === 'reload') {
-            return [];
-        }
-
         $required = $this->partial() ? 'sometimes' : 'required';
         $directory = $this->container->make(ShippingAddresses::class)->directory() !== null;
 

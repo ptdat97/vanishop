@@ -25,7 +25,7 @@ final class CartLineRequest extends FormRequest
             'quantity' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'buy_now' => ['nullable', 'boolean'],
             // Bộ chọn của trang sản phẩm (ADR-045) gửi kèm giá trị trục đầu đang chọn `axis[<mã loại>]=<mã giá trị>` (khác `options` — tuỳ chọn dòng của plugin): biến thể
-            // phải mang đúng giá trị đó (không JS, đổi giá trị trục đầu sau khi đã chọn SKU thì SKU của nhóm cũ vẫn được chọn ngầm).
+            // phải mang đúng giá trị đó (đổi giá trị trục đầu sau khi đã chọn SKU thì SKU của nhóm cũ có thể vẫn được chọn ngầm).
             'axis' => ['nullable', 'array', 'max:3'],
             'axis.*' => ['string', 'max:32'],
         ];

@@ -11,7 +11,6 @@ return [
     'discount' => 'Discount',
     'discount_code' => 'Discount code',
     'full_name' => 'Full name',
-    'load_wards' => 'Load wards',
     'loading' => 'Loading…',
     'next_image' => 'Next image',
     'notifications' => 'Notifications',

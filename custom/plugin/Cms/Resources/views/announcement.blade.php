@@ -1,4 +1,4 @@
-{{-- Thanh thông báo nhiều dòng (store-content §3.1). Không JS: chỉ hiện dòng đầu. JS (announcement.js) xoay vòng, nút trước/sau. --}}
+{{-- Thanh thông báo nhiều dòng (store-content §3.1). HTML render sẵn dòng đầu; JS (announcement.js) xoay vòng, nút trước/sau. --}}
 {{-- $style, $scriptSrc: provider dựng sẵn. --}}
 <div class="relative bg-primary px-10 py-2 text-center text-sm text-white [&_a]:underline" data-vani-cms-announcement
      data-pause="{{ $announcement['pause_ms'] }}" data-fade="{{ $announcement['fade_ms'] }}" @if ($announcement['until']) data-until="{{ $announcement['until'] }}" @endif

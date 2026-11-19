@@ -43,7 +43,8 @@ beforeEach(function () {
 
         return (int) Customer::query()->where('phone', Phones::fromString($phone)->e164)->value('id');
     };
-    $this->toggle = fn (int $styleId) => $this->postJson('/p/vani-wishlist/toggle', ['style_id' => $styleId]);
+    $this->api = '/api/storefront/v1/x/vani-wishlist';
+    $this->sameOrigin = ['Sec-Fetch-Site' => 'same-origin'];
 });
 
 afterEach(fn () => File::deleteDirectory($this->assets));
@@ -61,9 +62,8 @@ it('trang sản phẩm có nút tim + script của plugin; HTML trang cache gi�
     expect($this->get('/san-pham/'.$this->style->slug)->getContent())->toBe($guest)
         ->and($guest)->not->toContain('name="_token"');
 
-    // Không cache CDN: form có token CSRF (chạy khi tắt JS).
-    config(['vanishop.storefront.page_cache.enabled' => false]);
-    expect($this->get('/san-pham/'.$this->style->slug)->getContent())->toMatch('/data-vani-wishlist="'.$this->style->id.'"[^>]*>\s*<input type="hidden" name="_token"/');
+    // Nút tim là nút JS (không form, không route web riêng): thêm/bỏ qua Storefront API.
+    expect($guest)->toMatch('/data-vani-wishlist="'.$this->style->id.'"[^>]*>\s*<button type="button"/');
 });
 
 it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ năng', function () {
@@ -73,22 +73,21 @@ it('header yêu thích dùng biểu tượng Lucide và vẫn có nhãn trợ n�
         ->assertSee('data-vani-wishlist-count', false);
 });
 
-it('khách đăng nhập: thêm/bỏ (JSON và form không JS), trạng thái qua Storefront API ids (phiên cùng nguồn); vãng lai bị từ chối', function () {
-    ($this->toggle)($this->style->id)->assertUnauthorized();
-    $this->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect(url('/tai-khoan/dang-nhap'));
+it('khách đăng nhập: thêm/bỏ như wishlist.js (Storefront API, phiên cùng nguồn), trạng thái qua ids; vãng lai bị từ chối', function () {
+    $this->postJson("{$this->api}/items", ['style_id' => $this->style->id], $this->sameOrigin)->assertUnauthorized();
     Api::assertRoutesDocumented(dirname(__DIR__, 2));
-    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin']), dirname(__DIR__, 2), '/ids', 'GET')->assertUnauthorized();
+    Api::assertResponse($this->getJson("{$this->api}/ids", $this->sameOrigin), dirname(__DIR__, 2), '/ids', 'GET')->assertUnauthorized();
 
     ($this->signIn)();
-    ($this->toggle)($this->style->id)->assertOk()->assertJson(['in_wishlist' => true, 'count' => 1]);
-    Api::assertResponse($this->getJson('/api/storefront/v1/x/vani-wishlist/ids', ['Sec-Fetch-Site' => 'same-origin']), dirname(__DIR__, 2), '/ids', 'GET')->assertOk()->assertExactJson(['data' => ['ids' => [$this->style->id]]])->assertHeader('Cache-Control', 'no-store, private');
-    ($this->toggle)($this->style->id)->assertOk()->assertJson(['in_wishlist' => false, 'count' => 0]);
-
-    $this->from('/san-pham/'.$this->style->slug)->post('/p/vani-wishlist/toggle', ['style_id' => $this->style->id])->assertRedirect('/san-pham/'.$this->style->slug);
-    expect(WishlistItem::query()->count())->toBe(1);
+    $this->postJson("{$this->api}/items", ['style_id' => $this->style->id], $this->sameOrigin)->assertCreated()->assertJsonPath('data.ids', [$this->style->id]);
+    Api::assertResponse($this->getJson("{$this->api}/ids", $this->sameOrigin), dirname(__DIR__, 2), '/ids', 'GET')->assertOk()->assertExactJson(['data' => ['ids' => [$this->style->id]]])->assertHeader('Cache-Control', 'no-store, private');
+    // Trang tài khoản: nút bỏ gọi DELETE của API.
+    $this->get('/tai-khoan/yeu-thich')->assertOk()->assertSee('data-vani-wishlist-remove="'.$this->style->id.'"', false);
+    $this->deleteJson("{$this->api}/items/{$this->style->id}", [], $this->sameOrigin)->assertOk()->assertJsonPath('data.ids', []);
+    expect(WishlistItem::query()->count())->toBe(0);
 
     [$hidden] = P::variants(T::product($this->brand->id, ['status' => 'draft']), ['M']);
-    ($this->toggle)($hidden->style_id)->assertStatus(422);
+    $this->postJson("{$this->api}/items", ['style_id' => $hidden->style_id], $this->sameOrigin)->assertStatus(422);
 });
 
 it('gộp danh sách của trình duyệt khi đăng nhập: bỏ trùng, bỏ mẫu không bán, giữ giới hạn', function () {

@@ -10,7 +10,7 @@ require_once __DIR__.'/../../../Customer/Tests/Feature/CustomerTestHelpers.php';
 
 /*
 | Giỏ mini offcanvas + window.vani (0.3.93): cùng route web của native storefront, `Accept: application/json` trả trạng thái
-| giỏ (cart, count, voucher, html của partial mini-cart, change). Form không JS vẫn chuyển hướng như cũ.
+| giỏ (cart, count, voucher, html của partial mini-cart, change). Form POST thường vẫn chuyển hướng.
 */
 
 beforeEach(function () {
@@ -36,7 +36,7 @@ it('thêm / sửa số lượng / xoá dòng bằng JSON: trả số món, HTML 
     expect($removed['html'])->toContain('Giỏ hàng trống.');
 
     $this->postJson('/gio-hang', [])->assertUnprocessable()->assertJsonValidationErrors(['variant_id' => __('storefront::messages.choose_variant')]);
-    // Không JS: vẫn là form chuyển hướng.
+    // Không gửi Accept JSON: form chuyển hướng.
     $this->post('/gio-hang', ['variant_id' => $this->s->id])->assertRedirect('/gio-hang');
 });
 
@@ -67,7 +67,7 @@ it('mã giảm giá ở giỏ: mã sai báo lý do; mã đúng hiện mức gi�
     $this->postJson('/gio-hang/ma-giam-gia', ['code' => ''])->assertOk()->assertJsonPath('voucher', null);
     $this->get('/thanh-toan')->assertOk()->assertDontSee('value="GIAM10"', false);
 
-    // Không JS: form ở trang giỏ.
+    // Form POST thường (không Accept JSON) ở trang giỏ.
     $this->post('/gio-hang/ma-giam-gia', ['code' => 'GIAM10'])->assertRedirect('/gio-hang')->assertSessionHas('status', 'Đã áp dụng mã GIAM10.');
     $this->post('/thanh-toan', [
         'contact' => ['full_name' => 'Nguyễn Thị Lan', 'phone' => '0912345678', 'email' => 'lan@example.com'],
@@ -119,7 +119,7 @@ it('trang giỏ đầy đủ (0.3.94): vùng thay được; JSON kèm X-Vani-Car
         ->assertSee('<div data-vani-cart-page aria-live="polite">', false)
         ->assertSee('data-autosubmit data-line="'.$line.'"', false)
         ->assertSee('data-cart-remove-form data-line="'.$line.'"', false)
-        ->assertSee('data-no-js>Cập nhật</button>', false);
+        ->assertDontSee('data-no-js', false);
 
     $page = ['X-Vani-Cart-View' => 'page'];
     $updated = $this->postJson("/gio-hang/{$line}", ['quantity' => 3], $page)->assertOk()->assertJsonPath('count', 4)->json('page_html');

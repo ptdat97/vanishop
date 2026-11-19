@@ -81,7 +81,7 @@ it('mua ngay: chỉ chọn dòng vừa thêm, dòng khác ở lại giỏ; thêm
     ($this->add)($this->s, 1)->assertJsonPath('data.lines.0.selected', true)->assertJsonPath('data.lines.0.quantity', 2);
 });
 
-it('web: nút "Mua ngay" chuyển tới checkout, form chọn dòng hoạt động khi tắt JS, phiên trả giỏ mini', function () {
+it('web: nút "Mua ngay" chuyển tới checkout, form chọn dòng gửi lines[], phiên trả giỏ mini', function () {
     $this->post('/gio-hang', ['variant_id' => $this->s->id, 'quantity' => 1])->assertRedirect('/gio-hang');
     $this->post('/gio-hang', ['variant_id' => $this->m->id, 'quantity' => 2, 'buy_now' => '1'])->assertRedirect('/thanh-toan');
 

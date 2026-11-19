@@ -48,10 +48,9 @@ const STOREFRONT_API_PAIRS = [
     'storefront.account.addresses.destroy' => ['api.storefront.v1.me.addresses.destroy'],
     'storefront.account.delete.confirm' => ['api.storefront.v1.me.destroy'],
     'storefront.track.search' => ['api.storefront.v1.orders.track'],
-    // Plugin (route chỉ có khi plugin bật): nút tim là form thường khi tắt JS; có JS thì wishlist.js gọi API.
+    // Plugin (route chỉ có khi plugin bật).
     'storefront.p.vani-phone-otp-login.request' => ['api.storefront.x.vani-phone-otp-login.otp.request'],
     'storefront.p.vani-phone-otp-login.verify' => ['api.storefront.x.vani-phone-otp-login.otp.verify'],
-    'storefront.p.vani-wishlist.toggle' => ['api.storefront.x.vani-wishlist.items.store', 'api.storefront.x.vani-wishlist.items.destroy'],
 ];
 
 /**
@@ -75,7 +74,7 @@ const STOREFRONT_SHARED_INPUT = [
     'storefront.account.addresses.store', 'storefront.account.addresses.update',
     'storefront.order.received', 'storefront.order.returns.shipped', 'storefront.order.returns.photos',
     'storefront.account.authenticate', 'storefront.account.password.email', 'storefront.account.order.cancel',
-    'storefront.account.delete.confirm', 'storefront.track.search', 'storefront.p.vani-wishlist.toggle', 'storefront.order.pay',
+    'storefront.account.delete.confirm', 'storefront.track.search', 'storefront.order.pay',
 ];
 
 /**
