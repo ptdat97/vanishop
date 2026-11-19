@@ -11,7 +11,9 @@ use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Returns\Contracts\Returns;
+use Modules\Storefront\Http\Requests\ReturnPhotosRequest;
 use Modules\Storefront\Http\Requests\ReturnRequestForm;
+use Modules\Storefront\Http\Requests\ReturnShippedRequest;
 
 /**
  * Khách gửi / huỷ yêu cầu đổi-trả trên storefront native (order §7, §7.1). Quyền xem đơn như trang đơn: token đơn trong
@@ -48,9 +50,9 @@ final class ReturnController
     /**
      * Khách báo đã gửi hàng về (§3.13-2), kèm mã vận đơn trả nếu có.
      */
-    public function shipped(Request $request, string $order, string $return, Session $session): RedirectResponse
+    public function shipped(ReturnShippedRequest $request, string $order, string $return, Session $session): RedirectResponse
     {
-        $data = $request->validate(['tracking_number' => ['nullable', 'string', 'max:64']]);
+        $data = $request->validated();
         $this->returns->markShipped($this->detail($request, $order, $session)->id, $return, $data['tracking_number'] ?? null, 'customer');
 
         return back()->with('status', __('storefront::messages.return_shipped'));
@@ -59,9 +61,9 @@ final class ReturnController
     /**
      * Gửi thêm ảnh cho yêu cầu còn mở (chờ duyệt / đã duyệt, tối đa 5 ảnh) — L16.
      */
-    public function photos(Request $request, string $order, string $return, Session $session): RedirectResponse
+    public function photos(ReturnPhotosRequest $request, string $order, string $return, Session $session): RedirectResponse
     {
-        $data = $request->validate(ReturnRequestForm::photoRules(required: true));
+        $data = $request->validated();
         $this->returns->attachPhotos($this->detail($request, $order, $session)->id, $return, array_values($data['photos']), 'customer');
 
         return back()->with('status', __('storefront::messages.return_photos_added'));

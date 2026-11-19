@@ -12,6 +12,7 @@ use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\AddressRequest;
+use Modules\Customer\Contracts\Requests\DeleteAccountRequest;
 use Modules\Customer\Contracts\Requests\PasswordRequest;
 use Modules\Customer\Contracts\Requests\ProfileRequest;
 use Modules\Shared\Support\LocalizedUrls;
@@ -98,10 +99,10 @@ final class AccountSettingsController
     /**
      * Xác nhận bằng mật khẩu hiện tại; tài khoản chưa có mật khẩu (đăng nhập OTP/mạng xã hội) đặt mật khẩu ở trang hồ sơ trước.
      */
-    public function destroyAccount(Request $request): RedirectResponse
+    public function destroyAccount(DeleteAccountRequest $request): RedirectResponse
     {
         $customer = $this->required($request);
-        $data = $request->validate(['password' => ['required', 'string', 'max:200']]);
+        $data = $request->validated();
         $this->accounts->deleteAccount($customer->id, $data['password']);
 
         // Ẩn danh hoá đã thu hồi mọi token; bỏ phiên web để không còn dấu vết đăng nhập.

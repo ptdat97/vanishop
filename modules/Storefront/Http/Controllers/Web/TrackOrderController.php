@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\Storefront\Http\Controllers\Web;
 
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Storefront\Application\OrderPresenter;
+use Modules\Storefront\Http\Requests\TrackOrderRequest;
 
 /**
  * Tra cứu đơn cho khách vãng lai: số đơn + SĐT → thông tin đơn đã che (như GET /orders/track của API).
@@ -19,9 +19,9 @@ final class TrackOrderController
         return view('theme::pages.track', ['order' => null]);
     }
 
-    public function search(Request $request, CustomerOrders $orders, OrderPresenter $presenter): View
+    public function search(TrackOrderRequest $request, CustomerOrders $orders, OrderPresenter $presenter): View
     {
-        $data = $request->validate(['number' => ['required', 'string', 'max:32'], 'phone' => ['required', 'string', 'max:20']]);
+        $data = $request->validated();
         $order = $orders->track(strtoupper(trim($data['number'])), $data['phone']);
 
         return view('theme::pages.track', [

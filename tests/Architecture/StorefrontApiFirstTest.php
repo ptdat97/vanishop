@@ -63,7 +63,7 @@ const STOREFRONT_API_PENDING = [
 ];
 
 /**
- * Các cặp phải dùng chung một FormRequest (đã gom ở đợt A1).
+ * Các cặp phải dùng chung một FormRequest — luật đầu vào viết một lần (đợt A1; AF1 gom nốt các cặp còn validate tay).
  *
  * @var list<string>
  */
@@ -73,7 +73,40 @@ const STOREFRONT_SHARED_INPUT = [
     'storefront.account.profile.update', 'storefront.account.password.update',
     'storefront.account.register.store', 'storefront.account.password.update-forgotten',
     'storefront.account.addresses.store', 'storefront.account.addresses.update',
+    'storefront.order.received', 'storefront.order.returns.shipped', 'storefront.order.returns.photos',
+    'storefront.account.authenticate', 'storefront.account.password.email', 'storefront.account.order.cancel',
+    'storefront.account.delete.confirm', 'storefront.track.search', 'storefront.p.vani-wishlist.toggle', 'storefront.order.pay',
 ];
+
+/**
+ * Cặp không có đầu vào cần validate (định danh nằm trên URL/phiên) hoặc có lý do riêng — mỗi mục ghi lý do.
+ *
+ * @var array<string, string>
+ */
+const STOREFRONT_NO_INPUT = [
+    'storefront.cart.remove' => 'dòng giỏ nằm trên URL',
+    'storefront.order.returns.cancel' => 'yêu cầu đổi trả nằm trên URL',
+    'storefront.account.logout' => 'chỉ cần phiên/token',
+    'storefront.account.email.resend' => 'chỉ cần phiên/token',
+    'storefront.account.addresses.default' => 'Blade chỉ đặt mặc định (id trên URL); API đặt mặc định qua `PUT /me/addresses/{id}` (AddressRequest)',
+    'storefront.account.addresses.destroy' => 'địa chỉ nằm trên URL',
+    'storefront.p.vani-phone-otp-login.request' => 'plugin kết nối OTP đang đóng băng (chỉ sửa lỗi) — gom khi mở lại',
+    'storefront.p.vani-phone-otp-login.verify' => 'plugin kết nối OTP đang đóng băng (chỉ sửa lỗi) — gom khi mở lại',
+];
+
+/** Thân method của action (để tìm validate viết tay). */
+function routeActionSource(Route $route): ?string
+{
+    $action = $route->getAction('uses');
+    if (! is_string($action)) {
+        return null;
+    }
+    [$class, $method] = str_contains($action, '@') ? explode('@', $action) : [$action, '__invoke'];
+    $reflection = new ReflectionMethod($class, $method);
+    $lines = file((string) $reflection->getFileName());
+
+    return implode('', array_slice($lines, $reflection->getStartLine() - 1, $reflection->getEndLine() - $reflection->getStartLine() + 1));
+}
 
 /**
  * @return array<string, Route> route ghi của storefront Blade (ngôn ngữ mặc định), theo tên
@@ -143,9 +176,17 @@ it('R37: cặp đã gom dùng CÙNG một FormRequest ở Blade và API (luật 
     $routes = app('router')->getRoutes();
     $diverged = [];
     foreach (STOREFRONT_SHARED_INPUT as $blade) {
+        if ($routes->getByName($blade) === null) {
+            continue; // route của plugin chưa bật
+        }
         $expected = routeFormRequest($routes->getByName($blade));
         foreach (STOREFRONT_API_PAIRS[$blade] as $api) {
-            $actual = routeFormRequest($routes->getByName($api));
+            $route = $routes->getByName($api);
+            // Endpoint DELETE mang định danh trên URL, không có thân request (vd. bỏ một mục yêu thích).
+            if ($route === null || in_array('DELETE', $route->methods(), true)) {
+                continue;
+            }
+            $actual = routeFormRequest($route);
             if ($expected === null || $actual !== $expected) {
                 $diverged[] = "{$blade}: ".($expected ?? 'không có FormRequest')." ≠ {$api}: ".($actual ?? 'không có FormRequest');
             }
@@ -153,6 +194,125 @@ it('R37: cặp đã gom dùng CÙNG một FormRequest ở Blade và API (luật 
     }
 
     expect($diverged)->toBe([]);
+});
+
+it('AF1: mọi cặp Blade ↔ API được xếp loại: dùng chung FormRequest hoặc không có đầu vào (có lý do)', function () {
+    $classified = [...STOREFRONT_SHARED_INPUT, ...array_keys(STOREFRONT_NO_INPUT)];
+
+    expect(array_values(array_diff(array_keys(STOREFRONT_API_PAIRS), $classified)))->toBe([], 'Cặp mới: dùng chung FormRequest (STOREFRONT_SHARED_INPUT) hoặc ghi lý do ở STOREFRONT_NO_INPUT')
+        ->and(array_values(array_intersect(STOREFRONT_SHARED_INPUT, array_keys(STOREFRONT_NO_INPUT))))->toBe([])
+        ->and(array_values(array_diff($classified, array_keys(STOREFRONT_API_PAIRS))))->toBe([]);
+});
+
+it('AF1: action của cặp Blade ↔ API không validate tay — luật đầu vào ở FormRequest dùng chung', function () {
+    $routes = app('router')->getRoutes();
+    $inline = [];
+    foreach (STOREFRONT_API_PAIRS as $blade => $apis) {
+        if (array_key_exists($blade, STOREFRONT_NO_INPUT) && str_contains(STOREFRONT_NO_INPUT[$blade], 'đóng băng')) {
+            continue;
+        }
+        foreach ([$blade, ...$apis] as $name) {
+            $route = $routes->getByName($name);
+            $source = $route === null ? null : routeActionSource($route);
+            if ($source !== null && preg_match('/->validate(WithBag)?\(/', $source) === 1) {
+                $inline[] = "{$name} ({$route->getActionName()})";
+            }
+        }
+    }
+
+    expect(array_values(array_unique($inline)))->toBe([]);
+});
+
+/**
+ * AF2 — phía đọc: trang Blade GET → endpoint Storefront API GET cho cùng dữ liệu (app/headless dựng được cùng màn hình).
+ *
+ * @var array<string, list<string>>
+ */
+const STOREFRONT_API_READ_PAIRS = [
+    'storefront.home' => ['api.storefront.v1.pages.home', 'api.storefront.v1.store.show', 'api.storefront.v1.menus.show'],
+    'storefront.categories' => ['api.storefront.v1.categories.index'],
+    'storefront.category' => ['api.storefront.v1.categories.show', 'api.storefront.v1.products.index'],
+    'storefront.brands' => ['api.storefront.v1.brands.index'],
+    'storefront.brand' => ['api.storefront.v1.brands.show', 'api.storefront.v1.products.index'],
+    'storefront.search' => ['api.storefront.v1.products.index', 'api.storefront.v1.search.suggestions'],
+    'storefront.product' => ['api.storefront.v1.products.show'],
+    'storefront.cart' => ['api.storefront.v1.carts.show', 'api.storefront.v1.me.cart'],
+    'storefront.checkout' => ['api.storefront.v1.carts.show', 'api.storefront.v1.me.addresses.index', 'api.storefront.v1.address.provinces'],
+    'storefront.order' => ['api.storefront.v1.orders.show', 'api.storefront.v1.payments.show'],
+    'storefront.track' => ['api.storefront.v1.orders.track'],
+    'storefront.account' => ['api.storefront.v1.me.show', 'api.storefront.v1.me.orders.index'],
+    'storefront.account.orders' => ['api.storefront.v1.me.orders.index'],
+    'storefront.account.order' => ['api.storefront.v1.me.orders.show'],
+    'storefront.account.profile' => ['api.storefront.v1.me.show', 'api.storefront.v1.me.consents.index'],
+    'storefront.account.addresses' => ['api.storefront.v1.me.addresses.index'],
+    'storefront.account.addresses.create' => ['api.storefront.v1.address.provinces', 'api.storefront.v1.address.wards'],
+    'storefront.account.addresses.edit' => ['api.storefront.v1.me.addresses.index', 'api.storefront.v1.address.wards'],
+    'storefront.account.delete' => ['api.storefront.v1.me.deletion'],
+    // Plugin (route chỉ có khi plugin bật).
+    'storefront.p.vani-cms.blog' => ['api.storefront.x.vani-cms.posts.index', 'api.storefront.x.vani-cms.categories.index'],
+    'storefront.p.vani-cms.post' => ['api.storefront.x.vani-cms.posts.show'],
+    'storefront.p.vani-cms.page' => ['api.storefront.x.vani-cms.pages.show'],
+    'storefront.p.vani-lookbook.index' => ['api.storefront.x.vani-lookbook.lookbooks.index'],
+    'storefront.p.vani-lookbook.show' => ['api.storefront.x.vani-lookbook.lookbooks.show'],
+    'storefront.p.vani-wishlist.account.index' => ['api.storefront.x.vani-wishlist.items.index'],
+];
+
+/**
+ * Trang GET chỉ có trên web — mỗi mục có lý do (ADR-044 §3: phần trình bày web, form thuần, link trong email).
+ *
+ * @var array<string, string>
+ */
+const STOREFRONT_WEB_ONLY_PAGES = [
+    'storefront.session' => '"đường ống" của Blade khi trang cache CDN (CSRF, flash, lỗi form) — không phải dữ liệu cửa hàng',
+    'storefront.robots' => 'trình bày web (SEO)',
+    'storefront.sitemap' => 'trình bày web (SEO)',
+    'storefront.sitemap.page' => 'trình bày web (SEO)',
+    'storefront.account.login' => 'form thuần; app gọi POST /auth/login (và GET /auth/social cho nút đăng nhập mạng xã hội)',
+    'storefront.account.register' => 'form thuần; app gọi POST /auth/register',
+    'storefront.account.password.forgot' => 'form thuần; app gọi POST /auth/password/forgot',
+    'storefront.account.password.reset' => 'link trong email mở form; app gọi POST /auth/password/reset',
+    'storefront.account.register.verify' => 'link trong email; app gọi POST /auth/register/verify',
+    'storefront.account.email.verify' => 'link trong email; app gọi POST /auth/email/verify',
+];
+
+it('AF2: mọi trang Blade GET có endpoint Storefront API GET cho cùng dữ liệu, hoặc ghi lý do chỉ có trên web', function () {
+    $missing = [];
+    foreach (app('router')->getRoutes()->getRoutes() as $route) {
+        $name = (string) $route->getName();
+        $locale = '/^storefront\.('.implode('|', array_map('preg_quote', StoreLocale::supported())).')\./';
+        if (! str_starts_with($name, 'storefront.') || preg_match($locale, $name) === 1 || ! in_array('GET', $route->methods(), true)) {
+            continue;
+        }
+        if (! array_key_exists($name, STOREFRONT_API_READ_PAIRS) && ! array_key_exists($name, STOREFRONT_WEB_ONLY_PAGES)) {
+            $missing[] = $name;
+        }
+    }
+
+    expect($missing)->toBe([], 'Trang Blade mới: thêm endpoint API GET trước rồi khai báo ở STOREFRONT_API_READ_PAIRS (hoặc lý do ở STOREFRONT_WEB_ONLY_PAGES)');
+});
+
+it('AF2: bảng trang Blade ↔ API đọc trỏ tới route GET có thật', function () {
+    $routes = app('router')->getRoutes();
+    $broken = [];
+    foreach (STOREFRONT_API_READ_PAIRS as $blade => $apis) {
+        $plugin = str_starts_with($blade, 'storefront.p.');
+        if ($routes->getByName($blade) === null) {
+            if (! $plugin) {
+                $broken[] = "{$blade}: không có route Blade";
+            }
+
+            continue;
+        }
+        foreach ($apis as $api) {
+            $route = $routes->getByName($api);
+            if ($route === null || ! in_array('GET', $route->methods(), true)) {
+                $broken[] = "{$blade} → {$api}: không có route GET";
+            }
+        }
+    }
+
+    expect($broken)->toBe([])
+        ->and(array_values(array_intersect(array_keys(STOREFRONT_API_READ_PAIRS), array_keys(STOREFRONT_WEB_ONLY_PAGES))))->toBe([]);
 });
 
 it('R37: JS và view của theme/plugin không gọi endpoint JSON riêng ngoài Storefront API', function () {

@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Plugin\Wishlist\Http\Requests\WishlistItemRequest;
 use Plugin\Wishlist\Infrastructure\Wishlists;
 
 /**
@@ -18,9 +19,9 @@ final class WishlistController
 {
     public function __construct(private readonly Wishlists $wishlists) {}
 
-    public function toggle(Request $request): JsonResponse|RedirectResponse
+    public function toggle(WishlistItemRequest $request): JsonResponse|RedirectResponse
     {
-        $styleId = (int) $request->validate(['style_id' => ['required', 'integer', 'min:1']])['style_id'];
+        $styleId = (int) $request->validated()['style_id'];
         $customerId = $this->customerId($request);
         if ($customerId === null) {
             return $request->expectsJson()

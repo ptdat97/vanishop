@@ -11,7 +11,13 @@ use Modules\Payment\Contracts\Payments;
 use Modules\Returns\Contracts\Returns;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\PaymentPresenter;
+use Modules\Storefront\Http\Requests\CancelOrderRequest;
+use Modules\Storefront\Http\Requests\OrderReceivedRequest;
+use Modules\Storefront\Http\Requests\RetryPaymentRequest;
+use Modules\Storefront\Http\Requests\ReturnPhotosRequest;
 use Modules\Storefront\Http\Requests\ReturnRequestForm;
+use Modules\Storefront\Http\Requests\ReturnShippedRequest;
+use Modules\Storefront\Http\Requests\TrackOrderRequest;
 
 /**
  * Đơn của khách vãng lai: tra cứu bằng số đơn + SĐT (thông tin bị che), xem/huỷ bằng access token trả lúc đặt.
@@ -25,9 +31,9 @@ final class OrderController
         private readonly OrderPresenter $presenter,
     ) {}
 
-    public function track(Request $request): JsonResponse
+    public function track(TrackOrderRequest $request): JsonResponse
     {
-        $data = $request->validate(['number' => ['required', 'string', 'max:32'], 'phone' => ['required', 'string', 'max:20']]);
+        $data = $request->validated();
         $order = $this->orders->track($data['number'], $data['phone']);
         abort_if($order === null, 404, __('ordering::messages.not_found'));
 
@@ -75,9 +81,9 @@ final class OrderController
     /**
      * Gửi thêm ảnh (multipart `photos[]`) cho yêu cầu đổi trả còn mở — L16. Trả đơn (kèm `returns[].attachments`).
      */
-    public function addReturnPhotos(Request $request, string $order, string $return, Returns $returns): JsonResponse
+    public function addReturnPhotos(ReturnPhotosRequest $request, string $order, string $return, Returns $returns): JsonResponse
     {
-        $data = $request->validate(ReturnRequestForm::photoRules(required: true));
+        $data = $request->validated();
         $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
         $returns->attachPhotos($detail->id, $return, array_values($data['photos']), 'customer');
@@ -85,9 +91,9 @@ final class OrderController
         return response()->json(['data' => $this->presenter->present($this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, '')))]);
     }
 
-    public function markReturnShipped(Request $request, string $order, string $return, Returns $returns): JsonResponse
+    public function markReturnShipped(ReturnShippedRequest $request, string $order, string $return, Returns $returns): JsonResponse
     {
-        $data = $request->validate(['tracking_number' => ['nullable', 'string', 'max:64']]);
+        $data = $request->validated();
         $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
         $returns->markShipped($detail->id, $return, $data['tracking_number'] ?? null, 'customer');
@@ -99,9 +105,9 @@ final class OrderController
      * Thanh toán lại (0.3.75, §3.11-2): đơn online chưa trả, còn hạn; `gateway` tuỳ chọn để đổi sang cổng online khác.
      * Trả khoản thanh toán (kèm `action` mới của cổng).
      */
-    public function retryPayment(Request $request, string $order, Payments $payments, PaymentPresenter $paymentPresenter): JsonResponse
+    public function retryPayment(RetryPaymentRequest $request, string $order, Payments $payments, PaymentPresenter $paymentPresenter): JsonResponse
     {
-        $data = $request->validate(['gateway' => ['nullable', 'string', 'max:64']]);
+        $data = $request->validated();
         $detail = $this->orders->show($order, (string) $request->headers->get(self::TOKEN_HEADER, ''));
         abort_if($detail === null, 404, __('ordering::messages.not_found'));
 
@@ -111,18 +117,18 @@ final class OrderController
     /**
      * Khách xác nhận đã nhận hàng (0.3.78, §3.11-1); `waive_returns` = không đổi trả đơn này.
      */
-    public function confirmReceived(Request $request, string $order): JsonResponse
+    public function confirmReceived(OrderReceivedRequest $request, string $order): JsonResponse
     {
-        $data = $request->validate(['waive_returns' => ['sometimes', 'boolean']]);
+        $data = $request->validated();
 
         return response()->json(['data' => $this->presenter->present(
             $this->orders->confirmReceived($order, (string) $request->headers->get(self::TOKEN_HEADER, ''), (bool) ($data['waive_returns'] ?? false)),
         )]);
     }
 
-    public function cancel(Request $request, string $order): JsonResponse
+    public function cancel(CancelOrderRequest $request, string $order): JsonResponse
     {
-        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        $data = $request->validated();
 
         return response()->json(['data' => $this->presenter->present(
             $this->orders->cancel($order, (string) $request->headers->get(self::TOKEN_HEADER, ''), $data['reason']),

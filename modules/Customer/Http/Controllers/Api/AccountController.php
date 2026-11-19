@@ -14,6 +14,7 @@ use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Requests\AddressRequest;
+use Modules\Customer\Contracts\Requests\DeleteAccountRequest;
 use Modules\Customer\Contracts\Requests\PasswordRequest;
 use Modules\Customer\Contracts\Requests\ProfileRequest;
 use Modules\Customer\Http\Middleware\AuthenticateCustomer;
@@ -108,9 +109,9 @@ final class AccountController
     /**
      * Xoá tài khoản = ẩn danh hoá; xác nhận bằng mật khẩu hiện tại (chưa có → `customer.password_required`).
      */
-    public function destroy(Request $request, AccountLifecycle $lifecycle): JsonResponse
+    public function destroy(DeleteAccountRequest $request, AccountLifecycle $lifecycle): JsonResponse
     {
-        $data = $request->validate(['password' => ['required', 'string', 'max:200']]);
+        $data = $request->validated();
         $lifecycle->deleteOwnAccount(AuthenticateCustomer::customer($request)->id, $data['password']);
 
         return response()->json(null, 204);

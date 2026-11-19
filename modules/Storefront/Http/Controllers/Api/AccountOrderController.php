@@ -18,6 +18,7 @@ use Modules\Storefront\Application\MemberPrices;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\PriceVisibility;
 use Modules\Storefront\Application\ProductViews;
+use Modules\Storefront\Http\Requests\CancelOrderRequest;
 
 /**
  * Đơn và giỏ của khách đã đăng nhập (route có middleware `vani.customer`).
@@ -51,9 +52,9 @@ final class AccountOrderController
         return response()->json(['data' => $this->presenter->present($detail)]);
     }
 
-    public function cancel(Request $request, string $order): JsonResponse
+    public function cancel(CancelOrderRequest $request, string $order): JsonResponse
     {
-        $data = $request->validate(['reason' => ['required', 'string', 'max:200']]);
+        $data = $request->validated();
 
         return response()->json(['data' => $this->presenter->present($this->orders->cancelForCustomer($this->customerId(), $order, $data['reason']))]);
     }

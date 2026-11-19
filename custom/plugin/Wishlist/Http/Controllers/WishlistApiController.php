@@ -6,6 +6,7 @@ namespace Plugin\Wishlist\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Plugin\Wishlist\Http\Requests\WishlistItemRequest;
 use Plugin\Wishlist\Infrastructure\Wishlists;
 
 /**
@@ -38,9 +39,9 @@ final class WishlistApiController
         return response()->json(['data' => ['added' => $added, 'ids' => $this->wishlists->ids($this->customerId($request))]]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(WishlistItemRequest $request): JsonResponse
     {
-        $data = $request->validate(['style_id' => ['required', 'integer', 'min:1']]);
+        $data = $request->validated();
         $customerId = $this->customerId($request);
         if (! in_array((int) $data['style_id'], $this->wishlists->ids($customerId), true) && $this->wishlists->add($customerId, [(int) $data['style_id']]) === 0) {
             return response()->json(['error' => ['code' => 'wishlist.unavailable', 'message' => __('vani-wishlist::storefront.add_failed', ['max' => Wishlists::MAX])]], 422);

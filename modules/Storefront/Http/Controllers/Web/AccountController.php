@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Customer\Contracts\Requests\ForgotPasswordRequest;
+use Modules\Customer\Contracts\Requests\LoginRequest;
 use Modules\Customer\Contracts\Requests\RegisterRequest;
 use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 use Modules\Ordering\Contracts\CustomerOrders;
@@ -21,6 +23,7 @@ use Modules\Storefront\Application\NativeCustomerSignIn;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\ReturnFormPresenter;
 use Modules\Storefront\Contracts\CustomerSignIn;
+use Modules\Storefront\Http\Requests\CancelOrderRequest;
 
 /**
  * Tài khoản khách trên native storefront: đăng nhập bằng email + mật khẩu (mặc định của Core, 0.5.12; token trong phiên), đăng
@@ -51,12 +54,9 @@ final class AccountController
      * Email + mật khẩu → đăng nhập, gộp giỏ vãng lai. JSON (`window.vani.auth.login`): `{signed_in, message, redirect,
      * csrf_token}` — phiên được cấp lại nên JS phải dùng `csrf_token` mới cho request sau.
      */
-    public function authenticate(Request $request): RedirectResponse|JsonResponse
+    public function authenticate(LoginRequest $request): RedirectResponse|JsonResponse
     {
-        $data = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:190'],
-            'password' => ['required', 'string', 'max:200'],
-        ]);
+        $data = $request->validated();
         $session = $this->sessions->loginWithPassword($data['email'], $data['password'], (string) $request->ip(), 'web');
 
         return $this->signedIn($request, $session['token'], $session['customer']->id);
@@ -105,9 +105,9 @@ final class AccountController
     /**
      * Luôn báo "đã gửi nếu email có tài khoản" — không lộ email nào là khách của cửa hàng.
      */
-    public function sendPasswordReset(Request $request): RedirectResponse
+    public function sendPasswordReset(ForgotPasswordRequest $request): RedirectResponse
     {
-        $data = $request->validate(['email' => ['required', 'string', 'email', 'max:190']]);
+        $data = $request->validated();
         $this->sessions->requestPasswordReset($data['email']);
 
         return redirect()->to(LocalizedUrls::route('storefront.account.password.forgot'))->with('status', __('storefront::messages.password_reset_sent'));
@@ -172,10 +172,10 @@ final class AccountController
         return view('theme::pages.account.order', ['order' => [...$presented, 'placed_at_label' => StoreClock::format($presented['placed_at'])], 'returnForm' => $returnForm->present($presented)]);
     }
 
-    public function cancelOrder(Request $request, string $order): RedirectResponse
+    public function cancelOrder(CancelOrderRequest $request, string $order): RedirectResponse
     {
         $customer = $this->required($request);
-        $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
+        $data = $request->validated();
         $this->orders->cancelForCustomer($customer->id, $order, $data['reason']);
 
         return redirect()->to(LocalizedUrls::route('storefront.account.order', $order))->with('status', __('storefront::messages.order_cancelled'));

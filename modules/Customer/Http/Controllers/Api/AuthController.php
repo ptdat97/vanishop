@@ -12,6 +12,8 @@ use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\SocialLogin;
 use Modules\Customer\Contracts\CustomerRejected;
 use Modules\Customer\Contracts\Data\CustomerData;
+use Modules\Customer\Contracts\Requests\ForgotPasswordRequest;
+use Modules\Customer\Contracts\Requests\LoginRequest;
 use Modules\Customer\Contracts\Requests\RegisterRequest;
 use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
 
@@ -60,14 +62,9 @@ final class AuthController
         return response()->json(['data' => ['email' => $customer->email, 'email_verified' => $customer->emailVerified]]);
     }
 
-    public function login(Request $request, Carts $carts): JsonResponse
+    public function login(LoginRequest $request, Carts $carts): JsonResponse
     {
-        $data = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:190'],
-            'password' => ['required', 'string', 'max:200'],
-            'device' => ['nullable', 'string', 'max:64'],
-            'cart_id' => ['nullable', 'string', 'size:26'],
-        ]);
+        $data = $request->validated();
         $session = $this->auth->loginWithPassword($data['email'], $data['password'], (string) $request->ip(), $data['device'] ?? null);
 
         return $this->respond($session, $request, $carts, $data['cart_id'] ?? null);
@@ -76,9 +73,9 @@ final class AuthController
     /**
      * Luôn 202 (không báo email có phải tài khoản hay không).
      */
-    public function forgotPassword(Request $request): JsonResponse
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $data = $request->validate(['email' => ['required', 'string', 'email', 'max:190']]);
+        $data = $request->validated();
         $this->auth->requestPasswordReset($data['email']);
 
         return response()->json(['data' => ['email' => AuthService::normalizeEmail($data['email'])]], 202);

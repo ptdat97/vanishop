@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.47 — 2026-11-19 · Extension API 1.12.0 (không đổi)
+
+Củng cố API-first (stabilization S0.5, S0.6). Không đổi API cho plugin.
+
+### Đổi
+- Cặp ghi Blade ↔ Storefront API còn validate tay dùng chung FormRequest: `Customer\Contracts\Requests\{LoginRequest, ForgotPasswordRequest, DeleteAccountRequest}`, `Storefront\Http\Requests\{TrackOrderRequest, CancelOrderRequest, OrderReceivedRequest, RetryPaymentRequest, ReturnShippedRequest, ReturnPhotosRequest}`, `vani.wishlist` 1.1.4 `WishlistItemRequest`.
+- Arch test `StorefrontApiFirstTest`: mọi cặp ghi xếp loại (dùng chung FormRequest / không có đầu vào kèm lý do), action không validate tay; mọi trang Blade GET có endpoint API GET tương ứng hoặc ghi lý do chỉ-có-trên-web.
+
+### Sửa
+- `POST /api/storefront/v1/me/orders/{order}/cancel`: lý do huỷ nhận tối đa 255 ký tự như form Blade và `POST /orders/{order}/cancel` (trước đây 200).
+
 ## 0.5.46 — 2026-11-19 · Extension API 1.12.0
 
 ADR-049 đợt A2 + I5 (kết thúc kế hoạch dịch theo khoá). L2, L9 đóng.

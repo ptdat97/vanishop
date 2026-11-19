@@ -16,6 +16,8 @@ use Modules\Shared\Support\LocalizedUrls;
 use Modules\Storefront\Application\OrderPresenter;
 use Modules\Storefront\Application\PaymentPresenter;
 use Modules\Storefront\Application\ReturnFormPresenter;
+use Modules\Storefront\Http\Requests\OrderReceivedRequest;
+use Modules\Storefront\Http\Requests\RetryPaymentRequest;
 
 /**
  * Trang cảm ơn / chi tiết đơn vừa đặt: token xem đơn giữ trong phiên (thay header X-Vani-Order-Token của API).
@@ -46,7 +48,7 @@ final class OrderController
      * Khách xác nhận đã nhận hàng (§3.11-1), tuỳ chọn "không đổi trả đơn này". Quyền như trang đơn: token trong phiên hoặc
      * khách đăng nhập là chủ đơn.
      */
-    public function received(Request $request, string $order, Session $session, CustomerOrders $orders): RedirectResponse
+    public function received(OrderReceivedRequest $request, string $order, Session $session, CustomerOrders $orders): RedirectResponse
     {
         $waive = $request->boolean('waive_returns');
         $stored = (array) $session->get("vani.orders.{$order}", []);
@@ -65,7 +67,7 @@ final class OrderController
     /**
      * Thanh toán lại (§3.11-2): đơn online chưa trả, còn hạn. Cổng chuyển hướng → sang trang cổng; QR/hướng dẫn → về trang đơn.
      */
-    public function pay(Request $request, string $order, Session $session, CustomerOrders $orders, Payments $payments): RedirectResponse
+    public function pay(RetryPaymentRequest $request, string $order, Session $session, CustomerOrders $orders, Payments $payments): RedirectResponse
     {
         $stored = (array) $session->get("vani.orders.{$order}", []);
         $customer = $request->attributes->get(CustomerSessions::REQUEST_ATTRIBUTE);
