@@ -229,8 +229,17 @@ function savePrice(url: string): void {
         </template>
         <template #cell-name="{ row }">
             <span>{{ row.name ?? '—' }}</span>
-            <span v-if="row.missing.length" class="mt-1 flex flex-wrap gap-1" data-missing>
-                <span v-for="item in row.missing" :key="item" class="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-800">{{ item }}</span>
+            <!-- Thiếu dữ liệu: chỉ icon (rê chuột xem nhanh); chi tiết ở trang sửa sản phẩm. -->
+            <span
+                v-if="row.missing.length"
+                class="ml-1.5 inline-flex items-center gap-0.5 align-middle text-xs font-normal text-amber-600"
+                role="img"
+                :title="t('catalog::admin.products_index.missing_count_items', { count: row.missing.length, items: row.missing.join(', ') })"
+                :aria-label="t('catalog::admin.products_index.missing_count_items', { count: row.missing.length, items: row.missing.join(', ') })"
+                data-missing
+            >
+                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+                {{ row.missing.length }}
             </span>
         </template>
         <template #cell-brand="{ row }">{{ row.brand ?? '—' }}</template>

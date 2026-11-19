@@ -31,6 +31,8 @@ const props = defineProps<{
     nav: NavItem[];
     stockUrl?: string | null;
     labels: CatalogLabels;
+    /** Dữ liệu còn thiếu của sản phẩm (nhãn đã dịch) — rỗng khi đủ hoặc khi thêm mới. */
+    missing: string[];
     product: null | {
         id: number;
         style_code: string;
@@ -267,6 +269,17 @@ async function destroy(): Promise<void> {
         <button v-if="product" type="button" :class="secondaryButton" data-duplicate @click="duplicate">{{ t('catalog::admin.products_form.duplicate') }}</button>
         <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">{{ t('catalog::admin.products_form.delete') }}</button>
     </PageHeader>
+
+    <div v-if="missing.length" role="status" class="mb-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-missing-details>
+        <svg viewBox="0 0 24 24" class="mt-0.5 size-5 shrink-0 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+        <div>
+            <p class="font-medium">{{ t('catalog::admin.products_form.missing_data_title') }}</p>
+            <ul class="mt-1 list-disc pl-5">
+                <li v-for="item in missing" :key="item">{{ item }}</li>
+            </ul>
+            <p class="mt-1 text-xs text-amber-800">{{ t('catalog::admin.products_form.missing_data_hint') }}</p>
+        </div>
+    </div>
 
 
     <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">

@@ -4,6 +4,11 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.56 — 2026-11-19 · Extension API 1.16.0 (không đổi)
+
+### Đổi (Admin)
+- Danh sách sản phẩm: dữ liệu còn thiếu hiện bằng icon cảnh báo + số mục (rê chuột xem nhanh) thay cho các nhãn; trang sửa sản phẩm có khung "Sản phẩm còn thiếu dữ liệu" liệt kê từng mục (prop `missing` của `Catalog::Products/Form`).
+
 ## 0.5.55 — 2026-11-19 · Extension API 1.16.0
 
 Rút gọn phân quyền (Owner 2026-11-19: phân quyền theo team ở mức module, không giới hạn chi tiết).

@@ -504,6 +504,8 @@ final class ProductController
                     'option_value_store' => str_replace('__TYPE__', '{type}', route('admin.catalog.option-types.values.store', ['optionType' => '__TYPE__'])),
                 ],
             ],
+            // Dữ liệu còn thiếu (A4) — danh sách chỉ hiện icon, chi tiết ở đây.
+            'missing' => $style === null ? [] : array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $this->queries->missingData([$style->id])[$style->id] ?? []),
             'product' => $style === null ? null : [
                 'id' => $style->id,
                 'style_code' => $style->style_code,
