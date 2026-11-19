@@ -6,6 +6,7 @@ namespace Modules\Extension\Application\Plugins;
 
 use Illuminate\Support\Facades\File;
 use Modules\Extension\Domain\Plugin\PluginManifest;
+use RuntimeException;
 
 /**
  * Tài nguyên tĩnh của plugin (reference-parity §3.4-2): copy thư mục `assets` của manifest sang public/plugins/<id>/ với
@@ -50,16 +51,27 @@ final class PluginAssets
             }
             $relative = str_replace('\\', '/', $file->getRelativePathname());
             $hashed = substr($relative, 0, -strlen($extension) - 1).'.'.substr(hash_file('sha256', $file->getPathname()), 0, 10).'.'.$extension;
-            File::ensureDirectoryExists(dirname($target.'/'.$hashed));
+            self::ensureDirectory(dirname($target.'/'.$hashed));
             File::copy($file->getPathname(), $target.'/'.$hashed);
             $map[$relative] = $hashed;
         }
         ksort($map);
-        File::ensureDirectoryExists($target);
+        self::ensureDirectory($target);
         File::put($target.'/'.self::MANIFEST, (string) json_encode($map, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         unset($this->loaded[$manifest->id]);
 
         return count($map);
+    }
+
+    /**
+     * Tạo thư mục, chịu được việc tiến trình khác vừa tạo cùng thư mục (hai lệnh publish chạy song song: kiểm "chưa có"
+     * rồi mkdir của File::ensureDirectoryExists báo "File exists").
+     */
+    private static function ensureDirectory(string $path): void
+    {
+        if (! is_dir($path) && ! @mkdir($path, 0755, true) && ! is_dir($path)) {
+            throw new RuntimeException("Không tạo được thư mục {$path}.");
+        }
     }
 
     public function remove(string $pluginId): void
