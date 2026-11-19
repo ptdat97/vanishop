@@ -112,7 +112,7 @@ abstract class PluginServiceProvider extends ServiceProvider
      * Giá trị theo ngôn ngữ: khai một khoá cho mỗi ngôn ngữ cửa hàng, vd. `message.vi`, `message.en` (`StoreLocale::supported()`).
      *
      * Quyền sửa cấu hình của plugin: `settings.plugin.<plugin id>` (tự đăng ký; `settings.manage` bao trùm), `$presets` =
-     * vai trò mẫu được sửa (vd. Tracking Pixels → `marketing`). Ô `secret` cần thêm `settings.secrets`.
+     * vai trò mẫu được sửa (vd. Tracking Pixels → `marketing`). Ô `secret` chỉ `settings.manage` sửa được.
      *
      * @param  list<array{key: string, label: string, type?: string, default?: mixed, options?: array<string, string>, help?: string, rules?: list<mixed>}>  $definitions
      * @param  list<string>  $presets

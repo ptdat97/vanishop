@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Plugin\Warehouse\Infrastructure;
 
 use Illuminate\Support\Facades\Gate;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Contracts\StockPageLink;
 
 /**
@@ -20,7 +19,7 @@ final class LocationsLink implements StockPageLink
 
     public function url(): ?string
     {
-        return Gate::allows('warehouse.locations.manage', [ScopeRef::owner()]) ? route('admin.plugins.vani-warehouse.locations.index') : null;
+        return Gate::allows('warehouse.locations.manage') ? route('admin.plugins.vani-warehouse.locations.index') : null;
     }
 
     public function managesLocations(): bool

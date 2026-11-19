@@ -30,7 +30,4 @@ return [
         'reset_password' => 'Reset password',
         'set_first_password' => 'Set your first password',
     ],
-    'staff_request' => [
-        'scope' => 'scope',
-    ],
 ];

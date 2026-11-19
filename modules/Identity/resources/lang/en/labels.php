@@ -6,5 +6,4 @@
 
 return [
     'staff_status' => ['active' => 'Active', 'invited' => 'Invitation pending', 'locked' => 'Locked'],
-    'scope_type' => ['owner' => 'Whole store', 'location' => 'One location'],
 ];

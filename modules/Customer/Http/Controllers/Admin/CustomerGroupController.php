@@ -13,7 +13,6 @@ use Inertia\Response;
 use Modules\Customer\Application\AdminQueries;
 use Modules\Customer\Application\CustomerSegmentService;
 use Modules\Customer\Persistence\Models\CustomerGroup;
-use Modules\Identity\Contracts\Data\ScopeRef;
 
 /**
  * Nhóm khách (roadmap Phase 8): gắn bảng giá thành viên ở Admin → Bảng giá.
@@ -24,7 +23,7 @@ final class CustomerGroupController
 
     public function index(): Response
     {
-        Gate::authorize('customers.view', [ScopeRef::owner()]);
+        Gate::authorize('customers.view');
 
         return Inertia::render('Customer::Customers/Groups', [
             'baseUrl' => route('admin.customer-groups.index'),
@@ -33,13 +32,13 @@ final class CustomerGroupController
                 'id' => $group->id, 'code' => $group->code, 'name' => $group->name, 'description' => $group->description,
                 'position' => $group->position, 'customers_count' => (int) $group->getAttribute('customers_count'),
             ])->all(),
-            'canManage' => Gate::allows('customers.segment', [ScopeRef::owner()]),
+            'canManage' => Gate::allows('customers.segment'),
         ]);
     }
 
     public function store(Request $request, CustomerSegmentService $segments): RedirectResponse
     {
-        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        Gate::authorize('customers.segment');
         $segments->saveGroup($this->validated($request));
 
         return back()->with('success', __('customer::messages.group_saved'));
@@ -47,7 +46,7 @@ final class CustomerGroupController
 
     public function update(int $group, Request $request, CustomerSegmentService $segments): RedirectResponse
     {
-        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        Gate::authorize('customers.segment');
         $model = $this->queries->group($group);
         $segments->saveGroup($this->validated($request, $model), $model);
 
@@ -56,7 +55,7 @@ final class CustomerGroupController
 
     public function destroy(int $group, CustomerSegmentService $segments): RedirectResponse
     {
-        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        Gate::authorize('customers.segment');
         $segments->deleteGroup($this->queries->group($group));
 
         return back()->with('success', __('customer::messages.group_deleted'));

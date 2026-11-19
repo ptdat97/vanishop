@@ -40,7 +40,7 @@ it('không có customers.pii: đơn (danh sách, chi tiết) và khách (danh s�
         ->where('order.shippingAddress.street_line', '***')->where('order.shippingAddress.ward_name', 'Phường Bến Thành')
         ->where('customerHistory.orders_url', null));
     $this->get('/admin/customers')->assertInertia(fn (Assert $page) => $page
-        ->where('customers.0.phone', '091****678')->where('customers.0.full_name', 'N. T. Lan')->where('customers.0.contacts_masked', true));
+        ->where('customers.0.phone', '091****678')->where('customers.0.full_name', 'N. T. Lan'));
     $this->get("/admin/customers/{$this->customer->public_id}")->assertInertia(fn (Assert $page) => $page
         ->where('customer.email', 'l***@example.com'));
     // Tìm theo SĐT vẫn được (người dùng tự gõ số), kết quả vẫn che.
@@ -53,7 +53,7 @@ it('có customers.pii: thấy đủ liên hệ', function () {
 
     $this->get("/admin/orders/orders/{$this->order->id}")->assertInertia(fn (Assert $page) => $page
         ->where('order.customer.full_name', 'Nguyễn Thị Lan')->where('order.shippingAddress.street_line', '12 Lê Lợi'));
-    $this->get('/admin/customers')->assertInertia(fn (Assert $page) => $page->where('customers.0.full_name', 'Nguyễn Thị Lan')->where('customers.0.contacts_masked', false));
+    $this->get('/admin/customers')->assertInertia(fn (Assert $page) => $page->where('customers.0.full_name', 'Nguyễn Thị Lan'));
     $this->get("/admin/orders/orders/print?ids[]={$this->order->id}")->assertOk()->assertSee('12 Lê Lợi');
 });
 

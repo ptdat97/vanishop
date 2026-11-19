@@ -32,7 +32,6 @@ return [
         'settings_orders' => 'Edit system settings: Orders & returns',
         'settings_other' => 'Edit system settings: Other',
         'settings_sales' => 'Edit system settings: Sales & tax',
-        'settings_secrets' => 'Edit secrets in settings (passwords, API keys)',
         'settings_seo' => 'Edit system settings: SEO & search',
         'settings_store' => 'Edit system settings: Store',
     ],

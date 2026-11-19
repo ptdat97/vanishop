@@ -6,5 +6,4 @@
 
 return [
     'staff_status' => ['active' => 'Hoạt động', 'invited' => 'Chờ nhận lời mời', 'locked' => 'Đã khoá'],
-    'scope_type' => ['owner' => 'Toàn cửa hàng', 'location' => 'Một kho/cửa hàng'],
 ];

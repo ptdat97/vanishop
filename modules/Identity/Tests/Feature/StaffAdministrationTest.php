@@ -4,11 +4,9 @@ use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Event;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\AuditLog;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;
-use Modules\Inventory\Persistence\Models\Location;
 
 /*
 | reference-parity §3.3-1/2/4 (R1): Admin → Nhân viên, Vai trò, quên mật khẩu Admin.
@@ -31,7 +29,7 @@ function ownerRole(): Role
 function makeOwner(array $attributes = []): StaffUser
 {
     $staff = StaffUser::factory()->create($attributes);
-    $staff->roleAssignments()->create(['role_id' => ownerRole()->id, 'scope_type' => ScopeType::Owner, 'scope_id' => null]);
+    $staff->roleAssignments()->create(['role_id' => ownerRole()->id]);
 
     return $staff;
 }
@@ -45,7 +43,7 @@ beforeEach(function () {
 
 describe('nhân viên', function () {
     it('danh sách: tìm theo tên/email, lọc vai trò và trạng thái; cần quyền staff.manage', function () {
-        StaffUser::factory()->create(['name' => 'Lan Bán Hàng', 'status' => 'locked'])->roleAssignments()->create(['role_id' => $this->clerk->id, 'scope_type' => ScopeType::Owner]);
+        StaffUser::factory()->create(['name' => 'Lan Bán Hàng', 'status' => 'locked'])->roleAssignments()->create(['role_id' => $this->clerk->id]);
 
         $this->actingAs($this->owner, 'staff')->get('/admin/staff?q=lan&status=locked&role='.$this->clerk->id.'&per_page=50')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Identity::Staff/Index')->where('staff.total', 1)->where('staff.data.0.roles', ['Bán hàng'])->where('staff.per_page', 50));
@@ -70,7 +68,7 @@ describe('nhân viên', function () {
     it('mời: tạo ở trạng thái invited, gửi link 24 giờ; nhận lời mời → đặt mật khẩu, active, đăng nhập được', function () {
         $this->actingAs($this->owner, 'staff')->post('/admin/staff', [
             'name' => 'Minh Kho', 'email' => 'minh@example.com',
-            'assignments' => [['role_id' => $this->clerk->id, 'scope_type' => 'owner', 'scope_id' => null]],
+            'assignments' => [['role_id' => $this->clerk->id]],
         ])->assertRedirect()->assertSessionHas('success');
 
         $staff = StaffUser::query()->where('email', 'minh@example.com')->sole();
@@ -101,17 +99,16 @@ describe('nhân viên', function () {
         $this->post('/admin/login', ['email' => 'minh@example.com', 'password' => 'mat-khau-moi-123'])->assertRedirect(route('admin.dashboard'));
     });
 
-    it('gán vai trò theo một location; location không tồn tại bị từ chối', function () {
-        $location = Location::query()->create(['code' => 'ST-Q1', 'name' => 'Quận 1', 'type' => 'store']);
+    it('gán nhiều vai trò cho một nhân viên (trùng thì gộp); vai trò không tồn tại bị từ chối', function () {
+        $other = Role::query()->create(['code' => 'kho', 'name' => 'Kho']);
 
-        $this->actingAs($this->owner, 'staff')->get('/admin/staff/create')
-            ->assertInertia(fn (Assert $page) => $page->where("scopes.location.{$location->id}", 'ST-Q1 — Quận 1'));
-        $this->post('/admin/staff', ['name' => 'A', 'email' => 'a@example.com', 'assignments' => [['role_id' => $this->clerk->id, 'scope_type' => 'location', 'scope_id' => 999]]])
-            ->assertSessionHasErrors('assignments.0.scope_id');
-        $this->post('/admin/staff', ['name' => 'A', 'email' => 'a@example.com', 'assignments' => [['role_id' => $this->clerk->id, 'scope_type' => 'location', 'scope_id' => $location->id]]])
+        $this->actingAs($this->owner, 'staff')
+            ->post('/admin/staff', ['name' => 'A', 'email' => 'a@example.com', 'assignments' => [['role_id' => 999_999]]])
+            ->assertSessionHasErrors('assignments.0.role_id');
+        $this->post('/admin/staff', ['name' => 'A', 'email' => 'a@example.com', 'assignments' => [['role_id' => $this->clerk->id], ['role_id' => $other->id], ['role_id' => $this->clerk->id]]])
             ->assertSessionHasNoErrors();
 
-        expect(StaffUser::query()->where('email', 'a@example.com')->sole()->roleAssignments()->sole()->scope_id)->toBe($location->id);
+        expect(StaffUser::query()->where('email', 'a@example.com')->sole()->roleAssignments()->orderBy('role_id')->pluck('role_id')->all())->toBe([$this->clerk->id, $other->id]);
     });
 
     it('khoá: bị đăng xuất, không đăng nhập, không nhận link đặt lại; mở khoá được; có audit', function () {
@@ -132,8 +129,8 @@ describe('nhân viên', function () {
 
     it('không tự khoá, không tự đổi vai trò; vẫn tự đổi tên được', function () {
         $this->actingAs($this->owner, 'staff')->post("/admin/staff/{$this->owner->id}/lock")->assertSessionHasErrors('business');
-        $this->put("/admin/staff/{$this->owner->id}", ['name' => 'Chủ', 'assignments' => [['role_id' => $this->clerk->id, 'scope_type' => 'owner']]])->assertSessionHasErrors('business');
-        $this->put("/admin/staff/{$this->owner->id}", ['name' => 'Chủ cửa hàng', 'assignments' => [['role_id' => ownerRole()->id, 'scope_type' => 'owner']]])->assertSessionHasNoErrors();
+        $this->put("/admin/staff/{$this->owner->id}", ['name' => 'Chủ', 'assignments' => [['role_id' => $this->clerk->id]]])->assertSessionHasErrors('business');
+        $this->put("/admin/staff/{$this->owner->id}", ['name' => 'Chủ cửa hàng', 'assignments' => [['role_id' => ownerRole()->id]]])->assertSessionHasNoErrors();
 
         expect($this->owner->refresh()->status)->toBe('active')->and($this->owner->name)->toBe('Chủ cửa hàng');
     });
@@ -142,7 +139,7 @@ describe('nhân viên', function () {
         $manager = StaffUser::factory()->withPermissions(['admin.access', 'staff.manage', 'orders.view'])->create();
 
         $this->actingAs($manager, 'staff')->post("/admin/staff/{$this->owner->id}/lock")->assertSessionHasErrors(['business' => 'Phải còn ít nhất một nhân viên Owner đang hoạt động.']);
-        $this->put("/admin/staff/{$this->owner->id}", ['name' => 'Chủ shop', 'assignments' => [['role_id' => $this->clerk->id, 'scope_type' => 'owner']]])->assertSessionHasErrors('business');
+        $this->put("/admin/staff/{$this->owner->id}", ['name' => 'Chủ shop', 'assignments' => [['role_id' => $this->clerk->id]]])->assertSessionHasErrors('business');
         expect($this->owner->refresh()->status)->toBe('active');
 
         // Có Owner thứ hai → khoá được.
@@ -153,9 +150,9 @@ describe('nhân viên', function () {
     it('không cấp vai trò có quyền mình không có (vai trò `*` chỉ Owner cấp được)', function () {
         $manager = StaffUser::factory()->withPermissions(['admin.access', 'staff.manage'])->create();
 
-        $this->actingAs($manager, 'staff')->post('/admin/staff', ['name' => 'X', 'email' => 'x@example.com', 'assignments' => [['role_id' => ownerRole()->id, 'scope_type' => 'owner']]])
+        $this->actingAs($manager, 'staff')->post('/admin/staff', ['name' => 'X', 'email' => 'x@example.com', 'assignments' => [['role_id' => ownerRole()->id]]])
             ->assertSessionHasErrors(['business' => 'Không thể cấp quyền mà bạn không có.']);
-        $this->post('/admin/staff', ['name' => 'X', 'email' => 'x@example.com', 'assignments' => [['role_id' => $this->clerk->id, 'scope_type' => 'owner']]])
+        $this->post('/admin/staff', ['name' => 'X', 'email' => 'x@example.com', 'assignments' => [['role_id' => $this->clerk->id]]])
             ->assertSessionHasErrors('business'); // thiếu orders.view
         expect(StaffUser::query()->where('email', 'x@example.com')->exists())->toBeFalse();
     });
@@ -182,7 +179,7 @@ describe('vai trò', function () {
 
     it('vai trò hệ thống không sửa/xoá được; vai trò đang gán không xoá được', function () {
         $system = ownerRole();
-        StaffUser::factory()->create()->roleAssignments()->create(['role_id' => $this->clerk->id, 'scope_type' => ScopeType::Owner]);
+        StaffUser::factory()->create()->roleAssignments()->create(['role_id' => $this->clerk->id]);
         $unused = Role::query()->create(['code' => 'tam', 'name' => 'Tạm']);
 
         $this->actingAs($this->owner, 'staff')->put("/admin/staff/roles/{$system->id}", ['name' => 'X', 'permissions' => []])->assertSessionHasErrors('business');

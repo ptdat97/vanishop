@@ -2,7 +2,6 @@
 
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;
 
@@ -15,7 +14,7 @@ beforeEach(function () {
     $owner = Role::query()->firstOrCreate(['code' => 'owner_admin'], ['name' => 'Owner Admin', 'is_system' => true]);
     $owner->syncPermissions([PermissionRegistry::WILDCARD]);
     $this->owner = StaffUser::factory()->create();
-    $this->owner->roleAssignments()->create(['role_id' => $owner->id, 'scope_type' => ScopeType::Owner, 'scope_id' => null]);
+    $this->owner->roleAssignments()->create(['role_id' => $owner->id]);
     $this->presets = fn (): array => collect($this->actingAs($this->owner, 'staff')->get('/admin/staff/roles/create')->assertOk()->viewData('page')['props']['presets'])->keyBy('key')->all();
 });
 

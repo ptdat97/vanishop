@@ -22,7 +22,6 @@ use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Domain\CustomerStatus;
 use Modules\Customer\Persistence\Models\Customer;
 use Modules\Extension\Contracts\AdminScreen;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\Data\OrderPermissions;
@@ -39,7 +38,7 @@ final class CustomerController
 
     public function index(Request $request, CustomerQueries $queries, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
-        Gate::authorize('customers.view', [ScopeRef::owner()]);
+        Gate::authorize('customers.view');
         $validated = $request->validate([
             'per_page' => ['sometimes', 'integer', Rule::in([30, 50, 100])],
         ]);
@@ -76,7 +75,7 @@ final class CustomerController
      */
     public function addNote(string $customer, Request $request, CustomerQueries $queries, CustomerNotes $notes): RedirectResponse
     {
-        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        Gate::authorize('customers.segment');
         $model = $queries->byPublicId($customer) ?? abort(404);
         $data = $request->validate(['note' => ['required', 'string', 'max:500']]);
         $notes->add($model->id, $data['note'], 'staff');
@@ -86,7 +85,7 @@ final class CustomerController
 
     public function show(string $customer, Request $request, CustomerQueries $queries, AddressBook $addresses, ConsentService $consents, CustomerStats $stats, CustomerOrders $orders, AdminScreen $screen, CustomerSegmentService $segments): Response
     {
-        Gate::authorize('customers.view', [ScopeRef::owner()]);
+        Gate::authorize('customers.view');
         $model = $queries->byPublicId($customer) ?? abort(404);
 
         return Inertia::render('Customer::Customers/Show', [
@@ -114,9 +113,9 @@ final class CustomerController
                 'placed_at' => StoreClock::format($order->placedAt),
             ], $orders->ofCustomer($model->id, 1, 20)['data']),
             'can' => [
-                'merge' => Gate::allows('customers.merge', [ScopeRef::owner()]),
-                'anonymize' => Gate::allows('customers.anonymize', [ScopeRef::owner()]),
-                'segment' => Gate::allows('customers.segment', [ScopeRef::owner()]),
+                'merge' => Gate::allows('customers.merge'),
+                'anonymize' => Gate::allows('customers.anonymize'),
+                'segment' => Gate::allows('customers.segment'),
             ],
             'extensions' => ['id' => $model->id, 'actions' => $screen->actions('customer', 'detail'), 'tabs' => $screen->tabs('customer', $model->id)],
         ]);
@@ -127,7 +126,7 @@ final class CustomerController
      */
     public function merge(string $customer, Request $request, CustomerQueries $queries, AccountLifecycle $lifecycle): RedirectResponse
     {
-        Gate::authorize('customers.merge', [ScopeRef::owner()]);
+        Gate::authorize('customers.merge');
         $data = $request->validate(['target' => ['required', 'string', 'size:26']]);
         $source = $queries->byPublicId($customer) ?? abort(404);
         $target = $queries->byPublicId($data['target']) ?? throw ValidationException::withMessages(['target' => __('customer::texts.customer_controller.target_customer_not_found')]);
@@ -139,7 +138,7 @@ final class CustomerController
 
     public function anonymize(string $customer, CustomerQueries $queries, AccountLifecycle $lifecycle): RedirectResponse
     {
-        Gate::authorize('customers.anonymize', [ScopeRef::owner()]);
+        Gate::authorize('customers.anonymize');
         $model = $queries->byPublicId($customer) ?? abort(404);
         $lifecycle->anonymize($model->id, 'staff');
 
@@ -151,7 +150,7 @@ final class CustomerController
      */
     public function segment(string $customer, Request $request, CustomerQueries $queries, CustomerSegmentService $segments): RedirectResponse
     {
-        Gate::authorize('customers.segment', [ScopeRef::owner()]);
+        Gate::authorize('customers.segment');
         $model = $queries->byPublicId($customer) ?? abort(404);
         $data = $request->validate(['customer_group_id' => ['nullable', 'integer'], 'tags' => ['nullable', 'string', 'max:1000']]);
         $segments->assign($model, isset($data['customer_group_id']) ? (int) $data['customer_group_id'] : null, explode(',', (string) ($data['tags'] ?? '')));
@@ -172,7 +171,6 @@ final class CustomerController
             'phone' => $contacts ? $customer->phone : ContactMask::phone($customer->phone),
             'email' => $contacts ? $customer->email : ContactMask::email($customer->email),
             'full_name' => $contacts ? $customer->full_name : ContactMask::name($customer->full_name),
-            'contacts_masked' => ! $contacts,
             'status' => $customer->status->value, 'registered' => $customer->isRegistered(),
             'created_at' => StoreClock::format($customer->created_at),
         ];

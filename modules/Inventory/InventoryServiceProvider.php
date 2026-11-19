@@ -14,8 +14,6 @@ use Modules\Extension\Contracts\Requirement;
 use Modules\Extension\Facades\Hook;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Identity\Contracts\ScopeOptions;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Inventory\Application\AuthoritySyncService;
 use Modules\Inventory\Application\BackorderService;
 use Modules\Inventory\Application\EloquentLocationRegistry;
@@ -47,7 +45,6 @@ use Modules\Inventory\Contracts\InventorySync;
 use Modules\Inventory\Contracts\LocationRegistry;
 use Modules\Inventory\Contracts\StockImporter;
 use Modules\Inventory\Contracts\StockMovements;
-use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
@@ -91,7 +88,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->bind(IncomingStock::class, IncomingStockService::class);
     }
 
-    public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, ScopeOptions $scopes): void
+    public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(StockDashboardTasks::class)());
         Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListStock::class)->column($styleIds));
@@ -111,9 +108,6 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $permissions->register('inventory.locations.manage', 'inventory::texts.inventory_service_provider.edit_main_warehouse_details_create');
 
         $navigation->add('inventory', 'inventory::texts.inventory_service_provider.inventory', 'admin.inventory.home', 'inventory.view', 140, group: 'catalog');
-        // Admin → Nhân viên: gán vai trò theo phạm vi một location.
-        $scopes->register(ScopeType::Location, fn (): array => Location::query()->orderBy('code')->get(['id', 'code', 'name'])
-            ->mapWithKeys(fn (Location $location): array => [$location->id => "{$location->code} — {$location->name}"])->all());
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('vani:inventory:release-expired')->everyMinute()->withoutOverlapping()->onOneServer();

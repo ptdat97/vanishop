@@ -15,7 +15,7 @@ export type SettingField = {
     is_set: boolean;
     value: unknown;
     effective: unknown;
-    /** false: ô bí mật, người dùng chưa có quyền settings.secrets. */
+    /** false: ô bí mật, người dùng không có toàn quyền cài đặt (settings.manage). */
     editable?: boolean;
 };
 

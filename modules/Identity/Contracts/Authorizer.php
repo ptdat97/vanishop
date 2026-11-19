@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Identity\Contracts;
 
-use Modules\Identity\Contracts\Data\ScopeRef;
-
+/**
+ * Service contract: kiểm tra quyền của nhân viên (vai trò được gán có permission hoặc `*`). Code thường gọi qua
+ * `Gate::allows('<permission>')` — Gate::before của Identity chuyển sang đây cho mọi permission đã đăng ký.
+ */
 interface Authorizer
 {
-    /**
-     * Nhân viên có permission trên phạm vi $target không.
-     *
-     * $target = null: có permission ở BẤT KỲ phạm vi nào. Thao tác trên một location truyền
-     * ScopeRef::location($id): vai trò cấp owner hoặc gán đúng location đó mới qua.
-     */
-    public function allows(int $staffUserId, string $permission, ?ScopeRef $target = null): bool;
+    public function allows(int $staffUserId, string $permission): bool;
 }

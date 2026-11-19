@@ -28,7 +28,6 @@ Nhân viên, vai trò theo phạm vi (Owner/location), đăng nhập Admin, nh�
 | `AuditLogger` | interface | plugin |
 | `Authorizer` | interface | giữa module |
 | `PermissionRegistry` | interface | giữa module |
-| `ScopeOptions` | interface | giữa module |
 | `StaffRejected` | class | giữa module |
 
 ---

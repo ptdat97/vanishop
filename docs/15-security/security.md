@@ -1,6 +1,6 @@
 # Security
 
-> Trạng thái: **Partially Implemented**. Đã có: guard `staff`, đăng nhập Admin + rate limit, RBAC theo `owner`/`location`, audit log append-only và các kiểm soát ADR-020 (đường dẫn Admin cấu hình được, cookie phiên riêng, IP allowlist, noindex, chính sách mật khẩu, audit IP mới). Brand không phải phạm vi quyền và không có global scope `BelongsToBrand` ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Chưa có: SSO, maker-checker, secret scan trong CI. **Không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
+> Trạng thái: **Partially Implemented**. Đã có: guard `staff`, đăng nhập Admin + rate limit, RBAC theo vai trò (toàn cửa hàng), audit log append-only và các kiểm soát ADR-020 (đường dẫn Admin cấu hình được, cookie phiên riêng, IP allowlist, noindex, chính sách mật khẩu, audit IP mới). Brand không phải phạm vi quyền và không có global scope `BelongsToBrand` ([ADR-028](../19-adr/ADR-028-single-store-brand-as-catalog.md)). Chưa có: SSO, maker-checker, secret scan trong CI. **Không dùng 2FA** ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)).
 
 ## 1. Tách biệt người dùng
 
@@ -27,7 +27,7 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 
 > Đường dẫn bí mật chỉ giảm bị dò quét tự động, **không thay thế xác thực**. Thiếu 2FA thì an toàn của Admin phụ thuộc vào mật khẩu, nên các kiểm soát trên là bắt buộc trước go-live.
 
-## 2. RBAC theo phạm vi (Scoped RBAC)
+## 2. RBAC theo vai trò
 
 - **Permission**: chuỗi `<resource>.<action>` — `orders.view`, `orders.cancel`, `prices.edit`, `stock.adjust`, `promotions.publish`, `customers.export`, `integration.replay`…
 - **Role**: tập permission. **Vai trò mẫu cho từng team** (0.5.54 — Admin → Vai trò → Thêm → "Bắt đầu từ vai trò mẫu"; điền sẵn tên, mã, quyền, vẫn chỉnh được). Mỗi quyền tự khai mẫu khi đăng ký (`PermissionRegistry::register($code, $label, presets: [...])`, plugin: `permissions([...], presets)` / `settings([...], presets)`), nên quyền của plugin mới tự vào đúng mẫu:
@@ -40,21 +40,19 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 | Nội dung (`content`) | Sản phẩm, danh mục, ảnh, giao diện cửa hàng, CMS/Lookbook/Bảng size, **Cài đặt: SEO, Giao diện** | Sửa giá, kho, cài đặt khác |
 | Phân tích dữ liệu (`analyst`) | Chỉ `*.view` (đơn, khách, sản phẩm, tồn, giá, khuyến mãi, thanh toán, đổi trả, báo cáo) + xuất đơn | Mọi quyền sửa; liên hệ khách (file xuất bị che) |
 
-Phân quyền theo team ở **mức module** (Owner 2026-11-19): team không làm một mảng thì không có quyền nào của mảng đó (vd. Marketing, Nội dung không có quyền kho/giao hàng). Không làm giới hạn chi tiết theo từng kho cho từng thao tác — phạm vi `location` giữ trong mô hình dữ liệu nhưng không mở rộng thêm.
+Phân quyền theo team ở **mức module** (Owner 2026-11-19): team không làm một mảng thì không có quyền nào của mảng đó (vd. Marketing, Nội dung không có quyền kho/giao hàng). Không giới hạn theo từng kho/cửa hàng: quyền luôn áp dụng toàn cửa hàng (phạm vi `location` đã gỡ ở 0.5.55).
 
 - **Quyền dữ liệu khách** (0.5.54): `orders.export` tách khỏi `orders.view`; `customers.pii` — không có thì họ tên/SĐT/email/số nhà hiện dạng che (`ContactMask`: "N. T. Lan", "091****678", "l***@…", "***") trên danh sách/chi tiết đơn, file xuất, danh sách/chi tiết/sổ địa chỉ khách; phiếu giao (in) cần `customers.pii`. Tỉnh/phường và số liệu vẫn hiện; tìm theo SĐT vẫn được. Màn hình vận đơn/đổi trả là màn hình thao tác, hiện đủ người nhận cho ai có quyền giao hàng/đổi trả.
-- **Quyền cài đặt** (0.5.54): `settings.manage` = toàn bộ (kể cả ô bí mật); `settings.<nhóm>` (`settings.seo`, `settings.mail`…) chỉ nhóm đó của Cài đặt hệ thống; `settings.plugin.<plugin id>` (plugin tự đăng ký khi khai `settings()`) chỉ plugin đó; ô `secret` (mật khẩu SMTP, khoá API) cần thêm `settings.secrets` — không có thì ô bị khoá. Lưu một lượt có khoá ngoài quyền → 403, không lưu gì.
+- **Quyền cài đặt** (0.5.54): `settings.manage` = toàn bộ; `settings.<nhóm>` (`settings.seo`, `settings.mail`…) chỉ nhóm đó của Cài đặt hệ thống; `settings.plugin.<plugin id>` (plugin tự đăng ký khi khai `settings()`) chỉ plugin đó; ô `secret` (mật khẩu SMTP, khoá API) chỉ `settings.manage` sửa được — người chỉ có quyền nhóm/plugin thấy ô bị khoá. Lưu một lượt có khoá ngoài quyền → 403, không lưu gì.
 
-- **Gán role**: `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)` với scope `owner` (toàn cửa hàng) hoặc `location`. Permission là mã chuỗi do module/plugin khai báo (`PermissionRegistry`), vai trò lưu trong `role_permissions`; `'*'` = mọi quyền. Brand **không** là phạm vi quyền: muốn giới hạn ai sửa sản phẩm brand nào thì dùng quy trình duyệt, không dùng RBAC.
+- **Gán role**: `staff_role_assignments(staff_user_id, role_id)` — một nhân viên nhiều vai trò, quyền cộng dồn. Permission là mã chuỗi do module/plugin khai báo (`PermissionRegistry`), vai trò lưu trong `role_permissions`; `'*'` = mọi quyền. Brand **không** là phạm vi quyền: muốn giới hạn ai sửa sản phẩm brand nào thì dùng quy trình duyệt, không dùng RBAC.
 - Kiểm tra (**Implemented**, `Authorizer` + `Gate::before`):
-  - `Gate::allows('orders.cancel')`: có permission ở phạm vi cửa hàng.
-  - `Authorizer` hỗ trợ kiểm tra quyền với `ScopeRef::location($id)`, nhưng màn hình kho kiểm `inventory.adjust` không kèm location — chủ đích (Owner 2026-11-19: không cần giới hạn theo từng kho).
-  - RBAC dùng scope `owner` hoặc `location`; không có scope `legal_entity`/`brand` hay global scope `BelongsToBrand`.
+  - `Gate::allows('orders.cancel')`: một vai trò được gán có permission đó (hoặc `*`). Permission chưa đăng ký trong `PermissionRegistry` không cấp được qua vai trò.
+  - Không có phạm vi `legal_entity`/`brand`/`location` hay global scope `BelongsToBrand`.
 - **Quản trị nhân viên/vai trò (Implemented, R1-4, Core 0.3.51 — [reference-parity §3.3](../20-roadmap/reference-parity-refactor.md))**: Admin → Hệ thống → Nhân viên / Vai trò, quyền `staff.manage`.
   - Tạo nhân viên = **mời qua email** (link đặt mật khẩu một lần, 24 giờ, bảng `staff_invite_tokens`); Admin không đặt mật khẩu hộ. Trạng thái `invited` → `active` khi đặt mật khẩu; `locked` khi bị khoá (đăng xuất ngay, xoay `remember_token`, huỷ link còn hạn). Không xoá cứng nhân viên.
-  - Chặn: tự khoá/tự đổi vai trò của mình; khoá hoặc hạ quyền **Owner cuối cùng** (nhân viên `active` có vai trò `*` ở phạm vi owner — kiểm tra trong transaction có khoá dòng); **cấp quyền mình không có** (gán vai trò hoặc thêm quyền vào vai trò; vai trò `*` chỉ Owner cấp được). Không cấp `*` qua giao diện — chỉ vai trò hệ thống `owner_admin` (tạo bởi `vani:staff:create-owner`). Vai trò hệ thống không sửa/xoá; vai trò đang gán không xoá.
+  - Chặn: tự khoá/tự đổi vai trò của mình; khoá hoặc hạ quyền **Owner cuối cùng** (nhân viên `active` có vai trò `*` — kiểm tra trong transaction có khoá dòng); **cấp quyền mình không có** (gán vai trò hoặc thêm quyền vào vai trò; vai trò `*` chỉ Owner cấp được). Không cấp `*` qua giao diện — chỉ vai trò hệ thống `owner_admin` (tạo bởi `vani:staff:create-owner`). Vai trò hệ thống không sửa/xoá; vai trò đang gán không xoá.
   - Hồ sơ của tôi (0.3.72): nhân viên tự đổi tên, ngôn ngữ Admin, mật khẩu (bắt buộc mật khẩu hiện tại, chính sách mật khẩu, rate limit 10/phút; đổi remember token). Email/vai trò chỉ đổi ở Admin → Nhân viên. Mất quyền truy cập email: `php artisan vani:staff:reset-password {email}` in link một lần (không in/đặt mật khẩu; nhân viên bị khoá phải mở khoá trước; audit `identity.staff.password_link_issued`).
-  - Phạm vi `location`: Inventory đăng ký danh sách kho vào `Identity\Contracts\ScopeOptions` (Identity ở vòng 0 không đọc bảng thương mại).
   - **Quên mật khẩu Admin**: `/{admin}/quen-mat-khau` → link một lần 60 phút (`staff_password_reset_tokens`), chỉ nhân viên `active`; thông báo giống nhau dù email có hay không; giới hạn 3 lần/10 phút theo email + IP và 10 lần/10 phút theo IP; link sinh từ `APP_URL` (§5.2). Mọi thao tác ghi audit `identity.staff.*`, `identity.role.*`.
 - **Phê duyệt 2 bước** (maker–checker) cho thao tác nhạy cảm: hoàn tiền > ngưỡng, điều chỉnh tồn lớn, khuyến mãi giảm > X%, export dữ liệu khách.
 

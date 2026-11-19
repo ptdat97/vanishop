@@ -7,15 +7,12 @@ namespace Modules\Extension\Contracts;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
 
 /**
- * Quyền của Admin → Cài đặt: `settings.manage` = toàn bộ (kể cả ô bí mật); từng nhóm của Cài đặt hệ thống
- * `settings.<nhóm>` (vd. `settings.seo`); từng plugin `settings.plugin.<plugin id>`; ô `secret` (mật khẩu, khoá API)
- * cần thêm `settings.secrets`.
+ * Quyền của Admin → Cài đặt: `settings.manage` = toàn bộ; từng nhóm của Cài đặt hệ thống `settings.<nhóm>` (vd.
+ * `settings.seo`); từng plugin `settings.plugin.<plugin id>`. Ô `secret` (mật khẩu, khoá API) chỉ `settings.manage` sửa.
  */
 final class SettingPermissions
 {
     public const ALL = 'settings.manage';
-
-    public const SECRETS = 'settings.secrets';
 
     public static function forGroup(SettingGroup $group): string
     {

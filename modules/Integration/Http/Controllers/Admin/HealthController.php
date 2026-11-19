@@ -11,7 +11,6 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Identity\Contracts\AuditLogger;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Integration\Application\HealthQueries;
 use Modules\Integration\Application\ReplayService;
 use Modules\Integration\Domain\MessageStatus;
@@ -25,7 +24,7 @@ final class HealthController
 {
     public function index(Request $request, HealthQueries $queries): Response
     {
-        Gate::authorize('integration.view', [ScopeRef::owner()]);
+        Gate::authorize('integration.view');
         $box = $request->query('box') === 'inbox' ? 'inbox' : 'outbox';
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $target = is_string($request->query('target')) ? $request->query('target') : null;
@@ -41,15 +40,15 @@ final class HealthController
             'messages' => $queries->messages($box, $status, $target, $sort),
             'clients' => $queries->clients(),
             'can' => [
-                'replay' => Gate::allows('integration.replay', [ScopeRef::owner()]),
-                'manage' => Gate::allows('integration.manage', [ScopeRef::owner()]),
+                'replay' => Gate::allows('integration.replay'),
+                'manage' => Gate::allows('integration.manage'),
             ],
         ]);
     }
 
     public function replay(Request $request, ReplayService $replay): RedirectResponse
     {
-        Gate::authorize('integration.replay', [ScopeRef::owner()]);
+        Gate::authorize('integration.replay');
         $data = $request->validate([
             'box' => ['required', Rule::in(['outbox', 'inbox'])],
             'ids' => ['nullable', 'array', 'max:'.ReplayService::MAX_PER_CALL],
@@ -71,7 +70,7 @@ final class HealthController
 
     public function resumeSubscription(WebhookSubscription $subscription, AuditLogger $audit): RedirectResponse
     {
-        Gate::authorize('integration.manage', [ScopeRef::owner()]);
+        Gate::authorize('integration.manage');
         $subscription->update(['status' => 'active', 'failing_since' => null]);
         $audit->record('integration.subscription.resumed', 'integration_webhook_subscription', $subscription->id);
 

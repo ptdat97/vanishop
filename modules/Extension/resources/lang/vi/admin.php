@@ -91,7 +91,7 @@ return [
         'no_settings' => 'Không có cấu hình nào.',
         'not_set' => 'Chưa đặt',
         'save' => 'Lưu',
-        'secret_needs_permission' => 'Cần quyền "Sửa ô bí mật trong cài đặt" để đổi.',
+        'secret_needs_permission' => 'Chỉ người có toàn quyền cài đặt đổi được ô này.',
         'set_leave_empty_keep' => 'Đã đặt — để trống để giữ nguyên',
         'yes' => 'Có',
     ],

@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.55 — 2026-11-19 · Extension API 1.16.0
+
+Rút gọn phân quyền (Owner 2026-11-19: phân quyền theo team ở mức module, không giới hạn chi tiết).
+
+### Bỏ (phá vỡ — plugin/test cập nhật theo)
+- Phạm vi gán vai trò `owner`/`location`: xoá `Identity\Contracts\Data\ScopeRef`, `Identity\Domain\ScopeType`, `Identity\Contracts\ScopeOptions`; `Authorizer::allows(int $staffUserId, string $permission)` (bỏ tham số phạm vi; `ScopedRbacAuthorizer` → `RbacAuthorizer`). Gọi `Gate::allows('x')` thay cho `Gate::allows('x', [ScopeRef::owner()])`. Bảng `staff_role_assignments` bỏ `scope_type`, `scope_id` (unique `staff_user_id, role_id`; dòng trùng vai trò được gộp). Form Nhân viên chỉ còn chọn vai trò. `StaffUserFactory::withPermissions(array $permissions)`.
+- Quyền `settings.secrets`: ô bí mật chỉ `settings.manage` sửa được.
+- Trường `contacts_masked` trên dòng khách hàng (giao diện không dùng).
+
+### Đổi
+- Mẫu Nội dung bỏ `inventory.view` (Marketing/Nội dung không có quyền kho/giao hàng nào).
+
 ## 0.5.54 — 2026-11-19 · Extension API 1.15.0
 
 Phân quyền cho nhiều team (vận hành đơn, marketing, nội dung, owner, phân tích dữ liệu) — giữ RBAC theo phạm vi hiện có (không dùng spatie/laravel-permission).

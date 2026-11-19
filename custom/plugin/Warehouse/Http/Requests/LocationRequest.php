@@ -7,7 +7,6 @@ namespace Plugin\Warehouse\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Contracts\Data\LocationData;
 
 /**
@@ -17,7 +16,7 @@ final class LocationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('warehouse.locations.manage', [ScopeRef::owner()]);
+        return Gate::allows('warehouse.locations.manage');
     }
 
     /**

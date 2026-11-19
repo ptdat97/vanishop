@@ -108,7 +108,7 @@ final class SettingsAdmin
                 'is_set' => array_key_exists($definition->key, $explicit),
                 'value' => $secret ? null : ($explicit[$definition->key] ?? null),
                 'effective' => $secret ? null : $this->settings->get($namespace, $definition->key),
-                // Ô bí mật (mật khẩu, khoá API) cần quyền settings.secrets — không có thì hiện khoá, không sửa được.
+                // Ô bí mật (mật khẩu, khoá API) chỉ người có toàn quyền cài đặt sửa được.
                 'editable' => ! $secret || $this->canEditSecrets(),
             ];
         }
@@ -132,7 +132,7 @@ final class SettingsAdmin
 
     public function canEditSecrets(): bool
     {
-        return Gate::any([SettingPermissions::ALL, SettingPermissions::SECRETS]);
+        return Gate::allows(SettingPermissions::ALL);
     }
 
     /** Có ít nhất một nhóm hoặc một plugin sửa được (menu Cài đặt). */
@@ -148,7 +148,7 @@ final class SettingsAdmin
     }
 
     /**
-     * Từng khoá gửi lên phải thuộc nhóm/plugin người dùng sửa được; ô bí mật có giá trị mới cần `settings.secrets`.
+     * Từng khoá gửi lên phải thuộc nhóm/plugin người dùng sửa được; ô bí mật có giá trị mới cần `settings.manage`.
      *
      * @param  array<string, mixed>  $values
      *

@@ -8,7 +8,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Contracts\Data\LocationData;
 use Modules\Inventory\Contracts\LocationRegistry;
 use Plugin\Warehouse\Http\Requests\LocationRequest;
@@ -23,7 +22,7 @@ final class LocationController
 
     public function index(): Response
     {
-        Gate::authorize('warehouse.locations.manage', [ScopeRef::owner()]);
+        Gate::authorize('warehouse.locations.manage');
 
         return Inertia::render('Warehouse::Locations/Index', [
             'labels' => __('vani-warehouse::labels'),
@@ -38,7 +37,7 @@ final class LocationController
 
     public function create(): Response
     {
-        Gate::authorize('warehouse.locations.manage', [ScopeRef::owner()]);
+        Gate::authorize('warehouse.locations.manage');
 
         return $this->form(null);
     }
@@ -52,7 +51,7 @@ final class LocationController
 
     public function edit(int $location): Response
     {
-        Gate::authorize('warehouse.locations.manage', [ScopeRef::owner()]);
+        Gate::authorize('warehouse.locations.manage');
 
         return $this->form($this->locations->find($location) ?? abort(404));
     }

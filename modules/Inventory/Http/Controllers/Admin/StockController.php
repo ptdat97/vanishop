@@ -15,7 +15,6 @@ use Inertia\Response;
 use Modules\Catalog\Contracts\VariantDirectory;
 use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Inventory\Application\AdminQueries;
 use Modules\Inventory\Application\LocationService;
 use Modules\Inventory\Application\LowStockThreshold;
@@ -59,7 +58,7 @@ final class StockController
         $criteria = $this->criteria($request->query());
         $page = max(1, (int) $request->query('page', 1));
         $result = $grid->page([...$criteria, 'ids' => $screen->filterIds('stock', $criteria['ext'])], $page, $perPage);
-        $canManageLocations = Gate::allows('inventory.locations.manage', [ScopeRef::owner()]);
+        $canManageLocations = Gate::allows('inventory.locations.manage');
         // Nút của plugin (vd. vận hành kho — ADR-042): chỉ implementation của plugin đang bật.
         $links = $extensions->implementations(StockPageLink::TAG, StockPageLink::class, fn (StockPageLink $link): string => $link::class);
         $managed = array_filter($links, fn (StockPageLink $link): bool => $link->managesLocations());
@@ -205,7 +204,7 @@ final class StockController
      */
     public function updateLocation(int $location, Request $request, LocationService $locations): RedirectResponse
     {
-        Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);
+        Gate::authorize('inventory.locations.manage');
         $record = $this->queries->location($location);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -220,7 +219,7 @@ final class StockController
 
     public function defaultLocation(LocationService $locations): RedirectResponse
     {
-        Gate::authorize('inventory.locations.manage', [ScopeRef::owner()]);
+        Gate::authorize('inventory.locations.manage');
         $created = $locations->ensureDefault();
 
         return back()->with('success', $created === null ? __('inventory::messages.default_exists') : __('inventory::messages.default_created', ['name' => $created->name]));

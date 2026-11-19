@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Notification\Application\AdminQueries;
 use Modules\Notification\Application\ChannelRegistry;
 use Modules\Notification\Application\TemplateAdmin;
@@ -31,7 +30,7 @@ final class NotificationController
 
     public function templates(ChannelRegistry $channels, NotificationCatalog $catalog): Response
     {
-        Gate::authorize('notifications.view', [ScopeRef::owner()]);
+        Gate::authorize('notifications.view');
 
         return Inertia::render('Notification::Templates/Index', [
             'baseUrl' => route('admin.notifications.templates.index'),
@@ -39,13 +38,13 @@ final class NotificationController
             'channels' => array_keys($channels->all()),
             'templates' => $this->queries->templates()
                 ->map(fn (NotificationTemplate $template): array => $this->present($template))->all(),
-            'can' => ['manage' => Gate::allows('notifications.manage', [ScopeRef::owner()])],
+            'can' => ['manage' => Gate::allows('notifications.manage')],
         ]);
     }
 
     public function store(Request $request, TemplateAdmin $admin): RedirectResponse
     {
-        Gate::authorize('notifications.manage', [ScopeRef::owner()]);
+        Gate::authorize('notifications.manage');
         $admin->create($request->validate($this->rules(creating: true)));
 
         return back()->with('success', __('notification::messages.saved'));
@@ -53,7 +52,7 @@ final class NotificationController
 
     public function update(Request $request, NotificationTemplate $template, TemplateAdmin $admin): RedirectResponse
     {
-        Gate::authorize('notifications.manage', [ScopeRef::owner()]);
+        Gate::authorize('notifications.manage');
         $admin->update($template, $request->validate([...$this->rules(creating: false), 'lock_version' => ['required', 'integer']]));
 
         return back()->with('success', __('notification::messages.saved'));
@@ -61,7 +60,7 @@ final class NotificationController
 
     public function destroy(NotificationTemplate $template, TemplateAdmin $admin): RedirectResponse
     {
-        Gate::authorize('notifications.manage', [ScopeRef::owner()]);
+        Gate::authorize('notifications.manage');
         $admin->delete($template);
 
         return back()->with('success', __('notification::messages.deleted'));
@@ -69,7 +68,7 @@ final class NotificationController
 
     public function logs(Request $request, NotificationCatalog $catalog): Response
     {
-        Gate::authorize('notifications.view', [ScopeRef::owner()]);
+        Gate::authorize('notifications.view');
         $validated = $request->validate([
             'per_page' => ['sometimes', 'integer', Rule::in([25, 50, 100])],
         ]);

@@ -74,13 +74,11 @@ return [
         'resend_invitation' => 'Resend invitation',
         'roles' => 'Roles',
         'save' => 'Save',
-        'scope' => 'Scope',
         'send_invitation' => 'Send invitation',
         'staff_member_signed_out_cannot' => 'The staff member is signed out and cannot sign in.',
         'staff_name' => 'Staff: :name',
         'staff_receive_email_set_their' => 'Staff receive an email to set their own password (link valid for 24 hours).',
         'unlock' => 'Unlock',
-        'warehouse_store' => 'Warehouse/store',
         'you_cannot_change_own_roles' => 'You cannot change your own roles.',
     ],
     'staff_index' => [

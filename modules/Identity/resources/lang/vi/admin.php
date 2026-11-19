@@ -74,13 +74,11 @@ return [
         'resend_invitation' => 'Gửi lại lời mời',
         'roles' => 'Vai trò',
         'save' => 'Lưu',
-        'scope' => 'Phạm vi',
         'send_invitation' => 'Gửi lời mời',
         'staff_member_signed_out_cannot' => 'Nhân viên bị đăng xuất và không đăng nhập được.',
         'staff_name' => 'Nhân viên: :name',
         'staff_receive_email_set_their' => 'Nhân viên nhận email để tự đặt mật khẩu (link 24 giờ).',
         'unlock' => 'Mở khoá',
-        'warehouse_store' => 'Kho/cửa hàng',
         'you_cannot_change_own_roles' => 'Không tự đổi vai trò của chính mình.',
     ],
     'staff_index' => [

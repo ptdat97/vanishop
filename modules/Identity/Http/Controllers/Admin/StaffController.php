@@ -12,7 +12,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Identity\Application\AdminQueries;
 use Modules\Identity\Application\StaffAdministration;
-use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Http\Requests\StaffRequest;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Shared\Http\ListSort;
@@ -64,11 +63,11 @@ final class StaffController
         ]);
     }
 
-    public function create(ScopeOptions $scopes): Response
+    public function create(): Response
     {
         Gate::authorize('staff.manage');
 
-        return $this->form(null, [], $scopes);
+        return $this->form(null, []);
     }
 
     public function store(StaffRequest $request, StaffAdministration $administration): RedirectResponse
@@ -78,11 +77,11 @@ final class StaffController
         return redirect()->route('admin.staff.edit', $staff)->with('success', __('identity::staff.invited', ['email' => $staff->email]));
     }
 
-    public function edit(StaffUser $staff, StaffAdministration $administration, ScopeOptions $scopes): Response
+    public function edit(StaffUser $staff, StaffAdministration $administration): Response
     {
         Gate::authorize('staff.manage');
 
-        return $this->form($staff, $administration->assignmentsOf($staff), $scopes);
+        return $this->form($staff, $administration->assignmentsOf($staff));
     }
 
     public function update(StaffUser $staff, StaffRequest $request, StaffAdministration $administration): RedirectResponse
@@ -117,9 +116,9 @@ final class StaffController
     }
 
     /**
-     * @param  list<array{role_id: int, scope_type: string, scope_id: int|null}>  $assignments
+     * @param  list<array{role_id: int}>  $assignments
      */
-    private function form(?StaffUser $staff, array $assignments, ScopeOptions $scopes): Response
+    private function form(?StaffUser $staff, array $assignments): Response
     {
         return Inertia::render('Identity::Staff/Form', [
             'baseUrl' => route('admin.staff.index'),
@@ -131,7 +130,6 @@ final class StaffController
             ],
             'assignments' => $assignments,
             'roles' => $this->queries->roleOptions(['id', 'code', 'name']),
-            'scopes' => $scopes->all(),
         ]);
     }
 

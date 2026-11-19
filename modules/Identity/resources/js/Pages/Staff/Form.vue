@@ -10,20 +10,16 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
-type Assignment = { role_id: number | null; scope_type: string; scope_id: number | null };
+type Assignment = { role_id: number | null };
 
 const props = defineProps<{
     baseUrl: string;
-    labels: { staff_status: Record<string, string>; scope_type: Record<string, string> };
+    labels: { staff_status: Record<string, string> };
     staff: null | { id: number; name: string; email: string; status: string; last_login_at: string | null; is_self: boolean };
     assignments: Assignment[];
     roles: Array<{ id: number; code: string; name: string }>;
-    /** Loại phạm vi có id (vd. location) → id → nhãn. Phạm vi `owner` (toàn cửa hàng) luôn có. */
-    scopes: Record<string, Record<string, string>>;
 }>();
 
-const scopeTypeOptions = computed(() => ['owner', ...Object.keys(props.scopes)].map((type) => ({ value: type, label: props.labels.scope_type[type] ?? type })));
-const scopeOptions = (type: string): Array<{ value: number; label: string }> => Object.entries(props.scopes[type] ?? {}).map(([id, label]) => ({ value: Number(id), label }));
 const { form, save } = useAdminForm({
     name: props.staff?.name ?? '',
     email: props.staff ? undefined : '',
@@ -31,7 +27,7 @@ const { form, save } = useAdminForm({
 });
 
 function addAssignment(): void {
-    form.assignments.push({ role_id: props.roles[0]?.id ?? null, scope_type: 'owner', scope_id: null });
+    form.assignments.push({ role_id: props.roles[0]?.id ?? null });
 }
 
 function submit(): void {
@@ -69,12 +65,6 @@ const errors = computed(() => usePage().props.errors as Record<string, string>);
             <p v-if="staff?.is_self" class="mb-2 text-xs text-slate-500">{{ t('identity::admin.staff_form.you_cannot_change_own_roles') }}</p>
             <div v-for="(assignment, index) in form.assignments" :key="index" class="mb-2 flex flex-wrap gap-2">
                 <div class="w-56"><Select v-model="assignment.role_id" :options="recordOptions(roles, (role) => role.name)" :aria-label="t('identity::admin.staff_form.roles')" :disabled="staff?.is_self" /></div>
-                <div class="w-48">
-                    <Select v-model="assignment.scope_type" :options="scopeTypeOptions" :aria-label="t('identity::admin.staff_form.scope')" :disabled="staff?.is_self" @change="assignment.scope_id = null" />
-                </div>
-                <div v-if="assignment.scope_type !== 'owner'" class="w-56">
-                    <Select v-model="assignment.scope_id" :options="scopeOptions(assignment.scope_type)" :aria-label="t('identity::admin.staff_form.warehouse_store')" :disabled="staff?.is_self" />
-                </div>
                 <button type="button" :class="secondaryButton" @click="form.assignments.splice(index, 1)">{{ t('identity::admin.staff_form.remove') }}</button>
             </div>
             <p v-for="(message, key) in form.errors" v-show="String(key).startsWith('assignments')" :key="key" class="text-sm text-red-600">{{ message }}</p>

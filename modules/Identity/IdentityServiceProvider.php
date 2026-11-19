@@ -10,16 +10,13 @@ use Illuminate\Validation\Rules\Password;
 use Modules\Identity\Application\DatabaseAuditLogger;
 use Modules\Identity\Application\EloquentStaffNames;
 use Modules\Identity\Application\InMemoryPermissionRegistry;
-use Modules\Identity\Application\ScopedRbacAuthorizer;
-use Modules\Identity\Application\ScopeOptionsRegistry;
+use Modules\Identity\Application\RbacAuthorizer;
 use Modules\Identity\Console\CreateStaffCommand;
 use Modules\Identity\Console\ResetStaffPasswordCommand;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\Authorizer;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Contracts\StaffNames;
 use Modules\Identity\Http\Middleware\ConfigureAdminSession;
 use Modules\Identity\Http\Middleware\ResolveStaffContext;
@@ -36,8 +33,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(PermissionRegistry::class, InMemoryPermissionRegistry::class);
-        $this->app->singleton(ScopeOptions::class, ScopeOptionsRegistry::class);
-        $this->app->scoped(Authorizer::class, ScopedRbacAuthorizer::class);
+        $this->app->scoped(Authorizer::class, RbacAuthorizer::class);
         $this->app->scoped(AuditLogger::class, DatabaseAuditLogger::class);
         $this->app->bind(StaffNames::class, EloquentStaffNames::class);
         // Chụp khi config đã nạp và trước mọi request; dùng để trả phiên về mặc định cho request storefront.
@@ -58,16 +54,13 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         $permissions->register('staff.manage', 'identity::texts.identity_service_provider.manage_staff_roles');
         $navigation->add('staff', 'identity::texts.identity_service_provider.staff', 'admin.staff.index', 'staff.manage', 810, group: 'system');
 
-        // Permission đã khai báo trong registry được quyết định bởi RBAC theo phạm vi.
-        // Tham số đầu tiên có thể là ScopeRef để kiểm tra theo location.
-        Gate::before(function (mixed $user, string $ability, array $arguments) use ($permissions): ?bool {
+        // Permission đã khai báo trong registry được quyết định bởi RBAC của Identity.
+        Gate::before(function (mixed $user, string $ability) use ($permissions): ?bool {
             if (! $user instanceof StaffUser || ! $permissions->has($ability)) {
                 return null;
             }
 
-            $target = ($arguments[0] ?? null) instanceof ScopeRef ? $arguments[0] : null;
-
-            return $this->app->make(Authorizer::class)->allows($user->id, $ability, $target);
+            return $this->app->make(Authorizer::class)->allows($user->id, $ability);
         });
 
         $this->loadWebRoutes($this->modulePath('Http/routes/admin-auth.php'));

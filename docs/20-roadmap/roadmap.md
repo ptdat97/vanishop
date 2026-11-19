@@ -100,7 +100,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 - [x] `modules/`, `custom/` + autoload, `ModuleServiceProvider`
 - [x] Shared: `Money`, `PhoneNumber`, `CurrentContext`, correlation id
 - [x] Tenancy/Brand/Channel tối thiểu, `ResolveChannel`, `BelongsToBrand`
-- [x] Identity: nhân viên, RBAC theo scope, audit, đăng nhập Admin
+- [x] Identity: nhân viên, RBAC theo vai trò, audit, đăng nhập Admin
 - [x] Identity: đường dẫn Admin cấu hình được `VANI_ADMIN_PATH` + kiểm soát bù trừ ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)). Không dùng 2FA.
 - [x] Extension: `Hook` + registry, plugin loader, manifest, CLI, safe mode, plugin mẫu `HelloWorld`
 - [x] Khung Admin Inertia

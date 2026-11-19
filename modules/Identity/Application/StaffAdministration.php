@@ -11,7 +11,6 @@ use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\Authorizer;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Contracts\StaffRejected;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\RolePermission;
 use Modules\Identity\Persistence\Models\StaffRoleAssignment;
 use Modules\Identity\Persistence\Models\StaffUser;
@@ -20,10 +19,10 @@ use Modules\Identity\Persistence\Models\StaffUser;
  * Admin → Nhân viên (reference-parity §3.3-1). Quy tắc:
  * - tạo = mời qua email (link đặt mật khẩu 24 giờ), không đặt mật khẩu hộ; không xoá cứng (chỉ khoá);
  * - không tự khoá, không tự đổi vai trò của chính mình; không khoá/hạ quyền Owner cuối cùng (nhân viên đang hoạt động
- *   có vai trò `*` ở phạm vi Owner);
+ *   có vai trò `*`);
  * - không cấp vai trò có quyền mà người thao tác không có (chống leo thang quyền).
  *
- * @phpstan-type Assignment array{role_id: int, scope_type: string, scope_id: int|null}
+ * @phpstan-type Assignment array{role_id: int}
  */
 final class StaffAdministration
 {
@@ -132,11 +131,7 @@ final class StaffAdministration
      */
     public function assignmentsOf(StaffUser $staff): array
     {
-        return $this->normalize($staff->roleAssignments()->get(['role_id', 'scope_type', 'scope_id'])->map(fn (StaffRoleAssignment $assignment): array => [
-            'role_id' => $assignment->role_id,
-            'scope_type' => $assignment->scope_type->value,
-            'scope_id' => $assignment->scope_id,
-        ])->all());
+        return $this->normalize($staff->roleAssignments()->get(['role_id'])->map(fn (StaffRoleAssignment $assignment): array => ['role_id' => $assignment->role_id])->all());
     }
 
     /**
@@ -179,15 +174,10 @@ final class StaffAdministration
      */
     private function normalize(array $assignments): array
     {
-        $normalized = array_map(fn (array $assignment): array => [
-            'role_id' => (int) $assignment['role_id'],
-            'scope_type' => (string) $assignment['scope_type'],
-            'scope_id' => ($assignment['scope_type'] ?? null) === ScopeType::Owner->value || ($assignment['scope_id'] ?? null) === null ? null : (int) $assignment['scope_id'],
-        ], $assignments);
-        $normalized = array_values(array_unique($normalized, SORT_REGULAR));
-        usort($normalized, fn (array $a, array $b): int => [$a['role_id'], $a['scope_type'], $a['scope_id']] <=> [$b['role_id'], $b['scope_type'], $b['scope_id']]);
+        $roleIds = array_values(array_unique(array_map(fn (array $assignment): int => (int) $assignment['role_id'], $assignments)));
+        sort($roleIds);
 
-        return $normalized;
+        return array_map(fn (int $roleId): array => ['role_id' => $roleId], $roleIds);
     }
 
     /** Khoá các Owner đang hoạt động: hai quản trị khoá/hạ quyền nhau cùng lúc không làm mất Owner cuối. */
@@ -211,7 +201,6 @@ final class StaffAdministration
         return StaffUser::query()
             ->where('status', StaffUser::STATUS_ACTIVE)
             ->whereHas('roleAssignments', fn ($query) => $query
-                ->where('scope_type', ScopeType::Owner->value)
                 ->whereIn('role_id', RolePermission::query()->select('role_id')->where('permission', PermissionRegistry::WILDCARD)));
     }
 }

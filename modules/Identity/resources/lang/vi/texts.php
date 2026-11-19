@@ -30,7 +30,4 @@ return [
         'reset_password' => 'Đặt lại mật khẩu',
         'set_first_password' => 'Đặt mật khẩu lần đầu',
     ],
-    'staff_request' => [
-        'scope' => 'phạm vi',
-    ],
 ];

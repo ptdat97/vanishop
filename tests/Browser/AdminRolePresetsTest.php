@@ -1,7 +1,6 @@
 <?php
 
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;
 
@@ -13,7 +12,7 @@ it('bấm mẫu "Phân tích dữ liệu": điền tên/mã, tích quyền xem v
     $owner = Role::query()->firstOrCreate(['code' => 'owner_admin'], ['name' => 'Owner Admin', 'is_system' => true]);
     $owner->syncPermissions([PermissionRegistry::WILDCARD]);
     $staff = StaffUser::factory()->create();
-    $staff->roleAssignments()->create(['role_id' => $owner->id, 'scope_type' => ScopeType::Owner, 'scope_id' => null]);
+    $staff->roleAssignments()->create(['role_id' => $owner->id]);
     $this->actingAs($staff, 'staff');
 
     $page = visit('/admin/staff/roles/create')->assertSee('Bắt đầu từ vai trò mẫu')->click('[data-role-preset="analyst"]');

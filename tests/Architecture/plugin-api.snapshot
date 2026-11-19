@@ -1,4 +1,4 @@
-Extension API 1.15.0
+Extension API 1.16.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -436,10 +436,6 @@ class Modules\Fulfillment\Events\ShipmentStatusChanged
 interface Modules\Identity\Contracts\AuditLogger
   record(string $action, ?string $subjectType = NULL, string|int|null $subjectId = NULL, array $changes = array (
 )): void
-class Modules\Identity\Contracts\Data\ScopeRef
-  __construct(Modules\Identity\Domain\ScopeType $type, ?int $id = NULL)
-  static owner(): self
-  static location(int $locationId): self
 interface Modules\Identity\Contracts\PermissionRegistry
   const WILDCARD = '*'
   const PRESET_ORDER_OPS = 'order_ops'

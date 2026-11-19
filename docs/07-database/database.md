@@ -81,7 +81,7 @@ erDiagram
 |---|---|
 | Shared | `currencies`, `administrative_units`, `administrative_unit_mappings`, `idempotency_keys`, `number_sequences` |
 | Tenancy (cửa hàng) | `legal_entities` (một bản ghi: pháp nhân vận hành), `settings(key, value json, is_encrypted)` (một cấp; theme tokens là một setting) |
-| Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id, scope_type[owner|location], scope_id)`, `audit_logs` |
+| Identity | `staff_users`, `roles`, `role_permissions(role_id, permission)`: mã permission do module/plugin khai báo trong `PermissionRegistry` (không có bảng `permissions`), `'*'` = mọi quyền; `staff_role_assignments(staff_user_id, role_id)`, `audit_logs` |
 | Extension | `plugins(id VARCHAR PK = plugin id, version, status, installed_at, last_error)` (bật/tắt toàn cửa hàng) |
 | Catalog | `brands`, `styles(brand_id NULL, meta json)`, `style_translations`, `option_types`, `option_values` (+ bản dịch), `style_options`, `style_option_values`, `variants(option_key, meta json)`, `variant_option_values` (ADR-045 — biến thể theo loại tuỳ chọn dùng chung, 1–3 trục), `attributes`, `attribute_values`, `style_attribute_values`, `size_charts`, `categories`, `category_translations`, `category_style`, `collections`, `collection_rules`, `collection_style`, `media` |
 | Pricing | `price_lists`, `prices`, `price_history` |

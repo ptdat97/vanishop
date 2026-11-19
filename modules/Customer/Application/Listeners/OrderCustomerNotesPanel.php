@@ -7,7 +7,6 @@ namespace Modules\Customer\Application\Listeners;
 use Illuminate\Support\Facades\Gate;
 use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Persistence\Models\Customer;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\Data\OrderDetail;
 use Modules\Ordering\Contracts\OrderReader;
 
@@ -25,7 +24,7 @@ final class OrderCustomerNotesPanel
     public function __invoke(OrderDetail $order): ?array
     {
         $customerId = $this->orders->find($order->id)?->customerId;
-        if ($customerId === null || ! Gate::allows('customers.view', [ScopeRef::owner()])) {
+        if ($customerId === null || ! Gate::allows('customers.view')) {
             return null;
         }
         $publicId = (string) Customer::query()->whereKey($customerId)->value('public_id');
@@ -35,7 +34,7 @@ final class OrderCustomerNotesPanel
             'title' => __('customer::texts.order_customer_notes_panel.customer_service_notes'),
             'rows' => $notes === [] ? [['label' => __('customer::texts.order_customer_notes_panel.no_notes_yet'), 'value' => '']] : array_map(fn (array $note): array => ['label' => (string) $note['at'], 'value' => $note['note'].($note['source'] === 'staff' ? '' : " ({$note['source']})")], $notes),
             'link' => ['label' => __('customer::texts.order_customer_notes_panel.customer_profile'), 'url' => route('admin.customers.show', $publicId)],
-            'actions' => Gate::allows('customers.segment', [ScopeRef::owner()]) ? [[
+            'actions' => Gate::allows('customers.segment') ? [[
                 'key' => 'customer-note', 'label' => __('customer::texts.order_customer_notes_panel.add_customer_service_note'), 'url' => route('admin.customers.notes.store', $publicId), 'tone' => 'secondary',
                 'fields' => [['key' => 'note', 'label' => __('customer::texts.order_customer_notes_panel.note_customer_pick_up_after'), 'required' => true]],
             ]] : [],

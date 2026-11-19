@@ -91,7 +91,7 @@ return [
         'no_settings' => 'No settings.',
         'not_set' => 'Not set',
         'save' => 'Save',
-        'secret_needs_permission' => 'Requires the "Edit secrets in settings" permission.',
+        'secret_needs_permission' => 'Only staff with full settings access can change this.',
         'set_leave_empty_keep' => 'Set — leave empty to keep',
         'yes' => 'Yes',
     ],

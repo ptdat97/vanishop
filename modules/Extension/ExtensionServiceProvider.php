@@ -168,7 +168,6 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $permissions->register('extension.plugins.view', 'extension::texts.extension_service_provider.view_plugin_list');
         $permissions->register('extension.plugins.manage', 'extension::texts.extension_service_provider.install_enable_disable_plugins');
         $permissions->register(SettingPermissions::ALL, 'extension::texts.extension_service_provider.edit_scoped_settings_core_plugins');
-        $permissions->register(SettingPermissions::SECRETS, 'extension::texts.permissions.settings_secrets');
         // Từng nhóm của Cài đặt hệ thống: SEO và Giao diện thuộc vai trò mẫu Nội dung.
         foreach (SettingGroup::cases() as $group) {
             $permissions->register(SettingPermissions::forGroup($group), "extension::texts.permissions.settings_{$group->value}",

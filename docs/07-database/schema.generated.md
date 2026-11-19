@@ -102,7 +102,7 @@
 | [`slug_redirects`](#slug_redirects) | 7 |
 | [`staff_invite_tokens`](#staff_invite_tokens) | 3 |
 | [`staff_password_reset_tokens`](#staff_password_reset_tokens) | 3 |
-| [`staff_role_assignments`](#staff_role_assignments) | 7 |
+| [`staff_role_assignments`](#staff_role_assignments) | 5 |
 | [`staff_users`](#staff_users) | 10 |
 | [`stock_count_lines`](#stock_count_lines) | 7 |
 | [`stock_counts`](#stock_counts) | 10 |
@@ -1799,12 +1799,10 @@ Index: PK (email)
 | `id` | bigint unsigned |  |  |
 | `staff_user_id` | bigint unsigned |  |  |
 | `role_id` | bigint unsigned |  |  |
-| `scope_type` | varchar(32) |  |  |
-| `scope_id` | bigint unsigned | có |  |
 | `created_at` | timestamp | có |  |
 | `updated_at` | timestamp | có |  |
 
-Index: PK (id); index (role_id); unique (staff_user_id, role_id, scope_type, scope_id)
+Index: PK (id); index (role_id); unique (staff_user_id, role_id)
 
 Khoá ngoại: role_id → roles(id); staff_user_id → staff_users(id) on delete cascade
 

@@ -14,7 +14,7 @@ import { ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
-    labels: { staff_status: Record<string, string>; scope_type: Record<string, string> };
+    labels: { staff_status: Record<string, string> };
     rolesUrl: string;
     filters: { q: string; role: number | null; status: string | null };
     sort: ListSortState | null;

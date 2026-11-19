@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use Modules\Identity\Contracts\PermissionRegistry;
-use Modules\Identity\Domain\ScopeType;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;
 
@@ -49,7 +48,7 @@ final class CreateStaffCommand extends Command
                 'password' => $password,
             ]);
 
-            $staff->roleAssignments()->create(['role_id' => $role->id, 'scope_type' => ScopeType::Owner, 'scope_id' => null]);
+            $staff->roleAssignments()->create(['role_id' => $role->id]);
         });
 
         $this->info('Đã tạo nhân viên '.$this->argument('email').' với vai trò owner_admin.');

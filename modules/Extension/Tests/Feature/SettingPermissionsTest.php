@@ -9,7 +9,7 @@ use Modules\Tenancy\Contracts\Settings;
 
 /*
 | Quyền Admin → Cài đặt: `settings.manage` = toàn bộ; `settings.<nhóm>` chỉ nhóm đó; `settings.plugin.<id>` chỉ plugin
-| đó; ô bí mật cần thêm `settings.secrets`.
+| đó; ô bí mật chỉ `settings.manage` sửa.
 */
 
 beforeEach(function () {
@@ -42,7 +42,7 @@ it('chỉ settings.seo: thấy và sửa đúng nhóm SEO; nhóm khác, plugin, 
     expect($menu())->not->toContain('settings')->and($menu())->not->toBeEmpty();
 });
 
-it('quyền cài đặt của plugin: sửa ô thường được; ô bí mật cần settings.secrets (giao diện khoá ô)', function () {
+it('quyền cài đặt của plugin: sửa ô thường được; ô bí mật chỉ settings.manage (giao diện khoá ô)', function () {
     ($this->as)(['settings.plugin.test.plugin']);
 
     $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->where('system', [])->where('plugins.0.namespace', 'test.plugin'));
@@ -54,12 +54,12 @@ it('quyền cài đặt của plugin: sửa ô thường được; ô bí mật 
     $this->put('/admin/settings', ['namespace' => 'test.plugin', 'values' => ['pixel_id' => '456', 'api_key' => '']])->assertSessionHasNoErrors();
     expect(app(Settings::class)->get('test.plugin', 'pixel_id'))->toBe('456')->and(app(Settings::class)->get('test.plugin', 'api_key'))->toBeNull();
 
-    ($this->as)(['settings.plugin.test.plugin', 'settings.secrets']);
+    ($this->as)(['settings.manage']);
     $this->put('/admin/settings', ['namespace' => 'test.plugin', 'values' => ['api_key' => 'bi-mat']])->assertSessionHasNoErrors();
     expect(app(Settings::class)->get('test.plugin', 'api_key'))->toBe('bi-mat');
 });
 
-it('Email gửi đi: settings.mail sửa máy chủ và gửi thử được, mật khẩu SMTP cần settings.secrets; settings.manage làm được hết', function () {
+it('Email gửi đi: settings.mail sửa máy chủ và gửi thử được, mật khẩu SMTP chỉ settings.manage; settings.manage làm được hết', function () {
     ($this->as)(['settings.mail']);
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => [MailSettings::HOST => 'smtp.zoho.com']])->assertSessionHasNoErrors();
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => [MailSettings::PASSWORD => 'x']])->assertForbidden();
