@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -54,35 +55,35 @@ function submit(): void {
 </script>
 
 <template>
-    <Head :title="location ? 'Sửa location' : 'Thêm location'" />
-    <PageHeader :title="location ? `Sửa location: ${location.name}` : 'Thêm location'">
-        <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
+    <Head :title="location ? t('vani-warehouse::admin.locations_form.edit_location') : t('vani-warehouse::admin.locations_form.add_location')" />
+    <PageHeader :title="location ? t('vani-warehouse::admin.locations_form.edit_location_name', { name: location.name }) : t('vani-warehouse::admin.locations_form.add_location')">
+        <Link :href="baseUrl" :class="secondaryButton">{{ t('vani-warehouse::admin.locations_form.back') }}</Link>
     </PageHeader>
 
     <form class="grid max-w-3xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">
-        <FormField label="Tên" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
-        <FormField label="Mã" hint="Chữ hoa, số, -. Ví dụ: WH-HCM, ST-Q1" :error="form.errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
-        <FormField label="Loại" :error="form.errors.type">
+        <FormField :label="t('vani-warehouse::admin.locations_form.name')" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
+        <FormField :label="t('vani-warehouse::admin.locations_form.code')" :hint="t('vani-warehouse::admin.locations_form.uppercase_letters_digits_example_wh')" :error="form.errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
+        <FormField :label="t('vani-warehouse::admin.locations_form.type')" :error="form.errors.type">
             <Select v-model="form.type" :options="codeOptions(types, labels.location_type)" />
         </FormField>
-        <FormField label="Địa chỉ" :error="form.errors.address"><input v-model="form.address" :class="inputClass" /></FormField>
-        <FormField label="Mã tỉnh/thành" :error="form.errors.province_code"><input v-model="form.province_code" :class="inputClass" /></FormField>
-        <FormField label="Priority" hint="Cao hơn được giữ hàng trước." :error="form.errors.priority">
+        <FormField :label="t('vani-warehouse::admin.locations_form.address')" :error="form.errors.address"><input v-model="form.address" :class="inputClass" /></FormField>
+        <FormField :label="t('vani-warehouse::admin.locations_form.province_city_code')" :error="form.errors.province_code"><input v-model="form.province_code" :class="inputClass" /></FormField>
+        <FormField label="Priority" :hint="t('vani-warehouse::admin.locations_form.higher_priority_reserves_stock_first')" :error="form.errors.priority">
             <input v-model.number="form.priority" :class="inputClass" type="number" />
         </FormField>
-        <FormField label="Quản lý tồn vật lý" hint="vanishop = điều chỉnh tại đây; mã khác (vd. erp) = chỉ nhận đồng bộ." :error="form.errors.stock_authority">
+        <FormField :label="t('vani-warehouse::admin.locations_form.manages_physical_stock')" :hint="t('vani-warehouse::admin.locations_form.vanishop_adjusted_here_another_code')" :error="form.errors.stock_authority">
             <input v-model="form.stock_authority" :class="inputClass" />
         </FormField>
-        <FormField label="Khả năng" :error="form.errors.ships_online_orders">
+        <FormField :label="t('vani-warehouse::admin.locations_form.capabilities')" :error="form.errors.ships_online_orders">
             <div class="space-y-1 text-sm">
-                <label class="flex items-center gap-2"><input v-model="form.ships_online_orders" type="checkbox" /> Giao đơn online</label>
-                <label class="flex items-center gap-2"><input v-model="form.allows_pickup" type="checkbox" /> Nhận tại cửa hàng</label>
-                <label class="flex items-center gap-2"><input v-model="form.accepts_returns" type="checkbox" /> Nhận hàng trả</label>
+                <label class="flex items-center gap-2"><input v-model="form.ships_online_orders" type="checkbox" /> {{ t('vani-warehouse::admin.locations_form.ships_online_orders') }}</label>
+                <label class="flex items-center gap-2"><input v-model="form.allows_pickup" type="checkbox" /> {{ t('vani-warehouse::admin.locations_form.store_pickup') }}</label>
+                <label class="flex items-center gap-2"><input v-model="form.accepts_returns" type="checkbox" /> {{ t('vani-warehouse::admin.locations_form.receives_returns') }}</label>
             </div>
         </FormField>
-        <FormField label="Trạng thái" :error="form.errors.status">
+        <FormField :label="t('vani-warehouse::admin.locations_form.status')" :error="form.errors.status">
             <Select v-model="form.status" :options="labelOptions(labels.location_status)" />
         </FormField>
-        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>
+        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('vani-warehouse::admin.locations_form.save') }}</button></div>
     </form>
 </template>

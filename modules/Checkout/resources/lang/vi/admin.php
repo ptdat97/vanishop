@@ -1,0 +1,40 @@
+<?php
+
+// Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
+
+return [
+    'admin_orders_create' => [
+        'add_product' => 'Thêm sản phẩm',
+        'amount' => 'Thành tiền',
+        'calculate' => 'Tính tiền',
+        'calculate_choose' => '— Tính tiền để chọn —',
+        'calculating' => 'Đang tính…',
+        'choose_province_city' => 'Chọn tỉnh/thành',
+        'choose_ward' => 'Chọn phường/xã',
+        'could_not_calculate_total' => 'Không tính được tiền.',
+        'create_order' => 'Tạo đơn',
+        'discount' => 'Giảm giá',
+        'email_optional' => 'Email (không bắt buộc)',
+        'full_name' => 'Họ tên',
+        'house_number_street' => 'Số nhà, đường',
+        'no_products_yet' => 'Chưa có sản phẩm nào.',
+        'no_sku_sale_found' => 'Không tìm thấy SKU đang bán',
+        'order_list' => 'Danh sách đơn',
+        'order_note' => 'Ghi chú đơn',
+        'orders_received_phone_zalo_facebook' => 'Đơn nhận qua điện thoại, Zalo, Facebook… Cùng giá, khuyến mãi và giữ hàng như đơn web.',
+        'payment' => 'Thanh toán',
+        'phone_number' => 'Số điện thoại',
+        'products' => 'Sản phẩm',
+        'province_city' => 'Tỉnh/thành',
+        'quantity' => 'Số lượng',
+        'quantity_sku' => 'Số lượng :sku',
+        'recipient' => 'Người nhận',
+        'remove' => 'Bỏ',
+        'shipping_fee' => 'Phí giao',
+        'subtotal' => 'Tạm tính',
+        'total' => 'Tổng',
+        'type_sku_product_name' => 'Gõ SKU hoặc tên sản phẩm',
+        'unit_price' => 'Đơn giá',
+        'ward' => 'Phường/xã',
+    ],
+];

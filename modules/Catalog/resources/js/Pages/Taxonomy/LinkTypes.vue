@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -24,10 +25,10 @@ const props = defineProps<{ nav: NavItem[]; linkTypes: LinkTypeRow[]; canManage:
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'link-types')?.url ?? '');
 const editingId = ref<number | null>(null);
 const columns = [
-    { key: 'name', label: 'Tên' },
-    { key: 'code', label: 'Mã', class: 'font-mono text-xs' },
-    { key: 'groups_count', label: 'Nhóm liên kết' },
-    { key: 'is_active', label: 'Trạng thái' },
+    { key: 'name', label: t('catalog::admin.taxonomy_link_types.name') },
+    { key: 'code', label: t('catalog::admin.taxonomy_link_types.code'), class: 'font-mono text-xs' },
+    { key: 'groups_count', label: t('catalog::admin.taxonomy_link_types.link_groups') },
+    { key: 'is_active', label: t('catalog::admin.taxonomy_link_types.status') },
     { key: 'actions', label: '', align: 'right' as const },
 ];
 
@@ -59,43 +60,43 @@ function submit(): void {
 }
 
 async function destroy(type: LinkTypeRow): Promise<void> {
-    if ((await confirmAction({ title: `Xoá loại liên kết ${type.code}?`, confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('catalog::admin.taxonomy_link_types.delete_link_type_code', { code: type.code }), confirmLabel: t('catalog::admin.taxonomy_link_types.delete'), tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${type.id}`, { preserveScroll: true });
     }
 }
 </script>
 
 <template>
-    <Head title="Loại liên kết" />
+    <Head :title="t('catalog::admin.taxonomy_link_types.link_type')" />
     <CatalogTabs :nav="nav" active="link-types" />
-    <PageHeader title="Loại liên kết" subtitle="Nhóm sản phẩm gợi ý trên trang sản phẩm: tương tự, mua kèm, nâng cấp…" />
+    <PageHeader :title="t('catalog::admin.taxonomy_link_types.link_type')" :subtitle="t('catalog::admin.taxonomy_link_types.groups_suggested_products_product_page')" />
 
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="lg:col-span-2">
-            <DataTable :columns="columns" :rows="linkTypes" :row-label="(type) => type.code" empty-text="Chưa có loại liên kết nào.">
+            <DataTable :columns="columns" :rows="linkTypes" :row-label="(type) => type.code" :empty-text="t('catalog::admin.taxonomy_link_types.no_link_types_yet')">
                 <template #cell-name="{ row }">{{ row.translations[defaultLocale]?.name }}</template>
-                <template #cell-is_active="{ row }"><StatusBadge :label="row.is_active ? 'Đang bật' : 'Tắt'" :tone="row.is_active ? 'success' : 'neutral'" /></template>
+                <template #cell-is_active="{ row }"><StatusBadge :label="row.is_active ? t('catalog::admin.taxonomy_link_types.active') : t('catalog::admin.taxonomy_link_types.off')" :tone="row.is_active ? 'success' : 'neutral'" /></template>
                 <template #cell-actions="{ row }">
                     <template v-if="canManage">
-                        <button type="button" class="text-indigo-600 hover:underline" @click="edit(row)">Sửa</button>
-                        <button type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(row)">Xoá</button>
+                        <button type="button" class="text-indigo-600 hover:underline" @click="edit(row)">{{ t('catalog::admin.taxonomy_link_types.edit') }}</button>
+                        <button type="button" class="ml-3 text-red-600 hover:underline" @click="destroy(row)">{{ t('catalog::admin.taxonomy_link_types.delete') }}</button>
                     </template>
                 </template>
             </DataTable>
         </div>
 
         <form v-if="canManage" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
-            <h2 class="text-sm font-medium">{{ editingId ? 'Sửa loại liên kết' : 'Thêm loại liên kết' }}</h2>
-            <FormField v-for="option in locales" :key="option.code" :label="`Tên hiển thị (${option.label})`" :error="errors[`translations.${option.code}.name`]">
+            <h2 class="text-sm font-medium">{{ editingId ? t('catalog::admin.taxonomy_link_types.edit_link_type') : t('catalog::admin.taxonomy_link_types.add_link_type') }}</h2>
+            <FormField v-for="option in locales" :key="option.code" :label="t('catalog::admin.taxonomy_link_types.display_name_label', { label: option.label })" :error="errors[`translations.${option.code}.name`]">
                 <input v-model="form.translations[option.code].name" :class="inputClass" />
             </FormField>
-            <FormField label="Mã" hint="Chữ thường, số, gạch ngang — vd. similar, cross-sell" :error="errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
-            <FormField label="Thứ tự trên trang sản phẩm" :error="errors.position"><input v-model.number="form.position" :class="inputClass" type="number" min="0" /></FormField>
-            <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" /> Hiện trên storefront</label>
+            <FormField :label="t('catalog::admin.taxonomy_link_types.code')" :hint="t('catalog::admin.taxonomy_link_types.lowercase_letters_digits_hyphens_similar')" :error="errors.code"><input v-model="form.code" :class="inputClass" /></FormField>
+            <FormField :label="t('catalog::admin.taxonomy_link_types.order_product_page')" :error="errors.position"><input v-model.number="form.position" :class="inputClass" type="number" min="0" /></FormField>
+            <label class="flex items-center gap-2 text-sm"><input v-model="form.is_active" type="checkbox" /> {{ t('catalog::admin.taxonomy_link_types.shown_storefront') }}</label>
             <div class="flex gap-2">
-                <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
-                <button v-if="editingId" type="button" :class="secondaryButton" @click="cancel">Huỷ</button>
+                <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('catalog::admin.taxonomy_link_types.save') }}</button>
+                <button v-if="editingId" type="button" :class="secondaryButton" @click="cancel">{{ t('catalog::admin.taxonomy_link_types.cancel') }}</button>
             </div>
         </form>
     </div>

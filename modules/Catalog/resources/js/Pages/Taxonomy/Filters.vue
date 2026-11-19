@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import Sortable from '@admin/Components/Sortable.vue';
@@ -28,7 +29,7 @@ const form = useForm<{ facets: Facet[] }>({ facets: props.facets.map((facet) => 
 const errors = computed(() => form.errors as Record<string, string | undefined>);
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'filters')?.url ?? '');
 const displayOptions = (facet: Facet) => facet.displays.map((value) => ({ value, label: props.displayLabels[value] ?? value }));
-const kindLabel: Record<Facet['type'], string> = { brand: 'Thương hiệu', price: 'Giá niêm yết', option: 'Tuỳ chọn biến thể (SKU đang bán)', attribute: 'Thuộc tính' };
+const kindLabel: Record<Facet['type'], string> = { brand: t('catalog::admin.taxonomy_filters.brand'), price: t('catalog::admin.taxonomy_filters.list_price'), option: t('catalog::admin.taxonomy_filters.variant_options_skus_sale'), attribute: t('catalog::admin.taxonomy_filters.attributes') };
 
 function save(): void {
     form.transform((data) => ({ facets: data.facets.map(({ key, enabled, display }) => ({ key, enabled, display })) })).put(baseUrl.value, { preserveScroll: true });
@@ -36,13 +37,13 @@ function save(): void {
 </script>
 
 <template>
-    <Head title="Bộ lọc" />
+    <Head :title="t('catalog::admin.taxonomy_filters.filters')" />
     <CatalogTabs :nav="nav" active="filters" />
-    <PageHeader title="Bộ lọc" subtitle="Bộ lọc ở trang danh mục, thương hiệu, tìm kiếm. Bộ lọc không có giá trị nào trong kết quả tự ẩn.">
-        <button v-if="canManage" type="button" :class="primaryButton" :disabled="form.processing" @click="save">Lưu</button>
+    <PageHeader :title="t('catalog::admin.taxonomy_filters.filters')" :subtitle="t('catalog::admin.taxonomy_filters.filters_category_brand_search_pages')">
+        <button v-if="canManage" type="button" :class="primaryButton" :disabled="form.processing" @click="save">{{ t('catalog::admin.taxonomy_filters.save') }}</button>
     </PageHeader>
 
-    <p class="mb-4 text-sm text-slate-500">Thêm bộ lọc theo thuộc tính: bật "Dùng để lọc" ở thuộc tính loại spec. Kéo tay nắm để đổi thứ tự.</p>
+    <p class="mb-4 text-sm text-slate-500">{{ t('catalog::admin.taxonomy_filters.add_attribute_filters_turn_use') }}</p>
 
     <Sortable v-model="form.facets" v-slot="{ item: facet, index, handle }" tag="ol" item-tag="li" item-class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3" :item-key="(facet) => facet.key" :item-label="(facet) => facet.label" :disabled="!canManage">
             <SortHandle v-if="canManage" v-bind="handle" />
@@ -52,7 +53,7 @@ function save(): void {
                 <span class="text-xs text-slate-500">{{ kindLabel[facet.type] }}</span>
             </label>
             <div class="w-40">
-                <Select v-model="facet.display" :options="displayOptions(facet)" :disabled="!canManage || facet.displays.length < 2" aria-label="Kiểu hiển thị" />
+                <Select v-model="facet.display" :options="displayOptions(facet)" :disabled="!canManage || facet.displays.length < 2" :aria-label="t('catalog::admin.taxonomy_filters.display_style')" />
             </div>
             <p v-if="errors[`facets.${index}.key`] || errors[`facets.${index}.display`]" class="w-full text-sm text-red-600">{{ errors[`facets.${index}.key`] ?? errors[`facets.${index}.display`] }}</p>
     </Sortable>

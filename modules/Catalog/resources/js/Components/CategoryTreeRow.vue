@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { Link } from '@inertiajs/vue3';
 import type { CategoryNode } from '../types';
 
@@ -13,9 +14,9 @@ defineProps<{ node: CategoryNode; baseUrl: string; canManage: boolean }>();
                 <img v-if="node.image_url" :src="node.image_url" alt="" class="h-8 w-8 rounded object-cover" />
                 <span class="font-medium">{{ node.name ?? node.slug }}</span>
                 <span class="text-xs text-slate-400">/{{ node.slug }}</span>
-                <span v-if="node.status === 'hidden'" class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">ẩn</span>
+                <span v-if="node.status === 'hidden'" class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">{{ t('catalog::admin.category_tree_row.hidden') }}</span>
             </div>
-            <Link v-if="canManage" :href="`${baseUrl}/${node.id}/edit`" class="text-sm text-indigo-600 hover:underline">Sửa</Link>
+            <Link v-if="canManage" :href="`${baseUrl}/${node.id}/edit`" class="text-sm text-indigo-600 hover:underline">{{ t('catalog::admin.category_tree_row.edit') }}</Link>
         </div>
         <ul v-if="node.children.length">
             <CategoryTreeRow v-for="child in node.children" :key="child.id" :node="child" :base-url="baseUrl" :can-manage="canManage" />

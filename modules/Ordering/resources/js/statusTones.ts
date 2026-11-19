@@ -1,3 +1,4 @@
+import { t } from '@admin/i18n';
 type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 export type DeliveryHistory = { orders: number; delivered: number; returned_to_sender: number; cancelled: number };
@@ -5,9 +6,9 @@ export type DeliveryHistory = { orders: number; delivered: number; returned_to_s
 /** Nhãn rủi ro khách theo lịch sử nhận hàng (SĐT) — đánh giá trước khi xác nhận đơn COD (chốt ①, ADR-046). */
 export function customerRiskFlag(history: DeliveryHistory | null): { label: string; tone: 'danger' | 'warning' | 'success' } | null {
     if (history === null) return null;
-    if (history.returned_to_sender > 0) return { label: `Từng hoàn hàng ${history.returned_to_sender} lần`, tone: 'danger' };
-    if (history.orders === 0) return { label: 'Khách mới', tone: 'warning' };
-    if (history.delivered > 0) return { label: 'Khách quen', tone: 'success' };
+    if (history.returned_to_sender > 0) return { label: t('ordering::admin.status_tones.returned_sender_returned_sender_times', { returned_to_sender: history.returned_to_sender }), tone: 'danger' };
+    if (history.orders === 0) return { label: t('ordering::admin.status_tones.new_customer'), tone: 'warning' };
+    if (history.delivered > 0) return { label: t('ordering::admin.status_tones.returning_customer'), tone: 'success' };
     return null;
 }
 

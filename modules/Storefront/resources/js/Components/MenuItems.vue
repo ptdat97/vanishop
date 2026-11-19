@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DateInput from '@admin/Components/DateInput.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
 import Select from '@admin/Components/Select.vue';
@@ -32,19 +33,19 @@ const { locales } = useStoreLocales();
 const opened = ref<string | null>(null);
 const picking = ref<MenuItem | null>(null);
 const badgeOptions = [
-    { value: 'new' as const, label: 'Mới' },
+    { value: 'new' as const, label: t('storefront::admin.menu_items.new') },
     { value: 'sale' as const, label: 'Sale' },
 ];
 
 function title(item: MenuItem): string {
     const override = Object.values(item.label).find((text) => text);
-    return override || context.linkLabels[item.id]?.label || (item.link ? `${item.link.type}: ${item.link.value || '…'}` : '(chưa đặt tên)');
+    return override || context.linkLabels[item.id]?.label || (item.link ? `${item.link.type}: ${item.link.value || '…'}` : t('storefront::admin.menu_items.unnamed'));
 }
 
 async function remove(siblings: MenuItem[], index: number): Promise<void> {
     const item = siblings[index];
-    const message = item.children.length ? `Mục con (${item.children.length}) cũng bị xoá.` : undefined;
-    if ((await confirmAction({ title: `Xoá mục "${title(item)}"?`, message, confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    const message = item.children.length ? t('storefront::admin.menu_items.count_sub_items_deleted_too', { count: item.children.length }) : undefined;
+    if ((await confirmAction({ title: t('storefront::admin.menu_items.delete_item_title', { title: title(item) }), message, confirmLabel: t('storefront::admin.menu_items.delete'), tone: 'danger' })) !== false) {
         // Cấp gốc là mảng của v-model: phát mảng mới; cấp con sửa tại chỗ.
         if (siblings === items.value) items.value = items.value.filter((candidate) => candidate !== item);
         else siblings.splice(index, 1);
@@ -85,12 +86,12 @@ const fieldError = (path: number[], field: string): string | undefined => props.
                 <SortHandle v-bind="handle" />
                 <button type="button" class="flex-1 text-left font-medium" :aria-expanded="opened === item.id" @click="opened = opened === item.id ? null : item.id">
                     {{ title(item) }}
-                    <span v-if="item.children.length" class="ml-1 text-xs text-slate-400">({{ item.children.length }} mục con)</span>
+                    <span v-if="item.children.length" class="ml-1 text-xs text-slate-400">{{ t('storefront::admin.menu_items.count_sub_items', { count: item.children.length }) }}</span>
                 </button>
-                <StatusBadge v-if="!item.enabled" label="Tắt" />
-                <StatusBadge v-if="item.badge" :label="item.badge === 'new' ? 'Mới' : 'Sale'" :tone="item.badge === 'new' ? 'success' : 'danger'" />
-                <StatusBadge v-if="context.linkLabels[item.id]?.exists === false" label="Link hỏng" tone="danger" />
-                <button type="button" class="px-2 text-red-600 hover:underline" @click="remove(siblings, index)">Xoá</button>
+                <StatusBadge v-if="!item.enabled" :label="t('storefront::admin.menu_items.off')" />
+                <StatusBadge v-if="item.badge" :label="item.badge === 'new' ? t('storefront::admin.menu_items.new') : 'Sale'" :tone="item.badge === 'new' ? 'success' : 'danger'" />
+                <StatusBadge v-if="context.linkLabels[item.id]?.exists === false" :label="t('storefront::admin.menu_items.broken_link')" tone="danger" />
+                <button type="button" class="px-2 text-red-600 hover:underline" @click="remove(siblings, index)">{{ t('storefront::admin.menu_items.delete') }}</button>
             </div>
 
             <div v-if="opened === item.id" class="grid gap-3 border-t border-slate-100 p-3 text-sm md:grid-cols-2">
@@ -101,36 +102,36 @@ const fieldError = (path: number[], field: string): string | undefined => props.
                 </div>
                 <div class="space-y-2">
                     <label v-for="option in locales" :key="option.code" class="block">
-                        <span class="mb-1 block text-slate-700">Nhãn ({{ option.label }})</span>
-                        <input v-model="item.label[option.code]" :class="inputClass" maxlength="80" :placeholder="context.linkLabels[item.id]?.label ?? 'Để trống = tên của đối tượng'" />
+                        <span class="mb-1 block text-slate-700">{{ t('storefront::admin.menu_items.label_label', { label: option.label }) }}</span>
+                        <input v-model="item.label[option.code]" :class="inputClass" maxlength="80" :placeholder="context.linkLabels[item.id]?.label ?? t('storefront::admin.menu_items.leave_empty_target_s_name')" />
                     </label>
                     <p v-if="fieldError(itemPath, 'label')" class="text-xs text-red-600">{{ fieldError(itemPath, 'label') }}</p>
                 </div>
                 <label class="block">
-                    <span class="mb-1 block text-slate-700">Huy hiệu</span>
-                    <Select v-model="item.badge" :options="badgeOptions" empty-label="Không" :empty-value="null" />
+                    <span class="mb-1 block text-slate-700">{{ t('storefront::admin.menu_items.badge') }}</span>
+                    <Select v-model="item.badge" :options="badgeOptions" :empty-label="t('storefront::admin.menu_items.no')" :empty-value="null" />
                 </label>
-                <label class="flex items-center gap-2 self-end"><input v-model="item.enabled" type="checkbox" /> Hiển thị</label>
+                <label class="flex items-center gap-2 self-end"><input v-model="item.enabled" type="checkbox" /> {{ t('storefront::admin.menu_items.display') }}</label>
                 <label class="block">
-                    <span class="mb-1 block text-slate-700">Hiện từ (giờ cửa hàng)</span>
+                    <span class="mb-1 block text-slate-700">{{ t('storefront::admin.menu_items.show_from_store_time') }}</span>
                     <DateInput v-model="item.visible_from" with-time />
                 </label>
                 <label class="block">
-                    <span class="mb-1 block text-slate-700">Ẩn từ</span>
+                    <span class="mb-1 block text-slate-700">{{ t('storefront::admin.menu_items.hide_from') }}</span>
                     <DateInput v-model="item.visible_to" with-time />
                     <span v-if="fieldError(itemPath, 'visible_to')" class="text-xs text-red-600">{{ fieldError(itemPath, 'visible_to') }}</span>
                 </label>
                 <div v-if="level <= (imageDepth ?? 1)" class="flex items-center gap-3 md:col-span-2">
                     <img v-if="item.image_media_id && context.images[item.image_media_id]" :src="context.images[item.image_media_id]" alt="" class="h-12 w-12 rounded object-cover" />
-                    <button type="button" :class="secondaryButton" @click="picking = item">{{ item.image_media_id ? 'Đổi ảnh' : level === 1 ? 'Ảnh (mega menu / banner)' : 'Ảnh (ô danh mục)' }}</button>
-                    <button v-if="item.image_media_id" type="button" class="text-red-600 hover:underline" @click="item.image_media_id = null">Gỡ ảnh</button>
+                    <button type="button" :class="secondaryButton" @click="picking = item">{{ item.image_media_id ? t('storefront::admin.menu_items.change_image') : level === 1 ? t('storefront::admin.menu_items.image_mega_menu_banner') : t('storefront::admin.menu_items.image_category_tile') }}</button>
+                    <button v-if="item.image_media_id" type="button" class="text-red-600 hover:underline" @click="item.image_media_id = null">{{ t('storefront::admin.menu_items.remove_image') }}</button>
                 </div>
                 <div v-if="level < maxDepth" class="md:col-span-2">
-                    <button type="button" :class="secondaryButton" @click="addChild(item)">+ Mục con</button>
+                    <button type="button" :class="secondaryButton" @click="addChild(item)">{{ t('storefront::admin.menu_items.sub_item') }}</button>
                 </div>
             </div>
         </div>
     </Sortable>
-    <MediaPicker :open="picking !== null" title="Ảnh cho mục menu" :multiple="false" @update:open="(value) => !value && (picking = null)" @select="pickImage" />
+    <MediaPicker :open="picking !== null" :title="t('storefront::admin.menu_items.image_menu_item')" :multiple="false" @update:open="(value) => !value && (picking = null)" @select="pickImage" />
     </div>
 </template>

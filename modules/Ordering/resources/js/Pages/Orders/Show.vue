@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Combobox from '@admin/Components/Combobox.vue';
 import DataTable from '@admin/Components/DataTable.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
@@ -142,7 +143,7 @@ const props = defineProps<{
 const money = useMoney();
 
 /** Thanh tiến trình: bước hiện tại theo giai đoạn vận hành (đơn huỷ không hiện). */
-const steps = ['Đặt hàng', 'Xác nhận', 'Giao hãng', 'Đang giao', 'Đã giao', 'Hoàn tất'];
+const steps = [t('ordering::admin.orders_show.placed'), t('ordering::admin.orders_show.confirmed'), t('ordering::admin.orders_show.handed_carrier'), t('ordering::admin.orders_show.transit'), t('ordering::admin.orders_show.delivered'), t('ordering::admin.orders_show.completed')];
 const currentStep = computed(
     () => ({ to_confirm: 1, awaiting_payment: 1, to_ship: 2, shipping: 3, issue: 3, delivered: 4, returns: 4, completed: 6 })[props.stage] ?? -1,
 );
@@ -184,7 +185,7 @@ const statusForm = useForm({ status: '', reason: '' });
 const statusOptions = computed(() =>
     props.statusCard.change.options
         .filter((option) => option.value !== props.order.orderStatus)
-        .map((option) => ({ value: option.value, label: option.mode === 'forced' ? `${option.label} (ngoài trình tự)` : option.label, disabled: !option.allowed })),
+        .map((option) => ({ value: option.value, label: option.mode === 'forced' ? t('ordering::admin.orders_show.label_out_sequence', { label: option.label }) : option.label, disabled: !option.allowed })),
 );
 const chosenStatus = computed(() => props.statusCard.change.options.find((option) => option.value === statusForm.status) ?? null);
 const canChangeStatus = computed(() => statusOptions.value.some((option) => !option.disabled));
@@ -246,17 +247,17 @@ async function loadWards(): Promise<void> {
 const provinceOptions = computed(() => (props.addressDirectory?.provinces ?? []).map((province) => ({ value: province.code, label: province.name })));
 const wardOptions = computed(() => wards.value.map((ward) => ({ value: ward.code, label: ward.name })));
 const causeOptions = [
-    { value: 'shop', label: 'Lỗi shop (hết hàng, sai giá…)' },
-    { value: 'customer', label: 'Khách yêu cầu bớt hàng' },
+    { value: 'shop', label: t('ordering::admin.orders_show.store_error_out_stock_wrong') },
+    { value: 'customer', label: t('ordering::admin.orders_show.customer_asked_remove_items') },
 ];
 watch(() => addressForm.province_code, loadWards);
 const lineColumns = computed(() => [
-    { key: 'name', label: 'Sản phẩm' },
+    { key: 'name', label: t('ordering::admin.orders_show.products') },
     { key: 'quantity', label: 'SL' },
-    ...(cancellingLines.value ? [{ key: 'cancel', label: 'Huỷ' }] : []),
-    { key: 'unit_amount', label: 'Đơn giá' },
-    { key: 'discount_amount', label: 'Giảm' },
-    { key: 'total_amount', label: 'Thành tiền', align: 'right' as const },
+    ...(cancellingLines.value ? [{ key: 'cancel', label: t('ordering::admin.orders_show.cancel') }] : []),
+    { key: 'unit_amount', label: t('ordering::admin.orders_show.unit_price') },
+    { key: 'discount_amount', label: t('ordering::admin.orders_show.reduce') },
+    { key: 'total_amount', label: t('ordering::admin.orders_show.amount'), align: 'right' as const },
 ]);
 
 /** Trạng thái đích của sự kiện lịch sử: trạng thái đơn hoặc thanh toán, chưa có nhãn thì in mã. */
@@ -280,23 +281,23 @@ function addNote(): void {
 </script>
 
 <template>
-    <Head :title="`Đơn ${order.number}`" />
-    <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
+    <Head :title="t('ordering::admin.orders_show.order_number', { number: order.number })" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('ordering::admin.orders_show.orders') }}</p>
     <div class="mb-2 flex flex-wrap gap-2">
         <StatusBadge :label="labels.stage[stage] ?? stage" :tone="stageTone(stage)" />
         <StatusBadge :label="labels.order_status[order.orderStatus] ?? order.orderStatus" :tone="orderStatusTone(order.orderStatus)" />
         <StatusBadge :label="labels.payment_status[order.paymentStatus] ?? order.paymentStatus" :tone="paymentStatusTone(order.paymentStatus)" />
     </div>
-    <PageHeader :title="`Đơn ${order.number}`" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
-        <Link :href="listUrl" :class="secondaryButton">Danh sách</Link>
-        <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">In phiếu giao</a>
+    <PageHeader :title="t('ordering::admin.orders_show.order_number', { number: order.number })" :subtitle="`${order.placedAt} · ${order.customerStatus.label}`">
+        <Link :href="listUrl" :class="secondaryButton">{{ t('ordering::admin.orders_show.list') }}</Link>
+        <a :href="printUrl" target="_blank" rel="noopener" :class="secondaryButton">{{ t('ordering::admin.orders_show.print_packing_slip') }}</a>
         <span v-if="stage === 'to_confirm' && customerFlag" class="self-center" data-confirm-risk><StatusBadge :label="customerFlag.label" :tone="customerFlag.tone" /></span>
         <span v-for="risk in risks" :key="`${risk.source}:${risk.label}`" class="self-center" :title="risk.reason ?? undefined" data-risk><StatusBadge :label="risk.label" :tone="riskTone(risk.level)" /></span>
         <button v-if="nextAction" type="button" :class="primaryButton" data-next-action @click="runAction(nextAction)">{{ nextAction.label }}</button>
-        <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">Huỷ một phần</button>
+        <button v-if="can.cancel_lines && !cancellingLines" type="button" :class="secondaryButton" @click="cancellingLines = true">{{ t('ordering::admin.orders_show.partial_cancellation') }}</button>
         <ExtensionActions :actions="extensions.actions" :ids="[order.id]" />
     </PageHeader>
-    <ol v-if="currentStep >= 0" class="mb-4 flex flex-wrap items-center gap-x-1 gap-y-2 text-xs" aria-label="Tiến trình đơn">
+    <ol v-if="currentStep >= 0" class="mb-4 flex flex-wrap items-center gap-x-1 gap-y-2 text-xs" :aria-label="t('ordering::admin.orders_show.order_progress')">
         <li v-for="(step, index) in steps" :key="step" class="flex items-center gap-1">
             <span
                 class="rounded-full px-2.5 py-1"
@@ -321,10 +322,10 @@ function addNote(): void {
                     </template>
                     <template #cell-quantity="{ row }">
                         {{ row.quantity }}
-                        <div v-if="row.cancelled_quantity" class="text-xs text-red-600">đã huỷ {{ row.cancelled_quantity }}</div>
+                        <div v-if="row.cancelled_quantity" class="text-xs text-red-600">{{ t('ordering::admin.orders_show.cancelled_cancelled_quantity', { cancelled_quantity: row.cancelled_quantity }) }}</div>
                     </template>
                     <template #cell-cancel="{ row }">
-                        <input v-model.number="cancelLinesForm.lines[row.id]" type="number" min="0" :max="row.quantity" :class="[inputClass, 'w-20']" :aria-label="`Số lượng huỷ ${row.sku}`" />
+                        <input v-model.number="cancelLinesForm.lines[row.id]" type="number" min="0" :max="row.quantity" :class="[inputClass, 'w-20']" :aria-label="t('ordering::admin.orders_show.quantity_cancel_sku', { sku: row.sku })" />
                     </template>
                     <template #cell-unit_amount="{ row }">
                         <MoneyText :amount="row.unit_amount" />
@@ -334,59 +335,59 @@ function addNote(): void {
                     <template #cell-total_amount="{ row }"><MoneyText :amount="row.total_amount" /></template>
                 </DataTable>
                 <form v-if="cancellingLines" class="flex flex-wrap items-end gap-3 border-t border-slate-100 bg-red-50/40 p-4 text-sm" @submit.prevent="cancelLines">
-                    <FormField label="Nguyên nhân" :error="cancelLinesForm.errors.cause" class="min-w-56">
+                    <FormField :label="t('ordering::admin.orders_show.cause')" :error="cancelLinesForm.errors.cause" class="min-w-56">
                         <Select v-model="cancelLinesForm.cause" :options="causeOptions" />
                     </FormField>
-                    <FormField label="Lý do huỷ một phần" :error="cancelLinesForm.errors.reason" class="min-w-64 flex-1">
-                        <input v-model="cancelLinesForm.reason" :class="inputClass" maxlength="255" required placeholder="Vd. hết hàng size M" />
+                    <FormField :label="t('ordering::admin.orders_show.reason_partial_cancellation')" :error="cancelLinesForm.errors.reason" class="min-w-64 flex-1">
+                        <input v-model="cancelLinesForm.reason" :class="inputClass" maxlength="255" required :placeholder="t('ordering::admin.orders_show.size_m_out_stock')" />
                     </FormField>
-                    <button type="submit" :class="dangerButton" :disabled="cancelLinesForm.processing || cancelTotal === 0">Huỷ {{ cancelTotal }} sản phẩm</button>
-                    <button type="button" :class="secondaryButton" @click="cancellingLines = false">Thôi</button>
+                    <button type="submit" :class="dangerButton" :disabled="cancelLinesForm.processing || cancelTotal === 0">{{ t('ordering::admin.orders_show.cancel_cancel_total_items', { cancel_total: cancelTotal }) }}</button>
+                    <button type="button" :class="secondaryButton" @click="cancellingLines = false">{{ t('ordering::admin.orders_show.never_mind') }}</button>
                     <p class="w-full text-xs text-slate-500">
-                        Tiền phần huỷ: COD giảm số thu hộ; đã thanh toán thì hoàn tự động (cổng hỗ trợ) hoặc tạo yêu cầu hoàn tay. Vận đơn chưa rời kho được tạo lại.
+                        {{ t('ordering::admin.orders_show.cancelled_amount_cod_reduces_amount') }}
                         <template v-if="cancelLinesForm.cause === 'customer'">
-                            Khách bớt hàng: khuyến mãi mà phần còn lại không còn đủ điều kiện (vd. dưới ngưỡng) được thu hồi, trừ vào tiền hoàn/giảm thu hộ — không vượt tiền phần huỷ.
+                            {{ t('ordering::admin.orders_show.customer_removed_items_promotions_remaining') }}
                         </template>
-                        <template v-else>Lỗi shop: khách giữ nguyên ưu đãi.</template>
+                        <template v-else>{{ t('ordering::admin.orders_show.store_error_customer_keeps_their') }}</template>
                     </p>
                 </form>
                 <!-- Tầng giá (Phase 8): niêm yết → giá bán → khuyến mãi → mã giảm giá → giảm khác → phí giao → tổng (VAT đã gồm). -->
                 <dl class="space-y-1 border-t border-slate-100 p-4 text-sm">
                     <div class="flex justify-between text-slate-600">
-                        <dt>Giá niêm yết</dt>
+                        <dt>{{ t('ordering::admin.orders_show.list_price') }}</dt>
                         <dd>{{ money(order.pricing.list_amount) }}</dd>
                     </div>
                     <div v-if="order.pricing.markdown" class="flex justify-between text-slate-600">
-                        <dt>Giảm giá bán<span v-if="order.pricing.price_lists.length" class="font-mono text-xs"> ({{ order.pricing.price_lists.map((list) => list.code).join(', ') }})</span></dt>
+                        <dt>{{ t('ordering::admin.orders_show.sale_discount') }}<span v-if="order.pricing.price_lists.length" class="font-mono text-xs"> ({{ order.pricing.price_lists.map((list) => list.code).join(', ') }})</span></dt>
                         <dd>-{{ money(order.pricing.markdown) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt>Tạm tính</dt>
+                        <dt>{{ t('ordering::admin.orders_show.subtotal') }}</dt>
                         <dd>{{ money(order.pricing.subtotal) }}</dd>
                     </div>
                     <div v-for="promotion in order.pricing.promotions" :key="promotion.promotion_id" class="flex justify-between text-slate-600">
-                        <dt>{{ promotion.voucher ? 'Mã giảm giá' : 'Khuyến mãi' }}: {{ promotion.name }}<span v-if="promotion.code" class="font-mono"> ({{ promotion.code }})</span></dt>
+                        <dt>{{ promotion.voucher ? t('ordering::admin.orders_show.discount_code') : t('ordering::admin.orders_show.promotion') }}: {{ promotion.name }}<span v-if="promotion.code" class="font-mono"> ({{ promotion.code }})</span></dt>
                         <dd>-{{ money(promotion.amount) }}</dd>
                     </div>
                     <div v-if="order.pricing.other_discount" class="flex justify-between text-slate-600">
-                        <dt>Giảm khác</dt>
+                        <dt>{{ t('ordering::admin.orders_show.other_discount') }}</dt>
                         <dd>-{{ money(order.pricing.other_discount) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt>Phí giao ({{ order.shippingMethod.label }})</dt>
+                        <dt>{{ t('ordering::admin.orders_show.shipping_fee_label', { label: order.shippingMethod.label }) }}</dt>
                         <dd>{{ money(order.amounts.shipping) }}</dd>
                     </div>
                     <div class="flex justify-between font-semibold">
-                        <dt>Tổng</dt>
+                        <dt>{{ t('ordering::admin.orders_show.total') }}</dt>
                         <dd>{{ money(order.amounts.total) }}</dd>
                     </div>
                     <div class="flex justify-between text-xs text-slate-500">
-                        <dt>Trong đó VAT</dt>
+                        <dt>{{ t('ordering::admin.orders_show.which_vat') }}</dt>
                         <dd>{{ money(order.amounts.tax) }}</dd>
                     </div>
                 </dl>
                 <details v-if="order.adjustments.length" class="border-t border-slate-100 px-4 py-2 text-xs text-slate-600">
-                    <summary class="cursor-pointer">Lịch sử điều chỉnh ({{ order.adjustments.length }})</summary>
+                    <summary class="cursor-pointer">{{ t('ordering::admin.orders_show.adjustment_history_count', { count: order.adjustments.length }) }}</summary>
                     <div v-for="(adjustment, index) in order.adjustments" :key="index" class="mt-1 flex justify-between">
                         <span>{{ adjustment.label }}<span v-if="adjustment.code" class="font-mono"> ({{ adjustment.code }})</span></span>
                         <span>{{ money(adjustment.amount) }}</span>
@@ -397,7 +398,7 @@ function addNote(): void {
             <ExtensionTabs :tabs="extensions.tabs" />
 
             <section class="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="mb-3 font-semibold">Lịch sử</h2>
+                <h2 class="mb-3 font-semibold">{{ t('ordering::admin.orders_show.history') }}</h2>
                 <ol class="space-y-2 text-sm">
                     <li v-for="item in history" :key="`${item.kind}-${item.order}`" class="border-l-2 pl-3" :class="item.kind === 'order' ? 'border-slate-200' : 'border-indigo-200'">
                         <template v-if="item.kind === 'order'">
@@ -421,15 +422,15 @@ function addNote(): void {
                     </li>
                 </ol>
                 <form v-if="can.note" class="mt-3 flex gap-2" @submit.prevent="addNote">
-                    <input v-model="noteForm.note" :class="inputClass" placeholder="Ghi chú nội bộ" />
-                    <button type="submit" :class="secondaryButton" :disabled="noteForm.processing">Thêm</button>
+                    <input v-model="noteForm.note" :class="inputClass" :placeholder="t('ordering::admin.orders_show.internal_note')" />
+                    <button type="submit" :class="secondaryButton" :disabled="noteForm.processing">{{ t('ordering::admin.orders_show.add') }}</button>
                 </form>
             </section>
         </div>
 
         <aside class="space-y-4">
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm" data-status-card>
-                <h2 class="mb-2 font-semibold">Trạng thái đơn</h2>
+                <h2 class="mb-2 font-semibold">{{ t('ordering::admin.orders_show.order_status') }}</h2>
                 <dl class="space-y-1.5">
                     <div v-for="row in statusCard.rows" :key="row.key" class="flex items-center justify-between gap-3">
                         <dt class="text-slate-500">{{ row.label }}</dt>
@@ -449,17 +450,17 @@ function addNote(): void {
                     </button>
                 </div>
                 <form v-if="canChangeStatus" class="mt-3 space-y-2 border-t border-slate-100 pt-3" data-status-change @submit.prevent="changeStatus">
-                    <FormField label="Đổi trạng thái đơn" :error="statusForm.errors.status">
-                        <Select v-model="statusForm.status" :options="statusOptions" empty-label="— Chọn trạng thái —" aria-label="Trạng thái mới" />
+                    <FormField :label="t('ordering::admin.orders_show.change_order_status')" :error="statusForm.errors.status">
+                        <Select v-model="statusForm.status" :options="statusOptions" :empty-label="t('ordering::admin.orders_show.choose_status')" :aria-label="t('ordering::admin.orders_show.new_status')" />
                     </FormField>
                     <p v-if="chosenStatus?.mode === 'forced'" class="rounded bg-amber-50 p-2 text-xs text-amber-800">
-                        Ngoài trình tự: bỏ qua các bước giữa, ghi vào lịch sử đơn.
-                        <template v-if="chosenStatus.value === 'completed'">Hàng coi như đã giao ngoài hệ thống — vận đơn còn mở bị huỷ, hàng đang giữ được trừ khỏi tồn kho.</template>
+                        {{ t('ordering::admin.orders_show.out_sequence_skips_intermediate_steps') }}
+                        <template v-if="chosenStatus.value === 'completed'">{{ t('ordering::admin.orders_show.goods_treated_delivered_outside_system') }}</template>
                     </p>
-                    <FormField label="Lý do (bắt buộc)" :error="statusForm.errors.reason">
-                        <input v-model="statusForm.reason" :class="inputClass" maxlength="255" required placeholder="vd. Khách đã nhận hàng tại cửa hàng" />
+                    <FormField :label="t('ordering::admin.orders_show.reason_required')" :error="statusForm.errors.reason">
+                        <input v-model="statusForm.reason" :class="inputClass" maxlength="255" required :placeholder="t('ordering::admin.orders_show.customer_picked_up_goods_store')" />
                     </FormField>
-                    <button type="submit" :class="primaryButton" :disabled="statusForm.processing || !statusForm.status || !statusForm.reason.trim()">Đổi trạng thái</button>
+                    <button type="submit" :class="primaryButton" :disabled="statusForm.processing || !statusForm.status || !statusForm.reason.trim()">{{ t('ordering::admin.orders_show.change_status') }}</button>
                 </form>
                 <ul v-if="statusCard.change.options.some((option) => option.blocked && option.value !== order.orderStatus)" class="mt-2 space-y-0.5 text-xs text-slate-400">
                     <template v-for="option in statusCard.change.options" :key="`blocked-${option.value}`">
@@ -469,7 +470,7 @@ function addNote(): void {
             </section>
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <div class="mb-2 flex items-center justify-between gap-2">
-                    <h2 class="font-semibold">Khách hàng</h2>
+                    <h2 class="font-semibold">{{ t('ordering::admin.orders_show.customers') }}</h2>
                     <StatusBadge v-if="customerFlag" :label="customerFlag.label" :tone="customerFlag.tone" />
                 </div>
                 <p>{{ order.customer.full_name }}</p>
@@ -477,26 +478,26 @@ function addNote(): void {
                 <p v-if="order.customer.email" class="text-slate-600">
                     {{ order.customer.email }}
                 </p>
-                <dl class="mt-2 grid grid-cols-4 gap-1 rounded bg-slate-50 p-2 text-center text-xs" aria-label="Lịch sử nhận hàng theo số điện thoại">
-                    <div><dt class="text-slate-500">Đơn trước</dt><dd class="font-semibold">{{ customerHistory.orders }}</dd></div>
-                    <div><dt class="text-slate-500">Đã nhận</dt><dd class="font-semibold text-emerald-700">{{ customerHistory.delivered }}</dd></div>
-                    <div><dt class="text-slate-500">Hoàn về</dt><dd class="font-semibold" :class="customerHistory.returned_to_sender ? 'text-red-600' : ''">{{ customerHistory.returned_to_sender }}</dd></div>
-                    <div><dt class="text-slate-500">Đã huỷ</dt><dd class="font-semibold">{{ customerHistory.cancelled }}</dd></div>
+                <dl class="mt-2 grid grid-cols-4 gap-1 rounded bg-slate-50 p-2 text-center text-xs" :aria-label="t('ordering::admin.orders_show.delivery_history_phone_number')">
+                    <div><dt class="text-slate-500">{{ t('ordering::admin.orders_show.previous_orders') }}</dt><dd class="font-semibold">{{ customerHistory.orders }}</dd></div>
+                    <div><dt class="text-slate-500">{{ t('ordering::admin.orders_show.received') }}</dt><dd class="font-semibold text-emerald-700">{{ customerHistory.delivered }}</dd></div>
+                    <div><dt class="text-slate-500">{{ t('ordering::admin.orders_show.returned_sender') }}</dt><dd class="font-semibold" :class="customerHistory.returned_to_sender ? 'text-red-600' : ''">{{ customerHistory.returned_to_sender }}</dd></div>
+                    <div><dt class="text-slate-500">{{ t('ordering::admin.orders_show.cancelled') }}</dt><dd class="font-semibold">{{ customerHistory.cancelled }}</dd></div>
                 </dl>
-                <Link v-if="customerHistory.orders" :href="customerHistory.orders_url" class="mt-1 inline-block text-xs text-indigo-600 hover:underline">Xem các đơn của SĐT này</Link>
-                <p v-if="order.note" class="mt-2 rounded bg-amber-50 p-2">Ghi chú của khách: {{ order.note }}</p>
+                <Link v-if="customerHistory.orders" :href="customerHistory.orders_url" class="mt-1 inline-block text-xs text-indigo-600 hover:underline">{{ t('ordering::admin.orders_show.view_phone_number_s_orders') }}</Link>
+                <p v-if="order.note" class="mt-2 rounded bg-amber-50 p-2">{{ t('ordering::admin.orders_show.customer_note_note', { note: order.note }) }}</p>
             </section>
 
             <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
                 <div class="mb-2 flex items-center justify-between">
-                    <h2 class="font-semibold">Giao đến</h2>
+                    <h2 class="font-semibold">{{ t('ordering::admin.orders_show.deliver') }}</h2>
                     <button
                         v-if="can.change_address && !editingAddress"
                         type="button"
                         class="text-xs text-indigo-600 hover:underline"
                         @click="editingAddress = true"
                     >
-                        Sửa
+                        {{ t('ordering::admin.orders_show.edit') }}
                     </button>
                 </div>
                 <template v-if="!editingAddress">
@@ -507,35 +508,35 @@ function addNote(): void {
                     </p>
                 </template>
                 <form v-else class="space-y-2" @submit.prevent="saveAddress">
-                    <FormField label="Số nhà, đường" :error="addressForm.errors.street_line"
+                    <FormField :label="t('ordering::admin.orders_show.house_number_street')" :error="addressForm.errors.street_line"
                         ><input v-model="addressForm.street_line" :class="inputClass"
                     /></FormField>
                     <template v-if="addressDirectory">
-                        <FormField label="Tỉnh/thành" for="order-province" :error="addressForm.errors.province_code">
-                            <Combobox id="order-province" v-model="addressForm.province_code" :options="provinceOptions" placeholder="Gõ để tìm tỉnh/thành" />
+                        <FormField :label="t('ordering::admin.orders_show.province_city')" for="order-province" :error="addressForm.errors.province_code">
+                            <Combobox id="order-province" v-model="addressForm.province_code" :options="provinceOptions" :placeholder="t('ordering::admin.orders_show.type_search_provinces_cities')" />
                         </FormField>
-                        <FormField label="Phường/xã" for="order-ward" :error="addressForm.errors.ward_code || (wardsError ? 'Không tải được danh sách phường/xã.' : undefined)">
-                            <Combobox id="order-ward" v-model="addressForm.ward_code" :options="wardOptions" placeholder="Gõ để tìm phường/xã" :disabled="!addressForm.province_code" />
+                        <FormField :label="t('ordering::admin.orders_show.ward')" for="order-ward" :error="addressForm.errors.ward_code || (wardsError ? t('ordering::admin.orders_show.could_not_load_list_wards') : undefined)">
+                            <Combobox id="order-ward" v-model="addressForm.ward_code" :options="wardOptions" :placeholder="t('ordering::admin.orders_show.type_search_wards')" :disabled="!addressForm.province_code" />
                         </FormField>
                     </template>
                     <template v-else>
-                        <FormField label="Phường/xã" :error="addressForm.errors.ward_name"
+                        <FormField :label="t('ordering::admin.orders_show.ward')" :error="addressForm.errors.ward_name"
                             ><input v-model="addressForm.ward_name" :class="inputClass"
                         /></FormField>
-                        <FormField label="Mã phường/xã" :error="addressForm.errors.ward_code"
+                        <FormField :label="t('ordering::admin.orders_show.ward_code')" :error="addressForm.errors.ward_code"
                             ><input v-model="addressForm.ward_code" :class="inputClass"
                         /></FormField>
-                        <FormField label="Tỉnh/thành" :error="addressForm.errors.province_name"
+                        <FormField :label="t('ordering::admin.orders_show.province_city')" :error="addressForm.errors.province_name"
                             ><input v-model="addressForm.province_name" :class="inputClass"
                         /></FormField>
-                        <FormField label="Mã tỉnh/thành" :error="addressForm.errors.province_code"
+                        <FormField :label="t('ordering::admin.orders_show.province_city_code')" :error="addressForm.errors.province_code"
                             ><input v-model="addressForm.province_code" :class="inputClass"
                         /></FormField>
                     </template>
-                    <FormField label="Lý do" :error="addressForm.errors.reason"><input v-model="addressForm.reason" :class="inputClass" /></FormField>
+                    <FormField :label="t('ordering::admin.orders_show.reason')" :error="addressForm.errors.reason"><input v-model="addressForm.reason" :class="inputClass" /></FormField>
                     <div class="flex gap-2">
-                        <button type="submit" :class="primaryButton" :disabled="addressForm.processing">Lưu</button>
-                        <button type="button" :class="secondaryButton" @click="editingAddress = false">Huỷ</button>
+                        <button type="submit" :class="primaryButton" :disabled="addressForm.processing">{{ t('ordering::admin.orders_show.save') }}</button>
+                        <button type="button" :class="secondaryButton" @click="editingAddress = false">{{ t('ordering::admin.orders_show.cancel') }}</button>
                     </div>
                 </form>
             </section>

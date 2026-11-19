@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
@@ -16,20 +17,20 @@ const props = defineProps<{
 }>();
 const baseUrl = computed(() => props.nav.find((item) => item.key === 'collections')?.url ?? '');
 const columns = [
-    { key: 'name', label: 'Tên', class: 'font-medium' },
+    { key: 'name', label: t('catalog::admin.collections_index.name'), class: 'font-medium' },
     { key: 'slug', label: 'Slug', class: 'text-slate-500' },
-    { key: 'styles_count', label: 'Sản phẩm' },
-    { key: 'status', label: 'Trạng thái' },
+    { key: 'styles_count', label: t('catalog::admin.collections_index.products') },
+    { key: 'status', label: t('catalog::admin.collections_index.status') },
 ];
 </script>
 
 <template>
-    <Head title="Bộ sưu tập" />
+    <Head :title="t('catalog::admin.collections_index.collections')" />
     <CatalogTabs :nav="nav" active="collections" />
-    <PageHeader title="Bộ sưu tập" subtitle="Tập hợp sản phẩm cho landing page, campaign.">
-        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm bộ sưu tập</Link>
+    <PageHeader :title="t('catalog::admin.collections_index.collections')" :subtitle="t('catalog::admin.collections_index.product_sets_landing_pages_campaigns')">
+        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('catalog::admin.collections_index.add_collection') }}</Link>
     </PageHeader>
-    <DataTable :columns="columns" :rows="collections" :row-label="(collection) => collection.slug" :row-click="canManage ? (collection) => router.visit(`${baseUrl}/${collection.id}/edit`) : undefined" empty-text="Chưa có bộ sưu tập nào.">
+    <DataTable :columns="columns" :rows="collections" :row-label="(collection) => collection.slug" :row-click="canManage ? (collection) => router.visit(`${baseUrl}/${collection.id}/edit`) : undefined" :empty-text="t('catalog::admin.collections_index.no_collections_yet')">
         <template #cell-slug="{ row }">/{{ row.slug }}</template>
         <template #cell-status="{ row }"><StatusBadge :label="labels.visibility[row.status] ?? row.status" :tone="row.status === 'active' ? 'success' : 'neutral'" /></template>
     </DataTable>

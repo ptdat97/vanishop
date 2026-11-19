@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.45 — 2026-11-19 · Extension API 1.11.0 (không đổi)
+
+ADR-049 đợt A3 (phần 2) — mọi trang Vue của Admin dùng khoá dịch. Không đổi API cho plugin.
+
+### Đổi (Admin)
+- Trang Vue của Catalog, Inventory, Ordering, Checkout (tạo đơn), Payment, Fulfillment, Returns, Pricing, Promotion, Customer, Extension, Storefront và plugin `vani.cms`, `vani.lookbook`, `vani.size-chart`, `vani.warehouse` dùng `t('<namespace>::admin.<trang>.<khoá>')`; bản dịch `resources/lang/{vi,en}/admin.php` (~1.550 câu). Chọn English ở dropdown là đổi toàn bộ giao diện Vue.
+- `vani.cms`: `kindLabels()` / `statusLabels()` thành hàm (tính theo ngôn ngữ lúc gọi).
+- `TranslationParams` nhận `null`/`undefined`/`boolean` (hiện như `{{ }}` của Vue).
+- Prop `adminI18n` ≈ 126 KB (vi, trước nén), gửi một lần mỗi ngôn ngữ/version.
+
 ## 0.5.44 — 2026-11-19 · Extension API 1.11.0 (không đổi)
 
 ADR-049 đợt A3 (phần 1). Không đổi API cho plugin.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -27,12 +28,12 @@ const status = ref(props.filters.status ?? '');
 const list = useListQuery(() => props.urls.base);
 const { form, save } = useAdminForm({ location_id: props.locations[0]?.id ?? null, note: '' }, { leaveGuard: false });
 const columns = [
-    { key: 'number', label: 'Phiên', class: 'font-mono' },
+    { key: 'number', label: t('inventory::admin.counts_index.session'), class: 'font-mono' },
     { key: 'location', label: 'Kho' },
-    { key: 'note', label: 'Ghi chú' },
-    { key: 'lines', label: 'SKU đã đếm', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'date', label: 'Ngày', class: 'whitespace-nowrap tabular-nums' },
+    { key: 'note', label: t('inventory::admin.counts_index.note') },
+    { key: 'lines', label: t('inventory::admin.counts_index.skus_counted'), align: 'right' as const, class: 'tabular-nums' },
+    { key: 'status', label: t('inventory::admin.counts_index.status') },
+    { key: 'date', label: t('inventory::admin.counts_index.date'), class: 'whitespace-nowrap tabular-nums' },
 ];
 
 function filter(page = 1): void {
@@ -41,22 +42,22 @@ function filter(page = 1): void {
 </script>
 
 <template>
-    <Head title="Kiểm kê" />
-    <PageHeader title="Kiểm kê" subtitle="Đếm trong lúc vẫn bán: chỉ phần chênh giữa số đếm và tồn lúc đếm được ghi khi áp dụng.">
-        <Link :href="urls.stock" :class="secondaryButton">Tồn kho</Link>
+    <Head :title="t('inventory::admin.counts_index.stock_counts')" />
+    <PageHeader :title="t('inventory::admin.counts_index.stock_counts')" :subtitle="t('inventory::admin.counts_index.count_while_still_selling_only')">
+        <Link :href="urls.stock" :class="secondaryButton">{{ t('inventory::admin.counts_index.inventory') }}</Link>
     </PageHeader>
 
     <form v-if="canManage && locations.length" class="mb-6 flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-start-count @submit.prevent="save('post', urls.store)">
-        <label class="w-64"><span class="mb-1 block font-medium">Kho</span><Select v-model="form.location_id" :options="recordOptions(locations)" aria-label="Kho kiểm kê" /></label>
-        <label class="min-w-64 flex-1"><span class="mb-1 block font-medium">Ghi chú (khu vực, kệ…)</span><input v-model="form.note" :class="inputClass" maxlength="500" /></label>
-        <button type="submit" :class="primaryButton" :disabled="form.processing">Bắt đầu kiểm kê</button>
+        <label class="w-64"><span class="mb-1 block font-medium">Kho</span><Select v-model="form.location_id" :options="recordOptions(locations)" :aria-label="t('inventory::admin.counts_index.warehouse_count')" /></label>
+        <label class="min-w-64 flex-1"><span class="mb-1 block font-medium">{{ t('inventory::admin.counts_index.note_area_shelf') }}</span><input v-model="form.note" :class="inputClass" maxlength="500" /></label>
+        <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('inventory::admin.counts_index.start_counting') }}</button>
     </form>
 
     <form class="mb-4 flex gap-2" @submit.prevent="filter()">
-        <div class="w-44"><Select v-model="status" :options="labelOptions(statusLabels)" empty-label="Mọi trạng thái" aria-label="Trạng thái" /></div>
-        <button type="submit" :class="secondaryButton">Lọc</button>
+        <div class="w-44"><Select v-model="status" :options="labelOptions(statusLabels)" :empty-label="t('inventory::admin.counts_index.all_statuses')" :aria-label="t('inventory::admin.counts_index.status')" /></div>
+        <button type="submit" :class="secondaryButton">{{ t('inventory::admin.counts_index.filter') }}</button>
     </form>
-    <DataTable :columns="columns" :rows="counts.data" :loading="list.loading.value" :row-label="(row) => row.number" :row-click="(row) => router.visit(`${urls.base}/${row.id}`)" empty-text="Chưa có phiên kiểm kê nào.">
+    <DataTable :columns="columns" :rows="counts.data" :loading="list.loading.value" :row-label="(row) => row.number" :row-click="(row) => router.visit(`${urls.base}/${row.id}`)" :empty-text="t('inventory::admin.counts_index.no_stock_count_sessions_yet')">
         <template #cell-note="{ row }">{{ row.note ?? '—' }}</template>
         <template #cell-status="{ row }">
             <StatusBadge :label="statusLabels[row.status] ?? row.status" :tone="row.status === 'applied' ? 'success' : row.status === 'counting' ? 'warning' : 'neutral'" />

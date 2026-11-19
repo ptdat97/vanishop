@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FileInput from '@admin/Components/FileInput.vue';
@@ -104,12 +105,12 @@ const options = (values: string[] | Record<string, string>, labels: Record<strin
 const totalCount = computed(() => Object.values(props.stageCounts).reduce((sum, count) => sum + count, 0));
 const hasActiveFilters = computed(() => Object.values(form).some((value) => value !== '') || Object.values(ext).some((value) => value !== ''));
 const columns = [
-    { key: 'number', label: 'Đơn', sortable: true },
-    { key: 'customer', label: 'Khách' },
-    { key: 'items', label: 'Sản phẩm' },
-    { key: 'total', label: 'Tổng', align: 'right' as const, sortable: true },
-    { key: 'stage', label: 'Giai đoạn' },
-    { key: 'payment_status', label: 'Thanh toán' },
+    { key: 'number', label: t('ordering::admin.orders_index.order'), sortable: true },
+    { key: 'customer', label: t('ordering::admin.orders_index.customer') },
+    { key: 'items', label: t('ordering::admin.orders_index.products') },
+    { key: 'total', label: t('ordering::admin.orders_index.total'), align: 'right' as const, sortable: true },
+    { key: 'stage', label: t('ordering::admin.orders_index.stage') },
+    { key: 'payment_status', label: t('ordering::admin.orders_index.payment') },
 ];
 
 const list = useListQuery(() => props.baseUrl);
@@ -173,7 +174,7 @@ function clearFilters(): void {
 /** Tuổi đơn: đơn cần xử lý để lâu đổi màu (quá 24 giờ: cam, quá 48 giờ: đỏ). */
 function ageText(hours: number | null): string {
     if (hours === null) return '';
-    return hours < 24 ? `${hours} giờ` : `${Math.floor(hours / 24)} ngày`;
+    return hours < 24 ? t('ordering::admin.orders_index.hours_hours', { hours }) : t('ordering::admin.orders_index.hours_days', { hours: Math.floor(hours / 24) });
 }
 function ageClass(row: { age_hours: number | null; stage: string }): string {
     if (row.age_hours === null || !props.actionableStages.includes(row.stage)) return 'text-slate-400';
@@ -182,12 +183,12 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
 </script>
 
 <template>
-    <Head title="Đơn hàng" />
-    <p class="mb-2 text-sm text-slate-500">Đơn hàng</p>
-    <PageHeader title="Đơn hàng" :subtitle="`${pagination.total} đơn`">
-        <a :href="exportHref('orders')" :class="secondaryButton" data-export="orders">Xuất Excel</a>
-        <a :href="exportHref('lines')" :class="secondaryButton" data-export="lines">Xuất theo dòng SKU</a>
-        <Link v-if="createUrl" :href="createUrl" :class="primaryButton" data-create-order>Tạo đơn</Link>
+    <Head :title="t('ordering::admin.orders_index.orders')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('ordering::admin.orders_index.orders') }}</p>
+    <PageHeader :title="t('ordering::admin.orders_index.orders')" :subtitle="t('ordering::admin.orders_index.total_orders', { total: pagination.total })">
+        <a :href="exportHref('orders')" :class="secondaryButton" data-export="orders">{{ t('ordering::admin.orders_index.export_excel') }}</a>
+        <a :href="exportHref('lines')" :class="secondaryButton" data-export="lines">{{ t('ordering::admin.orders_index.export_sku_line') }}</a>
+        <Link v-if="createUrl" :href="createUrl" :class="primaryButton" data-create-order>{{ t('ordering::admin.orders_index.create_order') }}</Link>
         <button v-for="tool in tools" :key="tool.key" type="button" :class="secondaryButton" :aria-expanded="openTool === tool.key" @click="toggleTool(tool.key)">
             {{ tool.label }}
         </button>
@@ -212,7 +213,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         <li v-for="message in importErrors" :key="message">{{ message }}</li>
     </ul>
 
-    <nav class="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200 text-sm" aria-label="Hàng đợi đơn">
+    <nav class="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200 text-sm" :aria-label="t('ordering::admin.orders_index.order_queue')">
         <button
             type="button"
             class="shrink-0 border-b-2 px-3 py-2"
@@ -220,7 +221,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             :aria-current="form.stage === '' ? 'page' : undefined"
             @click="openStage('')"
         >
-            Tất cả <span class="text-xs text-slate-400">{{ totalCount }}</span>
+            {{ t('ordering::admin.orders_index.all') }} <span class="text-xs text-slate-400">{{ totalCount }}</span>
         </button>
         <button
             type="button"
@@ -229,7 +230,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             :aria-pressed="form.actionable === '1'"
             @click="toggleActionable"
         >
-            Cần xử lý <span class="text-xs text-slate-400">{{ actionableStages.reduce((sum, stage) => sum + (stageCounts[stage] ?? 0), 0) }}</span>
+            {{ t('ordering::admin.orders_index.needs_action') }} <span class="text-xs text-slate-400">{{ actionableStages.reduce((sum, stage) => sum + (stageCounts[stage] ?? 0), 0) }}</span>
         </button>
         <button
             v-for="stage in stages"
@@ -256,37 +257,37 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
             :aria-pressed="form.aged === '24'"
             @click="toggleAgedQueue"
         >
-            Quá 24 giờ <span class="text-xs text-slate-400">{{ agedCount }}</span>
+            {{ t('ordering::admin.orders_index.over_24_hours') }} <span class="text-xs text-slate-400">{{ agedCount }}</span>
         </button>
     </nav>
 
     <p v-if="form.aged" class="mb-3 flex items-center justify-between rounded bg-red-50 px-3 py-2 text-sm text-red-800" data-aged-filter>
-        Đang xem đơn chưa xác nhận hoặc chưa giao hãng, đặt quá {{ form.aged }} giờ.
-        <button type="button" class="underline" @click="clearAged">Bỏ lọc</button>
+        {{ t('ordering::admin.orders_index.showing_orders_not_yet_confirmed', { aged: form.aged }) }}
+        <button type="button" class="underline" @click="clearAged">{{ t('ordering::admin.orders_index.clear_filter') }}</button>
     </p>
     <form class="mb-4 space-y-2" @submit.prevent="search()">
         <div class="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-            <input v-model="form.q" :class="inputClass" placeholder="Số đơn hoặc SĐT" aria-label="Tìm đơn" />
-            <button type="button" :class="secondaryButton" :aria-expanded="moreFilters" @click="moreFilters = !moreFilters">Bộ lọc</button>
-            <button type="submit" :class="primaryButton">Lọc</button>
-            <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ tất cả bộ lọc</button>
+            <input v-model="form.q" :class="inputClass" :placeholder="t('ordering::admin.orders_index.order_number_phone')" :aria-label="t('ordering::admin.orders_index.search_orders')" />
+            <button type="button" :class="secondaryButton" :aria-expanded="moreFilters" @click="moreFilters = !moreFilters">{{ t('ordering::admin.orders_index.filters') }}</button>
+            <button type="submit" :class="primaryButton">{{ t('ordering::admin.orders_index.filter') }}</button>
+            <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">{{ t('ordering::admin.orders_index.clear_all_filters') }}</button>
         </div>
         <div v-if="moreFilters" class="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-            <Select v-model="form.payment_method" :options="options(labels.payment_method, labels.payment_method)" empty-label="Mọi cách thanh toán" aria-label="Cách thanh toán" />
-            <Select v-model="form.payment_status" :options="options(paymentStatuses, labels.payment_status)" empty-label="Mọi trạng thái thanh toán" aria-label="Trạng thái thanh toán" />
-            <Select v-model="form.source" :options="options(labels.source, labels.source)" empty-label="Mọi nguồn đơn" aria-label="Nguồn đơn" />
-            <Select v-model="form.status" :options="options(statuses, labels.order_status)" empty-label="Mọi trạng thái đơn" aria-label="Trạng thái đơn" />
-            <DateInput v-model="form.from" aria-label="Đặt từ ngày" />
-            <DateInput v-model="form.to" aria-label="Đặt đến ngày" />
+            <Select v-model="form.payment_method" :options="options(labels.payment_method, labels.payment_method)" :empty-label="t('ordering::admin.orders_index.all_payment_methods')" :aria-label="t('ordering::admin.orders_index.payment_method')" />
+            <Select v-model="form.payment_status" :options="options(paymentStatuses, labels.payment_status)" :empty-label="t('ordering::admin.orders_index.all_payment_statuses')" :aria-label="t('ordering::admin.orders_index.payment_status')" />
+            <Select v-model="form.source" :options="options(labels.source, labels.source)" :empty-label="t('ordering::admin.orders_index.all_order_sources')" :aria-label="t('ordering::admin.orders_index.order_source')" />
+            <Select v-model="form.status" :options="options(statuses, labels.order_status)" :empty-label="t('ordering::admin.orders_index.all_order_statuses')" :aria-label="t('ordering::admin.orders_index.order_status')" />
+            <DateInput v-model="form.from" :aria-label="t('ordering::admin.orders_index.placed_from')" />
+            <DateInput v-model="form.to" :aria-label="t('ordering::admin.orders_index.placed')" />
         </div>
     </form>
 
     <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
-        <span class="text-slate-500">Đã chọn {{ selected.length }} đơn trên trang hiện tại</span>
-        <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="đơn trên trang hiện tại" />
+        <span class="text-slate-500">{{ t('ordering::admin.orders_index.count_orders_current_page_selected', { count: selected.length }) }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('ordering::admin.orders_index.orders_current_page')" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :row-label="(order) => order.number" :row-click="openOrder" empty-text="Không có đơn nào.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="orders" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :row-label="(order) => order.number" :row-click="openOrder" :empty-text="t('ordering::admin.orders_index.no_orders')">
         <template #cell-number="{ row }">
             <span class="font-mono">{{ row.number }}</span>
             <div class="text-xs text-slate-400">{{ row.placed_at }}</div>
@@ -302,7 +303,7 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
         </template>
         <template #cell-items="{ row }">
             <div v-for="item in row.items.slice(0, 2)" :key="item.sku" class="font-mono text-xs">{{ item.sku }} × {{ item.quantity }}</div>
-            <div v-if="row.items.length > 2" class="text-xs text-slate-400">+{{ row.items.length - 2 }} sản phẩm</div>
+            <div v-if="row.items.length > 2" class="text-xs text-slate-400">{{ t('ordering::admin.orders_index.items_products', { items: row.items.length - 2 }) }}</div>
         </template>
         <template #cell-total="{ row }"><MoneyText :amount="row.total" /></template>
         <template #cell-stage="{ row }">

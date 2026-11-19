@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DateInput from '@admin/Components/DateInput.vue';
 import InsightView from '@admin/Components/Insights/InsightView.vue';
 import type { MetricData, SeriesData, TableData } from '@admin/Components/Insights/types';
@@ -47,7 +48,7 @@ function choose(preset: string): void {
 <template>
     <Head :title="report.label" />
     <PageHeader :title="report.label" :subtitle="report.description">
-        <a v-if="result" :class="secondaryButton" :href="`${baseUrl}/export?${query}`">Xuất CSV</a>
+        <a v-if="result" :class="secondaryButton" :href="`${baseUrl}/export?${query}`">{{ t('extension::admin.reports_show.export_csv') }}</a>
     </PageHeader>
 
     <div class="mb-6 flex flex-wrap items-center gap-2">
@@ -60,9 +61,9 @@ function choose(preset: string): void {
         >
             {{ label }}
         </button>
-        <div class="w-40"><DateInput v-model="start" aria-label="Từ ngày" /></div>
+        <div class="w-40"><DateInput v-model="start" :aria-label="t('extension::admin.reports_show.from_date')" /></div>
         <span class="text-slate-400">→</span>
-        <div class="w-40"><DateInput v-model="end" aria-label="Đến ngày" /></div>
+        <div class="w-40"><DateInput v-model="end" :aria-label="t('extension::admin.reports_show.date')" /></div>
         <button :class="[secondaryButton, period.preset === 'custom' ? 'border-indigo-500 text-red-700' : '']" @click="choose('custom')">Xem</button>
         <span v-if="errors.period" class="text-sm text-red-600">{{ errors.period }}</span>
     </div>
@@ -86,5 +87,5 @@ function choose(preset: string): void {
             <InsightView :data="result.table" />
         </section>
     </template>
-    <p v-else class="text-sm text-red-600">Báo cáo tạm thời không chạy được (đã ghi log). Thử lại sau hoặc kiểm tra plugin cung cấp báo cáo.</p>
+    <p v-else class="text-sm text-red-600">{{ t('extension::admin.reports_show.report_cannot_run_right_now') }}</p>
 </template>

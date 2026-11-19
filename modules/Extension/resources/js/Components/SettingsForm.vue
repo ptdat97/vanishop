@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import Select from '@admin/Components/Select.vue';
@@ -29,8 +30,8 @@ const { form, save } = useAdminForm({
     values: Object.fromEntries(props.fields.map((field) => [field.key, toInput(field)])) as Record<string, string>,
 });
 const booleanOptions = [
-    { value: '1', label: 'Có' },
-    { value: '0', label: 'Không' },
+    { value: '1', label: t('extension::admin.settings_form.yes') },
+    { value: '0', label: t('extension::admin.settings_form.no') },
 ];
 const display = (value: unknown): string => (value === null || value === undefined || value === '' ? '—' : String(value));
 
@@ -56,10 +57,10 @@ function submit(): void {
                     v-if="field.type === 'select' || field.type === 'bool'"
                     v-model="form.values[field.key]"
                     :options="field.type === 'bool' ? booleanOptions : labelOptions(field.options)"
-                    empty-label="(mặc định)"
+                    :empty-label="t('extension::admin.settings_form.default')"
                     :aria-label="field.label"
                 />
-                <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" placeholder="(mặc định)" />
+                <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" :placeholder="t('extension::admin.settings_form.default')" />
                 <MediaField
                     v-else-if="field.type === 'media'"
                     :model-value="form.values[field.key] ? Number(form.values[field.key]) : null"
@@ -70,16 +71,16 @@ function submit(): void {
                     v-model="form.values[field.key]"
                     :type="field.type === 'secret' ? 'password' : field.type === 'int' ? 'number' : 'text'"
                     :class="inputClass"
-                    :placeholder="field.type === 'secret' ? (field.is_set ? 'Đã đặt — để trống để giữ nguyên' : 'Chưa đặt') : '(mặc định)'"
+                    :placeholder="field.type === 'secret' ? (field.is_set ? t('extension::admin.settings_form.set_leave_empty_keep') : t('extension::admin.settings_form.not_set')) : t('extension::admin.settings_form.default')"
                     autocomplete="off"
                 />
                 <p v-if="form.errors[`values.${field.key}`]" class="text-xs text-red-600">{{ form.errors[`values.${field.key}`] }}</p>
             </div>
             <div v-if="field.type !== 'secret'" class="text-xs text-slate-500">
-                Hiệu lực: <strong>{{ display(field.effective) }}</strong>
+                {{ t('extension::admin.settings_form.effective') }} <strong>{{ display(field.effective) }}</strong>
             </div>
         </div>
-        <p v-if="!fields.length" class="text-slate-500">Không có cấu hình nào.</p>
-        <button v-if="fields.length" type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
+        <p v-if="!fields.length" class="text-slate-500">{{ t('extension::admin.settings_form.no_settings') }}</p>
+        <button v-if="fields.length" type="submit" :class="primaryButton" :disabled="form.processing">{{ t('extension::admin.settings_form.save') }}</button>
     </form>
 </template>

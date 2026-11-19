@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -38,9 +39,9 @@ const isMainBase = computed(() => props.priceList?.code === 'base' && props.pric
 /** Bảng loại niêm yết thừa (dữ liệu cũ, mã khác `base`): phải chọn lại Sale hoặc Thành viên. */
 const needsType = computed(() => props.priceList !== null && props.priceList.type === 'base' && !isMainBase.value);
 const typeHelp: Record<string, string> = {
-    sale: 'Giá giảm theo đợt (sale cuối mùa, 11.11…) cho mọi khách.',
-    member: 'Giá riêng cho một nhóm khách (VIP, thành viên…).',
-    base: 'Giá bán thường của cửa hàng — sửa giá ở sản phẩm.',
+    sale: t('pricing::admin.price_lists_form.time_limited_discounted_prices_end'),
+    member: t('pricing::admin.price_lists_form.special_prices_customer_group_vip'),
+    base: t('pricing::admin.price_lists_form.store_s_regular_selling_price'),
 };
 
 const { form, save } = useAdminForm(
@@ -68,56 +69,56 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.priceList && (await confirmAction({ title: 'Xoá bảng giá?', message: 'Toàn bộ giá trong bảng cũng bị xoá.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.priceList && (await confirmAction({ title: t('pricing::admin.price_lists_form.delete_price_list'), message: t('pricing::admin.price_lists_form.all_prices_list_deleted_too'), confirmLabel: t('pricing::admin.price_lists_form.delete'), tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.priceList.id}`);
     }
 }
 </script>
 
 <template>
-    <Head :title="priceList ? 'Thông tin bảng giá' : 'Thêm bảng giá'" />
-    <PageHeader :title="priceList ? `Thông tin bảng giá: ${priceList.name}` : 'Thêm bảng giá'">
-        <Link :href="priceList ? `${baseUrl}/${priceList.id}/prices` : baseUrl" :class="secondaryButton">{{ priceList ? 'Về trang giá' : 'Quay lại' }}</Link>
-        <button v-if="priceList && !isMainBase" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+    <Head :title="priceList ? t('pricing::admin.price_lists_form.price_list_details') : t('pricing::admin.price_lists_form.add_price_list')" />
+    <PageHeader :title="priceList ? t('pricing::admin.price_lists_form.price_list_details_name', { name: priceList.name }) : t('pricing::admin.price_lists_form.add_price_list')">
+        <Link :href="priceList ? `${baseUrl}/${priceList.id}/prices` : baseUrl" :class="secondaryButton">{{ priceList ? t('pricing::admin.price_lists_form.back_prices') : t('pricing::admin.price_lists_form.back') }}</Link>
+        <button v-if="priceList && !isMainBase" type="button" :class="dangerButton" @click="destroy">{{ t('pricing::admin.price_lists_form.delete') }}</button>
     </PageHeader>
 
     <div v-if="needsType" class="mb-4 max-w-3xl rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-needs-type>
-        Cửa hàng chỉ có một bảng giá niêm yết (mã <span class="font-mono">base</span>). Bảng này đang là loại niêm yết thừa — chọn <strong>Sale</strong> hoặc
-        <strong>Thành viên</strong> rồi Lưu, hoặc Xoá nếu không dùng.
+        {{ t('pricing::admin.price_lists_form.store_has_only_one_list') }} <span class="font-mono">base</span>{{ t('pricing::admin.price_lists_form.list_surplus_list_price_type') }} <strong>Sale</strong> {{ t('pricing::admin.price_lists_form.text') }}
+        <strong>{{ t('pricing::admin.price_lists_form.member') }}</strong> {{ t('pricing::admin.price_lists_form.then_save_delete_if_unused') }}
     </div>
 
     <form class="grid max-w-3xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">
-        <FormField label="Loại" class="sm:col-span-2" :error="form.errors.type">
+        <FormField :label="t('pricing::admin.price_lists_form.type')" class="sm:col-span-2" :error="form.errors.type">
             <div v-if="isMainBase" class="text-sm text-slate-600">{{ labels.price_list_type.base }} — {{ typeHelp.base }}</div>
-            <div v-else class="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Loại bảng giá">
+            <div v-else class="grid gap-2 sm:grid-cols-2" role="radiogroup" :aria-label="t('pricing::admin.price_lists_form.price_list_type')">
                 <label v-for="type in types" :key="type" class="flex cursor-pointer gap-2 rounded-md border p-3 text-sm" :class="form.type === type ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
                     <input v-model="form.type" type="radio" :value="type" class="mt-0.5" />
-                    <span><span class="font-medium">{{ type === 'sale' ? 'Sale' : 'Thành viên' }}</span><span class="block text-xs text-slate-500">{{ typeHelp[type] }}</span></span>
+                    <span><span class="font-medium">{{ type === 'sale' ? 'Sale' : t('pricing::admin.price_lists_form.member') }}</span><span class="block text-xs text-slate-500">{{ typeHelp[type] }}</span></span>
                 </label>
             </div>
         </FormField>
-        <FormField v-if="form.type === 'member'" label="Nhóm khách" class="sm:col-span-2" hint="Khách thuộc nhóm này thấy giá trong bảng khi đăng nhập." :error="form.errors.customer_group_id">
-            <Select v-model="form.customer_group_id" :options="recordOptions(customerGroups, (group) => group.name)" empty-label="— Chọn nhóm khách —" :empty-value="null" />
+        <FormField v-if="form.type === 'member'" :label="t('pricing::admin.price_lists_form.customer_groups')" class="sm:col-span-2" :hint="t('pricing::admin.price_lists_form.customers_group_see_these_prices')" :error="form.errors.customer_group_id">
+            <Select v-model="form.customer_group_id" :options="recordOptions(customerGroups, (group) => group.name)" :empty-label="t('pricing::admin.price_lists_form.choose_customer_group')" :empty-value="null" />
         </FormField>
-        <FormField label="Tên" class="sm:col-span-2" :error="form.errors.name"><input v-model="form.name" :class="inputClass" placeholder="vd. Sale cuối mùa 12/2026" aria-label="Tên bảng giá" /></FormField>
-        <FormField label="Bắt đầu" hint="Để trống = chạy ngay" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
-        <FormField label="Kết thúc" hint="Để trống = không hết hạn" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
-        <FormField v-if="priceList" label="Đang dùng" :error="form.errors.status">
-            <label class="flex items-center gap-2 text-sm"><input v-model="form.status" type="checkbox" true-value="active" false-value="inactive" /> {{ form.status === 'active' ? 'Bật' : 'Tắt — khách không thấy giá trong bảng này' }}</label>
+        <FormField :label="t('pricing::admin.price_lists_form.name')" class="sm:col-span-2" :error="form.errors.name"><input v-model="form.name" :class="inputClass" :placeholder="t('pricing::admin.price_lists_form.end_season_sale_12_2026')" :aria-label="t('pricing::admin.price_lists_form.price_list_name')" /></FormField>
+        <FormField :label="t('pricing::admin.price_lists_form.started')" :hint="t('pricing::admin.price_lists_form.leave_empty_starts_now')" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
+        <FormField :label="t('pricing::admin.price_lists_form.ends')" :hint="t('pricing::admin.price_lists_form.leave_empty_never_expires')" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
+        <FormField v-if="priceList" :label="t('pricing::admin.price_lists_form.use')" :error="form.errors.status">
+            <label class="flex items-center gap-2 text-sm"><input v-model="form.status" type="checkbox" true-value="active" false-value="inactive" /> {{ form.status === 'active' ? t('pricing::admin.price_lists_form.enable') : t('pricing::admin.price_lists_form.off_customers_do_not_see') }}</label>
         </FormField>
 
         <details class="sm:col-span-2 text-sm" :open="advanced">
-            <summary class="cursor-pointer text-slate-500">Nâng cao (mã, độ ưu tiên)</summary>
+            <summary class="cursor-pointer text-slate-500">{{ t('pricing::admin.price_lists_form.advanced_code_priority') }}</summary>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                <FormField label="Mã" :hint="priceList ? 'Chữ thường, số, _ -.' : 'Để trống = tự sinh từ tên.'" :error="form.errors.code">
+                <FormField :label="t('pricing::admin.price_lists_form.code')" :hint="priceList ? t('pricing::admin.price_lists_form.lowercase_letters_digits') : t('pricing::admin.price_lists_form.leave_empty_generated_from_name')" :error="form.errors.code">
                     <input v-model="form.code" :class="inputClass" :disabled="isMainBase" />
                 </FormField>
-                <FormField label="Độ ưu tiên" :hint="`Bảng cao hơn thắng khi một SKU có nhiều giá. Để trống = ${defaultPriorities[form.type] ?? 10}.`" :error="form.errors.priority">
+                <FormField :label="t('pricing::admin.price_lists_form.priority')" :hint="t('pricing::admin.price_lists_form.higher_list_wins_when_sku', { type: defaultPriorities[form.type] ?? 10 })" :error="form.errors.priority">
                     <input v-model.number="form.priority" :class="inputClass" type="number" />
                 </FormField>
             </div>
         </details>
 
-        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ priceList ? 'Lưu' : 'Tạo bảng giá' }}</button></div>
+        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ priceList ? t('pricing::admin.price_lists_form.save') : t('pricing::admin.price_lists_form.create_price_list') }}</button></div>
     </form>
 </template>

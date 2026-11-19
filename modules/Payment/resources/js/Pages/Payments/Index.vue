@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import Dialog from '@admin/Components/Dialog.vue';
@@ -56,11 +57,11 @@ const label = (status: string): string => props.labels.payment_status[status] ??
 const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' =>
     (({ pending: 'warning', authorized: 'info', paid: 'success', failed: 'danger', expired: 'danger' }) as const)[status as 'pending'] ?? 'neutral';
 const columns = [
-    { key: 'order_number', label: 'Đơn', class: 'font-mono' },
-    { key: 'gateway', label: 'Phương thức' },
-    { key: 'amount', label: 'Số tiền', sortable: true },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs', sortable: true },
+    { key: 'order_number', label: t('payment::admin.payments_index.order'), class: 'font-mono' },
+    { key: 'gateway', label: t('payment::admin.payments_index.method') },
+    { key: 'amount', label: t('payment::admin.payments_index.amount'), sortable: true },
+    { key: 'status', label: t('payment::admin.payments_index.status') },
+    { key: 'created_at', label: t('payment::admin.payments_index.created'), class: 'text-xs', sortable: true },
     { key: 'actions', label: '', align: 'right' as const },
 ];
 const refunding = ref<null | { id: number; max: number }>(null);
@@ -87,10 +88,10 @@ function hasActions(row: Props['payments'][number]): boolean {
 
 function hint(row: Props['payments'][number]): string | null {
     if (row.status === 'pending' && !row.can_confirm && !row.can_collect) {
-        return 'Chờ khách thanh toán qua cổng';
+        return t('payment::admin.payments_index.waiting_customer_pay_via_gateway');
     }
     if (row.status === 'authorized') {
-        return 'Tự thu khi vận đơn rời kho';
+        return t('payment::admin.payments_index.collected_automatically_when_shipment_leaves');
     }
 
     return null;
@@ -106,10 +107,10 @@ function changePageSize(perPage: number): void {
 
 async function collectPayment(row: { id: number; amount: number }): Promise<void> {
     const note = await confirmAction({
-        title: 'Ghi nhận đã thu tiền khi giao?',
-        message: 'Dùng khi shop tự giao hoặc hãng vận chuyển chưa báo giao thành công. Hãng báo sau đó sẽ không ghi nhận lần hai.',
-        confirmLabel: 'Đã thu tiền',
-        reason: { label: 'Ghi chú', placeholder: 'vd. shipper shop đã nộp tiền', required: true },
+        title: t('payment::admin.payments_index.record_cash_collected_delivery'),
+        message: t('payment::admin.payments_index.use_when_store_delivers_itself'),
+        confirmLabel: t('payment::admin.payments_index.cash_collected'),
+        reason: { label: t('payment::admin.payments_index.note'), placeholder: t('payment::admin.payments_index.store_courier_handed_cash'), required: true },
     });
     if (note !== false) {
         router.post(`${props.baseUrl}/${row.id}/collect`, { note }, { preserveScroll: true });
@@ -117,13 +118,13 @@ async function collectPayment(row: { id: number; amount: number }): Promise<void
 }
 
 async function capturePayment(id: number): Promise<void> {
-    if ((await confirmAction({ title: 'Thu khoản đã giữ tiền này?', confirmLabel: 'Thu tiền' })) !== false) {
+    if ((await confirmAction({ title: t('payment::admin.payments_index.capture_authorised_payment'), confirmLabel: t('payment::admin.payments_index.capture') })) !== false) {
         router.post(`${props.baseUrl}/${id}/capture`, {}, { preserveScroll: true });
     }
 }
 
 async function confirmPayment(id: number): Promise<void> {
-    const note = await confirmAction({ title: 'Xác nhận đã nhận tiền?', confirmLabel: 'Xác nhận', reason: { label: 'Ghi chú xác nhận', placeholder: 'vd. mã giao dịch ngân hàng', required: true } });
+    const note = await confirmAction({ title: t('payment::admin.payments_index.confirm_money_was_received'), confirmLabel: t('payment::admin.payments_index.confirmed'), reason: { label: t('payment::admin.payments_index.confirmation_note'), placeholder: t('payment::admin.payments_index.bank_transaction_id'), required: true } });
     if (note !== false) {
         router.post(`${props.baseUrl}/${id}/confirm`, { note }, { preserveScroll: true });
     }
@@ -143,20 +144,20 @@ function submitRefund(): void {
 }
 
 async function payout(id: number, channel: { code: string; label: string }): Promise<void> {
-    if ((await confirmAction({ title: `Chuyển trả khoản hoàn qua ${channel.label}?`, confirmLabel: 'Chuyển trả' })) !== false) {
+    if ((await confirmAction({ title: t('payment::admin.payments_index.pay_out_refund_via_label', { label: channel.label }), confirmLabel: t('payment::admin.payments_index.pay_out') })) !== false) {
         router.post(props.baseUrl.replace(/\/payments$/, `/refunds/${id}/payout/${channel.code}`), {}, { preserveScroll: true });
     }
 }
 
 async function resolveEntry(id: number): Promise<void> {
-    const note = await confirmAction({ title: 'Đánh dấu đã xử lý dòng đối soát?', confirmLabel: 'Đã xử lý', reason: { label: 'Cách xử lý', placeholder: 'vd. khách chuyển thiếu, đã gọi bổ sung', required: true } });
+    const note = await confirmAction({ title: t('payment::admin.payments_index.mark_reconciliation_line_resolved'), confirmLabel: t('payment::admin.payments_index.resolved'), reason: { label: t('payment::admin.payments_index.resolution'), placeholder: t('payment::admin.payments_index.customer_underpaid_called_top_up'), required: true } });
     if (note !== false) {
         router.post(props.baseUrl.replace(/\/payments$/, `/reconciliation/${id}/resolve`), { note }, { preserveScroll: true });
     }
 }
 
 async function completeRefund(id: number): Promise<void> {
-    const note = await confirmAction({ title: 'Đã chuyển trả tiền cho khách?', confirmLabel: 'Đã chuyển trả', reason: { label: 'Ghi chú', placeholder: 'vd. mã giao dịch chuyển trả', required: true } });
+    const note = await confirmAction({ title: t('payment::admin.payments_index.refund_paid_customer'), confirmLabel: t('payment::admin.payments_index.refund_paid'), reason: { label: t('payment::admin.payments_index.note'), placeholder: t('payment::admin.payments_index.refund_transfer_transaction_id'), required: true } });
     if (note !== false) {
         router.post(props.baseUrl.replace(/\/payments$/, `/refunds/${id}/complete`), { note }, { preserveScroll: true });
     }
@@ -164,91 +165,91 @@ async function completeRefund(id: number): Promise<void> {
 </script>
 
 <template>
-    <Head title="Thanh toán" />
-    <p class="mb-2 text-sm text-slate-500">Thanh toán</p>
-    <PageHeader title="Thanh toán" subtitle="Xác nhận chuyển khoản, ghi nhận đã thu COD, hoàn tiền. Tổng hoàn không vượt số đã thu." />
+    <Head :title="t('payment::admin.payments_index.payment')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('payment::admin.payments_index.payment') }}</p>
+    <PageHeader :title="t('payment::admin.payments_index.payment')" :subtitle="t('payment::admin.payments_index.confirm_bank_transfers_record_cod')" />
     <ExtensionTools :tools="extensions.tools ?? []" />
 
     <form class="mb-3 flex max-w-md gap-2" @submit.prevent="filter(status ?? '')">
-        <input v-model="search" :class="inputClass" type="search" placeholder="Tìm theo số đơn, vd. VN2611-000006" />
+        <input v-model="search" :class="inputClass" type="search" :placeholder="t('payment::admin.payments_index.search_order_number_vn2611_000006')" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="secondaryButton">Tìm</button>
+        <button type="submit" :class="secondaryButton">{{ t('payment::admin.payments_index.search') }}</button>
     </form>
 
     <div class="mb-4 flex flex-wrap gap-2">
-        <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">Tất cả</button>
+        <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">{{ t('payment::admin.payments_index.all') }}</button>
         <button v-for="value in statuses" :key="value" type="button" :class="status === value ? primaryButton : secondaryButton" @click="filter(value)">{{ label(value) }}</button>
     </div>
 
     <section v-if="reconciliation.length" class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4" data-reconciliation>
-        <h2 class="mb-2 font-semibold">Đối soát lệch</h2>
+        <h2 class="mb-2 font-semibold">{{ t('payment::admin.payments_index.reconciliation_mismatches') }}</h2>
         <div v-for="entry in reconciliation" :key="entry.id" class="flex items-center justify-between gap-3 border-t border-amber-100 py-2 text-sm">
             <span>
                 <span class="font-mono text-xs">{{ entry.reference }}</span> · {{ entry.note }}
-                <template v-if="entry.expected !== null"> · cần <MoneyText :amount="entry.expected" /></template>
-                <template v-if="entry.actual !== null"> · nhận <MoneyText :amount="entry.actual" /></template>
+                <template v-if="entry.expected !== null"> {{ t('payment::admin.payments_index.expected') }} <MoneyText :amount="entry.expected" /></template>
+                <template v-if="entry.actual !== null"> {{ t('payment::admin.payments_index.received') }} <MoneyText :amount="entry.actual" /></template>
                 <span class="text-xs text-slate-500"> · {{ entry.source }}</span>
             </span>
-            <button v-if="can.confirm" type="button" class="text-indigo-600 hover:underline" @click="resolveEntry(entry.id)">Đã xử lý</button>
+            <button v-if="can.confirm" type="button" class="text-indigo-600 hover:underline" @click="resolveEntry(entry.id)">{{ t('payment::admin.payments_index.resolved') }}</button>
         </div>
     </section>
 
     <section v-if="refunds.length" class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <h2 class="mb-2 font-semibold">Chờ hoàn tiền thủ công</h2>
+        <h2 class="mb-2 font-semibold">{{ t('payment::admin.payments_index.awaiting_manual_refund') }}</h2>
         <div v-for="refund in refunds" :key="refund.id" class="flex items-center justify-between border-t border-amber-100 py-2 text-sm">
-            <span><MoneyText :amount="refund.amount" /> · {{ refund.reason }} · {{ refund.created_at }}<template v-if="refund.paying_out"> · <strong data-paying-out>Đang chuyển trả — kiểm tra ngân hàng trước khi bấm "Đã chuyển trả"</strong></template></span>
+            <span><MoneyText :amount="refund.amount" /> · {{ refund.reason }} · {{ refund.created_at }}<template v-if="refund.paying_out"> · <strong data-paying-out>{{ t('payment::admin.payments_index.paying_out_check_bank_before') }}</strong></template></span>
             <span v-if="can.refund" class="flex gap-3">
-                <button v-for="channel in refund.paying_out ? [] : payouts" :key="channel.code" type="button" class="text-indigo-600 hover:underline" :data-payout="channel.code" @click="payout(refund.id, channel)">Chuyển trả qua {{ channel.label }}</button>
-                <button type="button" class="text-indigo-600 hover:underline" @click="completeRefund(refund.id)">Đã chuyển trả</button>
+                <button v-for="channel in refund.paying_out ? [] : payouts" :key="channel.code" type="button" class="text-indigo-600 hover:underline" :data-payout="channel.code" @click="payout(refund.id, channel)">{{ t('payment::admin.payments_index.pay_out_via_label', { label: channel.label }) }}</button>
+                <button type="button" class="text-indigo-600 hover:underline" @click="completeRefund(refund.id)">{{ t('payment::admin.payments_index.refund_paid') }}</button>
             </span>
         </div>
     </section>
 
     <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
-        <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="thanh toán" />
+        <span class="text-slate-500">{{ t('payment::admin.payments_index.count_selected', { count: selected.length }) }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('payment::admin.payments_index.payments')" />
     </div>
-    <DataTable v-model:selected="selected" :sort="sort" :loading="list.loading.value" @sort="(next) => filter(props.status ?? '', 1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.order_number ?? String(row.id)" :columns="columns" :rows="payments" :empty-text="search ? 'Không có thanh toán của đơn này.' : 'Chưa có thanh toán nào.'">
+    <DataTable v-model:selected="selected" :sort="sort" :loading="list.loading.value" @sort="(next) => filter(props.status ?? '', 1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.order_number ?? String(row.id)" :columns="columns" :rows="payments" :empty-text="search ? t('payment::admin.payments_index.no_payments_order') : t('payment::admin.payments_index.no_payments_yet')">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
         </template>
         <template #cell-amount="{ row }">
             <MoneyText :amount="row.amount" />
-            <div v-if="row.refunded_amount" class="text-xs text-slate-500">đã hoàn <MoneyText :amount="row.refunded_amount" /></div>
+            <div v-if="row.refunded_amount" class="text-xs text-slate-500">{{ t('payment::admin.payments_index.refunded') }} <MoneyText :amount="row.refunded_amount" /></div>
         </template>
         <template #cell-status="{ row }">
             <StatusBadge :label="label(row.status)" :tone="tone(row.status)" />
-            <div v-if="row.status === 'pending' && row.expires_at" class="mt-1 text-xs text-slate-400">hết hạn {{ row.expires_at }}</div>
+            <div v-if="row.status === 'pending' && row.expires_at" class="mt-1 text-xs text-slate-400">{{ t('payment::admin.payments_index.expires_expires', { expires_at: row.expires_at }) }}</div>
         </template>
         <template #cell-actions="{ row }">
             <div v-if="hasActions(row)" class="flex flex-wrap justify-end gap-3">
-                <button v-if="row.can_confirm && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="confirmPayment(row.id)">Xác nhận đã nhận tiền</button>
-                <button v-if="row.can_collect && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="collectPayment(row)">Đã thu tiền</button>
-                <button v-if="row.can_capture && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="capturePayment(row.id)">Thu tiền</button>
-                <button v-if="row.can_refund && can.refund" type="button" class="text-indigo-600 hover:underline" @click="openRefund(row)">Hoàn tiền</button>
+                <button v-if="row.can_confirm && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="confirmPayment(row.id)">{{ t('payment::admin.payments_index.confirm_money_received') }}</button>
+                <button v-if="row.can_collect && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="collectPayment(row)">{{ t('payment::admin.payments_index.cash_collected') }}</button>
+                <button v-if="row.can_capture && can.confirm" type="button" class="text-indigo-600 hover:underline" @click="capturePayment(row.id)">{{ t('payment::admin.payments_index.capture') }}</button>
+                <button v-if="row.can_refund && can.refund" type="button" class="text-indigo-600 hover:underline" @click="openRefund(row)">{{ t('payment::admin.payments_index.refund') }}</button>
             </div>
             <span v-else-if="hint(row)" class="text-xs text-slate-400">{{ hint(row) }}</span>
         </template>
     </DataTable>
     <Pagination :current="pagination.page" :last="pagination.last_page" :from="pagination.from" :to="pagination.to" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="goToPage" @per-page-change="changePageSize" />
 
-    <Dialog v-model:open="refundOpen" title="Hoàn tiền" :subtitle="refunding ? `Tối đa ${money(refunding.max)}` : undefined" :dirty="refundForm.isDirty && !refundForm.processing">
+    <Dialog v-model:open="refundOpen" :title="t('payment::admin.payments_index.refund')" :subtitle="refunding ? t('payment::admin.payments_index.most_refunding', { refunding: money(refunding.max) }) : undefined" :dirty="refundForm.isDirty && !refundForm.processing">
         <template #default>
             <form v-if="refunding" id="refund-form" class="grid gap-3" data-refund-form @submit.prevent="submitRefund">
                 <label class="grid gap-1 text-sm">
-                    <span class="font-medium">Số tiền hoàn</span>
+                    <span class="font-medium">{{ t('payment::admin.payments_index.refund_amount') }}</span>
                     <input v-model.number="refundForm.amount" :class="inputClass" type="number" min="1" :max="refunding.max" required />
                 </label>
                 <label class="grid gap-1 text-sm">
-                    <span class="font-medium">Lý do</span>
-                    <input v-model="refundForm.reason" :class="inputClass" placeholder="vd. khách trả hàng, giao thiếu" required />
+                    <span class="font-medium">{{ t('payment::admin.payments_index.reason') }}</span>
+                    <input v-model="refundForm.reason" :class="inputClass" :placeholder="t('payment::admin.payments_index.customer_returned_items_short_delivery')" required />
                 </label>
                 <p v-for="(error, key) in refundForm.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
             </form>
         </template>
         <template #footer="{ close }">
-            <button type="submit" form="refund-form" :class="primaryButton" :disabled="refundForm.processing">Hoàn tiền</button>
-            <button type="button" :class="secondaryButton" @click="close">Huỷ</button>
+            <button type="submit" form="refund-form" :class="primaryButton" :disabled="refundForm.processing">{{ t('payment::admin.payments_index.refund') }}</button>
+            <button type="button" :class="secondaryButton" @click="close">{{ t('payment::admin.payments_index.cancel') }}</button>
         </template>
     </Dialog>
 </template>

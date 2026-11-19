@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { confirmAction } from '@admin/confirm';
@@ -57,7 +58,7 @@ function save(onSuccess?: () => void): void {
 }
 
 async function publish(): Promise<void> {
-    if (dirty.value && (await confirmAction({ title: 'Có thay đổi chưa lưu', message: 'Lưu nháp rồi xuất bản?', confirmLabel: 'Lưu và xuất bản' })) === false) {
+    if (dirty.value && (await confirmAction({ title: t('storefront::admin.design_menus.unsaved_changes'), message: t('storefront::admin.design_menus.save_draft_publish'), confirmLabel: t('storefront::admin.design_menus.save_publish') })) === false) {
         return;
     }
     const send = (): void => router.post(locationUrl('/publish'), {}, { preserveScroll: true, onSuccess: reload });
@@ -69,13 +70,13 @@ async function publish(): Promise<void> {
 }
 
 async function discard(): Promise<void> {
-    if ((await confirmAction({ title: 'Bỏ thay đổi chưa xuất bản?', message: 'Nháp quay về bản đang hiển thị trên cửa hàng.', confirmLabel: 'Bỏ thay đổi', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('storefront::admin.design_menus.discard_unpublished_changes'), message: t('storefront::admin.design_menus.draft_goes_back_version_shown'), confirmLabel: t('storefront::admin.design_menus.discard_changes'), tone: 'danger' })) !== false) {
         router.post(locationUrl('/discard'), {}, { preserveScroll: true, onSuccess: reload });
     }
 }
 
 async function restore(version: number): Promise<void> {
-    if ((await confirmAction({ title: 'Khôi phục phiên bản này vào nháp?', message: 'Nháp hiện tại bị thay thế. Cửa hàng chỉ đổi sau khi xuất bản.', confirmLabel: 'Khôi phục' })) !== false) {
+    if ((await confirmAction({ title: t('storefront::admin.design_menus.restore_version_into_draft'), message: t('storefront::admin.design_menus.current_draft_replaced_store_changes'), confirmLabel: t('storefront::admin.design_menus.restore') })) !== false) {
         router.post(locationUrl(`/restore/${version}`), {}, { preserveScroll: true, onSuccess: reload });
     }
 }
@@ -83,20 +84,20 @@ async function restore(version: number): Promise<void> {
 
 <template>
     <Head title="Menu" />
-    <p class="mb-2 text-sm text-slate-500">Giao diện</p>
-    <PageHeader title="Menu" subtitle="Menu theo vị trí theme khai báo. Lưu nháp, xuất bản để hiện trên cửa hàng (trang có cache đổi sau vài phút).">
+    <p class="mb-2 text-sm text-slate-500">{{ t('storefront::admin.design_menus.storefront_design') }}</p>
+    <PageHeader title="Menu" :subtitle="t('storefront::admin.design_menus.menus_locations_theme_declares_save')">
         <template v-if="location">
-            <button v-if="menu?.has_changes && menu.published_at" type="button" :class="dangerButton" @click="discard">Bỏ thay đổi</button>
-            <button type="button" :class="secondaryButton" :disabled="processing" @click="save()">Lưu nháp</button>
-            <button type="button" :class="primaryButton" :disabled="processing" @click="publish">Xuất bản</button>
+            <button v-if="menu?.has_changes && menu.published_at" type="button" :class="dangerButton" @click="discard">{{ t('storefront::admin.design_menus.discard_changes') }}</button>
+            <button type="button" :class="secondaryButton" :disabled="processing" @click="save()">{{ t('storefront::admin.design_menus.save_draft') }}</button>
+            <button type="button" :class="primaryButton" :disabled="processing" @click="publish">{{ t('storefront::admin.design_menus.publish') }}</button>
         </template>
     </PageHeader>
     <DesignTabs active="menus" />
 
-    <p v-if="!locations.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Theme đang dùng không khai báo vị trí menu nào.</p>
+    <p v-if="!locations.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{{ t('storefront::admin.design_menus.current_theme_declares_no_menu') }}</p>
 
     <div v-else class="grid gap-6 lg:grid-cols-[14rem_1fr]">
-        <nav class="space-y-1 text-sm" aria-label="Vị trí menu">
+        <nav class="space-y-1 text-sm" :aria-label="t('storefront::admin.design_menus.menu_location')">
             <Link
                 v-for="item in locations"
                 :key="item.code"
@@ -105,31 +106,31 @@ async function restore(version: number): Promise<void> {
                 :class="item.code === location ? 'bg-indigo-50 font-medium text-indigo-700' : 'text-slate-600 hover:bg-slate-100'"
             >
                 {{ item.label }}
-                <span class="block font-mono text-xs text-slate-400">{{ item.code }} · {{ item.depth }} cấp</span>
+                <span class="block font-mono text-xs text-slate-400">{{ t('storefront::admin.design_menus.code_depth_levels', { code: item.code, depth: item.depth }) }}</span>
             </Link>
         </nav>
 
         <section v-if="current && menu" class="space-y-4">
             <div class="flex flex-wrap items-center gap-2 text-sm">
-                <StatusBadge v-if="!menu.published_at" label="Chưa xuất bản — cửa hàng dùng menu mặc định của theme" tone="warning" />
+                <StatusBadge v-if="!menu.published_at" :label="t('storefront::admin.design_menus.not_published_store_uses_theme')" tone="warning" />
                 <template v-else>
-                    <StatusBadge label="Đã xuất bản" tone="success" />
+                    <StatusBadge :label="t('storefront::admin.design_menus.published')" tone="success" />
                     <span class="text-slate-500">{{ formatDate(menu.published_at) }}</span>
-                    <StatusBadge v-if="menu.has_changes || dirty" label="Có thay đổi chưa xuất bản" tone="warning" />
+                    <StatusBadge v-if="menu.has_changes || dirty" :label="t('storefront::admin.design_menus.has_unpublished_changes')" tone="warning" />
                 </template>
             </div>
             <p v-if="errors.items" class="text-sm text-red-600">{{ errors.items }}</p>
 
             <MenuItems v-model:items="items" :max-depth="current.depth" :image-depth="current.image_depth" :errors="errors" path="items" />
-            <p v-if="!items.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Chưa có mục nào.</p>
-            <button type="button" :class="secondaryButton" @click="add">+ Thêm mục</button>
+            <p v-if="!items.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{{ t('storefront::admin.design_menus.no_items_yet') }}</p>
+            <button type="button" :class="secondaryButton" @click="add">{{ t('storefront::admin.design_menus.add_item') }}</button>
 
             <div v-if="menu.versions.length" class="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-                <h2 class="mb-2 font-semibold">Phiên bản đã xuất bản trước</h2>
+                <h2 class="mb-2 font-semibold">{{ t('storefront::admin.design_menus.previously_published_versions') }}</h2>
                 <ul class="divide-y divide-slate-100">
                     <li v-for="(version, index) in menu.versions" :key="index" class="flex items-center justify-between py-1.5">
-                        <span>{{ formatDate(version.published_at) }} · {{ version.count }} mục</span>
-                        <button type="button" class="text-indigo-600 hover:underline" @click="restore(index)">Khôi phục vào nháp</button>
+                        <span>{{ t('storefront::admin.design_menus.published_count_items', { published_at: formatDate(version.published_at), count: version.count }) }}</span>
+                        <button type="button" class="text-indigo-600 hover:underline" @click="restore(index)">{{ t('storefront::admin.design_menus.restore_into_draft') }}</button>
                     </li>
                 </ul>
             </div>

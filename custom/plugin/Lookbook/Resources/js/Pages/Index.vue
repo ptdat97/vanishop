@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -30,9 +31,9 @@ const perPageOptions = [20, 50, 100];
 const columns = [
     { key: 'cover', label: '', class: 'w-16' },
     { key: 'name', label: 'Lookbook', class: 'font-medium' },
-    { key: 'images_count', label: 'Số ảnh', align: 'right' as const },
-    { key: 'position', label: 'Thứ tự', align: 'right' as const },
-    { key: 'active', label: 'Trạng thái' },
+    { key: 'images_count', label: t('vani-lookbook::admin.index.photos'), align: 'right' as const },
+    { key: 'position', label: t('vani-lookbook::admin.index.order'), align: 'right' as const },
+    { key: 'active', label: t('vani-lookbook::admin.index.status') },
 ];
 
 function search(page = 1, pageSize = props.lookbooks.per_page): void {
@@ -46,19 +47,19 @@ function changePageSize(pageSize: number): void {
 
 <template>
     <Head title="Lookbook" />
-    <PageHeader title="Lookbook" subtitle="Bộ ảnh theo mùa/chủ đề ở /lookbook.">
-        <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm lookbook</Link>
+    <PageHeader title="Lookbook" :subtitle="t('vani-lookbook::admin.index.seasonal_themed_photo_sets_lookbook')">
+        <Link v-if="can.manage" :href="urls.create" :class="primaryButton">{{ t('vani-lookbook::admin.index.add_lookbook') }}</Link>
     </PageHeader>
     <form class="mb-4 max-w-sm" @submit.prevent="search()">
-        <input v-model="q" :class="inputClass" placeholder="Tìm theo tên hoặc đường dẫn…" aria-label="Tìm lookbook" />
+        <input v-model="q" :class="inputClass" :placeholder="t('vani-lookbook::admin.index.search_name_path')" :aria-label="t('vani-lookbook::admin.index.search_lookbooks')" />
     </form>
-    <DataTable :columns="columns" :rows="lookbooks.data" :row-label="(row) => row.name ?? row.slug" empty-text="Chưa có lookbook.">
+    <DataTable :columns="columns" :rows="lookbooks.data" :row-label="(row) => row.name ?? row.slug" :empty-text="t('vani-lookbook::admin.index.no_lookbooks_yet')">
         <template #cell-cover="{ row }"><img v-if="row.cover_url" :src="row.cover_url" alt="" class="h-12 w-12 rounded object-cover" /></template>
         <template #cell-name="{ row }">
             <Link :href="`${urls.index}/${row.id}`" class="hover:underline">{{ row.name ?? row.slug }}</Link>
             <div class="text-xs text-slate-400">/lookbook/{{ row.slug }}</div>
         </template>
-        <template #cell-active="{ row }"><StatusBadge :label="row.active ? 'Đang bật' : 'Tắt'" :tone="row.active ? 'success' : 'neutral'" /></template>
+        <template #cell-active="{ row }"><StatusBadge :label="row.active ? t('vani-lookbook::admin.index.active') : t('vani-lookbook::admin.index.off')" :tone="row.active ? 'success' : 'neutral'" /></template>
     </DataTable>
     <Pagination :current="lookbooks.current_page" :last="lookbooks.last_page" :from="lookbooks.from" :to="lookbooks.to" :total="lookbooks.total" :per-page="lookbooks.per_page" :per-page-options="perPageOptions" @change="search" @per-page-change="changePageSize" />
 </template>

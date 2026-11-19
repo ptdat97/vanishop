@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import MediaPicker from '@admin/Components/Media/MediaPicker.vue';
@@ -61,12 +62,12 @@ const sku = computed({
 
 const fieldColumns = computed(() => props.columns.flatMap((column) => column.fields.map((field) => ({ key: `f:${column.code}.${field.key}`, column, field }))));
 const tableColumns = computed(() => [
-    { key: 'images', label: 'Ảnh' },
+    { key: 'images', label: t('catalog::admin.default_variant_editor.image') },
     { key: 'sku', label: 'SKU' },
     { key: 'barcode', label: 'Barcode' },
-    { key: 'weight_gram', label: 'Khối lượng (g)' },
-    { key: 'status', label: 'Trạng thái' },
-    ...fieldColumns.value.map(({ key, column, field }) => ({ key, label: column.editable ? field.label : `${field.label} (chỉ xem)` })),
+    { key: 'weight_gram', label: t('catalog::admin.default_variant_editor.weight') },
+    { key: 'status', label: t('catalog::admin.default_variant_editor.status') },
+    ...fieldColumns.value.map(({ key, column, field }) => ({ key, label: column.editable ? field.label : t('catalog::admin.default_variant_editor.label_view_only', { label: field.label }) })),
 ]);
 const rows = [{ key: 'single' }];
 
@@ -117,16 +118,16 @@ function removeImage(imageId: number): void {
                 <div v-if="variant" class="flex w-48 flex-wrap items-center gap-1">
                     <span v-for="image in variant.images" :key="image.id" class="group relative">
                         <img :src="image.url" alt="" class="h-12 w-9 rounded object-cover" />
-                        <button type="button" class="absolute -top-1 -right-1 hidden rounded-full bg-white px-1 text-xs text-red-600 shadow group-hover:block" aria-label="Xoá ảnh" @click="removeImage(image.id)">✕</button>
+                        <button type="button" class="absolute -top-1 -right-1 hidden rounded-full bg-white px-1 text-xs text-red-600 shadow group-hover:block" :aria-label="t('catalog::admin.default_variant_editor.delete_image')" @click="removeImage(image.id)">✕</button>
                     </span>
-                    <button type="button" class="text-xs text-indigo-600 underline" @click="picking = true">+ Ảnh</button>
+                    <button type="button" class="text-xs text-indigo-600 underline" @click="picking = true">{{ t('catalog::admin.default_variant_editor.image_2') }}</button>
                 </div>
                 <div v-else class="w-48"><MediaField v-model="mediaIds" multiple :max="20" /></div>
             </template>
             <template #cell-sku><input v-model="sku" :class="[inputClass, 'w-44 font-mono text-xs']" aria-label="SKU" /></template>
             <template #cell-barcode><input v-model="draft.barcode" :class="[inputClass, 'w-32 font-mono text-xs']" aria-label="Barcode" /></template>
-            <template #cell-weight_gram><input v-model.number="draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" aria-label="Khối lượng (g)" /></template>
-            <template #cell-status><div class="w-32"><Select v-model="draft.status" :options="labelOptions(statusLabels)" aria-label="Trạng thái" /></div></template>
+            <template #cell-weight_gram><input v-model.number="draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" :aria-label="t('catalog::admin.default_variant_editor.weight')" /></template>
+            <template #cell-status><div class="w-32"><Select v-model="draft.status" :options="labelOptions(statusLabels)" :aria-label="t('catalog::admin.default_variant_editor.status')" /></div></template>
             <template v-for="{ key: columnKey, column, field } in fieldColumns" :key="columnKey" #[`cell-${columnKey}`]>
                 <input
                     v-if="field.type === 'bool'"
@@ -152,6 +153,6 @@ function removeImage(imageId: number): void {
             </template>
             <template #expanded><p class="text-xs text-red-600">{{ rowError }}</p></template>
         </DataTable>
-        <MediaPicker v-if="variant" :open="picking" title="Ảnh cho SKU" @update:open="(value) => !value && (picking = false)" @select="attach" />
+        <MediaPicker v-if="variant" :open="picking" :title="t('catalog::admin.default_variant_editor.image_sku')" @update:open="(value) => !value && (picking = false)" @select="attach" />
     </div>
 </template>

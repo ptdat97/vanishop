@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
@@ -18,11 +19,11 @@ const props = defineProps<{
 }>();
 
 const columns = [
-    { key: 'code', label: 'Mã sản phẩm', class: 'font-mono' },
-    { key: 'name', label: 'Tên' },
-    { key: 'lines', label: 'Dòng' },
+    { key: 'code', label: t('catalog::admin.products_import.product_code'), class: 'font-mono' },
+    { key: 'name', label: t('catalog::admin.products_import.name') },
+    { key: 'lines', label: t('catalog::admin.products_import.lines') },
     { key: 'skus', label: 'SKU' },
-    { key: 'action', label: 'Kết quả' },
+    { key: 'action', label: t('catalog::admin.products_import.result') },
 ];
 const onlyErrors = ref(false);
 const shown = computed(() => (onlyErrors.value ? props.preview.products.filter((product) => product.action === 'error') : props.preview.products).slice(0, 1000));
@@ -40,30 +41,30 @@ function lineRange(lines: number[]): string {
 </script>
 
 <template>
-    <Head title="Xem trước nhập sản phẩm" />
+    <Head :title="t('catalog::admin.products_import.product_import_preview')" />
     <CatalogTabs :nav="nav" active="products" />
-    <PageHeader :title="`Xem trước: ${preview.file}`" subtitle="Chưa ghi gì. Kiểm tra rồi bấm Áp dụng — sản phẩm có lỗi sẽ được bỏ qua.">
-        <Link :href="urls.back" :class="secondaryButton">Quay lại</Link>
+    <PageHeader :title="t('catalog::admin.products_import.preview_file', { file: preview.file })" :subtitle="t('catalog::admin.products_import.nothing_written_yet_check_then')">
+        <Link :href="urls.back" :class="secondaryButton">{{ t('catalog::admin.products_import.back') }}</Link>
         <button v-if="urls.apply" type="button" :class="primaryButton" :disabled="applying" data-apply @click="apply">
-            Áp dụng: tạo {{ preview.summary.create }}, cập nhật {{ preview.summary.update }}
+            {{ t('catalog::admin.products_import.apply_create_create_update_update', { create: preview.summary.create, update: preview.summary.update }) }}
         </button>
     </PageHeader>
 
     <div class="mb-4 flex flex-wrap gap-2 text-sm">
-        <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">Tạo mới: {{ preview.summary.create }}</span>
-        <span class="rounded-full bg-slate-100 px-3 py-1">Cập nhật: {{ preview.summary.update }}</span>
-        <span class="rounded-full px-3 py-1" :class="preview.summary.error ? 'bg-red-50 text-red-700' : 'bg-slate-100'">Lỗi: {{ preview.summary.error }}</span>
+        <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">{{ t('catalog::admin.products_import.new_create', { create: preview.summary.create }) }}</span>
+        <span class="rounded-full bg-slate-100 px-3 py-1">{{ t('catalog::admin.products_import.updates_update', { update: preview.summary.update }) }}</span>
+        <span class="rounded-full px-3 py-1" :class="preview.summary.error ? 'bg-red-50 text-red-700' : 'bg-slate-100'">{{ t('catalog::admin.products_import.errors_error', { error: preview.summary.error }) }}</span>
     </div>
-    <p v-if="!urls.apply" class="mb-4 text-sm text-slate-600">Không có sản phẩm nào ghi được — sửa lỗi trong file rồi tải lên lại.</p>
-    <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="onlyErrors" type="checkbox" /> Chỉ hiện sản phẩm lỗi</label>
+    <p v-if="!urls.apply" class="mb-4 text-sm text-slate-600">{{ t('catalog::admin.products_import.no_product_written_fix_errors') }}</p>
+    <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="onlyErrors" type="checkbox" /> {{ t('catalog::admin.products_import.show_only_products_errors') }}</label>
 
-    <DataTable :columns="columns" :rows="shown" :row-key="(product) => product.code" :row-label="(product) => product.code" empty-text="File không có dòng sản phẩm nào.">
+    <DataTable :columns="columns" :rows="shown" :row-key="(product) => product.code" :row-label="(product) => product.code" :empty-text="t('catalog::admin.products_import.file_has_no_product_rows')">
         <template #cell-name="{ row }">{{ row.name ?? '—' }}</template>
         <template #cell-lines="{ row }">{{ lineRange(row.lines) }}</template>
         <template #cell-skus="{ row }">
-            <span v-if="row.new_skus">+{{ row.new_skus }} mới</span>
+            <span v-if="row.new_skus">{{ t('catalog::admin.products_import.new_skus_new', { new_skus: row.new_skus }) }}</span>
             <span v-if="row.new_skus && row.updated_skus">, </span>
-            <span v-if="row.updated_skus">{{ row.updated_skus }} cập nhật</span>
+            <span v-if="row.updated_skus">{{ t('catalog::admin.products_import.updated_skus_updated', { updated_skus: row.updated_skus }) }}</span>
         </template>
         <template #cell-action="{ row }">
             <span :class="row.action === 'error' ? 'text-red-600' : row.action === 'create' ? 'text-emerald-700' : 'text-indigo-700'">{{ actionLabels[row.action] }}</span>
@@ -73,5 +74,5 @@ function lineRange(lines: number[]): string {
             </ul>
         </template>
     </DataTable>
-    <p v-if="preview.products.length > 1000" class="mt-2 text-xs text-slate-500">Chỉ hiện 1000 sản phẩm đầu.</p>
+    <p v-if="preview.products.length > 1000" class="mt-2 text-xs text-slate-500">{{ t('catalog::admin.products_import.only_first_1000_products_shown') }}</p>
 </template>

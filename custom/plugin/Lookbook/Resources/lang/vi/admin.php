@@ -1,0 +1,45 @@
+<?php
+
+// Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
+
+return [
+    'form' => [
+        'active_shown_store' => 'Đang bật (hiện trên cửa hàng)',
+        'add_lookbook' => 'Thêm lookbook',
+        'add_photos' => 'Thêm ảnh',
+        'add_photos_lookbook' => 'Thêm ảnh vào lookbook',
+        'cover_image' => 'Ảnh bìa',
+        'cover_image_2' => 'ảnh bìa',
+        'delete' => 'Xoá',
+        'delete_lookbook' => 'Xoá lookbook này?',
+        'description_markdown' => 'Mô tả (Markdown)',
+        'edit_lookbook' => 'Sửa lookbook',
+        'leave_empty_generated_from_name' => 'Để trống: tạo từ tên',
+        'list' => 'Danh sách',
+        'name' => 'Tên',
+        'none' => '— Không —',
+        'not_chosen_use_first_photo' => 'Không chọn: dùng ảnh đầu tiên.',
+        'order' => 'Thứ tự',
+        'path_lookbook' => 'Đường dẫn (/lookbook/…)',
+        'photo_description_label' => 'Mô tả ảnh (:label)',
+        'photos_count' => 'Ảnh (:count)',
+        'related_category' => 'Danh mục liên quan',
+        'remove' => 'Bỏ',
+        'save' => 'Lưu',
+        'see_more_hint' => 'Trang chi tiết có nút "Xem thêm tại …".',
+        'seo_description' => 'Mô tả SEO',
+        'seo_title' => 'Tiêu đề SEO',
+    ],
+    'index' => [
+        'active' => 'Đang bật',
+        'add_lookbook' => 'Thêm lookbook',
+        'no_lookbooks_yet' => 'Chưa có lookbook.',
+        'off' => 'Tắt',
+        'order' => 'Thứ tự',
+        'photos' => 'Số ảnh',
+        'search_lookbooks' => 'Tìm lookbook',
+        'search_name_path' => 'Tìm theo tên hoặc đường dẫn…',
+        'seasonal_themed_photo_sets_lookbook' => 'Bộ ảnh theo mùa/chủ đề ở /lookbook.',
+        'status' => 'Trạng thái',
+    ],
+];

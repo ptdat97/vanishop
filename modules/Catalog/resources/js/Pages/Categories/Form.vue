@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
 import FileInput from '@admin/Components/FileInput.vue';
@@ -63,7 +64,7 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.category && (await confirmAction({ title: 'Xoá danh mục này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.category && (await confirmAction({ title: t('catalog::admin.categories_form.delete_category'), confirmLabel: t('catalog::admin.categories_form.delete'), tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${props.category.id}`);
     }
 }
@@ -90,11 +91,11 @@ function removeImage(): void {
 </script>
 
 <template>
-    <Head :title="category ? 'Sửa danh mục' : 'Thêm danh mục'" />
+    <Head :title="category ? t('catalog::admin.categories_form.edit_category') : t('catalog::admin.categories_form.add_category')" />
     <CatalogTabs :nav="nav" active="categories" />
-    <PageHeader :title="category ? 'Sửa danh mục' : 'Thêm danh mục'">
-        <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
-        <button v-if="category" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+    <PageHeader :title="category ? t('catalog::admin.categories_form.edit_category') : t('catalog::admin.categories_form.add_category')">
+        <Link :href="baseUrl" :class="secondaryButton">{{ t('catalog::admin.categories_form.back') }}</Link>
+        <button v-if="category" type="button" :class="dangerButton" @click="destroy">{{ t('catalog::admin.categories_form.delete') }}</button>
     </PageHeader>
 
     <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">
@@ -104,16 +105,16 @@ function removeImage(): void {
                     {{ option.label }}
                 </button>
             </div>
-            <FormField :label="locale === defaultLocale ? 'Tên (bắt buộc)' : 'Tên'" :error="errors[`translations.${locale}.name`]">
+            <FormField :label="locale === defaultLocale ? t('catalog::admin.categories_form.name_required') : t('catalog::admin.categories_form.name')" :error="errors[`translations.${locale}.name`]">
                 <input v-model="form.translations[locale].name" :class="inputClass" type="text" />
             </FormField>
-            <FormField v-if="locale !== defaultLocale" label="Slug riêng cho ngôn ngữ này" hint="Trống = dùng slug gốc. Đổi slug đã được index làm gãy link cũ." :error="errors[`translations.${locale}.slug`]">
+            <FormField v-if="locale !== defaultLocale" :label="t('catalog::admin.categories_form.slug_language')" :hint="t('catalog::admin.categories_form.empty_use_base_slug_changing')" :error="errors[`translations.${locale}.slug`]">
                     <div class="flex gap-2">
                         <input v-model="form.translations[locale].slug" :class="inputClass" :placeholder="slugify(form.translations[locale].name ?? '') || form.slug" />
-                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">Tạo từ tên</button>
+                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">{{ t('catalog::admin.categories_form.generate_from_name') }}</button>
                     </div>
                 </FormField>
-            <FormField label="Mô tả" :error="errors[`translations.${locale}.description`]">
+            <FormField :label="t('catalog::admin.categories_form.description')" :error="errors[`translations.${locale}.description`]">
                 <textarea v-model="form.translations[locale].description" :class="inputClass" rows="4" />
             </FormField>
             <FormField label="Meta title (SEO)" :error="errors[`translations.${locale}.meta_title`]">
@@ -127,32 +128,32 @@ function removeImage(): void {
 
         <div class="space-y-4">
             <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-                <FormField label="Slug (đường dẫn)" hint="Chữ thường không dấu, số và gạch ngang." :error="errors.slug">
+                <FormField :label="t('catalog::admin.categories_form.slug_path')" :hint="t('catalog::admin.categories_form.lowercase_letters_without_accents_digits')" :error="errors.slug">
                     <input v-model="form.slug" :class="inputClass" type="text" />
                 </FormField>
-                <FormField label="Danh mục cha" :error="errors.parent_id">
-                    <Select v-model="form.parent_id" :options="recordOptions(parents)" empty-label="— Gốc —" :empty-value="null" />
+                <FormField :label="t('catalog::admin.categories_form.parent_category')" :error="errors.parent_id">
+                    <Select v-model="form.parent_id" :options="recordOptions(parents)" :empty-label="t('catalog::admin.categories_form.root')" :empty-value="null" />
                 </FormField>
-                <FormField label="Trạng thái" :error="errors.status">
+                <FormField :label="t('catalog::admin.categories_form.status')" :error="errors.status">
                     <Select v-model="form.status" :options="labelOptions(labels.visibility)" />
                 </FormField>
-                <FormField label="Thứ tự" :error="errors.position">
+                <FormField :label="t('catalog::admin.categories_form.order')" :error="errors.position">
                     <input v-model.number="form.position" :class="inputClass" type="number" min="0" />
                 </FormField>
-                <button type="submit" :class="primaryButton" :disabled="form.processing" class="w-full">Lưu</button>
+                <button type="submit" :class="primaryButton" :disabled="form.processing" class="w-full">{{ t('catalog::admin.categories_form.save') }}</button>
             </div>
 
             <div v-if="category" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
-                <h2 class="text-sm font-medium">Ảnh danh mục</h2>
+                <h2 class="text-sm font-medium">{{ t('catalog::admin.categories_form.category_image') }}</h2>
                 <img v-if="category.image_url" :src="category.image_url" alt="" class="w-full rounded" />
-                <FileInput v-model="imageForm.image" accept="image/jpeg,image/png,image/webp" :max-kb="10240" label="Chọn ảnh" :progress="imageForm.progress?.percentage ?? null" :error="imageForm.errors.image" />
-                <input v-model="imageForm.alt" :class="inputClass" type="text" placeholder="Mô tả ảnh (alt)" />
+                <FileInput v-model="imageForm.image" accept="image/jpeg,image/png,image/webp" :max-kb="10240" :label="t('catalog::admin.categories_form.choose_image')" :progress="imageForm.progress?.percentage ?? null" :error="imageForm.errors.image" />
+                <input v-model="imageForm.alt" :class="inputClass" type="text" :placeholder="t('catalog::admin.categories_form.image_description_alt')" />
                 <div class="flex gap-2">
-                    <button type="button" :class="secondaryButton" :disabled="!imageForm.image || imageForm.processing" @click="uploadImage">Tải lên</button>
-                    <button type="button" :class="secondaryButton" @click="picking = true">Chọn từ thư viện</button>
-                    <button v-if="category.image_url" type="button" :class="dangerButton" @click="removeImage">Gỡ ảnh</button>
+                    <button type="button" :class="secondaryButton" :disabled="!imageForm.image || imageForm.processing" @click="uploadImage">{{ t('catalog::admin.categories_form.upload') }}</button>
+                    <button type="button" :class="secondaryButton" @click="picking = true">{{ t('catalog::admin.categories_form.choose_from_library') }}</button>
+                    <button v-if="category.image_url" type="button" :class="dangerButton" @click="removeImage">{{ t('catalog::admin.categories_form.remove_image') }}</button>
                 </div>
-                <MediaPicker v-model:open="picking" title="Chọn ảnh danh mục" :multiple="false" @select="pickImage" />
+                <MediaPicker v-model:open="picking" :title="t('catalog::admin.categories_form.choose_category_image')" :multiple="false" @select="pickImage" />
             </div>
         </div>
     </form>

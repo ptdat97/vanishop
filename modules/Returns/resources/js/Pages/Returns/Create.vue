@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -29,11 +30,11 @@ const props = defineProps<{
 
 const formatDate = useDateTime();
 const columns = computed(() => [
-    { key: 'name', label: 'Sản phẩm' },
-    { key: 'ordered', label: 'Đã mua', align: 'right' as const },
-    { key: 'returnable', label: 'Còn trả được', align: 'right' as const },
-    { key: 'quantity', label: 'Số lượng trả', align: 'right' as const },
-    ...(form.exchange ? [{ key: 'exchange', label: 'Đổi sang SKU' }] : []),
+    { key: 'name', label: t('returns::admin.returns_create.products') },
+    { key: 'ordered', label: t('returns::admin.returns_create.purchased'), align: 'right' as const },
+    { key: 'returnable', label: t('returns::admin.returns_create.still_returnable'), align: 'right' as const },
+    { key: 'quantity', label: t('returns::admin.returns_create.quantity_return'), align: 'right' as const },
+    ...(form.exchange ? [{ key: 'exchange', label: t('returns::admin.returns_create.exchange_sku') }] : []),
 ]);
 const form = useForm({
     order_id: props.order.id,
@@ -54,15 +55,15 @@ function submit(): void {
 </script>
 
 <template>
-    <Head :title="`Tạo đổi/trả — ${order.number}`" />
+    <Head :title="t('returns::admin.returns_create.create_return_exchange_number', { number: order.number })" />
     <PageHeader
-        :title="`Tạo yêu cầu đổi/trả cho đơn ${order.number}`"
-        subtitle="Tạo hộ khách (gọi điện, nhắn tin). Áp dụng cùng chính sách đổi/trả như khi khách tự gửi."
+        :title="t('returns::admin.returns_create.create_return_exchange_request_order', { number: order.number })"
+        :subtitle="t('returns::admin.returns_create.create_customer_s_behalf_phone')"
     >
-        <Link :href="orderUrl" :class="secondaryButton">← Đơn {{ order.number }}</Link>
+        <Link :href="orderUrl" :class="secondaryButton">{{ t('returns::admin.returns_create.order_number', { number: order.number }) }}</Link>
     </PageHeader>
 
-    <p v-if="deadlineText" class="mb-4 text-sm text-slate-600">Hạn đổi/trả theo chính sách: {{ deadlineText }}</p>
+    <p v-if="deadlineText" class="mb-4 text-sm text-slate-600">{{ t('returns::admin.returns_create.return_deadline_under_policy_deadline', { deadline_text: deadlineText }) }}</p>
 
     <form class="space-y-6" @submit.prevent="submit">
         <DataTable :columns="columns" :rows="lines" :row-label="(line) => line.sku">
@@ -78,11 +79,11 @@ function submit(): void {
                     :max="row.returnable"
                     :disabled="row.returnable === 0"
                     :class="[inputClass, 'w-24 text-right']"
-                    :aria-label="`Số lượng trả ${row.sku}`"
+                    :aria-label="t('returns::admin.returns_create.quantity_return_sku', { sku: row.sku })"
                 />
             </template>
             <template #cell-exchange="{ row }">
-                <input v-model="form.exchange_skus[row.id]" :disabled="!form.lines[row.id]" :placeholder="row.sku" :class="[inputClass, 'w-48 font-mono uppercase']" :aria-label="`Đổi sang SKU cho ${row.sku}`" />
+                <input v-model="form.exchange_skus[row.id]" :disabled="!form.lines[row.id]" :placeholder="row.sku" :class="[inputClass, 'w-48 font-mono uppercase']" :aria-label="t('returns::admin.returns_create.exchange_sku_sku', { sku: row.sku })" />
                 <p v-if="errors[`exchange_skus.${row.id}`]" class="mt-1 text-xs text-red-600">{{ errors[`exchange_skus.${row.id}`] }}</p>
             </template>
         </DataTable>
@@ -91,21 +92,20 @@ function submit(): void {
             <label class="flex items-start gap-2 text-sm">
                 <input v-model="form.exchange" type="checkbox" class="mt-1" />
                 <span>
-                    <span class="font-medium">Đổi hàng</span> thay vì hoàn tiền — nhập SKU thay thế cho từng dòng trả. Cùng mẫu (đổi size/màu): không tính chênh;
-                    mẫu khác: theo giá hiện tại, khách bù phần thiếu (COD) hoặc được hoàn phần thừa. Đơn thay thế tạo khi nhận hàng trả, miễn phí giao.
+                    <span class="font-medium">{{ t('returns::admin.returns_create.exchange') }}</span> {{ t('returns::admin.returns_create.instead_refund_enter_replacement_sku') }}
                 </span>
             </label>
-            <FormField label="Lý do" :error="form.errors.reason_code">
+            <FormField :label="t('returns::admin.returns_create.reason')" :error="form.errors.reason_code">
                 <Select v-model="form.reason_code" :options="codeOptions(reasons, labels.reason)" />
             </FormField>
-            <FormField label="Ghi chú (nội dung khách báo)" :error="form.errors.note">
+            <FormField :label="t('returns::admin.returns_create.note_what_customer_reported')" :error="form.errors.note">
                 <textarea v-model="form.note" rows="3" maxlength="500" :class="inputClass" />
             </FormField>
             <p v-if="form.errors.lines" class="text-sm text-red-600">
                 {{ form.errors.lines }}
             </p>
             <div>
-                <button type="submit" :class="primaryButton" :disabled="form.processing || total === 0">Tạo yêu cầu ({{ total }} sản phẩm)</button>
+                <button type="submit" :class="primaryButton" :disabled="form.processing || total === 0">{{ t('returns::admin.returns_create.create_request_total_items', { total }) }}</button>
             </div>
         </div>
     </form>

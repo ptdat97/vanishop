@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import Dialog from '@admin/Components/Dialog.vue';
 import FileInput from '@admin/Components/FileInput.vue';
@@ -203,7 +204,7 @@ function addValue(axis: Axis): void {
 }
 
 async function removeValue(axis: Axis, valueId: number): Promise<void> {
-    if ((await confirmAction({ title: `Bỏ giá trị ${valueName(valueId)}?`, message: 'Các ô chưa lưu của giá trị này bị bỏ.', confirmLabel: 'Bỏ', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('catalog::admin.variant_matrix_editor.remove_value_value_id', { value_id: valueName(valueId) }), message: t('catalog::admin.variant_matrix_editor.unsaved_cells_value_discarded'), confirmLabel: t('catalog::admin.variant_matrix_editor.remove'), tone: 'danger' })) !== false) {
         axis.value_ids = axis.value_ids.filter((id) => id !== valueId);
     }
 }
@@ -213,7 +214,7 @@ const gridStyle = computed(() => ({ gridTemplateColumns: `minmax(10rem, auto) re
 const cellClass = (draft: Draft | undefined): string => draft?.enabled
     ? (draft.status === 'active' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-400 bg-slate-100 text-slate-500')
     : 'border-dashed border-slate-300 text-slate-400';
-const cellText = (draft: Draft | undefined): string => (draft?.enabled ? (draft.status === 'active' ? 'Bán' : 'Ngừng') : '+');
+const cellText = (draft: Draft | undefined): string => (draft?.enabled ? (draft.status === 'active' ? t('catalog::admin.variant_matrix_editor.sell') : t('catalog::admin.variant_matrix_editor.stop')) : '+');
 
 /** Dòng của bảng chi tiết: tổ hợp đang bật, theo thứ tự trục. */
 interface Row { values: number[]; key: string; label: string; draft: Draft }
@@ -251,12 +252,12 @@ watch(adoptTarget, (next, previous) => {
 const fieldColumns = computed(() => props.columns.flatMap((column) => column.fields.map((field) => ({ key: `f:${column.code}.${field.key}`, column, field }))));
 const tableColumns = computed(() => [
     { key: 'label', label: activeAxes.value.map((axis) => typeName(axis.option_type_id)).join(' / '), class: 'whitespace-nowrap' },
-    { key: 'images', label: 'Ảnh' },
+    { key: 'images', label: t('catalog::admin.variant_matrix_editor.image') },
     { key: 'sku', label: 'SKU' },
     { key: 'barcode', label: 'Barcode' },
-    { key: 'weight_gram', label: 'Khối lượng (g)' },
-    { key: 'status', label: 'Trạng thái' },
-    ...fieldColumns.value.map(({ key: columnKey, column, field }) => ({ key: columnKey, label: column.editable ? field.label : `${field.label} (chỉ xem)` })),
+    { key: 'weight_gram', label: t('catalog::admin.variant_matrix_editor.weight') },
+    { key: 'status', label: t('catalog::admin.variant_matrix_editor.status') },
+    ...fieldColumns.value.map(({ key: columnKey, column, field }) => ({ key: columnKey, label: column.editable ? field.label : t('catalog::admin.variant_matrix_editor.label_view_only', { label: field.label }) })),
 ]);
 
 function fieldValue(draft: Draft, column: Column, field: Field): FieldValue {
@@ -270,11 +271,11 @@ function setField(draft: Draft, column: Column, field: Field, value: FieldValue)
 // Áp hàng loạt cho các SKU khớp giá trị từng trục (0 = tất cả) trong bản nháp.
 const batch = reactive<{ filter: Record<number, number>; target: string; value: FieldValue }>({ filter: {}, target: '', value: null });
 const batchTargets = computed(() => [
-    { value: 'status', label: 'Trạng thái' },
-    { value: 'weight_gram', label: 'Khối lượng (g)' },
+    { value: 'status', label: t('catalog::admin.variant_matrix_editor.status') },
+    { value: 'weight_gram', label: t('catalog::admin.variant_matrix_editor.weight') },
     ...props.columns.filter((column) => column.editable).flatMap((column) => column.fields.map((field) => ({ value: `${column.code}.${field.key}`, label: `${column.label}: ${field.label}` }))),
 ]);
-const batchOptions = (axis: Axis) => [{ value: 0, label: `Mọi ${typeName(axis.option_type_id).toLowerCase()}` }, ...axis.value_ids.map((id) => ({ value: id, label: valueName(id) }))];
+const batchOptions = (axis: Axis) => [{ value: 0, label: t('catalog::admin.variant_matrix_editor.all_option_type_id', { option_type_id: typeName(axis.option_type_id).toLowerCase() }) }, ...axis.value_ids.map((id) => ({ value: id, label: valueName(id) }))];
 
 function applyBatch(): void {
     if (!batch.target) return;
@@ -407,7 +408,7 @@ function submitAssign(): void {
             assign.open = false;
             assign.variantIds = [];
         },
-        onError: (errors) => toast(Object.values(errors)[0] ?? 'Không gán được ảnh.', 'error'),
+        onError: (errors) => toast(Object.values(errors)[0] ?? t('catalog::admin.variant_matrix_editor.could_not_assign_images'), 'error'),
         onFinish: () => (assign.busy = false),
     });
 }
@@ -422,8 +423,8 @@ function removeImage(variant: Variant, imageId: number): void {
 }
 
 async function copyImages(variant: Variant, typeId: number, valueId: number): Promise<void> {
-    const message = `Mọi SKU khác có ${typeName(typeId).toLowerCase()} ${valueName(valueId)} sẽ dùng đúng bộ ảnh này (thay ảnh đang có).`;
-    if ((await confirmAction({ title: 'Áp bộ ảnh cho các SKU cùng giá trị?', message, confirmLabel: 'Áp dụng' })) !== false) {
+    const message = t('catalog::admin.variant_matrix_editor.every_other_sku_type_id', { type_id: typeName(typeId).toLowerCase(), value_id: valueName(valueId) });
+    if ((await confirmAction({ title: t('catalog::admin.variant_matrix_editor.apply_image_set_skus_same'), message, confirmLabel: t('catalog::admin.variant_matrix_editor.apply') })) !== false) {
         router.post(`${imagesUrl(variant)}/copy`, { option_type_id: typeId }, { preserveScroll: true });
     }
 }
@@ -468,7 +469,7 @@ function createValue(axis: Axis): void {
 }
 
 const quickType = reactive({ name: '', display_type: 'button' });
-const displayTypeOptions = [{ value: 'button', label: 'Nút' }, { value: 'swatch', label: 'Ô màu' }, { value: 'dropdown', label: 'Danh sách' }];
+const displayTypeOptions = [{ value: 'button', label: t('catalog::admin.variant_matrix_editor.button') }, { value: 'swatch', label: t('catalog::admin.variant_matrix_editor.swatch') }, { value: 'dropdown', label: t('catalog::admin.variant_matrix_editor.list') }];
 
 function createType(): void {
     const name = quickType.name.trim();
@@ -507,21 +508,21 @@ const enabledCount = computed(() => rows.value.length);
 
 <template>
     <div class="grid gap-6 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
-        <aside class="space-y-3" aria-label="Tuỳ chọn biến thể">
+        <aside class="space-y-3" :aria-label="t('catalog::admin.variant_matrix_editor.variant_options')">
             <div class="flex items-baseline justify-between gap-2">
-                <h3 class="text-sm font-semibold text-slate-900">1. Tuỳ chọn</h3>
-                <a :href="urls.option_types" target="_blank" class="text-xs text-indigo-600 underline">Danh mục tuỳ chọn ↗</a>
+                <h3 class="text-sm font-semibold text-slate-900">{{ t('catalog::admin.variant_matrix_editor.text_1_options') }}</h3>
+                <a :href="urls.option_types" target="_blank" class="text-xs text-indigo-600 underline">{{ t('catalog::admin.variant_matrix_editor.option_catalogue') }}</a>
             </div>
-            <p class="text-xs text-slate-500">Tối đa 3 trục (vd. Màu, Size). Chọn giá trị có sẵn hoặc gõ tên để tạo mới.</p>
+            <p class="text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.up_3_axes_colour_size') }}</p>
         <!-- Bước 1 — Tuỳ chọn: trục (kéo để đổi thứ tự) và giá trị (kéo để đổi thứ tự hiển thị) -->
         <div class="space-y-2">
-            <Sortable v-slot="{ item: axis, handle }" v-model="axes" :item-key="(axis) => axis.option_type_id" :item-label="(axis) => `trục ${typeName(axis.option_type_id)}`">
+            <Sortable v-slot="{ item: axis, handle }" v-model="axes" :item-key="(axis) => axis.option_type_id" :item-label="(axis) => t('catalog::admin.variant_matrix_editor.axis_option_type_id', { option_type_id: typeName(axis.option_type_id) })">
                 <div class="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
                     <div class="flex items-center gap-2">
                         <SortHandle v-bind="handle" />
                         <span class="font-medium">{{ typeName(axis.option_type_id) }}</span>
                         <span class="rounded-full bg-slate-100 px-2 text-xs text-slate-600">{{ axis.value_ids.length }}</span>
-                        <button v-if="!locked" type="button" class="ml-auto text-xs text-red-600 hover:underline" @click="removeAxis(axis)">Bỏ trục</button>
+                        <button v-if="!locked" type="button" class="ml-auto text-xs text-red-600 hover:underline" @click="removeAxis(axis)">{{ t('catalog::admin.variant_matrix_editor.remove_axis') }}</button>
                     </div>
                     <Sortable
                         v-slot="{ item: valueId, handle: valueHandle }"
@@ -540,21 +541,21 @@ const enabledCount = computed(() => rows.value.length);
                                 type="button"
                                 class="text-slate-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
                                 :disabled="usedValueIds.has(valueId)"
-                                :title="usedValueIds.has(valueId) ? 'Còn SKU: tắt các ô của giá trị này rồi lưu trước' : undefined"
-                                :aria-label="`Bỏ ${valueName(valueId)}`"
+                                :title="usedValueIds.has(valueId) ? t('catalog::admin.variant_matrix_editor.skus_remain_turn_off_value') : undefined"
+                                :aria-label="t('catalog::admin.variant_matrix_editor.remove_value_id', { value_id: valueName(valueId) })"
                                 @click="removeValue(axis, valueId)"
                             >✕</button>
                         </span>
                     </Sortable>
-                    <p v-if="!axis.value_ids.length" class="text-xs text-amber-700">Chưa chọn giá trị — trục trống được bỏ qua.</p>
+                    <p v-if="!axis.value_ids.length" class="text-xs text-amber-700">{{ t('catalog::admin.variant_matrix_editor.no_values_chosen_empty_axes') }}</p>
                     <div class="space-y-1.5">
                         <!-- Chọn là thêm ngay (một thao tác). -->
                         <div v-if="addableValues(axis).length">
                             <Select
                                 :model-value="null"
                                 :options="addableValues(axis)"
-                                :placeholder="`+ ${typeName(axis.option_type_id)} có sẵn`"
-                                :aria-label="`Thêm giá trị ${typeName(axis.option_type_id)}`"
+                                :placeholder="t('catalog::admin.variant_matrix_editor.existing_option_type_id', { option_type_id: typeName(axis.option_type_id) })"
+                                :aria-label="t('catalog::admin.variant_matrix_editor.add_option_type_id_value', { option_type_id: typeName(axis.option_type_id) })"
                                 @update:model-value="(id) => { newValue[axis.option_type_id] = Number(id); addValue(axis); }"
                             />
                         </div>
@@ -565,33 +566,33 @@ const enabledCount = computed(() => rows.value.length);
                             v-model="newValueDraft(axis).hex"
                             type="color"
                             class="h-8 w-8 cursor-pointer rounded border border-slate-300"
-                            :aria-label="`Mã màu cho ${typeName(axis.option_type_id)} mới`"
+                            :aria-label="t('catalog::admin.variant_matrix_editor.colour_code_new_option_type', { option_type_id: typeName(axis.option_type_id) })"
                         />
                         <input
                             v-model="newValueDraft(axis).name"
                             :class="[inputClass, 'min-w-0 flex-1']"
-                            :placeholder="`${typeName(axis.option_type_id)} mới…`"
-                            :aria-label="`Tạo ${typeName(axis.option_type_id)} mới`"
+                            :placeholder="t('catalog::admin.variant_matrix_editor.new_option_type_id', { option_type_id: typeName(axis.option_type_id) })"
+                            :aria-label="t('catalog::admin.variant_matrix_editor.create_new_option_type_id', { option_type_id: typeName(axis.option_type_id) })"
                             @keydown.enter.prevent="createValue(axis)"
                         />
-                        <button type="button" :class="secondaryButton" :disabled="quickBusy || !newValueDraft(axis).name.trim()" @click="createValue(axis)">Tạo</button>
+                        <button type="button" :class="secondaryButton" :disabled="quickBusy || !newValueDraft(axis).name.trim()" @click="createValue(axis)">{{ t('catalog::admin.variant_matrix_editor.create') }}</button>
                         </div>
                     </div>
                 </div>
             </Sortable>
             <div v-if="!locked && axes.length < MAX_AXES" class="space-y-1.5 rounded-lg border border-dashed border-slate-300 p-3 text-sm">
-                <span class="text-xs font-medium text-slate-600">Thêm trục ({{ axes.length }}/{{ MAX_AXES }})</span>
+                <span class="text-xs font-medium text-slate-600">{{ t('catalog::admin.variant_matrix_editor.add_axis_count_max_axes', { count: axes.length, max_axes: MAX_AXES }) }}</span>
                 <span v-if="addableTypes.length" class="block">
-                    <Select :model-value="null" :options="addableTypes" placeholder="+ Thêm trục có sẵn…" aria-label="Thêm trục" @update:model-value="(id) => { newTypeId = Number(id); addAxis(); }" />
+                    <Select :model-value="null" :options="addableTypes" :placeholder="t('catalog::admin.variant_matrix_editor.add_existing_axis')" :aria-label="t('catalog::admin.variant_matrix_editor.add_axis')" @update:model-value="(id) => { newTypeId = Number(id); addAxis(); }" />
                 </span>
-                <span class="block text-xs text-slate-400">hoặc tạo loại mới</span>
+                <span class="block text-xs text-slate-400">{{ t('catalog::admin.variant_matrix_editor.create_new_type') }}</span>
                 <div class="flex items-center gap-1">
-                    <input v-model="quickType.name" :class="[inputClass, 'min-w-0 flex-1']" placeholder="vd. Chất liệu" aria-label="Tên loại tuỳ chọn mới" @keydown.enter.prevent="createType" />
-                    <span class="w-28"><Select v-model="quickType.display_type" :options="displayTypeOptions" aria-label="Kiểu hiển thị" /></span>
-                    <button type="button" :class="secondaryButton" :disabled="quickBusy || !quickType.name.trim()" @click="createType">Tạo</button>
+                    <input v-model="quickType.name" :class="[inputClass, 'min-w-0 flex-1']" :placeholder="t('catalog::admin.variant_matrix_editor.material')" :aria-label="t('catalog::admin.variant_matrix_editor.new_option_type_name')" @keydown.enter.prevent="createType" />
+                    <span class="w-28"><Select v-model="quickType.display_type" :options="displayTypeOptions" :aria-label="t('catalog::admin.variant_matrix_editor.display_style')" /></span>
+                    <button type="button" :class="secondaryButton" :disabled="quickBusy || !quickType.name.trim()" @click="createType">{{ t('catalog::admin.variant_matrix_editor.create') }}</button>
                 </div>
             </div>
-            <p v-else-if="locked" class="text-xs text-slate-500">Đã có SKU: không đổi được loại tuỳ chọn (tắt hết SKU rồi lưu trước). Vẫn thêm/bớt giá trị và kéo đổi thứ tự trục được.</p>
+            <p v-else-if="locked" class="text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.skus_exist_option_type_cannot') }}</p>
             <p v-for="message in axisErrors" :key="message" class="text-sm text-red-600">{{ message }}</p>
             <p v-for="(message, field) in quickErrors" :key="field" class="text-sm text-red-600">{{ message }}</p>
         </div>
@@ -599,14 +600,14 @@ const enabledCount = computed(() => rows.value.length);
         </aside>
 
         <div class="min-w-0 space-y-6">
-            <section class="space-y-3" aria-label="Tổ hợp đang bán">
+            <section class="space-y-3" :aria-label="t('catalog::admin.variant_matrix_editor.combinations_sale')">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h3 class="text-sm font-semibold text-slate-900">2. Chọn tổ hợp bán</h3>
-                    <span class="text-xs text-slate-500">{{ summary.active }} đang bán · {{ summary.inactive }} ngừng bán<template v-if="combos.length"> / {{ combos.length }} tổ hợp</template></span>
+                    <h3 class="text-sm font-semibold text-slate-900">{{ t('catalog::admin.variant_matrix_editor.text_2_choose_combinations_sell') }}</h3>
+                    <span class="text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.active_sale_inactive_discontinued', { active: summary.active, inactive: summary.inactive }) }}<template v-if="combos.length"> {{ t('catalog::admin.variant_matrix_editor.count_combinations', { count: combos.length }) }}</template></span>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-3">
-        <p v-if="!axes.length" class="text-sm text-slate-500">Chưa có trục. Thêm ít nhất một loại tuỳ chọn (vd. Màu, Size).</p>
-                    <p v-else-if="!combos.length" class="text-sm text-slate-500">Chọn hoặc tạo giá trị cho trục (vd. các màu, các size) — mọi tổ hợp được bật sẵn, tắt ô không bán.</p>
+        <p v-if="!axes.length" class="text-sm text-slate-500">{{ t('catalog::admin.variant_matrix_editor.no_axes_yet_add_least') }}</p>
+                    <p v-else-if="!combos.length" class="text-sm text-slate-500">{{ t('catalog::admin.variant_matrix_editor.choose_create_values_each_axis') }}</p>
                     <template v-else-if="combos.length">
                         <!-- 2 trục: lưới hàng × cột -->
                         <div v-if="activeAxes.length === 2" class="overflow-x-auto text-sm">
@@ -617,12 +618,12 @@ const enabledCount = computed(() => rows.value.length);
                                     :key="columnId"
                                     type="button"
                                     class="rounded p-2 text-center font-medium hover:bg-indigo-50"
-                                    :title="`Bật/tắt cả cột ${valueName(columnId)}`"
+                                    :title="t('catalog::admin.variant_matrix_editor.toggle_whole_column_column_id', { column_id: valueName(columnId) })"
                                     @click="toggleLine(1, columnId)"
                                 >{{ valueName(columnId) }}</button>
                             </div>
                             <div v-for="rowId in activeAxes[0].value_ids" :key="rowId" class="grid items-center gap-1 border-t border-slate-100" :style="gridStyle">
-                                <button type="button" class="flex items-center gap-2 rounded p-2 text-left hover:bg-indigo-50" :title="`Bật/tắt cả hàng ${valueName(rowId)}`" @click="toggleLine(0, rowId)">
+                                <button type="button" class="flex items-center gap-2 rounded p-2 text-left hover:bg-indigo-50" :title="t('catalog::admin.variant_matrix_editor.toggle_whole_row_row_id', { row_id: valueName(rowId) })" @click="toggleLine(0, rowId)">
                                     <span v-if="isSwatch(activeAxes[0].option_type_id)" class="inline-block h-5 w-5 shrink-0 rounded-full border border-slate-300" :style="{ background: valueById.get(rowId)?.hex ?? 'transparent' }" />
                                     <span class="truncate font-medium">{{ valueName(rowId) }}</span>
                                     <span class="ml-auto text-xs text-slate-400">{{ lineCount(0, rowId) }}</span>
@@ -652,31 +653,31 @@ const enabledCount = computed(() => rows.value.length);
                             >{{ comboLabel(values) }} · {{ cellText(draftOf(values)) }}</button>
                         </div>
                         <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                            <span><span class="inline-block h-3 w-3 rounded border border-indigo-500 bg-indigo-50 align-middle" /> Đang bán</span>
-                            <span><span class="inline-block h-3 w-3 rounded border border-slate-400 bg-slate-100 align-middle" /> Ngừng bán</span>
-                            <span><span class="inline-block h-3 w-3 rounded border border-dashed border-slate-300 align-middle" /> Chưa có</span>
-                            <span v-if="activeAxes.length === 2">· Bấm tên hàng/cột để bật/tắt cả hàng/cột</span>
-                            <button v-if="enabledCount < combos.length" type="button" class="ml-auto text-indigo-600 underline" @click="enableAll">Bật mọi tổ hợp ({{ combos.length }})</button>
+                            <span><span class="inline-block h-3 w-3 rounded border border-indigo-500 bg-indigo-50 align-middle" /> {{ t('catalog::admin.variant_matrix_editor.sale') }}</span>
+                            <span><span class="inline-block h-3 w-3 rounded border border-slate-400 bg-slate-100 align-middle" /> {{ t('catalog::admin.variant_matrix_editor.discontinued') }}</span>
+                            <span><span class="inline-block h-3 w-3 rounded border border-dashed border-slate-300 align-middle" /> {{ t('catalog::admin.variant_matrix_editor.not_yet') }}</span>
+                            <span v-if="activeAxes.length === 2">{{ t('catalog::admin.variant_matrix_editor.click_row_column_name_toggle') }}</span>
+                            <button v-if="enabledCount < combos.length" type="button" class="ml-auto text-indigo-600 underline" @click="enableAll">{{ t('catalog::admin.variant_matrix_editor.turn_all_combinations_count', { count: combos.length }) }}</button>
                         </div>
                     </template>
 
                 </div>
             </section>
 
-            <section v-if="enabledCount" class="space-y-3" aria-label="Chi tiết SKU">
+            <section v-if="enabledCount" class="space-y-3" :aria-label="t('catalog::admin.variant_matrix_editor.sku_details')">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h3 class="text-sm font-semibold text-slate-900">3. Chi tiết SKU</h3>
-                    <button v-if="productUrl && variants.length" type="button" :class="secondaryButton" data-assign-images @click="assign.picking = true">Gán ảnh cho nhiều SKU</button>
-                    <span class="text-xs text-slate-500">Sửa trực tiếp trong bảng: SKU, giá, tồn… <template v-if="summary.withoutImages"> · <span class="text-amber-700">{{ summary.withoutImages }} SKU chưa có ảnh</span></template></span>
+                    <h3 class="text-sm font-semibold text-slate-900">{{ t('catalog::admin.variant_matrix_editor.text_3_sku_details') }}</h3>
+                    <button v-if="productUrl && variants.length" type="button" :class="secondaryButton" data-assign-images @click="assign.picking = true">{{ t('catalog::admin.variant_matrix_editor.assign_images_multiple_skus') }}</button>
+                    <span class="text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.edit_directly_table_sku_price') }} <template v-if="summary.withoutImages"> · <span class="text-amber-700">{{ t('catalog::admin.variant_matrix_editor.without_images_skus_without_images', { without_images: summary.withoutImages }) }}</span></template></span>
                 </div>
                 <div v-if="adoptVariant" class="flex flex-wrap items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm" data-adopt-single>
-                    <span>SKU hiện có <span class="font-mono text-xs font-medium">{{ adoptVariant.sku }}</span> (giữ giá, tồn, ảnh, lịch sử đơn) trở thành ô</span>
-                    <div class="w-56"><Select v-model="adoptTarget" :options="adoptOptions" aria-label="Ô nhận SKU hiện có" /></div>
+                    <span>{{ t('catalog::admin.variant_matrix_editor.existing_sku') }} <span class="font-mono text-xs font-medium">{{ adoptVariant.sku }}</span> {{ t('catalog::admin.variant_matrix_editor.keeps_price_stock_images_order') }}</span>
+                    <div class="w-56"><Select v-model="adoptTarget" :options="adoptOptions" :aria-label="t('catalog::admin.variant_matrix_editor.cell_receiving_existing_sku')" /></div>
                 </div>
                 <div v-if="!productUrl && imageAxis && imageValues.length" class="space-y-3 rounded-md border border-slate-200 bg-white p-3 text-sm" data-value-images>
                     <div>
-                        <h4 class="font-medium">Ảnh theo {{ typeName(imageAxis.option_type_id).toLowerCase() }}</h4>
-                        <p class="text-xs text-slate-500">Lưu cùng sản phẩm khi bấm "Lưu" — mọi SKU cùng {{ typeName(imageAxis.option_type_id).toLowerCase() }} dùng chung bộ ảnh; để trống thì dùng "Ảnh sản phẩm" chung.</p>
+                        <h4 class="font-medium">{{ t('catalog::admin.variant_matrix_editor.images_option_type_id', { option_type_id: typeName(imageAxis.option_type_id).toLowerCase() }) }}</h4>
+                        <p class="text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.saved_product_when_you_click', { option_type_id: typeName(imageAxis.option_type_id).toLowerCase() }) }}</p>
                     </div>
                     <div class="grid gap-4 lg:grid-cols-2">
                         <div v-for="valueId in imageValues" :key="valueId" class="space-y-1">
@@ -684,22 +685,22 @@ const enabledCount = computed(() => rows.value.length);
                                 <span v-if="isSwatch(imageAxis.option_type_id)" class="inline-block h-3 w-3 rounded-full border border-slate-300" :style="{ background: valueById.get(valueId)?.hex ?? 'transparent' }" />
                                 {{ valueName(valueId) }}
                             </p>
-                            <MediaField v-model="valueImages[valueId]" multiple :max="20" :label="`ảnh ${valueName(valueId)}`" />
+                            <MediaField v-model="valueImages[valueId]" multiple :max="20" :label="t('catalog::admin.variant_matrix_editor.value_id_images', { value_id: valueName(valueId) })" />
                         </div>
                     </div>
                     <p v-for="(message, field) in valueImageErrors" :key="field" class="text-red-600">{{ message }}</p>
                 </div>
                 <div class="flex flex-wrap items-end gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm">
-                    <span class="w-full text-xs text-slate-500">Áp hàng loạt cho các SKU khớp (lưu khi bấm "Lưu")</span>
+                    <span class="w-full text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.bulk_apply_matching_skus_saved') }}</span>
                     <div v-for="axis in activeAxes" :key="axis.option_type_id" class="w-36">
-                        <Select :model-value="batch.filter[axis.option_type_id] ?? 0" :options="batchOptions(axis)" :aria-label="`${typeName(axis.option_type_id)} áp dụng`" @update:model-value="(value) => (batch.filter[axis.option_type_id] = Number(value))" />
+                        <Select :model-value="batch.filter[axis.option_type_id] ?? 0" :options="batchOptions(axis)" :aria-label="t('catalog::admin.variant_matrix_editor.applies_option_type_id', { option_type_id: typeName(axis.option_type_id) })" @update:model-value="(value) => (batch.filter[axis.option_type_id] = Number(value))" />
                     </div>
-                    <div class="w-56"><Select v-model="batch.target" :options="batchTargets" placeholder="Trường…" aria-label="Trường cần áp" /></div>
+                    <div class="w-56"><Select v-model="batch.target" :options="batchTargets" :placeholder="t('catalog::admin.variant_matrix_editor.field')" :aria-label="t('catalog::admin.variant_matrix_editor.field_apply')" /></div>
                     <div class="w-40">
-                        <Select v-if="batch.target === 'status'" v-model="batch.value" :options="labelOptions(statusLabels)" aria-label="Giá trị" />
-                        <input v-else v-model="batch.value" :class="inputClass" aria-label="Giá trị" />
+                        <Select v-if="batch.target === 'status'" v-model="batch.value" :options="labelOptions(statusLabels)" :aria-label="t('catalog::admin.variant_matrix_editor.value')" />
+                        <input v-else v-model="batch.value" :class="inputClass" :aria-label="t('catalog::admin.variant_matrix_editor.value')" />
                     </div>
-                    <button type="button" :class="secondaryButton" :disabled="!batch.target" @click="applyBatch">Áp dụng</button>
+                    <button type="button" :class="secondaryButton" :disabled="!batch.target" @click="applyBatch">{{ t('catalog::admin.variant_matrix_editor.apply') }}</button>
                 </div>
 
                 <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
@@ -722,14 +723,14 @@ const enabledCount = computed(() => rows.value.length);
                                 @click="imageVariantId = row.draft.variantId"
                             >
                                 <img v-if="variantById.get(row.draft.variantId)!.images.length" :src="variantById.get(row.draft.variantId)!.images[0].url" alt="" class="h-8 w-6 rounded object-cover" />
-                                {{ variantById.get(row.draft.variantId)!.images.length ? `${variantById.get(row.draft.variantId)!.images.length} ảnh` : 'Thêm ảnh' }}
+                                {{ variantById.get(row.draft.variantId)!.images.length ? t('catalog::admin.variant_matrix_editor.count_images', { count: variantById.get(row.draft.variantId)!.images.length }) : t('catalog::admin.variant_matrix_editor.add_photos') }}
                             </button>
-                            <span v-else class="text-xs text-slate-400" title="Lưu biến thể trước rồi thêm ảnh">—</span>
+                            <span v-else class="text-xs text-slate-400" :title="t('catalog::admin.variant_matrix_editor.save_variants_first_then_add')">—</span>
                         </template>
                         <template #cell-sku="{ row }"><input v-model="row.draft.sku" :class="[inputClass, 'w-44 font-mono text-xs']" :aria-label="`SKU ${row.label}`" /></template>
                         <template #cell-barcode="{ row }"><input v-model="row.draft.barcode" :class="[inputClass, 'w-32 font-mono text-xs']" aria-label="Barcode" /></template>
-                        <template #cell-weight_gram="{ row }"><input v-model.number="row.draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" aria-label="Khối lượng (g)" /></template>
-                        <template #cell-status="{ row }"><div class="w-32"><Select v-model="row.draft.status" :options="labelOptions(statusLabels)" aria-label="Trạng thái" /></div></template>
+                        <template #cell-weight_gram="{ row }"><input v-model.number="row.draft.weight_gram" type="number" min="0" :class="[inputClass, 'w-24']" :aria-label="t('catalog::admin.variant_matrix_editor.weight')" /></template>
+                        <template #cell-status="{ row }"><div class="w-32"><Select v-model="row.draft.status" :options="labelOptions(statusLabels)" :aria-label="t('catalog::admin.variant_matrix_editor.status')" /></div></template>
                         <template v-for="{ key: columnKey, column, field } in fieldColumns" :key="columnKey" #[`cell-${columnKey}`]="{ row }">
                             <input
                                 v-if="field.type === 'bool'"
@@ -759,8 +760,8 @@ const enabledCount = computed(() => rows.value.length);
         <!-- Ảnh của một SKU -->
                 <div v-if="imageVariant" class="space-y-3 rounded-md border border-slate-200 p-3" aria-live="polite">
                     <div class="flex items-center justify-between text-sm">
-                        <span class="font-medium">Ảnh của {{ imageVariant.label }} <span class="font-mono text-xs text-slate-400">{{ imageVariant.sku }}</span></span>
-                        <button type="button" class="text-xs text-slate-500 underline" @click="imageVariantId = null">Đóng</button>
+                        <span class="font-medium">{{ t('catalog::admin.variant_matrix_editor.images_label', { label: imageVariant.label }) }} <span class="font-mono text-xs text-slate-400">{{ imageVariant.sku }}</span></span>
+                        <button type="button" class="text-xs text-slate-500 underline" @click="imageVariantId = null">{{ t('catalog::admin.variant_matrix_editor.close') }}</button>
                     </div>
                     <p v-if="errors.images" class="text-sm text-red-600">{{ errors.images }}</p>
                     <div class="flex flex-wrap gap-3">
@@ -771,13 +772,13 @@ const enabledCount = computed(() => rows.value.length);
                             list-class="flex flex-wrap gap-3"
                             item-class="w-24"
                             :item-key="(image) => image.id"
-                            :item-label="(image) => `ảnh ${imageVariant!.images.indexOf(image) + 1} của ${imageVariant!.label}`"
+                            :item-label="(image) => t('catalog::admin.variant_matrix_editor.image_image_label', { image: imageVariant!.images.indexOf(image) + 1, label: imageVariant!.label })"
                             @update:model-value="(images) => reorderImages(imageVariant!, images)"
                         >
-                            <img :src="image.url" :alt="index === 0 ? 'Ảnh đại diện' : ''" class="h-32 w-24 rounded object-cover" />
+                            <img :src="image.url" :alt="index === 0 ? t('catalog::admin.variant_matrix_editor.main_image') : ''" class="h-32 w-24 rounded object-cover" />
                             <div class="mt-1 flex items-center justify-between text-xs">
                                 <SortHandle v-bind="handle" />
-                                <button type="button" class="text-red-600" @click="removeImage(imageVariant!, image.id)">Xoá</button>
+                                <button type="button" class="text-red-600" @click="removeImage(imageVariant!, image.id)">{{ t('catalog::admin.variant_matrix_editor.delete') }}</button>
                             </div>
                         </Sortable>
                         <FileInput
@@ -790,10 +791,10 @@ const enabledCount = computed(() => rows.value.length);
                             class="w-24"
                             @pick="uploadImages(imageVariant!, $event)"
                         >
-                            <span class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">{{ imageUploadProgress === null ? '+ Ảnh' : `${imageUploadProgress}%` }}</span>
+                            <span class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-slate-300 text-xs text-slate-500">{{ imageUploadProgress === null ? t('catalog::admin.variant_matrix_editor.image_2') : `${imageUploadProgress}%` }}</span>
                         </FileInput>
                         <button type="button" class="flex h-32 w-24 items-center justify-center rounded border border-dashed border-indigo-300 text-center text-xs text-indigo-600" @click="picking = true">
-                            Chọn từ<br />thư viện
+                            {{ t('catalog::admin.variant_matrix_editor.choose_from') }}<br />{{ t('catalog::admin.variant_matrix_editor.library') }}
                         </button>
                     </div>
                     <div v-if="imageVariant.images.length && props.axes.length > 1" class="flex flex-wrap gap-2 text-xs">
@@ -803,16 +804,16 @@ const enabledCount = computed(() => rows.value.length);
                             type="button"
                             :class="secondaryButton"
                             @click="copyImages(imageVariant, axis.option_type_id, imageVariant.values[index])"
-                        >Áp cho mọi SKU cùng {{ typeName(axis.option_type_id).toLowerCase() }} {{ valueName(imageVariant.values[index]) }}</button>
+                        >{{ t('catalog::admin.variant_matrix_editor.apply_every_sku_same_option', { option_type_id: typeName(axis.option_type_id).toLowerCase(), index: valueName(imageVariant.values[index]) }) }}</button>
                     </div>
-                    <p class="text-xs text-slate-500">Ảnh đầu là ảnh đại diện của SKU (khuyến nghị tỉ lệ 4:5). Thời trang thường dùng chung ảnh cho mọi size cùng màu.</p>
+                    <p class="text-xs text-slate-500">{{ t('catalog::admin.variant_matrix_editor.first_image_sku_s_main') }}</p>
                 </div>
             </section>
         </div>
-        <MediaPicker v-model:open="assign.picking" title="Chọn ảnh để gán cho nhiều SKU" @select="startAssign" />
-        <Dialog v-model:open="assign.open" title="Gán ảnh cho SKU" :subtitle="`${assign.media.length} ảnh — thêm vào cuối bộ ảnh của SKU đã chọn`" size="large" :dirty="assign.variantIds.length > 0 && !assign.busy">
+        <MediaPicker v-model:open="assign.picking" :title="t('catalog::admin.variant_matrix_editor.choose_images_assign_multiple_skus')" @select="startAssign" />
+        <Dialog v-model:open="assign.open" :title="t('catalog::admin.variant_matrix_editor.assign_images_skus')" :subtitle="t('catalog::admin.variant_matrix_editor.count_images_added_end_selected', { count: assign.media.length })" size="large" :dirty="assign.variantIds.length > 0 && !assign.busy">
             <div class="space-y-4 overflow-y-auto">
-                <ol class="flex flex-wrap gap-2" aria-label="Ảnh sẽ gán (theo thứ tự)">
+                <ol class="flex flex-wrap gap-2" :aria-label="t('catalog::admin.variant_matrix_editor.images_assign_order')">
                     <li v-for="(item, index) in assign.media" :key="item.id" class="relative">
                         <img :src="item.thumb_url ?? item.url" :alt="item.name" class="h-24 w-20 rounded object-cover" />
                         <span class="absolute top-1 left-1 rounded bg-slate-900/70 px-1 text-[10px] text-white">{{ index + 1 }}</span>
@@ -828,24 +829,24 @@ const enabledCount = computed(() => rows.value.length);
                         :class="variantsWith(axisIndex, valueId).every((id) => assign.variantIds.includes(id)) ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-300'"
                         :aria-pressed="variantsWith(axisIndex, valueId).every((id) => assign.variantIds.includes(id))"
                         @click="toggleGroup(variantsWith(axisIndex, valueId))"
-                    >Mọi SKU {{ valueName(valueId) }}</button>
+                    >{{ t('catalog::admin.variant_matrix_editor.all_value_id_skus', { value_id: valueName(valueId) }) }}</button>
                 </div>
                 <fieldset class="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <legend class="mb-1 text-sm font-medium">SKU nhận ảnh ({{ assign.variantIds.length }}/{{ variants.length }})</legend>
+                    <legend class="mb-1 text-sm font-medium">{{ t('catalog::admin.variant_matrix_editor.skus_receiving_images_count_count2', { count: assign.variantIds.length, count2: variants.length }) }}</legend>
                     <label v-for="variant in variants" :key="variant.id" class="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-100">
                         <input v-model="assign.variantIds" type="checkbox" :value="variant.id" />
                         <span class="flex-1 truncate">{{ variant.label }} <span class="font-mono text-xs text-slate-400">{{ variant.sku }}</span></span>
-                        <span class="text-xs text-slate-400">{{ variant.images.length }} ảnh</span>
+                        <span class="text-xs text-slate-400">{{ t('catalog::admin.variant_matrix_editor.count_images', { count: variant.images.length }) }}</span>
                     </label>
                 </fieldset>
             </div>
             <template #footer="{ close }">
-                <button type="button" :class="secondaryButton" @click="close">Huỷ</button>
+                <button type="button" :class="secondaryButton" @click="close">{{ t('catalog::admin.variant_matrix_editor.cancel') }}</button>
                 <button type="button" :class="primaryButton" class="ml-auto" :disabled="!assign.variantIds.length || assign.busy" @click="submitAssign">
-                    {{ assign.busy ? 'Đang gán…' : `Gán cho ${assign.variantIds.length} SKU` }}
+                    {{ assign.busy ? t('catalog::admin.variant_matrix_editor.assigning') : t('catalog::admin.variant_matrix_editor.assign_count_skus', { count: assign.variantIds.length }) }}
                 </button>
             </template>
         </Dialog>
-        <MediaPicker :open="picking" :title="`Ảnh cho ${imageVariant?.label ?? ''}`" @update:open="(value) => !value && (picking = false)" @select="attachFromLibrary" />
+        <MediaPicker :open="picking" :title="t('catalog::admin.variant_matrix_editor.images_label_2', { label: imageVariant?.label ?? '' })" @update:open="(value) => !value && (picking = false)" @select="attachFromLibrary" />
     </div>
 </template>

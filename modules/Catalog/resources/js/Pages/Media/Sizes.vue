@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -39,10 +40,10 @@ const preview = computed(() => {
     return [...new Set(parsedWidths.value)].sort((a, b) => a - b).map((width) => (w ? `${width}×${Math.round((width * h) / w)}` : `${width}×…`));
 });
 const namedColumns = [
-    { key: 'label', label: 'Kích thước' },
-    { key: 'plugin', label: 'Khai báo bởi' },
-    { key: 'size', label: 'Rộng × cao (px)' },
-    { key: 'crop', label: 'Cắt khung' },
+    { key: 'label', label: t('catalog::admin.media_sizes.size') },
+    { key: 'plugin', label: t('catalog::admin.media_sizes.declared') },
+    { key: 'size', label: t('catalog::admin.media_sizes.width_height_px') },
+    { key: 'crop', label: t('catalog::admin.media_sizes.crop') },
     { key: 'reset', label: '', align: 'right' as const },
 ];
 
@@ -58,9 +59,9 @@ function save(): void {
 
 async function flush(): Promise<void> {
     const confirmed = await confirmAction({
-        title: 'Xoá toàn bộ cache ảnh?',
-        message: 'Bản thu nhỏ được tạo lại dần khi có người xem (trang đầu tiên sẽ chậm hơn một chút). Ảnh gốc không bị ảnh hưởng.',
-        confirmLabel: 'Xoá cache',
+        title: t('catalog::admin.media_sizes.clear_whole_image_cache'),
+        message: t('catalog::admin.media_sizes.thumbnails_regenerated_gradually_people_view'),
+        confirmLabel: t('catalog::admin.media_sizes.clear_cache'),
         tone: 'danger',
     });
     if (confirmed !== false) router.post(props.urls.flush, {}, { preserveScroll: true });
@@ -68,31 +69,31 @@ async function flush(): Promise<void> {
 </script>
 
 <template>
-    <Head title="Kích thước ảnh" />
-    <PageHeader title="Kích thước ảnh" subtitle="Bản thu nhỏ tạo tự động khi có người xem lần đầu, sau đó trả thẳng file tĩnh. Đổi kích thước là đổi đường dẫn ảnh — không lo ảnh cũ.">
-        <Link :href="urls.library" :class="secondaryButton">Thư viện ảnh</Link>
-        <button v-if="canManage" type="button" :class="secondaryButton" @click="flush">Xoá cache ảnh</button>
+    <Head :title="t('catalog::admin.media_sizes.image_sizes')" />
+    <PageHeader :title="t('catalog::admin.media_sizes.image_sizes')" :subtitle="t('catalog::admin.media_sizes.thumbnails_generated_first_view_then')">
+        <Link :href="urls.library" :class="secondaryButton">{{ t('catalog::admin.media_sizes.media_library') }}</Link>
+        <button v-if="canManage" type="button" :class="secondaryButton" @click="flush">{{ t('catalog::admin.media_sizes.clear_image_cache') }}</button>
     </PageHeader>
 
     <form class="grid max-w-4xl gap-6" @submit.prevent="save">
         <section class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 md:grid-cols-2">
-            <FormField label="Tỉ lệ ảnh sản phẩm" hint="Ảnh trong gallery sản phẩm được cắt (giữa ảnh) về đúng tỉ lệ để lưới đều nhau. Logo, banner, bài viết giữ tỉ lệ gốc." :error="errors.product_ratio">
+            <FormField :label="t('catalog::admin.media_sizes.product_image_ratio')" :hint="t('catalog::admin.media_sizes.product_gallery_images_cropped_centred')" :error="errors.product_ratio">
                 <Select v-model="form.product_ratio" :options="ratios" :disabled="!canManage" />
             </FormField>
-            <FormField label="Chất lượng (30–100)" hint="80 là cân bằng giữa dung lượng và độ nét." :error="errors.quality">
+            <FormField :label="t('catalog::admin.media_sizes.quality_30_100')" :hint="t('catalog::admin.media_sizes.text_80_balances_file_size_sharpness')" :error="errors.quality">
                 <input v-model.number="form.quality" type="number" min="30" max="100" :class="inputClass" :disabled="!canManage" />
             </FormField>
-            <FormField :label="`Các bề rộng (px, tối đa ${limits.widths})`" hint="Cách nhau bằng dấu phẩy. Trình duyệt tự chọn bản vừa màn hình (srcset); ảnh nhỏ hơn bề rộng thì không phóng to." :error="errors.widths ?? errors['widths.0']" class="md:col-span-2">
+            <FormField :label="t('catalog::admin.media_sizes.widths_px_most_widths', { widths: limits.widths })" :hint="t('catalog::admin.media_sizes.separated_commas_browsers_pick_version')" :error="errors.widths ?? errors['widths.0']" class="md:col-span-2">
                 <input v-model="widthsText" :class="inputClass" placeholder="160, 400, 800, 1600" :disabled="!canManage" />
             </FormField>
             <p class="text-sm text-slate-600 md:col-span-2" data-product-sizes>
-                Ảnh sản phẩm: <span v-for="size in preview" :key="size" class="mr-2 inline-block rounded bg-slate-100 px-2 py-0.5 font-mono text-xs">{{ size }}</span>
+                {{ t('catalog::admin.media_sizes.product_images') }} <span v-for="size in preview" :key="size" class="mr-2 inline-block rounded bg-slate-100 px-2 py-0.5 font-mono text-xs">{{ size }}</span>
             </p>
         </section>
 
         <section class="space-y-3">
-            <h2 class="text-sm font-medium">Kích thước riêng của plugin</h2>
-            <DataTable :columns="namedColumns" :rows="named" :row-key="(row) => row.name" :row-label="(row) => row.label" empty-text="Chưa có plugin nào khai báo kích thước riêng.">
+            <h2 class="text-sm font-medium">{{ t('catalog::admin.media_sizes.plugin_specific_sizes') }}</h2>
+            <DataTable :columns="namedColumns" :rows="named" :row-key="(row) => row.name" :row-label="(row) => row.label" :empty-text="t('catalog::admin.media_sizes.no_plugin_declares_own_sizes')">
                 <template #cell-label="{ row }">
                     <div class="font-medium">{{ row.label }}</div>
                     <div class="font-mono text-xs text-slate-500">{{ row.name }}</div>
@@ -100,21 +101,21 @@ async function flush(): Promise<void> {
                 <template #cell-plugin="{ row }">{{ row.plugin ?? 'Core' }}</template>
                 <template #cell-size="{ row }">
                     <div class="flex items-center gap-1">
-                        <input v-model.number="overrides[row.name].width" type="number" :min="limits.min" :max="limits.max" :class="[inputClass, 'w-24 py-1']" :aria-label="`Rộng ${row.label}`" :disabled="!canManage" />
+                        <input v-model.number="overrides[row.name].width" type="number" :min="limits.min" :max="limits.max" :class="[inputClass, 'w-24 py-1']" :aria-label="t('catalog::admin.media_sizes.width_label', { label: row.label })" :disabled="!canManage" />
                         <span>×</span>
-                        <input v-model.number="overrides[row.name].height" type="number" :min="limits.min" :max="limits.max" :class="[inputClass, 'w-24 py-1']" placeholder="tự động" :aria-label="`Cao ${row.label}`" :disabled="!canManage" />
+                        <input v-model.number="overrides[row.name].height" type="number" :min="limits.min" :max="limits.max" :class="[inputClass, 'w-24 py-1']" :placeholder="t('catalog::admin.media_sizes.auto')" :aria-label="`Cao ${row.label}`" :disabled="!canManage" />
                     </div>
                     <p v-if="errors[`overrides.${row.name}`]" class="mt-1 text-xs text-red-600">{{ errors[`overrides.${row.name}`] }}</p>
                 </template>
                 <template #cell-crop="{ row }">
-                    <input v-model="overrides[row.name].crop" type="checkbox" :aria-label="`Cắt khung ${row.label}`" :disabled="!canManage || !overrides[row.name].height" />
+                    <input v-model="overrides[row.name].crop" type="checkbox" :aria-label="t('catalog::admin.media_sizes.crop_label', { label: row.label })" :disabled="!canManage || !overrides[row.name].height" />
                 </template>
                 <template #cell-reset="{ row }">
-                    <button v-if="canManage" type="button" class="text-xs text-indigo-600 hover:underline" @click="reset(row)">Mặc định ({{ row.default.width }}×{{ row.default.height ?? '…' }})</button>
+                    <button v-if="canManage" type="button" class="text-xs text-indigo-600 hover:underline" @click="reset(row)">{{ t('catalog::admin.media_sizes.default_width_height', { width: row.default.width, height: row.default.height ?? '…' }) }}</button>
                 </template>
             </DataTable>
         </section>
 
-        <div v-if="canManage"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>
+        <div v-if="canManage"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('catalog::admin.media_sizes.save') }}</button></div>
     </form>
 </template>

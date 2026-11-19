@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionTabs from '@admin/Components/Extensions/ExtensionTabs.vue';
@@ -58,29 +59,29 @@ function submit(): void {
 async function act(action: 'activate' | 'stop'): Promise<void> {
     const options =
         action === 'stop'
-            ? { title: 'Dừng ngay campaign?', message: 'Mọi khuyến mãi và bảng giá của campaign sẽ tắt và không bật lại được.', confirmLabel: 'Dừng ngay', tone: 'danger' as const }
-            : { title: 'Kích hoạt campaign?', message: 'Khuyến mãi và bảng giá sẽ chạy theo lịch.', confirmLabel: 'Kích hoạt' };
+            ? { title: t('promotion::admin.campaigns_form.stop_campaign_now'), message: t('promotion::admin.campaigns_form.every_promotion_price_list_campaign'), confirmLabel: t('promotion::admin.campaigns_form.stop_now'), tone: 'danger' as const }
+            : { title: t('promotion::admin.campaigns_form.activate_campaign'), message: t('promotion::admin.campaigns_form.promotions_price_lists_run_schedule'), confirmLabel: t('promotion::admin.campaigns_form.activate') };
     if (props.campaign && (await confirmAction(options)) !== false) {
         router.post(`${props.baseUrl}/${props.campaign.id}/${action}`, {}, { preserveScroll: true });
     }
 }
 
 async function destroy(): Promise<void> {
-    if (props.campaign && (await confirmAction({ title: 'Xoá campaign nháp?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.campaign && (await confirmAction({ title: t('promotion::admin.campaigns_form.delete_draft_campaign'), confirmLabel: t('promotion::admin.campaigns_form.delete'), tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.campaign.id}`);
     }
 }
 </script>
 
 <template>
-    <Head :title="campaign ? campaign.name : 'Thêm campaign'" />
-    <PageHeader :title="campaign ? campaign.name : 'Thêm campaign'">
+    <Head :title="campaign ? campaign.name : t('promotion::admin.campaigns_form.add_campaign')" />
+    <PageHeader :title="campaign ? campaign.name : t('promotion::admin.campaigns_form.add_campaign')">
         <StatusBadge v-if="campaign" :label="labels.campaign_state[campaign.state] ?? campaign.state" :tone="campaignStateTone(campaign.state)" />
-        <Link :href="baseUrl" :class="secondaryButton">Danh sách</Link>
+        <Link :href="baseUrl" :class="secondaryButton">{{ t('promotion::admin.campaigns_form.list') }}</Link>
         <template v-if="campaign && can.manage">
-            <button v-if="campaign.status === 'draft'" type="button" :class="primaryButton" @click="act('activate')">Kích hoạt</button>
-            <button v-if="campaign.status !== 'stopped'" type="button" :class="dangerButton" @click="act('stop')">Dừng ngay</button>
-            <button v-if="campaign.status === 'draft'" type="button" :class="secondaryButton" @click="destroy">Xoá</button>
+            <button v-if="campaign.status === 'draft'" type="button" :class="primaryButton" @click="act('activate')">{{ t('promotion::admin.campaigns_form.activate') }}</button>
+            <button v-if="campaign.status !== 'stopped'" type="button" :class="dangerButton" @click="act('stop')">{{ t('promotion::admin.campaigns_form.stop_now') }}</button>
+            <button v-if="campaign.status === 'draft'" type="button" :class="secondaryButton" @click="destroy">{{ t('promotion::admin.campaigns_form.delete') }}</button>
         </template>
     </PageHeader>
 
@@ -90,34 +91,34 @@ async function destroy(): Promise<void> {
 
     <form class="grid gap-6 lg:grid-cols-2" @submit.prevent="submit">
         <div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
-            <FormField label="Tên" :error="errors.name"><input v-model="form.name" :class="inputClass" :disabled="!editable" placeholder="vd. Sale 11.11" /></FormField>
-            <FormField label="Mã" hint="chữ thường, vd. sale-1111" :error="errors.code"><input v-model="form.code" :class="inputClass" :disabled="!editable" /></FormField>
-            <FormField label="Mô tả" :error="errors.description"><textarea v-model="form.description" rows="2" :class="inputClass" :disabled="!editable" /></FormField>
-            <FormField label="Bắt đầu (giờ cửa hàng)" :error="errors.starts_at"><DateInput v-model="form.starts_at" with-time :disabled="!editable" /></FormField>
-            <FormField label="Kết thúc (giờ cửa hàng)" :error="errors.ends_at"><DateInput v-model="form.ends_at" with-time :disabled="!editable" /></FormField>
-            <button v-if="editable" type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
-            <p class="text-xs text-slate-500">Campaign quyết định lịch và trạng thái của mọi thành viên: nháp → thành viên tắt; kích hoạt → bật theo lịch này; dừng → tắt ngay.</p>
+            <FormField :label="t('promotion::admin.campaigns_form.name')" :error="errors.name"><input v-model="form.name" :class="inputClass" :disabled="!editable" placeholder="vd. Sale 11.11" /></FormField>
+            <FormField :label="t('promotion::admin.campaigns_form.code')" :hint="t('promotion::admin.campaigns_form.lowercase_sale_1111')" :error="errors.code"><input v-model="form.code" :class="inputClass" :disabled="!editable" /></FormField>
+            <FormField :label="t('promotion::admin.campaigns_form.description')" :error="errors.description"><textarea v-model="form.description" rows="2" :class="inputClass" :disabled="!editable" /></FormField>
+            <FormField :label="t('promotion::admin.campaigns_form.starts_store_time')" :error="errors.starts_at"><DateInput v-model="form.starts_at" with-time :disabled="!editable" /></FormField>
+            <FormField :label="t('promotion::admin.campaigns_form.ends_store_time')" :error="errors.ends_at"><DateInput v-model="form.ends_at" with-time :disabled="!editable" /></FormField>
+            <button v-if="editable" type="submit" :class="primaryButton" :disabled="form.processing">{{ t('promotion::admin.campaigns_form.save') }}</button>
+            <p class="text-xs text-slate-500">{{ t('promotion::admin.campaigns_form.campaign_controls_schedule_status_all') }}</p>
         </div>
 
         <div class="space-y-4">
             <fieldset class="rounded-lg border border-slate-200 bg-white p-5">
-                <legend class="px-1 text-sm font-medium">Khuyến mãi</legend>
+                <legend class="px-1 text-sm font-medium">{{ t('promotion::admin.campaigns_form.promotion') }}</legend>
                 <p v-if="errors.promotion_ids" class="mb-2 text-sm text-red-600">{{ errors.promotion_ids }}</p>
                 <label v-for="promotion in promotions" :key="promotion.id" class="flex items-center gap-2 py-1 text-sm">
                     <input v-model="form.promotion_ids" type="checkbox" :value="promotion.id" :disabled="!editable" />
                     {{ promotion.name }}<span v-if="promotion.requires_voucher" class="text-xs text-slate-400">(voucher)</span>
                 </label>
-                <p v-if="!promotions.length" class="text-sm text-slate-500">Chưa có khuyến mãi nào chưa thuộc campaign khác.</p>
+                <p v-if="!promotions.length" class="text-sm text-slate-500">{{ t('promotion::admin.campaigns_form.no_promotions_outside_other_campaigns') }}</p>
             </fieldset>
             <fieldset class="rounded-lg border border-slate-200 bg-white p-5">
-                <legend class="px-1 text-sm font-medium">Bảng giá sale / thành viên</legend>
-                <p v-if="!can.price_lists" class="mb-2 text-xs text-slate-500">Cần quyền bảng giá (pricing.manage) để thay đổi.</p>
+                <legend class="px-1 text-sm font-medium">{{ t('promotion::admin.campaigns_form.sale_member_price_lists') }}</legend>
+                <p v-if="!can.price_lists" class="mb-2 text-xs text-slate-500">{{ t('promotion::admin.campaigns_form.requires_price_list_permission_pricing') }}</p>
                 <p v-if="errors.price_list_ids" class="mb-2 text-sm text-red-600">{{ errors.price_list_ids }}</p>
                 <label v-for="list in priceLists" :key="list.id" class="flex items-center gap-2 py-1 text-sm">
                     <input v-model="form.price_list_ids" type="checkbox" :value="list.id" :disabled="!editable || !can.price_lists" />
                     {{ list.name }} <span class="font-mono text-xs text-slate-400">{{ list.code }} · {{ list.type }}</span>
                 </label>
-                <p v-if="!priceLists.length" class="text-sm text-slate-500">Chưa có bảng giá sale/thành viên.</p>
+                <p v-if="!priceLists.length" class="text-sm text-slate-500">{{ t('promotion::admin.campaigns_form.no_sale_member_price_lists') }}</p>
             </fieldset>
         </div>
     </form>

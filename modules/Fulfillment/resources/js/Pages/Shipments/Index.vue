@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
@@ -62,9 +63,9 @@ const selected = ref<number[]>([]);
 const hasActiveFilters = computed(() => Boolean(filters.order || filters.status || Object.values(ext).some(Boolean)));
 const errors = computed(() => usePage().props.errors as Record<string, string>);
 const columns = [
-    { key: 'order_number', label: 'Đơn', class: 'font-mono' },
-    { key: 'carrier', label: 'Vận chuyển' },
-    { key: 'status', label: 'Trạng thái' },
+    { key: 'order_number', label: t('fulfillment::admin.shipments_index.order'), class: 'font-mono' },
+    { key: 'carrier', label: t('fulfillment::admin.shipments_index.shipping') },
+    { key: 'status', label: t('fulfillment::admin.shipments_index.status') },
     { key: 'cod_amount', label: 'COD', sortable: true },
     { key: 'actions', label: '', align: 'right' as const, class: 'space-x-2' },
 ];
@@ -104,11 +105,11 @@ function create(): void {
 
 async function book(id: number): Promise<void> {
     const values = await promptFields({
-        title: 'Nhập mã vận đơn',
-        confirmLabel: 'Lưu',
+        title: t('fulfillment::admin.shipments_index.enter_tracking_number'),
+        confirmLabel: t('fulfillment::admin.shipments_index.save'),
         fields: [
-            { key: 'tracking_number', label: 'Mã vận đơn', required: true },
-            { key: 'service_code', label: 'Hãng / dịch vụ', placeholder: 'vd. Viettel Post' },
+            { key: 'tracking_number', label: t('fulfillment::admin.shipments_index.tracking_number'), required: true },
+            { key: 'service_code', label: t('fulfillment::admin.shipments_index.carrier_service'), placeholder: 'vd. Viettel Post' },
         ],
     });
     if (values !== false) {
@@ -121,7 +122,7 @@ function move(id: number, status: string): void {
 }
 
 async function cancel(id: number): Promise<void> {
-    const reason = await confirmAction({ title: 'Huỷ vận đơn?', confirmLabel: 'Huỷ vận đơn', tone: 'danger', reason: { label: 'Lý do huỷ vận đơn', required: true } });
+    const reason = await confirmAction({ title: t('fulfillment::admin.shipments_index.cancel_shipment'), confirmLabel: t('fulfillment::admin.shipments_index.cancel_shipment_2'), tone: 'danger', reason: { label: t('fulfillment::admin.shipments_index.reason_cancelling_shipment'), required: true } });
     if (reason !== false) {
         router.post(`${props.baseUrl}/${id}/cancel`, { reason }, { preserveScroll: true });
     }
@@ -129,42 +130,42 @@ async function cancel(id: number): Promise<void> {
 </script>
 
 <template>
-    <Head title="Giao hàng" />
-    <p class="mb-2 text-sm text-slate-500">Giao hàng</p>
-    <PageHeader title="Vận đơn" subtitle="Tồn kho được trừ khi mọi vận đơn của đơn đã rời kho; hàng hoàn về được nhập lại kho.">
-        <button v-if="codStatementUrl" type="button" :class="secondaryButton" data-cod-statement-toggle @click="showCodStatement = !showCodStatement">Nhập bảng kê COD</button>
+    <Head :title="t('fulfillment::admin.shipments_index.fulfilment')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('fulfillment::admin.shipments_index.fulfilment') }}</p>
+    <PageHeader :title="t('fulfillment::admin.shipments_index.shipments')" :subtitle="t('fulfillment::admin.shipments_index.stock_deducted_once_every_shipment')">
+        <button v-if="codStatementUrl" type="button" :class="secondaryButton" data-cod-statement-toggle @click="showCodStatement = !showCodStatement">{{ t('fulfillment::admin.shipments_index.import_cod_statement') }}</button>
     </PageHeader>
     <form v-if="showCodStatement" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-cod-statement @submit.prevent="submitCodStatement">
-        <p>File Excel (.xlsx) hoặc CSV hãng gửi khi chuyển tiền thu hộ. Cần cột <strong>Mã vận đơn</strong> và <strong>Tiền thu hộ</strong>; cột <strong>Phí</strong> nếu có được ghi kèm. Dòng lệch vào mục "Đối soát lệch" ở trang Thanh toán. Bước sau là xem trước, chưa ghi gì.</p>
-        <FileInput v-model="codStatementForm.file" accept=".xlsx,.csv" :max-kb="5120" label="Chọn file" :progress="codStatementForm.progress?.percentage ?? null" />
+        <p>{{ t('fulfillment::admin.shipments_index.excel_xlsx_csv_file_carrier') }} <strong>{{ t('fulfillment::admin.shipments_index.tracking_number') }}</strong> {{ t('fulfillment::admin.shipments_index.text') }} <strong>{{ t('fulfillment::admin.shipments_index.cod_amount') }}</strong>{{ t('fulfillment::admin.shipments_index.column') }} <strong>{{ t('fulfillment::admin.shipments_index.fee') }}</strong> {{ t('fulfillment::admin.shipments_index.recorded_if_present_mismatched_rows') }}</p>
+        <FileInput v-model="codStatementForm.file" accept=".xlsx,.csv" :max-kb="5120" :label="t('fulfillment::admin.shipments_index.choose_file')" :progress="codStatementForm.progress?.percentage ?? null" />
         <p v-for="(error, key) in codStatementForm.errors" :key="key" class="text-red-600">{{ error }}</p>
-        <div><button type="submit" :class="primaryButton" :disabled="!codStatementForm.file || codStatementForm.processing">Xem trước</button></div>
+        <div><button type="submit" :class="primaryButton" :disabled="!codStatementForm.file || codStatementForm.processing">{{ t('fulfillment::admin.shipments_index.preview') }}</button></div>
     </form>
 
     <ExtensionTools :tools="extensions.tools ?? []" />
 
     <form class="mb-4 grid gap-2 sm:grid-cols-3" @submit.prevent="search()">
-        <input v-model="filters.order" :class="inputClass" placeholder="Số đơn" aria-label="Số đơn" />
-        <Select v-model="filters.status" :options="codeOptions(statuses, labels.shipment_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
+        <input v-model="filters.order" :class="inputClass" :placeholder="t('fulfillment::admin.shipments_index.orders')" :aria-label="t('fulfillment::admin.shipments_index.orders')" />
+        <Select v-model="filters.status" :options="codeOptions(statuses, labels.shipment_status)" :empty-label="t('fulfillment::admin.shipments_index.all_statuses')" :aria-label="t('fulfillment::admin.shipments_index.status')" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="primaryButton">Áp dụng</button>
-        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ bộ lọc</button>
-        <span v-if="hasActiveFilters" class="self-center text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
+        <button type="submit" :class="primaryButton">{{ t('fulfillment::admin.shipments_index.apply') }}</button>
+        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">{{ t('fulfillment::admin.shipments_index.clear_filters') }}</button>
+        <span v-if="hasActiveFilters" class="self-center text-xs text-indigo-700" aria-live="polite">{{ t('fulfillment::admin.shipments_index.filtering') }}</span>
     </form>
 
     <div v-if="order" class="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-sm">
-        <span>Đơn <span class="font-mono">{{ order.number }}</span> · {{ order.status_label }}</span>
-        <button v-if="order.can_create && canManage" type="button" :class="primaryButton" @click="create">Tạo vận đơn</button>
+        <span>{{ t('fulfillment::admin.shipments_index.order') }} <span class="font-mono">{{ order.number }}</span> · {{ order.status_label }}</span>
+        <button v-if="order.can_create && canManage" type="button" :class="primaryButton" @click="create">{{ t('fulfillment::admin.shipments_index.create_shipment') }}</button>
     </div>
 
     <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
-        <ExtensionActions :actions="extensions.actions" :ids="selected" selection-description="vận đơn" />
+        <span class="text-slate-500">{{ t('fulfillment::admin.shipments_index.count_selected', { count: selected.length }) }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="selected" :selection-description="t('fulfillment::admin.shipments_index.shipments_2')" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="shipments" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" empty-text="Chưa có vận đơn.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="shipments" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="extensions" :row-label="(row) => row.tracking_number ?? row.order_number ?? String(row.id)" :row-class="() => 'align-top'" :empty-text="t('fulfillment::admin.shipments_index.no_shipments_yet')">
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
-            <div class="font-sans text-xs text-slate-400">{{ row.items }} sản phẩm</div>
+            <div class="font-sans text-xs text-slate-400">{{ t('fulfillment::admin.shipments_index.items_products', { items: row.items }) }}</div>
         </template>
         <template #cell-carrier="{ row }">
             {{ row.carrier }}<span v-if="row.service_code"> · {{ row.service_code }}</span>
@@ -177,9 +178,9 @@ async function cancel(id: number): Promise<void> {
         <template #cell-cod_amount="{ row }"><MoneyText v-if="row.cod_amount" :amount="row.cod_amount" /><template v-else>—</template></template>
         <template #cell-actions="{ row }">
             <template v-if="canManage">
-                <button v-if="row.can_book && row.manual" type="button" class="text-indigo-600 hover:underline" @click="book(row.id)">Nhập mã vận đơn</button>
+                <button v-if="row.can_book && row.manual" type="button" class="text-indigo-600 hover:underline" @click="book(row.id)">{{ t('fulfillment::admin.shipments_index.enter_tracking_number') }}</button>
                 <button v-for="next in row.next" :key="next" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="move(row.id, next)">{{ label(next) }}</button>
-                <button v-if="row.can_cancel" type="button" class="text-xs text-red-600 hover:underline" @click="cancel(row.id)">Huỷ</button>
+                <button v-if="row.can_cancel" type="button" class="text-xs text-red-600 hover:underline" @click="cancel(row.id)">{{ t('fulfillment::admin.shipments_index.cancel') }}</button>
             </template>
         </template>
     </DataTable>

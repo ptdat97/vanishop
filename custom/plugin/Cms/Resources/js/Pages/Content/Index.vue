@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -6,7 +7,9 @@ import StatusBadge from '@admin/Components/StatusBadge.vue';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { kindLabels, statusLabels, type Kind } from './labels';
+import { kindLabels as kindLabelsOf, statusLabels as statusLabelsOf, type Kind } from './labels';
+const kindLabels = kindLabelsOf();
+const statusLabels = statusLabelsOf();
 
 const props = defineProps<{
     kind: Kind;
@@ -35,9 +38,9 @@ const props = defineProps<{
 const q = ref(props.search);
 const perPageOptions = [20, 50, 100];
 const columns = [
-    { key: 'title', label: 'Tiêu đề' },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'date', label: props.kind === 'posts' ? 'Ngày đăng' : 'Cập nhật', class: 'text-slate-600' },
+    { key: 'title', label: t('vani-cms::admin.content_index.title') },
+    { key: 'status', label: t('vani-cms::admin.content_index.status') },
+    { key: 'date', label: props.kind === 'posts' ? t('vani-cms::admin.content_index.published') : t('vani-cms::admin.content_index.updated'), class: 'text-slate-600' },
     { key: 'actions', label: '', align: 'right' as const },
 ];
 
@@ -51,11 +54,11 @@ function changePageSize(pageSize: number): void {
 </script>
 
 <template>
-    <Head :title="`Nội dung — ${kindLabels[kind].plural}`" />
-    <PageHeader title="Nội dung" subtitle="Trang (giới thiệu, chính sách…) và tin tức của cửa hàng. Soạn bằng Markdown.">
-        <Link v-if="kind === 'posts' && urls.categories" :href="urls.categories" :class="secondaryButton">Chuyên mục</Link>
-        <Link v-if="urls.banners" :href="urls.banners" :class="secondaryButton">Banner danh mục</Link>
-        <Link v-if="can.manage" :href="urls.create" :class="primaryButton">Thêm {{ kindLabels[kind].singular }}</Link>
+    <Head :title="t('vani-cms::admin.content_index.content_plural', { plural: kindLabels[kind].plural })" />
+    <PageHeader :title="t('vani-cms::admin.content_index.content')" :subtitle="t('vani-cms::admin.content_index.store_pages_about_policies_news')">
+        <Link v-if="kind === 'posts' && urls.categories" :href="urls.categories" :class="secondaryButton">{{ t('vani-cms::admin.content_index.category') }}</Link>
+        <Link v-if="urls.banners" :href="urls.banners" :class="secondaryButton">{{ t('vani-cms::admin.content_index.category_banners') }}</Link>
+        <Link v-if="can.manage" :href="urls.create" :class="primaryButton">{{ t('vani-cms::admin.content_index.add_singular', { singular: kindLabels[kind].singular }) }}</Link>
     </PageHeader>
 
     <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -63,12 +66,12 @@ function changePageSize(pageSize: number): void {
             {{ labels.plural }}
         </Link>
         <form class="ml-auto flex gap-2" @submit.prevent="submitSearch()">
-            <input v-model="q" type="search" placeholder="Tìm theo tiêu đề" :class="[inputClass, 'w-56']" />
-            <button type="submit" :class="secondaryButton">Tìm</button>
+            <input v-model="q" type="search" :placeholder="t('vani-cms::admin.content_index.search_title')" :class="[inputClass, 'w-56']" />
+            <button type="submit" :class="secondaryButton">{{ t('vani-cms::admin.content_index.search') }}</button>
         </form>
     </div>
 
-    <DataTable :columns="columns" :rows="items.data" :row-label="(item) => item.title" :empty-text="`Chưa có ${kindLabels[kind].singular} nào.`">
+    <DataTable :columns="columns" :rows="items.data" :row-label="(item) => item.title" :empty-text="t('vani-cms::admin.content_index.no_singular_yet', { singular: kindLabels[kind].singular })">
         <template #cell-title="{ row }">
             <Link :href="`${urls.index}/${row.id}`" class="font-medium text-red-700 hover:underline">{{ row.title }}</Link>
             <div class="text-xs text-slate-400">/{{ kind === 'pages' ? 'trang' : 'tin-tuc' }}/{{ row.slug }}</div>

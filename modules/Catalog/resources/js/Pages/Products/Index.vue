@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
@@ -45,7 +46,7 @@ const category = ref<number | ''>(props.filters.category ?? '');
 const brand = ref(props.filters.brand ?? '');
 const collection = ref<number | ''>(props.filters.collection ?? '');
 const missing = ref(props.filters.missing ?? '');
-const brandOptions = computed(() => [{ value: 'none', label: 'Chưa có thương hiệu' }, ...props.filterOptions.brands.map((item) => ({ value: String(item.id), label: item.label }))]);
+const brandOptions = computed(() => [{ value: 'none', label: t('catalog::admin.products_index.no_brand') }, ...props.filterOptions.brands.map((item) => ({ value: String(item.id), label: item.label }))]);
 const perPageOptions = [30, 50, 100];
 const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues });
 const selected = ref<number[]>([]);
@@ -81,12 +82,12 @@ const stockError = ref('');
 const savingStock = ref(false);
 const columns = [
     { key: 'image', label: '', class: 'w-16' },
-    { key: 'name', label: 'Sản phẩm', class: 'font-medium' },
-    { key: 'style_code', label: 'Mã', class: 'font-mono text-xs', sortable: true },
-    { key: 'brand', label: 'Thương hiệu' },
+    { key: 'name', label: t('catalog::admin.products_index.products'), class: 'font-medium' },
+    { key: 'style_code', label: t('catalog::admin.products_index.code'), class: 'font-mono text-xs', sortable: true },
+    { key: 'brand', label: t('catalog::admin.products_index.brand') },
     { key: 'skus', label: 'SKU' },
-    { key: 'views', label: 'Lượt xem 30 ngày', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'status', label: 'Trạng thái', sortable: true },
+    { key: 'views', label: t('catalog::admin.products_index.views_30_days'), align: 'right' as const, class: 'tabular-nums' },
+    { key: 'status', label: t('catalog::admin.products_index.status'), sortable: true },
 ];
 
 const list = useListQuery(() => baseUrl.value);
@@ -146,10 +147,10 @@ function saveStock(edit: StockEdit): void {
 
     stockError.value = '';
     savingStock.value = true;
-    router.post(edit.url, { changes, reason: 'Sửa nhanh ở danh sách sản phẩm' }, {
+    router.post(edit.url, { changes, reason: t('catalog::admin.products_index.quick_edit_product_list') }, {
         preserveScroll: true,
         onError: (errors) => {
-            stockError.value = Object.values(errors)[0] ?? 'Không thể cập nhật tồn.';
+            stockError.value = Object.values(errors)[0] ?? t('catalog::admin.products_index.could_not_update_stock');
         },
         onSuccess: () => {
             editingStockId.value = null;
@@ -170,7 +171,7 @@ function savePrice(url: string): void {
     router.put(url, { amount: priceDraft.value }, {
         preserveScroll: true,
         onError: (errors) => {
-            priceError.value = errors.amount ?? 'Không thể cập nhật giá.';
+            priceError.value = errors.amount ?? t('catalog::admin.products_index.could_not_update_price');
         },
         onSuccess: () => {
             editingPriceId.value = null;
@@ -183,45 +184,45 @@ function savePrice(url: string): void {
 </script>
 
 <template>
-    <Head title="Sản phẩm" />
+    <Head :title="t('catalog::admin.products_index.products')" />
     <CatalogTabs :nav="nav" active="products" />
-    <PageHeader title="Sản phẩm" :subtitle="`${products.total} sản phẩm`">
-        <a :href="fileUrls.export" :class="secondaryButton" data-export>Xuất file</a>
-        <button v-if="canManage" type="button" :class="secondaryButton" data-import-toggle @click="showImport = !showImport">Nhập file</button>
-        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm sản phẩm</Link>
+    <PageHeader :title="t('catalog::admin.products_index.products')" :subtitle="t('catalog::admin.products_index.total_products', { total: products.total })">
+        <a :href="fileUrls.export" :class="secondaryButton" data-export>{{ t('catalog::admin.products_index.export_file') }}</a>
+        <button v-if="canManage" type="button" :class="secondaryButton" data-import-toggle @click="showImport = !showImport">{{ t('catalog::admin.products_index.import_file') }}</button>
+        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('catalog::admin.products_index.add_product') }}</Link>
     </PageHeader>
 
     <form v-if="showImport" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-import @submit.prevent="submitImport">
-        <p>File Excel (.xlsx) hoặc CSV, mỗi SKU một dòng; các dòng cùng <strong>Mã sản phẩm</strong> là một sản phẩm. Dùng file "Xuất file" làm mẫu. Ô trống = giữ nguyên; sản phẩm mới là bản nháp nếu không ghi trạng thái. Bước sau là xem trước, chưa ghi gì.</p>
-        <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" label="Chọn file" :progress="importForm.progress?.percentage ?? null" />
+        <p>{{ t('catalog::admin.products_index.excel_xlsx_csv_file_one') }} <strong>{{ t('catalog::admin.products_index.product_code') }}</strong> {{ t('catalog::admin.products_index.form_one_product_use_export') }}</p>
+        <FileInput v-model="importForm.file" accept=".xlsx,.csv" :max-kb="5120" :label="t('catalog::admin.products_index.choose_file')" :progress="importForm.progress?.percentage ?? null" />
         <p v-for="(error, key) in importForm.errors" :key="key" class="text-red-600">{{ error }}</p>
-        <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">Xem trước</button></div>
+        <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">{{ t('catalog::admin.products_index.preview') }}</button></div>
     </form>
 
     <form class="mb-4 flex flex-wrap gap-2" @submit.prevent="search()">
-        <input v-model="q" :class="inputClass" class="max-w-xs" type="search" placeholder="Tìm theo tên hoặc mã (không cần dấu)" aria-label="Tìm sản phẩm" />
-        <div class="w-44"><Select v-model="status" :options="labelOptions(labels.product_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" /></div>
-        <div v-if="filterOptions.categories.length" class="w-52"><Select v-model="category" :options="recordOptions(filterOptions.categories)" empty-label="Mọi danh mục" aria-label="Danh mục (gồm danh mục con)" /></div>
-        <div class="w-48"><Select v-model="brand" :options="brandOptions" empty-label="Mọi thương hiệu" aria-label="Thương hiệu" /></div>
-        <div class="w-48"><Select v-model="missing" :options="labelOptions(filterOptions.missing)" empty-label="Đủ/thiếu dữ liệu" aria-label="Thiếu dữ liệu" /></div>
-        <div v-if="filterOptions.collections.length" class="w-48"><Select v-model="collection" :options="recordOptions(filterOptions.collections)" empty-label="Mọi bộ sưu tập" aria-label="Bộ sưu tập" /></div>
+        <input v-model="q" :class="inputClass" class="max-w-xs" type="search" :placeholder="t('catalog::admin.products_index.search_name_code_accents_optional')" :aria-label="t('catalog::admin.products_index.search_products')" />
+        <div class="w-44"><Select v-model="status" :options="labelOptions(labels.product_status)" :empty-label="t('catalog::admin.products_index.all_statuses')" :aria-label="t('catalog::admin.products_index.status')" /></div>
+        <div v-if="filterOptions.categories.length" class="w-52"><Select v-model="category" :options="recordOptions(filterOptions.categories)" :empty-label="t('catalog::admin.products_index.all_categories')" :aria-label="t('catalog::admin.products_index.category_including_subcategories')" /></div>
+        <div class="w-48"><Select v-model="brand" :options="brandOptions" :empty-label="t('catalog::admin.products_index.all_brands')" :aria-label="t('catalog::admin.products_index.brand')" /></div>
+        <div class="w-48"><Select v-model="missing" :options="labelOptions(filterOptions.missing)" :empty-label="t('catalog::admin.products_index.complete_missing_data')" :aria-label="t('catalog::admin.products_index.missing_data')" /></div>
+        <div v-if="filterOptions.collections.length" class="w-48"><Select v-model="collection" :options="recordOptions(filterOptions.collections)" :empty-label="t('catalog::admin.products_index.all_collections')" :aria-label="t('catalog::admin.products_index.collections')" /></div>
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="secondaryButton">Lọc</button>
+        <button type="submit" :class="secondaryButton">{{ t('catalog::admin.products_index.filter') }}</button>
     </form>
 
     <div v-if="extensions.actions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500" data-selected-count>Đã chọn {{ actionIds.length }}</span>
-        <ExtensionActions :actions="extensions.actions" :ids="actionIds" selection-description="sản phẩm" />
+        <span class="text-slate-500" data-selected-count>{{ t('catalog::admin.products_index.count_selected', { count: actionIds.length }) }}</span>
+        <ExtensionActions :actions="extensions.actions" :ids="actionIds" :selection-description="t('catalog::admin.products_index.products_2')" />
     </div>
     <div v-if="matching" class="mb-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-900" data-select-matching>
-        Đã chọn tất cả {{ matching.ids.length }} sản phẩm khớp bộ lọc<span v-if="matching.capped"> (tối đa {{ matching.ids.length }} trên {{ matching.total }} — thu hẹp bộ lọc để chọn phần còn lại)</span>.
-        <button type="button" class="ml-1 underline" @click="matching = null">Chỉ chọn trên trang này</button>
+        {{ t('catalog::admin.products_index.all_count_products_matching_filter', { count: matching.ids.length }) }}<span v-if="matching.capped"> {{ t('catalog::admin.products_index.most_count_total_narrow_filter', { count: matching.ids.length, total: matching.total }) }}</span>.
+        <button type="button" class="ml-1 underline" @click="matching = null">{{ t('catalog::admin.products_index.select_only_page') }}</button>
     </div>
     <div v-else-if="extensions.actions.length && pageFullySelected && products.total > products.data.length" class="mb-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm" data-select-matching>
-        Đã chọn {{ products.data.length }} sản phẩm trên trang này.
-        <button type="button" class="ml-1 font-medium text-indigo-700 underline" :disabled="loadingMatching" @click="selectAllMatching">Chọn tất cả {{ products.total }} sản phẩm khớp bộ lọc</button>
+        {{ t('catalog::admin.products_index.count_products_page_selected', { count: products.data.length }) }}
+        <button type="button" class="ml-1 font-medium text-indigo-700 underline" :disabled="loadingMatching" @click="selectAllMatching">{{ t('catalog::admin.products_index.select_all_total_products_matching', { total: products.total }) }}</button>
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, products.per_page, next)" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" empty-text="Không có sản phẩm nào.">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="products.data" :extensions="extensions" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, products.per_page, next)" :row-label="(product) => product.style_code" :row-click="canManage ? editProduct : undefined" :empty-text="t('catalog::admin.products_index.no_products')">
         <template #cell-image="{ row }">
             <img v-if="row.image_url" :src="row.image_url" alt="" class="h-12 w-10 rounded object-cover" />
             <div v-else class="h-12 w-10 rounded bg-slate-100" />
@@ -236,7 +237,7 @@ function savePrice(url: string): void {
         <template #cell-price="{ row, value, editValue, url }">
             <div v-if="canManagePrices && url" class="min-w-52">
                 <form v-if="editingPriceId === row.id" class="flex flex-wrap items-center gap-2" @submit.prevent="savePrice(url)">
-                    <label class="sr-only" :for="`base-price-${row.id}`">Giá niêm yết cho mọi size</label>
+                    <label class="sr-only" :for="`base-price-${row.id}`">{{ t('catalog::admin.products_index.list_price_every_size') }}</label>
                     <input
                         :id="`base-price-${row.id}`"
                         v-model="priceDraft"
@@ -247,16 +248,16 @@ function savePrice(url: string): void {
                         max="1000000000"
                         step="1"
                         required
-                        placeholder="Giá mới"
+                        :placeholder="t('catalog::admin.products_index.new_price')"
                     />
-                    <button type="submit" :class="primaryButton" :disabled="savingPrice">{{ savingPrice ? 'Đang lưu…' : 'Lưu' }}</button>
-                    <button type="button" :class="secondaryButton" :disabled="savingPrice" @click="closePriceEditor">Hủy</button>
+                    <button type="submit" :class="primaryButton" :disabled="savingPrice">{{ savingPrice ? t('catalog::admin.products_index.saving') : t('catalog::admin.products_index.save') }}</button>
+                    <button type="button" :class="secondaryButton" :disabled="savingPrice" @click="closePriceEditor">{{ t('catalog::admin.products_index.cancel') }}</button>
                     <span v-if="priceError" class="basis-full text-xs text-rose-700" role="alert">{{ priceError }}</span>
-                    <span class="basis-full text-xs text-slate-500">Hiện tại: {{ value }}. Áp dụng giá niêm yết mới cho mọi size.</span>
+                    <span class="basis-full text-xs text-slate-500">{{ t('catalog::admin.products_index.current_count_apply_new_list', { count: value }) }}</span>
                 </form>
                 <div v-else class="flex items-start justify-between gap-2">
                     <span>{{ value }}</span>
-                    <button type="button" class="shrink-0 text-indigo-600 hover:underline" @click="openPriceEditor(row.id, editValue as number | null)">Sửa</button>
+                    <button type="button" class="shrink-0 text-indigo-600 hover:underline" @click="openPriceEditor(row.id, editValue as number | null)">{{ t('catalog::admin.products_index.edit') }}</button>
                 </div>
             </div>
             <span v-else>{{ value }}</span>
@@ -265,19 +266,19 @@ function savePrice(url: string): void {
             <form v-if="editValue && editingStockId === row.id" class="min-w-52 space-y-1" data-stock-editor @submit.prevent="saveStock(editValue as StockEdit)" @click.stop>
                 <label v-for="line in (editValue as StockEdit).rows" :key="line.variant_id" class="flex items-center justify-between gap-2 text-xs">
                     <span class="text-slate-600">{{ line.label }}</span>
-                    <input v-model="stockDraft[line.variant_id]" :class="inputClass" class="w-20 text-right tabular-nums" type="number" min="0" max="1000000" step="1" required :aria-label="`Tồn ${line.label}`" />
+                    <input v-model="stockDraft[line.variant_id]" :class="inputClass" class="w-20 text-right tabular-nums" type="number" min="0" max="1000000" step="1" required :aria-label="t('catalog::admin.products_index.stock_label', { label: line.label })" />
                 </label>
                 <div class="flex flex-wrap items-center gap-2 pt-1">
-                    <button type="submit" :class="primaryButton" :disabled="savingStock">{{ savingStock ? 'Đang lưu…' : 'Lưu' }}</button>
-                    <button type="button" :class="secondaryButton" :disabled="savingStock" @click="closeStockEditor">Hủy</button>
+                    <button type="submit" :class="primaryButton" :disabled="savingStock">{{ savingStock ? t('catalog::admin.products_index.saving') : t('catalog::admin.products_index.save') }}</button>
+                    <button type="button" :class="secondaryButton" :disabled="savingStock" @click="closeStockEditor">{{ t('catalog::admin.products_index.cancel') }}</button>
                 </div>
                 <span v-if="stockError" class="block text-xs text-rose-700" role="alert">{{ stockError }}</span>
-                <span class="block text-xs text-slate-500">Số tồn thực tế trong kho (chưa trừ hàng đang giữ cho đơn).</span>
+                <span class="block text-xs text-slate-500">{{ t('catalog::admin.products_index.actual_stock_warehouse_before_subtracting') }}</span>
             </form>
             <div v-else class="flex items-start justify-between gap-2">
-                <Link v-if="url" :href="url" class="text-indigo-600 hover:underline" :aria-label="`Mở lưới tồn kho của ${row.name ?? row.style_code}`">{{ value }}</Link>
+                <Link v-if="url" :href="url" class="text-indigo-600 hover:underline" :aria-label="t('catalog::admin.products_index.open_stock_grid_style_code', { style_code: row.name ?? row.style_code })">{{ value }}</Link>
                 <span v-else>{{ value }}</span>
-                <button v-if="editValue" type="button" class="shrink-0 text-indigo-600 hover:underline" data-stock-edit @click.stop="openStockEditor(row.id, editValue as StockEdit)">Sửa</button>
+                <button v-if="editValue" type="button" class="shrink-0 text-indigo-600 hover:underline" data-stock-edit @click.stop="openStockEditor(row.id, editValue as StockEdit)">{{ t('catalog::admin.products_index.edit') }}</button>
             </div>
         </template>
         <template #cell-status="{ row }">

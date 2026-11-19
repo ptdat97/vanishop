@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
@@ -14,7 +15,8 @@ import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin
 import type { MediaItem } from '@admin/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { kindLabels, type Kind } from './labels';
+import { kindLabels as kindLabelsOf, type Kind } from './labels';
+const kindLabels = kindLabelsOf();
 
 type Item = {
     id: number;
@@ -125,7 +127,7 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.urls.item && (await confirmAction({ title: `Xoá ${label.value} "${props.item?.title}"?`, message: 'Không khôi phục được.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.urls.item && (await confirmAction({ title: t('vani-cms::admin.content_form.delete_label_title', { label: label.value, title: props.item?.title }), message: t('vani-cms::admin.content_form.cannot_undone'), confirmLabel: t('vani-cms::admin.content_form.delete'), tone: 'danger' })) !== false) {
         router.delete(props.urls.item);
     }
 }
@@ -179,40 +181,40 @@ function onPicked(items: MediaItem[]): void {
 </script>
 
 <template>
-    <Head :title="item ? item.title : `Thêm ${label}`" />
-    <PageHeader :title="item ? item.title : `Thêm ${label}`" :subtitle="item?.public_url ?? undefined">
+    <Head :title="item ? item.title : t('vani-cms::admin.content_form.add_label', { label })" />
+    <PageHeader :title="item ? item.title : t('vani-cms::admin.content_form.add_label', { label })" :subtitle="item?.public_url ?? undefined">
         <Link :href="urls.index" :class="secondaryButton">← {{ kindLabels[kind].plural }}</Link>
         <a v-if="item" :href="item.public_url ?? item.preview_url" target="_blank" rel="noopener" :class="secondaryButton">
-            {{ item.public_url ? 'Xem trên cửa hàng' : 'Xem trước' }}
+            {{ item.public_url ? t('vani-cms::admin.content_form.view_store') : t('vani-cms::admin.content_form.preview') }}
         </a>
     </PageHeader>
 
     <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="submit">
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-            <FormField label="Tiêu đề" :error="form.errors.title">
+            <FormField :label="t('vani-cms::admin.content_form.title')" :error="form.errors.title">
                 <input v-model="form.title" :class="inputClass" maxlength="200" required :disabled="!can.manage" />
             </FormField>
-            <FormField :label="`Đường dẫn (${prefix}…)`" :error="form.errors.slug">
-                <input v-model="form.slug" :class="inputClass" maxlength="120" placeholder="Để trống: tạo từ tiêu đề" :disabled="!can.manage" />
+            <FormField :label="t('vani-cms::admin.content_form.path_prefix', { prefix })" :error="form.errors.slug">
+                <input v-model="form.slug" :class="inputClass" maxlength="120" :placeholder="t('vani-cms::admin.content_form.leave_empty_generated_from_title')" :disabled="!can.manage" />
             </FormField>
-            <FormField v-if="kind === 'posts'" label="Tóm tắt" :error="form.errors.excerpt">
+            <FormField v-if="kind === 'posts'" :label="t('vani-cms::admin.content_form.summary')" :error="form.errors.excerpt">
                 <textarea
                     v-model="form.excerpt"
                     :class="inputClass"
                     rows="2"
                     maxlength="500"
-                    placeholder="Để trống: lấy đoạn đầu nội dung"
+                    :placeholder="t('vani-cms::admin.content_form.leave_empty_use_first_paragraph')"
                     :disabled="!can.manage"
                 />
             </FormField>
 
             <div>
                 <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
-                    <span class="text-sm font-medium">Nội dung (Markdown)</span>
+                    <span class="text-sm font-medium">{{ t('vani-cms::admin.content_form.content_markdown') }}</span>
                     <div class="flex items-center gap-2">
-                        <button v-if="can.manage" type="button" :class="secondaryButton" :disabled="previewHtml !== null" @click="picking = 'body'">Chèn ảnh</button>
+                        <button v-if="can.manage" type="button" :class="secondaryButton" :disabled="previewHtml !== null" @click="picking = 'body'">{{ t('vani-cms::admin.content_form.insert_image') }}</button>
                         <button type="button" :class="secondaryButton" :disabled="busy" @click="togglePreview">
-                            {{ previewHtml === null ? 'Xem trước' : 'Soạn tiếp' }}
+                            {{ previewHtml === null ? t('vani-cms::admin.content_form.preview') : t('vani-cms::admin.content_form.keep_editing') }}
                         </button>
                     </div>
                 </div>
@@ -225,66 +227,66 @@ function onPicked(items: MediaItem[]): void {
                     :class="[inputClass, 'min-h-96 font-mono']"
                     required
                     :disabled="!can.manage"
-                    placeholder="## Tiêu đề mục&#10;&#10;Đoạn văn… **in đậm**, [liên kết](https://…), - danh sách"
+                    :placeholder="t('vani-cms::admin.content_form.section_heading_paragraph_bold_link')"
                 />
                 <p v-if="form.errors.body" class="mt-1 text-sm text-red-600">
                     {{ form.errors.body }}
                 </p>
                 <p class="mt-1 text-xs text-slate-500">
-                    Hỗ trợ tiêu đề (##), in đậm, danh sách, liên kết, ảnh, bảng. HTML thô không được hiển thị. Ảnh chèn từ thư viện có dạng
-                    <code>![mô tả](media:123)</code> — sửa phần mô tả cho đúng nội dung ảnh.
+                    {{ t('vani-cms::admin.content_form.supports_headings_bold_lists_links') }}
+                    <code>{{ t('vani-cms::admin.content_form.description_media123') }}</code> {{ t('vani-cms::admin.content_form.edit_description_match_image') }}
                 </p>
             </div>
         </div>
 
         <aside class="space-y-4">
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <FormField label="Trạng thái" :error="form.errors.status">
+                <FormField :label="t('vani-cms::admin.content_form.status')" :error="form.errors.status">
                     <Select
                         v-model="form.status"
                         :options="[
-                            { value: 'draft', label: 'Nháp' },
-                            { value: 'published', label: 'Đăng' },
+                            { value: 'draft', label: t('vani-cms::admin.content_form.draft') },
+                            { value: 'published', label: t('vani-cms::admin.content_form.published') },
                         ]"
                         :disabled="!can.manage"
                     />
                 </FormField>
-                <FormField label="Thời điểm đăng (giờ VN)" :error="form.errors.published_at">
+                <FormField :label="t('vani-cms::admin.content_form.publish_time_vietnam_time')" :error="form.errors.published_at">
                     <DateInput v-model="form.published_at" with-time :disabled="!can.manage" />
                 </FormField>
-                <p class="text-xs text-slate-500">Đăng + để trống: đăng ngay. Chọn thời điểm trong tương lai: tự hiện khi tới giờ.</p>
+                <p class="text-xs text-slate-500">{{ t('vani-cms::admin.content_form.published_empty_publish_now_choose') }}</p>
                 <div v-if="can.manage" class="flex gap-2">
-                    <button type="submit" :class="primaryButton" :disabled="form.processing || busy">Lưu</button>
-                    <button v-if="item" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+                    <button type="submit" :class="primaryButton" :disabled="form.processing || busy">{{ t('vani-cms::admin.content_form.save') }}</button>
+                    <button v-if="item" type="button" :class="dangerButton" @click="destroy">{{ t('vani-cms::admin.content_form.delete') }}</button>
                 </div>
             </section>
 
             <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <FormField label="Chuyên mục" :error="form.errors.category_id">
-                    <Select v-model="form.category_id" :options="categories" empty-label="— Không chuyên mục —" :empty-value="null" :disabled="!can.manage" />
+                <FormField :label="t('vani-cms::admin.content_form.category')" :error="form.errors.category_id">
+                    <Select v-model="form.category_id" :options="categories" :empty-label="t('vani-cms::admin.content_form.no_category')" :empty-value="null" :disabled="!can.manage" />
                 </FormField>
-                <Link v-if="urls.categories" :href="urls.categories" class="text-xs text-indigo-600 hover:underline">Quản lý chuyên mục</Link>
+                <Link v-if="urls.categories" :href="urls.categories" class="text-xs text-indigo-600 hover:underline">{{ t('vani-cms::admin.content_form.manage_categories') }}</Link>
             </section>
 
             <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4" data-post-products>
-                <h2 class="text-sm font-medium">Sản phẩm trong bài ({{ chosen.length }}/{{ MAX_PRODUCTS }})</h2>
+                <h2 class="text-sm font-medium">{{ t('vani-cms::admin.content_form.products_post_count_max_products', { count: chosen.length, max_products: MAX_PRODUCTS }) }}</h2>
                 <Sortable v-if="chosen.length" v-slot="{ item: product, index, handle }" :model-value="chosen" tag="ol" item-tag="li" list-class="space-y-1 text-sm" item-class="flex items-center gap-1" :item-key="(product) => product.id" :item-label="(product) => product.name" :disabled="!can.manage" @update:model-value="reorderProducts">
                         <SortHandle v-if="can.manage" v-bind="handle" />
-                        <span class="flex-1 truncate" :class="product.visible === false ? 'text-slate-400' : ''">{{ product.name }}<template v-if="product.visible === false"> (đang ẩn)</template></span>
-                        <button v-if="can.manage" type="button" class="px-1 text-red-600" aria-label="Bỏ" @click="removeProduct(index)">×</button>
+                        <span class="flex-1 truncate" :class="product.visible === false ? 'text-slate-400' : ''">{{ product.name }}<template v-if="product.visible === false"> {{ t('vani-cms::admin.content_form.hidden') }}</template></span>
+                        <button v-if="can.manage" type="button" class="px-1 text-red-600" :aria-label="t('vani-cms::admin.content_form.remove')" @click="removeProduct(index)">×</button>
                 </Sortable>
                 <template v-if="can.manage && chosen.length < MAX_PRODUCTS">
-                    <Combobox :key="chosen.length" model-value="" :search="searchProducts" placeholder="Tìm sản phẩm theo tên/mã…" aria-label="Thêm sản phẩm" @select="addProduct" />
+                    <Combobox :key="chosen.length" model-value="" :search="searchProducts" :placeholder="t('vani-cms::admin.content_form.search_products_name_code')" :aria-label="t('vani-cms::admin.content_form.add_product')" @select="addProduct" />
                 </template>
                 <p v-if="form.errors.product_ids" class="text-sm text-red-600">{{ form.errors.product_ids }}</p>
             </section>
 
             <section v-if="kind === 'posts'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="text-sm font-medium">Ảnh bìa</h2>
+                <h2 class="text-sm font-medium">{{ t('vani-cms::admin.content_form.cover_image') }}</h2>
                 <img v-if="coverUrl" :src="coverUrl" alt="" class="w-full rounded" />
                 <div v-if="can.manage" class="flex gap-2">
-                    <button type="button" :class="secondaryButton" @click="picking = 'cover'">{{ coverUrl ? 'Đổi ảnh' : 'Chọn ảnh' }}</button>
-                    <button v-if="coverUrl" type="button" :class="secondaryButton" @click="removeCover">Bỏ</button>
+                    <button type="button" :class="secondaryButton" @click="picking = 'cover'">{{ coverUrl ? t('vani-cms::admin.content_form.change_image') : t('vani-cms::admin.content_form.choose_image') }}</button>
+                    <button v-if="coverUrl" type="button" :class="secondaryButton" @click="removeCover">{{ t('vani-cms::admin.content_form.remove') }}</button>
                 </div>
                 <p v-if="form.errors.cover_media_id" class="text-sm text-red-600">
                     {{ form.errors.cover_media_id }}
@@ -292,28 +294,28 @@ function onPicked(items: MediaItem[]): void {
             </section>
 
             <section v-if="kind === 'pages'" class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-                <h2 class="font-medium">Hiển thị</h2>
+                <h2 class="font-medium">{{ t('vani-cms::admin.content_form.display') }}</h2>
                 <label class="flex items-center gap-2"
-                    ><input v-model="form.show_in_header" type="checkbox" :disabled="!can.manage" /> Link ở menu đầu trang</label
+                    ><input v-model="form.show_in_header" type="checkbox" :disabled="!can.manage" /> {{ t('vani-cms::admin.content_form.link_header_menu') }}</label
                 >
-                <label class="flex items-center gap-2"><input v-model="form.show_in_footer" type="checkbox" :disabled="!can.manage" /> Link ở chân trang</label>
-                <FormField label="Thứ tự" :error="form.errors.sort_order">
+                <label class="flex items-center gap-2"><input v-model="form.show_in_footer" type="checkbox" :disabled="!can.manage" /> {{ t('vani-cms::admin.content_form.link_footer') }}</label>
+                <FormField :label="t('vani-cms::admin.content_form.order')" :error="form.errors.sort_order">
                     <input v-model.number="form.sort_order" type="number" min="0" :class="inputClass" :disabled="!can.manage" />
                 </FormField>
             </section>
 
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
                 <h2 class="text-sm font-medium">SEO</h2>
-                <FormField label="Tiêu đề SEO" :error="form.errors.meta_title">
-                    <input v-model="form.meta_title" :class="inputClass" maxlength="200" placeholder="Mặc định: tiêu đề" :disabled="!can.manage" />
+                <FormField :label="t('vani-cms::admin.content_form.seo_title')" :error="form.errors.meta_title">
+                    <input v-model="form.meta_title" :class="inputClass" maxlength="200" :placeholder="t('vani-cms::admin.content_form.default_title')" :disabled="!can.manage" />
                 </FormField>
-                <FormField label="Mô tả SEO" :error="form.errors.meta_description">
+                <FormField :label="t('vani-cms::admin.content_form.seo_description')" :error="form.errors.meta_description">
                     <textarea
                         v-model="form.meta_description"
                         :class="inputClass"
                         rows="3"
                         maxlength="300"
-                        placeholder="Mặc định: đoạn đầu nội dung"
+                        :placeholder="t('vani-cms::admin.content_form.default_first_paragraph_content')"
                         :disabled="!can.manage"
                     />
                 </FormField>
@@ -322,7 +324,7 @@ function onPicked(items: MediaItem[]): void {
     </form>
     <MediaPicker
         :open="picking !== null"
-        :title="picking === 'cover' ? 'Chọn ảnh bìa' : 'Chèn ảnh vào nội dung'"
+        :title="picking === 'cover' ? t('vani-cms::admin.content_form.choose_cover_image') : t('vani-cms::admin.content_form.insert_image_into_content')"
         :multiple="picking === 'body'"
         @update:open="(value) => !value && (picking = null)"
         @select="onPicked"

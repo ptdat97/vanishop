@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
@@ -38,11 +39,11 @@ const ext = reactive<Record<string, string>>({ ...props.extensions.filterValues 
 const allActions = computed(() => [...props.actions, ...props.extensions.actions]);
 const bulk = computed(() => ({ ...props.extensions, actions: allActions.value }));
 const columns = [
-    { key: 'number', label: 'Yêu cầu', sortable: true },
-    { key: 'order_number', label: 'Đơn', class: 'font-mono' },
-    { key: 'reason_code', label: 'Lý do' },
-    { key: 'refund_amount', label: 'Tiền hoàn', sortable: true },
-    { key: 'status', label: 'Trạng thái' },
+    { key: 'number', label: t('returns::admin.returns_index.request'), sortable: true },
+    { key: 'order_number', label: t('returns::admin.returns_index.order'), class: 'font-mono' },
+    { key: 'reason_code', label: t('returns::admin.returns_index.reason') },
+    { key: 'refund_amount', label: t('returns::admin.returns_index.refund'), sortable: true },
+    { key: 'status', label: t('returns::admin.returns_index.status') },
 ];
 
 const list = useListQuery(() => props.baseUrl);
@@ -60,20 +61,20 @@ function changePageSize(perPage: number): void {
 </script>
 
 <template>
-    <Head title="Đổi/trả" />
-    <p class="mb-2 text-sm text-slate-500">Đổi/trả</p>
-    <PageHeader title="Yêu cầu đổi/trả" subtitle="Tiền hoàn tính từ thành tiền dòng đã trừ giảm giá; không hoàn phí giao.">
-        <Link :href="reasonsUrl" :class="secondaryButton">Lý do đổi trả</Link>
+    <Head :title="t('returns::admin.returns_index.return_exchange')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('returns::admin.returns_index.return_exchange') }}</p>
+    <PageHeader :title="t('returns::admin.returns_index.return_exchange_requests')" :subtitle="t('returns::admin.returns_index.refunds_calculated_from_line_totals')">
+        <Link :href="reasonsUrl" :class="secondaryButton">{{ t('returns::admin.returns_index.return_reasons') }}</Link>
     </PageHeader>
 
     <form class="mb-3 flex max-w-md gap-2" @submit.prevent="filter(status)">
-        <input v-model="search" :class="inputClass" type="search" placeholder="Số yêu cầu hoặc số đơn" aria-label="Tìm yêu cầu đổi/trả" />
+        <input v-model="search" :class="inputClass" type="search" :placeholder="t('returns::admin.returns_index.request_number_order_number')" :aria-label="t('returns::admin.returns_index.search_return_exchange_requests')" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="secondaryButton">Tìm</button>
+        <button type="submit" :class="secondaryButton">{{ t('returns::admin.returns_index.search') }}</button>
     </form>
 
     <div class="mb-4 flex flex-wrap gap-2">
-        <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">Tất cả</button>
+        <button type="button" :class="status ? secondaryButton : primaryButton" @click="filter('')">{{ t('returns::admin.returns_index.all') }}</button>
         <button v-for="value in statuses" :key="value" type="button" :class="status === value ? primaryButton : secondaryButton" @click="filter(value)">
             {{ labels.return_status[value] ?? value }}
             <span class="ml-1 text-xs opacity-70">{{ counts[value] ?? 0 }}</span>
@@ -82,13 +83,13 @@ function changePageSize(perPage: number): void {
 
     <ExtensionTools :tools="extensions.tools ?? []" />
     <div v-if="allActions.length" class="mb-2 flex flex-wrap items-center gap-2 text-sm">
-        <span class="text-slate-500">Đã chọn {{ selected.length }}</span>
+        <span class="text-slate-500">{{ t('returns::admin.returns_index.count_selected', { count: selected.length }) }}</span>
         <ExtensionActions :actions="allActions" :ids="selected" />
     </div>
-    <DataTable v-model:selected="selected" :columns="columns" :rows="returns" :sort="sort" :loading="list.loading.value" @sort="(next) => filter(props.status, 1, pagination.per_page, next)" :extensions="bulk" :row-label="(item) => item.number" :empty-text="search ? 'Không có yêu cầu khớp.' : 'Chưa có yêu cầu nào.'">
+    <DataTable v-model:selected="selected" :columns="columns" :rows="returns" :sort="sort" :loading="list.loading.value" @sort="(next) => filter(props.status, 1, pagination.per_page, next)" :extensions="bulk" :row-label="(item) => item.number" :empty-text="search ? t('returns::admin.returns_index.no_matching_requests') : t('returns::admin.returns_index.no_requests_yet')">
         <template #cell-number="{ row }">
             <Link :href="`${baseUrl}/${row.id}`" class="font-mono text-indigo-600 hover:underline">{{ row.number }}</Link>
-            <div class="text-xs text-slate-400">{{ row.created_at }} · {{ row.source === 'customer' ? 'khách gửi' : 'nhân viên tạo' }}</div>
+            <div class="text-xs text-slate-400">{{ row.created_at }} · {{ row.source === 'customer' ? t('returns::admin.returns_index.sent_customer') : t('returns::admin.returns_index.created_staff') }}</div>
         </template>
         <template #cell-order_number="{ row }">
             <Link :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>

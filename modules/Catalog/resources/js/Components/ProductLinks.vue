@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { inputClass, secondaryButton } from '@admin/styles';
@@ -18,7 +19,7 @@ const errors = computed(() => page.props.errors ?? {});
 const typeId = ref<number | null>(props.linkTypes.find((type) => type.is_active)?.id ?? null);
 const codes = ref('');
 const oneWay = ref(false);
-const typeOptions = computed(() => props.linkTypes.map((type) => ({ value: type.id, label: `${type.label}${type.is_active ? '' : ' (đang tắt)'}` })));
+const typeOptions = computed(() => props.linkTypes.map((type) => ({ value: type.id, label: `${type.label}${type.is_active ? '' : t('catalog::admin.product_links.inactive')}` })));
 
 function add(): void {
     const styleCodes = codes.value.split(/[\s,;]+/).filter(Boolean);
@@ -32,7 +33,7 @@ function add(): void {
 }
 
 async function remove(group: LinkGroupRow, productId: number, code: string): Promise<void> {
-    if ((await confirmAction({ title: `Gỡ liên kết "${group.name}" với ${code}?`, confirmLabel: 'Gỡ', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('catalog::admin.product_links.unlink_name_from_code', { name: group.name, code }), confirmLabel: t('catalog::admin.product_links.unlink'), tone: 'danger' })) !== false) {
         router.delete(`${props.productUrl}/links/${group.type_id}/${productId}`, { preserveScroll: true });
     }
 }
@@ -40,20 +41,20 @@ async function remove(group: LinkGroupRow, productId: number, code: string): Pro
 
 <template>
     <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
-        <h2 class="text-sm font-medium">Sản phẩm liên kết</h2>
+        <h2 class="text-sm font-medium">{{ t('catalog::admin.product_links.linked_products') }}</h2>
 
         <p v-if="!linkTypes.length" class="text-sm text-slate-500">
-            Chưa có loại liên kết. Tạo ở <a :href="linkTypesUrl" class="text-indigo-600 hover:underline">Loại liên kết</a> (vd. "Sản phẩm tương tự", "Mua kèm").
+            {{ t('catalog::admin.product_links.no_link_types_yet_create') }} <a :href="linkTypesUrl" class="text-indigo-600 hover:underline">{{ t('catalog::admin.product_links.link_type') }}</a> {{ t('catalog::admin.product_links.similar_products_buy_together') }}
         </p>
         <div v-else class="space-y-2 rounded-md bg-slate-50 p-3">
             <div class="flex flex-wrap gap-2">
-                <div class="w-56"><Select v-model="typeId" :options="typeOptions" aria-label="Loại liên kết" /></div>
-                <input v-model="codes" :class="inputClass" class="min-w-48 flex-1" placeholder="Mã sản phẩm, cách nhau bằng dấu phẩy" @keydown.enter.prevent="add" />
-                <button type="button" :class="secondaryButton" :disabled="!typeId || !codes.trim()" @click="add">Liên kết</button>
+                <div class="w-56"><Select v-model="typeId" :options="typeOptions" :aria-label="t('catalog::admin.product_links.link_type')" /></div>
+                <input v-model="codes" :class="inputClass" class="min-w-48 flex-1" :placeholder="t('catalog::admin.product_links.product_codes_separated_commas')" @keydown.enter.prevent="add" />
+                <button type="button" :class="secondaryButton" :disabled="!typeId || !codes.trim()" @click="add">{{ t('catalog::admin.product_links.link') }}</button>
             </div>
             <label class="flex items-center gap-2 text-xs text-slate-600">
                 <input v-model="oneWay" type="checkbox" />
-                Một chiều: chỉ sản phẩm này gợi ý các sản phẩm kia (bỏ chọn = các sản phẩm gợi ý lẫn nhau)
+                {{ t('catalog::admin.product_links.one_way_only_product_suggests') }}
             </label>
             <p v-if="errors.style_codes" class="text-sm text-red-600">{{ errors.style_codes }}</p>
         </div>
@@ -63,7 +64,7 @@ async function remove(group: LinkGroupRow, productId: number, code: string): Pro
             <ul class="divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
                 <li v-for="linked in group.products" :key="linked.id" class="flex items-center justify-between px-3 py-1.5">
                     <span>{{ linked.name }} <span class="font-mono text-xs text-slate-400">{{ linked.style_code }}</span></span>
-                    <button type="button" class="text-red-600 hover:underline" @click="remove(group, linked.id, linked.style_code)">Gỡ</button>
+                    <button type="button" class="text-red-600 hover:underline" @click="remove(group, linked.id, linked.style_code)">{{ t('catalog::admin.product_links.unlink') }}</button>
                 </li>
             </ul>
         </div>

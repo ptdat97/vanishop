@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -72,60 +73,60 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.attribute && (await confirmAction({ title: 'Xoá thuộc tính này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.attribute && (await confirmAction({ title: t('catalog::admin.taxonomy_attribute_form.delete_attribute'), confirmLabel: t('catalog::admin.taxonomy_attribute_form.delete'), tone: 'danger' })) !== false) {
         router.delete(`${baseUrl.value}/${props.attribute.id}`);
     }
 }
 </script>
 
 <template>
-    <Head :title="attribute ? 'Sửa thuộc tính' : 'Thêm thuộc tính'" />
+    <Head :title="attribute ? t('catalog::admin.taxonomy_attribute_form.edit_attribute') : t('catalog::admin.taxonomy_attribute_form.add_attribute')" />
     <CatalogTabs :nav="nav" active="attributes" />
-    <PageHeader :title="attribute ? 'Sửa thuộc tính' : 'Thêm thuộc tính'">
-        <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
-        <button v-if="attribute" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+    <PageHeader :title="attribute ? t('catalog::admin.taxonomy_attribute_form.edit_attribute') : t('catalog::admin.taxonomy_attribute_form.add_attribute')">
+        <Link :href="baseUrl" :class="secondaryButton">{{ t('catalog::admin.taxonomy_attribute_form.back') }}</Link>
+        <button v-if="attribute" type="button" :class="dangerButton" @click="destroy">{{ t('catalog::admin.taxonomy_attribute_form.delete') }}</button>
     </PageHeader>
 
     <form class="max-w-3xl space-y-6" @submit.prevent="submit">
         <div class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
-            <FormField v-for="option in locales" :key="option.code" :label="`Tên (${option.label})${option.code === defaultLocale ? ' *' : ''}`" :error="errors[`translations.${option.code}.name`]">
+            <FormField v-for="option in locales" :key="option.code" :label="t('catalog::admin.taxonomy_attribute_form.name_label_default_locale', { label: option.label, default_locale: option.code === defaultLocale ? ' *' : '' })" :error="errors[`translations.${option.code}.name`]">
                 <input v-model="form.translations[option.code].name" :class="inputClass" type="text" />
             </FormField>
-            <FormField label="Mã" hint="Chữ thường, số, gạch dưới. Ví dụ: material" :error="errors.code">
+            <FormField :label="t('catalog::admin.taxonomy_attribute_form.code')" :hint="t('catalog::admin.taxonomy_attribute_form.lowercase_letters_digits_underscore_example')" :error="errors.code">
                 <input v-model="form.code" :class="inputClass" type="text" />
             </FormField>
-            <FormField label="Thứ tự" :error="errors.position">
+            <FormField :label="t('catalog::admin.taxonomy_attribute_form.order')" :error="errors.position">
                 <input v-model.number="form.position" :class="inputClass" type="number" min="0" />
             </FormField>
-            <FormField label="Loại" :error="errors.kind">
+            <FormField :label="t('catalog::admin.taxonomy_attribute_form.type')" :error="errors.kind">
                 <Select v-model="form.kind" :options="codeOptions(kinds, labels.attribute_kind)" />
             </FormField>
-            <FormField label="Kiểu nhập" :error="errors.input_type">
+            <FormField :label="t('catalog::admin.taxonomy_attribute_form.input_type')" :error="errors.input_type">
                 <Select v-model="form.input_type" :options="codeOptions(inputTypes)" />
             </FormField>
             <label class="flex items-center gap-2 text-sm sm:col-span-2">
                 <input v-model="form.is_filterable" type="checkbox" />
-                Dùng làm bộ lọc trên storefront
+                {{ t('catalog::admin.taxonomy_attribute_form.use_storefront_filter') }}
             </label>
         </div>
 
         <div v-if="hasOptions" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
             <div class="flex items-center justify-between">
-                <h2 class="text-sm font-medium">Giá trị</h2>
-                <button type="button" :class="secondaryButton" @click="addValue">Thêm giá trị</button>
+                <h2 class="text-sm font-medium">{{ t('catalog::admin.taxonomy_attribute_form.value') }}</h2>
+                <button type="button" :class="secondaryButton" @click="addValue">{{ t('catalog::admin.taxonomy_attribute_form.add_value') }}</button>
             </div>
             <p v-if="errors.values" class="text-sm text-red-600">{{ errors.values }}</p>
             <div v-for="(value, index) in form.values" :key="index" class="grid items-start gap-2 sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))_auto]" :style="{ '--cols': locales.length + 1 }">
-                <FormField label="Mã" :error="errors[`values.${index}.code`]">
+                <FormField :label="t('catalog::admin.taxonomy_attribute_form.code')" :error="errors[`values.${index}.code`]">
                     <input v-model="value.code" :class="inputClass" type="text" />
                 </FormField>
-                <FormField v-for="option in locales" :key="option.code" :label="`Nhãn (${option.label})`" :error="errors[`values.${index}.translations.${option.code}.label`]">
+                <FormField v-for="option in locales" :key="option.code" :label="t('catalog::admin.taxonomy_attribute_form.label_label', { label: option.label })" :error="errors[`values.${index}.translations.${option.code}.label`]">
                     <input v-model="value.translations[option.code].label" :class="inputClass" type="text" />
                 </FormField>
-                <button type="button" class="mt-6 text-sm text-red-600" @click="removeValue(index)">Bỏ</button>
+                <button type="button" class="mt-6 text-sm text-red-600" @click="removeValue(index)">{{ t('catalog::admin.taxonomy_attribute_form.remove') }}</button>
             </div>
         </div>
 
-        <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
+        <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('catalog::admin.taxonomy_attribute_form.save') }}</button>
     </form>
 </template>

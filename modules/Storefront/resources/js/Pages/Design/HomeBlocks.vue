@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import MediaField from '@admin/Components/Media/MediaField.vue';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -65,7 +66,7 @@ function summary(block: Block): string {
         return text.length > 90 ? `${text.slice(0, 90)}…` : text;
     }
     const count = Object.values(block.config).filter(filled).length;
-    return count ? `${count} trường đã điền` : 'Chưa điền nội dung';
+    return count ? t('storefront::admin.design_home_blocks.count_fields_filled', { count }) : t('storefront::admin.design_home_blocks.no_content_yet');
 }
 
 function add(): void {
@@ -82,26 +83,26 @@ function save(): void {
 }
 
 async function reset(): Promise<void> {
-    if ((await confirmAction({ title: 'Dùng lại trang chủ mặc định?', message: 'Cấu hình khối hiện tại sẽ bị xoá.', confirmLabel: 'Dùng mặc định', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('storefront::admin.design_home_blocks.use_default_home_page_again'), message: t('storefront::admin.design_home_blocks.current_block_configuration_deleted'), confirmLabel: t('storefront::admin.design_home_blocks.use_default'), tone: 'danger' })) !== false) {
         router.delete(window.location.pathname, { preserveScroll: true });
     }
 }
 </script>
 
 <template>
-    <Head title="Trang chủ" />
-    <p class="mb-2 text-sm text-slate-500">Giao diện</p>
-    <PageHeader title="Trang chủ" :subtitle="configured ? `${form.blocks.length} khối` : 'Đang dùng trang chủ mặc định của giao diện'">
+    <Head :title="t('storefront::admin.design_home_blocks.home_page')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('storefront::admin.design_home_blocks.storefront_design') }}</p>
+    <PageHeader :title="t('storefront::admin.design_home_blocks.home_page')" :subtitle="configured ? t('storefront::admin.design_home_blocks.count_blocks', { count: form.blocks.length }) : t('storefront::admin.design_home_blocks.using_theme_s_default_home')">
         <a :href="previewUrl" target="_blank" rel="noopener" :class="secondaryButton">Xem trang</a>
-        <button v-if="configured" type="button" :class="dangerButton" @click="reset">Dùng mặc định</button>
-        <button type="button" :class="primaryButton" :disabled="form.processing" @click="save">Lưu</button>
+        <button v-if="configured" type="button" :class="dangerButton" @click="reset">{{ t('storefront::admin.design_home_blocks.use_default') }}</button>
+        <button type="button" :class="primaryButton" :disabled="form.processing" @click="save">{{ t('storefront::admin.design_home_blocks.save') }}</button>
     </PageHeader>
     <DesignTabs active="home" />
 
     <div class="space-y-4">
         <div v-if="form.blocks.length > 1" class="flex items-center justify-between text-sm text-slate-500">
-            <span>Kéo tay nắm để đổi thứ tự khối. Thu gọn để kéo dễ hơn.</span>
-            <button type="button" class="text-indigo-600 hover:underline" data-toggle-all @click="toggleAll">{{ allExpanded ? 'Thu gọn tất cả' : 'Mở tất cả' }}</button>
+            <span>{{ t('storefront::admin.design_home_blocks.drag_handle_reorder_blocks_collapse') }}</span>
+            <button type="button" class="text-indigo-600 hover:underline" data-toggle-all @click="toggleAll">{{ allExpanded ? t('storefront::admin.design_home_blocks.collapse_all') : t('storefront::admin.design_home_blocks.expand_all') }}</button>
         </div>
         <Sortable v-model="form.blocks" v-slot="{ item: block, index, handle }" list-class="space-y-2" item-tag="section" item-class="rounded-lg border border-slate-200 bg-white" :item-label="(block) => typeOf(block.type)?.label ?? block.type">
             <div class="flex items-center justify-between gap-2 px-3 py-2" :data-block="block.type">
@@ -116,11 +117,11 @@ async function reset(): Promise<void> {
                     <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 shrink-0 text-slate-400 transition-transform" :class="isExpanded(block) ? 'rotate-90' : ''" aria-hidden="true">
                         <path fill-rule="evenodd" d="M7.2 14.8a.75.75 0 0 1 0-1.06L10.94 10 7.2 6.26a.75.75 0 1 1 1.06-1.06l4.27 4.27a.75.75 0 0 1 0 1.06l-4.27 4.27a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
                     </svg>
-                    <span class="shrink-0 font-semibold">{{ index + 1 }}. {{ typeOf(block.type)?.label ?? `${block.type} (plugin đã tắt)` }}</span>
+                    <span class="shrink-0 font-semibold">{{ index + 1 }}. {{ typeOf(block.type)?.label ?? t('storefront::admin.design_home_blocks.type_plugin_disabled', { type: block.type }) }}</span>
                     <span v-if="!isExpanded(block)" class="truncate text-sm text-slate-500">{{ summary(block) }}</span>
-                    <span v-if="!isExpanded(block) && Object.keys(errors).some((key) => key.startsWith(`blocks.${index}.`))" class="shrink-0 text-xs font-medium text-red-600">Có lỗi</span>
+                    <span v-if="!isExpanded(block) && Object.keys(errors).some((key) => key.startsWith(`blocks.${index}.`))" class="shrink-0 text-xs font-medium text-red-600">{{ t('storefront::admin.design_home_blocks.has_errors') }}</span>
                 </button>
-                <button type="button" class="shrink-0 px-2 text-sm text-red-600 hover:underline" @click="form.blocks.splice(index, 1)">Xoá</button>
+                <button type="button" class="shrink-0 px-2 text-sm text-red-600 hover:underline" @click="form.blocks.splice(index, 1)">{{ t('storefront::admin.design_home_blocks.delete') }}</button>
             </div>
             <div v-if="isExpanded(block)" class="border-t border-slate-100 p-4">
             <p v-if="errors[`blocks.${index}.type`]" class="mb-2 text-sm text-red-600">{{ errors[`blocks.${index}.type`] }}</p>
@@ -138,11 +139,11 @@ async function reset(): Promise<void> {
             </div>
         </Sortable>
 
-        <p v-if="!form.blocks.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Chưa có khối nào. Thêm khối bên dưới.</p>
+        <p v-if="!form.blocks.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{{ t('storefront::admin.design_home_blocks.no_blocks_yet_add_block') }}</p>
 
         <div class="flex gap-2">
-            <div class="w-64"><Select v-model="adding" :options="types.map((type) => ({ value: type.type, label: type.label }))" aria-label="Loại khối" /></div>
-            <button type="button" :class="secondaryButton" @click="add">Thêm khối</button>
+            <div class="w-64"><Select v-model="adding" :options="types.map((type) => ({ value: type.type, label: type.label }))" :aria-label="t('storefront::admin.design_home_blocks.block_type')" /></div>
+            <button type="button" :class="secondaryButton" @click="add">{{ t('storefront::admin.design_home_blocks.add_block') }}</button>
         </div>
     </div>
 </template>

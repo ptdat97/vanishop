@@ -1,0 +1,40 @@
+<?php
+
+// Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
+
+return [
+    'admin_orders_create' => [
+        'add_product' => 'Add product',
+        'amount' => 'Amount',
+        'calculate' => 'Calculate',
+        'calculate_choose' => '— Calculate to choose —',
+        'calculating' => 'Calculating…',
+        'choose_province_city' => 'Choose province/city',
+        'choose_ward' => 'Choose ward',
+        'could_not_calculate_total' => 'Could not calculate the total.',
+        'create_order' => 'Create order',
+        'discount' => 'Discount',
+        'email_optional' => 'Email (optional)',
+        'full_name' => 'Full name',
+        'house_number_street' => 'House number, street',
+        'no_products_yet' => 'No products yet.',
+        'no_sku_sale_found' => 'No SKU on sale found',
+        'order_list' => 'Order list',
+        'order_note' => 'Order note',
+        'orders_received_phone_zalo_facebook' => 'Orders received by phone, Zalo, Facebook… Same prices, promotions and stock reservation as web orders.',
+        'payment' => 'Payment',
+        'phone_number' => 'Phone number',
+        'products' => 'Products',
+        'province_city' => 'Province/city',
+        'quantity' => 'Quantity',
+        'quantity_sku' => 'Quantity :sku',
+        'recipient' => 'Recipient',
+        'remove' => 'Remove',
+        'shipping_fee' => 'Shipping fee',
+        'subtotal' => 'Subtotal',
+        'total' => 'Total',
+        'type_sku_product_name' => 'Type a SKU or product name',
+        'unit_price' => 'Unit price',
+        'ward' => 'Ward',
+    ],
+];

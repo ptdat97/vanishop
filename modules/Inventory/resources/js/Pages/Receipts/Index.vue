@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -25,12 +26,12 @@ const q = ref(props.filters.q);
 const status = ref(props.filters.status ?? '');
 const list = useListQuery(() => props.urls.base);
 const columns = [
-    { key: 'number', label: 'Số phiếu', class: 'font-mono' },
-    { key: 'supplier', label: 'Nhà cung cấp' },
+    { key: 'number', label: t('inventory::admin.receipts_index.receipt_number'), class: 'font-mono' },
+    { key: 'supplier', label: t('inventory::admin.receipts_index.supplier') },
     { key: 'location', label: 'Kho' },
-    { key: 'units', label: 'Số lượng', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'date', label: 'Ngày', class: 'whitespace-nowrap tabular-nums' },
+    { key: 'units', label: t('inventory::admin.receipts_index.quantity'), align: 'right' as const, class: 'tabular-nums' },
+    { key: 'status', label: t('inventory::admin.receipts_index.status') },
+    { key: 'date', label: t('inventory::admin.receipts_index.date'), class: 'whitespace-nowrap tabular-nums' },
 ];
 
 function search(page = 1): void {
@@ -39,19 +40,19 @@ function search(page = 1): void {
 </script>
 
 <template>
-    <Head title="Nhập hàng" />
-    <PageHeader title="Nhập hàng" :subtitle="`${receipts.total} phiếu nhập`">
-        <Link :href="urls.stock" :class="secondaryButton">Tồn kho</Link>
-        <Link v-if="canManage" :href="urls.create" :class="primaryButton">Tạo phiếu nhập</Link>
+    <Head :title="t('inventory::admin.receipts_index.goods_receipts')" />
+    <PageHeader :title="t('inventory::admin.receipts_index.goods_receipts')" :subtitle="t('inventory::admin.receipts_index.total_goods_receipts', { total: receipts.total })">
+        <Link :href="urls.stock" :class="secondaryButton">{{ t('inventory::admin.receipts_index.inventory') }}</Link>
+        <Link v-if="canManage" :href="urls.create" :class="primaryButton">{{ t('inventory::admin.receipts_index.create_goods_receipt') }}</Link>
     </PageHeader>
 
     <form class="mb-4 flex flex-wrap gap-2" @submit.prevent="search()">
-        <input v-model="q" :class="inputClass" class="max-w-xs" type="search" placeholder="Số phiếu hoặc nhà cung cấp" aria-label="Tìm phiếu nhập" />
-        <div class="w-44"><Select v-model="status" :options="labelOptions(statusLabels)" empty-label="Mọi trạng thái" aria-label="Trạng thái" /></div>
-        <button type="submit" :class="secondaryButton">Lọc</button>
+        <input v-model="q" :class="inputClass" class="max-w-xs" type="search" :placeholder="t('inventory::admin.receipts_index.receipt_number_supplier')" :aria-label="t('inventory::admin.receipts_index.search_goods_receipts')" />
+        <div class="w-44"><Select v-model="status" :options="labelOptions(statusLabels)" :empty-label="t('inventory::admin.receipts_index.all_statuses')" :aria-label="t('inventory::admin.receipts_index.status')" /></div>
+        <button type="submit" :class="secondaryButton">{{ t('inventory::admin.receipts_index.filter') }}</button>
     </form>
 
-    <DataTable :columns="columns" :rows="receipts.data" :loading="list.loading.value" :row-label="(row) => row.number" :row-click="(row) => router.visit(`${urls.base}/${row.id}`)" empty-text="Chưa có phiếu nhập nào.">
+    <DataTable :columns="columns" :rows="receipts.data" :loading="list.loading.value" :row-label="(row) => row.number" :row-click="(row) => router.visit(`${urls.base}/${row.id}`)" :empty-text="t('inventory::admin.receipts_index.no_goods_receipts_yet')">
         <template #cell-supplier="{ row }">{{ row.supplier ?? '—' }}</template>
         <template #cell-units="{ row }">{{ row.units }} <span class="text-xs text-slate-500">({{ row.lines }} SKU)</span></template>
         <template #cell-status="{ row }">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { secondaryButton } from '@admin/styles';
 import { Head, Link } from '@inertiajs/vue3';
@@ -14,10 +15,10 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Cấu hình" />
+    <Head :title="t('extension::admin.settings_index.settings')" />
     <PageHeader
-        title="Cấu hình"
-        subtitle="Chọn một nhóm để xem và chỉnh sửa cấu hình."
+        :title="t('extension::admin.settings_index.settings')"
+        :subtitle="t('extension::admin.settings_index.choose_group_view_edit_settings')"
     />
 
     <div v-if="cards.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -35,6 +36,6 @@ defineProps<{
         </Link>
     </div>
     <div v-else class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        Chưa có cấu hình nào được đăng ký.
+        {{ t('extension::admin.settings_index.no_settings_registered') }}
     </div>
 </template>

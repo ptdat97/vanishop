@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton, secondaryButton } from '@admin/styles';
@@ -15,12 +16,12 @@ const props = defineProps<{
 }>();
 
 const columns = [
-    { key: 'line', label: 'Dòng' },
+    { key: 'line', label: t('inventory::admin.stock_import.lines') },
     { key: 'sku', label: 'SKU', class: 'font-mono' },
     { key: 'location', label: 'Kho' },
-    { key: 'current', label: 'Hiện tại', align: 'right' as const },
-    { key: 'new', label: 'Mới', align: 'right' as const },
-    { key: 'status', label: 'Kết quả' },
+    { key: 'current', label: t('inventory::admin.stock_import.current'), align: 'right' as const },
+    { key: 'new', label: t('inventory::admin.stock_import.new'), align: 'right' as const },
+    { key: 'status', label: t('inventory::admin.stock_import.result') },
 ];
 const problem = (status: string) => !['change', 'same'].includes(status);
 const onlyRelevant = ref(true);
@@ -35,10 +36,10 @@ function apply(): void {
 </script>
 
 <template>
-    <Head title="Xem trước nhập tồn" />
-    <PageHeader :title="`Xem trước: ${preview.file}`" subtitle="Chưa ghi gì. Kiểm tra rồi bấm Áp dụng — dòng có tồn thay đổi sau bước này sẽ được bỏ qua.">
-        <Link :href="urls.back" :class="secondaryButton">Quay lại</Link>
-        <button v-if="urls.apply" type="button" :class="primaryButton" :disabled="applying" data-apply @click="apply">Áp dụng {{ preview.summary.change ?? 0 }} thay đổi</button>
+    <Head :title="t('inventory::admin.stock_import.stock_import_preview')" />
+    <PageHeader :title="t('inventory::admin.stock_import.preview_file', { file: preview.file })" :subtitle="t('inventory::admin.stock_import.nothing_written_yet_check_then')">
+        <Link :href="urls.back" :class="secondaryButton">{{ t('inventory::admin.stock_import.back') }}</Link>
+        <button v-if="urls.apply" type="button" :class="primaryButton" :disabled="applying" data-apply @click="apply">{{ t('inventory::admin.stock_import.apply_change_changes', { change: preview.summary.change ?? 0 }) }}</button>
     </PageHeader>
 
     <div class="mb-4 flex flex-wrap gap-2 text-sm">
@@ -46,10 +47,10 @@ function apply(): void {
             {{ statusLabels[status] ?? status }}: {{ count }}
         </span>
     </div>
-    <p v-if="!urls.apply" class="mb-4 text-sm text-slate-600">File không có dòng nào cần thay đổi.</p>
-    <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="onlyRelevant" type="checkbox" /> Ẩn dòng không đổi</label>
+    <p v-if="!urls.apply" class="mb-4 text-sm text-slate-600">{{ t('inventory::admin.stock_import.file_has_no_lines_change') }}</p>
+    <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="onlyRelevant" type="checkbox" /> {{ t('inventory::admin.stock_import.hide_unchanged_lines') }}</label>
 
-    <DataTable :columns="columns" :rows="shown" :row-key="(line) => line.line" :row-label="(line) => line.sku" empty-text="Không có dòng nào.">
+    <DataTable :columns="columns" :rows="shown" :row-key="(line) => line.line" :row-label="(line) => line.sku" :empty-text="t('inventory::admin.stock_import.no_lines')">
         <template #cell-location="{ row }">{{ row.location || '—' }}</template>
         <template #cell-current="{ row }">{{ row.current ?? '—' }}</template>
         <template #cell-new="{ row }"><span class="font-medium">{{ row.new ?? '—' }}</span></template>
@@ -58,6 +59,6 @@ function apply(): void {
         </template>
     </DataTable>
     <p v-if="preview.hidden_lines > 0" class="mt-2 text-xs text-slate-500">
-        File lớn: hiện {{ preview.lines.length }} dòng cần chú ý trước (lỗi, thay đổi) — còn {{ preview.hidden_lines }} dòng không hiện; tổng ở trên tính đủ. Trên 1.000 thay đổi thì áp dụng chạy nền, trang Tồn kho hiện tiến độ.
+        {{ t('inventory::admin.stock_import.large_file_showing_count_lines', { count: preview.lines.length, hidden_lines: preview.hidden_lines }) }}
     </p>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import MoneyText from '@admin/Components/MoneyText.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -25,13 +26,13 @@ const props = defineProps<{
 }>();
 
 const columns = [
-    { key: 'line', label: 'Dòng' },
-    { key: 'tracking', label: 'Mã vận đơn', class: 'font-mono' },
-    { key: 'order', label: 'Đơn' },
-    { key: 'amount', label: 'Hãng ghi thu hộ' },
-    { key: 'expected', label: 'COD vận đơn' },
-    { key: 'fee', label: 'Phí hãng' },
-    { key: 'status', label: 'Kết quả' },
+    { key: 'line', label: t('fulfillment::admin.cod_statements_preview.lines') },
+    { key: 'tracking', label: t('fulfillment::admin.cod_statements_preview.tracking_number'), class: 'font-mono' },
+    { key: 'order', label: t('fulfillment::admin.cod_statements_preview.order') },
+    { key: 'amount', label: t('fulfillment::admin.cod_statements_preview.carrier_recorded_cod') },
+    { key: 'expected', label: t('fulfillment::admin.cod_statements_preview.shipment_cod') },
+    { key: 'fee', label: t('fulfillment::admin.cod_statements_preview.carrier_fee') },
+    { key: 'status', label: t('fulfillment::admin.cod_statements_preview.result') },
 ];
 const MISMATCH = ['amount_mismatch', 'not_found', 'not_delivered'];
 const onlyIssues = ref(false);
@@ -52,24 +53,24 @@ function tone(status: string): string {
 </script>
 
 <template>
-    <Head title="Xem trước bảng kê COD" />
-    <PageHeader :title="`Bảng kê COD: ${preview.file}`" subtitle="Chưa ghi gì. Dòng khớp được ghi là đã đối soát (và đã thu nếu chưa ghi nhận); dòng lệch vào mục &quot;Đối soát lệch&quot; ở trang Thanh toán để xử lý.">
-        <Link :href="urls.back" :class="secondaryButton">Quay lại</Link>
+    <Head :title="t('fulfillment::admin.cod_statements_preview.cod_statement_preview')" />
+    <PageHeader :title="t('fulfillment::admin.cod_statements_preview.cod_statement_file', { file: preview.file })" :subtitle="t('fulfillment::admin.cod_statements_preview.nothing_written_yet_matching_rows')">
+        <Link :href="urls.back" :class="secondaryButton">{{ t('fulfillment::admin.cod_statements_preview.back') }}</Link>
         <button v-if="urls.apply" type="button" :class="primaryButton" :disabled="applying" data-apply @click="apply">
-            Áp dụng: {{ matched }} khớp, {{ mismatched }} lệch
+            {{ t('fulfillment::admin.cod_statements_preview.apply_matched_matched_mismatched_mismatched', { matched, mismatched }) }}
         </button>
     </PageHeader>
 
     <div class="mb-4 flex flex-wrap gap-2 text-sm">
-        <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">Khớp: {{ matched }} · <MoneyText :amount="preview.total" /></span>
+        <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">{{ t('fulfillment::admin.cod_statements_preview.matched_matched', { matched }) }} <MoneyText :amount="preview.total" /></span>
         <span v-for="(count, status) in preview.summary" v-show="status !== 'matched'" :key="status" class="rounded-full px-3 py-1" :class="MISMATCH.includes(String(status)) ? 'bg-red-50 text-red-700' : 'bg-slate-100'">
             {{ statusLabels[status] ?? status }}: {{ count }}
         </span>
     </div>
-    <p v-if="!urls.apply" class="mb-4 text-sm text-slate-600">Không có dòng nào cần ghi — file thiếu cột, hoặc mọi dòng đã đối soát trước đó.</p>
-    <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="onlyIssues" type="checkbox" /> Chỉ hiện dòng không khớp</label>
+    <p v-if="!urls.apply" class="mb-4 text-sm text-slate-600">{{ t('fulfillment::admin.cod_statements_preview.no_rows_write_file_missing') }}</p>
+    <label class="mb-2 flex items-center gap-2 text-sm"><input v-model="onlyIssues" type="checkbox" /> {{ t('fulfillment::admin.cod_statements_preview.show_only_mismatched_rows') }}</label>
 
-    <DataTable :columns="columns" :rows="shown" :row-key="(line) => `${line.line}`" :row-label="(line) => line.tracking" empty-text="File không có dòng vận đơn nào.">
+    <DataTable :columns="columns" :rows="shown" :row-key="(line) => `${line.line}`" :row-label="(line) => line.tracking" :empty-text="t('fulfillment::admin.cod_statements_preview.file_has_no_shipment_rows')">
         <template #cell-order="{ row }">
             <Link v-if="row.order_url" :href="row.order_url" class="text-indigo-600 hover:underline">{{ row.order_number ?? '—' }}</Link>
             <span v-else>—</span>
@@ -79,5 +80,5 @@ function tone(status: string): string {
         <template #cell-fee="{ row }"><MoneyText v-if="row.fee !== null" :amount="row.fee" /><span v-else>—</span></template>
         <template #cell-status="{ row }"><span :class="tone(row.status)">{{ statusLabels[row.status] ?? row.status }}</span></template>
     </DataTable>
-    <p v-if="preview.lines.length > 1000" class="mt-2 text-xs text-slate-500">Chỉ hiện 1000 dòng đầu.</p>
+    <p v-if="preview.lines.length > 1000" class="mt-2 text-xs text-slate-500">{{ t('fulfillment::admin.cod_statements_preview.only_first_1000_rows_shown') }}</p>
 </template>

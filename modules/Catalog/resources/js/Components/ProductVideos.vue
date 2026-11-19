@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Select from '@admin/Components/Select.vue';
 import Sortable from '@admin/Components/Sortable.vue';
 import SortHandle from '@admin/Components/SortHandle.vue';
@@ -37,7 +38,7 @@ function reorder(videos: VideoRow[]): void {
 }
 
 async function remove(video: VideoRow): Promise<void> {
-    if ((await confirmAction({ title: 'Gỡ video này khỏi sản phẩm?', confirmLabel: 'Gỡ', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('catalog::admin.product_videos.remove_video_from_product'), confirmLabel: t('catalog::admin.product_videos.unlink'), tone: 'danger' })) !== false) {
         router.delete(`${props.productUrl}/videos/${video.id}`, { preserveScroll: true });
     }
 }
@@ -47,15 +48,15 @@ async function remove(video: VideoRow): Promise<void> {
     <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
         <h2 class="text-sm font-medium">Video</h2>
 
-        <p v-if="!drivers.length" class="text-sm text-slate-500">Chưa bật nền tảng video nào. Bật plugin (vd. "Video YouTube") trong Admin → Plugin.</p>
+        <p v-if="!drivers.length" class="text-sm text-slate-500">{{ t('catalog::admin.product_videos.no_video_platform_enabled_enable') }}</p>
         <div v-else class="space-y-2 rounded-md bg-slate-50 p-3">
             <div class="flex flex-wrap gap-2">
                 <div v-if="drivers.length > 1" class="w-40">
-                    <Select v-model="driver" :options="drivers.map((item) => ({ value: item.code, label: item.label }))" aria-label="Nền tảng video" />
+                    <Select v-model="driver" :options="drivers.map((item) => ({ value: item.code, label: item.label }))" :aria-label="t('catalog::admin.product_videos.video_platform')" />
                 </div>
                 <input v-model="url" :class="inputClass" class="min-w-48 flex-1" :placeholder="hint" @keydown.enter.prevent="add" />
-                <input v-model="title" :class="inputClass" class="max-w-56" placeholder="Tiêu đề (không bắt buộc)" />
-                <button type="button" :class="secondaryButton" :disabled="!url.trim()" @click="add">Thêm video</button>
+                <input v-model="title" :class="inputClass" class="max-w-56" :placeholder="t('catalog::admin.product_videos.title_optional')" />
+                <button type="button" :class="secondaryButton" :disabled="!url.trim()" @click="add">{{ t('catalog::admin.product_videos.add_video') }}</button>
             </div>
             <p v-if="errors.url || errors.driver" class="text-sm text-red-600">{{ errors.url ?? errors.driver }}</p>
         </div>
@@ -65,11 +66,11 @@ async function remove(video: VideoRow): Promise<void> {
                     <img v-if="video.thumbnail_url" :src="video.thumbnail_url" alt="" class="aspect-video w-40 rounded object-cover" />
                     <span v-else class="flex aspect-video w-40 items-center justify-center rounded bg-slate-100 text-slate-500">{{ video.driver }}</span>
                 </a>
-                <span v-else class="flex aspect-video w-40 items-center justify-center rounded bg-amber-50 px-2 text-center text-amber-700">Nền tảng "{{ video.driver }}" đang tắt</span>
+                <span v-else class="flex aspect-video w-40 items-center justify-center rounded bg-amber-50 px-2 text-center text-amber-700">{{ t('catalog::admin.product_videos.platform_driver_disabled', { driver: video.driver }) }}</span>
                 <p class="mt-1 truncate" :title="video.title ?? video.reference">{{ video.title ?? video.reference }}</p>
                 <div class="mt-1 flex items-center justify-between">
                     <SortHandle v-bind="handle" />
-                    <button type="button" class="text-red-600" @click="remove(video)">Gỡ</button>
+                    <button type="button" class="text-red-600" @click="remove(video)">{{ t('catalog::admin.product_videos.unlink') }}</button>
                 </div>
         </Sortable>
     </div>

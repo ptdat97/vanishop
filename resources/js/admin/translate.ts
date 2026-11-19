@@ -9,7 +9,8 @@ export type TranslationLines = { [key: string]: string | TranslationLines };
 /** Bản dịch theo `namespace::nhóm` (prop `adminI18n` của server). */
 export type TranslationCatalog = Record<string, TranslationLines>;
 
-export type TranslationParams = Record<string, string | number>;
+/** Giá trị tham số như trong `{{ }}` của Vue: `null`/`undefined` hiện rỗng. */
+export type TranslationParams = Record<string, string | number | boolean | null | undefined>;
 
 /** Dòng dịch của khoá; không có → `null`. */
 export function lookup(catalog: TranslationCatalog, key: string): string | null {
@@ -31,7 +32,8 @@ export function replaceParams(line: string, params: TranslationParams = {}): str
     const keys = Object.keys(params).sort((a, b) => b.length - a.length);
     let result = line;
     for (const key of keys) {
-        const value = String(params[key]);
+        const raw = params[key];
+        const value = raw === null || raw === undefined ? '' : String(raw);
         result = result
             .replaceAll(`:${key.toUpperCase()}`, value.toUpperCase())
             .replaceAll(`:${key.charAt(0).toUpperCase()}${key.slice(1)}`, value.charAt(0).toUpperCase() + value.slice(1))

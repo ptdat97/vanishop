@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import FormField from '@admin/Components/FormField.vue';
 import MediaField from '@admin/Components/Media/MediaField.vue';
@@ -49,29 +50,29 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.banner && (await confirmAction({ title: 'Xoá banner này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.banner && (await confirmAction({ title: t('vani-cms::admin.banners_form.delete_banner'), confirmLabel: t('vani-cms::admin.banners_form.delete'), tone: 'danger' })) !== false) {
         router.delete(`${props.urls.index}/${props.banner.id}`);
     }
 }
 </script>
 
 <template>
-    <Head :title="banner ? 'Sửa banner danh mục' : 'Thêm banner danh mục'" />
-    <PageHeader :title="banner ? (banner.content[defaultLocale]?.title || 'Sửa banner danh mục') : 'Thêm banner danh mục'">
-        <Link :href="urls.index" :class="secondaryButton">Danh sách</Link>
+    <Head :title="banner ? t('vani-cms::admin.banners_form.edit_category_banner') : t('vani-cms::admin.banners_form.add_category_banner')" />
+    <PageHeader :title="banner ? (banner.content[defaultLocale]?.title || t('vani-cms::admin.banners_form.edit_category_banner')) : t('vani-cms::admin.banners_form.add_category_banner')">
+        <Link :href="urls.index" :class="secondaryButton">{{ t('vani-cms::admin.banners_form.list') }}</Link>
     </PageHeader>
 
     <form class="grid gap-6 lg:grid-cols-[1fr_20rem]" @submit.prevent="submit">
         <div class="space-y-4">
             <section v-for="locale in locales" :key="locale.code" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
                 <h2 class="text-sm font-medium">{{ locale.label }}</h2>
-                <FormField label="Tiêu đề" :error="errors[`content.${locale.code}.title`]">
+                <FormField :label="t('vani-cms::admin.banners_form.title')" :error="errors[`content.${locale.code}.title`]">
                     <input v-model="form.content[locale.code].title" :class="inputClass" maxlength="160" :disabled="!can.manage" />
                 </FormField>
-                <FormField label="Nội dung ngắn (Markdown)" :error="errors[`content.${locale.code}.markdown`]">
+                <FormField :label="t('vani-cms::admin.banners_form.short_text_markdown')" :error="errors[`content.${locale.code}.markdown`]">
                     <textarea v-model="form.content[locale.code].markdown" :class="inputClass" rows="3" maxlength="1000" :disabled="!can.manage" />
                 </FormField>
-                <FormField label="Chữ trên nút" hint="Trống = không có nút." :error="errors[`content.${locale.code}.button_text`]">
+                <FormField :label="t('vani-cms::admin.banners_form.button_text')" :hint="t('vani-cms::admin.banners_form.empty_no_button')" :error="errors[`content.${locale.code}.button_text`]">
                     <input v-model="form.content[locale.code].button_text" :class="inputClass" maxlength="60" :disabled="!can.manage" />
                 </FormField>
             </section>
@@ -79,28 +80,28 @@ async function destroy(): Promise<void> {
 
         <aside class="space-y-4">
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <FormField label="Danh mục *" :error="errors.category_id">
-                    <Select v-model="form.category_id" :options="categories" empty-label="— Chọn danh mục —" :empty-value="null" :disabled="!can.manage" />
+                <FormField :label="t('vani-cms::admin.banners_form.category')" :error="errors.category_id">
+                    <Select v-model="form.category_id" :options="categories" :empty-label="t('vani-cms::admin.banners_form.choose_category')" :empty-value="null" :disabled="!can.manage" />
                 </FormField>
-                <FormField label="Link nút" hint="Đường dẫn trong cửa hàng (/…) hoặc https://…" :error="errors.button_url">
+                <FormField :label="t('vani-cms::admin.banners_form.button_link')" :hint="t('vani-cms::admin.banners_form.store_path_https')" :error="errors.button_url">
                     <input v-model="form.button_url" :class="inputClass" maxlength="500" placeholder="/danh-muc/…" :disabled="!can.manage" />
                 </FormField>
-                <label class="flex items-center gap-2 text-sm"><input v-model="form.active" type="checkbox" :disabled="!can.manage" /> Đang bật</label>
+                <label class="flex items-center gap-2 text-sm"><input v-model="form.active" type="checkbox" :disabled="!can.manage" /> {{ t('vani-cms::admin.banners_form.active') }}</label>
                 <div v-if="can.manage" class="flex gap-2">
-                    <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
-                    <button v-if="banner" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+                    <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('vani-cms::admin.banners_form.save') }}</button>
+                    <button v-if="banner" type="button" :class="dangerButton" @click="destroy">{{ t('vani-cms::admin.banners_form.delete') }}</button>
                 </div>
             </section>
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="text-sm font-medium">Ảnh desktop</h2>
+                <h2 class="text-sm font-medium">{{ t('vani-cms::admin.banners_form.desktop_image') }}</h2>
                 <p v-if="errors.desktop_media_id" class="text-sm text-red-600">{{ errors.desktop_media_id }}</p>
-                <MediaField v-model="form.desktop_media_id" label="ảnh desktop" :disabled="!can.manage" />
-                <p class="text-xs text-slate-500">Gợi ý 1600×480.</p>
+                <MediaField v-model="form.desktop_media_id" :label="t('vani-cms::admin.banners_form.desktop_image_2')" :disabled="!can.manage" />
+                <p class="text-xs text-slate-500">{{ t('vani-cms::admin.banners_form.suggested_1600_480') }}</p>
             </section>
             <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="text-sm font-medium">Ảnh mobile (tuỳ chọn)</h2>
-                <MediaField v-model="form.mobile_media_id" label="ảnh mobile" :disabled="!can.manage" />
-                <p class="text-xs text-slate-500">Không chọn: dùng ảnh desktop.</p>
+                <h2 class="text-sm font-medium">{{ t('vani-cms::admin.banners_form.mobile_image_optional') }}</h2>
+                <MediaField v-model="form.mobile_media_id" :label="t('vani-cms::admin.banners_form.mobile_image')" :disabled="!can.manage" />
+                <p class="text-xs text-slate-500">{{ t('vani-cms::admin.banners_form.not_chosen_use_desktop_image') }}</p>
             </section>
         </aside>
     </form>

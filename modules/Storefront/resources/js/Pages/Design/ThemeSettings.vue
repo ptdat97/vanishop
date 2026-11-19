@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -43,14 +44,14 @@ function submit(): void {
 </script>
 
 <template>
-    <Head title="Đầu & chân trang" />
-    <p class="mb-2 text-sm text-slate-500">Giao diện</p>
-    <PageHeader title="Đầu & chân trang" subtitle="Các trường do giao diện đang dùng khai báo">
-        <button v-if="sections.length" type="button" :class="primaryButton" :disabled="form.processing" @click="submit">Lưu</button>
+    <Head :title="t('storefront::admin.design_theme_settings.header_footer')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('storefront::admin.design_theme_settings.storefront_design') }}</p>
+    <PageHeader :title="t('storefront::admin.design_theme_settings.header_footer')" :subtitle="t('storefront::admin.design_theme_settings.fields_declared_current_theme')">
+        <button v-if="sections.length" type="button" :class="primaryButton" :disabled="form.processing" @click="submit">{{ t('storefront::admin.design_theme_settings.save') }}</button>
     </PageHeader>
     <DesignTabs active="theme-settings" />
 
-    <p v-if="!sections.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">Giao diện đang dùng không khai báo cấu hình đầu/chân trang.</p>
+    <p v-if="!sections.length" class="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">{{ t('storefront::admin.design_theme_settings.current_theme_declares_no_header') }}</p>
 
     <div class="space-y-4">
         <section v-for="section in sections" :key="section.code" class="rounded-lg border border-slate-200 bg-white p-4" :data-section="section.code">
@@ -62,7 +63,7 @@ function submit(): void {
                             v-for="locale in locales"
                             :key="locale"
                             :label="`${field.label} (${locale.toUpperCase()})` + (field.required && locale === defaultLocale ? ' *' : '')"
-                            :hint="locale === defaultLocale ? (field.help ?? undefined) : 'Để trống = dùng bản ngôn ngữ mặc định'"
+                            :hint="locale === defaultLocale ? (field.help ?? undefined) : t('storefront::admin.design_theme_settings.leave_empty_use_default_language')"
                             :error="errors[`settings.${section.code}.${field.key}.${locale}`]"
                         >
                             <textarea v-if="field.type === 'text'" v-model="localized(section.code, field.key)[locale] as string | null" :class="inputClass" rows="3" />

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import FileInput from '@admin/Components/FileInput.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -36,11 +37,11 @@ const summary = computed(() => ({
 }));
 const columns = computed(() => [
     { key: 'sku', label: 'SKU', class: 'font-mono text-xs' },
-    { key: 'name', label: 'Sản phẩm' },
-    { key: 'counted', label: 'Số đếm', align: 'right' as const },
-    { key: 'on_hand_at_count', label: 'Tồn lúc đếm', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'delta', label: props.count.status === 'applied' ? 'Đã ghi' : 'Chênh', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'new_on_hand', label: 'Tồn sau áp dụng', align: 'right' as const, class: 'tabular-nums' },
+    { key: 'name', label: t('inventory::admin.counts_show.products') },
+    { key: 'counted', label: t('inventory::admin.counts_show.counted'), align: 'right' as const },
+    { key: 'on_hand_at_count', label: t('inventory::admin.counts_show.stock_count'), align: 'right' as const, class: 'tabular-nums' },
+    { key: 'delta', label: props.count.status === 'applied' ? t('inventory::admin.counts_show.recorded') : t('inventory::admin.counts_show.difference'), align: 'right' as const, class: 'tabular-nums' },
+    { key: 'new_on_hand', label: t('inventory::admin.counts_show.stock_after_apply'), align: 'right' as const, class: 'tabular-nums' },
 ]);
 
 // Hàng đợi: mỗi lần quét gửi lần lượt (không huỷ lần trước), danh sách tải lại khi hàng đợi trống.
@@ -54,7 +55,7 @@ function send(body: FormData | Record<string, unknown>): void {
             if (result.errors.length) errors.value = [...result.errors, ...errors.value].slice(0, 20);
         })
         .catch((error) => {
-            errors.value = [error instanceof HttpError ? error.message : 'Không ghi được số đếm.', ...errors.value].slice(0, 20);
+            errors.value = [error instanceof HttpError ? error.message : t('inventory::admin.counts_show.could_not_record_count'), ...errors.value].slice(0, 20);
         })
         .finally(() => {
             if (--pending === 0) router.reload({ only: ['lines'] });
@@ -80,38 +81,38 @@ function setCounted(line: Line, value: string): void {
 }
 
 async function apply(): Promise<void> {
-    const message = `${summary.value.skus} SKU đã đếm, ${summary.value.diff} SKU lệch (+${summary.value.plus} / ${summary.value.minus}). SKU chưa đếm không đổi.`;
-    if ((await confirmAction({ title: `Áp dụng kiểm kê ${props.count.number}?`, message, confirmLabel: 'Áp dụng' })) !== false) {
+    const message = t('inventory::admin.counts_show.skus_skus_counted_diff_skus', { skus: summary.value.skus, diff: summary.value.diff, plus: summary.value.plus, minus: summary.value.minus });
+    if ((await confirmAction({ title: t('inventory::admin.counts_show.apply_stock_count_number', { number: props.count.number }), message, confirmLabel: t('inventory::admin.counts_show.apply') })) !== false) {
         router.post(props.urls.apply);
     }
 }
 
 async function cancel(): Promise<void> {
-    if ((await confirmAction({ title: 'Huỷ phiên kiểm kê?', message: 'Số đếm không được ghi vào tồn.', confirmLabel: 'Huỷ phiên', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('inventory::admin.counts_show.cancel_stock_count'), message: t('inventory::admin.counts_show.counts_not_written_stock'), confirmLabel: t('inventory::admin.counts_show.cancel_session'), tone: 'danger' })) !== false) {
         router.post(props.urls.cancel);
     }
 }
 </script>
 
 <template>
-    <Head :title="`Kiểm kê ${count.number}`" />
-    <PageHeader :title="`Kiểm kê ${count.number}`" :subtitle="[count.location, count.note, count.applied_at ? `áp dụng ${count.applied_at}` : null].filter(Boolean).join(' · ')">
+    <Head :title="t('inventory::admin.counts_show.stock_count_number', { number: count.number })" />
+    <PageHeader :title="t('inventory::admin.counts_show.stock_count_number', { number: count.number })" :subtitle="[count.location, count.note, count.applied_at ? t('inventory::admin.counts_show.applied_applied', { applied_at: count.applied_at }) : null].filter(Boolean).join(' · ')">
         <StatusBadge :label="statusLabels[count.status] ?? count.status" :tone="count.status === 'applied' ? 'success' : count.status === 'counting' ? 'warning' : 'neutral'" />
-        <Link :href="urls.index" :class="secondaryButton">Các phiên</Link>
-        <button v-if="canManage" type="button" :class="dangerButton" data-cancel @click="cancel">Huỷ phiên</button>
-        <button v-if="canManage" type="button" :class="primaryButton" :disabled="!lines.length" data-apply @click="apply">Áp dụng</button>
+        <Link :href="urls.index" :class="secondaryButton">{{ t('inventory::admin.counts_show.sessions') }}</Link>
+        <button v-if="canManage" type="button" :class="dangerButton" data-cancel @click="cancel">{{ t('inventory::admin.counts_show.cancel_session') }}</button>
+        <button v-if="canManage" type="button" :class="primaryButton" :disabled="!lines.length" data-apply @click="apply">{{ t('inventory::admin.counts_show.apply') }}</button>
     </PageHeader>
 
     <div v-if="canManage" class="mb-4 space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm">
         <form class="flex gap-2" @submit.prevent="addScan">
-            <input v-model="scan" :class="inputClass" autofocus placeholder="Quét hoặc gõ SKU rồi Enter (mỗi lần +1; SKU 12 = +12)" aria-label="Quét SKU" data-scan />
-            <button type="submit" :class="secondaryButton">Thêm</button>
+            <input v-model="scan" :class="inputClass" autofocus :placeholder="t('inventory::admin.counts_show.scan_type_sku_then_enter')" :aria-label="t('inventory::admin.counts_show.scan_sku')" data-scan />
+            <button type="submit" :class="secondaryButton">{{ t('inventory::admin.counts_show.add') }}</button>
         </form>
         <details>
-            <summary class="cursor-pointer text-slate-600">Tải file số đếm</summary>
+            <summary class="cursor-pointer text-slate-600">{{ t('inventory::admin.counts_show.upload_count_file') }}</summary>
             <div class="mt-3 flex flex-wrap items-center gap-2">
-                <FileInput v-model="file" accept=".xlsx,.csv" :max-kb="2048" label="File Excel/CSV: cột SKU, số lượng (cộng vào số đã đếm)" />
-                <button type="button" :class="secondaryButton" :disabled="!file" @click="addFile">Thêm từ file</button>
+                <FileInput v-model="file" accept=".xlsx,.csv" :max-kb="2048" :label="t('inventory::admin.counts_show.excel_csv_file_sku_quantity')" />
+                <button type="button" :class="secondaryButton" :disabled="!file" @click="addFile">{{ t('inventory::admin.counts_show.add_from_file') }}</button>
             </div>
         </details>
         <ul v-if="errors.length" class="list-inside list-disc text-red-600" role="alert">
@@ -120,13 +121,13 @@ async function cancel(): Promise<void> {
     </div>
 
     <div class="mb-2 flex flex-wrap items-center gap-3 text-sm" data-count-summary>
-        <span>{{ summary.skus }} SKU đã đếm</span>
-        <span :class="summary.diff ? 'font-medium text-amber-700' : 'text-slate-500'">{{ summary.diff }} SKU lệch (+{{ summary.plus }} / {{ summary.minus }})</span>
-        <label class="flex items-center gap-2"><input v-model="onlyDiff" type="checkbox" /> Chỉ hiện SKU lệch</label>
+        <span>{{ t('inventory::admin.counts_show.skus_skus_counted', { skus: summary.skus }) }}</span>
+        <span :class="summary.diff ? 'font-medium text-amber-700' : 'text-slate-500'">{{ t('inventory::admin.counts_show.diff_skus_differ_plus_minus', { diff: summary.diff, plus: summary.plus, minus: summary.minus }) }}</span>
+        <label class="flex items-center gap-2"><input v-model="onlyDiff" type="checkbox" /> {{ t('inventory::admin.counts_show.show_only_skus_differ') }}</label>
     </div>
-    <DataTable :columns="columns" :rows="shown" :row-key="(line) => line.variant_id" :row-label="(line) => line.sku" empty-text="Chưa đếm SKU nào.">
+    <DataTable :columns="columns" :rows="shown" :row-key="(line) => line.variant_id" :row-label="(line) => line.sku" :empty-text="t('inventory::admin.counts_show.no_skus_counted_yet')">
         <template #cell-counted="{ row }">
-            <input v-if="canManage" :value="row.counted" :class="inputClass" class="w-24 text-right tabular-nums" type="number" min="0" max="1000000" :aria-label="`Số đếm ${row.sku}`" @change="setCounted(row, ($event.target as HTMLInputElement).value)" />
+            <input v-if="canManage" :value="row.counted" :class="inputClass" class="w-24 text-right tabular-nums" type="number" min="0" max="1000000" :aria-label="t('inventory::admin.counts_show.count_sku', { sku: row.sku })" @change="setCounted(row, ($event.target as HTMLInputElement).value)" />
             <span v-else class="tabular-nums">{{ row.counted }}</span>
         </template>
         <template #cell-delta="{ row }">

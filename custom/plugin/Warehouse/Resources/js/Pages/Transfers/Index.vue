@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -37,10 +38,10 @@ const errors = computed(() => usePage().props.errors as Record<string, string>);
 const internal = computed(() => props.locations.filter((location) => !location.external));
 const locationOptions = computed(() => recordOptions(internal.value, (location) => `${location.code} — ${location.name}`));
 const columns = [
-    { key: 'public_id', label: 'Mã' },
-    { key: 'route', label: 'Lộ trình', class: 'font-mono' },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'items', label: 'Dòng', class: 'text-xs' },
+    { key: 'public_id', label: t('vani-warehouse::admin.transfers_index.code') },
+    { key: 'route', label: t('vani-warehouse::admin.transfers_index.route'), class: 'font-mono' },
+    { key: 'status', label: t('vani-warehouse::admin.transfers_index.status') },
+    { key: 'items', label: t('vani-warehouse::admin.transfers_index.lines'), class: 'text-xs' },
     { key: 'actions', label: '', align: 'right' as const, class: 'space-x-2' },
 ];
 const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' =>
@@ -75,7 +76,7 @@ function receive(id: number): void {
 }
 
 async function cancel(id: number): Promise<void> {
-    const reason = await confirmAction({ title: 'Huỷ phiếu chuyển kho?', confirmLabel: 'Huỷ phiếu', tone: 'danger', reason: { label: 'Lý do huỷ phiếu chuyển kho', required: true } });
+    const reason = await confirmAction({ title: t('vani-warehouse::admin.transfers_index.cancel_transfer'), confirmLabel: t('vani-warehouse::admin.transfers_index.cancel_transfer_2'), tone: 'danger', reason: { label: t('vani-warehouse::admin.transfers_index.reason_cancelling_transfer'), required: true } });
     if (reason !== false) {
         router.post(`${props.baseUrl}/${id}/cancel`, { reason }, { preserveScroll: true });
     }
@@ -83,41 +84,41 @@ async function cancel(id: number): Promise<void> {
 </script>
 
 <template>
-    <Head title="Chuyển kho" />
-    <p class="mb-2 text-sm text-slate-500">Tồn kho</p>
-    <PageHeader title="Chuyển kho" subtitle="pending → đã gửi → đã nhận. Khi gửi, tồn kho đi được trừ; hàng đang đi đường không bán được; khi nhận, tồn kho đến được cộng." />
+    <Head :title="t('vani-warehouse::admin.transfers_index.stock_transfers')" />
+    <p class="mb-2 text-sm text-slate-500">{{ t('vani-warehouse::admin.transfers_index.inventory') }}</p>
+    <PageHeader :title="t('vani-warehouse::admin.transfers_index.stock_transfers')" :subtitle="t('vani-warehouse::admin.transfers_index.pending_shipped_received_when_shipped')" />
 
 
     <form v-if="canManage" class="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="create">
         <div class="grid gap-3 sm:grid-cols-2">
             <label class="text-sm">
-                <span class="mb-1 block text-slate-500">Kho đi</span>
+                <span class="mb-1 block text-slate-500">{{ t('vani-warehouse::admin.transfers_index.from') }}</span>
                 <Select v-model="form.from_location_id" :options="locationOptions" />
             </label>
             <label class="text-sm">
-                <span class="mb-1 block text-slate-500">Kho đến</span>
+                <span class="mb-1 block text-slate-500">{{ t('vani-warehouse::admin.transfers_index.text') }}</span>
                 <Select v-model="form.to_location_id" :options="locationOptions" />
             </label>
         </div>
-        <p v-if="!internal.length" class="text-sm text-amber-700">Chưa có kho nào do VaniShop quản lý tồn để chuyển.</p>
+        <p v-if="!internal.length" class="text-sm text-amber-700">{{ t('vani-warehouse::admin.transfers_index.no_warehouse_managed_vanishop_transfer') }}</p>
 
         <div class="grid gap-2">
             <div v-for="(line, index) in form.lines" :key="index" class="flex gap-2">
                 <input v-model="line.sku" :class="inputClass" placeholder="SKU, vd. LM-DR01-M" />
                 <input v-model.number="line.quantity" :class="inputClass" type="number" min="1" class="max-w-28" />
-                <button type="button" :class="secondaryButton" @click="removeLine(index)">Xoá</button>
+                <button type="button" :class="secondaryButton" @click="removeLine(index)">{{ t('vani-warehouse::admin.transfers_index.delete') }}</button>
             </div>
             <p v-for="(error, key) in form.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
             <div class="flex gap-2">
-                <button type="button" :class="secondaryButton" @click="addLine">+ Dòng</button>
-                <input v-model="form.reference" :class="inputClass" placeholder="Tham chiếu (tuỳ chọn)" />
-                <input v-model="form.note" :class="inputClass" placeholder="Ghi chú (tuỳ chọn)" />
-                <button type="submit" :class="primaryButton" :disabled="form.processing">Tạo phiếu</button>
+                <button type="button" :class="secondaryButton" @click="addLine">{{ t('vani-warehouse::admin.transfers_index.line') }}</button>
+                <input v-model="form.reference" :class="inputClass" :placeholder="t('vani-warehouse::admin.transfers_index.reference_optional')" />
+                <input v-model="form.note" :class="inputClass" :placeholder="t('vani-warehouse::admin.transfers_index.note_optional')" />
+                <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('vani-warehouse::admin.transfers_index.create_transfer') }}</button>
             </div>
         </div>
     </form>
 
-    <DataTable :columns="columns" :rows="transfers" :row-class="() => 'align-top'" :row-label="(transfer) => transfer.public_id" empty-text="Chưa có phiếu chuyển kho.">
+    <DataTable :columns="columns" :rows="transfers" :row-class="() => 'align-top'" :row-label="(transfer) => transfer.public_id" :empty-text="t('vani-warehouse::admin.transfers_index.no_stock_transfers_yet')">
         <template #cell-public_id="{ row }">
             <div class="font-mono text-xs">{{ row.public_id }}</div>
             <div class="text-xs text-slate-400">{{ row.at }}</div>
@@ -127,12 +128,12 @@ async function cancel(id: number): Promise<void> {
             <StatusBadge :label="labels.transfer_status[row.status] ?? row.status" :tone="tone(row.status)" />
             <div v-if="row.cancel_reason" class="mt-1 text-xs text-red-600">{{ row.cancel_reason }}</div>
         </template>
-        <template #cell-items="{ row }">{{ row.items }} sản phẩm</template>
+        <template #cell-items="{ row }">{{ t('vani-warehouse::admin.transfers_index.items_products', { items: row.items }) }}</template>
         <template #cell-actions="{ row }">
             <template v-if="canManage">
-                <button v-if="row.status === 'pending'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="ship(row.id)">Gửi hàng</button>
-                <button v-if="row.status === 'shipped'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="receive(row.id)">Nhận hàng</button>
-                <button v-if="row.status === 'pending' || row.status === 'shipped'" type="button" class="text-xs text-red-600 hover:underline" @click="cancel(row.id)">Huỷ</button>
+                <button v-if="row.status === 'pending'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="ship(row.id)">{{ t('vani-warehouse::admin.transfers_index.ship') }}</button>
+                <button v-if="row.status === 'shipped'" type="button" :class="secondaryButton" class="!px-2 !py-1 text-xs" @click="receive(row.id)">{{ t('vani-warehouse::admin.transfers_index.receive') }}</button>
+                <button v-if="row.status === 'pending' || row.status === 'shipped'" type="button" class="text-xs text-red-600 hover:underline" @click="cancel(row.id)">{{ t('vani-warehouse::admin.transfers_index.cancel') }}</button>
             </template>
         </template>
     </DataTable>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Combobox from '@admin/Components/Combobox.vue';
 import DataTable from '@admin/Components/DataTable.vue';
 import FormField from '@admin/Components/FormField.vue';
@@ -78,10 +79,10 @@ function addVariant(option: Option): void {
 const priceOf = (variantId: number) => quote.value?.lines.find((line) => line.variant_id === variantId);
 const lineColumns = [
     { key: 'sku', label: 'SKU', class: 'font-mono text-xs' },
-    { key: 'name', label: 'Sản phẩm' },
-    { key: 'quantity', label: 'Số lượng', align: 'right' as const },
-    { key: 'price', label: 'Đơn giá', align: 'right' as const, class: 'tabular-nums' },
-    { key: 'subtotal', label: 'Thành tiền', align: 'right' as const, class: 'tabular-nums' },
+    { key: 'name', label: t('checkout::admin.admin_orders_create.products') },
+    { key: 'quantity', label: t('checkout::admin.admin_orders_create.quantity'), align: 'right' as const },
+    { key: 'price', label: t('checkout::admin.admin_orders_create.unit_price'), align: 'right' as const, class: 'tabular-nums' },
+    { key: 'subtotal', label: t('checkout::admin.admin_orders_create.amount'), align: 'right' as const, class: 'tabular-nums' },
     { key: 'remove', label: '' },
 ];
 
@@ -107,7 +108,7 @@ async function runQuote(): Promise<void> {
         if (!form.shipping_method && result.shipping_options[0]) form.shipping_method = result.shipping_options[0].code;
         if (!form.payment_method && result.payment_methods[0]) form.payment_method = result.payment_methods[0].code;
     } catch (error) {
-        quoteError.value = error instanceof HttpError ? error.message : 'Không tính được tiền.';
+        quoteError.value = error instanceof HttpError ? error.message : t('checkout::admin.admin_orders_create.could_not_calculate_total');
     } finally {
         quoting.value = false;
     }
@@ -122,59 +123,59 @@ function submit(): void {
 </script>
 
 <template>
-    <Head title="Tạo đơn" />
-    <PageHeader title="Tạo đơn" subtitle="Đơn nhận qua điện thoại, Zalo, Facebook… Cùng giá, khuyến mãi và giữ hàng như đơn web.">
-        <Link :href="urls.orders" :class="secondaryButton">Danh sách đơn</Link>
+    <Head :title="t('checkout::admin.admin_orders_create.create_order')" />
+    <PageHeader :title="t('checkout::admin.admin_orders_create.create_order')" :subtitle="t('checkout::admin.admin_orders_create.orders_received_phone_zalo_facebook')">
+        <Link :href="urls.orders" :class="secondaryButton">{{ t('checkout::admin.admin_orders_create.order_list') }}</Link>
     </PageHeader>
 
     <form class="grid gap-6 lg:grid-cols-3" @submit.prevent="submit">
         <section class="space-y-4 lg:col-span-2">
             <div class="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 class="mb-2 font-medium">Sản phẩm</h2>
-                <Combobox v-model="sku" :search="searchVariants" placeholder="Gõ SKU hoặc tên sản phẩm" aria-label="Thêm sản phẩm" empty-text="Không tìm thấy SKU đang bán" data-add-variant @select="addVariant" />
+                <h2 class="mb-2 font-medium">{{ t('checkout::admin.admin_orders_create.products') }}</h2>
+                <Combobox v-model="sku" :search="searchVariants" :placeholder="t('checkout::admin.admin_orders_create.type_sku_product_name')" :aria-label="t('checkout::admin.admin_orders_create.add_product')" :empty-text="t('checkout::admin.admin_orders_create.no_sku_sale_found')" data-add-variant @select="addVariant" />
             </div>
-            <DataTable :columns="lineColumns" :rows="form.lines" :row-key="(line) => line.variant_id" :row-label="(line) => line.sku" empty-text="Chưa có sản phẩm nào." data-order-lines>
+            <DataTable :columns="lineColumns" :rows="form.lines" :row-key="(line) => line.variant_id" :row-label="(line) => line.sku" :empty-text="t('checkout::admin.admin_orders_create.no_products_yet')" data-order-lines>
                 <template #cell-quantity="{ row }">
-                    <input v-model.number="row.quantity" :class="inputClass" class="w-20 text-right tabular-nums" type="number" min="1" max="1000" required :aria-label="`Số lượng ${row.sku}`" @change="recalc" />
+                    <input v-model.number="row.quantity" :class="inputClass" class="w-20 text-right tabular-nums" type="number" min="1" max="1000" required :aria-label="t('checkout::admin.admin_orders_create.quantity_sku', { sku: row.sku })" @change="recalc" />
                 </template>
                 <template #cell-price="{ row }">{{ priceOf(row.variant_id)?.unit_price ?? '—' }}</template>
                 <template #cell-subtotal="{ row }">{{ priceOf(row.variant_id)?.subtotal ?? '—' }}</template>
                 <template #cell-remove="{ row }">
-                    <button type="button" class="text-red-600 hover:underline" @click="form.lines.splice(form.lines.indexOf(row), 1); recalc()">Bỏ</button>
+                    <button type="button" class="text-red-600 hover:underline" @click="form.lines.splice(form.lines.indexOf(row), 1); recalc()">{{ t('checkout::admin.admin_orders_create.remove') }}</button>
                 </template>
             </DataTable>
 
             <div class="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2">
-                <h2 class="font-medium sm:col-span-2">Người nhận</h2>
-                <FormField label="Họ tên" :error="form.errors.full_name"><input v-model="form.full_name" :class="inputClass" maxlength="120" required /></FormField>
-                <FormField label="Số điện thoại" :error="form.errors.phone"><input v-model="form.phone" :class="inputClass" type="tel" maxlength="20" required /></FormField>
-                <FormField label="Email (không bắt buộc)" :error="form.errors.email"><input v-model="form.email" :class="inputClass" type="email" maxlength="190" /></FormField>
+                <h2 class="font-medium sm:col-span-2">{{ t('checkout::admin.admin_orders_create.recipient') }}</h2>
+                <FormField :label="t('checkout::admin.admin_orders_create.full_name')" :error="form.errors.full_name"><input v-model="form.full_name" :class="inputClass" maxlength="120" required /></FormField>
+                <FormField :label="t('checkout::admin.admin_orders_create.phone_number')" :error="form.errors.phone"><input v-model="form.phone" :class="inputClass" type="tel" maxlength="20" required /></FormField>
+                <FormField :label="t('checkout::admin.admin_orders_create.email_optional')" :error="form.errors.email"><input v-model="form.email" :class="inputClass" type="email" maxlength="190" /></FormField>
                 <div class="hidden sm:block" />
-                <FormField label="Tỉnh/thành" :error="form.errors.province_code"><Combobox v-model="form.province_code" :options="provinces" placeholder="Chọn tỉnh/thành" aria-label="Tỉnh/thành" /></FormField>
-                <FormField label="Phường/xã" :error="form.errors.ward_code"><Combobox v-model="form.ward_code" :options="wards" :disabled="!wards.length" placeholder="Chọn phường/xã" aria-label="Phường/xã" /></FormField>
-                <FormField label="Số nhà, đường" :error="form.errors.street_line" class="sm:col-span-2"><input v-model="form.street_line" :class="inputClass" maxlength="255" required @change="recalc" /></FormField>
-                <FormField label="Ghi chú đơn" :error="form.errors.note" class="sm:col-span-2"><textarea v-model="form.note" :class="inputClass" rows="2" maxlength="1000"></textarea></FormField>
+                <FormField :label="t('checkout::admin.admin_orders_create.province_city')" :error="form.errors.province_code"><Combobox v-model="form.province_code" :options="provinces" :placeholder="t('checkout::admin.admin_orders_create.choose_province_city')" :aria-label="t('checkout::admin.admin_orders_create.province_city')" /></FormField>
+                <FormField :label="t('checkout::admin.admin_orders_create.ward')" :error="form.errors.ward_code"><Combobox v-model="form.ward_code" :options="wards" :disabled="!wards.length" :placeholder="t('checkout::admin.admin_orders_create.choose_ward')" :aria-label="t('checkout::admin.admin_orders_create.ward')" /></FormField>
+                <FormField :label="t('checkout::admin.admin_orders_create.house_number_street')" :error="form.errors.street_line" class="sm:col-span-2"><input v-model="form.street_line" :class="inputClass" maxlength="255" required @change="recalc" /></FormField>
+                <FormField :label="t('checkout::admin.admin_orders_create.order_note')" :error="form.errors.note" class="sm:col-span-2"><textarea v-model="form.note" :class="inputClass" rows="2" maxlength="1000"></textarea></FormField>
             </div>
         </section>
 
         <aside class="space-y-3 self-start rounded-lg border border-slate-200 bg-white p-4 text-sm" data-order-summary>
-            <FormField label="Phí giao" :error="form.errors.shipping_method">
-                <Select v-model="form.shipping_method" :options="(quote?.shipping_options ?? []).map((option) => ({ value: option.code, label: `${option.label} — ${option.fee}` }))" empty-label="— Tính tiền để chọn —" aria-label="Phí giao" />
+            <FormField :label="t('checkout::admin.admin_orders_create.shipping_fee')" :error="form.errors.shipping_method">
+                <Select v-model="form.shipping_method" :options="(quote?.shipping_options ?? []).map((option) => ({ value: option.code, label: `${option.label} — ${option.fee}` }))" :empty-label="t('checkout::admin.admin_orders_create.calculate_choose')" :aria-label="t('checkout::admin.admin_orders_create.shipping_fee')" />
             </FormField>
-            <FormField label="Thanh toán" :error="form.errors.payment_method">
-                <Select v-model="form.payment_method" :options="(quote?.payment_methods ?? []).map((method) => ({ value: method.code, label: method.label }))" empty-label="— Tính tiền để chọn —" aria-label="Thanh toán" />
+            <FormField :label="t('checkout::admin.admin_orders_create.payment')" :error="form.errors.payment_method">
+                <Select v-model="form.payment_method" :options="(quote?.payment_methods ?? []).map((method) => ({ value: method.code, label: method.label }))" :empty-label="t('checkout::admin.admin_orders_create.calculate_choose')" :aria-label="t('checkout::admin.admin_orders_create.payment')" />
             </FormField>
             <dl v-if="quote" class="space-y-1 border-t border-slate-100 pt-3">
-                <div class="flex justify-between"><dt>Tạm tính</dt><dd class="tabular-nums">{{ quote.subtotal }}</dd></div>
-                <div class="flex justify-between"><dt>Giảm giá</dt><dd class="tabular-nums">{{ quote.discount }}</dd></div>
-                <div class="flex justify-between"><dt>Phí giao</dt><dd class="tabular-nums">{{ quote.shipping }}</dd></div>
-                <div class="flex justify-between text-base font-semibold"><dt>Tổng</dt><dd class="tabular-nums" data-order-total>{{ quote.total }}</dd></div>
+                <div class="flex justify-between"><dt>{{ t('checkout::admin.admin_orders_create.subtotal') }}</dt><dd class="tabular-nums">{{ quote.subtotal }}</dd></div>
+                <div class="flex justify-between"><dt>{{ t('checkout::admin.admin_orders_create.discount') }}</dt><dd class="tabular-nums">{{ quote.discount }}</dd></div>
+                <div class="flex justify-between"><dt>{{ t('checkout::admin.admin_orders_create.shipping_fee') }}</dt><dd class="tabular-nums">{{ quote.shipping }}</dd></div>
+                <div class="flex justify-between text-base font-semibold"><dt>{{ t('checkout::admin.admin_orders_create.total') }}</dt><dd class="tabular-nums" data-order-total>{{ quote.total }}</dd></div>
             </dl>
             <p v-if="quoteError" class="text-red-600" role="alert">{{ quoteError }}</p>
             <p v-for="(error, key) in form.errors" :key="key" class="text-red-600">{{ error }}</p>
             <div class="flex flex-wrap gap-2 pt-2">
-                <button type="button" :class="secondaryButton" :disabled="quoting || !form.lines.length" data-quote @click="runQuote">{{ quoting ? 'Đang tính…' : 'Tính tiền' }}</button>
-                <button type="submit" :class="primaryButton" :disabled="!canSubmit || form.processing" data-place>Tạo đơn</button>
+                <button type="button" :class="secondaryButton" :disabled="quoting || !form.lines.length" data-quote @click="runQuote">{{ quoting ? t('checkout::admin.admin_orders_create.calculating') : t('checkout::admin.admin_orders_create.calculate') }}</button>
+                <button type="submit" :class="primaryButton" :disabled="!canSubmit || form.processing" data-place>{{ t('checkout::admin.admin_orders_create.create_order') }}</button>
             </div>
         </aside>
     </form>

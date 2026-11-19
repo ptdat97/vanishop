@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionActions from '@admin/Components/Extensions/ExtensionActions.vue';
@@ -54,9 +55,9 @@ const criteria = reactive<Criteria>({ ...props.query, options: { ...(Array.isArr
 /** Bộ lọc của plugin (EP v3 X1). */
 const ext = reactive<Record<string, string>>({ ...(Array.isArray(props.query.ext) ? {} : (props.query.ext ?? {})) });
 const filterOptions = computed(() => [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'out', label: 'Hết hàng (online)' },
-    { value: 'low', label: `Sắp hết (≤ ${props.threshold})` },
+    { value: 'all', label: t('inventory::admin.stock_index.all') },
+    { value: 'out', label: t('inventory::admin.stock_index.out_stock_online') },
+    { value: 'low', label: t('inventory::admin.stock_index.low_stock_threshold', { threshold: props.threshold }) },
 ]);
 const valueOptions = (filter: OptionFilter) => filter.values.map((code) => ({ value: code, label: code }));
 const hasOptionFilter = computed(() => Object.values(props.query.options ?? {}).some((code) => code !== ''));
@@ -66,8 +67,8 @@ const rows = computed<Row[]>(() => {
 });
 const columns = computed(() => [
     ...(props.canAdjust ? [{ key: 'select', label: '' }] : []),
-    { key: 'product', label: 'Sản phẩm / SKU' },
-    { key: 'sellable', label: 'Bán được online', align: 'right' as const },
+    { key: 'product', label: t('inventory::admin.stock_index.product_sku') },
+    { key: 'sellable', label: t('inventory::admin.stock_index.sellable_online'), align: 'right' as const },
     ...props.locations.map((location, index) => ({ key: `location-${index}`, label: location.code })),
     { key: 'actions', label: '', align: 'right' as const },
 ]);
@@ -134,7 +135,7 @@ function params(overrides: Partial<Criteria> & { page?: number; per_page?: numbe
 }
 
 async function visit(query: Record<string, string | number | Record<string, string> | undefined>): Promise<void> {
-    if (dirty.value && (await confirmAction({ title: `Bỏ ${dirty.value} ô chưa lưu?`, confirmLabel: 'Bỏ thay đổi', tone: 'danger' })) === false) return;
+    if (dirty.value && (await confirmAction({ title: t('inventory::admin.stock_index.discard_dirty_unsaved_cells', { dirty: dirty.value }), confirmLabel: t('inventory::admin.stock_index.discard_changes'), tone: 'danger' })) === false) return;
     discard();
     clearSelection();
     list.visit(query);
@@ -161,7 +162,7 @@ const allMatching = ref(false);
 const pageIds = computed(() => rows.value.map((row) => row.id));
 const pageAllSelected = computed(() => pageIds.value.length > 0 && pageIds.value.every((id) => selected.value.includes(id)));
 const selectedCount = computed(() => (allMatching.value ? props.pagination.variants : selected.value.length));
-const selectionScope = computed(() => (allMatching.value ? 'khớp bộ lọc trên mọi trang' : 'trên trang hiện tại'));
+const selectionScope = computed(() => (allMatching.value ? t('inventory::admin.stock_index.matching_filter_every_page') : t('inventory::admin.stock_index.current_page')));
 watch(selected, () => {
     if (!pageAllSelected.value) allMatching.value = false;
 });
@@ -200,14 +201,14 @@ async function applyBulk(): Promise<void> {
     const action = bulk.action === 'zero' ? 'set' : bulk.action;
     const quantity = bulk.action === 'zero' ? 0 : bulk.quantity;
     const what: Record<string, string> = {
-        set: `đặt tồn = ${quantity}`,
-        adjust: `${quantity >= 0 ? 'cộng' : 'trừ'} ${Math.abs(quantity)}`,
-        safety: `đặt tồn an toàn = ${quantity}`,
+        set: t('inventory::admin.stock_index.set_stock_quantity', { quantity }),
+        adjust: `${quantity >= 0 ? t('inventory::admin.stock_index.add') : t('inventory::admin.stock_index.subtract')} ${Math.abs(quantity)}`,
+        safety: t('inventory::admin.stock_index.set_safety_stock_quantity', { quantity }),
     };
     const confirmed = await confirmAction({
-        title: `${what[action]} cho ${selectedCount.value} SKU ${selectionScope.value} tại ${location.code}?`,
-        message: `${action === 'adjust' ? 'SKU nào không đủ tồn để trừ sẽ được bỏ qua. ' : ''}Mỗi SKU được ghi một dòng trong lịch sử biến động.`,
-        confirmLabel: 'Áp dụng',
+        title: t('inventory::admin.stock_index.action_selected_count_skus_selection', { action: what[action], selected_count: selectedCount.value, selection_scope: selectionScope.value, code: location.code }),
+        message: t('inventory::admin.stock_index.movement_recorded_hint', { prefix: action === 'adjust' ? t('inventory::admin.stock_index.adjust_skip_hint') : '' }),
+        confirmLabel: t('inventory::admin.stock_index.apply'),
     });
     if (confirmed === false) return;
 
@@ -299,120 +300,120 @@ onBeforeUnmount(() => runTimer && clearTimeout(runTimer));
 </script>
 
 <template>
-    <Head title="Tồn kho" />
-    <PageHeader title="Tồn kho" subtitle="Gõ số tồn vào ô (Enter: xuống dòng) rồi Lưu, hoặc chọn nhiều SKU để sửa hàng loạt. Bán được = tồn − đang giữ − tồn an toàn.">
-        <Link :href="urls.receipts" :class="secondaryButton" data-receipts>Nhập hàng</Link>
-        <Link :href="urls.counts" :class="secondaryButton" data-counts>Kiểm kê</Link>
-        <a :href="urls.export" :class="secondaryButton">Xuất CSV</a>
-        <button v-if="canAdjust && locations.length" type="button" :class="secondaryButton" @click="showImport = !showImport">Nhập CSV</button>
+    <Head :title="t('inventory::admin.stock_index.inventory')" />
+    <PageHeader :title="t('inventory::admin.stock_index.inventory')" :subtitle="t('inventory::admin.stock_index.type_stock_into_cells_enter')">
+        <Link :href="urls.receipts" :class="secondaryButton" data-receipts>{{ t('inventory::admin.stock_index.goods_receipts') }}</Link>
+        <Link :href="urls.counts" :class="secondaryButton" data-counts>{{ t('inventory::admin.stock_index.stock_counts') }}</Link>
+        <a :href="urls.export" :class="secondaryButton">{{ t('inventory::admin.stock_index.export_csv') }}</a>
+        <button v-if="canAdjust && locations.length" type="button" :class="secondaryButton" @click="showImport = !showImport">{{ t('inventory::admin.stock_index.import_csv') }}</button>
         <Link v-for="link in links" :key="link.url" :href="link.url" :class="secondaryButton">{{ link.label }}</Link>
-        <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">Kho chính</button>
+        <button v-if="urls.main_location" type="button" :class="secondaryButton" @click="editingLocation = !editingLocation">{{ t('inventory::admin.stock_index.main_warehouse') }}</button>
     </PageHeader>
     <ExtensionTools :tools="extensions.tools ?? []" />
     <section v-if="run" class="mb-4 rounded-lg border border-slate-200 bg-white p-4 text-sm" role="status" aria-live="polite" data-bulk-run>
         <p class="font-medium">{{ run.label }}</p>
         <div class="mt-2 h-2 overflow-hidden rounded bg-slate-100"><div class="h-full bg-indigo-600 transition-all" :style="{ width: `${run.progress}%` }"></div></div>
         <p class="mt-2 text-slate-600">
-            <template v-if="run.finished">Xong — </template><template v-else>Đang chạy {{ run.progress }}% — </template>
-            đã ghi {{ run.counts.updated }}<template v-if="run.counts.unchanged">, không đổi {{ run.counts.unchanged }}</template><template v-if="run.counts.conflicts">, xung đột {{ run.counts.conflicts }} (tồn đã đổi sau khi xem trước)</template><template v-if="run.counts.skipped">, bỏ qua {{ run.counts.skipped }}</template><template v-if="run.failed_jobs">, {{ run.failed_jobs }} lô lỗi — xem log</template>.
+            <template v-if="run.finished">Xong — </template><template v-else>{{ t('inventory::admin.stock_index.running_progress', { progress: run.progress }) }} </template>
+            {{ t('inventory::admin.stock_index.recorded_updated', { updated: run.counts.updated }) }}<template v-if="run.counts.unchanged">{{ t('inventory::admin.stock_index.unchanged_unchanged', { unchanged: run.counts.unchanged }) }}</template><template v-if="run.counts.conflicts">{{ t('inventory::admin.stock_index.conflicts_conflicts_stock_changed_after', { conflicts: run.counts.conflicts }) }}</template><template v-if="run.counts.skipped">{{ t('inventory::admin.stock_index.skipped_skipped', { skipped: run.counts.skipped }) }}</template><template v-if="run.failed_jobs">{{ t('inventory::admin.stock_index.failed_jobs_failed_batches_see', { failed_jobs: run.failed_jobs }) }}</template>.
         </p>
     </section>
     <form v-if="editingLocation && urls.main_location && mainLocation" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm md:grid-cols-3" data-main-location @submit.prevent="saveLocation">
-        <p class="md:col-span-3">Kho chính của cửa hàng. Cần nhiều kho, cửa hàng nhận tại quầy hay chuyển kho: bật plugin <strong>Vận hành kho</strong>.</p>
-        <input v-model="locationForm.name" :class="inputClass" placeholder="Tên kho" aria-label="Tên kho" />
-        <input v-model="locationForm.address" :class="inputClass" placeholder="Địa chỉ" aria-label="Địa chỉ" />
-        <Select v-if="provinces.length" v-model="locationForm.province_code" :options="provinces" empty-label="— Tỉnh/thành —" empty-value="" aria-label="Tỉnh/thành" data-province-select />
-        <input v-else v-model="locationForm.province_code" :class="inputClass" placeholder="Mã tỉnh/thành" aria-label="Mã tỉnh/thành" />
+        <p class="md:col-span-3">{{ t('inventory::admin.stock_index.store_s_main_warehouse_need') }} <strong>{{ t('inventory::admin.stock_index.warehouse_operations') }}</strong>.</p>
+        <input v-model="locationForm.name" :class="inputClass" :placeholder="t('inventory::admin.stock_index.warehouse_name')" :aria-label="t('inventory::admin.stock_index.warehouse_name')" />
+        <input v-model="locationForm.address" :class="inputClass" :placeholder="t('inventory::admin.stock_index.address')" :aria-label="t('inventory::admin.stock_index.address')" />
+        <Select v-if="provinces.length" v-model="locationForm.province_code" :options="provinces" :empty-label="t('inventory::admin.stock_index.province_city')" empty-value="" :aria-label="t('inventory::admin.stock_index.province_city_2')" data-province-select />
+        <input v-else v-model="locationForm.province_code" :class="inputClass" :placeholder="t('inventory::admin.stock_index.province_city_code')" :aria-label="t('inventory::admin.stock_index.province_city_code')" />
         <p v-for="(error, key) in locationForm.errors" :key="key" class="text-red-600 md:col-span-3">{{ error }}</p>
-        <div><button type="submit" :class="primaryButton" :disabled="locationForm.processing">Lưu</button></div>
+        <div><button type="submit" :class="primaryButton" :disabled="locationForm.processing">{{ t('inventory::admin.stock_index.save') }}</button></div>
     </form>
 
     <div v-if="warnings.no_location" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm" data-no-location>
-        <p class="font-medium">Cửa hàng chưa có kho nào — mọi sản phẩm đang hiện "hết hàng".</p>
-        <p class="mt-1 text-slate-600">Tạo "Kho chính" (giao đơn online, quản lý tồn tại VaniShop) rồi nhập số tồn.</p>
-        <button v-if="urls.default_location" type="button" :class="[primaryButton, 'mt-3']" @click="createDefault">Tạo Kho chính</button>
-        <p v-else class="mt-2 text-slate-600">Nhờ chủ cửa hàng tạo Kho chính.</p>
+        <p class="font-medium">{{ t('inventory::admin.stock_index.store_has_no_warehouse_every') }}</p>
+        <p class="mt-1 text-slate-600">{{ t('inventory::admin.stock_index.create_main_warehouse_ships_online') }}</p>
+        <button v-if="urls.default_location" type="button" :class="[primaryButton, 'mt-3']" @click="createDefault">{{ t('inventory::admin.stock_index.create_main_warehouse') }}</button>
+        <p v-else class="mt-2 text-slate-600">{{ t('inventory::admin.stock_index.ask_store_owner_create_main') }}</p>
     </div>
     <div v-else-if="warnings.no_online_location" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
-        Chưa có kho nào đang bật "Giao đơn online" — khách không mua được. Sửa ở
-        <Link v-if="urls.locations" :href="urls.locations" class="underline">Kho & cửa hàng</Link><span v-else>Kho & cửa hàng (plugin Vận hành kho)</span>.
+        {{ t('inventory::admin.stock_index.no_warehouse_has_ships_online') }}
+        <Link v-if="urls.locations" :href="urls.locations" class="underline">{{ t('inventory::admin.stock_index.warehouses_stores') }}</Link><span v-else>{{ t('inventory::admin.stock_index.warehouses_stores_warehouse_operations_plugin') }}</span>.
     </div>
 
     <form v-if="showImport" class="mb-4 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="submitImport">
-        <p>File CSV có cột <code>sku</code>, <code>on_hand</code> và (tuỳ chọn) <code>location</code> — mã kho. File "Xuất CSV" sửa xong nhập lại được. Bước sau là xem trước, chưa ghi gì.</p>
-        <FileInput v-model="importForm.file" accept=".csv,text/csv" :max-kb="2048" label="Chọn file CSV" :progress="importForm.progress?.percentage ?? null" />
-        <Select v-model="importForm.location_id" :options="importLocations" empty-label="Kho cho dòng không có cột location: — kho giao online đầu tiên —" :empty-value="null" />
+        <p>{{ t('inventory::admin.stock_index.csv_file_columns') }} <code>sku</code>, <code>on_hand</code> {{ t('inventory::admin.stock_index.optional') }} <code>location</code> {{ t('inventory::admin.stock_index.warehouse_code_export_csv_file') }}</p>
+        <FileInput v-model="importForm.file" accept=".csv,text/csv" :max-kb="2048" :label="t('inventory::admin.stock_index.choose_csv_file')" :progress="importForm.progress?.percentage ?? null" />
+        <Select v-model="importForm.location_id" :options="importLocations" :empty-label="t('inventory::admin.stock_index.warehouse_rows_without_location_column')" :empty-value="null" />
         <p v-for="(error, key) in importForm.errors" :key="key" class="text-red-600">{{ error }}</p>
-        <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">Xem trước</button></div>
+        <div><button type="submit" :class="primaryButton" :disabled="!importForm.file || importForm.processing">{{ t('inventory::admin.stock_index.preview') }}</button></div>
     </form>
 
     <form class="mb-4 flex flex-wrap items-center gap-2" @submit.prevent="find">
-        <input v-model="criteria.q" :class="[inputClass, 'max-w-sm']" placeholder="Tên sản phẩm (vd. đầm lụa), mã hoặc SKU" aria-label="Tìm" />
-        <Select v-model="criteria.filter" :options="filterOptions" class="w-44" aria-label="Tình trạng" />
+        <input v-model="criteria.q" :class="[inputClass, 'max-w-sm']" :placeholder="t('inventory::admin.stock_index.product_name_silk_dress_code')" :aria-label="t('inventory::admin.stock_index.search')" />
+        <Select v-model="criteria.filter" :options="filterOptions" class="w-44" :aria-label="t('inventory::admin.stock_index.availability')" />
         <Select
             v-for="filter in optionFilters"
             :key="filter.code"
             :model-value="criteria.options[filter.code] ?? ''"
             :options="valueOptions(filter)"
-            :empty-label="`Mọi ${filter.name.toLowerCase()}`"
+            :empty-label="t('inventory::admin.stock_index.all_name', { name: filter.name.toLowerCase() })"
             empty-value=""
             class="w-32"
             :aria-label="filter.name"
             @update:model-value="(code) => (criteria.options[filter.code] = String(code ?? ''))"
         />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="primaryButton">Lọc</button>
-        <button v-if="query.q || query.style || query.filter !== 'all' || hasOptionFilter" type="button" :class="secondaryButton" @click="clearFilters">Bỏ lọc</button>
-        <span v-if="query.style" class="text-sm text-slate-600">Đang xem mã {{ query.style }}</span>
+        <button type="submit" :class="primaryButton">{{ t('inventory::admin.stock_index.filter') }}</button>
+        <button v-if="query.q || query.style || query.filter !== 'all' || hasOptionFilter" type="button" :class="secondaryButton" @click="clearFilters">{{ t('inventory::admin.stock_index.clear_filter') }}</button>
+        <span v-if="query.style" class="text-sm text-slate-600">{{ t('inventory::admin.stock_index.viewing_code_style', { style: query.style }) }}</span>
     </form>
 
     <div v-if="canAdjust && (selected.length || allMatching)" class="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm shadow" data-stock-bulkbar>
         <span class="font-medium" aria-live="polite">
-            {{ allMatching ? `Đã chọn toàn bộ ${selectedCount} SKU khớp bộ lọc trên mọi trang` : `Đã chọn ${selectedCount} SKU trên trang hiện tại` }}
+            {{ allMatching ? t('inventory::admin.stock_index.all_selected_count_skus_matching', { selected_count: selectedCount }) : t('inventory::admin.stock_index.selected_count_skus_current_page', { selected_count: selectedCount }) }}
         </span>
         <button v-if="pageAllSelected && !allMatching && pagination.variants > pageIds.length" type="button" class="text-indigo-700 underline" @click="allMatching = true">
-            Chọn cả {{ pagination.variants }} SKU khớp bộ lọc
+            {{ t('inventory::admin.stock_index.select_all_variants_skus_matching', { variants: pagination.variants }) }}
         </button>
-        <Select v-model="bulk.action" :options="bulkActions" class="w-52" aria-label="Thao tác hàng loạt" />
-        <input v-if="bulk.action !== 'zero'" v-model.number="bulk.quantity" type="number" :class="[inputClass, 'w-24']" :placeholder="bulk.action === 'adjust' ? '+10 / -2' : 'Số lượng'" aria-label="Số lượng" />
-        <span>tại</span>
+        <Select v-model="bulk.action" :options="bulkActions" class="w-52" :aria-label="t('inventory::admin.stock_index.bulk_actions')" />
+        <input v-if="bulk.action !== 'zero'" v-model.number="bulk.quantity" type="number" :class="[inputClass, 'w-24']" :placeholder="bulk.action === 'adjust' ? '+10 / -2' : t('inventory::admin.stock_index.quantity')" :aria-label="t('inventory::admin.stock_index.quantity')" />
+        <span>{{ t('inventory::admin.stock_index.text') }}</span>
         <Select v-model="bulk.location_id" :options="bulkLocationOptions" class="w-56" aria-label="Kho" />
-        <input v-model="bulk.reason" :class="[inputClass, 'w-56']" :placeholder="bulk.action === 'adjust' ? 'Lý do (bắt buộc)' : 'Lý do (tuỳ chọn)'" maxlength="255" aria-label="Lý do" />
-        <button type="button" :class="primaryButton" :disabled="bulkProcessing || !bulk.location_id || (bulk.action === 'adjust' && !bulk.reason.trim())" @click="applyBulk">Áp dụng</button>
+        <input v-model="bulk.reason" :class="[inputClass, 'w-56']" :placeholder="bulk.action === 'adjust' ? t('inventory::admin.stock_index.reason_required') : t('inventory::admin.stock_index.reason_optional')" maxlength="255" :aria-label="t('inventory::admin.stock_index.reason')" />
+        <button type="button" :class="primaryButton" :disabled="bulkProcessing || !bulk.location_id || (bulk.action === 'adjust' && !bulk.reason.trim())" @click="applyBulk">{{ t('inventory::admin.stock_index.apply') }}</button>
         <ExtensionActions v-if="!allMatching" :actions="extensions.actions" :ids="selected" selection-description="SKU" />
-        <button type="button" :class="secondaryButton" @click="clearSelection">Bỏ chọn</button>
+        <button type="button" :class="secondaryButton" @click="clearSelection">{{ t('inventory::admin.stock_index.deselect') }}</button>
     </div>
 
     <div v-if="locations.length" data-stock-grid>
-        <DataTable :columns="columns" :rows="rows" :loading="list.loading.value" :row-class="(row) => (row.first ? 'align-top border-t-2 border-slate-200' : 'align-top')" :row-label="(row) => row.sku" empty-text="Không có sản phẩm phù hợp.">
+        <DataTable :columns="columns" :rows="rows" :loading="list.loading.value" :row-class="(row) => (row.first ? 'align-top border-t-2 border-slate-200' : 'align-top')" :row-label="(row) => row.sku" :empty-text="t('inventory::admin.stock_index.no_matching_products')">
             <template #head-select>
-                <input type="checkbox" :checked="pageAllSelected" aria-label="Chọn cả trang" @change="toggle(pageIds, ($event.target as HTMLInputElement).checked)" />
+                <input type="checkbox" :checked="pageAllSelected" :aria-label="t('inventory::admin.stock_index.select_whole_page')" @change="toggle(pageIds, ($event.target as HTMLInputElement).checked)" />
             </template>
             <template #cell-select="{ row }">
-                <input v-model="selected" type="checkbox" :value="row.id" :aria-label="`Chọn ${row.sku}`" />
+                <input v-model="selected" type="checkbox" :value="row.id" :aria-label="t('inventory::admin.stock_index.select_sku', { sku: row.sku })" />
             </template>
             <template v-for="(location, index) in locations" :key="location.id" #[`head-location-${index}`]>
                 {{ location.code }}
-                <span v-if="location.external" class="ml-1 text-amber-600">(đồng bộ)</span>
-                <span v-else-if="!location.online" class="ml-1 text-slate-400">(không bán online)</span>
+                <span v-if="location.external" class="ml-1 text-amber-600">{{ t('inventory::admin.stock_index.synced') }}</span>
+                <span v-else-if="!location.online" class="ml-1 text-slate-400">{{ t('inventory::admin.stock_index.not_sold_online') }}</span>
             </template>
             <template #cell-product="{ row }">
                 <div v-if="row.first" class="mb-1 flex items-center gap-2">
                     <input
-                        v-if="canAdjust" type="checkbox" :checked="productSelected(row.product)" :aria-label="`Chọn cả ${row.product.style_name}`"
+                        v-if="canAdjust" type="checkbox" :checked="productSelected(row.product)" :aria-label="t('inventory::admin.stock_index.select_all_style_name', { style_name: row.product.style_name })"
                         @change="toggle(productIds(row.product), ($event.target as HTMLInputElement).checked)"
                     />
                     <span class="font-medium">{{ row.product.style_name }}</span>
-                    <span class="text-xs text-slate-500">{{ row.product.style_code }} · {{ row.product.variants.length }} SKU<template v-if="row.product.tracked"> · bán được {{ row.product.sellable }}</template></span>
-                    <span v-if="!row.product.tracked" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700" title="Sản phẩm luôn bán được; tồn tự bù khi có đơn" data-untracked>Không theo dõi tồn</span>
+                    <span class="text-xs text-slate-500">{{ row.product.style_code }} · {{ row.product.variants.length }} SKU<template v-if="row.product.tracked"> {{ t('inventory::admin.stock_index.sellable_sellable', { sellable: row.product.sellable }) }}</template></span>
+                    <span v-if="!row.product.tracked" class="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700" :title="t('inventory::admin.stock_index.product_always_sellable_stock_backfills')" data-untracked>{{ t('inventory::admin.stock_index.stock_not_tracked') }}</span>
                 </div>
-                <div class="font-mono text-xs text-slate-600">{{ row.sku }}<template v-if="row.options_label"> · {{ row.options_label }}</template><span v-if="row.status !== 'active'"> · ngừng bán</span></div>
+                <div class="font-mono text-xs text-slate-600">{{ row.sku }}<template v-if="row.options_label"> · {{ row.options_label }}</template><span v-if="row.status !== 'active'"> {{ t('inventory::admin.stock_index.discontinued') }}</span></div>
                 <div v-for="column in extensions.columns" :key="column.key" class="text-xs text-slate-500" :data-extension-column="column.key">
                     <template v-if="extensions.values[row.id]?.[column.key] !== null && extensions.values[row.id]?.[column.key] !== undefined">{{ column.label }}: {{ extensions.values[row.id][column.key] }}</template>
                 </div>
             </template>
             <template #cell-sellable="{ row }">
-                <span v-if="!row.tracked" class="text-sky-700" title="Không theo dõi tồn — luôn bán được">Không giới hạn</span>
+                <span v-if="!row.tracked" class="text-sky-700" :title="t('inventory::admin.stock_index.stock_not_tracked_always_sellable')">{{ t('inventory::admin.stock_index.unlimited') }}</span>
                 <span v-else class="font-semibold" :class="row.sellable === 0 ? 'text-red-600' : row.sellable <= threshold ? 'text-amber-600' : 'text-emerald-700'">{{ row.sellable }}</span>
             </template>
             <template v-for="(location, index) in locations" :key="location.id" #[`cell-location-${index}`]="{ row }">
@@ -421,42 +422,42 @@ onBeforeUnmount(() => runTimer && clearTimeout(runTimer));
                         v-if="editable(location)"
                         type="number" min="0" :value="edits[cellKey(location, row)] ?? row.levels[index].on_hand" :data-cell="`${row.index}-${index}`"
                         :class="[inputClass, 'w-20 py-1', edits[cellKey(location, row)] !== undefined ? 'border-indigo-500 bg-indigo-50' : '']"
-                        :aria-label="`Tồn ${row.sku} tại ${location.code}`"
+                        :aria-label="t('inventory::admin.stock_index.stock_sku_code', { sku: row.sku, code: location.code })"
                         @input="onInput(location, row, index, ($event.target as HTMLInputElement).value)"
                         @keydown.enter="moveFocus($event, row.index, index)"
                         @focus="($event.target as HTMLInputElement).select()"
                     />
                     <span v-else class="w-20 font-semibold">{{ row.levels[index].on_hand }}</span>
-                    <button v-if="editable(location)" type="button" class="px-1 text-slate-400 hover:text-slate-700" title="Cộng/trừ, tồn an toàn" @click="openAdvanced(row, location)">⋯</button>
+                    <button v-if="editable(location)" type="button" class="px-1 text-slate-400 hover:text-slate-700" :title="t('inventory::admin.stock_index.add_subtract_safety_stock')" @click="openAdvanced(row, location)">⋯</button>
                 </div>
                 <div v-if="row.levels[index].reserved || row.levels[index].safety_stock" class="mt-1 text-xs text-slate-500">
-                    giữ {{ row.levels[index].reserved }} · an toàn {{ row.levels[index].safety_stock }}
+                    {{ t('inventory::admin.stock_index.reserved_reserved_safety_safety_stock', { reserved: row.levels[index].reserved, safety_stock: row.levels[index].safety_stock }) }}
                 </div>
             </template>
             <template #cell-actions="{ row }">
-                <Link :href="`${urls.movements}?variant=${row.id}`" class="text-xs text-indigo-600 hover:underline">Lịch sử</Link>
+                <Link :href="`${urls.movements}?variant=${row.id}`" class="text-xs text-indigo-600 hover:underline">{{ t('inventory::admin.stock_index.history') }}</Link>
             </template>
         </DataTable>
     </div>
-    <p class="mt-2 text-xs text-slate-500">{{ pagination.total }} sản phẩm · {{ pagination.variants }} SKU</p>
+    <p class="mt-2 text-xs text-slate-500">{{ t('inventory::admin.stock_index.total_products_variants_skus', { total: pagination.total, variants: pagination.variants }) }}</p>
     <Pagination :current="pagination.page" :last="lastPage" :from="firstResult" :to="lastResult" :total="pagination.total" :per-page="pagination.per_page" :per-page-options="perPageOptions" @change="(target) => visit(params({ page: target }))" @per-page-change="changePageSize" />
 
     <div v-if="dirty" class="sticky bottom-0 mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-white p-3 shadow-lg" data-stock-savebar>
-        <span class="text-sm font-medium">{{ dirty }} ô đã sửa</span>
-        <input v-model="reason" :class="[inputClass, 'max-w-xs']" placeholder="Lý do (tuỳ chọn), vd. Kiểm kê tháng 11" maxlength="255" />
-        <button type="button" :class="primaryButton" :disabled="saving" @click="save">Lưu</button>
-        <button type="button" :class="secondaryButton" @click="discard">Huỷ</button>
+        <span class="text-sm font-medium">{{ t('inventory::admin.stock_index.dirty_cells_edited', { dirty }) }}</span>
+        <input v-model="reason" :class="[inputClass, 'max-w-xs']" :placeholder="t('inventory::admin.stock_index.reason_optional_november_stock_count')" maxlength="255" />
+        <button type="button" :class="primaryButton" :disabled="saving" @click="save">{{ t('inventory::admin.stock_index.save') }}</button>
+        <button type="button" :class="secondaryButton" @click="discard">{{ t('inventory::admin.stock_index.cancel') }}</button>
     </div>
 
     <form v-if="advanced" class="mt-4 grid max-w-xl gap-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submitAdvanced">
-        <p class="font-medium">{{ advanced.sku }} tại {{ advanced.location }}</p>
-        <Select v-model="form.action" :options="advancedActions" aria-label="Thao tác" />
-        <input v-model.number="form.quantity" :class="inputClass" type="number" :placeholder="form.action === 'adjust' ? 'Ví dụ: 10 hoặc -2' : 'Số lượng chừa lại, không bán online'" />
-        <input v-if="form.action === 'adjust'" v-model="form.reason" :class="inputClass" placeholder="Lý do (bắt buộc)" />
+        <p class="font-medium">{{ t('inventory::admin.stock_index.sku_location', { sku: advanced.sku, location: advanced.location }) }}</p>
+        <Select v-model="form.action" :options="advancedActions" :aria-label="t('inventory::admin.stock_index.actions')" />
+        <input v-model.number="form.quantity" :class="inputClass" type="number" :placeholder="form.action === 'adjust' ? t('inventory::admin.stock_index.example_10_2') : t('inventory::admin.stock_index.quantity_held_back_not_sold')" />
+        <input v-if="form.action === 'adjust'" v-model="form.reason" :class="inputClass" :placeholder="t('inventory::admin.stock_index.reason_required')" />
         <p v-for="(error, key) in form.errors" :key="key" class="text-sm text-red-600">{{ error }}</p>
         <div class="flex gap-2">
-            <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
-            <button type="button" :class="secondaryButton" @click="advanced = null">Huỷ</button>
+            <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('inventory::admin.stock_index.save') }}</button>
+            <button type="button" :class="secondaryButton" @click="advanced = null">{{ t('inventory::admin.stock_index.cancel') }}</button>
         </div>
     </form>
 </template>

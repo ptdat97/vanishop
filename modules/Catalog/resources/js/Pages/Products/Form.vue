@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DateInput from '@admin/Components/DateInput.vue';
 import ExtensionFormSections from '@admin/Components/Extensions/ExtensionFormSections.vue';
@@ -76,8 +77,8 @@ const locale = ref(defaultLocale);
 const categoryOptions = computed(() => recordOptions(props.categories));
 const primaryCategoryOptions = computed(() => recordOptions(props.categories.filter((category) => form.category_ids.includes(category.id))));
 const booleanOptions = [
-    { value: true, label: 'Có' },
-    { value: false, label: 'Không' },
+    { value: true, label: t('catalog::admin.products_form.yes') },
+    { value: false, label: t('catalog::admin.products_form.no') },
 ];
 
 const emptyTranslation = { name: '', slug: '', description: '', care_instructions: '', meta_title: '', meta_description: '' };
@@ -152,8 +153,8 @@ const singleVariant = computed(() => {
 });
 const singleValues = computed(() => (singleVariant.value ? props.variantMatrix.values[singleVariant.value.id] ?? {} : {}));
 const kindOptions = [
-    { value: 'single', label: 'Sản phẩm đơn', hint: 'Một SKU, không màu / size' },
-    { value: 'variants', label: 'Có biến thể', hint: 'Nhiều SKU theo màu, size…' },
+    { value: 'single', label: t('catalog::admin.products_form.simple_product'), hint: t('catalog::admin.products_form.one_sku_no_colour_size') },
+    { value: 'variants', label: t('catalog::admin.products_form.variants'), hint: t('catalog::admin.products_form.multiple_skus_colour_size') },
 ] as const;
 /** Sản phẩm đơn đã có SKU → chuyển sang có biến thể: SKU đó trở thành một ô của ma trận (VariantMatrix `adopt_single`). */
 const converting = ref(false);
@@ -200,10 +201,10 @@ function submit(): void {
 
 /* Tạo nhanh thuộc tính tại form (không rời trang, giữ dữ liệu đang nhập); thuộc tính chọn nhiều giá trị nhập cách nhau dấu phẩy. */
 const attributeTypes = [
-    { value: 'select', label: 'Chọn một' },
-    { value: 'multiselect', label: 'Chọn nhiều' },
-    { value: 'text', label: 'Văn bản' },
-    { value: 'boolean', label: 'Có / Không' },
+    { value: 'select', label: t('catalog::admin.products_form.single_choice') },
+    { value: 'multiselect', label: t('catalog::admin.products_form.multiple_choice') },
+    { value: 'text', label: t('catalog::admin.products_form.text') },
+    { value: 'boolean', label: t('catalog::admin.products_form.yes_no') },
 ];
 const quickAttribute = reactive({ open: false, name: '', input_type: 'select', values: '', busy: false });
 const quickAttributeErrors = computed(() => (page.props.errors as unknown as Record<string, Record<string, string> | undefined>).quickAttribute ?? {});
@@ -236,12 +237,12 @@ function createAttribute(): void {
 async function duplicate(): Promise<void> {
     if (!props.product) return;
     const values = await promptFields({
-        title: 'Nhân bản sản phẩm',
-        message: 'Tạo bản nháp có cùng mô tả, danh mục, thuộc tính, biến thể, ảnh và giá niêm yết. Tồn kho không được chép.',
-        confirmLabel: 'Nhân bản',
+        title: t('catalog::admin.products_form.duplicate_product'),
+        message: t('catalog::admin.products_form.creates_draft_same_description_categories'),
+        confirmLabel: t('catalog::admin.products_form.duplicate'),
         fields: [
-            { key: 'style_code', label: 'Mã sản phẩm mới', required: true, maxlength: 64, value: `${props.product.style_code}-2` },
-            { key: 'name', label: 'Tên sản phẩm mới', required: true, maxlength: 255, value: `${form.translations[defaultLocale]?.name ?? ''} (bản sao)` },
+            { key: 'style_code', label: t('catalog::admin.products_form.new_product_code'), required: true, maxlength: 64, value: `${props.product.style_code}-2` },
+            { key: 'name', label: t('catalog::admin.products_form.new_product_name'), required: true, maxlength: 255, value: t('catalog::admin.products_form.name_copy', { name: form.translations[defaultLocale]?.name ?? '' }) },
         ],
     });
     if (values !== false) {
@@ -250,7 +251,7 @@ async function duplicate(): Promise<void> {
 }
 
 async function destroy(): Promise<void> {
-    if (props.product && (await confirmAction({ title: 'Xoá sản phẩm nháp này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.product && (await confirmAction({ title: t('catalog::admin.products_form.delete_draft_product'), confirmLabel: t('catalog::admin.products_form.delete'), tone: 'danger' })) !== false) {
         router.delete(productUrl.value);
     }
 }
@@ -258,13 +259,13 @@ async function destroy(): Promise<void> {
 </script>
 
 <template>
-    <Head :title="product ? 'Sửa sản phẩm' : 'Thêm sản phẩm'" />
+    <Head :title="product ? t('catalog::admin.products_form.edit_product') : t('catalog::admin.products_form.add_product')" />
     <CatalogTabs :nav="nav" active="products" />
-    <PageHeader :title="product ? `Sửa: ${product.style_code}` : 'Thêm sản phẩm'">
-        <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
-        <Link v-if="stockUrl" :href="stockUrl" :class="secondaryButton" data-stock-link>Tồn kho</Link>
-        <button v-if="product" type="button" :class="secondaryButton" data-duplicate @click="duplicate">Nhân bản</button>
-        <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+    <PageHeader :title="product ? t('catalog::admin.products_form.edit_style_code', { style_code: product.style_code }) : t('catalog::admin.products_form.add_product')">
+        <Link :href="baseUrl" :class="secondaryButton">{{ t('catalog::admin.products_form.back') }}</Link>
+        <Link v-if="stockUrl" :href="stockUrl" :class="secondaryButton" data-stock-link>{{ t('catalog::admin.products_form.inventory') }}</Link>
+        <button v-if="product" type="button" :class="secondaryButton" data-duplicate @click="duplicate">{{ t('catalog::admin.products_form.duplicate') }}</button>
+        <button v-if="product && product.status === 'draft'" type="button" :class="dangerButton" @click="destroy">{{ t('catalog::admin.products_form.delete') }}</button>
     </PageHeader>
 
 
@@ -276,19 +277,19 @@ async function destroy(): Promise<void> {
                         {{ option.label }}
                     </button>
                 </div>
-                <FormField :label="locale === defaultLocale ? 'Tên sản phẩm (bắt buộc)' : 'Tên sản phẩm'" :error="errors[`translations.${locale}.name`]">
+                <FormField :label="locale === defaultLocale ? t('catalog::admin.products_form.product_name_required') : t('catalog::admin.products_form.product_name')" :error="errors[`translations.${locale}.name`]">
                     <input v-model="form.translations[locale].name" :class="inputClass" />
                 </FormField>
-                <FormField v-if="locale !== defaultLocale" label="Slug riêng cho ngôn ngữ này" hint="Trống = dùng slug gốc. Đổi slug đã được index làm gãy link cũ." :error="errors[`translations.${locale}.slug`]">
+                <FormField v-if="locale !== defaultLocale" :label="t('catalog::admin.products_form.slug_language')" :hint="t('catalog::admin.products_form.empty_use_base_slug_changing')" :error="errors[`translations.${locale}.slug`]">
                     <div class="flex gap-2">
                         <input v-model="form.translations[locale].slug" :class="inputClass" :placeholder="slugify(form.translations[locale].name ?? '') || form.slug" />
-                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">Tạo từ tên</button>
+                        <button type="button" :class="secondaryButton" :disabled="!form.translations[locale].name" @click="form.translations[locale].slug = slugify(form.translations[locale].name ?? '')">{{ t('catalog::admin.products_form.generate_from_name') }}</button>
                     </div>
                 </FormField>
-                <FormField label="Mô tả" :error="errors[`translations.${locale}.description`]">
+                <FormField :label="t('catalog::admin.products_form.description')" :error="errors[`translations.${locale}.description`]">
                     <textarea v-model="form.translations[locale].description" :class="inputClass" rows="6" />
                 </FormField>
-                <FormField label="Hướng dẫn bảo quản" :error="errors[`translations.${locale}.care_instructions`]">
+                <FormField :label="t('catalog::admin.products_form.care_instructions')" :error="errors[`translations.${locale}.care_instructions`]">
                     <textarea v-model="form.translations[locale].care_instructions" :class="inputClass" rows="3" />
                 </FormField>
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -299,25 +300,25 @@ async function destroy(): Promise<void> {
 
             <div class="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">
                 <div class="flex flex-wrap items-center justify-between gap-2 sm:col-span-2">
-                    <h2 class="text-sm font-medium">Thuộc tính</h2>
+                    <h2 class="text-sm font-medium">{{ t('catalog::admin.products_form.attributes') }}</h2>
                     <div class="flex items-center gap-3 text-xs">
-                        <button type="button" class="text-indigo-600 underline" @click="quickAttribute.open = !quickAttribute.open">+ Thuộc tính mới</button>
-                        <a :href="attributeUrls.index" target="_blank" class="text-indigo-600 underline">Quản lý thuộc tính ↗</a>
+                        <button type="button" class="text-indigo-600 underline" @click="quickAttribute.open = !quickAttribute.open">{{ t('catalog::admin.products_form.new_attribute') }}</button>
+                        <a :href="attributeUrls.index" target="_blank" class="text-indigo-600 underline">{{ t('catalog::admin.products_form.manage_attributes') }}</a>
                     </div>
                 </div>
-                <p v-if="!attributeDefinitions.length && !quickAttribute.open" class="text-sm text-slate-500 sm:col-span-2">Chưa có thuộc tính (vd. Chất liệu, Form dáng). Bấm "+ Thuộc tính mới" để tạo ngay.</p>
+                <p v-if="!attributeDefinitions.length && !quickAttribute.open" class="text-sm text-slate-500 sm:col-span-2">{{ t('catalog::admin.products_form.no_attributes_yet_material_fit') }}</p>
                 <div v-if="quickAttribute.open" class="flex flex-wrap items-end gap-2 rounded-md bg-slate-50 p-3 sm:col-span-2">
-                    <FormField label="Tên thuộc tính" :error="quickAttributeErrors.code ?? quickAttributeErrors[`translations.${defaultLocale}.name`]">
-                        <input v-model="quickAttribute.name" :class="inputClass" placeholder="vd. Chất liệu" @keydown.enter.prevent="createAttribute" />
+                    <FormField :label="t('catalog::admin.products_form.attribute_name')" :error="quickAttributeErrors.code ?? quickAttributeErrors[`translations.${defaultLocale}.name`]">
+                        <input v-model="quickAttribute.name" :class="inputClass" :placeholder="t('catalog::admin.products_form.material')" @keydown.enter.prevent="createAttribute" />
                     </FormField>
-                    <FormField label="Kiểu"><Select v-model="quickAttribute.input_type" :options="attributeTypes" /></FormField>
-                    <FormField v-if="['select', 'multiselect'].includes(quickAttribute.input_type)" label="Giá trị (cách nhau dấu phẩy)" class="min-w-60 flex-1">
-                        <input v-model="quickAttribute.values" :class="inputClass" placeholder="vd. Cotton, Lụa, Linen" @keydown.enter.prevent="createAttribute" />
+                    <FormField :label="t('catalog::admin.products_form.type')"><Select v-model="quickAttribute.input_type" :options="attributeTypes" /></FormField>
+                    <FormField v-if="['select', 'multiselect'].includes(quickAttribute.input_type)" :label="t('catalog::admin.products_form.values_comma_separated')" class="min-w-60 flex-1">
+                        <input v-model="quickAttribute.values" :class="inputClass" :placeholder="t('catalog::admin.products_form.cotton_silk_linen')" @keydown.enter.prevent="createAttribute" />
                     </FormField>
-                    <button type="button" :class="secondaryButton" :disabled="quickAttribute.busy || !quickAttribute.name.trim()" @click="createAttribute">Tạo</button>
+                    <button type="button" :class="secondaryButton" :disabled="quickAttribute.busy || !quickAttribute.name.trim()" @click="createAttribute">{{ t('catalog::admin.products_form.create') }}</button>
                     <p v-for="(message, field) in quickAttributeErrors" :key="field" class="w-full text-xs text-red-600">{{ message }}</p>
                 </div>
-                <FormField v-for="definition in attributeDefinitions" :key="definition.id" :label="`${definition.name}${definition.kind === 'internal' ? ' (nội bộ)' : ''}`" :error="errors[`attributes.${definition.id}`]">
+                <FormField v-for="definition in attributeDefinitions" :key="definition.id" :label="`${definition.name}${definition.kind === 'internal' ? t('catalog::admin.products_form.internal') : ''}`" :error="errors[`attributes.${definition.id}`]">
                     <Select
                         v-if="definition.input_type === 'select'"
                         v-model="form.attributes[definition.id] as number | null"
@@ -337,8 +338,8 @@ async function destroy(): Promise<void> {
 
             <!-- Loại sản phẩm: đơn (một SKU, không màu/size) hoặc có biến thể (ma trận) — hai khối độc lập, lưu khối đang chọn. -->
             <fieldset v-if="canChangeKind" class="rounded-lg border border-slate-200 bg-white p-5" data-product-kind>
-                <legend class="sr-only">Loại sản phẩm</legend>
-                <h2 class="text-sm font-medium">Loại sản phẩm</h2>
+                <legend class="sr-only">{{ t('catalog::admin.products_form.product_type') }}</legend>
+                <h2 class="text-sm font-medium">{{ t('catalog::admin.products_form.product_type') }}</h2>
                 <div class="mt-3 grid gap-2 sm:grid-cols-2">
                     <label
                         v-for="option in kindOptions"
@@ -359,16 +360,16 @@ async function destroy(): Promise<void> {
             <section v-show="productKind === 'single'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="single-variant-title">
                 <div>
                     <h2 id="single-variant-title" class="text-sm font-medium">
-                        SKU &amp; giá
-                        <span v-if="defaultVariant?.dirty && product" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">Chưa lưu</span>
+                        {{ t('catalog::admin.products_form.sku_price') }}
+                        <span v-if="defaultVariant?.dirty && product" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">{{ t('catalog::admin.products_form.unsaved') }}</span>
                     </h2>
-                    <p class="mt-1 text-sm text-slate-600">Sản phẩm đơn — một SKU, không màu / size. <template v-if="!product">Để trống thì lưu sản phẩm chưa có SKU.</template></p>
+                    <p class="mt-1 text-sm text-slate-600">{{ t('catalog::admin.products_form.simple_product_one_sku_no') }} <template v-if="!product">{{ t('catalog::admin.products_form.leave_empty_save_product_without') }}</template></p>
                     <div v-if="collapseTo !== null" class="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-indigo-50 p-3 text-sm text-indigo-900" data-collapsing>
-                        <span>Đang chuyển về sản phẩm đơn — giữ SKU {{ singleVariant?.sku }} (bỏ màu/size, giữ đơn, tồn, giá, ảnh); xoá {{ variants.length - 1 }} SKU còn lại (chưa phát sinh gì). Bấm Lưu để hoàn tất.</span>
-                        <button type="button" class="ml-auto underline" @click="cancelCollapse">Huỷ chuyển đổi</button>
+                        <span>{{ t('catalog::admin.products_form.converting_simple_product_keeping_sku', { sku: singleVariant?.sku, variants: variants.length - 1 }) }}</span>
+                        <button type="button" class="ml-auto underline" @click="cancelCollapse">{{ t('catalog::admin.products_form.cancel_conversion') }}</button>
                     </div>
                     <button v-else-if="singleVariant" type="button" class="mt-2 text-sm text-indigo-600 underline" data-convert-to-variants @click="startConversion">
-                        Chuyển sang có biến thể (SKU này trở thành một ô màu / size)
+                        {{ t('catalog::admin.products_form.convert_variants_sku_becomes_one') }}
                     </button>
                 </div>
                 <DefaultVariantEditor
@@ -388,41 +389,40 @@ async function destroy(): Promise<void> {
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h2 id="variants-card-title" class="text-sm font-medium">
-                            Biến thể
-                            <span v-if="variantSummary?.dirty" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">Chưa lưu</span>
+                            {{ t('catalog::admin.products_form.variants_2') }}
+                            <span v-if="variantSummary?.dirty" class="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-normal text-amber-800">{{ t('catalog::admin.products_form.unsaved') }}</span>
                         </h2>
                         <p class="mt-1 text-sm text-slate-600">
                             <template v-if="variantSummary && variantSummary.active + variantSummary.inactive > 0">
-                                <span class="font-medium text-slate-900">{{ variantSummary.active }}</span> SKU đang bán<template v-if="variantSummary.inactive"> · {{ variantSummary.inactive }} ngừng bán</template>
-                                <template v-if="product && variantSummary.withoutImages"> · <span class="text-amber-700">{{ variantSummary.withoutImages }} chưa có ảnh</span></template>
+                                <span class="font-medium text-slate-900">{{ variantSummary.active }}</span> {{ t('catalog::admin.products_form.skus_sale') }}<template v-if="variantSummary.inactive"> {{ t('catalog::admin.products_form.inactive_discontinued', { inactive: variantSummary.inactive }) }}</template>
+                                <template v-if="product && variantSummary.withoutImages"> · <span class="text-amber-700">{{ t('catalog::admin.products_form.without_images_without_images', { without_images: variantSummary.withoutImages }) }}</span></template>
                             </template>
-                            <template v-else>Chưa có biến thể — chọn màu, size… để tạo SKU.</template>
+                            <template v-else>{{ t('catalog::admin.products_form.no_variants_yet_choose_colours') }}</template>
                         </p>
                     </div>
                     <button type="button" :class="primaryButton" data-open-variants @click="variantsOpen = true">
-                        {{ variantSummary && variantSummary.active + variantSummary.inactive > 0 ? 'Quản lý biến thể' : 'Thiết lập biến thể' }}
+                        {{ variantSummary && variantSummary.active + variantSummary.inactive > 0 ? t('catalog::admin.products_form.manage_variants') : t('catalog::admin.products_form.set_up_variants') }}
                     </button>
                 </div>
                 <div v-if="converting" class="mt-3 flex flex-wrap items-center gap-2 rounded-md bg-indigo-50 p-3 text-sm text-indigo-900">
-                    <span>Đang chuyển sang có biến thể — SKU {{ singleVariant?.sku }} sẽ thành một ô. Bấm Lưu để hoàn tất.</span>
-                    <button type="button" class="ml-auto underline" @click="cancelConversion">Huỷ chuyển đổi</button>
+                    <span>{{ t('catalog::admin.products_form.converting_variants_sku_sku_become', { sku: singleVariant?.sku }) }}</span>
+                    <button type="button" class="ml-auto underline" @click="cancelConversion">{{ t('catalog::admin.products_form.cancel_conversion') }}</button>
                 </div>
                 <details v-if="product && hasOptionVariants && !converting" class="mt-3 text-sm" data-collapse-to-single>
-                    <summary class="cursor-pointer text-indigo-600">Chuyển về sản phẩm đơn</summary>
+                    <summary class="cursor-pointer text-indigo-600">{{ t('catalog::admin.products_form.convert_simple_product') }}</summary>
                     <div class="mt-2 space-y-2 rounded-md border border-slate-200 p-3">
                         <template v-if="collapseCandidates.length">
                             <p class="text-slate-600">
-                                Giữ một SKU (bỏ màu/size, giữ id, đơn, tồn, giá, ảnh); các SKU còn lại bị xoá.
-                                <template v-if="usedVariants.length === 1">Chỉ giữ được {{ usedVariants[0].sku }} vì SKU này đã phát sinh.</template>
+                                {{ t('catalog::admin.products_form.keep_one_sku_drops_colour') }}
+                                <template v-if="usedVariants.length === 1">{{ t('catalog::admin.products_form.only_sku_kept_because_sku', { sku: usedVariants[0].sku }) }}</template>
                             </p>
                             <div class="flex flex-wrap items-center gap-2">
-                                <div class="w-72"><Select v-model="pickedCollapse" :options="collapseCandidates" placeholder="Chọn SKU giữ lại…" aria-label="SKU giữ lại" /></div>
-                                <button type="button" :class="secondaryButton" :disabled="pickedCollapse === null" @click="startCollapse">Chuyển</button>
+                                <div class="w-72"><Select v-model="pickedCollapse" :options="collapseCandidates" :placeholder="t('catalog::admin.products_form.choose_sku_keep')" :aria-label="t('catalog::admin.products_form.sku_keep')" /></div>
+                                <button type="button" :class="secondaryButton" :disabled="pickedCollapse === null" @click="startCollapse">{{ t('catalog::admin.products_form.convert') }}</button>
                             </div>
                         </template>
                         <p v-else class="text-amber-800">
-                            Không chuyển được: {{ usedVariants.length }} SKU đã phát sinh (đơn hàng, giỏ, giữ hàng, tồn kho, bảng giá hoặc đổi trả) — xoá sẽ mất lịch sử.
-                            Giữ sản phẩm có biến thể và ngừng bán các SKU không dùng.
+                            {{ t('catalog::admin.products_form.cannot_convert_count_skus_have', { count: usedVariants.length }) }}
                         </p>
                     </div>
                 </details>
@@ -441,8 +441,8 @@ async function destroy(): Promise<void> {
             </section>
             <FullscreenDialog
                 v-model:open="variantsOpen"
-                :title="`Biến thể — ${form.translations[defaultLocale]?.name || form.style_code || 'sản phẩm mới'}`"
-                subtitle="Chọn tuỳ chọn, bật tổ hợp bán, sửa SKU/giá/tồn trong bảng. Tắt SKU đã có: chưa phát sinh → xoá, đã bán/có tồn → ngừng bán."
+                :title="t('catalog::admin.products_form.variants_i', { i: form.translations[defaultLocale]?.name || form.style_code || t('catalog::admin.products_form.new_product_fallback') })"
+                :subtitle="t('catalog::admin.products_form.choose_options_turn_combinations_sell')"
             >
                 <VariantMatrixEditor
                     ref="matrix"
@@ -458,11 +458,11 @@ async function destroy(): Promise<void> {
                     :adopt-variant="converting ? singleVariant : null"
                 />
                 <template #footer>
-                    <span v-if="variantSummary?.dirty" class="text-sm text-amber-700">Có thay đổi chưa lưu</span>
-                    <span v-else class="text-sm text-slate-500">Không có thay đổi</span>
+                    <span v-if="variantSummary?.dirty" class="text-sm text-amber-700">{{ t('catalog::admin.products_form.unsaved_changes') }}</span>
+                    <span v-else class="text-sm text-slate-500">{{ t('catalog::admin.products_form.no_changes') }}</span>
                     <span class="ml-auto" />
-                    <button type="button" :class="secondaryButton" @click="variantsOpen = false">Đóng (giữ bản nháp)</button>
-                    <button type="button" :class="primaryButton" :disabled="form.processing" data-save-variants @click="submit">{{ product ? 'Lưu' : 'Lưu sản phẩm' }}</button>
+                    <button type="button" :class="secondaryButton" @click="variantsOpen = false">{{ t('catalog::admin.products_form.close_keep_draft') }}</button>
+                    <button type="button" :class="primaryButton" :disabled="form.processing" data-save-variants @click="submit">{{ product ? t('catalog::admin.products_form.save') : t('catalog::admin.products_form.save_product') }}</button>
                 </template>
             </FullscreenDialog>
             <ProductVideos v-if="product" :product-url="productUrl" :videos="product.videos" :drivers="videoDrivers" />
@@ -470,54 +470,54 @@ async function destroy(): Promise<void> {
             <template v-else>
                 <section v-if="productKind === 'variants'" class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="new-product-images-title" data-new-product-images>
                     <div>
-                        <h2 id="new-product-images-title" class="text-sm font-medium">Ảnh sản phẩm</h2>
-                        <p class="mt-1 text-sm text-slate-600">Chọn hoặc tải ảnh lên, kéo để sắp thứ tự (ảnh đầu là ảnh đại diện). Ảnh riêng từng màu chọn ngay trong "Thiết lập biến thể"; khi lưu, ảnh ở đây dùng cho các màu chưa có ảnh riêng.</p>
+                        <h2 id="new-product-images-title" class="text-sm font-medium">{{ t('catalog::admin.products_form.product_images') }}</h2>
+                        <p class="mt-1 text-sm text-slate-600">{{ t('catalog::admin.products_form.choose_upload_images_drag_reorder') }}</p>
                     </div>
-                    <FormField label="Ảnh" :error="errors.media_ids ?? errors.images">
+                    <FormField :label="t('catalog::admin.products_form.image')" :error="errors.media_ids ?? errors.images">
                         <MediaField v-model="form.media_ids" multiple :max="20" />
                     </FormField>
                 </section>
-                <p class="text-sm text-slate-500">Video và sản phẩm liên kết thêm được sau lần Lưu đầu tiên.</p>
+                <p class="text-sm text-slate-500">{{ t('catalog::admin.products_form.videos_linked_products_added_after') }}</p>
             </template>
             <ExtensionFormSections v-model="form.extensions" :sections="extensionSections" :errors="errors" />
         </div>
 
         <div class="space-y-4 rounded-lg border border-slate-200 bg-white p-5 self-start">
-            <FormField label="Mã sản phẩm (style code)" hint="Chữ in hoa, số, . _ -" :error="errors.style_code">
+            <FormField :label="t('catalog::admin.products_form.product_code_style_code')" :hint="t('catalog::admin.products_form.uppercase_letters_digits')" :error="errors.style_code">
                 <input v-model="form.style_code" :class="inputClass" />
             </FormField>
-            <FormField label="Slug (đường dẫn)" :error="errors.slug">
+            <FormField :label="t('catalog::admin.products_form.slug_path')" :error="errors.slug">
                 <input v-model="form.slug" :class="inputClass" />
             </FormField>
-            <FormField label="Trạng thái" :error="errors.status">
+            <FormField :label="t('catalog::admin.products_form.status')" :error="errors.status">
                 <Select v-model="form.status" :options="codeOptions(statuses, labels.product_status)" />
             </FormField>
             <div>
                 <label class="flex items-start gap-2 text-sm">
                     <input v-model="form.track_inventory" type="checkbox" class="mt-0.5" data-track-inventory />
                     <span>
-                        <span class="font-medium text-slate-700">Theo dõi tồn kho</span>
-                        <span class="block text-xs text-slate-500">Bỏ chọn nếu hàng đặt may, dropship hoặc dịch vụ: mọi SKU luôn bán được, không cần nhập tồn (cần một kho giao online do VaniShop quản lý tồn — kho đồng bộ từ ERP/POS không tự bù).</span>
+                        <span class="font-medium text-slate-700">{{ t('catalog::admin.products_form.track_stock') }}</span>
+                        <span class="block text-xs text-slate-500">{{ t('catalog::admin.products_form.uncheck_made_order_dropship_services') }}</span>
                     </span>
                 </label>
                 <p v-if="errors.track_inventory" class="mt-1 text-sm text-red-600">{{ errors.track_inventory }}</p>
             </div>
-            <FormField label="Hiển thị từ" :error="errors.published_from">
+            <FormField :label="t('catalog::admin.products_form.visible_from')" :error="errors.published_from">
                 <DateInput v-model="form.published_from" with-time />
             </FormField>
-            <FormField label="Hiển thị đến" :error="errors.published_to">
+            <FormField :label="t('catalog::admin.products_form.visible_until')" :error="errors.published_to">
                 <DateInput v-model="form.published_to" with-time />
             </FormField>
-            <FormField label="Danh mục" :error="errors.category_ids">
-                <MultiSelect v-model="form.category_ids" :options="categoryOptions" placeholder="Gõ để tìm danh mục" />
+            <FormField :label="t('catalog::admin.products_form.category')" :error="errors.category_ids">
+                <MultiSelect v-model="form.category_ids" :options="categoryOptions" :placeholder="t('catalog::admin.products_form.type_search_categories')" />
             </FormField>
-            <FormField label="Thương hiệu" :error="errors.brand_id">
-                <Select v-model="form.brand_id" :options="recordOptions(brands)" empty-label="— Không —" :empty-value="null" />
+            <FormField :label="t('catalog::admin.products_form.brand')" :error="errors.brand_id">
+                <Select v-model="form.brand_id" :options="recordOptions(brands)" :empty-label="t('catalog::admin.products_form.none')" :empty-value="null" />
             </FormField>
-            <FormField label="Danh mục chính (breadcrumb)" :error="errors.primary_category_id">
+            <FormField :label="t('catalog::admin.products_form.primary_category_breadcrumb')" :error="errors.primary_category_id">
                 <Select v-model="form.primary_category_id" :options="primaryCategoryOptions" empty-label="—" :empty-value="null" />
             </FormField>
-            <button type="submit" :class="primaryButton" class="w-full" :disabled="form.processing">Lưu</button>
+            <button type="submit" :class="primaryButton" class="w-full" :disabled="form.processing">{{ t('catalog::admin.products_form.save') }}</button>
         </div>
     </form>
 </template>

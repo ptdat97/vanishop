@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useAdminForm } from '@admin/forms';
 import DataTable from '@admin/Components/DataTable.vue';
 import DateInput from '@admin/Components/DateInput.vue';
@@ -57,9 +58,9 @@ const symbol = usePage<SharedProps>().props.app.money.symbol;
 const actionOptions = props.actions.map((action) => ({ value: action.type, label: action.label }));
 const ruleTypeOptions = props.ruleTypes.map((type) => ({ value: type.type, label: type.label }));
 const voucherColumns = [
-    { key: 'code', label: 'Mã', class: 'font-mono' },
-    { key: 'used_count', label: 'Đã dùng' },
-    { key: 'expires_at', label: 'Hết hạn', class: 'text-xs' },
+    { key: 'code', label: t('promotion::admin.promotions_form.code'), class: 'font-mono' },
+    { key: 'used_count', label: t('promotion::admin.promotions_form.used') },
+    { key: 'expires_at', label: t('promotion::admin.promotions_form.expired'), class: 'text-xs' },
     { key: 'actions', label: '', align: 'right' as const },
 ];
 const percent = ref(props.promotion?.action_config.basis_points ? props.promotion.action_config.basis_points / 100 : 10);
@@ -99,7 +100,7 @@ function collectRules(): boolean {
         try {
             parsed.push({ type: rule.type, config: rule.config.trim() === '' ? {} : (JSON.parse(rule.config) as Record<string, RuleValue>) });
         } catch {
-            rulesError.value = `Cấu hình của điều kiện "${rule.type}" không phải JSON hợp lệ.`;
+            rulesError.value = t('promotion::admin.promotions_form.settings_condition_type_not_valid', { type: rule.type });
             return false;
         }
     }
@@ -129,7 +130,7 @@ function submit(): void {
 }
 
 async function destroy(): Promise<void> {
-    if (props.promotion && (await confirmAction({ title: 'Xoá khuyến mãi?', message: 'Toàn bộ voucher của khuyến mãi cũng bị xoá.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if (props.promotion && (await confirmAction({ title: t('promotion::admin.promotions_form.delete_promotion'), message: t('promotion::admin.promotions_form.all_promotion_s_vouchers_deleted'), confirmLabel: t('promotion::admin.promotions_form.delete'), tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${props.promotion.id}`);
     }
 }
@@ -154,81 +155,81 @@ function toggleVoucher(voucher: { id: number; status: string }): void {
 </script>
 
 <template>
-    <Head :title="promotion ? 'Sửa khuyến mãi' : 'Thêm khuyến mãi'" />
-    <PageHeader :title="promotion ? `Sửa khuyến mãi: ${promotion.name}` : 'Thêm khuyến mãi'">
-        <Link :href="baseUrl" :class="secondaryButton">Quay lại</Link>
-        <button v-if="promotion" type="button" :class="dangerButton" @click="destroy">Xoá</button>
+    <Head :title="promotion ? t('promotion::admin.promotions_form.edit_promotion') : t('promotion::admin.promotions_form.add_promotion')" />
+    <PageHeader :title="promotion ? t('promotion::admin.promotions_form.edit_promotion_name', { name: promotion.name }) : t('promotion::admin.promotions_form.add_promotion')">
+        <Link :href="baseUrl" :class="secondaryButton">{{ t('promotion::admin.promotions_form.back') }}</Link>
+        <button v-if="promotion" type="button" :class="dangerButton" @click="destroy">{{ t('promotion::admin.promotions_form.delete') }}</button>
     </PageHeader>
 
     <form class="grid max-w-3xl gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2" @submit.prevent="submit">
-        <FormField label="Tên" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
-        <FormField label="Trạng thái" :error="form.errors.status">
+        <FormField :label="t('promotion::admin.promotions_form.name')" :error="form.errors.name"><input v-model="form.name" :class="inputClass" /></FormField>
+        <FormField :label="t('promotion::admin.promotions_form.status')" :error="form.errors.status">
             <Select v-model="form.status" :options="labelOptions(labels.promotion_status)" />
         </FormField>
-        <FormField label="Loại giảm" :error="form.errors.action_type">
+        <FormField :label="t('promotion::admin.promotions_form.discount_type')" :error="form.errors.action_type">
             <Select v-model="form.action_type" :options="actionOptions" />
         </FormField>
-        <FormField v-if="form.action_type === 'percent_off'" label="Phần trăm giảm" :error="form.errors.action_config">
+        <FormField v-if="form.action_type === 'percent_off'" :label="t('promotion::admin.promotions_form.discount_percentage')" :error="form.errors.action_config">
             <input v-model.number="percent" :class="inputClass" type="number" step="0.01" min="0.01" max="100" />
         </FormField>
-        <FormField v-else-if="form.action_type === 'amount_off'" :label="`Số tiền giảm (${symbol})`" :error="form.errors.action_config">
+        <FormField v-else-if="form.action_type === 'amount_off'" :label="t('promotion::admin.promotions_form.discount_amount_symbol', { symbol })" :error="form.errors.action_config">
             <input v-model.number="amount" :class="inputClass" type="number" min="1" />
         </FormField>
-        <FormField label="Hiệu lực từ" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
-        <FormField label="Hiệu lực đến" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
-        <FormField label="Priority" hint="Cao hơn được đánh giá trước." :error="form.errors.priority">
+        <FormField :label="t('promotion::admin.promotions_form.valid_from')" :error="form.errors.starts_at"><DateInput v-model="form.starts_at" with-time /></FormField>
+        <FormField :label="t('promotion::admin.promotions_form.valid_until')" :error="form.errors.ends_at"><DateInput v-model="form.ends_at" with-time /></FormField>
+        <FormField label="Priority" :hint="t('promotion::admin.promotions_form.higher_evaluated_first')" :error="form.errors.priority">
             <input v-model.number="form.priority" :class="inputClass" type="number" />
         </FormField>
-        <FormField label="Kết hợp" :error="form.errors.stacking">
+        <FormField :label="t('promotion::admin.promotions_form.combination')" :error="form.errors.stacking">
             <Select v-model="form.stacking" :options="codeOptions(stackings, labels.stacking)" />
         </FormField>
-        <FormField label="Tổng lượt dùng tối đa" hint="Để trống = không giới hạn." :error="form.errors.usage_limit">
+        <FormField :label="t('promotion::admin.promotions_form.maximum_total_uses')" :hint="t('promotion::admin.promotions_form.leave_empty_unlimited')" :error="form.errors.usage_limit">
             <input v-model.number="form.usage_limit" :class="inputClass" type="number" min="1" />
         </FormField>
-        <FormField :label="`Ngân sách (${symbol})`" hint="Tổng tiền giảm tối đa. Để trống = không giới hạn." :error="form.errors.budget_amount">
+        <FormField :label="t('promotion::admin.promotions_form.budget_symbol', { symbol })" :hint="t('promotion::admin.promotions_form.maximum_total_discount_leave_empty')" :error="form.errors.budget_amount">
             <input v-model.number="form.budget_amount" :class="inputClass" type="number" min="1" />
         </FormField>
-        <label class="flex items-center gap-2 text-sm sm:col-span-2"><input v-model="form.requires_voucher" type="checkbox" /> Cần nhập mã voucher (bỏ chọn = tự động áp dụng)</label>
+        <label class="flex items-center gap-2 text-sm sm:col-span-2"><input v-model="form.requires_voucher" type="checkbox" /> {{ t('promotion::admin.promotions_form.requires_voucher_code_unchecked_applied') }}</label>
         <div class="sm:col-span-2">
-            <p class="mb-2 text-sm font-medium">Điều kiện áp dụng (rule do Core/plugin cung cấp)</p>
-            <p v-if="!ruleTypes.length" class="text-sm text-slate-500">Chưa có loại điều kiện nào. Cài và bật plugin cung cấp rule (ví dụ <code>vani.promotion-rules</code>) để dùng.</p>
+            <p class="mb-2 text-sm font-medium">{{ t('promotion::admin.promotions_form.conditions_rules_provided_core_plugins') }}</p>
+            <p v-if="!ruleTypes.length" class="text-sm text-slate-500">{{ t('promotion::admin.promotions_form.no_condition_types_yet_install') }} <code>vani.promotion-rules</code>{{ t('promotion::admin.promotions_form.use_them') }}</p>
             <div v-for="(rule, index) in rules" :key="index" class="mb-2 flex flex-wrap items-start gap-2">
-                <div class="w-56"><Select v-model="rule.type" :options="ruleTypeOptions" aria-label="Loại điều kiện" /></div>
+                <div class="w-56"><Select v-model="rule.type" :options="ruleTypeOptions" :aria-label="t('promotion::admin.promotions_form.condition_type')" /></div>
                 <input v-model="rule.config" :class="[inputClass, 'flex-1 font-mono text-xs']" placeholder='{"amount": 500000}' />
-                <button type="button" :class="dangerButton" @click="rules.splice(index, 1)">Bỏ</button>
+                <button type="button" :class="dangerButton" @click="rules.splice(index, 1)">{{ t('promotion::admin.promotions_form.remove') }}</button>
                 <p v-if="form.errors[`rules.${index}.config`] || form.errors[`rules.${index}.type`]" class="w-full text-sm text-red-600">
                     {{ form.errors[`rules.${index}.config`] ?? form.errors[`rules.${index}.type`] }}
                 </p>
             </div>
-            <button v-if="ruleTypes.length" type="button" :class="secondaryButton" @click="addRule">Thêm điều kiện</button>
+            <button v-if="ruleTypes.length" type="button" :class="secondaryButton" @click="addRule">{{ t('promotion::admin.promotions_form.add_condition') }}</button>
             <p v-if="rulesError" class="mt-2 text-sm text-red-600">{{ rulesError }}</p>
         </div>
         <p v-if="promotion" class="text-sm text-slate-500 sm:col-span-2">
-            Đã dùng {{ promotion.usage_count }} lượt<span v-if="promotion.budget_amount">, <MoneyText :amount="promotion.budget_used_amount" /> ngân sách</span>.
+            {{ t('promotion::admin.promotions_form.used_usage_count_times', { usage_count: promotion.usage_count }) }}<span v-if="promotion.budget_amount">, <MoneyText :amount="promotion.budget_used_amount" /> {{ t('promotion::admin.promotions_form.budget') }}</span>.
         </p>
-        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button></div>
+        <div class="sm:col-span-2"><button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('promotion::admin.promotions_form.save') }}</button></div>
     </form>
 
     <section v-if="promotion && promotion.requires_voucher" class="mt-6 max-w-3xl rounded-lg border border-slate-200 bg-white p-5">
         <h2 class="mb-3 font-semibold">Voucher ({{ vouchersTotal }})</h2>
         <form class="mb-4 grid gap-3 sm:grid-cols-5" @submit.prevent="createVouchers">
-            <input v-model="voucherForm.code" :class="inputClass" placeholder="Mã cụ thể, vd. SALE10" />
-            <input v-model="voucherForm.prefix" :class="inputClass" placeholder="hoặc tiền tố" />
-            <input v-model.number="voucherForm.count" :class="inputClass" type="number" min="1" max="5000" placeholder="số mã sinh" />
-            <input v-model.number="voucherForm.usage_limit" :class="inputClass" type="number" min="1" placeholder="lượt/mã" />
-            <button type="submit" :class="primaryButton" :disabled="voucherForm.processing">Tạo mã</button>
+            <input v-model="voucherForm.code" :class="inputClass" :placeholder="t('promotion::admin.promotions_form.specific_code_sale10')" />
+            <input v-model="voucherForm.prefix" :class="inputClass" :placeholder="t('promotion::admin.promotions_form.prefix')" />
+            <input v-model.number="voucherForm.count" :class="inputClass" type="number" min="1" max="5000" :placeholder="t('promotion::admin.promotions_form.codes_generate')" />
+            <input v-model.number="voucherForm.usage_limit" :class="inputClass" type="number" min="1" :placeholder="t('promotion::admin.promotions_form.uses_code')" />
+            <button type="submit" :class="primaryButton" :disabled="voucherForm.processing">{{ t('promotion::admin.promotions_form.create_codes') }}</button>
             <p v-for="(error, key) in voucherForm.errors" :key="key" class="text-sm text-red-600 sm:col-span-5">{{ error }}</p>
         </form>
         <form class="mb-3 flex gap-2" role="search" @submit.prevent="loadVouchers()">
-            <input v-model="voucherSearch" :class="inputClass" type="search" placeholder="Tìm mã, vd. SALE10" aria-label="Tìm voucher theo mã" />
-            <button type="submit" :class="secondaryButton">Tìm</button>
+            <input v-model="voucherSearch" :class="inputClass" type="search" :placeholder="t('promotion::admin.promotions_form.search_codes_sale10')" :aria-label="t('promotion::admin.promotions_form.search_vouchers_code')" />
+            <button type="submit" :class="secondaryButton">{{ t('promotion::admin.promotions_form.search') }}</button>
         </form>
-        <DataTable :columns="voucherColumns" :rows="vouchers" :empty-text="voucherFilters.q ? 'Không có mã khớp.' : 'Chưa có voucher.'">
-            <template #cell-code="{ row }">{{ row.code }}<span v-if="row.status !== 'active'" class="font-sans text-xs text-slate-400"> · tắt</span></template>
+        <DataTable :columns="voucherColumns" :rows="vouchers" :empty-text="voucherFilters.q ? t('promotion::admin.promotions_form.no_matching_codes') : t('promotion::admin.promotions_form.no_vouchers_yet')">
+            <template #cell-code="{ row }">{{ row.code }}<span v-if="row.status !== 'active'" class="font-sans text-xs text-slate-400"> {{ t('promotion::admin.promotions_form.off') }}</span></template>
             <template #cell-used_count="{ row }">{{ row.used_count }}<span v-if="row.usage_limit"> / {{ row.usage_limit }}</span></template>
             <template #cell-expires_at="{ row }">{{ row.expires_at ?? '—' }}</template>
             <template #cell-actions="{ row }">
-                <button type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(row)">{{ row.status === 'active' ? 'Tắt' : 'Bật' }}</button>
+                <button type="button" class="text-xs text-indigo-600 hover:underline" @click="toggleVoucher(row)">{{ row.status === 'active' ? t('promotion::admin.promotions_form.off_2') : t('promotion::admin.promotions_form.enable') }}</button>
             </template>
         </DataTable>
         <Pagination

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import { primaryButton } from '@admin/styles';
 import { Head, Link, usePage } from '@inertiajs/vue3';
@@ -13,15 +14,15 @@ const baseUrl = computed(() => props.nav.find((item) => item.key === 'categories
 </script>
 
 <template>
-    <Head title="Danh mục" />
+    <Head :title="t('catalog::admin.categories_index.category')" />
     <CatalogTabs :nav="nav" active="categories" />
-    <PageHeader title="Danh mục">
-        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">Thêm danh mục</Link>
+    <PageHeader :title="t('catalog::admin.categories_index.category')">
+        <Link v-if="canManage" :href="`${baseUrl}/create`" :class="primaryButton">{{ t('catalog::admin.categories_index.add_category') }}</Link>
     </PageHeader>
     <div class="rounded-lg border border-slate-200 bg-white px-4">
         <ul v-if="tree.length">
             <CategoryTreeRow v-for="node in tree" :key="node.id" :node="node" :base-url="baseUrl" :can-manage="canManage" />
         </ul>
-        <p v-else class="py-6 text-center text-sm text-slate-500">Chưa có danh mục nào.</p>
+        <p v-else class="py-6 text-center text-sm text-slate-500">{{ t('catalog::admin.categories_index.no_categories_yet') }}</p>
     </div>
 </template>

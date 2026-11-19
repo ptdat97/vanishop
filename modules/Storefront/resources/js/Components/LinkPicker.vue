@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Combobox from '@admin/Components/Combobox.vue';
 import Select from '@admin/Components/Select.vue';
 import { getJson } from '@admin/http';
@@ -42,25 +43,25 @@ function pickOption(value: string): void {
 
 <template>
     <div class="space-y-2">
-        <Select :model-value="link?.type ?? ''" :options="typeOptions" empty-label="— Không có link (tiêu đề nhóm) —" aria-label="Loại link" @change="setType" />
+        <Select :model-value="link?.type ?? ''" :options="typeOptions" :empty-label="t('storefront::admin.link_picker.no_link_group_heading')" :aria-label="t('storefront::admin.link_picker.link_type')" @change="setType" />
         <template v-if="link && type">
-            <Select v-if="type.options.length" :model-value="link.value" :options="type.options" placeholder="Chọn trang" aria-label="Trang" @change="pickOption" />
+            <Select v-if="type.options.length" :model-value="link.value" :options="type.options" :placeholder="t('storefront::admin.link_picker.choose_page')" aria-label="Trang" @change="pickOption" />
             <template v-else-if="type.searchable">
                 <p v-if="link.value" class="text-xs" :class="selectedLabel?.exists === false ? 'text-red-600' : 'text-slate-600'">
-                    Đang trỏ tới: <strong>{{ selectedLabel?.label ?? `#${link.value}` }}</strong>
-                    <span v-if="selectedLabel?.exists === false"> — đối tượng đã ẩn hoặc xoá, mục sẽ không hiện</span>
+                    {{ t('storefront::admin.link_picker.points') }} <strong>{{ selectedLabel?.label ?? `#${link.value}` }}</strong>
+                    <span v-if="selectedLabel?.exists === false"> {{ t('storefront::admin.link_picker.target_hidden_deleted_item_not') }}</span>
                 </p>
                 <Combobox
                     :key="link.type"
                     :model-value="link.value"
                     :search="searchTargets"
                     :selected-label="selectedLabel?.label"
-                    :placeholder="`Tìm ${type.label.toLowerCase()}…`"
-                    :aria-label="`Tìm ${type.label}`"
+                    :placeholder="t('storefront::admin.link_picker.search_label', { label: type.label.toLowerCase() })"
+                    :aria-label="t('storefront::admin.link_picker.search_label_2', { label: type.label })"
                     @select="pick"
                 />
             </template>
-            <input v-else v-model="link.value" :class="inputClass" placeholder="/duong-dan, https://…, mailto:…, tel:…" aria-label="Đường dẫn" />
+            <input v-else v-model="link.value" :class="inputClass" placeholder="/duong-dan, https://…, mailto:…, tel:…" :aria-label="t('storefront::admin.link_picker.path')" />
         </template>
     </div>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import ExtensionFilters from '@admin/Components/Extensions/ExtensionFilters.vue';
@@ -36,12 +37,12 @@ const props = defineProps<{
 }>();
 
 const columns = [
-    { key: 'full_name', label: 'Khách', sortable: true },
-    { key: 'phone', label: 'SĐT', class: 'font-mono text-xs' },
+    { key: 'full_name', label: t('customer::admin.customers_index.customer'), sortable: true },
+    { key: 'phone', label: t('customer::admin.customers_index.phone'), class: 'font-mono text-xs' },
     { key: 'email', label: 'Email', class: 'text-xs' },
-    { key: 'registered', label: 'Loại', class: 'text-xs' },
-    { key: 'group', label: 'Nhóm', class: 'text-xs' },
-    { key: 'created_at', label: 'Tạo lúc', class: 'text-xs', sortable: true },
+    { key: 'registered', label: t('customer::admin.customers_index.type'), class: 'text-xs' },
+    { key: 'group', label: t('customer::admin.customers_index.group'), class: 'text-xs' },
+    { key: 'created_at', label: t('customer::admin.customers_index.created'), class: 'text-xs', sortable: true },
 ];
 const list = useListQuery(() => props.baseUrl);
 const filters = reactive<CustomerFilters>({
@@ -78,36 +79,36 @@ function changePageSize(pageSize: number): void {
 </script>
 
 <template>
-    <Head title="Khách hàng" />
-    <PageHeader title="Khách hàng" :subtitle="`${pagination.total} khách`">
-        <Link :href="groupsUrl" :class="secondaryButton">Nhóm khách</Link>
+    <Head :title="t('customer::admin.customers_index.customers')" />
+    <PageHeader :title="t('customer::admin.customers_index.customers')" :subtitle="t('customer::admin.customers_index.total_customers', { total: pagination.total })">
+        <Link :href="groupsUrl" :class="secondaryButton">{{ t('customer::admin.customers_index.customer_groups') }}</Link>
     </PageHeader>
 
     <form class="mb-3 flex flex-wrap items-center gap-2" @submit.prevent="search()">
-        <input v-model="filters.q" :class="[inputClass, 'w-72']" placeholder="SĐT, email, tên hoặc mã khách" aria-label="Tìm khách hàng" />
+        <input v-model="filters.q" :class="[inputClass, 'w-72']" :placeholder="t('customer::admin.customers_index.phone_email_name_customer_id')" :aria-label="t('customer::admin.customers_index.search_customers')" />
         <div class="w-48">
-            <Select v-model="filters.status" :options="codeOptions(statuses, labels.customer_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
+            <Select v-model="filters.status" :options="codeOptions(statuses, labels.customer_status)" :empty-label="t('customer::admin.customers_index.all_statuses')" :aria-label="t('customer::admin.customers_index.status')" />
         </div>
         <div class="w-44">
-            <Select v-model="filters.group" :options="recordOptions(groups, (group) => group.name)" empty-label="Mọi nhóm" :empty-value="null" aria-label="Nhóm khách" />
+            <Select v-model="filters.group" :options="recordOptions(groups, (group) => group.name)" :empty-label="t('customer::admin.customers_index.all_groups')" :empty-value="null" :aria-label="t('customer::admin.customers_index.customer_groups')" />
         </div>
-        <input v-model="filters.tag" :class="[inputClass, 'w-36']" placeholder="Tag" aria-label="Tag khách hàng" />
+        <input v-model="filters.tag" :class="[inputClass, 'w-36']" placeholder="Tag" :aria-label="t('customer::admin.customers_index.customer_tag')" />
         <ExtensionFilters v-model="ext" :filters="extensions.filters" />
-        <button type="submit" :class="secondaryButton">Áp dụng</button>
-        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ tất cả bộ lọc</button>
-        <span v-if="hasActiveFilters" class="text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
+        <button type="submit" :class="secondaryButton">{{ t('customer::admin.customers_index.apply') }}</button>
+        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">{{ t('customer::admin.customers_index.clear_all_filters') }}</button>
+        <span v-if="hasActiveFilters" class="text-xs text-indigo-700" aria-live="polite">{{ t('customer::admin.customers_index.filtering') }}</span>
     </form>
 
-    <DataTable :columns="columns" :rows="customers" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" :row-click="openCustomer" empty-text="Không có khách nào.">
+    <DataTable :columns="columns" :rows="customers" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :extensions="{ ...extensions, actions: [] }" :extension-id="(customer) => customer.ref" :row-label="(customer) => customer.id" :row-click="openCustomer" :empty-text="t('customer::admin.customers_index.no_customers')">
         <template #cell-full_name="{ row }">
-            <span class="font-medium">{{ row.full_name ?? '(chưa có tên)' }}</span>
+            <span class="font-medium">{{ row.full_name ?? t('customer::admin.customers_index.no_name_yet') }}</span>
             <div class="font-mono text-xs text-slate-400">
                 {{ row.id }}<span v-if="row.status !== 'active'"> · {{ labels.customer_status[row.status] ?? row.status }}</span>
             </div>
         </template>
         <template #cell-phone="{ row }">{{ row.phone ?? '—' }}</template>
         <template #cell-email="{ row }">{{ row.email ?? '—' }}</template>
-        <template #cell-registered="{ row }">{{ row.registered ? 'Tài khoản' : 'Khách vãng lai' }}</template>
+        <template #cell-registered="{ row }">{{ row.registered ? t('customer::admin.customers_index.account') : t('customer::admin.customers_index.guest') }}</template>
         <template #cell-group="{ row }">{{ row.group ?? '—' }}</template>
     </DataTable>
 
