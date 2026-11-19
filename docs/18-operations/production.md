@@ -46,7 +46,7 @@ Bắt đầu từ `.env.example`, đổi/thêm các giá trị sau. **Sau khi `c
 | `VANI_MEDIA_DISK` + `AWS_*`, `AWS_ENDPOINT` | `s3` + endpoint nhà cung cấp VN | Web node stateless |
 | `VANI_BACKUP_DISKS` / `VANI_BACKUP_S3_BUCKET` | `s3_backup` / bucket riêng, khác vùng | Backup không nằm cùng máy với DB |
 | `BACKUP_ARCHIVE_PASSWORD` | Chuỗi mạnh | File backup chứa dữ liệu khách |
-| `MAIL_*` | SMTP/dịch vụ email thật | Email đơn hàng, cảnh báo backup, cảnh báo vận hành |
+| `MAIL_*` | SMTP/dịch vụ email thật — hoặc để chủ shop tự đặt SMTP ở Admin → Cài đặt → Email gửi đi (ưu tiên hơn `.env`, có nút gửi thử) | Email đơn hàng, cảnh báo backup, cảnh báo vận hành |
 | `VANI_ALERT_EMAILS` | Email người trực, phân tách dấu phẩy | Nhận cảnh báo tự động (`vani:alerts:check`); trống = chỉ ghi log và hiện trên Tổng quan Admin |
 | `VANI_LOAD_TEST_IPS` | **Để trống** | Chỉ đặt trên staging khi load test (IP máy k6 bỏ qua rate limit); `vani:security:check` báo lỗi nếu còn ở production |
 | `VNPAY_SANDBOX` | `false` (khi đã có hợp đồng) | Cùng `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` thật |

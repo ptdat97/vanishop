@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Settings\SettingsAdmin;
+use Modules\Extension\Contracts\SettingActions;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
 
@@ -23,6 +24,7 @@ final class SettingsController
     public function __construct(
         private readonly SettingsAdmin $admin,
         private readonly ManifestRepository $manifests,
+        private readonly SettingActions $actions,
     ) {}
 
     public function index(): Response
@@ -54,7 +56,7 @@ final class SettingsController
 
         return $this->page('core', $this->groupLink($current) + [
             'description' => __("extension::texts.setting_groups.{$current->value}.description"),
-        ], $fields, "system:{$current->value}");
+        ], $fields, "system:{$current->value}", $this->actions->for($current));
     }
 
     /** Cấu hình của một plugin. `core` → nhóm đầu tiên của Cài đặt hệ thống. */
@@ -86,8 +88,9 @@ final class SettingsController
     /**
      * @param  array<string, string>  $section  code, title, url, description (+ icon / namespace)
      * @param  list<array<string, mixed>>  $fields
+     * @param  list<array{label: string, url: string}>  $actions  nút thao tác của nhóm (SettingActions)
      */
-    private function page(string $namespace, array $section, array $fields, string $active): Response
+    private function page(string $namespace, array $section, array $fields, string $active, array $actions = []): Response
     {
         return Inertia::render('Extension::Settings/Show', [
             'baseUrl' => route('admin.settings.index'),
@@ -96,6 +99,7 @@ final class SettingsController
             'section' => $section,
             'fields' => $fields,
             'active' => $active,
+            'actions' => $actions,
             'nav' => [
                 'system' => array_map(fn (array $group): array => $this->groupLink($group['group']), $this->admin->systemGroups()),
                 'plugins' => array_map(fn (string $plugin): array => $this->pluginLink($plugin), $this->admin->pluginNamespaces()),

@@ -4,6 +4,21 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.52 — 2026-11-19 · Extension API 1.14.0
+
+Admin → Cài đặt → **Email gửi đi**: chủ shop tự đặt SMTP và người gửi, có nút gửi thử.
+
+### Thêm
+- `SettingGroup::Mail` (nhóm "Email gửi đi", sau "Đơn hàng & đổi trả").
+- Contract `Modules\Extension\Contracts\SettingActions`: nút thao tác trên trang một nhóm của Cài đặt hệ thống (`add(SettingGroup, nhãn, route POST)`); trang nhóm nhận prop `actions`.
+- Cấu hình `core` nhóm Mail (Notification, `MailSettings`): `mail.transport` (`server` = theo `.env` / `smtp`), `mail.smtp_host`, `mail.smtp_port`, `mail.smtp_encryption` (`tls` STARTTLS / `ssl` / `none`), `mail.smtp_username`, `mail.smtp_password` (secret), `mail.from_address`, `mail.from_name`.
+- `POST /admin/notifications/mail/test` (`admin.notifications.mail.test`, quyền `settings.manage`, 6 lần/phút): gửi ngay tới email nhân viên đang đăng nhập, lỗi SMTP báo nguyên văn.
+
+### Đổi
+- Mailer mặc định là `vani` (`config/mail.php`): mỗi lần gửi đọc cấu hình trên — SMTP của cửa hàng khi đã chọn SMTP và có máy chủ, không thì mailer `MAIL_MAILER` (`mail.mailers.vani.fallback`); người gửi đã đặt thay ô "Từ" và người gửi phong bì. Đọc lúc gửi nên queue worker đang chạy không cần khởi động lại.
+- `vani:security:check`: chỉ báo lỗi email khi chưa đặt SMTP trong Admin **và** `MAIL_MAILER` là `log`/`array`.
+- Test đọc thư đã gửi dùng `Mail::mailer('array')->getSymfonyTransport()` (transport của mailer mặc định giờ là `vani`).
+
 ## 0.5.51 — 2026-11-19 · Extension API 1.13.0
 
 Admin → Cài đặt tái cấu trúc: "Cài đặt hệ thống" chia nhóm nhỏ, "Cài đặt Plugin" theo từng plugin.

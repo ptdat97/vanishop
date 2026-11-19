@@ -4,7 +4,7 @@ import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
 import { secondaryButton } from '@admin/styles';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import SettingGroupIcon from '../../Components/SettingGroupIcon.vue';
 import SettingsForm, { type SettingField } from '../../Components/SettingsForm.vue';
 
@@ -21,6 +21,7 @@ const props = defineProps<{
     section: { code: string; title: string; url: string; description: string; icon?: string };
     fields: SettingField[];
     active: string;
+    actions: { label: string; url: string }[];
     nav: { system: NavLink[]; plugins: NavLink[] };
 }>();
 
@@ -29,6 +30,13 @@ const mobileOptions = computed(() => [
     ...props.nav.system.map((link) => ({ value: link.code, label: `${t('extension::admin.settings_index.system_settings')} · ${link.title}` })),
     ...props.nav.plugins.map((link) => ({ value: link.code, label: `${t('extension::admin.settings_index.plugin_settings')} · ${link.title}` })),
 ]);
+// Nút thao tác của nhóm (vd. "Gửi email thử"): POST, kết quả hiện qua toast. Lưu form trước rồi mới thử.
+const running = ref<string | null>(null);
+function runAction(url: string): void {
+    running.value = url;
+    router.post(url, {}, { preserveScroll: true, onFinish: () => (running.value = null) });
+}
+
 function go(code: string | null): void {
     const link = [...props.nav.system, ...props.nav.plugins].find((item) => item.code === code);
     if (link) router.visit(link.url);
@@ -81,7 +89,22 @@ const linkClass = (active: boolean): string =>
             </nav>
 
             <div class="min-w-0 space-y-3">
-                <p class="text-xs text-slate-500">{{ t('extension::admin.settings_show.leave_empty_use_default_value') }}</p>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-xs text-slate-500">{{ t('extension::admin.settings_show.leave_empty_use_default_value') }}</p>
+                    <div v-if="actions.length" class="flex flex-wrap gap-2" data-settings-actions>
+                        <button
+                            v-for="action in actions"
+                            :key="action.url"
+                            type="button"
+                            :class="secondaryButton"
+                            :disabled="running !== null"
+                            :title="t('extension::admin.settings_show.save_before_action')"
+                            @click="runAction(action.url)"
+                        >
+                            {{ action.label }}
+                        </button>
+                    </div>
+                </div>
                 <!-- key: phòng khi chuyển trang giữ state (preserveState) — form luôn theo nhóm/plugin đang mở. -->
                 <SettingsForm :key="active" :action="action" :namespace="namespace" :fields="fields" />
             </div>

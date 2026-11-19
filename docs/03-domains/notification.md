@@ -11,7 +11,7 @@
 | Mẫu tin theo **loại × kênh gửi × locale**, render biến `{{ ten_bien }}` | Kênh gửi: SMS brandname, Zalo ZNS, web push… (`NotificationChannel`) |
 | Chọn kênh, kiểm consent (tin marketing), nhật ký gửi, retry | Loại tin riêng (abandoned cart, loyalty…) gửi qua `Notifier` |
 | Tin giao dịch theo domain event của đơn/giao hàng | OTP qua SMS/ZNS (`OtpSender` của Customer) |
-| Kênh `mail` (văn bản thuần, mailer Laravel) | |
+| Kênh `mail` (văn bản thuần, mailer Laravel `vani`: SMTP + người gửi theo Admin → Cài đặt → Email gửi đi, chưa đặt thì theo `MAIL_*`; nút gửi thử — 0.5.52) | |
 
 ## 2. Luồng gửi
 

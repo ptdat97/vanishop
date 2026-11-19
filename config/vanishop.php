@@ -6,14 +6,14 @@ return [
     /*
     | Phiên bản Core — plugin khai báo "requires.vanishop" dựa trên giá trị này (semver).
     */
-    'version' => '0.5.51',
+    'version' => '0.5.52',
 
     /*
     | Version API cho plugin (ADR-048) — tách khỏi version Core: chỉ tăng khi bề mặt trong plugin-api.snapshot đổi
     | (class #[PluginApi], hook, PluginServiceProvider, helper). Đổi phá vỡ class stable → tăng major. Plugin khai
     | requires.extension_api.
     */
-    'extension_api' => '1.13.0',
+    'extension_api' => '1.14.0',
     // Giai đoạn của API cho plugin (Owner 2026-11-18): `dev` = đang phát triển, API chưa chốt — ưu tiên Core; thay đổi phá
     // vỡ (đổi constructor DTO, đổi/xoá method…) chỉ cần tăng minor + ghi CHANGELOG-extension, plugin trong repo cập nhật
     // theo trong cùng commit. `stable` = đã chốt: xoá/đổi phần stable bắt tăng major (ADR-048 §5).

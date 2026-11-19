@@ -130,6 +130,7 @@ return [
         'sales' => ['title' => 'Bán hàng & thuế', 'description' => 'Cách chọn giá bán, cách tính thuế, mua hàng không cần đăng nhập.'],
         'inventory' => ['title' => 'Kho & giao hàng', 'description' => 'Cách tính số lượng bán được, ngưỡng sắp hết hàng, chọn kho giao.'],
         'orders' => ['title' => 'Đơn hàng & đổi trả', 'description' => 'Hoàn tất đơn khi khách xác nhận đã nhận, chính sách đổi trả.'],
+        'mail' => ['title' => 'Email gửi đi', 'description' => 'Máy chủ SMTP của cửa hàng, email và tên người gửi; gửi thử để kiểm tra.'],
         'other' => ['title' => 'Khác', 'description' => 'Cấu hình hệ thống chưa xếp nhóm.'],
     ],
     'settings_admin' => [

@@ -110,6 +110,7 @@ return [
     'settings_show' => [
         'back_list' => 'Back to list',
         'leave_empty_use_default_value' => 'Leave empty = use the default value. Secrets are not shown again.',
+        'save_before_action' => 'Save your changes before trying.',
         'settings_navigation' => 'Switch settings group',
         'settings_title' => 'Settings: :title',
     ],

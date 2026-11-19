@@ -75,7 +75,7 @@ it('Admin → Cài đặt: form (lựa chọn lấy từ extension point), lưu/
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
 
     $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
-        ->where('system', fn ($groups) => collect($groups)->pluck('code')->all() === ['system:store', 'system:appearance', 'system:seo', 'system:sales', 'system:inventory', 'system:orders']
+        ->where('system', fn ($groups) => collect($groups)->pluck('code')->all() === ['system:store', 'system:appearance', 'system:seo', 'system:sales', 'system:inventory', 'system:orders', 'system:mail']
             && collect($groups)->firstWhere('code', 'system:sales')['url'] === route('admin.settings.system', 'sales')
             && collect($groups)->firstWhere('code', 'system:sales')['count'] === 3
             && ! array_key_exists('fields', collect($groups)->first()))

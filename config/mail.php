@@ -14,7 +14,9 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    // `vani` (Notification): theo Admin → Cài đặt → Email gửi đi (SMTP của cửa hàng, người gửi); chưa đặt SMTP thì gửi
+    // bằng mailer MAIL_MAILER bên dưới.
+    'default' => 'vani',
 
     /*
     |--------------------------------------------------------------------------
@@ -36,6 +38,11 @@ return [
     */
 
     'mailers' => [
+
+        'vani' => [
+            'transport' => 'vani',
+            'fallback' => env('MAIL_MAILER', 'log'),
+        ],
 
         'smtp' => [
             'transport' => 'smtp',

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
@@ -41,7 +42,7 @@ beforeEach(function () {
 
         return Order::query()->withoutGlobalScopes()->where('number', $number)->sole();
     };
-    $this->mails = fn (): array => app('mailer')->getSymfonyTransport()->messages()->all();
+    $this->mails = fn (): array => Mail::mailer('array')->getSymfonyTransport()->messages()->all();
 });
 
 it('L2: khách đặt đơn bằng tiếng Anh nhận mail theo mẫu en mặc định', function () {

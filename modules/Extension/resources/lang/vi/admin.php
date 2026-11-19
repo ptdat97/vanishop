@@ -110,6 +110,7 @@ return [
     'settings_show' => [
         'back_list' => 'Quay lại danh sách',
         'leave_empty_use_default_value' => 'Để trống = dùng giá trị mặc định. Secret không hiển thị lại.',
+        'save_before_action' => 'Lưu thay đổi trước khi thử.',
         'settings_navigation' => 'Chuyển nhóm cài đặt',
         'settings_title' => 'Cài đặt: :title',
     ],

@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\Notification;
 
+use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Event;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\Requirement;
+use Modules\Extension\Contracts\SettingActions;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Notification\Application\Channels\MailChannel;
 use Modules\Notification\Application\InMemoryNotificationCatalog;
 use Modules\Notification\Application\Listeners\SendOrderNotifications;
+use Modules\Notification\Application\Mail\MailSettings;
+use Modules\Notification\Application\Mail\SettingsMailTransport;
 use Modules\Notification\Application\NotificationService;
 use Modules\Notification\Contracts\Data\NotificationType;
 use Modules\Notification\Contracts\NotificationCatalog;
@@ -21,6 +25,8 @@ use Modules\Notification\Contracts\Notifier;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Gửi tin giao dịch/marketing theo template (loại × kênh), nhật ký gửi. Kênh ngoài email là plugin.
@@ -41,6 +47,10 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         $this->app->make(Extensions::class)->tag([MailChannel::class], NotificationChannel::TAG);
         $this->app->make(Extensions::class)->requires(NotificationChannel::TAG, Requirement::AtLeastOne, 'notification::texts.notification_service_provider.notification_channels');
         $this->app->make(Extensions::class)->kindContract('notification_channel', NotificationChannel::TAG);
+        // Mailer `vani` (mặc định, config/mail.php): theo Admin → Cài đặt → Email gửi đi, đọc lúc gửi.
+        $this->app->afterResolving(MailManager::class, function (MailManager $mail): void {
+            $mail->extend('vani', fn (array $config): SettingsMailTransport => new SettingsMailTransport($this->app, (string) ($config['fallback'] ?? 'log')));
+        });
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
@@ -60,6 +70,9 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         Event::listen(OrderPlaced::class, [SendOrderNotifications::class, 'orderPlaced']);
         Event::listen(OrderCancelled::class, [SendOrderNotifications::class, 'orderCancelled']);
         Event::listen(ShipmentStatusChanged::class, [SendOrderNotifications::class, 'shipmentStatusChanged']);
+
+        MailSettings::define($this->app->make(Settings::class));
+        $this->app->make(SettingActions::class)->add(SettingGroup::Mail, 'notification::texts.mail_settings.send_test', 'admin.notifications.mail.test');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
         $this->bootModuleResources();

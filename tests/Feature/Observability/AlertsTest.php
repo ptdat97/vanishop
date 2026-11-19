@@ -5,6 +5,7 @@ use App\Observability\AlertRules;
 use App\Observability\OpenAlertsWidget;
 use App\Observability\RecentCounters;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Contracts\Extensions;
@@ -99,10 +100,10 @@ it('kênh email của Core gửi ngay tới VANI_ALERT_EMAILS; --dry-run không 
     $this->artisan('vani:alerts:check --dry-run')->expectsOutputToContain('Message order.* vào dead')->assertSuccessful();
     expect(DB::table('alert_states')->count())->toBe(0)
         ->and(RecordingAlertChannel::$sent)->toBe([])
-        ->and(app('mailer')->getSymfonyTransport()->messages())->toHaveCount(0);
+        ->and(Mail::mailer('array')->getSymfonyTransport()->messages())->toHaveCount(0);
 
     $this->artisan('vani:alerts:check')->assertSuccessful();
-    $messages = app('mailer')->getSymfonyTransport()->messages();
+    $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
     expect($messages)->toHaveCount(1);
     $email = $messages->first()->getOriginalMessage();
     expect($email->getSubject())->toContain('[KHẨN] Message order.* vào dead')

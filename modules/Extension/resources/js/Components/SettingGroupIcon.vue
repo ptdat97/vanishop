@@ -11,6 +11,7 @@ const paths: Record<string, string[]> = {
     sales: ['M6 3h12v18l-3-2-3 2-3-2-3 2V3z', 'M9 8h6', 'M9 12h6', 'M9 16h3'],
     inventory: ['M3 8l9-5 9 5v12H3V8z', 'M7 20v-8h10v8', 'M7 16h10'],
     orders: ['M4 7l8-4 8 4v10l-8 4-8-4V7z', 'M4 7l8 4 8-4', 'M12 11v10'],
+    mail: ['M3 6h18v12H3V6z', 'M3 7l9 6 9-6'],
     other: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z'],
 };
 const shape = computed(() => paths[props.name] ?? paths.other);

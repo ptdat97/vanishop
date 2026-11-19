@@ -39,6 +39,7 @@ use Modules\Extension\Application\Plugins\PluginSeeders;
 use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
+use Modules\Extension\Application\Settings\SettingActionRegistry;
 use Modules\Extension\Application\Storefront\AccountPageRegistry;
 use Modules\Extension\Application\Storefront\PluginViewRegistry;
 use Modules\Extension\Application\Storefront\StorefrontPrefixes;
@@ -60,6 +61,7 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\PluginDirectory;
 use Modules\Extension\Contracts\PluginViews;
+use Modules\Extension\Contracts\SettingActions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
 use Modules\Identity\Contracts\AdminNavigation;
@@ -110,6 +112,7 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
         $this->app->alias(ScopedExtensions::class, Extensions::class);
         $this->app->singleton(PluginViews::class, PluginViewRegistry::class);
         $this->app->singleton(StorefrontPrefixes::class);
+        $this->app->singleton(SettingActions::class, SettingActionRegistry::class);
         $this->app->singleton(AccountPages::class, fn ($app): AccountPages => new AccountPageRegistry(fn (): PluginActivation => $app->make(PluginActivation::class)));
         $this->app->singleton(CallerPlugin::class);
         // Điểm mở rộng tự động cho mọi trang Admin (ADR-031).

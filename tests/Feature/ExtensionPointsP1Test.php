@@ -2,6 +2,7 @@
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Tests\Feature\CatalogTestHelpers as T;
 use Modules\Checkout\Contracts\Data\CheckoutRequest;
@@ -91,12 +92,12 @@ it('NotificationCatalog: loại tin của plugin có mẫu mặc định gửi �
     $send = fn (string $key) => app(Notifier::class)->notify(new NotificationRequest('cart_abandoned', $key, new Recipient(email: 'lan@example.com'), ['customer_name' => 'Lan']));
 
     expect($send('cart:1'))->toBe(['mail']);
-    $mails = app('mailer')->getSymfonyTransport()->messages()->all();
+    $mails = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
     expect(end($mails)->getOriginalMessage()->getTextBody())->toBe('Chào Lan, giỏ của bạn vẫn còn.');
 
     T::seed(fn () => NotificationTemplate::query()->create(['type' => 'cart_abandoned', 'channel' => 'mail', 'subject' => 'Tuỳ chỉnh', 'body' => 'Mẫu Admin cho {{ customer_name }}']));
     $send('cart:2');
-    $mails = app('mailer')->getSymfonyTransport()->messages()->all();
+    $mails = Mail::mailer('array')->getSymfonyTransport()->messages()->all();
     expect(end($mails)->getOriginalMessage()->getSubject())->toBe('Tuỳ chỉnh');
 });
 

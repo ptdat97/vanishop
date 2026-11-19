@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Customer\Tests\Feature;
 
+use Illuminate\Support\Facades\Mail;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Customer\Application\CustomerService;
 use Modules\Customer\Contracts\OtpSender;
@@ -83,7 +84,7 @@ final class CustomerTestHelpers
     public static function mailedLink(string $email): string
     {
         $messages = array_filter(
-            iterator_to_array(app('mailer')->getSymfonyTransport()->messages()),
+            iterator_to_array(Mail::mailer('array')->getSymfonyTransport()->messages()),
             fn (SentMessage $sent): bool => in_array($email, array_map(fn ($address): string => $address->getAddress(), $sent->getOriginalMessage()->getTo()), true),
         );
         $body = (string) end($messages)?->getOriginalMessage()->getTextBody();

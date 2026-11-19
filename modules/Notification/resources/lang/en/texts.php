@@ -3,6 +3,33 @@
 // Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
 
 return [
+    'mail_settings' => [
+        'encryption' => 'Encryption',
+        'encryption_none' => 'None',
+        'encryption_ssl' => 'SSL/TLS (usually port 465)',
+        'encryption_tls' => 'STARTTLS (usually port 587)',
+        'from_address' => 'Sender email',
+        'from_address_help' => 'The "From" address customers see. Use an address on the store\'s domain that the SMTP server above may send for. Empty = server configuration.',
+        'from_name' => 'Sender name',
+        'from_name_help' => 'The "From" name customers see, e.g. the store name. Empty = server configuration.',
+        'host' => 'SMTP server',
+        'host_help' => 'E.g. smtp.gmail.com, smtp.zoho.com, email-smtp.ap-southeast-1.amazonaws.com.',
+        'password' => 'SMTP password',
+        'password_help' => 'Gmail/Zoho: use an app password, not your sign-in password.',
+        'port' => 'SMTP port',
+        'port_help' => '587 for STARTTLS, 465 for SSL/TLS.',
+        'send_test' => 'Send test email',
+        'test_body' => "This is a test email from the store admin.\n\nIf you received it, email sending works.",
+        'test_failed' => 'Could not send the test email: :error',
+        'test_no_email' => 'Your account has no email address to receive the test.',
+        'test_sent' => 'Test email sent to :email. Check your inbox (and Spam).',
+        'test_subject' => '[:store] Test email',
+        'transport' => 'Sending method',
+        'transport_help' => '"Server configuration" uses MAIL_* in .env. Choose SMTP to use the store\'s email account below.',
+        'transport_server' => 'Server configuration (.env)',
+        'transport_smtp' => 'Store SMTP',
+        'username' => 'SMTP username',
+    ],
     'notification_service_provider' => [
         'edit_message_templates' => 'Edit message templates',
         'notification_channels' => 'Notification channels',

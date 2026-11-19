@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Redis;
+use Modules\Notification\Application\Mail\MailSettings;
 use Throwable;
 
 /**
@@ -53,7 +54,7 @@ final class SecurityCheckCommand extends Command
             ['error', 'APP_URL phải là https://', ! $https],
             ['error', 'SESSION_SECURE_COOKIE phải bật (cookie chỉ gửi qua HTTPS)', config('session.secure') !== true],
             ['error', 'VANI_ADMIN_PATH đang là mặc định "admin" — đặt đường dẫn khó đoán (ADR-020)', trim((string) config('vanishop.admin.path'), '/') === 'admin'],
-            ['error', 'MAIL_MAILER đang là log/array — email đơn hàng và cảnh báo sẽ không gửi', in_array((string) config('mail.default'), ['log', 'array'], true)],
+            ['error', 'Email không gửi thật: chưa đặt SMTP ở Admin → Cài đặt → Email gửi đi và MAIL_MAILER đang là log/array', app(MailSettings::class)->smtp() === null && in_array((string) config('mail.mailers.vani.fallback'), ['log', 'array'], true)],
             ['error', 'VANI_PLUGINS_SAFE_MODE đang bật — không plugin nào được nạp (mất thanh toán/giao hàng)', (bool) config('vanishop.plugins.safe_mode')],
             ['error', 'VANI_OTP_LOG_SENDER đang bật — mã OTP bị ghi ra log', (bool) config('vanishop.customer.otp.log_sender')],
             ['error', 'VANI_LOAD_TEST_IPS phải trống ở production (bỏ qua rate limit cho IP phát tải)', (array) config('vanishop.load_test.bypass_ips') !== []],

@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Redis;
+use Modules\Notification\Application\Mail\MailSettings;
+use Modules\Tenancy\Contracts\Settings;
 
 /*
 | Go-live gate (bảo mật): header bảo mật trên mọi response; vani:security:check chặn cấu hình production sai.
@@ -25,7 +27,7 @@ it('vani:security:check: cấu hình production chuẩn → qua; mỗi lỗi ngh
     app()->detectEnvironment(fn () => 'production');
     config([
         'app.debug' => false, 'app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.url' => 'https://shop.vn', 'session.secure' => true,
-        'vanishop.admin.path' => 'quan-tri-x9', 'mail.default' => 'smtp', 'vanishop.plugins.safe_mode' => false, 'vanishop.customer.otp.log_sender' => false,
+        'vanishop.admin.path' => 'quan-tri-x9', 'mail.mailers.vani.fallback' => 'smtp', 'vanishop.plugins.safe_mode' => false, 'vanishop.customer.otp.log_sender' => false,
     ]);
     $this->artisan('vani:security:check')->expectsOutputToContain('Không có lỗi cấu hình')->assertSuccessful();
 
@@ -36,10 +38,22 @@ it('vani:security:check: cấu hình production chuẩn → qua; mỗi lỗi ngh
     'http' => [['app.url' => 'http://shop.vn'], 'APP_URL'],
     'cookie' => [['session.secure' => null], 'SESSION_SECURE_COOKIE'],
     'admin path' => [['vanishop.admin.path' => 'admin'], 'VANI_ADMIN_PATH'],
-    'mail log' => [['mail.default' => 'log'], 'MAIL_MAILER'],
+    'mail log' => [['mail.mailers.vani.fallback' => 'log'], 'Email không gửi thật'],
     'safe mode' => [['vanishop.plugins.safe_mode' => true], 'SAFE_MODE'],
     'load test ips' => [['vanishop.load_test.bypass_ips' => ['10.0.0.9']], 'VANI_LOAD_TEST_IPS'],
 ]);
+
+it('vani:security:check: MAIL_MAILER=log nhưng đã đặt SMTP ở Admin → Cài đặt → Email gửi đi → không báo lỗi email', function () {
+    app()->detectEnvironment(fn () => 'production');
+    config([
+        'app.debug' => false, 'app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.url' => 'https://shop.vn', 'session.secure' => true,
+        'vanishop.admin.path' => 'quan-tri-x9', 'mail.mailers.vani.fallback' => 'log', 'vanishop.plugins.safe_mode' => false, 'vanishop.customer.otp.log_sender' => false,
+    ]);
+    app(Settings::class)->set('core', MailSettings::TRANSPORT, MailSettings::SMTP);
+    app(Settings::class)->set('core', MailSettings::HOST, 'smtp.zoho.com');
+
+    $this->artisan('vani:security:check')->doesntExpectOutputToContain('Email không gửi thật')->assertSuccessful();
+});
 
 it('IP máy load test bỏ qua rate limit storefront ngoài production; ở production vẫn bị giới hạn', function () {
     config(['vanishop.load_test.bypass_ips' => ['10.0.0.9']]);
@@ -64,7 +78,7 @@ it('vani:security:check: Redis giữ queue/session phải noeviction; không k�
     app()->detectEnvironment(fn () => 'production');
     config([
         'app.debug' => false, 'app.key' => 'base64:'.base64_encode(random_bytes(32)), 'app.url' => 'https://shop.vn', 'session.secure' => true,
-        'vanishop.admin.path' => 'quan-tri-x9', 'mail.default' => 'smtp', 'vanishop.plugins.safe_mode' => false, 'vanishop.customer.otp.log_sender' => false,
+        'vanishop.admin.path' => 'quan-tri-x9', 'mail.mailers.vani.fallback' => 'smtp', 'vanishop.plugins.safe_mode' => false, 'vanishop.customer.otp.log_sender' => false,
         'queue.default' => 'redis', 'session.driver' => 'redis', 'session.connection' => null,
     ]);
     $connection = Mockery::mock();

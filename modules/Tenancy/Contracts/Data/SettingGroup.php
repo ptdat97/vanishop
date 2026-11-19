@@ -20,5 +20,6 @@ enum SettingGroup: string
     case Sales = 'sales';
     case Inventory = 'inventory';
     case Orders = 'orders';
+    case Mail = 'mail';
     case Other = 'other';
 }

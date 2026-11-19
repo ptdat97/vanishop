@@ -130,6 +130,7 @@ return [
         'sales' => ['title' => 'Sales & tax', 'description' => 'How the selling price is chosen, tax calculation, guest checkout.'],
         'inventory' => ['title' => 'Inventory & shipping', 'description' => 'Sellable quantity calculation, low-stock threshold, shipping warehouse.'],
         'orders' => ['title' => 'Orders & returns', 'description' => 'Complete orders when the customer confirms receipt, return policy.'],
+        'mail' => ['title' => 'Outgoing email', 'description' => 'Store SMTP server, sender email and name; send a test to check.'],
         'other' => ['title' => 'Other', 'description' => 'System settings without a group.'],
     ],
     'settings_admin' => [
