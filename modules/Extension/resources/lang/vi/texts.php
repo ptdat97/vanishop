@@ -17,7 +17,7 @@ return [
         'install_enable_disable_plugins' => 'Cài/bật/tắt plugin',
         'overview' => 'Tổng quan',
         'reports' => 'Báo cáo',
-        'settings' => 'Cấu hình',
+        'settings' => 'Cài đặt',
         'system' => 'Hệ thống',
         'view_plugin_list' => 'Xem danh sách plugin',
     ],
@@ -123,6 +123,15 @@ return [
         'timezone_comes_from_store_settings' => 'múi giờ lấy từ cấu hình cửa hàng (vanishop.locale.timezone); gỡ ở Extension API 2.0',
         'today' => 'Hôm nay',
     ],
+    'setting_groups' => [
+        'store' => ['title' => 'Cửa hàng', 'description' => 'Bảo trì cửa hàng, ai được xem giá, số sản phẩm mỗi trang.'],
+        'appearance' => ['title' => 'Giao diện', 'description' => 'Theme, màu và token thiết kế, ảnh thay thế khi sản phẩm chưa có ảnh.'],
+        'seo' => ['title' => 'SEO & tìm kiếm', 'description' => 'Mô tả và ảnh khi chia sẻ link, từ khoá tìm kiếm nổi bật.'],
+        'sales' => ['title' => 'Bán hàng & thuế', 'description' => 'Cách chọn giá bán, cách tính thuế, mua hàng không cần đăng nhập.'],
+        'inventory' => ['title' => 'Kho & giao hàng', 'description' => 'Cách tính số lượng bán được, ngưỡng sắp hết hàng, chọn kho giao.'],
+        'orders' => ['title' => 'Đơn hàng & đổi trả', 'description' => 'Hoàn tất đơn khi khách xác nhận đã nhận, chính sách đổi trả.'],
+        'other' => ['title' => 'Khác', 'description' => 'Cấu hình hệ thống chưa xếp nhóm.'],
+    ],
     'settings_admin' => [
         'choose_image_from_media_library' => 'Chọn ảnh từ Thư viện ảnh.',
         'most_2000_characters' => 'Tối đa 2000 ký tự.',
@@ -132,8 +141,6 @@ return [
         'value_not_list' => 'Giá trị không nằm trong danh sách.',
     ],
     'settings_controller' => [
-        'general_settings' => 'Cấu hình chung',
-        'platform_setup' => 'Thiết lập nền tảng',
         'settings_saved' => 'Đã lưu cấu hình.',
     ],
 ];

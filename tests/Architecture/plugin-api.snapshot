@@ -1,4 +1,4 @@
-Extension API 1.12.0
+Extension API 1.13.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -1026,7 +1026,18 @@ class Modules\Tenancy\Contracts\Data\SettingDefinition
 )
   __construct(string $namespace, string $key, string $label, string $type = 'string', mixed $default = NULL, array $options = array (
 ), ?string $help = NULL, ?string $optionsFromTag = NULL, array $rules = array (
-))
+), ?Modules\Tenancy\Contracts\Data\SettingGroup $group = NULL)
+enum Modules\Tenancy\Contracts\Data\SettingGroup
+  const Store = \Modules\Tenancy\Contracts\Data\SettingGroup::Store
+  const Appearance = \Modules\Tenancy\Contracts\Data\SettingGroup::Appearance
+  const Seo = \Modules\Tenancy\Contracts\Data\SettingGroup::Seo
+  const Sales = \Modules\Tenancy\Contracts\Data\SettingGroup::Sales
+  const Inventory = \Modules\Tenancy\Contracts\Data\SettingGroup::Inventory
+  const Orders = \Modules\Tenancy\Contracts\Data\SettingGroup::Orders
+  const Other = \Modules\Tenancy\Contracts\Data\SettingGroup::Other
+  static cases(): array
+  static from(string|int $value): static
+  static tryFrom(string|int $value): ?static
 interface Modules\Tenancy\Contracts\Settings
   get(string $namespace, string $key, mixed $default = NULL): mixed
   set(string $namespace, string $key, mixed $value): void

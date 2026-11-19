@@ -61,7 +61,7 @@ Không có bảng. Cấu hình khối lưu trong page builder của Core; cấu 
 
 ## 7. Quyền
 
-Không có màn hình riêng; khối cấu hình trong page builder (quyền hiện có), settings trong Admin → Cấu hình.
+Không có màn hình riêng; khối cấu hình trong page builder (quyền hiện có), settings trong Admin → Cài đặt.
 
 ## 8. Tiêu chí chấp nhận
 

@@ -83,7 +83,7 @@ it('plugin bật → tin giao dịch có mẫu kênh sms được gửi qua eSMS
     Http::assertSent(fn (Request $request): bool => $request['Content'] === VietnameseText::stripDiacritics(config('app.name').": da nhan don {$number}"));
 });
 
-it('brandname đặt trong Admin → Cấu hình ghi đè config', function () {
+it('brandname đặt trong Admin → Cài đặt ghi đè config', function () {
     Http::fake(['rest.esms.vn/*' => Http::response(['CodeResult' => '100', 'SMSID' => 'x'])]);
     T::seed(fn () => app(Settings::class)->set('vani.sms-brandname', 'brandname', 'VANI.VN'));
 

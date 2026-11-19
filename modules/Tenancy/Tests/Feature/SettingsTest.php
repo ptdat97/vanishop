@@ -70,28 +70,40 @@ describe('chọn strategy qua cấu hình', function () {
     });
 });
 
-it('Admin → Cấu hình: form (lựa chọn lấy từ extension point), lưu/xoá có audit, secret không lộ', function () {
+it('Admin → Cài đặt: form (lựa chọn lấy từ extension point), lưu/xoá có audit, secret không lộ', function () {
     app(Extensions::class)->tag([ZeroTax::class], TaxCalculator::TAG);
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
 
     $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Index')
-        ->where('cards', fn ($cards) => collect($cards)->contains(fn (array $card): bool => $card['namespace'] === 'core'
-            && $card['url'] === route('admin.settings.show', 'core')
-            && ! array_key_exists('fields', $card))));
+        ->where('system', fn ($groups) => collect($groups)->pluck('code')->all() === ['system:store', 'system:appearance', 'system:seo', 'system:sales', 'system:inventory', 'system:orders']
+            && collect($groups)->firstWhere('code', 'system:sales')['url'] === route('admin.settings.system', 'sales')
+            && collect($groups)->firstWhere('code', 'system:sales')['count'] === 3
+            && ! array_key_exists('fields', collect($groups)->first()))
+        ->where('plugins', fn ($plugins) => ! collect($plugins)->contains('namespace', 'core')));
 
-    $this->get('/admin/settings/core')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Show')
+    // `core` không còn là một trang dài: mở nhóm đầu; mỗi nhóm chỉ có cấu hình của nhóm đó.
+    $this->get('/admin/settings/core')->assertRedirect(route('admin.settings.system', 'store'));
+    $this->get('/admin/settings/system/sales')->assertInertia(fn (Assert $page) => $page->component('Extension::Settings/Show')
         ->where('namespace', 'core')
-        ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['none' => 'none', 'vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
+        ->where('active', 'system:sales')
+        ->where('nav.system.3.code', 'system:sales')
+        ->where('fields', fn ($fields) => collect($fields)->pluck('key')->sort()->values()->all() === ['pricing.strategy', 'storefront.guest_checkout', 'tax.calculator']
+            && collect($fields)->firstWhere('key', 'tax.calculator')['options'] === ['none' => 'none', 'vn_vat_inclusive' => 'vn_vat_inclusive', 'zero_tax' => 'zero_tax']));
+    $this->get('/admin/settings/system/khong-co')->assertNotFound();
+    $this->get('/admin/settings/system/other')->assertNotFound(); // nhóm không có cấu hình nào
 
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['tax.calculator' => 'zero_tax', 'returns.policy' => '']])->assertSessionHasNoErrors();
     expect(app(Settings::class)->get('core', 'tax.calculator'))->toBe('zero_tax')
         ->and(AuditLog::query()->where('action', 'settings.updated')->count())->toBe(1);
+    $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->where('system.3.customized', 1)->where('system.5.customized', 0));
 
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['tax.calculator' => 'khong_ton_tai']])->assertSessionHasErrors('values.tax.calculator');
     $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['khong.co' => 'x']])->assertSessionHasErrors();
 
     $this->put('/admin/settings', ['namespace' => 'test', 'values' => ['api_key' => 'bi-mat']])->assertSessionHasNoErrors();
+    $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->where('plugins', fn ($plugins) => collect($plugins)->firstWhere('namespace', 'test')['customized'] === 1));
     $this->get('/admin/settings/test')->assertInertia(fn (Assert $page) => $page
+        ->where('active', 'plugin:test')
         ->where('fields', fn ($fields) => collect($fields)->firstWhere('key', 'api_key')['value'] === null
             && collect($fields)->firstWhere('key', 'api_key')['is_set'] === true));
     $this->get('/admin/settings/unknown')->assertNotFound();
@@ -103,6 +115,15 @@ it('Admin → Cấu hình: form (lựa chọn lấy từ extension point), lưu/
 
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff');
     $this->get('/admin/settings')->assertForbidden();
+});
+
+it('cấu hình hệ thống không khai nhóm → nhóm "Khác" (cuối danh sách)', function () {
+    app(Settings::class)->define(new SettingDefinition('core', 'test.ungrouped', 'Chưa xếp nhóm'));
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'settings.manage'])->create(), 'staff');
+
+    $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->where('system', fn ($groups) => collect($groups)->last()['code'] === 'system:other'
+        && collect($groups)->last()['labels'] === ['Chưa xếp nhóm']));
+    $this->get('/admin/settings/system/other')->assertOk()->assertInertia(fn (Assert $page) => $page->where('fields.0.key', 'test.ungrouped'));
 });
 
 it('rule validate thêm của cấu hình (0.3.43): sai → lỗi theo trường, không lưu; rỗng = đặt lại không bị kiểm tra', function () {

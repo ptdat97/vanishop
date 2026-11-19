@@ -246,7 +246,7 @@ Tiền chỉ đổi qua `totals`, `pricing.prices`, `promotion.result`. Phân b�
 | `adminMenu()` | Mục menu Admin + permission — Implemented |
 | `adminPages($namespace, $path)` | Trang Inertia của plugin (`'Promotion::Rules/Index'`) — Implemented. Giao diện dùng bộ component `@admin/Components` (`DataTable`, `Pagination`, `Select`, `MultiSelect`, `Combobox`, `DateInput`, `StatusBadge`, `MoneyText`, `confirmAction()`, `promptFields()`, `useMoney()`, `useDateTime()`…), không import `reka-ui` trực tiếp ([ADR-039](../19-adr/ADR-039-admin-ui-reka.md)) |
 | `permissions()` | Khai báo permission — Implemented (gán role mẫu: Designed) |
-| `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cấu hình); secret được mã hoá — Implemented |
+| `settings()` | Khai báo cấu hình theo scope → form tự sinh (Admin → Cài đặt); secret được mã hoá — Implemented |
 | `storefrontRoutes()` | Storefront API của plugin dưới `/api/storefront/v1/x/{slug}/…` (không ghi đè route Core) — Implemented (0.3.3) |
 | `accountPage(key, label, route)` | Mục menu tài khoản khách native trỏ tới trang của plugin — Implemented (0.3.9) |
 | `storefrontPages(file, prefix, cacheable)` theo ngôn ngữ | `prefix` nhận mảng `['vi' => 'tin-tuc', 'en' => 'news']` → thêm `/en/news/…` (tên `storefront.en.p.{slug}.…`); chuỗi = chỉ ngôn ngữ mặc định. Sinh URL bằng `vani_route()` — Implemented (0.3.59, ADR-038) |

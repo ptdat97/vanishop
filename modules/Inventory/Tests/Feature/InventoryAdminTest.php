@@ -208,7 +208,7 @@ it('sửa hàng loạt tại một kho: SKU đã chọn, cả sản phẩm hoặ
     $bulk(['action' => 'set', 'quantity' => 1, 'variant_ids' => [$this->s->id]])->assertForbidden();
 });
 
-it('ngưỡng "sắp hết hàng" đổi ở Admin → Cấu hình: lưới tồn và Tổng quan theo ngưỡng mới; chỉ nhận 0–1000', function () {
+it('ngưỡng "sắp hết hàng" đổi ở Admin → Cài đặt: lưới tồn và Tổng quan theo ngưỡng mới; chỉ nhận 0–1000', function () {
     I::stock($this->hn, $this->s->id, 5);
     I::stock($this->hn, $this->m->id, 9);
     $this->actingAs(T::staff(['admin.access', 'inventory.view', 'settings.manage']), 'staff');

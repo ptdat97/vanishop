@@ -107,7 +107,7 @@ php artisan optimize                    # config/route/view/event cache + cache 
 php artisan vani:plugin:doctor          # phải sạch lỗi (mã thoát 0)
 ```
 
-Bật thêm plugin nghiệp vụ (cổng thanh toán, hãng vận chuyển, `vani.media-webp`…) bằng `vani:plugin:install <id>` rồi `vani:plugin:enable <id>`, cấu hình ở Admin → Cấu hình.
+Bật thêm plugin nghiệp vụ (cổng thanh toán, hãng vận chuyển, `vani.media-webp`…) bằng `vani:plugin:install <id>` rồi `vani:plugin:enable <id>`, cấu hình ở Admin → Cài đặt.
 
 **Không chạy ở production:** `migrate:fresh`, `migrate:refresh`, `db:seed` (kể cả `DemoSeeder` — tự từ chối khi `APP_ENV=production`).
 
@@ -266,7 +266,7 @@ Sự cố thường gặp:
 - Chỉ mở 80/443 ra Internet; MySQL/Redis trong mạng riêng.
 - HTTPS bắt buộc (HSTS ở CDN/Nginx), `SESSION_SECURE_COOKIE=true`.
 - Admin: đường dẫn riêng + allowlist IP + tài khoản nhân viên theo vai trò; mật khẩu bị lộ bị chặn (`VANI_ADMIN_CHECK_BREACHED_PASSWORDS`, mặc định bật ở production).
-- Bí mật (`APP_KEY`, secret cổng thanh toán, key S3, mật khẩu backup) không commit, không gửi qua chat; secret plugin nhập ở Admin → Cấu hình được lưu mã hoá.
+- Bí mật (`APP_KEY`, secret cổng thanh toán, key S3, mật khẩu backup) không commit, không gửi qua chat; secret plugin nhập ở Admin → Cài đặt được lưu mã hoá.
 - Không copy DB production xuống môi trường khác khi chưa ẩn danh hoá.
 
 ## 12. Chưa có (cần biết khi vận hành)

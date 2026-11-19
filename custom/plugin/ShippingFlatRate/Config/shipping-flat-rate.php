@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Cấu hình mặc định của vani.shipping-flat-rate — Admin → Cấu hình (namespace vani.shipping-flat-rate) ghi đè.
+ * Cấu hình mặc định của vani.shipping-flat-rate — Admin → Cài đặt (namespace vani.shipping-flat-rate) ghi đè.
  */
 
 return [

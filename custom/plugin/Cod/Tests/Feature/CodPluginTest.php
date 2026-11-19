@@ -25,7 +25,7 @@ beforeEach(function () {
     };
 });
 
-it('ngưỡng COD đặt trong Admin → Cấu hình ghi đè .env', function () {
+it('ngưỡng COD đặt trong Admin → Cài đặt ghi đè .env', function () {
     expect(($this->quote)())->toContain('cod');
 
     T::seed(fn () => app(Settings::class)->set('vani.cod', 'max_amount', 100_000));

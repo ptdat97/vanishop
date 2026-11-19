@@ -8,7 +8,7 @@ use Modules\Tenancy\Contracts\Settings;
 use Plugin\VnPay\VnPayServiceProvider;
 
 /**
- * Cấu hình đang hiệu lực: Admin → Cấu hình (vani.vnpay) trước, rồi config/env.
+ * Cấu hình đang hiệu lực: Admin → Cài đặt (vani.vnpay) trước, rồi config/env.
  */
 final class VnPaySettings
 {

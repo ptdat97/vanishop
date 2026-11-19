@@ -21,6 +21,7 @@ Route::prefix('plugins/{plugin}')->where(['plugin' => '[a-z0-9-]+\\.[a-z0-9-]+']
     Route::post('upgrade', [PluginController::class, 'upgrade'])->name('upgrade');
 });
 Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+Route::get('settings/system/{group}', [SettingsController::class, 'system'])->where('group', '[a-z]+')->name('settings.system');
 Route::get('settings/{namespace}', [SettingsController::class, 'show'])->where('namespace', '[A-Za-z0-9._-]+')->name('settings.show');
 Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
 Route::post('extensions/{resource}/tools/{plugin}/{key}', AdminToolController::class)

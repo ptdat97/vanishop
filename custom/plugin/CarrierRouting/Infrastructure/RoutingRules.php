@@ -11,7 +11,7 @@ use Modules\Tenancy\Contracts\Settings;
 use Plugin\CarrierRouting\CarrierRoutingServiceProvider;
 
 /**
- * Bảng quy tắc (Admin → Cấu hình → vani.carrier-routing), mỗi dòng `điều kiện = hãng[:dịch vụ]`, dòng đầu tiên khớp thắng:
+ * Bảng quy tắc (Admin → Cài đặt → vani.carrier-routing), mỗi dòng `điều kiện = hãng[:dịch vụ]`, dòng đầu tiên khớp thắng:
  *   `tinh:79,01 = ahamove`        — tỉnh/thành nhận hàng (mã danh mục địa giới);
  *   `cod>=3000000 = ghtk`         — số tiền thu hộ từ mức này;
  *   `* = ghn:standard`            — mọi đơn còn lại.

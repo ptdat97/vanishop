@@ -34,6 +34,7 @@ use Modules\Pricing\Contracts\PricingStrategy;
 use Modules\Pricing\Events\PriceChanged;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 final class PricingServiceProvider extends ModuleServiceProvider
@@ -68,6 +69,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'pricing.strategy', 'pricing::texts.pricing_service_provider.how_selling_price_chosen', 'select', (string) config('vanishop.pricing.strategy', 'price_list_priority'),
             optionsFromTag: PricingStrategy::TAG, help: 'pricing::texts.pricing_service_provider.pricingstrategy_used_store',
+            group: SettingGroup::Sales,
         ));
         $permissions->register('pricing.view', 'pricing::texts.pricing_service_provider.view_price_lists');
         $permissions->register('pricing.manage', 'pricing::texts.pricing_service_provider.edit_price_lists_selling_prices');

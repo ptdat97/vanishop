@@ -35,5 +35,7 @@ final readonly class SettingDefinition
          * @var list<mixed>
          */
         public array $rules = [],
+        /** Nhóm trên Admin → Cài đặt hệ thống (chỉ namespace `core`; null = Khác). */
+        public ?SettingGroup $group = null,
     ) {}
 }

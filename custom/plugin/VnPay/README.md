@@ -4,7 +4,7 @@ Cổng thanh toán VNPay, giao thức v2.1.0 (`kind: payment_gateway`). Khách t
 
 ## Cấu hình
 
-Vào Admin → Cấu hình → `vani.vnpay`. Giá trị để trống thì lấy theo `.env`.
+Vào Admin → Cài đặt → `vani.vnpay`. Giá trị để trống thì lấy theo `.env`.
 
 | Khoá | Ý nghĩa | `.env` |
 |---|---|---|

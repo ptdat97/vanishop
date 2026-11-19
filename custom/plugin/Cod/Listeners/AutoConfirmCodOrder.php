@@ -14,7 +14,7 @@ use Modules\Tenancy\Contracts\Settings;
 use Plugin\Cod\CodServiceProvider;
 
 /**
- * Điểm mở rộng của chốt ① (ADR-046): tự xác nhận đơn COD sau khi đặt, theo Admin → Cấu hình → vani.cod →
+ * Điểm mở rộng của chốt ① (ADR-046): tự xác nhận đơn COD sau khi đặt, theo Admin → Cài đặt → vani.cod →
  * "Tự xác nhận đơn COD" (1.1.0):
  *   `off`     — mặc định (1.2.0): nhân viên gọi/nhắn xác nhận mọi đơn;
  *   `trusted` — chỉ khi SĐT đã có ≥ N đơn giao thành công và chưa từng bị hoàn về (chống bom hàng); còn lại nhân viên gọi;

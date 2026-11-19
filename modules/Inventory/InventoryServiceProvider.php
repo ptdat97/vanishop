@@ -50,6 +50,7 @@ use Modules\Inventory\Contracts\StockMovements;
 use Modules\Inventory\Persistence\Models\Location;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 final class InventoryServiceProvider extends ModuleServiceProvider
@@ -97,11 +98,13 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'inventory.strategy', 'inventory::texts.inventory_service_provider.sellable_quantity_calculation_ats', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
             optionsFromTag: InventoryStrategy::TAG, help: 'inventory::texts.inventory_service_provider.strategy_only_reduce_ats_compared',
+            group: SettingGroup::Inventory,
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', LowStockThreshold::SETTING, 'inventory::texts.inventory_service_provider.low_stock_threshold', 'int', (int) config('vanishop.inventory.low_stock_threshold', 3),
             help: 'inventory::texts.inventory_service_provider.below_sellable_quantity_admin_highlights',
             rules: ['min:0', 'max:1000'],
+            group: SettingGroup::Inventory,
         ));
         $permissions->register('inventory.view', 'inventory::texts.inventory_service_provider.view_inventory');
         $permissions->register('inventory.adjust', 'inventory::texts.inventory_service_provider.adjust_count_inventory');

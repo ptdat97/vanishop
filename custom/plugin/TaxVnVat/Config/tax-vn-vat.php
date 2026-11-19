@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Cấu hình mặc định của vani.tax-vn-vat — Admin → Cấu hình (namespace vani.tax-vn-vat) ghi đè.
+ * Cấu hình mặc định của vani.tax-vn-vat — Admin → Cài đặt (namespace vani.tax-vn-vat) ghi đè.
  */
 
 return [

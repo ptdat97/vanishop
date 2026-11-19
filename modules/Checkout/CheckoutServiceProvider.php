@@ -27,6 +27,7 @@ use Modules\Extension\Contracts\Requirement;
 use Modules\Ordering\Events\OrderCancelled;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 final class CheckoutServiceProvider extends ModuleServiceProvider
@@ -61,10 +62,12 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'tax.calculator', 'checkout::texts.checkout_service_provider.tax_calculation', 'select', (string) config('vanishop.tax.calculator', NoTax::CODE),
             optionsFromTag: TaxCalculator::TAG, help: 'checkout::texts.checkout_service_provider.store_s_taxcalculator_if_chosen',
+            group: SettingGroup::Sales,
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', CheckoutService::GUEST_CHECKOUT, 'checkout::texts.checkout_service_provider.allow_guest_checkout', 'bool', true,
             help: 'checkout::texts.checkout_service_provider.off_customers_must_sign_place',
+            group: SettingGroup::Sales,
         ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
 

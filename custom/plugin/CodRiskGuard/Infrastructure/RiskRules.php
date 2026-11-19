@@ -12,7 +12,7 @@ use Modules\Tenancy\Contracts\Settings;
 use Plugin\CodRiskGuard\CodRiskGuardServiceProvider;
 
 /**
- * Quy tắc rủi ro của shop (cấu hình ở Admin → Cấu hình → vani.cod-risk-guard):
+ * Quy tắc rủi ro của shop (cấu hình ở Admin → Cài đặt → vani.cod-risk-guard):
  *   - SĐT trong danh sách đen → `high` (và chặn xác nhận nếu bật);
  *   - SĐT đã có ≥ N đơn hoàn về → `high`; có đơn hoàn về nhưng chưa tới N → `medium`.
  * Chỉ chấm đơn thu tiền khi giao đang chờ (`cod_pending`).

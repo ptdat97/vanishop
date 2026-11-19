@@ -42,7 +42,7 @@ final class SmsChannel implements NotificationChannel
     }
 
     /**
-     * Brandname: cấu hình `vani.sms-brandname.brandname` (Admin → Cấu hình) → brandname trong config.
+     * Brandname: cấu hình `vani.sms-brandname.brandname` (Admin → Cài đặt) → brandname trong config.
      */
     public function brandname(): string
     {

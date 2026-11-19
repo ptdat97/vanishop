@@ -105,7 +105,7 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
-     * Khai báo cấu hình của plugin (namespace = plugin id) → Admin → Cấu hình sinh form.
+     * Khai báo cấu hình của plugin (namespace = plugin id) → Admin → Cài đặt sinh form.
      * Đọc lúc chạy qua contract `Modules\Tenancy\Contracts\Settings::get($pluginId, $key, $default)`.
      *
      * Giá trị theo ngôn ngữ: khai một khoá cho mỗi ngôn ngữ cửa hàng, vd. `message.vi`, `message.en` (`StoreLocale::supported()`).

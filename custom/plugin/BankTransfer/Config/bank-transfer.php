@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Cấu hình mặc định của vani.bank-transfer — Admin → Cấu hình (namespace vani.bank-transfer) ghi đè.
+ * Cấu hình mặc định của vani.bank-transfer — Admin → Cài đặt (namespace vani.bank-transfer) ghi đè.
  * Thiếu số tài khoản → phương thức ẩn ở checkout.
  */
 

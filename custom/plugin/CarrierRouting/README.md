@@ -2,7 +2,7 @@
 
 Chọn hãng vận chuyển cho vận đơn mới theo quy tắc của shop — tham chiếu cho `CarrierAssignment` (EP v3 X3, [extension-point-catalog](../../../docs/04-extension/extension-point-catalog.md)).
 
-Cấu hình: Admin → Cấu hình → `vani.carrier-routing` → "Quy tắc chọn hãng", mỗi dòng `điều kiện = hãng[:dịch vụ]`:
+Cấu hình: Admin → Cài đặt → `vani.carrier-routing` → "Quy tắc chọn hãng", mỗi dòng `điều kiện = hãng[:dịch vụ]`:
 
 ```
 tinh:79 = ahamove

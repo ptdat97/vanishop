@@ -30,6 +30,7 @@ use Modules\Ordering\Contracts\OrderTransitions;
 use Modules\Ordering\Contracts\OrderWriter;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -73,6 +74,7 @@ final class OrderingServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', OrderReceipt::SETTING_COMPLETE, 'ordering::texts.ordering_service_provider.complete_order_when_customer_confirms', 'bool', false,
             help: 'ordering::texts.ordering_service_provider.customer_clicks_i_ve_received',
+            group: SettingGroup::Orders,
         ));
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));

@@ -9,7 +9,7 @@ use Modules\Storefront\View\PageMeta;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
- * Giá trị mặc định khi chia sẻ link và cho Google (Admin → Cấu hình): mô tả cửa hàng (`core`/`storefront.meta_description`
+ * Giá trị mặc định khi chia sẻ link và cho Google (Admin → Cài đặt): mô tả cửa hàng (`core`/`storefront.meta_description`
  * — mô tả trang chủ, và mô tả dự phòng cho trang không có mô tả riêng) và ảnh chia sẻ (`core`/`storefront.share_image` —
  * ảnh Facebook/Zalo hiện khi trang không có ảnh riêng; logo trong dữ liệu cấu trúc của cửa hàng).
  */

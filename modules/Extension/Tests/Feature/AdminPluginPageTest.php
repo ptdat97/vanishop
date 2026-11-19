@@ -151,9 +151,10 @@ describe('quản lý plugin trên Admin', function () {
 
         $this->get('/admin/plugins')->assertInertia(fn (Assert $page) => $page->where('plugins.3.has_settings', true));
         $this->get('/admin/settings')->assertInertia(fn (Assert $page) => $page
-            ->where('cards', fn ($cards) => collect($cards)->contains(fn (array $card): bool => $card['namespace'] === 'fixture.greeting'
+            ->where('plugins', fn ($cards) => collect($cards)->contains(fn (array $card): bool => $card['namespace'] === 'fixture.greeting'
                 && $card['title'] === 'fixture.greeting'
                 && $card['url'] === route('admin.settings.show', 'fixture.greeting')
+                && $card['count'] === 1
                 && ! array_key_exists('fields', $card))));
         $this->get('/admin/settings/fixture.greeting')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Extension::Settings/Show')->where('fields.0.key', 'greeting')->where('fields.0.effective', 'xin chào'));

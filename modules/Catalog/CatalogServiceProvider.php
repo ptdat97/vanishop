@@ -52,6 +52,7 @@ use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 use Modules\Tenancy\Events\SettingChanged;
 
@@ -128,6 +129,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
             'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'catalog::texts.catalog_service_provider.placeholder_image', 'media',
             help: 'catalog::texts.catalog_service_provider.shown_products_without_images_product',
             rules: ['min:1', 'exists:media,id'],
+            group: SettingGroup::Appearance,
         ));
 
         if (! $this->app->routesAreCached()) {

@@ -10,7 +10,7 @@ return [
     'api_key' => env('ESMS_API_KEY', ''),
     'secret_key' => env('ESMS_SECRET_KEY', ''),
 
-    // Brandname mặc định (đổi trong Admin → Cấu hình).
+    // Brandname mặc định (đổi trong Admin → Cài đặt).
     'brandname' => env('ESMS_BRANDNAME', ''),
 
     // 1 = sandbox của eSMS (không gửi thật, không trừ tiền).

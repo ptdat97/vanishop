@@ -61,6 +61,7 @@ use Modules\Storefront\View\Composers\ListingComposer;
 use Modules\Storefront\View\Composers\NotificationComposer;
 use Modules\Storefront\View\Composers\ProductFrameComposer;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -132,46 +133,55 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             'core', 'theme', 'storefront::texts.storefront_service_provider.storefront_theme', 'select', (string) config('vanishop.storefront.theme', Themes::BASE),
             options: array_map(fn (Theme $theme): string => $theme->label, $this->app->make(Themes::class)->all()),
             help: 'storefront::texts.storefront_service_provider.store_s_active_theme_custom',
+            group: SettingGroup::Appearance,
         ));
         $settings->define(new SettingDefinition(
             'core', 'theme.tokens', 'storefront::texts.storefront_service_provider.design_tokens_json', 'text',
             help: 'storefront::texts.storefront_service_provider.override_theme_s_tokens_color',
+            group: SettingGroup::Appearance,
         ));
         $settings->define(new SettingDefinition(
             'core', 'storefront.maintenance', 'storefront::texts.storefront_service_provider.store_maintenance', 'bool', false,
             help: 'storefront::texts.storefront_service_provider.storefront_storefront_api_return_503',
+            group: SettingGroup::Store,
         ));
         $settings->define(new SettingDefinition(
             'core', 'storefront.maintenance_message', 'storefront::texts.storefront_service_provider.maintenance_message', 'text',
             help: 'storefront::texts.storefront_service_provider.maintenance_page_text_leave_empty',
             rules: ['max:1000'],
+            group: SettingGroup::Store,
         ));
         $settings->define(new SettingDefinition(
             'core', PriceVisibility::SETTING, 'storefront::texts.storefront_service_provider.show_prices', 'select', PriceVisibility::PUBLIC,
             options: [PriceVisibility::PUBLIC => 'storefront::texts.storefront_service_provider.everyone', PriceVisibility::MEMBERS => 'storefront::texts.storefront_service_provider.signed_customers_only'],
             help: 'storefront::texts.storefront_service_provider.signed_customers_only_guests_see',
+            group: SettingGroup::Store,
         ));
 
         $settings->define(new SettingDefinition(
             'core', 'storefront.per_page', 'storefront::texts.storefront_service_provider.products_per_page', 'int', 24,
             help: 'storefront::texts.storefront_service_provider.category_brand_search_pages_storefront',
             rules: ['min:12', 'max:60'],
+            group: SettingGroup::Store,
         ));
         $settings->define(new SettingDefinition(
             'core', StoreShare::DESCRIPTION_SETTING, 'storefront::texts.storefront_service_provider.store_description_google_link_sharing', 'text',
             help: 'storefront::texts.storefront_service_provider.shown_under_store_name_google',
             rules: ['max:300'],
+            group: SettingGroup::Seo,
         ));
         $settings->define(new SettingDefinition(
             'core', StoreShare::IMAGE_SETTING, 'storefront::texts.storefront_service_provider.link_sharing_image', 'media',
             help: 'storefront::texts.storefront_service_provider.facebook_zalo_image_shown_when',
             // Ảnh không còn trong thư viện → bỏ qua (StoreShare trả null), không cần kiểm bảng của Catalog ở đây.
             rules: ['min:1'],
+            group: SettingGroup::Seo,
         ));
         $settings->define(new SettingDefinition(
             'core', PopularSearches::SETTING, 'storefront::texts.storefront_service_provider.featured_search_keywords', 'text',
             help: 'storefront::texts.storefront_service_provider.one_keyword_per_line_most',
             rules: ['max:1000'],
+            group: SettingGroup::Seo,
         ));
 
         // Tạo giỏ không cần đăng nhập → giới hạn riêng, chặt hơn, chống spam bảng carts.

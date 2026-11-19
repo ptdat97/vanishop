@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Cấu hình mặc định của plugin vani.vnpay. Admin → Cấu hình (namespace vani.vnpay) ghi đè các giá trị này.
+ * Cấu hình mặc định của plugin vani.vnpay. Admin → Cài đặt (namespace vani.vnpay) ghi đè các giá trị này.
  */
 
 return [

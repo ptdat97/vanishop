@@ -10,6 +10,7 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 /**
@@ -36,14 +37,64 @@ final class SettingsAdmin
     }
 
     /**
+     * Nhóm của Cài đặt hệ thống (namespace `core`) có ít nhất một cấu hình, theo thứ tự của SettingGroup.
+     *
+     * @return list<array{group: SettingGroup, labels: list<string>, count: int, customized: int}>
+     */
+    public function systemGroups(): array
+    {
+        $explicit = $this->settings->explicit('core');
+        $groups = [];
+        foreach ($this->settings->definitions('core') as $definition) {
+            $group = $definition->group ?? SettingGroup::Other;
+            $groups[$group->value] ??= ['group' => $group, 'labels' => [], 'count' => 0, 'customized' => 0];
+            $groups[$group->value]['labels'][] = self::text($definition->label, $definition->key);
+            $groups[$group->value]['count']++;
+            $groups[$group->value]['customized'] += array_key_exists($definition->key, $explicit) ? 1 : 0;
+        }
+
+        return array_values(array_filter(array_map(fn (SettingGroup $group): ?array => $groups[$group->value] ?? null, SettingGroup::cases())));
+    }
+
+    /**
+     * Số cấu hình và số mục đã đặt khác mặc định của một namespace (thẻ plugin).
+     *
+     * @return array{count: int, customized: int}
+     */
+    public function summary(string $namespace): array
+    {
+        $explicit = $this->settings->explicit($namespace);
+        $definitions = $this->settings->definitions($namespace);
+
+        return [
+            'count' => count($definitions),
+            'customized' => count(array_filter($definitions, fn (SettingDefinition $definition): bool => array_key_exists($definition->key, $explicit))),
+        ];
+    }
+
+    /**
+     * Namespace của plugin có cấu hình (không gồm `core`).
+     *
+     * @return list<string>
+     */
+    public function pluginNamespaces(): array
+    {
+        return array_values(array_filter($this->namespaces(), fn (string $namespace): bool => $namespace !== 'core'));
+    }
+
+    /**
+     * @param  SettingGroup|null  $group  chỉ cấu hình của nhóm này (Cài đặt hệ thống; cấu hình không khai nhóm = `Other`)
      * @return list<array<string, mixed>>
      */
-    public function form(string $namespace): array
+    public function form(string $namespace, ?SettingGroup $group = null): array
     {
         $explicit = $this->settings->explicit($namespace);
 
         $fields = [];
         foreach ($this->settings->definitions($namespace) as $definition) {
+            if ($group !== null && ($definition->group ?? SettingGroup::Other) !== $group) {
+                continue;
+            }
             $secret = $definition->type === 'secret';
             $fields[] = [
                 'key' => $definition->key,

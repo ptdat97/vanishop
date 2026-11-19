@@ -8,7 +8,7 @@ use Modules\Tenancy\Contracts\Settings;
 use Plugin\TrackingPixels\TrackingPixelsServiceProvider;
 
 /**
- * Cấu hình của plugin (Admin → Cấu hình → Theo dõi quảng cáo).
+ * Cấu hình của plugin (Admin → Cài đặt → Theo dõi quảng cáo).
  */
 final class TrackingSettings
 {

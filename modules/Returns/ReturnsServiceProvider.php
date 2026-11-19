@@ -28,6 +28,7 @@ use Modules\Returns\Contracts\ReturnStatistics;
 use Modules\Returns\Listeners\PurgeAnonymizedCustomerAttachments;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 final class ReturnsServiceProvider extends ModuleServiceProvider
@@ -55,6 +56,7 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'returns.policy', 'returns::texts.returns_service_provider.return_policy', 'select', (string) config('vanishop.returns.policy', 'days_window'),
             optionsFromTag: ReturnPolicy::TAG, help: 'returns::texts.returns_service_provider.returnpolicy_applied_store_s_orders',
+            group: SettingGroup::Orders,
         ));
         $permissions->register('returns.view', 'returns::texts.returns_service_provider.view_return_exchange_requests');
         $permissions->register('returns.manage', 'returns::texts.returns_service_provider.approve_reject_receive_returns');

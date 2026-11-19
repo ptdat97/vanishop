@@ -9,7 +9,7 @@ use Modules\Payment\Contracts\PaymentGateway;
 use Plugin\VnPay\Infrastructure\VnPayGateway;
 
 /**
- * Cổng thanh toán VNPay. Cấu hình: Admin → Cấu hình (vani.vnpay), mặc định từ .env (VNPAY_*).
+ * Cổng thanh toán VNPay. Cấu hình: Admin → Cài đặt (vani.vnpay), mặc định từ .env (VNPAY_*).
  * IPN đăng ký với VNPay: https://<domain>/api/payments/vnpay/callback.
  */
 final class VnPayServiceProvider extends PluginServiceProvider

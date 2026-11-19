@@ -17,7 +17,7 @@ export type SettingField = {
     effective: unknown;
 };
 
-/** Form cấu hình theo SettingDefinition — dùng ở Admin → Cấu hình và trang cấu hình riêng của plugin. */
+/** Form cấu hình theo SettingDefinition — dùng ở Admin → Cài đặt và trang cấu hình riêng của plugin. */
 const props = defineProps<{ action: string; namespace: string; fields: SettingField[]; title?: string; subtitle?: string }>();
 
 const toInput = (field: SettingField): string => {
@@ -46,7 +46,7 @@ function submit(): void {
             <h2 class="text-base font-semibold text-slate-900">{{ title }}</h2>
             <p v-if="subtitle" class="mt-1 font-mono text-xs text-slate-500">{{ subtitle }}</p>
         </div>
-        <div v-for="field in fields" :key="field.key" class="grid gap-2 md:grid-cols-3">
+        <div v-for="field in fields" :key="field.key" class="grid gap-2 md:grid-cols-3" :data-setting="field.key">
             <div>
                 <div class="font-medium">{{ field.label }}</div>
                 <div class="font-mono text-xs text-slate-400">{{ namespace }}.{{ field.key }}</div>
@@ -60,7 +60,7 @@ function submit(): void {
                     :empty-label="t('extension::admin.settings_form.default')"
                     :aria-label="field.label"
                 />
-                <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" :placeholder="t('extension::admin.settings_form.default')" />
+                <textarea v-else-if="field.type === 'text'" v-model="form.values[field.key]" rows="3" :class="inputClass" :aria-label="field.label" :placeholder="t('extension::admin.settings_form.default')" />
                 <MediaField
                     v-else-if="field.type === 'media'"
                     :model-value="form.values[field.key] ? Number(form.values[field.key]) : null"
@@ -71,6 +71,7 @@ function submit(): void {
                     v-model="form.values[field.key]"
                     :type="field.type === 'secret' ? 'password' : field.type === 'int' ? 'number' : 'text'"
                     :class="inputClass"
+                    :aria-label="field.label"
                     :placeholder="field.type === 'secret' ? (field.is_set ? t('extension::admin.settings_form.set_leave_empty_keep') : t('extension::admin.settings_form.not_set')) : t('extension::admin.settings_form.default')"
                     autocomplete="off"
                 />

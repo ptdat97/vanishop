@@ -48,6 +48,7 @@ use Modules\Ordering\Events\OrderLinesCancelled;
 use Modules\Ordering\Events\OrderStatusOverridden;
 use Modules\Shared\Support\ModuleServiceProvider;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Modules\Tenancy\Contracts\Settings;
 
 final class FulfillmentServiceProvider extends ModuleServiceProvider
@@ -92,6 +93,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $this->app->make(Settings::class)->define(new SettingDefinition(
             'core', 'fulfillment.sourcing', 'fulfillment::texts.fulfillment_service_provider.choose_shipping_warehouse_sourcing', 'select', (string) config('vanishop.fulfillment.sourcing', 'reserved_locations'),
             optionsFromTag: SourcingStrategy::TAG, help: 'fulfillment::texts.fulfillment_service_provider.sourcingstrategy_when_creating_shipments',
+            group: SettingGroup::Inventory,
         ));
         $permissions->register('fulfillment.view', 'fulfillment::texts.fulfillment_service_provider.view_shipments');
         $permissions->register('fulfillment.manage', 'fulfillment::texts.fulfillment_service_provider.create_update_cancel_shipments');

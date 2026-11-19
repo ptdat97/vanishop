@@ -123,6 +123,15 @@ return [
         'timezone_comes_from_store_settings' => 'the timezone comes from the store settings (vanishop.locale.timezone); removed in Extension API 2.0',
         'today' => 'Today',
     ],
+    'setting_groups' => [
+        'store' => ['title' => 'Store', 'description' => 'Maintenance mode, who can see prices, products per page.'],
+        'appearance' => ['title' => 'Appearance', 'description' => 'Theme, colours and design tokens, placeholder image for products without images.'],
+        'seo' => ['title' => 'SEO & search', 'description' => 'Description and image for shared links, featured search keywords.'],
+        'sales' => ['title' => 'Sales & tax', 'description' => 'How the selling price is chosen, tax calculation, guest checkout.'],
+        'inventory' => ['title' => 'Inventory & shipping', 'description' => 'Sellable quantity calculation, low-stock threshold, shipping warehouse.'],
+        'orders' => ['title' => 'Orders & returns', 'description' => 'Complete orders when the customer confirms receipt, return policy.'],
+        'other' => ['title' => 'Other', 'description' => 'System settings without a group.'],
+    ],
     'settings_admin' => [
         'choose_image_from_media_library' => 'Choose an image from the Media library.',
         'most_2000_characters' => 'At most 2000 characters.',
@@ -132,8 +141,6 @@ return [
         'value_not_list' => 'The value is not in the list.',
     ],
     'settings_controller' => [
-        'general_settings' => 'General settings',
-        'platform_setup' => 'Platform setup',
         'settings_saved' => 'Settings saved.',
     ],
 ];

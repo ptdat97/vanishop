@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.51 — 2026-11-19 · Extension API 1.13.0
+
+Admin → Cài đặt tái cấu trúc: "Cài đặt hệ thống" chia nhóm nhỏ, "Cài đặt Plugin" theo từng plugin.
+
+### Thêm
+- `Modules\Tenancy\Contracts\Data\SettingGroup` (enum: `Store`, `Appearance`, `Seo`, `Sales`, `Inventory`, `Orders`, `Other`) và tham số `SettingDefinition::$group` (cuối constructor, mặc định `null`). Chỉ dùng cho namespace `core`: cấu hình hệ thống không khai nhóm rơi vào "Khác". Cấu hình của plugin không cần nhóm (mỗi plugin một trang).
+
+### Đổi (Admin)
+- `/admin/settings`: hai phần — **Cài đặt hệ thống** (thẻ theo nhóm: biểu tượng, mô tả, vài mục tiêu biểu, số mục, số mục đã chỉnh) và **Cài đặt Plugin** (thẻ theo plugin); ô tìm lọc theo tên nhóm/plugin/mục cấu hình. Props `system`, `plugins` thay cho `cards`.
+- Trang nhóm mới `/admin/settings/system/{group}` (route `admin.settings.system`) chỉ hiện cấu hình của nhóm; `/admin/settings/core` chuyển tới nhóm đầu. `/admin/settings/{plugin}` giữ nguyên. Trang chi tiết có cột điều hướng giữa các nhóm và plugin (điện thoại: ô chọn). Props `section`, `active`, `nav` thay cho `title`, `subtitle`.
+- Menu "Cấu hình" đổi tên "Cài đặt"; khoá dịch `extension::texts.settings_controller.general_settings`, `platform_setup`, `extension::admin.settings_index.no_settings_registered` bỏ.
+
 ## 0.5.50 — 2026-11-19 · Extension API 1.12.0 (không đổi)
 
 Gỡ phần dự phòng cho trình duyệt tắt JS (ADR-025 sửa đổi 2026-11-19). Không đổi API cho plugin.

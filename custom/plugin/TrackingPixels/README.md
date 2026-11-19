@@ -6,7 +6,7 @@ Theo dõi quảng cáo: **Meta Pixel**, **Google Analytics 4**, **Google Tag Man
 php artisan vani:plugin:install vani.tracking-pixels && php artisan vani:plugin:enable vani.tracking-pixels
 ```
 
-Cấu hình ở **Admin → Cấu hình → Theo dõi quảng cáo**: mã Meta Pixel, GA4, GTM (trống = tắt nền tảng đó), chế độ đồng ý cookie, gửi server-side (token/secret lưu mã hoá), debug.
+Cấu hình ở **Admin → Cài đặt → Theo dõi quảng cáo**: mã Meta Pixel, GA4, GTM (trống = tắt nền tảng đó), chế độ đồng ý cookie, gửi server-side (token/secret lưu mã hoá), debug.
 
 - **Sự kiện trình duyệt**: `view_item` (trang sản phẩm), `view_item_list` + `search` (danh mục, thương hiệu, tìm kiếm), `add_to_cart` / `remove_from_cart` (sự kiện `vani:cart-updated` của theme), `begin_checkout`, `add_payment_info` (bấm đặt hàng), `purchase` (trang đơn, **một lần mỗi đơn** nhờ đánh dấu trong `localStorage`). Gửi đồng thời tới GA4 (`gtag`), GTM (`dataLayer`, khoá `ecommerce`) và Meta (`ViewContent`, `Search`, `AddToCart`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase`).
 - **Đồng ý cookie**: `banner` (mặc định — thanh Đồng ý/Từ chối của plugin, nhớ 180 ngày trong cookie `vani_consent`), `custom` (biểu thức JS của công cụ khác; đúng thì ghi `vani_consent=granted`), `none`. Chưa đồng ý: không nạp script, sự kiện chờ trong trang; Đồng ý → nạp và gửi; Từ chối → bỏ.

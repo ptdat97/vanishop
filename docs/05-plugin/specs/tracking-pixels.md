@@ -49,7 +49,7 @@ Gửi sự kiện thương mại điện tử chuẩn tới Meta Pixel, Google A
 
 Không có bảng. Cấu hình ở settings của plugin; secret (token Meta, API secret GA4) lưu dạng secret (mã hoá).
 
-## 5. Cấu hình (Admin → Cấu hình → Theo dõi quảng cáo)
+## 5. Cấu hình (Admin → Cài đặt → Theo dõi quảng cáo)
 
 | Khoá | Kiểu | Ghi chú |
 |---|---|---|
