@@ -4,6 +4,18 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.48 — 2026-11-19 · Extension API 1.12.0 (không đổi)
+
+Backlog L45 — API-first: Blade và API gọi cùng service tầng Application. Không đổi API cho plugin.
+
+### Sửa
+- Storefront API tài khoản đi qua contract như storefront Blade: `PATCH /me`, `PUT /me/password`, `/me/addresses*`, `POST /me/delete`, `GET /me/delete` dùng `CustomerAccounts`; `/auth/*` (đăng ký, xác minh, đăng nhập, quên/đặt lại mật khẩu, đăng xuất, xác minh email) và `/me/email/verification` dùng `CustomerSessions`. Trước đây gọi thẳng `CustomerService`/`AuthService`/`AddressBook`/`AccountLifecycle` — `PATCH /me` bỏ qua hook `vani.service.customer.profile_attributes` (plugin sửa hồ sơ chỉ có tác dụng trên web).
+- `vani.storefront-extras`: nhãn tiếng Anh khối "bán chạy" đổi sang "Top selling" (từ cũ nằm trong danh sách ngoài phạm vi ADR-033); trang `vani.hello-world` khai cặp với `GET /x/vani-hello-world/greeting` — hai test kiến trúc đang đỏ trên `main`.
+- `FieldDefinition::toArray()`: bỏ kiểm `is_string` thừa (Larastan đỏ trên `main` từ 0.5.46).
+
+### Kiểm thử
+- `StorefrontApiFirstTest` L45: mỗi cặp trong `STOREFRONT_API_PAIRS` so service tầng Application/Contracts hai phía dùng; khác nhau phải ghi lý do ở `STOREFRONT_SERVICE_DIFFERENCES`.
+
 ## 0.5.47 — 2026-11-19 · Extension API 1.12.0 (không đổi)
 
 Củng cố API-first (stabilization S0.5, S0.6). Không đổi API cho plugin.

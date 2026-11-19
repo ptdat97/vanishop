@@ -110,7 +110,7 @@ final readonly class FieldDefinition
         // Nhãn/help/lựa chọn có thể là khoá dịch (khai báo lúc boot) — dịch theo ngôn ngữ hiện tại (ADR-049).
         return [
             'key' => $this->key, 'label' => __($this->label), 'type' => $this->type, 'required' => $this->required,
-            'options' => array_map(fn (mixed $label): mixed => is_string($label) ? __($label) : $label, $this->options),
+            'options' => array_map(fn (string $label): string => (string) __($label), $this->options),
             'help' => $this->help === null ? null : __($this->help),
         ];
     }

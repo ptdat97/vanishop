@@ -11,6 +11,7 @@ use Modules\Cart\Contracts\Data\CartKey;
 use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\SocialLogin;
 use Modules\Customer\Contracts\CustomerRejected;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Data\CustomerData;
 use Modules\Customer\Contracts\Requests\ForgotPasswordRequest;
 use Modules\Customer\Contracts\Requests\LoginRequest;
@@ -24,7 +25,8 @@ use Modules\Customer\Contracts\Requests\ResetPasswordRequest;
  */
 final class AuthController
 {
-    public function __construct(private readonly AuthService $auth) {}
+    /** Cùng contract với storefront Blade (L45): đăng ký, đăng nhập, mật khẩu, xác minh email đi một đường. */
+    public function __construct(private readonly CustomerSessions $auth) {}
 
     /**
      * Gửi link xác minh tới email (202); tài khoản chỉ tạo khi bấm link (`POST /auth/register/verify`).
@@ -135,13 +137,13 @@ final class AuthController
     }
 
     /**
-     * @param  array{customer: CustomerData, token: string, customer_id: int}  $session
+     * @param  array{customer: CustomerData, token: string}  $session
      */
     private function respond(array $session, Request $request, Carts $carts, ?string $cartId): JsonResponse
     {
         $meta = ['token' => $session['token'], 'token_type' => 'Bearer'];
         if ($cartId !== null) {
-            $cart = $carts->attachToCustomer(new CartKey($cartId, (string) $request->header('X-Vani-Cart-Token', '')), $session['customer_id']);
+            $cart = $carts->attachToCustomer(new CartKey($cartId, (string) $request->header('X-Vani-Cart-Token', '')), $session['customer']->id);
             $meta['cart_id'] = $cart->id;
         }
 

@@ -224,6 +224,132 @@ it('AF1: action của cặp Blade ↔ API không validate tay — luật đầu 
 });
 
 /**
+ * L45 — cùng tầng xử lý: lớp chỉ lo "vận chuyển" dữ liệu theo kênh (đọc/ghi phiên, định dạng response) — không tính khi so.
+ *
+ * @var list<string>
+ */
+const STOREFRONT_CHANNEL_ADAPTERS = [
+    'Modules\Storefront\Application\NativeCart',
+    'Modules\Storefront\Application\CartPresenter',
+    'Modules\Storefront\Application\CheckoutPresenter',
+    'Modules\Storefront\Application\PaymentPresenter',
+    'Modules\Storefront\Application\OrderPresenter',
+];
+
+/**
+ * Private method của controller Blade chỉ lo việc của kênh web — không đi vào khi dò service: nhận diện khách từ phiên
+ * (phía API làm ở middleware `AuthenticateCustomer`), dựng phản hồi cho JS.
+ *
+ * @var array<string, string>
+ */
+const STOREFRONT_CHANNEL_HELPERS = [
+    'Modules\Storefront\Http\Controllers\Web\AccountController::customer' => 'nhận diện khách từ phiên',
+    'Modules\Storefront\Http\Controllers\Web\AccountController::required' => 'nhận diện khách từ phiên',
+    'Modules\Storefront\Http\Controllers\Web\AccountSettingsController::required' => 'nhận diện khách từ phiên',
+    'Modules\Storefront\Http\Controllers\Web\CartController::payload' => 'phản hồi JSON cho JS (mini-cart HTML, mã giảm giá đang giữ để hiển thị)',
+];
+
+/**
+ * Cặp Blade ↔ API mà service tầng Application/Contracts hai phía dùng KHÁC nhau — mỗi mục ghi lý do. Danh sách chỉ được
+ * ngắn lại; khác biệt mới mà không ghi lý do → đỏ.
+ *
+ * @var array<string, string>
+ */
+const STOREFRONT_SERVICE_DIFFERENCES = [
+    'storefront.checkout.store' => 'form checkout Blade có ô mã giảm giá ghi vào giỏ (CartVoucher) — app gọi PUT /carts/{id}/vouchers riêng; đặt hàng/báo giá cùng Checkout',
+    'storefront.account.authenticate' => 'gộp giỏ vãng lai vào khách: Blade theo giỏ trong phiên (CustomerSignIn → NativeCart), API theo cart_id + token (Carts::attachToCustomer); đăng nhập cùng CustomerSessions',
+];
+
+/**
+ * Service tầng Application/Contracts mà action của route dùng: tham số của action + property constructor được dùng trong
+ * thân action và trong private method nó gọi (đệ quy trong cùng class). Bỏ FormRequest/DTO và lớp vận chuyển theo kênh.
+ *
+ * @return list<string>
+ */
+function routeServices(Route $route): array
+{
+    $action = $route->getAction('uses');
+    if (! is_string($action)) {
+        return [];
+    }
+    [$class, $method] = str_contains($action, '@') ? explode('@', $action) : [$action, '__invoke'];
+    $reflection = new ReflectionClass($class);
+    $types = [];
+    foreach ($reflection->getConstructor()?->getParameters() ?? [] as $parameter) {
+        $type = $parameter->getType();
+        if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
+            $types['$this->'.$parameter->getName()] = $type->getName();
+        }
+    }
+    $lines = file((string) $reflection->getFileName());
+    $body = fn (string $name): string => (fn (ReflectionMethod $m): string => implode('', array_slice($lines, $m->getStartLine() - 1, $m->getEndLine() - $m->getStartLine() + 1)))(new ReflectionMethod($class, $name));
+
+    $found = [];
+    foreach ((new ReflectionMethod($class, $method))->getParameters() as $parameter) {
+        $type = $parameter->getType();
+        if ($type instanceof ReflectionNamedType && ! $type->isBuiltin()) {
+            $found[] = $type->getName();
+        }
+    }
+    $queue = [$method];
+    $seen = [];
+    while ($queue !== []) {
+        $name = array_shift($queue);
+        if (isset($seen[$name]) || ($name !== $method && array_key_exists("{$class}::{$name}", STOREFRONT_CHANNEL_HELPERS))) {
+            continue;
+        }
+        $seen[$name] = true;
+        $source = $body($name);
+        foreach ($types as $property => $type) {
+            if (preg_match('/'.preg_quote($property, '/').'\b/', $source) === 1) {
+                $found[] = $type;
+            }
+        }
+        preg_match_all('/\$this->([a-zA-Z_]+)\(/', $source, $calls);
+        foreach ($calls[1] as $called) {
+            if ($reflection->hasMethod($called) && $reflection->getMethod($called)->getDeclaringClass()->getName() === $class) {
+                $queue[] = $called;
+            }
+        }
+    }
+
+    return array_values(array_unique(array_filter($found, fn (string $type): bool => preg_match('/^Modules\\\\[A-Za-z]+\\\\(Contracts|Application)\\\\/', $type) === 1
+        && preg_match('/\\\\Contracts\\\\(Requests|Data)\\\\/', $type) !== 1
+        && is_subclass_of($type, FormRequest::class) === false
+        && ! in_array($type, STOREFRONT_CHANNEL_ADAPTERS, true))));
+}
+
+it('L45: mỗi cặp Blade ↔ API gọi cùng service tầng Application/Contracts (khác nhau phải ghi lý do)', function () {
+    $routes = app('router')->getRoutes();
+    $diverged = [];
+    $explained = [];
+    foreach (STOREFRONT_API_PAIRS as $blade => $apis) {
+        $bladeRoute = $routes->getByName($blade);
+        if ($bladeRoute === null) {
+            continue; // route của plugin chưa bật
+        }
+        $bladeServices = routeServices($bladeRoute);
+        $apiServices = array_values(array_unique(array_merge(...array_map(fn (string $api): array => ($route = $routes->getByName($api)) === null ? [] : routeServices($route), $apis))));
+        $onlyBlade = array_values(array_diff($bladeServices, $apiServices));
+        $onlyApi = array_values(array_diff($apiServices, $bladeServices));
+        if ($onlyBlade === [] && $onlyApi === []) {
+            continue;
+        }
+        if (array_key_exists($blade, STOREFRONT_SERVICE_DIFFERENCES)) {
+            $explained[] = $blade;
+
+            continue;
+        }
+        $short = fn (array $classes): string => implode(', ', array_map(fn (string $c): string => preg_replace('/^Modules\\\\/', '', $c), $classes)) ?: '—';
+        $diverged[] = "{$blade}: chỉ Blade dùng [{$short($onlyBlade)}], chỉ API dùng [{$short($onlyApi)}]";
+    }
+    $stale = array_values(array_diff(array_keys(STOREFRONT_SERVICE_DIFFERENCES), $explained, array_filter(array_keys(STOREFRONT_SERVICE_DIFFERENCES), fn (string $name): bool => $routes->getByName($name) === null)));
+
+    expect($diverged)->toBe([], 'Blade và API phải gọi cùng service (ADR-044) — sửa phía lệch, hoặc ghi lý do ở STOREFRONT_SERVICE_DIFFERENCES')
+        ->and($stale)->toBe([], 'Cặp đã khớp: bỏ khỏi STOREFRONT_SERVICE_DIFFERENCES');
+});
+
+/**
  * AF2 — phía đọc: trang Blade GET → endpoint Storefront API GET cho cùng dữ liệu (app/headless dựng được cùng màn hình).
  *
  * @var array<string, list<string>>
@@ -255,6 +381,7 @@ const STOREFRONT_API_READ_PAIRS = [
     'storefront.p.vani-lookbook.index' => ['api.storefront.x.vani-lookbook.lookbooks.index'],
     'storefront.p.vani-lookbook.show' => ['api.storefront.x.vani-lookbook.lookbooks.show'],
     'storefront.p.vani-wishlist.account.index' => ['api.storefront.x.vani-wishlist.items.index'],
+    'storefront.p.vani-hello-world.index' => ['api.storefront.x.vani-hello-world.greeting'],
 ];
 
 /**

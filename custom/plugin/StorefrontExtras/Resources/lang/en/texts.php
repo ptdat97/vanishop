@@ -16,7 +16,7 @@ return [
         'tile_i_title' => 'Tile :i: title',
     ],
     'bestsellers_block' => [
-        'best_sellers' => 'Best sellers',
+        'best_sellers' => 'Top selling',
         'calculated_over' => 'Calculated over',
         'default_8' => 'Default 8.',
         'number_products_1_24' => 'Number of products (1–24)',

@@ -8,11 +8,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Modules\Customer\Application\AccountLifecycle;
-use Modules\Customer\Application\AddressBook;
-use Modules\Customer\Application\AuthService;
 use Modules\Customer\Application\ConsentService;
 use Modules\Customer\Application\CustomerService;
+use Modules\Customer\Contracts\CustomerAccounts;
 use Modules\Customer\Contracts\CustomerRejected;
+use Modules\Customer\Contracts\CustomerSessions;
 use Modules\Customer\Contracts\Requests\AddressRequest;
 use Modules\Customer\Contracts\Requests\DeleteAccountRequest;
 use Modules\Customer\Contracts\Requests\PasswordRequest;
@@ -29,11 +29,12 @@ final class AccountController
         return response()->json(['data' => CustomerService::toData(AuthenticateCustomer::customer($request))->toArray()]);
     }
 
-    public function update(ProfileRequest $request, CustomerService $customers, AuthService $auth): JsonResponse
+    public function update(ProfileRequest $request, CustomerAccounts $accounts, CustomerSessions $auth): JsonResponse
     {
         $customer = AuthenticateCustomer::customer($request);
         $previousEmail = $customer->email;
-        $updated = $customers->updateProfile($customer->id, $request->validated());
+        // Qua contract như storefront Blade (L45): hook `vani.service.customer.profile_attributes` chạy cho cả hai kênh.
+        $updated = $accounts->updateProfile($customer->id, $request->validated());
         // Đổi/thêm email → gửi link xác minh tới email mới (L40).
         if ($updated->email !== null && $updated->email !== $previousEmail) {
             $auth->sendEmailVerification($customer->id);
@@ -43,7 +44,7 @@ final class AccountController
     }
 
     /** Gửi lại link xác minh email (0.5.32). 202 khi đã gửi; email đã xác minh hoặc chưa có email → 409. */
-    public function sendEmailVerification(Request $request, AuthService $auth): JsonResponse
+    public function sendEmailVerification(Request $request, CustomerSessions $auth): JsonResponse
     {
         $customer = AuthenticateCustomer::customer($request);
         if (! $auth->sendEmailVerification($customer->id)) {
@@ -53,32 +54,32 @@ final class AccountController
         return response()->json(['data' => ['email' => $customer->email]], 202);
     }
 
-    public function password(PasswordRequest $request, AuthService $auth): JsonResponse
+    public function password(PasswordRequest $request, CustomerAccounts $accounts): JsonResponse
     {
         $data = $request->validated();
-        $auth->setPassword(AuthenticateCustomer::customer($request)->id, $data['current_password'] ?? null, $data['password']);
+        $accounts->setPassword(AuthenticateCustomer::customer($request)->id, $data['current_password'] ?? null, $data['password']);
 
         return response()->json(null, 204);
     }
 
-    public function addresses(Request $request, AddressBook $book): JsonResponse
+    public function addresses(Request $request, CustomerSessions $sessions): JsonResponse
     {
-        return response()->json(['data' => $book->all(AuthenticateCustomer::customer($request)->id)]);
+        return response()->json(['data' => $sessions->addresses(AuthenticateCustomer::customer($request)->id)]);
     }
 
-    public function storeAddress(AddressRequest $request, AddressBook $book): JsonResponse
+    public function storeAddress(AddressRequest $request, CustomerAccounts $accounts): JsonResponse
     {
-        return response()->json(['data' => $book->add(AuthenticateCustomer::customer($request)->id, $request->toAddressData())], 201);
+        return response()->json(['data' => $accounts->addAddress(AuthenticateCustomer::customer($request)->id, $request->toAddressData())], 201);
     }
 
-    public function updateAddress(AddressRequest $request, int $address, AddressBook $book): JsonResponse
+    public function updateAddress(AddressRequest $request, int $address, CustomerAccounts $accounts): JsonResponse
     {
-        return response()->json(['data' => $book->update(AuthenticateCustomer::customer($request)->id, $address, $request->toAddressData())]);
+        return response()->json(['data' => $accounts->updateAddress(AuthenticateCustomer::customer($request)->id, $address, $request->toAddressData())]);
     }
 
-    public function destroyAddress(Request $request, int $address, AddressBook $book): JsonResponse
+    public function destroyAddress(Request $request, int $address, CustomerAccounts $accounts): JsonResponse
     {
-        $book->delete(AuthenticateCustomer::customer($request)->id, $address);
+        $accounts->deleteAddress(AuthenticateCustomer::customer($request)->id, $address);
 
         return response()->json(null, 204);
     }
@@ -109,10 +110,10 @@ final class AccountController
     /**
      * Xoá tài khoản = ẩn danh hoá; xác nhận bằng mật khẩu hiện tại (chưa có → `customer.password_required`).
      */
-    public function destroy(DeleteAccountRequest $request, AccountLifecycle $lifecycle): JsonResponse
+    public function destroy(DeleteAccountRequest $request, CustomerAccounts $accounts): JsonResponse
     {
         $data = $request->validated();
-        $lifecycle->deleteOwnAccount(AuthenticateCustomer::customer($request)->id, $data['password']);
+        $accounts->deleteAccount(AuthenticateCustomer::customer($request)->id, $data['password']);
 
         return response()->json(null, 204);
     }
@@ -120,9 +121,9 @@ final class AccountController
     /**
      * Xoá được tài khoản chưa — trả danh sách việc còn dở (đơn chưa hoàn tất, đổi trả đang mở…) để app hiển thị trước khi hỏi mật khẩu.
      */
-    public function deletion(Request $request, AccountLifecycle $lifecycle): JsonResponse
+    public function deletion(Request $request, CustomerAccounts $accounts): JsonResponse
     {
-        $blockers = $lifecycle->deletionBlockers(AuthenticateCustomer::customer($request)->id);
+        $blockers = $accounts->deletionBlockers(AuthenticateCustomer::customer($request)->id);
 
         return response()->json(['data' => ['deletable' => $blockers === [], 'blockers' => $blockers]]);
     }
