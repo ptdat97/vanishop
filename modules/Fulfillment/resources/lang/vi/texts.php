@@ -83,8 +83,6 @@ return [
         'booking_on_create' => 'Ngay khi tạo vận đơn',
         'default_carrier' => 'Hãng vận chuyển mặc định',
         'default_carrier_help' => 'Dùng khi phí giao không gắn với hãng nào, hoặc hãng đã chọn đang tắt.',
-        'default_item_weight_gram' => 'Khối lượng mặc định mỗi sản phẩm (gram)',
-        'default_item_weight_gram_help' => 'Dùng khi biến thể chưa khai báo khối lượng (tính phí, file gửi hãng).',
     ],
     'shipment_dashboard_tasks' => [
         'call_customer_back_schedule_redelivery' => 'Gọi lại khách, hẹn giao lại hoặc hoàn về',

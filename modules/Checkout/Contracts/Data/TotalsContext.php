@@ -80,7 +80,7 @@ final readonly class TotalsContext
         return $weight;
     }
 
-    /** Có dòng chưa nhập khối lượng → weight() thấp hơn thực tế; nhà vận chuyển tự quyết (khối lượng mặc định, từ chối…). */
+    /** Có dòng không có khối lượng (SKU của Catalog đã dùng khối lượng mặc định của cửa hàng — chỉ còn dòng do plugin dựng) → weight() thấp hơn thực tế. */
     public function missingWeight(): bool
     {
         foreach ($this->lines as $line) {

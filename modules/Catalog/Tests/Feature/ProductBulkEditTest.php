@@ -125,11 +125,11 @@ it('báo và lọc sản phẩm thiếu dữ liệu: chưa có SKU, ảnh, danh 
 
     $rows = collect($this->get('/admin/catalog/products')->viewData('page')['props']['products']['data'])->keyBy('style_code');
     expect($rows['DAM01']['missing'])->toBe([])
-        ->and($rows['AO01']['missing'])->toBe(['Chưa có ảnh', 'Chưa có danh mục', 'SKU thiếu khối lượng', 'Chưa có mô tả']);
+        ->and($rows['AO01']['missing'])->toBe(['Chưa có ảnh', 'Chưa có danh mục', 'SKU chưa nhập khối lượng (đang dùng mặc định)', 'Chưa có mô tả']);
     $this->get('/admin/catalog/products?missing=gia')->assertSessionHasErrors('missing');
 
     // Danh sách chỉ hiện icon; chi tiết ở trang sửa sản phẩm.
-    $this->get("/admin/catalog/products/{$this->shirt->id}/edit")->assertInertia(fn (Assert $page) => $page->where('missing', ['Chưa có ảnh', 'Chưa có danh mục', 'SKU thiếu khối lượng', 'Chưa có mô tả']));
+    $this->get("/admin/catalog/products/{$this->shirt->id}/edit")->assertInertia(fn (Assert $page) => $page->where('missing', ['Chưa có ảnh', 'Chưa có danh mục', 'SKU chưa nhập khối lượng (đang dùng mặc định)', 'Chưa có mô tả']));
     $this->get("/admin/catalog/products/{$this->dress->id}/edit")->assertInertia(fn (Assert $page) => $page->where('missing', []));
     $this->get('/admin/catalog/products/create')->assertInertia(fn (Assert $page) => $page->where('missing', []));
 });

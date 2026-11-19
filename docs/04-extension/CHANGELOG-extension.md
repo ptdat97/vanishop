@@ -4,6 +4,15 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.57 — 2026-11-19 · Extension API 1.17.0
+
+Khối lượng mặc định cho sản phẩm chưa nhập khối lượng.
+
+### Đổi
+- Cấu hình chuyển sang Catalog: `core.catalog.default_weight_gram` (Admin → Cài đặt → Kho & giao hàng; mặc định `VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`, 300 g) — `Catalog\Contracts\Data\DefaultWeight`. Bỏ `core.fulfillment.default_item_weight_gram` và `FulfillmentSettings::defaultItemWeightGram()`.
+- `CatalogReader::sellableVariants()` trả `weightGram` = khối lượng của SKU, chưa nhập thì khối lượng mặc định → phí giao theo cân lúc thanh toán (`TotalsContext::weight()`), đơn tạo trong Admin, file gửi hãng đều dùng. Ô khối lượng của SKU vẫn để trống (không ghi giá trị mặc định vào sản phẩm).
+- Nhãn dữ liệu thiếu "SKU thiếu khối lượng" → "SKU chưa nhập khối lượng (đang dùng mặc định)".
+
 ## 0.5.56 — 2026-11-19 · Extension API 1.16.0 (không đổi)
 
 ### Đổi (Admin)

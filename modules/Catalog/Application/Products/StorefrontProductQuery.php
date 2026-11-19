@@ -7,6 +7,7 @@ namespace Modules\Catalog\Application\Products;
 use Illuminate\Support\Collection;
 use Modules\Catalog\Application\Media\ImageSizes;
 use Modules\Catalog\Application\Search\SearchManager;
+use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\Data\ProductSearchQuery;
 use Modules\Catalog\Contracts\Data\SellableVariant;
 use Modules\Catalog\Domain\AttributeInputType;
@@ -24,6 +25,7 @@ use Modules\Catalog\Persistence\Models\StyleOptionValue;
 use Modules\Catalog\Persistence\Models\Variant;
 use Modules\Catalog\Persistence\Models\Video;
 use Modules\Extension\Facades\Hook;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Dữ liệu sản phẩm cho storefront (native và Storefront API dùng chung — ADR-009).
@@ -35,6 +37,7 @@ final class StorefrontProductQuery
         private readonly SearchManager $search,
         private readonly StyleLinkService $links,
         private readonly VideoDrivers $videos,
+        private readonly Settings $settings,
     ) {}
 
     /**
@@ -149,6 +152,7 @@ final class StorefrontProductQuery
     public function sellable(array $variantIds, string $locale, int $now): array
     {
         $at = new \DateTimeImmutable("@{$now}");
+        $defaultWeight = DefaultWeight::grams($this->settings);
 
         return Variant::query()
             ->with(['style.translations', 'style.brand', 'gallery.media', ...VariantOptions::relations()])
@@ -165,7 +169,8 @@ final class StorefrontProductQuery
                 name: (string) $variant->style->translate('name', $locale),
                 imageUrl: $variant->gallery->first()?->media->url(400, ImageSizes::PRODUCT),
                 brandName: $variant->style->brand?->name,
-                weightGram: $variant->weight_gram,
+                // SKU chưa nhập khối lượng → khối lượng mặc định của cửa hàng (tính phí giao, file gửi hãng).
+                weightGram: $variant->weight_gram ?? $defaultWeight,
                 options: VariantOptions::present($variant, $locale),
             )])
             ->all();

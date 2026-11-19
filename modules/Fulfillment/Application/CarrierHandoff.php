@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Fulfillment\Application;
 
 use Modules\Catalog\Contracts\CatalogReader;
+use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\Data\VariantOptionsText;
 use Modules\Fulfillment\Domain\ShipmentStatus;
 use Modules\Fulfillment\Persistence\Models\Shipment;
@@ -12,6 +13,7 @@ use Modules\Ordering\Contracts\OrderReader;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreLocale;
+use Modules\Tenancy\Contracts\Settings;
 
 /**
  * Trao đổi file với hãng vận chuyển (0.3.97) — shop đẩy đơn lên nhiều hãng bằng tay (SME, vision §2.1):
@@ -34,7 +36,7 @@ final class CarrierHandoff
         private readonly OrderReader $orders,
         private readonly CatalogReader $catalog,
         private readonly FulfillmentService $fulfillment,
-        private readonly FulfillmentSettings $fulfillmentSettings,
+        private readonly Settings $settings,
     ) {}
 
     /**
@@ -51,7 +53,8 @@ final class CarrierHandoff
         foreach ($this->catalog->sellableVariants($variantIds, StoreLocale::default(), time()) as $id => $variant) {
             $weights[$id] = $variant->weightGram;
         }
-        $defaultWeight = $this->fulfillmentSettings->defaultItemWeightGram();
+        // SKU không còn bán (không có trong sellableVariants) → khối lượng mặc định.
+        $defaultWeight = DefaultWeight::grams($this->settings);
 
         $rows = [self::HEADERS];
         foreach ($shipments as $shipment) {

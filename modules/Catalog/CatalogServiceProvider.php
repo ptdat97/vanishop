@@ -30,6 +30,7 @@ use Modules\Catalog\Contracts\CatalogImporter;
 use Modules\Catalog\Contracts\CatalogLookup;
 use Modules\Catalog\Contracts\CatalogReader;
 use Modules\Catalog\Contracts\CollectionDirectory;
+use Modules\Catalog\Contracts\Data\DefaultWeight;
 use Modules\Catalog\Contracts\ImageFormat;
 use Modules\Catalog\Contracts\ListPrices;
 use Modules\Catalog\Contracts\MediaDirectory;
@@ -130,6 +131,10 @@ final class CatalogServiceProvider extends ModuleServiceProvider
             help: 'catalog::texts.catalog_service_provider.shown_products_without_images_product',
             rules: ['min:1', 'exists:media,id'],
             group: SettingGroup::Appearance,
+        ));
+        $this->app->make(Settings::class)->define(new SettingDefinition(
+            'core', DefaultWeight::SETTING, 'catalog::texts.catalog_service_provider.default_weight_gram', 'int', (int) config('vanishop.fulfillment.default_item_weight_gram', 300),
+            help: 'catalog::texts.catalog_service_provider.default_weight_gram_help', rules: ['min:1', 'max:50000'], group: SettingGroup::Inventory,
         ));
 
         if (! $this->app->routesAreCached()) {

@@ -8,7 +8,7 @@ return [
         'no_description' => 'Chưa có mô tả',
         'no_image' => 'Chưa có ảnh',
         'no_sku' => 'Chưa có SKU',
-        'sku_missing_weight' => 'SKU thiếu khối lượng',
+        'sku_missing_weight' => 'SKU chưa nhập khối lượng (đang dùng mặc định)',
     ],
     'catalog_navigation' => [
         'attributes' => 'Thuộc tính',
@@ -21,6 +21,8 @@ return [
         'variant_options' => 'Tuỳ chọn biến thể',
     ],
     'catalog_service_provider' => [
+        'default_weight_gram' => 'Khối lượng mặc định mỗi sản phẩm (gram)',
+        'default_weight_gram_help' => 'Dùng khi SKU chưa nhập khối lượng: tính phí giao lúc thanh toán và file gửi hãng. Nên nhập khối lượng thật cho từng SKU nếu phí giao tính theo cân.',
         'edit_catalogue_products_brands_categories' => 'Sửa catalog (sản phẩm, thương hiệu, danh mục, thuộc tính, màu, size)',
         'manage_media_library_upload_folders' => 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)',
         'media_library' => 'Thư viện ảnh',

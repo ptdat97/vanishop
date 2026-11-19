@@ -8,7 +8,7 @@ return [
         'no_description' => 'No description',
         'no_image' => 'No image',
         'no_sku' => 'No SKU',
-        'sku_missing_weight' => 'SKU missing weight',
+        'sku_missing_weight' => 'SKU without weight (using the default)',
     ],
     'catalog_navigation' => [
         'attributes' => 'Attributes',
@@ -21,6 +21,8 @@ return [
         'variant_options' => 'Variant options',
     ],
     'catalog_service_provider' => [
+        'default_weight_gram' => 'Default weight per item (grams)',
+        'default_weight_gram_help' => 'Used when a SKU has no weight: shipping rates at checkout and carrier files. Enter real weights per SKU if shipping is charged by weight.',
         'edit_catalogue_products_brands_categories' => 'Edit the catalogue (products, brands, categories, attributes, colours, sizes)',
         'manage_media_library_upload_folders' => 'Manage the Media library (upload, folders, rename, delete unused images)',
         'media_library' => 'Media library',

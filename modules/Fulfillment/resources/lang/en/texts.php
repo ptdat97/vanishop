@@ -83,8 +83,6 @@ return [
         'booking_on_create' => 'As soon as the shipment is created',
         'default_carrier' => 'Default carrier',
         'default_carrier_help' => 'Used when the shipping rate is not tied to a carrier, or the chosen carrier is off.',
-        'default_item_weight_gram' => 'Default weight per item (grams)',
-        'default_item_weight_gram_help' => 'Used when a variant has no weight (rates, carrier files).',
     ],
     'shipment_dashboard_tasks' => [
         'call_customer_back_schedule_redelivery' => 'Call the customer back, schedule redelivery or return to sender',

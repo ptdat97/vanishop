@@ -79,7 +79,7 @@ Core không ghi cứng các giá trị dưới đây — tất cả nằm trong 
 |---|---|---|
 | Bán hàng & thuế | Số lượng tối đa mỗi sản phẩm trong giỏ (`VANI_CART_MAX_LINE_QUANTITY`), số sản phẩm khác nhau tối đa (`VANI_CART_MAX_LINES`), giỏ bị bỏ quên sau (`VANI_CART_ABANDONED_AFTER_MINUTES`), giữ giỏ không hoạt động (`VANI_CART_TTL_DAYS`) | 20; 50; 60 phút; 30 ngày |
 | | Mức giảm tối đa % (`VANI_PROMOTION_MAX_DISCOUNT_BP` ÷ 100), thu tiền online đã giữ (`VANI_PAYMENT_CAPTURE_ON`) | 50% (NĐ 81/2018); khi vận đơn rời kho |
-| Kho & giao hàng | Tự tạo vận đơn (`VANI_FULFILLMENT_AUTO_CREATE`), đẩy vận đơn lên hãng (`VANI_FULFILLMENT_BOOKING`), hãng mặc định (`VANI_FULFILLMENT_CARRIER`), khối lượng mặc định mỗi sản phẩm (`VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`) | bật; khi bấm; `manual`; 300 g |
+| Kho & giao hàng | Tự tạo vận đơn (`VANI_FULFILLMENT_AUTO_CREATE`), đẩy vận đơn lên hãng (`VANI_FULFILLMENT_BOOKING`), hãng mặc định (`VANI_FULFILLMENT_CARRIER`), khối lượng mặc định mỗi sản phẩm — SKU chưa nhập khối lượng dùng giá trị này khi tính phí giao và làm file gửi hãng (`VANI_FULFILLMENT_DEFAULT_ITEM_GRAM`) | bật; khi bấm; `manual`; 300 g |
 | Đơn hàng & đổi trả | Tiền tố mã đơn (`VANI_ORDER_NUMBER_PREFIX`), số ngày đổi trả (`VANI_RETURN_WINDOW_DAYS`), cho bấm "Đã nhận hàng" sau (`VANI_CONFIRM_RECEIPT_AFTER_DAYS`), giữ ảnh đổi trả (`VANI_RETURN_ATTACHMENTS_RETENTION_DAYS`), cảnh báo đơn tồn đọng sau | `VN`; 7; 5 ngày; 90 ngày; 24 giờ |
 | Email gửi đi | SMTP, người gửi (`MAIL_*`) | theo `.env` |
 
