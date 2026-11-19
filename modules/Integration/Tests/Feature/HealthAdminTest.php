@@ -39,6 +39,23 @@ it('Owner xem message lỗi (payload đã che PII), client và webhook; replay �
     expect($this->subscription->fresh()->status)->toBe('active');
 });
 
+it('L33: message lỗi sắp theo # / số lần thử ở server, giữ bộ lọc hộp thư', function () {
+    H::publish('order.created', 'LU-2', ['order' => []]);
+    app(OutboxWorker::class)->run();
+    app(OutboxWorker::class)->run();
+    [$first, $second] = OutboxRecord::query()->orderBy('id')->pluck('id')->all();
+    OutboxRecord::query()->whereKey($first)->update(['attempts' => 5]);
+    OutboxRecord::query()->whereKey($second)->update(['attempts' => 2]);
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'integration.view'])->create(), 'staff');
+    $ids = fn (string $query): array => array_column($this->get("/admin/integration{$query}")->assertOk()->viewData('page')['props']['messages'], 'id');
+
+    expect($ids(''))->toBe([$second, $first])
+        ->and($ids('?sort=attempts&direction=asc'))->toBe([$second, $first])
+        ->and($ids('?sort=id&direction=asc&box=outbox'))->toBe([$first, $second]);
+    $this->get('/admin/integration?sort=attempts&direction=desc&box=outbox')->assertInertia(fn (Assert $page) => $page
+        ->where('sort', ['key' => 'attempts', 'direction' => 'desc'])->where('filters.box', 'outbox'));
+});
+
 it('chỉ xem không replay được; không có quyền xem thì bị chặn', function () {
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'integration.view'])->create(), 'staff');
     $this->get('/admin/integration')->assertOk();

@@ -18,6 +18,7 @@ use Modules\Notification\Contracts\Data\NotificationType;
 use Modules\Notification\Contracts\NotificationCatalog;
 use Modules\Notification\Persistence\Models\NotificationLog;
 use Modules\Notification\Persistence\Models\NotificationTemplate;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreClock;
 use Modules\Shared\Support\StoreLocale;
 
@@ -75,7 +76,8 @@ final class NotificationController
         $perPage = (int) ($validated['per_page'] ?? 50);
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $q = is_string($request->query('q')) ? trim($request->query('q')) : '';
-        $page = $this->queries->logs($status ?? '', $q, $perPage);
+        $sort = ListSort::fromRequest($request, ['created_at' => 'created_at', 'status' => 'status']);
+        $page = $this->queries->logs($status ?? '', $q, $perPage, $sort);
 
         return Inertia::render('Notification::Logs/Index', [
             'baseUrl' => route('admin.notifications.logs'),
@@ -83,6 +85,7 @@ final class NotificationController
             // Tên loại thông báo (NotificationCatalog) thay cho mã thô — 0.3.101.
             'typeLabels' => array_map(fn (NotificationType $type): string => $type->label, $catalog->types()),
             'filters' => ['status' => $status, 'q' => $q, 'per_page' => $page->perPage()],
+            'sort' => $sort?->toArray(),
             'statuses' => [NotificationLog::QUEUED, NotificationLog::SENT, NotificationLog::FAILED, NotificationLog::SKIPPED],
             'logs' => collect($page->items())->map(fn (NotificationLog $log): array => [
                 'id' => $log->id, 'type' => $log->type, 'channel' => $log->channel, 'recipient' => $this->mask($log->recipient),

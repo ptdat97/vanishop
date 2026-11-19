@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Pagination from '@admin/Components/Pagination.vue';
@@ -15,6 +16,7 @@ const props = defineProps<{
     labels: { staff_status: Record<string, string>; scope_type: Record<string, string> };
     rolesUrl: string;
     filters: { q: string; role: number | null; status: string | null };
+    sort: ListSortState | null;
     roles: Array<{ id: number; name: string }>;
     staff: {
         data: Array<{ id: number; name: string; email: string; status: string; roles: string[]; last_login_at: string | null }>;
@@ -29,18 +31,19 @@ const props = defineProps<{
 
 const formatDate = useDateTime();
 const columns = [
-    { key: 'name', label: 'Nhân viên' },
+    { key: 'name', label: 'Nhân viên', sortable: true },
     { key: 'roles', label: 'Vai trò' },
     { key: 'status', label: 'Trạng thái' },
-    { key: 'last_login_at', label: 'Đăng nhập gần nhất', class: 'text-slate-500' },
+    { key: 'last_login_at', label: 'Đăng nhập gần nhất', class: 'text-slate-500', sortable: true },
 ];
 const q = ref(props.filters.q);
+const list = useListQuery(() => props.baseUrl);
 
 const perPageOptions = [25, 50, 100];
 
-function search(changes: { role?: number | null; status?: string | null; page?: number; per_page?: number } = {}): void {
-    const next = { q: q.value || null, role: props.filters.role, status: props.filters.status, per_page: props.staff.per_page, ...changes };
-    router.get(props.baseUrl, Object.fromEntries(Object.entries(next).filter(([, value]) => value)), { preserveState: true });
+function search(changes: { role?: number | null; status?: string | null; page?: number; per_page?: number; sort?: ListSortState | null } = {}): void {
+    const { sort = props.sort, ...rest } = changes;
+    list.visit({ q: q.value, role: props.filters.role, status: props.filters.status, per_page: props.staff.per_page, ...list.sortQuery(sort), ...rest });
 }
 </script>
 
@@ -62,7 +65,7 @@ function search(changes: { role?: number | null; status?: string | null; page?: 
         <button type="submit" :class="secondaryButton">Tìm</button>
     </form>
 
-    <DataTable :columns="columns" :rows="staff.data" :row-label="(member) => member.email" :row-click="(member) => router.visit(`${props.baseUrl}/${member.id}/edit`)" empty-text="Không có nhân viên phù hợp.">
+    <DataTable :columns="columns" :rows="staff.data" :sort="sort" :loading="list.loading.value" @sort="(next) => search({ sort: next })" :row-label="(member) => member.email" :row-click="(member) => router.visit(`${props.baseUrl}/${member.id}/edit`)" empty-text="Không có nhân viên phù hợp.">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="text-xs text-slate-400">{{ row.email }}</div>

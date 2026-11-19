@@ -10,6 +10,7 @@ import Pagination from '@admin/Components/Pagination.vue';
 import Select from '@admin/Components/Select.vue';
 import { confirmAction } from '@admin/confirm';
 import { getJson } from '@admin/http';
+import { useListQuery } from '@admin/list';
 import { labelOptions } from '@admin/options';
 import { inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import type { ExtensionList } from '@admin/types';
@@ -120,6 +121,7 @@ function save(): void {
 
 /* ---------- Lọc, phân trang ---------- */
 const perPageOptions = [20, 50, 100];
+const list = useListQuery(() => props.urls.base);
 
 function params(overrides: Partial<Criteria> & { page?: number; per_page?: number } = {}): Record<string, string | number | Record<string, string> | undefined> {
     const merged = { ...criteria, ...overrides };
@@ -135,7 +137,7 @@ async function visit(query: Record<string, string | number | Record<string, stri
     if (dirty.value && (await confirmAction({ title: `Bỏ ${dirty.value} ô chưa lưu?`, confirmLabel: 'Bỏ thay đổi', tone: 'danger' })) === false) return;
     discard();
     clearSelection();
-    router.get(props.urls.base, query, { preserveState: true });
+    list.visit(query);
 }
 
 function find(): void {
@@ -382,7 +384,7 @@ onBeforeUnmount(() => runTimer && clearTimeout(runTimer));
     </div>
 
     <div v-if="locations.length" data-stock-grid>
-        <DataTable :columns="columns" :rows="rows" :row-class="(row) => (row.first ? 'align-top border-t-2 border-slate-200' : 'align-top')" :row-label="(row) => row.sku" empty-text="Không có sản phẩm phù hợp.">
+        <DataTable :columns="columns" :rows="rows" :loading="list.loading.value" :row-class="(row) => (row.first ? 'align-top border-t-2 border-slate-200' : 'align-top')" :row-label="(row) => row.sku" empty-text="Không có sản phẩm phù hợp.">
             <template #head-select>
                 <input type="checkbox" :checked="pageAllSelected" aria-label="Chọn cả trang" @change="toggle(pageIds, ($event.target as HTMLInputElement).checked)" />
             </template>

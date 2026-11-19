@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Identity\Persistence\Models\Role;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Shared\Http\ListSort;
 
 /**
  * Truy vấn đọc cho màn hình Admin của Identity (nhân viên, vai trò) — controller không tự truy vấn (D4, R9).
@@ -27,14 +28,14 @@ final class AdminQueries
      *
      * @return LengthAwarePaginator<int, StaffUser>
      */
-    public function staff(string $search, int $role, string $status, int $perPage): LengthAwarePaginator
+    public function staff(string $search, int $role, string $status, int $perPage, ?ListSort $sort = null): LengthAwarePaginator
     {
         return StaffUser::query()
             ->with('roleAssignments.role')
             ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->when($role > 0, fn ($query) => $query->whereHas('roleAssignments', fn ($query) => $query->where('role_id', $role)))
             ->when(in_array($status, [StaffUser::STATUS_ACTIVE, StaffUser::STATUS_INVITED, StaffUser::STATUS_LOCKED], true), fn ($query) => $query->where('status', $status))
-            ->orderBy('name')
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderBy('name'))
             ->paginate($perPage)
             ->withQueryString();
     }

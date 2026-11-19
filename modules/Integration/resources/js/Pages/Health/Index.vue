@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -30,6 +31,7 @@ const props = defineProps<{
         status: string | null;
         target: string | null;
     };
+    sort: ListSortState | null;
     statuses: string[];
     summary: {
         outbox: Record<string, number>;
@@ -60,11 +62,12 @@ const props = defineProps<{
 
 const opened = ref<number | null>(null);
 const messageColumns = [
-    { key: 'id', label: '#', class: 'font-mono text-xs' },
+    { key: 'id', label: '#', class: 'font-mono text-xs', sortable: true },
     { key: 'target', label: 'Target', class: 'font-mono text-xs' },
     { key: 'type', label: 'Loại', class: 'font-mono text-xs' },
     { key: 'reference', label: 'Tham chiếu', class: 'font-mono text-xs' },
     { key: 'status', label: 'Trạng thái' },
+    { key: 'attempts', label: 'Lần thử', align: 'right' as const, class: 'text-xs', sortable: true },
     { key: 'last_error', label: 'Lỗi gần nhất', class: 'max-w-xs text-xs break-words text-red-700' },
     { key: 'actions', label: '', align: 'right' as const, class: 'whitespace-nowrap' },
 ];
@@ -83,9 +86,10 @@ function statusTone(status: string): 'neutral' | 'info' | 'success' | 'warning' 
     return 'neutral';
 }
 
-function filter(changes: Partial<typeof props.filters>): void {
-    const next = { ...props.filters, ...changes };
-    router.get(props.baseUrl, Object.fromEntries(Object.entries(next).filter(([, value]) => value)), { preserveState: true });
+const list = useListQuery(() => props.baseUrl);
+
+function filter(changes: Partial<typeof props.filters>, sort = props.sort): void {
+    list.visit({ ...props.filters, ...changes, ...list.sortQuery(sort) });
 }
 
 async function replay(ids: number[] | null): Promise<void> {
@@ -165,14 +169,13 @@ function resume(id: number): void {
     </div>
 
     <div class="mb-8">
-        <DataTable :columns="messageColumns" :rows="messages" :row-class="() => 'align-top'" :expanded="(message) => opened === message.id" empty-text="Không có message nào khớp bộ lọc.">
+        <DataTable :columns="messageColumns" :rows="messages" :sort="sort" :loading="list.loading.value" @sort="(next) => filter({}, next)" :row-class="() => 'align-top'" :expanded="(message) => opened === message.id" empty-text="Không có message nào khớp bộ lọc.">
             <template #cell-id="{ row }">
                 {{ row.id }}
                 <div class="text-slate-400">{{ row.at }}</div>
             </template>
             <template #cell-status="{ row }">
                 <StatusBadge :label="labels.message_status[row.status] ?? row.status" :tone="statusTone(row.status)" />
-                <span class="ml-1 text-xs text-slate-500">{{ row.attempts }} lần</span>
             </template>
             <template #cell-actions="{ row }">
                 <button class="mr-3 text-indigo-600 hover:underline" @click="opened = opened === row.id ? null : row.id">Payload</button>

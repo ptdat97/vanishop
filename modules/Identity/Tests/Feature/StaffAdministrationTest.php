@@ -54,6 +54,19 @@ describe('nhân viên', function () {
         $this->actingAs(StaffUser::factory()->withPermissions(['admin.access'])->create(), 'staff')->get('/admin/staff')->assertForbidden();
     });
 
+    it('L33: danh sách sắp theo tên / đăng nhập gần nhất ở server, giữ bộ lọc; khoá lạ về thứ tự mặc định', function () {
+        StaffUser::factory()->create(['name' => 'An Kho', 'status' => 'active', 'last_login_at' => now()->subDays(3)]);
+        StaffUser::factory()->create(['name' => 'Bình Kho', 'status' => 'active', 'last_login_at' => now()->subDay()]);
+        $this->actingAs($this->owner, 'staff');
+        $names = fn (string $query): array => array_column($this->get("/admin/staff{$query}")->assertOk()->viewData('page')['props']['staff']['data'], 'name');
+
+        expect($names('?q=kho&sort=name&direction=desc'))->toBe(['Bình Kho', 'An Kho'])
+            ->and($names('?q=kho&sort=last_login_at&direction=asc'))->toBe(['An Kho', 'Bình Kho'])
+            ->and($names('?q=kho&sort=email'))->toBe(['An Kho', 'Bình Kho']);
+        $this->get('/admin/staff?sort=name&direction=desc&status=active')->assertInertia(fn (Assert $page) => $page
+            ->where('sort', ['key' => 'name', 'direction' => 'desc'])->where('filters.status', 'active'));
+    });
+
     it('mời: tạo ở trạng thái invited, gửi link 24 giờ; nhận lời mời → đặt mật khẩu, active, đăng nhập được', function () {
         $this->actingAs($this->owner, 'staff')->post('/admin/staff', [
             'name' => 'Minh Kho', 'email' => 'minh@example.com',

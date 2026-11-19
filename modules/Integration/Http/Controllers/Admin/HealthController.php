@@ -16,6 +16,7 @@ use Modules\Integration\Application\HealthQueries;
 use Modules\Integration\Application\ReplayService;
 use Modules\Integration\Domain\MessageStatus;
 use Modules\Integration\Persistence\Models\WebhookSubscription;
+use Modules\Shared\Http\ListSort;
 
 /**
  * Integration Health — cấp Owner: backlog, message lỗi (payload đã che PII), replay, client & webhook.
@@ -28,14 +29,16 @@ final class HealthController
         $box = $request->query('box') === 'inbox' ? 'inbox' : 'outbox';
         $status = is_string($request->query('status')) ? $request->query('status') : null;
         $target = is_string($request->query('target')) ? $request->query('target') : null;
+        $sort = ListSort::fromRequest($request, ['id' => 'id', 'attempts' => 'attempts']);
 
         return Inertia::render('Integration::Health/Index', [
             'baseUrl' => route('admin.integration.health'),
             'labels' => __('integration::labels'),
             'filters' => ['box' => $box, 'status' => $status, 'target' => $target],
+            'sort' => $sort?->toArray(),
             'statuses' => array_column(MessageStatus::cases(), 'value'),
             'summary' => $queries->summary(),
-            'messages' => $queries->messages($box, $status, $target),
+            'messages' => $queries->messages($box, $status, $target, $sort),
             'clients' => $queries->clients(),
             'can' => [
                 'replay' => Gate::allows('integration.replay', [ScopeRef::owner()]),

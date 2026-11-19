@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.38 — 2026-11-19 · Extension API 1.10.0 (không đổi)
+
+Backlog L33 (một phần). Không đổi API cho plugin.
+
+### Đổi (Admin)
+- Danh sách Nhân viên (tên, đăng nhập gần nhất), Nhật ký gửi tin (thời gian, trạng thái), message lỗi ở Tích hợp (#, số lần thử — cột "Lần thử" riêng) sắp xếp theo cột ở server (`ListSort`), dùng `useListQuery`. Prop mới `sort`.
+- Lưới Tồn kho điều hướng (lọc, phân trang) qua `useListQuery`: giữ vị trí cuộn, thay lịch sử, làm mờ lưới khi đang tải. Lưới gộp theo sản phẩm × biến thể nên không sắp theo cột.
+
 ## 0.5.37 — 2026-11-19 · Extension API 1.10.0 (không đổi)
 
 Backlog L33 (một phần). Không đổi API cho plugin.

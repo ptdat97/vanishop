@@ -11,6 +11,7 @@ use Modules\Integration\Persistence\Models\InboxRecord;
 use Modules\Integration\Persistence\Models\IntegrationClient;
 use Modules\Integration\Persistence\Models\OutboxRecord;
 use Modules\Integration\Persistence\Models\WebhookSubscription;
+use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\StoreClock;
 
 /**
@@ -45,14 +46,14 @@ final class HealthQueries
     /**
      * @return list<array<string, mixed>>
      */
-    public function messages(string $box, ?string $status, ?string $target): array
+    public function messages(string $box, ?string $status, ?string $target, ?ListSort $sort = null): array
     {
         $statuses = $status !== null && $status !== '' ? [$status] : [MessageStatus::Failed->value, MessageStatus::Dead->value];
 
         if ($box === 'inbox') {
             return InboxRecord::query()->whereIn('status', $statuses)
                 ->when($target !== null && $target !== '', fn ($query) => $query->where('system', $target))
-                ->orderByDesc('id')->limit(100)->get()
+                ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))->limit(100)->get()
                 ->map(fn (InboxRecord $record): array => [
                     'id' => $record->id, 'target' => $record->system, 'type' => $record->message_type, 'reference' => $record->external_event_id,
                     'status' => $record->status->value, 'attempts' => $record->attempts, 'last_error' => $record->last_error,
@@ -63,7 +64,7 @@ final class HealthQueries
 
         return OutboxRecord::query()->whereIn('status', $statuses)
             ->when($target !== null && $target !== '', fn ($query) => $query->where('target', $target))
-            ->orderByDesc('id')->limit(100)->get()
+            ->when($sort !== null, fn ($query) => $sort->apply($query), fn ($query) => $query->orderByDesc('id'))->limit(100)->get()
             ->map(fn (OutboxRecord $record): array => [
                 'id' => $record->id, 'target' => $record->target, 'type' => $record->message_type, 'reference' => "{$record->aggregate_type}:{$record->aggregate_id}",
                 'status' => $record->status->value, 'attempts' => $record->attempts, 'last_error' => $record->last_error,

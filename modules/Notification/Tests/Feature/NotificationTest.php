@@ -138,6 +138,20 @@ it('Admin: xem/sửa mẫu tin (khoá lạc quan, chống trùng), xem nhật k�
     $this->get('/admin/notifications/logs?per_page=101')->assertSessionHasErrors('per_page');
 });
 
+it('L33: nhật ký gửi tin sắp theo thời gian / trạng thái ở server, giữ bộ lọc', function () {
+    foreach (['sent', 'failed', 'queued'] as $i => $status) {
+        NotificationLog::query()->create(['type' => 'order_placed', 'category' => NotificationRequest::TRANSACTIONAL, 'channel' => 'mail', 'recipient' => "k{$i}@example.com", 'idempotency_key' => "sort-{$i}", 'status' => $status, 'attempts' => 1, 'created_at' => now()->subMinutes(10 - $i)]);
+    }
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'notifications.view'])->create(), 'staff');
+    $statuses = fn (string $query): array => array_column($this->get("/admin/notifications/logs{$query}")->assertOk()->viewData('page')['props']['logs'], 'status');
+
+    expect($statuses('?q=sort-&sort=status&direction=asc'))->toBe(['failed', 'queued', 'sent'])
+        ->and($statuses('?q=sort-&sort=created_at&direction=asc'))->toBe(['sent', 'failed', 'queued'])
+        ->and($statuses('?q=sort-'))->toBe(['queued', 'failed', 'sent']);
+    $this->get('/admin/notifications/logs?sort=status&direction=desc&status=failed')->assertInertia(fn (Assert $page) => $page
+        ->where('sort', ['key' => 'status', 'direction' => 'desc'])->where('filters.status', 'failed')->has('logs', 1));
+});
+
 it('đơn lưu ngôn ngữ lúc đặt; email theo mẫu ngôn ngữ của đơn, thiếu mẫu thì dùng ngôn ngữ mặc định (ADR-038 §8)', function () {
     NotificationTemplate::query()->create(['type' => 'order_placed', 'channel' => 'mail', 'locale' => 'en', 'subject' => 'Order {{ order_number }} received', 'body' => 'Hi {{ customer_name }}', 'active' => true]);
 

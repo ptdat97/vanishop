@@ -15,6 +15,7 @@ use Modules\Identity\Application\StaffAdministration;
 use Modules\Identity\Contracts\ScopeOptions;
 use Modules\Identity\Http\Requests\StaffRequest;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Shared\Http\ListSort;
 
 /**
  * Admin → Nhân viên (reference-parity §3.3-1): mời, sửa tên + vai trò theo phạm vi, khoá/mở khoá. Không xoá cứng.
@@ -34,13 +35,15 @@ final class StaffController
         $role = (int) $request->query('role', 0);
         $status = (string) $request->query('status', '');
 
-        $staff = $this->queries->staff($search, $role, $status, $perPage);
+        $sort = ListSort::fromRequest($request, ['name' => 'name', 'last_login_at' => 'last_login_at']);
+        $staff = $this->queries->staff($search, $role, $status, $perPage, $sort);
 
         return Inertia::render('Identity::Staff/Index', [
             'baseUrl' => route('admin.staff.index'),
             'labels' => __('identity::labels'),
             'rolesUrl' => route('admin.staff.roles.index'),
             'filters' => ['q' => $search, 'role' => $role ?: null, 'status' => $status ?: null],
+            'sort' => $sort?->toArray(),
             'roles' => $this->queries->roleOptions(['id', 'name']),
             'staff' => [
                 'data' => $staff->getCollection()->map(fn (StaffUser $member): array => [
