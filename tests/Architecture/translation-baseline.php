@@ -386,7 +386,6 @@ return array (
     'resources/js/admin/Components/SkuPicker.vue' => 12,
     'resources/js/admin/Components/Sortable.vue' => 4,
     'resources/js/admin/Components/Toaster.vue' => 2,
-    'resources/js/admin/Layouts/AdminLayout.vue' => 7,
     'resources/js/admin/Pages/Dashboard.vue' => 5,
     'resources/js/admin/dnd/tree.test.mjs' => 6,
     'resources/js/admin/forms.ts' => 2,

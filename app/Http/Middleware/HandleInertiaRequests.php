@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Middleware;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Persistence\Models\StaffUser;
+use Modules\Shared\Support\AdminTranslations;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\StoreClock;
 use Modules\Shared\Support\StoreLocale;
@@ -66,7 +67,12 @@ final class HandleInertiaRequests extends Middleware
                 'money' => app(MoneyFormatter::class)->rules((string) config('vanishop.currency'), app()->getLocale()),
                 // Múi giờ + mẫu ngày giờ (PHP date()) của cửa hàng cho useDateTime — cùng quy tắc với StoreClock::format().
                 'clock' => ['timezone' => StoreClock::timezone(), 'formats' => (array) config('vanishop.locale.formats')],
+                // Dropdown ngôn ngữ ở thanh trên / trang đăng nhập (ADR-049): nhân viên lưu vào hồ sơ, khách lưu vào phiên.
+                'localeUrl' => route('admin.locale.update'),
             ],
+            // Chuỗi giao diện Vue (nhóm `*::admin`, ADR-049): client nhớ tới khi đổi ngôn ngữ hoặc lên version mới (khoá đổi).
+            'adminI18n' => Inertia::once(fn (): array => app(AdminTranslations::class)->forLocale(app()->getLocale()))
+                ->as('admin-i18n.'.app()->getLocale().'.'.config('vanishop.version')),
             'auth' => [
                 'staff' => $staff instanceof StaffUser ? ['id' => $staff->id, 'name' => $staff->name, 'email' => $staff->email] : null,
             ],

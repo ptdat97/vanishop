@@ -10,6 +10,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Modules\Identity\Http\Middleware\AdminGate;
 use Modules\Identity\Http\Middleware\ConfigureAdminSession;
 use Modules\Identity\Http\Middleware\ResolveStaffContext;
+use Modules\Identity\Http\Middleware\UseAdminLocale;
 use Modules\Shared\Http\ApiErrorRenderer;
 use Modules\Shared\Http\Middleware\AssignCorrelationId;
 use Modules\Shared\Http\Middleware\ResolveStorefrontContext;
@@ -31,7 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Cookie xem trước khi bảo trì tự ký HMAC; không mã hoá để Storefront API (nhóm `api`, không EncryptCookies) đọc được.
         $middleware->encryptCookies(except: [Maintenance::COOKIE]);
         $middleware->alias(['vani.inertia' => HandleInertiaRequests::class]);
-        $middleware->group('vani.admin', [AdminGate::class, HandleInertiaRequests::class]);
+        // UseAdminLocale trước HandleInertiaRequests: props dùng chung (ngôn ngữ, định dạng tiền, bản dịch Vue) đọc ngôn ngữ lúc chia sẻ.
+        $middleware->group('vani.admin', [AdminGate::class, UseAdminLocale::class, HandleInertiaRequests::class]);
         // CurrentContext (actor, locale) phải có TRƯỚC route model binding.
         foreach ([ResolveStaffContext::class, ResolveStorefrontContext::class] as $scopeMiddleware) {
             $middleware->prependToPriorityList(before: SubstituteBindings::class, prepend: $scopeMiddleware);

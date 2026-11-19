@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Identity\Http\Controllers\Admin\AdminLocaleController;
 use Modules\Identity\Http\Controllers\Admin\StaffPasswordController;
 use Modules\Identity\Http\Controllers\Admin\StaffSessionController;
 use Modules\Shared\Support\AdminPath;
@@ -18,6 +19,9 @@ Route::prefix(AdminPath::prefix())->name('admin.')->middleware('vani.admin')->gr
         Route::get('loi-moi/{token}', [StaffPasswordController::class, 'showInvitation'])->name('invitation.show');
         Route::post('loi-moi', [StaffPasswordController::class, 'acceptInvitation'])->middleware('throttle:10,1')->name('invitation.accept');
     });
+
+    // Dropdown ngôn ngữ Admin (ADR-049): cả trang khách lẫn nhân viên đã đăng nhập.
+    Route::put('ngon-ngu', [AdminLocaleController::class, 'update'])->middleware('throttle:30,1')->name('locale.update');
 
     Route::post('logout', [StaffSessionController::class, 'destroy'])
         ->middleware(['auth:staff', 'vani.staff-context'])

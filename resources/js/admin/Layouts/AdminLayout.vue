@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { t } from '@admin/i18n';
 import ConfirmDialog from '../Components/ConfirmDialog.vue';
+import LocaleSwitcher from '../Components/LocaleSwitcher.vue';
 import Toaster from '../Components/Toaster.vue';
 import type { NavigationItem, SharedProps } from '../types';
 
@@ -155,7 +157,7 @@ function logout(): void {
             v-if="mobileNavigationOpen"
             type="button"
             class="fixed inset-0 z-40 bg-slate-900/40 md:hidden"
-            aria-label="Đóng điều hướng"
+            :aria-label="t('shared::admin.layout.close_navigation')"
             @click="closeMobileNavigation"
         />
         <aside
@@ -167,14 +169,15 @@ function logout(): void {
             :aria-modal="isMobileViewport && mobileNavigationOpen ? 'true' : undefined"
             :aria-hidden="isMobileViewport && !mobileNavigationOpen ? 'true' : undefined"
             :inert="isMobileViewport && !mobileNavigationOpen"
-            aria-label="Điều hướng quản trị"
+            :aria-label="t('shared::admin.layout.navigation')"
             @keydown.esc.stop.prevent="closeMobileNavigation"
             @keydown.tab="trapMobileNavigationFocus"
         >
             <div class="flex items-center justify-between px-5 py-4">
                 <div class="text-lg font-semibold">{{ page.props.app.name }}</div>
-                <button v-if="mobileNavigationOpen" type="button" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Đóng menu" @click="closeMobileNavigation">
-                    Đóng
+                <button v-if="mobileNavigationOpen" type="button" class="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 md:hidden" 
+                    :aria-label="t('shared::admin.layout.close_menu')" @click="closeMobileNavigation">
+                    {{ t('shared::admin.layout.close') }}
                 </button>
             </div>
             <nav class="flex flex-col gap-1 px-3 pb-6">
@@ -230,13 +233,14 @@ function logout(): void {
                     :aria-expanded="mobileNavigationOpen"
                     @click="openMobileNavigation"
                 >
-                    Mở menu
+                    {{ t('shared::admin.layout.open_menu') }}
                 </button>
                 <div class="flex items-center justify-end gap-4">
-                    <a href="/" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-slate-900">Xem cửa hàng</a>
+                    <LocaleSwitcher />
+                    <a href="/" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-slate-900">{{ t('shared::admin.layout.view_store') }}</a>
                     <Link v-if="page.props.urls.profile" :href="page.props.urls.profile" class="text-slate-600 hover:text-slate-900">{{ staff?.name }}</Link>
                     <span v-else class="text-slate-600">{{ staff?.name }}</span>
-                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="logout">Đăng xuất</button>
+                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="logout">{{ t('shared::admin.layout.sign_out') }}</button>
                 </div>
             </header>
             <main class="flex-1 p-4 sm:p-6">

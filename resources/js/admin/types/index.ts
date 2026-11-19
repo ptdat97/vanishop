@@ -48,7 +48,9 @@ export interface Option {
 }
 
 export interface SharedProps {
-    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string; money: MoneyRules; clock: StoreClockRules };
+    app: { name: string; locale: string; locales: StoreLocaleOption[]; defaultLocale: string; money: MoneyRules; clock: StoreClockRules; localeUrl: string };
+    /** Chuỗi giao diện Vue theo `namespace::admin` (ADR-049) — đọc qua `t()`/`tc()` của `@admin/i18n`. */
+    adminI18n?: Record<string, Record<string, unknown>>;
     auth: { staff: StaffUser | null };
     navigation: NavigationItem[];
     navigationGroups: NavigationGroup[];
