@@ -12,6 +12,7 @@ use Illuminate\Translation\FileLoader;
 use Modules\Extension\Contracts\PluginViews;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Application\Theme\ThemeTranslationLoader;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -45,7 +46,9 @@ final class UseActiveTheme
 
         // Chuỗi giao diện của theme (`<theme>/lang/<locale>.json`, khoá = câu tiếng Việt): cha trước, con ghi đè.
         $loader = app('translator')->getLoader();
-        $added = false;
+        // Chuỗi dịch `theme::` (ADR-049): tính lại chuỗi theme cho request này.
+        $added = $loader instanceof ThemeTranslationLoader && $loader->refresh();
+        $loader = $loader instanceof ThemeTranslationLoader ? $loader->inner() : $loader;
         foreach (array_reverse($chain) as $theme) {
             $path = "{$theme->path}/lang";
             if (is_dir($path) && $loader instanceof FileLoader && ! in_array($path, $loader->jsonPaths(), true)) {

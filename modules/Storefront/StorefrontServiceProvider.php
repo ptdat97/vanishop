@@ -6,6 +6,7 @@ namespace Modules\Storefront;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -39,6 +40,7 @@ use Modules\Storefront\Application\Seo\StoreShare;
 use Modules\Storefront\Application\StoreProfile;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
+use Modules\Storefront\Application\Theme\ThemeTranslationLoader;
 use Modules\Storefront\Contracts\CustomerSignIn;
 use Modules\Storefront\Contracts\LinkResolver;
 use Modules\Storefront\Contracts\LinkType;
@@ -84,6 +86,11 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
             (string) config('vanishop.storefront.themes_path'),
             $app->make(Settings::class),
             (string) config('vanishop.storefront.theme', Themes::BASE),
+        ));
+        // Chuỗi dịch `theme::` theo chuỗi theme cha → con (ADR-049).
+        $this->app->extend('translation.loader', fn (Loader $loader, Application $app): ThemeTranslationLoader => new ThemeTranslationLoader(
+            $loader,
+            fn (): array => array_map(fn (Theme $theme): string => "{$theme->path}/lang", array_reverse($app->make(Themes::class)->chain())),
         ));
     }
 

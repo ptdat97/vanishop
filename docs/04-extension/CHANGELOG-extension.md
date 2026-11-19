@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.39 — 2026-11-19 · Extension API 1.10.0 (không đổi)
+
+ADR-049 đợt I1 (hạ tầng). Chưa đổi chuỗi nào của theme/plugin.
+
+### Thêm
+- Namespace dịch `theme::` (`Storefront\Application\Theme\ThemeTranslationLoader`, bọc `translation.loader`): file `custom/theme/<theme>/lang/<locale>/<nhóm>.php`, gộp theo chuỗi theme cha → con (theme con ghi đè từng khoá); `vani.theme` tính lại chuỗi theme mỗi request.
+- Arch test `TranslationKeysTest` (5 luật của ADR-049) với mốc ngoại lệ `tests/Architecture/translation-baseline.php` chỉ được giảm (`VANI_UPDATE_TRANSLATION_BASELINE=1` hạ mốc).
+
+### Sửa
+- Bản `en` còn thiếu: nhóm khách và tag (Customer), campaign (Promotion), yêu cầu đổi trả + trạng thái đổi trả ở storefront (`storefront::messages.return_*`) — trang `/en` trước đây hiện tiếng Việt cho các thông báo này.
+
 ## 0.5.38 — 2026-11-19 · Extension API 1.10.0 (không đổi)
 
 Backlog L33 (một phần). Không đổi API cho plugin.

@@ -52,4 +52,10 @@ Open this link to set a new password (valid for :minutes minutes):
 If you did not ask for this, please ignore this email — your current password stays the same.',
     'deletion_blocked' => 'The account cannot be deleted yet because of pending items: :items. Please wait until they are completed or contact the store.',
     'note_added' => 'Note added.',
+    'group_in_use' => 'This group still has customers — move them to another group before deleting it.',
+    'group_not_found' => 'Customer group not found.',
+    'too_many_tags' => 'A customer can have at most :max tags.',
+    'segment_saved' => 'Customer group and tags saved.',
+    'group_saved' => 'Customer group saved.',
+    'group_deleted' => 'Customer group deleted.',
 ];

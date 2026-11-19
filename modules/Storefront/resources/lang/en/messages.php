@@ -47,4 +47,17 @@ return [
     'return_shipped' => 'Thanks — we have noted that you shipped the items back. We will let you know when they arrive.',
     'payment_restarted' => 'A new payment request has been created. Follow the instructions below.',
     'order_received' => 'Thanks for confirming you received your order.',
+    'return_requested' => 'Return/exchange request :number sent. The store will contact you to confirm.',
+    'return_cancelled' => 'Return/exchange request cancelled.',
+    'return_nothing_selected' => 'Choose the quantity of items you want to return or exchange.',
+    'return_exchange_missing' => 'Choose the size/colour to exchange for every exchanged item.',
+    'return_statuses' => [
+        'requested' => 'Awaiting approval',
+        'approved' => 'Approved — please send the items back',
+        'in_transit' => 'On the way back to the store',
+        'received' => 'Received by the store',
+        'resolved' => 'Completed',
+        'rejected' => 'Rejected',
+        'cancelled' => 'Cancelled',
+    ],
 ];

@@ -64,7 +64,7 @@ Luật 1, 5 có **danh sách ngoại lệ chỉ được giảm** (theo file), x
 | Đợt | Việc | Kiểm chứng | Trạng thái |
 |---|---|---|---|
 | **I0** | ADR-049; kế hoạch này; ghi chú trong storefront.md, plugin-system.md | Owner duyệt ADR | ✅ 2026-11-19 (ADR-049 Accepted) |
-| **I1** | `ThemeTranslationLoader` + namespace `theme`; `TranslationKeysTest` (luật 1–5) kèm danh sách ngoại lệ; bỏ `addJsonPath` trong `UseActiveTheme` sau I3 | Unit test loader: cha/con ghi đè, đổi theme giữa request | |
+| **I1** | `ThemeTranslationLoader` + namespace `theme`; `TranslationKeysTest` (luật 1–5) kèm danh sách ngoại lệ; bỏ `addJsonPath` trong `UseActiveTheme` sau I3 | Unit test loader: cha/con ghi đè, đổi theme giữa request | ✅ 0.5.39 (2026-11-19): mốc ban đầu luật 1: 469 lời gọi/90 file, luật 5: 3.393 chỗ/391 file, luật 4: 23 file; luật 2–3 phát hiện 25 khoá thiếu `en` (Customer, Promotion, Storefront) — đã bổ sung |
 | **I2** | 11 câu thô ở `Storefront`, `Customer` → `storefront::`/`customer::`; gỡ khỏi `en.json` theme | So HTML trước/sau | |
 | **I3** | Theme `vani-base`: 380 lời gọi, `data-vani-i18n`; xoá `en.json`, bỏ nạp JSON (2 commit: layouts + partials, pages) | So HTML; luật 2–4 xanh cho theme | |
 | **I4** | 10 plugin JSON → `translations()`; xoá `loadJsonTranslationsFrom`; tăng patch từng plugin; CHANGELOG-extension (Extension API minor — đổi quy ước theme/plugin) | Test của từng plugin; luật 4 không còn ngoại lệ | |

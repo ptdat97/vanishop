@@ -239,6 +239,20 @@ describe('theme', function () {
         $this->get('/thuong-hieu')->assertOk()->assertDontSee('Trang thương hiệu của theme con');
     });
 
+    it('ADR-049: chuỗi dịch theme:: theo theme đang hoạt động, tính lại khi đổi theme giữa các request', function () {
+        File::ensureDirectoryExists($this->themes.'/shop/lang/vi');
+        File::put($this->themes.'/shop/lang/vi/common.php', "<?php return ['greeting' => 'Chào từ theme con'];");
+        File::put($this->themes.'/shop/views/pages/brands.blade.php', "@extends('theme::layouts.app')\n@section('content')<h1>{{ __('theme::common.greeting') }}</h1>@endsection");
+        T::seed(fn () => app(Settings::class)->set('core', 'theme', 'shop'));
+
+        $this->get('/thuong-hieu')->assertOk()->assertSee('Chào từ theme con');
+
+        T::seed(fn () => app(Settings::class)->set('core', 'theme', 'vani-base'));
+        expect(app(Themes::class)->active()->name)->toBe('vani-base');
+        $this->get('/thuong-hieu')->assertOk();
+        expect(__('theme::common.greeting'))->toBe('theme::common.greeting');
+    });
+
     it('token giao diện cấu hình trong Admin ghi đè theme; giá trị không an toàn bị bỏ', function () {
         T::seed(fn () => app(Settings::class)->set('core', 'theme.tokens', json_encode(['color-accent' => '#be123c', 'radius' => '1rem;}</style><script>'])));
 
