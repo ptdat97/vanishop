@@ -44,7 +44,7 @@
                     <input id="qty-{{ $line['id'] }}" name="quantity" type="number" min="0" max="20" value="{{ $line['quantity'] }}" data-autosubmit data-line="{{ $line['id'] }}" class="w-16 rounded border border-slate-300 px-2 py-1">
                     <button type="submit" class="text-sm underline" data-no-js>{{ __('theme::cart.update') }}</button>
                 </form>
-                <p class="w-28 text-right font-medium">{{ $line['line_total']['formatted'] ?? '—' }}</p>
+                <p class="w-28 text-right font-medium" data-vani-value="line.total" data-vani-line="{{ $line['id'] }}" data-vani-amount="{{ $line['line_total']['amount'] ?? '' }}">{{ $line['line_total']['formatted'] ?? '—' }}</p>
                 <form action="{{ vani_route('storefront.cart.remove', $line['id']) }}" method="post" data-cart-remove-form data-line="{{ $line['id'] }}">
                     @csrf
                     <button type="submit" class="text-sm text-slate-500 underline">{{ __('theme::common.remove') }}</button>
@@ -56,7 +56,7 @@
 
     <div class="mt-6 flex flex-col items-end gap-3">
         <div class="w-full max-w-sm">@include('theme::partials.cart-voucher', ['voucher' => $voucher ?? null])</div>
-        <p>{{ __('theme::cart.subtotal_selected_colon', ['count' => $cart['selected_count']]) }} <strong>{{ $cart['selected_subtotal']['formatted'] }}</strong></p>
+        <p>{{ __('theme::cart.subtotal_selected_colon', ['count' => $cart['selected_count']]) }} <strong data-vani-value="cart.selected_subtotal" data-vani-amount="{{ $cart['selected_subtotal']['amount'] }}">{{ $cart['selected_subtotal']['formatted'] }}</strong></p>
         @if (($voucher ?? null) && $voucher['rejection'] === null && $voucher['discount']['amount'] > 0)
             <p class="text-emerald-700">{{ __('theme::common.discount') }}: −{{ $voucher['discount']['formatted'] }} · {{ __('theme::cart.estimated_total') }}: <strong>{{ $voucher['total']['formatted'] }}</strong></p>
         @endif

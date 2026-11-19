@@ -4,6 +4,20 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.49 — 2026-11-19 · Extension API 1.12.0 (không đổi)
+
+Backlog L46 — API-first: so khớp số liệu trang Blade với Storefront API. Không đổi API cho plugin.
+
+### Đổi (theme)
+- `vani-base` gắn `data-vani-value` / `data-vani-amount` / `data-vani-code` cho giá, giá gạch, % giảm, còn hàng, dòng giỏ, tạm tính, báo giá checkout, tổng đơn, phân rã giá đơn, trạng thái đơn; thẻ sản phẩm có `data-vani-product`. Theme con override `partials.price`, `partials.product-card`, `partials.cart-page`, `partials.order-summary`, `pages.checkout`, `pages.order`, `pages.product` giữ các thuộc tính này (storefront §5).
+
+### Sửa (Admin, lỗi từ đợt i18n 0.5.43–0.5.45 — 21 test trình duyệt đỏ)
+- `t()` gọi trước khi app Inertia khởi tạo làm Admin lỗi JS (`Cannot read properties of undefined (reading 'adminI18n')`) — nay trả bản dịch rỗng, không lỗi.
+- `MediaField`, `MediaPicker`, `ExtensionActions` dịch nhãn mặc định trong giá trị mặc định của prop (chạy lúc import) → nút hiện nguyên khoá ("Thêm shared::admin.media_media_field.images"). Nay dịch lúc render; `TranslationKeysTest` cấm dịch trong mặc định của prop.
+
+### Kiểm thử
+- `Storefront/Tests/Feature/BladeApiParityTest`: trang sản phẩm ↔ `GET /products/{slug}`, danh mục ↔ `GET /products?category=`, giỏ ↔ `GET /carts/{id}`, thanh toán ↔ `POST /checkout/{cart}/quote`, trang đơn ↔ `GET /orders/{id}`.
+
 ## 0.5.48 — 2026-11-19 · Extension API 1.12.0 (không đổi)
 
 Backlog L45 — API-first: Blade và API gọi cùng service tầng Application. Không đổi API cho plugin.

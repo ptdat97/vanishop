@@ -110,3 +110,22 @@ it('không nạp bản dịch lúc boot (đăng ký lúc boot truyền khoá, d�
 
     expect($groups)->toBe([]);
 });
+
+it('Vue Admin không dịch trong giá trị mặc định của prop (chạy lúc import, trước khi có bản dịch → hiện nguyên khoá)', function () {
+    $files = [...glob(base_path('resources/js/**/*.vue')) ?: [], ...(array) glob(base_path('resources/js/*/*/*.vue')), ...(array) glob(base_path('resources/js/*/*/*/*.vue')),
+        ...(array) glob(base_path('modules/*/resources/js/*/*.vue')), ...(array) glob(base_path('modules/*/resources/js/*/*/*.vue')),
+        ...(array) glob(base_path('custom/plugin/*/resources/js/*/*.vue')), ...(array) glob(base_path('custom/plugin/*/resources/js/*/*/*.vue'))];
+    $offenders = [];
+    foreach (array_unique($files) as $file) {
+        $source = (string) file_get_contents($file);
+        preg_match_all('/withDefaults\(defineProps<[\s\S]*?>\(\),\s*\{([\s\S]*?)\}\);/', $source, $defaults);
+        preg_match_all('/defineProps\(\{([\s\S]*?)\}\)/', $source, $runtime);
+        foreach ([...$defaults[1], ...$runtime[1]] as $block) {
+            if (preg_match('/(?<![\w.])tc?\(/', $block) === 1) {
+                $offenders[] = str_replace(base_path().'/', '', $file);
+            }
+        }
+    }
+
+    expect(array_values(array_unique($offenders)))->toBe([], 'Để mặc định undefined và dịch trong component: computed(() => props.x ?? t(...))');
+});

@@ -21,9 +21,11 @@ const props = withDefaults(defineProps<{ multiple?: boolean; max?: number; disab
     multiple: false,
     max: 50,
     disabled: false,
-    label: t('shared::admin.media_media_field.images'),
+    label: undefined,
     kind: 'image',
 });
+// Dịch nhãn mặc định lúc render (giá trị mặc định của prop chạy lúc import — chưa có bản dịch).
+const label = computed(() => props.label ?? t('shared::admin.media_media_field.images'));
 const model = defineModel<number | null | number[]>({ default: null });
 
 const libraryUrl = computed(() => usePage<SharedProps>().props.urls.media ?? null);

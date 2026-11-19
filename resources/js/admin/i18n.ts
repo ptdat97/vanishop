@@ -9,7 +9,8 @@ import { lookup, translate, translateChoice, type TranslationCatalog, type Trans
  * Khoá thiếu: hiện chính khoá (môi trường dev cảnh báo ở console). TranslationKeysTest kiểm mọi khoá có `vi` + `en`.
  */
 function catalog(): TranslationCatalog {
-    return (usePage().props as { adminI18n?: TranslationCatalog }).adminI18n ?? {};
+    // Trước khi app Inertia khởi tạo (module thuần gọi lúc import) chưa có trang: catalog rỗng, không lỗi.
+    return (usePage().props as { adminI18n?: TranslationCatalog } | undefined)?.adminI18n ?? {};
 }
 
 function warnMissing(key: string): void {

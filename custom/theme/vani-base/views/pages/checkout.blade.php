@@ -146,12 +146,12 @@
             @endif
 
             <dl class="space-y-1 border-t border-slate-200 pt-3">
-                <div class="flex justify-between"><dt>{{ __('theme::checkout.subtotal') }}</dt><dd>{{ $quote['subtotal']['formatted'] }}</dd></div>
+                <div class="flex justify-between"><dt>{{ __('theme::checkout.subtotal') }}</dt><dd data-vani-value="quote.subtotal" data-vani-amount="{{ $quote['subtotal']['amount'] }}">{{ $quote['subtotal']['formatted'] }}</dd></div>
                 @if ($quote['discount']['amount'] > 0)
-                    <div class="flex justify-between text-accent"><dt>{{ __('theme::common.discount') }}</dt><dd>-{{ $quote['discount']['formatted'] }}</dd></div>
+                    <div class="flex justify-between text-accent"><dt>{{ __('theme::common.discount') }}</dt><dd data-vani-value="quote.discount" data-vani-amount="{{ $quote['discount']['amount'] }}">-{{ $quote['discount']['formatted'] }}</dd></div>
                 @endif
-                <div class="flex justify-between"><dt>{{ __('theme::checkout.shipping') }}</dt><dd>{{ $quote['shipping_fee']['formatted'] }}</dd></div>
-                <div class="flex justify-between text-base font-semibold"><dt>{{ __('theme::checkout.total') }}</dt><dd data-total>{{ $quote['total']['formatted'] }}</dd></div>
+                <div class="flex justify-between"><dt>{{ __('theme::checkout.shipping') }}</dt><dd data-vani-value="quote.shipping_fee" data-vani-amount="{{ $quote['shipping_fee']['amount'] }}">{{ $quote['shipping_fee']['formatted'] }}</dd></div>
+                <div class="flex justify-between text-base font-semibold"><dt>{{ __('theme::checkout.total') }}</dt><dd data-total data-vani-value="quote.total" data-vani-amount="{{ $quote['total']['amount'] }}">{{ $quote['total']['formatted'] }}</dd></div>
                 @if ($quote['tax_included']['amount'] > 0)
                     <p class="text-xs text-slate-500">{{ __('theme::checkout.tax_included_amount', ['amount' => $quote['tax_included']['formatted']]) }}</p>
                 @endif

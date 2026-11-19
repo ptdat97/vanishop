@@ -4,7 +4,7 @@
 
 @section('content')
     <h1 class="mb-2 text-2xl font-semibold">{{ __('theme::order.thank_you') }}</h1>
-    <p class="mb-6">{{ __('theme::order.order_number_label') }} <strong data-order-number>{{ $order['number'] }}</strong> · {{ $order['status']['label'] ?? $order['order_status'] }}</p>
+    <p class="mb-6">{{ __('theme::order.order_number_label') }} <strong data-order-number>{{ $order['number'] }}</strong> · <span data-vani-value="order.status" data-vani-code="{{ $order['order_status'] ?? '' }}">{{ $order['status']['label'] ?? $order['order_status'] }}</span></p>
 
     @if (($payment['status'] ?? null) === 'paid')
         <p role="status" class="mb-6 rounded-[var(--radius-theme)] bg-emerald-50 px-4 py-2 text-sm text-emerald-800">{{ __('theme::order.payment_received') }}</p>

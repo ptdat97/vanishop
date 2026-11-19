@@ -8,8 +8,10 @@ import { router } from '@inertiajs/vue3';
 
 /** Nút thao tác hàng loạt (plugin hoặc module Core); server kiểm tra quyền. `method: 'get'` mở trang/tải file. */
 const props = withDefaults(defineProps<{ actions: ExtensionAction[]; ids: number[]; selectionDescription?: string }>(), {
-    selectionDescription: t('shared::admin.extensions_extension_actions.selected_items'),
+    selectionDescription: undefined,
 });
+// Dịch mô tả mặc định lúc chạy (giá trị mặc định của prop chạy lúc import — chưa có bản dịch).
+const selection = (): string => props.selectionDescription ?? t('shared::admin.extensions_extension_actions.selected_items');
 
 async function run(action: ExtensionAction): Promise<void> {
     if (props.ids.length === 0) {
@@ -17,10 +19,10 @@ async function run(action: ExtensionAction): Promise<void> {
     }
     let values: Record<string, string> = {};
     if (action.fields?.length) {
-        const result = await promptFields({ title: action.label, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: props.selectionDescription }), confirmLabel: action.label, fields: action.fields });
+        const result = await promptFields({ title: action.label, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: selection() }), confirmLabel: action.label, fields: action.fields });
         if (result === false) return;
         values = result;
-    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: props.selectionDescription }) })) === false) {
+    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: selection() }) })) === false) {
         return;
     }
     if (action.preview_url) {

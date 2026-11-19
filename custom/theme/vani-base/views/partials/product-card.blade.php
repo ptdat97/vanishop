@@ -1,5 +1,5 @@
 @php($isList = ($style ?? 'grid') === 'list')
-<article @class(['group vani-product-card' => true, 'flex items-start gap-3 border-b border-slate-200 pb-4 last:border-0' => $isList]) data-vani-motion="rise" data-vani-motion-item>
+<article @class(['group vani-product-card' => true, 'flex items-start gap-3 border-b border-slate-200 pb-4 last:border-0' => $isList]) data-vani-motion="rise" data-vani-motion-item data-vani-product="{{ $product['slug'] }}">
     <a href="{{ vani_route('storefront.product', $product['slug']) }}" @class(['relative block' => ! $isList, 'relative flex min-w-0 flex-1 gap-3' => $isList])>
         {{-- $productFrame: khung theo tỉ lệ ảnh sản phẩm, Core dựng sẵn (ProductFrameComposer). --}}
         <div @class(['overflow-hidden rounded-[var(--radius-theme)] bg-slate-100' => true, 'w-20 shrink-0 sm:w-28' => $isList]) style="aspect-ratio: {{ $productFrame['aspect'] }}">

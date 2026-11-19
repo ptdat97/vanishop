@@ -65,7 +65,7 @@
             <h1 class="text-2xl font-semibold">{{ $product['name'] }}</h1>
             <x-vani::hook-slot name="vani.storefront.pdp.after_title" :args="[$product]" />
 
-            <p class="mt-3 text-lg" data-product-price>@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
+            <p class="mt-3 text-lg" data-product-price data-vani-value="in_stock" data-vani-code="{{ $product['in_stock'] ? '1' : '0' }}">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
             {{-- Giá thành viên (Phase 8): trang cache được hiện giá chung; JS điền giá theo nhóm của khách đăng nhập. --}}
             <p class="mt-1 text-sm font-medium text-accent" data-vani-member-price data-route="{{ route('api.storefront.v1.me.prices') }}" hidden></p>
             <x-vani::hook-slot name="vani.storefront.pdp.after_price" :args="[$product]" />
