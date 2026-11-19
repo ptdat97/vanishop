@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.43 — 2026-11-19 · Extension API 1.11.0 (không đổi)
+
+ADR-049 đợt A1 (Admin chọn ngôn ngữ).
+
+### Thêm
+- Dropdown ngôn ngữ ở thanh trên Admin và trang đăng nhập/quên mật khẩu/lời mời (`LocaleSwitcher`, ẩn khi cửa hàng một ngôn ngữ). `PUT /admin/ngon-ngu` (`admin.locale.update`): nhân viên lưu `staff_users.locale` (audit `identity.staff.profile_updated`), khách lưu phiên `admin_locale`.
+- Middleware `Identity\Http\Middleware\UseAdminLocale` trong nhóm `vani.admin` (trước `HandleInertiaRequests`): hồ sơ nhân viên → phiên → mặc định.
+- Bản dịch cho Vue: prop `adminI18n` (once prop, khoá `admin-i18n.<locale>.<version>`) = nhóm `admin` của mọi namespace dịch (`Shared\Support\AdminTranslations`); `resources/js/admin/i18n.ts` có `t(key, params)`, `tc(key, count, params)` cùng cú pháp `__()`/`trans_choice()` (phần thuần ở `translate.ts`, test `npm run test:admin`). Plugin có trang Admin: thêm `Resources/lang/{vi,en}/admin.php`.
+- Chuỗi vỏ Admin (`AdminLayout`) → `shared::admin.layout.*`.
+
+### Sửa
+- Props dùng chung của Admin (`app.locale`, định dạng tiền theo ngôn ngữ) trước đây luôn theo ngôn ngữ mặc định vì được tính trước khi biết nhân viên — nay theo ngôn ngữ của nhân viên.
+
 ## 0.5.42 — 2026-11-19 · Extension API 1.11.0
 
 ADR-049 đợt I4. **Thay đổi phá vỡ cho plugin/theme ngoài repo** (Owner: bỏ JSON ngay, không giữ tương thích): bản dịch `Resources/lang/<locale>.json` (khoá = câu tiếng Việt) không còn được dùng.
