@@ -19,7 +19,7 @@ final class CategoryController
     {
         $category = $catalog->category($slug, App::getLocale());
 
-        abort_if($category === null, 404, __('Không tìm thấy danh mục.'));
+        abort_if($category === null, 404, __('storefront::messages.category_not_found'));
 
         return response()->json(['data' => $category]);
     }

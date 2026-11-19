@@ -93,7 +93,7 @@ final class LayoutComposer
             'search_query' => $this->request->routeIs('storefront.search', 'storefront.*.search') ? (string) $this->request->query('q', '') : '',
             'account' => [
                 'url' => LocalizedUrls::route($signedIn ? 'storefront.account' : 'storefront.account.login'),
-                'label' => $signedIn ? __('Tài khoản') : __('Đăng nhập'),
+                'label' => $signedIn ? __('storefront::labels.account') : __('storefront::labels.sign_in'),
             ],
             'mobile_topics_url' => (($themeSettings['mobile_nav']['topics_url'] ?? null) ?: null) ?? LocalizedUrls::route('storefront.brands'),
             'contact' => $phone || $email || $address || $socials !== [] ? [

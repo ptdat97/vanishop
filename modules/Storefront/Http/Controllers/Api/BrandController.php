@@ -22,7 +22,7 @@ final class BrandController
     {
         $brand = $catalog->brand($slug);
 
-        abort_if($brand === null, 404, __('Không tìm thấy thương hiệu.'));
+        abort_if($brand === null, 404, __('storefront::messages.brand_not_found'));
 
         return response()->json(['data' => $brand]);
     }

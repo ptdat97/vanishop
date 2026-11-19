@@ -24,7 +24,7 @@ final class Breadcrumbs
      */
     public function trail(array $crumbs): array
     {
-        $items = [['label' => __('Trang chủ'), 'url' => LocalizedUrls::route('storefront.home')]];
+        $items = [['label' => __('storefront::labels.home'), 'url' => LocalizedUrls::route('storefront.home')]];
         foreach ($crumbs as $crumb) {
             $items[] = ['label' => (string) $crumb['label'], 'url' => $crumb['url'] ?? (isset($crumb['link']) ? $this->resolve($crumb['link']) : null)];
         }

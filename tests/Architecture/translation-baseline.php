@@ -85,15 +85,6 @@ return array (
     'custom/theme/vani-base/views/partials/product-card.blade.php' => 2,
     'custom/theme/vani-base/views/partials/search-modal-content.blade.php' => 4,
     'custom/theme/vani-base/views/partials/toast.blade.php' => 3,
-    'modules/Customer/Contracts/Requests/AddressRequest.php' => 1,
-    'modules/Storefront/Application/CustomerSessionState.php' => 2,
-    'modules/Storefront/Http/Controllers/Api/BrandController.php' => 1,
-    'modules/Storefront/Http/Controllers/Api/CategoryController.php' => 1,
-    'modules/Storefront/Http/Controllers/Api/ProductController.php' => 1,
-    'modules/Storefront/Http/Controllers/Web/CatalogController.php' => 1,
-    'modules/Storefront/View/Breadcrumbs.php' => 1,
-    'modules/Storefront/View/Composers/LayoutComposer.php' => 2,
-    'modules/Storefront/View/ProductPage.php' => 3,
   ),
   'hardcoded' => 
   array (

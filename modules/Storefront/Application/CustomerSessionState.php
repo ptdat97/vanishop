@@ -32,7 +32,7 @@ final class CustomerSessionState
         return [
             'signed_in' => $customer !== null,
             'account' => [
-                'label' => $customer !== null ? __('Tài khoản') : __('Đăng nhập'),
+                'label' => $customer !== null ? __('storefront::labels.account') : __('storefront::labels.sign_in'),
                 'url' => LocalizedUrls::route($customer !== null ? 'storefront.account' : 'storefront.account.login', [], $locale),
             ],
             'cart' => $current === null ? ['count' => 0, 'subtotal' => null, 'lines' => []] : $this->carts->mini($current),

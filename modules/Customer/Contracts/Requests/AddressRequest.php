@@ -32,7 +32,7 @@ final class AddressRequest extends FormRequest
         return [
             'label' => ['nullable', 'string', 'max:32'],
             'full_name' => [$required, 'string', 'max:120'],
-            'phone' => [$required, 'string', 'max:20', fn (string $attribute, mixed $value, Closure $fail) => Phones::parse((string) $value) === null ? $fail(__('Số điện thoại không hợp lệ.')) : null],
+            'phone' => [$required, 'string', 'max:20', fn (string $attribute, mixed $value, Closure $fail) => Phones::parse((string) $value) === null ? $fail(__('customer::messages.phone_invalid')) : null],
             // Có danh mục: mã bắt buộc, tên lấy theo mã. Không có: tên bắt buộc, mã để trống.
             'province_code' => [$directory ? $required : 'nullable', 'string', 'max:8'],
             'province_name' => [$directory ? 'nullable' : $required, 'string', 'max:64'],

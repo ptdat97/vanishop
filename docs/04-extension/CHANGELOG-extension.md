@@ -4,6 +4,16 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.40 — 2026-11-19 · Extension API 1.10.0 (không đổi)
+
+ADR-049 đợt I2. Không đổi API cho plugin.
+
+### Đổi
+- Module `Storefront`, `Customer` không còn dùng câu làm khoá dịch: nhãn breadcrumb/tài khoản/ảnh sản phẩm → `storefront::labels.*` (nhóm mới), thông báo 404 của Storefront API → `storefront::messages.{brand,category,product}_not_found`, lỗi số điện thoại địa chỉ → `customer::messages.phone_invalid`. Bản `en` của chúng không còn phụ thuộc `en.json` của theme.
+
+### Sửa
+- Storefront API ở `/en` (và `Accept-Language: en`) trả thông báo 404 tiếng Anh thay vì tiếng Việt.
+
 ## 0.5.39 — 2026-11-19 · Extension API 1.10.0 (không đổi)
 
 ADR-049 đợt I1 (hạ tầng). Chưa đổi chuỗi nào của theme/plugin.

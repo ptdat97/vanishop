@@ -88,19 +88,19 @@ final class ProductPage
                 // Ảnh đầu là LCP: tải ngay, ưu tiên cao; ảnh sau tải lười.
                 'main' => $index === 0,
                 'zoom' => ['url' => $zoomUrl, 'width' => $zoomWidth, 'height' => $height($zoomWidth)],
-                'zoom_label' => __('Phóng to ảnh :index của :name', ['index' => $index + 1, 'name' => $name]),
+                'zoom_label' => __('storefront::labels.product_image_zoom', ['index' => $index + 1, 'name' => $name]),
             ];
         }, array_keys($sources), $sources);
 
         $thumbs = count($images) > 1 ? array_map(fn (int $index, array $image): array => [
             'index' => $index, 'url' => (string) $image['url'], 'thumb_url' => (string) ($image['thumb_url'] ?? $image['url']),
             'width' => 150, 'height' => $height(150), 'active' => $index === 0,
-            'label' => __('Ảnh :index của :name', ['index' => $index + 1, 'name' => $name]),
+            'label' => __('storefront::labels.product_image', ['index' => $index + 1, 'name' => $name]),
         ], array_keys($images), $images) : [];
 
         return [
             'aspect' => "{$ratioW} / {$ratioH}",
-            'label' => __('Ảnh sản phẩm :name', ['name' => $name]),
+            'label' => __('storefront::labels.product_gallery', ['name' => $name]),
             'slides' => $slides,
             'thumbs' => $thumbs,
             'navigation' => count($slides) > 1,

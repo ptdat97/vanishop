@@ -60,4 +60,7 @@ return [
         'rejected' => 'Rejected',
         'cancelled' => 'Cancelled',
     ],
+    'brand_not_found' => 'Brand not found.',
+    'category_not_found' => 'Category not found.',
+    'product_not_found' => 'Product not found.',
 ];

@@ -103,7 +103,7 @@ final class CatalogController
         $seo->alternates(PageAlternates::forSlugs('storefront.brand', array_fill_keys(StoreLocale::supported(), $slug)), StoreLocale::supported());
         $request->merge(['brand' => $slug]);
 
-        $crumbs = [['label' => __('Thương hiệu'), 'url' => LocalizedUrls::route('storefront.brands')], ['label' => (string) $brand['name']]];
+        $crumbs = [['label' => __('storefront::labels.brands'), 'url' => LocalizedUrls::route('storefront.brands')], ['label' => (string) $brand['name']]];
 
         return view('theme::pages.brand', ['brand' => $brand, 'crumbs' => $crumbs, 'meta' => PageMeta::for($brand, $brand['logo_url'] ?? null), ...$this->listing($request)]);
     }

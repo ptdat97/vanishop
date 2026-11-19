@@ -54,7 +54,7 @@ final class ProductController
     {
         $product = $products->detail($slug, App::getLocale(), now()->getTimestamp());
 
-        abort_if($product === null, 404, __('Không tìm thấy sản phẩm.'));
+        abort_if($product === null, 404, __('storefront::messages.product_not_found'));
 
         return response()->json(['data' => $product]);
     }

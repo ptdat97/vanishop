@@ -60,4 +60,7 @@ return [
     'return_shipped' => 'Đã ghi nhận bạn gửi hàng về. Cửa hàng sẽ báo khi nhận được.',
     'payment_restarted' => 'Đã tạo lại yêu cầu thanh toán. Làm theo hướng dẫn bên dưới.',
     'order_received' => 'Cảm ơn bạn đã xác nhận nhận hàng.',
+    'brand_not_found' => 'Không tìm thấy thương hiệu.',
+    'category_not_found' => 'Không tìm thấy danh mục.',
+    'product_not_found' => 'Không tìm thấy sản phẩm.',
 ];
