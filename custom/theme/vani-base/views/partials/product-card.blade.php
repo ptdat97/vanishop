@@ -17,7 +17,7 @@
             @if ($isList)
                 <p class="mt-1">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
                 @unless ($product['in_stock'])
-                    <p class="mt-1 text-xs text-slate-500">{{ __('Hết hàng') }}</p>
+                    <p class="mt-1 text-xs text-slate-500">{{ __('theme::product.out_of_stock') }}</p>
                 @endunless
             @endif
         </div>
@@ -25,7 +25,7 @@
     @unless ($isList)
         <p class="mt-1">@include('theme::partials.price', ['price' => $product['price'], 'product' => $product])</p>
         @unless ($product['in_stock'])
-            <p class="text-xs text-slate-500">{{ __('Hết hàng') }}</p>
+            <p class="text-xs text-slate-500">{{ __('theme::product.out_of_stock') }}</p>
         @endunless
     @endunless
     <x-vani::hook-slot name="vani.storefront.plp.card.actions" :args="[$product]" />

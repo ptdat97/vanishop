@@ -21,7 +21,7 @@
                         {{ $attribute }}@if ($value !== true)="{{ $value }}"@endif
                     @endif
                 @endforeach
-                aria-label="{{ __('Đóng') }}">×</button>
+                aria-label="{{ __('theme::common.close') }}">×</button>
         </div>
         @endif
         @include($contentView, $contentData ?? [])

@@ -1,22 +1,22 @@
 @extends('theme::layouts.app')
 
-@section('title', __('Đăng ký'))
+@section('title', __('theme::account.sign_up'))
 
 @section('content')
     <div class="mx-auto max-w-sm">
-        <h1 class="mb-6 text-2xl font-semibold">{{ __('Đăng ký') }}</h1>
+        <h1 class="mb-6 text-2xl font-semibold">{{ __('theme::account.sign_up') }}</h1>
         @if ($sentTo)
             <div role="status" class="space-y-2 rounded-[var(--radius-theme)] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                <p class="font-medium">{{ __('Kiểm tra hộp thư của bạn') }}</p>
-                <p>{{ __('Chúng tôi đã gửi link xác minh tới :email. Bấm vào link trong email để hoàn tất đăng ký.', ['email' => $sentTo]) }}</p>
-                <p class="text-emerald-800">{{ __('Không thấy email? Hãy xem thư mục spam hoặc đăng ký lại.') }}</p>
+                <p class="font-medium">{{ __('theme::account.check_inbox') }}</p>
+                <p>{{ __('theme::account.verification_sent', ['email' => $sentTo]) }}</p>
+                <p class="text-emerald-800">{{ __('theme::account.email_not_received_hint') }}</p>
             </div>
         @else
             <form action="{{ vani_route('storefront.account.register.store') }}" method="post" class="space-y-3">
                 @csrf
                 @error('business')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                 <div>
-                    <label for="full_name" class="block text-sm">{{ __('Họ tên') }}</label>
+                    <label for="full_name" class="block text-sm">{{ __('theme::common.full_name') }}</label>
                     <input id="full_name" name="full_name" type="text" autocomplete="name" value="{{ old('full_name') }}" required maxlength="120" class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                     @error('full_name')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
@@ -26,17 +26,17 @@
                     @error('email')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label for="password" class="block text-sm">{{ __('Mật khẩu (tối thiểu 8 ký tự)') }}</label>
+                    <label for="password" class="block text-sm">{{ __('theme::account.password_at_least_8_characters') }}</label>
                     <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                     @error('password')<p role="alert" class="text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label for="password_confirmation" class="block text-sm">{{ __('Nhập lại mật khẩu') }}</label>
+                    <label for="password_confirmation" class="block text-sm">{{ __('theme::account.confirm_password') }}</label>
                     <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required class="mt-1 w-full rounded border border-slate-300 px-3 py-2">
                 </div>
-                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('Đăng ký') }}</button>
+                <button type="submit" class="w-full rounded-[var(--radius-theme)] bg-primary px-4 py-2 font-medium text-white">{{ __('theme::account.sign_up') }}</button>
             </form>
         @endif
-        <p class="mt-4 text-center text-sm">{{ __('Đã có tài khoản?') }} <a href="{{ vani_route('storefront.account.login') }}" class="font-medium underline">{{ __('Đăng nhập') }}</a></p>
+        <p class="mt-4 text-center text-sm">{{ __('theme::account.already_have_account') }} <a href="{{ vani_route('storefront.account.login') }}" class="font-medium underline">{{ __('theme::account.sign_in') }}</a></p>
     </div>
 @endsection

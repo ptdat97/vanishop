@@ -53,20 +53,20 @@
     <header class="border-b border-slate-200 sticky top-0 z-50 bg-white">
         <div class="mx-auto grid container grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-4 md:grid-cols-[1fr_auto_1fr]">
             <a href="{{ vani_route('storefront.home') }}" class="col-start-1 row-start-1 justify-self-start text-xl font-semibold text-primary">{{ config('app.name') }}</a>
-            <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:justify-center" aria-label="{{ __('Menu chính') }}">
+            <nav class="hidden md:col-start-2 md:row-start-1 md:flex md:justify-center" aria-label="{{ __('theme::layout.main_menu') }}">
                 @if ($shell['menus']['header'] !== null)
                     @include('theme::partials.menu', ['items' => $shell['menus']['header']])
                 @else
-                    <a href="{{ vani_route('storefront.categories') }}">{{ __('Danh mục') }}</a>
-                    <a href="{{ vani_route('storefront.brands') }}">{{ __('Thương hiệu') }}</a>
+                    <a href="{{ vani_route('storefront.categories') }}">{{ __('theme::common.categories') }}</a>
+                    <a href="{{ vani_route('storefront.brands') }}">{{ __('theme::common.brands') }}</a>
                 @endif
                 <x-vani::hook-slot name="vani.storefront.header.nav" class="flex flex-wrap items-center gap-4 ml-4" />
             </nav>
             <form action="{{ vani_route('storefront.search') }}" method="get" role="search" class="relative col-span-2 row-start-2 md:col-span-3"
                 data-vani-search-fallback data-vani-suggest="{{ route('api.storefront.v1.search.suggestions') }}" data-locale="{{ app()->getLocale() }}">
-                <label for="vani-search-fallback-q" class="sr-only">{{ __('Tìm kiếm') }}</label>
+                <label for="vani-search-fallback-q" class="sr-only">{{ __('theme::common.search') }}</label>
                 <input id="vani-search-fallback-q" name="q" type="search" value="{{ $shell['search_query'] }}"
-                    placeholder="{{ __('Tìm sản phẩm…') }}" @if (($popularSearches ?? []) !== []) list="vani-search-fallback-popular-searches" @endif
+                    placeholder="{{ __('theme::common.search_products') }}" @if (($popularSearches ?? []) !== []) list="vani-search-fallback-popular-searches" @endif
                     class="w-full rounded-[var(--radius-theme)] border border-slate-300 px-3 py-2 text-sm">
                 <div data-vani-suggest-box hidden class="absolute inset-x-0 top-full z-30 mt-1 rounded-[var(--radius-theme)] border border-slate-200 bg-white p-2 text-sm shadow-lg"></div>
                 @if (($popularSearches ?? []) !== [])
@@ -79,17 +79,17 @@
             </form>
             <div class="col-start-2 row-start-1 flex items-center justify-self-end gap-1 md:col-start-3">
                 <button type="button" class="inline-flex size-10 cursor-pointer items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    data-js-only data-vani-search-open data-vani-modal-open="vani-search-modal" aria-label="{{ __('Tìm kiếm') }}" aria-haspopup="dialog" aria-controls="vani-search-modal">
+                    data-js-only data-vani-search-open data-vani-modal-open="vani-search-modal" aria-label="{{ __('theme::common.search') }}" aria-haspopup="dialog" aria-controls="vani-search-modal">
                     <i data-lucide="search" class="size-5" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="hidden cursor-pointer items-center justify-center rounded text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:hidden"
-                    data-vani-mobile-menu-open data-vani-drawer-open="vani-mobile-menu" aria-label="{{ __('Danh mục') }}" aria-haspopup="dialog" aria-controls="vani-mobile-menu">
-                    <span class="sr-only">{{ __('Danh mục') }}</span>
+                    data-vani-mobile-menu-open data-vani-drawer-open="vani-mobile-menu" aria-label="{{ __('theme::common.categories') }}" aria-haspopup="dialog" aria-controls="vani-mobile-menu">
+                    <span class="sr-only">{{ __('theme::common.categories') }}</span>
                     <i data-lucide="menu" class="size-5" aria-hidden="true"></i>
                 </button>
                 <x-vani::hook-slot name="vani.storefront.header.actions" />
                 @if (count($seo['switcher'] ?? []) > 1)
-                    <nav aria-label="{{ __('Ngôn ngữ') }}" class="hidden gap-1 text-xs uppercase sm:flex">
+                    <nav aria-label="{{ __('theme::layout.language') }}" class="hidden gap-1 text-xs uppercase sm:flex">
                         @foreach ($seo['switcher'] as $option)
                             <a href="{{ $option['url'] }}" hreflang="{{ $option['locale'] }}" lang="{{ $option['locale'] }}" title="{{ $option['label'] }}" @if ($option['current']) aria-current="true" class="font-semibold" @else class="text-slate-500" @endif>{{ $option['locale'] }}</a>
                         @endforeach
@@ -104,19 +104,19 @@
                 {{-- Giỏ mini (0.3.93): bấm mở offcanvas bên phải (app.js tải nội dung qua JSON); không JS vẫn là link tới trang giỏ. --}}
                 <a href="{{ vani_route('storefront.cart') }}" data-vani-cart-open aria-haspopup="dialog"
                     class="relative inline-flex size-10 items-center justify-center rounded text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    aria-label="{{ __('Giỏ hàng') }}" title="{{ __('Giỏ hàng') }}">
+                    aria-label="{{ __('theme::common.cart') }}" title="{{ __('theme::common.cart') }}">
                     <i data-lucide="shopping-bag" class="size-5" aria-hidden="true"></i>
                     <span data-vani-cart-count @if (($customerState['cart']['count'] ?? 0) === 0) hidden @endif
                         class="absolute -right-1 -top-1 min-w-5 rounded-full bg-primary px-1.5 text-center text-xs leading-5 text-white">{{ ($customerState['cart']['count'] ?? 0) ?: '' }}</span>
                 </a>
             </div>
             <details class="col-span-2 row-start-3 w-full text-sm md:hidden" data-vani-mobile-menu-fallback>
-                <summary class="cursor-pointer select-none py-1">{{ __('Danh mục') }}</summary>
-                <nav aria-label="{{ __('Menu di động') }}" class="mt-2 space-y-1">
+                <summary class="cursor-pointer select-none py-1">{{ __('theme::common.categories') }}</summary>
+                <nav aria-label="{{ __('theme::layout.mobile_menu') }}" class="mt-2 space-y-1">
                     @if ($shell['menus']['mobile'] !== null)
                         @include('theme::partials.menu-list', ['items' => $shell['menus']['mobile']])
                     @else
-                        <a href="{{ vani_route('storefront.brands') }}" class="block py-1">{{ __('Thương hiệu') }}</a>
+                        <a href="{{ vani_route('storefront.brands') }}" class="block py-1">{{ __('theme::common.brands') }}</a>
                     @endif
                     <x-vani::hook-slot name="vani.storefront.header.nav" />
                 </nav>
@@ -125,14 +125,14 @@
     </header>
     @include('theme::partials.modal', [
         'id' => 'vani-search-modal',
-        'title' => __('Tìm kiếm sản phẩm'),
+        'title' => __('theme::layout.search_products'),
         'contentView' => 'theme::partials.search-modal-content',
         'dialogClass' => 'vani-search-modal',
         'dataAttributes' => ['data-vani-search-modal' => true],
     ])
     @include('theme::partials.drawer', [
         'id' => 'vani-mobile-menu',
-        'title' => __('Danh mục'),
+        'title' => __('theme::common.categories'),
         'contentView' => 'theme::partials.mobile-menu-content',
         'contentData' => [
             // Menu "Di động" (chưa xuất bản → menu đầu trang); cả hai chưa có → cây danh mục Catalog qua Storefront API.
@@ -159,12 +159,12 @@
                     @include('theme::partials.menu-list', ['items' => $items])
                 </nav>
             @empty
-                <nav class="space-y-1" aria-label="{{ __('Hỗ trợ') }}"><a href="{{ vani_route('storefront.track') }}" class="block">{{ __('Tra cứu đơn hàng') }}</a></nav>
+                <nav class="space-y-1" aria-label="{{ __('theme::layout.help') }}"><a href="{{ vani_route('storefront.track') }}" class="block">{{ __('theme::common.track_order') }}</a></nav>
             @endforelse
             <x-vani::hook-slot name="vani.storefront.footer.columns" />
             @if ($contact = $shell['contact'])
                 <address class="space-y-1 not-italic" data-vani-footer-contact>
-                    <p class="font-medium text-slate-700">{{ __('Liên hệ') }}</p>
+                    <p class="font-medium text-slate-700">{{ __('theme::layout.contact') }}</p>
                     @if ($contact['phone'])<a href="{{ $contact['phone_href'] }}" class="block">{{ $contact['phone'] }}</a>@endif
                     @if ($contact['email'])<a href="mailto:{{ $contact['email'] }}" class="block">{{ $contact['email'] }}</a>@endif
                     @if ($contact['address'])<p>{!! nl2br(e($contact['address'])) !!}</p>@endif
@@ -178,7 +178,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3 md:col-span-4">
                 <p>{{ $shell['copyright'] }}</p>
                 @if ($shell['payment_methods'] !== [])
-                    <ul class="flex flex-wrap gap-2" aria-label="{{ __('Phương thức thanh toán') }}">
+                    <ul class="flex flex-wrap gap-2" aria-label="{{ __('theme::layout.payment_methods') }}">
                         @foreach ($shell['payment_methods'] as $payment)<li class="rounded border border-slate-300 px-2 py-0.5 text-xs">{{ $payment }}</li>@endforeach
                     </ul>
                 @endif
@@ -192,7 +192,7 @@
         <script type="application/json" data-vani-cart-change>@json($shell['cart_change'])</script>
     @endif
     {{-- Chuỗi giao diện cho app.js theo ngôn ngữ trang. --}}
-    @php($jsStrings = ['wards_loading' => __('— Đang tải… —'), 'province_first' => __('— Chọn tỉnh/thành trước —'), 'choose_ward' => __('— Chọn phường/xã —'), 'wards_failed' => __('— Không tải được, thử lại —'), 'wards_no_match' => __('— Không có phường/xã khớp —'), 'member_price_from' => __('Giá :group: từ :price'), 'member_price' => __('Giá :group: :price'), 'member' => __('thành viên'), 'suggest_products' => __('Sản phẩm'), 'suggest_categories' => __('Danh mục'), 'suggest_brands' => __('Thương hiệu'), 'suggest_all' => __('Xem tất cả kết quả'), 'carousel_prev' => __('Mục trước'), 'carousel_next' => __('Mục sau'), 'lightbox_prev' => __('Ảnh trước'), 'lightbox_next' => __('Ảnh sau'), 'lightbox_close' => __('Đóng'), 'lightbox_zoom' => __('Phóng to'), 'lightbox_error' => __('Không tải được ảnh.'), 'close' => __('Đóng'), 'request_failed' => __('Có lỗi xảy ra, vui lòng thử lại.')])
+    @php($jsStrings = ['wards_loading' => __('theme::js.wards_loading'), 'province_first' => __('theme::common.select_province_first'), 'choose_ward' => __('theme::common.select_ward'), 'wards_failed' => __('theme::js.wards_failed'), 'wards_no_match' => __('theme::js.wards_no_match'), 'member_price_from' => __('theme::js.member_price_from'), 'member_price' => __('theme::js.member_price'), 'member' => __('theme::js.member'), 'suggest_products' => __('theme::common.products'), 'suggest_categories' => __('theme::common.categories'), 'suggest_brands' => __('theme::common.brands'), 'suggest_all' => __('theme::js.suggest_all'), 'carousel_prev' => __('theme::js.carousel_prev'), 'carousel_next' => __('theme::js.carousel_next'), 'lightbox_prev' => __('theme::common.previous_image'), 'lightbox_next' => __('theme::common.next_image'), 'lightbox_close' => __('theme::common.close'), 'lightbox_zoom' => __('theme::js.lightbox_zoom'), 'lightbox_error' => __('theme::js.lightbox_error'), 'close' => __('theme::common.close'), 'request_failed' => __('theme::js.request_failed')])
     <script type="application/json" data-vani-i18n>@json($jsStrings)</script>
     {{--
         Giỏ mini offcanvas (0.3.93): <dialog> mở bằng showModal() — khoá nền, giữ focus, Esc đóng. Nội dung = partial
@@ -200,7 +200,7 @@
     --}}
     @include('theme::partials.drawer', [
         'id' => 'vani-cart-drawer',
-        'title' => __('Giỏ hàng'),
+        'title' => __('theme::common.cart'),
         'contentView' => 'theme::partials.cart-drawer-content',
         'dialogClass' => 'vani-offcanvas',
         'dataAttributes' => ['data-vani-offcanvas-cart' => true],

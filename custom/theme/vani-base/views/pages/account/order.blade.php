@@ -1,12 +1,12 @@
 @extends('theme::layouts.app')
 
-@section('title', __('Đơn :number', ['number' => $order['number']]))
+@section('title', __('theme::common.order_title', ['number' => $order['number']]))
 
 @section('content')
     <div class="grid gap-8 md:grid-cols-[12rem_1fr]">
         @include('theme::partials.account-menu')
         <section>
-            <h1 class="mb-2 text-2xl font-semibold">{{ __('Đơn :number', ['number' => $order['number']]) }}</h1>
+            <h1 class="mb-2 text-2xl font-semibold">{{ __('theme::common.order_title', ['number' => $order['number']]) }}</h1>
             <p class="mb-6 text-sm text-slate-500">{{ $order['placed_at_label'] }} · {{ $order['status']['label'] ?? $order['order_status'] }}</p>
             <x-vani::hook-slot name="vani.storefront.order.before_summary" :args="[$order]" />
             @include('theme::partials.order-summary')
@@ -18,10 +18,10 @@
                 <form action="{{ vani_route('storefront.account.order.cancel', $order['id']) }}" method="post" class="mt-8 flex flex-wrap items-end gap-2">
                     @csrf
                     <div class="flex-1">
-                        <label for="reason" class="block text-sm">{{ __('Lý do huỷ') }}</label>
+                        <label for="reason" class="block text-sm">{{ __('theme::account.cancellation_reason') }}</label>
                         <input id="reason" name="reason" required maxlength="255" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
                     </div>
-                    <button type="submit" class="rounded border border-red-300 px-4 py-2 text-sm text-red-700">{{ __('Huỷ đơn') }}</button>
+                    <button type="submit" class="rounded border border-red-300 px-4 py-2 text-sm text-red-700">{{ __('theme::account.cancel_order') }}</button>
                 </form>
             @endif
         </section>

@@ -351,7 +351,8 @@ function translationHardcodedOffenders(): array
             $source = (string) preg_replace(TRANSLATION_JS_CALL, '', $source);
             foreach (explode("\n", $source) as $line) {
                 $line = (string) preg_replace('#(?<![:\'"`])//.*$#', '', $line);
-                $count += preg_match($vietnamese, $line) === 1 ? 1 : 0;
+                // Thông điệp cho dev ở console trình duyệt — không dịch.
+                $count += preg_match($vietnamese, $line) === 1 && preg_match('/\bconsole\.(log|info|warn|error|debug)\(|\bnew Error\(/', $line) !== 1 ? 1 : 0;
             }
         }
         if ($count > 0) {

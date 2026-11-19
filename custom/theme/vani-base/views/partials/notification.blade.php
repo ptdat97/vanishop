@@ -22,8 +22,8 @@
                         <button type="button"
                                 class="mt-0.5 shrink-0 inline-flex items-center rounded text-current hover:bg-current hover:text-white opacity-70 hover:opacity-100"
                                 data-vani-notification-close
-                                aria-label="{{ __('Đóng') }}"
-                                title="{{ __('Đóng') }}">×</button>
+                                aria-label="{{ __('theme::common.close') }}"
+                                title="{{ __('theme::common.close') }}">×</button>
                     @endif
                 </div>
             </div>

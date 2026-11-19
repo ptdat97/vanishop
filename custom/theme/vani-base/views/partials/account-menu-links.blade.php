@@ -1,4 +1,4 @@
-<nav aria-label="{{ __('Tài khoản') }}" class="space-y-1 text-sm" data-vani-account-menu-links>
+<nav aria-label="{{ __('theme::common.account') }}" class="space-y-1 text-sm" data-vani-account-menu-links>
     {{-- $accountLinks: trang tài khoản của Core, Core dựng sẵn (URL, đang mở) — AccountMenuComposer. --}}
     @foreach ($accountLinks as $link)
         <a href="{{ $link['url'] }}" @class(['block rounded px-3 py-2', 'bg-slate-100 font-semibold' => $link['active']])>{{ $link['label'] }}</a>
@@ -10,6 +10,6 @@
     <x-vani::hook-slot name="vani.storefront.account.menu" />
     <form action="{{ vani_route('storefront.account.logout') }}" method="post" class="pt-2">
         @csrf
-        <button type="submit" class="px-3 py-2 text-slate-500 underline">{{ __('Đăng xuất') }}</button>
+        <button type="submit" class="px-3 py-2 text-slate-500 underline">{{ __('theme::account.sign_out') }}</button>
     </form>
 </nav>

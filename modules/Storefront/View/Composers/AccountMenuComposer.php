@@ -15,7 +15,7 @@ use Modules\Shared\Support\LocalizedUrls;
  */
 final class AccountMenuComposer
 {
-    private const PAGES = ['storefront.account' => 'Tổng quan', 'storefront.account.orders' => 'Đơn hàng', 'storefront.account.addresses' => 'Địa chỉ', 'storefront.account.profile' => 'Hồ sơ'];
+    private const PAGES = ['storefront.account' => 'storefront::labels.account_overview', 'storefront.account.orders' => 'storefront::labels.account_orders', 'storefront.account.addresses' => 'storefront::labels.account_addresses', 'storefront.account.profile' => 'storefront::labels.account_profile'];
 
     public function __construct(
         private readonly Request $request,

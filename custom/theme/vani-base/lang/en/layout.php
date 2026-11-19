@@ -1,0 +1,11 @@
+<?php
+
+return [
+    'contact' => 'Contact',
+    'help' => 'Help',
+    'language' => 'Language',
+    'main_menu' => 'Main menu',
+    'mobile_menu' => 'Mobile menu',
+    'payment_methods' => 'Payment methods',
+    'search_products' => 'Search products',
+];

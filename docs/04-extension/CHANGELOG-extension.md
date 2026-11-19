@@ -4,6 +4,17 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.41 — 2026-11-19 · Extension API 1.10.0 (không đổi)
+
+ADR-049 đợt I3. Không đổi API cho plugin.
+
+### Đổi (theme)
+- Theme `vani-base` dùng khoá `theme::<nhóm>.<khoá>` (252 câu, nhóm `common`, `layout`, `catalog`, `product`, `cart`, `checkout`, `account`, `order`, `js`), file `lang/{vi,en}/<nhóm>.php`. Bỏ `lang/en.json` và việc nạp JSON của theme (`UseActiveTheme`). **Theme con** đang ghi đè chuỗi bằng `lang/<locale>.json` phải chuyển sang `lang/<locale>/<nhóm>.php` với cùng khoá (chỉ khai khoá muốn đổi).
+- Menu tài khoản của Core (`AccountMenuComposer`): nhãn → `storefront::labels.account_{overview,orders,addresses,profile}`.
+
+### Sửa
+- Trang tiếng Việt hiện số sản phẩm bằng tiếng Anh ("1 product", "No products") ở danh mục, thương hiệu, tìm kiếm.
+
 ## 0.5.40 — 2026-11-19 · Extension API 1.10.0 (không đổi)
 
 ADR-049 đợt I2. Không đổi API cho plugin.

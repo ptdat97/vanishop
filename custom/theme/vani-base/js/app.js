@@ -570,7 +570,8 @@ if (cartPage) {
 }
 
 /** Chữ thường, bỏ dấu tiếng Việt (đ → d) — so khớp "phuong ben thanh" với "Phường Bến Thành". */
-const foldVietnamese = (text) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().trim();
+const LETTER_D_STROKE = new RegExp(String.fromCharCode(0x111), 'gi'); // đ/Đ
+const foldVietnamese = (text) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(LETTER_D_STROKE, 'd').toLowerCase().trim();
 
 /** Ô tìm phường/xã (`[data-ward-filter]`) lọc danh sách đang có của select; hiện khi danh sách dài. */
 function mountWardFilter(filter, ward) {

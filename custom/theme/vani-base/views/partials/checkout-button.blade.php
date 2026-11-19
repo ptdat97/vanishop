@@ -5,7 +5,7 @@
     $cart: giỏ (CartPresenter::present) · $class: class của nút.
 --}}
 @if ($cart['checkout_ready'])
-    <a href="{{ vani_route('storefront.checkout') }}" class="{{ $class }}">{{ __('Thanh toán') }}</a>
+    <a href="{{ vani_route('storefront.checkout') }}" class="{{ $class }}">{{ __('theme::checkout.checkout') }}</a>
 @elseif (($cart['payable_line_ids'] ?? []) !== [])
     <form action="{{ vani_route('storefront.cart.select') }}" method="post" class="contents" data-cart-checkout-form>
         @csrf
@@ -13,8 +13,8 @@
         @foreach ($cart['payable_line_ids'] as $lineId)
             <input type="hidden" name="lines[]" value="{{ $lineId }}">
         @endforeach
-        <button type="submit" class="{{ $class }}">{{ __('Thanh toán') }}</button>
+        <button type="submit" class="{{ $class }}">{{ __('theme::checkout.checkout') }}</button>
     </form>
 @else
-    <span class="{{ $class }} cursor-not-allowed opacity-50" aria-disabled="true">{{ __('Thanh toán') }}</span>
+    <span class="{{ $class }} cursor-not-allowed opacity-50" aria-disabled="true">{{ __('theme::checkout.checkout') }}</span>
 @endif

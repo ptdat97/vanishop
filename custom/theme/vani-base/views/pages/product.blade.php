@@ -42,8 +42,8 @@
                     @endforeach
                 </div>
                 @if ($gallery['navigation'])
-                    <button type="button" class="vani-carousel-nav left-2" data-carousel-prev data-js-only aria-label="{{ __('Ảnh trước') }}">‹</button>
-                    <button type="button" class="vani-carousel-nav right-2" data-carousel-next data-js-only aria-label="{{ __('Ảnh sau') }}">›</button>
+                    <button type="button" class="vani-carousel-nav left-2" data-carousel-prev data-js-only aria-label="{{ __('theme::common.previous_image') }}">‹</button>
+                    <button type="button" class="vani-carousel-nav right-2" data-carousel-next data-js-only aria-label="{{ __('theme::common.next_image') }}">›</button>
                 @endif
             </div>
             @if ($gallery['thumbs'] !== [])
@@ -94,7 +94,7 @@
                                 @foreach ($primary['values'] as $value)
                                     <option value="{{ $value['input_value'] }}" data-primary data-option-value="{{ $value['code'] }}" data-images='@json($value['images'])'
                                         @if ($value['price_html']) data-price-html="{{ $value['price_html'] }}" @endif
-                                        @selected($value['checked']) @disabled($value['disabled'])>{{ $value['name'] }}@unless ($value['available']) ({{ __('hết hàng') }})@endunless</option>
+                                        @selected($value['checked']) @disabled($value['disabled'])>{{ $value['name'] }}@unless ($value['available']) ({{ __('theme::product.out_of_stock_lower') }})@endunless</option>
                                 @endforeach
                             </select>
                         @else
@@ -112,7 +112,7 @@
                                             @if ($value['price_html']) data-price-html="{{ $value['price_html'] }}" @endif>
                                         @if (! $swatch)
                                             <span class="font-medium">{{ $value['name'] }}</span>
-                                            @if ($value['low_stock'])<span class="text-[11px] leading-none text-accent no-underline">{{ __('sắp hết') }}</span>@endif
+                                            @if ($value['low_stock'])<span class="text-[11px] leading-none text-accent no-underline">{{ __('theme::product.low_stock') }}</span>@endif
                                         @elseif ($value['hex'])
                                             <span class="block h-8 w-8 rounded-full border border-black/10" style="background: {{ $value['hex'] }}"></span>
                                         @elseif ($value['image_url'])
@@ -123,7 +123,7 @@
                                         @if ($swatch && ! $value['available'])
                                             <span aria-hidden="true" class="pointer-events-none absolute inset-0 m-auto h-px w-9 -rotate-45 bg-slate-500"></span>
                                         @endif
-                                        <span class="sr-only">{{ $value['name'] }}@unless ($value['available']) {{ __('(hết hàng)') }}@endunless</span>
+                                        <span class="sr-only">{{ $value['name'] }}@unless ($value['available']) {{ __('theme::product.out_of_stock_parenthesized') }}@endunless</span>
                                     </label>
                                 @endforeach
                             </div>
@@ -139,8 +139,8 @@
                                         <input type="radio" name="variant_id" value="{{ $variant['id'] }}" class="sr-only" data-images='@json($variant['images'])' @disabled($variant['disabled']) @checked($variant['checked'])
                                             @if ($variant['price_html']) data-price-html="{{ $variant['price_html'] }}" @endif>
                                         <span class="font-medium">{{ $variant['label'] }}</span>
-                                        @if ($variant['availability'] === 'low_stock')<span class="text-[11px] leading-none text-accent no-underline">{{ __('sắp hết') }}</span>@endif
-                                        @if ($variant['availability'] === 'out_of_stock')<span class="sr-only">{{ __('(hết hàng)') }}</span>@endif
+                                        @if ($variant['availability'] === 'low_stock')<span class="text-[11px] leading-none text-accent no-underline">{{ __('theme::product.low_stock') }}</span>@endif
+                                        @if ($variant['availability'] === 'out_of_stock')<span class="sr-only">{{ __('theme::product.out_of_stock_parenthesized') }}</span>@endif
                                     </label>
                                 @endforeach
                             </div>
@@ -151,17 +151,17 @@
                 <p role="alert" class="text-sm text-red-600" data-vani-error-for="variant_id" @unless ($errors->has('variant_id')) hidden @endunless>{{ $errors->first('variant_id') }}</p>
 
                 <div class="flex items-center gap-3">
-                    <label for="quantity" class="text-sm">{{ __('Số lượng') }}</label>
+                    <label for="quantity" class="text-sm">{{ __('theme::common.quantity') }}</label>
                     <input id="quantity" name="quantity" type="number" min="{{ $product['purchase']['min_quantity'] }}" max="{{ $product['purchase']['max_quantity'] }}" value="{{ $product['purchase']['min_quantity'] }}" class="w-20 rounded border border-slate-300 px-2 py-1.5">
                 </div>
                 <x-vani::hook-slot name="vani.storefront.pdp.add_to_cart_fields" :args="[$product]" />
                 <div class="flex gap-3">
                     <button type="submit" class="flex-1 rounded-[var(--radius-theme)] bg-primary px-6 py-3 font-medium text-white disabled:opacity-50" @disabled(! $page['can_buy'])>
-                        {{ $product['in_stock'] ? __('Thêm vào giỏ') : __('Hết hàng') }}
+                        {{ $product['in_stock'] ? __('theme::product.add_to_cart') : __('theme::product.out_of_stock') }}
                     </button>
                     {{-- Mua ngay (§3.8): thêm rồi chỉ thanh toán riêng món này; món khác vẫn ở lại giỏ. --}}
                     @if ($product['in_stock'])
-                        <button type="submit" name="buy_now" value="1" class="flex-1 rounded-[var(--radius-theme)] border border-primary px-6 py-3 font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('Mua ngay') }}</button>
+                        <button type="submit" name="buy_now" value="1" class="flex-1 rounded-[var(--radius-theme)] border border-primary px-6 py-3 font-medium text-primary disabled:opacity-50" @disabled(! $page['can_buy'])>{{ __('theme::product.buy_now') }}</button>
                     @endif
                 </div>
             </form>
@@ -217,7 +217,7 @@
     <section class="mt-12" hidden data-vani-recently-viewed data-style-id="{{ $product['id'] }}"
              data-view-url="{{ route('api.storefront.v1.products.views') }}" data-products-url="{{ route('api.storefront.v1.products.index') }}" data-locale="{{ app()->getLocale() }}"
              data-product-url="{{ vani_route('storefront.product', '__slug__') }}">
-        <h2 class="mb-4 text-lg font-medium">{{ __('Đã xem gần đây') }}</h2>
+        <h2 class="mb-4 text-lg font-medium">{{ __('theme::product.recently_viewed') }}</h2>
         <div class="grid grid-cols-2 gap-6 md:grid-cols-6" data-vani-recently-viewed-list></div>
     </section>
 @endsection

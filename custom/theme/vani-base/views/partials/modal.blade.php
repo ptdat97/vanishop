@@ -14,7 +14,7 @@
             <h2 id="{{ $id }}-title" class="text-lg font-semibold">{{ $title }}</h2>
             <button type="button" class="cursor-pointer px-2 text-2xl leading-none text-slate-500 hover:text-slate-900"
                 data-vani-modal-close
-                aria-label="{{ __('Đóng') }}">×</button>
+                aria-label="{{ __('theme::common.close') }}">×</button>
         </div>
         @include($contentView, $contentData ?? [])
     </div>

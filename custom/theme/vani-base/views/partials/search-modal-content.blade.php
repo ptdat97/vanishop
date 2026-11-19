@@ -10,7 +10,7 @@
         data-locale="{{ app()->getLocale() }}"
     >
         <label for="vani-search-modal-q" class="sr-only">
-            {{ __('Tìm kiếm') }}
+            {{ __('theme::common.search') }}
         </label>
 
         <div class="flex items-center border-b-2 border-slate-200
@@ -20,13 +20,13 @@
                 name="q"
                 type="search"
                 value="{{ $shell['search_query'] ?? '' }}"
-                placeholder="{{ __('Bạn đang tìm kiếm gì?') }}"
+                placeholder="{{ __('theme::catalog.search_prompt') }}"
                 class="min-w-0 flex-1 border-0 bg-transparent px-3 py-4
                        text-base outline-none ring-0 focus:ring-0"
                 autocomplete="off"
             >
 
-            <button type="submit" aria-label="{{ __('Tìm kiếm') }}"
+            <button type="submit" aria-label="{{ __('theme::common.search') }}"
                     class="flex size-10 items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="1.8"
@@ -51,7 +51,7 @@
     @if (($popularSearches ?? []) !== [])
         <section class="mt-8">
             <h3 class="mb-4 text-xs font-semibold uppercase tracking-wider">
-                {{ __('Tìm kiếm phổ biến') }}
+                {{ __('theme::catalog.popular_searches_heading') }}
             </h3>
 
             <div class="flex flex-wrap gap-2">

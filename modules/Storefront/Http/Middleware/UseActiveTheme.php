@@ -8,7 +8,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Vite;
-use Illuminate\Translation\FileLoader;
 use Modules\Extension\Contracts\PluginViews;
 use Modules\Storefront\Application\Theme\Theme;
 use Modules\Storefront\Application\Theme\Themes;
@@ -44,19 +43,10 @@ final class UseActiveTheme
         Vite::flush();
         View::share('themeTokens', $this->themes->tokens());
 
-        // Chuỗi giao diện của theme (`<theme>/lang/<locale>.json`, khoá = câu tiếng Việt): cha trước, con ghi đè.
+        // Chuỗi dịch `theme::` (ADR-049, `<theme>/lang/<locale>/<nhóm>.php`): tính lại chuỗi theme cho request này; đổi theme
+        // thì bỏ các dòng đã nạp.
         $loader = app('translator')->getLoader();
-        // Chuỗi dịch `theme::` (ADR-049): tính lại chuỗi theme cho request này.
-        $added = $loader instanceof ThemeTranslationLoader && $loader->refresh();
-        $loader = $loader instanceof ThemeTranslationLoader ? $loader->inner() : $loader;
-        foreach (array_reverse($chain) as $theme) {
-            $path = "{$theme->path}/lang";
-            if (is_dir($path) && $loader instanceof FileLoader && ! in_array($path, $loader->jsonPaths(), true)) {
-                $loader->addJsonPath($path);
-                $added = true;
-            }
-        }
-        if ($added) {
+        if ($loader instanceof ThemeTranslationLoader && $loader->refresh()) {
             app('translator')->setLoaded([]);
         }
 

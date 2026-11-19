@@ -13,8 +13,9 @@ const VIETNAMESE = 'àáảãạăằắẳẵặâầấẩẫậđèéẻẽ�
 function storefrontViewOwners(): array
 {
     $root = realpath(__DIR__.'/../..');
-    $owners = ["{$root}/custom/theme/vani-base/views" => "{$root}/custom/theme/vani-base/lang"];
-    // Plugin có chuỗi giao diện storefront theo JSON (Resources/lang/en.json) và view.
+    // Theme đã chuyển sang khoá `theme::` (ADR-049, TranslationKeysTest). Còn plugin có chuỗi giao diện theo JSON
+    // (Resources/lang/en.json) — test này bỏ khi plugin chuyển xong (i18n I4).
+    $owners = [];
     foreach (glob("{$root}/custom/plugin/*/Resources/lang/en.json") as $file) {
         if (is_dir(dirname($file, 2).'/views')) {
             $owners[dirname($file, 2).'/views'] = dirname($file);

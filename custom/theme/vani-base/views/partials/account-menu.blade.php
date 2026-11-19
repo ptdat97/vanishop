@@ -1,3 +1,3 @@
-<div data-vani-account-menu-root data-label="{{ __('Điều hướng tài khoản') }}">
+<div data-vani-account-menu-root data-label="{{ __('theme::account.account_navigation') }}">
     @include('theme::partials.account-menu-links')
 </div>
