@@ -30,17 +30,19 @@ Admin chạy cùng domain với storefront, dưới đường dẫn **cấu hìn
 ## 2. RBAC theo phạm vi (Scoped RBAC)
 
 - **Permission**: chuỗi `<resource>.<action>` — `orders.view`, `orders.cancel`, `prices.edit`, `stock.adjust`, `promotions.publish`, `customers.export`, `integration.replay`…
-- **Role**: tập permission, ví dụ:
+- **Role**: tập permission. **Vai trò mẫu cho từng team** (0.5.54 — Admin → Vai trò → Thêm → "Bắt đầu từ vai trò mẫu"; điền sẵn tên, mã, quyền, vẫn chỉnh được). Mỗi quyền tự khai mẫu khi đăng ký (`PermissionRegistry::register($code, $label, presets: [...])`, plugin: `permissions([...], presets)` / `settings([...], presets)`), nên quyền của plugin mới tự vào đúng mẫu:
 
-| Role | Phạm vi | Quyền chính |
+| Mẫu | Quyền chính | Không có |
 |---|---|---|
-| Quản trị | cửa hàng | Toàn quyền |
-| Quản lý ngành hàng | cửa hàng | Catalog (gồm brand), giá, KM, nội dung, báo cáo |
-| Merchandiser | cửa hàng | Catalog, danh mục, nội dung (không giá) |
-| CSKH | cửa hàng | Xem/sửa đơn, đổi trả, khách hàng (không export) |
-| Kế toán | cửa hàng | Thanh toán, đối soát, hoá đơn, báo cáo doanh thu |
-| Nhân viên cửa hàng/kho | Có loại phạm vi `location`; áp dụng theo từng thao tác còn một phần | BOPIS, nhận trả hàng, tra tồn tại location |
-| Integration Operator | cửa hàng | Theo dõi & replay message |
+| Owner (`owner_admin`, hệ thống) | `*` | — |
+| Vận hành đơn (`order_ops`) | Đơn (xem, xác nhận, huỷ, **xuất**), giao hàng, đổi trả, xác nhận thanh toán, điều chỉnh tồn, khách (xem, gộp), **xem liên hệ khách** (`customers.pii`), plugin định tuyến hãng/COD rủi ro | Hoàn tiền, đổi trạng thái ngoài trình tự, cài đặt hệ thống |
+| Marketing (`marketing`) | Khuyến mãi, phân nhóm khách, mẫu tin, báo cáo, xem đơn/khách/sản phẩm/giá, cài đặt plugin Tracking Pixels/Wishlist/Khan hiếm/SMS | Xem liên hệ khách, xuất đơn |
+| Nội dung (`content`) | Sản phẩm, danh mục, ảnh, giao diện cửa hàng, CMS/Lookbook/Bảng size, **Cài đặt: SEO, Giao diện** | Sửa giá, cài đặt khác |
+| Phân tích dữ liệu (`analyst`) | Chỉ `*.view` (đơn, khách, sản phẩm, tồn, giá, khuyến mãi, thanh toán, đổi trả, báo cáo) + xuất đơn | Mọi quyền sửa; liên hệ khách (file xuất bị che) |
+| Nhân viên cửa hàng/kho | Phạm vi `location`; áp dụng theo từng thao tác còn một phần | — |
+
+- **Quyền dữ liệu khách** (0.5.54): `orders.export` tách khỏi `orders.view`; `customers.pii` — không có thì họ tên/SĐT/email/số nhà hiện dạng che (`ContactMask`: "N. T. Lan", "091****678", "l***@…", "***") trên danh sách/chi tiết đơn, file xuất, danh sách/chi tiết/sổ địa chỉ khách; phiếu giao (in) cần `customers.pii`. Tỉnh/phường và số liệu vẫn hiện; tìm theo SĐT vẫn được. Màn hình vận đơn/đổi trả là màn hình thao tác, hiện đủ người nhận cho ai có quyền giao hàng/đổi trả.
+- **Quyền cài đặt** (0.5.54): `settings.manage` = toàn bộ (kể cả ô bí mật); `settings.<nhóm>` (`settings.seo`, `settings.mail`…) chỉ nhóm đó của Cài đặt hệ thống; `settings.plugin.<plugin id>` (plugin tự đăng ký khi khai `settings()`) chỉ plugin đó; ô `secret` (mật khẩu SMTP, khoá API) cần thêm `settings.secrets` — không có thì ô bị khoá. Lưu một lượt có khoá ngoài quyền → 403, không lưu gì.
 
 - **Gán role**: `staff_role_assignments(staff_user_id, role_id, scope_type, scope_id)` với scope `owner` (toàn cửa hàng) hoặc `location`. Permission là mã chuỗi do module/plugin khai báo (`PermissionRegistry`), vai trò lưu trong `role_permissions`; `'*'` = mọi quyền. Brand **không** là phạm vi quyền: muốn giới hạn ai sửa sản phẩm brand nào thì dùng quy trình duyệt, không dùng RBAC.
 - Kiểm tra (**Implemented**, `Authorizer` + `Gate::before`):

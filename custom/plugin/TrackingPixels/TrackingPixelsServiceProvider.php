@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plugin\TrackingPixels;
 
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Ordering\Events\OrderPlaced;
 use Modules\Shared\Domain\Money\Currency;
 use Modules\Shared\Support\StoreLocale;
@@ -30,7 +31,7 @@ final class TrackingPixelsServiceProvider extends PluginServiceProvider
     {
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
         $this->translations($this->pluginPath('Resources/lang'), 'vani-tracking-pixels');
-        $this->settings($this->definitions());
+        $this->settings($this->definitions(), [PermissionRegistry::PRESET_MARKETING]);
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-tracking-pixels');
 
         $this->onSlot('vani.storefront.layout.head', fn (): ?SlotView => $this->tracking()->anyConfigured()

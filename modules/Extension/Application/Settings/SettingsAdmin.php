@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Extension\Application\Settings;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\Extension\Contracts\Extensions;
+use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
@@ -105,10 +108,65 @@ final class SettingsAdmin
                 'is_set' => array_key_exists($definition->key, $explicit),
                 'value' => $secret ? null : ($explicit[$definition->key] ?? null),
                 'effective' => $secret ? null : $this->settings->get($namespace, $definition->key),
+                // Ô bí mật (mật khẩu, khoá API) cần quyền settings.secrets — không có thì hiện khoá, không sửa được.
+                'editable' => ! $secret || $this->canEditSecrets(),
             ];
         }
 
         return $fields;
+    }
+
+    /**
+     * Người đang đăng nhập sửa được cấu hình này: `settings.manage`, hoặc quyền của nhóm (Cài đặt hệ thống) / của plugin.
+     */
+    public function canManage(string $namespace, ?SettingGroup $group = null): bool
+    {
+        if (Gate::allows(SettingPermissions::ALL)) {
+            return true;
+        }
+
+        return $namespace === 'core'
+            ? $group !== null && Gate::allows(SettingPermissions::forGroup($group))
+            : Gate::allows(SettingPermissions::forPlugin($namespace));
+    }
+
+    public function canEditSecrets(): bool
+    {
+        return Gate::any([SettingPermissions::ALL, SettingPermissions::SECRETS]);
+    }
+
+    /** Có ít nhất một nhóm hoặc một plugin sửa được (menu Cài đặt). */
+    public function canOpenAny(): bool
+    {
+        foreach ($this->systemGroups() as $group) {
+            if ($this->canManage('core', $group['group'])) {
+                return true;
+            }
+        }
+
+        return array_filter($this->pluginNamespaces(), fn (string $namespace): bool => $this->canManage($namespace)) !== [];
+    }
+
+    /**
+     * Từng khoá gửi lên phải thuộc nhóm/plugin người dùng sửa được; ô bí mật có giá trị mới cần `settings.secrets`.
+     *
+     * @param  array<string, mixed>  $values
+     *
+     * @throws AuthorizationException
+     */
+    public function authorizeSave(string $namespace, array $values): void
+    {
+        foreach ($this->settings->definitions($namespace) as $definition) {
+            if (! array_key_exists($definition->key, $values)) {
+                continue;
+            }
+            if (! $this->canManage($namespace, $namespace === 'core' ? ($definition->group ?? SettingGroup::Other) : null)) {
+                throw new AuthorizationException;
+            }
+            if ($definition->type === 'secret' && ! in_array($values[$definition->key], [null, ''], true) && ! $this->canEditSecrets()) {
+                throw new AuthorizationException;
+            }
+        }
     }
 
     /**

@@ -34,7 +34,7 @@ beforeEach(function () {
     $this->order = fn () => Order::query()->withoutGlobalScopes()->latest('id')->first();
     $this->reserved = fn () => (int) DB::table('stock_levels')->where('variant_id', $this->s->id)->value('reserved');
     $this->admin = '/admin/orders/orders';
-    $this->staff = fn (array $permissions = ['admin.access', 'orders.view', 'orders.manage', 'orders.cancel', 'payments.view']) => $this->actingAs(T::staff($permissions), 'staff');
+    $this->staff = fn (array $permissions = ['admin.access', 'orders.view', 'orders.manage', 'orders.cancel', 'payments.view', 'customers.pii']) => $this->actingAs(T::staff($permissions), 'staff');
 });
 
 it('OrderReader: khách đã từng đặt đơn (không tính đơn đã huỷ)', function () {

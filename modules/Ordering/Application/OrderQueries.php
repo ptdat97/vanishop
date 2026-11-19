@@ -17,6 +17,7 @@ use Modules\Ordering\Persistence\Models\Order;
 use Modules\Ordering\Persistence\Models\OrderAdjustment;
 use Modules\Ordering\Persistence\Models\OrderLine;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\ContactMask;
 use Modules\Shared\Support\Phones;
 use Modules\Shared\Support\StoreClock;
 
@@ -54,7 +55,7 @@ final class OrderQueries
      * @param  array<string, mixed>  $filters
      * @return list<list<string|int|null>> dòng đầu là tiêu đề
      */
-    public function export(array $filters, string $mode): array
+    public function export(array $filters, string $mode, bool $maskContacts = false): array
     {
         $orderStatus = (array) __('ordering::labels.order_status');
         $paymentStatus = (array) __('ordering::labels.payment_status');
@@ -64,7 +65,7 @@ final class OrderQueries
             : [__('ordering::texts.order_queries.orders'), __('ordering::texts.order_queries.order_date'), __('ordering::texts.order_queries.status'), __('ordering::texts.order_queries.payment'), __('ordering::texts.order_queries.method'), __('ordering::texts.order_queries.source'), __('ordering::texts.order_queries.customers'), __('ordering::texts.order_queries.phone_number'), 'Email', __('ordering::texts.order_queries.province_city'), __('ordering::texts.order_queries.ward'), __('ordering::texts.order_queries.address'), __('ordering::texts.order_queries.subtotal'), __('ordering::texts.order_queries.discount'), __('ordering::texts.order_queries.shipping_fee'), __('ordering::texts.order_queries.total'), __('ordering::texts.order_queries.note')]];
         $this->filtered($filters)->select('orders.*')->with($lines ? 'lines' : [])->orderByDesc('placed_at')->orderByDesc('id')
             ->limit(self::EXPORT_MAX)->get()
-            ->each(function (Order $order) use (&$rows, $lines, $orderStatus, $paymentStatus): void {
+            ->each(function (Order $order) use (&$rows, $lines, $orderStatus, $paymentStatus, $maskContacts): void {
                 $placed = StoreClock::format($order->placed_at);
                 $status = $orderStatus[$order->order_status->value] ?? $order->order_status->value;
                 if ($lines) {
@@ -78,8 +79,10 @@ final class OrderQueries
                 $address = $order->shipping_address;
                 $rows[] = [
                     $order->number, $placed, $status, $paymentStatus[$order->payment_status] ?? $order->payment_status, $order->payment_method, $order->source,
-                    $order->customer_snapshot['full_name'] ?? null, $order->customer_phone, $order->customer_snapshot['email'] ?? null,
-                    $address['province_name'] ?? null, $address['ward_name'] ?? null, $address['street_line'] ?? null,
+                    ...($maskContacts
+                        ? [ContactMask::name($order->customer_snapshot['full_name'] ?? null), ContactMask::phone($order->customer_phone), ContactMask::email($order->customer_snapshot['email'] ?? null)]
+                        : [$order->customer_snapshot['full_name'] ?? null, $order->customer_phone, $order->customer_snapshot['email'] ?? null]),
+                    $address['province_name'] ?? null, $address['ward_name'] ?? null, $maskContacts ? ContactMask::HIDDEN : ($address['street_line'] ?? null),
                     $order->subtotal_amount, $order->discount_amount, $order->shipping_amount, $order->total_amount, $order->note,
                 ];
             });
@@ -179,12 +182,25 @@ final class OrderQueries
             ->when(isset($filters['ids']), fn ($query) => $query->whereIn('id', $filters['ids']));
     }
 
-    public function detail(Order $order, bool $masked = false): OrderDetail
+    /**
+     * @param  bool  $masked  trang tra cứu của khách: che liên hệ, bỏ ghi chú và sự kiện nội bộ
+     * @param  bool  $maskContacts  Admin không có quyền `customers.pii`: chỉ che liên hệ
+     */
+    public function detail(Order $order, bool $masked = false, bool $maskContacts = false): OrderDetail
     {
         $customer = (array) $order->customer_snapshot;
         $address = array_map('strval', (array) $order->shipping_address);
+        if ($maskContacts && ! $masked) {
+            $customer = ['full_name' => ContactMask::name((string) ($customer['full_name'] ?? '')), 'phone' => ContactMask::phone((string) ($customer['phone'] ?? '')), 'email' => ContactMask::email($customer['email'] ?? null)];
+            $address = [...$address, 'street_line' => ContactMask::HIDDEN];
+            foreach (['full_name' => ContactMask::name(...), 'phone' => ContactMask::phone(...)] as $field => $mask) {
+                if (isset($address[$field])) {
+                    $address[$field] = $mask($address[$field]);
+                }
+            }
+        }
         if ($masked) {
-            $customer = ['full_name' => self::maskName((string) ($customer['full_name'] ?? '')), 'phone' => Phones::parse((string) ($customer['phone'] ?? ''))?->masked() ?? '', 'email' => null];
+            $customer = ['full_name' => ContactMask::name((string) ($customer['full_name'] ?? '')), 'phone' => ContactMask::phone((string) ($customer['phone'] ?? '')), 'email' => null];
             $address = ['province_name' => $address['province_name'] ?? '', 'ward_name' => $address['ward_name'] ?? '', 'street_line' => '***'];
         }
 
@@ -244,13 +260,5 @@ final class OrderQueries
                 // Mốc thời gian (giây, UTC) để Admin gộp với sự kiện vận đơn/thanh toán (0.3.96).
                 'ts' => strtotime((string) $event->created_at.' UTC') ?: 0,
             ])->all();
-    }
-
-    private static function maskName(string $name): string
-    {
-        $parts = preg_split('/\s+/u', trim($name)) ?: [];
-        $last = array_pop($parts) ?? '';
-
-        return trim(implode(' ', array_map(fn (string $part): string => mb_substr($part, 0, 1).'.', $parts)).' '.$last);
     }
 }

@@ -15,6 +15,8 @@ export type SettingField = {
     is_set: boolean;
     value: unknown;
     effective: unknown;
+    /** false: ô bí mật, người dùng chưa có quyền settings.secrets. */
+    editable?: boolean;
 };
 
 /** Form cấu hình theo SettingDefinition — dùng ở Admin → Cài đặt và trang cấu hình riêng của plugin. */
@@ -72,9 +74,11 @@ function submit(): void {
                     :type="field.type === 'secret' ? 'password' : field.type === 'int' ? 'number' : 'text'"
                     :class="inputClass"
                     :aria-label="field.label"
+                    :disabled="field.editable === false"
                     :placeholder="field.type === 'secret' ? (field.is_set ? t('extension::admin.settings_form.set_leave_empty_keep') : t('extension::admin.settings_form.not_set')) : t('extension::admin.settings_form.default')"
                     autocomplete="off"
                 />
+                <p v-if="field.editable === false" class="text-xs text-slate-500" data-setting-locked>{{ t('extension::admin.settings_form.secret_needs_permission') }}</p>
                 <p v-if="form.errors[`values.${field.key}`]" class="text-xs text-red-600">{{ form.errors[`values.${field.key}`] }}</p>
             </div>
             <div v-if="field.type !== 'secret'" class="text-xs text-slate-500">

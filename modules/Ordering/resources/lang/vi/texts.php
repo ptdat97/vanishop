@@ -75,8 +75,10 @@ return [
         'complete_order_when_customer_confirms' => 'Hoàn tất đơn khi khách xác nhận đã nhận hàng',
         'confirm_orders_change_addresses_notes' => 'Xác nhận đơn, đổi địa chỉ, ghi chú',
         'customer_clicks_i_ve_received' => 'Bật: khách bấm "Đã nhận hàng" + chọn không đổi trả (hoặc đã quá hạn đổi trả) → đơn hoàn tất ngay thay vì chờ hết hạn đổi trả. Tắt: chỉ ghi nhận.',
+        'export_orders' => 'Xuất danh sách đơn ra Excel',
         'orders' => 'Đơn hàng',
         'sales' => 'Bán hàng',
+        'view_customer_contacts' => 'Xem thông tin liên hệ của khách (họ tên, SĐT, email, địa chỉ) — đơn, khách hàng, file xuất, phiếu giao',
         'view_orders' => 'Xem đơn hàng',
     ],
     'price_breakdown_calculator' => [

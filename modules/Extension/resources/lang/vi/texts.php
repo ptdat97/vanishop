@@ -24,6 +24,18 @@ return [
     'manifest_repository' => [
         'duplicate_id_id' => 'trùng id [:id]',
     ],
+    'permissions' => [
+        'plugin_settings' => 'Sửa cài đặt của plugin :plugin',
+        'settings_appearance' => 'Sửa Cài đặt hệ thống: Giao diện',
+        'settings_inventory' => 'Sửa Cài đặt hệ thống: Kho & giao hàng',
+        'settings_mail' => 'Sửa Cài đặt hệ thống: Email gửi đi',
+        'settings_orders' => 'Sửa Cài đặt hệ thống: Đơn hàng & đổi trả',
+        'settings_other' => 'Sửa Cài đặt hệ thống: Khác',
+        'settings_sales' => 'Sửa Cài đặt hệ thống: Bán hàng & thuế',
+        'settings_secrets' => 'Sửa ô bí mật trong cài đặt (mật khẩu, khoá API)',
+        'settings_seo' => 'Sửa Cài đặt hệ thống: SEO & tìm kiếm',
+        'settings_store' => 'Sửa Cài đặt hệ thống: Cửa hàng',
+    ],
     'plugin_capabilities' => [
         'dependent_id_requires_tag' => ':dependent_id cần [:tag]',
         'tag_type_kind' => ':tag (loại :kind)',

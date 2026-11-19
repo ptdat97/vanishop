@@ -62,8 +62,8 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         $catalog->define(new NotificationType('shipment_shipped', 'notification::texts.notification_service_provider.order_out_delivery', [...$order, 'carrier', 'tracking_number']));
         $catalog->define(new NotificationType('shipment_delivered', 'notification::texts.notification_service_provider.order_delivered', [...$order, 'carrier', 'tracking_number']));
 
-        $permissions->register('notifications.view', 'notification::texts.notification_service_provider.view_message_templates_send_log');
-        $permissions->register('notifications.manage', 'notification::texts.notification_service_provider.edit_message_templates');
+        $permissions->register('notifications.view', 'notification::texts.notification_service_provider.view_message_templates_send_log', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_MARKETING]);
+        $permissions->register('notifications.manage', 'notification::texts.notification_service_provider.edit_message_templates', [PermissionRegistry::PRESET_MARKETING]);
 
         $navigation->add('notifications', 'notification::texts.notification_service_provider.notifications', 'admin.notifications.templates.index', 'notifications.view', 220, group: 'marketing');
 

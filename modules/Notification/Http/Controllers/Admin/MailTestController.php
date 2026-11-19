@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
-use Modules\Identity\Contracts\Data\ScopeRef;
+use Modules\Extension\Contracts\SettingPermissions;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 /**
@@ -20,7 +21,7 @@ final class MailTestController
 {
     public function __invoke(Request $request): RedirectResponse
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
+        abort_unless(Gate::any([SettingPermissions::ALL, SettingPermissions::forGroup(SettingGroup::Mail)]), 403);
         $email = (string) $request->user('staff')?->email;
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             return back()->with('error', __('notification::texts.mail_settings.test_no_email'));

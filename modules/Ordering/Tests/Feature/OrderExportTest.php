@@ -28,7 +28,7 @@ beforeEach(function () {
     };
     $this->first = ($this->place)(2);
     $this->second = ($this->place)(3);
-    $this->actingAs(T::staff(['admin.access', 'orders.view']), 'staff');
+    $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.export', 'customers.pii']), 'staff');
     $this->rows = fn (string $query): array => SimpleXlsx::read($this->get('/admin/orders/orders/export?'.$query)->assertOk()->assertDownload()->getFile()->getPathname());
 });
 

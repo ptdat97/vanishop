@@ -6,6 +6,7 @@ namespace Plugin\CarrierRouting;
 
 use Modules\Extension\PluginServiceProvider;
 use Modules\Fulfillment\Contracts\CarrierAssignment;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Plugin\CarrierRouting\Infrastructure\RoutingRules;
 
 /**
@@ -26,7 +27,7 @@ final class CarrierRoutingServiceProvider extends PluginServiceProvider
         $this->settings([
             ['key' => 'rules', 'label' => 'vani-carrier-routing::texts.carrier_routing_service_provider.carrier_selection_rules', 'type' => 'text',
                 'help' => 'vani-carrier-routing::texts.carrier_routing_service_provider.one_condition_carrier_service_per'],
-        ]);
+        ], [PermissionRegistry::PRESET_ORDER_OPS]);
         $this->contribute(CarrierAssignment::TAG, RoutingRules::class);
     }
 }

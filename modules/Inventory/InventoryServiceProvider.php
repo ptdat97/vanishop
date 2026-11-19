@@ -106,8 +106,8 @@ final class InventoryServiceProvider extends ModuleServiceProvider
             rules: ['min:0', 'max:1000'],
             group: SettingGroup::Inventory,
         ));
-        $permissions->register('inventory.view', 'inventory::texts.inventory_service_provider.view_inventory');
-        $permissions->register('inventory.adjust', 'inventory::texts.inventory_service_provider.adjust_count_inventory');
+        $permissions->register('inventory.view', 'inventory::texts.inventory_service_provider.view_inventory', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_CONTENT, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register('inventory.adjust', 'inventory::texts.inventory_service_provider.adjust_count_inventory', [PermissionRegistry::PRESET_ORDER_OPS]);
         $permissions->register('inventory.locations.manage', 'inventory::texts.inventory_service_provider.edit_main_warehouse_details_create');
 
         $navigation->add('inventory', 'inventory::texts.inventory_service_provider.inventory', 'admin.inventory.home', 'inventory.view', 140, group: 'catalog');

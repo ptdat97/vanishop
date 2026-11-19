@@ -24,6 +24,18 @@ return [
     'manifest_repository' => [
         'duplicate_id_id' => 'duplicate id [:id]',
     ],
+    'permissions' => [
+        'plugin_settings' => 'Edit settings of plugin :plugin',
+        'settings_appearance' => 'Edit system settings: Appearance',
+        'settings_inventory' => 'Edit system settings: Inventory & shipping',
+        'settings_mail' => 'Edit system settings: Outgoing email',
+        'settings_orders' => 'Edit system settings: Orders & returns',
+        'settings_other' => 'Edit system settings: Other',
+        'settings_sales' => 'Edit system settings: Sales & tax',
+        'settings_secrets' => 'Edit secrets in settings (passwords, API keys)',
+        'settings_seo' => 'Edit system settings: SEO & search',
+        'settings_store' => 'Edit system settings: Store',
+    ],
     'plugin_capabilities' => [
         'dependent_id_requires_tag' => ':dependent_id requires [:tag]',
         'tag_type_kind' => ':tag (type :kind)',

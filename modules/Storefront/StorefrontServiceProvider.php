@@ -99,7 +99,7 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     {
         $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
         $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
-        $permissions->register('storefront.manage', 'storefront::texts.storefront_service_provider.edit_storefront_design_home_page');
+        $permissions->register('storefront.manage', 'storefront::texts.storefront_service_provider.edit_storefront_design_home_page', [PermissionRegistry::PRESET_CONTENT]);
         $navigation->group('content', 'storefront::texts.storefront_service_provider.content_design', 590);
         $navigation->add('storefront', 'storefront::texts.storefront_service_provider.storefront_design', 'admin.storefront.home', 'storefront.manage', 600, group: 'content');
 

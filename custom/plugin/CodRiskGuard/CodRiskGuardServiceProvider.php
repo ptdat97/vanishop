@@ -8,6 +8,7 @@ use Modules\Customer\Contracts\CustomerNotes;
 use Modules\Customer\Contracts\CustomerSegments;
 use Modules\Extension\PluginServiceProvider;
 use Modules\Fulfillment\Events\ShipmentStatusChanged;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Ordering\Contracts\Data\OrderData;
 use Modules\Ordering\Contracts\OrderReader;
 use Modules\Ordering\Contracts\OrderRiskSignal;
@@ -36,7 +37,7 @@ final class CodRiskGuardServiceProvider extends PluginServiceProvider
                 'help' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.staff_must_remove_number_from'],
             ['key' => 'returned_threshold', 'label' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.returned_orders_count_high_risk', 'type' => 'int', 'default' => 2, 'rules' => ['min:1', 'max:20']],
             ['key' => 'tag_returned', 'label' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.tag_bom_hang_add_customer', 'type' => 'bool', 'default' => true],
-        ]);
+        ], [PermissionRegistry::PRESET_ORDER_OPS]);
         // EP v3 X6: đơn hoàn về → nhãn khách + ghi chú CSKH (CustomerSegments/CustomerNotes, nguồn system:<plugin>).
         $this->onEvent(ShipmentStatusChanged::class, function (ShipmentStatusChanged $event): void {
             if ($event->to !== 'returned' || ! (bool) $this->app->make(Settings::class)->get(self::ID, 'tag_returned', true)) {

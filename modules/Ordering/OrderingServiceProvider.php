@@ -22,6 +22,7 @@ use Modules\Ordering\Application\OrderReceipt;
 use Modules\Ordering\Application\OrderRiskService;
 use Modules\Ordering\Application\OrderTransitionService;
 use Modules\Ordering\Contracts\CustomerOrders;
+use Modules\Ordering\Contracts\Data\OrderPermissions;
 use Modules\Ordering\Contracts\Data\OrderSettings;
 use Modules\Ordering\Contracts\OrderActions;
 use Modules\Ordering\Contracts\OrderReader;
@@ -64,10 +65,12 @@ final class OrderingServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(OrderDashboardTasks::class)());
-        $permissions->register('orders.view', 'ordering::texts.ordering_service_provider.view_orders');
-        $permissions->register('orders.manage', 'ordering::texts.ordering_service_provider.confirm_orders_change_addresses_notes');
-        $permissions->register('orders.cancel', 'ordering::texts.ordering_service_provider.cancel_order');
+        $permissions->register('orders.view', 'ordering::texts.ordering_service_provider.view_orders', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register('orders.manage', 'ordering::texts.ordering_service_provider.confirm_orders_change_addresses_notes', [PermissionRegistry::PRESET_ORDER_OPS]);
+        $permissions->register('orders.cancel', 'ordering::texts.ordering_service_provider.cancel_order', [PermissionRegistry::PRESET_ORDER_OPS]);
         $permissions->register('orders.override_status', 'ordering::texts.ordering_service_provider.change_order_status_out_sequence');
+        $permissions->register(OrderPermissions::EXPORT, 'ordering::texts.ordering_service_provider.export_orders', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register(OrderPermissions::CUSTOMER_CONTACTS, 'ordering::texts.ordering_service_provider.view_customer_contacts', [PermissionRegistry::PRESET_ORDER_OPS]);
 
         $navigation->group('sales', 'ordering::texts.ordering_service_provider.sales', 45);
         $navigation->add('orders', 'ordering::texts.ordering_service_provider.orders', 'admin.orders.home', 'orders.view', 50, group: 'sales');

@@ -76,7 +76,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
             'core', DiscountCap::SETTING, 'pricing::texts.settings.max_discount_percent', 'int', intdiv((int) config('vanishop.promotion.max_discount_bp', 10_000), 100),
             help: 'pricing::texts.settings.max_discount_percent_help', rules: ['min:1', 'max:100'], group: SettingGroup::Sales,
         ));
-        $permissions->register('pricing.view', 'pricing::texts.pricing_service_provider.view_price_lists');
+        $permissions->register('pricing.view', 'pricing::texts.pricing_service_provider.view_price_lists', [PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_CONTENT, PermissionRegistry::PRESET_ANALYST]);
         $permissions->register('pricing.manage', 'pricing::texts.pricing_service_provider.edit_price_lists_selling_prices');
 
         $navigation->add('pricing', 'pricing::texts.pricing_service_provider.selling_price', 'admin.pricing.home', 'pricing.view', 120, group: 'catalog');

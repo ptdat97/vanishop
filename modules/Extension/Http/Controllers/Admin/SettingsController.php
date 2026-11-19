@@ -6,13 +6,11 @@ namespace Modules\Extension\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Extension\Application\Plugins\ManifestRepository;
 use Modules\Extension\Application\Settings\SettingsAdmin;
 use Modules\Extension\Contracts\SettingActions;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Tenancy\Contracts\Data\SettingGroup;
 
 /**
@@ -29,7 +27,7 @@ final class SettingsController
 
     public function index(): Response
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
+        abort_unless($this->admin->canOpenAny(), 403);
 
         return Inertia::render('Extension::Settings/Index', [
             'system' => array_map(fn (array $group): array => [
@@ -38,19 +36,19 @@ final class SettingsController
                 'labels' => $group['labels'],
                 'count' => $group['count'],
                 'customized' => $group['customized'],
-            ], $this->admin->systemGroups()),
+            ], $this->manageableGroups()),
             'plugins' => array_map(fn (string $namespace): array => [
                 ...$this->pluginLink($namespace),
                 ...$this->admin->summary($namespace),
-            ], $this->admin->pluginNamespaces()),
+            ], $this->manageablePlugins()),
         ]);
     }
 
     /** Một nhóm của Cài đặt hệ thống. */
     public function system(string $group): Response
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
         $current = SettingGroup::tryFrom($group) ?? abort(404);
+        abort_unless($this->admin->canManage('core', $current), 403);
         $fields = $this->admin->form('core', $current);
         abort_if($fields === [], 404);
 
@@ -62,24 +60,24 @@ final class SettingsController
     /** Cấu hình của một plugin. `core` → nhóm đầu tiên của Cài đặt hệ thống. */
     public function show(string $namespace): Response|RedirectResponse
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
         if ($namespace === 'core') {
-            $first = $this->admin->systemGroups()[0]['group'] ?? abort(404);
+            $first = $this->manageableGroups()[0]['group'] ?? abort(403);
 
             return redirect()->route('admin.settings.system', $first->value);
         }
         abort_unless(in_array($namespace, $this->admin->pluginNamespaces(), true), 404);
+        abort_unless($this->admin->canManage($namespace), 403);
 
         return $this->page($namespace, $this->pluginLink($namespace) + ['description' => $namespace], $this->admin->form($namespace), "plugin:{$namespace}");
     }
 
     public function update(Request $request): RedirectResponse
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
         $data = $request->validate([
             'namespace' => ['required', 'string', 'max:64'],
             'values' => ['required', 'array'],
         ]);
+        $this->admin->authorizeSave($data['namespace'], $data['values']);
         $this->admin->save($data['namespace'], $data['values']);
 
         return back()->with('success', __('extension::texts.settings_controller.settings_saved'));
@@ -101,10 +99,28 @@ final class SettingsController
             'active' => $active,
             'actions' => $actions,
             'nav' => [
-                'system' => array_map(fn (array $group): array => $this->groupLink($group['group']), $this->admin->systemGroups()),
-                'plugins' => array_map(fn (string $plugin): array => $this->pluginLink($plugin), $this->admin->pluginNamespaces()),
+                'system' => array_map(fn (array $group): array => $this->groupLink($group['group']), $this->manageableGroups()),
+                'plugins' => array_map(fn (string $plugin): array => $this->pluginLink($plugin), $this->manageablePlugins()),
             ],
         ]);
+    }
+
+    /**
+     * Nhóm Cài đặt hệ thống người dùng sửa được.
+     *
+     * @return list<array{group: SettingGroup, labels: list<string>, count: int, customized: int}>
+     */
+    private function manageableGroups(): array
+    {
+        return array_values(array_filter($this->admin->systemGroups(), fn (array $group): bool => $this->admin->canManage('core', $group['group'])));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function manageablePlugins(): array
+    {
+        return array_values(array_filter($this->admin->pluginNamespaces(), fn (string $namespace): bool => $this->admin->canManage($namespace)));
     }
 
     /**

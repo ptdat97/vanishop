@@ -28,7 +28,7 @@ beforeEach(function () {
 
         return Order::query()->withoutGlobalScopes()->latest('id')->first();
     };
-    $this->staff = fn (array $extra = ['fulfillment.view', 'fulfillment.manage', 'payments.view', 'payments.confirm', 'payments.refund']) => $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.manage', ...$extra]), 'staff');
+    $this->staff = fn (array $extra = ['fulfillment.view', 'fulfillment.manage', 'payments.view', 'payments.confirm', 'payments.refund']) => $this->actingAs(T::staff(['admin.access', 'orders.view', 'orders.manage', 'customers.pii', ...$extra]), 'staff');
     $this->page = fn (Order $order): array => $this->get("/admin/orders/orders/{$order->id}")->assertOk()->viewData('page')['props'];
 });
 

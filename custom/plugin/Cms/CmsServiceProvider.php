@@ -6,6 +6,7 @@ namespace Plugin\Cms;
 
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Support\StoreLocale;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\LinkType;
@@ -48,7 +49,7 @@ final class CmsServiceProvider extends PluginServiceProvider
     {
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
         $this->translations($this->pluginPath('Resources/lang'), 'vani-cms');
-        $this->permissions(['cms.view' => 'vani-cms::texts.cms_service_provider.view_content_pages_posts', 'cms.manage' => 'vani-cms::texts.cms_service_provider.write_publish_delete_content']);
+        $this->permissions(['cms.view' => 'vani-cms::texts.cms_service_provider.view_content_pages_posts', 'cms.manage' => 'vani-cms::texts.cms_service_provider.write_publish_delete_content'], [PermissionRegistry::PRESET_CONTENT]);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-cms');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'trang', 'en' => 'pages'], cacheable: true);
@@ -72,7 +73,7 @@ final class CmsServiceProvider extends PluginServiceProvider
     private function extraContent(): void
     {
         $content = fn (): ExtraContent => $this->app->make(ExtraContent::class);
-        $this->settings($this->extraContentSettings());
+        $this->settings($this->extraContentSettings(), [PermissionRegistry::PRESET_CONTENT]);
         $this->contribute(StorefrontEnricher::TAG, ProductExtrasEnricher::class);
 
         $this->onSlot('vani.storefront.layout.body_start', fn (): ?SlotView => ($announcement = $content()->announcement(app()->getLocale())) === null

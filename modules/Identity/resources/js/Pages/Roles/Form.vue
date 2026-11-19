@@ -6,12 +6,13 @@ import PageHeader from '@admin/Components/PageHeader.vue';
 import { confirmAction } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     baseUrl: string;
     role: null | { id: number; code: string; name: string; is_system: boolean; permissions: string[]; assigned: boolean };
     groups: Array<{ key: string; permissions: Array<{ code: string; label: string }> }>;
+    presets: Array<{ key: string; code: string; name: string; description: string; permissions: string[] }>;
 }>();
 
 const { form, save } = useAdminForm({
@@ -19,6 +20,16 @@ const { form, save } = useAdminForm({
     name: props.role?.name ?? '',
     permissions: [...(props.role?.permissions ?? [])],
 });
+
+// Vai trò mẫu: điền tên, mã và các quyền của mẫu (chỉ quyền đang có trong danh mục).
+const known = computed(() => new Set(props.groups.flatMap((group) => group.permissions.map((permission) => permission.code))));
+const chosenPreset = ref<string | null>(null);
+function applyPreset(preset: { key: string; code: string; name: string; permissions: string[] }): void {
+    chosenPreset.value = preset.key;
+    form.name = preset.name;
+    form.code = preset.code;
+    form.permissions = preset.permissions.filter((code) => known.value.has(code));
+}
 
 function toggleGroup(codes: string[], checked: boolean): void {
     form.permissions = checked ? [...new Set([...form.permissions, ...codes])] : form.permissions.filter((code) => !codes.includes(code));
@@ -47,6 +58,26 @@ const errors = computed(() => usePage().props.errors as Record<string, string>);
         <Link :href="baseUrl" :class="secondaryButton">{{ t('identity::admin.roles_form.back') }}</Link>
     </PageHeader>
 
+
+    <section v-if="!role && presets.length" class="mb-4 max-w-3xl space-y-2" data-role-presets>
+        <h2 class="text-sm font-semibold text-slate-900">{{ t('identity::admin.roles_form.start_from_preset') }}</h2>
+        <p class="text-xs text-slate-500">{{ t('identity::admin.roles_form.preset_hint') }}</p>
+        <div class="grid gap-2 sm:grid-cols-2">
+            <button
+                v-for="preset in presets"
+                :key="preset.key"
+                type="button"
+                :class="['rounded-lg border p-3 text-left text-sm transition', chosenPreset === preset.key ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white hover:border-slate-300']"
+                :aria-pressed="chosenPreset === preset.key"
+                :data-role-preset="preset.key"
+                @click="applyPreset(preset)"
+            >
+                <span class="block font-medium text-slate-900">{{ preset.name }}</span>
+                <span class="mt-1 block text-xs text-slate-500">{{ preset.description }}</span>
+                <span class="mt-1 block text-xs text-slate-400">{{ t('identity::admin.roles_form.preset_count', { count: preset.permissions.filter((code) => known.has(code)).length }) }}</span>
+            </button>
+        </div>
+    </section>
 
     <form class="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="submit">
         <fieldset :disabled="role?.is_system" class="space-y-4">

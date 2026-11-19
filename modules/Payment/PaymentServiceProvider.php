@@ -72,8 +72,8 @@ final class PaymentServiceProvider extends ModuleServiceProvider
             options: ['shipped' => 'payment::texts.settings.capture_on_shipped', 'manual' => 'payment::texts.settings.capture_on_manual'],
             help: 'payment::texts.settings.capture_on_help', group: SettingGroup::Sales,
         ));
-        $permissions->register('payments.view', 'payment::texts.payment_service_provider.view_payments');
-        $permissions->register('payments.confirm', 'payment::texts.payment_service_provider.confirm_money_received_manual_bank');
+        $permissions->register('payments.view', 'payment::texts.payment_service_provider.view_payments', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register('payments.confirm', 'payment::texts.payment_service_provider.confirm_money_received_manual_bank', [PermissionRegistry::PRESET_ORDER_OPS]);
         $permissions->register('payments.refund', 'payment::texts.payment_service_provider.refund');
 
         $navigation->add('payment', 'payment::texts.payment_service_provider.payment', 'admin.payment.home', 'payments.view', 90, group: 'sales');

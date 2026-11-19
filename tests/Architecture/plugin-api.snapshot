@@ -1,4 +1,4 @@
-Extension API 1.14.0
+Extension API 1.15.0
 interface Modules\Cart\Contracts\CartLineOption
   const TAG = 'vani.cart.line_options'
   normalize(int $variantId, array $values): array
@@ -440,6 +440,18 @@ class Modules\Identity\Contracts\Data\ScopeRef
   __construct(Modules\Identity\Domain\ScopeType $type, ?int $id = NULL)
   static owner(): self
   static location(int $locationId): self
+interface Modules\Identity\Contracts\PermissionRegistry
+  const WILDCARD = '*'
+  const PRESET_ORDER_OPS = 'order_ops'
+  const PRESET_MARKETING = 'marketing'
+  const PRESET_CONTENT = 'content'
+  const PRESET_ANALYST = 'analyst'
+  register(string $code, string $description, array $presets = array (
+), array $params = array (
+)): void
+  has(string $code): bool
+  all(): array
+  preset(string $preset): array
 interface Modules\Integration\Contracts\Connector
   const TAG = 'vani.integration.connectors'
   system(): string

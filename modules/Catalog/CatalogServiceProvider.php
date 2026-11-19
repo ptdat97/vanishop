@@ -115,11 +115,11 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         // Không lưu tên class vào cột *_type (đổi namespace không làm hỏng dữ liệu).
         Relation::morphMap(['catalog.category' => Category::class, 'catalog.variant' => Variant::class]);
 
-        $permissions->register('catalog.view', 'Xem catalog');
-        $permissions->register('catalog.manage', 'catalog::texts.catalog_service_provider.edit_catalogue_products_brands_categories');
+        $permissions->register('catalog.view', 'Xem catalog', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_CONTENT, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register('catalog.manage', 'catalog::texts.catalog_service_provider.edit_catalogue_products_brands_categories', [PermissionRegistry::PRESET_CONTENT]);
 
-        $permissions->register('media.view', 'catalog::texts.catalog_service_provider.view_choose_images_from_media');
-        $permissions->register('media.manage', 'catalog::texts.catalog_service_provider.manage_media_library_upload_folders');
+        $permissions->register('media.view', 'catalog::texts.catalog_service_provider.view_choose_images_from_media', [PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_CONTENT]);
+        $permissions->register('media.manage', 'catalog::texts.catalog_service_provider.manage_media_library_upload_folders', [PermissionRegistry::PRESET_CONTENT]);
 
         $navigation->group('catalog', 'catalog::texts.catalog_service_provider.products', 95);
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100, group: 'catalog');

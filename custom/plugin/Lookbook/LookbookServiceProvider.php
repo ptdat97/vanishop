@@ -6,6 +6,7 @@ namespace Plugin\Lookbook;
 
 use Modules\Catalog\Contracts\ImageSizeProvider;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Storefront\Contracts\SitemapProvider;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\Lookbook\Infrastructure\LatestLookbooksBlock;
@@ -28,10 +29,10 @@ final class LookbookServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-lookbook');
-        $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'vani-lookbook::texts.lookbook_service_provider.create_edit_delete_lookbooks']);
+        $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'vani-lookbook::texts.lookbook_service_provider.create_edit_delete_lookbooks'], [PermissionRegistry::PRESET_CONTENT]);
         $this->settings([
             ['key' => 'per_page', 'label' => 'vani-lookbook::texts.lookbook_service_provider.lookbooks_per_page_6_48', 'type' => 'int', 'default' => 12, 'rules' => ['min:6', 'max:48']],
-        ]);
+        ], [PermissionRegistry::PRESET_CONTENT]);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-lookbook');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'lookbook', 'en' => 'lookbook'], cacheable: true);

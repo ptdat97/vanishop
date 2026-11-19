@@ -121,7 +121,7 @@ const props = defineProps<{
     };
     /** Tín hiệu rủi ro của plugin khi đơn còn chờ xác nhận (EP v3 X2). */
     risks: RiskSignal[];
-    customerHistory: { orders: number; delivered: number; returned_to_sender: number; cancelled: number; orders_url: string };
+    customerHistory: { orders: number; delivered: number; returned_to_sender: number; cancelled: number; orders_url: string | null };
     printUrl: string;
     timeline: Array<{ ts: number; at: string; title: string; detail: string | null; source: string | null }>;
     can: {
@@ -484,7 +484,7 @@ function addNote(): void {
                     <div><dt class="text-slate-500">{{ t('ordering::admin.orders_show.returned_sender') }}</dt><dd class="font-semibold" :class="customerHistory.returned_to_sender ? 'text-red-600' : ''">{{ customerHistory.returned_to_sender }}</dd></div>
                     <div><dt class="text-slate-500">{{ t('ordering::admin.orders_show.cancelled') }}</dt><dd class="font-semibold">{{ customerHistory.cancelled }}</dd></div>
                 </dl>
-                <Link v-if="customerHistory.orders" :href="customerHistory.orders_url" class="mt-1 inline-block text-xs text-indigo-600 hover:underline">{{ t('ordering::admin.orders_show.view_phone_number_s_orders') }}</Link>
+                <Link v-if="customerHistory.orders && customerHistory.orders_url" :href="customerHistory.orders_url" class="mt-1 inline-block text-xs text-indigo-600 hover:underline">{{ t('ordering::admin.orders_show.view_phone_number_s_orders') }}</Link>
                 <p v-if="order.note" class="mt-2 rounded bg-amber-50 p-2">{{ t('ordering::admin.orders_show.customer_note_note', { note: order.note }) }}</p>
             </section>
 

@@ -40,6 +40,7 @@ use Modules\Extension\Application\Plugins\PluginStateCache;
 use Modules\Extension\Application\Plugins\RequiredExtensions;
 use Modules\Extension\Application\Plugins\ScopedExtensions;
 use Modules\Extension\Application\Settings\SettingActionRegistry;
+use Modules\Extension\Application\Settings\SettingsAdmin;
 use Modules\Extension\Application\Storefront\AccountPageRegistry;
 use Modules\Extension\Application\Storefront\PluginViewRegistry;
 use Modules\Extension\Application\Storefront\StorefrontPrefixes;
@@ -62,12 +63,14 @@ use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\PluginDirectory;
 use Modules\Extension\Contracts\PluginViews;
 use Modules\Extension\Contracts\SettingActions;
+use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Extension\Domain\Plugin\DependencyResolver;
 use Modules\Extension\Http\Middleware\EnsurePluginActive;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\AuditLogger;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Support\ModuleServiceProvider;
+use Modules\Tenancy\Contracts\Data\SettingGroup;
 use Throwable;
 use TorMorten\Eventy\Events;
 
@@ -164,14 +167,21 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
 
         $permissions->register('extension.plugins.view', 'extension::texts.extension_service_provider.view_plugin_list');
         $permissions->register('extension.plugins.manage', 'extension::texts.extension_service_provider.install_enable_disable_plugins');
-        $permissions->register('settings.manage', 'extension::texts.extension_service_provider.edit_scoped_settings_core_plugins');
+        $permissions->register(SettingPermissions::ALL, 'extension::texts.extension_service_provider.edit_scoped_settings_core_plugins');
+        $permissions->register(SettingPermissions::SECRETS, 'extension::texts.permissions.settings_secrets');
+        // Từng nhóm của Cài đặt hệ thống: SEO và Giao diện thuộc vai trò mẫu Nội dung.
+        foreach (SettingGroup::cases() as $group) {
+            $permissions->register(SettingPermissions::forGroup($group), "extension::texts.permissions.settings_{$group->value}",
+                in_array($group, [SettingGroup::Seo, SettingGroup::Appearance], true) ? [PermissionRegistry::PRESET_CONTENT] : []);
+        }
 
         $navigation = $this->app->make(AdminNavigation::class);
         $navigation->group('system', 'extension::texts.extension_service_provider.system', 800);
         $navigation->add('dashboard', 'extension::texts.extension_service_provider.overview', 'admin.dashboard', 'admin.access', 0);
         $navigation->add('reports', 'extension::texts.extension_service_provider.reports', 'admin.reports.index', 'admin.access', 500, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);
         $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 810);
-        $navigation->add('settings', 'extension::texts.extension_service_provider.settings', 'admin.settings.index', 'settings.manage', 840, group: 'system');
+        // Hiện khi có quyền sửa ít nhất một nhóm cài đặt hoặc một plugin.
+        $navigation->add('settings', 'extension::texts.extension_service_provider.settings', 'admin.settings.index', 'admin.access', 840, when: fn (): bool => $this->app->make(SettingsAdmin::class)->canOpenAny(), group: 'system');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
         $this->bootModuleResources();

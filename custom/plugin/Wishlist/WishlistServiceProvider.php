@@ -7,6 +7,7 @@ namespace Plugin\Wishlist;
 use Modules\Customer\Events\CustomerAnonymized;
 use Modules\Customer\Events\CustomerMerged;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Inventory\Events\AvailabilityChanged;
 use Modules\Notification\Contracts\Data\NotificationType;
 use Modules\Notification\Contracts\NotificationCatalog;
@@ -34,7 +35,7 @@ final class WishlistServiceProvider extends PluginServiceProvider
         $this->settings([
             ['key' => 'notify_back_in_stock', 'label' => 'vani-wishlist::texts.wishlist_service_provider.notify_customers_when_wishlisted_product', 'type' => 'bool', 'default' => false, 'help' => 'vani-wishlist::texts.wishlist_service_provider.marketing_message_only_sent_customers'],
             ['key' => 'notify_price_drop', 'label' => 'vani-wishlist::texts.wishlist_service_provider.notify_customers_when_wishlisted_product_2', 'type' => 'bool', 'default' => false, 'help' => 'vani-wishlist::texts.wishlist_service_provider.compared_price_when_added_last'],
-        ]);
+        ], [PermissionRegistry::PRESET_MARKETING]);
 
         $variables = ['customer_name', 'product_name', 'product_url', 'price'];
         $catalog = $this->app->make(NotificationCatalog::class);

@@ -45,9 +45,12 @@ return [
         'full_access_every_current_permission' => 'Toàn quyền (mọi quyền hiện có và quyền plugin thêm sau).',
         'lowercase_letters_digits_example_kho' => 'Chữ thường, số, _. Ví dụ: kho_hcm',
         'name' => 'Tên',
+        'preset_count' => ':count quyền',
+        'preset_hint' => 'Chọn một mẫu để điền sẵn tên và quyền, rồi chỉnh thêm nếu cần trước khi lưu.',
         'role_assigned' => 'Vai trò đang được gán',
         'role_name' => 'Vai trò: :name',
         'save' => 'Lưu',
+        'start_from_preset' => 'Bắt đầu từ vai trò mẫu',
         'system_role_cannot_edited' => 'Vai trò hệ thống — không sửa được.',
     ],
     'roles_index' => [

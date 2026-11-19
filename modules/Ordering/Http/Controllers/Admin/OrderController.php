@@ -27,6 +27,7 @@ use Modules\Ordering\Application\OrderStatusChanger;
 use Modules\Ordering\Contracts\ConfirmationChannel;
 use Modules\Ordering\Contracts\Data\LineCancellationCause;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Ordering\Contracts\Data\OrderPermissions;
 use Modules\Ordering\Contracts\Data\OrderStatus;
 use Modules\Ordering\Contracts\Data\OrderStatusActionView;
 use Modules\Ordering\Contracts\Data\RiskSignal;
@@ -46,6 +47,7 @@ use Modules\Shared\Contracts\ShippingAddresses;
 use Modules\Shared\Domain\BusinessRuleViolation;
 use Modules\Shared\Http\ListSort;
 use Modules\Shared\Support\Code128;
+use Modules\Shared\Support\ContactMask;
 use Modules\Shared\Support\ExternalCalls;
 use Modules\Shared\Support\MoneyFormatter;
 use Modules\Shared\Support\SimpleXlsx;
@@ -70,12 +72,14 @@ final class OrderController
      */
     public function export(Request $request, OrderQueries $queries, AdminScreen $screen, AuditLogger $audit): BinaryFileResponse
     {
-        Gate::authorize('orders.view');
+        Gate::authorize('orders.export');
         $mode = $request->validate(['mode' => ['sometimes', Rule::in(['orders', 'lines'])]])['mode'] ?? 'orders';
         $keys = ['stage', 'aged', 'actionable', 'status', 'payment_status', 'payment_method', 'source', 'from', 'to', 'q'];
         $filters = array_map(fn (mixed $value): string => is_scalar($value) ? (string) $value : '', array_replace(array_fill_keys($keys, ''), $request->only($keys)));
-        $rows = $queries->export([...$filters, 'ids' => $screen->filterIds('order', (array) $request->query('ext', []))], $mode);
-        $audit->record('orders.exported', 'order', null, ['mode' => $mode, 'rows' => count($rows) - 1, 'filters' => array_filter($filters)]);
+        // Không có quyền xem liên hệ: cột tên/SĐT/email/địa chỉ bị che (file vẫn đủ số liệu cho phân tích).
+        $contacts = Gate::allows(OrderPermissions::CUSTOMER_CONTACTS);
+        $rows = $queries->export([...$filters, 'ids' => $screen->filterIds('order', (array) $request->query('ext', []))], $mode, maskContacts: ! $contacts);
+        $audit->record('orders.exported', 'order', null, ['mode' => $mode, 'rows' => count($rows) - 1, 'filters' => array_filter($filters), 'contacts' => $contacts]);
 
         $path = tempnam(sys_get_temp_dir(), 'vani-orders-').'.xlsx';
         SimpleXlsx::write($path, $rows, $mode === 'lines' ? 'Dong don' : 'Don hang');
@@ -98,6 +102,7 @@ final class OrderController
         $extensionFilters = (array) $request->query('ext', []);
         $scoped = [...$filters, 'ids' => $screen->filterIds('order', $extensionFilters)];
         $sort = ListSort::fromRequest($request, ['number' => 'orders.placed_at', 'total' => 'orders.total_amount']);
+        $contacts = Gate::allows(OrderPermissions::CUSTOMER_CONTACTS);
         $page = $queries->search($scoped, $perPage, $sort);
         $ids = collect($page->items())->pluck('id')->all();
 
@@ -136,7 +141,7 @@ final class OrderController
 
         return Inertia::render('Ordering::Orders/Index', [
             'baseUrl' => route('admin.orders.orders.index'),
-            'exportUrl' => route('admin.orders.orders.export'),
+            'exportUrl' => Gate::allows('orders.export') ? route('admin.orders.orders.export') : null,
             // Tạo đơn trong Admin (A8, module Checkout).
             'createUrl' => Gate::allows('orders.manage') && Route::has('admin.orders.new') ? route('admin.orders.new') : null,
             'filters' => $filters,
@@ -150,7 +155,7 @@ final class OrderController
             'labels' => [...__('ordering::labels'), 'payment_method' => $this->paymentMethodLabels()],
             // Chốt ① (ADR-046): đơn "Cần xác nhận" kèm lịch sử nhận hàng theo SĐT (đơn khác của SĐT) để xác nhận hàng loạt
             // mà không mở từng đơn.
-            'orders' => collect($page->items())->map(fn (Order $order): array => [
+            'orders' => collect($page->items())->map(fn (Order $order): array => $this->maskRow($contacts, [
                 'id' => $order->id,
                 'number' => $order->number,
                 'placed_at' => StoreClock::format($order->placed_at),
@@ -171,7 +176,7 @@ final class OrderController
                 'history' => $order->getAttribute('stage') === 'to_confirm' && isset($histories[(string) $order->customer_phone])
                     ? [...$histories[(string) $order->customer_phone], 'orders' => $histories[(string) $order->customer_phone]['orders'] - 1]
                     : null,
-            ])->all(),
+            ]))->all(),
             'pagination' => ['current' => $page->currentPage(), 'last' => $page->lastPage(), 'from' => $page->firstItem(), 'to' => $page->lastItem(), 'total' => $page->total(), 'per_page' => $page->perPage()],
             'extensions' => [
                 ...$extensionColumns,
@@ -186,7 +191,8 @@ final class OrderController
     public function show(Order $order, Request $request, OrderQueries $queries, AdminScreen $screen, ShippingAddresses $addresses, OrderReader $reader, OrderStatusChanger $changer): Response
     {
         Gate::authorize('orders.view');
-        $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']));
+        $contacts = Gate::allows(OrderPermissions::CUSTOMER_CONTACTS);
+        $detail = $queries->detail($order->loadMissing(['lines', 'adjustments']), maskContacts: ! $contacts);
         $canManage = Gate::allows('orders.manage');
 
         return Inertia::render('Ordering::Orders/Show', [
@@ -211,7 +217,7 @@ final class OrderController
             'risks' => OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)
                 ? array_map(fn (RiskSignal $signal): array => $signal->toArray(), app(OrderRisks::class)->forOrders([$order->id])[$order->id] ?? [])
                 : [],
-            'customerHistory' => [...$reader->deliveryHistory($detail->customer['phone'], $order->id), 'orders_url' => route('admin.orders.orders.index', ['q' => $detail->customer['phone']])],
+            'customerHistory' => [...$reader->deliveryHistory((string) $order->customer_phone, $order->id), 'orders_url' => $contacts ? route('admin.orders.orders.index', ['q' => $detail->customer['phone']]) : null],
             'printUrl' => route('admin.orders.orders.print', ['ids' => [$order->id]]),
             'can' => [
                 'confirm' => $canManage && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed),
@@ -398,6 +404,17 @@ final class OrderController
     }
 
     /**
+     * Dòng danh sách đơn khi không có quyền xem liên hệ: che tên, SĐT (tỉnh/thành vẫn hiện).
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<string, mixed>
+     */
+    private function maskRow(bool $contacts, array $row): array
+    {
+        return $contacts ? $row : [...$row, 'customer' => ContactMask::name((string) $row['customer']), 'phone' => ContactMask::phone((string) $row['phone'])];
+    }
+
+    /**
      * Sự kiện do module khác góp (slot vani.admin.order.timeline), sắp theo thời gian; Vue gộp với lịch sử của đơn.
      *
      * @return list<array{ts: int, at: string, title: string, detail: string|null, source: string|null}>
@@ -463,7 +480,9 @@ final class OrderController
      */
     public function print(Request $request, MoneyFormatter $money): View
     {
+        // Phiếu giao in đủ người nhận, SĐT, địa chỉ.
         Gate::authorize('orders.view');
+        Gate::authorize(OrderPermissions::CUSTOMER_CONTACTS);
         $ids = array_values(array_unique(array_map('intval', (array) $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:200'], 'ids.*' => ['integer', 'min:1'],
         ])['ids'])));

@@ -95,10 +95,10 @@ final class CustomerServiceProvider extends ModuleServiceProvider
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, Router $router): void
     {
-        $permissions->register('customers.view', 'customer::texts.customer_service_provider.view_customers_owner_level');
-        $permissions->register('customers.merge', 'customer::texts.customer_service_provider.merge_duplicate_customers');
+        $permissions->register('customers.view', 'customer::texts.customer_service_provider.view_customers_owner_level', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register('customers.merge', 'customer::texts.customer_service_provider.merge_duplicate_customers', [PermissionRegistry::PRESET_ORDER_OPS]);
         $permissions->register('customers.anonymize', 'customer::texts.customer_service_provider.anonymise_customers_deletion_requests');
-        $permissions->register('customers.segment', 'customer::texts.customer_service_provider.manage_customer_groups_assign_groups');
+        $permissions->register('customers.segment', 'customer::texts.customer_service_provider.manage_customer_groups_assign_groups', [PermissionRegistry::PRESET_MARKETING]);
 
         $navigation->add('customers', 'customer::texts.customer_service_provider.customers', 'admin.customers.index', 'customers.view', 110);
 

@@ -16,7 +16,6 @@ use Modules\Extension\Application\Plugins\PluginOperationFailed;
 use Modules\Extension\Application\Plugins\PluginOverview;
 use Modules\Extension\Application\Settings\SettingsAdmin;
 use Modules\Extension\Domain\Plugin\PluginManifest;
-use Modules\Identity\Contracts\Data\ScopeRef;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -38,7 +37,7 @@ final class PluginController
         ]);
     }
 
-    public function show(string $plugin, PluginOverview $overview): Response
+    public function show(string $plugin, PluginOverview $overview, SettingsAdmin $settings): Response
     {
         Gate::authorize('extension.plugins.view');
         $detail = $overview->detail($plugin, app()->getLocale());
@@ -49,7 +48,7 @@ final class PluginController
             'labels' => __('extension::labels'),
             'plugin' => $detail,
             'canManage' => Gate::allows('extension.plugins.manage'),
-            'canConfigure' => Gate::allows('settings.manage', [ScopeRef::owner()]),
+            'canConfigure' => $settings->canManage($plugin),
         ]);
     }
 
@@ -123,9 +122,9 @@ final class PluginController
 
     public function settings(string $plugin, SettingsAdmin $admin, ManifestRepository $manifests): Response
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
         $manifest = $manifests->find($plugin);
         abort_if($manifest === null || ! in_array($plugin, $admin->namespaces(), true), 404);
+        abort_unless($admin->canManage($plugin), 403);
 
         return Inertia::render('Extension::Plugins/Settings', [
             'baseUrl' => route('admin.plugins.index'),
@@ -136,9 +135,10 @@ final class PluginController
 
     public function updateSettings(string $plugin, Request $request, SettingsAdmin $admin): RedirectResponse
     {
-        Gate::authorize('settings.manage', [ScopeRef::owner()]);
         abort_unless(in_array($plugin, $admin->namespaces(), true), 404);
-        $admin->save($plugin, (array) $request->validate(['values' => ['required', 'array']])['values']);
+        $values = (array) $request->validate(['values' => ['required', 'array']])['values'];
+        $admin->authorizeSave($plugin, $values);
+        $admin->save($plugin, $values);
 
         return back()->with('success', __('extension::texts.plugin_controller.settings_saved'));
     }

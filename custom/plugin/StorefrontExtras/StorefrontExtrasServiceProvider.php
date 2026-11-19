@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plugin\StorefrontExtras;
 
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontBlock;
 use Plugin\StorefrontExtras\Infrastructure\Blocks\BannerGridBlock;
@@ -35,7 +36,7 @@ final class StorefrontExtrasServiceProvider extends PluginServiceProvider
         $this->settings([
             ['key' => 'recent_on_cart', 'label' => 'vani-storefront-extras::texts.storefront_extras_service_provider.recently_viewed_bar_cart_page', 'type' => 'bool', 'default' => true],
             ['key' => 'recent_on_cart_limit', 'label' => 'vani-storefront-extras::texts.storefront_extras_service_provider.products_cart_recently_viewed_bar', 'type' => 'int', 'default' => 12, 'rules' => ['min:1', 'max:20']],
-        ]);
+        ], [PermissionRegistry::PRESET_CONTENT]);
 
         foreach ([BestsellersBlock::class, RecentlyViewedBlock::class, VideoHeroBlock::class, SlideshowBlock::class, BannerGridBlock::class, ProductTabsBlock::class, FeaturesBlock::class, MarkdownBlock::class] as $block) {
             $this->contribute(StorefrontBlock::TAG, $block);

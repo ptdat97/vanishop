@@ -21,6 +21,7 @@ use Modules\Extension\Contracts\AccountPages;
 use Modules\Extension\Contracts\Data\FieldDefinition;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\Contracts\PluginViews;
+use Modules\Extension\Contracts\SettingPermissions;
 use Modules\Identity\Contracts\AdminNavigation;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Shared\Http\SessionlessRoutes;
@@ -110,10 +111,15 @@ abstract class PluginServiceProvider extends ServiceProvider
      *
      * Giá trị theo ngôn ngữ: khai một khoá cho mỗi ngôn ngữ cửa hàng, vd. `message.vi`, `message.en` (`StoreLocale::supported()`).
      *
+     * Quyền sửa cấu hình của plugin: `settings.plugin.<plugin id>` (tự đăng ký; `settings.manage` bao trùm), `$presets` =
+     * vai trò mẫu được sửa (vd. Tracking Pixels → `marketing`). Ô `secret` cần thêm `settings.secrets`.
+     *
      * @param  list<array{key: string, label: string, type?: string, default?: mixed, options?: array<string, string>, help?: string, rules?: list<mixed>}>  $definitions
+     * @param  list<string>  $presets
      */
-    protected function settings(array $definitions): void
+    protected function settings(array $definitions, array $presets = []): void
     {
+        $this->app->make(PermissionRegistry::class)->register(SettingPermissions::forPlugin($this->pluginId()), 'extension::texts.permissions.plugin_settings', $presets, ['plugin' => $this->pluginId()]);
         $settings = $this->app->make(Settings::class);
         foreach ($definitions as $definition) {
             $settings->define(new SettingDefinition(
@@ -226,14 +232,15 @@ abstract class PluginServiceProvider extends ServiceProvider
     }
 
     /**
-     * @param  array<string, string>  $permissions  code => mô tả
+     * @param  array<string, string>  $permissions  code => mô tả (khoá dịch)
+     * @param  list<string>  $presets  vai trò mẫu có các quyền này (PermissionRegistry::PRESET_*), vd. quyền nội dung → `content`
      */
-    protected function permissions(array $permissions): void
+    protected function permissions(array $permissions, array $presets = []): void
     {
         $registry = $this->app->make(PermissionRegistry::class);
 
         foreach ($permissions as $code => $description) {
-            $registry->register($code, $description);
+            $registry->register($code, $description, $presets);
         }
     }
 

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Modules\Checkout\Tests\Feature\CheckoutTestHelpers as C;
 use Modules\Extension\Application\Plugins\PluginManager;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Persistence\Models\StaffUser;
 use Modules\Ordering\Persistence\Models\Order;
 use Modules\Shared\Context\ContextScope;
@@ -124,4 +125,14 @@ it('cấu hình: mã sai định dạng bị từ chối', function () {
 
     $this->put('/admin/settings', ['namespace' => TrackingPixelsServiceProvider::ID, 'values' => ['ga4_measurement_id' => 'UA-123']])->assertSessionHasErrors('values.ga4_measurement_id');
     $this->put('/admin/settings', ['namespace' => TrackingPixelsServiceProvider::ID, 'values' => ['ga4_measurement_id' => 'G-ABCD1234']])->assertSessionHasNoErrors();
+});
+
+it('quyền cài đặt riêng của plugin (settings.plugin.vani.tracking-pixels) thuộc vai trò mẫu Marketing; có quyền này là sửa được', function () {
+    $permission = 'settings.plugin.'.TrackingPixelsServiceProvider::ID;
+    expect(app(PermissionRegistry::class)->preset(PermissionRegistry::PRESET_MARKETING))->toContain($permission)
+        ->and(app(PermissionRegistry::class)->preset(PermissionRegistry::PRESET_CONTENT))->not->toContain($permission);
+
+    $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', $permission])->create(), 'staff');
+    $this->put('/admin/settings', ['namespace' => TrackingPixelsServiceProvider::ID, 'values' => ['ga4_measurement_id' => 'G-ABCD1234']])->assertSessionHasNoErrors();
+    $this->put('/admin/settings', ['namespace' => 'core', 'values' => ['tax.calculator' => 'zero_tax']])->assertForbidden();
 });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plugin\ScarcitySignals;
 
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Storefront\Contracts\Data\SlotView;
 use Modules\Storefront\Contracts\StorefrontEnricher;
 use Plugin\ScarcitySignals\Infrastructure\CardSignalsEnricher;
@@ -36,7 +37,7 @@ final class ScarcitySignalsServiceProvider extends PluginServiceProvider
             ['key' => 'sold_window_days', 'label' => 'vani-scarcity-signals::texts.scarcity_signals_service_provider.statistics_window_days_1_90', 'type' => 'int', 'default' => 7, 'rules' => ['min:1', 'max:90']],
             ['key' => 'sold_min_to_show', 'label' => 'vani-scarcity-signals::texts.scarcity_signals_service_provider.only_show_sold_from_1', 'type' => 'int', 'default' => 3, 'rules' => ['min:1', 'max:1000'],
                 'help' => 'vani-scarcity-signals::texts.scarcity_signals_service_provider.sold_1_counter_evidence_almost'],
-        ]);
+        ], [PermissionRegistry::PRESET_MARKETING]);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-scarcity');
         $this->contribute(StorefrontEnricher::TAG, ProductSignalsEnricher::class);

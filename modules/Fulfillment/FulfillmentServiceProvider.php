@@ -97,8 +97,8 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
             group: SettingGroup::Inventory,
         ));
         FulfillmentSettings::define($this->app->make(Settings::class));
-        $permissions->register('fulfillment.view', 'fulfillment::texts.fulfillment_service_provider.view_shipments');
-        $permissions->register('fulfillment.manage', 'fulfillment::texts.fulfillment_service_provider.create_update_cancel_shipments');
+        $permissions->register('fulfillment.view', 'fulfillment::texts.fulfillment_service_provider.view_shipments', [PermissionRegistry::PRESET_ORDER_OPS]);
+        $permissions->register('fulfillment.manage', 'fulfillment::texts.fulfillment_service_provider.create_update_cancel_shipments', [PermissionRegistry::PRESET_ORDER_OPS]);
 
         // SME trước (vision §2.1, ADR-043): việc giao hàng hằng ngày làm trên danh sách đơn + trang đơn; trang vận đơn riêng
         // chỉ lên menu khi cửa hàng có hãng kết nối API hoặc nhiều kho — vẫn mở được từ link trên trang đơn.

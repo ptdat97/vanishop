@@ -25,7 +25,7 @@ type Filters = { stage: string; aged: string; actionable: string; status: string
 
 const props = defineProps<{
     baseUrl: string;
-    exportUrl: string;
+    exportUrl: string | null;
     createUrl: string | null;
     filters: Filters;
     sort: ListSortState | null;
@@ -121,7 +121,7 @@ function exportHref(mode: 'orders' | 'lines'): string {
     query.delete('page');
     query.delete('per_page');
     query.set('mode', mode);
-    return `${props.exportUrl}?${query}`;
+    return `${props.exportUrl ?? ''}?${query}`;
 }
 
 function search(page = 1, pageSize = props.pagination.per_page, sort = props.sort): void {
@@ -186,8 +186,8 @@ function ageClass(row: { age_hours: number | null; stage: string }): string {
     <Head :title="t('ordering::admin.orders_index.orders')" />
     <p class="mb-2 text-sm text-slate-500">{{ t('ordering::admin.orders_index.orders') }}</p>
     <PageHeader :title="t('ordering::admin.orders_index.orders')" :subtitle="t('ordering::admin.orders_index.total_orders', { total: pagination.total })">
-        <a :href="exportHref('orders')" :class="secondaryButton" data-export="orders">{{ t('ordering::admin.orders_index.export_excel') }}</a>
-        <a :href="exportHref('lines')" :class="secondaryButton" data-export="lines">{{ t('ordering::admin.orders_index.export_sku_line') }}</a>
+        <a v-if="exportUrl" :href="exportHref('orders')" :class="secondaryButton" data-export="orders">{{ t('ordering::admin.orders_index.export_excel') }}</a>
+        <a v-if="exportUrl" :href="exportHref('lines')" :class="secondaryButton" data-export="lines">{{ t('ordering::admin.orders_index.export_sku_line') }}</a>
         <Link v-if="createUrl" :href="createUrl" :class="primaryButton" data-create-order>{{ t('ordering::admin.orders_index.create_order') }}</Link>
         <button v-for="tool in tools" :key="tool.key" type="button" :class="secondaryButton" :aria-expanded="openTool === tool.key" @click="toggleTool(tool.key)">
             {{ tool.label }}

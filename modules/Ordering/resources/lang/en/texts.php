@@ -75,8 +75,10 @@ return [
         'complete_order_when_customer_confirms' => 'Complete the order when the customer confirms receipt',
         'confirm_orders_change_addresses_notes' => 'Confirm orders, change addresses, notes',
         'customer_clicks_i_ve_received' => 'On: the customer clicks "I\'ve received it" + chooses no return (or the return period has passed) → the order completes immediately instead of waiting for the return period. Off: only recorded.',
+        'export_orders' => 'Export orders to Excel',
         'orders' => 'Orders',
         'sales' => 'Sales',
+        'view_customer_contacts' => 'View customer contact details (name, phone, email, address) — orders, customers, exports, packing slips',
         'view_orders' => 'View orders',
     ],
     'price_breakdown_calculator' => [

@@ -25,7 +25,9 @@ use Modules\Extension\Contracts\AdminScreen;
 use Modules\Identity\Contracts\Data\ScopeRef;
 use Modules\Ordering\Contracts\CustomerOrders;
 use Modules\Ordering\Contracts\Data\OrderDetail;
+use Modules\Ordering\Contracts\Data\OrderPermissions;
 use Modules\Shared\Http\ListSort;
+use Modules\Shared\Support\ContactMask;
 use Modules\Shared\Support\StoreClock;
 
 /**
@@ -102,7 +104,9 @@ final class CustomerController
             'segment' => ['customer_group_id' => $model->customer_group_id, 'tags' => $segments->tagsOf($model->id), 'groups' => $segments->groups()],
             // Ghi chú CSKH (nhân viên + plugin, EP v3 X6).
             'notes' => app(CustomerNotes::class)->latest($model->id),
-            'addresses' => $addresses->all($model->id),
+            'addresses' => Gate::allows(OrderPermissions::CUSTOMER_CONTACTS) ? $addresses->all($model->id) : array_map(fn (array $address): array => [
+                ...$address, 'full_name' => ContactMask::name($address['full_name']), 'phone' => ContactMask::phone($address['phone']), 'street_line' => ContactMask::HIDDEN,
+            ], $addresses->all($model->id)),
             'consents' => $consents->all($model->id),
             'stats' => $stats->of($model),
             'orders' => array_map(fn (OrderDetail $order): array => [
@@ -160,8 +164,15 @@ final class CustomerController
      */
     private function row(Customer $customer): array
     {
+        // Không có quyền xem liên hệ (customers.pii): tên, SĐT, email dạng che.
+        $contacts = Gate::allows(OrderPermissions::CUSTOMER_CONTACTS);
+
         return [
-            'id' => $customer->public_id, 'ref' => $customer->id, 'phone' => $customer->phone, 'email' => $customer->email, 'full_name' => $customer->full_name,
+            'id' => $customer->public_id, 'ref' => $customer->id,
+            'phone' => $contacts ? $customer->phone : ContactMask::phone($customer->phone),
+            'email' => $contacts ? $customer->email : ContactMask::email($customer->email),
+            'full_name' => $contacts ? $customer->full_name : ContactMask::name($customer->full_name),
+            'contacts_masked' => ! $contacts,
             'status' => $customer->status->value, 'registered' => $customer->isRegistered(),
             'created_at' => StoreClock::format($customer->created_at),
         ];

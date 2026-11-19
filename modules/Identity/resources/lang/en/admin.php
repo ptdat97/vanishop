@@ -45,9 +45,12 @@ return [
         'full_access_every_current_permission' => 'Full access (every current permission and permissions plugins add later).',
         'lowercase_letters_digits_example_kho' => 'Lowercase letters, digits, _. For example: kho_hcm',
         'name' => 'Name',
+        'preset_count' => ':count permissions',
+        'preset_hint' => 'Pick a preset to prefill the name and permissions, then adjust before saving.',
         'role_assigned' => 'The role is assigned',
         'role_name' => 'Role: :name',
         'save' => 'Save',
+        'start_from_preset' => 'Start from a preset',
         'system_role_cannot_edited' => 'System role — cannot be edited.',
     ],
     'roles_index' => [

@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Identity\Application\AdminQueries;
 use Modules\Identity\Application\RoleAdministration;
+use Modules\Identity\Application\RolePresets;
 use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Identity\Http\Requests\RoleRequest;
 use Modules\Identity\Persistence\Models\Role;
@@ -89,6 +90,8 @@ final class RoleController
                 'assigned' => $role->assignments()->exists(),
             ],
             'groups' => array_map(fn (string $group, array $permissions): array => ['key' => $group, 'permissions' => $permissions], array_keys($groups), array_values($groups)),
+            // Vai trò mẫu cho từng team — chỉ khi thêm mới; chọn mẫu điền sẵn tên, mã, quyền (vẫn chỉnh được trước khi lưu).
+            'presets' => $role === null ? app(RolePresets::class)->all() : [],
         ]);
     }
 

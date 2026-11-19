@@ -4,6 +4,19 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.54 — 2026-11-19 · Extension API 1.15.0
+
+Phân quyền cho nhiều team (vận hành đơn, marketing, nội dung, owner, phân tích dữ liệu) — giữ RBAC theo phạm vi hiện có (không dùng spatie/laravel-permission).
+
+### Thêm
+- **Vai trò mẫu**: `PermissionRegistry` (nay `#[PluginApi]`) có hằng `PRESET_ORDER_OPS|MARKETING|CONTENT|ANALYST`, `register($code, $description, array $presets = [], array $params = [])` (đăng ký lại cùng mã thì gộp mẫu) và `preset($key)`. `PluginServiceProvider::permissions(array $permissions, array $presets = [])`. Admin → Vai trò → Thêm có "Bắt đầu từ vai trò mẫu" (`Identity\Application\RolePresets`). Quyền Core đã khai mẫu; plugin Cms, Lookbook, SizeChart (nội dung), Reports (marketing, phân tích), Warehouse chuyển kho (vận hành đơn).
+- **Quyền cài đặt** (`Extension\Contracts\SettingPermissions`): `settings.<nhóm>` cho từng nhóm Cài đặt hệ thống, `settings.plugin.<id>` (tự đăng ký trong `PluginServiceProvider::settings(array $definitions, array $presets = [])`), `settings.secrets` cho ô bí mật; `settings.manage` vẫn bao trùm. Form trả `editable: false` cho ô bí mật khi thiếu quyền. Menu Cài đặt hiện khi sửa được ít nhất một nhóm/plugin. Plugin TrackingPixels, Wishlist, ScarcitySignals, SmsBrandname (marketing), Cms, Lookbook, StorefrontExtras (nội dung), CodRiskGuard, CarrierRouting (vận hành đơn) khai mẫu cho quyền cài đặt.
+- **Quyền dữ liệu khách** (`Ordering\Contracts\Data\OrderPermissions`): `orders.export`, `customers.pii`. `Shared\Support\ContactMask` (che tên/SĐT/email). `OrderQueries::detail(..., bool $maskContacts)`, `export(..., bool $maskContacts)`.
+
+### Đổi (phá vỡ — plugin/test cập nhật theo)
+- Xuất đơn cần `orders.export` (trước: `orders.view`); in phiếu giao cần thêm `customers.pii`; danh sách/chi tiết đơn và khách che liên hệ khi thiếu `customers.pii` (`contacts_masked` trên dòng khách). `exportUrl` của trang đơn là `null` khi không có quyền xuất; `customerHistory.orders_url` là `null` khi không xem được liên hệ.
+- Admin → Cài đặt, trang cài đặt riêng của plugin và nút "Gửi email thử" kiểm quyền theo nhóm/plugin (`settings.<nhóm>`, `settings.plugin.<id>`, `settings.mail`) — `settings.manage` vẫn làm được hết.
+
 ## 0.5.53 — 2026-11-19 · Extension API 1.14.0 (không đổi)
 
 Cấu hình nghiệp vụ trước chỉ đặt được bằng `.env` nay chủ shop đổi ở Admin → Cài đặt (namespace `core`; `.env` thành giá trị mặc định khi Admin để trống). Đọc lúc dùng — đổi có hiệu lực ngay, kể cả queue worker đang chạy.

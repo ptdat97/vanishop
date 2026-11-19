@@ -63,8 +63,8 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
             'core', ReturnService::ATTACHMENTS_RETENTION_DAYS, 'returns::texts.settings.attachments_retention_days', 'int', (int) config('vanishop.returns.attachments_retention_days', 90),
             help: 'returns::texts.settings.attachments_retention_days_help', rules: ['min:7', 'max:3650'], group: SettingGroup::Orders,
         ));
-        $permissions->register('returns.view', 'returns::texts.returns_service_provider.view_return_exchange_requests');
-        $permissions->register('returns.manage', 'returns::texts.returns_service_provider.approve_reject_receive_returns');
+        $permissions->register('returns.view', 'returns::texts.returns_service_provider.view_return_exchange_requests', [PermissionRegistry::PRESET_ORDER_OPS, PermissionRegistry::PRESET_ANALYST]);
+        $permissions->register('returns.manage', 'returns::texts.returns_service_provider.approve_reject_receive_returns', [PermissionRegistry::PRESET_ORDER_OPS]);
         $permissions->register('returns.refund', 'returns::texts.returns_service_provider.complete_returns_exchanges_refund');
 
         $navigation->add('returns', 'returns::texts.returns_service_provider.return_exchange', 'admin.returns.home', 'returns.view', 70, group: 'sales');

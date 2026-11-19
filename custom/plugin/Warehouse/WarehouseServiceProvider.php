@@ -7,6 +7,7 @@ namespace Plugin\Warehouse;
 use Modules\Catalog\Contracts\VariantUsage;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Inventory\Contracts\StockPageLink;
 use Plugin\Warehouse\Application\TransferGuard;
 use Plugin\Warehouse\Console\ReconcileCommand;
@@ -33,8 +34,8 @@ final class WarehouseServiceProvider extends PluginServiceProvider
         $this->translations($this->pluginPath('Resources/lang'), 'vani-warehouse');
         $this->permissions([
             'warehouse.locations.manage' => 'vani-warehouse::texts.warehouse_service_provider.manage_warehouses_stores_add_warehouses',
-            'warehouse.transfer' => 'vani-warehouse::texts.warehouse_service_provider.create_coordinate_stock_transfers',
         ]);
+        $this->permissions(['warehouse.transfer' => 'vani-warehouse::texts.warehouse_service_provider.create_coordinate_stock_transfers'], [PermissionRegistry::PRESET_ORDER_OPS]);
 
         $this->adminMenu('locations', 'vani-warehouse::texts.warehouse_service_provider.warehouses_stores', 'admin.plugins.vani-warehouse.locations.index', 'warehouse.locations.manage', 160, 'catalog');
         $this->adminMenu('transfers', 'vani-warehouse::texts.warehouse_service_provider.stock_transfers', 'admin.plugins.vani-warehouse.transfers.index', 'inventory.view', 170, 'catalog');

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\Extension\Contracts\DashboardWidget;
 use Modules\Extension\Contracts\ReportProvider;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Plugin\Reports\Infrastructure\CampaignResults;
 use Plugin\Reports\Infrastructure\Reports\BrandSalesReport;
 use Plugin\Reports\Infrastructure\Reports\ChannelSalesReport;
@@ -44,7 +45,7 @@ final class ReportsServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-reports');
-        $this->permissions([self::PERMISSION => 'vani-reports::texts.reports_service_provider.view_sales_reports_revenue_widgets']);
+        $this->permissions([self::PERMISSION => 'vani-reports::texts.reports_service_provider.view_sales_reports_revenue_widgets'], [PermissionRegistry::PRESET_MARKETING, PermissionRegistry::PRESET_ANALYST]);
 
         foreach ([RevenueTodayWidget::class, OrdersToProcessWidget::class, Revenue30DaysWidget::class, Sales14DaysWidget::class, TopProductsWidget::class] as $widget) {
             $this->contribute(DashboardWidget::TAG, $widget);

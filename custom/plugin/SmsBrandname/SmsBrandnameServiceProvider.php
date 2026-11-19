@@ -7,6 +7,7 @@ namespace Plugin\SmsBrandname;
 use Modules\Customer\Contracts\OtpSender;
 use Modules\Extension\Contracts\PluginHealthCheck;
 use Modules\Extension\PluginServiceProvider;
+use Modules\Identity\Contracts\PermissionRegistry;
 use Modules\Notification\Contracts\NotificationChannel;
 use Modules\Tenancy\Contracts\Settings;
 use Plugin\SmsBrandname\Infrastructure\EsmsClient;
@@ -52,7 +53,7 @@ final class SmsBrandnameServiceProvider extends PluginServiceProvider
         $this->contribute(PluginHealthCheck::TAG, SmsHealthCheck::class);
         $this->settings([
             ['key' => 'brandname', 'label' => 'Brandname SMS', 'help' => 'vani-sms-brandname::texts.sms_brandname_service_provider.brandname_registered_carriers'],
-        ]);
+        ], [PermissionRegistry::PRESET_MARKETING]);
 
         $this->contribute(NotificationChannel::TAG, SmsChannel::class);
         $this->contribute(OtpSender::TAG, SmsOtpSender::class);
