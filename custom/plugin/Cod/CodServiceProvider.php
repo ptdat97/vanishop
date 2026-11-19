@@ -31,13 +31,13 @@ final class CodServiceProvider extends PluginServiceProvider
     {
         $this->translations($this->pluginPath('resources/lang'), 'vani-cod');
         $this->settings([
-            ['key' => 'max_amount', 'label' => 'Đơn COD tối đa (₫)', 'type' => 'int', 'help' => 'Để trống = theo VANI_COD_MAX_AMOUNT.'],
-            ['key' => 'auto_confirm_mode', 'label' => 'Tự xác nhận đơn COD', 'type' => 'select', 'options' => [
-                'off' => 'Không — nhân viên gọi/nhắn xác nhận mọi đơn (khuyến nghị)',
-                'trusted' => 'Chỉ khách quen (đã nhận hàng, chưa từng bị hoàn về)',
-                'all' => 'Có — xác nhận ngay mọi đơn COD',
-            ], 'help' => 'Khách quen tính theo số điện thoại. Để trống = theo VANI_COD_AUTO_CONFIRM (mặc định tắt).'],
-            ['key' => 'trusted_min_delivered', 'label' => 'Khách quen: số đơn đã giao tối thiểu', 'type' => 'int', 'default' => 1, 'rules' => ['min:1', 'max:100'], 'help' => 'Dùng khi chọn "Chỉ khách quen".'],
+            ['key' => 'max_amount', 'label' => 'vani-cod::texts.cod_service_provider.maximum_cod_order', 'type' => 'int', 'help' => 'vani-cod::texts.cod_service_provider.leave_empty_use_vani_cod'],
+            ['key' => 'auto_confirm_mode', 'label' => 'vani-cod::texts.cod_service_provider.auto_confirm_cod_orders', 'type' => 'select', 'options' => [
+                'off' => 'vani-cod::texts.cod_service_provider.no_staff_call_message_confirm',
+                'trusted' => 'vani-cod::texts.cod_service_provider.returning_customers_only_received_orders',
+                'all' => 'vani-cod::texts.cod_service_provider.yes_confirm_every_cod_order',
+            ], 'help' => 'vani-cod::texts.cod_service_provider.returning_customers_identified_phone_number'],
+            ['key' => 'trusted_min_delivered', 'label' => 'vani-cod::texts.cod_service_provider.returning_customer_minimum_delivered_orders', 'type' => 'int', 'default' => 1, 'rules' => ['min:1', 'max:100'], 'help' => 'vani-cod::texts.cod_service_provider.used_returning_customers_only'],
         ]);
 
         $this->contribute(PaymentGateway::TAG, CodGateway::class);

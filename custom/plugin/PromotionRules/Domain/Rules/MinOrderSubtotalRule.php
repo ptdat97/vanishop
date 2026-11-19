@@ -23,14 +23,14 @@ final class MinOrderSubtotalRule implements CartContentRule
 
     public function label(): string
     {
-        return 'Giá trị đơn tối thiểu';
+        return __('vani-promotion-rules::texts.min_order_subtotal_rule.minimum_order_value');
     }
 
     public function validateConfig(array $config): array
     {
         $min = $config['min_subtotal'] ?? null;
         if (! is_numeric($min) || (int) $min <= 0) {
-            return ['Cần khai báo "min_subtotal" là số dương.'];
+            return [__('vani-promotion-rules::texts.min_order_subtotal_rule.min_subtotal_must_positive_number')];
         }
 
         return [];

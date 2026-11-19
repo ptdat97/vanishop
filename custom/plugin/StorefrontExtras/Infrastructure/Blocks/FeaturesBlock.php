@@ -15,7 +15,7 @@ final class FeaturesBlock implements StorefrontBlock
 {
     public const ITEMS = 4;
 
-    public const ICONS = ['truck' => 'Giao hàng', 'return' => 'Đổi trả', 'shield' => 'Bảo đảm', 'support' => 'Hỗ trợ', 'gift' => 'Quà tặng', 'card' => 'Thanh toán'];
+    public const ICONS = ['truck' => 'vani-storefront-extras::texts.features_block.fulfilment', 'return' => 'vani-storefront-extras::texts.features_block.returns', 'shield' => 'vani-storefront-extras::texts.features_block.guarantee', 'support' => 'vani-storefront-extras::texts.features_block.support', 'gift' => 'vani-storefront-extras::texts.features_block.gifts', 'card' => 'vani-storefront-extras::texts.features_block.payment'];
 
     /** Đường SVG (viewBox 24) của từng biểu tượng — view chỉ in `icon_path`. */
     private const ICON_PATHS = [
@@ -34,16 +34,16 @@ final class FeaturesBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Biểu tượng + chữ';
+        return __('vani-storefront-extras::texts.features_block.icons_text');
     }
 
     public function fields(): array
     {
         $fields = [];
         foreach (range(1, self::ITEMS) as $i) {
-            $fields[] = FieldDefinition::select("item_{$i}_icon", "Mục {$i}: biểu tượng", self::ICONS);
-            $fields[] = FieldDefinition::string("item_{$i}_title", "Mục {$i}: tiêu đề", max: 60);
-            $fields[] = FieldDefinition::string("item_{$i}_text", "Mục {$i}: mô tả", max: 160);
+            $fields[] = FieldDefinition::select("item_{$i}_icon", __('vani-storefront-extras::texts.features_block.item_i_icon', ['i' => $i]), array_map(fn (string $label): string => __($label), self::ICONS));
+            $fields[] = FieldDefinition::string("item_{$i}_title", __('vani-storefront-extras::texts.features_block.item_i_title', ['i' => $i]), max: 60);
+            $fields[] = FieldDefinition::string("item_{$i}_text", __('vani-storefront-extras::texts.features_block.item_i_description', ['i' => $i]), max: 160);
         }
 
         return $fields;

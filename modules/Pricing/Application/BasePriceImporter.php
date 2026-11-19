@@ -22,7 +22,7 @@ final class BasePriceImporter implements PriceImporter
         }
 
         $list = PriceList::query()->where('code', 'base')->first()
-            ?? $this->lists->save(['code' => 'base', 'name' => 'Giá niêm yết', 'type' => 'base', 'priority' => 0, 'starts_at' => null, 'ends_at' => null, 'status' => 'active']);
+            ?? $this->lists->save(['code' => 'base', 'name' => __('pricing::texts.base_price_importer.list_price'), 'type' => 'base', 'priority' => 0, 'starts_at' => null, 'ends_at' => null, 'status' => 'active']);
         $variants = $this->variants->findBySkus(array_map('strval', array_keys($prices)));
 
         $rows = [];

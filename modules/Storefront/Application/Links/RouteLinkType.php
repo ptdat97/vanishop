@@ -15,14 +15,14 @@ final class RouteLinkType implements LinkType
 {
     /** @var array<string, string> tên route => nhãn mặc định */
     private const ROUTES = [
-        'storefront.home' => 'Trang chủ',
-        'storefront.categories' => 'Danh mục',
-        'storefront.brands' => 'Thương hiệu',
-        'storefront.search' => 'Tất cả sản phẩm',
-        'storefront.cart' => 'Giỏ hàng',
-        'storefront.track' => 'Tra cứu đơn hàng',
-        'storefront.account' => 'Tài khoản',
-        'storefront.account.orders' => 'Đơn hàng của tôi',
+        'storefront.home' => 'storefront::texts.route_link_type.home_page',
+        'storefront.categories' => 'storefront::texts.route_link_type.category',
+        'storefront.brands' => 'storefront::texts.route_link_type.brand',
+        'storefront.search' => 'storefront::texts.route_link_type.all_products',
+        'storefront.cart' => 'storefront::texts.route_link_type.cart',
+        'storefront.track' => 'storefront::texts.route_link_type.track_order',
+        'storefront.account' => 'storefront::texts.route_link_type.account',
+        'storefront.account.orders' => 'storefront::texts.route_link_type.my_orders',
     ];
 
     public function type(): string
@@ -32,7 +32,7 @@ final class RouteLinkType implements LinkType
 
     public function label(): string
     {
-        return 'Trang của cửa hàng';
+        return __('storefront::texts.route_link_type.store_page');
     }
 
     public function searchable(): bool
@@ -42,7 +42,7 @@ final class RouteLinkType implements LinkType
 
     public function options(): array
     {
-        return array_map(fn (string $route, string $label): array => ['value' => $route, 'label' => $label], array_keys(self::ROUTES), self::ROUTES);
+        return array_map(fn (string $route, string $label): array => ['value' => $route, 'label' => __($label)], array_keys(self::ROUTES), self::ROUTES);
     }
 
     public function search(string $query, string $locale, int $limit = 20): array
@@ -60,7 +60,7 @@ final class RouteLinkType implements LinkType
         $resolved = [];
         foreach ($values as $value) {
             if ($this->accepts($value) && app('router')->has($value)) {
-                $resolved[$value] = ['url' => LocalizedUrls::route($value, [], $locale), 'label' => self::ROUTES[$value]];
+                $resolved[$value] = ['url' => LocalizedUrls::route($value, [], $locale), 'label' => __(self::ROUTES[$value])];
             }
         }
 

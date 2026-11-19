@@ -15,12 +15,12 @@ final class ProductSalesReport extends BreakdownReport
 
     public function label(): string
     {
-        return 'Sản phẩm bán chạy';
+        return __('vani-reports::texts.product_sales_report.best_selling_products');
     }
 
     public function description(): string
     {
-        return 'Số lượng và doanh thu theo sản phẩm (tên tại thời điểm đặt hàng).';
+        return __('vani-reports::texts.product_sales_report.quantity_revenue_product_name_time');
     }
 
     protected function dimension(): SalesDimension
@@ -30,7 +30,7 @@ final class ProductSalesReport extends BreakdownReport
 
     protected function groupLabel(): string
     {
-        return 'Sản phẩm';
+        return __('vani-reports::texts.product_sales_report.products');
     }
 
     protected function withQuantity(): bool

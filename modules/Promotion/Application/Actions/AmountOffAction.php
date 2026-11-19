@@ -20,14 +20,14 @@ final class AmountOffAction implements PromotionAction
 
     public function label(): string
     {
-        return 'Giảm số tiền';
+        return __('promotion::texts.amount_off_action.decrease_amount');
     }
 
     public function validateConfig(array $config): array
     {
         $amount = $config['amount'] ?? null;
 
-        return is_int($amount) && $amount > 0 ? [] : ['Số tiền giảm phải lớn hơn 0.'];
+        return is_int($amount) && $amount > 0 ? [] : [__('promotion::texts.amount_off_action.discount_amount_must_greater_than')];
     }
 
     public function apply(array $remaining, array $config, string $currencyCode): array

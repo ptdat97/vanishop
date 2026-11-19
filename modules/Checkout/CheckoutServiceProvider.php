@@ -46,10 +46,10 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
 
         // Phí giao và thuế theo thị trường là plugin hệ thống (vani.shipping-flat-rate, vani.tax-vn-vat — ADR-029);
         // Core chỉ giữ `none` (không thuế) làm dự phòng trung lập.
-        $this->app->make(Extensions::class)->requires(ShippingRateProvider::TAG, Requirement::AtLeastOne, 'Phí giao hàng');
+        $this->app->make(Extensions::class)->requires(ShippingRateProvider::TAG, Requirement::AtLeastOne, 'checkout::texts.checkout_service_provider.shipping_fee');
         $this->app->make(Extensions::class)->kindContract('shipping_rate', ShippingRateProvider::TAG);
         $this->app->make(Extensions::class)->tag([NoTax::class], TaxCalculator::TAG);
-        $this->app->make(Extensions::class)->requires(TaxCalculator::TAG, Requirement::ExactlyOne, 'Cách tính thuế');
+        $this->app->make(Extensions::class)->requires(TaxCalculator::TAG, Requirement::ExactlyOne, 'checkout::texts.checkout_service_provider.tax_calculation');
         $this->app->make(Extensions::class)->kindContract('tax', TaxCalculator::TAG);
         $this->app->bind(TaxCalculator::class, fn ($app): TaxCalculator => new ConfiguredTaxCalculator(
             $app->make(Extensions::class), $app->make(Settings::class), (string) config('vanishop.tax.calculator', NoTax::CODE),
@@ -59,12 +59,12 @@ final class CheckoutServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', 'tax.calculator', 'Cách tính thuế', 'select', (string) config('vanishop.tax.calculator', NoTax::CODE),
-            optionsFromTag: TaxCalculator::TAG, help: 'TaxCalculator của cửa hàng. Implementation đã chọn không có hiệu lực (plugin tắt) → mặc định, rồi `none`.',
+            'core', 'tax.calculator', 'checkout::texts.checkout_service_provider.tax_calculation', 'select', (string) config('vanishop.tax.calculator', NoTax::CODE),
+            optionsFromTag: TaxCalculator::TAG, help: 'checkout::texts.checkout_service_provider.store_s_taxcalculator_if_chosen',
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', CheckoutService::GUEST_CHECKOUT, 'Cho phép khách vãng lai đặt hàng', 'bool', true,
-            help: 'Tắt: phải đăng nhập mới đặt được hàng — trang thanh toán chuyển sang đăng nhập, Storefront API trả 403 `checkout.sign_in_required`. Xem giá và thêm giỏ vẫn không cần đăng nhập.',
+            'core', CheckoutService::GUEST_CHECKOUT, 'checkout::texts.checkout_service_provider.allow_guest_checkout', 'bool', true,
+            help: 'checkout::texts.checkout_service_provider.off_customers_must_sign_place',
         ));
         Event::listen(OrderCancelled::class, UndoCancelledOrder::class);
 

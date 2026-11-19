@@ -8,7 +8,7 @@
         "vi": "Chấm rủi ro đơn COD theo danh sách đen SĐT và lịch sử hoàn hàng; hiện cảnh báo trên dòng \"Cần xác nhận\" và trang đơn; chặn xác nhận đơn của SĐT trong danh sách đen. Tham chiếu cho OrderRiskSignal và hook vani.order.before_confirm (EP v3 X2).",
         "en": "Scores COD orders by phone blacklist and return history; flags them on the \"To confirm\" queue and order page; blocks confirming blacklisted phones. Reference for OrderRiskSignal and the vani.order.before_confirm hook (EP v3 X2)."
     },
-    "version": "1.1.0",
+    "version": "1.1.1",
     "kind": "feature",
     "provider": "Plugin\\CodRiskGuard\\CodRiskGuardServiceProvider",
     "requires": {

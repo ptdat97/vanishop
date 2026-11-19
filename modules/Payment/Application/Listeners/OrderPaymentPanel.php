@@ -40,38 +40,38 @@ final class OrderPaymentPanel
             $rows[] = ['label' => $gateway?->label() ?? $payment->gateway_code, 'value' => ($labels[$payment->status->value] ?? $payment->status->value).' · '.$money($payment->amount)];
             $pendingRefunds = Refund::query()->where('payment_id', $payment->id)->whereIn('status', ['requested', 'paying_out'])->get();
             if ($payment->refunded_amount > 0) {
-                $rows[] = ['label' => 'Đã hoàn', 'value' => $money($payment->refunded_amount).($pendingRefunds->isNotEmpty() ? ' (chờ chuyển trả '.$money((int) $pendingRefunds->sum('amount')).')' : '')];
+                $rows[] = ['label' => __('payment::texts.order_payment_panel.refunded'), 'value' => $money($payment->refunded_amount).($pendingRefunds->isNotEmpty() ? __('payment::texts.order_payment_panel.awaiting_payout').$money((int) $pendingRefunds->sum('amount')).')' : '')];
             }
 
             if (Gate::allows('payments.confirm') && ($gateway?->capabilities()->manualConfirmation ?? false)
                 && in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed, PaymentStatus::Expired], true)) {
-                $actions[] = ['key' => "{$payment->id}-confirm", 'label' => 'Xác nhận đã nhận tiền', 'url' => "{$base}/{$payment->id}/confirm", 'primary' => true, 'tone' => 'primary',
-                    'fields' => [['key' => 'note', 'label' => 'Ghi chú (mã giao dịch ngân hàng, người kiểm tra…)', 'required' => true]]];
+                $actions[] = ['key' => "{$payment->id}-confirm", 'label' => __('payment::texts.order_payment_panel.confirm_money_received'), 'url' => "{$base}/{$payment->id}/confirm", 'primary' => true, 'tone' => 'primary',
+                    'fields' => [['key' => 'note', 'label' => __('payment::texts.order_payment_panel.note_bank_transaction_id_checked'), 'required' => true]]];
             }
             if (Gate::allows('payments.confirm') && $order->orderStatus !== 'cancelled' && $this->payments->canCollectCodManually($payment)) {
-                $actions[] = ['key' => "{$payment->id}-collect", 'label' => 'Đã thu tiền '.$money($payment->amount), 'url' => "{$base}/{$payment->id}/collect", 'tone' => 'secondary',
-                    'fields' => [['key' => 'note', 'label' => 'Ghi chú (người thu, shop tự giao, hãng chưa báo giao…)', 'required' => true]]];
+                $actions[] = ['key' => "{$payment->id}-collect", 'label' => __('payment::texts.order_payment_panel.cash_collected').$money($payment->amount), 'url' => "{$base}/{$payment->id}/collect", 'tone' => 'secondary',
+                    'fields' => [['key' => 'note', 'label' => __('payment::texts.order_payment_panel.note_collected_store_delivered_itself'), 'required' => true]]];
             }
             if (Gate::allows('payments.refund')) {
                 if ($payment->status->hasCollected() && $payment->refunded_amount < $payment->amount) {
-                    $actions[] = ['key' => "{$payment->id}-refund", 'label' => 'Hoàn tiền', 'url' => "{$base}/{$payment->id}/refunds", 'tone' => 'secondary',
+                    $actions[] = ['key' => "{$payment->id}-refund", 'label' => __('payment::texts.order_payment_panel.refund'), 'url' => "{$base}/{$payment->id}/refunds", 'tone' => 'secondary',
                         'data' => ['idempotency_key' => (string) Str::ulid()],
                         'fields' => [
-                            ['key' => 'amount', 'label' => 'Số tiền hoàn (tối đa '.$money($payment->amount - $payment->refunded_amount).')', 'required' => true, 'value' => (string) ($payment->amount - $payment->refunded_amount)],
-                            ['key' => 'reason', 'label' => 'Lý do', 'required' => true],
+                            ['key' => 'amount', 'label' => __('payment::texts.order_payment_panel.refund_amount_most').$money($payment->amount - $payment->refunded_amount).')', 'required' => true, 'value' => (string) ($payment->amount - $payment->refunded_amount)],
+                            ['key' => 'reason', 'label' => __('payment::texts.order_payment_panel.reason'), 'required' => true],
                         ]];
                 }
                 foreach ($pendingRefunds as $refund) {
-                    $actions[] = ['key' => "refund-{$refund->id}-complete", 'label' => 'Đã chuyển trả '.$money($refund->amount), 'url' => route('admin.payment.refunds.complete', $refund->id), 'tone' => 'secondary',
-                        'fields' => [['key' => 'note', 'label' => 'Ghi chú (mã giao dịch chuyển trả)', 'required' => true]]];
+                    $actions[] = ['key' => "refund-{$refund->id}-complete", 'label' => __('payment::texts.order_payment_panel.refund_paid').$money($refund->amount), 'url' => route('admin.payment.refunds.complete', $refund->id), 'tone' => 'secondary',
+                        'fields' => [['key' => 'note', 'label' => __('payment::texts.order_payment_panel.note_refund_transfer_transaction_id'), 'required' => true]]];
                 }
             }
         }
 
         return [
-            'title' => 'Thanh toán',
-            'rows' => $rows === [] ? [['label' => 'Chưa có thanh toán', 'value' => '']] : $rows,
-            'link' => ['label' => 'Quản lý thanh toán', 'url' => $base],
+            'title' => __('payment::texts.order_payment_panel.payment'),
+            'rows' => $rows === [] ? [['label' => __('payment::texts.order_payment_panel.no_payments_yet'), 'value' => '']] : $rows,
+            'link' => ['label' => __('payment::texts.order_payment_panel.payment_management'), 'url' => $base],
             'actions' => $actions,
         ];
     }
@@ -83,7 +83,7 @@ final class OrderPaymentPanel
      */
     public function timeline(OrderDetail $order): array
     {
-        $types = ['callback' => 'Cổng báo kết quả', 'confirm' => 'Xác nhận thanh toán', 'capture' => 'Thu tiền', 'refund' => 'Hoàn tiền', 'cod_collected' => 'Đã thu COD'];
+        $types = ['callback' => __('payment::texts.order_payment_panel.gateway_reported_result'), 'confirm' => __('payment::texts.order_payment_panel.confirm_payment'), 'capture' => __('payment::texts.order_payment_panel.capture'), 'refund' => __('payment::texts.order_payment_panel.refund'), 'cod_collected' => __('payment::texts.order_payment_panel.cod_collected')];
 
         return DB::table('payment_transactions')->join('payments', 'payments.id', '=', 'payment_transactions.payment_id')
             ->where('payments.order_id', $order->id)
@@ -93,7 +93,7 @@ final class OrderPaymentPanel
             ->map(fn (object $row): array => [
                 'ts' => strtotime((string) $row->created_at.' UTC') ?: 0,
                 'at' => (string) StoreClock::format((string) $row->created_at),
-                'title' => 'Thanh toán: '.$types[$row->type],
+                'title' => __('payment::texts.order_payment_panel.payment_2').$types[$row->type],
                 'detail' => trim(($row->amount !== null ? $this->money->formatAmount((int) $row->amount, $order->currencyCode) : '').' '.$row->status) ?: null,
                 'source' => 'payment',
             ])->all();

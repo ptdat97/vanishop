@@ -66,10 +66,10 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
         $this->app->bind(ShipmentBooking::class, FulfillmentService::class);
         $this->app->bind(ReturnPickups::class, ReturnPickupService::class);
         $this->app->make(Extensions::class)->tag([ManualCarrier::class], CarrierRegistry::CARRIERS_TAG);
-        $this->app->make(Extensions::class)->requires(ShippingCarrier::CARRIERS_TAG, Requirement::AtLeastOne, 'Hãng vận chuyển');
+        $this->app->make(Extensions::class)->requires(ShippingCarrier::CARRIERS_TAG, Requirement::AtLeastOne, 'fulfillment::texts.fulfillment_service_provider.carrier');
         $this->app->make(Extensions::class)->kindContract('shipping_carrier', ShippingCarrier::CARRIERS_TAG);
         $this->app->make(Extensions::class)->tag([ReservedLocationSourcing::class], SourcingStrategy::TAG);
-        $this->app->make(Extensions::class)->requires(SourcingStrategy::TAG, Requirement::ExactlyOne, 'Chọn kho xuất hàng');
+        $this->app->make(Extensions::class)->requires(SourcingStrategy::TAG, Requirement::ExactlyOne, 'fulfillment::texts.fulfillment_service_provider.choose_shipping_warehouse');
     }
 
     /**
@@ -90,15 +90,15 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(ShipmentDashboardTasks::class)());
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', 'fulfillment.sourcing', 'Chọn kho giao hàng (sourcing)', 'select', (string) config('vanishop.fulfillment.sourcing', 'reserved_locations'),
-            optionsFromTag: SourcingStrategy::TAG, help: 'SourcingStrategy khi tạo vận đơn.',
+            'core', 'fulfillment.sourcing', 'fulfillment::texts.fulfillment_service_provider.choose_shipping_warehouse_sourcing', 'select', (string) config('vanishop.fulfillment.sourcing', 'reserved_locations'),
+            optionsFromTag: SourcingStrategy::TAG, help: 'fulfillment::texts.fulfillment_service_provider.sourcingstrategy_when_creating_shipments',
         ));
-        $permissions->register('fulfillment.view', 'Xem vận đơn');
-        $permissions->register('fulfillment.manage', 'Tạo/cập nhật/huỷ vận đơn');
+        $permissions->register('fulfillment.view', 'fulfillment::texts.fulfillment_service_provider.view_shipments');
+        $permissions->register('fulfillment.manage', 'fulfillment::texts.fulfillment_service_provider.create_update_cancel_shipments');
 
         // SME trước (vision §2.1, ADR-043): việc giao hàng hằng ngày làm trên danh sách đơn + trang đơn; trang vận đơn riêng
         // chỉ lên menu khi cửa hàng có hãng kết nối API hoặc nhiều kho — vẫn mở được từ link trên trang đơn.
-        $navigation->add('fulfillment', 'Giao hàng', 'admin.fulfillment.home', 'fulfillment.view', 60, group: 'sales', when: fn (): bool => $this->showsShipmentsMenu());
+        $navigation->add('fulfillment', 'fulfillment::texts.fulfillment_service_provider.fulfilment', 'admin.fulfillment.home', 'fulfillment.view', 60, group: 'sales', when: fn (): bool => $this->showsShipmentsMenu());
 
         Event::listen(OrderConfirmed::class, CreateShipmentsOnConfirm::class);
         Event::listen(OrderCancelled::class, CancelShipmentsOnOrderCancel::class);
@@ -118,7 +118,7 @@ final class FulfillmentServiceProvider extends ModuleServiceProvider
             $open = Shipment::query()->where('carrier_code', $carrier->code())
                 ->whereNotIn('status', [ShipmentStatus::Delivered, ShipmentStatus::Returned, ShipmentStatus::Cancelled])->count();
 
-            return $open === 0 ? null : "còn {$open} vận đơn chưa kết thúc của hãng {$carrier->code()}";
+            return $open === 0 ? null : __('fulfillment::texts.fulfillment_service_provider.open_shipments_carrier_code_still', ['open' => $open, 'code' => $carrier->code()]);
         });
 
         RateLimiter::for('shipping-webhooks', fn (Request $request): Limit => Limit::perMinute((int) config('vanishop.rate_limits.shipping_webhooks', 600))->by((string) $request->ip()));

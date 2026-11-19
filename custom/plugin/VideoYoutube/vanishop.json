@@ -4,7 +4,7 @@
         "vi": "Video YouTube",
         "en": "YouTube videos"
     },
-    "version": "1.0.0",
+    "version": "1.0.1",
     "kind": "video",
     "provider": "Plugin\\VideoYoutube\\VideoYoutubeServiceProvider",
     "requires": {

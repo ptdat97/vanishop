@@ -17,6 +17,6 @@ final class LookbookImageSizes implements ImageSizeProvider
 
     public function sizes(): array
     {
-        return [new ImageSize(self::COVER, 'Ảnh bìa lookbook (lưới)', 600, 900, crop: true)];
+        return [new ImageSize(self::COVER, __('vani-lookbook::texts.lookbook_image_sizes.lookbook_cover_image_grid'), 600, 900, crop: true)];
     }
 }

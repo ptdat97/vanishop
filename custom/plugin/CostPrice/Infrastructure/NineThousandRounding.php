@@ -19,7 +19,7 @@ final class NineThousandRounding implements PriceRounding
 
     public function label(): string
     {
-        return 'Giá đẹp đuôi 9.000';
+        return __('vani-cost-price::texts.nine_thousand_rounding.charm_price_ending_9_000');
     }
 
     public function round(int $amount): int

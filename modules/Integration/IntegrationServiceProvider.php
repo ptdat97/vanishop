@@ -89,11 +89,11 @@ final class IntegrationServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, Router $router): void
     {
         $this->app->make(Extensions::class)->kindContract('integration', Connector::TAG);
-        $permissions->register('integration.view', 'Xem tình trạng tích hợp (outbox/inbox, client)');
-        $permissions->register('integration.replay', 'Gửi lại message tích hợp lỗi');
-        $permissions->register('integration.manage', 'Quản lý Integration Client và webhook');
+        $permissions->register('integration.view', 'integration::texts.integration_service_provider.view_integration_status_outbox_inbox');
+        $permissions->register('integration.replay', 'integration::texts.integration_service_provider.resend_failed_integration_messages');
+        $permissions->register('integration.manage', 'integration::texts.integration_service_provider.manage_integration_clients_webhooks');
 
-        $navigation->add('integration', 'Tích hợp', 'admin.integration.health', 'integration.view', 820, group: 'system');
+        $navigation->add('integration', 'integration::texts.integration_service_provider.integrations', 'admin.integration.health', 'integration.view', 820, group: 'system');
 
         $router->aliasMiddleware('vani.integration-client', AuthenticateIntegrationClient::class);
         $router->aliasMiddleware('vani.integration-scope', RequireIntegrationScope::class);

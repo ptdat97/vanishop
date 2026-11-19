@@ -22,12 +22,12 @@ final class RichTextBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Đoạn văn bản';
+        return __('storefront::texts.rich_text_block.text_block');
     }
 
     public function fields(): array
     {
-        return [FieldDefinition::string('title', 'Tiêu đề', max: 120), FieldDefinition::text('body', 'Nội dung', required: true, max: 50_000)];
+        return [FieldDefinition::string('title', __('storefront::texts.rich_text_block.title'), max: 120), FieldDefinition::text('body', __('storefront::texts.rich_text_block.content'), required: true, max: 50_000)];
     }
 
     public function resolve(array $config, string $locale): array

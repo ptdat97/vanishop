@@ -159,16 +159,16 @@ final class ExtensionServiceProvider extends ModuleServiceProvider
             $schedule->command('vani:plugin:finish-draining')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
         });
 
-        $permissions->register('extension.plugins.view', 'Xem danh sách plugin');
-        $permissions->register('extension.plugins.manage', 'Cài/bật/tắt plugin');
-        $permissions->register('settings.manage', 'Sửa cấu hình theo phạm vi (Core và plugin)');
+        $permissions->register('extension.plugins.view', 'extension::texts.extension_service_provider.view_plugin_list');
+        $permissions->register('extension.plugins.manage', 'extension::texts.extension_service_provider.install_enable_disable_plugins');
+        $permissions->register('settings.manage', 'extension::texts.extension_service_provider.edit_scoped_settings_core_plugins');
 
         $navigation = $this->app->make(AdminNavigation::class);
-        $navigation->group('system', 'Hệ thống', 800);
-        $navigation->add('dashboard', 'Tổng quan', 'admin.dashboard', 'admin.access', 0);
-        $navigation->add('reports', 'Báo cáo', 'admin.reports.index', 'admin.access', 500, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);
+        $navigation->group('system', 'extension::texts.extension_service_provider.system', 800);
+        $navigation->add('dashboard', 'extension::texts.extension_service_provider.overview', 'admin.dashboard', 'admin.access', 0);
+        $navigation->add('reports', 'extension::texts.extension_service_provider.reports', 'admin.reports.index', 'admin.access', 500, when: fn (): bool => $this->app->make(Reports::class)->visible() !== []);
         $navigation->add('plugins', 'Plugin', 'admin.plugins.index', 'extension.plugins.view', 810);
-        $navigation->add('settings', 'Cấu hình', 'admin.settings.index', 'settings.manage', 840, group: 'system');
+        $navigation->add('settings', 'extension::texts.extension_service_provider.settings', 'admin.settings.index', 'settings.manage', 840, group: 'system');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin.php'));
         $this->bootModuleResources();

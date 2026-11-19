@@ -180,7 +180,7 @@ final class CampaignService implements Campaigns
         }
         $taken = DB::table('campaign_price_lists')->whereIn('price_list_id', $priceListIds)->where('campaign_id', '!=', $campaign->id)->exists();
         if ($taken) {
-            throw ValidationException::withMessages(['price_list_ids' => __('promotion::messages.campaign_member_taken', ['names' => 'bảng giá'])]);
+            throw ValidationException::withMessages(['price_list_ids' => __('promotion::messages.campaign_member_taken', ['names' => __('promotion::texts.campaign_service.price_list')])]);
         }
         DB::table('campaign_price_lists')->where('campaign_id', $campaign->id)->whereNotIn('price_list_id', $priceListIds)->delete();
         foreach (array_diff($priceListIds, $this->priceListIds($campaign)) as $listId) {

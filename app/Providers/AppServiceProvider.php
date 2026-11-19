@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
         self::trustProxies((string) config('vanishop.trusted_proxies'));
         self::useAppUrlOrigin((string) config('app.url'), (string) $this->app->environment());
         // Dashboard vận hành (Horizon, Pulse — ADR-032): chỉ nhân viên có quyền system.monitor.
-        $permissions->register('system.monitor', 'Xem dashboard vận hành (queue, hiệu năng)');
+        $permissions->register('system.monitor', 'shared::texts.app_service_provider.view_operations_dashboard_queues_performance');
         Gate::define('viewPulse', fn ($user = null): bool => $user !== null && Gate::forUser($user)->allows('system.monitor'));
         // Backup DB + file dữ liệu hằng đêm, dọn bản cũ, kiểm tra sức khoẻ backup (go-live gate).
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->make(Extensions::class)->tag([MailAlertChannel::class], AlertChannel::TAG);
         $this->app->make(Extensions::class)->tag([OpenAlertsWidget::class], DashboardWidget::TAG);
         $this->app->make(Extensions::class)->tag([InternationalPhonePolicy::class], PhoneNumberPolicy::TAG);
-        $this->app->make(Extensions::class)->requires(PhoneNumberPolicy::TAG, Requirement::ExactlyOne, 'Định dạng số điện thoại');
+        $this->app->make(Extensions::class)->requires(PhoneNumberPolicy::TAG, Requirement::ExactlyOne, 'shared::texts.app_service_provider.phone_number_format');
         // Counter thương mại từ domain event (sau commit) — Phase 6 observability.
         foreach (RecordCommerceMetrics::listeners() as $event => $method) {
             Event::listen($event, [RecordCommerceMetrics::class, $method]);

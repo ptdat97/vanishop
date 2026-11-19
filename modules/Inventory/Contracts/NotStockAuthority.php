@@ -13,7 +13,7 @@ final class NotStockAuthority extends BusinessRuleViolation
 {
     public function __construct(public readonly string $locationCode)
     {
-        parent::__construct("Không phải authority tồn kho của location {$locationCode}.");
+        parent::__construct(__('inventory::texts.not_stock_authority.not_stock_authority_location_location', ['location_code' => $locationCode]));
     }
 
     public function errorCode(): string

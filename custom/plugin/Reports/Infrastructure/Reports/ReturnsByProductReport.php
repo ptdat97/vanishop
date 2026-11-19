@@ -34,12 +34,12 @@ final class ReturnsByProductReport implements ReportProvider
 
     public function label(): string
     {
-        return 'Đổi trả theo sản phẩm';
+        return __('vani-reports::texts.returns_by_product_report.returns_product');
     }
 
     public function description(): string
     {
-        return 'Số lượng trả, tỷ lệ trả (so với số bán trong cùng kỳ) và tiền hoàn theo SKU. Không tính yêu cầu bị từ chối/đã huỷ.';
+        return __('vani-reports::texts.returns_by_product_report.returned_quantity_return_rate_vs');
     }
 
     public function permission(): string
@@ -66,8 +66,8 @@ final class ReturnsByProductReport implements ReportProvider
         return new ReportResult(
             new Table(
                 [
-                    new Column('sku', 'SKU'), new Column('product', 'Sản phẩm'), new Column('sold', 'Đã bán', 'number'), new Column('returned', 'Trả lại', 'number'),
-                    new Column('rate', 'Tỷ lệ trả', 'percent'), new Column('refund', 'Tiền hoàn', 'money'),
+                    new Column('sku', 'SKU'), new Column('product', __('vani-reports::texts.returns_by_product_report.products')), new Column('sold', __('vani-reports::texts.returns_by_product_report.sold'), 'number'), new Column('returned', __('vani-reports::texts.returns_by_product_report.returned'), 'number'),
+                    new Column('rate', __('vani-reports::texts.returns_by_product_report.return_rate'), 'percent'), new Column('refund', __('vani-reports::texts.returns_by_product_report.refund'), 'money'),
                 ],
                 array_map(fn (array $row): array => [
                     'sku' => $names[$row['variant_id']][0] ?? "#{$row['variant_id']}", 'product' => $names[$row['variant_id']][1] ?? '',
@@ -77,9 +77,9 @@ final class ReturnsByProductReport implements ReportProvider
                 ], $returned),
             ),
             [
-                new Metric('Số lượng trả', $returnedTotal, 'number', "Đã bán {$soldTotal}"),
-                new Metric('Tỷ lệ trả', $soldTotal === 0 ? 0 : round($returnedTotal * 100 / $soldTotal, 1), 'percent'),
-                new Metric('Tiền hoàn', array_sum(array_column($returned, 'refund_amount')), 'money'),
+                new Metric(__('vani-reports::texts.returns_by_product_report.quantity_return'), $returnedTotal, 'number', __('vani-reports::texts.returns_by_product_report.sold_sold_total', ['sold_total' => $soldTotal])),
+                new Metric(__('vani-reports::texts.returns_by_product_report.return_rate'), $soldTotal === 0 ? 0 : round($returnedTotal * 100 / $soldTotal, 1), 'percent'),
+                new Metric(__('vani-reports::texts.returns_by_product_report.refund'), array_sum(array_column($returned, 'refund_amount')), 'money'),
             ],
         );
     }

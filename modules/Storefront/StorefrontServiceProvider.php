@@ -98,9 +98,9 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
     {
         $this->app->make(Extensions::class)->tag([HeroBlock::class, ProductGridBlock::class, BrandGridBlock::class, RichTextBlock::class], StorefrontBlock::TAG);
         $this->app->make(Extensions::class)->tag([CategoryLinkType::class, CollectionLinkType::class, BrandLinkType::class, ProductLinkType::class, RouteLinkType::class, UrlLinkType::class], LinkType::TAG);
-        $permissions->register('storefront.manage', 'Sửa giao diện cửa hàng (trang chủ, menu, đầu & chân trang)');
-        $navigation->group('content', 'Nội dung & giao diện', 590);
-        $navigation->add('storefront', 'Giao diện', 'admin.storefront.home', 'storefront.manage', 600, group: 'content');
+        $permissions->register('storefront.manage', 'storefront::texts.storefront_service_provider.edit_storefront_design_home_page');
+        $navigation->group('content', 'storefront::texts.storefront_service_provider.content_design', 590);
+        $navigation->add('storefront', 'storefront::texts.storefront_service_provider.storefront_design', 'admin.storefront.home', 'storefront.manage', 600, group: 'content');
 
         $router->aliasMiddleware('vani.theme', UseActiveTheme::class);
         $router->aliasMiddleware('vani.page-cache', PublicPageCache::class);
@@ -129,48 +129,48 @@ final class StorefrontServiceProvider extends ModuleServiceProvider
 
         $settings = $this->app->make(Settings::class);
         $settings->define(new SettingDefinition(
-            'core', 'theme', 'Giao diện (theme)', 'select', (string) config('vanishop.storefront.theme', Themes::BASE),
+            'core', 'theme', 'storefront::texts.storefront_service_provider.storefront_theme', 'select', (string) config('vanishop.storefront.theme', Themes::BASE),
             options: array_map(fn (Theme $theme): string => $theme->label, $this->app->make(Themes::class)->all()),
-            help: 'Theme đang hoạt động của cửa hàng (custom/theme/*). Theme con chỉ override vài view, còn lại theo theme cha → vani-base.',
+            help: 'storefront::texts.storefront_service_provider.store_s_active_theme_custom',
         ));
         $settings->define(new SettingDefinition(
-            'core', 'theme.tokens', 'Token giao diện (JSON)', 'text',
-            help: 'Ghi đè token của theme, vd. {"color-primary": "#0f766e", "radius": "0.75rem"} → CSS variables --vani-*.',
+            'core', 'theme.tokens', 'storefront::texts.storefront_service_provider.design_tokens_json', 'text',
+            help: 'storefront::texts.storefront_service_provider.override_theme_s_tokens_color',
         ));
         $settings->define(new SettingDefinition(
-            'core', 'storefront.maintenance', 'Bảo trì cửa hàng', 'bool', false,
-            help: 'Bật: storefront và Storefront API trả 503. IPN thanh toán, webhook vận chuyển, Integration API, /health vẫn chạy. Nhân viên xem trước qua Admin → Giao diện → "Xem trang" (cookie 12 giờ). Trang đã cache ở CDN còn hiện tới khi hết TTL — xoá cache CDN sau khi đổi.',
+            'core', 'storefront.maintenance', 'storefront::texts.storefront_service_provider.store_maintenance', 'bool', false,
+            help: 'storefront::texts.storefront_service_provider.storefront_storefront_api_return_503',
         ));
         $settings->define(new SettingDefinition(
-            'core', 'storefront.maintenance_message', 'Thông báo bảo trì', 'text',
-            help: 'Nội dung trang bảo trì. Để trống: dùng câu mặc định của theme.',
+            'core', 'storefront.maintenance_message', 'storefront::texts.storefront_service_provider.maintenance_message', 'text',
+            help: 'storefront::texts.storefront_service_provider.maintenance_page_text_leave_empty',
             rules: ['max:1000'],
         ));
         $settings->define(new SettingDefinition(
-            'core', PriceVisibility::SETTING, 'Hiện giá', 'select', PriceVisibility::PUBLIC,
-            options: [PriceVisibility::PUBLIC => 'Mọi người', PriceVisibility::MEMBERS => 'Chỉ khách đã đăng nhập'],
-            help: '"Chỉ khách đã đăng nhập": khách chưa đăng nhập thấy "Đăng nhập để xem giá", không thêm giỏ/đặt hàng được; Storefront API trả giá null, JSON-LD không có giá. Trang đã cache ở CDN còn bản cũ tới khi hết TTL — xoá cache CDN sau khi đổi.',
+            'core', PriceVisibility::SETTING, 'storefront::texts.storefront_service_provider.show_prices', 'select', PriceVisibility::PUBLIC,
+            options: [PriceVisibility::PUBLIC => 'storefront::texts.storefront_service_provider.everyone', PriceVisibility::MEMBERS => 'storefront::texts.storefront_service_provider.signed_customers_only'],
+            help: 'storefront::texts.storefront_service_provider.signed_customers_only_guests_see',
         ));
 
         $settings->define(new SettingDefinition(
-            'core', 'storefront.per_page', 'Số sản phẩm mỗi trang', 'int', 24,
-            help: 'Trang danh mục, thương hiệu, tìm kiếm và Storefront API khi không truyền per_page (12–60).',
+            'core', 'storefront.per_page', 'storefront::texts.storefront_service_provider.products_per_page', 'int', 24,
+            help: 'storefront::texts.storefront_service_provider.category_brand_search_pages_storefront',
             rules: ['min:12', 'max:60'],
         ));
         $settings->define(new SettingDefinition(
-            'core', StoreShare::DESCRIPTION_SETTING, 'Mô tả cửa hàng (Google, chia sẻ link)', 'text',
-            help: 'Hiện dưới tên cửa hàng trên Google và khi chia sẻ link trang chủ lên Facebook/Zalo; trang không có mô tả riêng cũng dùng câu này. Nên 1–2 câu, dưới 160 ký tự.',
+            'core', StoreShare::DESCRIPTION_SETTING, 'storefront::texts.storefront_service_provider.store_description_google_link_sharing', 'text',
+            help: 'storefront::texts.storefront_service_provider.shown_under_store_name_google',
             rules: ['max:300'],
         ));
         $settings->define(new SettingDefinition(
-            'core', StoreShare::IMAGE_SETTING, 'Ảnh khi chia sẻ link', 'media',
-            help: 'Ảnh Facebook/Zalo hiện khi chia sẻ link trang không có ảnh riêng (trang chủ, danh mục chưa có ảnh…). Nên ảnh ngang 1200 × 630 px.',
+            'core', StoreShare::IMAGE_SETTING, 'storefront::texts.storefront_service_provider.link_sharing_image', 'media',
+            help: 'storefront::texts.storefront_service_provider.facebook_zalo_image_shown_when',
             // Ảnh không còn trong thư viện → bỏ qua (StoreShare trả null), không cần kiểm bảng của Catalog ở đây.
             rules: ['min:1'],
         ));
         $settings->define(new SettingDefinition(
-            'core', PopularSearches::SETTING, 'Từ khoá tìm kiếm nổi bật', 'text',
-            help: 'Mỗi dòng một từ khoá (tối đa 10): gợi ý ở ô tìm kiếm và trang tìm kiếm khi chưa gõ.',
+            'core', PopularSearches::SETTING, 'storefront::texts.storefront_service_provider.featured_search_keywords', 'text',
+            help: 'storefront::texts.storefront_service_provider.one_keyword_per_line_most',
             rules: ['max:1000'],
         ));
 

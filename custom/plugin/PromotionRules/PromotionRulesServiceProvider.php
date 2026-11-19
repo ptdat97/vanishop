@@ -23,6 +23,7 @@ final class PromotionRulesServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-promotion-rules');
         $this->contribute(PromotionRule::TAG, MinOrderSubtotalRule::class);
         $this->contribute(PromotionRule::TAG, MinQuantityRule::class);
         $this->contribute(PromotionRule::TAG, InCollectionsRule::class);

@@ -19,14 +19,14 @@ final class PercentOffAction implements PromotionAction
 
     public function label(): string
     {
-        return 'Giảm theo %';
+        return __('promotion::texts.percent_off_action.decrease');
     }
 
     public function validateConfig(array $config): array
     {
         $bp = $config['basis_points'] ?? null;
 
-        return is_int($bp) && $bp >= 1 && $bp <= 10_000 ? [] : ['Phần trăm giảm phải từ 0,01% đến 100%.'];
+        return is_int($bp) && $bp >= 1 && $bp <= 10_000 ? [] : [__('promotion::texts.percent_off_action.discount_percentage_must_between_0')];
     }
 
     public function apply(array $remaining, array $config, string $currencyCode): array

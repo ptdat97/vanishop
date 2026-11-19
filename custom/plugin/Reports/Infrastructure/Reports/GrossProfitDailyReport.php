@@ -27,12 +27,12 @@ final class GrossProfitDailyReport implements ReportProvider
 
     public function label(): string
     {
-        return 'Lợi nhuận gộp theo ngày';
+        return __('vani-reports::texts.gross_profit_daily_report.gross_profit_day');
     }
 
     public function description(): string
     {
-        return 'Doanh thu, giá vốn, lợi nhuận gộp từng ngày (chưa gồm phí giao). Doanh thu của SKU thiếu giá vốn tách riêng.';
+        return __('vani-reports::texts.gross_profit_daily_report.revenue_cost_gross_profit_per');
     }
 
     public function permission(): string
@@ -60,21 +60,21 @@ final class GrossProfitDailyReport implements ReportProvider
         return new ReportResult(
             new Table(
                 [
-                    new Column('date', 'Ngày'), new Column('revenue', 'Doanh thu có giá vốn', 'money'), new Column('cost', 'Giá vốn', 'money'),
-                    new Column('profit', 'Lợi nhuận gộp', 'money'), new Column('margin', 'Biên LN', 'percent'), new Column('uncosted', 'Doanh thu thiếu giá vốn', 'money'),
+                    new Column('date', __('vani-reports::texts.gross_profit_daily_report.date')), new Column('revenue', __('vani-reports::texts.gross_profit_daily_report.revenue_cost_price'), 'money'), new Column('cost', __('vani-reports::texts.gross_profit_daily_report.cost_price'), 'money'),
+                    new Column('profit', __('vani-reports::texts.gross_profit_daily_report.gross_profit'), 'money'), new Column('margin', __('vani-reports::texts.gross_profit_daily_report.margin'), 'percent'), new Column('uncosted', __('vani-reports::texts.gross_profit_daily_report.revenue_without_cost_price'), 'money'),
                 ],
                 $rows,
             ),
             [
-                new Metric('Lợi nhuận gộp', $total['profit'], 'money', $total['margin'] === null ? null : "Biên {$total['margin']}%"),
-                new Metric('Giá vốn', $total['cost'], 'money'),
-                new Metric('Doanh thu thiếu giá vốn', $total['uncosted_revenue'], 'money', $this->grossProfit->hasCostSource() ? null : 'Chưa có nguồn giá vốn — bật plugin Giá vốn'),
+                new Metric(__('vani-reports::texts.gross_profit_daily_report.gross_profit'), $total['profit'], 'money', $total['margin'] === null ? null : __('vani-reports::texts.gross_profit_daily_report.margin_margin', ['margin' => $total['margin']])),
+                new Metric(__('vani-reports::texts.gross_profit_daily_report.cost_price'), $total['cost'], 'money'),
+                new Metric(__('vani-reports::texts.gross_profit_daily_report.revenue_without_cost_price'), $total['uncosted_revenue'], 'money', $this->grossProfit->hasCostSource() ? null : __('vani-reports::texts.gross_profit_daily_report.no_cost_price_source_enable')),
             ],
             new Series(
                 array_map(fn (array $row): string => (new DateTimeImmutable($row['date']))->format('d/m'), $rows),
                 array_map(fn (array $row): int => $row['profit'], $rows),
                 'money',
-                'Lợi nhuận gộp theo ngày',
+                __('vani-reports::texts.gross_profit_daily_report.gross_profit_day'),
             ),
         );
     }

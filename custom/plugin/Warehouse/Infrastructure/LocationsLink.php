@@ -15,7 +15,7 @@ final class LocationsLink implements StockPageLink
 {
     public function label(): string
     {
-        return 'Kho & cửa hàng';
+        return __('vani-warehouse::texts.locations_link.warehouses_stores');
     }
 
     public function url(): ?string

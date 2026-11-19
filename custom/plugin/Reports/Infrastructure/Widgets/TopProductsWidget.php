@@ -24,7 +24,7 @@ final class TopProductsWidget implements DashboardWidget
 
     public function label(): string
     {
-        return 'Sản phẩm doanh thu cao (30 ngày)';
+        return __('vani-reports::texts.top_products_widget.top_products_revenue_30_days');
     }
 
     public function permission(): string
@@ -48,7 +48,7 @@ final class TopProductsWidget implements DashboardWidget
         $products = $this->statistics->breakdown(SalesDimension::Product, $period->from, $period->to, 5);
 
         return new Table(
-            [new Column('product', 'Sản phẩm'), new Column('quantity', 'SL', 'number'), new Column('revenue', 'Doanh thu', 'money')],
+            [new Column('product', __('vani-reports::texts.top_products_widget.products')), new Column('quantity', 'SL', 'number'), new Column('revenue', 'Doanh thu', 'money')],
             array_map(fn (SalesBucket $product): array => ['product' => $product->label, 'quantity' => $product->quantity, 'revenue' => $product->revenue], $products),
             $this->label(),
         );

@@ -42,7 +42,7 @@ final class StaffPasswordController
 
     public function showReset(Request $request, string $token): Response
     {
-        return $this->setPasswordPage($request, $token, route('admin.password.update'), 'Đặt lại mật khẩu');
+        return $this->setPasswordPage($request, $token, route('admin.password.update'), __('identity::texts.staff_password_controller.reset_password'));
     }
 
     public function reset(Request $request, StaffPasswords $passwords): RedirectResponse
@@ -52,7 +52,7 @@ final class StaffPasswordController
 
     public function showInvitation(Request $request, string $token): Response
     {
-        return $this->setPasswordPage($request, $token, route('admin.invitation.accept'), 'Đặt mật khẩu lần đầu');
+        return $this->setPasswordPage($request, $token, route('admin.invitation.accept'), __('identity::texts.staff_password_controller.set_first_password'));
     }
 
     public function acceptInvitation(Request $request, StaffPasswords $passwords): RedirectResponse

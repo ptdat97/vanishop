@@ -32,12 +32,12 @@ final class WarehouseServiceProvider extends PluginServiceProvider
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-warehouse');
         $this->permissions([
-            'warehouse.locations.manage' => 'Quản lý kho/cửa hàng (thêm kho, ưu tiên, kho do ERP/POS quản lý)',
-            'warehouse.transfer' => 'Tạo/điều phối chuyển kho',
+            'warehouse.locations.manage' => 'vani-warehouse::texts.warehouse_service_provider.manage_warehouses_stores_add_warehouses',
+            'warehouse.transfer' => 'vani-warehouse::texts.warehouse_service_provider.create_coordinate_stock_transfers',
         ]);
 
-        $this->adminMenu('locations', 'Kho & cửa hàng', 'admin.plugins.vani-warehouse.locations.index', 'warehouse.locations.manage', 160, 'catalog');
-        $this->adminMenu('transfers', 'Chuyển kho', 'admin.plugins.vani-warehouse.transfers.index', 'inventory.view', 170, 'catalog');
+        $this->adminMenu('locations', 'vani-warehouse::texts.warehouse_service_provider.warehouses_stores', 'admin.plugins.vani-warehouse.locations.index', 'warehouse.locations.manage', 160, 'catalog');
+        $this->adminMenu('transfers', 'vani-warehouse::texts.warehouse_service_provider.stock_transfers', 'admin.plugins.vani-warehouse.transfers.index', 'inventory.view', 170, 'catalog');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
         $this->adminPages('Warehouse', $this->pluginPath('Resources/js/Pages'));
         // Nút trên trang Tồn kho của Core — tự ẩn khi plugin tắt.

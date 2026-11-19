@@ -50,7 +50,7 @@ final class PluginCapabilities
         foreach (array_diff($runningIds, [$pluginId]) as $dependentId) {
             foreach ($manifests[$dependentId]->requiresCapabilities ?? [] as $tag) {
                 if (in_array($pluginId, $this->extensions->providers($tag), true) && ! $this->provided($tag, [...$remaining, $dependentId])) {
-                    $broken[] = "{$dependentId} cần [{$tag}]";
+                    $broken[] = __('extension::texts.plugin_capabilities.dependent_id_requires_tag', ['dependent_id' => $dependentId, 'tag' => $tag]);
                 }
             }
         }
@@ -65,7 +65,7 @@ final class PluginCapabilities
     {
         $kind = array_search($tag, $this->extensions->kindContracts(), true);
 
-        return $kind === false ? $tag : "{$tag} (loại {$kind})";
+        return $kind === false ? $tag : __('extension::texts.plugin_capabilities.tag_type_kind', ['tag' => $tag, 'kind' => $kind]);
     }
 
     /**

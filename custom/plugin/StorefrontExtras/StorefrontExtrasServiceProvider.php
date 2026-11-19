@@ -33,8 +33,8 @@ final class StorefrontExtrasServiceProvider extends PluginServiceProvider
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-storefront-extras');
         $this->settings([
-            ['key' => 'recent_on_cart', 'label' => 'Thanh "Đã xem" ở trang giỏ', 'type' => 'bool', 'default' => true],
-            ['key' => 'recent_on_cart_limit', 'label' => 'Số sản phẩm thanh "Đã xem" ở giỏ (1–20)', 'type' => 'int', 'default' => 12, 'rules' => ['min:1', 'max:20']],
+            ['key' => 'recent_on_cart', 'label' => 'vani-storefront-extras::texts.storefront_extras_service_provider.recently_viewed_bar_cart_page', 'type' => 'bool', 'default' => true],
+            ['key' => 'recent_on_cart_limit', 'label' => 'vani-storefront-extras::texts.storefront_extras_service_provider.products_cart_recently_viewed_bar', 'type' => 'int', 'default' => 12, 'rules' => ['min:1', 'max:20']],
         ]);
 
         foreach ([BestsellersBlock::class, RecentlyViewedBlock::class, VideoHeroBlock::class, SlideshowBlock::class, BannerGridBlock::class, ProductTabsBlock::class, FeaturesBlock::class, MarkdownBlock::class] as $block) {

@@ -29,9 +29,9 @@ final class BankTransferServiceProvider extends PluginServiceProvider
     {
         $this->translations($this->pluginPath('resources/lang'), 'vani-bank-transfer');
         $this->settings([
-            ['key' => 'bank', 'label' => 'Ngân hàng'],
-            ['key' => 'account_number', 'label' => 'Số tài khoản', 'help' => 'Thiếu số tài khoản → phương thức ẩn ở checkout.'],
-            ['key' => 'account_name', 'label' => 'Chủ tài khoản'],
+            ['key' => 'bank', 'label' => 'vani-bank-transfer::texts.bank_transfer_service_provider.bank'],
+            ['key' => 'account_number', 'label' => 'vani-bank-transfer::texts.bank_transfer_service_provider.account_number', 'help' => 'vani-bank-transfer::texts.bank_transfer_service_provider.missing_account_number_method_hidden'],
+            ['key' => 'account_name', 'label' => 'vani-bank-transfer::texts.bank_transfer_service_provider.account_holder'],
         ]);
 
         $this->contribute(PaymentGateway::TAG, ManualBankTransferGateway::class);

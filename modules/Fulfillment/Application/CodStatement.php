@@ -161,13 +161,13 @@ final class CodStatement
      */
     private function note(array $line): string
     {
-        $fee = $line['fee'] === null ? '' : " · phí hãng {$line['fee']}";
+        $fee = $line['fee'] === null ? '' : __('fulfillment::texts.cod_statement.carrier_fee_fee', ['fee' => $line['fee']]);
 
         return match ($line['status']) {
-            'matched' => 'Khớp bảng kê COD'.$fee,
-            'amount_mismatch' => "Hãng ghi thu hộ {$line['amount']}, vận đơn {$line['expected']}".$fee,
-            'not_delivered' => 'Có trong bảng kê nhưng vận đơn chưa ở trạng thái đã giao'.$fee,
-            'not_found' => 'Không có vận đơn này trong hệ thống'.$fee,
+            'matched' => __('fulfillment::texts.cod_statement.matched_cod_statement').$fee,
+            'amount_mismatch' => __('fulfillment::texts.cod_statement.carrier_recorded_cod_amount_shipment', ['amount' => $line['amount'], 'expected' => $line['expected']]).$fee,
+            'not_delivered' => __('fulfillment::texts.cod_statement.statement_but_shipment_not_delivered').$fee,
+            'not_found' => __('fulfillment::texts.cod_statement.shipment_does_not_exist_system').$fee,
             default => $line['status'],
         };
     }

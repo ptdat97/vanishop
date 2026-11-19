@@ -31,6 +31,7 @@ final class InMemoryPermissionRegistry implements PermissionRegistry
     {
         ksort($this->permissions);
 
-        return $this->permissions;
+        // Mô tả là khoá dịch (đăng ký lúc boot, ADR-049) — dịch theo ngôn ngữ hiện tại.
+        return array_map(fn (string $description): string => __($description), $this->permissions);
     }
 }

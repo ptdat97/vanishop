@@ -37,7 +37,7 @@ abstract class CatalogLinkType implements LinkType
     public function search(string $query, string $locale, int $limit = 20): array
     {
         return array_map(
-            fn (array $row): array => ['value' => (string) $row['id'], 'label' => $row['visible'] ? $row['name'] : "{$row['name']} (đang ẩn)"],
+            fn (array $row): array => ['value' => (string) $row['id'], 'label' => $row['visible'] ? $row['name'] : __('storefront::texts.catalog_link_type.name_hidden', ['name' => $row['name']])],
             $this->catalog->search($this->kind(), $query, $locale, $limit),
         );
     }

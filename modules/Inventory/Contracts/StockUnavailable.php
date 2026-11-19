@@ -16,7 +16,7 @@ final class StockUnavailable extends BusinessRuleViolation
         public readonly int $requested,
         public readonly int $available,
     ) {
-        parent::__construct("Không đủ hàng cho variant #{$variantId}: cần {$requested}, còn {$available}.");
+        parent::__construct(__('inventory::texts.stock_unavailable.not_enough_stock_variant_variant', ['variant_id' => $variantId, 'requested' => $requested, 'available' => $available]));
     }
 
     public function errorCode(): string

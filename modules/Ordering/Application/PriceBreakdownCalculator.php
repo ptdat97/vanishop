@@ -73,7 +73,7 @@ final class PriceBreakdownCalculator
         $promotionDiscount = $legacyPromotion;
         $voucherDiscount = 0;
         foreach ($byPromotion as $promotionId => $amount) {
-            $info = $known[$promotionId] ?? ['name' => "Khuyến mãi #{$promotionId}", 'code' => null, 'voucher' => false];
+            $info = $known[$promotionId] ?? ['name' => __('ordering::texts.price_breakdown_calculator.promotion_promotion_id', ['promotion_id' => $promotionId]), 'code' => null, 'voucher' => false];
             $promotions[] = ['promotion_id' => $promotionId, ...$info, 'amount' => $amount];
             if ($info['voucher']) {
                 $voucherDiscount += $amount;

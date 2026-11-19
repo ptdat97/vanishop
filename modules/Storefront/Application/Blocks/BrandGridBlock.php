@@ -19,12 +19,12 @@ final class BrandGridBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Lưới thương hiệu';
+        return __('storefront::texts.brand_grid_block.brand_grid');
     }
 
     public function fields(): array
     {
-        return [FieldDefinition::string('title', 'Tiêu đề', max: 120)];
+        return [FieldDefinition::string('title', __('storefront::texts.brand_grid_block.title'), max: 120)];
     }
 
     public function resolve(array $config, string $locale): array

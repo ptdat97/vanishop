@@ -32,12 +32,12 @@ final class OrderCustomerNotesPanel
         $notes = $this->notes->latest($customerId, 3);
 
         return [
-            'title' => 'Ghi chú CSKH',
-            'rows' => $notes === [] ? [['label' => 'Chưa có ghi chú', 'value' => '']] : array_map(fn (array $note): array => ['label' => (string) $note['at'], 'value' => $note['note'].($note['source'] === 'staff' ? '' : " ({$note['source']})")], $notes),
-            'link' => ['label' => 'Hồ sơ khách', 'url' => route('admin.customers.show', $publicId)],
+            'title' => __('customer::texts.order_customer_notes_panel.customer_service_notes'),
+            'rows' => $notes === [] ? [['label' => __('customer::texts.order_customer_notes_panel.no_notes_yet'), 'value' => '']] : array_map(fn (array $note): array => ['label' => (string) $note['at'], 'value' => $note['note'].($note['source'] === 'staff' ? '' : " ({$note['source']})")], $notes),
+            'link' => ['label' => __('customer::texts.order_customer_notes_panel.customer_profile'), 'url' => route('admin.customers.show', $publicId)],
             'actions' => Gate::allows('customers.segment', [ScopeRef::owner()]) ? [[
-                'key' => 'customer-note', 'label' => 'Thêm ghi chú CSKH', 'url' => route('admin.customers.notes.store', $publicId), 'tone' => 'secondary',
-                'fields' => [['key' => 'note', 'label' => 'Ghi chú (vd. khách hẹn nhận sau 18h)', 'required' => true]],
+                'key' => 'customer-note', 'label' => __('customer::texts.order_customer_notes_panel.add_customer_service_note'), 'url' => route('admin.customers.notes.store', $publicId), 'tone' => 'secondary',
+                'fields' => [['key' => 'note', 'label' => __('customer::texts.order_customer_notes_panel.note_customer_pick_up_after'), 'required' => true]],
             ]] : [],
         ];
     }

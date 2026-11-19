@@ -18,17 +18,17 @@ final class IntegrationRequestRejected extends BusinessRuleViolation
 
     public static function orderNotFound(string $number): self
     {
-        return new self('Không tìm thấy đơn.', 'integration.order_not_found', 404, ['number' => $number]);
+        return new self(__('integration::texts.integration_request_rejected.order_not_found'), 'integration.order_not_found', 404, ['number' => $number]);
     }
 
     public static function idempotencyKeyRequired(): self
     {
-        return new self('Header Idempotency-Key bắt buộc (8–128 ký tự A-Z a-z 0-9 _ . : -).', 'integration.idempotency_key_required', 400);
+        return new self(__('integration::texts.integration_request_rejected.idempotency_key_header_required_8'), 'integration.idempotency_key_required', 400);
     }
 
     public static function referenceConflict(string $number, string $existing): self
     {
-        return new self('Đơn đã được xác nhận với số chứng từ khác.', 'integration.reference_conflict', 409, ['number' => $number, 'external_id' => $existing]);
+        return new self(__('integration::texts.integration_request_rejected.order_was_already_confirmed_different'), 'integration.reference_conflict', 409, ['number' => $number, 'external_id' => $existing]);
     }
 
     public function errorCode(): string

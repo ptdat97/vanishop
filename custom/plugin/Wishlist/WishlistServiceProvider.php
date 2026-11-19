@@ -32,17 +32,17 @@ final class WishlistServiceProvider extends PluginServiceProvider
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-wishlist');
         $this->settings([
-            ['key' => 'notify_back_in_stock', 'label' => 'Báo khách khi sản phẩm yêu thích có hàng lại', 'type' => 'bool', 'default' => false, 'help' => 'Tin marketing: chỉ gửi cho khách đồng ý nhận tin. Mẫu tin ở Admin → Thông báo.'],
-            ['key' => 'notify_price_drop', 'label' => 'Báo khách khi sản phẩm yêu thích giảm giá', 'type' => 'bool', 'default' => false, 'help' => 'So với giá lúc thêm (hoặc lần báo trước). Tối đa một tin mỗi sản phẩm trong 7 ngày.'],
+            ['key' => 'notify_back_in_stock', 'label' => 'vani-wishlist::texts.wishlist_service_provider.notify_customers_when_wishlisted_product', 'type' => 'bool', 'default' => false, 'help' => 'vani-wishlist::texts.wishlist_service_provider.marketing_message_only_sent_customers'],
+            ['key' => 'notify_price_drop', 'label' => 'vani-wishlist::texts.wishlist_service_provider.notify_customers_when_wishlisted_product_2', 'type' => 'bool', 'default' => false, 'help' => 'vani-wishlist::texts.wishlist_service_provider.compared_price_when_added_last'],
         ]);
 
         $variables = ['customer_name', 'product_name', 'product_url', 'price'];
         $catalog = $this->app->make(NotificationCatalog::class);
-        $catalog->define(new NotificationType(WishlistAlerts::BACK_IN_STOCK, 'Sản phẩm yêu thích có hàng lại', $variables, [
-            'mail' => ['subject' => '{{ product_name }} đã có hàng lại', 'body' => "Chào {{ customer_name }},\n\n{{ product_name }} trong danh sách yêu thích của bạn đã có hàng lại: {{ product_url }}"],
+        $catalog->define(new NotificationType(WishlistAlerts::BACK_IN_STOCK, 'vani-wishlist::texts.wishlist_service_provider.wishlisted_product_back_stock', $variables, [
+            'mail' => ['subject' => 'vani-wishlist::texts.wishlist_service_provider.product_name_back_stock', 'body' => 'vani-wishlist::texts.wishlist_service_provider.hi_customer_name_product_name'],
         ]));
-        $catalog->define(new NotificationType(WishlistAlerts::PRICE_DROP, 'Sản phẩm yêu thích giảm giá', $variables, [
-            'mail' => ['subject' => '{{ product_name }} đang giảm giá', 'body' => "Chào {{ customer_name }},\n\n{{ product_name }} trong danh sách yêu thích của bạn giảm còn {{ price }}: {{ product_url }}"],
+        $catalog->define(new NotificationType(WishlistAlerts::PRICE_DROP, 'vani-wishlist::texts.wishlist_service_provider.wishlisted_product_sale', $variables, [
+            'mail' => ['subject' => 'vani-wishlist::texts.wishlist_service_provider.product_name_sale', 'body' => 'vani-wishlist::texts.wishlist_service_provider.hi_customer_name_product_name_2'],
         ]));
 
         $this->onEvent(AvailabilityChanged::class, fn (AvailabilityChanged $event) => $this->app->make(WishlistAlerts::class)->variantsChanged($event->variantIds));

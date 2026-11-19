@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\Extension\Contracts\Extensions;
 use Modules\Identity\Contracts\AuditLogger;
+use Modules\Shared\Support\StoreLocale;
 use Modules\Tenancy\Contracts\Data\SettingDefinition;
 use Modules\Tenancy\Contracts\Settings;
 
@@ -46,9 +47,9 @@ final class SettingsAdmin
             $secret = $definition->type === 'secret';
             $fields[] = [
                 'key' => $definition->key,
-                'label' => $definition->label,
+                'label' => self::text($definition->label, $definition->key),
                 'type' => $definition->type,
-                'help' => $definition->help,
+                'help' => $definition->help === null ? null : self::text($definition->help, $definition->key),
                 'options' => $this->options($definition),
                 'is_set' => array_key_exists($definition->key, $explicit),
                 'value' => $secret ? null : ($explicit[$definition->key] ?? null),
@@ -70,7 +71,7 @@ final class SettingsAdmin
         }
 
         foreach ($values as $key => $value) {
-            $definition = $definitions[$key] ?? throw ValidationException::withMessages(["values.{$key}" => 'Cấu hình không tồn tại.']);
+            $definition = $definitions[$key] ?? throw ValidationException::withMessages(["values.{$key}" => __('extension::texts.settings_admin.setting_does_not_exist')]);
             if ($definition->type === 'secret' && ($value === null || $value === '')) {
                 continue;
             }
@@ -84,7 +85,7 @@ final class SettingsAdmin
 
             $value = $this->cast($definition, $value);
             if ($definition->rules !== []) {
-                $validator = Validator::make(['value' => $value], ['value' => $definition->rules], [], ['value' => $definition->label]);
+                $validator = Validator::make(['value' => $value], ['value' => $definition->rules], [], ['value' => self::text($definition->label, $definition->key)]);
                 if ($validator->fails()) {
                     throw ValidationException::withMessages(["values.{$key}" => $validator->errors()->first('value')]);
                 }
@@ -101,11 +102,11 @@ final class SettingsAdmin
         $error = fn (string $message) => ValidationException::withMessages(["values.{$definition->key}" => $message]);
 
         return match ($definition->type) {
-            'int' => filter_var($value, FILTER_VALIDATE_INT) !== false ? (int) $value : throw $error('Phải là số nguyên.'),
-            'media' => filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false ? (int) $value : throw $error('Chọn ảnh từ Thư viện ảnh.'),
-            'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? throw $error('Phải là đúng/sai.'),
-            'select' => array_key_exists((string) $value, $this->options($definition)) ? (string) $value : throw $error('Giá trị không nằm trong danh sách.'),
-            default => is_scalar($value) && mb_strlen((string) $value) <= 2000 ? (string) $value : throw $error('Tối đa 2000 ký tự.'),
+            'int' => filter_var($value, FILTER_VALIDATE_INT) !== false ? (int) $value : throw $error(__('extension::texts.settings_admin.must_integer')),
+            'media' => filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false ? (int) $value : throw $error(__('extension::texts.settings_admin.choose_image_from_media_library')),
+            'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? throw $error(__('extension::texts.settings_admin.must_true_false')),
+            'select' => array_key_exists((string) $value, $this->options($definition)) ? (string) $value : throw $error(__('extension::texts.settings_admin.value_not_list')),
+            default => is_scalar($value) && mb_strlen((string) $value) <= 2000 ? (string) $value : throw $error(__('extension::texts.settings_admin.most_2000_characters')),
         };
     }
 
@@ -115,10 +116,10 @@ final class SettingsAdmin
     private function options(SettingDefinition $definition): array
     {
         if ($definition->optionsFromTag === null) {
-            return $definition->options;
+            return array_map(fn (mixed $label): string => __((string) $label), $definition->options);
         }
 
-        $options = $definition->options;
+        $options = array_map(fn (mixed $label): string => __((string) $label), $definition->options);
         foreach ($this->extensions->tagged($definition->optionsFromTag) as $implementation) {
             if (method_exists($implementation, 'code')) {
                 $code = (string) $implementation->code();
@@ -127,5 +128,16 @@ final class SettingsAdmin
         }
 
         return $options;
+    }
+
+    /**
+     * Nhãn/help của cấu hình là khoá dịch (ADR-049) — dịch theo ngôn ngữ Admin lúc hiển thị; cấu hình theo ngôn ngữ
+     * (khoá kết thúc `.<locale>`) được tham số `:locale`.
+     */
+    private static function text(string $text, string $key): string
+    {
+        $locale = str_contains($key, '.') ? substr($key, (int) strrpos($key, '.') + 1) : '';
+
+        return (string) __($text, StoreLocale::isSupported($locale) ? ['locale' => strtoupper($locale)] : []);
     }
 }

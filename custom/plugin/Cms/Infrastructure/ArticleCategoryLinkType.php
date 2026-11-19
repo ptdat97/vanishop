@@ -20,7 +20,7 @@ final class ArticleCategoryLinkType implements LinkType
 
     public function label(): string
     {
-        return 'Chuyên mục tin tức';
+        return __('vani-cms::texts.article_category_link_type.news_categories');
     }
 
     public function searchable(): bool

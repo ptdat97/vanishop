@@ -15,7 +15,7 @@ final class VietnameseText
     public static function normalize(string $text): string
     {
         $text = mb_strtolower($text, 'UTF-8');
-        $text = str_replace('đ', 'd', $text);
+        $text = str_replace('đ', 'd', $text); // i18n-ignore: bỏ dấu
 
         $decomposed = Normalizer::normalize($text, Normalizer::FORM_D);
         $text = preg_replace('/\p{Mn}+/u', '', $decomposed === false ? $text : $decomposed) ?? $text;
@@ -31,7 +31,7 @@ final class VietnameseText
      */
     public static function stripDiacritics(string $text): string
     {
-        $text = str_replace(['đ', 'Đ'], ['d', 'D'], $text);
+        $text = str_replace(['đ', 'Đ'], ['d', 'D'], $text); // i18n-ignore: bỏ dấu
         $decomposed = Normalizer::normalize($text, Normalizer::FORM_D);
 
         return preg_replace('/\p{Mn}+/u', '', $decomposed === false ? $text : $decomposed) ?? $text;

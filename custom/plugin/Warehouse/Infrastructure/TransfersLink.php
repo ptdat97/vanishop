@@ -14,7 +14,7 @@ final class TransfersLink implements StockPageLink
 {
     public function label(): string
     {
-        return 'Chuyển kho';
+        return __('vani-warehouse::texts.transfers_link.stock_transfers');
     }
 
     public function url(): ?string

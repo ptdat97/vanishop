@@ -36,7 +36,7 @@ abstract class BreakdownReport implements ReportProvider
 
     protected function displayLabel(SalesBucket $bucket): string
     {
-        return $bucket->label !== '' ? $bucket->label : '(Không có)';
+        return $bucket->label !== '' ? $bucket->label : __('vani-reports::texts.breakdown_report.none');
     }
 
     public function permission(): string
@@ -49,18 +49,18 @@ abstract class BreakdownReport implements ReportProvider
         $buckets = $this->statistics->breakdown($this->dimension(), $period->from, $period->to, static::LIMIT);
         $revenue = array_sum(array_map(fn (SalesBucket $bucket): int => $bucket->revenue, $buckets));
 
-        $columns = [new Column('group', $this->groupLabel()), new Column('orders', 'Số đơn', 'number')];
+        $columns = [new Column('group', $this->groupLabel()), new Column('orders', __('vani-reports::texts.breakdown_report.orders'), 'number')];
         if ($this->withQuantity()) {
-            $columns[] = new Column('quantity', 'Số lượng', 'number');
+            $columns[] = new Column('quantity', __('vani-reports::texts.breakdown_report.quantity'), 'number');
         }
-        array_push($columns, new Column('revenue', 'Doanh thu', 'money'), new Column('share', 'Tỷ trọng', 'percent'));
+        array_push($columns, new Column('revenue', 'Doanh thu', 'money'), new Column('share', __('vani-reports::texts.breakdown_report.share'), 'percent'));
 
         return new ReportResult(
             new Table($columns, array_map(fn (SalesBucket $bucket): array => [
                 'group' => $this->displayLabel($bucket), 'orders' => $bucket->ordersCount, 'quantity' => $bucket->quantity,
                 'revenue' => $bucket->revenue, 'share' => $revenue === 0 ? 0 : round($bucket->revenue * 100 / $revenue, 1),
             ], $buckets)),
-            [new Metric('Doanh thu', $revenue, 'money'), new Metric($this->groupLabel(), count($buckets), 'number', count($buckets) >= static::LIMIT ? 'Hiển thị '.static::LIMIT.' nhóm đầu' : null)],
+            [new Metric('Doanh thu', $revenue, 'money'), new Metric($this->groupLabel(), count($buckets), 'number', count($buckets) >= static::LIMIT ? __('vani-reports::texts.breakdown_report.showing_first').static::LIMIT.__('vani-reports::texts.breakdown_report.groups') : null)],
         );
     }
 }

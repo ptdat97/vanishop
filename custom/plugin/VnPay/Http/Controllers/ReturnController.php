@@ -22,13 +22,13 @@ final class ReturnController
         $payment = $result === 'invalid' ? null : $payments->view((string) ($params['vnp_TxnRef'] ?? ''));
 
         if ($payment === null || $payment->gatewayCode !== VnPayGateway::CODE) {
-            return redirect()->to(vani_route('storefront.home'))->withErrors(['business' => 'Không xác định được giao dịch VNPay.']);
+            return redirect()->to(vani_route('storefront.home'))->withErrors(['business' => __('vani-vnpay::texts.return_controller.could_not_identify_vnpay_transaction')]);
         }
 
         $redirect = redirect()->to(vani_route('storefront.order', $payment->orderPublicId));
 
         return $result === 'paid'
-            ? $redirect->with('status', 'Thanh toán VNPay thành công. Cảm ơn bạn!')
-            : $redirect->withErrors(['business' => 'Thanh toán VNPay chưa thành công. Bạn có thể thử lại.']);
+            ? $redirect->with('status', __('vani-vnpay::texts.return_controller.vnpay_payment_successful_thank_you'))
+            : $redirect->withErrors(['business' => __('vani-vnpay::texts.return_controller.vnpay_payment_was_not_successful')]);
     }
 }

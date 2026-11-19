@@ -26,19 +26,19 @@ final class InCollectionsRule implements CartContentRule
 
     public function label(): string
     {
-        return 'Thuộc bộ sưu tập';
+        return __('vani-promotion-rules::texts.in_collections_rule.collection');
     }
 
     public function validateConfig(array $config): array
     {
         $slugs = $config['slugs'] ?? null;
         if (! is_array($slugs) || $slugs === []) {
-            return ['Cần khai báo danh sách slug "slugs" không rỗng.'];
+            return [__('vani-promotion-rules::texts.in_collections_rule.non_empty_slugs_list_required')];
         }
 
         foreach ($slugs as $slug) {
             if (! is_string($slug) || trim($slug) === '') {
-                return ['Mỗi slug trong "slugs" phải là chuỗi không rỗng.'];
+                return [__('vani-promotion-rules::texts.in_collections_rule.every_slug_slugs_must_non')];
             }
         }
 

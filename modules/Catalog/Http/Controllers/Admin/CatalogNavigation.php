@@ -19,14 +19,14 @@ final class CatalogNavigation
             'label' => $item[1],
             'url' => route("admin.catalog.{$item[0]}.index"),
         ], [
-            ['products', 'Sản phẩm'],
-            ['brands', 'Thương hiệu'],
-            ['categories', 'Danh mục'],
-            ['collections', 'Bộ sưu tập'],
-            ['option-types', 'Tuỳ chọn biến thể'],
-            ['attributes', 'Thuộc tính'],
-            ['link-types', 'Loại liên kết'],
-            ['filters', 'Bộ lọc'],
+            ['products', __('catalog::texts.catalog_navigation.products')],
+            ['brands', __('catalog::texts.catalog_navigation.brand')],
+            ['categories', __('catalog::texts.catalog_navigation.category')],
+            ['collections', __('catalog::texts.catalog_navigation.collections')],
+            ['option-types', __('catalog::texts.catalog_navigation.variant_options')],
+            ['attributes', __('catalog::texts.catalog_navigation.attributes')],
+            ['link-types', __('catalog::texts.catalog_navigation.link_type')],
+            ['filters', __('catalog::texts.catalog_navigation.filters')],
         ]);
     }
 }

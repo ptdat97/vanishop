@@ -20,12 +20,12 @@ final class CostMarkupMode implements BulkPriceMode
 
     public function label(): string
     {
-        return 'Giá vốn + %';
+        return __('vani-cost-price::texts.cost_markup_mode.cost_price');
     }
 
     public function hint(): string
     {
-        return '% cộng thêm vào giá vốn';
+        return __('vani-cost-price::texts.cost_markup_mode.added_cost_price');
     }
 
     public function compute(array $variantIds, float $value, array $listAmounts): array

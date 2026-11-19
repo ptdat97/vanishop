@@ -149,7 +149,7 @@ final class RefundService
         if (! $result->successful) {
             throw PaymentRejected::payoutFailed($payout->label(), (string) ($result->message ?? ''));
         }
-        $this->completeManualRefund($refund->id, "Chuyển trả qua {$payout->label()}".($result->reference === null ? '' : ": {$result->reference}"));
+        $this->completeManualRefund($refund->id, __('payment::texts.refund_service.pay_out_via_label', ['label' => $payout->label()]).($result->reference === null ? '' : ": {$result->reference}"));
 
         return (string) $result->reference;
     }

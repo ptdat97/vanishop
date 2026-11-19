@@ -38,7 +38,7 @@ final class ManifestRepository
                 $manifest = PluginManifest::fromArray(is_array($data) ? $data : [], dirname($file));
 
                 if (isset($this->manifests[$manifest->id])) {
-                    throw InvalidManifest::because($file, "trùng id [{$manifest->id}]");
+                    throw InvalidManifest::because($file, __('extension::texts.manifest_repository.duplicate_id_id', ['id' => $manifest->id]));
                 }
 
                 $this->manifests[$manifest->id] = $manifest;

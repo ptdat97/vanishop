@@ -42,15 +42,15 @@ final class OrderReturnsPanel
         }
 
         return [
-            'title' => 'Đổi/trả',
+            'title' => __('returns::texts.order_returns_panel.return_exchange'),
             'rows' => $returns->map(fn (ReturnRequest $return): array => [
-                'label' => $return->number.($return->resolution === 'exchange' ? ' (đổi hàng)' : ''),
+                'label' => $return->number.($return->resolution === 'exchange' ? __('returns::texts.order_returns_panel.exchange') : ''),
                 'value' => ($labels[$return->status->value] ?? $return->status->value).' · '.$this->money->formatAmount($return->refund_amount, $order->currencyCode),
             ])->values()->all(),
             // Còn hàng trả được → tạo hộ khách; không thì mở yêu cầu gần nhất.
             'link' => $canCreate
-                ? ['label' => 'Tạo yêu cầu đổi/trả', 'url' => route('admin.returns.returns.create', ['order' => $order->id])]
-                : ['label' => 'Mở yêu cầu đổi/trả', 'url' => route('admin.returns.returns.show', ['return' => $returns->last()->id])],
+                ? ['label' => __('returns::texts.order_returns_panel.create_return_exchange_request'), 'url' => route('admin.returns.returns.create', ['order' => $order->id])]
+                : ['label' => __('returns::texts.order_returns_panel.open_return_exchange_request'), 'url' => route('admin.returns.returns.show', ['return' => $returns->last()->id])],
             'actions' => $actions,
         ];
     }
@@ -69,25 +69,25 @@ final class OrderReturnsPanel
 
         if (Gate::allows('returns.manage')) {
             if ($return->status->canMoveTo(ReturnStatus::Approved)) {
-                $actions[] = $transition(ReturnStatus::Approved, 'Duyệt đổi/trả', ['primary' => true, 'tone' => 'primary']);
+                $actions[] = $transition(ReturnStatus::Approved, __('returns::texts.order_returns_panel.approve_return_exchange'), ['primary' => true, 'tone' => 'primary']);
             }
             if ($return->status->canMoveTo(ReturnStatus::Rejected)) {
-                $actions[] = $transition(ReturnStatus::Rejected, 'Từ chối', ['tone' => 'danger', 'fields' => [['key' => 'note', 'label' => 'Lý do từ chối (gửi cho khách)', 'required' => true]]]);
+                $actions[] = $transition(ReturnStatus::Rejected, __('returns::texts.order_returns_panel.reject'), ['tone' => 'danger', 'fields' => [['key' => 'note', 'label' => __('returns::texts.order_returns_panel.rejection_reason_sent_customer'), 'required' => true]]]);
             }
             if ($return->status->canMoveTo(ReturnStatus::InTransit) && $return->status !== ReturnStatus::Requested) {
-                $actions[] = $transition(ReturnStatus::InTransit, 'Khách đã gửi hàng', ['confirm' => 'Ghi nhận khách đã gửi hàng về?']);
+                $actions[] = $transition(ReturnStatus::InTransit, __('returns::texts.order_returns_panel.customer_shipped_goods'), ['confirm' => __('returns::texts.order_returns_panel.record_customer_shipped_goods_back')]);
             }
             if ($return->status->canMoveTo(ReturnStatus::Received)) {
-                $actions[] = ['key' => "return-{$return->id}-receive", 'label' => $prefix.'Đã nhận hàng (còn bán được)', 'url' => "{$url}/receive",
-                    'primary' => true, 'tone' => 'primary', 'confirm' => 'Nhận hàng trả, nhập lại kho tất cả dòng? (Có hàng hỏng: khai ở trang yêu cầu.)'];
+                $actions[] = ['key' => "return-{$return->id}-receive", 'label' => $prefix.__('returns::texts.order_returns_panel.received_still_sellable'), 'url' => "{$url}/receive",
+                    'primary' => true, 'tone' => 'primary', 'confirm' => __('returns::texts.order_returns_panel.receive_return_restock_every_line')];
             }
         }
         if (Gate::allows('returns.refund') && $return->status->canMoveTo(ReturnStatus::Resolved)) {
             $actions[] = $return->resolution === 'exchange'
-                ? ['key' => "return-{$return->id}-resolve", 'label' => $prefix.'Hoàn tất & tạo đơn đổi', 'url' => "{$url}/resolve", 'primary' => true, 'tone' => 'primary', 'confirm' => 'Hoàn tất đổi hàng và tạo đơn đổi?']
-                : ['key' => "return-{$return->id}-resolve", 'label' => $prefix.'Hoàn tất & hoàn tiền', 'url' => "{$url}/resolve", 'primary' => true, 'tone' => 'primary', 'fields' => [
-                    ['key' => 'amount', 'label' => 'Số tiền hoàn (tối đa '.$this->money->formatAmount($return->refund_amount, $currency).'; trừ phí hư hỏng nếu có)', 'required' => true, 'value' => (string) $return->refund_amount],
-                    ['key' => 'note', 'label' => 'Ghi chú'],
+                ? ['key' => "return-{$return->id}-resolve", 'label' => $prefix.__('returns::texts.order_returns_panel.complete_create_exchange_order'), 'url' => "{$url}/resolve", 'primary' => true, 'tone' => 'primary', 'confirm' => __('returns::texts.order_returns_panel.complete_exchange_create_exchange_order')]
+                : ['key' => "return-{$return->id}-resolve", 'label' => $prefix.__('returns::texts.order_returns_panel.complete_refund'), 'url' => "{$url}/resolve", 'primary' => true, 'tone' => 'primary', 'fields' => [
+                    ['key' => 'amount', 'label' => __('returns::texts.order_returns_panel.refund_amount_most').$this->money->formatAmount($return->refund_amount, $currency).__('returns::texts.order_returns_panel.minus_damage_fees_if_any'), 'required' => true, 'value' => (string) $return->refund_amount],
+                    ['key' => 'note', 'label' => __('returns::texts.order_returns_panel.note')],
                 ]];
         }
 

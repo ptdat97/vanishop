@@ -39,7 +39,7 @@ final class NotificationServiceProvider extends ModuleServiceProvider
         $this->app->bind(Notifier::class, NotificationService::class);
         $this->app->singleton(NotificationCatalog::class, InMemoryNotificationCatalog::class);
         $this->app->make(Extensions::class)->tag([MailChannel::class], NotificationChannel::TAG);
-        $this->app->make(Extensions::class)->requires(NotificationChannel::TAG, Requirement::AtLeastOne, 'Kênh gửi thông báo');
+        $this->app->make(Extensions::class)->requires(NotificationChannel::TAG, Requirement::AtLeastOne, 'notification::texts.notification_service_provider.notification_channels');
         $this->app->make(Extensions::class)->kindContract('notification_channel', NotificationChannel::TAG);
     }
 
@@ -47,15 +47,15 @@ final class NotificationServiceProvider extends ModuleServiceProvider
     {
         $catalog = $this->app->make(NotificationCatalog::class);
         $order = ['store_name', 'customer_name', 'order_number', 'total'];
-        $catalog->define(new NotificationType('order_placed', 'Đặt đơn thành công', $order));
-        $catalog->define(new NotificationType('order_cancelled', 'Đơn đã huỷ', $order));
-        $catalog->define(new NotificationType('shipment_shipped', 'Đơn đang được giao', [...$order, 'carrier', 'tracking_number']));
-        $catalog->define(new NotificationType('shipment_delivered', 'Đã giao thành công', [...$order, 'carrier', 'tracking_number']));
+        $catalog->define(new NotificationType('order_placed', 'notification::texts.notification_service_provider.order_placed', $order));
+        $catalog->define(new NotificationType('order_cancelled', 'notification::texts.notification_service_provider.order_cancelled', $order));
+        $catalog->define(new NotificationType('shipment_shipped', 'notification::texts.notification_service_provider.order_out_delivery', [...$order, 'carrier', 'tracking_number']));
+        $catalog->define(new NotificationType('shipment_delivered', 'notification::texts.notification_service_provider.order_delivered', [...$order, 'carrier', 'tracking_number']));
 
-        $permissions->register('notifications.view', 'Xem mẫu tin và nhật ký gửi');
-        $permissions->register('notifications.manage', 'Sửa mẫu tin');
+        $permissions->register('notifications.view', 'notification::texts.notification_service_provider.view_message_templates_send_log');
+        $permissions->register('notifications.manage', 'notification::texts.notification_service_provider.edit_message_templates');
 
-        $navigation->add('notifications', 'Thông báo', 'admin.notifications.templates.index', 'notifications.view', 220, group: 'marketing');
+        $navigation->add('notifications', 'notification::texts.notification_service_provider.notifications', 'admin.notifications.templates.index', 'notifications.view', 220, group: 'marketing');
 
         Event::listen(OrderPlaced::class, [SendOrderNotifications::class, 'orderPlaced']);
         Event::listen(OrderCancelled::class, [SendOrderNotifications::class, 'orderCancelled']);

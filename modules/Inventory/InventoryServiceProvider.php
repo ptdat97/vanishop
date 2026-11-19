@@ -76,7 +76,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         // Ma trận biến thể (variant-matrix §3.3): cột tồn (cửa hàng một kho) + SKU đã có tồn/biến động là đã phát sinh.
         $this->app->make(Extensions::class)->tag([VariantStockFields::class], VariantFieldProvider::TAG);
         $this->app->make(Extensions::class)->tag([StockedVariants::class], VariantUsage::TAG);
-        $this->app->make(Extensions::class)->requires(InventoryStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược tồn bán được');
+        $this->app->make(Extensions::class)->requires(InventoryStrategy::TAG, Requirement::ExactlyOne, 'inventory::texts.inventory_service_provider.sellable_stock_strategy');
         $this->app->bind(AvailabilityReader::class, fn ($app): StockAvailability => new StockAvailability(
             $app->make(Extensions::class),
             $app->make(Settings::class),
@@ -95,19 +95,19 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(StockDashboardTasks::class)());
         Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListStock::class)->column($styleIds));
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', 'inventory.strategy', 'Cách tính số bán được (ATS)', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
-            optionsFromTag: InventoryStrategy::TAG, help: 'Strategy chỉ giảm được ATS so với công thức chuẩn.',
+            'core', 'inventory.strategy', 'inventory::texts.inventory_service_provider.sellable_quantity_calculation_ats', 'select', (string) config('vanishop.inventory.strategy', 'standard'),
+            optionsFromTag: InventoryStrategy::TAG, help: 'inventory::texts.inventory_service_provider.strategy_only_reduce_ats_compared',
         ));
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', LowStockThreshold::SETTING, 'Ngưỡng "sắp hết hàng"', 'int', (int) config('vanishop.inventory.low_stock_threshold', 3),
-            help: 'Số bán được từ mức này trở xuống: Admin tô cảnh báo, Tổng quan đếm vào "Sắp hết hàng", storefront báo "sắp hết hàng". 0 = chỉ báo khi hết.',
+            'core', LowStockThreshold::SETTING, 'inventory::texts.inventory_service_provider.low_stock_threshold', 'int', (int) config('vanishop.inventory.low_stock_threshold', 3),
+            help: 'inventory::texts.inventory_service_provider.below_sellable_quantity_admin_highlights',
             rules: ['min:0', 'max:1000'],
         ));
-        $permissions->register('inventory.view', 'Xem tồn kho');
-        $permissions->register('inventory.adjust', 'Điều chỉnh/kiểm kê tồn kho');
-        $permissions->register('inventory.locations.manage', 'Sửa thông tin Kho chính, tạo Kho chính (cấp Owner)');
+        $permissions->register('inventory.view', 'inventory::texts.inventory_service_provider.view_inventory');
+        $permissions->register('inventory.adjust', 'inventory::texts.inventory_service_provider.adjust_count_inventory');
+        $permissions->register('inventory.locations.manage', 'inventory::texts.inventory_service_provider.edit_main_warehouse_details_create');
 
-        $navigation->add('inventory', 'Tồn kho', 'admin.inventory.home', 'inventory.view', 140, group: 'catalog');
+        $navigation->add('inventory', 'inventory::texts.inventory_service_provider.inventory', 'admin.inventory.home', 'inventory.view', 140, group: 'catalog');
         // Admin → Nhân viên: gán vai trò theo phạm vi một location.
         $scopes->register(ScopeType::Location, fn (): array => Location::query()->orderBy('code')->get(['id', 'code', 'name'])
             ->mapWithKeys(fn (Location $location): array => [$location->id => "{$location->code} — {$location->name}"])->all());

@@ -20,16 +20,16 @@ final class ProductGridBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Lưới sản phẩm';
+        return __('storefront::texts.product_grid_block.product_grid');
     }
 
     public function fields(): array
     {
         return [
-            FieldDefinition::string('title', 'Tiêu đề', max: 120),
-            FieldDefinition::select('source', 'Nguồn', ['newest' => 'Mới nhất', 'category' => 'Danh mục', 'collection' => 'Bộ sưu tập', 'brand' => 'Thương hiệu'], required: true),
-            FieldDefinition::string('slug', 'Slug danh mục/bộ sưu tập/thương hiệu', help: 'Bỏ trống khi nguồn là "Mới nhất".', max: 128),
-            FieldDefinition::int('limit', 'Số sản phẩm (1–24)'),
+            FieldDefinition::string('title', __('storefront::texts.product_grid_block.title'), max: 120),
+            FieldDefinition::select('source', __('storefront::texts.product_grid_block.source'), ['newest' => __('storefront::texts.product_grid_block.newest'), 'category' => __('storefront::texts.product_grid_block.category'), 'collection' => __('storefront::texts.product_grid_block.collections'), 'brand' => __('storefront::texts.product_grid_block.brand')], required: true),
+            FieldDefinition::string('slug', __('storefront::texts.product_grid_block.category_collection_brand_slug'), help: __('storefront::texts.product_grid_block.leave_empty_when_source_newest'), max: 128),
+            FieldDefinition::int('limit', __('storefront::texts.product_grid_block.number_products_1_24')),
         ];
     }
 

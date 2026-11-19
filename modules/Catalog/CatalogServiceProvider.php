@@ -92,7 +92,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->singleton(DatabaseSearchProvider::class);
         // Tìm kiếm bằng truy vấn SQL (provider `database`); chỉ mục ngoài (nếu cần sau này) là plugin qua SearchProvider.
         $this->app->make(Extensions::class)->tag([DatabaseSearchProvider::class], SearchProvider::TAG);
-        $this->app->make(Extensions::class)->requires(SearchProvider::TAG, Requirement::ExactlyOne, 'Tìm kiếm sản phẩm');
+        $this->app->make(Extensions::class)->requires(SearchProvider::TAG, Requirement::ExactlyOne, 'catalog::texts.catalog_service_provider.product_search');
         $this->app->make(Extensions::class)->kindContract('search', SearchProvider::TAG);
         // Định dạng ảnh thu nhỏ (WebP/AVIF…) là plugin (vani.media-webp); không có → giữ định dạng gốc.
         $this->app->make(Extensions::class)->kindContract('image_format', ImageFormat::TAG);
@@ -115,18 +115,18 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         Relation::morphMap(['catalog.category' => Category::class, 'catalog.variant' => Variant::class]);
 
         $permissions->register('catalog.view', 'Xem catalog');
-        $permissions->register('catalog.manage', 'Sửa catalog (sản phẩm, thương hiệu, danh mục, thuộc tính, màu, size)');
+        $permissions->register('catalog.manage', 'catalog::texts.catalog_service_provider.edit_catalogue_products_brands_categories');
 
-        $permissions->register('media.view', 'Xem và chọn ảnh từ Thư viện ảnh');
-        $permissions->register('media.manage', 'Quản lý Thư viện ảnh (tải lên, thư mục, đổi tên, xoá ảnh không dùng)');
+        $permissions->register('media.view', 'catalog::texts.catalog_service_provider.view_choose_images_from_media');
+        $permissions->register('media.manage', 'catalog::texts.catalog_service_provider.manage_media_library_upload_folders');
 
-        $navigation->group('catalog', 'Sản phẩm', 95);
+        $navigation->group('catalog', 'catalog::texts.catalog_service_provider.products', 95);
         $navigation->add('catalog', 'Catalog', 'admin.catalog.home', 'catalog.view', 100, group: 'catalog');
-        $navigation->add('media', 'Thư viện ảnh', 'admin.media.index', 'media.view', 610, group: 'content');
+        $navigation->add('media', 'catalog::texts.catalog_service_provider.media_library', 'admin.media.index', 'media.view', 610, group: 'content');
 
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'Ảnh thay thế', 'media',
-            help: 'Hiện thay cho sản phẩm chưa có ảnh (thẻ sản phẩm, Storefront API) và cho vani_image() khi thiếu ảnh. Để trống: khung trống của theme.',
+            'core', EloquentMediaUrls::PLACEHOLDER_SETTING, 'catalog::texts.catalog_service_provider.placeholder_image', 'media',
+            help: 'catalog::texts.catalog_service_provider.shown_products_without_images_product',
             rules: ['min:1', 'exists:media,id'],
         ));
 

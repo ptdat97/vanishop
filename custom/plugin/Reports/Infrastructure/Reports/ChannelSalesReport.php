@@ -16,12 +16,12 @@ final class ChannelSalesReport extends BreakdownReport
 
     public function label(): string
     {
-        return 'Doanh thu theo kênh';
+        return __('vani-reports::texts.channel_sales_report.revenue_channel');
     }
 
     public function description(): string
     {
-        return 'Số đơn và doanh thu theo kênh bán (web, app, Zalo, Admin…).';
+        return __('vani-reports::texts.channel_sales_report.orders_revenue_sales_channel_web');
     }
 
     protected function dimension(): SalesDimension
@@ -31,13 +31,13 @@ final class ChannelSalesReport extends BreakdownReport
 
     protected function groupLabel(): string
     {
-        return 'Kênh';
+        return __('vani-reports::texts.channel_sales_report.channel');
     }
 
-    private const CHANNELS = ['web' => 'Website', 'app' => 'Ứng dụng', 'zalo' => 'Zalo', 'admin' => 'Admin (nhân viên)', 'pos' => 'Tại cửa hàng', 'exchange' => 'Đơn đổi hàng'];
+    private const CHANNELS = ['web' => 'Website', 'app' => 'vani-reports::texts.channel_sales_report.app', 'zalo' => 'Zalo', 'admin' => 'vani-reports::texts.channel_sales_report.admin_staff', 'pos' => 'vani-reports::texts.channel_sales_report.store', 'exchange' => 'vani-reports::texts.channel_sales_report.exchange_orders'];
 
     protected function displayLabel(SalesBucket $bucket): string
     {
-        return self::CHANNELS[$bucket->key] ?? parent::displayLabel($bucket);
+        return isset(self::CHANNELS[$bucket->key]) ? __(self::CHANNELS[$bucket->key]) : parent::displayLabel($bucket);
     }
 }

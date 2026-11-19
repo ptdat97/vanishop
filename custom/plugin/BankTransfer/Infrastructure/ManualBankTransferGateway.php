@@ -62,7 +62,7 @@ final class ManualBankTransferGateway implements PaymentGateway
 
     public function verifyCallback(Request $request): GatewayCallback
     {
-        throw new InvalidCallback('Chuyển khoản thủ công không có callback.');
+        throw new InvalidCallback(__('vani-bank-transfer::texts.manual_bank_transfer_gateway.manual_bank_transfer_has_no'));
     }
 
     public function query(PaymentData $payment): GatewayStatus
@@ -72,7 +72,7 @@ final class ManualBankTransferGateway implements PaymentGateway
 
     public function refund(PaymentData $payment, Money $amount, string $idempotencyKey): GatewayResult
     {
-        return new GatewayResult(false, null, 'Hoàn tiền chuyển khoản thủ công.');
+        return new GatewayResult(false, null, __('vani-bank-transfer::texts.manual_bank_transfer_gateway.manual_bank_transfer_refund'));
     }
 
     /**

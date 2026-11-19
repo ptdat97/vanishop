@@ -62,17 +62,17 @@ final class OrderingServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(OrderDashboardTasks::class)());
-        $permissions->register('orders.view', 'Xem đơn hàng');
-        $permissions->register('orders.manage', 'Xác nhận đơn, đổi địa chỉ, ghi chú');
-        $permissions->register('orders.cancel', 'Huỷ đơn');
-        $permissions->register('orders.override_status', 'Đổi trạng thái đơn ngoài trình tự (bắt buộc ghi lý do)');
+        $permissions->register('orders.view', 'ordering::texts.ordering_service_provider.view_orders');
+        $permissions->register('orders.manage', 'ordering::texts.ordering_service_provider.confirm_orders_change_addresses_notes');
+        $permissions->register('orders.cancel', 'ordering::texts.ordering_service_provider.cancel_order');
+        $permissions->register('orders.override_status', 'ordering::texts.ordering_service_provider.change_order_status_out_sequence');
 
-        $navigation->group('sales', 'Bán hàng', 45);
-        $navigation->add('orders', 'Đơn hàng', 'admin.orders.home', 'orders.view', 50, group: 'sales');
+        $navigation->group('sales', 'ordering::texts.ordering_service_provider.sales', 45);
+        $navigation->add('orders', 'ordering::texts.ordering_service_provider.orders', 'admin.orders.home', 'orders.view', 50, group: 'sales');
 
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', OrderReceipt::SETTING_COMPLETE, 'Hoàn tất đơn khi khách xác nhận đã nhận hàng', 'bool', false,
-            help: 'Bật: khách bấm "Đã nhận hàng" + chọn không đổi trả (hoặc đã quá hạn đổi trả) → đơn hoàn tất ngay thay vì chờ hết hạn đổi trả. Tắt: chỉ ghi nhận.',
+            'core', OrderReceipt::SETTING_COMPLETE, 'ordering::texts.ordering_service_provider.complete_order_when_customer_confirms', 'bool', false,
+            help: 'ordering::texts.ordering_service_provider.customer_clicks_i_ve_received',
         ));
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));

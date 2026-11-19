@@ -48,9 +48,10 @@ final class SmsBrandnameServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-sms-brandname');
         $this->contribute(PluginHealthCheck::TAG, SmsHealthCheck::class);
         $this->settings([
-            ['key' => 'brandname', 'label' => 'Brandname SMS', 'help' => 'Brandname đã đăng ký với nhà mạng.'],
+            ['key' => 'brandname', 'label' => 'Brandname SMS', 'help' => 'vani-sms-brandname::texts.sms_brandname_service_provider.brandname_registered_carriers'],
         ]);
 
         $this->contribute(NotificationChannel::TAG, SmsChannel::class);

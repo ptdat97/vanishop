@@ -20,15 +20,15 @@ final class RecentlyViewedBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Sản phẩm đã xem';
+        return __('vani-storefront-extras::texts.recently_viewed_block.recently_viewed_products');
     }
 
     public function fields(): array
     {
         return [
-            FieldDefinition::string('title', 'Tiêu đề', max: 120),
-            FieldDefinition::int('limit', 'Số sản phẩm (1–20)', help: 'Mặc định 8.'),
-            FieldDefinition::select('layout', 'Kiểu hiển thị', ['grid' => 'Lưới', 'scroll' => 'Trượt ngang']),
+            FieldDefinition::string('title', __('vani-storefront-extras::texts.recently_viewed_block.title'), max: 120),
+            FieldDefinition::int('limit', __('vani-storefront-extras::texts.recently_viewed_block.number_products_1_20'), help: __('vani-storefront-extras::texts.recently_viewed_block.default_8')),
+            FieldDefinition::select('layout', __('vani-storefront-extras::texts.recently_viewed_block.display_style'), ['grid' => __('vani-storefront-extras::texts.recently_viewed_block.grid'), 'scroll' => __('vani-storefront-extras::texts.recently_viewed_block.horizontal_slider')]),
         ];
     }
 

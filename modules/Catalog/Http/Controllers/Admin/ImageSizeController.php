@@ -33,7 +33,7 @@ final class ImageSizeController
         return Inertia::render('Catalog::Media/Sizes', [
             'widths' => $this->sizes->widths(),
             'productRatio' => $this->sizes->ratioCode(),
-            'ratios' => array_map(fn (string $value, string $label): array => ['value' => $value, 'label' => $label], array_keys(ImageSizes::RATIOS), ImageSizes::RATIOS),
+            'ratios' => array_map(fn (string $value, string $label): array => ['value' => $value, 'label' => __($label)], array_keys(ImageSizes::RATIOS), ImageSizes::RATIOS),
             'quality' => $this->sizes->quality(),
             'productSizes' => array_map(fn (ImageSize $size): array => $size->toArray(), $this->sizes->responsive(ImageSizes::PRODUCT)),
             'named' => $this->sizes->catalog(),
@@ -61,7 +61,7 @@ final class ImageSizeController
         $this->sizes->save($data);
         $this->audit->record('media.sizes.updated', 'settings', null, ['widths' => $this->sizes->widths(), 'product_ratio' => $this->sizes->ratioCode(), 'quality' => $this->sizes->quality()]);
 
-        return back()->with('success', 'Đã lưu kích thước ảnh. Ảnh mới được tạo dần khi có người xem.');
+        return back()->with('success', __('catalog::texts.image_size_controller.image_sizes_saved_new_images'));
     }
 
     public function flush(ImageCache $cache): RedirectResponse
@@ -70,6 +70,6 @@ final class ImageSizeController
         $cache->flush();
         $this->audit->record('media.cache.flushed', 'settings', null, []);
 
-        return back()->with('success', 'Đã xoá cache ảnh; bản thu nhỏ được tạo lại khi có người xem.');
+        return back()->with('success', __('catalog::texts.image_size_controller.image_cache_cleared_thumbnails_regenerated'));
     }
 }

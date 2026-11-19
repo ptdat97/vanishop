@@ -58,7 +58,7 @@ final class ReturnFormPresenter
                 if ($variant !== null) {
                     $options[] = [
                         'variant_id' => $variantId,
-                        'label' => VariantOptionsText::label($variant->options).($variantId === $own->id ? ' (như cũ)' : ''),
+                        'label' => VariantOptionsText::label($variant->options).($variantId === $own->id ? __('storefront::texts.return_form_presenter.unchanged') : ''),
                         'available' => ($stock[$variantId] ?? 0) > 0,
                     ];
                 }

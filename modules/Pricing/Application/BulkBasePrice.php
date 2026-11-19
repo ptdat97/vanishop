@@ -29,7 +29,7 @@ final class BulkBasePrice
     public function baseList(): PriceList
     {
         return PriceList::query()->where('code', 'base')->first()
-            ?? $this->lists->save(['code' => 'base', 'name' => 'Giá niêm yết', 'type' => 'base', 'priority' => 0, 'starts_at' => null, 'ends_at' => null, 'status' => 'active']);
+            ?? $this->lists->save(['code' => 'base', 'name' => __('pricing::texts.bulk_base_price.list_price'), 'type' => 'base', 'priority' => 0, 'starts_at' => null, 'ends_at' => null, 'status' => 'active']);
     }
 
     /**

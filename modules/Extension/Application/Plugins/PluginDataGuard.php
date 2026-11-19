@@ -30,7 +30,7 @@ final class PluginDataGuard
             }
             foreach ($other->data->references as $from => $to) {
                 if (in_array(explode('.', $to)[0], $owned, true)) {
-                    $reasons[] = "plugin {$id} tham chiếu {$to} (cột {$from})";
+                    $reasons[] = __('extension::texts.plugin_data_guard.plugin_id_references_column_from', ['id' => $id, 'to' => $to, 'from' => $from]);
                 }
             }
         }
@@ -43,14 +43,14 @@ final class PluginDataGuard
                 }
                 foreach (Schema::getForeignKeys($name) as $key) {
                     if (in_array((string) $key['foreign_table'], $owned, true)) {
-                        $reasons[] = "khoá ngoại {$name}(".implode(', ', $key['columns']).") → {$key['foreign_table']}";
+                        $reasons[] = __('extension::texts.plugin_data_guard.foreign_key_name', ['name' => $name]).implode(', ', $key['columns']).") → {$key['foreign_table']}";
                     }
                 }
             }
         }
 
         if ($manifest->data->retained !== [] && ! $dropRetained) {
-            $reasons[] = 'dữ liệu phải lưu giữ: '.implode(', ', $manifest->data->retained).' — xuất/lưu trữ trước, rồi xác nhận --drop-retained';
+            $reasons[] = __('extension::texts.plugin_data_guard.data_must_retained').implode(', ', $manifest->data->retained).__('extension::texts.plugin_data_guard.export_archive_first_then_confirm');
         }
 
         return $reasons;

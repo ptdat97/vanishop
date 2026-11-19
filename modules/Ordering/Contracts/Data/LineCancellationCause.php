@@ -18,8 +18,8 @@ enum LineCancellationCause: string
     public function label(): string
     {
         return match ($this) {
-            self::Shop => 'Lỗi shop (hết hàng, sai giá…)',
-            self::Customer => 'Khách yêu cầu bớt hàng',
+            self::Shop => __('ordering::texts.line_cancellation_cause.store_error_out_stock_wrong'),
+            self::Customer => __('ordering::texts.line_cancellation_cause.customer_asked_remove_items'),
         };
     }
 }

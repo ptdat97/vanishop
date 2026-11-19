@@ -71,12 +71,12 @@ final class PluginController
 
     public function install(string $plugin, PluginManager $plugins): RedirectResponse
     {
-        return $this->run(fn () => $plugins->install($plugin), "Đã cài {$plugin}. Bật plugin để bắt đầu dùng.");
+        return $this->run(fn () => $plugins->install($plugin), __('extension::texts.plugin_controller.installed_plugin_enable_plugin_start', ['plugin' => $plugin]));
     }
 
     public function enable(string $plugin, PluginManager $plugins): RedirectResponse
     {
-        return $this->run(fn () => $plugins->enable($plugin), "Đã bật {$plugin}.");
+        return $this->run(fn () => $plugins->enable($plugin), __('extension::texts.plugin_controller.enabled_plugin', ['plugin' => $plugin]));
     }
 
     /**
@@ -91,9 +91,9 @@ final class PluginController
         ]);
 
         return match ($data['mode']) {
-            'drain' => $this->run(fn () => $plugins->drain($plugin), "Đã ngừng {$plugin}: không nhận giao dịch mới, tự tắt khi xử lý xong việc dở dang."),
-            'force' => $this->run(fn () => $plugins->disable($plugin, force: true), "Đã tắt ngay {$plugin}. Việc dở dang cần xử lý tay."),
-            default => $this->run(fn () => $plugins->disable($plugin), "Đã tắt {$plugin}."),
+            'drain' => $this->run(fn () => $plugins->drain($plugin), __('extension::texts.plugin_controller.stopping_plugin_no_new_transactions', ['plugin' => $plugin])),
+            'force' => $this->run(fn () => $plugins->disable($plugin, force: true), __('extension::texts.plugin_controller.disabled_plugin_immediately_pending_work', ['plugin' => $plugin])),
+            default => $this->run(fn () => $plugins->disable($plugin), __('extension::texts.plugin_controller.disabled_plugin', ['plugin' => $plugin])),
         };
     }
 
@@ -106,19 +106,19 @@ final class PluginController
             'purge' => ['boolean'],
             'drop_retained' => ['boolean'],
             'confirm_id' => ['exclude_unless:purge,true', 'required', 'in:'.$plugin],
-        ], ['confirm_id.in' => 'Gõ đúng id plugin để xác nhận xoá dữ liệu.']);
+        ], ['confirm_id.in' => __('extension::texts.plugin_controller.type_exact_plugin_id_confirm')]);
         $purge = (bool) ($data['purge'] ?? false);
 
         return $this->run(
             fn () => $plugins->uninstall($plugin, $purge, $purge && (bool) ($data['drop_retained'] ?? false)),
-            $purge ? "Đã gỡ {$plugin} và xoá dữ liệu của plugin." : "Đã gỡ {$plugin}. Dữ liệu của plugin được giữ lại.",
+            $purge ? __('extension::texts.plugin_controller.uninstalled_plugin_deleted_data', ['plugin' => $plugin]) : __('extension::texts.plugin_controller.uninstalled_plugin_plugin_s_data', ['plugin' => $plugin]),
             redirectToIndex: true,
         );
     }
 
     public function upgrade(string $plugin, PluginManager $plugins): RedirectResponse
     {
-        return $this->run(fn () => $plugins->upgrade($plugin), "Đã nâng cấp {$plugin}.");
+        return $this->run(fn () => $plugins->upgrade($plugin), __('extension::texts.plugin_controller.upgraded_plugin', ['plugin' => $plugin]));
     }
 
     public function settings(string $plugin, SettingsAdmin $admin, ManifestRepository $manifests): Response
@@ -140,7 +140,7 @@ final class PluginController
         abort_unless(in_array($plugin, $admin->namespaces(), true), 404);
         $admin->save($plugin, (array) $request->validate(['values' => ['required', 'array']])['values']);
 
-        return back()->with('success', 'Đã lưu cấu hình.');
+        return back()->with('success', __('extension::texts.plugin_controller.settings_saved'));
     }
 
     private function run(Closure $operation, string $success, bool $redirectToIndex = false): RedirectResponse

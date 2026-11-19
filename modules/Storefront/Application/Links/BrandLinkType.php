@@ -10,7 +10,7 @@ final class BrandLinkType extends CatalogLinkType
 {
     public function label(): string
     {
-        return 'Thương hiệu';
+        return __('storefront::texts.brand_link_type.brand');
     }
 
     protected function kind(): string

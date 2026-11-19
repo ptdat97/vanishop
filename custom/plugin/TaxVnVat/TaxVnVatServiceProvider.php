@@ -28,8 +28,9 @@ final class TaxVnVatServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-tax-vn-vat');
         $this->settings([
-            ['key' => 'rate_bp', 'label' => 'Thuế suất (basis points)', 'type' => 'int', 'help' => '1000 = 10%. Để trống = theo VANI_VAT_RATE_BP.'],
+            ['key' => 'rate_bp', 'label' => 'vani-tax-vn-vat::texts.tax_vn_vat_service_provider.tax_rate_basis_points', 'type' => 'int', 'help' => 'vani-tax-vn-vat::texts.tax_vn_vat_service_provider.text_1000_10_leave_empty_use'],
         ]);
 
         $this->contribute(TaxCalculator::TAG, VnVatInclusiveTax::class);

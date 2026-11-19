@@ -19,7 +19,7 @@ final class UrlLinkType implements LinkType
 
     public function label(): string
     {
-        return 'Đường dẫn tuỳ chọn';
+        return __('storefront::texts.url_link_type.custom_path');
     }
 
     public function searchable(): bool

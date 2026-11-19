@@ -22,9 +22,10 @@ final class CarrierRoutingServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-carrier-routing');
         $this->settings([
-            ['key' => 'rules', 'label' => 'Quy tắc chọn hãng', 'type' => 'text',
-                'help' => 'Mỗi dòng "điều kiện = hãng[:dịch vụ]", dòng đầu tiên khớp thắng. Điều kiện: "tinh:79,01" (mã tỉnh/thành), "cod>=3000000" (thu hộ từ mức), "*" (mọi đơn). Vd. "tinh:79 = ahamove".'],
+            ['key' => 'rules', 'label' => 'vani-carrier-routing::texts.carrier_routing_service_provider.carrier_selection_rules', 'type' => 'text',
+                'help' => 'vani-carrier-routing::texts.carrier_routing_service_provider.one_condition_carrier_service_per'],
         ]);
         $this->contribute(CarrierAssignment::TAG, RoutingRules::class);
     }

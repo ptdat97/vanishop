@@ -22,14 +22,14 @@ final class LatestPostsBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Bài viết mới';
+        return __('vani-cms::texts.latest_posts_block.latest_posts');
     }
 
     public function fields(): array
     {
         return [
-            FieldDefinition::string('title', 'Tiêu đề', max: 120),
-            FieldDefinition::int('limit', 'Số bài (1–12)', required: true),
+            FieldDefinition::string('title', __('vani-cms::texts.latest_posts_block.title'), max: 120),
+            FieldDefinition::int('limit', __('vani-cms::texts.latest_posts_block.number_posts_1_12'), required: true),
         ];
     }
 

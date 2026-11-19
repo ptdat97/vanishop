@@ -34,7 +34,7 @@ final class StaffRequest extends FormRequest
             'assignments.*.scope_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail): void {
                 $type = ScopeType::tryFrom((string) $this->input(str_replace('.scope_id', '.scope_type', $attribute)));
                 if ($type !== null && ! app(ScopeOptions::class)->exists($type, $value === null ? null : (int) $value)) {
-                    $fail(__('validation.exists', ['attribute' => 'phạm vi']));
+                    $fail(__('validation.exists', ['attribute' => __('identity::texts.staff_request.scope')]));
                 }
             }],
         ];

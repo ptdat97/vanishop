@@ -62,7 +62,7 @@ final class OrderFeed
         $decoded = base64_decode(strtr($cursor, '-_', '+/'), true);
         $parts = $decoded === false ? [] : explode('|', $decoded);
         if (count($parts) !== 2 || ! ctype_digit($parts[1])) {
-            throw ValidationException::withMessages(['cursor' => 'Cursor không hợp lệ.']);
+            throw ValidationException::withMessages(['cursor' => __('integration::texts.order_feed.invalid_cursor')]);
         }
 
         return [CarbonImmutable::parse($parts[0], (string) config('app.timezone')), (int) $parts[1]];

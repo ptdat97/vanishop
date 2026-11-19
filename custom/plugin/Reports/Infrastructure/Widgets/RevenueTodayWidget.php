@@ -21,7 +21,7 @@ final class RevenueTodayWidget implements DashboardWidget
 
     public function label(): string
     {
-        return 'Doanh thu hôm nay';
+        return __('vani-reports::texts.revenue_today_widget.revenue_today');
     }
 
     public function permission(): string
@@ -44,6 +44,6 @@ final class RevenueTodayWidget implements DashboardWidget
         $period = ReportPeriod::fromPreset('today');
         $totals = $this->statistics->totals($period->from, $period->to);
 
-        return new Metric($this->label(), $totals->revenue, 'money', "{$totals->ordersCount} đơn");
+        return new Metric($this->label(), $totals->revenue, 'money', __('vani-reports::texts.revenue_today_widget.orders_count_orders', ['orders_count' => $totals->ordersCount]));
     }
 }

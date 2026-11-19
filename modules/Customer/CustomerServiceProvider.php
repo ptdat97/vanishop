@@ -90,17 +90,17 @@ final class CustomerServiceProvider extends ModuleServiceProvider
         $this->app->bind(PhoneOtpLogin::class, PhoneOtpLoginService::class);
         $this->app->bind(LogOtpSender::class, fn (): LogOtpSender => new LogOtpSender((bool) config('vanishop.customer.otp.log_sender', false)));
         $this->app->make(Extensions::class)->tag([EmailOtpSender::class, LogOtpSender::class], OtpSender::TAG);
-        $this->app->make(Extensions::class)->requires(OtpSender::TAG, Requirement::AtLeastOne, 'Kênh gửi OTP');
+        $this->app->make(Extensions::class)->requires(OtpSender::TAG, Requirement::AtLeastOne, 'customer::texts.customer_service_provider.otp_delivery_channel');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation, Router $router): void
     {
-        $permissions->register('customers.view', 'Xem khách hàng (cấp Owner)');
-        $permissions->register('customers.merge', 'Hợp nhất khách hàng trùng');
-        $permissions->register('customers.anonymize', 'Ẩn danh hoá khách hàng theo yêu cầu xoá');
-        $permissions->register('customers.segment', 'Quản lý nhóm khách và gán nhóm/tag cho khách');
+        $permissions->register('customers.view', 'customer::texts.customer_service_provider.view_customers_owner_level');
+        $permissions->register('customers.merge', 'customer::texts.customer_service_provider.merge_duplicate_customers');
+        $permissions->register('customers.anonymize', 'customer::texts.customer_service_provider.anonymise_customers_deletion_requests');
+        $permissions->register('customers.segment', 'customer::texts.customer_service_provider.manage_customer_groups_assign_groups');
 
-        $navigation->add('customers', 'Khách hàng', 'admin.customers.index', 'customers.view', 110);
+        $navigation->add('customers', 'customer::texts.customer_service_provider.customers', 'admin.customers.index', 'customers.view', 110);
 
         $router->aliasMiddleware('vani.customer', AuthenticateCustomer::class);
         $router->aliasMiddleware('vani.customer-session', CustomerSession::class);

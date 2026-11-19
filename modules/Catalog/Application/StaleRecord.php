@@ -13,6 +13,6 @@ final class StaleRecord extends RuntimeException
 {
     public function __construct()
     {
-        parent::__construct('Dữ liệu đã được người khác cập nhật. Vui lòng tải lại trang rồi sửa lại.');
+        parent::__construct(__('catalog::texts.stale_record.data_was_updated_someone_else'));
     }
 }

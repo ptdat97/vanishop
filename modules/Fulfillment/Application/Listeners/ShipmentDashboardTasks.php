@@ -24,10 +24,10 @@ final class ShipmentDashboardTasks
         }
         $count = fn (ShipmentStatus $status): int => Shipment::query()->where('status', $status)->count();
         $url = fn (ShipmentStatus $status): string => route('admin.fulfillment.shipments.index', ['status' => $status->value]);
-        $tasks = [['key' => 'shipments.failed_attempt', 'label' => 'Giao không thành công', 'count' => $count(ShipmentStatus::FailedAttempt), 'url' => $url(ShipmentStatus::FailedAttempt), 'tone' => 'danger', 'hint' => 'Gọi lại khách, hẹn giao lại hoặc hoàn về', 'order' => 55]];
+        $tasks = [['key' => 'shipments.failed_attempt', 'label' => __('fulfillment::texts.shipment_dashboard_tasks.delivery_failed'), 'count' => $count(ShipmentStatus::FailedAttempt), 'url' => $url(ShipmentStatus::FailedAttempt), 'tone' => 'danger', 'hint' => __('fulfillment::texts.shipment_dashboard_tasks.call_customer_back_schedule_redelivery'), 'order' => 55]];
         $failedBooking = $count(ShipmentStatus::BookingFailed);
         if ($failedBooking > 0) {
-            $tasks[] = ['key' => 'shipments.booking_failed', 'label' => 'Đặt vận đơn lỗi', 'count' => $failedBooking, 'url' => $url(ShipmentStatus::BookingFailed), 'tone' => 'danger', 'order' => 56];
+            $tasks[] = ['key' => 'shipments.booking_failed', 'label' => __('fulfillment::texts.shipment_dashboard_tasks.shipment_booking_failed'), 'count' => $failedBooking, 'url' => $url(ShipmentStatus::BookingFailed), 'tone' => 'danger', 'order' => 56];
         }
 
         return $tasks;

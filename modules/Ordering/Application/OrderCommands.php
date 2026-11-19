@@ -219,13 +219,13 @@ final class OrderCommands implements OrderActions
             ]);
             $cancellationId = (string) Str::ulid();
             DB::table('order_adjustments')->insert([
-                'order_id' => $order->id, 'type' => 'cancellation', 'source' => 'core', 'code' => $cancellationId, 'label' => 'Huỷ một phần: '.$reason,
+                'order_id' => $order->id, 'type' => 'cancellation', 'source' => 'core', 'code' => $cancellationId, 'label' => __('ordering::texts.order_commands.partial_cancellation').$reason,
                 'amount' => -$totals['total'], 'meta' => json_encode(['lines' => $breakdown, 'totals' => $totals], JSON_UNESCAPED_UNICODE), 'created_at' => now(), 'updated_at' => now(),
             ]);
             if ($clawback['total'] > 0) {
                 DB::table('order_adjustments')->insert([
                     'order_id' => $order->id, 'type' => 'promotion_clawback', 'source' => 'core', 'code' => $cancellationId,
-                    'label' => 'Thu hồi khuyến mãi không còn đủ điều kiện', 'amount' => $clawback['total'],
+                    'label' => __('ordering::texts.order_commands.revoke_promotions_no_longer_qualify'), 'amount' => $clawback['total'],
                     'meta' => json_encode(['lines' => $clawback['lines'], 'promotions' => $clawback['promotions'], 'tax' => $clawbackTax], JSON_UNESCAPED_UNICODE),
                     'created_at' => now(), 'updated_at' => now(),
                 ]);

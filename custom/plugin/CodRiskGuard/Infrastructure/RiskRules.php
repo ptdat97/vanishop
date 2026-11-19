@@ -31,14 +31,14 @@ final class RiskRules implements OrderRiskSignal
             }
             $signals = [];
             if ($this->blacklisted($order)) {
-                $signals[] = new RiskSignal('high', 'SĐT trong danh sách đen', 'Số điện thoại có trong danh sách đen của cửa hàng.');
+                $signals[] = new RiskSignal('high', __('vani-cod-risk-guard::texts.risk_rules.blacklisted_phone_number'), __('vani-cod-risk-guard::texts.risk_rules.phone_number_store_s_blacklist'));
             }
             $returned = $this->orders->deliveryHistory($order->recipient['phone'], $order->id)['returned_to_sender'];
             $threshold = max(1, (int) $this->settings->get(CodRiskGuardServiceProvider::ID, 'returned_threshold', 2));
             if ($returned >= $threshold) {
-                $signals[] = new RiskSignal('high', "Hoàn về {$returned} lần", "SĐT đã có {$returned} đơn hoàn về (ngưỡng {$threshold}).");
+                $signals[] = new RiskSignal('high', __('vani-cod-risk-guard::texts.risk_rules.returned_sender_returned_times', ['returned' => $returned]), __('vani-cod-risk-guard::texts.risk_rules.phone_number_already_has_returned', ['returned' => $returned, 'threshold' => $threshold]));
             } elseif ($returned > 0) {
-                $signals[] = new RiskSignal('medium', "Hoàn về {$returned} lần", null);
+                $signals[] = new RiskSignal('medium', __('vani-cod-risk-guard::texts.risk_rules.returned_sender_returned_times', ['returned' => $returned]), null);
             }
             if ($signals !== []) {
                 $result[$orderId] = $signals;

@@ -31,15 +31,15 @@ final class VideoHeroBlock implements StorefrontBlock
     public function fields(): array
     {
         return [
-            FieldDefinition::video('video', 'Video (máy tính)', required: true, help: 'Từ Thư viện ảnh — MP4 (H.264) hoặc WebM, nên dưới 10 MB.'),
-            FieldDefinition::video('video_mobile', 'Video (di động)', help: 'Để trống: dùng video máy tính. Nên là bản dọc, nhẹ hơn.'),
-            FieldDefinition::media('poster', 'Ảnh poster', help: 'Từ Thư viện ảnh — hiện khi video chưa phát; nên có để trang tải nhanh.'),
-            FieldDefinition::string('title', 'Tiêu đề phủ', max: 120),
-            FieldDefinition::text('text', 'Nội dung phủ', max: 300),
-            FieldDefinition::string('cta_label', 'Chữ trên nút', max: 40),
-            FieldDefinition::string('cta_url', 'Đường dẫn nút', max: 300),
-            FieldDefinition::bool('autoplay', 'Tự phát (tắt tiếng)'),
-            FieldDefinition::bool('loop', 'Lặp lại'),
+            FieldDefinition::video('video', __('vani-storefront-extras::texts.video_hero_block.video_desktop'), required: true, help: __('vani-storefront-extras::texts.video_hero_block.from_media_library_mp4_h')),
+            FieldDefinition::video('video_mobile', __('vani-storefront-extras::texts.video_hero_block.video_mobile'), help: __('vani-storefront-extras::texts.video_hero_block.leave_empty_use_desktop_video')),
+            FieldDefinition::media('poster', __('vani-storefront-extras::texts.video_hero_block.poster_image'), help: __('vani-storefront-extras::texts.video_hero_block.from_media_library_shown_before')),
+            FieldDefinition::string('title', __('vani-storefront-extras::texts.video_hero_block.overlay_title'), max: 120),
+            FieldDefinition::text('text', __('vani-storefront-extras::texts.video_hero_block.overlay_text'), max: 300),
+            FieldDefinition::string('cta_label', __('vani-storefront-extras::texts.video_hero_block.button_text'), max: 40),
+            FieldDefinition::string('cta_url', __('vani-storefront-extras::texts.video_hero_block.button_link'), max: 300),
+            FieldDefinition::bool('autoplay', __('vani-storefront-extras::texts.video_hero_block.autoplay_muted')),
+            FieldDefinition::bool('loop', __('vani-storefront-extras::texts.video_hero_block.loop')),
         ];
     }
 

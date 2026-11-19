@@ -23,18 +23,18 @@ final class SlideshowBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Trình chiếu ảnh';
+        return __('vani-storefront-extras::texts.slideshow_block.image_slideshow');
     }
 
     public function fields(): array
     {
-        $fields = [FieldDefinition::int('interval', 'Tự chuyển sau (giây)', help: '0 = không tự chuyển. Mặc định 6.')];
+        $fields = [FieldDefinition::int('interval', __('vani-storefront-extras::texts.slideshow_block.auto_advance_after_seconds'), help: __('vani-storefront-extras::texts.slideshow_block.text_0_no_auto_advance_default'))];
         foreach (range(1, self::SLIDES) as $i) {
-            $fields[] = FieldDefinition::media("slide_{$i}_media", "Slide {$i}: ảnh", help: 'Từ Thư viện ảnh (tự có bản vừa màn hình).');
-            $fields[] = FieldDefinition::string("slide_{$i}_title", "Slide {$i}: tiêu đề", max: 120);
-            $fields[] = FieldDefinition::string("slide_{$i}_text", "Slide {$i}: mô tả", max: 200);
-            $fields[] = FieldDefinition::string("slide_{$i}_link", "Slide {$i}: đường dẫn", max: 300);
-            $fields[] = FieldDefinition::string("slide_{$i}_label", "Slide {$i}: chữ trên nút", max: 40);
+            $fields[] = FieldDefinition::media("slide_{$i}_media", __('vani-storefront-extras::texts.slideshow_block.slide_i_image', ['i' => $i]), help: __('vani-storefront-extras::texts.slideshow_block.from_media_library_responsive_versions'));
+            $fields[] = FieldDefinition::string("slide_{$i}_title", __('vani-storefront-extras::texts.slideshow_block.slide_i_title', ['i' => $i]), max: 120);
+            $fields[] = FieldDefinition::string("slide_{$i}_text", __('vani-storefront-extras::texts.slideshow_block.slide_i_description', ['i' => $i]), max: 200);
+            $fields[] = FieldDefinition::string("slide_{$i}_link", __('vani-storefront-extras::texts.slideshow_block.slide_i_link', ['i' => $i]), max: 300);
+            $fields[] = FieldDefinition::string("slide_{$i}_label", __('vani-storefront-extras::texts.slideshow_block.slide_i_button_text', ['i' => $i]), max: 40);
         }
 
         return $fields;

@@ -30,12 +30,12 @@ final class ClientProvisioning
     public function upsert(string $code, array $attributes): IntegrationClient
     {
         if (preg_match('/^[a-z0-9][a-z0-9_-]{1,63}$/', $code) !== 1 || $code === 'vanishop') {
-            throw ValidationException::withMessages(['code' => 'Mã client chỉ gồm a-z, 0-9, "-", "_" và không được là "vanishop".']);
+            throw ValidationException::withMessages(['code' => __('integration::texts.client_provisioning.client_code_may_only_contain')]);
         }
 
         $unknown = array_diff($attributes['scopes'] ?? [], self::SCOPES);
         if ($unknown !== []) {
-            throw ValidationException::withMessages(['scopes' => 'Scope không hợp lệ: '.implode(', ', $unknown)]);
+            throw ValidationException::withMessages(['scopes' => __('integration::texts.client_provisioning.invalid_scope').implode(', ', $unknown)]);
         }
 
         $client = IntegrationClient::query()->firstOrNew(['code' => $code]);
@@ -61,7 +61,7 @@ final class ClientProvisioning
     {
         $active = $client->keys()->get()->filter->isUsable()->count();
         if ($active >= self::MAX_ACTIVE_KEYS) {
-            throw ValidationException::withMessages(['key' => 'Client đã có '.self::MAX_ACTIVE_KEYS.' key còn hiệu lực; thu hồi key cũ trước.']);
+            throw ValidationException::withMessages(['key' => __('integration::texts.client_provisioning.client_already_has').self::MAX_ACTIVE_KEYS.__('integration::texts.client_provisioning.active_keys_revoke_old_key')]);
         }
 
         $keyId = 'vk_'.Str::lower(Str::random(24));
@@ -76,7 +76,7 @@ final class ClientProvisioning
     {
         $key = $client->keys()->where('key_id', $keyId)->first();
         if (! $key instanceof ClientKey) {
-            throw ValidationException::withMessages(['key' => "Không có key {$keyId}."]);
+            throw ValidationException::withMessages(['key' => __('integration::texts.client_provisioning.key_key_id_not_found', ['key_id' => $keyId])]);
         }
 
         $key->update(['revoked_at' => now()]);
@@ -90,11 +90,11 @@ final class ClientProvisioning
     public function subscribe(string $clientCode, string $url, array $eventTypes): array
     {
         $client = IntegrationClient::query()->where('code', $clientCode)->first()
-            ?? throw ValidationException::withMessages(['client' => "Không có client {$clientCode}."]);
+            ?? throw ValidationException::withMessages(['client' => __('integration::texts.client_provisioning.client_client_code_not_found', ['client_code' => $clientCode])]);
 
         $scheme = parse_url($url, PHP_URL_SCHEME);
         if (filter_var($url, FILTER_VALIDATE_URL) === false || ! in_array($scheme, app()->isProduction() ? ['https'] : ['https', 'http'], true)) {
-            throw ValidationException::withMessages(['url' => 'URL webhook không hợp lệ (production bắt buộc HTTPS).']);
+            throw ValidationException::withMessages(['url' => __('integration::texts.client_provisioning.invalid_webhook_url_https_required')]);
         }
 
         $secret = Str::random(48);

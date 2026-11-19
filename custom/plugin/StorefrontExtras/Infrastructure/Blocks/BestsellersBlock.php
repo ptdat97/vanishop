@@ -29,15 +29,15 @@ final class BestsellersBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Bán chạy';
+        return __('vani-storefront-extras::texts.bestsellers_block.best_sellers');
     }
 
     public function fields(): array
     {
         return [
-            FieldDefinition::string('title', 'Tiêu đề', max: 120),
-            FieldDefinition::int('limit', 'Số sản phẩm (1–24)', help: 'Mặc định 8.'),
-            FieldDefinition::select('days', 'Tính trong', ['7' => '7 ngày', '30' => '30 ngày', '90' => '90 ngày']),
+            FieldDefinition::string('title', __('vani-storefront-extras::texts.bestsellers_block.title'), max: 120),
+            FieldDefinition::int('limit', __('vani-storefront-extras::texts.bestsellers_block.number_products_1_24'), help: __('vani-storefront-extras::texts.bestsellers_block.default_8')),
+            FieldDefinition::select('days', __('vani-storefront-extras::texts.bestsellers_block.calculated_over'), ['7' => __('vani-storefront-extras::texts.bestsellers_block.text_7_days'), '30' => __('vani-storefront-extras::texts.bestsellers_block.text_30_days'), '90' => __('vani-storefront-extras::texts.bestsellers_block.text_90_days')]),
         ];
     }
 

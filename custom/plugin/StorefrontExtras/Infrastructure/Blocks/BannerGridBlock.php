@@ -25,16 +25,16 @@ final class BannerGridBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Lưới banner';
+        return __('vani-storefront-extras::texts.banner_grid_block.banner_grid');
     }
 
     public function fields(): array
     {
-        $fields = [FieldDefinition::select('layout', 'Bố cục', ['1' => '1 ô', '2' => '2 ô ngang', '3' => '3 ô (1 lớn + 2 nhỏ)', '4' => '4 ô'], required: true)];
+        $fields = [FieldDefinition::select('layout', __('vani-storefront-extras::texts.banner_grid_block.layout'), ['1' => __('vani-storefront-extras::texts.banner_grid_block.text_1_tile'), '2' => __('vani-storefront-extras::texts.banner_grid_block.text_2_tiles_side_side'), '3' => __('vani-storefront-extras::texts.banner_grid_block.text_3_tiles_1_large_2'), '4' => __('vani-storefront-extras::texts.banner_grid_block.text_4_tiles')], required: true)];
         foreach (range(1, self::CELLS) as $i) {
-            $fields[] = FieldDefinition::media("cell_{$i}_media", "Ô {$i}: ảnh", help: 'Từ Thư viện ảnh (tự có bản vừa màn hình).');
-            $fields[] = FieldDefinition::string("cell_{$i}_title", "Ô {$i}: tiêu đề", max: 120);
-            $fields[] = FieldDefinition::string("cell_{$i}_link", "Ô {$i}: đường dẫn", max: 300);
+            $fields[] = FieldDefinition::media("cell_{$i}_media", __('vani-storefront-extras::texts.banner_grid_block.tile_i_image', ['i' => $i]), help: __('vani-storefront-extras::texts.banner_grid_block.from_media_library_responsive_versions'));
+            $fields[] = FieldDefinition::string("cell_{$i}_title", __('vani-storefront-extras::texts.banner_grid_block.tile_i_title', ['i' => $i]), max: 120);
+            $fields[] = FieldDefinition::string("cell_{$i}_link", __('vani-storefront-extras::texts.banner_grid_block.tile_i_link', ['i' => $i]), max: 300);
         }
 
         return $fields;

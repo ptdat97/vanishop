@@ -37,7 +37,7 @@ final class BannerController
 
         return Inertia::render('Cms::Banners/Index', [
             'banners' => $banners->map(fn (CategoryBanner $banner): array => [
-                'id' => $banner->id, 'category' => $categories[$banner->category_id] ?? "#{$banner->category_id} (đã xoá)",
+                'id' => $banner->id, 'category' => $categories[$banner->category_id] ?? __('vani-cms::texts.banner_controller.category_id_deleted', ['category_id' => $banner->category_id]),
                 'title' => $banner->text('title', StoreLocale::default(), StoreLocale::default()), 'active' => $banner->active,
                 'thumb_url' => ($thumbs[$banner->desktop_media_id ?? 0] ?? null)?->urlFor(160),
             ])->all(),
@@ -59,7 +59,7 @@ final class BannerController
         $data = $this->validated($request);
         $banner = $this->content->saveBanner(null, (int) $data['category_id'], $data);
 
-        return redirect()->route('admin.plugins.vani-cms.banners.edit', $banner->id)->with('success', 'Đã lưu banner.');
+        return redirect()->route('admin.plugins.vani-cms.banners.edit', $banner->id)->with('success', __('vani-cms::texts.banner_controller.banner_saved'));
     }
 
     public function edit(CategoryBanner $banner): Response
@@ -75,7 +75,7 @@ final class BannerController
         $data = $this->validated($request);
         $this->content->saveBanner($banner, (int) $data['category_id'], $data);
 
-        return back()->with('success', 'Đã lưu banner.');
+        return back()->with('success', __('vani-cms::texts.banner_controller.banner_saved'));
     }
 
     public function destroy(CategoryBanner $banner): RedirectResponse
@@ -83,7 +83,7 @@ final class BannerController
         Gate::authorize('cms.manage');
         $this->content->deleteBanner($banner);
 
-        return redirect()->route('admin.plugins.vani-cms.banners.index')->with('success', 'Đã xoá banner.');
+        return redirect()->route('admin.plugins.vani-cms.banners.index')->with('success', __('vani-cms::texts.banner_controller.banner_deleted'));
     }
 
     private function form(?CategoryBanner $banner): Response
@@ -98,7 +98,7 @@ final class BannerController
                 'button_url' => $banner->button_url, 'active' => $banner->active,
                 'desktop' => $image($banner->desktop_media_id), 'mobile' => $image($banner->mobile_media_id),
             ],
-            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : ' (đang ẩn)')], $this->catalog->search('category', '', StoreLocale::default(), 200)),
+            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : __('vani-cms::texts.banner_controller.hidden'))], $this->catalog->search('category', '', StoreLocale::default(), 200)),
             'urls' => [
                 'index' => route('admin.plugins.vani-cms.banners.index'),
                 'save' => $banner === null ? route('admin.plugins.vani-cms.banners.store') : route('admin.plugins.vani-cms.banners.update', $banner->id),
@@ -140,7 +140,7 @@ final class BannerController
 
         $data = $request->validate($rules) + ['content' => []];
         if (! array_key_exists((int) $data['category_id'], $this->categoryNames())) {
-            throw ValidationException::withMessages(['category_id' => 'Danh mục không tồn tại.']);
+            throw ValidationException::withMessages(['category_id' => __('vani-cms::texts.banner_controller.category_does_not_exist')]);
         }
 
         return $data;

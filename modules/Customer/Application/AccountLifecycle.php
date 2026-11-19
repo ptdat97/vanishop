@@ -74,7 +74,7 @@ final class AccountLifecycle
     public function merge(int $sourceId, int $targetId): int
     {
         if ($sourceId === $targetId) {
-            throw CustomerRejected::mergeInvalid('Không thể hợp nhất khách với chính nó.');
+            throw CustomerRejected::mergeInvalid(__('customer::texts.account_lifecycle.customer_cannot_merged_itself'));
         }
 
         $moved = DB::transaction(function () use ($sourceId, $targetId): int {
@@ -82,7 +82,7 @@ final class AccountLifecycle
             $source = $locked[$sourceId] ?? throw CustomerRejected::notFound();
             $target = $locked[$targetId] ?? throw CustomerRejected::notFound();
             if (! $source->isActive() || ! $target->isActive()) {
-                throw CustomerRejected::mergeInvalid('Chỉ hợp nhất được hai khách đang hoạt động.');
+                throw CustomerRejected::mergeInvalid(__('customer::texts.account_lifecycle.only_two_active_customers_merged'));
             }
 
             $moved = $this->orders->reassignCustomer($sourceId, $targetId);

@@ -109,8 +109,8 @@ final class AdminExtensions implements AdminScreen
         foreach ($this->active('tool', $resource) as $item) {
             if (Gate::allows($item['permission'])) {
                 $tools[] = [
-                    'key' => "{$item['plugin']}:{$item['key']}", 'label' => $item['label'], 'accept' => $item['accept'], 'max_kb' => $item['maxKb'],
-                    'help' => $item['help'], 'fields' => $item['fields'],
+                    'key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'accept' => $item['accept'], 'max_kb' => $item['maxKb'],
+                    'help' => $item['help'] === null ? null : __($item['help']), 'fields' => $item['fields'],
                     'url' => route('admin.extensions.tool', ['resource' => $resource, 'plugin' => $item['plugin'], 'key' => $item['key']]),
                 ];
             }
@@ -138,7 +138,7 @@ final class AdminExtensions implements AdminScreen
         foreach ($this->active('section', $resource) as $item) {
             $values = $id === null ? [] : $this->guard($item, 'load', fn (): array => (array) ($item['load'])($id), []);
             $sections[] = [
-                'plugin' => $item['plugin'], 'input' => self::inputKey($item['plugin']), 'key' => $item['key'], 'label' => $item['label'],
+                'plugin' => $item['plugin'], 'input' => self::inputKey($item['plugin']), 'key' => $item['key'], 'label' => __($item['label']),
                 'fields' => array_map(fn (FieldDefinition $field): array => $field->toArray(), $this->fields($item)),
                 'values' => $values,
             ];
@@ -184,7 +184,7 @@ final class AdminExtensions implements AdminScreen
             if ($resolved === null) {
                 continue;
             }
-            $columns[] = ['key' => $key, 'label' => $item['label']];
+            $columns[] = ['key' => $key, 'label' => __($item['label'])];
             foreach ($ids as $id) {
                 $value = $resolved[$id] ?? null;
                 $values[$id][$key] = is_scalar($value) ? $value : null;
@@ -200,7 +200,7 @@ final class AdminExtensions implements AdminScreen
         foreach ($this->active('filter', $resource) as $item) {
             $options = $item['options'] instanceof Closure ? $this->guard($item, 'options', fn (): array => (array) ($item['options'])(), null) : $item['options'];
             if ($options !== null) {
-                $filters[] = ['key' => "{$item['plugin']}:{$item['key']}", 'label' => $item['label'], 'options' => array_map('strval', $options)];
+                $filters[] = ['key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'options' => array_map('strval', $options)];
             }
         }
 
@@ -228,7 +228,7 @@ final class AdminExtensions implements AdminScreen
         foreach ($this->active('action', $resource) as $item) {
             if (($item['scope'] === $scope || $item['scope'] === 'both') && Gate::allows($item['permission'])) {
                 $actions[] = [
-                    'key' => "{$item['plugin']}:{$item['key']}", 'label' => $item['label'], 'confirm' => $item['confirm'],
+                    'key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'confirm' => is_string($item['confirm']) ? __($item['confirm']) : $item['confirm'],
                     'url' => route('admin.extensions.action', ['resource' => $resource, 'plugin' => $item['plugin'], 'key' => $item['key']]),
                 ];
             }
@@ -243,7 +243,7 @@ final class AdminExtensions implements AdminScreen
         foreach ($this->active('tab', $resource) as $item) {
             $rows = $this->guard($item, 'rows', fn (): array => (array) ($item['rows'])($id), null);
             if ($rows !== null) {
-                $tabs[] = ['key' => "{$item['plugin']}:{$item['key']}", 'label' => $item['label'], 'rows' => array_values(array_map(
+                $tabs[] = ['key' => "{$item['plugin']}:{$item['key']}", 'label' => __($item['label']), 'rows' => array_values(array_map(
                     fn (array $row): array => ['label' => (string) ($row['label'] ?? ''), 'value' => (string) ($row['value'] ?? '')], $rows,
                 ))];
             }

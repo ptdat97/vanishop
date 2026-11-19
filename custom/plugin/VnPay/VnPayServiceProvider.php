@@ -28,11 +28,12 @@ final class VnPayServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-vnpay');
         $this->settings([
-            ['key' => 'tmn_code', 'label' => 'Mã website (vnp_TmnCode)', 'help' => 'Để trống = theo VNPAY_TMN_CODE.'],
-            ['key' => 'hash_secret', 'label' => 'Khoá bí mật (vnp_HashSecret)', 'type' => 'secret', 'help' => 'Lưu mã hoá. Để trống = theo VNPAY_HASH_SECRET.'],
-            ['key' => 'sandbox', 'label' => 'Môi trường thử nghiệm (sandbox)', 'type' => 'bool', 'help' => 'Tắt khi chạy thật. Để trống = theo VNPAY_SANDBOX.'],
-            ['key' => 'ttl', 'label' => 'Thời gian chờ thanh toán (giây)', 'type' => 'int', 'help' => 'Tối thiểu 300. Để trống = theo VNPAY_TTL (900).'],
+            ['key' => 'tmn_code', 'label' => 'vani-vnpay::texts.vn_pay_service_provider.website_code_vnp_tmncode', 'help' => 'vani-vnpay::texts.vn_pay_service_provider.leave_empty_use_vnpay_tmn'],
+            ['key' => 'hash_secret', 'label' => 'vani-vnpay::texts.vn_pay_service_provider.secret_key_vnp_hashsecret', 'type' => 'secret', 'help' => 'vani-vnpay::texts.vn_pay_service_provider.stored_encrypted_leave_empty_use'],
+            ['key' => 'sandbox', 'label' => 'vani-vnpay::texts.vn_pay_service_provider.test_environment_sandbox', 'type' => 'bool', 'help' => 'vani-vnpay::texts.vn_pay_service_provider.turn_off_production_leave_empty'],
+            ['key' => 'ttl', 'label' => 'vani-vnpay::texts.vn_pay_service_provider.payment_timeout_seconds', 'type' => 'int', 'help' => 'vani-vnpay::texts.vn_pay_service_provider.least_300_leave_empty_use'],
         ]);
 
         $this->contribute(PaymentGateway::TAG, VnPayGateway::class);

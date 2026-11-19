@@ -48,7 +48,7 @@ final class CmsServiceProvider extends PluginServiceProvider
     {
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
         $this->translations($this->pluginPath('Resources/lang'), 'vani-cms');
-        $this->permissions(['cms.view' => 'Xem nội dung (trang, bài viết)', 'cms.manage' => 'Soạn, đăng, xoá nội dung']);
+        $this->permissions(['cms.view' => 'vani-cms::texts.cms_service_provider.view_content_pages_posts', 'cms.manage' => 'vani-cms::texts.cms_service_provider.write_publish_delete_content']);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-cms');
         $this->storefrontPages($this->pluginPath('Http/routes/pages.php'), prefix: ['vi' => 'trang', 'en' => 'pages'], cacheable: true);
@@ -64,7 +64,7 @@ final class CmsServiceProvider extends PluginServiceProvider
         $this->onSlot('vani.storefront.footer.columns', fn (): ?SlotView => $this->links('footer'));
         $this->extraContent();
 
-        $this->adminMenu('cms', 'Nội dung', 'admin.plugins.vani-cms.pages.index', 'cms.view', 620, 'content');
+        $this->adminMenu('cms', 'vani-cms::texts.cms_service_provider.content', 'admin.plugins.vani-cms.pages.index', 'cms.view', 620, 'content');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
         $this->adminPages('Cms', $this->pluginPath('Resources/js/Pages'));
     }
@@ -98,10 +98,10 @@ final class CmsServiceProvider extends PluginServiceProvider
 
         // Form sản phẩm: điểm nổi bật theo ngôn ngữ (mỗi dòng một ý) + ẩn hộp ưu đãi.
         $fields = fn (): array => [
-            ...array_map(fn (string $locale): FieldDefinition => FieldDefinition::text(ExtraContent::highlightKey($locale), "Điểm nổi bật ({$locale})", help: 'Mỗi dòng một ý, tối đa '.ExtraContent::MAX_HIGHLIGHTS.'; hiện dưới tên sản phẩm.', max: 2000), StoreLocale::supported()),
-            FieldDefinition::bool('hide_promo_box', 'Ẩn hộp ưu đãi dùng chung ở sản phẩm này'),
+            ...array_map(fn (string $locale): FieldDefinition => FieldDefinition::text(ExtraContent::highlightKey($locale), __('vani-cms::texts.cms_service_provider.highlights_locale', ['locale' => $locale]), help: __('vani-cms::texts.cms_service_provider.one_point_per_line_most').ExtraContent::MAX_HIGHLIGHTS.__('vani-cms::texts.cms_service_provider.shown_below_product_name'), max: 2000), StoreLocale::supported()),
+            FieldDefinition::bool('hide_promo_box', __('vani-cms::texts.cms_service_provider.hide_shared_offer_box_product')),
         ];
-        $this->adminFormSection('product', 'extras', 'Nội dung thêm', $fields,
+        $this->adminFormSection('product', 'extras', 'vani-cms::texts.cms_service_provider.extra_content', $fields,
             load: fn (int $id): array => $content()->productForm($id),
             save: fn (int $id, array $values) => $content()->saveProduct($id, $values),
             order: 400,
@@ -118,21 +118,21 @@ final class CmsServiceProvider extends PluginServiceProvider
         $time = ['regex:/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/'];
         $color = ['regex:/^#[0-9a-fA-F]{6}$/'];
         $definitions = [
-            ['key' => 'announcement_enabled', 'label' => 'Bật thanh thông báo đầu trang', 'type' => 'bool', 'default' => false,
-                'help' => 'Nhiều dòng, tự xoay vòng. Khi bật, để trống "Dòng thông báo" ở Giao diện → Đầu & chân trang để không hiện hai thanh.'],
-            ['key' => 'announcement_bg', 'label' => 'Màu nền thanh thông báo', 'help' => 'Dạng #rrggbb; trống = màu chính của giao diện.', 'rules' => $color],
-            ['key' => 'announcement_fg', 'label' => 'Màu chữ thanh thông báo', 'help' => 'Dạng #rrggbb; trống = trắng.', 'rules' => $color],
-            ['key' => 'announcement_pause_ms', 'label' => 'Thời gian hiện mỗi dòng (ms, 1000–15000)', 'type' => 'int', 'default' => 3000, 'rules' => ['min:1000', 'max:15000']],
-            ['key' => 'announcement_fade_ms', 'label' => 'Thời gian chuyển dòng (ms, 0–2000)', 'type' => 'int', 'default' => 500, 'rules' => ['min:0', 'max:2000']],
-            ['key' => 'announcement_from', 'label' => 'Hiện từ (giờ cửa hàng)', 'help' => 'Dạng 2026-11-20 08:00; trống = ngay.', 'rules' => $time],
-            ['key' => 'announcement_to', 'label' => 'Hiện đến (giờ cửa hàng)', 'help' => 'Dạng 2026-11-30 23:59; trống = không hết hạn.', 'rules' => $time],
-            ['key' => 'promo_box_enabled', 'label' => 'Bật hộp ưu đãi ở trang sản phẩm', 'type' => 'bool', 'default' => false, 'help' => 'Một nội dung chung cho mọi sản phẩm; ẩn riêng từng sản phẩm ở form sản phẩm → Nội dung thêm.'],
-            ['key' => 'promo_box_position', 'label' => 'Vị trí hộp ưu đãi', 'type' => 'select', 'default' => 'after_add_to_cart', 'options' => ExtraContent::POSITIONS],
+            ['key' => 'announcement_enabled', 'label' => 'vani-cms::texts.cms_service_provider.enable_announcement_bar', 'type' => 'bool', 'default' => false,
+                'help' => 'vani-cms::texts.cms_service_provider.multiple_lines_rotating_automatically_when'],
+            ['key' => 'announcement_bg', 'label' => 'vani-cms::texts.cms_service_provider.announcement_bar_background_colour', 'help' => 'vani-cms::texts.cms_service_provider.format_rrggbb_empty_theme_s', 'rules' => $color],
+            ['key' => 'announcement_fg', 'label' => 'vani-cms::texts.cms_service_provider.announcement_bar_text_colour', 'help' => 'vani-cms::texts.cms_service_provider.format_rrggbb_empty_white', 'rules' => $color],
+            ['key' => 'announcement_pause_ms', 'label' => 'vani-cms::texts.cms_service_provider.time_each_line_shown_ms', 'type' => 'int', 'default' => 3000, 'rules' => ['min:1000', 'max:15000']],
+            ['key' => 'announcement_fade_ms', 'label' => 'vani-cms::texts.cms_service_provider.line_transition_time_ms_0', 'type' => 'int', 'default' => 500, 'rules' => ['min:0', 'max:2000']],
+            ['key' => 'announcement_from', 'label' => 'vani-cms::texts.cms_service_provider.show_from_store_time', 'help' => 'vani-cms::texts.cms_service_provider.format_2026_11_20_0800', 'rules' => $time],
+            ['key' => 'announcement_to', 'label' => 'vani-cms::texts.cms_service_provider.show_until_store_time', 'help' => 'vani-cms::texts.cms_service_provider.format_2026_11_30_2359', 'rules' => $time],
+            ['key' => 'promo_box_enabled', 'label' => 'vani-cms::texts.cms_service_provider.enable_offer_box_product_pages', 'type' => 'bool', 'default' => false, 'help' => 'vani-cms::texts.cms_service_provider.one_shared_content_every_product'],
+            ['key' => 'promo_box_position', 'label' => 'vani-cms::texts.cms_service_provider.offer_box_position', 'type' => 'select', 'default' => 'after_add_to_cart', 'options' => ExtraContent::POSITIONS],
         ];
         foreach (StoreLocale::supported() as $locale) {
-            $definitions[] = ['key' => "announcement_lines.{$locale}", 'label' => "Các dòng thông báo ({$locale})", 'type' => 'text',
-                'help' => 'Mỗi dòng một thông báo; Markdown một dòng: **đậm**, [link](/duong-dan). Trống = theo ngôn ngữ mặc định.'];
-            $definitions[] = ['key' => "promo_box_markdown.{$locale}", 'label' => "Nội dung hộp ưu đãi ({$locale}, Markdown)", 'type' => 'text'];
+            $definitions[] = ['key' => "announcement_lines.{$locale}", 'label' => 'vani-cms::texts.cms_service_provider.announcement_lines_locale', 'type' => 'text',
+                'help' => 'vani-cms::texts.cms_service_provider.one_announcement_per_line_single'];
+            $definitions[] = ['key' => "promo_box_markdown.{$locale}", 'label' => 'vani-cms::texts.cms_service_provider.offer_box_content_locale_markdown', 'type' => 'text'];
         }
 
         return $definitions;

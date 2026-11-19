@@ -60,8 +60,8 @@ final class OrderQueries
         $paymentStatus = (array) __('ordering::labels.payment_status');
         $lines = $mode === 'lines';
         $rows = [$lines
-            ? ['Số đơn', 'Ngày đặt', 'Trạng thái', 'SKU', 'Sản phẩm', 'Tuỳ chọn', 'Số lượng', 'Đã huỷ', 'Đơn giá', 'Giảm giá', 'Thành tiền']
-            : ['Số đơn', 'Ngày đặt', 'Trạng thái', 'Thanh toán', 'Phương thức', 'Nguồn', 'Khách hàng', 'Số điện thoại', 'Email', 'Tỉnh/thành', 'Phường/xã', 'Địa chỉ', 'Tạm tính', 'Giảm giá', 'Phí giao', 'Tổng', 'Ghi chú']];
+            ? [__('ordering::texts.order_queries.orders'), __('ordering::texts.order_queries.order_date'), __('ordering::texts.order_queries.status'), 'SKU', __('ordering::texts.order_queries.products'), __('ordering::texts.order_queries.custom'), __('ordering::texts.order_queries.quantity'), __('ordering::texts.order_queries.cancelled'), __('ordering::texts.order_queries.unit_price'), __('ordering::texts.order_queries.discount'), __('ordering::texts.order_queries.amount')]
+            : [__('ordering::texts.order_queries.orders'), __('ordering::texts.order_queries.order_date'), __('ordering::texts.order_queries.status'), __('ordering::texts.order_queries.payment'), __('ordering::texts.order_queries.method'), __('ordering::texts.order_queries.source'), __('ordering::texts.order_queries.customers'), __('ordering::texts.order_queries.phone_number'), 'Email', __('ordering::texts.order_queries.province_city'), __('ordering::texts.order_queries.ward'), __('ordering::texts.order_queries.address'), __('ordering::texts.order_queries.subtotal'), __('ordering::texts.order_queries.discount'), __('ordering::texts.order_queries.shipping_fee'), __('ordering::texts.order_queries.total'), __('ordering::texts.order_queries.note')]];
         $this->filtered($filters)->select('orders.*')->with($lines ? 'lines' : [])->orderByDesc('placed_at')->orderByDesc('id')
             ->limit(self::EXPORT_MAX)->get()
             ->each(function (Order $order) use (&$rows, $lines, $orderStatus, $paymentStatus): void {

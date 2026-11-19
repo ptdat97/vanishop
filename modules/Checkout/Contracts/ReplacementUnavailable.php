@@ -20,9 +20,9 @@ final class ReplacementUnavailable extends BusinessRuleViolation
         public readonly string $reason,
     ) {
         parent::__construct(match ($reason) {
-            'insufficient_stock' => 'Không đủ hàng để đổi (variant '.implode(', ', $variantIds).').',
-            'no_collect_on_delivery' => 'Không có cổng thu tiền khi giao đang bật để thu phần chênh.',
-            default => 'Sản phẩm đổi không còn bán (variant '.implode(', ', $variantIds).').',
+            'insufficient_stock' => __('checkout::texts.replacement_unavailable.not_enough_stock_exchange_variant').implode(', ', $variantIds).').',
+            'no_collect_on_delivery' => __('checkout::texts.replacement_unavailable.no_cash_delivery_gateway_enabled'),
+            default => __('checkout::texts.replacement_unavailable.exchanged_product_no_longer_sold').implode(', ', $variantIds).').',
         });
     }
 

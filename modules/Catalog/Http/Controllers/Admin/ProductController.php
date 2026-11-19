@@ -80,12 +80,12 @@ final class ProductController
             'nav' => CatalogNavigation::all(),
             'labels' => __('catalog::labels'),
             'filters' => ['q' => $search, 'status' => $status, 'category' => $taxonomy['category'], 'brand' => $taxonomy['brand'] === null ? null : (string) $taxonomy['brand'], 'collection' => $taxonomy['collection'], 'missing' => $taxonomy['missing']],
-            'filterOptions' => [...$options, 'missing' => AdminQueries::MISSING],
+            'filterOptions' => [...$options, 'missing' => array_map(fn (string $label): string => __($label), AdminQueries::MISSING)],
             'sort' => $sort?->toArray(),
             'products' => [
                 'data' => $styles->getCollection()->map(fn (Style $style): array => [
                     'views' => $viewCounts[$style->id] ?? 0,
-                    'missing' => array_map(fn (string $key): string => AdminQueries::MISSING[$key], $missing[$style->id] ?? []),
+                    'missing' => array_map(fn (string $key): string => __(AdminQueries::MISSING[$key]), $missing[$style->id] ?? []),
                     'id' => $style->id,
                     'style_code' => $style->style_code,
                     'name' => $style->translate('name'),
@@ -206,20 +206,20 @@ final class ProductController
             'fields' => [['key' => 'target_id', 'label' => $field, 'required' => $action !== 'brand', 'options' => $values]],
         ];
         $actions = Gate::allows('catalog.manage') ? [
-            ['key' => 'activate', 'label' => 'Mở bán', 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'active']],
-            ['key' => 'archive', 'label' => 'Ngừng bán (ẩn khỏi cửa hàng)', 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'archived']],
+            ['key' => 'activate', 'label' => __('catalog::texts.product_controller.put_sale'), 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'active']],
+            ['key' => 'archive', 'label' => __('catalog::texts.product_controller.stop_selling_hide_from_store'), 'url' => route('admin.catalog.products.bulk-status'), 'confirm' => true, 'data' => ['status' => 'archived']],
             ...($options['categories'] === [] ? [] : [
-                $edit('category_add', 'Thêm vào danh mục', 'category_add', 'Danh mục', $choices($options['categories'])),
-                $edit('category_remove', 'Gỡ khỏi danh mục', 'category_remove', 'Danh mục', $choices($options['categories'])),
+                $edit('category_add', __('catalog::texts.product_controller.add_category'), 'category_add', __('catalog::texts.product_controller.category'), $choices($options['categories'])),
+                $edit('category_remove', __('catalog::texts.product_controller.remove_from_category'), 'category_remove', __('catalog::texts.product_controller.category'), $choices($options['categories'])),
             ]),
-            $edit('brand', 'Đổi thương hiệu', 'brand', 'Thương hiệu (để trống = bỏ thương hiệu)', $choices($options['brands'])),
+            $edit('brand', __('catalog::texts.product_controller.change_brand'), 'brand', __('catalog::texts.product_controller.brand_leave_empty_remove_brand'), $choices($options['brands'])),
             ...($options['collections'] === [] ? [] : [
-                $edit('collection_add', 'Thêm vào bộ sưu tập', 'collection_add', 'Bộ sưu tập', $choices($options['collections'])),
-                $edit('collection_remove', 'Gỡ khỏi bộ sưu tập', 'collection_remove', 'Bộ sưu tập', $choices($options['collections'])),
+                $edit('collection_add', __('catalog::texts.product_controller.add_collection'), 'collection_add', __('catalog::texts.product_controller.collections'), $choices($options['collections'])),
+                $edit('collection_remove', __('catalog::texts.product_controller.remove_from_collection'), 'collection_remove', __('catalog::texts.product_controller.collections'), $choices($options['collections'])),
             ]),
-            ['key' => 'delete', 'label' => 'Xoá bản nháp', 'url' => route('admin.catalog.products.bulk-delete'), 'confirm' => true],
+            ['key' => 'delete', 'label' => __('catalog::texts.product_controller.delete_draft'), 'url' => route('admin.catalog.products.bulk-delete'), 'confirm' => true],
         ] : [];
-        $actions[] = ['key' => 'export', 'label' => 'Xuất file', 'url' => route('admin.catalog.products.export'), 'confirm' => false, 'method' => 'get'];
+        $actions[] = ['key' => 'export', 'label' => __('catalog::texts.product_controller.export_file'), 'url' => route('admin.catalog.products.export'), 'confirm' => false, 'method' => 'get'];
         foreach (array_filter(Hook::slot('vani.admin.product.bulk_actions'), 'is_array') as $contributed) {
             array_push($actions, ...$contributed);
         }

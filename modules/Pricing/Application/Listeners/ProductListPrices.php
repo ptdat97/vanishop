@@ -43,7 +43,7 @@ final class ProductListPrices
         foreach ($byStyle as $styleId => $variants) {
             $found = array_values(array_filter(array_map(fn ($variant) => $prices->get($variant->id), $variants)));
             if ($found === []) {
-                $values[$styleId] = 'Chưa có giá';
+                $values[$styleId] = __('pricing::texts.product_list_prices.no_price_yet');
                 $editValues[$styleId] = null;
 
                 continue;
@@ -54,10 +54,10 @@ final class ProductListPrices
                 ? $this->money->formatAmount(min($amounts), $currency)
                 : $this->money->formatAmount(min($amounts), $currency).' – '.$this->money->formatAmount(max($amounts), $currency);
             if ($compares !== []) {
-                $text .= "\ngạch ".$this->money->formatAmount(max($compares), $currency);
+                $text .= __('pricing::texts.product_list_prices.compare').$this->money->formatAmount(max($compares), $currency);
             }
             if (count($found) < count($variants)) {
-                $text .= "\n".(count($variants) - count($found)).' biến thể chưa có giá';
+                $text .= "\n".(count($variants) - count($found)).__('pricing::texts.product_list_prices.variants_without_price');
             }
             $values[$styleId] = $text;
             $editValues[$styleId] = count($found) === count($variants) && min($amounts) === max($amounts)
@@ -72,7 +72,7 @@ final class ProductListPrices
             }
         }
 
-        return ['key' => 'price', 'label' => 'Giá bán', 'values' => $values, 'edit_values' => $editValues, 'urls' => $urls];
+        return ['key' => 'price', 'label' => __('pricing::texts.product_list_prices.selling_price'), 'values' => $values, 'edit_values' => $editValues, 'urls' => $urls];
     }
 
     /**
@@ -87,26 +87,26 @@ final class ProductListPrices
         // "Đưa vào bảng giá…" (thao tác gọn đợt 2): chọn bảng giá sale/thành viên → trang làm việc mở sẵn cách tính + xem trước.
         $lists = PriceList::query()->where('type', '!=', PriceListType::Base)->orderByDesc('id')->get();
         $addToList = $lists->isEmpty() ? [] : [[
-            'key' => 'add_to_price_list', 'label' => 'Đưa vào bảng giá…', 'url' => route('admin.pricing.price-lists.add-products'),
-            'fields' => [['key' => 'price_list_id', 'label' => 'Bảng giá', 'required' => true, 'value' => (string) $lists->first()->id,
+            'key' => 'add_to_price_list', 'label' => __('pricing::texts.product_list_prices.add_price_list'), 'url' => route('admin.pricing.price-lists.add-products'),
+            'fields' => [['key' => 'price_list_id', 'label' => __('pricing::texts.product_list_prices.price_lists'), 'required' => true, 'value' => (string) $lists->first()->id,
                 'options' => $lists->map(fn (PriceList $list): array => ['value' => (string) $list->id, 'label' => $list->name.' · '.__('pricing::labels.price_list_state.'.PriceListWorkspace::state($list))])->all()]],
         ]];
 
         return [...$addToList, [
-            'key' => 'price', 'label' => 'Đổi giá', 'url' => route('admin.pricing.base-prices.bulk'), 'confirm' => true,
+            'key' => 'price', 'label' => __('pricing::texts.product_list_prices.change_price'), 'url' => route('admin.pricing.base-prices.bulk'), 'confirm' => true,
             // A5: xem trước số SKU, khoảng giá cũ/mới, cảnh báo (giá vốn…) trước khi ghi.
             'preview_url' => route('admin.pricing.base-prices.bulk.preview'),
             'fields' => [
-                ['key' => 'mode', 'label' => 'Cách đổi', 'required' => true, 'value' => 'percent_down', 'options' => [
-                    ['value' => 'set', 'label' => 'Đặt giá mới (mọi size)'],
-                    ['value' => 'percent_down', 'label' => 'Giảm theo %'],
-                    ['value' => 'percent_up', 'label' => 'Tăng theo %'],
-                    ['value' => 'amount_down', 'label' => 'Giảm số tiền'],
-                    ['value' => 'clear_compare', 'label' => 'Bỏ giá gạch (kết thúc giảm giá)'],
+                ['key' => 'mode', 'label' => __('pricing::texts.product_list_prices.how_change'), 'required' => true, 'value' => 'percent_down', 'options' => [
+                    ['value' => 'set', 'label' => __('pricing::texts.product_list_prices.set_new_price_every_size')],
+                    ['value' => 'percent_down', 'label' => __('pricing::texts.product_list_prices.decrease')],
+                    ['value' => 'percent_up', 'label' => __('pricing::texts.product_list_prices.increase')],
+                    ['value' => 'amount_down', 'label' => __('pricing::texts.product_list_prices.decrease_amount')],
+                    ['value' => 'clear_compare', 'label' => __('pricing::texts.product_list_prices.remove_compare_price_end_discount')],
                 ]],
-                ['key' => 'value', 'label' => 'Giá trị (₫ hoặc %; "Bỏ giá gạch" để 0)', 'required' => true, 'value' => '10'],
-                ['key' => 'strike', 'label' => 'Khi giảm: hiện giá cũ gạch ngang', 'required' => true, 'value' => '1', 'options' => [
-                    ['value' => '1', 'label' => 'Có'], ['value' => '0', 'label' => 'Không'],
+                ['key' => 'value', 'label' => __('pricing::texts.product_list_prices.value_0_remove_compare_price'), 'required' => true, 'value' => '10'],
+                ['key' => 'strike', 'label' => __('pricing::texts.product_list_prices.when_decreasing_show_old_price'), 'required' => true, 'value' => '1', 'options' => [
+                    ['value' => '1', 'label' => __('pricing::texts.product_list_prices.yes')], ['value' => '0', 'label' => __('pricing::texts.product_list_prices.no')],
                 ]],
             ],
         ]];

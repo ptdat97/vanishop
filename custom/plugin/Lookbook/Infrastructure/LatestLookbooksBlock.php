@@ -27,7 +27,7 @@ final class LatestLookbooksBlock implements StorefrontBlock
 
     public function fields(): array
     {
-        return [FieldDefinition::string('title', 'Tiêu đề', max: 120), FieldDefinition::int('limit', 'Số lookbook (1–6)', help: 'Mặc định 3.')];
+        return [FieldDefinition::string('title', __('vani-lookbook::texts.latest_lookbooks_block.title'), max: 120), FieldDefinition::int('limit', __('vani-lookbook::texts.latest_lookbooks_block.number_lookbooks_1_6'), help: __('vani-lookbook::texts.latest_lookbooks_block.default_3'))];
     }
 
     public function resolve(array $config, string $locale): array

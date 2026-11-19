@@ -1,6 +1,6 @@
 # ADR-049 — Chuỗi dịch bằng khoá có namespace ở mọi nơi; Admin chọn ngôn ngữ, Vue đọc cùng file lang PHP
 
-- Trạng thái: **Accepted** (Owner duyệt 2026-11-19) · Code: chưa làm · Ngày: 2026-11-19 · Người quyết định: Owner (2026-11-19, 4 câu trong [i18n-keyed-translations](../20-roadmap/i18n-keyed-translations.md))
+- Trạng thái: **Accepted** (Owner duyệt 2026-11-19) · Code: **Implemented** (Core 0.5.39–0.5.46, Extension API 1.11.0) · Ngày: 2026-11-19 · Người quyết định: Owner (2026-11-19, 4 câu trong [i18n-keyed-translations](../20-roadmap/i18n-keyed-translations.md))
 - Liên quan: [ADR-038](ADR-038-localized-storefront-urls.md), [storefront §3a](../14-storefront/storefront.md), [plugin-system §10 bước 11](../05-plugin/plugin-system.md), [reference-parity §6b](../20-roadmap/reference-parity-refactor.md) L2, L9. Thay quy ước "chuỗi giao diện" của Core 0.3.63.
 
 ## Context

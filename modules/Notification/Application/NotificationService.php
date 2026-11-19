@@ -79,7 +79,10 @@ final class NotificationService implements Notifier
         foreach ($this->catalog->types()[$request->type]->defaults ?? [] as $channel => $default) {
             $picked[$channel] ??= new NotificationTemplate([
                 'type' => $request->type, 'channel' => $channel, 'locale' => StoreLocale::default(),
-                'subject' => $default['subject'] ?? null, 'body' => $default['body'] ?? null, 'meta' => $default['meta'] ?? null, 'active' => true,
+                // Mẫu mặc định có thể là khoá dịch (khai báo lúc boot, ADR-049).
+                'subject' => isset($default['subject']) ? __($default['subject'], [], StoreLocale::default()) : null,
+                'body' => isset($default['body']) ? __($default['body'], [], StoreLocale::default()) : null,
+                'meta' => $default['meta'] ?? null, 'active' => true,
             ]);
         }
 

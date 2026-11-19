@@ -25,10 +25,10 @@ final class PaymentDashboardTasks
         $mismatches = app(ReconciliationLedger::class)->openCount();
 
         return [...($mismatches > 0 ? [[
-            'key' => 'payments.reconciliation_mismatch', 'label' => 'Đối soát lệch', 'count' => $mismatches, 'hint' => 'Sao kê/bảng kê không khớp đơn',
+            'key' => 'payments.reconciliation_mismatch', 'label' => __('payment::texts.payment_dashboard_tasks.reconciliation_mismatches'), 'count' => $mismatches, 'hint' => __('payment::texts.payment_dashboard_tasks.statement_does_not_match_order'),
             'url' => route('admin.payment.payments.index'), 'tone' => 'warning', 'order' => 61,
         ]] : []), [
-            'key' => 'payments.refunds_requested', 'label' => 'Hoàn tiền chờ chuyển trả', 'count' => Refund::query()->whereIn('status', ['requested', 'paying_out'])->count(),
+            'key' => 'payments.refunds_requested', 'label' => __('payment::texts.payment_dashboard_tasks.refund_awaiting_payout'), 'count' => Refund::query()->whereIn('status', ['requested', 'paying_out'])->count(),
             'url' => route('admin.payment.payments.index'), 'tone' => 'warning', 'order' => 60,
         ]];
     }

@@ -61,14 +61,14 @@ final class PageBlocks
     public function saveHome(array $blocks): void
     {
         if (count($blocks) > self::MAX_BLOCKS) {
-            throw ValidationException::withMessages(['blocks' => 'Tối đa '.self::MAX_BLOCKS.' khối.']);
+            throw ValidationException::withMessages(['blocks' => __('storefront::texts.page_blocks.most').self::MAX_BLOCKS.__('storefront::texts.page_blocks.blocks')]);
         }
 
         $types = $this->types();
         $clean = [];
         $mediaIds = [];
         foreach (array_values($blocks) as $index => $block) {
-            $type = $types[(string) ($block['type'] ?? '')] ?? throw ValidationException::withMessages(["blocks.{$index}.type" => 'Loại khối không có hoặc plugin đã tắt.']);
+            $type = $types[(string) ($block['type'] ?? '')] ?? throw ValidationException::withMessages(["blocks.{$index}.type" => __('storefront::texts.page_blocks.block_type_does_not_exist')]);
             $fields = $type->fields();
             $config = (array) ($block['config'] ?? []);
             $rules = [];
@@ -81,7 +81,7 @@ final class PageBlocks
             }
             if ($type instanceof RichTextBlock && RichTextRenderer::textLength((string) ($config['body'] ?? '')) > RichTextBlock::MAX_TEXT_LENGTH) {
                 throw ValidationException::withMessages([
-                    "blocks.{$index}.config.body" => 'Nội dung không được vượt quá '.RichTextBlock::MAX_TEXT_LENGTH.' ký tự.',
+                    "blocks.{$index}.config.body" => __('storefront::texts.page_blocks.content_must_not_exceed').RichTextBlock::MAX_TEXT_LENGTH.__('storefront::texts.page_blocks.characters'),
                 ]);
             }
             $known = array_map(fn (FieldDefinition $field): string => $field->key, $fields);

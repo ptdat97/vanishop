@@ -41,12 +41,12 @@ final class PluginManager
         $manifest = $this->manifestOrFail($pluginId);
 
         if (PluginRecord::query()->whereKey($pluginId)->exists()) {
-            throw new PluginOperationFailed("Plugin [{$pluginId}] đã được cài.");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.plugin_plugin_id_already_installed', ['plugin_id' => $pluginId]));
         }
 
         $problems = $this->resolver->problemsFor($pluginId, $this->manifests->all(), $this->installedIds(), $this->coreVersion);
         if ($problems !== []) {
-            throw new PluginOperationFailed("Không thể cài [{$pluginId}]:", $problems);
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_install_plugin_id', ['plugin_id' => $pluginId]), $problems);
         }
 
         $record = PluginRecord::query()->create([
@@ -62,7 +62,7 @@ final class PluginManager
             $record->update(['status' => PluginStatus::Failed, 'last_error' => $exception->getMessage()]);
             $this->rebuildCache();
 
-            throw new PluginOperationFailed("Migration của [{$pluginId}] lỗi: {$exception->getMessage()}");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.migration_plugin_id_failed_get', ['plugin_id' => $pluginId, 'get_message' => $exception->getMessage()]));
         }
 
         // Dữ liệu ban đầu sau migration. Lỗi → failed; sửa seeder rồi `vani:plugin:seed` (hoặc gỡ + cài lại).
@@ -86,7 +86,7 @@ final class PluginManager
         $record = $this->recordOrFail($pluginId);
 
         if ($record->status === PluginStatus::Failed) {
-            throw new PluginOperationFailed("Plugin [{$pluginId}] đang lỗi: {$record->last_error}");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.plugin_plugin_id_failing_last', ['plugin_id' => $pluginId, 'last_error' => $record->last_error]));
         }
 
         $active = array_values(array_diff($this->enabledIds(), [$pluginId]));
@@ -99,7 +99,7 @@ final class PluginManager
             array_push($problems, ...$this->capabilityProblems($manifest, $active));
         }
         if ($problems !== []) {
-            throw new PluginOperationFailed("Không thể bật [{$pluginId}]:", $problems);
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_enable_plugin_id', ['plugin_id' => $pluginId]), $problems);
         }
 
         $record->update(['status' => PluginStatus::Enabled]);
@@ -118,11 +118,11 @@ final class PluginManager
     {
         $record = $this->recordOrFail($pluginId);
 
-        $this->assertCanStop($pluginId, 'tắt');
+        $this->assertCanStop($pluginId, __('extension::texts.plugin_manager.disable'));
 
         $inUse = $this->required->inUse($pluginId);
         if ($inUse !== [] && ! $force) {
-            throw new PluginOperationFailed("Không nên tắt [{$pluginId}] lúc này: ".implode('; ', $inUse).'. Dùng --drain để ngừng nhận giao dịch mới và tự tắt khi xử lý xong, hoặc --force (việc dở dang sẽ không được ghi nhận tự động).');
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.plugin_id_should_not_disabled', ['plugin_id' => $pluginId]).implode('; ', $inUse).__('extension::texts.plugin_manager.use_drain_stop_accepting_new'));
         }
 
         $record->update(['status' => PluginStatus::Disabled]);
@@ -141,9 +141,9 @@ final class PluginManager
     {
         $record = $this->recordOrFail($pluginId);
         if ($record->status !== PluginStatus::Enabled) {
-            throw new PluginOperationFailed("Chỉ ngừng được plugin đang bật — [{$pluginId}] đang {$record->status->value}.");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.only_enabled_plugin_stopped_plugin', ['plugin_id' => $pluginId, 'status' => $record->status->value]));
         }
-        $this->assertCanStop($pluginId, 'ngừng');
+        $this->assertCanStop($pluginId, __('extension::texts.plugin_manager.stop'));
 
         $inUse = $this->required->inUse($pluginId);
         if ($inUse === []) {
@@ -201,18 +201,18 @@ final class PluginManager
         $record = $this->recordOrFail($pluginId);
 
         if (in_array($record->status, [PluginStatus::Enabled, PluginStatus::Draining], true)) {
-            throw new PluginOperationFailed("Hãy tắt [{$pluginId}] trước khi gỡ.");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.disable_plugin_id_before_uninstalling', ['plugin_id' => $pluginId]));
         }
 
         $dependents = $this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->installedIds());
         if ($dependents !== []) {
-            throw new PluginOperationFailed("Không thể gỡ [{$pluginId}]: các plugin ".implode(', ', $dependents).' phụ thuộc vào nó.');
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_uninstall_plugin_id_plugins', ['plugin_id' => $pluginId]).implode(', ', $dependents).__('extension::texts.plugin_manager.depend'));
         }
 
         // Gỡ = không nạp provider nữa → IPN/webhook của giao dịch đang dở sẽ 404 (kể cả khi đã --force tắt).
         $inUse = $this->required->inUse($pluginId);
         if ($inUse !== []) {
-            throw new PluginOperationFailed("Không thể gỡ [{$pluginId}]: ".implode('; ', $inUse).'.');
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_uninstall_plugin_id', ['plugin_id' => $pluginId]).implode('; ', $inUse).'.');
         }
 
         $manifest = $this->manifests->find($pluginId);
@@ -220,7 +220,7 @@ final class PluginManager
             $installed = array_intersect_key($this->manifests->all(), array_flip($this->installedIds()));
             $blockers = $this->dataGuard->purgeBlockers($manifest, $installed, $dropRetained);
             if ($blockers !== []) {
-                throw new PluginOperationFailed("Không thể xoá dữ liệu của [{$pluginId}]: ".implode('; ', $blockers).'. Gỡ không --purge để giữ dữ liệu.');
+                throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_delete_data_plugin_id', ['plugin_id' => $pluginId]).implode('; ', $blockers).__('extension::texts.plugin_manager.uninstall_without_purge_keep_data'));
             }
             $this->rollbackMigrations($manifest);
             $this->seeders->forget($pluginId);
@@ -245,10 +245,10 @@ final class PluginManager
         $from = $record->version;
 
         if (Comparator::equalTo($manifest->version, $from)) {
-            throw new PluginAlreadyCurrent("Plugin [{$pluginId}] đã ở version {$from}.");
+            throw new PluginAlreadyCurrent(__('extension::texts.plugin_manager.plugin_plugin_id_already_version', ['plugin_id' => $pluginId, 'from' => $from]));
         }
         if (Comparator::lessThan($manifest->version, $from)) {
-            throw new PluginOperationFailed("Không hạ version [{$pluginId}] từ {$from} xuống {$manifest->version}.");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_downgrade_plugin_id_from', ['plugin_id' => $pluginId, 'from' => $from, 'version' => $manifest->version]));
         }
 
         $others = array_values(array_diff($this->installedIds(), [$pluginId]));
@@ -258,7 +258,7 @@ final class PluginManager
             array_push($problems, ...$this->capabilityProblems($manifest, array_values(array_diff($this->enabledIds(), [$pluginId]))));
         }
         if ($problems !== []) {
-            throw new PluginOperationFailed("Không thể nâng [{$pluginId}] lên {$manifest->version}:", $problems);
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_upgrade_plugin_id_version', ['plugin_id' => $pluginId, 'version' => $manifest->version]), $problems);
         }
 
         try {
@@ -266,7 +266,7 @@ final class PluginManager
         } catch (Throwable $exception) {
             $this->markFailed($pluginId, "upgrade {$from} → {$manifest->version}: {$exception->getMessage()}");
 
-            throw new PluginOperationFailed("Migration khi nâng [{$pluginId}] lỗi: {$exception->getMessage()}");
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.migration_while_upgrading_plugin_id', ['plugin_id' => $pluginId, 'get_message' => $exception->getMessage()]));
         }
         // Bản mới thêm seeder → chỉ chạy seeder chưa chạy.
         try {
@@ -405,7 +405,7 @@ final class PluginManager
                 }
                 foreach (array_keys($manifest->requiresPlugins) as $dependency) {
                     if (isset($excluded[$dependency])) {
-                        $excluded[$id] = "dependency_unavailable: plugin phụ thuộc [{$dependency}] không được nạp.";
+                        $excluded[$id] = __('extension::texts.plugin_manager.dependency_unavailable_dependency_plugin_dependency', ['dependency' => $dependency]);
                         $changed = true;
                         break;
                     }
@@ -441,12 +441,12 @@ final class PluginManager
 
     private function manifestOrFail(string $pluginId): PluginManifest
     {
-        return $this->manifests->find($pluginId) ?? throw new PluginOperationFailed("Không tìm thấy plugin [{$pluginId}] trong custom/plugin.");
+        return $this->manifests->find($pluginId) ?? throw new PluginOperationFailed(__('extension::texts.plugin_manager.plugin_plugin_id_not_found', ['plugin_id' => $pluginId]));
     }
 
     private function recordOrFail(string $pluginId): PluginRecord
     {
-        return PluginRecord::query()->find($pluginId) ?? throw new PluginOperationFailed("Plugin [{$pluginId}] chưa được cài.");
+        return PluginRecord::query()->find($pluginId) ?? throw new PluginOperationFailed(__('extension::texts.plugin_manager.plugin_plugin_id_not_installed', ['plugin_id' => $pluginId]));
     }
 
     /**
@@ -483,17 +483,17 @@ final class PluginManager
     {
         $dependents = array_values(array_diff($this->resolver->dependentsOf($pluginId, $this->manifests->all(), $this->activeIds()), [$pluginId]));
         if ($dependents !== []) {
-            throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: đang được dùng bởi ".implode(', ', $dependents).'.');
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_verb_plugin_id_used', ['verb' => $verb, 'plugin_id' => $pluginId]).implode(', ', $dependents).'.');
         }
 
         $broken = $this->required->brokenWithout($pluginId, $this->enabledIds());
         if ($broken !== []) {
-            throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: đây là implementation cuối cùng của ".implode(', ', $broken).' — bật plugin thay thế trước.');
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_verb_plugin_id_last', ['verb' => $verb, 'plugin_id' => $pluginId]).implode(', ', $broken).__('extension::texts.plugin_manager.enable_replacement_plugin_first'));
         }
 
         $needed = $this->capabilities->brokenWithout($pluginId, $this->manifests->all(), $this->activeIds(), $this->enabledIds());
         if ($needed !== []) {
-            throw new PluginOperationFailed("Không thể {$verb} [{$pluginId}]: là nguồn cuối cùng của capability mà plugin khác cần (".implode('; ', $needed).') — bật plugin thay thế hoặc tắt plugin cần trước.');
+            throw new PluginOperationFailed(__('extension::texts.plugin_manager.cannot_verb_plugin_id_last_2', ['verb' => $verb, 'plugin_id' => $pluginId]).implode('; ', $needed).__('extension::texts.plugin_manager.enable_replacement_plugin_disable_dependent'));
         }
     }
 
@@ -504,7 +504,7 @@ final class PluginManager
     private function capabilityProblems(PluginManifest $manifest, array $active): array
     {
         return array_map(
-            fn (string $tag): DependencyProblem => new DependencyProblem($manifest->id, 'missing_capability', 'Cần ít nhất một implementation đang bật của '.$this->capabilities->describe($tag).' — bật plugin cung cấp trước.'),
+            fn (string $tag): DependencyProblem => new DependencyProblem($manifest->id, 'missing_capability', __('extension::texts.plugin_manager.requires_least_one_enabled_implementation').$this->capabilities->describe($tag).__('extension::texts.plugin_manager.enable_providing_plugin_first')),
             $this->capabilities->missingFor($manifest, $active),
         );
     }

@@ -26,7 +26,7 @@ final class ImageSizes
 {
     public const PRODUCT = 'product';
 
-    public const RATIOS = ['original' => 'Giữ tỉ lệ gốc', '2:3' => '2:3 (dọc, thời trang)', '3:4' => '3:4', '4:5' => '4:5', '1:1' => '1:1 (vuông)'];
+    public const RATIOS = ['original' => 'catalog::texts.image_sizes.keep_original_ratio', '2:3' => 'catalog::texts.image_sizes.text_23_portrait_fashion', '3:4' => '3:4', '4:5' => '4:5', '1:1' => 'catalog::texts.image_sizes.text_11_square'];
 
     public const DEFAULT_RATIO = '2:3';
 
@@ -76,7 +76,7 @@ final class ImageSizes
 
         return array_map(fn (int $width): ImageSize => $ratio === null
             ? new ImageSize("w{$width}", "{$width}px", $width)
-            : new ImageSize(self::PRODUCT.".w{$width}", "Sản phẩm {$width}px", $width, (int) round($width * $ratio[1] / $ratio[0]), true), $this->widths());
+            : new ImageSize(self::PRODUCT.".w{$width}", __('catalog::texts.image_sizes.product_widthpx', ['width' => $width]), $width, (int) round($width * $ratio[1] / $ratio[0]), true), $this->widths());
     }
 
     /**
@@ -137,7 +137,7 @@ final class ImageSizes
         $widths = array_values(array_unique(array_map('intval', $input['widths'])));
         sort($widths);
         if ($widths === [] || count($widths) > self::MAX_WIDTHS) {
-            throw ValidationException::withMessages(['widths' => 'Cần 1–'.self::MAX_WIDTHS.' bề rộng.']);
+            throw ValidationException::withMessages(['widths' => __('catalog::texts.image_sizes.requires_1').self::MAX_WIDTHS.__('catalog::texts.image_sizes.widths')]);
         }
 
         $declared = $this->declared();

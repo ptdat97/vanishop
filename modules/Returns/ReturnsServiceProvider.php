@@ -46,21 +46,21 @@ final class ReturnsServiceProvider extends ModuleServiceProvider
         $this->app->bind(DaysWindowPolicy::class, fn (): DaysWindowPolicy => new DaysWindowPolicy((int) config('vanishop.fulfillment.return_window_days', 7)));
         $this->app->make(Extensions::class)->tag([DaysWindowPolicy::class], ReturnPolicy::TAG);
         $this->app->make(Extensions::class)->tag([ReturnedVariants::class], VariantUsage::TAG);
-        $this->app->make(Extensions::class)->requires(ReturnPolicy::TAG, Requirement::ExactlyOne, 'Chính sách đổi trả');
+        $this->app->make(Extensions::class)->requires(ReturnPolicy::TAG, Requirement::ExactlyOne, 'returns::texts.returns_service_provider.return_policy');
     }
 
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(ReturnDashboardTasks::class)());
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', 'returns.policy', 'Chính sách đổi trả', 'select', (string) config('vanishop.returns.policy', 'days_window'),
-            optionsFromTag: ReturnPolicy::TAG, help: 'ReturnPolicy áp cho đơn của cửa hàng.',
+            'core', 'returns.policy', 'returns::texts.returns_service_provider.return_policy', 'select', (string) config('vanishop.returns.policy', 'days_window'),
+            optionsFromTag: ReturnPolicy::TAG, help: 'returns::texts.returns_service_provider.returnpolicy_applied_store_s_orders',
         ));
-        $permissions->register('returns.view', 'Xem yêu cầu đổi/trả');
-        $permissions->register('returns.manage', 'Duyệt, từ chối, nhận hàng trả');
-        $permissions->register('returns.refund', 'Hoàn tất đổi/trả và hoàn tiền');
+        $permissions->register('returns.view', 'returns::texts.returns_service_provider.view_return_exchange_requests');
+        $permissions->register('returns.manage', 'returns::texts.returns_service_provider.approve_reject_receive_returns');
+        $permissions->register('returns.refund', 'returns::texts.returns_service_provider.complete_returns_exchanges_refund');
 
-        $navigation->add('returns', 'Đổi/trả', 'admin.returns.home', 'returns.view', 70, group: 'sales');
+        $navigation->add('returns', 'returns::texts.returns_service_provider.return_exchange', 'admin.returns.home', 'returns.view', 70, group: 'sales');
         Hook::onSlot('vani.admin.order.sidebar', fn (OrderDetail $order) => $this->app->make(OrderReturnsPanel::class)($order), priority: 110);
 
         // Ảnh đổi trả là dữ liệu cá nhân (L16): xoá khi yêu cầu đóng quá hạn lưu, và ngay khi khách bị ẩn danh hoá.

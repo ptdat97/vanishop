@@ -28,7 +28,7 @@ final class RoutingRules implements CarrierAssignment
                 continue;
             }
 
-            return new CarrierChoice($match[2], ($match[3] ?? '') === '' ? null : $match[3], 'Quy tắc chọn hãng: '.trim($line));
+            return new CarrierChoice($match[2], ($match[3] ?? '') === '' ? null : $match[3], __('vani-carrier-routing::texts.routing_rules.carrier_selection_rules').trim($line));
         }
 
         return null;

@@ -176,8 +176,8 @@ final class PriceListWorkspace
             $amounts = array_values(array_filter(array_map(fn (int $id): ?int => $base[$id] ?? null, $variantIds), fn (?int $amount): bool => $amount !== null));
             $already = count(array_filter($variantIds, fn (int $id): bool => isset($inList[$id])));
             $meta = array_filter([
-                $amounts === [] ? 'chưa có giá niêm yết' : 'niêm yết '.(min($amounts) === max($amounts) ? $money(min($amounts)) : $money(min($amounts)).' – '.$money(max($amounts))),
-                $already > 0 ? "{$already}/".count($variantIds).' SKU đã có trong bảng' : null,
+                $amounts === [] ? __('pricing::texts.price_list_workspace.no_list_price_yet') : __('pricing::texts.price_list_workspace.list').(min($amounts) === max($amounts) ? $money(min($amounts)) : $money(min($amounts)).' – '.$money(max($amounts))),
+                $already > 0 ? "{$already}/".count($variantIds).__('pricing::texts.price_list_workspace.skus_already_list') : null,
             ]);
             $result[] = [
                 'id' => (int) $styleId, 'code' => (string) $first?->styleCode, 'name' => (string) $first?->styleName, 'meta' => implode(' · ', $meta),
@@ -187,8 +187,8 @@ final class PriceListWorkspace
                         return null;
                     }
                     $meta = array_filter([
-                        isset($base[$id]) ? 'niêm yết '.$money($base[$id]) : null,
-                        isset($inList[$id]) ? 'trong bảng '.$money($inList[$id]) : null,
+                        isset($base[$id]) ? __('pricing::texts.price_list_workspace.list').$money($base[$id]) : null,
+                        isset($inList[$id]) ? __('pricing::texts.price_list_workspace.list_2').$money($inList[$id]) : null,
                     ]);
 
                     return ['id' => $id, 'sku' => $variant->sku, 'label' => VariantOptionsText::label($variant->options), 'status' => $variant->status, 'meta' => $meta === [] ? null : implode(' · ', $meta)];

@@ -26,12 +26,12 @@ final class FirstOrderOnlyRule implements PromotionRule
 
     public function label(): string
     {
-        return 'Chỉ áp dụng cho đơn đầu tiên';
+        return __('vani-promotion-rules::texts.first_order_only_rule.first_order_only');
     }
 
     public function validateConfig(array $config): array
     {
-        return $config === [] ? [] : ['Rule này không nhận cấu hình.'];
+        return $config === [] ? [] : [__('vani-promotion-rules::texts.first_order_only_rule.rule_takes_no_settings')];
     }
 
     public function evaluate(PromotionContext $context, array $config, Eligibility $candidates): Eligibility

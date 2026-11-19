@@ -19,11 +19,11 @@ return [
     // Dịch vụ GHN và cước niêm yết tương ứng (₫) dùng khi không gọi được API báo giá.
     'services' => [
         'ghn_standard' => [
-            'label' => 'Giao Hàng Nhanh (Tiêu chuẩn 2-3 ngày)',
+            'label' => 'vani-ghn::texts.config_ghn.service_standard',
             'fee' => (int) env('GHN_FEE_STANDARD', 30000),
         ],
         'ghn_express' => [
-            'label' => 'Giao Hàng Nhanh (Nhanh 1-2 ngày)',
+            'label' => 'vani-ghn::texts.config_ghn.service_express',
             'fee' => (int) env('GHN_FEE_EXPRESS', 55000),
         ],
     ],

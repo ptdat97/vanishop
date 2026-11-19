@@ -19,7 +19,7 @@ final class OrdersToProcessWidget implements DashboardWidget
 
     public function label(): string
     {
-        return 'Đơn cần xử lý';
+        return __('vani-reports::texts.orders_to_process_widget.orders_needing_action');
     }
 
     public function permission(): string
@@ -44,6 +44,6 @@ final class OrdersToProcessWidget implements DashboardWidget
         $confirmed = $counts['confirmed'] ?? 0;
         $processing = $counts['processing'] ?? 0;
 
-        return new Metric($this->label(), $pending + $confirmed + $processing, 'number', "Chờ xác nhận {$pending} · Đã xác nhận {$confirmed} · Đang xử lý {$processing}");
+        return new Metric($this->label(), $pending + $confirmed + $processing, 'number', __('vani-reports::texts.orders_to_process_widget.awaiting_confirmation_pending_confirmed_confirmed', ['pending' => $pending, 'confirmed' => $confirmed, 'processing' => $processing]));
     }
 }

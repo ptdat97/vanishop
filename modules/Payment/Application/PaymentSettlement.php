@@ -148,7 +148,7 @@ final class PaymentSettlement
             if ($amount !== $expected) {
                 // Hãng thu thiếu/thừa so với kiện (hoặc so với phần còn phải thu): không ghi nhận, vào "Đối soát lệch".
                 Log::warning('Số tiền thu hộ không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $expected, 'received' => $amount]);
-                $this->records->amountMismatch($payment, Money::of($amount, $payment->currency_code), 'Số tiền thu không khớp khoản thanh toán', $expected);
+                $this->records->amountMismatch($payment, Money::of($amount, $payment->currency_code), __('payment::texts.payment_settlement.captured_amount_does_not_match'), $expected);
 
                 return;
             }
@@ -269,7 +269,7 @@ final class PaymentSettlement
     {
         if (! PaymentAmount::matches((int) $payment->amount, $payment->currency_code, $amount)) {
             Log::warning('Số tiền thanh toán không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $amount->amount]);
-            $this->records->amountMismatch($payment, $amount, 'Số tiền thu không khớp khoản thanh toán');
+            $this->records->amountMismatch($payment, $amount, __('payment::texts.payment_settlement.captured_amount_does_not_match'));
 
             return;
         }
@@ -309,7 +309,7 @@ final class PaymentSettlement
     {
         if (! PaymentAmount::matches((int) $payment->amount, $payment->currency_code, $amount)) {
             Log::warning('Số tiền giữ không khớp — không ghi nhận, cần kiểm tra.', ['payment' => $payment->public_id, 'expected' => $payment->amount, 'received' => $amount->amount]);
-            $this->records->amountMismatch($payment, $amount, 'Số tiền giữ không khớp khoản thanh toán');
+            $this->records->amountMismatch($payment, $amount, __('payment::texts.payment_settlement.authorised_amount_does_not_match'));
 
             return;
         }

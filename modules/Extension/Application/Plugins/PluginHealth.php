@@ -35,7 +35,7 @@ final class PluginHealth
                 $status = $check->check();
             } catch (Throwable $exception) {
                 report($exception);
-                $status = HealthStatus::error('Kiểm tra lỗi: '.$exception->getMessage());
+                $status = HealthStatus::error(__('extension::texts.plugin_health.check_failed').$exception->getMessage());
             }
 
             $previous = $results[$plugin] ?? null;

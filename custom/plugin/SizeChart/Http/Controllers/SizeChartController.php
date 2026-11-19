@@ -56,7 +56,7 @@ final class SizeChartController
         Gate::authorize('size_chart.manage');
         $chart = $this->charts->save($this->validated($request));
 
-        return redirect()->route('admin.plugins.vani-size-chart.edit', ['id' => $chart->id])->with('success', 'Đã lưu bảng size.');
+        return redirect()->route('admin.plugins.vani-size-chart.edit', ['id' => $chart->id])->with('success', __('vani-size-chart::texts.size_chart_controller.size_chart_saved'));
     }
 
     public function edit(int $id): Response
@@ -72,7 +72,7 @@ final class SizeChartController
         $chart = SizeChart::query()->findOrFail($id);
         $this->charts->save($this->validated($request), $chart, (int) $request->input('lock_version'));
 
-        return back()->with('success', 'Đã lưu bảng size.');
+        return back()->with('success', __('vani-size-chart::texts.size_chart_controller.size_chart_saved'));
     }
 
     public function destroy(int $id): RedirectResponse
@@ -80,7 +80,7 @@ final class SizeChartController
         Gate::authorize('size_chart.manage');
         $this->charts->delete(SizeChart::query()->findOrFail($id));
 
-        return redirect()->route('admin.plugins.vani-size-chart.index')->with('success', 'Đã xoá bảng size và bỏ mọi gán.');
+        return redirect()->route('admin.plugins.vani-size-chart.index')->with('success', __('vani-size-chart::texts.size_chart_controller.size_chart_deleted_every_assignment'));
     }
 
     private function form(?SizeChart $chart): Response
@@ -143,7 +143,7 @@ final class SizeChartController
 
         $mediaIds = array_values(array_filter(array_map(fn (array $block): ?int => $block['type'] === 'image' ? (int) $block['media_id'] : null, $data['blocks'])));
         if (count($this->media->find($mediaIds)) !== count(array_unique($mediaIds))) {
-            throw ValidationException::withMessages(['blocks' => 'Ảnh không còn trong Thư viện ảnh.']);
+            throw ValidationException::withMessages(['blocks' => __('vani-size-chart::texts.size_chart_controller.image_no_longer_media_library')]);
         }
 
         return [

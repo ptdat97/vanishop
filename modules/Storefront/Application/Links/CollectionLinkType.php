@@ -10,7 +10,7 @@ final class CollectionLinkType extends CatalogLinkType
 {
     public function label(): string
     {
-        return 'Bộ sưu tập';
+        return __('storefront::texts.collection_link_type.collections');
     }
 
     protected function kind(): string

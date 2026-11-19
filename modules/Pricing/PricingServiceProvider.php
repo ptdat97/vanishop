@@ -52,7 +52,7 @@ final class PricingServiceProvider extends ModuleServiceProvider
         // Ma trận biến thể (variant-matrix §3.3): cột giá + dọn giá khi SKU bị xoá.
         $this->app->make(Extensions::class)->tag([VariantPriceFields::class], VariantFieldProvider::TAG);
         $this->app->make(Extensions::class)->tag([PricedVariants::class], VariantUsage::TAG);
-        $this->app->make(Extensions::class)->requires(PricingStrategy::TAG, Requirement::ExactlyOne, 'Chiến lược chọn giá');
+        $this->app->make(Extensions::class)->requires(PricingStrategy::TAG, Requirement::ExactlyOne, 'pricing::texts.pricing_service_provider.price_selection_strategy');
         $this->app->bind(PriceImporter::class, BasePriceImporter::class);
         $this->app->bind(PriceListSchedule::class, PriceListScheduler::class);
         $this->app->bindIf(CustomerGroupDirectory::class, NoCustomerGroups::class); // module Customer ghi đè
@@ -66,13 +66,13 @@ final class PricingServiceProvider extends ModuleServiceProvider
         Hook::onSlot('vani.admin.product.list_columns', fn (array $styleIds): ?array => $this->app->make(ProductListPrices::class)->column($styleIds));
         Hook::onSlot('vani.admin.product.bulk_actions', fn (): array => $this->app->make(ProductListPrices::class)->bulkActions());
         $this->app->make(Settings::class)->define(new SettingDefinition(
-            'core', 'pricing.strategy', 'Cách chọn giá bán', 'select', (string) config('vanishop.pricing.strategy', 'price_list_priority'),
-            optionsFromTag: PricingStrategy::TAG, help: 'PricingStrategy dùng cho cửa hàng.',
+            'core', 'pricing.strategy', 'pricing::texts.pricing_service_provider.how_selling_price_chosen', 'select', (string) config('vanishop.pricing.strategy', 'price_list_priority'),
+            optionsFromTag: PricingStrategy::TAG, help: 'pricing::texts.pricing_service_provider.pricingstrategy_used_store',
         ));
-        $permissions->register('pricing.view', 'Xem bảng giá');
-        $permissions->register('pricing.manage', 'Sửa bảng giá và giá bán');
+        $permissions->register('pricing.view', 'pricing::texts.pricing_service_provider.view_price_lists');
+        $permissions->register('pricing.manage', 'pricing::texts.pricing_service_provider.edit_price_lists_selling_prices');
 
-        $navigation->add('pricing', 'Giá bán', 'admin.pricing.home', 'pricing.view', 120, group: 'catalog');
+        $navigation->add('pricing', 'pricing::texts.pricing_service_provider.selling_price', 'admin.pricing.home', 'pricing.view', 120, group: 'catalog');
 
         $this->loadAdminRoutes($this->modulePath('Http/routes/admin-home.php'));
         $this->loadAdminSectionRoutes('pricing', $this->modulePath('Http/routes/admin-workspace.php'));

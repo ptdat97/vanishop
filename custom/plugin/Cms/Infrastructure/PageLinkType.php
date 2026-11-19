@@ -16,7 +16,7 @@ final class PageLinkType extends ContentLinkType
 
     public function label(): string
     {
-        return 'Trang nội dung';
+        return __('vani-cms::texts.page_link_type.content_page');
     }
 
     protected function query(): Builder

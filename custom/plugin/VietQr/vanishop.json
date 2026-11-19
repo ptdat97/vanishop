@@ -4,7 +4,7 @@
         "vi": "Thanh toán VietQR",
         "en": "VietQR Payment Gateway"
     },
-    "version": "0.1.0",
+    "version": "0.1.1",
     "kind": "payment_gateway",
     "provider": "Plugin\\VietQr\\VietQrServiceProvider",
     "requires": {

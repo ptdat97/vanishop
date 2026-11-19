@@ -42,6 +42,6 @@ final class ManualCarrier implements ShippingCarrier
 
     public function parseWebhook(Request $request): CarrierEvent
     {
-        throw new InvalidCarrierEvent('Vận đơn thủ công không có webhook.');
+        throw new InvalidCarrierEvent(__('fulfillment::texts.manual_carrier.manual_shipments_have_no_webhook'));
     }
 }

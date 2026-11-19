@@ -29,12 +29,13 @@ final class CodRiskGuardServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-cod-risk-guard');
         $this->settings([
-            ['key' => 'blacklist', 'label' => 'Danh sách đen SĐT', 'type' => 'text', 'help' => 'Mỗi dòng một số, vd. 0912345678. Đơn COD của các số này bị đánh dấu rủi ro cao.'],
-            ['key' => 'block_blacklisted', 'label' => 'Chặn xác nhận đơn của SĐT trong danh sách đen', 'type' => 'bool', 'default' => true,
-                'help' => 'Nhân viên phải gỡ số khỏi danh sách đen (sau khi gọi xác nhận) mới xác nhận được.'],
-            ['key' => 'returned_threshold', 'label' => 'Số đơn hoàn về để coi là rủi ro cao', 'type' => 'int', 'default' => 2, 'rules' => ['min:1', 'max:20']],
-            ['key' => 'tag_returned', 'label' => 'Gắn nhãn "bom-hang" và ghi chú CSKH khi đơn của khách bị hoàn về', 'type' => 'bool', 'default' => true],
+            ['key' => 'blacklist', 'label' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.phone_blacklist', 'type' => 'text', 'help' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.one_number_per_line_0912345678'],
+            ['key' => 'block_blacklisted', 'label' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.block_confirming_orders_from_blacklisted', 'type' => 'bool', 'default' => true,
+                'help' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.staff_must_remove_number_from'],
+            ['key' => 'returned_threshold', 'label' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.returned_orders_count_high_risk', 'type' => 'int', 'default' => 2, 'rules' => ['min:1', 'max:20']],
+            ['key' => 'tag_returned', 'label' => 'vani-cod-risk-guard::texts.cod_risk_guard_service_provider.tag_bom_hang_add_customer', 'type' => 'bool', 'default' => true],
         ]);
         // EP v3 X6: đơn hoàn về → nhãn khách + ghi chú CSKH (CustomerSegments/CustomerNotes, nguồn system:<plugin>).
         $this->onEvent(ShipmentStatusChanged::class, function (ShipmentStatusChanged $event): void {
@@ -46,7 +47,7 @@ final class CodRiskGuardServiceProvider extends PluginServiceProvider
                 return;
             }
             $this->app->make(CustomerSegments::class)->tag($order->customerId, 'bom-hang', 'system:'.self::ID);
-            $this->app->make(CustomerNotes::class)->add($order->customerId, "Đơn {$order->number} bị hoàn về (khách không nhận).", 'system:'.self::ID);
+            $this->app->make(CustomerNotes::class)->add($order->customerId, __('vani-cod-risk-guard::texts.cod_risk_guard_service_provider.order_number_was_returned_sender', ['number' => $order->number]), 'system:'.self::ID);
         });
         $this->contribute(OrderRiskSignal::TAG, RiskRules::class);
         $this->onValidate('vani.order.before_confirm', function (OrderData $order): array {
@@ -55,7 +56,7 @@ final class CodRiskGuardServiceProvider extends PluginServiceProvider
                 return [];
             }
 
-            return ['SĐT trong danh sách đen của cửa hàng — gọi xác nhận với khách rồi gỡ số khỏi danh sách đen (Cấu hình → Chống bom hàng COD)'];
+            return [__('vani-cod-risk-guard::texts.cod_risk_guard_service_provider.phone_number_store_s_blacklist')];
         });
     }
 }

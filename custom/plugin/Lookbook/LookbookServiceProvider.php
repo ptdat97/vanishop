@@ -28,9 +28,9 @@ final class LookbookServiceProvider extends PluginServiceProvider
     public function boot(): void
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-lookbook');
-        $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'Tạo, sửa, xoá lookbook']);
+        $this->permissions(['lookbook.view' => 'Xem lookbook', 'lookbook.manage' => 'vani-lookbook::texts.lookbook_service_provider.create_edit_delete_lookbooks']);
         $this->settings([
-            ['key' => 'per_page', 'label' => 'Số lookbook mỗi trang (6–48)', 'type' => 'int', 'default' => 12, 'rules' => ['min:6', 'max:48']],
+            ['key' => 'per_page', 'label' => 'vani-lookbook::texts.lookbook_service_provider.lookbooks_per_page_6_48', 'type' => 'int', 'default' => 12, 'rules' => ['min:6', 'max:48']],
         ]);
 
         $this->storefrontViews($this->pluginPath('Resources/views'), 'vani-lookbook');

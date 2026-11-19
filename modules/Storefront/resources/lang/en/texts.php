@@ -1,0 +1,116 @@
+<?php
+
+// Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
+
+return [
+    'brand_grid_block' => [
+        'brand_grid' => 'Brand grid',
+        'title' => 'Title',
+    ],
+    'brand_link_type' => [
+        'brand' => 'Brand',
+    ],
+    'catalog_link_type' => [
+        'name_hidden' => ':name (hidden)',
+    ],
+    'category_link_type' => [
+        'category' => 'Category',
+    ],
+    'checkout_request_form' => [
+        'value_must_string_number_boolean' => 'The value must be a string/number/boolean.',
+    ],
+    'collection_link_type' => [
+        'collections' => 'Collections',
+    ],
+    'hero_block' => [
+        'button_link' => 'Button link',
+        'button_text' => 'Button text',
+        'choose_from_media_library_responsive' => 'Choose from the Media library — responsive versions included (srcset).',
+        'hero_banner' => 'Hero banner',
+        'image' => 'Image',
+        'path_within_website_thuong_hieu' => 'Path within the website, e.g. /thuong-hieu/urbanx',
+        'short_description' => 'Short description',
+        'title' => 'Title',
+    ],
+    'menu_repository' => [
+        'end_time_must_after_start' => 'The end time must be after the start time.',
+        'invalid_badge' => 'Invalid badge.',
+        'invalid_link_link_type_no' => 'Invalid link, or the link type no longer exists.',
+        'invalid_time' => 'Invalid time.',
+        'items_per_menu' => ' items per menu.',
+        'items_without_link_need_label' => 'Items without a link need a label (group heading).',
+        'location_allows_most_max_depth' => 'This location allows at most :max_depth levels.',
+        'most' => 'At most',
+        'theme_has_no_such_menu' => 'The theme has no such menu location.',
+        'version_does_not_exist' => 'This version does not exist.',
+    ],
+    'page_blocks' => [
+        'block_type_does_not_exist' => 'The block type does not exist or its plugin is disabled.',
+        'blocks' => ' blocks.',
+        'characters' => ' characters.',
+        'content_must_not_exceed' => 'Content must not exceed',
+        'most' => 'At most',
+    ],
+    'product_grid_block' => [
+        'brand' => 'Brand',
+        'category' => 'Category',
+        'category_collection_brand_slug' => 'Category/collection/brand slug',
+        'collections' => 'Collections',
+        'leave_empty_when_source_newest' => 'Leave empty when the source is "Newest".',
+        'newest' => 'Newest',
+        'number_products_1_24' => 'Number of products (1–24)',
+        'product_grid' => 'Product grid',
+        'source' => 'Source',
+        'title' => 'Title',
+    ],
+    'product_link_type' => [
+        'products' => 'Products',
+    ],
+    'return_form_presenter' => [
+        'unchanged' => ' (unchanged)',
+    ],
+    'rich_text_block' => [
+        'content' => 'Content',
+        'text_block' => 'Text block',
+        'title' => 'Title',
+    ],
+    'route_link_type' => [
+        'account' => 'Account',
+        'all_products' => 'All products',
+        'brand' => 'Brand',
+        'cart' => 'Cart',
+        'category' => 'Category',
+        'home_page' => 'Home page',
+        'my_orders' => 'My orders',
+        'store_page' => 'Store page',
+        'track_order' => 'Track order',
+    ],
+    'storefront_service_provider' => [
+        'category_brand_search_pages_storefront' => 'Category, brand and search pages and the Storefront API when per_page is not given (12–60).',
+        'content_design' => 'Content & design',
+        'design_tokens_json' => 'Design tokens (JSON)',
+        'edit_storefront_design_home_page' => 'Edit the storefront design (home page, menus, header & footer)',
+        'everyone' => 'Everyone',
+        'facebook_zalo_image_shown_when' => 'Facebook/Zalo image shown when sharing a link to a page without its own image (home page, categories without images…). Ideally a 1200 × 630 px landscape image.',
+        'featured_search_keywords' => 'Featured search keywords',
+        'link_sharing_image' => 'Link sharing image',
+        'maintenance_message' => 'Maintenance message',
+        'maintenance_page_text_leave_empty' => 'Maintenance page text. Leave empty: use the theme\'s default sentence.',
+        'one_keyword_per_line_most' => 'One keyword per line (at most 10): suggested in the search box and on the search page before typing.',
+        'override_theme_s_tokens_color' => 'Override the theme\'s tokens, e.g. {"color-primary": "#0f766e", "radius": "0.75rem"} → CSS variables --vani-*.',
+        'products_per_page' => 'Products per page',
+        'show_prices' => 'Show prices',
+        'shown_under_store_name_google' => 'Shown under the store name on Google and when sharing the home page link on Facebook/Zalo; pages without their own description use it too. Ideally 1–2 sentences, under 160 characters.',
+        'signed_customers_only' => 'Signed-in customers only',
+        'signed_customers_only_guests_see' => '"Signed-in customers only": guests see "Sign in to see prices" and cannot add to cart/order; the Storefront API returns null prices and JSON-LD has no price. Pages cached on the CDN keep the old version until the TTL expires — purge the CDN cache after changing.',
+        'store_description_google_link_sharing' => 'Store description (Google, link sharing)',
+        'store_maintenance' => 'Store maintenance',
+        'store_s_active_theme_custom' => 'The store\'s active theme (custom/theme/*). A child theme overrides only some views; the rest come from its parent → vani-base.',
+        'storefront_design' => 'Storefront design',
+        'storefront_storefront_api_return_503' => 'On: the storefront and Storefront API return 503. Payment IPNs, shipping webhooks, the Integration API and /health keep running. Staff preview via Admin → Storefront design → "View page" (12-hour cookie). Pages cached on the CDN keep showing until the TTL expires — purge the CDN cache after changing.',
+        'storefront_theme' => 'Storefront theme',
+    ],
+    'url_link_type' => [
+        'custom_path' => 'Custom path',
+    ],
+];

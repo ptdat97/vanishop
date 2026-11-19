@@ -18,17 +18,17 @@ final class IntegrationAccessDenied extends BusinessRuleViolation
 
     public static function unauthenticated(): self
     {
-        return new self('Thiếu hoặc sai chữ ký Integration API.', 'integration.unauthenticated', 401);
+        return new self(__('integration::texts.integration_access_denied.integration_api_signature_missing_invalid'), 'integration.unauthenticated', 401);
     }
 
     public static function ipNotAllowed(): self
     {
-        return new self('Địa chỉ IP không được phép.', 'integration.ip_not_allowed', 403);
+        return new self(__('integration::texts.integration_access_denied.ip_address_not_allowed'), 'integration.ip_not_allowed', 403);
     }
 
     public static function insufficientScope(string $scope): self
     {
-        return new self("Client thiếu scope {$scope}.", 'integration.insufficient_scope', 403);
+        return new self(__('integration::texts.integration_access_denied.client_missing_scope_scope', ['scope' => $scope]), 'integration.insufficient_scope', 403);
     }
 
     public function errorCode(): string

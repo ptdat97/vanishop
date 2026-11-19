@@ -43,7 +43,7 @@ final class ReportController
         return Inertia::render('Extension::Reports/Show', [
             'report' => ['key' => $report->key(), 'label' => $report->label(), 'description' => $report->description()],
             'period' => $period->toArray(),
-            'presets' => ReportPeriod::PRESETS,
+            'presets' => array_map(fn (string $label): string => __($label), ReportPeriod::PRESETS),
             'result' => $result?->toArray(),
         ]);
     }
@@ -53,7 +53,7 @@ final class ReportController
         $report = $this->report($key);
         $period = $this->period($request);
         $result = $this->reports->run($report, $period);
-        abort_if($result === null, 503, 'Báo cáo tạm thời không chạy được.');
+        abort_if($result === null, 503, __('extension::texts.report_controller.report_cannot_run_right_now'));
 
         $filename = sprintf('%s_%s_%s.csv', $report->key(), $period->from->format('Ymd'), str_replace('-', '', $period->lastDay()));
 

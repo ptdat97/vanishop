@@ -26,7 +26,7 @@ final readonly class ReportPeriod
 
     public string $timezone;
 
-    public const PRESETS = ['today' => 'Hôm nay', '7d' => '7 ngày', '30d' => '30 ngày', 'this_month' => 'Tháng này', 'last_month' => 'Tháng trước', 'custom' => 'Tuỳ chọn'];
+    public const PRESETS = ['today' => 'extension::texts.report_period.today', '7d' => 'extension::texts.report_period.text_7_days', '30d' => 'extension::texts.report_period.text_30_days', 'this_month' => 'extension::texts.report_period.month', 'last_month' => 'extension::texts.report_period.previous_month', 'custom' => 'extension::texts.report_period.custom'];
 
     public function __construct(
         public DateTimeImmutable $from,

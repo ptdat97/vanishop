@@ -110,18 +110,18 @@ final class OrderController
             }
         }
         $actions = [
-            ...(Gate::allows('orders.manage') ? [['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : []),
-            ['key' => 'print', 'label' => 'In phiếu giao', 'url' => route('admin.orders.orders.print'), 'confirm' => false, 'method' => 'get', 'target' => '_blank'],
+            ...(Gate::allows('orders.manage') ? [['key' => 'confirm', 'label' => __('ordering::texts.order_controller.confirm_order'), 'url' => route('admin.orders.orders.bulk-confirm'), 'confirm' => true]] : []),
+            ['key' => 'print', 'label' => __('ordering::texts.order_controller.print_packing_slip'), 'url' => route('admin.orders.orders.print'), 'confirm' => false, 'method' => 'get', 'target' => '_blank'],
         ];
         if (Gate::allows('orders.manage')) {
             // Gửi yêu cầu xác nhận qua kênh của plugin (EP v3 X2): chỉ đơn đang "Cần xác nhận" được gửi, đơn khác bỏ qua.
             foreach ($this->confirmationChannels() as $channel) {
-                $actions[] = ['key' => "confirmation_{$channel->code()}", 'label' => "Gửi xác nhận qua {$channel->label()}", 'url' => route('admin.orders.orders.bulk-confirmation', ['channel' => $channel->code()]), 'confirm' => true];
+                $actions[] = ['key' => "confirmation_{$channel->code()}", 'label' => __('ordering::texts.order_controller.send_confirmation_via_label', ['label' => $channel->label()]), 'url' => route('admin.orders.orders.bulk-confirmation', ['channel' => $channel->code()]), 'confirm' => true];
             }
             // Đổi trạng thái hàng loạt (0.3.99): mỗi đơn đi đúng đường (theo trình tự / ngoài trình tự nếu có quyền), đơn bị chặn được bỏ qua.
-            $actions[] = ['key' => 'status', 'label' => 'Đổi trạng thái', 'url' => route('admin.orders.orders.bulk-status'), 'confirm' => true, 'fields' => [
-                ['key' => 'status', 'label' => 'Trạng thái mới', 'required' => true, 'options' => array_map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => (string) __("ordering::labels.order_status.{$status->value}")], OrderStatus::cases())],
-                ['key' => 'reason', 'label' => 'Lý do (ghi vào lịch sử từng đơn)', 'required' => true],
+            $actions[] = ['key' => 'status', 'label' => __('ordering::texts.order_controller.change_status'), 'url' => route('admin.orders.orders.bulk-status'), 'confirm' => true, 'fields' => [
+                ['key' => 'status', 'label' => __('ordering::texts.order_controller.new_status'), 'required' => true, 'options' => array_map(fn (OrderStatus $status): array => ['value' => $status->value, 'label' => (string) __("ordering::labels.order_status.{$status->value}")], OrderStatus::cases())],
+                ['key' => 'reason', 'label' => __('ordering::texts.order_controller.reason_recorded_each_order_s'), 'required' => true],
             ]];
         }
         foreach (array_filter(Hook::slot('vani.admin.order.bulk_actions'), 'is_array') as $contributed) {
@@ -241,15 +241,15 @@ final class OrderController
         $url = route('admin.orders.orders.show', $order->id);
         $actions = [];
         if (Gate::allows('orders.manage') && OrderStateMachine::can($order->order_status, OrderStatus::Confirmed)) {
-            $actions[] = ['key' => 'confirm', 'label' => 'Xác nhận đơn', 'url' => "{$url}/confirm", 'primary' => true, 'tone' => 'primary'];
+            $actions[] = ['key' => 'confirm', 'label' => __('ordering::texts.order_controller.confirm_order'), 'url' => "{$url}/confirm", 'primary' => true, 'tone' => 'primary'];
             foreach ($this->confirmationChannels() as $channel) {
-                $actions[] = ['key' => "confirmation-{$channel->code()}", 'label' => "Gửi xác nhận qua {$channel->label()}", 'url' => "{$url}/confirmation/{$channel->code()}", 'tone' => 'secondary',
-                    'confirm' => "Gửi yêu cầu xác nhận đơn cho khách qua {$channel->label()}?"];
+                $actions[] = ['key' => "confirmation-{$channel->code()}", 'label' => __('ordering::texts.order_controller.send_confirmation_via_label', ['label' => $channel->label()]), 'url' => "{$url}/confirmation/{$channel->code()}", 'tone' => 'secondary',
+                    'confirm' => __('ordering::texts.order_controller.send_order_confirmation_request_customer', ['label' => $channel->label()])];
             }
         }
         if (Gate::allows('orders.manage') && OrderPolicy::staffCanComplete($order->order_status, (string) $order->fulfillment_status, (string) $order->return_status)) {
-            $actions[] = ['key' => 'complete', 'label' => 'Hoàn tất đơn', 'url' => "{$url}/complete", 'tone' => 'secondary',
-                'fields' => [['key' => 'reason', 'label' => 'Lý do hoàn tất sớm (không chờ hết hạn đổi trả)', 'required' => true]]];
+            $actions[] = ['key' => 'complete', 'label' => __('ordering::texts.order_controller.complete_order'), 'url' => "{$url}/complete", 'tone' => 'secondary',
+                'fields' => [['key' => 'reason', 'label' => __('ordering::texts.order_controller.reason_completing_early_without_waiting'), 'required' => true]]];
         }
 
         $data = $reader->find($order->id);
@@ -266,8 +266,8 @@ final class OrderController
         }
 
         if (Gate::allows('orders.cancel') && OrderPolicy::staffCanCancel($order->order_status, (string) $order->fulfillment_status)) {
-            $actions[] = ['key' => 'cancel', 'label' => 'Huỷ đơn', 'url' => "{$url}/cancel", 'tone' => 'danger',
-                'fields' => [['key' => 'reason', 'label' => 'Lý do huỷ đơn (hàng đang giữ được trả lại kho; đơn đã thanh toán được hoàn tiền)', 'required' => true]]];
+            $actions[] = ['key' => 'cancel', 'label' => __('ordering::texts.order_controller.cancel_order'), 'url' => "{$url}/cancel", 'tone' => 'danger',
+                'fields' => [['key' => 'reason', 'label' => __('ordering::texts.order_controller.reason_cancelling_reserved_stock_goes'), 'required' => true]]];
         }
 
         $row = function (string $key, string $label, string $code, string $labels): array {
@@ -278,10 +278,10 @@ final class OrderController
 
         return [
             'rows' => [
-                $row('order', 'Đơn hàng', $order->order_status->value, 'order_status'),
-                $row('payment', 'Thanh toán', (string) $order->payment_status, 'payment_status'),
-                $row('fulfillment', 'Giao hàng', (string) $order->fulfillment_status, 'fulfillment_status'),
-                $row('return', 'Đổi/trả', (string) $order->return_status, 'return_status'),
+                $row('order', __('ordering::texts.order_controller.orders'), $order->order_status->value, 'order_status'),
+                $row('payment', __('ordering::texts.order_controller.payment'), (string) $order->payment_status, 'payment_status'),
+                $row('fulfillment', __('ordering::texts.order_controller.fulfilment'), (string) $order->fulfillment_status, 'fulfillment_status'),
+                $row('return', __('ordering::texts.order_controller.return_exchange'), (string) $order->return_status, 'return_status'),
             ],
             'actions' => $actions,
         ];
@@ -474,7 +474,7 @@ final class OrderController
         $link = fn (?string $code): string => route('admin.orders.orders.print', array_filter(['ids' => $ids, 'template' => $code]));
 
         return view($current?->view() ?? 'ordering::admin.print', [
-            'templates' => [['code' => null, 'label' => 'Mẫu chuẩn (A5)', 'url' => $link(null)], ...array_values(array_map(fn (PackingSlipTemplate $template): array => ['code' => $template->code(), 'label' => $template->label(), 'url' => $link($template->code())], $templates))],
+            'templates' => [['code' => null, 'label' => __('ordering::texts.order_controller.standard_template_a5'), 'url' => $link(null)], ...array_values(array_map(fn (PackingSlipTemplate $template): array => ['code' => $template->code(), 'label' => $template->label(), 'url' => $link($template->code())], $templates))],
             'current' => $current?->code(),
             'shopName' => (string) config('app.name'),
             'orders' => $orders->map(function (Order $order) use ($money): array {
@@ -544,7 +544,7 @@ final class OrderController
         }
         ExternalCalls::guard("ordering.confirmation:{$channel}");
         $message = $found->request($reader->find($order->id) ?? abort(404));
-        $commands->addNote($order->id, "Gửi yêu cầu xác nhận qua {$found->label()}: {$message}");
+        $commands->addNote($order->id, __('ordering::texts.order_controller.confirmation_request_via_label_message', ['label' => $found->label(), 'message' => $message]));
 
         return back()->with('success', $message);
     }
@@ -562,7 +562,7 @@ final class OrderController
                 continue;
             }
             try {
-                $commands->addNote($order->id, "Gửi yêu cầu xác nhận qua {$found->label()}: ".$found->request($view));
+                $commands->addNote($order->id, __('ordering::texts.order_controller.confirmation_request_via_label', ['label' => $found->label()]).$found->request($view));
                 $sent++;
             } catch (BusinessRuleViolation) {
             }

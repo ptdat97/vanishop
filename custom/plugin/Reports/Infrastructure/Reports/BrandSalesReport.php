@@ -15,12 +15,12 @@ final class BrandSalesReport extends BreakdownReport
 
     public function label(): string
     {
-        return 'Doanh thu theo thương hiệu';
+        return __('vani-reports::texts.brand_sales_report.revenue_brand');
     }
 
     public function description(): string
     {
-        return 'Số lượng và doanh thu theo thương hiệu của dòng đơn.';
+        return __('vani-reports::texts.brand_sales_report.quantity_revenue_brand_order_lines');
     }
 
     protected function dimension(): SalesDimension
@@ -30,7 +30,7 @@ final class BrandSalesReport extends BreakdownReport
 
     protected function groupLabel(): string
     {
-        return 'Thương hiệu';
+        return __('vani-reports::texts.brand_sales_report.brand');
     }
 
     protected function withQuantity(): bool

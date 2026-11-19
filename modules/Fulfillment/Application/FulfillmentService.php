@@ -179,7 +179,7 @@ final class FulfillmentService implements ShipmentBooking
             }
             $shipment->update(['cod_amount' => $shipment->cod_amount - $movedCod]);
 
-            $this->recordEvent($new, ShipmentStatus::PendingBooking, "split:{$shipment->public_id}:{$new->public_id}", 'staff', "Tách từ vận đơn {$shipment->public_id}", []);
+            $this->recordEvent($new, ShipmentStatus::PendingBooking, "split:{$shipment->public_id}:{$new->public_id}", 'staff', __('fulfillment::texts.fulfillment_service.split_from_shipment_public_id', ['public_id' => $shipment->public_id]), []);
             $this->audit->record('fulfillment.shipment.split', 'shipment', $shipment->id, ['new_shipment' => $new->public_id, 'lines' => $move, 'cod_moved' => $movedCod, 'staff' => $staffId]);
             event(new ShipmentCreated($new->id, $new->order_id, $new->carrier_code));
             $this->syncOrder($shipment->order_id);

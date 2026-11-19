@@ -42,9 +42,9 @@ final class PreorderServiceProvider extends PluginServiceProvider
     {
         $this->translations($this->pluginPath('Resources/lang'), 'vani-preorder');
         $this->settings([
-            ['key' => 'share_percent', 'label' => 'Mở bán đặt trước bao nhiêu % hàng đang về (0–100)', 'type' => 'int', 'default' => 100, 'rules' => ['min:0', 'max:100'],
-                'help' => 'Vd. 50: đang về 40 cái thì mở 20 suất đặt trước. 0 = tạm dừng đặt trước, vẫn hiện "Đang về" ở Tồn kho.'],
-            ['key' => 'block_push', 'label' => 'Không cho đẩy lên hãng đơn còn chờ hàng', 'type' => 'bool', 'default' => true],
+            ['key' => 'share_percent', 'label' => 'vani-preorder::texts.preorder_service_provider.open_pre_orders_what_incoming', 'type' => 'int', 'default' => 100, 'rules' => ['min:0', 'max:100'],
+                'help' => 'vani-preorder::texts.preorder_service_provider.text_50_40_units_incoming_20'],
+            ['key' => 'block_push', 'label' => 'vani-preorder::texts.preorder_service_provider.do_not_hand_orders_still', 'type' => 'bool', 'default' => true],
         ]);
         $this->contribute(BackorderPolicy::TAG, IncomingBackorderPolicy::class);
 
@@ -77,17 +77,17 @@ final class PreorderServiceProvider extends PluginServiceProvider
      */
     private function extendStockScreen(): void
     {
-        $this->adminColumn('stock', 'incoming', 'Đang về', resolve: function (array $variantIds): array {
+        $this->adminColumn('stock', 'incoming', 'vani-preorder::texts.preorder_service_provider.incoming', resolve: function (array $variantIds): array {
             $status = $this->app->make(Backorders::class)->status($variantIds);
             $rows = [];
             foreach ($this->app->make(IncomingStock::class)->forVariants($variantIds) as $variantId => $incoming) {
-                $rows[$variantId] = $incoming->quantity.($incoming->expectedOn === null ? '' : ' · về '.self::shortDate($incoming->expectedOn))
-                    .(($status[$variantId]['waiting'] ?? 0) > 0 ? ' · chờ hàng '.$status[$variantId]['waiting'] : '');
+                $rows[$variantId] = $incoming->quantity.($incoming->expectedOn === null ? '' : __('vani-preorder::texts.preorder_service_provider.arriving').self::shortDate($incoming->expectedOn))
+                    .(($status[$variantId]['waiting'] ?? 0) > 0 ? __('vani-preorder::texts.preorder_service_provider.awaiting_stock').$status[$variantId]['waiting'] : '');
             }
 
             return $rows;
         });
-        $this->adminTool('stock', 'import_incoming', 'Nhập hàng đang về', 'inventory.adjust',
+        $this->adminTool('stock', 'import_incoming', 'vani-preorder::texts.preorder_service_provider.import_incoming_stock', 'inventory.adjust',
             handle: function (UploadedFile $file, array $fields): string {
                 $rows = array_values(array_filter(SpreadsheetRows::fromUpload($file), fn (array $row): bool => trim((string) ($row[0] ?? '')) !== ''));
                 $variants = $this->app->make(VariantDirectory::class)->findBySkus(array_map(fn (array $row): string => trim((string) $row[0]), $rows));
@@ -107,18 +107,18 @@ final class PreorderServiceProvider extends PluginServiceProvider
                     }
                     $date = self::parseDate(trim((string) ($row[2] ?? '')));
                     if ($date === false) {
-                        throw ValidationException::withMessages(['file' => "Ngày về của {$sku} không hợp lệ — dùng dd/mm/yyyy."]);
+                        throw ValidationException::withMessages(['file' => __('vani-preorder::texts.preorder_service_provider.arrival_date_sku_invalid_use', ['sku' => $sku])]);
                     }
                     $incoming->set($variant->id, (int) ($row[1] ?? 0), $date, 'staff');
                     $saved++;
                 }
                 if ($saved === 0) {
-                    throw ValidationException::withMessages(['file' => 'File không có SKU nào khớp ở cột đầu.']);
+                    throw ValidationException::withMessages(['file' => __('vani-preorder::texts.preorder_service_provider.file_has_no_matching_sku')]);
                 }
 
-                return "Đã cập nhật hàng đang về cho {$saved} SKU.".($unknown === [] ? '' : ' Không tìm thấy: '.implode(', ', array_slice($unknown, 0, 10)).(count($unknown) > 10 ? '…' : '').'.');
+                return __('vani-preorder::texts.preorder_service_provider.updated_incoming_stock_saved_skus', ['saved' => $saved]).($unknown === [] ? '' : __('vani-preorder::texts.preorder_service_provider.not_found').implode(', ', array_slice($unknown, 0, 10)).(count($unknown) > 10 ? '…' : '').'.');
             },
-            help: 'File .csv/.xlsx: cột 1 SKU, cột 2 số lượng đang về (0 = xoá), cột 3 ngày dự kiến dd/mm/yyyy (tuỳ chọn).',
+            help: 'vani-preorder::texts.preorder_service_provider.csv_xlsx_file_column_1',
         );
     }
 
@@ -137,7 +137,7 @@ final class PreorderServiceProvider extends PluginServiceProvider
             $rows = [];
             foreach ($quantities as $variantId => $quantity) {
                 $date = $status[$variantId]['expected_on'] ?? null;
-                $rows[] = ['label' => ($variants[$variantId]->sku ?? "#{$variantId}")." × {$quantity}", 'value' => $date === null ? 'chờ hàng về' : 'dự kiến '.self::shortDate($date)];
+                $rows[] = ['label' => ($variants[$variantId]->sku ?? "#{$variantId}")." × {$quantity}", 'value' => $date === null ? __('vani-preorder::texts.preorder_service_provider.awaiting_stock_2') : __('vani-preorder::texts.preorder_service_provider.expected').self::shortDate($date)];
             }
 
             return $rows;
@@ -150,19 +150,19 @@ final class PreorderServiceProvider extends PluginServiceProvider
             $order = $this->app->make(OrderReader::class)->findByNumber($shipment->orderNumber);
             $short = $order === null ? [] : $this->shortInShipment($order->id, (string) $order->reservationKey, $shipment->publicId);
 
-            return $short === [] ? [] : ['Vận đơn còn món chờ hàng: '.implode(', ', $short).' — nhập kho khi hàng về rồi đẩy lên hãng, hoặc "Giao trước phần có hàng" trên trang đơn'];
+            return $short === [] ? [] : [__('vani-preorder::texts.preorder_service_provider.shipment_has_items_awaiting_stock').implode(', ', $short).__('vani-preorder::texts.preorder_service_provider.receive_stock_when_arrives_then')];
         });
         // Nhắc CSKH (L37): SKU đặt trước còn đơn chờ mà đã quá ngày dự kiến có hàng → cập nhật ngày hàng về hoặc báo khách.
         $this->onSlot('vani.admin.dashboard.tasks', function (): array {
             $due = $this->app->make(IncomingStock::class)->dueBy(now()->subDay()->format('Y-m-d'));
             $overdue = $due === [] ? 0 : count(array_filter($this->app->make(Backorders::class)->status(array_keys($due)), fn (array $row): bool => $row['waiting'] > 0));
 
-            return [['key' => 'preorder.overdue', 'label' => 'Đặt trước quá ngày dự kiến (SKU còn đơn chờ)', 'count' => $overdue, 'url' => route('admin.inventory.stock.index'), 'tone' => 'warning', 'order' => 35]];
+            return [['key' => 'preorder.overdue', 'label' => __('vani-preorder::texts.preorder_service_provider.pre_orders_past_their_expected'), 'count' => $overdue, 'url' => route('admin.inventory.stock.index'), 'tone' => 'warning', 'order' => 35]];
         });
         $this->onSlot('vani.admin.order.sidebar', function (OrderDetail $order) use ($waiting): ?array {
             $rows = $waiting($this->app->make(OrderReader::class)->find($order->id)?->reservationKey);
 
-            return $rows === [] ? null : ['title' => 'Đặt trước — chờ hàng', 'rows' => $rows];
+            return $rows === [] ? null : ['title' => __('vani-preorder::texts.preorder_service_provider.pre_order_awaiting_stock'), 'rows' => $rows];
         });
     }
 

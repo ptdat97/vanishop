@@ -26,12 +26,12 @@ final class GrossProfitByProductReport implements ReportProvider
 
     public function label(): string
     {
-        return 'Lợi nhuận gộp theo sản phẩm';
+        return __('vani-reports::texts.gross_profit_by_product_report.gross_profit_product');
     }
 
     public function description(): string
     {
-        return 'Doanh thu − giá vốn theo SKU (đơn không huỷ, chưa gồm phí giao). SKU thiếu giá vốn được ghi rõ, không tính vào lợi nhuận.';
+        return __('vani-reports::texts.gross_profit_by_product_report.revenue_cost_sku_non_cancelled');
     }
 
     public function permission(): string
@@ -58,22 +58,22 @@ final class GrossProfitByProductReport implements ReportProvider
         return new ReportResult(
             new Table(
                 [
-                    new Column('sku', 'SKU'), new Column('product', 'Sản phẩm'), new Column('quantity', 'Số lượng', 'number'), new Column('revenue', 'Doanh thu', 'money'),
-                    new Column('cost', 'Giá vốn', 'money'), new Column('profit', 'Lợi nhuận gộp', 'money'), new Column('margin', 'Biên LN', 'percent'), new Column('note', 'Ghi chú'),
+                    new Column('sku', 'SKU'), new Column('product', __('vani-reports::texts.gross_profit_by_product_report.products')), new Column('quantity', __('vani-reports::texts.gross_profit_by_product_report.quantity'), 'number'), new Column('revenue', 'Doanh thu', 'money'),
+                    new Column('cost', __('vani-reports::texts.gross_profit_by_product_report.cost_price'), 'money'), new Column('profit', __('vani-reports::texts.gross_profit_by_product_report.gross_profit'), 'money'), new Column('margin', __('vani-reports::texts.gross_profit_by_product_report.margin'), 'percent'), new Column('note', __('vani-reports::texts.gross_profit_by_product_report.note')),
                 ],
                 array_map(fn (array $row): array => [
                     'sku' => $row['sku'], 'product' => $row['product'], 'quantity' => $row['quantity'], 'revenue' => $row['revenue'],
                     'cost' => $row['missing'] ? null : $row['cost'],
                     'profit' => $row['missing'] ? null : $row['revenue'] - $row['cost'],
                     'margin' => $row['missing'] || $row['revenue'] === 0 ? null : round(($row['revenue'] - $row['cost']) * 100 / $row['revenue'], 1),
-                    'note' => $row['missing'] ? 'Thiếu giá vốn' : '',
+                    'note' => $row['missing'] ? __('vani-reports::texts.gross_profit_by_product_report.missing_cost_price') : '',
                 ], array_slice(array_values($variants), 0, self::LIMIT)),
             ),
             [
-                new Metric('Lợi nhuận gộp', $total['profit'], 'money', $total['margin'] === null ? null : "Biên {$total['margin']}%"),
-                new Metric('Doanh thu có giá vốn', $total['revenue'], 'money'),
-                new Metric('Giá vốn', $total['cost'], 'money'),
-                new Metric('SKU thiếu giá vốn', $missing, 'number', $this->missingHint($missing, $total['uncosted_revenue'], count($variants))),
+                new Metric(__('vani-reports::texts.gross_profit_by_product_report.gross_profit'), $total['profit'], 'money', $total['margin'] === null ? null : __('vani-reports::texts.gross_profit_by_product_report.margin_margin', ['margin' => $total['margin']])),
+                new Metric(__('vani-reports::texts.gross_profit_by_product_report.revenue_cost_price'), $total['revenue'], 'money'),
+                new Metric(__('vani-reports::texts.gross_profit_by_product_report.cost_price'), $total['cost'], 'money'),
+                new Metric(__('vani-reports::texts.gross_profit_by_product_report.skus_without_cost_price'), $missing, 'number', $this->missingHint($missing, $total['uncosted_revenue'], count($variants))),
             ],
         );
     }
@@ -81,10 +81,10 @@ final class GrossProfitByProductReport implements ReportProvider
     private function missingHint(int $missing, int $uncostedRevenue, int $variants): ?string
     {
         if (! $this->grossProfit->hasCostSource()) {
-            return 'Chưa có nguồn giá vốn — bật plugin Giá vốn và nhập giá vốn theo SKU';
+            return __('vani-reports::texts.gross_profit_by_product_report.no_cost_price_source_enable');
         }
-        $hint = $missing === 0 ? null : 'Doanh thu '.number_format($uncostedRevenue, 0, ',', '.').' ₫ chưa tính lợi nhuận';
+        $hint = $missing === 0 ? null : 'Doanh thu '.number_format($uncostedRevenue, 0, ',', '.').__('vani-reports::texts.gross_profit_by_product_report.not_included_profit');
 
-        return $variants > self::LIMIT ? trim(($hint ?? '').' · Bảng hiện '.self::LIMIT.' SKU đầu', ' ·') : $hint;
+        return $variants > self::LIMIT ? trim(($hint ?? '').__('vani-reports::texts.gross_profit_by_product_report.table_shows_first').self::LIMIT.__('vani-reports::texts.gross_profit_by_product_report.skus'), ' ·') : $hint;
     }
 }

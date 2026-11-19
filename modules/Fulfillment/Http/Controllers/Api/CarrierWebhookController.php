@@ -29,7 +29,7 @@ final class CarrierWebhookController
 
         try {
             $event = $implementation->parseWebhook($request);
-            $status = ShipmentStatus::tryFrom($event->status) ?? throw new InvalidCarrierEvent("Trạng thái [{$event->status}] không chuẩn.");
+            $status = ShipmentStatus::tryFrom($event->status) ?? throw new InvalidCarrierEvent(__('fulfillment::texts.carrier_webhook_controller.status_status_not_standard', ['status' => $event->status]));
         } catch (InvalidCarrierEvent $exception) {
             Log::warning('Webhook vận chuyển không hợp lệ.', ['carrier' => $carrier, 'ip' => $request->ip(), 'reason' => $exception->getMessage()]);
 

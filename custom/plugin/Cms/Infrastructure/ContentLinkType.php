@@ -34,7 +34,7 @@ abstract class ContentLinkType implements LinkType
         return $this->query()
             ->when(trim($query) !== '', fn (Builder $builder) => $builder->where('title', 'like', '%'.addcslashes(trim($query), '%_\\').'%'))
             ->orderByDesc('updated_at')->limit($limit)->get()
-            ->map(fn (Content $content): array => ['value' => (string) $content->id, 'label' => $content->isPublic() ? $content->title : "{$content->title} (chưa công khai)"])
+            ->map(fn (Content $content): array => ['value' => (string) $content->id, 'label' => $content->isPublic() ? $content->title : __('vani-cms::texts.content_link_type.title_not_public_yet', ['title' => $content->title])])
             ->all();
     }
 

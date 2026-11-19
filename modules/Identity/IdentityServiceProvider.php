@@ -54,9 +54,9 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         Password::defaults(fn (): Password => Password::min(12)
             ->when((bool) config('vanishop.admin.check_breached_passwords'), fn (Password $rule): Password => $rule->uncompromised()));
 
-        $permissions->register('admin.access', 'Truy cập trang quản trị');
-        $permissions->register('staff.manage', 'Quản lý nhân viên và vai trò');
-        $navigation->add('staff', 'Nhân viên', 'admin.staff.index', 'staff.manage', 810, group: 'system');
+        $permissions->register('admin.access', 'identity::texts.identity_service_provider.access_admin_area');
+        $permissions->register('staff.manage', 'identity::texts.identity_service_provider.manage_staff_roles');
+        $navigation->add('staff', 'identity::texts.identity_service_provider.staff', 'admin.staff.index', 'staff.manage', 810, group: 'system');
 
         // Permission đã khai báo trong registry được quyết định bởi RBAC theo phạm vi.
         // Tham số đầu tiên có thể là ScopeRef để kiểm tra theo location.

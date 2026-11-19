@@ -4,6 +4,24 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.46 — 2026-11-19 · Extension API 1.12.0
+
+ADR-049 đợt A2 + I5 (kết thúc kế hoạch dịch theo khoá). L2, L9 đóng.
+
+### Đổi (API cho plugin)
+- `Extension\Contracts\Data\ReportPeriod::PRESETS`: giá trị là **khoá dịch** (`extension::texts.report_period.*`) thay cho nhãn tiếng Việt — hiển thị bằng `__($label)`.
+
+### Đổi
+- Exception của tầng Domain (Core) giữ thông báo nội bộ nguyên văn — Domain thuần không gọi `__()`; tầng Application/Http đổi sang thông báo có khoá dịch như trước. `TranslationKeysTest` thêm luật: không nạp bản dịch lúc boot.
+- ~950 chuỗi tiếng Việt viết cứng trong PHP (Core + 25 plugin) → khoá `<namespace>::texts.<mục>.<khoá>` (file `resources/lang/{vi,en}/texts.php`): nhãn cấu hình, quyền, menu, thông báo flash, lỗi trả cho người dùng, nhãn báo cáo, khối trang chủ, tên phương thức thanh toán/giao hàng…
+- **Định nghĩa đăng ký lúc boot lưu khoá, dịch lúc hiển thị** (theo ngôn ngữ của người xem): `PermissionRegistry::all()`, `AdminMenuRegistry`, `SettingsAdmin` (nhãn/help/lựa chọn; cấu hình `<khoá>.<locale>` được tham số `:locale`), `FieldDefinition::toArray()`, `AdminExtensions` (cột, lọc, thao tác, tab, công cụ, phần form), `RequiredExtensions`, `NotificationType` (nhãn + mẫu mặc định). Plugin ngoài repo: truyền khoá dịch thay cho câu — câu thường vẫn hiện nguyên văn.
+- 13 plugin thêm `translations()` (`vani-bank-statement`, `vani-carrier-routing`, `vani-cod-risk-guard`, `vani-cost-price`, `vani-ghn`, `vani-media-webp`, `vani-promotion-rules`, `vani-reports`, `vani-sms-brandname`, `vani-tax-vn-vat`, `vani-video-youtube`, `vani-vietqr`, `vani-vnpay`); 25 plugin tăng patch.
+- View in phiếu giao (`ordering::admin.print`) theo ngôn ngữ Admin (`<html lang>`, nhãn).
+- `TranslationKeysTest`: mốc ngoại lệ về 0. Vùng không dịch: CLI, log, health-check, `Testing/`, `hooks.php`, `app/Observability`, Pulse, exception cho dev, `#[Deprecated]`, mẫu `preg_*`, dòng `// i18n-ignore: <lý do>` (dữ liệu, vd. tiêu đề cột của định dạng file nhập/xuất — đổi theo ngôn ngữ sẽ làm hỏng nhập lại file).
+
+### Thêm
+- Mẫu mail `en` mặc định cho `order_placed`, `order_cancelled`, `shipment_shipped`, `shipment_delivered` (migration, chỉ thêm khi chưa có) — L2.
+
 ## 0.5.45 — 2026-11-19 · Extension API 1.11.0 (không đổi)
 
 ADR-049 đợt A3 (phần 2) — mọi trang Vue của Admin dùng khoá dịch. Không đổi API cho plugin.

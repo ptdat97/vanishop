@@ -22,13 +22,13 @@ use Modules\Shared\Support\StoreLocale;
  */
 final class CarrierHandoff
 {
-    public const HEADERS = ['Mã đơn', 'Người nhận', 'Số điện thoại', 'Địa chỉ', 'Phường/Xã', 'Tỉnh/Thành phố', 'Sản phẩm', 'Số lượng', 'Khối lượng (gram)', 'Giá trị hàng', 'Tiền thu hộ (COD)', 'Hãng', 'Mã vận đơn'];
+    public const HEADERS = ['Mã đơn', 'Người nhận', 'Số điện thoại', 'Địa chỉ', 'Phường/Xã', 'Tỉnh/Thành phố', 'Sản phẩm', 'Số lượng', 'Khối lượng (gram)', 'Giá trị hàng', 'Tiền thu hộ (COD)', 'Hãng', 'Mã vận đơn']; // i18n-ignore: tiêu đề cột file cho hãng
 
     private const ORDER_NUMBER = '/^[A-Z0-9]{1,16}\d{4}-\d{6,}$/';
 
-    private const TRACKING_HEADER = '/(vận đơn|van don|tracking|waybill|mã vđ|ma vd|mã đơn hàng|ma don hang)/iu';
+    private const TRACKING_HEADER = '/(vận đơn|van don|tracking|waybill|mã vđ|ma vd|mã đơn hàng|ma don hang)/iu'; // i18n-ignore: nhận diện tiêu đề cột
 
-    private const CARRIER_HEADER = '/(hãng|hang vc|đơn vị vận chuyển|nhà vận chuyển|carrier|đvvc|dvvc)/iu';
+    private const CARRIER_HEADER = '/(hãng|hang vc|đơn vị vận chuyển|nhà vận chuyển|carrier|đvvc|dvvc)/iu'; // i18n-ignore: nhận diện tiêu đề cột
 
     public function __construct(
         private readonly OrderReader $orders,
@@ -105,12 +105,12 @@ final class CarrierHandoff
         $data = array_slice($rows, 1, null, true);
         $orderColumn = $this->orderColumn($data);
         if ($orderColumn === null) {
-            return ['booked' => 0, 'unchanged' => 0, 'errors' => ['Không tìm thấy cột số đơn của shop (dạng '.'ABC2611-000123'.') trong file.']];
+            return ['booked' => 0, 'unchanged' => 0, 'errors' => [__('fulfillment::texts.carrier_handoff.could_not_find_store_s').'ABC2611-000123'.') trong file.']];
         }
         $trackingColumn = $this->headerColumn($header, self::TRACKING_HEADER, [$orderColumn])
             ?? (count($header) === 2 || count($header) === 3 ? ($orderColumn === 0 ? 1 : 0) : null);
         if ($trackingColumn === null) {
-            return ['booked' => 0, 'unchanged' => 0, 'errors' => ['Không tìm thấy cột mã vận đơn (tiêu đề có "vận đơn", "tracking"…).']];
+            return ['booked' => 0, 'unchanged' => 0, 'errors' => [__('fulfillment::texts.carrier_handoff.could_not_find_tracking_number')]];
         }
         $carrierColumn = $this->headerColumn($header, self::CARRIER_HEADER, [$orderColumn, $trackingColumn]);
 
@@ -128,13 +128,13 @@ final class CarrierHandoff
                 continue; // Chưa có mã (vd. file xuất chưa điền): bỏ qua, không báo lỗi.
             }
             if (preg_match('/^[A-Za-z0-9._-]{1,64}$/', $tracking) !== 1) {
-                $errors[] = "Dòng {$line}: mã vận đơn \"{$tracking}\" không hợp lệ.";
+                $errors[] = __('fulfillment::texts.carrier_handoff.line_line_tracking_number_tracking', ['line' => $line, 'tracking' => $tracking]);
 
                 continue;
             }
             $order = $number === '' ? null : $this->orders->findByNumber($number);
             if ($order === null) {
-                $errors[] = "Dòng {$line}: không có đơn {$number}.";
+                $errors[] = __('fulfillment::texts.carrier_handoff.line_line_order_number_not', ['line' => $line, 'number' => $number]);
 
                 continue;
             }
@@ -147,7 +147,7 @@ final class CarrierHandoff
             }
             $waiting = $shipments->filter(fn (Shipment $shipment): bool => in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true))->values();
             if ($waiting->isEmpty()) {
-                $errors[] = "Dòng {$line}: đơn {$number} không có vận đơn đang chờ mã.";
+                $errors[] = __('fulfillment::texts.carrier_handoff.line_line_order_number_has', ['line' => $line, 'number' => $number]);
 
                 continue;
             }
@@ -155,7 +155,7 @@ final class CarrierHandoff
                 $this->fulfillment->book($waiting[0]->id, $tracking, $carrier !== null && $carrier !== '' ? mb_substr($carrier, 0, 64) : null);
                 $booked++;
             } catch (BusinessRuleViolation $exception) {
-                $errors[] = "Dòng {$line}: {$exception->getMessage()}";
+                $errors[] = __('fulfillment::texts.carrier_handoff.line_line_get_message', ['line' => $line, 'get_message' => $exception->getMessage()]);
             }
         }
 

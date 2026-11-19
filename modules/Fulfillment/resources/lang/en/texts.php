@@ -1,0 +1,82 @@
+<?php
+
+// Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
+
+return [
+    'carrier_handoff' => [
+        'could_not_find_store_s' => 'Could not find the store\'s order number column (format',
+        'could_not_find_tracking_number' => 'Could not find the tracking number column (header containing "vận đơn", "tracking"…).',
+        'line_line_get_message' => 'Line :line: :get_message',
+        'line_line_order_number_has' => 'Line :line: order :number has no shipment awaiting a tracking number.',
+        'line_line_order_number_not' => 'Line :line: order :number not found.',
+        'line_line_tracking_number_tracking' => 'Line :line: tracking number ":tracking" is invalid.',
+    ],
+    'carrier_webhook_controller' => [
+        'status_status_not_standard' => 'Status [:status] is not standard.',
+    ],
+    'cod_statement' => [
+        'carrier_fee_fee' => ' · carrier fee :fee',
+        'carrier_recorded_cod_amount_shipment' => 'Carrier recorded COD :amount, shipment :expected',
+        'matched_cod_statement' => 'Matched COD statement',
+        'shipment_does_not_exist_system' => 'This shipment does not exist in the system',
+        'statement_but_shipment_not_delivered' => 'In the statement but the shipment is not delivered yet',
+    ],
+    'fulfillment_service' => [
+        'split_from_shipment_public_id' => 'Split from shipment :public_id',
+    ],
+    'fulfillment_service_provider' => [
+        'carrier' => 'Carrier',
+        'choose_shipping_warehouse' => 'Choose the shipping warehouse',
+        'choose_shipping_warehouse_sourcing' => 'Choose the shipping warehouse (sourcing)',
+        'create_update_cancel_shipments' => 'Create/update/cancel shipments',
+        'fulfilment' => 'Fulfilment',
+        'open_shipments_carrier_code_still' => ':open shipments of carrier :code are still open',
+        'sourcingstrategy_when_creating_shipments' => 'SourcingStrategy when creating shipments.',
+        'view_shipments' => 'View shipments',
+    ],
+    'manual_carrier' => [
+        'manual_shipments_have_no_webhook' => 'Manual shipments have no webhook.',
+    ],
+    'order_list_shipments' => [
+        'carrier_when_file_has_no' => 'Carrier (when the file has no carrier column)',
+        'create_shipment' => 'Create shipment',
+        'excel_file_exported_carrier_filled' => 'Excel file exported by the carrier (or the filled-in "Export file for the carrier" file): needs the store\'s order number column and the tracking number column; the carrier column if present.',
+        'export_file_carrier' => 'Export file for the carrier',
+        'hand_carrier' => 'Hand to carrier',
+        'handed_over_carrier' => 'Handed over to the carrier',
+        'import_tracking_numbers_from_file' => 'Import tracking numbers from a file',
+        'no_code_yet' => 'No code yet',
+        'shipments' => 'Shipments',
+    ],
+    'order_shipment_panel' => [
+        'cancel_shipment' => 'Cancel shipment',
+        'carrier' => 'Carrier',
+        'cod_amount' => 'COD',
+        'create_shipment' => 'Create shipment',
+        'delivered' => 'Delivered',
+        'delivery_failed' => 'Delivery failed',
+        'enter_tracking_number' => 'Enter tracking number',
+        'error' => 'Error',
+        'finished_packing_hand_shipment_carrier' => 'Finished packing? Hand the shipment to the carrier so they come to pick it up.',
+        'fulfilment' => 'Fulfilment',
+        'hand_carrier' => 'Hand to carrier',
+        'hand_carrier_again' => 'Hand to carrier again',
+        'handed_over_carrier' => 'Handed over to the carrier',
+        'no_code_yet' => 'no code yet',
+        'no_shipments_yet' => 'No shipments yet',
+        'open_shipment_page' => 'Open the shipment page',
+        'quantity' => ' (of :quantity)',
+        'reason_cancelling_shipment' => 'Reason for cancelling the shipment',
+        'return_received' => 'Return received',
+        'returning_sender' => 'Returning to sender',
+        'ship_available_items_first' => 'Ship available items first',
+        'shipment' => 'Shipment',
+        'shipment_2' => 'Shipment:',
+        'tracking_number' => 'Tracking number',
+    ],
+    'shipment_dashboard_tasks' => [
+        'call_customer_back_schedule_redelivery' => 'Call the customer back, schedule redelivery or return to sender',
+        'delivery_failed' => 'Delivery failed',
+        'shipment_booking_failed' => 'Shipment booking failed',
+    ],
+];

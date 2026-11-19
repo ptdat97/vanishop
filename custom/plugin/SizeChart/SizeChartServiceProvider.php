@@ -28,8 +28,8 @@ final class SizeChartServiceProvider extends PluginServiceProvider
     {
         // Chuỗi giao diện storefront của plugin theo ngôn ngữ (khoá = câu tiếng Việt, ADR-038); theme ghi đè được.
         $this->translations($this->pluginPath('Resources/lang'), 'vani-size-chart');
-        $this->permissions(['size_chart.view' => 'Xem bảng size', 'size_chart.manage' => 'Quản lý bảng size']);
-        $this->adminMenu('size-charts', 'Bảng size', 'admin.plugins.vani-size-chart.index', 'size_chart.view', 130, group: 'catalog');
+        $this->permissions(['size_chart.view' => 'vani-size-chart::texts.size_chart_service_provider.view_size_charts', 'size_chart.manage' => 'vani-size-chart::texts.size_chart_service_provider.manage_size_charts']);
+        $this->adminMenu('size-charts', 'vani-size-chart::texts.size_chart_service_provider.size_charts', 'admin.plugins.vani-size-chart.index', 'size_chart.view', 130, group: 'catalog');
         $this->adminRoutes($this->pluginPath('Http/routes/admin.php'));
         $this->adminPages('SizeChart', $this->pluginPath('Resources/js/Pages'));
 
@@ -39,18 +39,18 @@ final class SizeChartServiceProvider extends PluginServiceProvider
             ? new SlotView('vani-size-chart::dialog', ['chart' => $product['extensions'][self::ID]])
             : null);
 
-        $this->assignmentSection('product', 'Để trống = theo danh mục, thương hiệu hoặc bảng mặc định.');
-        $this->assignmentSection('category', 'Áp dụng cho sản phẩm có danh mục chính là danh mục này hoặc danh mục con. Để trống = theo danh mục cha, thương hiệu hoặc bảng mặc định.');
-        $this->assignmentSection('brand', 'Áp dụng cho sản phẩm của thương hiệu khi sản phẩm và danh mục chưa có bảng riêng.');
+        $this->assignmentSection('product', 'vani-size-chart::texts.size_chart_service_provider.leave_empty_use_category_brand');
+        $this->assignmentSection('category', 'vani-size-chart::texts.size_chart_service_provider.applies_products_whose_primary_category');
+        $this->assignmentSection('brand', 'vani-size-chart::texts.size_chart_service_provider.applies_brand_s_products_when');
     }
 
     private function assignmentSection(string $resource, string $help): void
     {
         $charts = fn (): SizeCharts => $this->app->make(SizeCharts::class);
         // Lựa chọn đọc từ DB khi mở/lưu form (closure — Core 0.3.44), không truy vấn lúc boot.
-        $fields = fn (): array => [FieldDefinition::select('chart', 'Bảng size', $charts()->options(), help: $help)];
+        $fields = fn (): array => [FieldDefinition::select('chart', __('vani-size-chart::texts.size_chart_service_provider.size_charts'), $charts()->options(), help: $help)];
 
-        $this->adminFormSection($resource, 'chart', 'Bảng size', $fields,
+        $this->adminFormSection($resource, 'chart', 'vani-size-chart::texts.size_chart_service_provider.size_charts', $fields,
             load: fn (int $id): array => ['chart' => ($chartId = $charts()->assignedChart($resource, $id)) === null ? null : (string) $chartId],
             save: fn (int $id, array $values) => $charts()->assign($resource, $id, ($values['chart'] ?? null) === null || $values['chart'] === '' ? null : (int) $values['chart']),
             order: 300,

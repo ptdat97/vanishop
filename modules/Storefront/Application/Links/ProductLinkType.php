@@ -10,7 +10,7 @@ final class ProductLinkType extends CatalogLinkType
 {
     public function label(): string
     {
-        return 'Sản phẩm';
+        return __('storefront::texts.product_link_type.products');
     }
 
     protected function kind(): string

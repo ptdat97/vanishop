@@ -32,7 +32,7 @@ final class PromotionService
         }
 
         $action = $this->registry->action((string) $data['action_type']);
-        $errors = $action === null ? ['Loại giảm giá không hỗ trợ.'] : $action->validateConfig($data['action_config']);
+        $errors = $action === null ? [__('promotion::texts.promotion_service.unsupported_discount_type')] : $action->validateConfig($data['action_config']);
         if ($errors !== []) {
             throw ValidationException::withMessages(['action_config' => $errors]);
         }
@@ -124,7 +124,7 @@ final class PromotionService
             : $this->generateCodes(Voucher::normalize((string) $prefix), $count);
 
         if ($codes !== [] && Voucher::query()->whereIn('code', $codes)->exists()) {
-            throw ValidationException::withMessages(['code' => 'Mã đã tồn tại.']);
+            throw ValidationException::withMessages(['code' => __('promotion::texts.promotion_service.code_already_exists')]);
         }
 
         DB::transaction(function () use ($promotion, $codes, $usageLimit, $expiresAt): void {

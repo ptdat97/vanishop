@@ -47,13 +47,13 @@ final class OrderShipmentPanel
         foreach ($shipments as $index => $shipment) {
             $carrier = $this->carriers->carrier($shipment->carrier_code);
             $name = $shipment->service_code ?: ($carrier?->label() ?? $shipment->carrier_code);
-            $prefix = $shipments->count() > 1 ? 'Vận đơn '.($index + 1).': ' : '';
-            $rows[] = ['label' => $prefix.$name, 'value' => ($shipment->tracking_number ?? 'chưa có mã').' · '.($labels[$shipment->status->value] ?? $shipment->status->value)];
+            $prefix = $shipments->count() > 1 ? __('fulfillment::texts.order_shipment_panel.shipment').($index + 1).': ' : '';
+            $rows[] = ['label' => $prefix.$name, 'value' => ($shipment->tracking_number ?? __('fulfillment::texts.order_shipment_panel.no_code_yet')).' · '.($labels[$shipment->status->value] ?? $shipment->status->value)];
             if ($shipment->cod_amount > 0) {
-                $rows[] = ['label' => 'Thu hộ (COD)', 'value' => $this->money->formatAmount($shipment->cod_amount, $shipment->currency_code)];
+                $rows[] = ['label' => __('fulfillment::texts.order_shipment_panel.cod_amount'), 'value' => $this->money->formatAmount($shipment->cod_amount, $shipment->currency_code)];
             }
             if ($shipment->last_error !== null && $shipment->status === ShipmentStatus::BookingFailed) {
-                $rows[] = ['label' => 'Lỗi', 'value' => $shipment->last_error];
+                $rows[] = ['label' => __('fulfillment::texts.order_shipment_panel.error'), 'value' => $shipment->last_error];
             }
             if ($manage) {
                 array_push($actions, ...$this->actions($shipment, $base, $prefix, ! ($carrier?->capabilities()->autoBooking ?? false)));
@@ -61,13 +61,13 @@ final class OrderShipmentPanel
         }
 
         if ($manage && $active->isEmpty() && in_array($order->orderStatus, ['confirmed', 'processing'], true)) {
-            $actions[] = ['key' => 'create', 'label' => 'Tạo vận đơn', 'url' => $base, 'data' => ['order_id' => $order->id], 'primary' => true, 'tone' => 'primary'];
+            $actions[] = ['key' => 'create', 'label' => __('fulfillment::texts.order_shipment_panel.create_shipment'), 'url' => $base, 'data' => ['order_id' => $order->id], 'primary' => true, 'tone' => 'primary'];
         }
 
         return [
-            'title' => 'Giao hàng',
-            'rows' => $rows === [] ? [['label' => 'Chưa có vận đơn', 'value' => '']] : $rows,
-            'link' => ['label' => 'Mở trang vận đơn', 'url' => route('admin.fulfillment.shipments.index', ['order' => $order->number])],
+            'title' => __('fulfillment::texts.order_shipment_panel.fulfilment'),
+            'rows' => $rows === [] ? [['label' => __('fulfillment::texts.order_shipment_panel.no_shipments_yet'), 'value' => '']] : $rows,
+            'link' => ['label' => __('fulfillment::texts.order_shipment_panel.open_shipment_page'), 'url' => route('admin.fulfillment.shipments.index', ['order' => $order->number])],
             'actions' => $actions,
         ];
     }
@@ -86,7 +86,7 @@ final class OrderShipmentPanel
             ->map(fn (object $event): array => [
                 'ts' => strtotime((string) $event->occurred_at.' UTC') ?: 0,
                 'at' => (string) StoreClock::format((string) $event->occurred_at),
-                'title' => 'Vận đơn: '.($labels[$event->status] ?? $event->status),
+                'title' => __('fulfillment::texts.order_shipment_panel.shipment_2').($labels[$event->status] ?? $event->status),
                 'detail' => trim(($event->tracking_number ?? '').' '.($event->description ?? '')) ?: null,
                 'source' => (string) $event->source,
             ])->all();
@@ -104,26 +104,26 @@ final class OrderShipmentPanel
             'key' => "{$shipment->id}-{$to->value}", 'label' => $prefix.$label, 'url' => "{$url}/status", 'data' => ['status' => $to->value],
             'primary' => $primary, 'tone' => $tone, 'confirm' => "{$label}?",
         ];
-        $cancel = ['key' => "{$shipment->id}-cancel", 'label' => $prefix.'Huỷ vận đơn', 'url' => "{$url}/cancel", 'tone' => 'danger',
-            'fields' => [['key' => 'reason', 'label' => 'Lý do huỷ vận đơn', 'required' => true]]];
+        $cancel = ['key' => "{$shipment->id}-cancel", 'label' => $prefix.__('fulfillment::texts.order_shipment_panel.cancel_shipment'), 'url' => "{$url}/cancel", 'tone' => 'danger',
+            'fields' => [['key' => 'reason', 'label' => __('fulfillment::texts.order_shipment_panel.reason_cancelling_shipment'), 'required' => true]]];
 
         return match (true) {
             in_array($shipment->status, [ShipmentStatus::PendingBooking, ShipmentStatus::BookingFailed], true) => [
                 ...$this->splitAction($shipment, $url, $prefix),
-                ...($manual ? [['key' => "{$shipment->id}-book", 'label' => $prefix.'Nhập mã vận đơn', 'url' => "{$url}/book", 'primary' => true, 'tone' => 'primary', 'fields' => [
-                    ['key' => 'tracking_number', 'label' => 'Mã vận đơn', 'required' => true],
-                    ['key' => 'service_code', 'label' => 'Hãng vận chuyển', 'placeholder' => 'vd. GHN, J&T, Viettel Post'],
-                ]]] : [['key' => "{$shipment->id}-push", 'label' => $prefix.($shipment->status === ShipmentStatus::BookingFailed ? 'Đẩy lại lên hãng' : 'Đẩy lên hãng'), 'url' => "{$url}/push", 'primary' => true, 'tone' => 'primary',
-                    'confirm' => 'Đã đóng gói xong? Đẩy vận đơn lên hãng để hãng đến lấy hàng.']]),
+                ...($manual ? [['key' => "{$shipment->id}-book", 'label' => $prefix.__('fulfillment::texts.order_shipment_panel.enter_tracking_number'), 'url' => "{$url}/book", 'primary' => true, 'tone' => 'primary', 'fields' => [
+                    ['key' => 'tracking_number', 'label' => __('fulfillment::texts.order_shipment_panel.tracking_number'), 'required' => true],
+                    ['key' => 'service_code', 'label' => __('fulfillment::texts.order_shipment_panel.carrier'), 'placeholder' => 'vd. GHN, J&T, Viettel Post'],
+                ]]] : [['key' => "{$shipment->id}-push", 'label' => $prefix.($shipment->status === ShipmentStatus::BookingFailed ? __('fulfillment::texts.order_shipment_panel.hand_carrier_again') : __('fulfillment::texts.order_shipment_panel.hand_carrier')), 'url' => "{$url}/push", 'primary' => true, 'tone' => 'primary',
+                    'confirm' => __('fulfillment::texts.order_shipment_panel.finished_packing_hand_shipment_carrier')]]),
                 $cancel,
             ],
-            $shipment->status === ShipmentStatus::Created => [$status(ShipmentStatus::PickedUp, 'Đã bàn giao cho hãng', true, 'primary'), $cancel],
+            $shipment->status === ShipmentStatus::Created => [$status(ShipmentStatus::PickedUp, __('fulfillment::texts.order_shipment_panel.handed_over_carrier'), true, 'primary'), $cancel],
             in_array($shipment->status, [ShipmentStatus::PickedUp, ShipmentStatus::InTransit, ShipmentStatus::OutForDelivery, ShipmentStatus::FailedAttempt], true) => [
-                $status(ShipmentStatus::Delivered, 'Đã giao', true, 'primary'),
-                ...($shipment->status !== ShipmentStatus::FailedAttempt ? [$status(ShipmentStatus::FailedAttempt, 'Giao không thành công')] : []),
-                $status(ShipmentStatus::Returning, 'Đang hoàn về', false, 'danger'),
+                $status(ShipmentStatus::Delivered, __('fulfillment::texts.order_shipment_panel.delivered'), true, 'primary'),
+                ...($shipment->status !== ShipmentStatus::FailedAttempt ? [$status(ShipmentStatus::FailedAttempt, __('fulfillment::texts.order_shipment_panel.delivery_failed'))] : []),
+                $status(ShipmentStatus::Returning, __('fulfillment::texts.order_shipment_panel.returning_sender'), false, 'danger'),
             ],
-            $shipment->status === ShipmentStatus::Returning => [$status(ShipmentStatus::Returned, 'Đã nhận hàng hoàn về', true, 'primary')],
+            $shipment->status === ShipmentStatus::Returning => [$status(ShipmentStatus::Returned, __('fulfillment::texts.order_shipment_panel.return_received'), true, 'primary')],
             default => [],
         };
     }
@@ -142,10 +142,10 @@ final class OrderShipmentPanel
         $skus = $this->variants->find($lines->pluck('variant_id')->map(fn (mixed $id): int => (int) $id)->all());
 
         return [[
-            'key' => "{$shipment->id}-split", 'label' => $prefix.'Giao trước phần có hàng', 'url' => "{$url}/split", 'tone' => 'secondary',
+            'key' => "{$shipment->id}-split", 'label' => $prefix.__('fulfillment::texts.order_shipment_panel.ship_available_items_first'), 'url' => "{$url}/split", 'tone' => 'secondary',
             'fields' => $lines->map(fn (ShipmentLine $line): array => [
                 'key' => "move_{$line->order_line_id}",
-                'label' => 'Giao sau — '.($skus[$line->variant_id]->sku ?? "#{$line->variant_id}")." (trên {$line->quantity})",
+                'label' => 'Giao sau — '.($skus[$line->variant_id]->sku ?? "#{$line->variant_id}").__('fulfillment::texts.order_shipment_panel.quantity', ['quantity' => $line->quantity]),
                 'value' => '0',
             ])->values()->all(),
         ]];

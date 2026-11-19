@@ -13,7 +13,7 @@ use Modules\Storefront\Contracts\ProductCards;
  */
 final class Products
 {
-    public const SOURCES = ['newest' => 'Mới nhất', 'category' => 'Danh mục', 'collection' => 'Bộ sưu tập', 'brand' => 'Thương hiệu', 'ids' => 'Chọn tay (id sản phẩm)'];
+    public const SOURCES = ['newest' => 'vani-storefront-extras::texts.products.newest', 'category' => 'vani-storefront-extras::texts.products.category', 'collection' => 'vani-storefront-extras::texts.products.collections', 'brand' => 'vani-storefront-extras::texts.products.brand', 'ids' => 'vani-storefront-extras::texts.products.manual_pick_product_ids'];
 
     public function __construct(
         private readonly CatalogReader $catalog,

@@ -37,7 +37,7 @@ final class TrackingPixelsServiceProvider extends PluginServiceProvider
             ? new SlotView('vani-tracking-pixels::head', ['config' => $this->clientConfig()])
             : null);
         $this->onSlot('vani.storefront.layout.body_end', fn (): ?SlotView => $this->tracking()->anyConfigured() && $this->tracking()->consentMode() === 'banner'
-            ? new SlotView('vani-tracking-pixels::consent-banner', ['text' => $this->localized('consent_text', 'Chúng tôi dùng cookie để đo hiệu quả quảng cáo và cải thiện trải nghiệm mua sắm.')])
+            ? new SlotView('vani-tracking-pixels::consent-banner', ['text' => $this->localized('consent_text', __('vani-tracking-pixels::texts.tracking_pixels_service_provider.we_use_cookies_measure_advertising'))])
             : null);
 
         $this->onSlot('vani.storefront.pdp.after_details', fn (array $product): ?SlotView => $this->events([['view_item', Payloads::viewItem($product)]]));
@@ -99,22 +99,22 @@ final class TrackingPixelsServiceProvider extends PluginServiceProvider
     private function definitions(): array
     {
         $definitions = [
-            ['key' => 'meta_pixel_id', 'label' => 'Meta Pixel ID', 'help' => 'Ví dụ 123456789012345. Trống = tắt Meta.', 'rules' => ['regex:/^\d{5,20}$/']],
-            ['key' => 'ga4_measurement_id', 'label' => 'GA4 Measurement ID', 'help' => 'Ví dụ G-XXXXXXXXXX. Trống = tắt GA4.', 'rules' => ['regex:/^G-[A-Z0-9]{4,20}$/']],
-            ['key' => 'gtm_container_id', 'label' => 'Google Tag Manager ID', 'help' => 'Ví dụ GTM-XXXXXXX. Trống = tắt GTM.', 'rules' => ['regex:/^GTM-[A-Z0-9]{4,12}$/']],
-            ['key' => 'consent_mode', 'label' => 'Đồng ý cookie', 'type' => 'select', 'default' => 'banner',
-                'options' => ['banner' => 'Hiện thanh đồng ý của plugin', 'custom' => 'Biểu thức JS của công cụ đồng ý khác', 'none' => 'Không hỏi (luôn chạy)'],
-                'help' => 'Chưa đồng ý thì không nạp script quảng cáo và không gửi sự kiện từ server.'],
-            ['key' => 'consent_expression', 'label' => 'Biểu thức JS đồng ý', 'type' => 'text', 'help' => 'Khi chọn "Biểu thức JS". Ví dụ: window.CookieConsent && window.CookieConsent.acceptedCategory("analytics")'],
-            ['key' => 'meta_capi_enabled', 'label' => 'Gửi sự kiện mua từ server tới Meta (Conversions API)', 'type' => 'bool'],
+            ['key' => 'meta_pixel_id', 'label' => 'Meta Pixel ID', 'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.example_123456789012345_empty_meta_off', 'rules' => ['regex:/^\d{5,20}$/']],
+            ['key' => 'ga4_measurement_id', 'label' => 'GA4 Measurement ID', 'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.example_xxxxxxxxxx_empty_ga4_off', 'rules' => ['regex:/^G-[A-Z0-9]{4,20}$/']],
+            ['key' => 'gtm_container_id', 'label' => 'Google Tag Manager ID', 'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.example_gtm_xxxxxxx_empty_gtm', 'rules' => ['regex:/^GTM-[A-Z0-9]{4,12}$/']],
+            ['key' => 'consent_mode', 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.cookie_consent', 'type' => 'select', 'default' => 'banner',
+                'options' => ['banner' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.show_plugin_s_consent_bar', 'custom' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.js_expression_another_consent_tool', 'none' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.do_not_ask_always_run'],
+                'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.without_consent_ad_scripts_not'],
+            ['key' => 'consent_expression', 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.consent_js_expression', 'type' => 'text', 'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.when_js_expression_chosen_example'],
+            ['key' => 'meta_capi_enabled', 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.send_purchase_events_from_server', 'type' => 'bool'],
             ['key' => 'meta_access_token', 'label' => 'Meta Conversions API access token', 'type' => 'secret'],
-            ['key' => 'meta_test_event_code', 'label' => 'Mã Test Event của Meta', 'help' => 'Chỉ dùng khi thử trong Events Manager.'],
-            ['key' => 'ga4_mp_enabled', 'label' => 'Gửi sự kiện mua từ server tới GA4 (Measurement Protocol)', 'type' => 'bool'],
+            ['key' => 'meta_test_event_code', 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.meta_test_event_code', 'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.only_when_testing_events_manager'],
+            ['key' => 'ga4_mp_enabled', 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.send_purchase_events_from_server_2', 'type' => 'bool'],
             ['key' => 'ga4_api_secret', 'label' => 'GA4 API secret', 'type' => 'secret'],
-            ['key' => 'debug', 'label' => 'Chế độ debug', 'type' => 'bool', 'help' => 'Ghi log lỗi gửi, dùng endpoint debug của GA4, in sự kiện ra console trình duyệt.'],
+            ['key' => 'debug', 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.debug_mode', 'type' => 'bool', 'help' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.logs_send_errors_uses_ga4'],
         ];
         foreach (StoreLocale::supported() as $locale) {
-            $definitions[] = ['key' => "consent_text.{$locale}", 'label' => "Nội dung thanh đồng ý ({$locale})", 'type' => 'text'];
+            $definitions[] = ['key' => "consent_text.{$locale}", 'label' => 'vani-tracking-pixels::texts.tracking_pixels_service_provider.consent_bar_text_locale', 'type' => 'text'];
         }
 
         return $definitions;

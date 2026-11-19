@@ -53,10 +53,10 @@ final class PaymentServiceProvider extends ModuleServiceProvider
         // EP v3 X5: bảng đối soát chung cho plugin.
         $this->app->bind(Reconciliations::class, ReconciliationLedger::class);
         // Cổng thanh toán đều là plugin (COD, chuyển khoản: plugin hệ thống vani.cod, vani.bank-transfer — ADR-029).
-        $this->app->make(Extensions::class)->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
+        $this->app->make(Extensions::class)->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'payment::texts.payment_service_provider.payment_gateways');
         // Đơn đổi hàng thu phần chênh khi giao (Returns → ReplacementOrders): thiếu cổng thu khi giao thì đổi khác mẫu đắt hơn bị từ chối.
         $this->app->make(Extensions::class)->doctorCheck('collect_on_delivery_missing', fn (): ?string => $this->app->make(Payments::class)->collectOnDeliveryGateway() === null
-            ? 'Không có cổng thu tiền khi giao (collectsOnDelivery) đang nhận giao dịch mới — đổi hàng phải bù chênh sẽ bị từ chối. Bật vani.cod hoặc cổng tương tự.'
+            ? __('payment::texts.payment_service_provider.no_cash_delivery_gateway_collectsondelivery')
             : null);
         $this->app->make(Extensions::class)->kindContract('payment_gateway', PaymentGateway::TAG);
     }
@@ -64,11 +64,11 @@ final class PaymentServiceProvider extends ModuleServiceProvider
     public function boot(PermissionRegistry $permissions, AdminNavigation $navigation): void
     {
         Hook::onSlot('vani.admin.dashboard.tasks', fn (): array => $this->app->make(PaymentDashboardTasks::class)());
-        $permissions->register('payments.view', 'Xem thanh toán');
-        $permissions->register('payments.confirm', 'Xác nhận đã nhận tiền (chuyển khoản thủ công)');
-        $permissions->register('payments.refund', 'Hoàn tiền');
+        $permissions->register('payments.view', 'payment::texts.payment_service_provider.view_payments');
+        $permissions->register('payments.confirm', 'payment::texts.payment_service_provider.confirm_money_received_manual_bank');
+        $permissions->register('payments.refund', 'payment::texts.payment_service_provider.refund');
 
-        $navigation->add('payment', 'Thanh toán', 'admin.payment.home', 'payments.view', 90, group: 'sales');
+        $navigation->add('payment', 'payment::texts.payment_service_provider.payment', 'admin.payment.home', 'payments.view', 90, group: 'sales');
 
         Event::listen(OrderCancelled::class, SettleCancelledOrderPayments::class);
         Event::listen(OrderLinesCancelled::class, SettlePartialCancellation::class);
@@ -85,7 +85,7 @@ final class PaymentServiceProvider extends ModuleServiceProvider
             }
             $open = Payment::query()->where('gateway_code', $gateway->code())->whereIn('status', [PaymentStatus::Pending, PaymentStatus::Authorized])->count();
 
-            return $open === 0 ? null : "còn {$open} khoản thanh toán chờ/giữ tiền qua cổng {$gateway->code()}";
+            return $open === 0 ? null : __('payment::texts.payment_service_provider.open_payments_still_pending_authorised', ['open' => $open, 'code' => $gateway->code()]);
         });
 
         RateLimiter::for('payment-callbacks', fn (Request $request): Limit => Limit::perMinute((int) config('vanishop.rate_limits.payment_callbacks', 600))->by((string) $request->ip()));

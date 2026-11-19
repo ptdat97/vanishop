@@ -37,20 +37,20 @@ final class ShippingFlatRateServiceProvider extends PluginServiceProvider
     private function definitions(): array
     {
         $definitions = [
-            ['key' => 'fee', 'label' => 'Phí giao (₫)', 'type' => 'int', 'help' => 'Để trống = theo VANI_SHIPPING_FLAT_FEE.'],
-            ['key' => 'free_over', 'label' => 'Miễn phí giao từ (₫)', 'type' => 'int', 'help' => 'Tiền hàng sau giảm giá. Để trống = theo VANI_SHIPPING_FREE_OVER.'],
+            ['key' => 'fee', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.shipping_fee', 'type' => 'int', 'help' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.leave_empty_use_vani_shipping'],
+            ['key' => 'free_over', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.free_shipping_from', 'type' => 'int', 'help' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.merchandise_total_after_discounts_leave'],
             // Phụ phí theo khối lượng (1.2.0): khối lượng giỏ (gram, dòng đã chọn) do Checkout truyền vào.
-            ['key' => 'included_grams', 'label' => 'Khối lượng gồm trong phí giao (gram)', 'type' => 'int', 'help' => 'Vượt mức này thì cộng phụ phí mỗi kg (làm tròn lên). Để trống = không tính theo khối lượng.', 'rules' => ['min:0']],
-            ['key' => 'fee_per_extra_kg', 'label' => 'Phụ phí mỗi kg vượt (₫)', 'type' => 'int', 'rules' => ['min:0']],
-            ['key' => 'progress_enabled', 'label' => 'Hiện thanh tiến độ miễn phí giao', 'type' => 'bool', 'default' => true],
-            ['key' => 'progress_on_cart', 'label' => 'Thanh tiến độ ở trang giỏ', 'type' => 'bool', 'default' => true],
-            ['key' => 'progress_on_checkout', 'label' => 'Thanh tiến độ ở trang thanh toán', 'type' => 'bool', 'default' => true],
-            ['key' => 'progress_on_pdp', 'label' => 'Ngưỡng miễn phí giao ở trang sản phẩm', 'type' => 'bool', 'default' => false],
-            ['key' => 'progress_color', 'label' => 'Màu thanh tiến độ', 'help' => 'Dạng #rrggbb; trống = màu nhấn của giao diện.', 'rules' => ['regex:/^#[0-9a-fA-F]{6}$/']],
+            ['key' => 'included_grams', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.weight_included_shipping_fee_grams', 'type' => 'int', 'help' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.above_surcharge_per_kg_rounded', 'rules' => ['min:0']],
+            ['key' => 'fee_per_extra_kg', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.surcharge_per_extra_kg', 'type' => 'int', 'rules' => ['min:0']],
+            ['key' => 'progress_enabled', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.show_free_shipping_progress_bar', 'type' => 'bool', 'default' => true],
+            ['key' => 'progress_on_cart', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.progress_bar_cart_page', 'type' => 'bool', 'default' => true],
+            ['key' => 'progress_on_checkout', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.progress_bar_checkout_page', 'type' => 'bool', 'default' => true],
+            ['key' => 'progress_on_pdp', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.free_shipping_threshold_product_page', 'type' => 'bool', 'default' => false],
+            ['key' => 'progress_color', 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.progress_bar_colour', 'help' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.format_rrggbb_empty_theme_s', 'rules' => ['regex:/^#[0-9a-fA-F]{6}$/']],
         ];
         foreach (StoreLocale::supported() as $locale) {
-            $definitions[] = ['key' => "progress_message_pending.{$locale}", 'label' => "Thông báo khi chưa đạt ({$locale})", 'help' => 'Bắt buộc có {amount} — số tiền còn thiếu.', 'rules' => ['regex:/\{amount\}/']];
-            $definitions[] = ['key' => "progress_message_achieved.{$locale}", 'label' => "Thông báo khi đã đạt ({$locale})"];
+            $definitions[] = ['key' => "progress_message_pending.{$locale}", 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.message_when_not_reached_locale', 'help' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.must_contain_amount_remaining_amount', 'rules' => ['regex:/\{amount\}/']];
+            $definitions[] = ['key' => "progress_message_achieved.{$locale}", 'label' => 'vani-shipping-flat-rate::texts.shipping_flat_rate_service_provider.message_when_reached_locale'];
         }
 
         return $definitions;

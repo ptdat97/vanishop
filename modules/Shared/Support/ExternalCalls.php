@@ -23,7 +23,7 @@ final class ExternalCalls
             return;
         }
 
-        $message = "Gọi dịch vụ ngoài [{$call}] trong transaction DB chưa commit — chuyển lời gọi ra ngoài transaction hoặc dùng DB::afterCommit().";
+        $message = __('shared::texts.external_calls.external_service_call_call_inside', ['call' => $call]);
         if (app()->isProduction()) {
             Log::warning($message, ['call' => $call]);
 

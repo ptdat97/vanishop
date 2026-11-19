@@ -62,7 +62,7 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
 
     public function label(): string
     {
-        return 'VNPay (thẻ ATM, thẻ quốc tế, QR)';
+        return __('vani-vnpay::texts.vn_pay_gateway.vnpay_atm_cards_international_cards');
     }
 
     public function capabilities(): GatewayCapabilities
@@ -109,14 +109,14 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
         $params = $this->vnpParams($request);
         foreach (['vnp_TxnRef', 'vnp_Amount', 'vnp_ResponseCode', 'vnp_SecureHash'] as $field) {
             if (($params[$field] ?? '') === '') {
-                throw new InvalidCallback("Thiếu trường {$field} trong IPN VNPay.");
+                throw new InvalidCallback(__('vani-vnpay::texts.vn_pay_gateway.field_field_missing_from_vnpay', ['field' => $field]));
             }
         }
         if (! $this->settings->signer()->verifyQuery($params)) {
-            throw new InvalidCallback('Chữ ký IPN VNPay không khớp.');
+            throw new InvalidCallback(__('vani-vnpay::texts.vn_pay_gateway.vnpay_ipn_signature_does_not'));
         }
         if (($params['vnp_TmnCode'] ?? $this->settings->tmnCode()) !== $this->settings->tmnCode()) {
-            throw new InvalidCallback('IPN VNPay của mã website khác.');
+            throw new InvalidCallback(__('vani-vnpay::texts.vn_pay_gateway.vnpay_ipn_another_website_code'));
         }
 
         $paid = $params['vnp_ResponseCode'] === '00' && ($params['vnp_TransactionStatus'] ?? '00') === '00';
@@ -183,13 +183,13 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
     {
         $done = DB::table('plg_vnpay_refunds')->where('idempotency_key', $idempotencyKey)->value('gateway_reference');
         if ($done !== null) {
-            return new GatewayResult(true, (string) $done, 'Đã hoàn trước đó.');
+            return new GatewayResult(true, (string) $done, __('vani-vnpay::texts.vn_pay_gateway.already_refunded'));
         }
 
         // Hoàn tiền cần số giao dịch VNPay + thời điểm thanh toán gốc → tra cứu trước.
         $original = $this->queryTransaction($payment);
         if ($original === null || ($original['vnp_ResponseCode'] ?? '') !== '00' || ($original['vnp_TransactionStatus'] ?? '') !== '00') {
-            return new GatewayResult(false, message: 'VNPay chưa xác nhận giao dịch thanh toán gốc — hoàn tiền thủ công.');
+            return new GatewayResult(false, message: __('vani-vnpay::texts.vn_pay_gateway.vnpay_has_not_confirmed_original'));
         }
 
         $requestId = substr(hash('sha256', 'refund|'.$idempotencyKey), 0, 32); // cố định theo key: gửi lại không hoàn hai lần
@@ -217,7 +217,7 @@ final class VnPayGateway implements CallbackResponder, PaymentGateway
 
         $response = $this->post($body, self::REFUND_RESPONSE_FIELDS);
         if ($response === null || ($response['vnp_ResponseCode'] ?? '') !== '00') {
-            return new GatewayResult(false, message: 'VNPay từ chối hoàn tiền'.($response === null ? '' : ' (mã '.($response['vnp_ResponseCode'] ?? '?').')').' — hoàn tiền thủ công.');
+            return new GatewayResult(false, message: __('vani-vnpay::texts.vn_pay_gateway.vnpay_declined_refund').($response === null ? '' : __('vani-vnpay::texts.vn_pay_gateway.code').($response['vnp_ResponseCode'] ?? '?').')').__('vani-vnpay::texts.vn_pay_gateway.refund_manually'));
         }
 
         $reference = 'VNP-RF-'.((string) ($response['vnp_TransactionNo'] ?? '') ?: $requestId);

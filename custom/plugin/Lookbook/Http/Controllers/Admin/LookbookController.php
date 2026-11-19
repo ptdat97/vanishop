@@ -64,7 +64,7 @@ final class LookbookController
         Gate::authorize('lookbook.manage');
         $lookbook = $this->lookbooks->save(null, $this->validated($request));
 
-        return redirect()->route('admin.plugins.vani-lookbook.edit', $lookbook->id)->with('success', 'Đã lưu lookbook.');
+        return redirect()->route('admin.plugins.vani-lookbook.edit', $lookbook->id)->with('success', __('vani-lookbook::texts.lookbook_controller.lookbook_saved'));
     }
 
     public function edit(Lookbook $lookbook): Response
@@ -79,7 +79,7 @@ final class LookbookController
         Gate::authorize('lookbook.manage');
         $this->lookbooks->save($lookbook, $this->validated($request, $lookbook));
 
-        return back()->with('success', 'Đã lưu lookbook.');
+        return back()->with('success', __('vani-lookbook::texts.lookbook_controller.lookbook_saved'));
     }
 
     public function destroy(Lookbook $lookbook): RedirectResponse
@@ -87,7 +87,7 @@ final class LookbookController
         Gate::authorize('lookbook.manage');
         $this->lookbooks->delete($lookbook);
 
-        return redirect()->route('admin.plugins.vani-lookbook.index')->with('success', 'Đã xoá lookbook.');
+        return redirect()->route('admin.plugins.vani-lookbook.index')->with('success', __('vani-lookbook::texts.lookbook_controller.lookbook_deleted'));
     }
 
     private function form(?Lookbook $lookbook): Response
@@ -103,7 +103,7 @@ final class LookbookController
                 'category_id' => $lookbook->category_id, 'position' => $lookbook->position, 'active' => $lookbook->active, 'lock_version' => $lookbook->lock_version,
                 'public_url' => $lookbook->active ? vani_route('storefront.p.vani-lookbook.show', $lookbook->slug) : null,
             ],
-            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : ' (đang ẩn)')], $this->catalog->search('category', '', StoreLocale::default(), 200)),
+            'categories' => array_map(fn (array $category): array => ['value' => $category['id'], 'label' => $category['name'].($category['visible'] ? '' : __('vani-lookbook::texts.lookbook_controller.hidden'))], $this->catalog->search('category', '', StoreLocale::default(), 200)),
             'urls' => [
                 'index' => route('admin.plugins.vani-lookbook.index'),
                 'save' => $lookbook === null ? route('admin.plugins.vani-lookbook.store') : route('admin.plugins.vani-lookbook.update', $lookbook->id),

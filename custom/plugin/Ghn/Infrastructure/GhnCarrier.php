@@ -44,7 +44,7 @@ final class GhnCarrier implements ShippingCarrier, ShippingRateProvider
 
     public function label(): string
     {
-        return 'Giao Hàng Nhanh (GHN)';
+        return __('vani-ghn::texts.ghn_carrier.carrier_name');
     }
 
     public function capabilities(): CarrierCapabilities
@@ -81,11 +81,11 @@ final class GhnCarrier implements ShippingCarrier, ShippingRateProvider
         $eventToken = (string) $request->input('Token');
 
         if ($tracking === '' || $ghnStatus === '' || $eventToken === '') {
-            throw new InvalidCarrierEvent('Thiếu dữ liệu webhook GHN bắt buộc.');
+            throw new InvalidCarrierEvent(__('vani-ghn::texts.ghn_carrier.required_ghn_webhook_data_missing'));
         }
 
         if (! hash_equals($this->webhookSecret, $eventToken)) {
-            throw new InvalidCarrierEvent('Token webhook GHN không khớp bí mật.');
+            throw new InvalidCarrierEvent(__('vani-ghn::texts.ghn_carrier.ghn_webhook_token_does_not'));
         }
 
         $standardStatus = $this->mapGhnStatus($ghnStatus);
@@ -95,7 +95,7 @@ final class GhnCarrier implements ShippingCarrier, ShippingRateProvider
             status: $standardStatus,
             eventId: (string) ($request->input('EventId') ?: "ghn-evt-{$tracking}-".time()),
             occurredAt: new DateTimeImmutable,
-            description: "GHN trạng thái: {$ghnStatus}",
+            description: __('vani-ghn::texts.ghn_carrier.ghn_status_ghn_status', ['ghn_status' => $ghnStatus]),
             maskedPayload: [
                 'OrderCode' => $tracking,
                 'Status' => $ghnStatus,
@@ -112,14 +112,14 @@ final class GhnCarrier implements ShippingCarrier, ShippingRateProvider
     public function options(TotalsContext $context): array
     {
         $services = $this->services !== [] ? $this->services : [
-            'ghn_standard' => ['label' => 'Giao Hàng Nhanh (Tiêu chuẩn 2-3 ngày)', 'fee' => 30_000],
+            'ghn_standard' => ['label' => __('vani-ghn::texts.ghn_carrier.service_standard'), 'fee' => 30_000],
         ];
 
         $options = [];
         foreach ($services as $code => $service) {
             $options[] = new ShippingOption(
                 code: $code,
-                label: $service['label'],
+                label: __($service['label']),
                 fee: Money::vnd($service['fee']),
                 source: self::CODE,
             );

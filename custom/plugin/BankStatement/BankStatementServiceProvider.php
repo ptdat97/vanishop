@@ -23,10 +23,11 @@ final class BankStatementServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->adminTool('payment', 'import_statement', 'Nhập sao kê ngân hàng', 'payments.confirm', handle: function (UploadedFile $file): string {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-bank-statement');
+        $this->adminTool('payment', 'import_statement', 'vani-bank-statement::texts.bank_statement_service_provider.import_bank_statement', 'payments.confirm', handle: function (UploadedFile $file): string {
             $result = $this->app->make(StatementMatcher::class)->import(SpreadsheetRows::fromUpload($file));
 
-            return "Đã xác nhận {$result['confirmed']} chuyển khoản; {$result['mismatched']} giao dịch lệch (xem \"Đối soát lệch\"); bỏ qua {$result['duplicate']} giao dịch đã nhập.";
-        }, help: 'File .xlsx/.csv ngân hàng xuất: cột "Mã GD", "Số tiền", "Nội dung". Chuyển khoản có số đơn trong nội dung và đúng số tiền được xác nhận ngay.');
+            return __('vani-bank-statement::texts.bank_statement_service_provider.confirmed_confirmed_transfers_mismatched_mismatched', ['confirmed' => $result['confirmed'], 'mismatched' => $result['mismatched'], 'duplicate' => $result['duplicate']]);
+        }, help: 'vani-bank-statement::texts.bank_statement_service_provider.xlsx_csv_file_exported_bank');
     }
 }

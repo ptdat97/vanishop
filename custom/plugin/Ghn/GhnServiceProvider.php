@@ -30,6 +30,7 @@ final class GhnServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-ghn');
         $this->contribute(ShippingCarrier::CARRIERS_TAG, GhnCarrier::class);
         $this->contribute(ShippingRateProvider::TAG, GhnCarrier::class);
     }

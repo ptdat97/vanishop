@@ -43,16 +43,17 @@ final class ReportsServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->permissions([self::PERMISSION => 'Xem báo cáo bán hàng và widget doanh thu']);
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-reports');
+        $this->permissions([self::PERMISSION => 'vani-reports::texts.reports_service_provider.view_sales_reports_revenue_widgets']);
 
         foreach ([RevenueTodayWidget::class, OrdersToProcessWidget::class, Revenue30DaysWidget::class, Sales14DaysWidget::class, TopProductsWidget::class] as $widget) {
             $this->contribute(DashboardWidget::TAG, $widget);
         }
 
         // Tab "Kết quả" trên trang chiến dịch (Promotion → Chiến dịch): ghép số liệu Promotion + Ordering (M3).
-        $this->adminTab('campaign', 'results', 'Kết quả', rows: fn (int $campaignId): array => Gate::allows(self::PERMISSION)
+        $this->adminTab('campaign', 'results', 'vani-reports::texts.reports_service_provider.result', rows: fn (int $campaignId): array => Gate::allows(self::PERMISSION)
             ? $this->app->make(CampaignResults::class)->rows($campaignId)
-            : [['label' => 'Cần quyền xem báo cáo', 'value' => '']]);
+            : [['label' => __('vani-reports::texts.reports_service_provider.requires_permission_view_reports'), 'value' => '']]);
 
         foreach ([DailySalesReport::class, ProductSalesReport::class, BrandSalesReport::class, PaymentMethodSalesReport::class, ChannelSalesReport::class,
             GrossProfitDailyReport::class, GrossProfitByProductReport::class, ReturnsByProductReport::class, ReturnReasonsReport::class] as $report) {

@@ -23,6 +23,7 @@ final class VideoYoutubeServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-video-youtube');
         $this->contribute(VideoDriver::TAG, YoutubeDriver::class);
     }
 }

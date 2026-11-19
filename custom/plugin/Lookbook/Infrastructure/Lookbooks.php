@@ -36,23 +36,23 @@ final class Lookbooks
             $translations[$locale] = array_intersect_key($values, array_flip(['name', 'description', 'meta_title', 'meta_description']));
         }
         if (($translations[$default]['name'] ?? null) === null) {
-            throw ValidationException::withMessages(["translations.{$default}.name" => 'Cần tên ở ngôn ngữ mặc định.']);
+            throw ValidationException::withMessages(["translations.{$default}.name" => __('vani-lookbook::texts.lookbooks.name_default_language_required')]);
         }
 
         $slug = Str::slug((string) (($data['slug'] ?? '') ?: $translations[$default]['name']));
         if ($slug === '' || Lookbook::query()->where('slug', $slug)->when($lookbook !== null, fn ($query) => $query->whereKeyNot($lookbook->id))->exists()) {
-            throw ValidationException::withMessages(['slug' => 'Đường dẫn trống hoặc đã có lookbook khác dùng.']);
+            throw ValidationException::withMessages(['slug' => __('vani-lookbook::texts.lookbooks.path_empty_already_used_another')]);
         }
 
         $images = array_values(array_filter($data['images'] ?? [], fn (array $image): bool => $image['media_id'] > 0));
         if (count($images) > self::MAX_IMAGES) {
-            throw ValidationException::withMessages(['images' => 'Tối đa '.self::MAX_IMAGES.' ảnh.']);
+            throw ValidationException::withMessages(['images' => __('vani-lookbook::texts.lookbooks.most').self::MAX_IMAGES.__('vani-lookbook::texts.lookbooks.photos')]);
         }
         $cover = isset($data['cover_media_id']) ? (int) $data['cover_media_id'] : null;
         $mediaIds = array_values(array_unique([...array_map(fn (array $image): int => (int) $image['media_id'], $images), ...($cover === null ? [] : [$cover])]));
         $found = $mediaIds === [] ? [] : $this->media->find($mediaIds);
         if (count($found) !== count($mediaIds)) {
-            throw ValidationException::withMessages(['images' => 'Có ảnh không còn trong Thư viện ảnh.']);
+            throw ValidationException::withMessages(['images' => __('vani-lookbook::texts.lookbooks.some_images_no_longer_media')]);
         }
 
         return DB::transaction(function () use ($lookbook, $data, $translations, $slug, $images, $cover): Lookbook {
@@ -60,7 +60,7 @@ final class Lookbooks
                 // Tăng phiên bản có điều kiện: hai người lưu cùng lúc → chỉ một người thành công.
                 $updated = Lookbook::query()->whereKey($lookbook->id)->where('lock_version', (int) ($data['lock_version'] ?? -1))->increment('lock_version');
                 if ($updated === 0) {
-                    throw ValidationException::withMessages(['lock_version' => 'Lookbook đã được người khác cập nhật. Tải lại trang rồi sửa lại.']);
+                    throw ValidationException::withMessages(['lock_version' => __('vani-lookbook::texts.lookbooks.lookbook_was_updated_someone_else')]);
                 }
                 $lookbook->lock_version = (int) $data['lock_version'] + 1;
                 $lookbook->syncOriginalAttribute('lock_version');

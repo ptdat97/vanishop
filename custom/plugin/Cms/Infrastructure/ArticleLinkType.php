@@ -16,7 +16,7 @@ final class ArticleLinkType extends ContentLinkType
 
     public function label(): string
     {
-        return 'Bài viết';
+        return __('vani-cms::texts.article_link_type.posts');
     }
 
     protected function query(): Builder

@@ -15,12 +15,12 @@ final class IdempotencyConflict extends BusinessRuleViolation
 
     public static function differentRequest(): self
     {
-        return new self('idempotency.conflict', 'Idempotency-Key đã được dùng cho một yêu cầu khác.');
+        return new self('idempotency.conflict', __('shared::texts.idempotency_conflict.idempotency_key_was_already_used'));
     }
 
     public static function inProgress(): self
     {
-        return new self('idempotency.in_progress', 'Yêu cầu với Idempotency-Key này đang được xử lý. Vui lòng thử lại sau.');
+        return new self('idempotency.in_progress', __('shared::texts.idempotency_conflict.request_idempotency_key_being_processed'));
     }
 
     public function errorCode(): string

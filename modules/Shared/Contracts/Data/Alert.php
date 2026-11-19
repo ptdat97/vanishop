@@ -40,10 +40,10 @@ final readonly class Alert
     /** Dòng tiêu đề ngắn cho email/tin nhắn, vd. "[KHẨN] Message order.* vào dead". */
     public function subject(): string
     {
-        $level = ['critical' => 'KHẨN', 'high' => 'CAO', 'normal' => 'THƯỜNG'][$this->severity] ?? strtoupper($this->severity);
+        $level = ['critical' => __('shared::texts.alert.urgent'), 'high' => 'CAO', 'normal' => __('shared::texts.alert.normal')][$this->severity] ?? strtoupper($this->severity);
         $prefix = match ($this->state) {
-            self::RESOLVED => "[ĐÃ ỔN] [{$level}]",
-            self::REMINDER => "[CÒN] [{$level}]",
+            self::RESOLVED => __('shared::texts.alert.resolved_level', ['level' => $level]),
+            self::REMINDER => __('shared::texts.alert.ongoing_level', ['level' => $level]),
             default => "[{$level}]",
         };
 

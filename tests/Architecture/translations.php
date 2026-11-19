@@ -249,8 +249,9 @@ function translationParityProblems(): array
                 $problems[] = "{$where}: {$key} thiếu ở vi";
             }
             foreach (array_intersect_key($vi, $en) as $key => $text) {
-                preg_match_all('/(?<![:\w]):([a-z_]+)/', $text, $viParams);
-                preg_match_all('/(?<![:\w]):([a-z_]+)/', $en[$key], $enParams);
+                // `[:x` là cú pháp minh hoạ (vd. "hãng[:dịch vụ]"), không phải tham số; `:x` dính chữ có dấu cũng không.
+                preg_match_all('/(?<![:\w\[]):([a-z_]+)(?!\pL)/u', $text, $viParams);
+                preg_match_all('/(?<![:\w\[]):([a-z_]+)(?!\pL)/u', $en[$key], $enParams);
                 $viParams = array_unique($viParams[1]);
                 $enParams = array_unique($enParams[1]);
                 sort($viParams);
@@ -306,11 +307,18 @@ function translationJsonUsages(): array
  */
 function translationExemptFile(string $file): bool
 {
-    return preg_match('#(^|/)Console/|HealthCheck[^/]*\.php$|^custom/plugin/HelloWorld/|/config/|^app/Console/#', $file) === 1;
+    // modules/*/Domain, Shared/Context: Domain thuần (không phụ thuộc framework) — thông báo exception nội bộ, tầng
+    // Application/Http đổi sang thông báo có khoá dịch; nhãn dự phòng (vd. CustomerStatus) được dịch ở Application.
+    // Testing/: bộ contract test gửi cho plugin (code test); hooks.php: mô tả hook cho dev viết plugin; app/Observability,
+    // app/Livewire (Pulse): cảnh báo và bảng theo dõi vận hành — như log/health-check.
+    return preg_match('#(^|/)Console/|HealthCheck[^/]*\.php$|^custom/plugin/HelloWorld/|/config/|^app/Console/|(^|/)Testing/|(^|/)hooks\.php$|^modules/[^/]+/Domain/|^modules/Shared/Context/|^app/Observability/|^app/Livewire/|^resources/views/livewire/pulse/#', $file) === 1;
 }
 
-/** Dòng PHP không dịch: log, exception cho dev, mô tả lệnh. */
-const TRANSLATION_EXEMPT_LINE = '/\b(Log::|logger\(|->(debug|info|notice|warning|error|critical|alert|emergency)\(|throw new \\\\?(RuntimeException|LogicException|InvalidArgumentException|UnexpectedValueException|DomainException|OutOfBoundsException|LengthException)\b|\$(signature|description)\s*=)/';
+/**
+ * Dòng PHP không dịch: log, exception cho dev, mô tả lệnh, thông báo deprecated; dòng đánh dấu `// i18n-ignore: <lý do>`
+ * (dữ liệu, không phải chữ hiển thị — vd. tiêu đề cột của định dạng file nhập/xuất, regex nhận diện cột).
+ */
+const TRANSLATION_EXEMPT_LINE = '/\bLog::|\blogger\(|->(?:debug|info|notice|warning|error|critical|alert|emergency)\(|\bthrow new \\\\?(?:RuntimeException|LogicException|InvalidArgumentException|UnexpectedValueException|DomainException|OutOfBoundsException|LengthException)\b|\$(?:signature|description)\s*=|#\[\\\\?Deprecated\(|\bpreg_(?:replace|match|split|quote)(?:_all|_callback)?\(|\bi18n-ignore\b/';
 
 /**
  * Luật 5: chữ tiếng Việt ngoài lời gọi dịch, đếm theo file.

@@ -109,7 +109,7 @@ final class DeprecationScanner
             };
             foreach ($target?->getAttributes(Deprecated::class) ?? [] as $attribute) {
                 $deprecated = $attribute->newInstance();
-                $found[] = ["{$class}::{$member[1]}", trim(($deprecated->message ?? '').($deprecated->since !== null ? " (từ {$deprecated->since})" : '')), $member[2]];
+                $found[] = ["{$class}::{$member[1]}", trim(($deprecated->message ?? '').($deprecated->since !== null ? __('extension::texts.deprecation_scanner.since_since', ['since' => $deprecated->since]) : '')), $member[2]];
             }
         }
 

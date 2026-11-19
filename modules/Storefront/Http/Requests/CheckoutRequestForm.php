@@ -43,7 +43,7 @@ final class CheckoutRequestForm extends FormRequest
             // Trường bổ sung của plugin: {"<plugin id>": {"<field>": scalar}} — tối đa 10 plugin × 20 trường.
             'extra' => ['nullable', 'array', 'max:10'],
             'extra.*' => ['array', 'max:20'],
-            'extra.*.*' => ['nullable', 'max:500', fn (string $attribute, mixed $value, Closure $fail) => is_scalar($value) || $value === null ? null : $fail('Giá trị phải là chuỗi/số/đúng sai.')],
+            'extra.*.*' => ['nullable', 'max:500', fn (string $attribute, mixed $value, Closure $fail) => is_scalar($value) || $value === null ? null : $fail(__('storefront::texts.checkout_request_form.value_must_string_number_boolean'))],
             'expected_total' => [$placing ? 'required' : 'nullable', 'integer', 'min:0'],
         ];
 

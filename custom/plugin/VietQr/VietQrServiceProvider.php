@@ -28,6 +28,7 @@ final class VietQrServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-vietqr');
         $this->contribute(PaymentGateway::TAG, VietQrGateway::class);
     }
 }

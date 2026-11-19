@@ -26,19 +26,19 @@ final class InBrandsRule implements CartContentRule
 
     public function label(): string
     {
-        return 'Thuộc thương hiệu';
+        return __('vani-promotion-rules::texts.in_brands_rule.brand');
     }
 
     public function validateConfig(array $config): array
     {
         $slugs = $config['slugs'] ?? null;
         if (! is_array($slugs) || $slugs === []) {
-            return ['Cần khai báo danh sách slug "slugs" không rỗng.'];
+            return [__('vani-promotion-rules::texts.in_brands_rule.non_empty_slugs_list_required')];
         }
 
         foreach ($slugs as $slug) {
             if (! is_string($slug) || trim($slug) === '') {
-                return ['Mỗi slug trong "slugs" phải là chuỗi không rỗng.'];
+                return [__('vani-promotion-rules::texts.in_brands_rule.every_slug_slugs_must_non')];
             }
         }
 

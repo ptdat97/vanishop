@@ -26,8 +26,8 @@ final class SettingsController
 
             return [
                 'namespace' => $namespace,
-                'title' => $namespace === 'core' ? 'Cấu hình chung' : ($manifest?->displayName(app()->getLocale()) ?? "Plugin {$namespace}"),
-                'subtitle' => $namespace === 'core' ? 'Thiết lập nền tảng' : $namespace,
+                'title' => $namespace === 'core' ? __('extension::texts.settings_controller.general_settings') : ($manifest?->displayName(app()->getLocale()) ?? "Plugin {$namespace}"),
+                'subtitle' => $namespace === 'core' ? __('extension::texts.settings_controller.platform_setup') : $namespace,
                 'url' => route('admin.settings.show', $namespace),
             ];
         }, $admin->namespaces());
@@ -47,8 +47,8 @@ final class SettingsController
             'baseUrl' => route('admin.settings.index'),
             'action' => route('admin.settings.update'),
             'namespace' => $namespace,
-            'title' => $namespace === 'core' ? 'Cấu hình chung' : ($manifest?->displayName(app()->getLocale()) ?? "Plugin {$namespace}"),
-            'subtitle' => $namespace === 'core' ? 'Thiết lập nền tảng' : $namespace,
+            'title' => $namespace === 'core' ? __('extension::texts.settings_controller.general_settings') : ($manifest?->displayName(app()->getLocale()) ?? "Plugin {$namespace}"),
+            'subtitle' => $namespace === 'core' ? __('extension::texts.settings_controller.platform_setup') : $namespace,
             'fields' => $admin->form($namespace),
         ]);
     }
@@ -62,6 +62,6 @@ final class SettingsController
         ]);
         $admin->save($data['namespace'], $data['values']);
 
-        return back()->with('success', 'Đã lưu cấu hình.');
+        return back()->with('success', __('extension::texts.settings_controller.settings_saved'));
     }
 }

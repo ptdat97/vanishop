@@ -19,17 +19,17 @@ final class HeroBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Banner chính';
+        return __('storefront::texts.hero_block.hero_banner');
     }
 
     public function fields(): array
     {
         return [
-            FieldDefinition::string('title', 'Tiêu đề', required: true, max: 120),
-            FieldDefinition::text('subtitle', 'Mô tả ngắn', max: 300),
-            FieldDefinition::media('image', 'Ảnh', help: 'Chọn từ Thư viện ảnh — tự có bản vừa màn hình (srcset).'),
-            FieldDefinition::string('link_label', 'Chữ trên nút', max: 40),
-            FieldDefinition::string('link_url', 'Đường dẫn nút', help: 'Đường dẫn trong website, vd. /thuong-hieu/urbanx', max: 300),
+            FieldDefinition::string('title', __('storefront::texts.hero_block.title'), required: true, max: 120),
+            FieldDefinition::text('subtitle', __('storefront::texts.hero_block.short_description'), max: 300),
+            FieldDefinition::media('image', __('storefront::texts.hero_block.image'), help: __('storefront::texts.hero_block.choose_from_media_library_responsive')),
+            FieldDefinition::string('link_label', __('storefront::texts.hero_block.button_text'), max: 40),
+            FieldDefinition::string('link_url', __('storefront::texts.hero_block.button_link'), help: __('storefront::texts.hero_block.path_within_website_thuong_hieu'), max: 300),
         ];
     }
 

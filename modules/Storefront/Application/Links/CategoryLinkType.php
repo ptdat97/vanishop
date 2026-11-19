@@ -10,7 +10,7 @@ final class CategoryLinkType extends CatalogLinkType
 {
     public function label(): string
     {
-        return 'Danh mục';
+        return __('storefront::texts.category_link_type.category');
     }
 
     protected function kind(): string

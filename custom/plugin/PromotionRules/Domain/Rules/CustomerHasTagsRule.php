@@ -26,17 +26,17 @@ final class CustomerHasTagsRule implements PromotionRule
 
     public function label(): string
     {
-        return 'Khách có tag';
+        return __('vani-promotion-rules::texts.customer_has_tags_rule.customer_has_tag');
     }
 
     public function validateConfig(array $config): array
     {
         $errors = [];
         if (! is_array($config['tags'] ?? null) || $config['tags'] === []) {
-            $errors[] = 'Nhập ít nhất một tag (tags).';
+            $errors[] = __('vani-promotion-rules::texts.customer_has_tags_rule.enter_least_one_tag_tags');
         }
         if (isset($config['match']) && ! in_array($config['match'], ['any', 'all'], true)) {
-            $errors[] = 'match phải là any hoặc all.';
+            $errors[] = __('vani-promotion-rules::texts.customer_has_tags_rule.match_must_any_all');
         }
 
         return $errors;

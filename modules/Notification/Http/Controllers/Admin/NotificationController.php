@@ -35,7 +35,7 @@ final class NotificationController
 
         return Inertia::render('Notification::Templates/Index', [
             'baseUrl' => route('admin.notifications.templates.index'),
-            'types' => array_map(fn (NotificationType $type): array => ['label' => $type->label, 'variables' => $type->variables], $catalog->types()),
+            'types' => array_map(fn (NotificationType $type): array => ['label' => __($type->label), 'variables' => $type->variables], $catalog->types()),
             'channels' => array_keys($channels->all()),
             'templates' => $this->queries->templates()
                 ->map(fn (NotificationTemplate $template): array => $this->present($template))->all(),
@@ -83,7 +83,7 @@ final class NotificationController
             'baseUrl' => route('admin.notifications.logs'),
             'labels' => __('notification::labels'),
             // Tên loại thông báo (NotificationCatalog) thay cho mã thô — 0.3.101.
-            'typeLabels' => array_map(fn (NotificationType $type): string => $type->label, $catalog->types()),
+            'typeLabels' => array_map(fn (NotificationType $type): string => __($type->label), $catalog->types()),
             'filters' => ['status' => $status, 'q' => $q, 'per_page' => $page->perPage()],
             'sort' => $sort?->toArray(),
             'statuses' => [NotificationLog::QUEUED, NotificationLog::SENT, NotificationLog::FAILED, NotificationLog::SKIPPED],

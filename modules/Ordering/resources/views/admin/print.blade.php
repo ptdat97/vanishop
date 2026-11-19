@@ -4,12 +4,12 @@
     Dưới số đơn có mã vạch Code 128 của số đơn — SVG do Core sinh, chỉ gồm các thanh.
 --}}
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Phiếu giao {{ count($orders) === 1 ? $orders[0]['number'] : count($orders).' đơn' }}</title>
+    <title>{{ count($orders) === 1 ? __('ordering::texts.print.title_one', ['number' => $orders[0]['number']]) : __('ordering::texts.print.title_many', ['count' => count($orders)]) }}</title>
     <style>
         @page { size: A5; margin: 10mm; }
         * { box-sizing: border-box; }
@@ -39,22 +39,22 @@
 </head>
 <body>
     <div class="toolbar">
-        <span>{{ count($orders) }} phiếu giao</span>
+        <span>{{ __('ordering::texts.print.slip_count', ['count' => count($orders)]) }}</span>
         @if (count($templates ?? []) > 1)
-            <span>Mẫu:
+            <span>{{ __('ordering::texts.print.template') }}
                 @foreach ($templates as $template)
                     @if ($template['code'] === ($current ?? null))<strong>{{ $template['label'] }}</strong>@else<a href="{{ $template['url'] }}">{{ $template['label'] }}</a>@endif{{ $loop->last ? '' : ' · ' }}
                 @endforeach
             </span>
         @endif
-        <button type="button" onclick="window.print()">In</button>
+        <button type="button" onclick="window.print()">{{ __('ordering::texts.print.print') }}</button>
     </div>
     @foreach ($orders as $order)
         <section class="slip" data-order="{{ $order['number'] }}">
             <div class="head">
                 <div>
                     <div class="shop">{{ $shopName }}</div>
-                    <div class="muted">Phiếu giao hàng · đặt {{ $order['placed_at'] }}</div>
+                    <div class="muted">{{ __('ordering::texts.print.slip_placed_at', ['date' => $order['placed_at']]) }}</div>
                 </div>
                 <div>
                     <div class="number">{{ $order['number'] }}</div>
@@ -63,15 +63,15 @@
                 </div>
             </div>
 
-            <h2>Người nhận</h2>
+            <h2>{{ __('ordering::texts.print.recipient') }}</h2>
             <div class="to">
                 <strong>{{ $order['recipient'] }}</strong> · {{ $order['phone'] }}<br>
                 {{ $order['address'] }}
             </div>
 
-            <h2>Sản phẩm ({{ $order['item_count'] }})</h2>
+            <h2>{{ __('ordering::texts.print.products', ['count' => $order['item_count']]) }}</h2>
             <table>
-                <thead><tr><th>Sản phẩm</th><th class="qty">SL</th></tr></thead>
+                <thead><tr><th>{{ __('ordering::texts.print.product') }}</th><th class="qty">{{ __('ordering::texts.print.quantity_short') }}</th></tr></thead>
                 <tbody>
                     @foreach ($order['lines'] as $line)
                         <tr>
@@ -83,12 +83,12 @@
             </table>
 
             @if ($order['collect_on_delivery'] !== null)
-                <div class="collect"><span>THU HỘ (COD)</span><span>{{ $order['collect_on_delivery'] }}</span></div>
+                <div class="collect"><span>{{ __('ordering::texts.print.collect_cod') }}</span><span>{{ $order['collect_on_delivery'] }}</span></div>
             @else
-                <div class="collect paid"><span>Đã thanh toán — không thu tiền</span><span>{{ $order['total'] }}</span></div>
+                <div class="collect paid"><span>{{ __('ordering::texts.print.paid_no_collect') }}</span><span>{{ $order['total'] }}</span></div>
             @endif
             @if ($order['note'])
-                <div class="note">Ghi chú của khách: {{ $order['note'] }}</div>
+                <div class="note">{{ __('ordering::texts.print.customer_note', ['note' => $order['note']]) }}</div>
             @endif
         </section>
     @endforeach

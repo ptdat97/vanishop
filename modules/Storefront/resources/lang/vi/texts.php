@@ -1,0 +1,116 @@
+<?php
+
+// Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
+
+return [
+    'brand_grid_block' => [
+        'brand_grid' => 'Lưới thương hiệu',
+        'title' => 'Tiêu đề',
+    ],
+    'brand_link_type' => [
+        'brand' => 'Thương hiệu',
+    ],
+    'catalog_link_type' => [
+        'name_hidden' => ':name (đang ẩn)',
+    ],
+    'category_link_type' => [
+        'category' => 'Danh mục',
+    ],
+    'checkout_request_form' => [
+        'value_must_string_number_boolean' => 'Giá trị phải là chuỗi/số/đúng sai.',
+    ],
+    'collection_link_type' => [
+        'collections' => 'Bộ sưu tập',
+    ],
+    'hero_block' => [
+        'button_link' => 'Đường dẫn nút',
+        'button_text' => 'Chữ trên nút',
+        'choose_from_media_library_responsive' => 'Chọn từ Thư viện ảnh — tự có bản vừa màn hình (srcset).',
+        'hero_banner' => 'Banner chính',
+        'image' => 'Ảnh',
+        'path_within_website_thuong_hieu' => 'Đường dẫn trong website, vd. /thuong-hieu/urbanx',
+        'short_description' => 'Mô tả ngắn',
+        'title' => 'Tiêu đề',
+    ],
+    'menu_repository' => [
+        'end_time_must_after_start' => 'Thời điểm kết thúc phải sau thời điểm bắt đầu.',
+        'invalid_badge' => 'Huy hiệu không hợp lệ.',
+        'invalid_link_link_type_no' => 'Link không hợp lệ hoặc loại link không còn.',
+        'invalid_time' => 'Thời điểm không hợp lệ.',
+        'items_per_menu' => ' mục mỗi menu.',
+        'items_without_link_need_label' => 'Mục không có link cần nhãn (tiêu đề nhóm).',
+        'location_allows_most_max_depth' => 'Vị trí này tối đa :max_depth cấp.',
+        'most' => 'Tối đa ',
+        'theme_has_no_such_menu' => 'Theme không có vị trí menu này.',
+        'version_does_not_exist' => 'Không có phiên bản này.',
+    ],
+    'page_blocks' => [
+        'block_type_does_not_exist' => 'Loại khối không có hoặc plugin đã tắt.',
+        'blocks' => ' khối.',
+        'characters' => ' ký tự.',
+        'content_must_not_exceed' => 'Nội dung không được vượt quá ',
+        'most' => 'Tối đa ',
+    ],
+    'product_grid_block' => [
+        'brand' => 'Thương hiệu',
+        'category' => 'Danh mục',
+        'category_collection_brand_slug' => 'Slug danh mục/bộ sưu tập/thương hiệu',
+        'collections' => 'Bộ sưu tập',
+        'leave_empty_when_source_newest' => 'Bỏ trống khi nguồn là "Mới nhất".',
+        'newest' => 'Mới nhất',
+        'number_products_1_24' => 'Số sản phẩm (1–24)',
+        'product_grid' => 'Lưới sản phẩm',
+        'source' => 'Nguồn',
+        'title' => 'Tiêu đề',
+    ],
+    'product_link_type' => [
+        'products' => 'Sản phẩm',
+    ],
+    'return_form_presenter' => [
+        'unchanged' => ' (như cũ)',
+    ],
+    'rich_text_block' => [
+        'content' => 'Nội dung',
+        'text_block' => 'Đoạn văn bản',
+        'title' => 'Tiêu đề',
+    ],
+    'route_link_type' => [
+        'account' => 'Tài khoản',
+        'all_products' => 'Tất cả sản phẩm',
+        'brand' => 'Thương hiệu',
+        'cart' => 'Giỏ hàng',
+        'category' => 'Danh mục',
+        'home_page' => 'Trang chủ',
+        'my_orders' => 'Đơn hàng của tôi',
+        'store_page' => 'Trang của cửa hàng',
+        'track_order' => 'Tra cứu đơn hàng',
+    ],
+    'storefront_service_provider' => [
+        'category_brand_search_pages_storefront' => 'Trang danh mục, thương hiệu, tìm kiếm và Storefront API khi không truyền per_page (12–60).',
+        'content_design' => 'Nội dung & giao diện',
+        'design_tokens_json' => 'Token giao diện (JSON)',
+        'edit_storefront_design_home_page' => 'Sửa giao diện cửa hàng (trang chủ, menu, đầu & chân trang)',
+        'everyone' => 'Mọi người',
+        'facebook_zalo_image_shown_when' => 'Ảnh Facebook/Zalo hiện khi chia sẻ link trang không có ảnh riêng (trang chủ, danh mục chưa có ảnh…). Nên ảnh ngang 1200 × 630 px.',
+        'featured_search_keywords' => 'Từ khoá tìm kiếm nổi bật',
+        'link_sharing_image' => 'Ảnh khi chia sẻ link',
+        'maintenance_message' => 'Thông báo bảo trì',
+        'maintenance_page_text_leave_empty' => 'Nội dung trang bảo trì. Để trống: dùng câu mặc định của theme.',
+        'one_keyword_per_line_most' => 'Mỗi dòng một từ khoá (tối đa 10): gợi ý ở ô tìm kiếm và trang tìm kiếm khi chưa gõ.',
+        'override_theme_s_tokens_color' => 'Ghi đè token của theme, vd. {"color-primary": "#0f766e", "radius": "0.75rem"} → CSS variables --vani-*.',
+        'products_per_page' => 'Số sản phẩm mỗi trang',
+        'show_prices' => 'Hiện giá',
+        'shown_under_store_name_google' => 'Hiện dưới tên cửa hàng trên Google và khi chia sẻ link trang chủ lên Facebook/Zalo; trang không có mô tả riêng cũng dùng câu này. Nên 1–2 câu, dưới 160 ký tự.',
+        'signed_customers_only' => 'Chỉ khách đã đăng nhập',
+        'signed_customers_only_guests_see' => '"Chỉ khách đã đăng nhập": khách chưa đăng nhập thấy "Đăng nhập để xem giá", không thêm giỏ/đặt hàng được; Storefront API trả giá null, JSON-LD không có giá. Trang đã cache ở CDN còn bản cũ tới khi hết TTL — xoá cache CDN sau khi đổi.',
+        'store_description_google_link_sharing' => 'Mô tả cửa hàng (Google, chia sẻ link)',
+        'store_maintenance' => 'Bảo trì cửa hàng',
+        'store_s_active_theme_custom' => 'Theme đang hoạt động của cửa hàng (custom/theme/*). Theme con chỉ override vài view, còn lại theo theme cha → vani-base.',
+        'storefront_design' => 'Giao diện',
+        'storefront_storefront_api_return_503' => 'Bật: storefront và Storefront API trả 503. IPN thanh toán, webhook vận chuyển, Integration API, /health vẫn chạy. Nhân viên xem trước qua Admin → Giao diện → "Xem trang" (cookie 12 giờ). Trang đã cache ở CDN còn hiện tới khi hết TTL — xoá cache CDN sau khi đổi.',
+        'storefront_theme' => 'Giao diện (theme)',
+    ],
+    'url_link_type' => [
+        'custom_path' => 'Đường dẫn tuỳ chọn',
+    ],
+];

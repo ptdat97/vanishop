@@ -36,8 +36,8 @@ final class ReconciliationQueries
             'id' => $run->id,
             'source' => $run->source,
             'source_label' => $run->source === InventoryReconciliation::SOURCE_INTERNAL_VERIFY
-                ? 'Đối soát nội bộ (vani:inventory:verify)'
-                : "Nguồn ngoài: {$run->source}",
+                ? __('inventory::texts.reconciliation_queries.internal_reconciliation_vaniinventoryverify')
+                : __('inventory::texts.reconciliation_queries.external_source_source', ['source' => $run->source]),
             'checked' => $run->checked,
             'discrepancies' => $run->discrepancies,
             'repaired' => $run->repaired,

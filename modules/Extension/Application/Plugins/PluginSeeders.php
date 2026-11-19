@@ -67,7 +67,7 @@ final class PluginSeeders
         $ran = [];
         foreach ($rerun ? $this->discover($manifest) : $this->pending($manifest) as $class) {
             if (! class_exists($class) || ! is_subclass_of($class, Seeder::class)) {
-                throw new PluginOperationFailed("Seeder [{$class}] của [{$manifest->id}] không tồn tại hoặc không kế thừa ".Seeder::class.'.');
+                throw new PluginOperationFailed(__('extension::texts.plugin_seeders.seeder_class_id_does_not', ['class' => $class, 'id' => $manifest->id]).Seeder::class.'.');
             }
 
             try {
@@ -78,7 +78,7 @@ final class PluginSeeders
                     DB::table(self::TABLE)->upsert([['plugin_id' => $manifest->id, 'seeder' => $class, 'ran_at' => now()]], ['plugin_id', 'seeder'], ['ran_at']);
                 });
             } catch (Throwable $exception) {
-                throw new PluginOperationFailed("Seeder [{$class}] của [{$manifest->id}] lỗi: {$exception->getMessage()}");
+                throw new PluginOperationFailed(__('extension::texts.plugin_seeders.seeder_class_id_failed_get', ['class' => $class, 'id' => $manifest->id, 'get_message' => $exception->getMessage()]));
             }
             $ran[] = $class;
         }

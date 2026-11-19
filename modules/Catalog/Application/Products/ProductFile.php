@@ -42,21 +42,21 @@ final class ProductFile
 
     /** Cột của Catalog: khoá => [tiêu đề khi xuất, các tiêu đề nhận khi nhập (đã bỏ dấu, chữ thường)]. */
     private const COLUMNS = [
-        'code' => ['Mã sản phẩm', ['ma san pham', 'ma', 'style code', 'style_code']],
-        'name' => ['Tên sản phẩm', ['ten san pham', 'ten', 'name']],
-        'status' => ['Trạng thái', ['trang thai', 'status']],
-        'brand' => ['Thương hiệu', ['thuong hieu', 'brand']],
-        'categories' => ['Danh mục (mã, cách nhau bằng |)', ['danh muc (ma, cach nhau bang |)', 'danh muc', 'categories', 'category']],
-        'description' => ['Mô tả', ['mo ta', 'description']],
-        'option1' => ['Tuỳ chọn 1', ['tuy chon 1', 'option 1']],
-        'value1' => ['Giá trị 1', ['gia tri 1', 'value 1']],
-        'option2' => ['Tuỳ chọn 2', ['tuy chon 2', 'option 2']],
-        'value2' => ['Giá trị 2', ['gia tri 2', 'value 2']],
-        'option3' => ['Tuỳ chọn 3', ['tuy chon 3', 'option 3']],
-        'value3' => ['Giá trị 3', ['gia tri 3', 'value 3']],
+        'code' => ['Mã sản phẩm', ['ma san pham', 'ma', 'style code', 'style_code']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'name' => ['Tên sản phẩm', ['ten san pham', 'ten', 'name']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'status' => ['Trạng thái', ['trang thai', 'status']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'brand' => ['Thương hiệu', ['thuong hieu', 'brand']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'categories' => ['Danh mục (mã, cách nhau bằng |)', ['danh muc (ma, cach nhau bang |)', 'danh muc', 'categories', 'category']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'description' => ['Mô tả', ['mo ta', 'description']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'option1' => ['Tuỳ chọn 1', ['tuy chon 1', 'option 1']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'value1' => ['Giá trị 1', ['gia tri 1', 'value 1']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'option2' => ['Tuỳ chọn 2', ['tuy chon 2', 'option 2']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'value2' => ['Giá trị 2', ['gia tri 2', 'value 2']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'option3' => ['Tuỳ chọn 3', ['tuy chon 3', 'option 3']], // i18n-ignore: tiêu đề cột file (định dạng file)
+        'value3' => ['Giá trị 3', ['gia tri 3', 'value 3']], // i18n-ignore: tiêu đề cột file (định dạng file)
         'sku' => ['SKU', ['sku', 'ma sku']],
         'barcode' => ['Barcode', ['barcode', 'ma vach']],
-        'weight' => ['Khối lượng (g)', ['khoi luong (g)', 'khoi luong', 'weight', 'weight (g)']],
+        'weight' => ['Khối lượng (g)', ['khoi luong (g)', 'khoi luong', 'weight', 'weight (g)']], // i18n-ignore: tiêu đề cột file (định dạng file)
     ];
 
     public function __construct(

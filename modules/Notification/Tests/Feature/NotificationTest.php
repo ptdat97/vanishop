@@ -44,6 +44,20 @@ beforeEach(function () {
     $this->mails = fn (): array => app('mailer')->getSymfonyTransport()->messages()->all();
 });
 
+it('L2: khách đặt đơn bằng tiếng Anh nhận mail theo mẫu en mặc định', function () {
+    $api = '/api/storefront/v1';
+    $headers = ['X-Vani-Locale' => 'en'];
+    $created = $this->postJson("{$api}/carts", [], $headers)->assertCreated();
+    $headers['X-Vani-Cart-Token'] = $created->json('meta.token');
+    $this->postJson("{$api}/carts/{$created->json('data.id')}/lines", ['variant_id' => $this->s->id, 'quantity' => 1], $headers)->assertOk();
+    $number = $this->postJson("{$api}/checkout/{$created->json('data.id')}/orders", C::orderPayload(['expected_total' => 330_000]), [...$headers, 'Idempotency-Key' => 'notify-en-1'])
+        ->assertCreated()->json('data.number');
+
+    $email = ($this->mails)()[0]->getOriginalMessage();
+    expect($email->getSubject())->toBe(config('app.name').": order {$number} received")
+        ->and($email->getTextBody())->toContain('Hi Nguyễn Thị Lan');
+});
+
 it('đặt đơn → email "đã nhận đơn" theo mẫu mặc định, có nhật ký; event chạy lại không gửi trùng', function () {
     $order = ($this->placeOrder)();
 
@@ -123,8 +137,8 @@ it('Admin: xem/sửa mẫu tin (khoá lạc quan, chống trùng), xem nhật k�
     $this->actingAs(StaffUser::factory()->withPermissions(['admin.access', 'notifications.view', 'notifications.manage'])->create(), 'staff');
 
     $this->get('/admin/notifications/templates')->assertInertia(fn (Assert $page) => $page->component('Notification::Templates/Index')
-        ->has('templates', 4)->where('channels', ['mail']));
-    $template = NotificationTemplate::query()->where('type', 'order_placed')->sole();
+        ->has('templates', 8)->where('channels', ['mail'])); // 4 loại tin × vi/en (L2)
+    $template = NotificationTemplate::query()->where('type', 'order_placed')->where('locale', 'vi')->sole();
     $this->put("/admin/notifications/templates/{$template->id}", ['subject' => 'Mới', 'lock_version' => 0])->assertSessionHasNoErrors();
     $this->put("/admin/notifications/templates/{$template->id}", ['subject' => 'Cũ', 'lock_version' => 0])->assertSessionHasErrors('lock_version');
     $this->post('/admin/notifications/templates', ['type' => 'order_placed', 'channel' => 'mail', 'subject' => 'x', 'body' => 'y'])->assertSessionHasErrors('type');
@@ -153,7 +167,8 @@ it('L33: nhật ký gửi tin sắp theo thời gian / trạng thái ở server,
 });
 
 it('đơn lưu ngôn ngữ lúc đặt; email theo mẫu ngôn ngữ của đơn, thiếu mẫu thì dùng ngôn ngữ mặc định (ADR-038 §8)', function () {
-    NotificationTemplate::query()->create(['type' => 'order_placed', 'channel' => 'mail', 'locale' => 'en', 'subject' => 'Order {{ order_number }} received', 'body' => 'Hi {{ customer_name }}', 'active' => true]);
+    // Mẫu `en` mặc định có sẵn (L2) — cửa hàng sửa lại.
+    NotificationTemplate::query()->where(['type' => 'order_placed', 'channel' => 'mail', 'locale' => 'en'])->update(['subject' => 'Order {{ order_number }} received', 'body' => 'Hi {{ customer_name }}']);
 
     $vi = ($this->placeOrder)('locale-vi');
     $api = '/api/storefront/v1';

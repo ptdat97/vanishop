@@ -44,11 +44,11 @@ final class CategoryController
     {
         Gate::authorize('cms.manage');
         if (Category::query()->count() >= Category::MAX) {
-            throw ValidationException::withMessages(['name' => 'Tối đa '.Category::MAX.' chuyên mục.']);
+            throw ValidationException::withMessages(['name' => __('vani-cms::texts.category_controller.most').Category::MAX.__('vani-cms::texts.category_controller.categories')]);
         }
         Category::query()->create($this->validated($request, null));
 
-        return back()->with('success', 'Đã lưu chuyên mục.');
+        return back()->with('success', __('vani-cms::texts.category_controller.category_saved'));
     }
 
     public function update(Request $request, Category $category): RedirectResponse
@@ -56,7 +56,7 @@ final class CategoryController
         Gate::authorize('cms.manage');
         $category->update($this->validated($request, $category));
 
-        return back()->with('success', 'Đã lưu chuyên mục.');
+        return back()->with('success', __('vani-cms::texts.category_controller.category_saved'));
     }
 
     public function destroy(Category $category): RedirectResponse
@@ -67,7 +67,7 @@ final class CategoryController
             $category->delete();
         });
 
-        return back()->with('success', 'Đã xoá chuyên mục.');
+        return back()->with('success', __('vani-cms::texts.category_controller.category_deleted'));
     }
 
     /**
@@ -85,7 +85,7 @@ final class CategoryController
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ]);
         if (Post::query()->where('slug', $data['slug'])->exists()) {
-            throw ValidationException::withMessages(['slug' => 'Đường dẫn đã là của một bài viết.']);
+            throw ValidationException::withMessages(['slug' => __('vani-cms::texts.category_controller.path_already_belongs_post')]);
         }
 
         return [...$data, 'sort_order' => (int) ($data['sort_order'] ?? 0)];

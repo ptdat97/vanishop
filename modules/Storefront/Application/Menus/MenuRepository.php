@@ -115,7 +115,7 @@ final class MenuRepository
     public function restore(string $location, int $version): void
     {
         $versions = $this->state($location)['versions'];
-        $items = $versions[$version]['items'] ?? throw ValidationException::withMessages(['version' => 'Không có phiên bản này.']);
+        $items = $versions[$version]['items'] ?? throw ValidationException::withMessages(['version' => __('storefront::texts.menu_repository.version_does_not_exist')]);
 
         $this->write($location, ['draft' => $items, 'updated_at' => now()->toIso8601String()]);
     }
@@ -134,7 +134,7 @@ final class MenuRepository
      */
     private function location(string $location): array
     {
-        return $this->locations()[$location] ?? throw ValidationException::withMessages(['location' => 'Theme không có vị trí menu này.']);
+        return $this->locations()[$location] ?? throw ValidationException::withMessages(['location' => __('storefront::texts.menu_repository.theme_has_no_such_menu')]);
     }
 
     /**
@@ -148,31 +148,31 @@ final class MenuRepository
             $key = "{$path}.{$index}";
             $item = is_array($item) ? $item : [];
             if (++$count > self::MAX_ITEMS) {
-                throw ValidationException::withMessages(['items' => 'Tối đa '.self::MAX_ITEMS.' mục mỗi menu.']);
+                throw ValidationException::withMessages(['items' => __('storefront::texts.menu_repository.most').self::MAX_ITEMS.__('storefront::texts.menu_repository.items_per_menu')]);
             }
 
             $label = array_filter(array_map(fn (mixed $text): string => mb_substr(trim((string) $text), 0, 80), (array) ($item['label'] ?? [])), fn (string $text): bool => $text !== '');
             $link = is_array($item['link'] ?? null) ? LinkTarget::fromArray($item['link']) : null;
             if ($link !== null && ! $this->links->accepts($link)) {
-                throw ValidationException::withMessages(["{$key}.link" => 'Link không hợp lệ hoặc loại link không còn.']);
+                throw ValidationException::withMessages(["{$key}.link" => __('storefront::texts.menu_repository.invalid_link_link_type_no')]);
             }
             if ($link === null && $label === []) {
-                throw ValidationException::withMessages(["{$key}.label" => 'Mục không có link cần nhãn (tiêu đề nhóm).']);
+                throw ValidationException::withMessages(["{$key}.label" => __('storefront::texts.menu_repository.items_without_link_need_label')]);
             }
 
             $badge = $item['badge'] ?? null;
             if ($badge !== null && $badge !== '' && ! in_array($badge, self::BADGES, true)) {
-                throw ValidationException::withMessages(["{$key}.badge" => 'Huy hiệu không hợp lệ.']);
+                throw ValidationException::withMessages(["{$key}.badge" => __('storefront::texts.menu_repository.invalid_badge')]);
             }
 
             [$from, $to] = [$this->time($item['visible_from'] ?? null, "{$key}.visible_from"), $this->time($item['visible_to'] ?? null, "{$key}.visible_to")];
             if ($from !== null && $to !== null && $from >= $to) {
-                throw ValidationException::withMessages(["{$key}.visible_to" => 'Thời điểm kết thúc phải sau thời điểm bắt đầu.']);
+                throw ValidationException::withMessages(["{$key}.visible_to" => __('storefront::texts.menu_repository.end_time_must_after_start')]);
             }
 
             $children = (array) ($item['children'] ?? []);
             if ($children !== [] && $level >= $maxDepth) {
-                throw ValidationException::withMessages(["{$key}.children" => "Vị trí này tối đa {$maxDepth} cấp."]);
+                throw ValidationException::withMessages(["{$key}.children" => __('storefront::texts.menu_repository.location_allows_most_max_depth', ['max_depth' => $maxDepth])]);
             }
 
             $media = $item['image_media_id'] ?? null;
@@ -200,7 +200,7 @@ final class MenuRepository
         try {
             return Carbon::parse((string) $value, StoreClock::timezone())->format('Y-m-d\TH:i');
         } catch (Throwable) {
-            throw ValidationException::withMessages([$key => 'Thời điểm không hợp lệ.']);
+            throw ValidationException::withMessages([$key => __('storefront::texts.menu_repository.invalid_time')]);
         }
     }
 }

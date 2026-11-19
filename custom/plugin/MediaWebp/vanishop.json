@@ -4,7 +4,7 @@
         "vi": "Ảnh WebP",
         "en": "WebP images"
     },
-    "version": "1.0.0",
+    "version": "1.0.1",
     "kind": "image_format",
     "provider": "Plugin\\MediaWebp\\MediaWebpServiceProvider",
     "requires": {

@@ -64,9 +64,9 @@ final class ReturnController
             // Số yêu cầu theo trạng thái trên các thẻ lọc (0.3.101).
             // Thao tác hàng loạt (0.3.102): duyệt; nhận hàng còn bán được hoặc hàng hỏng — yêu cầu không đúng trạng thái được bỏ qua.
             'actions' => Gate::allows('returns.manage') ? [
-                ['key' => 'approve', 'label' => 'Duyệt', 'url' => route('admin.returns.returns.bulk-approve'), 'confirm' => true],
-                ['key' => 'receive', 'label' => 'Đã nhận hàng (còn bán được)', 'url' => route('admin.returns.returns.bulk-receive'), 'confirm' => true],
-                ['key' => 'receive_damaged', 'label' => 'Đã nhận hàng (hỏng, không nhập kho)', 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'damaged']), 'confirm' => true],
+                ['key' => 'approve', 'label' => __('returns::texts.return_controller.approve'), 'url' => route('admin.returns.returns.bulk-approve'), 'confirm' => true],
+                ['key' => 'receive', 'label' => __('returns::texts.return_controller.received_still_sellable'), 'url' => route('admin.returns.returns.bulk-receive'), 'confirm' => true],
+                ['key' => 'receive_damaged', 'label' => __('returns::texts.return_controller.received_damaged_not_restocked'), 'url' => route('admin.returns.returns.bulk-receive', ['condition' => 'damaged']), 'confirm' => true],
             ] : [],
             // Cột/lọc/thao tác hàng loạt/công cụ của plugin (EP v3 X1); thao tác hàng loạt của plugin nối sau của Core.
             'extensions' => $screen->listProps('return', collect($page->items())->pluck('id')->map(fn ($id): int => (int) $id)->all(), $extensionFilters),

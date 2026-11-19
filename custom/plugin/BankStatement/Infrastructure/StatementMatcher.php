@@ -36,7 +36,7 @@ final class StatementMatcher
         $column = fn (array $names): ?int => ($index = array_search(true, array_map(fn (string $cell): bool => in_array($cell, $names, true), $header), true)) === false ? null : $index;
         [$ref, $amount, $content] = [$column(self::REFERENCE_HEADERS), $column(self::AMOUNT_HEADERS), $column(self::CONTENT_HEADERS)];
         if ($ref === null || $amount === null || $content === null) {
-            throw ValidationException::withMessages(['file' => 'Sao kê cần cột "Mã GD", "Số tiền", "Nội dung" ở dòng đầu.']);
+            throw ValidationException::withMessages(['file' => __('vani-bank-statement::texts.statement_matcher.statement_needs_columns_m_gd')]);
         }
 
         $result = ['confirmed' => 0, 'mismatched' => 0, 'duplicate' => 0];
@@ -68,17 +68,17 @@ final class StatementMatcher
         $record = fn (bool $matched, ?string $note) => $this->ledger->record(BankStatementServiceProvider::ID, $reference, $matched, $order?->id, $paymentId, $payment?->amount, $paid, $note);
 
         if ($payment === null || $paymentId === null) {
-            return $record(false, 'Không tìm thấy số đơn trong nội dung: '.mb_substr($content, 0, 120)) ? 'mismatched' : 'duplicate';
+            return $record(false, __('vani-bank-statement::texts.statement_matcher.no_order_number_found_description').mb_substr($content, 0, 120)) ? 'mismatched' : 'duplicate';
         }
         if (! in_array($payment->status, ['pending', 'failed', 'expired'], true) || $payment->amount !== $paid) {
-            $note = $payment->amount !== $paid ? "Đơn {$order->number}: số tiền không khớp" : "Đơn {$order->number}: không chờ chuyển khoản ({$payment->status})";
+            $note = $payment->amount !== $paid ? __('vani-bank-statement::texts.statement_matcher.order_number_amount_does_not', ['number' => $order->number]) : __('vani-bank-statement::texts.statement_matcher.order_number_not_awaiting_bank', ['number' => $order->number, 'status' => $payment->status]);
 
             return $record(false, $note) ? 'mismatched' : 'duplicate';
         }
-        if (! $record(true, "Đơn {$order->number}")) {
+        if (! $record(true, __('vani-bank-statement::texts.statement_matcher.order_number', ['number' => $order->number]))) {
             return 'duplicate';
         }
-        $this->payments->confirmManually($paymentId, "Sao kê ngân hàng: {$reference}");
+        $this->payments->confirmManually($paymentId, __('vani-bank-statement::texts.statement_matcher.bank_statement_reference', ['reference' => $reference]));
 
         return 'confirmed';
     }

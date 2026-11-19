@@ -19,7 +19,7 @@ use Modules\Pricing\Persistence\Models\PriceList;
  */
 final class PriceListFile
 {
-    public const HEADER = ['SKU', 'Sản phẩm', 'Tuỳ chọn', 'Giá niêm yết', 'Giá', 'Giá gạch'];
+    public const HEADER = ['SKU', 'Sản phẩm', 'Tuỳ chọn', 'Giá niêm yết', 'Giá', 'Giá gạch']; // i18n-ignore: tiêu đề cột file
 
     private const SKU_HEADERS = ['sku', 'ma sku', 'ma bien the'];
 

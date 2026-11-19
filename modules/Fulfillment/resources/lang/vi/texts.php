@@ -1,0 +1,82 @@
+<?php
+
+// Chuỗi hiển thị từ server (ADR-049): nhãn định nghĩa, thông báo, lỗi — đọc bằng __('<namespace>::texts.<mục>.<khoá>').
+
+return [
+    'carrier_handoff' => [
+        'could_not_find_store_s' => 'Không tìm thấy cột số đơn của shop (dạng ',
+        'could_not_find_tracking_number' => 'Không tìm thấy cột mã vận đơn (tiêu đề có "vận đơn", "tracking"…).',
+        'line_line_get_message' => 'Dòng :line: :get_message',
+        'line_line_order_number_has' => 'Dòng :line: đơn :number không có vận đơn đang chờ mã.',
+        'line_line_order_number_not' => 'Dòng :line: không có đơn :number.',
+        'line_line_tracking_number_tracking' => 'Dòng :line: mã vận đơn ":tracking" không hợp lệ.',
+    ],
+    'carrier_webhook_controller' => [
+        'status_status_not_standard' => 'Trạng thái [:status] không chuẩn.',
+    ],
+    'cod_statement' => [
+        'carrier_fee_fee' => ' · phí hãng :fee',
+        'carrier_recorded_cod_amount_shipment' => 'Hãng ghi thu hộ :amount, vận đơn :expected',
+        'matched_cod_statement' => 'Khớp bảng kê COD',
+        'shipment_does_not_exist_system' => 'Không có vận đơn này trong hệ thống',
+        'statement_but_shipment_not_delivered' => 'Có trong bảng kê nhưng vận đơn chưa ở trạng thái đã giao',
+    ],
+    'fulfillment_service' => [
+        'split_from_shipment_public_id' => 'Tách từ vận đơn :public_id',
+    ],
+    'fulfillment_service_provider' => [
+        'carrier' => 'Hãng vận chuyển',
+        'choose_shipping_warehouse' => 'Chọn kho xuất hàng',
+        'choose_shipping_warehouse_sourcing' => 'Chọn kho giao hàng (sourcing)',
+        'create_update_cancel_shipments' => 'Tạo/cập nhật/huỷ vận đơn',
+        'fulfilment' => 'Giao hàng',
+        'open_shipments_carrier_code_still' => 'còn :open vận đơn chưa kết thúc của hãng :code',
+        'sourcingstrategy_when_creating_shipments' => 'SourcingStrategy khi tạo vận đơn.',
+        'view_shipments' => 'Xem vận đơn',
+    ],
+    'manual_carrier' => [
+        'manual_shipments_have_no_webhook' => 'Vận đơn thủ công không có webhook.',
+    ],
+    'order_list_shipments' => [
+        'carrier_when_file_has_no' => 'Hãng (khi file không có cột hãng)',
+        'create_shipment' => 'Tạo vận đơn',
+        'excel_file_exported_carrier_filled' => 'File Excel hãng xuất (hoặc file "Xuất file cho hãng" đã điền mã): cần cột số đơn của shop và cột mã vận đơn; cột hãng nếu có.',
+        'export_file_carrier' => 'Xuất file cho hãng',
+        'hand_carrier' => 'Đẩy lên hãng',
+        'handed_over_carrier' => 'Đã bàn giao cho hãng',
+        'import_tracking_numbers_from_file' => 'Nhập mã vận đơn từ file',
+        'no_code_yet' => 'Chưa có mã',
+        'shipments' => 'Vận đơn',
+    ],
+    'order_shipment_panel' => [
+        'cancel_shipment' => 'Huỷ vận đơn',
+        'carrier' => 'Hãng vận chuyển',
+        'cod_amount' => 'Thu hộ (COD)',
+        'create_shipment' => 'Tạo vận đơn',
+        'delivered' => 'Đã giao',
+        'delivery_failed' => 'Giao không thành công',
+        'enter_tracking_number' => 'Nhập mã vận đơn',
+        'error' => 'Lỗi',
+        'finished_packing_hand_shipment_carrier' => 'Đã đóng gói xong? Đẩy vận đơn lên hãng để hãng đến lấy hàng.',
+        'fulfilment' => 'Giao hàng',
+        'hand_carrier' => 'Đẩy lên hãng',
+        'hand_carrier_again' => 'Đẩy lại lên hãng',
+        'handed_over_carrier' => 'Đã bàn giao cho hãng',
+        'no_code_yet' => 'chưa có mã',
+        'no_shipments_yet' => 'Chưa có vận đơn',
+        'open_shipment_page' => 'Mở trang vận đơn',
+        'quantity' => ' (trên :quantity)',
+        'reason_cancelling_shipment' => 'Lý do huỷ vận đơn',
+        'return_received' => 'Đã nhận hàng hoàn về',
+        'returning_sender' => 'Đang hoàn về',
+        'ship_available_items_first' => 'Giao trước phần có hàng',
+        'shipment' => 'Vận đơn ',
+        'shipment_2' => 'Vận đơn: ',
+        'tracking_number' => 'Mã vận đơn',
+    ],
+    'shipment_dashboard_tasks' => [
+        'call_customer_back_schedule_redelivery' => 'Gọi lại khách, hẹn giao lại hoặc hoàn về',
+        'delivery_failed' => 'Giao không thành công',
+        'shipment_booking_failed' => 'Đặt vận đơn lỗi',
+    ],
+];

@@ -35,12 +35,12 @@ final class CampaignResults
         $totals = $this->statistics->summarize(array_values(array_unique([...$usage->promotionOrderIds, ...$priceListOrders])));
 
         return [
-            ['label' => 'Đơn của chiến dịch', 'value' => (string) $totals->ordersCount],
-            ['label' => 'Lượt dùng khuyến mãi', 'value' => (string) $usage->usages],
-            ['label' => 'Đơn hưởng giá sale/thành viên', 'value' => (string) count($priceListOrders)],
-            ['label' => 'Doanh thu các đơn', 'value' => $this->money->formatAmount($totals->revenue, $currency)],
-            ['label' => 'Đã giảm (khuyến mãi)', 'value' => $this->money->formatAmount($usage->promotionDiscount, $currency)],
-            ['label' => 'Khách / đơn huỷ', 'value' => "{$totals->customersCount} / {$totals->cancelledCount}"],
+            ['label' => __('vani-reports::texts.campaign_results.campaign_orders'), 'value' => (string) $totals->ordersCount],
+            ['label' => __('vani-reports::texts.campaign_results.promotion_uses'), 'value' => (string) $usage->usages],
+            ['label' => __('vani-reports::texts.campaign_results.orders_sale_member_prices'), 'value' => (string) count($priceListOrders)],
+            ['label' => __('vani-reports::texts.campaign_results.order_revenue'), 'value' => $this->money->formatAmount($totals->revenue, $currency)],
+            ['label' => __('vani-reports::texts.campaign_results.discounted_promotions'), 'value' => $this->money->formatAmount($usage->promotionDiscount, $currency)],
+            ['label' => __('vani-reports::texts.campaign_results.customers_cancelled_orders'), 'value' => "{$totals->customersCount} / {$totals->cancelledCount}"],
         ];
     }
 }

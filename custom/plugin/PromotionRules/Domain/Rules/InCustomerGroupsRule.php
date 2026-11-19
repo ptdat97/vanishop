@@ -26,19 +26,19 @@ final class InCustomerGroupsRule implements PromotionRule
 
     public function label(): string
     {
-        return 'Khách thuộc nhóm';
+        return __('vani-promotion-rules::texts.in_customer_groups_rule.customer_group');
     }
 
     public function validateConfig(array $config): array
     {
         $groups = $config['groups'] ?? null;
         if (! is_array($groups) || $groups === []) {
-            return ['Chọn ít nhất một nhóm khách (groups).'];
+            return [__('vani-promotion-rules::texts.in_customer_groups_rule.choose_least_one_customer_group')];
         }
         $known = array_column($this->segments->groups(), 'code');
         $unknown = array_diff(array_map('strval', $groups), $known);
 
-        return $unknown === [] ? [] : ['Nhóm khách không tồn tại: '.implode(', ', $unknown).'.'];
+        return $unknown === [] ? [] : [__('vani-promotion-rules::texts.in_customer_groups_rule.customer_group_not_found').implode(', ', $unknown).'.'];
     }
 
     public function evaluate(PromotionContext $context, array $config, Eligibility $candidates): Eligibility

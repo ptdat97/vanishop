@@ -33,7 +33,8 @@ final class CostPriceServiceProvider extends PluginServiceProvider
 
     public function boot(): void
     {
-        $this->permissions(['cost-price.manage' => 'Nhập giá vốn']);
+        $this->translations($this->pluginPath('Resources/lang'), 'vani-cost-price');
+        $this->permissions(['cost-price.manage' => 'vani-cost-price::texts.cost_price_service_provider.import_cost_prices']);
         $this->contribute(BulkPriceMode::TAG, CostMarkupMode::class);
         $this->contribute(PriceRounding::TAG, NineThousandRounding::class);
         $this->contribute(VariantUsage::TAG, CostPriceUsage::class);
@@ -42,22 +43,22 @@ final class CostPriceServiceProvider extends PluginServiceProvider
         $this->onFilter('vani.pricing.bulk.warnings', function (array $warnings, int $variantId, ?int $listAmount, int $amount) use ($costs): array {
             $cost = $costs()->of([$variantId])[$variantId] ?? null;
 
-            return $cost !== null && $amount < $cost ? [...$warnings, 'Dưới giá vốn'] : $warnings;
+            return $cost !== null && $amount < $cost ? [...$warnings, __('vani-cost-price::texts.cost_price_service_provider.below_cost')] : $warnings;
         });
         // Báo cáo lợi nhuận gộp (vani.reports, A10): giá vốn đơn vị theo SKU, một truy vấn cho cả tập.
         $this->onFilter('vani.pricing.unit_costs', fn (array $known, array $variantIds): array => $known + $costs()->of(array_values(array_map('intval', $variantIds))));
-        $this->adminColumn('price_list_item', 'cost', 'Giá vốn', resolve: function (array $variantIds) use ($costs): array {
+        $this->adminColumn('price_list_item', 'cost', 'vani-cost-price::texts.cost_price_service_provider.cost_price', resolve: function (array $variantIds) use ($costs): array {
             $money = $this->app->make(MoneyFormatter::class);
 
             return array_map(fn (int $amount): string => $money->formatAmount($amount, (string) config('vanishop.currency')), $costs()->of($variantIds));
         });
-        $this->adminTool('price_list_item', 'import_cost', 'Nhập giá vốn', 'cost-price.manage', handle: function (UploadedFile $file) use ($costs): string {
+        $this->adminTool('price_list_item', 'import_cost', 'vani-cost-price::texts.cost_price_service_provider.import_cost_prices', 'cost-price.manage', handle: function (UploadedFile $file) use ($costs): string {
             $rows = SpreadsheetRows::fromUpload($file);
             $header = array_map(fn (string $cell): string => mb_strtolower(trim($cell)), $rows[0] ?? []);
             $sku = array_search('sku', $header, true);
-            $cost = array_search('giá vốn', $header, true);
+            $cost = array_search(__('vani-cost-price::texts.cost_price_service_provider.cost_price_2'), $header, true);
             if ($sku === false || $cost === false) {
-                throw ValidationException::withMessages(['file' => 'File cần cột "SKU" và "Giá vốn" ở dòng đầu.']);
+                throw ValidationException::withMessages(['file' => __('vani-cost-price::texts.cost_price_service_provider.file_needs_columns_sku_gi')]);
             }
             $values = [];
             foreach (array_slice($rows, 1) as $row) {
@@ -71,7 +72,7 @@ final class CostPriceServiceProvider extends PluginServiceProvider
                 $costs()->set($variant->id, $values[$code]);
             }
 
-            return 'Đã nhập giá vốn '.count($found).' SKU'.(count($values) > count($found) ? '; '.(count($values) - count($found)).' SKU không có.' : '.');
-        }, help: 'File .xlsx/.csv có cột "SKU" và "Giá vốn".');
+            return __('vani-cost-price::texts.cost_price_service_provider.imported_cost_prices').count($found).' SKU'.(count($values) > count($found) ? '; '.(count($values) - count($found)).__('vani-cost-price::texts.cost_price_service_provider.skus_not_found') : '.');
+        }, help: 'vani-cost-price::texts.cost_price_service_provider.xlsx_csv_file_columns_sku');
     }
 }

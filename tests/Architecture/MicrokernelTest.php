@@ -22,7 +22,7 @@ it('modules/ không có implementation PaymentGateway, ShippingRateProvider, Tax
 
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
     foreach ($files as $file) {
-        $path = $file->getRealPath();
+        $path = str_replace('\\', '/', (string) $file->getRealPath());
         if ($file->getExtension() !== 'php' || preg_match('#/(Tests|Testing)/#', $path) === 1) {
             continue;
         }
@@ -58,15 +58,15 @@ it('plugin hệ thống khai báo bundled trong manifest', function () {
 it('modules/ không gắn mã implementation hay id của plugin (Core không biết plugin nào cung cấp gì)', function () {
     // Mã do plugin đóng góp cho extension point chọn theo mã (cổng, thuế, hãng, luật SĐT) + id plugin trong manifest.
     $contracts = [PaymentGateway::class, TaxCalculator::class, ShippingCarrier::class, PhoneNumberPolicy::class];
-    $pluginRoot = realpath(__DIR__.'/../../custom/plugin');
+    $pluginRoot = str_replace('\\', '/', (string) realpath(__DIR__.'/../../custom/plugin'));
     $codes = [];
     foreach (glob($pluginRoot.'/*/vanishop.json') as $file) {
         $codes[(string) json_decode((string) file_get_contents($file), true)['id']] = 'id plugin';
     }
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS));
     foreach ($files as $file) {
-        $path = $file->getRealPath();
-        if ($file->getExtension() !== 'php' || preg_match('#/(Tests|resources|database)/#', $path) === 1) {
+        $path = str_replace('\\', '/', (string) $file->getRealPath());
+        if ($file->getExtension() !== 'php' || preg_match('#/(Tests|[Rr]esources|[Dd]atabase)/#', $path) === 1) {
             continue;
         }
         $class = 'Plugin\\'.str_replace('/', '\\', substr($path, strlen($pluginRoot) + 1, -4));
@@ -89,7 +89,7 @@ it('modules/ không gắn mã implementation hay id của plugin (Core không bi
     $root = realpath(__DIR__.'/../../modules');
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
     foreach ($files as $file) {
-        $path = $file->getRealPath();
+        $path = str_replace('\\', '/', (string) $file->getRealPath());
         if ($file->getExtension() !== 'php' || preg_match('#/(Tests|Testing)/#', $path) === 1) {
             continue;
         }
@@ -106,14 +106,14 @@ it('modules/ không gắn mã implementation hay id của plugin (Core không bi
 
 it('giao diện Core (Vue, TS, Blade) không gắn mã implementation hay id của plugin', function () {
     $contracts = [PaymentGateway::class, TaxCalculator::class, ShippingCarrier::class, PhoneNumberPolicy::class];
-    $pluginRoot = realpath(__DIR__.'/../../custom/plugin');
+    $pluginRoot = str_replace('\\', '/', (string) realpath(__DIR__.'/../../custom/plugin'));
     $codes = [];
     foreach (glob($pluginRoot.'/*/vanishop.json') as $file) {
         $codes[] = (string) json_decode((string) file_get_contents($file), true)['id'];
     }
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS)) as $file) {
-        $path = $file->getRealPath();
-        if ($file->getExtension() !== 'php' || preg_match('#/(Tests|resources|database)/#', $path) === 1) {
+        $path = str_replace('\\', '/', (string) $file->getRealPath());
+        if ($file->getExtension() !== 'php' || preg_match('#/(Tests|[Rr]esources|[Dd]atabase)/#', $path) === 1) {
             continue;
         }
         $class = 'Plugin\\'.str_replace('/', '\\', substr($path, strlen($pluginRoot) + 1, -4));
@@ -135,7 +135,7 @@ it('giao diện Core (Vue, TS, Blade) không gắn mã implementation hay id c�
             continue;
         }
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)) as $file) {
-            $path = $file->getRealPath();
+            $path = str_replace('\\', '/', (string) $file->getRealPath());
             if (preg_match('/\.(vue|ts|js|blade\.php)$/', $path) !== 1 || preg_match('#/(Tests|Testing|node_modules)/#', $path) === 1) {
                 continue;
             }
@@ -170,7 +170,7 @@ it('modules/ không ghi cứng giá trị thị trường của cửa hàng — 
     $root = realpath(__DIR__.'/../../modules');
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
     foreach ($files as $file) {
-        $path = $file->getRealPath();
+        $path = str_replace('\\', '/', (string) $file->getRealPath());
         $relative = substr($path, strlen($root) + 1);
         if ($file->getExtension() !== 'php' || preg_match('#/(Tests|Testing|lang|database|Database|migrations)/#', $path) === 1 || in_array($relative, $allowed, true)) {
             continue;
@@ -186,11 +186,11 @@ it('modules/ không ghi cứng giá trị thị trường của cửa hàng — 
 });
 
 it('R35: plugin không thay binding, không kế thừa class nội bộ của Core, không chèn middleware vào route Core', function () {
-    $pluginRoot = realpath(__DIR__.'/../../custom/plugin');
+    $pluginRoot = str_replace('\\', '/', (string) realpath(__DIR__.'/../../custom/plugin'));
     $offenders = [];
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pluginRoot, FilesystemIterator::SKIP_DOTS));
     foreach ($files as $file) {
-        $path = $file->getRealPath();
+        $path = str_replace('\\', '/', (string) $file->getRealPath());
         if ($file->getExtension() !== 'php' || preg_match('#/Tests/#', $path) === 1) {
             continue;
         }

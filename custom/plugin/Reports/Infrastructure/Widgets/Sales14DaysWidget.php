@@ -22,7 +22,7 @@ final class Sales14DaysWidget implements DashboardWidget
 
     public function label(): string
     {
-        return 'Doanh thu 14 ngày';
+        return __('vani-reports::texts.sales14_days_widget.revenue_14_days');
     }
 
     public function permission(): string

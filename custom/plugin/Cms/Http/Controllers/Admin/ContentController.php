@@ -82,7 +82,7 @@ final class ContentController
         $item = $this->model($kind)->newInstance();
         $this->fill($item, $request, $kind);
 
-        return redirect()->route("admin.plugins.vani-cms.{$kind}.edit", $item->id)->with('success', 'Đã lưu.');
+        return redirect()->route("admin.plugins.vani-cms.{$kind}.edit", $item->id)->with('success', __('vani-cms::texts.content_controller.saved'));
     }
 
     public function edit(int $id, string $kind): Response
@@ -97,7 +97,7 @@ final class ContentController
         Gate::authorize('cms.manage');
         $this->fill($this->find($kind, $id), $request, $kind);
 
-        return back()->with('success', 'Đã lưu.');
+        return back()->with('success', __('vani-cms::texts.content_controller.saved'));
     }
 
     public function destroy(int $id, string $kind): RedirectResponse
@@ -110,7 +110,7 @@ final class ContentController
         });
         Navigation::forget();
 
-        return redirect()->route("admin.plugins.vani-cms.{$kind}.index")->with('success', 'Đã xoá.');
+        return redirect()->route("admin.plugins.vani-cms.{$kind}.index")->with('success', __('vani-cms::texts.content_controller.deleted'));
     }
 
     /** Xem trước Markdown đã render (cùng bộ render với storefront). */
@@ -214,7 +214,7 @@ final class ContentController
 
         // /tin-tuc/{slug} dùng chung cho chuyên mục và bài viết (1.4.0).
         if ($kind === 'posts' && Category::query()->where('slug', $data['slug'])->exists()) {
-            throw ValidationException::withMessages(['slug' => 'Đường dẫn đã là của một chuyên mục.']);
+            throw ValidationException::withMessages(['slug' => __('vani-cms::texts.content_controller.path_already_belongs_category')]);
         }
         if ($kind === 'posts') {
             $data['product_ids'] = array_values(array_map('intval', $data['product_ids'] ?? [])) ?: null;
@@ -223,7 +223,7 @@ final class ContentController
         $removeCover = (bool) ($data['remove_cover'] ?? false);
         unset($data['cover_media_id'], $data['remove_cover']);
         if ($cover !== null && $this->media->find([$cover]) === []) {
-            throw ValidationException::withMessages(['cover_media_id' => 'Ảnh bìa không còn trong Thư viện ảnh.']);
+            throw ValidationException::withMessages(['cover_media_id' => __('vani-cms::texts.content_controller.cover_image_no_longer_media')]);
         }
 
         // Giờ nhập theo giờ VN; đăng mà không chọn giờ → đăng ngay (giữ giờ đăng cũ nếu đã có).

@@ -177,11 +177,11 @@ final class AdminQueries
 
     /** Loại dữ liệu thiếu có thể lọc, theo thứ tự ưu tiên khi hiển thị. */
     public const MISSING = [
-        'variants' => 'Chưa có SKU',
-        'image' => 'Chưa có ảnh',
-        'category' => 'Chưa có danh mục',
-        'weight' => 'SKU thiếu khối lượng',
-        'description' => 'Chưa có mô tả',
+        'variants' => 'catalog::texts.admin_queries.no_sku',
+        'image' => 'catalog::texts.admin_queries.no_image',
+        'category' => 'catalog::texts.admin_queries.no_category',
+        'weight' => 'catalog::texts.admin_queries.sku_missing_weight',
+        'description' => 'catalog::texts.admin_queries.no_description',
     ];
 
     /**

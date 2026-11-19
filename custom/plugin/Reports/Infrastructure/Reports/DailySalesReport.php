@@ -26,12 +26,12 @@ final class DailySalesReport implements ReportProvider
 
     public function label(): string
     {
-        return 'Doanh thu theo ngày';
+        return __('vani-reports::texts.daily_sales_report.revenue_day');
     }
 
     public function description(): string
     {
-        return 'Doanh thu, số đơn, giá trị trung bình và số khách theo từng ngày.';
+        return __('vani-reports::texts.daily_sales_report.revenue_orders_average_order_value');
     }
 
     public function permission(): string
@@ -46,23 +46,23 @@ final class DailySalesReport implements ReportProvider
 
         return new ReportResult(
             new Table(
-                [new Column('date', 'Ngày'), new Column('orders', 'Số đơn', 'number'), new Column('revenue', 'Doanh thu', 'money'), new Column('average', 'TB/đơn', 'money')],
+                [new Column('date', __('vani-reports::texts.daily_sales_report.date')), new Column('orders', __('vani-reports::texts.daily_sales_report.orders'), 'number'), new Column('revenue', 'Doanh thu', 'money'), new Column('average', __('vani-reports::texts.daily_sales_report.avg_order'), 'money')],
                 array_map(fn (SalesBucket $day): array => [
                     'date' => $day->key, 'orders' => $day->ordersCount, 'revenue' => $day->revenue,
                     'average' => $day->ordersCount === 0 ? 0 : intdiv($day->revenue, $day->ordersCount),
                 ], $days),
             ),
             [
-                new Metric('Doanh thu', $totals->revenue, 'money', "Giảm giá {$this->vnd($totals->discount)} · Phí ship {$this->vnd($totals->shipping)}"),
-                new Metric('Số đơn', $totals->ordersCount, 'number', "Đã huỷ {$totals->cancelledCount}"),
-                new Metric('Giá trị TB/đơn', $totals->averageOrderValue(), 'money'),
-                new Metric('Khách mua', $totals->customersCount, 'number'),
+                new Metric('Doanh thu', $totals->revenue, 'money', __('vani-reports::texts.daily_sales_report.discounts_discount_shipping_shipping', ['discount' => $this->vnd($totals->discount), 'shipping' => $this->vnd($totals->shipping)])),
+                new Metric(__('vani-reports::texts.daily_sales_report.orders'), $totals->ordersCount, 'number', __('vani-reports::texts.daily_sales_report.cancelled_cancelled_count', ['cancelled_count' => $totals->cancelledCount])),
+                new Metric(__('vani-reports::texts.daily_sales_report.average_order_value'), $totals->averageOrderValue(), 'money'),
+                new Metric(__('vani-reports::texts.daily_sales_report.buyers'), $totals->customersCount, 'number'),
             ],
             new Series(
                 array_map(fn (SalesBucket $day): string => $day->label, $days),
                 array_map(fn (SalesBucket $day): int => $day->revenue, $days),
                 'money',
-                'Doanh thu theo ngày',
+                __('vani-reports::texts.daily_sales_report.revenue_day'),
             ),
         );
     }

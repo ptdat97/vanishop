@@ -4,7 +4,7 @@
         "vi": "Thuế GTGT Việt Nam (gồm trong giá)",
         "en": "Vietnam VAT (tax-inclusive)"
     },
-    "version": "1.0.0",
+    "version": "1.0.1",
     "kind": "tax",
     "provider": "Plugin\\TaxVnVat\\TaxVnVatServiceProvider",
     "bundled": true,

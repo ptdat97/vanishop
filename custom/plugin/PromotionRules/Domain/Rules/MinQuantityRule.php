@@ -23,14 +23,14 @@ final class MinQuantityRule implements CartContentRule
 
     public function label(): string
     {
-        return 'Số lượng sản phẩm tối thiểu';
+        return __('vani-promotion-rules::texts.min_quantity_rule.minimum_product_quantity');
     }
 
     public function validateConfig(array $config): array
     {
         $min = $config['min_quantity'] ?? null;
         if (! is_numeric($min) || (int) $min <= 0) {
-            return ['Cần khai báo "min_quantity" là số nguyên dương.'];
+            return [__('vani-promotion-rules::texts.min_quantity_rule.min_quantity_must_positive_integer')];
         }
 
         return [];

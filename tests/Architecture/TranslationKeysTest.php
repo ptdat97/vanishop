@@ -97,3 +97,16 @@ it('luật 5: không còn chữ tiếng Việt ngoài hàm dịch (trừ CLI, lo
     expect($result['over'])->toBe([], 'Chuyển chữ hiển thị sang khoá dịch (ADR-049)')
         ->and($result['stale'])->toBe([], 'Đã bớt vi phạm — hạ mốc: VANI_UPDATE_TRANSLATION_BASELINE=1');
 });
+
+it('không nạp bản dịch lúc boot (đăng ký lúc boot truyền khoá, dịch lúc hiển thị)', function () {
+    // `__()` trong register()/boot() chạy trước khi mọi namespace dịch được đăng ký → nhóm rỗng bị cache, khoá hiện thô.
+    $loaded = (new ReflectionProperty(app('translator'), 'loaded'))->getValue(app('translator'));
+    $groups = [];
+    foreach ($loaded as $namespace => $byGroup) {
+        foreach (array_keys($byGroup) as $group) {
+            $groups[] = "{$namespace}::{$group}";
+        }
+    }
+
+    expect($groups)->toBe([]);
+});

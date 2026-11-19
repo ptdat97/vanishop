@@ -38,7 +38,7 @@ final class VietQrGateway implements PaymentGateway
 
     public function label(): string
     {
-        return 'VietQR (Quét mã chuyển khoản)';
+        return __('vani-vietqr::texts.viet_qr_gateway.vietqr_scan_transfer');
     }
 
     public function capabilities(): GatewayCapabilities
@@ -101,7 +101,7 @@ final class VietQrGateway implements PaymentGateway
         $sig = (string) $request->input('signature');
 
         if ($paymentId === '' || $txn === '' || $status === '' || $amount === '') {
-            throw new InvalidCallback('Thiếu dữ liệu bắt buộc trong callback VietQR.');
+            throw new InvalidCallback(__('vani-vietqr::texts.viet_qr_gateway.required_data_missing_from_vietqr'));
         }
 
         $expectedSig = $this->computeSignature([
@@ -112,7 +112,7 @@ final class VietQrGateway implements PaymentGateway
         ]);
 
         if (! hash_equals($expectedSig, $sig)) {
-            throw new InvalidCallback('Chữ ký callback VietQR không khớp.');
+            throw new InvalidCallback(__('vani-vietqr::texts.viet_qr_gateway.vietqr_callback_signature_does_not'));
         }
 
         $mappedStatus = match ($status) {
@@ -145,7 +145,7 @@ final class VietQrGateway implements PaymentGateway
         return new GatewayResult(
             successful: true,
             gatewayReference: "VQR-REFUND-{$idempotencyKey}",
-            message: 'Đã tạo yêu cầu hoàn tiền qua tài khoản nguồn VietQR.',
+            message: __('vani-vietqr::texts.viet_qr_gateway.refund_request_was_created_via'),
         );
     }
 

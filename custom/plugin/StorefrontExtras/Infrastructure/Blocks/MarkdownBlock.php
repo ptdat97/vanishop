@@ -21,14 +21,14 @@ final class MarkdownBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Nội dung Markdown';
+        return __('vani-storefront-extras::texts.markdown_block.markdown_content');
     }
 
     public function fields(): array
     {
         return [
-            FieldDefinition::string('title', 'Tiêu đề', max: 120),
-            FieldDefinition::text('body', 'Nội dung (Markdown)', required: true, help: 'Đậm **chữ**, nghiêng *chữ*, danh sách "- ", link [chữ](https://…). HTML bị bỏ.', max: 5000),
+            FieldDefinition::string('title', __('vani-storefront-extras::texts.markdown_block.title'), max: 120),
+            FieldDefinition::text('body', __('vani-storefront-extras::texts.markdown_block.content_markdown'), required: true, help: __('vani-storefront-extras::texts.markdown_block.bold_text_italic_text_lists'), max: 5000),
         ];
     }
 

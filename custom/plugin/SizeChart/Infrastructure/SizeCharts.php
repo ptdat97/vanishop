@@ -32,7 +32,7 @@ final class SizeCharts
     public function options(): array
     {
         return SizeChart::query()->orderBy('id')->get()
-            ->mapWithKeys(fn (SizeChart $chart): array => [$chart->id => $chart->name(StoreLocale::default(), StoreLocale::default()).($chart->active ? '' : ' (tắt)')])
+            ->mapWithKeys(fn (SizeChart $chart): array => [$chart->id => $chart->name(StoreLocale::default(), StoreLocale::default()).($chart->active ? '' : __('vani-size-chart::texts.size_charts.off'))])
             ->all();
     }
 
@@ -43,7 +43,7 @@ final class SizeCharts
     {
         return DB::transaction(function () use ($data, $chart, $lockVersion): SizeChart {
             if ($chart !== null && $lockVersion !== null && $chart->lock_version !== $lockVersion) {
-                throw ValidationException::withMessages(['lock_version' => 'Bảng size vừa được người khác sửa. Tải lại trang để xem bản mới.']);
+                throw ValidationException::withMessages(['lock_version' => __('vani-size-chart::texts.size_charts.size_chart_was_just_edited')]);
             }
             $chart ??= new SizeChart;
             $chart->fill([

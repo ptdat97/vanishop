@@ -15,12 +15,12 @@ final class PaymentMethodSalesReport extends BreakdownReport
 
     public function label(): string
     {
-        return 'Doanh thu theo thanh toán';
+        return __('vani-reports::texts.payment_method_sales_report.revenue_payment');
     }
 
     public function description(): string
     {
-        return 'Số đơn và doanh thu theo phương thức thanh toán khách chọn.';
+        return __('vani-reports::texts.payment_method_sales_report.orders_revenue_payment_method_customers');
     }
 
     protected function dimension(): SalesDimension
@@ -30,6 +30,6 @@ final class PaymentMethodSalesReport extends BreakdownReport
 
     protected function groupLabel(): string
     {
-        return 'Phương thức';
+        return __('vani-reports::texts.payment_method_sales_report.method');
     }
 }

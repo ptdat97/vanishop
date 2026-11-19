@@ -30,12 +30,12 @@ final class OrderListShipments
         foreach ($shipments as $shipment) {
             $carrier = $shipment->service_code ?: ($this->carriers->carrier($shipment->carrier_code)?->label() ?? $shipment->carrier_code);
             $text = $shipment->tracking_number === null
-                ? 'Chưa có mã'
+                ? __('fulfillment::texts.order_list_shipments.no_code_yet')
                 : "{$carrier} · {$shipment->tracking_number}";
             $values[$shipment->order_id] = trim(($values[$shipment->order_id] ?? '')."\n{$text} — ".($labels[$shipment->status->value] ?? $shipment->status->value));
         }
 
-        return ['key' => 'shipments', 'label' => 'Vận đơn', 'values' => $values];
+        return ['key' => 'shipments', 'label' => __('fulfillment::texts.order_list_shipments.shipments'), 'values' => $values];
     }
 
     /**
@@ -48,10 +48,10 @@ final class OrderListShipments
         }
 
         return [
-            ['key' => 'create_shipments', 'label' => 'Tạo vận đơn', 'url' => route('admin.fulfillment.shipments.bulk-create'), 'confirm' => true],
-            ...($this->carriers->hasAutoBooking() ? [['key' => 'push', 'label' => 'Đẩy lên hãng', 'url' => route('admin.fulfillment.shipments.bulk-push'), 'confirm' => true]] : []),
-            ['key' => 'hand_over', 'label' => 'Đã bàn giao cho hãng', 'url' => route('admin.fulfillment.shipments.bulk-hand-over'), 'confirm' => true],
-            ['key' => 'export', 'label' => 'Xuất file cho hãng', 'url' => route('admin.fulfillment.shipments.export'), 'confirm' => false, 'method' => 'get'],
+            ['key' => 'create_shipments', 'label' => __('fulfillment::texts.order_list_shipments.create_shipment'), 'url' => route('admin.fulfillment.shipments.bulk-create'), 'confirm' => true],
+            ...($this->carriers->hasAutoBooking() ? [['key' => 'push', 'label' => __('fulfillment::texts.order_list_shipments.hand_carrier'), 'url' => route('admin.fulfillment.shipments.bulk-push'), 'confirm' => true]] : []),
+            ['key' => 'hand_over', 'label' => __('fulfillment::texts.order_list_shipments.handed_over_carrier'), 'url' => route('admin.fulfillment.shipments.bulk-hand-over'), 'confirm' => true],
+            ['key' => 'export', 'label' => __('fulfillment::texts.order_list_shipments.export_file_carrier'), 'url' => route('admin.fulfillment.shipments.export'), 'confirm' => false, 'method' => 'get'],
         ];
     }
 
@@ -67,10 +67,10 @@ final class OrderListShipments
         }
 
         return [[
-            'key' => 'import_tracking', 'label' => 'Nhập mã vận đơn từ file', 'url' => route('admin.fulfillment.shipments.import-tracking'),
+            'key' => 'import_tracking', 'label' => __('fulfillment::texts.order_list_shipments.import_tracking_numbers_from_file'), 'url' => route('admin.fulfillment.shipments.import-tracking'),
             'accept' => '.xlsx,.csv', 'max_kb' => 5120,
-            'help' => 'File Excel hãng xuất (hoặc file "Xuất file cho hãng" đã điền mã): cần cột số đơn của shop và cột mã vận đơn; cột hãng nếu có.',
-            'fields' => [['key' => 'carrier', 'label' => 'Hãng (khi file không có cột hãng)', 'placeholder' => 'vd. GHN']],
+            'help' => __('fulfillment::texts.order_list_shipments.excel_file_exported_carrier_filled'),
+            'fields' => [['key' => 'carrier', 'label' => __('fulfillment::texts.order_list_shipments.carrier_when_file_has_no'), 'placeholder' => 'vd. GHN']],
         ]];
     }
 }

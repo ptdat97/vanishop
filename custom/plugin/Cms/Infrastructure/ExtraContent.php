@@ -28,7 +28,7 @@ final class ExtraContent
 
     public const BANNER_OWNER = 'plg.cms.category_banner';
 
-    public const POSITIONS = ['after_price' => 'Sau giá', 'after_add_to_cart' => 'Sau nút thêm vào giỏ', 'after_details' => 'Sau mô tả chi tiết'];
+    public const POSITIONS = ['after_price' => 'vani-cms::texts.extra_content.after_price', 'after_add_to_cart' => 'vani-cms::texts.extra_content.after_add_cart_button', 'after_details' => 'vani-cms::texts.extra_content.after_detailed_description'];
 
     /** Thẻ được giữ trong một dòng thông báo (Markdown một dòng: đậm, nghiêng, link). */
     private const INLINE_TAGS = '<a><strong><em><code><del>';
@@ -210,11 +210,11 @@ final class ExtraContent
     public function saveBanner(?CategoryBanner $banner, int $categoryId, array $data): CategoryBanner
     {
         if (CategoryBanner::query()->where('category_id', $categoryId)->when($banner !== null, fn ($query) => $query->whereKeyNot($banner->id))->exists()) {
-            throw ValidationException::withMessages(['category_id' => 'Danh mục này đã có banner.']);
+            throw ValidationException::withMessages(['category_id' => __('vani-cms::texts.extra_content.category_already_has_banner')]);
         }
         $url = trim((string) ($data['button_url'] ?? ''));
         if ($url !== '' && ! self::allowedUrl($url)) {
-            throw ValidationException::withMessages(['button_url' => 'Link nút phải là đường dẫn trong cửa hàng (bắt đầu bằng /) hoặc https://.']);
+            throw ValidationException::withMessages(['button_url' => __('vani-cms::texts.extra_content.button_link_must_store_path')]);
         }
         $content = [];
         foreach (StoreLocale::supported() as $locale) {
@@ -227,10 +227,10 @@ final class ExtraContent
         $mobile = isset($data['mobile_media_id']) && (int) $data['mobile_media_id'] > 0 ? (int) $data['mobile_media_id'] : null;
         $ids = array_values(array_unique(array_filter([$desktop, $mobile])));
         if ($ids !== [] && count($this->media->find($ids)) !== count($ids)) {
-            throw ValidationException::withMessages(['desktop_media_id' => 'Có ảnh không còn trong Thư viện ảnh.']);
+            throw ValidationException::withMessages(['desktop_media_id' => __('vani-cms::texts.extra_content.some_images_no_longer_media')]);
         }
         if ($mobile !== null && $desktop === null) {
-            throw ValidationException::withMessages(['desktop_media_id' => 'Chọn ảnh desktop trước khi chọn ảnh mobile.']);
+            throw ValidationException::withMessages(['desktop_media_id' => __('vani-cms::texts.extra_content.choose_desktop_image_before_mobile')]);
         }
 
         return DB::transaction(function () use ($banner, $categoryId, $content, $url, $desktop, $mobile, $data): CategoryBanner {

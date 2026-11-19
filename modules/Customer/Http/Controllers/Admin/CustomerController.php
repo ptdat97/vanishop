@@ -126,7 +126,7 @@ final class CustomerController
         Gate::authorize('customers.merge', [ScopeRef::owner()]);
         $data = $request->validate(['target' => ['required', 'string', 'size:26']]);
         $source = $queries->byPublicId($customer) ?? abort(404);
-        $target = $queries->byPublicId($data['target']) ?? throw ValidationException::withMessages(['target' => 'Không tìm thấy khách đích.']);
+        $target = $queries->byPublicId($data['target']) ?? throw ValidationException::withMessages(['target' => __('customer::texts.customer_controller.target_customer_not_found')]);
 
         $lifecycle->merge($source->id, $target->id);
 

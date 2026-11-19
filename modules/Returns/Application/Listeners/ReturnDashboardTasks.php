@@ -25,8 +25,8 @@ final class ReturnDashboardTasks
         $url = fn (ReturnStatus $status): string => route('admin.returns.returns.index', ['status' => $status->value]);
 
         return [
-            ['key' => 'returns.requested', 'label' => 'Đổi/trả chờ duyệt', 'count' => $count(ReturnStatus::Requested), 'url' => $url(ReturnStatus::Requested), 'tone' => 'warning', 'order' => 40],
-            ['key' => 'returns.received', 'label' => 'Hàng trả đã nhận, chờ hoàn tất', 'count' => $count(ReturnStatus::Received), 'url' => $url(ReturnStatus::Received), 'tone' => 'info', 'order' => 45],
+            ['key' => 'returns.requested', 'label' => __('returns::texts.return_dashboard_tasks.returns_exchanges_awaiting_approval'), 'count' => $count(ReturnStatus::Requested), 'url' => $url(ReturnStatus::Requested), 'tone' => 'warning', 'order' => 40],
+            ['key' => 'returns.received', 'label' => __('returns::texts.return_dashboard_tasks.returns_received_awaiting_completion'), 'count' => $count(ReturnStatus::Received), 'url' => $url(ReturnStatus::Received), 'tone' => 'info', 'order' => 45],
         ];
     }
 }

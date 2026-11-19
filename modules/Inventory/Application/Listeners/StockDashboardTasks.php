@@ -30,8 +30,8 @@ final class StockDashboardTasks
         $url = fn (string $filter): string => route('admin.inventory.stock.index', ['filter' => $filter]);
 
         return [
-            ['key' => 'stock.out', 'label' => 'Hết hàng', 'count' => $counts['out'], 'url' => $url('out'), 'tone' => 'danger', 'hint' => 'Biến thể đang bán · cập nhật 5 phút/lần', 'order' => 70],
-            ['key' => 'stock.low', 'label' => 'Sắp hết hàng', 'count' => $counts['low'], 'url' => $url('low'), 'tone' => 'warning', 'hint' => 'Còn ≤ '.(int) config('vanishop.inventory.low_stock_threshold', 3).' sản phẩm bán được', 'order' => 71],
+            ['key' => 'stock.out', 'label' => __('inventory::texts.stock_dashboard_tasks.out_stock'), 'count' => $counts['out'], 'url' => $url('out'), 'tone' => 'danger', 'hint' => __('inventory::texts.stock_dashboard_tasks.variants_sale_updated_every_5'), 'order' => 70],
+            ['key' => 'stock.low', 'label' => __('inventory::texts.stock_dashboard_tasks.low_stock'), 'count' => $counts['low'], 'url' => $url('low'), 'tone' => 'warning', 'hint' => __('inventory::texts.stock_dashboard_tasks.most').(int) config('vanishop.inventory.low_stock_threshold', 3).__('inventory::texts.stock_dashboard_tasks.sellable_products'), 'order' => 71],
         ];
     }
 }

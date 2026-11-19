@@ -31,7 +31,7 @@ final class RequiredExtensions
 
             $remaining = array_filter($providers, fn (?string $provider): bool => $provider === null || ($provider !== $pluginId && in_array($provider, $enabledIds, true)));
             if ($remaining === []) {
-                $broken[] = $requirement['label'];
+                $broken[] = __($requirement['label']);
             }
         }
 
@@ -50,7 +50,7 @@ final class RequiredExtensions
         foreach ($this->extensions->requirements() as $tag => $requirement) {
             $active = array_filter($this->extensions->providers($tag), fn (?string $provider): bool => $provider === null || in_array($provider, $enabledIds, true));
             if ($active === []) {
-                $missing[$tag] = $requirement['label'];
+                $missing[$tag] = __($requirement['label']);
             }
         }
 

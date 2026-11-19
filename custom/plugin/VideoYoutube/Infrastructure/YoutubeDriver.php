@@ -27,7 +27,7 @@ final class YoutubeDriver implements VideoDriver
 
     public function inputHint(): string
     {
-        return 'Dán link YouTube (youtube.com/watch?v=…, youtu.be/…, Shorts) hoặc ID video 11 ký tự.';
+        return __('vani-video-youtube::texts.youtube_driver.paste_youtube_link_youtube_com');
     }
 
     public function reference(string $input): ?string

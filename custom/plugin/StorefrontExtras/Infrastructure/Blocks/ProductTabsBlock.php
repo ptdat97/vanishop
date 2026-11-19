@@ -25,16 +25,16 @@ final class ProductTabsBlock implements StorefrontBlock
 
     public function label(): string
     {
-        return 'Sản phẩm theo tab';
+        return __('vani-storefront-extras::texts.product_tabs_block.products_tab');
     }
 
     public function fields(): array
     {
-        $fields = [FieldDefinition::string('title', 'Tiêu đề', max: 120), FieldDefinition::int('limit', 'Số sản phẩm mỗi tab (1–24)', help: 'Mặc định 8.')];
+        $fields = [FieldDefinition::string('title', __('vani-storefront-extras::texts.product_tabs_block.title'), max: 120), FieldDefinition::int('limit', __('vani-storefront-extras::texts.product_tabs_block.products_per_tab_1_24'), help: __('vani-storefront-extras::texts.product_tabs_block.default_8'))];
         foreach (range(1, self::TABS) as $i) {
-            $fields[] = FieldDefinition::string("tab_{$i}_label", "Tab {$i}: tên", max: 60);
-            $fields[] = FieldDefinition::select("tab_{$i}_source", "Tab {$i}: nguồn", Products::SOURCES);
-            $fields[] = FieldDefinition::string("tab_{$i}_value", "Tab {$i}: slug hoặc id", help: 'Slug danh mục/bộ sưu tập/thương hiệu, hoặc id sản phẩm cách nhau bằng dấu phẩy (chọn tay).', max: 300);
+            $fields[] = FieldDefinition::string("tab_{$i}_label", __('vani-storefront-extras::texts.product_tabs_block.tab_i_name', ['i' => $i]), max: 60);
+            $fields[] = FieldDefinition::select("tab_{$i}_source", __('vani-storefront-extras::texts.product_tabs_block.tab_i_source', ['i' => $i]), array_map(fn (string $label): string => __($label), Products::SOURCES));
+            $fields[] = FieldDefinition::string("tab_{$i}_value", __('vani-storefront-extras::texts.product_tabs_block.tab_i_slug_id', ['i' => $i]), help: __('vani-storefront-extras::texts.product_tabs_block.category_collection_brand_slug_product'), max: 300);
         }
 
         return $fields;
