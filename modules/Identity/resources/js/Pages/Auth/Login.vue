@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import GuestLayout from '@admin/Layouts/GuestLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -21,10 +22,10 @@ function submit(): void {
 </script>
 
 <template>
-    <Head title="Đăng nhập" />
+    <Head :title="t('identity::admin.auth_login.sign')" />
     <div class="flex min-h-screen items-center justify-center px-4">
         <form class="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-6" @submit.prevent="submit">
-            <h1 class="text-lg font-semibold">Đăng nhập quản trị</h1>
+            <h1 class="text-lg font-semibold">{{ t('identity::admin.auth_login.admin_sign') }}</h1>
             <p v-if="notice" class="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{{ notice }}</p>
             <div>
                 <label for="email" class="mb-1 block text-sm font-medium">Email</label>
@@ -32,18 +33,18 @@ function submit(): void {
                 <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
             </div>
             <div>
-                <label for="password" class="mb-1 block text-sm font-medium">Mật khẩu</label>
+                <label for="password" class="mb-1 block text-sm font-medium">{{ t('identity::admin.auth_login.password') }}</label>
                 <input id="password" v-model="form.password" type="password" autocomplete="current-password" required class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
                 <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
             </div>
             <label class="flex items-center gap-2 text-sm">
                 <input v-model="form.remember" type="checkbox" />
-                Ghi nhớ đăng nhập
+                {{ t('identity::admin.auth_login.remember_me') }}
             </label>
             <button type="submit" :disabled="form.processing" class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">
-                Đăng nhập
+                {{ t('identity::admin.auth_login.sign') }}
             </button>
-            <Link :href="forgotUrl" class="block text-center text-sm text-indigo-600 hover:underline">Quên mật khẩu?</Link>
+            <Link :href="forgotUrl" class="block text-center text-sm text-indigo-600 hover:underline">{{ t('identity::admin.auth_login.forgot_password') }}</Link>
         </form>
     </div>
 </template>

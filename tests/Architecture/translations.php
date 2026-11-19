@@ -23,8 +23,8 @@ const TRANSLATION_DYNAMIC_PREFIX = '/^[a-z0-9-]+::[a-z0-9_]+\.([A-Za-z0-9_\-]+\.
  */
 const TRANSLATION_PHP_CALL = '/(?<![\w>$:\\\\])(?:__|trans|trans_choice|@lang|@choice)\(\s*([\'"])((?:\\\\.|(?!\1).)*)\1\s*(\.?)/su';
 
-/** Lời gọi dịch Vue/TS: `t()`, `tc()` (không tính method `x.t()`). */
-const TRANSLATION_JS_CALL = '/(?<![\w.$])tc?\(\s*([\'"`])((?:\\\\.|(?!\1).)*)\1\s*(\+?)/su';
+/** Lời gọi dịch Vue/TS: `t()`, `tc()`, `translateText()` (không tính method `x.t()`). */
+const TRANSLATION_JS_CALL = '/(?<![\w.$])(?:tc?|translateText)\(\s*([\'"`])((?:\\\\.|(?!\1).)*)\1\s*(\+?)/su';
 
 function translationRoot(): string
 {
@@ -54,7 +54,7 @@ function translationSourceFiles(): array
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator("{$root}/{$dir}", FilesystemIterator::SKIP_DOTS));
         foreach ($iterator as $file) {
             $path = str_replace('\\', '/', $file->getPathname());
-            if (preg_match($skip, substr($path, strlen($root))) === 1 || preg_match('/\.(php|vue|ts|js|mjs)$/', $path) !== 1) {
+            if (preg_match($skip, substr($path, strlen($root))) === 1 || preg_match('/\.(php|vue|ts|js|mjs)$/', $path) !== 1 || preg_match('/\.test\.m?[jt]s$/', $path) === 1) {
                 continue;
             }
             $files[] = substr($path, strlen($root) + 1);
@@ -354,6 +354,8 @@ function translationHardcodedOffenders(): array
             $source = (string) preg_replace('#<!--.*?-->|/\*.*?\*/#s', '', $source);
             $source = (string) preg_replace(TRANSLATION_JS_CALL, '', $source);
             foreach (explode("\n", $source) as $line) {
+                // Regex literal (vd. bỏ dấu `.replace(/đ/g, 'd')`) là dữ liệu, không phải chữ hiển thị.
+                $line = (string) preg_replace('#(?<=[(,=]|[(,=] )/(?:\\\\.|[^/\n])+/[a-z]*#u', '', $line);
                 $line = (string) preg_replace('#(?<![:\'"`])//.*$#', '', $line);
                 // Thông điệp cho dev ở console trình duyệt — không dịch.
                 $count += preg_match($vietnamese, $line) === 1 && preg_match('/\bconsole\.(log|info|warn|error|debug)\(|\bnew Error\(/', $line) !== 1 ? 1 : 0;

@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/vue3';
+import { setTranslator } from './textTranslator';
 import { lookup, translate, translateChoice, type TranslationCatalog, type TranslationParams } from './translate';
 
 /**
@@ -26,3 +27,6 @@ export function tc(key: string, count: number, params?: TranslationParams): stri
 
     return translateChoice(catalog(), key, count, params);
 }
+
+// Module thuần (toast.ts, upload.ts) dịch qua textTranslator — nối t() của Admin.
+setTranslator(t);

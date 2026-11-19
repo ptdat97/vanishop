@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Select from '@admin/Components/Select.vue';
 import { confirmState, settleConfirm } from '@admin/confirm';
 import { dangerButton, inputClass, primaryButton, secondaryButton } from '@admin/styles';
@@ -50,7 +51,7 @@ function accept(): void {
                     </ul>
                     <label v-for="(field, index) in options.fields" :key="field.key" class="mt-4 block text-sm">
                         <span class="mb-1 block font-medium text-slate-700">{{ field.label }}</span>
-                        <Select v-if="field.options" v-model="values[field.key]" :options="field.options" empty-label="— Chọn —" :aria-label="field.label" />
+                        <Select v-if="field.options" v-model="values[field.key]" :options="field.options" :empty-label="t('shared::admin.confirm_dialog.choose')" :aria-label="field.label" />
                         <input
                             v-else
                             v-model="values[field.key]"
@@ -62,8 +63,8 @@ function accept(): void {
                         />
                     </label>
                     <div class="mt-5 flex justify-end gap-2">
-                        <AlertDialogCancel type="button" :class="secondaryButton">Thôi</AlertDialogCancel>
-                        <button type="submit" :class="options.tone === 'danger' ? dangerButton : primaryButton" :disabled="blocked">{{ options.confirmLabel ?? 'Đồng ý' }}</button>
+                        <AlertDialogCancel type="button" :class="secondaryButton">{{ t('shared::admin.confirm_dialog.never_mind') }}</AlertDialogCancel>
+                        <button type="submit" :class="options.tone === 'danger' ? dangerButton : primaryButton" :disabled="blocked">{{ options.confirmLabel ?? t('shared::admin.confirm_dialog.consented') }}</button>
                     </div>
                 </form>
             </AlertDialogContent>

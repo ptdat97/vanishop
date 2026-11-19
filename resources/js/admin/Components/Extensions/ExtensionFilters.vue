@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import Select from '@admin/Components/Select.vue';
 import type { ExtensionFilter } from '@admin/types';
 
@@ -10,5 +11,5 @@ const options = (filter: ExtensionFilter): Array<{ value: string; label: string 
 </script>
 
 <template>
-    <Select v-for="filter in filters" :key="filter.key" :model-value="values[filter.key] ?? ''" :options="options(filter)" :empty-label="`${filter.label}: tất cả`" :aria-label="filter.label" @update:model-value="values[filter.key] = $event" />
+    <Select v-for="filter in filters" :key="filter.key" :model-value="values[filter.key] ?? ''" :options="options(filter)" :empty-label="t('shared::admin.extensions_extension_filters.label_all', { label: filter.label })" :aria-label="filter.label" @update:model-value="values[filter.key] = $event" />
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends string | number | boolean | null">
+import { t } from '@admin/i18n';
 import { SelectContent, SelectItem, SelectItemIndicator, SelectItemText, SelectPortal, SelectRoot, SelectTrigger, SelectValue, SelectViewport } from 'reka-ui';
 import { computed } from 'vue';
 
@@ -46,7 +47,7 @@ const selected = computed({
             :aria-label="ariaLabel"
             class="flex w-full items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 data-placeholder:text-slate-400"
         >
-            <SelectValue :placeholder="placeholder ?? '— Chọn —'" class="truncate" />
+            <SelectValue :placeholder="placeholder ?? t('shared::admin.select.choose')" class="truncate" />
             <span aria-hidden="true" class="text-slate-400">▾</span>
         </SelectTrigger>
         <SelectPortal>

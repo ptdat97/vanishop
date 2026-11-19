@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import InsightView from '@admin/Components/Insights/InsightView.vue';
 import type { InsightData } from '@admin/Components/Insights/types';
 import { Head, Link } from '@inertiajs/vue3';
@@ -32,12 +33,12 @@ const span: Record<number, string> = {
 </script>
 
 <template>
-    <Head title="Tổng quan" />
-    <h1 class="mb-6 text-xl font-semibold">Tổng quan</h1>
+    <Head :title="t('shared::admin.dashboard.overview')" />
+    <h1 class="mb-6 text-xl font-semibold">{{ t('shared::admin.dashboard.overview') }}</h1>
     <section v-if="tasks.length" class="mb-8" aria-labelledby="tasks-heading">
         <h2 id="tasks-heading" class="mb-3 flex items-baseline gap-2 font-semibold">
-            Việc cần làm
-            <span class="text-sm font-normal text-slate-500">{{ pending ? `${pending} hàng đợi đang có việc` : 'Không có việc tồn đọng' }}</span>
+            {{ t('shared::admin.dashboard.do') }}
+            <span class="text-sm font-normal text-slate-500">{{ pending ? t('shared::admin.dashboard.pending_queues_have_work', { pending }) : t('shared::admin.dashboard.nothing_pending') }}</span>
         </h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <Link
@@ -66,5 +67,5 @@ const span: Record<number, string> = {
             <p class="mt-2 text-sm text-slate-600">{{ card.body }}</p>
         </div>
     </div>
-    <p v-else-if="!tasks.length" class="text-sm text-slate-500">Chưa có nội dung. Bật plugin Báo cáo (vani.reports) hoặc plugin khác để thêm widget vào trang này.</p>
+    <p v-else-if="!tasks.length" class="text-sm text-slate-500">{{ t('shared::admin.dashboard.no_content_yet_enable_reports') }}</p>
 </template>

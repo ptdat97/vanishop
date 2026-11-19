@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { matchesSearch, useAsyncOptions } from '@admin/search';
 import type { Option } from '@admin/types';
 import { ComboboxAnchor, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxPortal, ComboboxRoot, ComboboxTrigger, ComboboxViewport } from 'reka-ui';
@@ -67,14 +68,14 @@ function onOpen(open: boolean): void {
                 class="w-full rounded-md bg-transparent px-3 py-2 focus:outline-none disabled:opacity-50"
                 @update:model-value="onSearch"
             />
-            <ComboboxTrigger class="px-2 text-slate-400" aria-label="Mở danh sách">▾</ComboboxTrigger>
+            <ComboboxTrigger class="px-2 text-slate-400" :aria-label="t('shared::admin.combobox.open_list')">▾</ComboboxTrigger>
         </ComboboxAnchor>
         <ComboboxPortal>
             <ComboboxContent position="popper" :side-offset="4" class="z-50 max-h-72 w-(--reka-combobox-trigger-width) overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
                 <ComboboxViewport class="p-1">
-                    <p v-if="remote?.loading.value" class="px-3 py-2 text-sm text-slate-500" aria-live="polite">Đang tìm…</p>
-                    <p v-else-if="remote?.failed.value" class="px-3 py-2 text-sm text-red-600" aria-live="polite">Không tìm được, gõ lại để thử.</p>
-                    <ComboboxEmpty v-else class="px-3 py-2 text-sm text-slate-500">{{ emptyText ?? 'Không có kết quả.' }}</ComboboxEmpty>
+                    <p v-if="remote?.loading.value" class="px-3 py-2 text-sm text-slate-500" aria-live="polite">{{ t('shared::admin.combobox.searching') }}</p>
+                    <p v-else-if="remote?.failed.value" class="px-3 py-2 text-sm text-red-600" aria-live="polite">{{ t('shared::admin.combobox.nothing_found_type_again_retry') }}</p>
+                    <ComboboxEmpty v-else class="px-3 py-2 text-sm text-slate-500">{{ emptyText ?? t('shared::admin.combobox.no_results') }}</ComboboxEmpty>
                     <ComboboxItem
                         v-for="option in shown"
                         :key="option.value"
@@ -85,7 +86,7 @@ function onOpen(open: boolean): void {
                         <ComboboxItemIndicator class="absolute left-2 text-indigo-600">✓</ComboboxItemIndicator>
                         {{ option.label }}
                     </ComboboxItem>
-                    <p v-if="matching.length > MAX_SHOWN" class="px-3 py-2 text-xs text-slate-500">Còn {{ matching.length - MAX_SHOWN }} kết quả — gõ thêm để thu hẹp.</p>
+                    <p v-if="matching.length > MAX_SHOWN" class="px-3 py-2 text-xs text-slate-500">{{ t('shared::admin.combobox.max_shown_more_results_keep', { max_shown: matching.length - MAX_SHOWN }) }}</p>
                 </ComboboxViewport>
             </ComboboxContent>
         </ComboboxPortal>

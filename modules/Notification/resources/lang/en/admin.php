@@ -1,0 +1,46 @@
+<?php
+
+// Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
+
+return [
+    'logs_index' => [
+        'all_statuses' => 'All statuses',
+        'apply' => 'Apply',
+        'attempts_attempts' => ':attempts attempts',
+        'clear_filters' => 'Clear filters',
+        'error' => 'Error',
+        'filtering' => 'Filtering',
+        'message_templates' => 'Message templates',
+        'no_messages_yet' => 'No messages yet.',
+        'notification_log' => 'Notification log',
+        'recipient' => 'Recipient',
+        'recipient_key_order_placed12' => 'Recipient or key (e.g. order_placed:12)',
+        'search_notification_log' => 'Search the notification log',
+        'sent_sent' => 'sent :sent_at',
+        'status' => 'Status',
+        'time' => 'Time',
+        'total_messages_recipients_masked' => ':total messages · recipients are masked',
+        'type_channel' => 'Type / channel',
+    ],
+    'templates_index' => [
+        'add_template' => 'Add template',
+        'available_variables_variable_hint' => 'Available variables: :variable_hint',
+        'cancel' => 'Cancel',
+        'channel' => 'Channel',
+        'channel_parameters_json_zns_template' => 'Channel parameters (JSON, e.g. ZNS: {"template_id": "123", "params": {"order_code": "{{ order_number }}"}})',
+        'content' => 'Content',
+        'delete' => 'Delete',
+        'delete_message_template' => 'Delete this message template?',
+        'invalid_json' => 'Invalid JSON.',
+        'language' => 'Language',
+        'message_templates' => 'Message templates',
+        'message_type' => 'Message type',
+        'no_message_templates_yet' => 'No message templates yet.',
+        'off' => '· off',
+        'save' => 'Save',
+        'send_log' => 'Send log',
+        'subject_email' => 'Subject (email)',
+        'transactional_messages_type_channel_variables' => 'Transactional messages by type × channel; Variables: {{ ten_bien }}.',
+        'use' => 'In use',
+    ],
+];

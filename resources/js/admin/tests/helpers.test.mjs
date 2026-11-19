@@ -3,6 +3,11 @@ import { test } from 'node:test';
 // Chạy bằng `npm run test:admin`: tsc biên dịch helper thuần (không cần trình duyệt) ra node_modules/.cache/vani-admin.
 import { matchesSearch, normalizeSearch } from '../../../../node_modules/.cache/vani-admin/search.js';
 import { checkFile, matchesAccept, partitionFiles } from '../../../../node_modules/.cache/vani-admin/upload.js';
+import { setTranslator } from '../../../../node_modules/.cache/vani-admin/textTranslator.js';
+import { translate } from '../../../../node_modules/.cache/vani-admin/translate.js';
+
+// i18n.ts nối t() khi chạy trong Admin; ở đây dùng catalog tiếng Việt tối thiểu.
+setTranslator((key, params) => translate({ 'shared::admin': { upload: { type_not_supported: ':name: loại tệp không được hỗ trợ.', too_large: ':name: :size, vượt giới hạn :max.' } } }, key, params));
 
 const file = (name, type, kb) => new File([new Uint8Array(kb * 1024)], name, { type });
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { secondaryButton } from '@admin/styles';
 import type { MediaItem, SharedProps } from '@admin/types';
 import { usePage } from '@inertiajs/vue3';
@@ -20,7 +21,7 @@ const props = withDefaults(defineProps<{ multiple?: boolean; max?: number; disab
     multiple: false,
     max: 50,
     disabled: false,
-    label: 'ảnh',
+    label: t('shared::admin.media_media_field.images'),
     kind: 'image',
 });
 const model = defineModel<number | null | number[]>({ default: null });
@@ -84,14 +85,14 @@ function remove(id: number): void {
                 <div v-else class="flex h-24 items-center justify-center text-xs text-slate-400">#{{ id }}</div>
                 <div v-if="!disabled" class="absolute inset-x-0 bottom-0 flex items-center justify-end gap-1 bg-white/80 p-1 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
                     <SortHandle v-if="multiple" v-bind="handle" class="mr-auto" />
-                    <button type="button" class="px-1 text-red-600" :aria-label="`Bỏ ${label}`" @click="remove(id)">Bỏ</button>
+                    <button type="button" class="px-1 text-red-600" :aria-label="t('shared::admin.media_media_field.remove_label', { label })" @click="remove(id)">{{ t('shared::admin.media_media_field.remove') }}</button>
                 </div>
         </Sortable>
-        <p v-else class="text-xs text-slate-500">Chưa chọn {{ label }}.</p>
+        <p v-else class="text-xs text-slate-500">{{ t('shared::admin.media_media_field.no_label_chosen', { label }) }}</p>
         <button v-if="!disabled && libraryUrl && (!multiple || ids.length < max)" type="button" :class="secondaryButton" @click="picking = true">
-            {{ multiple ? `Thêm ${label}` : ids.length ? `Đổi ${label}` : `Chọn ${label}` }}
+            {{ multiple ? t('shared::admin.media_media_field.add_label', { label }) : ids.length ? t('shared::admin.media_media_field.change_label', { label }) : t('shared::admin.media_media_field.choose_label', { label }) }}
         </button>
-        <p v-if="!libraryUrl" class="text-xs text-slate-500">Cần quyền xem Thư viện ảnh để chọn {{ label }}.</p>
-        <MediaPicker v-model:open="picking" :title="`Chọn ${label} từ thư viện`" :multiple="multiple" :kind="kind" @select="pick" />
+        <p v-if="!libraryUrl" class="text-xs text-slate-500">{{ t('shared::admin.media_media_field.you_need_permission_view_media', { label }) }}</p>
+        <MediaPicker v-model:open="picking" :title="t('shared::admin.media_media_field.choose_label_from_library', { label })" :multiple="multiple" :kind="kind" @select="pick" />
     </div>
 </template>

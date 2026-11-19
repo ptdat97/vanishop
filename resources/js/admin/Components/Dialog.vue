@@ -4,6 +4,7 @@ let openCount = 0;
 </script>
 
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { confirmAction } from '@admin/confirm';
 import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 
@@ -57,7 +58,7 @@ onBeforeUnmount(() => lockScroll(false));
 
 /** Yêu cầu đóng (Esc, ×, nền, nút "Đóng" trong slot qua `close`): hỏi lại khi còn thay đổi chưa lưu. */
 async function close(): Promise<void> {
-    if (props.dirty && (await confirmAction({ title: 'Đóng khi còn thay đổi chưa lưu?', message: 'Các thay đổi chưa lưu sẽ mất.', confirmLabel: 'Đóng', tone: 'danger' })) === false) {
+    if (props.dirty && (await confirmAction({ title: t('shared::admin.dialog.close_unsaved_changes'), message: t('shared::admin.dialog.unsaved_changes_lost'), confirmLabel: t('shared::admin.dialog.close'), tone: 'danger' })) === false) {
         return;
     }
     open.value = false;
@@ -116,7 +117,7 @@ defineExpose({ close });
                         <p v-if="subtitle" class="truncate text-xs text-slate-500">{{ subtitle }}</p>
                     </div>
                     <slot name="actions" />
-                    <button type="button" class="rounded px-2 text-2xl leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="Đóng" @click="close">×</button>
+                    <button type="button" class="rounded px-2 text-2xl leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-800" :aria-label="t('shared::admin.dialog.close')" @click="close">×</button>
                 </header>
                 <div class="min-h-0 flex-1 overflow-y-auto" :class="size === 'large' ? 'flex flex-col p-3' : 'p-4 sm:p-6'">
                     <slot :close="close" />

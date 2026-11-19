@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -45,9 +46,9 @@ const metaError = ref<string | null>(null);
 const typeOptions = computed(() => Object.entries(props.types).map(([value, type]) => ({ value, label: type.label })));
 const localeOptions = locales.map((option) => ({ value: option.code, label: option.label }));
 const columns = [
-    { key: 'type', label: 'Loại tin' },
-    { key: 'channel', label: 'Kênh', class: 'font-mono text-xs' },
-    { key: 'body', label: 'Nội dung', class: 'max-w-md text-xs whitespace-pre-line text-slate-600' },
+    { key: 'type', label: t('notification::admin.templates_index.message_type') },
+    { key: 'channel', label: t('notification::admin.templates_index.channel'), class: 'font-mono text-xs' },
+    { key: 'body', label: t('notification::admin.templates_index.content'), class: 'max-w-md text-xs whitespace-pre-line text-slate-600' },
     { key: 'actions', label: '', align: 'right' as const, class: 'whitespace-nowrap' },
 ];
 const variableHint = computed(() => (props.types[form.type]?.variables ?? []).map((name) => '{' + '{ ' + name + ' }' + '}').join(', '));
@@ -76,7 +77,7 @@ function submit(): void {
         meta = form.meta_json.trim() === '' ? null : JSON.parse(form.meta_json);
         metaError.value = null;
     } catch {
-        metaError.value = 'JSON không hợp lệ.';
+        metaError.value = t('notification::admin.templates_index.invalid_json');
         return;
     }
     const payload = form.transform((data) => ({
@@ -93,69 +94,69 @@ function submit(): void {
 }
 
 async function remove(template: Template): Promise<void> {
-    if ((await confirmAction({ title: 'Xoá mẫu tin này?', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('notification::admin.templates_index.delete_message_template'), confirmLabel: t('notification::admin.templates_index.delete'), tone: 'danger' })) !== false) {
         router.delete(`${props.baseUrl}/${template.id}`, { preserveScroll: true });
     }
 }
 </script>
 
 <template>
-    <Head title="Mẫu tin" />
-    <PageHeader title="Mẫu tin" subtitle="Tin giao dịch theo loại × kênh; Biến: {{ ten_bien }}.">
-        <Link :href="baseUrl.replace(/templates$/, 'logs')" :class="secondaryButton">Nhật ký gửi</Link>
-        <button v-if="can.manage" :class="primaryButton" @click="open(null)">Thêm mẫu</button>
+    <Head :title="t('notification::admin.templates_index.message_templates')" />
+    <PageHeader :title="t('notification::admin.templates_index.message_templates')" :subtitle="t('notification::admin.templates_index.transactional_messages_type_channel_variables')">
+        <Link :href="baseUrl.replace(/templates$/, 'logs')" :class="secondaryButton">{{ t('notification::admin.templates_index.send_log') }}</Link>
+        <button v-if="can.manage" :class="primaryButton" @click="open(null)">{{ t('notification::admin.templates_index.add_template') }}</button>
     </PageHeader>
 
     <form v-if="creating || editing" class="mb-6 space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" @submit.prevent="submit">
         <div class="grid gap-3 md:grid-cols-3">
             <label>
-                Loại tin
-                <Select v-model="form.type" :options="typeOptions" aria-label="Loại tin" />
+                {{ t('notification::admin.templates_index.message_type') }}
+                <Select v-model="form.type" :options="typeOptions" :aria-label="t('notification::admin.templates_index.message_type')" />
             </label>
             <label>
-                Kênh
+                {{ t('notification::admin.templates_index.channel') }}
                 <input v-model="form.channel" :class="inputClass" list="notification-channels" />
                 <datalist id="notification-channels">
                     <option v-for="channel in channels" :key="channel" :value="channel" />
                 </datalist>
             </label>
             <label>
-                Ngôn ngữ
-                <Select v-model="form.locale" :options="localeOptions" aria-label="Ngôn ngữ" />
+                {{ t('notification::admin.templates_index.language') }}
+                <Select v-model="form.locale" :options="localeOptions" :aria-label="t('notification::admin.templates_index.language')" />
             </label>
         </div>
         <label class="block">
-            Tiêu đề (email)
+            {{ t('notification::admin.templates_index.subject_email') }}
             <input v-model="form.subject" :class="inputClass" />
             <span v-if="form.errors.subject" class="text-xs text-red-600">{{ form.errors.subject }}</span>
         </label>
         <label class="block">
-            Nội dung
+            {{ t('notification::admin.templates_index.content') }}
             <textarea v-model="form.body" rows="5" :class="inputClass" />
             <span v-if="form.errors.body" class="text-xs text-red-600">{{ form.errors.body }}</span>
             <span v-if="form.errors.type" class="text-xs text-red-600">{{ form.errors.type }}</span>
         </label>
         <label class="block">
-            Tham số của kênh (JSON, vd. ZNS: {"template_id": "123", "params": {"order_code": "&#123;&#123; order_number &#125;&#125;"}})
+            {{ t('notification::admin.templates_index.channel_parameters_json_zns_template') }}
             <textarea v-model="form.meta_json" rows="3" :class="[inputClass, 'font-mono text-xs']" />
             <span v-if="metaError" class="text-xs text-red-600">{{ metaError }}</span>
         </label>
-        <p class="text-xs text-slate-500">Biến có sẵn: {{ variableHint }}</p>
-        <label class="flex items-center gap-2"><input v-model="form.active" type="checkbox" /> Đang dùng</label>
+        <p class="text-xs text-slate-500">{{ t('notification::admin.templates_index.available_variables_variable_hint', { variable_hint: variableHint }) }}</p>
+        <label class="flex items-center gap-2"><input v-model="form.active" type="checkbox" /> {{ t('notification::admin.templates_index.use') }}</label>
         <div class="flex gap-2">
-            <button type="submit" :class="primaryButton" :disabled="form.processing">Lưu</button>
-            <button type="button" :class="secondaryButton" @click="((editing = null), (creating = false))">Huỷ</button>
+            <button type="submit" :class="primaryButton" :disabled="form.processing">{{ t('notification::admin.templates_index.save') }}</button>
+            <button type="button" :class="secondaryButton" @click="((editing = null), (creating = false))">{{ t('notification::admin.templates_index.cancel') }}</button>
         </div>
     </form>
 
-    <DataTable :columns="columns" :rows="templates" :row-class="() => 'align-top'" :row-click="can.manage ? open : undefined" empty-text="Chưa có mẫu tin nào.">
+    <DataTable :columns="columns" :rows="templates" :row-class="() => 'align-top'" :row-click="can.manage ? open : undefined" :empty-text="t('notification::admin.templates_index.no_message_templates_yet')">
         <template #cell-type="{ row }">
             {{ types[row.type]?.label ?? row.type }}
-            <div class="font-mono text-xs text-slate-400">{{ row.type }} · {{ row.locale }}<span v-if="!row.active"> · tắt</span></div>
+            <div class="font-mono text-xs text-slate-400">{{ row.type }} · {{ row.locale }}<span v-if="!row.active"> {{ t('notification::admin.templates_index.off') }}</span></div>
         </template>
         <template #cell-body="{ row }">{{ row.subject ? `${row.subject}\n` : '' }}{{ row.body }}</template>
         <template #cell-actions="{ row }">
-            <button v-if="can.manage" :class="dangerButton" @click="remove(row)">Xoá</button>
+            <button v-if="can.manage" :class="dangerButton" @click="remove(row)">{{ t('notification::admin.templates_index.delete') }}</button>
         </template>
     </DataTable>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T">
+import { t } from '@admin/i18n';
 import { computed, nextTick, ref } from 'vue';
 import Draggable from 'vuedraggable';
 import { type DropTarget, type Path, canDrop, heightOf, indentTarget, moveNode, outdentTarget, siblingTarget } from '../dnd/tree';
@@ -107,8 +108,8 @@ function apply(from: Path, to: DropTarget): Path | null {
     if (touchesRoot) emit('update:modelValue', root);
     emit('change');
 
-    const name = props.itemLabel?.(item) ?? 'Mục';
-    announcement.value = `${name}: đã chuyển tới vị trí ${moved[moved.length - 1] + 1}${moved.length > 1 ? `, cấp ${moved.length}` : ''}.`;
+    const name = props.itemLabel?.(item) ?? t('shared::admin.sortable.item');
+    announcement.value = t('shared::admin.sortable.moved_to_position', { name, position: moved[moved.length - 1] + 1, level: moved.length > 1 ? t('shared::admin.sortable.level', { level: moved.length }) : '' });
 
     return moved;
 }
@@ -144,8 +145,8 @@ function handleFor(item: T, index: number): Record<string, unknown> {
     return {
         'data-dnd-handle': '',
         disabled: props.disabled,
-        'aria-label': `Sắp xếp${label ? ` ${label}` : ''}: kéo, hoặc dùng phím mũi tên`,
-        title: 'Kéo để sắp xếp',
+        'aria-label': t('shared::admin.sortable.sortlabel_drag_use_arrow_keys', { label: label ? ` ${label}` : '' }),
+        title: t('shared::admin.sortable.drag_reorder'),
         onKeydown: (event: KeyboardEvent) => context.value.key(event, path, props.modelValue.length, key),
     };
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { secondaryButton } from '@admin/styles';
 import { formatSize, partitionFiles } from '@admin/upload';
 import { computed, ref, useId } from 'vue';
@@ -12,7 +13,7 @@ import { computed, ref, useId } from 'vue';
  */
 const props = withDefaults(
     defineProps<{ accept?: string; maxKb?: number | null; multiple?: boolean; label?: string; progress?: number | null; error?: string | null; disabled?: boolean; compact?: boolean }>(),
-    { accept: '', maxKb: null, multiple: false, label: 'Chọn tệp', progress: null, error: null, disabled: false, compact: false },
+    { accept: '', maxKb: null, multiple: false, label: () => t('shared::admin.file_input.choose_file'), progress: null, error: null, disabled: false, compact: false },
 );
 const model = defineModel<File | File[] | null>({ default: null });
 const emit = defineEmits<{ pick: [files: File[]] }>();
@@ -22,7 +23,7 @@ const localErrors = ref<string[]>([]);
 
 const files = computed<File[]>(() => (Array.isArray(model.value) ? model.value : model.value ? [model.value] : []));
 const sending = computed(() => props.progress !== null && props.progress !== undefined);
-const hint = computed(() => (props.maxKb ? `Tối đa ${formatSize(props.maxKb * 1024)}` : ''));
+const hint = computed(() => (props.maxKb ? t('shared::admin.file_input.most_max_kb', { max_kb: formatSize(props.maxKb * 1024) }) : ''));
 
 function onChange(): void {
     const chosen = Array.from(input.value?.files ?? []);
@@ -50,7 +51,7 @@ defineExpose({ clear, open: () => input.value?.click() });
             <input :id="id" ref="input" type="file" class="sr-only" :accept="accept || undefined" :multiple="multiple" :disabled="disabled" @change="onChange" />
             <template v-if="!compact">
                 <span v-if="files.length" class="truncate text-slate-700">{{ files.map((file) => `${file.name} (${formatSize(file.size)})`).join(', ') }}</span>
-                <button v-if="files.length && !sending" type="button" class="text-xs text-slate-500 hover:underline" @click="clear">Bỏ</button>
+                <button v-if="files.length && !sending" type="button" class="text-xs text-slate-500 hover:underline" @click="clear">{{ t('shared::admin.file_input.remove') }}</button>
                 <span v-else-if="!files.length && hint" class="text-xs text-slate-500">{{ hint }}</span>
             </template>
         </div>

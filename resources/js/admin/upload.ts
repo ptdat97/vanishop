@@ -1,3 +1,4 @@
+import { translateText } from './textTranslator.js';
 /**
  * Tải tệp lên trong Admin: kiểm tra loại/dung lượng **trước khi gửi** (báo ngay, không chờ server) — server vẫn kiểm lại.
  *   const error = checkFile(file, { accept: 'image/jpeg,image/png', maxKb: 10240 }); // null khi hợp lệ
@@ -30,10 +31,10 @@ export function formatSize(bytes: number): string {
 /** Lý do tệp không hợp lệ (tiếng của Admin), hoặc `null`. */
 export function checkFile(file: File, rules: FileRules): string | null {
     if (!matchesAccept(file, rules.accept)) {
-        return `${file.name}: loại tệp không được hỗ trợ.`;
+        return translateText('shared::admin.upload.type_not_supported', { name: file.name });
     }
     if (rules.maxKb && file.size > rules.maxKb * 1024) {
-        return `${file.name}: ${formatSize(file.size)}, vượt giới hạn ${formatSize(rules.maxKb * 1024)}.`;
+        return translateText('shared::admin.upload.too_large', { name: file.name, size: formatSize(file.size), max: formatSize(rules.maxKb * 1024) });
     }
 
     return null;

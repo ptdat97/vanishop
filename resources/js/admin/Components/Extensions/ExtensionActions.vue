@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { confirmAction, promptFields } from '@admin/confirm';
 import { HttpError, postJson } from '@admin/http';
 import { secondaryButton } from '@admin/styles';
@@ -7,7 +8,7 @@ import { router } from '@inertiajs/vue3';
 
 /** Nút thao tác hàng loạt (plugin hoặc module Core); server kiểm tra quyền. `method: 'get'` mở trang/tải file. */
 const props = withDefaults(defineProps<{ actions: ExtensionAction[]; ids: number[]; selectionDescription?: string }>(), {
-    selectionDescription: 'mục đã chọn',
+    selectionDescription: t('shared::admin.extensions_extension_actions.selected_items'),
 });
 
 async function run(action: ExtensionAction): Promise<void> {
@@ -16,10 +17,10 @@ async function run(action: ExtensionAction): Promise<void> {
     }
     let values: Record<string, string> = {};
     if (action.fields?.length) {
-        const result = await promptFields({ title: action.label, message: `Áp dụng cho ${props.ids.length} ${props.selectionDescription}.`, confirmLabel: action.label, fields: action.fields });
+        const result = await promptFields({ title: action.label, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: props.selectionDescription }), confirmLabel: action.label, fields: action.fields });
         if (result === false) return;
         values = result;
-    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: `Áp dụng cho ${props.ids.length} ${props.selectionDescription}.` })) === false) {
+    } else if (action.confirm && (await confirmAction({ title: `${action.label}?`, message: t('shared::admin.extensions_extension_actions.applies_count_selection_description', { count: props.ids.length, selection_description: props.selectionDescription }) })) === false) {
         return;
     }
     if (action.preview_url) {
@@ -28,7 +29,7 @@ async function run(action: ExtensionAction): Promise<void> {
         try {
             preview = await postJson(action.preview_url, { ...(action.data ?? {}), ...values, ids: props.ids });
         } catch (error) {
-            await confirmAction({ title: action.label, message: error instanceof HttpError ? error.message : 'Không xem trước được. Vui lòng thử lại.', confirmLabel: 'Đóng' });
+            await confirmAction({ title: action.label, message: error instanceof HttpError ? error.message : t('shared::admin.extensions_extension_actions.could_not_preview_try_again'), confirmLabel: t('shared::admin.extensions_extension_actions.close') });
             return;
         }
         if ((await confirmAction({ title: `${action.label}?`, message: preview.message, details: preview.details, confirmLabel: action.label, tone: preview.warning ? 'danger' : 'primary' })) === false) {

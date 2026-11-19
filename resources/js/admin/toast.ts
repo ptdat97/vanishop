@@ -1,3 +1,4 @@
+import { translateText } from './textTranslator.js';
 import { reactive, toRaw } from 'vue';
 
 /**
@@ -49,15 +50,15 @@ export function generalErrorMessages(errors: Record<string, unknown>): string[] 
 
 /** Thông điệp cho lỗi HTTP ngoài luồng Inertia (status 0 = mất mạng). */
 export function httpErrorMessage(status: number): string {
-    if (status === 0) return 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.';
-    if (status === 419) return 'Phiên làm việc đã hết hạn. Tải lại trang (F5) rồi thử lại.';
-    if (status === 403) return 'Bạn không có quyền thực hiện thao tác này.';
-    if (status === 404) return 'Không tìm thấy dữ liệu (có thể đã bị xoá).';
-    if (status === 413) return 'Tệp vượt giới hạn tải lên của máy chủ.';
-    if (status === 429) return 'Thao tác quá nhanh, thử lại sau ít phút.';
-    if (status >= 500) return 'Máy chủ gặp lỗi, thử lại sau. Nếu lỗi lặp lại, hãy báo quản trị.';
+    if (status === 0) return translateText('shared::admin.toast.connection_failed');
+    if (status === 419) return translateText('shared::admin.toast.session_expired');
+    if (status === 403) return translateText('shared::admin.toast.forbidden');
+    if (status === 404) return translateText('shared::admin.toast.not_found');
+    if (status === 413) return translateText('shared::admin.toast.too_large');
+    if (status === 429) return translateText('shared::admin.toast.too_many_requests');
+    if (status >= 500) return translateText('shared::admin.toast.server_error');
 
-    return `Không thực hiện được (mã lỗi ${status}).`;
+    return translateText('shared::admin.toast.failed_status', { status });
 }
 
 export const toastState = reactive<{ items: ToastItem[] }>({ items: [] });

@@ -4,6 +4,14 @@ Ghi mọi thay đổi của extension point public: `Modules\*\Contracts`, `Modu
 
 Plugin khai báo `requires.vanishop` theo Composer semver. Ở giai đoạn `0.x`, tăng số giữa (`0.1` → `0.2`) được coi là **có thể phá vỡ**, nên `^0.1` không nhận Core `0.2.x`.
 
+## 0.5.44 — 2026-11-19 · Extension API 1.11.0 (không đổi)
+
+ADR-049 đợt A3 (phần 1). Không đổi API cho plugin.
+
+### Đổi (Admin)
+- Component dùng chung của Admin (`resources/js/admin`: DataTable, Dialog, Combobox, MultiSelect, Select, Pagination, MediaManager/Picker/Field, SkuPicker, Sortable, FileInput, Toaster, Dashboard, form standard) và trang Vue của Identity, Integration, Notification dùng khoá `t('<namespace>::admin.<trang>.<khoá>')` — file `resources/lang/{vi,en}/admin.php` của từng module (`shared::admin` cho component dùng chung). Giá trị mặc định của prop trong `withDefaults` là factory (`() => t(...)`) để đổi theo ngôn ngữ.
+- `toast.ts`, `upload.ts` (module thuần, test bằng node) dịch qua `textTranslator.ts` (`translateText()`); `i18n.ts` nối `t()` khi nạp.
+
 ## 0.5.43 — 2026-11-19 · Extension API 1.11.0 (không đổi)
 
 ADR-049 đợt A1 (Admin chọn ngôn ngữ).

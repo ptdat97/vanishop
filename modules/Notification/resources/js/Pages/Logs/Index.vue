@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -33,11 +34,11 @@ const props = defineProps<{
 }>();
 
 const columns = [
-    { key: 'created_at', label: 'Thời gian', class: 'text-xs', sortable: true },
-    { key: 'type', label: 'Loại / kênh', class: 'font-mono text-xs' },
-    { key: 'recipient', label: 'Người nhận', class: 'font-mono text-xs' },
-    { key: 'status', label: 'Trạng thái', sortable: true },
-    { key: 'error', label: 'Lỗi', class: 'max-w-xs text-xs break-words text-red-700' },
+    { key: 'created_at', label: t('notification::admin.logs_index.time'), class: 'text-xs', sortable: true },
+    { key: 'type', label: t('notification::admin.logs_index.type_channel'), class: 'font-mono text-xs' },
+    { key: 'recipient', label: t('notification::admin.logs_index.recipient'), class: 'font-mono text-xs' },
+    { key: 'status', label: t('notification::admin.logs_index.status'), sortable: true },
+    { key: 'error', label: t('notification::admin.logs_index.error'), class: 'max-w-xs text-xs break-words text-red-700' },
 ];
 const tone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' =>
     (({ queued: 'info', sent: 'success', failed: 'danger' }) as const)[status as 'queued'] ?? 'neutral';
@@ -62,25 +63,25 @@ function changePageSize(pageSize: number): void {
 </script>
 
 <template>
-    <Head title="Nhật ký gửi tin" />
-    <PageHeader title="Nhật ký gửi tin" :subtitle="`${pagination.total} tin · người nhận đã được che`">
-        <Link :href="baseUrl.replace(/logs$/, 'templates')" :class="secondaryButton">Mẫu tin</Link>
+    <Head :title="t('notification::admin.logs_index.notification_log')" />
+    <PageHeader :title="t('notification::admin.logs_index.notification_log')" :subtitle="t('notification::admin.logs_index.total_messages_recipients_masked', { total: pagination.total })">
+        <Link :href="baseUrl.replace(/logs$/, 'templates')" :class="secondaryButton">{{ t('notification::admin.logs_index.message_templates') }}</Link>
     </PageHeader>
 
     <form class="mb-3 flex flex-wrap items-center gap-2" @submit.prevent="search()">
-        <input v-model="filters.q" :class="[inputClass, 'w-72']" placeholder="Người nhận hoặc khoá (vd. order_placed:12)" aria-label="Tìm nhật ký gửi tin" />
+        <input v-model="filters.q" :class="[inputClass, 'w-72']" :placeholder="t('notification::admin.logs_index.recipient_key_order_placed12')" :aria-label="t('notification::admin.logs_index.search_notification_log')" />
         <div class="w-40">
-            <Select v-model="filters.status" :options="codeOptions(statuses, labels.log_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" />
+            <Select v-model="filters.status" :options="codeOptions(statuses, labels.log_status)" :empty-label="t('notification::admin.logs_index.all_statuses')" :aria-label="t('notification::admin.logs_index.status')" />
         </div>
-        <button type="submit" :class="secondaryButton">Áp dụng</button>
-        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">Bỏ bộ lọc</button>
-        <span v-if="hasActiveFilters" class="text-xs text-indigo-700" aria-live="polite">Đang lọc</span>
+        <button type="submit" :class="secondaryButton">{{ t('notification::admin.logs_index.apply') }}</button>
+        <button v-if="hasActiveFilters" type="button" :class="secondaryButton" @click="clearFilters">{{ t('notification::admin.logs_index.clear_filters') }}</button>
+        <span v-if="hasActiveFilters" class="text-xs text-indigo-700" aria-live="polite">{{ t('notification::admin.logs_index.filtering') }}</span>
     </form>
 
-    <DataTable :columns="columns" :rows="logs" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :row-class="() => 'align-top'" empty-text="Chưa có tin nào.">
+    <DataTable :columns="columns" :rows="logs" :sort="sort" :loading="list.loading.value" @sort="(next) => search(1, pagination.per_page, next)" :row-class="() => 'align-top'" :empty-text="t('notification::admin.logs_index.no_messages_yet')">
         <template #cell-created_at="{ row }">
             {{ row.created_at }}
-            <div v-if="row.sent_at" class="text-slate-400">gửi {{ row.sent_at }}</div>
+            <div v-if="row.sent_at" class="text-slate-400">{{ t('notification::admin.logs_index.sent_sent', { sent_at: row.sent_at }) }}</div>
         </template>
         <template #cell-type="{ row }">
             {{ typeLabels[row.type] ?? row.type }}
@@ -88,7 +89,7 @@ function changePageSize(pageSize: number): void {
         </template>
         <template #cell-status="{ row }">
             <StatusBadge :label="labels.log_status[row.status] ?? row.status" :tone="tone(row.status)" />
-            <span class="ml-1 text-xs text-slate-500">{{ row.attempts }} lần</span>
+            <span class="ml-1 text-xs text-slate-500">{{ t('notification::admin.logs_index.attempts_attempts', { attempts: row.attempts }) }}</span>
         </template>
     </DataTable>
 

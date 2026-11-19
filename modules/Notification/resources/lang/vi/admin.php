@@ -1,0 +1,46 @@
+<?php
+
+// Chuỗi giao diện Vue của Admin (ADR-049) — đọc bằng t('<namespace>::admin.<trang>.<khoá>').
+
+return [
+    'logs_index' => [
+        'all_statuses' => 'Mọi trạng thái',
+        'apply' => 'Áp dụng',
+        'attempts_attempts' => ':attempts lần',
+        'clear_filters' => 'Bỏ bộ lọc',
+        'error' => 'Lỗi',
+        'filtering' => 'Đang lọc',
+        'message_templates' => 'Mẫu tin',
+        'no_messages_yet' => 'Chưa có tin nào.',
+        'notification_log' => 'Nhật ký gửi tin',
+        'recipient' => 'Người nhận',
+        'recipient_key_order_placed12' => 'Người nhận hoặc khoá (vd. order_placed:12)',
+        'search_notification_log' => 'Tìm nhật ký gửi tin',
+        'sent_sent' => 'gửi :sent_at',
+        'status' => 'Trạng thái',
+        'time' => 'Thời gian',
+        'total_messages_recipients_masked' => ':total tin · người nhận đã được che',
+        'type_channel' => 'Loại / kênh',
+    ],
+    'templates_index' => [
+        'add_template' => 'Thêm mẫu',
+        'available_variables_variable_hint' => 'Biến có sẵn: :variable_hint',
+        'cancel' => 'Huỷ',
+        'channel' => 'Kênh',
+        'channel_parameters_json_zns_template' => 'Tham số của kênh (JSON, vd. ZNS: {"template_id": "123", "params": {"order_code": "{{ order_number }}"}})',
+        'content' => 'Nội dung',
+        'delete' => 'Xoá',
+        'delete_message_template' => 'Xoá mẫu tin này?',
+        'invalid_json' => 'JSON không hợp lệ.',
+        'language' => 'Ngôn ngữ',
+        'message_templates' => 'Mẫu tin',
+        'message_type' => 'Loại tin',
+        'no_message_templates_yet' => 'Chưa có mẫu tin nào.',
+        'off' => '· tắt',
+        'save' => 'Lưu',
+        'send_log' => 'Nhật ký gửi',
+        'subject_email' => 'Tiêu đề (email)',
+        'transactional_messages_type_channel_variables' => 'Tin giao dịch theo loại × kênh; Biến: {{ ten_bien }}.',
+        'use' => 'Đang dùng',
+    ],
+];

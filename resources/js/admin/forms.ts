@@ -1,3 +1,4 @@
+import { t } from '@admin/i18n';
 import type { FormDataErrors, FormDataType, UseFormSubmitOptions } from '@inertiajs/core';
 import { router, useForm, type InertiaForm } from '@inertiajs/vue3';
 import { nextTick, onBeforeUnmount, onMounted } from 'vue';
@@ -36,7 +37,7 @@ export interface AdminForm<TForm extends object> {
     save: (method: SaveMethod, url: string, options?: UseFormSubmitOptions) => void;
 }
 
-const FIELD_ERRORS_MESSAGE = 'Chưa lưu được: kiểm tra các ô báo lỗi.';
+const fieldErrorsMessage = (): string => t('shared::admin.forms.not_saved_yet_check_fields');
 
 export function useAdminForm<TForm extends FormDataType<TForm>>(data: TForm, options: AdminFormOptions = {}): AdminForm<TForm> {
     const form = useForm(data) as InertiaForm<TForm>;
@@ -81,7 +82,7 @@ function syncLockVersion(form: object, current?: () => number | null | undefined
 /** Có lỗi gắn với ô nhập (không phải lỗi chung đã thành toast riêng) → một toast nhắc. */
 function reportFieldErrors(errors: FormDataErrors<object> | Record<string, unknown>): void {
     if (Object.keys(errors).some((key) => !GENERAL_ERROR_KEYS.includes(key))) {
-        toast(FIELD_ERRORS_MESSAGE, 'error');
+        toast(fieldErrorsMessage(), 'error');
     }
 }
 
@@ -116,7 +117,7 @@ function installLeaveGuard(): void {
             leaving = false;
             return;
         }
-        confirmAction({ title: 'Rời trang khi còn thay đổi chưa lưu?', message: 'Các thay đổi chưa lưu sẽ mất.', confirmLabel: 'Rời trang', tone: 'danger' }).then((answer) => {
+        confirmAction({ title: t('shared::admin.forms.leave_page_unsaved_changes'), message: t('shared::admin.forms.unsaved_changes_lost'), confirmLabel: t('shared::admin.forms.leave_page'), tone: 'danger' }).then((answer) => {
             if (answer !== false) {
                 leaving = true;
                 router.visit(visit.url, { replace: visit.replace });

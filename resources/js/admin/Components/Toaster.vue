@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { firstTime, generalErrorMessages, httpErrorMessage, toast, toastState, type ToastTone } from '@admin/toast';
 import { router, usePage } from '@inertiajs/vue3';
 import { ToastClose, ToastDescription, ToastProvider, ToastRoot, ToastViewport } from 'reka-ui';
@@ -60,7 +61,7 @@ const icon: Record<ToastTone, string> = { success: '✓', error: '!', warning: '
 </script>
 
 <template>
-    <ToastProvider :duration="4000" label="Thông báo">
+    <ToastProvider :duration="4000" :label="t('shared::admin.toaster.notifications')">
         <ToastRoot
             v-for="item in toastState.items"
             :key="item.id"
@@ -73,7 +74,7 @@ const icon: Record<ToastTone, string> = { success: '✓', error: '!', warning: '
         >
             <span aria-hidden="true" class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-xs font-semibold">{{ icon[item.tone] }}</span>
             <ToastDescription class="flex-1 whitespace-pre-line">{{ item.message }}</ToastDescription>
-            <ToastClose class="opacity-70 hover:opacity-100" aria-label="Đóng">✕</ToastClose>
+            <ToastClose class="opacity-70 hover:opacity-100" :aria-label="t('shared::admin.toaster.close')">✕</ToastClose>
         </ToastRoot>
         <ToastViewport class="fixed right-4 bottom-4 z-[60] flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2 outline-none" />
     </ToastProvider>

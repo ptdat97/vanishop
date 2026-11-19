@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import type { SharedProps } from '@admin/types';
 import { type DateValue, parseDate, parseDateTime } from '@internationalized/date';
 import { usePage } from '@inertiajs/vue3';
@@ -60,14 +61,14 @@ const value = computed<DateValue | undefined>({
                     <DatePickerInput v-else :part="segment.part" class="rounded px-0.5 tabular-nums focus:bg-indigo-50 focus:text-indigo-700 focus:outline-none data-placeholder:text-slate-400">{{ segment.value }}</DatePickerInput>
                 </template>
             </div>
-            <DatePickerTrigger class="ml-2 text-slate-400 hover:text-slate-700" aria-label="Mở lịch">📅</DatePickerTrigger>
+            <DatePickerTrigger class="ml-2 text-slate-400 hover:text-slate-700" :aria-label="t('shared::admin.date_input.open_calendar')">📅</DatePickerTrigger>
         </DatePickerField>
         <DatePickerContent :side-offset="4" class="z-50 rounded-md border border-slate-200 bg-white p-3 shadow-lg">
             <DatePickerCalendar v-slot="{ weekDays, grid }">
                 <DatePickerHeader class="mb-2 flex items-center justify-between">
-                    <DatePickerPrev class="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" aria-label="Tháng trước">‹</DatePickerPrev>
+                    <DatePickerPrev class="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" :aria-label="t('shared::admin.date_input.previous_month')">‹</DatePickerPrev>
                     <DatePickerHeading class="text-sm font-medium" />
-                    <DatePickerNext class="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" aria-label="Tháng sau">›</DatePickerNext>
+                    <DatePickerNext class="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" :aria-label="t('shared::admin.date_input.next_month')">›</DatePickerNext>
                 </DatePickerHeader>
                 <DatePickerGrid v-for="month in grid" :key="month.value.toString()" class="w-full border-collapse select-none">
                     <DatePickerGridHead>

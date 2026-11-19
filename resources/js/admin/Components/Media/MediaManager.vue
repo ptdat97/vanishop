@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { toast } from '@admin/toast';
 import Dialog from '@admin/Components/Dialog.vue';
 import Select from '@admin/Components/Select.vue';
@@ -33,14 +34,14 @@ interface BrowseResponse {
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const VIDEO_TYPES = ['video/mp4', 'video/webm'];
 const acceptedTypes = computed(() => (props.kind === 'image' ? IMAGE_TYPES : props.kind === 'video' ? VIDEO_TYPES : [...IMAGE_TYPES, ...VIDEO_TYPES]));
-const noun = computed(() => (props.kind === 'image' ? 'ảnh' : props.kind === 'video' ? 'video' : 'ảnh/video'));
+const noun = computed(() => (props.kind === 'image' ? t('shared::admin.media_media_manager.images') : props.kind === 'video' ? 'video' : t('shared::admin.media_media_manager.images_videos')));
 const limits = ref<{ image_kb: number; video_kb: number } | null>(null);
 
 const sorts = [
-    { value: 'created_at:desc', label: 'Mới nhất' },
-    { value: 'created_at:asc', label: 'Cũ nhất' },
-    { value: 'original_name:asc', label: 'Tên A → Z' },
-    { value: 'size_bytes:desc', label: 'Dung lượng lớn' },
+    { value: 'created_at:desc', label: t('shared::admin.media_media_manager.newest') },
+    { value: 'created_at:asc', label: t('shared::admin.media_media_manager.oldest') },
+    { value: 'original_name:asc', label: t('shared::admin.media_media_manager.name_z') },
+    { value: 'size_bytes:desc', label: t('shared::admin.media_media_manager.largest') },
 ];
 
 const folders = ref<string[]>([]);
@@ -71,7 +72,7 @@ const previewing = ref<MediaItem | null>(null);
 
 const searching = computed(() => keyword.value.trim() !== '');
 const selectedItems = computed(() => Array.from(selected.value.values()));
-const folderName = (path: string) => (path === '' ? 'Tất cả (thư mục gốc)' : path.split('/').pop());
+const folderName = (path: string) => (path === '' ? t('shared::admin.media_media_manager.all_root_folder') : path.split('/').pop());
 const depth = (path: string) => (path === '' ? 0 : path.split('/').length);
 
 function url(path: string): string {
@@ -162,7 +163,7 @@ async function run(action: () => Promise<{ message?: string } | unknown>, reload
 
 function errorMessage(error: unknown): string {
     const errors = error instanceof HttpError ? Object.values(error.errors).flat() : [];
-    return errors[0] ?? (error instanceof Error ? error.message : 'Có lỗi xảy ra.');
+    return errors[0] ?? (error instanceof Error ? error.message : t('shared::admin.media_media_manager.something_went_wrong'));
 }
 
 function upload(files: File[]): void {
@@ -222,7 +223,7 @@ async function drainQueue(): Promise<void> {
     if (searching.value) {
         keyword.value = '';
     }
-    toast(`Đã tải lên ${uploaded.length} ${noun.value}.`);
+    toast(t('shared::admin.media_media_manager.uploaded_count_noun', { count: uploaded.length, noun: noun.value }));
     await load();
 }
 
@@ -248,30 +249,30 @@ function onDrop(event: DragEvent): void {
 }
 
 async function createFolder(): Promise<void> {
-    const name = await confirmAction({ title: folder.value ? `Tạo thư mục con trong "${folder.value}"` : 'Tạo thư mục mới', confirmLabel: 'Tạo', reason: { label: 'Tên thư mục', required: true } });
+    const name = await confirmAction({ title: folder.value ? t('shared::admin.media_media_manager.create_subfolder_folder', { folder: folder.value }) : t('shared::admin.media_media_manager.create_new_folder'), confirmLabel: t('shared::admin.media_media_manager.create'), reason: { label: t('shared::admin.media_media_manager.folder_name'), required: true } });
     if (name) {
         run(async () => {
             const result = await postJson<{ path: string }>(url('folders'), { parent: folder.value, name });
             folder.value = result.path;
             moveTarget.value = result.path;
-            return { message: `Đã tạo thư mục ${result.path}.` };
+            return { message: t('shared::admin.media_media_manager.created_folder_path', { path: result.path }) };
         });
     }
 }
 
 async function renameFolder(): Promise<void> {
-    const name = await confirmAction({ title: 'Đổi tên thư mục', confirmLabel: 'Đổi tên', reason: { label: 'Tên mới', required: true, value: folderName(folder.value) } });
+    const name = await confirmAction({ title: t('shared::admin.media_media_manager.rename_folder'), confirmLabel: t('shared::admin.media_media_manager.rename'), reason: { label: t('shared::admin.media_media_manager.new_name'), required: true, value: folderName(folder.value) } });
     if (name) {
         run(async () => {
             const result = await postJson<{ path: string }>(url('folders/rename'), { path: folder.value, name });
             folder.value = result.path;
-            return { message: `Đã đổi thành ${result.path}.` };
+            return { message: t('shared::admin.media_media_manager.renamed_path', { path: result.path }) };
         });
     }
 }
 
 async function deleteFolder(): Promise<void> {
-    if ((await confirmAction({ title: `Xoá thư mục "${folder.value}"?`, message: 'Chỉ xoá được thư mục rỗng.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('shared::admin.media_media_manager.delete_folder_folder', { folder: folder.value }), message: t('shared::admin.media_media_manager.only_empty_folders_deleted'), confirmLabel: t('shared::admin.media_media_manager.delete'), tone: 'danger' })) !== false) {
         run(async () => {
             const result = await postJson<{ message: string }>(url('folders/delete'), { path: folder.value });
             folder.value = folder.value.includes('/') ? folder.value.slice(0, folder.value.lastIndexOf('/')) : '';
@@ -282,7 +283,7 @@ async function deleteFolder(): Promise<void> {
 
 async function renameItem(): Promise<void> {
     const [item] = selectedItems.value;
-    const name = await confirmAction({ title: `Đổi tên ${noun.value}`, confirmLabel: 'Đổi tên', reason: { label: `Tên hiển thị của ${noun.value}`, required: true, value: item.name } });
+    const name = await confirmAction({ title: t('shared::admin.media_media_manager.rename_noun', { noun: noun.value }), confirmLabel: t('shared::admin.media_media_manager.rename'), reason: { label: t('shared::admin.media_media_manager.display_name_noun', { noun: noun.value }), required: true, value: item.name } });
     if (name) {
         run(() => postJson(url(`items/${item.id}/rename`), { name }));
     }
@@ -298,7 +299,7 @@ function moveItems(): void {
 }
 
 async function deleteItems(): Promise<void> {
-    if ((await confirmAction({ title: `Xoá vĩnh viễn ${selected.value.size} ${noun.value}?`, message: 'Tệp đang được dùng (sản phẩm, danh mục, khối trang chủ…) sẽ được giữ lại.', confirmLabel: 'Xoá', tone: 'danger' })) !== false) {
+    if ((await confirmAction({ title: t('shared::admin.media_media_manager.permanently_delete_selected_noun', { selected: selected.value.size, noun: noun.value }), message: t('shared::admin.media_media_manager.files_use_products_categories_home'), confirmLabel: t('shared::admin.media_media_manager.delete'), tone: 'danger' })) !== false) {
         run(async () => {
             const result = await postJson<{ message: string }>(url('items/delete'), { ids: selectedItems.value.map((item) => item.id) });
             selected.value = new Map();
@@ -327,10 +328,10 @@ onMounted(load);
                 {{ path === '' ? '🗂' : '📁' }} {{ folderName(path) }}
             </button>
             <div v-if="canManage" class="flex flex-wrap gap-x-3 gap-y-1 border-t border-slate-100 pt-2 text-xs">
-                <button type="button" class="text-indigo-600 hover:underline" @click="createFolder">+ Thư mục</button>
+                <button type="button" class="text-indigo-600 hover:underline" @click="createFolder">{{ t('shared::admin.media_media_manager.folder') }}</button>
                 <template v-if="folder && !searching">
-                    <button type="button" class="text-indigo-600 hover:underline" @click="renameFolder">Đổi tên</button>
-                    <button type="button" class="text-red-600 hover:underline" @click="deleteFolder">Xoá</button>
+                    <button type="button" class="text-indigo-600 hover:underline" @click="renameFolder">{{ t('shared::admin.media_media_manager.rename') }}</button>
+                    <button type="button" class="text-red-600 hover:underline" @click="deleteFolder">{{ t('shared::admin.media_media_manager.delete') }}</button>
                 </template>
             </div>
         </aside>
@@ -338,34 +339,34 @@ onMounted(load);
         <section class="flex min-h-0 flex-1 flex-col rounded-lg border border-slate-200 bg-white">
             <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3">
                 <form class="flex flex-1 gap-2" @submit.prevent="search">
-                    <input v-model="keyword" :class="inputClass" class="max-w-xs" type="search" placeholder="Tìm theo tên trong mọi thư mục…" />
-                    <div class="w-40"><Select v-model="sort" :options="sorts" aria-label="Sắp xếp" @change="search" /></div>
+                    <input v-model="keyword" :class="inputClass" class="max-w-xs" type="search" :placeholder="t('shared::admin.media_media_manager.search_name_every_folder')" />
+                    <div class="w-40"><Select v-model="sort" :options="sorts" :aria-label="t('shared::admin.media_media_manager.sort')" @change="search" /></div>
                 </form>
                 <label v-if="canManage" :class="primaryButton" class="cursor-pointer">
-                    {{ uploading ? 'Đang tải lên…' : `Tải ${noun} lên` }}
+                    {{ uploading ? t('shared::admin.media_media_manager.uploading') : t('shared::admin.media_media_manager.upload_noun', { noun }) }}
                     <input type="file" class="hidden" :accept="acceptedTypes.join(',')" multiple @change="onFileInput" />
                 </label>
             </div>
 
             <p class="px-3 pt-2 text-xs text-slate-500">
-                {{ searching ? `Kết quả tìm "${keyword.trim()}"` : folderName(folder) }} · {{ meta.total }} {{ noun }}
-                <template v-if="canManage"> · kéo thả {{ noun }} vào đây để tải lên thư mục này</template>
-                <template v-if="canManage && limits && kind !== 'video'"> · ảnh JPG/PNG/WebP tối đa {{ size(limits.image_kb * 1024) }}</template>
-                <template v-if="canManage && limits && kind !== 'image'"> · video MP4/WebM tối đa {{ size(limits.video_kb * 1024) }}</template>
+                {{ searching ? t('shared::admin.media_media_manager.results_keyword', { keyword: keyword.trim() }) : folderName(folder) }} · {{ meta.total }} {{ noun }}
+                <template v-if="canManage"> {{ t('shared::admin.media_media_manager.drag_drop_noun_here_upload', { noun }) }}</template>
+                <template v-if="canManage && limits && kind !== 'video'"> {{ t('shared::admin.media_media_manager.jpg_png_webp_images_up', { image_kb: size(limits.image_kb * 1024) }) }}</template>
+                <template v-if="canManage && limits && kind !== 'image'"> {{ t('shared::admin.media_media_manager.mp4_webm_videos_up_video', { video_kb: size(limits.video_kb * 1024) }) }}</template>
             </p>
             <ul v-if="queue.length" class="space-y-1 px-3 pt-2 text-xs" data-upload-queue>
                 <li v-for="entry in queue" :key="entry.key" class="flex items-center gap-2">
                     <span class="w-48 shrink-0 truncate" :title="entry.file.name">{{ entry.file.name }}</span>
                     <template v-if="entry.status === 'error'">
                         <span class="min-w-0 flex-1 truncate text-red-600" :title="entry.error ?? ''">{{ entry.error }}</span>
-                        <button type="button" class="text-indigo-600 hover:underline" @click="retryUpload(entry)">Thử lại</button>
-                        <button type="button" class="text-slate-500 hover:underline" @click="dismissUpload(entry)">Bỏ</button>
+                        <button type="button" class="text-indigo-600 hover:underline" @click="retryUpload(entry)">{{ t('shared::admin.media_media_manager.retry') }}</button>
+                        <button type="button" class="text-slate-500 hover:underline" @click="dismissUpload(entry)">{{ t('shared::admin.media_media_manager.remove') }}</button>
                     </template>
                     <template v-else>
                         <div class="h-1.5 flex-1 overflow-hidden rounded bg-slate-200" role="progressbar" :aria-valuenow="entry.progress" aria-valuemin="0" aria-valuemax="100" :aria-label="entry.file.name">
                             <div class="h-full bg-indigo-600 transition-all" :style="{ width: `${entry.progress}%` }" />
                         </div>
-                        <span class="w-10 text-right text-slate-500">{{ entry.status === 'waiting' ? 'Chờ' : `${entry.progress}%` }}</span>
+                        <span class="w-10 text-right text-slate-500">{{ entry.status === 'waiting' ? t('shared::admin.media_media_manager.waiting') : `${entry.progress}%` }}</span>
                     </template>
                 </li>
             </ul>
@@ -392,7 +393,7 @@ onMounted(load);
                             <video v-if="item.kind === 'video'" :src="`${item.url}#t=0.5`" muted playsinline preload="metadata" class="h-full w-full object-cover" />
                             <img v-else :src="item.thumb_url ?? item.url" :alt="item.name" loading="lazy" class="h-full w-full object-cover" />
                             <span v-if="item.kind === 'video'" class="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 text-[10px] text-white">▶ Video</span>
-                            <span v-if="item.usages_count" class="absolute top-1 left-1 rounded bg-emerald-600/90 px-1.5 text-[10px] text-white">Đang dùng {{ item.usages_count }}</span>
+                            <span v-if="item.usages_count" class="absolute top-1 left-1 rounded bg-emerald-600/90 px-1.5 text-[10px] text-white">{{ t('shared::admin.media_media_manager.use_usages_count', { usages_count: item.usages_count }) }}</span>
                             <span v-if="selected.has(item.id)" class="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs text-white">✓</span>
                         </div>
                         <div class="p-1.5 text-xs">
@@ -402,12 +403,12 @@ onMounted(load);
                         </div>
                     </button>
                 </div>
-                <p v-if="!loading && !items.length" class="py-12 text-center text-sm text-slate-500">{{ searching ? `Không tìm thấy ${noun}.` : `Thư mục chưa có ${noun}.` }}</p>
-                <p v-if="loading" class="absolute inset-x-0 top-2 text-center text-xs text-slate-400">Đang tải…</p>
+                <p v-if="!loading && !items.length" class="py-12 text-center text-sm text-slate-500">{{ searching ? t('shared::admin.media_media_manager.no_noun_found', { noun }) : t('shared::admin.media_media_manager.folder_has_no_noun_yet', { noun }) }}</p>
+                <p v-if="loading" class="absolute inset-x-0 top-2 text-center text-xs text-slate-400">{{ t('shared::admin.media_media_manager.loading') }}</p>
             </div>
 
             <div v-if="pick && multiple && selected.size" class="border-t border-slate-100 px-3 pt-2" data-selection-tray>
-                <p class="mb-1 text-xs text-slate-500">Đã chọn theo thứ tự — kéo để sắp lại, ảnh đầu được dùng trước.</p>
+                <p class="mb-1 text-xs text-slate-500">{{ t('shared::admin.media_media_manager.selected_order_drag_reorder_first') }}</p>
                 <Sortable
                     v-slot="{ item, index, handle }"
                     :model-value="selectedItems"
@@ -425,7 +426,7 @@ onMounted(load);
                     <span class="absolute top-0.5 left-0.5 rounded bg-slate-900/70 px-1 text-[10px] text-white">{{ index + 1 }}</span>
                     <div class="mt-0.5 flex items-center justify-between text-xs">
                         <SortHandle v-bind="handle" />
-                        <button type="button" class="px-1 text-red-600" :aria-label="`Bỏ chọn ${item.name}`" @click="unselect(item)">×</button>
+                        <button type="button" class="px-1 text-red-600" :aria-label="t('shared::admin.media_media_manager.deselect_name', { name: item.name })" @click="unselect(item)">×</button>
                     </div>
                 </Sortable>
             </div>
@@ -437,19 +438,19 @@ onMounted(load);
 
                 <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="previewing = selectedItems[0]">Xem</button>
                 <template v-if="canManage && selected.size">
-                    <span class="ml-2 text-slate-500">Đã chọn {{ selected.size }}</span>
-                    <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="renameItem">Đổi tên</button>
+                    <span class="ml-2 text-slate-500">{{ t('shared::admin.media_media_manager.selected_selected', { selected: selected.size }) }}</span>
+                    <button v-if="selected.size === 1" type="button" :class="secondaryButton" @click="renameItem">{{ t('shared::admin.media_media_manager.rename') }}</button>
                     <div class="w-44">
-                        <Select v-model="moveTarget" :options="['', ...folders].map((path) => ({ value: path, label: `→ ${path || 'Thư mục gốc'}` }))" aria-label="Chuyển tới thư mục" />
+                        <Select v-model="moveTarget" :options="['', ...folders].map((path) => ({ value: path, label: `→ ${path || t('shared::admin.media_media_manager.root_folder')}` }))" :aria-label="t('shared::admin.media_media_manager.go_folder')" />
                     </div>
-                    <button type="button" :class="secondaryButton" @click="moveItems">Chuyển</button>
-                    <button type="button" :class="dangerButton" @click="deleteItems">Xoá</button>
+                    <button type="button" :class="secondaryButton" @click="moveItems">{{ t('shared::admin.media_media_manager.convert') }}</button>
+                    <button type="button" :class="dangerButton" @click="deleteItems">{{ t('shared::admin.media_media_manager.delete') }}</button>
                 </template>
-                <button v-else-if="selected.size" type="button" class="text-slate-500 hover:underline" @click="selected = new Map()">Bỏ chọn</button>
+                <button v-else-if="selected.size" type="button" class="text-slate-500 hover:underline" @click="selected = new Map()">{{ t('shared::admin.media_media_manager.deselect') }}</button>
 
                 <div v-if="pick" class="ml-auto flex gap-2">
-                    <button type="button" :class="secondaryButton" @click="emit('cancel')">Huỷ</button>
-                    <button type="button" :class="primaryButton" :disabled="!selected.size" @click="emit('select', selectedItems)">Chọn {{ selected.size || '' }} {{ noun }}</button>
+                    <button type="button" :class="secondaryButton" @click="emit('cancel')">{{ t('shared::admin.media_media_manager.cancel') }}</button>
+                    <button type="button" :class="primaryButton" :disabled="!selected.size" @click="emit('select', selectedItems)">{{ t('shared::admin.media_media_manager.choose_selected_noun', { selected: selected.size || '', noun }) }}</button>
                 </div>
             </div>
         </section>

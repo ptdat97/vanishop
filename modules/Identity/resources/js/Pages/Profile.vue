@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import FormField from '@admin/Components/FormField.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
 import Select from '@admin/Components/Select.vue';
@@ -27,31 +28,31 @@ function savePassword(): void {
 </script>
 
 <template>
-    <Head title="Hồ sơ của tôi" />
-    <PageHeader title="Hồ sơ của tôi" :subtitle="props.profile.email" />
+    <Head :title="t('identity::admin.profile.my_profile')" />
+    <PageHeader :title="t('identity::admin.profile.my_profile')" :subtitle="props.profile.email" />
 
     <div class="grid gap-6 lg:grid-cols-2">
         <form class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="saveProfile">
-            <h2 class="text-sm font-medium">Thông tin</h2>
-            <FormField label="Tên hiển thị" for="profile-name" :error="profile.errors.name"><input id="profile-name" v-model="profile.name" :class="inputClass" /></FormField>
-            <FormField label="Ngôn ngữ Admin" hint="Ngôn ngữ của thông báo, lỗi và nhãn trạng thái trong Admin." :error="profile.errors.locale">
-                <Select v-model="profile.locale" :options="localeOptions" :empty-label="`Mặc định của cửa hàng (${defaultLabel})`" :empty-value="null" />
+            <h2 class="text-sm font-medium">{{ t('identity::admin.profile.information') }}</h2>
+            <FormField :label="t('identity::admin.profile.display_name')" for="profile-name" :error="profile.errors.name"><input id="profile-name" v-model="profile.name" :class="inputClass" /></FormField>
+            <FormField :label="t('identity::admin.profile.admin_language')" :hint="t('identity::admin.profile.language_notifications_errors_status_labels')" :error="profile.errors.locale">
+                <Select v-model="profile.locale" :options="localeOptions" :empty-label="t('identity::admin.profile.store_default_default_label', { default_label: defaultLabel })" :empty-value="null" />
             </FormField>
-            <button type="submit" :class="primaryButton" :disabled="profile.processing">Lưu</button>
+            <button type="submit" :class="primaryButton" :disabled="profile.processing">{{ t('identity::admin.profile.save') }}</button>
         </form>
 
         <form class="space-y-3 rounded-lg border border-slate-200 bg-white p-5" @submit.prevent="savePassword">
-            <h2 class="text-sm font-medium">Đổi mật khẩu</h2>
-            <FormField label="Mật khẩu hiện tại" for="current-password" :error="password.errors.current_password">
+            <h2 class="text-sm font-medium">{{ t('identity::admin.profile.change_password') }}</h2>
+            <FormField :label="t('identity::admin.profile.current_password')" for="current-password" :error="password.errors.current_password">
                 <input id="current-password" v-model="password.current_password" :class="inputClass" type="password" autocomplete="current-password" />
             </FormField>
-            <FormField label="Mật khẩu mới" for="new-password" :error="password.errors.password">
+            <FormField :label="t('identity::admin.profile.new_password')" for="new-password" :error="password.errors.password">
                 <input id="new-password" v-model="password.password" :class="inputClass" type="password" autocomplete="new-password" />
             </FormField>
-            <FormField label="Nhập lại mật khẩu mới" for="new-password-confirmation">
+            <FormField :label="t('identity::admin.profile.confirm_new_password')" for="new-password-confirmation">
                 <input id="new-password-confirmation" v-model="password.password_confirmation" :class="inputClass" type="password" autocomplete="new-password" />
             </FormField>
-            <button type="submit" :class="primaryButton" :disabled="password.processing">Đổi mật khẩu</button>
+            <button type="submit" :class="primaryButton" :disabled="password.processing">{{ t('identity::admin.profile.change_password') }}</button>
         </form>
     </div>
 </template>

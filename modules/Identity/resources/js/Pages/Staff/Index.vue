@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { useListQuery, type ListSortState } from '@admin/list';
 import DataTable from '@admin/Components/DataTable.vue';
 import PageHeader from '@admin/Components/PageHeader.vue';
@@ -31,10 +32,10 @@ const props = defineProps<{
 
 const formatDate = useDateTime();
 const columns = [
-    { key: 'name', label: 'Nhân viên', sortable: true },
-    { key: 'roles', label: 'Vai trò' },
-    { key: 'status', label: 'Trạng thái' },
-    { key: 'last_login_at', label: 'Đăng nhập gần nhất', class: 'text-slate-500', sortable: true },
+    { key: 'name', label: t('identity::admin.staff_index.staff'), sortable: true },
+    { key: 'roles', label: t('identity::admin.staff_index.roles') },
+    { key: 'status', label: t('identity::admin.staff_index.status') },
+    { key: 'last_login_at', label: t('identity::admin.staff_index.last_sign'), class: 'text-slate-500', sortable: true },
 ];
 const q = ref(props.filters.q);
 const list = useListQuery(() => props.baseUrl);
@@ -48,24 +49,24 @@ function search(changes: { role?: number | null; status?: string | null; page?: 
 </script>
 
 <template>
-    <Head title="Nhân viên" />
-    <PageHeader title="Nhân viên" :subtitle="`${staff.total} nhân viên`">
-        <Link :href="rolesUrl" :class="secondaryButton">Vai trò</Link>
-        <Link :href="`${baseUrl}/create`" :class="primaryButton">Mời nhân viên</Link>
+    <Head :title="t('identity::admin.staff_index.staff')" />
+    <PageHeader :title="t('identity::admin.staff_index.staff')" :subtitle="t('identity::admin.staff_index.total_staff', { total: staff.total })">
+        <Link :href="rolesUrl" :class="secondaryButton">{{ t('identity::admin.staff_index.roles') }}</Link>
+        <Link :href="`${baseUrl}/create`" :class="primaryButton">{{ t('identity::admin.staff_index.invite_staff') }}</Link>
     </PageHeader>
 
     <form class="mb-3 flex flex-wrap gap-2" @submit.prevent="search()">
-        <input v-model="q" :class="[inputClass, 'w-72']" placeholder="Tên hoặc email" />
+        <input v-model="q" :class="[inputClass, 'w-72']" :placeholder="t('identity::admin.staff_index.name_email')" />
         <div class="w-48">
-            <Select :model-value="filters.role" :options="recordOptions(roles, (role) => role.name)" empty-label="Mọi vai trò" :empty-value="null" aria-label="Vai trò" @change="search({ role: $event })" />
+            <Select :model-value="filters.role" :options="recordOptions(roles, (role) => role.name)" :empty-label="t('identity::admin.staff_index.all_roles')" :empty-value="null" :aria-label="t('identity::admin.staff_index.roles')" @change="search({ role: $event })" />
         </div>
         <div class="w-48">
-            <Select :model-value="filters.status ?? ''" :options="labelOptions(labels.staff_status)" empty-label="Mọi trạng thái" aria-label="Trạng thái" @change="search({ status: $event || null })" />
+            <Select :model-value="filters.status ?? ''" :options="labelOptions(labels.staff_status)" :empty-label="t('identity::admin.staff_index.all_statuses')" :aria-label="t('identity::admin.staff_index.status')" @change="search({ status: $event || null })" />
         </div>
-        <button type="submit" :class="secondaryButton">Tìm</button>
+        <button type="submit" :class="secondaryButton">{{ t('identity::admin.staff_index.search') }}</button>
     </form>
 
-    <DataTable :columns="columns" :rows="staff.data" :sort="sort" :loading="list.loading.value" @sort="(next) => search({ sort: next })" :row-label="(member) => member.email" :row-click="(member) => router.visit(`${props.baseUrl}/${member.id}/edit`)" empty-text="Không có nhân viên phù hợp.">
+    <DataTable :columns="columns" :rows="staff.data" :sort="sort" :loading="list.loading.value" @sort="(next) => search({ sort: next })" :row-label="(member) => member.email" :row-click="(member) => router.visit(`${props.baseUrl}/${member.id}/edit`)" :empty-text="t('identity::admin.staff_index.no_matching_staff')">
         <template #cell-name="{ row }">
             <div class="font-medium">{{ row.name }}</div>
             <div class="text-xs text-slate-400">{{ row.email }}</div>

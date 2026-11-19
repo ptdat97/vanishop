@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="Row extends object">
+import { t } from '@admin/i18n';
 import { nextSort, type ListSortState } from '@admin/list';
 import type { ExtensionList } from '@admin/types';
 import { computed, watch } from 'vue';
@@ -45,7 +46,7 @@ const props = withDefaults(
     }>(),
     {
         extensions: undefined,
-        emptyText: 'Không có dữ liệu.',
+        emptyText: () => t('shared::admin.data_table.no_data'),
         rowKey: (row: Row, index: number) => ((row as { id?: number | string }).id ?? index),
         rowLabel: (row: Row) => `#${String((row as { id?: number | string }).id ?? '')}`,
         rowClass: undefined,
@@ -129,14 +130,14 @@ function handleRowClick(event: MouseEvent, row: Row): void {
 <template>
     <div>
     <div v-if="$slots.bulk && selected.length" class="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm" data-bulk-bar>
-        <span class="font-medium text-indigo-900">Đã chọn {{ selected.length }}</span>
-        <button type="button" class="text-indigo-700 hover:underline" @click="clearSelection">Bỏ chọn</button>
+        <span class="font-medium text-indigo-900">{{ t('shared::admin.data_table.count_selected', { count: selected.length }) }}</span>
+        <button type="button" class="text-indigo-700 hover:underline" @click="clearSelection">{{ t('shared::admin.data_table.deselect') }}</button>
         <slot name="bulk" :selected="selected" :clear="clearSelection" />
     </div>
     <div
         class="overflow-x-auto transition-opacity"
         role="region"
-        aria-label="Bảng dữ liệu; cuộn ngang để xem thêm cột"
+        :aria-label="t('shared::admin.data_table.data_table_scroll_horizontally_see')"
         tabindex="0"
         :aria-busy="loading || undefined"
         :class="[bare ? '' : 'rounded-lg border border-slate-200 bg-white', loading ? 'pointer-events-none opacity-60' : '']"
@@ -145,7 +146,7 @@ function handleRowClick(event: MouseEvent, row: Row): void {
             <thead class="bg-slate-50 text-left text-slate-500">
                 <tr>
                     <th v-if="canSelect" class="w-8 px-2 py-2 max-sm:sticky max-sm:left-0 max-sm:z-20 bg-slate-50">
-                        <input type="checkbox" :checked="allSelected" aria-label="Chọn tất cả trên trang hiện tại" @change="toggleAll" />
+                        <input type="checkbox" :checked="allSelected" :aria-label="t('shared::admin.data_table.select_all_current_page')" @change="toggleAll" />
                     </th>
                     <th v-for="(column, index) in columns" :key="column.key" scope="col" class="px-4 py-2 font-medium max-sm:bg-slate-50" :class="[column.align === 'right' ? 'text-right' : '', column.class, ...mobileColumnClass(column, index)]" :aria-sort="ariaSort(column)">
                         <button
@@ -153,7 +154,7 @@ function handleRowClick(event: MouseEvent, row: Row): void {
                             type="button"
                             class="inline-flex items-center gap-1 rounded hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
                             :class="sort?.key === column.key ? 'text-slate-900' : ''"
-                            :title="`Sắp xếp theo ${column.label}`"
+                            :title="t('shared::admin.data_table.sort_label', { label: column.label })"
                             @click="emit('sort', nextSort(sort, column.key))"
                         >
                             <slot :name="`head-${column.key}`" :column="column">{{ column.label }}</slot>
@@ -170,14 +171,14 @@ function handleRowClick(event: MouseEvent, row: Row): void {
                     class="border-t border-slate-100 hover:bg-slate-50/60"
                     :class="[rowClass?.(row), isSelected(row) ? 'bg-indigo-50 hover:bg-indigo-50' : '', rowClick ? 'cursor-pointer focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:bg-indigo-50' : '']"
                     :tabindex="rowClick ? 0 : undefined"
-                    :aria-label="rowClick ? `Mở ${rowLabel(row)}` : undefined"
+                    :aria-label="rowClick ? t('shared::admin.data_table.open_row_label', { row_label: rowLabel(row) }) : undefined"
                     :aria-selected="canSelect ? isSelected(row) : undefined"
                     @click="handleRowClick($event, row)"
                     @keydown.enter.self="rowClick?.(row)"
                     @keydown.space.self.prevent="rowClick?.(row)"
                 >
                     <td v-if="canSelect" class="px-2 py-2 max-sm:sticky max-sm:left-0 max-sm:z-10" :class="isSelected(row) ? 'max-sm:bg-indigo-50' : 'max-sm:bg-white'">
-                        <input v-model="selected" class="focus-visible:outline-2 focus-visible:outline-indigo-600" type="checkbox" :value="idOf(row)" :aria-label="`Chọn ${rowLabel(row)}`" />
+                        <input v-model="selected" class="focus-visible:outline-2 focus-visible:outline-indigo-600" type="checkbox" :value="idOf(row)" :aria-label="t('shared::admin.data_table.select_row_label', { row_label: rowLabel(row) })" />
                     </td>
                     <td v-for="(column, columnIndex) in columns" :key="column.key" class="px-4 py-2" :class="[column.align === 'right' ? 'text-right' : '', column.class, ...mobileColumnClass(column, columnIndex, row)]">
                         <slot :name="`cell-${column.key}`" :row="row" :index="index">{{ cell(row, column.key) }}</slot>

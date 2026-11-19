@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends string | number">
+import { t } from '@admin/i18n';
 import { matchesSearch, useAsyncOptions } from '@admin/search';
 import { ComboboxAnchor, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxItemIndicator, ComboboxPortal, ComboboxRoot, ComboboxTrigger, ComboboxViewport } from 'reka-ui';
 import { computed, reactive, ref, watch } from 'vue';
@@ -54,24 +55,24 @@ function onBackspace(event: KeyboardEvent): void {
         <ComboboxAnchor class="flex w-full flex-wrap items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm focus-within:border-indigo-500">
             <span v-for="value in model" :key="value" class="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
                 {{ labels.get(value) ?? value }}
-                <button v-if="!disabled" type="button" class="text-indigo-400 hover:text-indigo-700" :aria-label="`Bỏ ${labels.get(value) ?? value}`" @click.stop="remove(value)">✕</button>
+                <button v-if="!disabled" type="button" class="text-indigo-400 hover:text-indigo-700" :aria-label="t('shared::admin.multi_select.remove_get', { get: labels.get(value) ?? value })" @click.stop="remove(value)">✕</button>
             </span>
             <ComboboxInput
                 :id="id"
                 :aria-label="ariaLabel"
-                :placeholder="model.length ? '' : (placeholder ?? 'Gõ để tìm')"
+                :placeholder="model.length ? '' : (placeholder ?? t('shared::admin.multi_select.type_search'))"
                 class="min-w-24 flex-1 bg-transparent px-1 py-0.5 focus:outline-none"
                 @update:model-value="onSearch"
                 @keydown.backspace="onBackspace"
             />
-            <ComboboxTrigger class="px-1 text-slate-400" aria-label="Mở danh sách">▾</ComboboxTrigger>
+            <ComboboxTrigger class="px-1 text-slate-400" :aria-label="t('shared::admin.multi_select.open_list')">▾</ComboboxTrigger>
         </ComboboxAnchor>
         <ComboboxPortal>
             <ComboboxContent position="popper" :side-offset="4" class="z-50 max-h-72 w-(--reka-combobox-trigger-width) overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
                 <ComboboxViewport class="p-1">
-                    <p v-if="remote?.loading.value" class="px-3 py-2 text-sm text-slate-500" aria-live="polite">Đang tìm…</p>
-                    <p v-else-if="remote?.failed.value" class="px-3 py-2 text-sm text-red-600" aria-live="polite">Không tìm được, gõ lại để thử.</p>
-                    <ComboboxEmpty v-else class="px-3 py-2 text-sm text-slate-500">{{ emptyText ?? 'Không có kết quả.' }}</ComboboxEmpty>
+                    <p v-if="remote?.loading.value" class="px-3 py-2 text-sm text-slate-500" aria-live="polite">{{ t('shared::admin.multi_select.searching') }}</p>
+                    <p v-else-if="remote?.failed.value" class="px-3 py-2 text-sm text-red-600" aria-live="polite">{{ t('shared::admin.multi_select.nothing_found_type_again_retry') }}</p>
+                    <ComboboxEmpty v-else class="px-3 py-2 text-sm text-slate-500">{{ emptyText ?? t('shared::admin.multi_select.no_results') }}</ComboboxEmpty>
                     <ComboboxItem
                         v-for="option in shown"
                         :key="option.value"
@@ -82,7 +83,7 @@ function onBackspace(event: KeyboardEvent): void {
                         <ComboboxItemIndicator class="absolute left-2 text-indigo-600">✓</ComboboxItemIndicator>
                         {{ option.label }}
                     </ComboboxItem>
-                    <p v-if="matching.length > MAX_SHOWN" class="px-3 py-2 text-xs text-slate-500">Còn {{ matching.length - MAX_SHOWN }} kết quả — gõ thêm để thu hẹp.</p>
+                    <p v-if="matching.length > MAX_SHOWN" class="px-3 py-2 text-xs text-slate-500">{{ t('shared::admin.multi_select.max_shown_more_results_keep', { max_shown: matching.length - MAX_SHOWN }) }}</p>
                 </ComboboxViewport>
             </ComboboxContent>
         </ComboboxPortal>

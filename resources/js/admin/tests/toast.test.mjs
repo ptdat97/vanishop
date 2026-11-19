@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 // Chạy bằng `npm run test:admin`.
 import { generalErrorMessages, httpErrorMessage, MAX_TOASTS, registerGeneralErrorKeys, toast, toastState } from '../../../../node_modules/.cache/vani-admin/toast.js';
+import { setTranslator } from '../../../../node_modules/.cache/vani-admin/textTranslator.js';
+import { translate } from '../../../../node_modules/.cache/vani-admin/translate.js';
+
+setTranslator((key, params) => translate({ 'shared::admin': { toast: { connection_failed: 'Không kết nối được máy chủ.', session_expired: 'Phiên làm việc đã hết hạn.', server_error: 'Máy chủ gặp lỗi, thử lại sau.', failed_status: 'Không thực hiện được (mã lỗi :status).' } } }, key, params));
 
 const shown = () => toastState.items.map((item) => `${item.tone}:${item.message}`);
 

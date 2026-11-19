@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import type { ExtensionDetail } from '@admin/types';
 import { ref } from 'vue';
 
@@ -17,7 +18,7 @@ const active = ref(props.tabs[0]?.key ?? '');
         <template v-for="tab in tabs" :key="tab.key">
             <dl v-show="active === tab.key" class="space-y-1 p-4 text-sm" role="tabpanel">
                 <div v-for="(row, index) in tab.rows" :key="index" class="flex justify-between gap-3"><dt class="text-slate-500">{{ row.label }}</dt><dd class="text-right">{{ row.value }}</dd></div>
-                <p v-if="!tab.rows.length" class="text-slate-500">Chưa có dữ liệu.</p>
+                <p v-if="!tab.rows.length" class="text-slate-500">{{ t('shared::admin.extensions_extension_tabs.no_data_yet') }}</p>
             </dl>
         </template>
     </section>

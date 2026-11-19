@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import { PaginationEllipsis, PaginationList, PaginationListItem, PaginationNext, PaginationPrev, PaginationRoot } from 'reka-ui';
 import Select from '@admin/Components/Select.vue';
 import { computed } from 'vue';
@@ -15,20 +16,20 @@ const perPageChoices = computed(() => (props.perPageOptions ?? []).map((value) =
     <div v-if="last > 1 || total !== undefined" class="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-4">
             <p v-if="total !== undefined" class="text-sm text-slate-500" aria-live="polite">
-                <template v-if="total === 0">Không có kết quả</template>
-                <template v-else>Đang xem {{ from ?? '—' }}–{{ to ?? '—' }} trên {{ total }} kết quả</template>
+                <template v-if="total === 0">{{ t('shared::admin.pagination.no_results') }}</template>
+                <template v-else>{{ t('shared::admin.pagination.showing_from_total_results', { from: from ?? '—', to: to ?? '—', total }) }}</template>
             </p>
             <label v-if="perPage !== undefined && perPageOptions?.length" class="flex items-center gap-2 text-sm text-slate-600">
-                <span>Số dòng</span>
+                <span>{{ t('shared::admin.pagination.rows') }}</span>
                 <div class="w-32">
-                    <Select :model-value="perPage" :options="perPageChoices" aria-label="Số dòng mỗi trang" @change="emit('perPageChange', $event)" />
+                    <Select :model-value="perPage" :options="perPageChoices" :aria-label="t('shared::admin.pagination.rows_per_page')" @change="emit('perPageChange', $event)" />
                 </div>
             </label>
         </div>
-        <nav v-if="last > 1" aria-label="Phân trang danh sách">
+        <nav v-if="last > 1" :aria-label="t('shared::admin.pagination.list_pagination')">
             <PaginationRoot :page="current" :total="last" :items-per-page="1" :sibling-count="1" show-edges @update:page="emit('change', $event)">
                 <PaginationList v-slot="{ items }" class="flex flex-wrap items-center gap-1">
-                    <PaginationPrev :class="[item, 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40']" aria-label="Trang trước">‹</PaginationPrev>
+                    <PaginationPrev :class="[item, 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40']" :aria-label="t('shared::admin.pagination.previous_page')">‹</PaginationPrev>
                     <template v-for="(entry, index) in items" :key="index">
                         <PaginationListItem
                             v-if="entry.type === 'page'"

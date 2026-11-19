@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@admin/i18n';
 import GuestLayout from '@admin/Layouts/GuestLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
@@ -23,16 +24,16 @@ function submit(): void {
                 <p v-if="form.errors.email" class="mt-1 text-sm text-red-600">{{ form.errors.email }}</p>
             </div>
             <div>
-                <label for="password" class="mb-1 block text-sm font-medium">Mật khẩu mới</label>
+                <label for="password" class="mb-1 block text-sm font-medium">{{ t('identity::admin.auth_set_password.new_password') }}</label>
                 <input id="password" v-model="form.password" type="password" autocomplete="new-password" required class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
                 <p v-if="form.errors.password" class="mt-1 text-sm text-red-600">{{ form.errors.password }}</p>
-                <p v-else class="mt-1 text-xs text-slate-500">Tối thiểu 12 ký tự.</p>
+                <p v-else class="mt-1 text-xs text-slate-500">{{ t('identity::admin.auth_set_password.least_12_characters') }}</p>
             </div>
             <div>
-                <label for="password_confirmation" class="mb-1 block text-sm font-medium">Nhập lại mật khẩu</label>
+                <label for="password_confirmation" class="mb-1 block text-sm font-medium">{{ t('identity::admin.auth_set_password.confirm_password') }}</label>
                 <input id="password_confirmation" v-model="form.password_confirmation" type="password" autocomplete="new-password" required class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
             </div>
-            <button type="submit" :disabled="form.processing" class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Đặt mật khẩu</button>
+            <button type="submit" :disabled="form.processing" class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">{{ t('identity::admin.auth_set_password.set_password') }}</button>
         </form>
     </div>
 </template>
