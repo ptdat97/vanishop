@@ -80,23 +80,25 @@ final class ProductFile
         $rows = [[...array_map(fn (array $column): string => $column[0], array_values(self::COLUMNS)), ...array_column($fields, 'header')]];
         $statusLabels = (array) __('catalog::labels.product_status');
 
-        Style::query()->withoutGlobalScopes()->with(['translations', 'brand', 'categories', 'options', 'variants.optionValues.translations', 'variants.style.options'])
+        Style::query()->withoutGlobalScopes()->with(['translations', 'brand', 'categories', 'options', ...VariantOptions::relations('variants.')])
             ->when($styleIds !== null, fn ($query) => $query->whereKey($styleIds))
             ->orderBy('style_code')
             ->chunk(200, function (Collection $styles) use (&$rows, $fields, $statusLabels): void {
                 $types = OptionType::query()->with('translations')->get()->keyBy('id');
+                // Cột của module/plugin: một lần cho cả lô (không N+1 theo sản phẩm).
+                $values = $this->fieldValues($fields, 0, $styles->flatMap(fn (Style $style) => $style->variants->pluck('id'))->map(fn ($id): int => (int) $id)->all());
                 foreach ($styles as $style) {
                     /** @var Style $style */
                     $variants = $style->variants->sortBy(fn (Variant $variant): string => VariantOptions::sortKey($variant))->values();
-                    $values = $this->fieldValues($fields, $style->id, $variants->pluck('id')->map(fn ($id): int => (int) $id)->all());
                     $base = [
                         $style->style_code, $style->translate('name'), $statusLabels[$style->status->value] ?? $style->status->value, $style->brand?->name,
                         $style->categories->pluck('slug')->implode(' | '), $style->translate('description'),
                     ];
                     foreach ($variants->isEmpty() ? [null] : $variants as $variant) {
                         $options = [];
+                        $ordered = $variant === null ? [] : VariantOptions::ordered($variant);
                         foreach (range(0, self::MAX_AXES - 1) as $index) {
-                            $value = $variant === null ? null : (VariantOptions::ordered($variant)[$index] ?? null);
+                            $value = $ordered[$index] ?? null;
                             $options[] = $value === null ? null : $types->get($value->option_type_id)?->translate('name') ?? $types->get($value->option_type_id)?->code;
                             $options[] = $value?->label();
                         }

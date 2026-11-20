@@ -37,7 +37,8 @@ interface VariantFieldProvider
     public function permission(): ?string;
 
     /**
-     * Giá trị hiện tại cho các SKU của sản phẩm.
+     * Giá trị hiện tại cho các SKU của sản phẩm. Xuất file theo lô gọi một lần cho nhiều sản phẩm: `$styleId` = 0 và
+     * `$variantIds` thuộc nhiều sản phẩm — trả theo variant id như thường (đừng truy vấn theo `$styleId`).
      *
      * @param  list<int>  $variantIds
      * @return array<int, array<string, scalar|null>> variant id => field key => giá trị (thiếu = chưa có)

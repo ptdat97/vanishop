@@ -49,6 +49,25 @@ it('xuất: tiêu đề cố định + cột giá của Pricing; mỗi SKU một
     $this->get('/admin/catalog/products/export')->assertOk()->assertDownload();
 });
 
+it('xuất file: số truy vấn không tăng theo số sản phẩm (không N+1 — catalog 50.000 SKU)', function () {
+    $count = function (): int {
+        $queries = 0;
+        DB::listen(function () use (&$queries): void {
+            $queries++;
+        });
+        ($this->exported)();
+
+        return $queries;
+    };
+    $one = $count();
+    foreach (['AO01', 'AO02', 'AO03'] as $code) {
+        P::variants(T::product($this->brand->id, ['style_code' => $code, 'category_ids' => [$this->dresses->id]]), ['S', 'M']);
+    }
+    DB::flushQueryLog();
+
+    expect(count(($this->exported)()))->toBe(9)->and($count())->toBeLessThanOrEqual($one + 2);
+});
+
 it('nhập lại file đã xuất có sửa: xem trước chưa ghi gì; áp dụng cập nhật tên, trạng thái, khối lượng, giá; ô trống giữ nguyên', function () {
     $rows = ($this->exported)();
     $header = $rows[0];
