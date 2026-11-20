@@ -11,7 +11,7 @@
 | **Shared** | `Money`, `Currency`, `Phone`, `Address` VO, `CurrentContext`, địa giới hành chính VN, `CorrelationId` | Nghiệp vụ | — (kernel dùng chung) |
 | **Tenancy** (cửa hàng) | Thông tin cửa hàng + pháp nhân vận hành, theme tokens cấp cửa hàng, settings một cấp | Catalog | `Settings`, `LegalEntityDirectory` |
 | **Identity & Access** | Nhân viên, vai trò, permission (`owner`/`location`), audit log | Khách hàng | `Authorizer`, `AuditLogger` |
-| **Extension** | Hook registry, plugin loader, manifest, trạng thái plugin, settings schema | Nghiệp vụ plugin | `Hook`, `PluginRegistry` |
+| **Extension** | Hook registry, plugin loader, manifest, trạng thái plugin, settings schema | Nghiệp vụ plugin | `Hook`, `PluginDirectory`, `Extensions` |
 | **Catalog** | **Brand**, style, style color, variant/SKU, thuộc tính, danh mục, bộ sưu tập, media, nội dung | Giá, tồn | `CatalogReader`, `VariantDirectory` |
 | **Pricing** | Bảng giá, giá theo variant, lịch giá, lịch sử giá, `PricingStrategy` | Khuyến mãi | `PriceResolver` |
 | **Inventory** | Location, stock level, reservation, movement/ledger, ATS | Chọn kho cho đơn (thuộc Fulfillment) | `InventoryReservation`, `InventoryAdjuster`, `AvailabilityReader` |

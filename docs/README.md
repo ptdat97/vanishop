@@ -56,7 +56,7 @@
 | So với hệ tham chiếu VaniCommerce: học gì, giữ gì | [reference-comparison](02-architecture/reference-comparison.md) (đọc lưu ý clean-room trước) |
 | Chuyển một plugin từ `VaniCommerce/plugins/` sang | [vanicommerce-plugin-migration](05-plugin/vanicommerce-plugin-migration.md) (đặc tả → viết lại) |
 | Bổ sung tính năng còn thiếu so với hệ tham chiếu v3, theo từng module; helper `vani_*` | [reference-parity-refactor](20-roadmap/reference-parity-refactor.md) (đặc tả + kế hoạch R0–R4) |
-| Việc đang làm, thứ tự ưu tiên, backlog giới hạn | [stabilization-2026-11](20-roadmap/stabilization-2026-11.md), [reference-parity-refactor §6b](20-roadmap/reference-parity-refactor.md) |
+| Việc đang làm, thứ tự ưu tiên, backlog giới hạn | [status — Đợt 0.5.x](00-overview/status.md), [reference-parity-refactor §6b](20-roadmap/reference-parity-refactor.md) |
 
 ## Cấu trúc
 
@@ -80,7 +80,7 @@
 | **17-testing** | [testing](17-testing/testing.md) |
 | **18-operations** | [operations](18-operations/operations.md) · [production](18-operations/production.md) |
 | **19-adr** | [Danh sách ADR](19-adr/README.md) |
-| **20-roadmap** | [roadmap](20-roadmap/roadmap.md) · [stabilization-2026-11](20-roadmap/stabilization-2026-11.md) · [reference-parity-refactor](20-roadmap/reference-parity-refactor.md) |
+| **20-roadmap** | [roadmap](20-roadmap/roadmap.md) · [reference-parity-refactor](20-roadmap/reference-parity-refactor.md) |
 
 ## Quy ước tài liệu
 

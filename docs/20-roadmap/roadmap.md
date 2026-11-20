@@ -48,66 +48,7 @@ flowchart LR
 | 9b ✅ | **Returns** | RMA cơ bản: yêu cầu đổi/trả theo dòng đã giao, duyệt, nhận hàng, nhập kho, hoàn tiền (Payment) | Tổng trả ≤ đã giao; hoàn ≤ đã thu; có test: **đạt** (2026-10-08), kèm concurrency test. Đổi hàng (đơn thay thế): chưa |
 | 10 ✅ | **Proof plugins** | `vani.vietqr`, `vani.ghn`, `vani.promotion-rules` ([plugin-catalog §2](../05-plugin/plugin-catalog.md)) | **Đạt** (2026-10-09): cả 3 plugin cài/bật theo scope và đóng góp implementation qua extension point; contract test `PaymentGatewayContract` + `ShippingCarrierContract` pass; arch test R5 giữ nguyên (plugin không chạm tầng nội bộ của Core). Thay đổi trong `modules/` chỉ là **PR Core tổng quát**: hằng tag trên contract (`PromotionRule::TAG`, `PaymentGateway::TAG`, `ShippingCarrier::CARRIERS_TAG`, `ShippingRateProvider::TAG`), `Extensions::contribute()`, `CollectionDirectory` (Catalog), `OrderReader::customerHasPlacedOrder()` (Ordering), `validateConfig()` trên `PromotionRule`, và sửa route lookup cho plugin nạp runtime |
 
-### Tiến độ slice Notification + plugin SMS/ZNS (2026-10-13)
-
-- [x] Module `Notification`: mẫu tin (loại × kênh × brand × locale), `Notifier`, `NotificationChannel` (Core: `mail`), nhật ký idempotent, queue + retry, consent cho marketing ([notification](../03-domains/notification.md))
-- [x] Tin giao dịch: đặt đơn, huỷ đơn, đang giao, đã giao (mẫu email mặc định tiếng Việt)
-- [x] Admin mẫu tin + nhật ký gửi
-- [x] `vani.sms-brandname` (eSMS) và `vani.zalo-zns`: kênh gửi + `OtpSender`; OTP thử ZNS trước, lỗi thì tự chuyển SMS (`OtpDeliveryFailed`)
-- [ ] Chạy thử với tài khoản sandbox eSMS / OA Zalo thật (điều kiện go-live P1); đối chiếu mã lỗi nhà cung cấp
-- [ ] Email HTML theo theme brand, kênh dự phòng cho tin giao dịch, chiến dịch marketing + huỷ đăng ký
-
-### Tiến độ slice Customer (2026-10-12)
-
-Xếp trước slice 12 theo quyết định của Owner (checkout trước đó chỉ cho khách vãng lai).
-
-- [x] Module `Customer`: tài khoản hợp nhất theo SĐT, profile ẩn cho khách vãng lai, unique `phone_active`/`email_normalized`
-- [x] Đăng nhập OTP (extension point `OtpSender`) + mật khẩu tuỳ chọn; token Bearer ([ADR-024](../19-adr/ADR-024-customer-api-token.md)); chống brute-force/SMS pumping
-- [x] `/me`, sổ địa chỉ, consent + ledger, xuất dữ liệu, xoá tài khoản (ẩn danh hoá, xác nhận bằng mật khẩu từ 0.5.12)
-- [x] Gộp giỏ khi đăng nhập (`Carts::attachToCustomer`, `forCustomer`); Checkout gắn `customer_id`; `/me/orders`, `/me/cart`
-- [x] Merge khách (chuyển đơn qua `OrderWriter::reassignCustomer`) + Admin khách hàng; thống kê theo brand
-- [x] Concurrency: cùng SĐT đặt song song → một hồ sơ
-- [ ] Nhóm khách/tag + giá `member`, social login, Notification (email giao dịch), `/me/returns`, native `/tai-khoan`, plugin OTP SMS/ZNS (P1)
-
-### Tiến độ slice 11 — Integration platform (2026-10-10)
-
-Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc ERP cụ thể **đóng băng** (Phase 9).
-
-- [x] Event feed `integration_events` + transactional outbox (fan-out cùng transaction với feed) + bridge domain event → event tích hợp (`vanishop.order.v1`)
-- [x] Outbox worker nhiều tiến trình (`SKIP LOCKED`), thứ tự theo đơn, backoff 1m→24h, `failed`/`dead`, thu hồi message kẹt; concurrency test trên MySQL
-- [x] Webhook subscription: envelope + chữ ký HMAC + `Idempotency-Key`, tự tạm dừng sau 24h lỗi, bật lại trong Admin
-- [x] Inbox (unique `(system, external_event_id)`) + processor + extension point `InboundHandler`; extension point `Connector` cho plugin
-- [x] Replay (Admin + CLI), giữ message id, có audit; Admin "Tích hợp" (payload đã che PII)
-- [x] Integration Client: 2 key HMAC song song, scope, IP allowlist, rate limit; không có data scope brand, quyền theo location ở endpoint hỗ trợ
-- [x] Integration API v1: `GET /events`, `GET /orders` (+ keyset cursor), `GET /orders/{number}`, `POST /orders/{number}/acknowledgements`, `PUT /inventory/levels` (`not_data_owner`, `stale_update`)
-- [x] PR Core tổng quát: `VariantDirectory::findBySkus`, `OrderReader::changedSince` (+ `OrderData` thêm `fulfillmentStatus`/`placedAt`/`updatedAt`), `InventorySync`
-- [x] Circuit breaker theo connector (5 lỗi retryable liên tiếp → hoãn 60s, không tốn lượt thử; lỗi dữ liệu không tính)
-- [x] Đối soát đơn ↔ event feed hằng giờ, bù event thiếu (`reconciled: true`), báo cáo `integration_reconciliations` — bịt khe hở do domain event phát sau commit
-- [ ] `integration_ownerships`, đối soát tồn/thanh toán, metric/cảnh báo, các endpoint ghi còn lại, JSON Schema
-- [ ] ~~Connector ERP (plugin), contract `ErpConnector`~~ — đóng băng (Phase 9, 2026-10-08)
-
-### Tiến độ slice 10 — Proof plugins (2026-10-09)
-
-- [x] `vani.promotion-rules`: 4 rule (`min_order_subtotal`, `min_quantity`, `in_collections`, `first_order_only`) cắm vào engine của Core
-- [x] `vani.vietqr`: cổng QR động, IPN HMAC qua route chung `/api/payments/vietqr/callback`
-- [x] `vani.ghn`: `ShippingCarrier` (đặt đơn idempotent, webhook trạng thái) + `ShippingRateProvider` (báo cước checkout)
-- [x] Cả 3 plugin: manifest, `Config/`, `README.md`, unit/feature/contract test
-- [x] Bật/tắt toàn cửa hàng — implementation của plugin không bị giới hạn theo brand
-- [x] Arch test R5 pass: plugin chỉ dùng `Contracts/`, `Events/`, `PluginServiceProvider` và `Shared\Domain\Money`
-
-### Tiến độ slice 0 (2026-09-28)
-
-- [x] `modules/`, `custom/` + autoload, `ModuleServiceProvider`
-- [x] Shared: `Money`, `PhoneNumber`, `CurrentContext`, correlation id
-- [x] Tenancy/Brand/Channel tối thiểu, `ResolveChannel`, `BelongsToBrand`
-- [x] Identity: nhân viên, RBAC theo vai trò, audit, đăng nhập Admin
-- [x] Identity: đường dẫn Admin cấu hình được `VANI_ADMIN_PATH` + kiểm soát bù trừ ([ADR-020](../19-adr/ADR-020-admin-path-no-2fa.md)). Không dùng 2FA.
-- [x] Extension: `Hook` + registry, plugin loader, manifest, CLI, safe mode, plugin mẫu `HelloWorld`
-- [x] Khung Admin Inertia
-- [x] MySQL + `.env`
-- [x] CI (chưa chạy trên GitHub vì repo chưa có remote CI)
-- [x] Larastan (level 5 + baseline, ADR-032)
-- [x] Settings cấu hình cấp cửa hàng trong Tenancy — làm 2026-10-14
+Nhật ký tiến độ từng slice (0, 10, 11, Customer, Notification) đã gỡ 2026-11-20 — slice đã xong; việc còn mở ở cột "Còn thiếu" của [status](../00-overview/status.md) và [reference-parity-refactor §6b](reference-parity-refactor.md); chi tiết trong git history.
 
 ## 3. Sau khi chứng minh kiến trúc
 
@@ -122,7 +63,7 @@ Làm **phần lõi** của slice 11 (mục 3 bên dưới). Phần phụ thuộc
 | 14 | Plugin P2: ví, đối soát COD, HĐĐT, store omnichannel, abandoned cart… | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 15 | Plugin P3: loyalty, promotion nâng cao, advanced sourcing | [plugin-catalog](../05-plugin/plugin-catalog.md) |
 | 16 ✅ | **Storefront API-first** (xong 2026-11-12, Core 0.4.7–0.4.15): API v1 là hợp đồng, Blade dùng API in-process, một mô hình mã giảm giá, khoá hợp đồng HTTP | [ADR-044](../19-adr/ADR-044-storefront-api-first.md) |
-| 17 ✅ | **Ổn định Commerce Core** (P1 C1–C3, P2 A2; 2026-11-12, Core 0.4.17–0.4.20) | [stabilization-2026-11](stabilization-2026-11.md) |
+| 17 ✅ | **Ổn định Commerce Core** (P1 C1–C3, P2 A2; 2026-11-12, Core 0.4.17–0.4.20) | stabilization-2026-11 (kế hoạch đã xong, gỡ 2026-11-20 — git history) |
 | 18 ✅ | **Biến thể linh hoạt** F1–F6 (xong 2026-11-13, Core 0.4.25–0.4.29) + ma trận biến thể Admin (0.4.30–0.4.31) + sản phẩm đơn ⇄ có biến thể giữ lịch sử thương mại (0.4.66–0.4.67) | [ADR-045](../19-adr/ADR-045-flexible-variant-options.md) |
 | 19 ✅ | **Ba chốt có người** V1–V2 (2026-11-15, Core 0.4.53–0.4.54) | [ADR-046](../19-adr/ADR-046-staffed-operations-vietnam.md) |
 | 20 ✅ | **Điểm mở rộng v3** X1–X7 (2026-11-15 → 16, Core 0.4.59–0.4.65): X1 màn vận hành mở cho plugin · X2 lệnh/chặn/tín hiệu/kênh xác nhận · X3 giao theo tuyến, mẫu phiếu, hãng lấy hàng trả · X4 giá theo cách làm của shop · X5 đối soát và chuyển trả · X6 khách hàng và CSKH · X7 đặt trước và hàng đang về ([ADR-047](../19-adr/ADR-047-backorder-incoming-stock.md)). Giá theo số lượng (giá sỉ) bỏ — ngoài phạm vi ([ADR-033](../19-adr/ADR-033-out-of-scope.md), chỉ D2C/B2C) | [extension-point-catalog](../04-extension/extension-point-catalog.md) |

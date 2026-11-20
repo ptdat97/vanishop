@@ -146,7 +146,7 @@ Module sở hữu contract đăng ký yêu cầu ở ServiceProvider (Implemente
 $extensions->requires(PaymentGateway::TAG, Requirement::AtLeastOne, 'Cổng thanh toán');
 ```
 
-Không đặt hằng trên interface: một class có thể implement nhiều contract (GHN vừa là `ShippingCarrier` vừa là `ShippingRateProvider`) và hằng trùng tên gây lỗi PHP. Đăng ký hiện có: `PaymentGateway`, `ShippingRateProvider`, `ShippingCarrier`, `NotificationChannel`, `OtpSender` (≥ 1); `TaxCalculator`, `SearchProvider`, `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy`, `ReturnPolicy` (đúng 1 — chọn qua cấu hình khi có nhiều; Core có implementation trung lập nên không bao giờ thiếu).
+Không đặt hằng trên interface: một class có thể implement nhiều contract (GHN vừa là `ShippingCarrier` vừa là `ShippingRateProvider`) và hằng trùng tên gây lỗi PHP. Đăng ký hiện có: `PaymentGateway`, `ShippingRateProvider`, `ShippingCarrier`, `NotificationChannel`, `OtpSender` (≥ 1); `TaxCalculator`, `PricingStrategy`, `InventoryStrategy`, `SourcingStrategy`, `ReturnPolicy` (đúng 1 — chọn qua cấu hình khi có nhiều; Core có implementation trung lập nên không bao giờ thiếu).
 
 | Thời điểm | Kiểm tra |
 |---|---|
